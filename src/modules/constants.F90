@@ -1,7 +1,7 @@
 module constants
-  
-  ! Define all constants used in the code. This is the *only* module 
-  ! that is allowed to be imported without an 'only' qualifier. 
+
+  ! Define all constants used in the code. This is the *only* module
+  ! that is allowed to be imported without an 'only' qualifier.
 
   use precision
   implicit none
@@ -34,9 +34,9 @@ module constants
 
   integer, parameter :: itu1    =  6  ! Turbulent kinetic energy,
   ! SA viscosity
-  integer, parameter :: itu2    =  7  ! Dissipation rate, time scale 
-  integer, parameter :: itu3    =  8  ! Scalar V2 
-  integer, parameter :: itu4    =  9  ! Scalar F2 
+  integer, parameter :: itu2    =  7  ! Dissipation rate, time scale
+  integer, parameter :: itu3    =  8  ! Scalar V2
+  integer, parameter :: itu4    =  9  ! Scalar F2
   integer, parameter :: itu5    = 10  ! Eddy-viscosity used for
   ! wall functions.
 
@@ -82,7 +82,7 @@ module constants
 
   ! String constants
   CHARACTER( * ), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
-  CHARACTER( * ), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 
+  CHARACTER( * ), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
   ! Threshold parameter for real types; the value depends
   ! whether single or double precision is used.
@@ -244,7 +244,7 @@ module constants
   integer(kind=adtElementType), parameter :: adtPyramid       = 4
   integer(kind=adtElementType), parameter :: adtPrism         = 5
   integer(kind=adtElementType), parameter :: adtHexahedron    = 6
-  
+
   ! BCDefinitions
   integer(kind=intType), parameter :: BCNull                =   0
   integer(kind=intType), parameter :: Symm                  =  -1
@@ -384,7 +384,7 @@ module constants
        costFuncMavgPtot      = 44, &
        costFuncMavgTtot      = 45, &
        costFuncMavgRho       = 46, &
-       costFuncMavgPs        = 47, & 
+       costFuncMavgPs        = 47, &
        costFuncMavgMN        = 48, &
        costFuncMavga         = 49, &
        costFuncArea          = 50, &
@@ -407,14 +407,14 @@ module constants
        iMassPTot   = 20, &
        iMassTtot   = 21, &
        iMassPs     = 22, &
-       iFlowMp     = 23, & 
-       iFlowFm     = 26, & 
-       iFlowMm     = 29, & 
+       iFlowMp     = 23, &
+       iFlowFm     = 26, &
+       iFlowMm     = 29, &
        iMassMN     = 32, &
        isigmaMN    = 33, &
        isigmaPtot  = 34, &
        iPk         = 35, &
-       iMassa      = 36, & 
+       iMassa      = 36, &
        iMassRho    = 37, &
        iArea       = 38, &
        iMassVx     = 39, &
@@ -422,8 +422,8 @@ module constants
        iMassVz     = 41, &
        iMassnx     = 42, &
        iMassny     = 43, &
-       iMassnz     = 44, & 
-       iAxisMoment = 45, & 
+       iMassnz     = 44, &
+       iAxisMoment = 45, &
        iPower      = 46
 
   ! Constants for zipper comm
@@ -452,5 +452,5 @@ module constants
   integer(kind=intType), parameter :: iZippWallY=8
   integer(kind=intType), parameter :: iZippWallZ=9
 
- 
+
 end module constants

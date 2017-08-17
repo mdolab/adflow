@@ -40,7 +40,7 @@ contains
     ! reason: If we were to send the same data twice, and the other
     ! processor started using the data, we could get a race condition
     ! as it was modified the received fringes (during a search) while
-    ! the same fringes were being overwritten by the receive operation. 
+    ! the same fringes were being overwritten by the receive operation.
 
     allocate(procsForThisRow(nDomTotal), inverse(nDomTotal), blkProc(nDomTotal))
 
@@ -60,11 +60,11 @@ contains
        call unique(procsForThisRow, nnRow, nUniqueProc, inverse)
 
        do jj = 1, nUniqueProc
-          if (procsForThisRow(jj) /= myid) then 
+          if (procsForThisRow(jj) /= myid) then
              ! This intersection requires a row quantity from me
              nSend = nSend + 1
-             sendList(1, nSend) = procsForThisRow(jj) 
-             sendList(2, nSend) = iDom 
+             sendList(1, nSend) = procsForThisRow(jj)
+             sendList(2, nSend) = iDom
           end if
        end do
     end do
@@ -77,10 +77,10 @@ contains
        rowLoop: do jj=oMat%rowPtr(iDom), oMat%rowPtr(iDom+1)-1
 
           ! I have to do this intersection
-          if (oMat%assignedProc(jj) == myID) then 
+          if (oMat%assignedProc(jj) == myID) then
 
              ! But I don't know the row entry
-             if (.not. (iDom > cumDomProc(myid) .and. iDom <= cumDomProc(myid+1))) then 
+             if (.not. (iDom > cumDomProc(myid) .and. iDom <= cumDomProc(myid+1))) then
 
                 ! Need to back out what proc the iDom correponds to:
                 nRecv = nRecv + 1
@@ -90,8 +90,8 @@ contains
              end if
           end if
 
-          ! Just move on to the next row since we only need to receive it once. 
-          if (added) then 
+          ! Just move on to the next row since we only need to receive it once.
+          if (added) then
              exit rowLoop
           end if
        end do rowLoop
@@ -103,7 +103,7 @@ contains
   subroutine getOSurfCommPattern(oMat, oMatT, sendList, nSend, &
        recvList, nRecv, rBufSize)
 
-    ! This subroutine get the the comm pattern to send the oWall types. 
+    ! This subroutine get the the comm pattern to send the oWall types.
     use constants
     use blockPointers, only : nDom
     use overset, only : nDomTotal, CSRMatrix, cumDomProc, nDomProc
@@ -145,7 +145,7 @@ contains
        ! Only deal with this block if the rbuffer size for the oWall is
        ! greater than zero. If it is zero, it is empty we don't need to
        ! deal with it.
-       if (rBufSize(iDom) > 0) then 
+       if (rBufSize(iDom) > 0) then
 
           nnRow = oMat%rowPtr(iDom+1) - oMat%rowPtr(iDom)
           procsForThisRow(1:nnRow) = oMat%assignedProc(oMat%rowPtr(iDom) : oMat%rowPtr(iDom+1)-1)
@@ -156,11 +156,11 @@ contains
           call unique(procsForThisRow, nnRow+nnRowT, nUniqueProc, inverse)
 
           do jj = 1, nUniqueProc
-             if (procsForThisRow(jj) /= myid) then 
+             if (procsForThisRow(jj) /= myid) then
                 ! This intersection requires a row quantity from me
                 nSend = nSend + 1
-                sendList(1, nSend) = procsForThisRow(jj) 
-                sendList(2, nSend) = iDom 
+                sendList(1, nSend) = procsForThisRow(jj)
+                sendList(2, nSend) = iDom
              end if
           end do
        end if
@@ -173,13 +173,13 @@ contains
     do iDom=1, nDomTotal
        do jj=oMat%rowPtr(iDom), oMat%rowPtr(iDom+1)-1
           jDom = oMat%colInd(jj)
-          if (oMat%assignedProc(jj) == myID) then 
+          if (oMat%assignedProc(jj) == myID) then
              ! I don't have the row entry:
-             if (.not. (iDom > cumDomProc(myid) .and. iDom <= cumDomProc(myid+1))) then 
+             if (.not. (iDom > cumDomProc(myid) .and. iDom <= cumDomProc(myid+1))) then
                 toRecv(iDom) = 1
              end if
              ! Don't have the column entry:
-             if (.not. (jDom > cumDomProc(myid) .and. jDom <= cumDomProc(myid+1))) then 
+             if (.not. (jDom > cumDomProc(myid) .and. jDom <= cumDomProc(myid+1))) then
                 toRecv(jDom) = 1
              end if
           end if
@@ -189,7 +189,7 @@ contains
     ! Now loop back through and set my recvList. Only add if the
     ! rBufferSize is larger than zero.
     do iDom=1, nDomTotal
-       if (toRecv(iDom) == 1 .and. rBufSize(iDom) > 0) then 
+       if (toRecv(iDom) == 1 .and. rBufSize(iDom) > 0) then
           nRecv = nRecv + 1
           recvList(1, nRecv) = blkProc(iDom)
           recvList(2, nRecv) = iDom
@@ -311,13 +311,13 @@ contains
     call mpi_irecv(oBlock%rBuffer, rSize, adflow_real, &
          iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
     call ECHK(ierr, __FILE__, __LINE__)
-    recvInfo(:, recvCount) = (/iDom, 1/) 
+    recvInfo(:, recvCount) = (/iDom, 1/)
 
     recvCount = recvCount + 1
     call mpi_irecv(oBlock%iBuffer, iSize, adflow_integer, &
          iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
     call ECHK(ierr, __FILE__, __LINE__)
-    recvInfo(:, recvCount) = (/iDom, 2/) 
+    recvInfo(:, recvCount) = (/iDom, 2/)
 
   end subroutine recvOBlock
 
@@ -346,13 +346,13 @@ contains
     call mpi_irecv(oFringe%rBuffer, rSize, adflow_real, &
          iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
     call ECHK(ierr, __FILE__, __LINE__)
-    recvInfo(:, recvCount) = (/iDom, 3/) 
+    recvInfo(:, recvCount) = (/iDom, 3/)
 
     recvCount = recvCount + 1
     call mpi_irecv(oFringe%iBuffer, iSize, adflow_integer, &
          iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
     call ECHK(ierr, __FILE__, __LINE__)
-    recvInfo(:, recvCount) = (/iDom, 4/) 
+    recvInfo(:, recvCount) = (/iDom, 4/)
 
   end subroutine recvOFringe
 
@@ -381,14 +381,14 @@ contains
     call mpi_irecv(oWall%rBuffer, rSize, adflow_real, &
          iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
     call ECHK(ierr, __FILE__, __LINE__)
-    recvInfo(:, recvCount) = (/iDom, 5/) 
+    recvInfo(:, recvCount) = (/iDom, 5/)
 
     recvCount = recvCount + 1
 
     call mpi_irecv(oWall%iBuffer, iSize, adflow_integer, &
          iProc, tag, ADflow_comm_world, recvRequests(recvCount), ierr)
     call ECHK(ierr, __FILE__, __LINE__)
-    recvInfo(:, recvCount) = (/iDom, 6/) 
+    recvInfo(:, recvCount) = (/iDom, 6/)
 
   end subroutine recvOSurf
 
@@ -398,7 +398,7 @@ contains
 
     ! For this data exchange we use the exact *reverse* of fringe
     ! communication pattern. This communiation simply determines the
-    ! number of fringes that must be returned to the owning process. 
+    ! number of fringes that must be returned to the owning process.
 
     use constants
     use communication , only : sendRequests, recvRequests, adflow_comm_world
@@ -414,12 +414,12 @@ contains
     ! Working
     integer(kind=intType) :: sendCount, recvCount
     integer(kind=intType) :: iDom, iProc, jj, ierr, index, i
-    integer mpiStatus(MPI_STATUS_SIZE) 
+    integer mpiStatus(MPI_STATUS_SIZE)
 
     ! Post all the fringe iSends
     sendCount = 0
     do jj=1, nOFringeRecv
-       
+
        iProc = oFringeRecvList(1, jj)
        iDom = oFringeRecvList(2, jj)
        sendCount = sendCount + 1
@@ -427,33 +427,33 @@ contains
             iproc, iDom, adflow_comm_world, sendRequests(sendCount), ierr)
        call ECHK(ierr, __FILE__, __LINE__)
     end do
-    
+
     allocate(fringeRecvSizes(nOfringeSend))
-    
+
     ! Non-blocking receives
     recvCount = 0
     do jj=1, nOFringeSend
-       
+
        iProc = oFringeSendList(1, jj)
        iDom = oFringeSendList(2, jj)
        recvCount = recvCount + 1
-          
+
        call mpi_irecv(fringeRecvSizes(jj), 1, adflow_integer, &
             iProc, iDom, adflow_comm_world, recvRequests(recvCount), ierr)
        call ECHK(ierr, __FILE__, __LINE__)
     end do
-    
-    ! Last thing to do wait for all the sends and receives to finish 
+
+    ! Last thing to do wait for all the sends and receives to finish
     do i=1,sendCount
        call mpi_waitany(sendCount, sendRequests, index, mpiStatus, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
     end do
-    
+
     do i=1,recvCount
        call mpi_waitany(recvCount, recvRequests, index, mpiStatus, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
     end do
-    
+
     ! Compute the cumulative form of the fringeRecvSizes
 
     allocate(cumFringeRecv(1:nOFringeSend+1))
@@ -463,16 +463,16 @@ contains
        ! back
        cumFringeRecv(jj+1) = cumFringeRecv(jj) + fringeRecvSizes(jj)
     end do
-    
+
   end subroutine getFringeReturnSizes
 
 
 
   !
-  !       oversetLoadBalance determine the deistributation of donor and  
-  !       receiver blocks that will result in approximate even load      
-  !       balancing. The sparse matrix structrue of the overla is        
-  !       provided. This computation runs on all processors.             
+  !       oversetLoadBalance determine the deistributation of donor and
+  !       receiver blocks that will result in approximate even load
+  !       balancing. The sparse matrix structrue of the overla is
+  !       provided. This computation runs on all processors.
 
   subroutine oversetLoadBalance(overlap)
 
@@ -513,37 +513,37 @@ contains
     evenCost = totalSearch / nProc
 
     ! Initialize the taken processor to False
-    blockTaken = .False. 
+    blockTaken = .False.
 
     ! Initialzie assignedProc to -1 since there could be entries we can
-    ! ignore. 
+    ! ignore.
     assignedProc(:) = -1
     procCosts = zero
     cumProcCosts(0) = zero
 
     ! Initialize the starting point
     jj = 1
-    iProc = 0 
+    iProc = 0
 
     ! Find the first row with non-zeros
     curRow = 1
-    do while(rowPtr(curRow+1)-rowPtr(curRow) == 0) 
+    do while(rowPtr(curRow+1)-rowPtr(curRow) == 0)
        curRow = curRow + 1
     end do
 
-    masterLoop: do while (curRow <= overlap%nRow .and. iProc <= nProc) 
+    masterLoop: do while (curRow <= overlap%nRow .and. iProc <= nProc)
 
        ! Normally we increment
-       increment = .True. 
+       increment = .True.
 
        ! This is our current target cost.
        targetCost = evenCost*(iProc + 1)
 
        ! It is still possible that data(jj) is zero. That's ok...we'll
-       ! explictly ignore them. 
-       if (data(jj) /= zero .and. .not. (blockTaken(jj))) then 
+       ! explictly ignore them.
+       if (data(jj) /= zero .and. .not. (blockTaken(jj))) then
 
-          if (procCosts(iProc) == 0 .or. iProc == nProc-1) then 
+          if (procCosts(iProc) == 0 .or. iProc == nProc-1) then
              ! Must be added
              procCosts(iProc) = procCosts(iProc) + data(jj)
              blockTaken(jj) = .True.
@@ -555,14 +555,14 @@ contains
              !  potential sum will be:
              potentialSum = cumProcCosts(iProc) + procCosts(iProc) + data(jj)
 
-             if (potentialSum < targetCost - tol*evenCost) then 
+             if (potentialSum < targetCost - tol*evenCost) then
                 !  We are not close to our limit yet so just add it normally
                 procCosts(iProc) = procCosts(iProc) + data(jj)
                 blockTaken(jj) = .True.
                 assignedProc(jj) = iProc
 
              else if (potentialSum >= targetCost - tol*evenCost  .and. &
-                  potentialSum <= targetCost + tol*evenCost) then 
+                  potentialSum <= targetCost + tol*evenCost) then
 
                 ! This one looks perfect. Call it a day...add it and
                 !  move on to the next proc
@@ -582,16 +582,16 @@ contains
                 ! finish this proc no matter what before we go back to
                 ! the outer loop. Essentially we know jj is bad,
                 ! instead scan over the rest of the row and see if we
-                ! can add something else that is decent. 
+                ! can add something else that is decent.
                 increment = .False.
 
                 restOfRow: do jj1=jj+1, rowPtr(curRow+1)-1
 
                    potentialSum = cumProcCosts(iProc) + procCosts(iProc) + data(jj1)
 
-                   if (data(jj1) /= zero .and. .not. (blockTaken(jj1))) then 
+                   if (data(jj1) /= zero .and. .not. (blockTaken(jj1))) then
 
-                      if (potentialSum < targetCost - tol*evenCost) then 
+                      if (potentialSum < targetCost - tol*evenCost) then
                          !Huh...that one fit in without going
                          ! over....add it and kep going in the loop
 
@@ -600,9 +600,9 @@ contains
                          assignedProc(jj1) = iProc
 
                       else if (potentialSum >= targetCost - tol*evenCost  .and. &
-                           potentialSum <= targetCost + tol*evenCost) then 
+                           potentialSum <= targetCost + tol*evenCost) then
 
-                         ! This one fit in perfectly. 
+                         ! This one fit in perfectly.
                          procCosts(iProc) = procCosts(iProc) + data(jj1)
                          blockTaken(jj1) = .True.
                          assignedProc(jj1) = iProc
@@ -617,7 +617,7 @@ contains
                 ! Well, the loop finished, we may or may not have
                 ! added something. If so great...if not, oh well. We
                 ! just keep going to the next proc. That's the greedy
-                ! algorithm for you. 
+                ! algorithm for you.
 
                 ! Processor can be incremented
                 cumProcCosts(iProc+1) = cumProcCosts(iProc) + procCosts(iProc)
@@ -627,11 +627,11 @@ contains
        end if
 
        ! Move 1 in jj, until we reach the end and wrap around.
-       if (increment) then 
+       if (increment) then
           jj = jj + 1
 
           ! Switch to the next row:
-          if (jj == rowPtr(curRow+1)) then 
+          if (jj == rowPtr(curRow+1)) then
 
              ! This is really tricky...we know we're at the end of the
              ! row, but we have to SKIP OVER THE EMPTY rows, or else the
@@ -641,7 +641,7 @@ contains
 
              findNextNonZeroRow: do while(jj == rowPtr(curRow+1))
                 curRow = curRow + 1
-                if (curRow > overlap%nRow) then 
+                if (curRow > overlap%nRow) then
                    exit findNextNonZeroRow
                 end if
              end do findNextNonZeroRow
@@ -653,11 +653,11 @@ contains
 
   subroutine exchangeFringes(level, sps, commPattern, internal)
     !
-    !       ExchangeFringes exchanges the donorInformation of the fringes: 
-    !       donorProc, donorBlock, dIndex and donorFrac. It does this  
-    !       the 1:1 halos for the given level and spectral instance. Since 
-    !       we have real values and integer values we will do all the ints 
-    !       first and then the reals.                                      
+    !       ExchangeFringes exchanges the donorInformation of the fringes:
+    !       donorProc, donorBlock, dIndex and donorFrac. It does this
+    !       the 1:1 halos for the given level and spectral instance. Since
+    !       we have real values and integer values we will do all the ints
+    !       first and then the reals.
     !
     use constants
     use block, only : fringeType
@@ -722,7 +722,7 @@ contains
 
           ! Copy integer values to buffer
           iFringe = flowDoms(d1, level, sps)%fringePtr(1, i1, j1, k1)
-          if (iFringe > 0) then 
+          if (iFringe > 0) then
              sendBufInt(jj  ) = flowDoms(d1,level,sps)%fringes(iFringe)%donorProc
              sendBufInt(jj+1) = flowDoms(d1,level,sps)%fringes(iFringe)%donorBlock
              sendBufInt(jj+2) = flowDoms(d1,level,sps)%fringes(iFringe)%dIndex
@@ -787,13 +787,13 @@ contains
        i2 = internal(level)%haloIndices(i,1)
        j2 = internal(level)%haloIndices(i,2)
        k2 = internal(level)%haloIndices(i,3)
-       
-       
+
+
        iFringe = flowDoms(d1, level, sps)%fringePtr(1, i1, j1, k1)
-       if (iFringe > 0) then 
+       if (iFringe > 0) then
           ! The sender has an actual fringe. Nowe check if the
           ! receiver has somewhere already to put it:
-          
+
           jFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
 
           ! Setup the new fringe:
@@ -808,13 +808,13 @@ contains
           fringe%donorBlock= flowDoms(d1, level, sps)%fringes(iFringe)%donorBlock
           fringe%dIndex    = flowDoms(d1, level, sps)%fringes(iFringe)%dIndex
           fringe%donorFrac = flowDoms(d1, level, sps)%fringes(iFringe)%donorFrac
-          
-          if (jFringe > 0) then 
+
+          if (jFringe > 0) then
              ! Just copy the fringe into the slot. No need to update
-             ! the pointer since it is already correct. 
+             ! the pointer since it is already correct.
              flowDoms(d2, level, sps)%fringes(jFringe) = fringe
           else
-             
+
              ! There is no slot available yet. Tack the fringe onto
              ! the end of the d2 fringe list and set the pointers
              ! accordingly.
@@ -823,7 +823,7 @@ contains
                   flowDoms(d2, level, sps)%nDonors,  fringe)
 
              ! Note that all three values (pointer, start and end) are
-             ! all the same. 
+             ! all the same.
              flowDoms(d2, level, sps)%fringePtr(:, i2, j2, k2) = &
                   flowDoms(d2, level, sps)%nDonors
           end if
@@ -868,10 +868,10 @@ contains
 
           fringe%donorProc  = recvBufInt(jj+1)
           fringe%donorBlock = recvBufInt(jj+2)
-          fringe%dIndex     = recvBufInt(jj+3)       
+          fringe%dIndex     = recvBufInt(jj+3)
 
           iFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
-          if (iFringe > 0) then 
+          if (iFringe > 0) then
              ! We have somehwere to to put the data already:
              flowDoms(d2, level, sps)%fringes(iFringe) = fringe
           else
@@ -880,7 +880,7 @@ contains
                   flowDoms(d2, level, sps)%nDonors, fringe)
 
              ! Note that all three values (pointer, start and end) are
-             ! all the same. 
+             ! all the same.
              flowDoms(d2, level, sps)%fringePtr(:, i2, j2, k2) = &
                   flowDoms(d2, level, sps)%nDonors
           end if
@@ -896,7 +896,7 @@ contains
        call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
     enddo
 
-    ! Done with the integer memory. 
+    ! Done with the integer memory.
 
     deallocate(sendBufInt, recvBufInt)
 
@@ -937,7 +937,7 @@ contains
 
           ! Copy real values to buffer
           iFringe = flowDoms(d1, level, sps)%fringePtr(1, i1, j1, k1)
-          if (iFringe > 0) then 
+          if (iFringe > 0) then
              sendBuffer(jj:jj+2) = flowDoms(d1,level,sps)%fringes(iFringe)%donorFrac
           else
              sendBuffer(jj:jj+2) = zero
@@ -982,7 +982,7 @@ contains
 
     ! ***********************************************************
     ! No local copy since we copied the fringes directly and the
-    ! donorFrac info is already there. 
+    ! donorFrac info is already there.
     ! ***********************************************************
 
     ! Complete the nonblocking receives in an arbitrary sequence and
@@ -1009,10 +1009,10 @@ contains
           k2 = commPattern(level)%recvList(ii)%indices(j,3)
 
           ! Now, there should already be a spot available for the
-          ! donorFrac since it was created if necessary in the integer exchange. 
+          ! donorFrac since it was created if necessary in the integer exchange.
           iFringe = flowDoms(d2, level, sps)%fringePtr(1, i2, j2, k2)
           flowDoms(d2, level, sps)%fringes(iFringe)%donorFrac = recvBuffer(jj+1:jj+3)
-          
+
           jj = jj + nVar
        enddo
 
@@ -1029,8 +1029,8 @@ contains
 
   subroutine exchangeStatus(level, sps, commPattern, internal)
     !
-    !       ExchangeIsCompute exchanges the isCompute flag for the 1 to 1  
-    !       connectivity for the given level and sps instance.             
+    !       ExchangeIsCompute exchanges the isCompute flag for the 1 to 1
+    !       connectivity for the given level and sps instance.
     !
     use constants
     use blockPointers, only : nDom, ib, jb, kb, flowDoms
@@ -1256,16 +1256,16 @@ contains
   end subroutine exchangeStatusTranspose
 
   subroutine setupFringeGlobalInd(level, sps)
-    
+
     use constants
     use blockPointers
     use communication
     use utils, only : EChk
     implicit none
-    
+
     ! This subroutine is used to record the global index of each of
     ! the donors for overset fringes. It has the same comm structure
-    ! as  wOverset and flagInvalidDonors. 
+    ! as  wOverset and flagInvalidDonors.
 
     !
     !      Subroutine arguments.
@@ -1289,14 +1289,14 @@ contains
 
     commPattern => commPatternOverset(level, sps)
     internal => internalOverset(level, sps)
-    
+
     ii = commPattern%nProcSend
     ii = commPattern%nsendCum(ii)
     jj = commPattern%nProcRecv
     jj = commPattern%nrecvCum(jj)
     nVar = 8
     allocate(sendBufInt(ii*nVar), recvBufInt(jj*nVar), stat=ierr)
-    
+
     ! Send the variables. The data is first copied into
     ! the send buffer after which the buffer is sent asap.
 
@@ -1392,7 +1392,7 @@ contains
           do jjj=j1, j1+1
              do iii=i1, i1+1
                 ind = ind + 1
-                flowDoms(d2, level, sps)%gInd(ind, i2, j2, k2) = & 
+                flowDoms(d2, level, sps)%gInd(ind, i2, j2, k2) = &
                      flowDoms(d1, level, sps)%globalCell(iii,jjj,kkk)
              end do
           end do
@@ -1446,8 +1446,8 @@ contains
 
   subroutine exchangeSurfaceDelta(zipperFamList, level, sps, commPattern, internal)
     !
-    !       ExchangeSurfaceDelta exchanges surface delta to fill up halo   
-    !       surface cells from adjacent blocks.                            
+    !       ExchangeSurfaceDelta exchanges surface delta to fill up halo
+    !       surface cells from adjacent blocks.
     !
     use constants
     use blockPointers, onlY : nDom, flowDoms, nBocos, BCType, BCFaceID, BCData, &
@@ -1483,7 +1483,7 @@ contains
 
        ! Push the surface iblank back to the generic volume variable rVar1
        bocoLoop: do mm=1, nBocos
-          famInclude: if (famInList(BCData(mm)%famID, zipperFamList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, zipperFamList)) then
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1521,9 +1521,9 @@ contains
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
-       ! Extract the surface iblank from the volume. 
+       ! Extract the surface iblank from the volume.
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (famInList(BCData(mm)%famID, zipperFamList)) then 
+          famInclude2: if (famInList(BCData(mm)%famID, zipperFamList)) then
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1559,8 +1559,8 @@ contains
 
   subroutine exchangeSurfaceIblanks(zipperFamList, level, sps, commPattern, internal)
     !
-    !       ExchangeIblank exchanges the 1 to 1 internal halo's for the    
-    !       given level and sps instance.                                  
+    !       ExchangeIblank exchanges the 1 to 1 internal halo's for the
+    !       given level and sps instance.
     !
     use constants
     use blockPointers, only : nDom, ib, jb, kb, iBlank, BCData, &
@@ -1584,7 +1584,7 @@ contains
     integer(kind=intType), dimension(:), allocatable :: iBlankSave
     integer(kind=intType), dimension(:, :), pointer :: ibp
 
-    ! Just cheat by saving iBlank iblank array, resusing itand 
+    ! Just cheat by saving iBlank iblank array, resusing itand
     ii = 0
     do nn=1, nDom
        call setPointers(nn, level, sps)
@@ -1607,7 +1607,7 @@ contains
 
        ! Push the surface iblank back to the volume:
        bocoLoop: do mm=1, nBocos
-          famInclude: if (famInList(BCData(mm)%famID, zipperFamList)) then 
+          famInclude: if (famInList(BCData(mm)%famID, zipperFamList)) then
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1650,9 +1650,9 @@ contains
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
-       ! Extract the surface iblank from the volume. 
+       ! Extract the surface iblank from the volume.
        bocoLoop2: do mm=1, nBocos
-          famInclude2: if (famInList(BCData(mm)%famID, zipperFamList)) then 
+          famInclude2: if (famInList(BCData(mm)%famID, zipperFamList)) then
 
              select case (BCFaceID(mm))
              case (iMin)
@@ -1736,7 +1736,7 @@ contains
     ! entire volume mesh is warped as one a-la pyWarpUstruct. This
     ! actually ends up being a fairly small correction most of the time,
     ! however, desipite looks to the contrary is actually quite fast to
-    ! run.                    
+    ! run.
 
     use constants
     use communication
@@ -1774,7 +1774,7 @@ contains
     do nn=1, nDom
        call setPointers(nn, level, sps)
 
-       if (.not. associated(flowDoms(nn, level, sps)%xSeed)) then 
+       if (.not. associated(flowDoms(nn, level, sps)%xSeed)) then
           allocate(flowDoms(nn, level, sps)%XSeed(0:ib, 0:jb, 0:kb, 3))
        end if
        xSeed => flowDoms(nn, level, sps)%xSeed
@@ -1796,11 +1796,11 @@ contains
        end do
     end do
 
-    ! Exchange the xSeeds. 
+    ! Exchange the xSeeds.
     do nn=1, nDom
        flowDoms(nn, level, sps)%realCommVars(1)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 1)
-       flowDoms(nn, level, sps)%realCommVars(2)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 2) 
-       flowDoms(nn, level, sps)%realCommVars(3)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 3) 
+       flowDoms(nn, level, sps)%realCommVars(2)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 2)
+       flowDoms(nn, level, sps)%realCommVars(3)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 3)
     end do
 
     ! Run the (foward) generic halo exchange.
@@ -1810,7 +1810,7 @@ contains
     ! procs. This means running the overset exchange in REVERSE (ie from
     ! receiver to donor).  Most of this code will look like
     ! wOverset_b. We will runt he newtonUpdate code (below) on the fly
-    ! as we receive the data, which should hide some of the comm time. 
+    ! as we receive the data, which should hide some of the comm time.
 
     ! Gather up the seeds into the *recv* buffer. Note we loop over
     ! nProcRECV here! After the buffer is assembled it is send off.
@@ -1866,7 +1866,7 @@ contains
        size    = 3*commPattern%nsend(i)
 
        ! Post the receive.
-       
+
        call mpi_irecv(sendBuffer(ii), size, adflow_real, procId, &
             myId, ADflow_comm_world, sendRequests(i), ierr)
 
@@ -1942,7 +1942,7 @@ contains
           ! Compute new fraction
           frac0 = (/half, half, half/)
           call newtonUpdate(xCen, &
-               flowDoms(d2, level, sps)%x(i2-1:i2+1, j2-1:j2+1, k2-1:k2+1, :), frac0, frac) 
+               flowDoms(d2, level, sps)%x(i2-1:i2+1, j2-1:j2+1, k2-1:k2+1, :), frac0, frac)
 
           ! Set the new weights
           call fracToWeights(frac, commPattern%sendList(ii)%interp(j, :))
@@ -1961,7 +1961,7 @@ contains
 #ifndef USE_COMPLEX
   subroutine updateOversetConnectivity_d(level, sps)
 
-    ! Forward mode linearization of updateOversetConnectivity 
+    ! Forward mode linearization of updateOversetConnectivity
 
     use constants
     use communication
@@ -1999,7 +1999,7 @@ contains
     do nn=1, nDom
        call setPointers_d(nn, level, sps)
 
-       if (.not. associated(flowDoms(nn, level, sps)%xSeed)) then 
+       if (.not. associated(flowDoms(nn, level, sps)%xSeed)) then
           allocate(flowDoms(nn, level, sps)%XSeed(0:ib, 0:jb, 0:kb, 3))
        end if
        xSeed => flowDoms(nn, level, sps)%xSeed
@@ -2019,7 +2019,7 @@ contains
 
                 ! Offset is not active so the xSeed_d just has the x
                 ! part. Just dump the values into scratch so we don't
-                ! acllocate any additional memory. 
+                ! acllocate any additional memory.
                 scratch(i, j, k, 1:3) = eighth*(&
                      xd(i-1, j-1, k-1, :) + &
                      xd(i  , j-1, k-1, :) + &
@@ -2034,14 +2034,14 @@ contains
        end do
     end do
 
-    ! Exchange the xSeeds. 
+    ! Exchange the xSeeds.
     do nn=1, nDom
        flowDoms(nn, level, sps)%realCommVars(1)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 1)
-       flowDoms(nn, level, sps)%realCommVars(2)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 2) 
-       flowDoms(nn, level, sps)%realCommVars(3)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 3) 
+       flowDoms(nn, level, sps)%realCommVars(2)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 2)
+       flowDoms(nn, level, sps)%realCommVars(3)%var => flowDoms(nn, level, sps)%xSeed(:, :, :, 3)
        flowDoms(nn, level, sps)%realCommVars(4)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 1)
-       flowDoms(nn, level, sps)%realCommVars(5)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 2) 
-       flowDoms(nn, level, sps)%realCommVars(6)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 3) 
+       flowDoms(nn, level, sps)%realCommVars(5)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 2)
+       flowDoms(nn, level, sps)%realCommVars(6)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 3)
     end do
 
     ! Run the (foward) generic halo exchange.
@@ -2051,7 +2051,7 @@ contains
     ! procs. This means running the overset exchange in REVERSE (ie from
     ! receiver to donor).  Most of this code will look like
     ! wOverset_b. We will runt he newtonUpdate code (below) on the fly
-    ! as we receive the data, which should hide some of the comm time. 
+    ! as we receive the data, which should hide some of the comm time.
 
     ! Gather up the seeds into the *recv* buffer. Note we loop over
     ! nProcRECV here! After the buffer is assembled it is send off.
@@ -2149,7 +2149,7 @@ contains
 
        ! Set the new weights
        call fracToWeights_d(frac, fracd, weight, internal%donorInterpd(i, :))
-    
+
     enddo localInterp
 
     ! Complete the nonblocking receives in an arbitrary sequence and
@@ -2204,7 +2204,7 @@ contains
 
   subroutine updateOversetConnectivity_b(level, sps)
 
-    ! Reverse  mode linearization of updateOversetConnectivity 
+    ! Reverse  mode linearization of updateOversetConnectivity
 
     use constants
     use communication
@@ -2236,10 +2236,10 @@ contains
     do nn=1, nDom
        flowDoms(nn, 1, sps)%scratch(:, :, :, 1:3) = zero
     end do
-       
+
     ! In reverse the fist thing we must do is the compute the
     ! sensitivites of xCen and send it to the receiving
-    ! processor. This comm pattern is the same as wOverset forward. 
+    ! processor. This comm pattern is the same as wOverset forward.
 
     ii = 1
     sends: do i=1,commPattern%nProcSend
@@ -2261,7 +2261,7 @@ contains
           i1 = commPattern%sendList(i)%indices(j,1)
           j1 = commPattern%sendList(i)%indices(j,2)
           k1 = commPattern%sendList(i)%indices(j,3)
-   
+
           ! -------- Recompute forward pass -------------
           xCen = commPattern%sendList(i)%xCen(j, :)
 
@@ -2269,17 +2269,17 @@ contains
           frac0 = (/half, half, half/)
           call newtonUpdate(xCen, &
                flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), frac0, frac)
-          
+
           ! Set the new weights
           call fracToWeights(frac, weight)
-          
+
           ! ------------- Reverse pass -----------
-          
+
           ! Transfer the weights back to the frac
           call fracToWeights_b(frac, fracd, weight, commPattern%sendList(i)%interpd(j, :))
 
           ! Run the reverse newton update.  Note that we are
-          ! accumulating into the local xd here in the newton_b call. 
+          ! accumulating into the local xd here in the newton_b call.
           frac0 = (/half, half, half/)
           call newtonUpdate_b(xCen, xCend, &
                flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
@@ -2291,7 +2291,7 @@ contains
           ! We want to send xCend to the receiver
           sendBuffer(jj:jj+2) = xCend
           jj = jj + 3
- 
+
        enddo
        ! Send the data.
 
@@ -2306,7 +2306,7 @@ contains
     enddo sends
 
     ! Post the nonblocking receives.
-    
+
     ii = 1
     receives: do i=1,commPattern%nProcRecv
 
@@ -2326,9 +2326,9 @@ contains
        ii = ii + size
 
     enddo receives
-        
+
     ! Do the local stuff while we're waiting
-    
+
     localInterp: do i=1,internal%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -2344,22 +2344,22 @@ contains
 
        ! -------- Recompute forward pass -------------
        xCen = internal%XCen(i, :)
-       
+
        ! Do newton update
        frac0 = (/half, half, half/)
        call newtonUpdate(xCen, &
             flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), frac0, frac)
-       
+
        ! Set the new weights
        call fracToWeights(frac, weight)
- 
+
       ! ------------- Reverse pass -----------
-       
+
        ! Transfer the weights back to the frac
        call fracToWeights_b(frac, fracd, weight, internal%Donorinterpd(i, :))
-       
+
        ! Run the reverse newton update.  Note that we are
-       ! accumulating into the local xd here in the newton_b call. 
+       ! accumulating into the local xd here in the newton_b call.
        frac0 = (/half, half, half/)
        call newtonUpdate_b(xCen, xCend, &
             flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), &
@@ -2411,7 +2411,7 @@ contains
 
     ! Now we have accumulated back as far as xSeedd (stored in
     ! scratch). We can now do the whalo1to1_b
-    
+
     ! Exchange the xSeeds in reverse.
     do nn=1, nDom
        flowDoms(nn, level, sps)%realCommVars(1)%var => flowDoms(nn, level, sps)%scratch(:, :, :, 1)

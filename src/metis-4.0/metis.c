@@ -72,7 +72,7 @@ void Bnd2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
   from = (pwgts[0] < tpwgts[0] ? 1 : 0);
   to = (from+1)%2;
 
-  IFSET(ctrl->dbglvl, DBG_REFINE, 
+  IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d] T[%6d %6d], Nv-Nb[%6d %6d]. ICut: %6d [B]\n",
              pwgts[0], pwgts[1], tpwgts[0], tpwgts[1], graph->nvtxs, graph->nbnd, graph->mincut));
 
@@ -110,14 +110,14 @@ void Bnd2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
     where[higain] = to;
     moved[higain] = nswaps;
 
-    IFSET(ctrl->dbglvl, DBG_MOVEINFO, 
+    IFSET(ctrl->dbglvl, DBG_MOVEINFO,
       printf("Moved %6d from %d. [%3d %3d] %5d [%4d %4d]\n", higain, from, ed[higain]-id[higain], vwgt[higain], mincut, pwgts[0], pwgts[1]));
 
     /**************************************************************
     * Update the id[i]/ed[i] values of the affected nodes
     ***************************************************************/
     SWAP(id[higain], ed[higain], tmp);
-    if (ed[higain] == 0 && xadj[higain] < xadj[higain+1]) 
+    if (ed[higain] == 0 && xadj[higain] < xadj[higain+1])
       BNDDelete(nbnd, bndind,  bndptr, higain);
 
     for (j=xadj[higain]; j<xadj[higain+1]; j++) {
@@ -142,14 +142,14 @@ void Bnd2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
       else {
         if (ed[k] > 0) {  /* It will now become a boundary vertex */
           BNDInsert(nbnd, bndind, bndptr, k);
-          if (moved[k] == -1 && where[k] == from && vwgt[k] <= mindiff) 
+          if (moved[k] == -1 && where[k] == from && vwgt[k] <= mindiff)
             PQueueInsert(&parts, k, ed[k]-id[k]);
         }
       }
     }
   }
 
-  IFSET(ctrl->dbglvl, DBG_REFINE, 
+  IFSET(ctrl->dbglvl, DBG_REFINE,
     printf("\tMinimum cut: %6d, PWGTS: [%6d %6d], NBND: %6d\n", mincut, pwgts[0], pwgts[1], nbnd));
 
   graph->mincut = mincut;
@@ -163,11 +163,11 @@ void Bnd2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
 
 
 /*************************************************************************
-* This function balances two partitions by moving the highest gain 
+* This function balances two partitions by moving the highest gain
 * (including negative gain) vertices to the other domain.
 * It is used only when tha unbalance is due to non contigous
 * subdomains. That is, the are no boundary vertices.
-* It moves vertices from the domain that is overweight to the one that 
+* It moves vertices from the domain that is overweight to the one that
 * is underweight.
 **************************************************************************/
 void General2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
@@ -198,7 +198,7 @@ void General2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
   from = (pwgts[0] < tpwgts[0] ? 1 : 0);
   to = (from+1)%2;
 
-  IFSET(ctrl->dbglvl, DBG_REFINE, 
+  IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d] T[%6d %6d], Nv-Nb[%6d %6d]. ICut: %6d [B]\n",
              pwgts[0], pwgts[1], tpwgts[0], tpwgts[1], graph->nvtxs, graph->nbnd, graph->mincut));
 
@@ -233,14 +233,14 @@ void General2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
     where[higain] = to;
     moved[higain] = nswaps;
 
-    IFSET(ctrl->dbglvl, DBG_MOVEINFO, 
+    IFSET(ctrl->dbglvl, DBG_MOVEINFO,
       printf("Moved %6d from %d. [%3d %3d] %5d [%4d %4d]\n", higain, from, ed[higain]-id[higain], vwgt[higain], mincut, pwgts[0], pwgts[1]));
 
     /**************************************************************
     * Update the id[i]/ed[i] values of the affected nodes
     ***************************************************************/
     SWAP(id[higain], ed[higain], tmp);
-    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1]) 
+    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1])
       BNDDelete(nbnd, bndind,  bndptr, higain);
     if (ed[higain] > 0 && bndptr[higain] == -1)
       BNDInsert(nbnd, bndind,  bndptr, higain);
@@ -257,14 +257,14 @@ void General2WayBalance(CtrlType *ctrl, GraphType *graph, int *tpwgts)
         PQueueUpdate(&parts, k, oldgain, ed[k]-id[k]);
 
       /* Update its boundary information */
-      if (ed[k] == 0 && bndptr[k] != -1) 
+      if (ed[k] == 0 && bndptr[k] != -1)
         BNDDelete(nbnd, bndind, bndptr, k);
-      else if (ed[k] > 0 && bndptr[k] == -1)  
+      else if (ed[k] > 0 && bndptr[k] == -1)
         BNDInsert(nbnd, bndind, bndptr, k);
     }
   }
 
-  IFSET(ctrl->dbglvl, DBG_REFINE, 
+  IFSET(ctrl->dbglvl, DBG_REFINE,
     printf("\tMinimum cut: %6d, PWGTS: [%6d %6d], NBND: %6d\n", mincut, pwgts[0], pwgts[1], nbnd));
 
   graph->mincut = mincut;
@@ -351,7 +351,7 @@ void CreateCoarseGraph(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxtype *ma
   dovsize = (ctrl->optype == OP_KVMETIS ? 1 : 0);
 
   mask = HTLENGTH;
-  if (cnvtxs < 8*mask || graph->nedges/graph->nvtxs > 15) { 
+  if (cnvtxs < 8*mask || graph->nedges/graph->nvtxs > 15) {
     CreateCoarseGraphNoMask(ctrl, graph, cnvtxs, match, perm);
     return;
   }
@@ -381,17 +381,17 @@ void CreateCoarseGraph(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxtype *ma
 
 
   iend = xadj[nvtxs];
-  auxadj = ctrl->wspace.auxcore; 
-  memcpy(auxadj, adjncy, iend*sizeof(idxtype)); 
+  auxadj = ctrl->wspace.auxcore;
+  memcpy(auxadj, adjncy, iend*sizeof(idxtype));
   for (i=0; i<iend; i++)
     auxadj[i] = cmap[auxadj[i]];
 
-  htable = idxset(mask+1, -1, idxwspacemalloc(ctrl, mask+1)); 
+  htable = idxset(mask+1, -1, idxwspacemalloc(ctrl, mask+1));
 
   cxadj[0] = cnvtxs = cnedges = 0;
   for (i=0; i<nvtxs; i++) {
     v = perm[i];
-    if (cmap[v] != cnvtxs) 
+    if (cmap[v] != cnvtxs)
       continue;
 
     u = match[v];
@@ -433,7 +433,7 @@ void CreateCoarseGraph(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxtype *ma
       }
     }
 
-    if (v != u) { 
+    if (v != u) {
       if (ncon == 1)
         cvwgt[cnvtxs] += vwgt[u];
       else
@@ -475,7 +475,7 @@ void CreateCoarseGraph(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxtype *ma
       jj = htable[cnvtxs&mask];
       if (jj >= 0 && cadjncy[jj] != cnvtxs) {
         for (jj=0; jj<nedges; jj++) {
-          if (cadjncy[jj] == cnvtxs) 
+          if (cadjncy[jj] == cnvtxs)
             break;
         }
       }
@@ -551,15 +551,15 @@ void CreateCoarseGraphNoMask(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxty
   htable = idxset(cnvtxs, -1, idxwspacemalloc(ctrl, cnvtxs));
 
   iend = xadj[nvtxs];
-  auxadj = ctrl->wspace.auxcore; 
-  memcpy(auxadj, adjncy, iend*sizeof(idxtype)); 
+  auxadj = ctrl->wspace.auxcore;
+  memcpy(auxadj, adjncy, iend*sizeof(idxtype));
   for (i=0; i<iend; i++)
     auxadj[i] = cmap[auxadj[i]];
 
   cxadj[0] = cnvtxs = cnedges = 0;
   for (i=0; i<nvtxs; i++) {
     v = perm[i];
-    if (cmap[v] != cnvtxs) 
+    if (cmap[v] != cnvtxs)
       continue;
 
     u = match[v];
@@ -588,7 +588,7 @@ void CreateCoarseGraphNoMask(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxty
       }
     }
 
-    if (v != u) { 
+    if (v != u) {
       if (ncon == 1)
         cvwgt[cnvtxs] += vwgt[u];
       else
@@ -678,18 +678,18 @@ void CreateCoarseGraph_NVW(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxtype
 
 
   iend = xadj[nvtxs];
-  auxadj = ctrl->wspace.auxcore; 
-  memcpy(auxadj, adjncy, iend*sizeof(idxtype)); 
+  auxadj = ctrl->wspace.auxcore;
+  memcpy(auxadj, adjncy, iend*sizeof(idxtype));
   for (i=0; i<iend; i++)
     auxadj[i] = cmap[auxadj[i]];
 
   mask = HTLENGTH;
-  htable = idxset(mask+1, -1, idxwspacemalloc(ctrl, mask+1)); 
+  htable = idxset(mask+1, -1, idxwspacemalloc(ctrl, mask+1));
 
   cxadj[0] = cnvtxs = cnedges = 0;
   for (i=0; i<nvtxs; i++) {
     v = perm[i];
-    if (cmap[v] != cnvtxs) 
+    if (cmap[v] != cnvtxs)
       continue;
 
     u = match[v];
@@ -724,7 +724,7 @@ void CreateCoarseGraph_NVW(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxtype
       }
     }
 
-    if (v != u) { 
+    if (v != u) {
       cvwgt[cnvtxs]++;
       cadjwgtsum[cnvtxs] += adjwgtsum[u];
 
@@ -759,7 +759,7 @@ void CreateCoarseGraph_NVW(CtrlType *ctrl, GraphType *graph, int cnvtxs, idxtype
       jj = htable[cnvtxs&mask];
       if (jj >= 0 && cadjncy[jj] != cnvtxs) {
         for (jj=0; jj<nedges; jj++) {
-          if (cadjncy[jj] == cnvtxs) 
+          if (cadjncy[jj] == cnvtxs)
             break;
         }
       }
@@ -860,7 +860,7 @@ GraphType *SetUpCoarseGraph(GraphType *graph, int cnvtxs, int dovsize)
 * This function re-adjusts the amount of memory that was allocated if
 * it will lead to significant savings
 **************************************************************************/
-void ReAdjustMemory(GraphType *graph, GraphType *cgraph, int dovsize) 
+void ReAdjustMemory(GraphType *graph, GraphType *cgraph, int dovsize)
 {
 
   if (cgraph->nedges > 100000 && graph->nedges < 0.7*graph->nedges) {
@@ -920,7 +920,7 @@ void ReAdjustMemory(GraphType *graph, GraphType *cgraph, int dovsize)
 /*
  * coarsen.c
  *
- * This file contains the driving routines for the coarsening process 
+ * This file contains the driving routines for the coarsening process
  *
  * Started 7/23/97
  * George
@@ -955,7 +955,7 @@ GraphType *Coarsen2Way(CtrlType *ctrl, GraphType *graph)
 
   do {
     IFSET(ctrl->dbglvl, DBG_COARSEN, printf("%6d %7d [%d] [%d %d]\n",
-          cgraph->nvtxs, cgraph->nedges, ctrl->CoarsenTo, ctrl->maxvwgt, 
+          cgraph->nvtxs, cgraph->nedges, ctrl->CoarsenTo, ctrl->maxvwgt,
           (cgraph->vwgt ? idxsum(cgraph->nvtxs, cgraph->vwgt) : cgraph->nvtxs)));
 
     if (cgraph->adjwgt) {
@@ -989,10 +989,10 @@ GraphType *Coarsen2Way(CtrlType *ctrl, GraphType *graph)
     cgraph = cgraph->coarser;
     clevel++;
 
-  } while (cgraph->nvtxs > ctrl->CoarsenTo && cgraph->nvtxs < COARSEN_FRACTION2*cgraph->finer->nvtxs && cgraph->nedges > cgraph->nvtxs/2); 
+  } while (cgraph->nvtxs > ctrl->CoarsenTo && cgraph->nvtxs < COARSEN_FRACTION2*cgraph->finer->nvtxs && cgraph->nedges > cgraph->nvtxs/2);
 
   IFSET(ctrl->dbglvl, DBG_COARSEN, printf("%6d %7d [%d] [%d %d]\n",
-        cgraph->nvtxs, cgraph->nedges, ctrl->CoarsenTo, ctrl->maxvwgt, 
+        cgraph->nvtxs, cgraph->nedges, ctrl->CoarsenTo, ctrl->maxvwgt,
         (cgraph->vwgt ? idxsum(cgraph->nvtxs, cgraph->vwgt) : cgraph->nvtxs)));
 
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->CoarsenTmr));
@@ -1044,9 +1044,9 @@ void CompressGraph(CtrlType *ctrl, GraphType *graph, int nvtxs, idxtype *xadj, i
   l = cptr[0] = 0;
   for (cnvtxs=i=0; i<nvtxs; i++) {
     ii = keys[i].val;
-    if (map[ii] == -1) { 
+    if (map[ii] == -1) {
       mark[ii] = i;  /* Add the diagonal entry */
-      for (j=xadj[ii]; j<xadj[ii+1]; j++) 
+      for (j=xadj[ii]; j<xadj[ii+1]; j++)
         mark[adjncy[j]] = i;
 
       cind[l++] = ii;
@@ -1058,7 +1058,7 @@ void CompressGraph(CtrlType *ctrl, GraphType *graph, int nvtxs, idxtype *xadj, i
         if (keys[i].key != keys[j].key || xadj[ii+1]-xadj[ii] != xadj[iii+1]-xadj[iii])
           break; /* Break if keys or degrees are different */
 
-        if (map[iii] == -1) { /* Do a comparison if iii has not been mapped */ 
+        if (map[iii] == -1) { /* Do a comparison if iii has not been mapped */
           for (jj=xadj[iii]; jj<xadj[iii+1]; jj++) {
             if (mark[adjncy[jj]] != i)
               break;
@@ -1128,7 +1128,7 @@ void CompressGraph(CtrlType *ctrl, GraphType *graph, int nvtxs, idxtype *xadj, i
         ii = cind[j];
         for (jj=xadj[ii]; jj<xadj[ii+1]; jj++) {
           k = map[adjncy[jj]];
-          if (mark[k] != i) 
+          if (mark[k] != i)
             cadjncy[l++] = k;
           mark[k] = i;
         }
@@ -1156,7 +1156,7 @@ void CompressGraph(CtrlType *ctrl, GraphType *graph, int nvtxs, idxtype *xadj, i
 
 
 /*************************************************************************
-* This function prunes all the vertices in a graph with degree greater 
+* This function prunes all the vertices in a graph with degree greater
 * than factor*average
 **************************************************************************/
 void PruneGraph(CtrlType *ctrl, GraphType *graph, int nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *iperm, float factor)
@@ -1223,7 +1223,7 @@ void PruneGraph(CtrlType *ctrl, GraphType *graph, int nvtxs, idxtype *xadj, idxt
       if (xadj[i+1]-xadj[i] < factor) {
         for (j=xadj[i]; j<xadj[i+1]; j++) {
           k = perm[adjncy[j]];
-          if (k < pnvtxs) 
+          if (k < pnvtxs)
             padjncy[pnedges++] = k;
         }
         pxadj[++l] = pnedges;
@@ -1301,7 +1301,7 @@ int ComputeCut(GraphType *graph, idxtype *where)
 /*************************************************************************
 * This function checks whether or not the boundary information is correct
 **************************************************************************/
-int CheckBnd(GraphType *graph) 
+int CheckBnd(GraphType *graph)
 {
   int i, j, nvtxs, nbnd;
   idxtype *xadj, *adjncy, *where, *bndptr, *bndind;
@@ -1337,7 +1337,7 @@ int CheckBnd(GraphType *graph)
 /*************************************************************************
 * This function checks whether or not the boundary information is correct
 **************************************************************************/
-int CheckBnd2(GraphType *graph) 
+int CheckBnd2(GraphType *graph)
 {
   int i, j, nvtxs, nbnd, id, ed;
   idxtype *xadj, *adjncy, *where, *bndptr, *bndind;
@@ -1352,7 +1352,7 @@ int CheckBnd2(GraphType *graph)
   for (nbnd=0, i=0; i<nvtxs; i++) {
     id = ed = 0;
     for (j=xadj[i]; j<xadj[i+1]; j++) {
-      if (where[i] != where[adjncy[j]]) 
+      if (where[i] != where[adjncy[j]])
         ed += graph->adjwgt[j];
       else
         id += graph->adjwgt[j];
@@ -1372,7 +1372,7 @@ int CheckBnd2(GraphType *graph)
 /*************************************************************************
 * This function checks whether or not the boundary information is correct
 **************************************************************************/
-int CheckNodeBnd(GraphType *graph, int onbnd) 
+int CheckNodeBnd(GraphType *graph, int onbnd)
 {
   int i, nvtxs, nbnd;
   idxtype *xadj, *adjncy, *where, *bndptr, *bndind;
@@ -1385,8 +1385,8 @@ int CheckNodeBnd(GraphType *graph, int onbnd)
   bndind = graph->bndind;
 
   for (nbnd=0, i=0; i<nvtxs; i++) {
-    if (where[i] == 2) 
-      nbnd++;   
+    if (where[i] == 2)
+      nbnd++;
   }
 
   ASSERTP(nbnd == onbnd, ("%d %d\n", nbnd, onbnd));
@@ -1531,7 +1531,7 @@ void METIS_EstimateMemory(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numfl
   EstimateCFraction(*nvtxs, xadj, adjncy, &vfraction, &efraction);
 
   /* Estimate the amount of memory for coresize */
-  if (*optype == 2) 
+  if (*optype == 2)
     coresize = nedges;
   else
     coresize = 0;
@@ -1555,7 +1555,7 @@ void METIS_EstimateMemory(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numfl
   if (*numflag == 1)
     Change2FNumbering2(*nvtxs, xadj, adjncy);
 }
-  
+
 
 /*************************************************************************
 * This function finds a matching using the HEM heuristic
@@ -1615,7 +1615,7 @@ int ComputeCoarseGraphSize(int nvtxs, idxtype *xadj, idxtype *adjncy, int cnvtxs
   cnvtxs = cnedges = 0;
   for (i=0; i<nvtxs; i++) {
     v = perm[i];
-    if (cmap[v] != cnvtxs) 
+    if (cmap[v] != cnvtxs)
       continue;
 
     htable[cnvtxs] = cnvtxs;
@@ -1632,7 +1632,7 @@ int ComputeCoarseGraphSize(int nvtxs, idxtype *xadj, idxtype *adjncy, int cnvtxs
       }
     }
 
-    if (v != u) { 
+    if (v != u) {
       istart = xadj[u];
       iend = xadj[u+1];
       for (j=istart; j<iend; j++) {
@@ -1702,7 +1702,7 @@ void FM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, int *tpwgts, int npasse
   PQueueInit(ctrl, &parts[0], nvtxs, tmp);
   PQueueInit(ctrl, &parts[1], nvtxs, tmp);
 
-  IFSET(ctrl->dbglvl, DBG_REFINE, 
+  IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d] T[%6d %6d], Nv-Nb[%6d %6d]. ICut: %6d\n",
              pwgts[0], pwgts[1], tpwgts[0], tpwgts[1], graph->nvtxs, graph->nbnd, graph->mincut));
 
@@ -1740,7 +1740,7 @@ void FM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, int *tpwgts, int npasse
       newcut -= (ed[higain]-id[higain]);
       INC_DEC(pwgts[to], pwgts[from], vwgt[higain]);
 
-      if ((newcut < mincut && abs(tpwgts[0]-pwgts[0]) <= origdiff+avgvwgt) || 
+      if ((newcut < mincut && abs(tpwgts[0]-pwgts[0]) <= origdiff+avgvwgt) ||
           (newcut == mincut && abs(tpwgts[0]-pwgts[0]) < mindiff)) {
         mincut = newcut;
         mindiff = abs(tpwgts[0]-pwgts[0]);
@@ -1756,14 +1756,14 @@ void FM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, int *tpwgts, int npasse
       moved[higain] = nswaps;
       swaps[nswaps] = higain;
 
-      IFSET(ctrl->dbglvl, DBG_MOVEINFO, 
+      IFSET(ctrl->dbglvl, DBG_MOVEINFO,
         printf("Moved %6d from %d. [%3d %3d] %5d [%4d %4d]\n", higain, from, ed[higain]-id[higain], vwgt[higain], newcut, pwgts[0], pwgts[1]));
 
       /**************************************************************
       * Update the id[i]/ed[i] values of the affected nodes
       ***************************************************************/
       SWAP(id[higain], ed[higain], tmp);
-      if (ed[higain] == 0 && xadj[higain] < xadj[higain+1]) 
+      if (ed[higain] == 0 && xadj[higain] < xadj[higain+1])
         BNDDelete(nbnd, bndind,  bndptr, higain);
 
       for (j=xadj[higain]; j<xadj[higain+1]; j++) {
@@ -1788,7 +1788,7 @@ void FM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, int *tpwgts, int npasse
         else {
           if (ed[k] > 0) {  /* It will now become a boundary vertex */
             BNDInsert(nbnd, bndind, bndptr, k);
-            if (moved[k] == -1) 
+            if (moved[k] == -1)
               PQueueInsert(&parts[where[k]], k, ed[k]-id[k]);
           }
         }
@@ -1826,7 +1826,7 @@ void FM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, int *tpwgts, int npasse
       }
     }
 
-    IFSET(ctrl->dbglvl, DBG_REFINE, 
+    IFSET(ctrl->dbglvl, DBG_REFINE,
       printf("\tMinimum cut: %6d at %5d, PWGTS: [%6d %6d], NBND: %6d\n", mincut, mincutorder, pwgts[0], pwgts[1], nbnd));
 
     graph->mincut = mincut;
@@ -1991,7 +1991,7 @@ void ChangeMesh2FNumbering2(int n, idxtype *mesh, int ne, int nn, idxtype *epart
  * Copyright 1997, Regents of the University of Minnesota
  *
  * frename.c
- * 
+ *
  * This file contains some renaming routines to deal with different Fortran compilers
  *
  * Started 9/15/97
@@ -2009,8 +2009,8 @@ void METIS_PARTGRAPHRECURSIVE(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtyp
   METIS_PartGraphRecursive(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts, options, edgecut, part);
 }
 void metis_partgraphrecursive(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, int *options, int *edgecut, idxtype *part)
-{ 
-  METIS_PartGraphRecursive(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts, options, edgecut, part); 
+{
+  METIS_PartGraphRecursive(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts, options, edgecut, part);
 }
 void metis_partgraphrecursive_(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, int *options, int *edgecut, idxtype *part)
 {
@@ -2340,7 +2340,7 @@ void SetUpGraph(GraphType *graph, int OpType, int nvtxs, int ncon,
   graph->adjncy = adjncy;
 
   if (ncon == 1) { /* We are in the non mC mode */
-    gsize = 0; 
+    gsize = 0;
     if ((wgtflag&2) == 0)
       gsize += nvtxs;
     if ((wgtflag&1) == 0)
@@ -2383,7 +2383,7 @@ void SetUpGraph(GraphType *graph, int OpType, int nvtxs, int ncon,
 
   }
   else {  /* Set up the graph in MOC mode */
-    gsize = 0; 
+    gsize = 0;
     if ((wgtflag&1) == 0)
       gsize += graph->nedges;
 
@@ -2392,13 +2392,13 @@ void SetUpGraph(GraphType *graph, int OpType, int nvtxs, int ncon,
     graph->gdata = idxmalloc(gsize, "SetUpGraph: gdata");
     gsize = 0;
 
-    for (i=0; i<ncon; i++) 
+    for (i=0; i<ncon; i++)
       tvwgt[i] = idxsum_strd(nvtxs, vwgt+i, ncon);
-    
+
     nvwgt = graph->nvwgt = fmalloc(ncon*nvtxs, "SetUpGraph: nvwgt");
 
     for (i=0; i<nvtxs; i++) {
-      for (j=0; j<ncon; j++) 
+      for (j=0; j<ncon; j++)
         nvwgt[i*ncon+j] = (1.0*vwgt[i*ncon+j])/(1.0*tvwgt[j]);
     }
 
@@ -2459,7 +2459,7 @@ void SetUpGraphKway(GraphType *graph, int nvtxs, idxtype *xadj, idxtype *adjncy)
   graph->cmap = graph->gdata + nvtxs;
 
   /* Compute the initial values of the adjwgtsum */
-  for (i=0; i<nvtxs; i++) 
+  for (i=0; i<nvtxs; i++)
     graph->adjwgtsum[i] = xadj[i+1]-xadj[i];
 
 }
@@ -2469,7 +2469,7 @@ void SetUpGraphKway(GraphType *graph, int nvtxs, idxtype *xadj, idxtype *adjncy)
 /*************************************************************************
 * This function sets up the graph from the user input
 **************************************************************************/
-void SetUpGraph2(GraphType *graph, int nvtxs, int ncon, idxtype *xadj, 
+void SetUpGraph2(GraphType *graph, int nvtxs, int ncon, idxtype *xadj,
        idxtype *adjncy, float *nvwgt, idxtype *adjwgt)
 {
   int i, j, sum;
@@ -2509,7 +2509,7 @@ void SetUpGraph2(GraphType *graph, int nvtxs, int ncon, idxtype *xadj,
 /*************************************************************************
 * This function sets up the graph from the user input
 **************************************************************************/
-void VolSetUpGraph(GraphType *graph, int OpType, int nvtxs, int ncon, idxtype *xadj, 
+void VolSetUpGraph(GraphType *graph, int OpType, int nvtxs, int ncon, idxtype *xadj,
                    idxtype *adjncy, idxtype *vwgt, idxtype *vsize, int wgtflag)
 {
   int i, j, sum, gsize;
@@ -2578,7 +2578,7 @@ void VolSetUpGraph(GraphType *graph, int OpType, int nvtxs, int ncon, idxtype *x
 
   }
   else {  /* Set up the graph in MOC mode */
-    gsize = graph->nedges; 
+    gsize = graph->nedges;
     if ((wgtflag&1) == 0)
       gsize += nvtxs;
 
@@ -2588,19 +2588,19 @@ void VolSetUpGraph(GraphType *graph, int OpType, int nvtxs, int ncon, idxtype *x
     gsize = 0;
 
     /* Create the normalized vertex weights along each constrain */
-    if ((wgtflag&2) == 0) 
+    if ((wgtflag&2) == 0)
       vwgt = idxsmalloc(nvtxs, 1, "SetUpGraph: vwgt");
 
-    for (i=0; i<ncon; i++) 
+    for (i=0; i<ncon; i++)
       tvwgt[i] = idxsum_strd(nvtxs, vwgt+i, ncon);
-    
+
     nvwgt = graph->nvwgt = fmalloc(ncon*nvtxs, "SetUpGraph: nvwgt");
 
     for (i=0; i<nvtxs; i++) {
-      for (j=0; j<ncon; j++) 
+      for (j=0; j<ncon; j++)
         nvwgt[i*ncon+j] = (1.0*vwgt[i*ncon+j])/(1.0*tvwgt[j]);
     }
-    if ((wgtflag&2) == 0) 
+    if ((wgtflag&2) == 0)
       free(vwgt);
 
 
@@ -2691,12 +2691,12 @@ int IsConnectedSubdomain(CtrlType *ctrl, GraphType *graph, int pid, int report)
 
   nleft = 0;
   for (i=0; i<nvtxs; i++) {
-    if (where[i] == pid) 
+    if (where[i] == pid)
       nleft++;
   }
 
   for (i=0; i<nvtxs; i++) {
-    if (where[i] == pid) 
+    if (where[i] == pid)
       break;
   }
 
@@ -2871,7 +2871,7 @@ int FindComponents(CtrlType *ctrl, GraphType *graph, idxtype *cptr, idxtype *cin
 
   nleft = 0;
   for (i=0; i<nvtxs; i++) {
-    if (where[i] != 2) 
+    if (where[i] != 2)
       nleft++;
   }
 
@@ -2935,7 +2935,7 @@ int FindComponents(CtrlType *ctrl, GraphType *graph, idxtype *cptr, idxtype *cin
 /*************************************************************************
 * This function computes the initial bisection of the coarsest graph
 **************************************************************************/
-void Init2WayPartition(CtrlType *ctrl, GraphType *graph, int *tpwgts, float ubfactor) 
+void Init2WayPartition(CtrlType *ctrl, GraphType *graph, int *tpwgts, float ubfactor)
 {
   int dbglvl;
 
@@ -2969,7 +2969,7 @@ void Init2WayPartition(CtrlType *ctrl, GraphType *graph, int *tpwgts, float ubfa
 /*************************************************************************
 * This function computes the initial bisection of the coarsest graph
 **************************************************************************/
-void InitSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor) 
+void InitSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor)
 {
   int dbglvl;
 
@@ -3084,14 +3084,14 @@ void GrowBisection(CtrlType *ctrl, GraphType *graph, int *tpwgts, float ubfactor
     }
 
     /* Check to see if we hit any bad limiting cases */
-    if (pwgts[1] == 0) { 
+    if (pwgts[1] == 0) {
       i = RandomInRange(nvtxs);
       where[i] = 1;
       INC_DEC(pwgts[1], pwgts[0], vwgt[i]);
     }
 
     /*************************************************************
-    * Do some partition refinement 
+    * Do some partition refinement
     **************************************************************/
     Compute2WayPartitionParams(ctrl, graph);
     /*printf("IPART: %3d [%5d %5d] [%5d %5d] %5d\n", graph->nvtxs, pwgts[0], pwgts[1], graph->pwgts[0], graph->pwgts[1], graph->mincut); */
@@ -3158,7 +3158,7 @@ void GrowBisectionNode(CtrlType *ctrl, GraphType *graph, float ubfactor)
   graph->nrinfo   = (NRInfoType *)(graph->rdata + 3*nvtxs + 3);
   graph->id       = graph->rdata + 3*nvtxs + 3;
   graph->ed       = graph->rdata + 4*nvtxs + 3;
-  
+
   where = graph->where;
   bndind = graph->bndind;
 
@@ -3184,7 +3184,7 @@ void GrowBisectionNode(CtrlType *ctrl, GraphType *graph, float ubfactor)
         if (first == last) { /* Empty. Disconnected graph! */
           if (nleft == 0 || drain)
             break;
-  
+
           k = RandomInRange(nleft);
           for (i=0; i<nvtxs; i++) {
             if (touched[i] == 0) {
@@ -3225,17 +3225,17 @@ void GrowBisectionNode(CtrlType *ctrl, GraphType *graph, float ubfactor)
     }
 
     /*************************************************************
-    * Do some partition refinement 
+    * Do some partition refinement
     **************************************************************/
     Compute2WayPartitionParams(ctrl, graph);
     Balance2Way(ctrl, graph, tpwgts, ubfactor);
     FM_2WayEdgeRefine(ctrl, graph, tpwgts, 4);
 
     /* Construct and refine the vertex separator */
-    for (i=0; i<graph->nbnd; i++) 
+    for (i=0; i<graph->nbnd; i++)
       where[bndind[i]] = 2;
 
-    Compute2WayNodePartitionParams(ctrl, graph); 
+    Compute2WayNodePartitionParams(ctrl, graph);
     FM_2WayNodeRefine(ctrl, graph, ubfactor, 6);
 
     /* printf("ISep: [%d %d %d] %d\n", graph->pwgts[0], graph->pwgts[1], graph->pwgts[2], bestcut); */
@@ -3249,7 +3249,7 @@ void GrowBisectionNode(CtrlType *ctrl, GraphType *graph, float ubfactor)
   graph->mincut = bestcut;
   idxcopy(nvtxs, bestwhere, where);
 
-  Compute2WayNodePartitionParams(ctrl, graph); 
+  Compute2WayNodePartitionParams(ctrl, graph);
 
   GKfree((void **) &bestwhere, (void **) &queue, (void **) &touched, LTERM);
 }
@@ -3309,7 +3309,7 @@ void RandomBisection(CtrlType *ctrl, GraphType *graph, int *tpwgts, float ubfact
     }
 
     /*************************************************************
-    * Do some partition refinement 
+    * Do some partition refinement
     **************************************************************/
     Compute2WayPartitionParams(ctrl, graph);
     /* printf("IPART: %3d [%5d %5d] [%5d %5d] %5d\n", graph->nvtxs, pwgts[0], pwgts[1], graph->pwgts[0], graph->pwgts[1], graph->mincut); */
@@ -3358,18 +3358,18 @@ void RandomBisection(CtrlType *ctrl, GraphType *graph, int *tpwgts, float ubfact
 /*************************************************************************
 * This function is the entry point for KMETIS
 **************************************************************************/
-void METIS_PartGraphKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                         idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_PartGraphKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                         idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
                          int *options, int *edgecut, idxtype *part)
 {
   int i;
   float *tpwgts;
 
   tpwgts = fmalloc(*nparts, "KMETIS: tpwgts");
-  for (i=0; i<*nparts; i++) 
+  for (i=0; i<*nparts; i++)
     tpwgts[i] = 1.0/(1.0*(*nparts));
 
-  METIS_WPartGraphKway(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts, 
+  METIS_WPartGraphKway(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts,
                        tpwgts, options, edgecut, part);
 
   free(tpwgts);
@@ -3379,8 +3379,8 @@ void METIS_PartGraphKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vw
 /*************************************************************************
 * This function is the entry point for KWMETIS
 **************************************************************************/
-void METIS_WPartGraphKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                          idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_WPartGraphKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                          idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
                           float *tpwgts, int *options, int *edgecut, idxtype *part)
 {
   GraphType graph;
@@ -3439,14 +3439,14 @@ int MlevelKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxtype
   IFSET(ctrl->dbglvl, DBG_TIME, starttimer(ctrl->InitPartTmr));
   AllocateKWayPartitionMemory(ctrl, cgraph, nparts);
 
-  options[0] = 1; 
+  options[0] = 1;
   options[OPTION_CTYPE] = MATCH_SHEMKWAY;
   options[OPTION_ITYPE] = IPART_GGPKL;
   options[OPTION_RTYPE] = RTYPE_FM;
   options[OPTION_DBGLVL] = 0;
 
-  METIS_WPartGraphRecursive(&cgraph->nvtxs, cgraph->xadj, cgraph->adjncy, cgraph->vwgt, 
-                            cgraph->adjwgt, &wgtflag, &numflag, &nparts, tpwgts, options, 
+  METIS_WPartGraphRecursive(&cgraph->nvtxs, cgraph->xadj, cgraph->adjncy, cgraph->vwgt,
+                            cgraph->adjwgt, &wgtflag, &numflag, &nparts, tpwgts, options,
                             &edgecut, cgraph->where);
 
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->InitPartTmr));
@@ -3485,18 +3485,18 @@ int MlevelKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxtype
 /*************************************************************************
 * This function is the entry point for KMETIS
 **************************************************************************/
-void METIS_PartGraphVKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                         idxtype *vsize, int *wgtflag, int *numflag, int *nparts, 
+void METIS_PartGraphVKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                         idxtype *vsize, int *wgtflag, int *numflag, int *nparts,
                          int *options, int *volume, idxtype *part)
 {
   int i;
   float *tpwgts;
 
   tpwgts = fmalloc(*nparts, "KMETIS: tpwgts");
-  for (i=0; i<*nparts; i++) 
+  for (i=0; i<*nparts; i++)
     tpwgts[i] = 1.0/(1.0*(*nparts));
 
-  METIS_WPartGraphVKway(nvtxs, xadj, adjncy, vwgt, vsize, wgtflag, numflag, nparts, 
+  METIS_WPartGraphVKway(nvtxs, xadj, adjncy, vwgt, vsize, wgtflag, numflag, nparts,
                        tpwgts, options, volume, part);
 
   free(tpwgts);
@@ -3506,8 +3506,8 @@ void METIS_PartGraphVKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *v
 /*************************************************************************
 * This function is the entry point for KWMETIS
 **************************************************************************/
-void METIS_WPartGraphVKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                          idxtype *vsize, int *wgtflag, int *numflag, int *nparts, 
+void METIS_WPartGraphVKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                          idxtype *vsize, int *wgtflag, int *numflag, int *nparts,
                           float *tpwgts, int *options, int *volume, idxtype *part)
 {
   GraphType graph;
@@ -3556,7 +3556,7 @@ void METIS_WPartGraphVKway(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *
 /*************************************************************************
 * This function takes a graph and produces a bisection of it
 **************************************************************************/
-int MlevelVolKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part, 
+int MlevelVolKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part,
                               float *tpwgts, float ubfactor)
 {
   GraphType *cgraph;
@@ -3567,14 +3567,14 @@ int MlevelVolKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxt
   IFSET(ctrl->dbglvl, DBG_TIME, starttimer(ctrl->InitPartTmr));
   AllocateVolKWayPartitionMemory(ctrl, cgraph, nparts);
 
-  options[0] = 1; 
+  options[0] = 1;
   options[OPTION_CTYPE] = MATCH_SHEMKWAY;
   options[OPTION_ITYPE] = IPART_GGPKL;
   options[OPTION_RTYPE] = RTYPE_FM;
   options[OPTION_DBGLVL] = 0;
 
-  METIS_WPartGraphRecursive(&cgraph->nvtxs, cgraph->xadj, cgraph->adjncy, cgraph->vwgt, 
-                            cgraph->adjwgt, &wgtflag, &numflag, &nparts, tpwgts, options, 
+  METIS_WPartGraphRecursive(&cgraph->nvtxs, cgraph->xadj, cgraph->adjncy, cgraph->vwgt,
+                            cgraph->adjwgt, &wgtflag, &numflag, &nparts, tpwgts, options,
                             &edgecut, cgraph->where);
 
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->InitPartTmr));
@@ -3612,7 +3612,7 @@ int MlevelVolKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxt
 **************************************************************************/
 void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, float ubfactor, int npasses, int ffactor)
 {
-  int i, ii, iii, j, k, pass, nvtxs, nmoves, nbnd, tvwgt, myndegrees; 
+  int i, ii, iii, j, k, pass, nvtxs, nmoves, nbnd, tvwgt, myndegrees;
   int from, me, to, oldcut, vwgt, gain;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *bndptr, *bndind, *minwgt, *maxwgt, *itpwgts;
@@ -3629,7 +3629,7 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  idxwspacemalloc(ctrl, nparts);
   maxwgt = idxwspacemalloc(ctrl, nparts);
@@ -3647,7 +3647,7 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d]-[%6d %6d], Balance: %5.3f, Nv-Nb[%6d %6d]. Cut: %6d\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut));
 
@@ -3670,7 +3670,7 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
         from = where[i];
         vwgt = graph->vwgt[i];
 
-        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from]) 
+        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from])
           continue;   /* This cannot be moved! */
 
         myedegrees = myrinfo->edegrees;
@@ -3679,8 +3679,8 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
         j = myrinfo->id;
         for (k=0; k<myndegrees; k++) {
           to = myedegrees[k].pid;
-          gain = myedegrees[k].ed-j; /* j = myrinfo->id. Allow good nodes to move */ 
-          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*gain && gain >= 0)  
+          gain = myedegrees[k].ed-j; /* j = myrinfo->id. Allow good nodes to move */
+          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*gain && gain >= 0)
             break;
         }
         if (k == myndegrees)
@@ -3689,7 +3689,7 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
         for (j=k+1; j<myndegrees; j++) {
           to = myedegrees[j].pid;
           if ((myedegrees[j].ed > myedegrees[k].ed && pwgts[to]+vwgt <= maxwgt[to]) ||
-              (myedegrees[j].ed == myedegrees[k].ed && 
+              (myedegrees[j].ed == myedegrees[k].ed &&
                itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid]))
             k = j;
         }
@@ -3705,9 +3705,9 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
         }
         if (j == 0)
           continue;
-          
+
         /*=====================================================================
-        * If we got here, we can now move the vertex from 'from' to 'to' 
+        * If we got here, we can now move the vertex from 'from' to 'to'
         *======================================================================*/
         graph->mincut -= myedegrees[k].ed-myrinfo->id;
 
@@ -3718,7 +3718,7 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
         INC_DEC(pwgts[to], pwgts[from], vwgt);
         myrinfo->ed += myrinfo->id-myedegrees[k].ed;
         SWAP(myrinfo->id, myedegrees[k].ed, j);
-        if (myedegrees[k].ed == 0) 
+        if (myedegrees[k].ed == 0)
           myedegrees[k] = myedegrees[--myrinfo->ndegrees];
         else
           myedegrees[k].pid = from;
@@ -3815,7 +3815,7 @@ void Random_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
 **************************************************************************/
 void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, float ubfactor, int npasses)
 {
-  int i, ii, iii, j, k, pass, nvtxs, nbnd, tvwgt, myndegrees, oldgain, gain; 
+  int i, ii, iii, j, k, pass, nvtxs, nbnd, tvwgt, myndegrees, oldgain, gain;
   int from, me, to, oldcut, vwgt;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *bndptr, *bndind, *minwgt, *maxwgt, *moved, *itpwgts;
@@ -3833,7 +3833,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  idxwspacemalloc(ctrl, nparts);
   maxwgt = idxwspacemalloc(ctrl, nparts);
@@ -3854,7 +3854,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d]-[%6d %6d], Balance: %5.3f, Nv-Nb[%6d %6d]. Cut: %6d\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut));
 
@@ -3875,7 +3875,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
     }
 
     for (iii=0;;iii++) {
-      if ((i = PQueueGetMax(&queue)) == -1) 
+      if ((i = PQueueGetMax(&queue)) == -1)
         break;
       moved[i] = 1;
 
@@ -3883,7 +3883,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
       from = where[i];
       vwgt = graph->vwgt[i];
 
-      if (pwgts[from]-vwgt < minwgt[from]) 
+      if (pwgts[from]-vwgt < minwgt[from])
         continue;   /* This cannot be moved! */
 
       myedegrees = myrinfo->edegrees;
@@ -3892,8 +3892,8 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
       j = myrinfo->id;
       for (k=0; k<myndegrees; k++) {
         to = myedegrees[k].pid;
-        gain = myedegrees[k].ed-j; /* j = myrinfo->id. Allow good nodes to move */ 
-        if (pwgts[to]+vwgt <= maxwgt[to]+gain && gain >= 0)  
+        gain = myedegrees[k].ed-j; /* j = myrinfo->id. Allow good nodes to move */
+        if (pwgts[to]+vwgt <= maxwgt[to]+gain && gain >= 0)
           break;
       }
       if (k == myndegrees)
@@ -3902,7 +3902,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
       for (j=k+1; j<myndegrees; j++) {
         to = myedegrees[j].pid;
         if ((myedegrees[j].ed > myedegrees[k].ed && pwgts[to]+vwgt <= maxwgt[to]) ||
-            (myedegrees[j].ed == myedegrees[k].ed && 
+            (myedegrees[j].ed == myedegrees[k].ed &&
              itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid]))
           k = j;
       }
@@ -3918,9 +3918,9 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
       }
       if (j == 0)
         continue;
-          
+
       /*=====================================================================
-      * If we got here, we can now move the vertex from 'from' to 'to' 
+      * If we got here, we can now move the vertex from 'from' to 'to'
       *======================================================================*/
       graph->mincut -= myedegrees[k].ed-myrinfo->id;
 
@@ -3931,7 +3931,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
       INC_DEC(pwgts[to], pwgts[from], vwgt);
       myrinfo->ed += myrinfo->id-myedegrees[k].ed;
       SWAP(myrinfo->id, myedegrees[k].ed, j);
-      if (myedegrees[k].ed == 0) 
+      if (myedegrees[k].ed == 0)
         myedegrees[k] = myedegrees[--myrinfo->ndegrees];
       else
         myedegrees[k].pid = from;
@@ -3996,7 +3996,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
         }
 
         /* Update the queue */
-        if (me == to || me == from) { 
+        if (me == to || me == from) {
           gain = myrinfo->ed-myrinfo->id;
           if (moved[ii] == 2) {
             if (gain >= 0)
@@ -4010,7 +4010,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
             PQueueInsert(&queue, ii, gain);
             moved[ii] = 2;
           }
-        } 
+        }
 
         ASSERT(myrinfo->ndegrees <= xadj[ii+1]-xadj[ii]);
         ASSERT(CheckRInfo(myrinfo));
@@ -4045,7 +4045,7 @@ void Greedy_KWayEdgeRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *
 **************************************************************************/
 void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, float ubfactor, int npasses)
 {
-  int i, ii, j, k, pass, nvtxs, nbnd, tvwgt, myndegrees, oldgain, gain, nmoves; 
+  int i, ii, j, k, pass, nvtxs, nbnd, tvwgt, myndegrees, oldgain, gain, nmoves;
   int from, me, to, oldcut, vwgt;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *bndptr, *bndind, *minwgt, *maxwgt, *moved, *itpwgts;
@@ -4063,7 +4063,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  idxwspacemalloc(ctrl, nparts);
   maxwgt = idxwspacemalloc(ctrl, nparts);
@@ -4084,7 +4084,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d]-[%6d %6d], Balance: %5.3f, Nv-Nb[%6d %6d]. Cut: %6d [B]\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut));
 
@@ -4114,7 +4114,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
 
     nmoves = 0;
     for (;;) {
-      if ((i = PQueueGetMax(&queue)) == -1) 
+      if ((i = PQueueGetMax(&queue)) == -1)
         break;
       moved[i] = 1;
 
@@ -4122,7 +4122,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
       from = where[i];
       vwgt = graph->vwgt[i];
 
-      if (pwgts[from]-vwgt < minwgt[from]) 
+      if (pwgts[from]-vwgt < minwgt[from])
         continue;   /* This cannot be moved! */
 
       myedegrees = myrinfo->edegrees;
@@ -4130,7 +4130,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
 
       for (k=0; k<myndegrees; k++) {
         to = myedegrees[k].pid;
-        if (pwgts[to]+vwgt <= maxwgt[to] || itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from]) 
+        if (pwgts[to]+vwgt <= maxwgt[to] || itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from])
           break;
       }
       if (k == myndegrees)
@@ -4138,17 +4138,17 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
 
       for (j=k+1; j<myndegrees; j++) {
         to = myedegrees[j].pid;
-        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid]) 
+        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid])
           k = j;
       }
 
       to = myedegrees[k].pid;
 
-      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] && myedegrees[k].ed-myrinfo->id < 0) 
+      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] && myedegrees[k].ed-myrinfo->id < 0)
         continue;
 
       /*=====================================================================
-      * If we got here, we can now move the vertex from 'from' to 'to' 
+      * If we got here, we can now move the vertex from 'from' to 'to'
       *======================================================================*/
       graph->mincut -= myedegrees[k].ed-myrinfo->id;
 
@@ -4159,7 +4159,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
       INC_DEC(pwgts[to], pwgts[from], vwgt);
       myrinfo->ed += myrinfo->id-myedegrees[k].ed;
       SWAP(myrinfo->id, myedegrees[k].ed, j);
-      if (myedegrees[k].ed == 0) 
+      if (myedegrees[k].ed == 0)
         myedegrees[k] = myedegrees[--myrinfo->ndegrees];
       else
         myedegrees[k].pid = from;
@@ -4224,7 +4224,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
         }
 
         /* Update the queue */
-        if (me == to || me == from) { 
+        if (me == to || me == from) {
           gain = myrinfo->ed-myrinfo->id;
           if (moved[ii] == 2) {
             if (myrinfo->ed > 0)
@@ -4238,7 +4238,7 @@ void Greedy_KWayEdgeBalance(CtrlType *ctrl, GraphType *graph, int nparts, float 
             PQueueInsert(&queue, ii, gain);
             moved[ii] = 2;
           }
-        } 
+        }
 
         ASSERT(myrinfo->ndegrees <= xadj[ii+1]-xadj[ii]);
         ASSERT(CheckRInfo(myrinfo));
@@ -4303,7 +4303,7 @@ void RefineKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int npart
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->AuxTmr1));
 
   /* Determine how many levels are there */
-  for (ptr=graph, nlevels=0; ptr!=orggraph; ptr=ptr->finer, nlevels++); 
+  for (ptr=graph, nlevels=0; ptr!=orggraph; ptr=ptr->finer, nlevels++);
 
   for (i=0; ;i++) {
     /* PrintSubDomainGraph(graph, nparts, graph->where); */
@@ -4315,21 +4315,21 @@ void RefineKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int npart
     if (2*i >= nlevels && !IsBalanced(graph->pwgts, nparts, tpwgts, 1.04*ubfactor)) {
       ComputeKWayBalanceBoundary(ctrl, graph, nparts);
       if (ctrl->RType == RTYPE_KWAYRANDOM_MCONN)
-        Greedy_KWayEdgeBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 1); 
+        Greedy_KWayEdgeBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 1);
       else
-        Greedy_KWayEdgeBalance(ctrl, graph, nparts, tpwgts, ubfactor, 1); 
+        Greedy_KWayEdgeBalance(ctrl, graph, nparts, tpwgts, ubfactor, 1);
       ComputeKWayBoundary(ctrl, graph, nparts);
     }
 
     switch (ctrl->RType) {
       case RTYPE_KWAYRANDOM:
-        Random_KWayEdgeRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 1); 
+        Random_KWayEdgeRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 1);
         break;
       case RTYPE_KWAYGREEDY:
-        Greedy_KWayEdgeRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10); 
+        Greedy_KWayEdgeRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10);
         break;
       case RTYPE_KWAYRANDOM_MCONN:
-        Random_KWayEdgeRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 1); 
+        Random_KWayEdgeRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 1);
         break;
     }
     IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->RefTmr));
@@ -4354,12 +4354,12 @@ void RefineKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int npart
   if (!IsBalanced(graph->pwgts, nparts, tpwgts, ubfactor)) {
     ComputeKWayBalanceBoundary(ctrl, graph, nparts);
     if (ctrl->RType == RTYPE_KWAYRANDOM_MCONN) {
-      Greedy_KWayEdgeBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 8); 
-      Random_KWayEdgeRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0); 
+      Greedy_KWayEdgeBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 8);
+      Random_KWayEdgeRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0);
     }
     else {
-      Greedy_KWayEdgeBalance(ctrl, graph, nparts, tpwgts, ubfactor, 8); 
-      Random_KWayEdgeRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0); 
+      Greedy_KWayEdgeBalance(ctrl, graph, nparts, tpwgts, ubfactor, 8);
+      Random_KWayEdgeRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0);
     }
   }
 
@@ -4368,7 +4368,7 @@ void RefineKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int npart
   EliminateComponents(ctrl, graph, nparts, tpwgts, ubfactor);
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->AuxTmr2));
 
-  if (mustfree) 
+  if (mustfree)
     GKfree((void **) &graph->vwgt, (void **) &graph->adjwgt, LTERM);
 
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->UncoarsenTmr));
@@ -4402,7 +4402,7 @@ void AllocateKWayPartitionMemory(CtrlType *ctrl, GraphType *graph, int nparts)
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void ComputeKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
 {
@@ -4443,14 +4443,14 @@ void ComputeKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
     }
     myrinfo->id = graph->adjwgtsum[i] - myrinfo->ed;
 
-    if (myrinfo->ed > 0) 
+    if (myrinfo->ed > 0)
       mincut += myrinfo->ed;
 
     if (myrinfo->ed-myrinfo->id >= 0)
       BNDInsert(nbnd, bndind, bndptr, i);
 
     /* Time to compute the particular external degrees */
-    if (myrinfo->ed > 0) { 
+    if (myrinfo->ed > 0) {
       myedegrees = myrinfo->edegrees = ctrl->wspace.edegrees+ctrl->wspace.cdegree;
       ctrl->wspace.cdegree += xadj[i+1]-xadj[i];
 
@@ -4557,13 +4557,13 @@ void ProjectKWayPartition(CtrlType *ctrl, GraphType *graph, int nparts)
       myrinfo->id -= myrinfo->ed;
 
       /* Remove space for edegrees if it was interior */
-      if (myrinfo->ed == 0) { 
+      if (myrinfo->ed == 0) {
         myrinfo->edegrees = NULL;
         ctrl->wspace.cdegree -= iend-istart;
       }
       else {
-        if (myrinfo->ed-myrinfo->id >= 0) 
-          BNDInsert(nbnd, bndind, bndptr, i); 
+        if (myrinfo->ed-myrinfo->id >= 0)
+          BNDInsert(nbnd, bndind, bndptr, i);
 
         myrinfo->ndegrees = ndegrees;
 
@@ -4624,7 +4624,7 @@ void ComputeKWayBoundary(CtrlType *ctrl, GraphType *graph, int nparts)
   /------------------------------------------------------------*/
   nbnd = 0;
   for (i=0; i<nvtxs; i++) {
-    if (graph->rinfo[i].ed-graph->rinfo[i].id >= 0) 
+    if (graph->rinfo[i].ed-graph->rinfo[i].id >= 0)
       BNDInsert(nbnd, bndind, bndptr, i);
   }
 
@@ -4649,7 +4649,7 @@ void ComputeKWayBalanceBoundary(CtrlType *ctrl, GraphType *graph, int nparts)
   /------------------------------------------------------------*/
   nbnd = 0;
   for (i=0; i<nvtxs; i++) {
-    if (graph->rinfo[i].ed > 0) 
+    if (graph->rinfo[i].ed > 0)
       BNDInsert(nbnd, bndind, bndptr, i);
   }
 
@@ -4674,15 +4674,15 @@ void ComputeKWayBalanceBoundary(CtrlType *ctrl, GraphType *graph, int nparts)
 /*************************************************************************
 * This function performs k-way refinement
 **************************************************************************/
-void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, 
+void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts,
                           float ubfactor, int npasses, int ffactor)
 {
-  int i, ii, iii, j, k, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain; 
+  int i, ii, iii, j, k, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain;
   int from, to, oldcut, oldvol, vwgt;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *bndptr, *bndind, *minwgt, *maxwgt, *itpwgts, *updind, *marker, *phtable;
   VEDegreeType *myedegrees;
-  VRInfoType *myrinfo; 
+  VRInfoType *myrinfo;
 
   nvtxs = graph->nvtxs;
   xadj = graph->xadj;
@@ -4694,7 +4694,7 @@ void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *t
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  idxwspacemalloc(ctrl, nparts);
   maxwgt = idxwspacemalloc(ctrl, nparts);
@@ -4716,7 +4716,7 @@ void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *t
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("VolPart: [%5d %5d]-[%5d %5d], Balance: %3.2f, Nv-Nb[%5d %5d]. Cut: %5d, Vol: %5d\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut, graph->minvol));
 
@@ -4738,7 +4738,7 @@ void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *t
         from = where[i];
         vwgt = graph->vwgt[i];
 
-        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from]) 
+        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from])
           continue;   /* This cannot be moved! */
 
         xgain = (myrinfo->id == 0 && myrinfo->ed > 0 ? graph->vsize[i] : 0);
@@ -4748,7 +4748,7 @@ void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *t
 
         for (k=0; k<myndegrees; k++) {
           to = myedegrees[k].pid;
-          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*myedegrees[k].gv && xgain+myedegrees[k].gv >= 0)  
+          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*myedegrees[k].gv && xgain+myedegrees[k].gv >= 0)
             break;
         }
         if (k == myndegrees)
@@ -4776,16 +4776,16 @@ void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *t
         }
         if (j == 0)
           continue;
-          
+
         /*=====================================================================
-        * If we got here, we can now move the vertex from 'from' to 'to' 
+        * If we got here, we can now move the vertex from 'from' to 'to'
         *======================================================================*/
         INC_DEC(pwgts[to], pwgts[from], vwgt);
         graph->mincut -= myedegrees[k].ed-myrinfo->id;
         graph->minvol -= (xgain+myedegrees[k].gv);
         where[i] = to;
 
-        IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n", 
+        IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n",
               i, from, to, xgain+myedegrees[k].gv, myedegrees[k].ed-myrinfo->id, graph->mincut, graph->minvol));
 
         KWayVolUpdate(ctrl, graph, i, from, to, marker, phtable, updind);
@@ -4799,7 +4799,7 @@ void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *t
     IFSET(ctrl->dbglvl, DBG_REFINE,
        printf("\t[%6d %6d], Balance: %5.3f, Nb: %6d. Nmoves: %5d, Cut: %6d, Vol: %6d\n",
                pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)],
-               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut, 
+               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut,
                graph->minvol));
 
     if (graph->minvol == oldvol && graph->mincut == oldcut)
@@ -4818,16 +4818,16 @@ void Random_KWayVolRefine(CtrlType *ctrl, GraphType *graph, int nparts, float *t
 /*************************************************************************
 * This function performs k-way refinement
 **************************************************************************/
-void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, 
+void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts,
             float ubfactor, int npasses, int ffactor)
 {
-  int i, ii, iii, j, k, l, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain; 
+  int i, ii, iii, j, k, l, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain;
   int from, me, to, oldcut, oldvol, vwgt, nadd, maxndoms;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *bndptr, *bndind, *minwgt, *maxwgt, *itpwgts, *updind, *marker, *phtable;
   idxtype *pmat, *pmatptr, *ndoms;
   VEDegreeType *myedegrees;
-  VRInfoType *myrinfo; 
+  VRInfoType *myrinfo;
 
   nvtxs = graph->nvtxs;
   xadj = graph->xadj;
@@ -4839,7 +4839,7 @@ void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, flo
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  idxwspacemalloc(ctrl, nparts);
   maxwgt = idxwspacemalloc(ctrl, nparts);
@@ -4866,7 +4866,7 @@ void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, flo
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("VolPart: [%5d %5d]-[%5d %5d], Balance: %3.2f, Nv-Nb[%5d %5d]. Cut: %5d, Vol: %5d\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut, graph->minvol));
 
@@ -4890,7 +4890,7 @@ void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, flo
         from = where[i];
         vwgt = graph->vwgt[i];
 
-        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from]) 
+        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from])
           continue;   /* This cannot be moved! */
 
         xgain = (myrinfo->id == 0 && myrinfo->ed > 0 ? graph->vsize[i] : 0);
@@ -4927,7 +4927,7 @@ void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, flo
           to = myedegrees[k].pid;
           if (!phtable[to])
             continue;
-          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*myedegrees[k].gv && xgain+myedegrees[k].gv >= 0)  
+          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*myedegrees[k].gv && xgain+myedegrees[k].gv >= 0)
             break;
         }
         if (k == myndegrees)
@@ -4957,19 +4957,19 @@ void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, flo
         if (j == 0)
           continue;
 
-        for (j=0; j<myndegrees; j++) 
+        for (j=0; j<myndegrees; j++)
           phtable[myedegrees[j].pid] = -1;
 
-          
+
         /*=====================================================================
-        * If we got here, we can now move the vertex from 'from' to 'to' 
+        * If we got here, we can now move the vertex from 'from' to 'to'
         *======================================================================*/
         INC_DEC(pwgts[to], pwgts[from], vwgt);
         graph->mincut -= myedegrees[k].ed-myrinfo->id;
         graph->minvol -= (xgain+myedegrees[k].gv);
         where[i] = to;
 
-        IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n", 
+        IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n",
               i, from, to, xgain+myedegrees[k].gv, myedegrees[k].ed-myrinfo->id, graph->mincut, graph->minvol));
 
         /* Update pmat to reflect the move of 'i' */
@@ -5035,7 +5035,7 @@ void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, flo
     IFSET(ctrl->dbglvl, DBG_REFINE,
        printf("\t[%6d %6d], Balance: %5.3f, Nb: %6d. Nmoves: %5d, Cut: %6d, Vol: %6d\n",
                pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)],
-               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut, 
+               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut,
                graph->minvol));
 
     if (graph->minvol == oldvol && graph->mincut == oldcut)
@@ -5057,15 +5057,15 @@ void Random_KWayVolRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, flo
 /*************************************************************************
 * This function performs k-way refinement
 **************************************************************************/
-void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, 
+void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts,
                            float ubfactor, int npasses)
 {
-  int i, ii, j, k, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain; 
+  int i, ii, j, k, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain;
   int from, to, vwgt;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *moved, *bndptr, *bndind, *minwgt, *maxwgt, *itpwgts, *updind, *marker, *phtable;
   VEDegreeType *myedegrees;
-  VRInfoType *myrinfo; 
+  VRInfoType *myrinfo;
   PQueueType queue;
 
   nvtxs = graph->nvtxs;
@@ -5078,7 +5078,7 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  idxwspacemalloc(ctrl, nparts);
   maxwgt = idxwspacemalloc(ctrl, nparts);
@@ -5103,7 +5103,7 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("VolPart: [%5d %5d]-[%5d %5d], Balance: %3.2f, Nv-Nb[%5d %5d]. Cut: %5d, Vol: %5d [B]\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut, graph->minvol));
 
@@ -5129,7 +5129,7 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
     }
 
     for (nmoves=0;;) {
-      if ((i = PQueueGetMax(&queue)) == -1) 
+      if ((i = PQueueGetMax(&queue)) == -1)
         break;
       moved[i] = 1;
 
@@ -5137,7 +5137,7 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
       from = where[i];
       vwgt = graph->vwgt[i];
 
-      if (pwgts[from]-vwgt < minwgt[from]) 
+      if (pwgts[from]-vwgt < minwgt[from])
         continue;   /* This cannot be moved! */
 
       xgain = (myrinfo->id == 0 && myrinfo->ed > 0 ? graph->vsize[i] : 0);
@@ -5147,8 +5147,8 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
       for (k=0; k<myndegrees; k++) {
         to = myedegrees[k].pid;
-        if (pwgts[to]+vwgt <= maxwgt[to] || 
-            itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from]) 
+        if (pwgts[to]+vwgt <= maxwgt[to] ||
+            itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from])
           break;
       }
       if (k == myndegrees)
@@ -5156,28 +5156,28 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
 
       for (j=k+1; j<myndegrees; j++) {
         to = myedegrees[j].pid;
-        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid]) 
+        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid])
           k = j;
       }
 
       to = myedegrees[k].pid;
 
-      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] && 
-          (xgain+myedegrees[k].gv < 0 || 
+      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] &&
+          (xgain+myedegrees[k].gv < 0 ||
            (xgain+myedegrees[k].gv == 0 &&  myedegrees[k].ed-myrinfo->id < 0))
          )
         continue;
-  
+
 
       /*=====================================================================
-      * If we got here, we can now move the vertex from 'from' to 'to' 
+      * If we got here, we can now move the vertex from 'from' to 'to'
       *======================================================================*/
       INC_DEC(pwgts[to], pwgts[from], vwgt);
       graph->mincut -= myedegrees[k].ed-myrinfo->id;
       graph->minvol -= (xgain+myedegrees[k].gv);
       where[i] = to;
 
-      IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n", 
+      IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n",
             i, from, to, xgain+myedegrees[k].gv, myedegrees[k].ed-myrinfo->id, graph->mincut, graph->minvol));
 
       KWayVolUpdate(ctrl, graph, i, from, to, marker, phtable, updind);
@@ -5190,7 +5190,7 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
     IFSET(ctrl->dbglvl, DBG_REFINE,
        printf("\t[%6d %6d], Balance: %5.3f, Nb: %6d. Nmoves: %5d, Cut: %6d, Vol: %6d\n",
                pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)],
-               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut, 
+               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut,
                graph->minvol));
 
   }
@@ -5211,16 +5211,16 @@ void Greedy_KWayVolBalance(CtrlType *ctrl, GraphType *graph, int nparts, float *
 /*************************************************************************
 * This function performs k-way refinement
 **************************************************************************/
-void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, 
+void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts,
                                 float ubfactor, int npasses)
 {
-  int i, ii, j, k, l, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain; 
+  int i, ii, j, k, l, pass, nvtxs, nmoves, tvwgt, myndegrees, xgain;
   int from, me, to, vwgt, maxndoms, nadd;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *moved, *bndptr, *bndind, *minwgt, *maxwgt, *itpwgts, *updind, *marker, *phtable;
   idxtype *pmat, *pmatptr, *ndoms;
   VEDegreeType *myedegrees;
-  VRInfoType *myrinfo; 
+  VRInfoType *myrinfo;
   PQueueType queue;
 
   nvtxs = graph->nvtxs;
@@ -5233,7 +5233,7 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  idxwspacemalloc(ctrl, nparts);
   maxwgt = idxwspacemalloc(ctrl, nparts);
@@ -5263,7 +5263,7 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("VolPart: [%5d %5d]-[%5d %5d], Balance: %3.2f, Nv-Nb[%5d %5d]. Cut: %5d, Vol: %5d [B]\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut, graph->minvol));
 
@@ -5291,7 +5291,7 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
     maxndoms = ndoms[idxamax(nparts, ndoms)];
 
     for (nmoves=0;;) {
-      if ((i = PQueueGetMax(&queue)) == -1) 
+      if ((i = PQueueGetMax(&queue)) == -1)
         break;
       moved[i] = 1;
 
@@ -5299,7 +5299,7 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
       from = where[i];
       vwgt = graph->vwgt[i];
 
-      if (pwgts[from]-vwgt < minwgt[from]) 
+      if (pwgts[from]-vwgt < minwgt[from])
         continue;   /* This cannot be moved! */
 
       xgain = (myrinfo->id == 0 && myrinfo->ed > 0 ? graph->vsize[i] : 0);
@@ -5334,8 +5334,8 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
         to = myedegrees[k].pid;
         if (!phtable[to])
           continue;
-        if (pwgts[to]+vwgt <= maxwgt[to] || 
-            itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from]) 
+        if (pwgts[to]+vwgt <= maxwgt[to] ||
+            itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from])
           break;
       }
       if (k == myndegrees)
@@ -5345,31 +5345,31 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
         to = myedegrees[j].pid;
         if (!phtable[to])
           continue;
-        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid]) 
+        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid])
           k = j;
       }
 
       to = myedegrees[k].pid;
 
-      for (j=0; j<myndegrees; j++) 
+      for (j=0; j<myndegrees; j++)
         phtable[myedegrees[j].pid] = -1;
 
-      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] && 
-          (xgain+myedegrees[k].gv < 0 || 
+      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] &&
+          (xgain+myedegrees[k].gv < 0 ||
            (xgain+myedegrees[k].gv == 0 &&  myedegrees[k].ed-myrinfo->id < 0))
          )
         continue;
-  
+
 
       /*=====================================================================
-      * If we got here, we can now move the vertex from 'from' to 'to' 
+      * If we got here, we can now move the vertex from 'from' to 'to'
       *======================================================================*/
       INC_DEC(pwgts[to], pwgts[from], vwgt);
       graph->mincut -= myedegrees[k].ed-myrinfo->id;
       graph->minvol -= (xgain+myedegrees[k].gv);
       where[i] = to;
 
-      IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n", 
+      IFSET(ctrl->dbglvl, DBG_MOVEINFO, printf("\t\tMoving %6d from %3d to %3d. Gain: [%4d %4d]. Cut: %6d, Vol: %6d\n",
             i, from, to, xgain+myedegrees[k].gv, myedegrees[k].ed-myrinfo->id, graph->mincut, graph->minvol));
 
       /* Update pmat to reflect the move of 'i' */
@@ -5434,7 +5434,7 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
     IFSET(ctrl->dbglvl, DBG_REFINE,
        printf("\t[%6d %6d], Balance: %5.3f, Nb: %6d. Nmoves: %5d, Cut: %6d, Vol: %6d\n",
                pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)],
-               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut, 
+               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, graph->mincut,
                graph->minvol));
 
   }
@@ -5463,7 +5463,7 @@ void Greedy_KWayVolBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
 void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
                    idxtype *marker, idxtype *phtable, idxtype *updind)
 {
-  int ii, j, jj, k, kk, u, nupd, other, me, myidx; 
+  int ii, j, jj, k, kk, u, nupd, other, me, myidx;
   idxtype *xadj, *vsize, *adjncy, *adjwgt, *where;
   VEDegreeType *myedegrees, *oedegrees;
   VRInfoType *myrinfo, *orinfo;
@@ -5479,7 +5479,7 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
 
 
   /*======================================================================
-   * Remove the contributions on the gain made by 'v'. 
+   * Remove the contributions on the gain made by 'v'.
    *=====================================================================*/
   for (k=0; k<myrinfo->ndegrees; k++)
     phtable[myedegrees[k].pid] = k;
@@ -5495,7 +5495,7 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
 
     if (other == from) {
       for (k=0; k<orinfo->ndegrees; k++) {
-        if (phtable[oedegrees[k].pid] == -1) 
+        if (phtable[oedegrees[k].pid] == -1)
           oedegrees[k].gv += vsize[v];
       }
     }
@@ -5504,13 +5504,13 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
 
       if (myedegrees[phtable[other]].ned > 1) {
         for (k=0; k<orinfo->ndegrees; k++) {
-          if (phtable[oedegrees[k].pid] == -1) 
+          if (phtable[oedegrees[k].pid] == -1)
             oedegrees[k].gv += vsize[v];
         }
       }
       else { /* There is only one connection */
         for (k=0; k<orinfo->ndegrees; k++) {
-          if (phtable[oedegrees[k].pid] != -1) 
+          if (phtable[oedegrees[k].pid] != -1)
             oedegrees[k].gv -= vsize[v];
         }
       }
@@ -5528,7 +5528,7 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
   myrinfo->ed += myrinfo->id-myedegrees[myidx].ed;
   SWAP(myrinfo->id, myedegrees[myidx].ed, j);
   SWAP(myrinfo->nid, myedegrees[myidx].ned, j);
-  if (myedegrees[myidx].ed == 0) 
+  if (myedegrees[myidx].ed == 0)
     myedegrees[myidx] = myedegrees[--myrinfo->ndegrees];
   else
     myedegrees[myidx].pid = from;
@@ -5558,7 +5558,7 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
     if (me == from) {
       INC_DEC(myrinfo->ed, myrinfo->id, adjwgt[j]);
       myrinfo->nid--;
-    } 
+    }
     else if (me == to) {
       INC_DEC(myrinfo->id, myrinfo->ed, adjwgt[j]);
       myrinfo->nid++;
@@ -5601,15 +5601,15 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
                 oedegrees = orinfo->edegrees;
 
                 if (other == from) {
-                  for (kk=0; kk<orinfo->ndegrees; kk++) 
+                  for (kk=0; kk<orinfo->ndegrees; kk++)
                     oedegrees[kk].gv += vsize[ii];
-                  break;  
+                  break;
                 }
               }
             }
           }
 
-          break; 
+          break;
         }
       }
     }
@@ -5631,9 +5631,9 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
               oedegrees = orinfo->edegrees;
 
               if (u != v && other == to) {
-                for (kk=0; kk<orinfo->ndegrees; kk++) 
+                for (kk=0; kk<orinfo->ndegrees; kk++)
                   oedegrees[kk].gv -= vsize[ii];
-                break;  
+                break;
               }
             }
           }
@@ -5688,7 +5688,7 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
 
     if (other == to) {
       for (k=0; k<orinfo->ndegrees; k++) {
-        if (phtable[oedegrees[k].pid] == -1) 
+        if (phtable[oedegrees[k].pid] == -1)
           oedegrees[k].gv -= vsize[v];
       }
     }
@@ -5697,13 +5697,13 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
 
       if (myedegrees[phtable[other]].ned > 1) {
         for (k=0; k<orinfo->ndegrees; k++) {
-          if (phtable[oedegrees[k].pid] == -1) 
+          if (phtable[oedegrees[k].pid] == -1)
             oedegrees[k].gv -= vsize[v];
         }
       }
       else { /* There is only one connection */
         for (k=0; k<orinfo->ndegrees; k++) {
-          if (phtable[oedegrees[k].pid] != -1) 
+          if (phtable[oedegrees[k].pid] != -1)
             oedegrees[k].gv += vsize[v];
         }
       }
@@ -5742,7 +5742,7 @@ void KWayVolUpdate(CtrlType *ctrl, GraphType *graph, int v, int from, int to,
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void ComputeKWayVolume(GraphType *graph, int nupd, idxtype *updind, idxtype *marker, idxtype *phtable)
 {
@@ -5771,7 +5771,7 @@ void ComputeKWayVolume(GraphType *graph, int nupd, idxtype *updind, idxtype *mar
     myedegrees = myrinfo->edegrees;
 
     if (marker[i] == 1) {  /* Only complete gain updates go through */
-      for (k=0; k<myrinfo->ndegrees; k++) 
+      for (k=0; k<myrinfo->ndegrees; k++)
         myedegrees[k].gv = 0;
 
       for (j=xadj[i]; j<xadj[i+1]; j++) {
@@ -5780,7 +5780,7 @@ void ComputeKWayVolume(GraphType *graph, int nupd, idxtype *updind, idxtype *mar
         orinfo = rinfo+ii;
         oedegrees = orinfo->edegrees;
 
-        for (kk=0; kk<orinfo->ndegrees; kk++) 
+        for (kk=0; kk<orinfo->ndegrees; kk++)
           phtable[oedegrees[kk].pid] = kk;
         phtable[other] = 1;
 
@@ -5795,26 +5795,26 @@ void ComputeKWayVolume(GraphType *graph, int nupd, idxtype *updind, idxtype *mar
           ASSERT(phtable[me] != -1);
 
           /* I'm the only connection of 'ii' in 'me' */
-          if (oedegrees[phtable[me]].ned == 1) { 
+          if (oedegrees[phtable[me]].ned == 1) {
             /* Increase the gains for all the common domains between 'i' and 'ii' */
             for (k=0; k<myrinfo->ndegrees; k++) {
-              if (phtable[myedegrees[k].pid] != -1) 
+              if (phtable[myedegrees[k].pid] != -1)
                 myedegrees[k].gv += vsize[ii];
             }
           }
           else {
             /* Find which domains 'i' is connected and 'ii' is not and update their gain */
             for (k=0; k<myrinfo->ndegrees; k++) {
-              if (phtable[myedegrees[k].pid] == -1) 
+              if (phtable[myedegrees[k].pid] == -1)
                 myedegrees[k].gv -= vsize[ii];
             }
           }
         }
 
-        for (kk=0; kk<orinfo->ndegrees; kk++) 
+        for (kk=0; kk<orinfo->ndegrees; kk++)
           phtable[oedegrees[kk].pid] = -1;
         phtable[other] = -1;
-  
+
       }
     }
 
@@ -5872,7 +5872,7 @@ int ComputeVolume(GraphType *graph, idxtype *where)
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void CheckVolKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
 {
@@ -5928,7 +5928,7 @@ void CheckVolKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
             if (oedegrees[kk].pid == pid)
               break;
           }
-          if (kk == orinfo->ndegrees) 
+          if (kk == orinfo->ndegrees)
             myedegrees[k].gv -= vsize[ii];
         }
       }
@@ -5969,7 +5969,7 @@ void CheckVolKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
               if (oedegrees[kk].pid == pid)
                 break;
             }
-            if (kk == orinfo->ndegrees) 
+            if (kk == orinfo->ndegrees)
               myedegrees[k].gv -= vsize[ii];
           }
         }
@@ -6023,7 +6023,7 @@ void ComputeVolSubDomainGraph(GraphType *graph, int nparts, idxtype *pmat, idxty
       edegrees = rinfo[i].edegrees;
 
       k = me*nparts;
-      for (j=0; j<ndegrees; j++) 
+      for (j=0; j<ndegrees; j++)
         pmat[k+edegrees[j].pid] += edegrees[j].ed;
     }
   }
@@ -6073,7 +6073,7 @@ void EliminateVolSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, fl
     pwgts[me] += vwgt[i];
     for (j=xadj[i]; j<xadj[i+1]; j++) {
       k = adjncy[j];
-      if (where[k] != me) 
+      if (where[k] != me)
         pmat[me*nparts+where[k]] += adjwgt[j];
     }
   }
@@ -6120,7 +6120,7 @@ void EliminateVolSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, fl
 
     move = 0;
     for (min=0; min<ncand2; min++) {
-      if (cand2[min].key > totalout/(2*ndoms[me])) 
+      if (cand2[min].key > totalout/(2*ndoms[me]))
         break;
 
       other = cand2[min].val;
@@ -6148,7 +6148,7 @@ void EliminateVolSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, fl
 
         for (j=xadj[i]; j<xadj[i+1]; j++) {
           k = adjncy[j];
-          if (where[k] != other) 
+          if (where[k] != other)
             otherpmat[where[k]] += adjwgt[j];
         }
       }
@@ -6161,7 +6161,7 @@ void EliminateVolSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, fl
       }
       ikeysort(ncand, cand);
 
-      /* 
+      /*
        * Go through and the select the first domain that is common with 'me', and
        * does not increase the ndoms[target] higher than my ndoms, subject to the
        * maxpwgt constraint. Traversal is done from the mostly connected to the least.
@@ -6238,7 +6238,7 @@ void EliminateVolSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, fl
             if (pmat[nparts*target + where[k]] == 0)
               ndoms[target]++;
             pmat[nparts*target + where[k]] += adjwgt[j];
-  
+
             if (pmat[nparts*where[k] + target] == 0)
               ndoms[where[k]]++;
             pmat[nparts*where[k] + target] += adjwgt[j];
@@ -6265,8 +6265,8 @@ void EliminateVolSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, fl
 
 
 /*************************************************************************
-* This function finds all the connected components induced by the 
-* partitioning vector in wgraph->where and tries to push them around to 
+* This function finds all the connected components induced by the
+* partitioning vector in wgraph->where and tries to push them around to
 * remove some of them
 **************************************************************************/
 void EliminateVolComponents(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, float ubfactor)
@@ -6295,7 +6295,7 @@ void EliminateVolComponents(CtrlType *ctrl, GraphType *graph, int nparts, float 
   cpvec = idxwspacemalloc(ctrl, nparts);
   npcmps = idxset(nparts, 0, idxwspacemalloc(ctrl, nparts));
 
-  for (i=0; i<nvtxs; i++) 
+  for (i=0; i<nvtxs; i++)
     perm[i] = todo[i] = i;
 
   /* Find the connected componends induced by the partition */
@@ -6334,7 +6334,7 @@ void EliminateVolComponents(CtrlType *ctrl, GraphType *graph, int nparts, float 
     cand = (KeyValueType *)GKmalloc(nparts*sizeof(KeyValueType), "EliminateSubDomainEdges: cand");
 
     /* First determine the partition sizes and max allowed load imbalance */
-    for (i=0; i<nvtxs; i++) 
+    for (i=0; i<nvtxs; i++)
       pwgts[where[i]] += vwgt[i];
     tvwgt = idxsum(nparts, pwgts);
     for (i=0; i<nparts; i++)
@@ -6395,7 +6395,7 @@ void EliminateVolComponents(CtrlType *ctrl, GraphType *graph, int nparts, float 
         pwgts[target] += cwgt;
         npcmps[me]--;
 
-        for (j=cptr[i]; j<cptr[i+1]; j++) 
+        for (j=cptr[i]; j<cptr[i+1]; j++)
           where[cind[j]] = target;
 
         graph->mincut -= cpvec[target];
@@ -6453,7 +6453,7 @@ void EliminateVolComponents(CtrlType *ctrl, GraphType *graph, int nparts, float 
 /*************************************************************************
 * This function is the entry point of refinement
 **************************************************************************/
-void RefineVolKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int nparts, 
+void RefineVolKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int nparts,
                    float *tpwgts, float ubfactor)
 {
   int i, nlevels;
@@ -6471,7 +6471,7 @@ void RefineVolKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int np
 
 
   /* Determine how many levels are there */
-  for (ptr=graph, nlevels=0; ptr!=orggraph; ptr=ptr->finer, nlevels++); 
+  for (ptr=graph, nlevels=0; ptr!=orggraph; ptr=ptr->finer, nlevels++);
 
   /* Compute the parameters of the coarsest graph */
   ComputeVolKWayPartitionParams(ctrl, graph, nparts);
@@ -6485,10 +6485,10 @@ void RefineVolKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int np
       ComputeVolKWayBalanceBoundary(ctrl, graph, nparts);
       switch (ctrl->RType) {
         case RTYPE_KWAYRANDOM:
-          Greedy_KWayVolBalance(ctrl, graph, nparts, tpwgts, ubfactor, 1); 
+          Greedy_KWayVolBalance(ctrl, graph, nparts, tpwgts, ubfactor, 1);
           break;
         case RTYPE_KWAYRANDOM_MCONN:
-          Greedy_KWayVolBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 1); 
+          Greedy_KWayVolBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 1);
           break;
       }
       ComputeVolKWayBoundary(ctrl, graph, nparts);
@@ -6496,10 +6496,10 @@ void RefineVolKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int np
 
     switch (ctrl->RType) {
       case RTYPE_KWAYRANDOM:
-        Random_KWayVolRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0); 
+        Random_KWayVolRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0);
         break;
       case RTYPE_KWAYRANDOM_MCONN:
-        Random_KWayVolRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0); 
+        Random_KWayVolRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0);
         break;
     }
     IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->RefTmr));
@@ -6520,17 +6520,17 @@ void RefineVolKWay(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int np
     ComputeVolKWayBalanceBoundary(ctrl, graph, nparts);
     switch (ctrl->RType) {
       case RTYPE_KWAYRANDOM:
-        Greedy_KWayVolBalance(ctrl, graph, nparts, tpwgts, ubfactor, 8); 
-        Random_KWayVolRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0); 
+        Greedy_KWayVolBalance(ctrl, graph, nparts, tpwgts, ubfactor, 8);
+        Random_KWayVolRefine(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0);
         break;
       case RTYPE_KWAYRANDOM_MCONN:
-        Greedy_KWayVolBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 8); 
-        Random_KWayVolRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0); 
+        Greedy_KWayVolBalanceMConn(ctrl, graph, nparts, tpwgts, ubfactor, 8);
+        Random_KWayVolRefineMConn(ctrl, graph, nparts, tpwgts, ubfactor, 10, 0);
         break;
     }
   }
 
-  EliminateVolComponents(ctrl, graph, nparts, tpwgts, ubfactor); 
+  EliminateVolComponents(ctrl, graph, nparts, tpwgts, ubfactor);
 
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->UncoarsenTmr));
 }
@@ -6560,11 +6560,11 @@ void AllocateVolKWayPartitionMemory(CtrlType *ctrl, GraphType *graph, int nparts
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void ComputeVolKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
 {
-  int i, j, k, nvtxs, mincut, me, other; 
+  int i, j, k, nvtxs, mincut, me, other;
   idxtype *xadj, *vwgt, *adjncy, *adjwgt, *pwgts, *where;
   VRInfoType *rinfo, *myrinfo;
   VEDegreeType *myedegrees;
@@ -6604,7 +6604,7 @@ void ComputeVolKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
     mincut += myrinfo->ed;
 
     /* Time to compute the particular external degrees */
-    if (myrinfo->ed > 0) { 
+    if (myrinfo->ed > 0) {
       myedegrees = myrinfo->edegrees = ctrl->wspace.vedegrees+ctrl->wspace.cdegree;
       ctrl->wspace.cdegree += xadj[i+1]-xadj[i];
 
@@ -6640,11 +6640,11 @@ void ComputeVolKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void ComputeKWayVolGains(CtrlType *ctrl, GraphType *graph, int nparts)
 {
-  int i, ii, j, k, kk, nvtxs, me, other, myndegrees; 
+  int i, ii, j, k, kk, nvtxs, me, other, myndegrees;
   idxtype *xadj, *vsize, *adjncy, *adjwgt, *where, *bndind, *bndptr, *ophtable;
   VRInfoType *rinfo, *myrinfo, *orinfo;
   VEDegreeType *myedegrees, *oedegrees;
@@ -6683,7 +6683,7 @@ void ComputeKWayVolGains(CtrlType *ctrl, GraphType *graph, int nparts)
         orinfo = rinfo+ii;
         oedegrees = orinfo->edegrees;
 
-        for (k=0; k<orinfo->ndegrees; k++) 
+        for (k=0; k<orinfo->ndegrees; k++)
           ophtable[oedegrees[k].pid] = k;
         ophtable[other] = 1;  /* this is to simplify coding */
 
@@ -6700,20 +6700,20 @@ void ComputeKWayVolGains(CtrlType *ctrl, GraphType *graph, int nparts)
           if (oedegrees[ophtable[me]].ned == 1) { /* I'm the only connection of 'ii' in 'me' */
             /* Increase the gains for all the common domains between 'i' and 'ii' */
             for (k=0; k<myndegrees; k++) {
-              if (ophtable[myedegrees[k].pid] != -1) 
+              if (ophtable[myedegrees[k].pid] != -1)
                 myedegrees[k].gv += vsize[ii];
             }
           }
           else {
             /* Find which domains 'i' is connected and 'ii' is not and update their gain */
             for (k=0; k<myndegrees; k++) {
-              if (ophtable[myedegrees[k].pid] == -1) 
+              if (ophtable[myedegrees[k].pid] == -1)
                 myedegrees[k].gv -= vsize[ii];
             }
           }
         }
 
-        for (kk=0; kk<orinfo->ndegrees; kk++) 
+        for (kk=0; kk<orinfo->ndegrees; kk++)
           ophtable[oedegrees[kk].pid] = -1;
         ophtable[other] = -1;
       }
@@ -6725,7 +6725,7 @@ void ComputeKWayVolGains(CtrlType *ctrl, GraphType *graph, int nparts)
       }
     }
 
-    if (myrinfo->ed > 0 && myrinfo->id == 0) 
+    if (myrinfo->ed > 0 && myrinfo->id == 0)
       myrinfo->gv += vsize[i];
 
     if (myrinfo->gv >= 0 || myrinfo->ed-myrinfo->id >= 0)
@@ -6817,7 +6817,7 @@ void ProjectVolKWayPartition(CtrlType *ctrl, GraphType *graph, int nparts)
       myrinfo->id -= myrinfo->ed;
 
       /* Remove space for edegrees if it was interior */
-      if (myrinfo->ed == 0) { 
+      if (myrinfo->ed == 0) {
         myrinfo->edegrees = NULL;
         ctrl->wspace.cdegree -= iend-istart;
       }
@@ -6862,7 +6862,7 @@ void ComputeVolKWayBoundary(CtrlType *ctrl, GraphType *graph, int nparts)
   /------------------------------------------------------------*/
   nbnd = 0;
   for (i=0; i<nvtxs; i++) {
-    if (graph->vrinfo[i].gv >=0 || graph->vrinfo[i].ed-graph->vrinfo[i].id >= 0) 
+    if (graph->vrinfo[i].gv >=0 || graph->vrinfo[i].ed-graph->vrinfo[i].id >= 0)
       BNDInsert(nbnd, bndind, bndptr, i);
   }
 
@@ -6887,7 +6887,7 @@ void ComputeVolKWayBalanceBoundary(CtrlType *ctrl, GraphType *graph, int nparts)
   /------------------------------------------------------------*/
   nbnd = 0;
   for (i=0; i<nvtxs; i++) {
-    if (graph->vrinfo[i].ed > 0) 
+    if (graph->vrinfo[i].ed > 0)
       BNDInsert(nbnd, bndind, bndptr, i);
   }
 
@@ -7099,7 +7099,7 @@ void Match_SHEM(CtrlType *ctrl, GraphType *graph)
 
   RandomPermute(nvtxs, tperm, 1);
   avgdegree = 0.7*(xadj[nvtxs]/nvtxs);
-  for (i=0; i<nvtxs; i++) 
+  for (i=0; i<nvtxs; i++)
     degrees[i] = (xadj[i+1]-xadj[i] > avgdegree ? avgdegree : xadj[i+1]-xadj[i]);
   BucketSortKeysInc(nvtxs, avgdegree, degrees, tperm, perm);
 
@@ -7248,7 +7248,7 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
     qnum[i] = samax(ncon, nvwgt+i*ncon);
 
   Compute2WayHLoadImbalanceVec(ncon, npwgts, tpwgts, origbal);
-  for (i=0; i<ncon; i++) 
+  for (i=0; i<ncon; i++)
     minbal[i] = origbal[i];
 
   newcut = mincut = graph->mincut;
@@ -7258,7 +7258,7 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
     printf("Parts: [");
     for (l=0; l<ncon; l++)
       printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
-    printf("] T[%.3f %.3f], Nv-Nb[%5d, %5d]. ICut: %6d, LB: ", tpwgts[0], tpwgts[1], 
+    printf("] T[%.3f %.3f], Nv-Nb[%5d, %5d]. ICut: %6d, LB: ", tpwgts[0], tpwgts[1],
             graph->nvtxs, graph->nbnd, graph->mincut);
     for (i=0; i<ncon; i++)
       printf("%.3f ", origbal[i]);
@@ -7294,10 +7294,10 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
     newcut -= (ed[higain]-id[higain]);
     Compute2WayHLoadImbalanceVec(ncon, npwgts, tpwgts, newbal);
 
-    if (IsBetter2wayBalance(ncon, newbal, minbal, ubvec) || 
+    if (IsBetter2wayBalance(ncon, newbal, minbal, ubvec) ||
         (IsBetter2wayBalance(ncon, newbal, origbal, ubvec) && newcut < mincut)) {
       mincut = newcut;
-      for (i=0; i<ncon; i++) 
+      for (i=0; i<ncon; i++)
         minbal[i] = newbal[i];
       mincutorder = nswaps;
     }
@@ -7314,12 +7314,12 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
 
     if (ctrl->dbglvl&DBG_MOVEINFO) {
       printf("Moved %6d from %d(%d). Gain: %5d, Cut: %5d, NPwgts: ", higain, from, cnum, ed[higain]-id[higain], newcut);
-      for (i=0; i<ncon; i++) 
+      for (i=0; i<ncon; i++)
         printf("(%.3f, %.3f) ", npwgts[i], npwgts[ncon+i]);
 
       Compute2WayHLoadImbalanceVec(ncon, npwgts, tpwgts, tvec);
       printf(", LB: ");
-      for (i=0; i<ncon; i++) 
+      for (i=0; i<ncon; i++)
         printf("%.3f ", tvec[i]);
       if (mincutorder == nswaps)
         printf(" *\n");
@@ -7332,7 +7332,7 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
     * Update the id[i]/ed[i] values of the affected nodes
     ***************************************************************/
     SWAP(id[higain], ed[higain], tmp);
-    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1]) 
+    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1])
       BNDDelete(nbnd, bndind,  bndptr, higain);
     if (ed[higain] > 0 && bndptr[higain] == -1)
       BNDInsert(nbnd, bndind,  bndptr, higain);
@@ -7349,12 +7349,12 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
         PQueueUpdate(&parts[qnum[k]][where[k]], k, oldgain, ed[k]-id[k]);
 
       /* Update its boundary information */
-      if (ed[k] == 0 && bndptr[k] != -1) 
+      if (ed[k] == 0 && bndptr[k] != -1)
         BNDDelete(nbnd, bndind, bndptr, k);
-      else if (ed[k] > 0 && bndptr[k] == -1)  
+      else if (ed[k] > 0 && bndptr[k] == -1)
         BNDInsert(nbnd, bndind, bndptr, k);
     }
-   
+
   }
 
 
@@ -7395,7 +7395,7 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
       printf("(%.3f, %.3f) ", npwgts[i], npwgts[ncon+i]);
     printf("], LB: ");
     Compute2WayHLoadImbalanceVec(ncon, npwgts, tpwgts, tvec);
-    for (i=0; i<ncon; i++) 
+    for (i=0; i<ncon; i++)
       printf("%.3f ", tvec[i]);
     printf("\n");
   }
@@ -7424,8 +7424,8 @@ void MocGeneral2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
 /*************************************************************************
 * This function selects the partition number and the queue from which
 * we will move vertices out
-**************************************************************************/ 
-void SelectQueue3(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum, 
+**************************************************************************/
+void SelectQueue3(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum,
        PQueueType queues[MAXNCON][2], float *maxwgt)
 {
   int i, j, maxgain=0;
@@ -7478,7 +7478,7 @@ printf("***[%5d %5d]\n", *cnum, *from);
     for (j=0; j<2; j++) {
       for (i=0; i<ncon; i++) {
         if (PQueueGetSize(&queues[i][j]) > 0 && PQueueGetKey(&queues[i][j]) > maxgain) {
-          maxgain = PQueueGetKey(&queues[i][0]); 
+          maxgain = PQueueGetKey(&queues[i][0]);
           *from = j;
           *cnum = i;
         }
@@ -7567,8 +7567,8 @@ void MocGeneral2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 
 /*
   printf("Weight Distribution:    \t");
-  for (i=0; i<ncon; i++) 
-    printf(" [%d %d]", qsizes[i][0], qsizes[i][1]); 
+  for (i=0; i<ncon; i++)
+    printf(" [%d %d]", qsizes[i][0], qsizes[i][1]);
   printf("\n");
 */
 
@@ -7592,14 +7592,14 @@ void MocGeneral2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 
 /*
   printf("Weight Distribution (after):\t ");
-  for (i=0; i<ncon; i++) 
-    printf(" [%d %d]", qsizes[i][0], qsizes[i][1]); 
+  for (i=0; i<ncon; i++)
+    printf(" [%d %d]", qsizes[i][0], qsizes[i][1]);
   printf("\n");
 */
 
 
 
-  for (i=0; i<ncon; i++) 
+  for (i=0; i<ncon; i++)
     mindiff[i] = fabs(tpwgts[0]-npwgts[i]);
   minbal = origbal = Compute2WayHLoadImbalance(ncon, npwgts, tpwgts);
   newcut = mincut = graph->mincut;
@@ -7640,7 +7640,7 @@ void MocGeneral2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
     newcut -= (ed[higain]-id[higain]);
     newbal = Compute2WayHLoadImbalance(ncon, npwgts, tpwgts);
 
-    if (newbal < minbal || (newbal == minbal && 
+    if (newbal < minbal || (newbal == minbal &&
         (newcut < mincut || (newcut == mincut && BetterBalance(ncon, npwgts, tpwgts, mindiff))))) {
       mincut = newcut;
       minbal = newbal;
@@ -7661,7 +7661,7 @@ void MocGeneral2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 
     if (ctrl->dbglvl&DBG_MOVEINFO) {
       printf("Moved %6d from %d(%d). Gain: %5d, Cut: %5d, NPwgts: ", higain, from, cnum, ed[higain]-id[higain], newcut);
-      for (l=0; l<ncon; l++) 
+      for (l=0; l<ncon; l++)
         printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
       printf(", %.3f LB: %.3f\n", minbal, newbal);
     }
@@ -7671,7 +7671,7 @@ void MocGeneral2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
     * Update the id[i]/ed[i] values of the affected nodes
     ***************************************************************/
     SWAP(id[higain], ed[higain], tmp);
-    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1]) 
+    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1])
       BNDDelete(nbnd, bndind,  bndptr, higain);
     if (ed[higain] > 0 && bndptr[higain] == -1)
       BNDInsert(nbnd, bndind,  bndptr, higain);
@@ -7688,9 +7688,9 @@ void MocGeneral2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
         PQueueUpdate(&parts[qnum[k]][where[k]], k, oldgain, ed[k]-id[k]);
 
       /* Update its boundary information */
-      if (ed[k] == 0 && bndptr[k] != -1) 
+      if (ed[k] == 0 && bndptr[k] != -1)
         BNDDelete(nbnd, bndind, bndptr, k);
-      else if (ed[k] > 0 && bndptr[k] == -1)  
+      else if (ed[k] > 0 && bndptr[k] == -1)
         BNDInsert(nbnd, bndind, bndptr, k);
     }
   }
@@ -7751,7 +7751,7 @@ void MocGeneral2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 /*
  * mcoarsen.c
  *
- * This file contains the driving routines for the coarsening process 
+ * This file contains the driving routines for the coarsening process
  *
  * Started 7/23/97
  * George
@@ -7778,7 +7778,7 @@ GraphType *MCCoarsen2Way(CtrlType *ctrl, GraphType *graph)
   clevel = 0;
   do {
     if (ctrl->dbglvl&DBG_COARSEN) {
-      printf("%6d %7d %10d [%d] [%6.4f", cgraph->nvtxs, cgraph->nedges, 
+      printf("%6d %7d %10d [%d] [%6.4f", cgraph->nvtxs, cgraph->nedges,
               idxsum(cgraph->nvtxs, cgraph->adjwgtsum), ctrl->CoarsenTo, ctrl->nmaxvwgt);
       for (i=0; i<graph->ncon; i++)
         printf(" %5.3f", ssum_strd(cgraph->nvtxs, cgraph->nvwgt+i, cgraph->ncon));
@@ -7823,10 +7823,10 @@ GraphType *MCCoarsen2Way(CtrlType *ctrl, GraphType *graph)
     cgraph = cgraph->coarser;
     clevel++;
 
-  } while (cgraph->nvtxs > ctrl->CoarsenTo && cgraph->nvtxs < COARSEN_FRACTION2*cgraph->finer->nvtxs && cgraph->nedges > cgraph->nvtxs/2); 
+  } while (cgraph->nvtxs > ctrl->CoarsenTo && cgraph->nvtxs < COARSEN_FRACTION2*cgraph->finer->nvtxs && cgraph->nedges > cgraph->nvtxs/2);
 
   if (ctrl->dbglvl&DBG_COARSEN) {
-    printf("%6d %7d %10d [%d] [%6.4f", cgraph->nvtxs, cgraph->nedges, 
+    printf("%6d %7d %10d [%d] [%6.4f", cgraph->nvtxs, cgraph->nedges,
             idxsum(cgraph->nvtxs, cgraph->adjwgtsum), ctrl->CoarsenTo, ctrl->nmaxvwgt);
     for (i=0; i<graph->ncon; i++)
       printf(" %5.3f", ssum_strd(cgraph->nvtxs, cgraph->nvwgt+i, cgraph->ncon));
@@ -7881,7 +7881,7 @@ void AllocateWorkSpace(CtrlType *ctrl, GraphType *graph, int nparts)
                 Greedy Refinement/Balance: 5*nparts + 2*nvtxs + 2*nedges + 1*PQueue(==Nvtxs)
             Total = 5*nparts + 3*nvtxs + 2*nedges
 
-         Total = 5*nparts + 3*nvtxs + 2*nedges 
+         Total = 5*nparts + 3*nvtxs + 2*nedges
     */
     ctrl->wspace.maxcore = 3*(graph->nvtxs+1) +                 /* Match/Refinement vectors */
                            5*(nparts+1) +                       /* Partition weights etc */
@@ -7941,7 +7941,7 @@ int WspaceAvail(CtrlType *ctrl)
 
 
 /*************************************************************************
-* This function allocate space from the core 
+* This function allocate space from the core
 **************************************************************************/
 idxtype *idxwspacemalloc(CtrlType *ctrl, int n)
 {
@@ -7953,7 +7953,7 @@ idxtype *idxwspacemalloc(CtrlType *ctrl, int n)
 }
 
 /*************************************************************************
-* This function frees space from the core 
+* This function frees space from the core
 **************************************************************************/
 void idxwspacefree(CtrlType *ctrl, int n)
 {
@@ -7965,7 +7965,7 @@ void idxwspacefree(CtrlType *ctrl, int n)
 
 
 /*************************************************************************
-* This function allocate space from the core 
+* This function allocate space from the core
 **************************************************************************/
 float *fwspacemalloc(CtrlType *ctrl, int n)
 {
@@ -7977,7 +7977,7 @@ float *fwspacemalloc(CtrlType *ctrl, int n)
 }
 
 /*************************************************************************
-* This function frees space from the core 
+* This function frees space from the core
 **************************************************************************/
 void fwspacefree(CtrlType *ctrl, int n)
 {
@@ -8009,7 +8009,7 @@ GraphType *CreateGraph(void)
 * This function creates a CoarseGraphType data structure and initializes
 * the various fields
 **************************************************************************/
-void InitGraph(GraphType *graph) 
+void InitGraph(GraphType *graph)
 {
   graph->gdata = graph->rdata = NULL;
 
@@ -8041,7 +8041,7 @@ void InitGraph(GraphType *graph)
 /*************************************************************************
 * This function deallocates any memory stored in a graph
 **************************************************************************/
-void FreeGraph(GraphType *graph) 
+void FreeGraph(GraphType *graph)
 {
 
   GKfree((void **) &graph->gdata, (void **) &graph->nvwgt,
@@ -8071,7 +8071,7 @@ void FreeGraph(GraphType *graph)
 * mesh. At this point the supported elements are triangles, tetrahedrons, and
 * bricks.
 ******************************************************************************/
-void METIS_MeshToDual(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag, 
+void METIS_MeshToDual(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag,
                       idxtype *dxadj, idxtype *dadjncy)
 {
   int esizes[] = {-1, 3, 4, 8, 4};
@@ -8087,10 +8087,10 @@ void METIS_MeshToDual(int *ne, int *nn, idxtype *elmnts, int *etype, int *numfla
 
 
 /*****************************************************************************
-* This function creates a graph corresponding to the finite element mesh. 
+* This function creates a graph corresponding to the finite element mesh.
 * At this point the supported elements are triangles, tetrahedrons.
 ******************************************************************************/
-void METIS_MeshToNodal(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag, 
+void METIS_MeshToNodal(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag,
                        idxtype *dxadj, idxtype *dadjncy)
 {
   int esizes[] = {-1, 3, 4, 8, 4};
@@ -8139,20 +8139,20 @@ void GENDUALMETIS(int nelmnts, int nvtxs, int etype, idxtype *elmnts, idxtype *d
 
    /* Construct the node-element list first */
    nptr = idxsmalloc(nvtxs+1, 0, "GENDUALMETIS: nptr");
-   for (j=esize*nelmnts, i=0; i<j; i++) 
+   for (j=esize*nelmnts, i=0; i<j; i++)
      nptr[elmnts[i]]++;
    MAKECSR(i, nvtxs, nptr);
 
    nind = idxmalloc(nptr[nvtxs], "GENDUALMETIS: nind");
    for (k=i=0; i<nelmnts; i++) {
-     for (j=0; j<esize; j++, k++) 
+     for (j=0; j<esize; j++, k++)
        nind[nptr[elmnts[k]]++] = i;
    }
    for (i=nvtxs; i>0; i--)
      nptr[i] = nptr[i-1];
    nptr[0] = 0;
 
-   for (i=0; i<nelmnts; i++) 
+   for (i=0; i<nelmnts; i++)
      dxadj[i] = esize*i;
 
    for (i=0; i<nelmnts; i++) {
@@ -8225,13 +8225,13 @@ void TRINODALMETIS(int nelmnts, int nvtxs, idxtype *elmnts, idxtype *dxadj, idxt
 
    /* Construct the node-element list first */
    nptr = idxsmalloc(nvtxs+1, 0, "TRINODALMETIS: nptr");
-   for (j=3*nelmnts, i=0; i<j; i++) 
+   for (j=3*nelmnts, i=0; i<j; i++)
      nptr[elmnts[i]]++;
    MAKECSR(i, nvtxs, nptr);
 
    nind = idxmalloc(nptr[nvtxs], "TRINODALMETIS: nind");
    for (k=i=0; i<nelmnts; i++) {
-     for (j=0; j<3; j++, k++) 
+     for (j=0; j<3; j++, k++)
        nind[nptr[elmnts[k]]++] = i;
    }
    for (i=nvtxs; i>0; i--)
@@ -8274,13 +8274,13 @@ void TETNODALMETIS(int nelmnts, int nvtxs, idxtype *elmnts, idxtype *dxadj, idxt
 
    /* Construct the node-element list first */
    nptr = idxsmalloc(nvtxs+1, 0, "TETNODALMETIS: nptr");
-   for (j=4*nelmnts, i=0; i<j; i++) 
+   for (j=4*nelmnts, i=0; i<j; i++)
      nptr[elmnts[i]]++;
    MAKECSR(i, nvtxs, nptr);
 
    nind = idxmalloc(nptr[nvtxs], "TETNODALMETIS: nind");
    for (k=i=0; i<nelmnts; i++) {
-     for (j=0; j<4; j++, k++) 
+     for (j=0; j<4; j++, k++)
        nind[nptr[elmnts[k]]++] = i;
    }
    for (i=nvtxs; i>0; i--)
@@ -8331,13 +8331,13 @@ void HEXNODALMETIS(int nelmnts, int nvtxs, idxtype *elmnts, idxtype *dxadj, idxt
 
    /* Construct the node-element list first */
    nptr = idxsmalloc(nvtxs+1, 0, "HEXNODALMETIS: nptr");
-   for (j=8*nelmnts, i=0; i<j; i++) 
+   for (j=8*nelmnts, i=0; i<j; i++)
      nptr[elmnts[i]]++;
    MAKECSR(i, nvtxs, nptr);
 
    nind = idxmalloc(nptr[nvtxs], "HEXNODALMETIS: nind");
    for (k=i=0; i<nelmnts; i++) {
-     for (j=0; j<8; j++, k++) 
+     for (j=0; j<8; j++, k++)
        nind[nptr[elmnts[k]]++] = i;
    }
    for (i=nvtxs; i>0; i--)
@@ -8393,20 +8393,20 @@ void QUADNODALMETIS(int nelmnts, int nvtxs, idxtype *elmnts, idxtype *dxadj, idx
    int i, j, jj, k, kk, nedges;
    idxtype *nptr, *nind;
    idxtype *mark;
-   int table[4][2] = {{1, 3}, 
+   int table[4][2] = {{1, 3},
                       {0, 2},
-                      {1, 3}, 
-                      {0, 2}}; 
+                      {1, 3},
+                      {0, 2}};
 
    /* Construct the node-element list first */
    nptr = idxsmalloc(nvtxs+1, 0, "QUADNODALMETIS: nptr");
-   for (j=4*nelmnts, i=0; i<j; i++) 
+   for (j=4*nelmnts, i=0; i<j; i++)
      nptr[elmnts[i]]++;
    MAKECSR(i, nvtxs, nptr);
 
    nind = idxmalloc(nptr[nvtxs], "QUADNODALMETIS: nind");
    for (k=i=0; i<nelmnts; i++) {
-     for (j=0; j<4; j++, k++) 
+     for (j=0; j<4; j++, k++)
        nind[nptr[elmnts[k]]++] = i;
    }
    for (i=nvtxs; i>0; i--)
@@ -8468,7 +8468,7 @@ void QUADNODALMETIS(int nelmnts, int nvtxs, idxtype *elmnts, idxtype *dxadj, idx
 * This function partitions a finite element mesh by partitioning its nodal
 * graph using KMETIS and then assigning elements in a load balanced fashion.
 **************************************************************************/
-void METIS_PartMeshNodal(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag, 
+void METIS_PartMeshNodal(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag,
                          int *nparts, int *edgecut, idxtype *epart, idxtype *npart)
 {
   int i, j, k, me;
@@ -8537,7 +8537,7 @@ void METIS_PartMeshNodal(int *ne, int *nn, idxtype *elmnts, int *etype, int *num
             break;
           }
         }
-        if (j == nnbrs) 
+        if (j == nnbrs)
           epart[i] = nbrind[iamax(nnbrs, nbrwgt)];
       }
       pwgts[epart[i]]++;
@@ -8556,7 +8556,7 @@ void METIS_PartMeshNodal(int *ne, int *nn, idxtype *elmnts, int *etype, int *num
 * This function partitions a finite element mesh by partitioning its dual
 * graph using KMETIS and then assigning nodes in a load balanced fashion.
 **************************************************************************/
-void METIS_PartMeshDual(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag, 
+void METIS_PartMeshDual(int *ne, int *nn, idxtype *elmnts, int *etype, int *numflag,
                         int *nparts, int *edgecut, idxtype *epart, idxtype *npart)
 {
   int i, j, k, me;
@@ -8580,13 +8580,13 @@ void METIS_PartMeshDual(int *ne, int *nn, idxtype *elmnts, int *etype, int *numf
 
   /* Construct the node-element list */
   nptr = idxsmalloc(*nn+1, 0, "METIS_MESHPARTDUAL: nptr");
-  for (j=esize*(*ne), i=0; i<j; i++) 
+  for (j=esize*(*ne), i=0; i<j; i++)
     nptr[elmnts[i]]++;
   MAKECSR(i, *nn, nptr);
 
   nind = idxmalloc(nptr[*nn], "METIS_MESHPARTDUAL: nind");
   for (k=i=0; i<(*ne); i++) {
-    for (j=0; j<esize; j++, k++) 
+    for (j=0; j<esize; j++, k++)
       nind[nptr[elmnts[k]]++] = i;
   }
   for (i=(*nn); i>0; i--)
@@ -8671,7 +8671,7 @@ void METIS_PartMeshDual(int *ne, int *nn, idxtype *elmnts, int *etype, int *numf
 /*************************************************************************
 * This function performs an edge-based FM refinement
 **************************************************************************/
-void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float *orgubvec, 
+void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float *orgubvec,
        int npasses)
 {
   int i, ii, j, k, l, kwgt, nvtxs, ncon, nbnd, nswaps, from, to, pass, limit, tmp, cnum;
@@ -8732,7 +8732,7 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
     printf("Parts: [");
     for (l=0; l<ncon; l++)
       printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
-    printf("] T[%.3f %.3f], Nv-Nb[%5d, %5d]. ICut: %6d, LB: ", tpwgts[0], tpwgts[1], 
+    printf("] T[%.3f %.3f], Nv-Nb[%5d, %5d]. ICut: %6d, LB: ", tpwgts[0], tpwgts[1],
             graph->nvtxs, graph->nbnd, graph->mincut);
     for (i=0; i<ncon; i++)
       printf("%.3f ", origbal[i]);
@@ -8741,7 +8741,7 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 
   idxset(nvtxs, -1, moved);
   for (pass=0; pass<npasses; pass++) { /* Do a number of passes */
-    for (i=0; i<ncon; i++) { 
+    for (i=0; i<ncon; i++) {
       PQueueReset(&parts[i][0]);
       PQueueReset(&parts[i][1]);
     }
@@ -8779,7 +8779,7 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
       if ((newcut < mincut && AreAllBelow(ncon, tvec, ubvec)) ||
           (newcut == mincut && IsBetter2wayBalance(ncon, tvec, minbal, ubvec))) {
         mincut = newcut;
-        for (i=0; i<ncon; i++) 
+        for (i=0; i<ncon; i++)
           minbal[i] = tvec[i];
         mincutorder = nswaps;
       }
@@ -8796,11 +8796,11 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 
       if (ctrl->dbglvl&DBG_MOVEINFO) {
         printf("Moved %6d from %d(%d). Gain: %5d, Cut: %5d, NPwgts: ", higain, from, cnum, ed[higain]-id[higain], newcut);
-        for (l=0; l<ncon; l++) 
+        for (l=0; l<ncon; l++)
           printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
 
         printf(", LB: ");
-        for (i=0; i<ncon; i++) 
+        for (i=0; i<ncon; i++)
           printf("%.3f ", tvec[i]);
         if (mincutorder == nswaps)
           printf(" *\n");
@@ -8813,7 +8813,7 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
       * Update the id[i]/ed[i] values of the affected nodes
       ***************************************************************/
       SWAP(id[higain], ed[higain], tmp);
-      if (ed[higain] == 0 && xadj[higain] < xadj[higain+1]) 
+      if (ed[higain] == 0 && xadj[higain] < xadj[higain+1])
         BNDDelete(nbnd, bndind,  bndptr, higain);
 
       for (j=xadj[higain]; j<xadj[higain+1]; j++) {
@@ -8838,7 +8838,7 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
         else {
           if (ed[k] > 0) {  /* It will now become a boundary vertex */
             BNDInsert(nbnd, bndind, bndptr, k);
-            if (moved[k] == -1) 
+            if (moved[k] == -1)
               PQueueInsert(&parts[qnum[k]][where[k]], k, ed[k]-id[k]);
           }
         }
@@ -8883,7 +8883,7 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
         printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
       printf("], LB: ");
       Compute2WayHLoadImbalanceVec(ncon, npwgts, tpwgts, tvec);
-      for (i=0; i<ncon; i++) 
+      for (i=0; i<ncon; i++)
         printf("%.3f ", tvec[i]);
       printf("\n");
     }
@@ -8913,8 +8913,8 @@ void MocFM_2WayEdgeRefine2(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 /*************************************************************************
 * This function selects the partition number and the queue from which
 * we will move vertices out
-**************************************************************************/ 
-void SelectQueue2(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum, 
+**************************************************************************/
+void SelectQueue2(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum,
        PQueueType queues[MAXNCON][2], float *maxwgt)
 {
   int i, j, maxgain=0;
@@ -8961,7 +8961,7 @@ void SelectQueue2(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum,
     for (j=0; j<2; j++) {
       for (i=0; i<ncon; i++) {
         if (PQueueGetSize(&queues[i][j]) > 0 && PQueueGetKey(&queues[i][j]) > maxgain) {
-          maxgain = PQueueGetKey(&queues[i][j]); 
+          maxgain = PQueueGetKey(&queues[i][j]);
           *from = j;
           *cnum = i;
         }
@@ -9073,7 +9073,7 @@ void MocFM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, float *tpwgts, int n
 
   idxset(nvtxs, -1, moved);
   for (pass=0; pass<npasses; pass++) { /* Do a number of passes */
-    for (i=0; i<ncon; i++) { 
+    for (i=0; i<ncon; i++) {
       PQueueReset(&parts[i][0]);
       PQueueReset(&parts[i][1]);
     }
@@ -9111,8 +9111,8 @@ void MocFM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, float *tpwgts, int n
       newcut -= (ed[higain]-id[higain]);
       newbal = Compute2WayHLoadImbalance(ncon, npwgts, tpwgts);
 
-      if ((newcut < mincut && newbal-origbal <= .00001) || 
-          (newcut == mincut && (newbal < minbal || 
+      if ((newcut < mincut && newbal-origbal <= .00001) ||
+          (newcut == mincut && (newbal < minbal ||
                                 (newbal == minbal && BetterBalance(ncon, npwgts, tpwgts, mindiff))))) {
         mincut = newcut;
         minbal = newbal;
@@ -9133,7 +9133,7 @@ void MocFM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, float *tpwgts, int n
 
       if (ctrl->dbglvl&DBG_MOVEINFO) {
         printf("Moved %6d from %d(%d). Gain: %5d, Cut: %5d, NPwgts: ", higain, from, cnum, ed[higain]-id[higain], newcut);
-        for (l=0; l<ncon; l++) 
+        for (l=0; l<ncon; l++)
           printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
         printf(", %.3f LB: %.3f\n", minbal, newbal);
       }
@@ -9143,7 +9143,7 @@ void MocFM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, float *tpwgts, int n
       * Update the id[i]/ed[i] values of the affected nodes
       ***************************************************************/
       SWAP(id[higain], ed[higain], tmp);
-      if (ed[higain] == 0 && xadj[higain] < xadj[higain+1]) 
+      if (ed[higain] == 0 && xadj[higain] < xadj[higain+1])
         BNDDelete(nbnd, bndind,  bndptr, higain);
 
       for (j=xadj[higain]; j<xadj[higain+1]; j++) {
@@ -9168,7 +9168,7 @@ void MocFM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, float *tpwgts, int n
         else {
           if (ed[k] > 0) {  /* It will now become a boundary vertex */
             BNDInsert(nbnd, bndind, bndptr, k);
-            if (moved[k] == -1) 
+            if (moved[k] == -1)
               PQueueInsert(&parts[qnum[k]][where[k]], k, ed[k]-id[k]);
           }
         }
@@ -9237,7 +9237,7 @@ void MocFM_2WayEdgeRefine(CtrlType *ctrl, GraphType *graph, float *tpwgts, int n
 /*************************************************************************
 * This function selects the partition number and the queue from which
 * we will move vertices out
-**************************************************************************/ 
+**************************************************************************/
 void SelectQueue(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum, PQueueType queues[MAXNCON][2])
 {
   int i, part, maxgain=0;
@@ -9284,7 +9284,7 @@ void SelectQueue(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum, P
     for (part=0; part<2; part++) {
       for (i=0; i<ncon; i++) {
         if (PQueueGetSize(&queues[i][part]) > 0 && PQueueGetKey(&queues[i][part]) > maxgain) {
-          maxgain = PQueueGetKey(&queues[i][part]); 
+          maxgain = PQueueGetKey(&queues[i][part]);
           *from = part;
           *cnum = i;
         }
@@ -9300,9 +9300,9 @@ void SelectQueue(int ncon, float *npwgts, float *tpwgts, int *from, int *cnum, P
 
 
 /*************************************************************************
-* This function checks if the balance achieved is better than the diff 
+* This function checks if the balance achieved is better than the diff
 * For now, it uses a 2-norm measure
-**************************************************************************/ 
+**************************************************************************/
 int BetterBalance(int ncon, float *npwgts, float *tpwgts, float *diff)
 {
   int i;
@@ -9310,7 +9310,7 @@ int BetterBalance(int ncon, float *npwgts, float *tpwgts, float *diff)
 
   for (i=0; i<ncon; i++)
     ndiff[i] = fabs(tpwgts[0]-npwgts[i]);
-   
+
   return snorm2(ncon, ndiff) < snorm2(ncon, diff);
 }
 
@@ -9318,7 +9318,7 @@ int BetterBalance(int ncon, float *npwgts, float *tpwgts, float *diff)
 
 /*************************************************************************
 * This function computes the load imbalance over all the constrains
-**************************************************************************/ 
+**************************************************************************/
 float Compute2WayHLoadImbalance(int ncon, float *npwgts, float *tpwgts)
 {
   int i;
@@ -9336,12 +9336,12 @@ float Compute2WayHLoadImbalance(int ncon, float *npwgts, float *tpwgts)
 /*************************************************************************
 * This function computes the load imbalance over all the constrains
 * For now assume that we just want balanced partitionings
-**************************************************************************/ 
+**************************************************************************/
 void Compute2WayHLoadImbalanceVec(int ncon, float *npwgts, float *tpwgts, float *lbvec)
 {
   int i;
 
-  for (i=0; i<ncon; i++) 
+  for (i=0; i<ncon; i++)
     lbvec[i] = 1.0 + fabs(tpwgts[0]-npwgts[i])/tpwgts[0];
 }
 
@@ -9422,7 +9422,7 @@ void MinCover(idxtype *xadj, idxtype *adjncy, int asize, int bsize, idxtype *cov
     maxlevel = bsize;
 
     /* Insert free nodes into the queue */
-    for (i=0; i<asize; i++) 
+    for (i=0; i<asize; i++)
       if (mate[i] == -1) {
         queue[rptr++] = i;
         level[i] = 0;
@@ -9442,14 +9442,14 @@ void MinCover(idxtype *xadj, idxtype *adjncy, int asize, int bsize, idxtype *cov
               lst[lstptr++] = col;
             }
             else { /* This column node is matched */
-              if (flag[mate[col]]) 
+              if (flag[mate[col]])
                 printf("\nSomething wrong, flag[%d] is 1",mate[col]);
               queue[rptr++] = mate[col];
               level[mate[col]] = level[row] + 1;
             }
           }
         }
-      } 
+      }
     }
 
     if (lstptr == 0)
@@ -9504,7 +9504,7 @@ int MinCover_Augment(idxtype *xadj, idxtype *adjncy, int col, idxtype *mate, idx
 
 
 /*************************************************************************
-* This function performs a coarse decomposition and determines the 
+* This function performs a coarse decomposition and determines the
 * min-cover.
 * REF: Pothen ACMTrans. on Amth Software
 **************************************************************************/
@@ -9523,26 +9523,26 @@ void MinCover_Decompose(idxtype *xadj, idxtype *adjncy, int asize, int bsize, id
   for (; i<bsize; i++)
     where[i] = SR;
 
-  for (i=0; i<asize; i++) 
-    if (mate[i] == -1)  
+  for (i=0; i<asize; i++)
+    if (mate[i] == -1)
       MinCover_ColDFS(xadj, adjncy, i, mate, where, INCOL);
-  for (; i<bsize; i++) 
-    if (mate[i] == -1)  
+  for (; i<bsize; i++)
+    if (mate[i] == -1)
       MinCover_RowDFS(xadj, adjncy, i, mate, where, INROW);
 
-  for (i=0; i<bsize; i++) 
+  for (i=0; i<bsize; i++)
     card[where[i]]++;
 
   k = 0;
   if (abs(card[VC]+card[SC]-card[HR]) < abs(card[VC]-card[SR]-card[HR])) {  /* S = VC+SC+HR */
     /* printf("%d %d ",vc+sc, hr); */
-    for (i=0; i<bsize; i++) 
+    for (i=0; i<bsize; i++)
       if (where[i] == VC || where[i] == SC || where[i] == HR)
         cover[k++] = i;
   }
   else {  /* S = VC+SR+HR */
     /* printf("%d %d ",vc, hr+sr); */
-    for (i=0; i<bsize; i++) 
+    for (i=0; i<bsize; i++)
       if (where[i] == VC || where[i] == SR || where[i] == HR)
         cover[k++] = i;
   }
@@ -9565,7 +9565,7 @@ void MinCover_ColDFS(idxtype *xadj, idxtype *adjncy, int root, idxtype *mate, id
     if (where[root] == HC)
       return;
     where[root] = HC;
-    for (i=xadj[root]; i<xadj[root+1]; i++) 
+    for (i=xadj[root]; i<xadj[root+1]; i++)
       MinCover_ColDFS(xadj, adjncy, adjncy[i], mate, where, INROW);
   }
   else {
@@ -9590,7 +9590,7 @@ void MinCover_RowDFS(idxtype *xadj, idxtype *adjncy, int root, idxtype *mate, id
     if (where[root] == VR)
       return;
     where[root] = VR;
-    for (i=xadj[root]; i<xadj[root+1]; i++) 
+    for (i=xadj[root]; i<xadj[root+1]; i++)
       MinCover_RowDFS(xadj, adjncy, adjncy[i], mate, where, INCOL);
   }
   else {
@@ -9625,7 +9625,7 @@ void MinCover_RowDFS(idxtype *xadj, idxtype *adjncy, int root, idxtype *mate, id
 /*************************************************************************
 * This function computes the initial bisection of the coarsest graph
 **************************************************************************/
-void MocInit2WayPartition2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float *ubvec) 
+void MocInit2WayPartition2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float *ubvec)
 {
   int dbglvl;
 
@@ -9673,7 +9673,7 @@ void MocGrowBisection2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float *u
 
   bestwhere = idxmalloc(nvtxs, "BisectGraph: bestwhere");
   nbfs = 2*(nvtxs <= ctrl->CoarsenTo ? SMALLNIPARTS : LARGENIPARTS);
-  bestcut = idxsum(graph->nedges, graph->adjwgt);  
+  bestcut = idxsum(graph->nedges, graph->adjwgt);
 
   for (; nbfs>0; nbfs--) {
     idxset(nvtxs, 1, where);
@@ -9683,10 +9683,10 @@ void MocGrowBisection2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float *u
 
     MocBalance2Way2(ctrl, graph, tpwgts, ubvec);
 
-    MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 4); 
+    MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 4);
 
     MocBalance2Way2(ctrl, graph, tpwgts, ubvec);
-    MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 4); 
+    MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 4);
 
     if (bestcut > graph->mincut) {
       bestcut = graph->mincut;
@@ -9724,7 +9724,7 @@ void MocGrowBisectionNew2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float
 
   bestwhere = idxmalloc(nvtxs, "BisectGraph: bestwhere");
   nbfs = 2*(nvtxs <= ctrl->CoarsenTo ? SMALLNIPARTS : LARGENIPARTS);
-  bestcut = idxsum(graph->nedges, graph->adjwgt);  
+  bestcut = idxsum(graph->nedges, graph->adjwgt);
 
   for (; nbfs>0; nbfs--) {
     idxset(nvtxs, 1, where);
@@ -9734,7 +9734,7 @@ void MocGrowBisectionNew2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float
 
     MocInit2WayBalance2(ctrl, graph, tpwgts, ubvec);
 
-    MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 4); 
+    MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 4);
 
     if (bestcut > graph->mincut) {
       bestcut = graph->mincut;
@@ -9753,11 +9753,11 @@ void MocGrowBisectionNew2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float
 
 
 /*************************************************************************
-* This function balances two partitions by moving the highest gain 
+* This function balances two partitions by moving the highest gain
 * (including negative gain) vertices to the other domain.
 * It is used only when tha unbalance is due to non contigous
 * subdomains. That is, the are no boundary vertices.
-* It moves vertices from the domain that is overweight to the one that 
+* It moves vertices from the domain that is overweight to the one that
 * is underweight.
 **************************************************************************/
 void MocInit2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float *ubvec)
@@ -9831,7 +9831,7 @@ void MocInit2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float 
 
   /* Determine the termination criterion */
   imin = 0;
-  for (i=1; i<ncon; i++) 
+  for (i=1; i<ncon; i++)
     imin = (ubvec[i] < ubvec[imin] ? i : imin);
   minwgt = .5/ubvec[imin];
 
@@ -9839,7 +9839,7 @@ void MocInit2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float 
   nbnd = graph->nbnd;
   for (nswaps=0; nswaps<nvtxs; nswaps++) {
     /* Exit as soon as the minimum weight crossed over */
-    if (npwgts[to*ncon+imin] > minwgt)  
+    if (npwgts[to*ncon+imin] > minwgt)
       break;
 
     if ((cnum = SelectQueueOneWay2(ncon, npwgts+to*ncon, parts, ubvec)) == -1)
@@ -9857,7 +9857,7 @@ void MocInit2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float 
 
     if (ctrl->dbglvl&DBG_MOVEINFO) {
       printf("Moved %6d from %d(%d). [%5d] %5d, NPwgts: ", higain, from, cnum, ed[higain]-id[higain], mincut);
-      for (l=0; l<ncon; l++) 
+      for (l=0; l<ncon; l++)
         printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
       printf(", LB: %.3f\n", ComputeLoadImbalance(ncon, 2, npwgts, tpwgts));
       if (ed[higain] == 0 && id[higain] > 0)
@@ -9869,7 +9869,7 @@ void MocInit2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float 
     * Update the id[i]/ed[i] values of the affected nodes
     ***************************************************************/
     SWAP(id[higain], ed[higain], tmp);
-    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1]) 
+    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1])
       BNDDelete(nbnd, bndind,  bndptr, higain);
     if (ed[higain] > 0 && bndptr[higain] == -1)
       BNDInsert(nbnd, bndind,  bndptr, higain);
@@ -9895,9 +9895,9 @@ void MocInit2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float 
       }
 
       /* Update its boundary information */
-      if (ed[k] == 0 && bndptr[k] != -1) 
+      if (ed[k] == 0 && bndptr[k] != -1)
         BNDDelete(nbnd, bndind, bndptr, k);
-      else if (ed[k] > 0 && bndptr[k] == -1)  
+      else if (ed[k] > 0 && bndptr[k] == -1)
         BNDInsert(nbnd, bndind, bndptr, k);
     }
 
@@ -9933,7 +9933,7 @@ void MocInit2WayBalance2(CtrlType *ctrl, GraphType *graph, float *tpwgts, float 
 /*************************************************************************
 * This function selects the partition number and the queue from which
 * we will move vertices out
-**************************************************************************/ 
+**************************************************************************/
 int SelectQueueOneWay2(int ncon, float *pto, PQueueType queues[MAXNCON][2], float *ubvec)
 {
   int i, cnum=-1, imax, maxgain;
@@ -9946,7 +9946,7 @@ int SelectQueueOneWay2(int ncon, float *pto, PQueueType queues[MAXNCON][2], floa
       max = pto[i];
     }
   }
-  for (i=0; i<ncon; i++) 
+  for (i=0; i<ncon; i++)
     twgt[i] = (max/(ubvec[imax]*ubvec[i]))/pto[i];
   twgt[imax] = 0.0;
 
@@ -9993,7 +9993,7 @@ int SelectQueueOneWay2(int ncon, float *pto, PQueueType queues[MAXNCON][2], floa
 /*************************************************************************
 * This function computes the initial bisection of the coarsest graph
 **************************************************************************/
-void MocInit2WayPartition(CtrlType *ctrl, GraphType *graph, float *tpwgts, float ubfactor) 
+void MocInit2WayPartition(CtrlType *ctrl, GraphType *graph, float *tpwgts, float ubfactor)
 {
   int dbglvl;
 
@@ -10041,7 +10041,7 @@ void MocGrowBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, float ubf
 
   bestwhere = idxmalloc(nvtxs, "BisectGraph: bestwhere");
   nbfs = 2*(nvtxs <= ctrl->CoarsenTo ? SMALLNIPARTS : LARGENIPARTS);
-  bestcut = idxsum(graph->nedges, graph->adjwgt);  
+  bestcut = idxsum(graph->nedges, graph->adjwgt);
 
   for (; nbfs>0; nbfs--) {
     idxset(nvtxs, 1, where);
@@ -10051,10 +10051,10 @@ void MocGrowBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, float ubf
 
     MocInit2WayBalance(ctrl, graph, tpwgts);
 
-    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 4); 
+    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 4);
 
     MocBalance2Way(ctrl, graph, tpwgts, 1.02);
-    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 4); 
+    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 4);
 
     if (bestcut >= graph->mincut) {
       bestcut = graph->mincut;
@@ -10093,7 +10093,7 @@ void MocRandomBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, float u
 
   bestwhere = idxmalloc(nvtxs, "BisectGraph: bestwhere");
   nbfs = 2*(nvtxs <= ctrl->CoarsenTo ? SMALLNIPARTS : LARGENIPARTS);
-  bestcut = idxsum(graph->nedges, graph->adjwgt);  
+  bestcut = idxsum(graph->nedges, graph->adjwgt);
   perm = idxmalloc(nvtxs, "BisectGraph: perm");
 
   for (; nbfs>0; nbfs--) {
@@ -10112,11 +10112,11 @@ void MocRandomBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, float u
 
     MocCompute2WayPartitionParams(ctrl, graph);
 
-    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 6); 
+    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 6);
     MocBalance2Way(ctrl, graph, tpwgts, 1.02);
-    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 6); 
+    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 6);
     MocBalance2Way(ctrl, graph, tpwgts, 1.02);
-    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 6); 
+    MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 6);
 
     /*
     printf("Edgecut: %6d, NPwgts: [", graph->mincut);
@@ -10143,11 +10143,11 @@ void MocRandomBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, float u
 
 
 /*************************************************************************
-* This function balances two partitions by moving the highest gain 
+* This function balances two partitions by moving the highest gain
 * (including negative gain) vertices to the other domain.
 * It is used only when tha unbalance is due to non contigous
 * subdomains. That is, the are no boundary vertices.
-* It moves vertices from the domain that is overweight to the one that 
+* It moves vertices from the domain that is overweight to the one that
 * is underweight.
 **************************************************************************/
 void MocInit2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts)
@@ -10183,8 +10183,8 @@ void MocInit2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts)
     printf("Parts: [");
     for (l=0; l<ncon; l++)
       printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
-    printf("] T[%.3f %.3f], Nv-Nb[%5d, %5d]. ICut: %6d, LB: %.3f [B]\n", tpwgts[0], tpwgts[1], 
-           graph->nvtxs, graph->nbnd, graph->mincut, 
+    printf("] T[%.3f %.3f], Nv-Nb[%5d, %5d]. ICut: %6d, LB: %.3f [B]\n", tpwgts[0], tpwgts[1],
+           graph->nvtxs, graph->nbnd, graph->mincut,
            Compute2WayHLoadImbalance(ncon, npwgts, tpwgts));
   }
 
@@ -10234,7 +10234,7 @@ void MocInit2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts)
 
     if (ctrl->dbglvl&DBG_MOVEINFO) {
       printf("Moved %6d from %d(%d). [%5d] %5d, NPwgts: ", higain, from, cnum, ed[higain]-id[higain], mincut);
-      for (l=0; l<ncon; l++) 
+      for (l=0; l<ncon; l++)
         printf("(%.3f, %.3f) ", npwgts[l], npwgts[ncon+l]);
       printf(", LB: %.3f\n", Compute2WayHLoadImbalance(ncon, npwgts, tpwgts));
       if (ed[higain] == 0 && id[higain] > 0)
@@ -10246,7 +10246,7 @@ void MocInit2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts)
     * Update the id[i]/ed[i] values of the affected nodes
     ***************************************************************/
     SWAP(id[higain], ed[higain], tmp);
-    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1]) 
+    if (ed[higain] == 0 && bndptr[higain] != -1 && xadj[higain] < xadj[higain+1])
       BNDDelete(nbnd, bndind,  bndptr, higain);
     if (ed[higain] > 0 && bndptr[higain] == -1)
       BNDInsert(nbnd, bndind,  bndptr, higain);
@@ -10272,9 +10272,9 @@ void MocInit2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts)
       }
 
       /* Update its boundary information */
-      if (ed[k] == 0 && bndptr[k] != -1) 
+      if (ed[k] == 0 && bndptr[k] != -1)
         BNDDelete(nbnd, bndind, bndptr, k);
-      else if (ed[k] > 0 && bndptr[k] == -1)  
+      else if (ed[k] > 0 && bndptr[k] == -1)
         BNDInsert(nbnd, bndind, bndptr, k);
     }
 
@@ -10310,14 +10310,14 @@ void MocInit2WayBalance(CtrlType *ctrl, GraphType *graph, float *tpwgts)
 /*************************************************************************
 * This function selects the partition number and the queue from which
 * we will move vertices out
-**************************************************************************/ 
+**************************************************************************/
 int SelectQueueOneWay(int ncon, float *npwgts, float *tpwgts, int from, PQueueType queues[MAXNCON][2])
 {
   int i, cnum=-1;
   float max=0.0;
 
   for (i=0; i<ncon; i++) {
-    if (npwgts[from*ncon+i]-tpwgts[from] >= max && 
+    if (npwgts[from*ncon+i]-tpwgts[from] >= max &&
         PQueueGetSize(&queues[i][0]) + PQueueGetSize(&queues[i][1]) > 0) {
       max = npwgts[from*ncon+i]-tpwgts[0];
       cnum = i;
@@ -10350,9 +10350,9 @@ int SelectQueueOneWay(int ncon, float *npwgts, float *tpwgts, int from, PQueueTy
 /*************************************************************************
 * This function is the entry point for KWMETIS
 **************************************************************************/
-void METIS_mCPartGraphKway(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy, 
-                          idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag, 
-                          int *nparts, float *rubvec, int *options, int *edgecut, 
+void METIS_mCPartGraphKway(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy,
+                          idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag,
+                          int *nparts, float *rubvec, int *options, int *edgecut,
                           idxtype *part)
 {
   GraphType graph;
@@ -10402,7 +10402,7 @@ void METIS_mCPartGraphKway(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy
 /*************************************************************************
 * This function takes a graph and produces a bisection of it
 **************************************************************************/
-int MCMlevelKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part, 
+int MCMlevelKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part,
       float *rubvec)
 {
   int i;
@@ -10414,7 +10414,7 @@ int MCMlevelKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxty
   IFSET(ctrl->dbglvl, DBG_TIME, starttimer(ctrl->InitPartTmr));
   MocAllocateKWayPartitionMemory(ctrl, cgraph, nparts);
 
-  options[0] = 1; 
+  options[0] = 1;
   options[OPTION_CTYPE] = MATCH_SBHEM_INFNORM;
   options[OPTION_ITYPE] = IPART_RANDOM;
   options[OPTION_RTYPE] = RTYPE_FM;
@@ -10426,12 +10426,12 @@ int MCMlevelKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxty
       break;
   }
   if (i == graph->ncon)
-    METIS_mCPartGraphRecursiveInternal(&cgraph->nvtxs, &cgraph->ncon, 
-          cgraph->xadj, cgraph->adjncy, cgraph->nvwgt, cgraph->adjwgt, &nparts, 
+    METIS_mCPartGraphRecursiveInternal(&cgraph->nvtxs, &cgraph->ncon,
+          cgraph->xadj, cgraph->adjncy, cgraph->nvwgt, cgraph->adjwgt, &nparts,
           options, &edgecut, cgraph->where);
   else
-    METIS_mCHPartGraphRecursiveInternal(&cgraph->nvtxs, &cgraph->ncon, 
-          cgraph->xadj, cgraph->adjncy, cgraph->nvwgt, cgraph->adjwgt, &nparts, 
+    METIS_mCHPartGraphRecursiveInternal(&cgraph->nvtxs, &cgraph->ncon,
+          cgraph->xadj, cgraph->adjncy, cgraph->nvwgt, cgraph->adjwgt, &nparts,
           rubvec, options, &edgecut, cgraph->where);
 
 
@@ -10470,10 +10470,10 @@ int MCMlevelKWayPartitioning(CtrlType *ctrl, GraphType *graph, int nparts, idxty
 /*************************************************************************
 * This function performs k-way refinement
 **************************************************************************/
-void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int nparts, 
+void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int nparts,
        float *orgubvec, int npasses)
 {
-  int i, ii, iii, j, k, pass, nvtxs, ncon, nmoves, nbnd, myndegrees, same; 
+  int i, ii, iii, j, k, pass, nvtxs, ncon, nmoves, nbnd, myndegrees, same;
   int from, me, to, oldcut, gain;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *perm, *bndptr, *bndind;
@@ -10492,7 +10492,7 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
 
   where = graph->where;
   npwgts = graph->npwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  fwspacemalloc(ctrl, nparts*ncon);
   maxwgt = fwspacemalloc(ctrl, nparts*ncon);
@@ -10521,7 +10521,7 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
   }
   else {
     maxlb = ubvec[0];
-    for (i=1; i<ncon; i++) 
+    for (i=1; i<ncon; i++)
       maxlb = (ubvec[i] > maxlb ? ubvec[i] : maxlb);
 
     for (i=0; i<nparts; i++) {
@@ -10537,7 +10537,7 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
 
   if (ctrl->dbglvl&DBG_REFINE) {
     printf("Partitions: [%5.4f %5.4f], Nv-Nb[%6d %6d]. Cut: %6d, LB: ",
-            npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)], 
+            npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)],
             graph->nvtxs, graph->nbnd, graph->mincut);
     ComputeHKWayLoadImbalance(ncon, nparts, npwgts, tvec);
     for (i=0; i<ncon; i++)
@@ -10564,7 +10564,7 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
         from = where[i];
         nvwgt = graph->nvwgt+i*ncon;
 
-        if (myrinfo->id > 0 && AreAllHVwgtsBelow(ncon, 1.0, npwgts+from*ncon, -1.0, nvwgt, minwgt+from*ncon)) 
+        if (myrinfo->id > 0 && AreAllHVwgtsBelow(ncon, 1.0, npwgts+from*ncon, -1.0, nvwgt, minwgt+from*ncon))
           continue;   /* This cannot be moved! */
 
         myedegrees = myrinfo->edegrees;
@@ -10572,8 +10572,8 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
 
         for (k=0; k<myndegrees; k++) {
           to = myedegrees[k].pid;
-          gain = myedegrees[k].ed - myrinfo->id; 
-          if (gain >= 0 && 
+          gain = myedegrees[k].ed - myrinfo->id;
+          if (gain >= 0 &&
               (AreAllHVwgtsBelow(ncon, 1.0, npwgts+to*ncon, 1.0, nvwgt, maxwgt+to*ncon) ||
                IsHBalanceBetterFT(ncon, nparts, npwgts+from*ncon, npwgts+to*ncon, nvwgt, ubvec)))
             break;
@@ -10584,22 +10584,22 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
         for (j=k+1; j<myndegrees; j++) {
           to = myedegrees[j].pid;
           if ((myedegrees[j].ed > myedegrees[k].ed &&
-               (AreAllHVwgtsBelow(ncon, 1.0, npwgts+to*ncon, 1.0, nvwgt, maxwgt+to*ncon) || 
+               (AreAllHVwgtsBelow(ncon, 1.0, npwgts+to*ncon, 1.0, nvwgt, maxwgt+to*ncon) ||
                IsHBalanceBetterFT(ncon, nparts, npwgts+from*ncon, npwgts+to*ncon, nvwgt, ubvec))) ||
-              (myedegrees[j].ed == myedegrees[k].ed && 
+              (myedegrees[j].ed == myedegrees[k].ed &&
                IsHBalanceBetterTT(ncon, nparts, npwgts+myedegrees[k].pid*ncon, npwgts+to*ncon, nvwgt, ubvec)))
             k = j;
         }
 
         to = myedegrees[k].pid;
 
-        if (myedegrees[k].ed-myrinfo->id == 0 
+        if (myedegrees[k].ed-myrinfo->id == 0
             && !IsHBalanceBetterFT(ncon, nparts, npwgts+from*ncon, npwgts+to*ncon, nvwgt, ubvec)
-            && AreAllHVwgtsBelow(ncon, 1.0, npwgts+from*ncon, 0.0, npwgts+from*ncon, maxwgt+from*ncon)) 
+            && AreAllHVwgtsBelow(ncon, 1.0, npwgts+from*ncon, 0.0, npwgts+from*ncon, maxwgt+from*ncon))
           continue;
 
         /*=====================================================================
-        * If we got here, we can now move the vertex from 'from' to 'to' 
+        * If we got here, we can now move the vertex from 'from' to 'to'
         *======================================================================*/
         graph->mincut -= myedegrees[k].ed-myrinfo->id;
 
@@ -10611,7 +10611,7 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
         where[i] = to;
         myrinfo->ed += myrinfo->id-myedegrees[k].ed;
         SWAP(myrinfo->id, myedegrees[k].ed, j);
-        if (myedegrees[k].ed == 0) 
+        if (myedegrees[k].ed == 0)
           myedegrees[k] = myedegrees[--myrinfo->ndegrees];
         else
           myedegrees[k].pid = from;
@@ -10685,7 +10685,7 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
 
     if (ctrl->dbglvl&DBG_REFINE) {
       printf("\t [%5.4f %5.4f], Nb: %6d, Nmoves: %5d, Cut: %6d, LB: ",
-              npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)], 
+              npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)],
               nbnd, nmoves, graph->mincut);
       ComputeHKWayLoadImbalance(ncon, nparts, npwgts, tvec);
       for (i=0; i<ncon; i++)
@@ -10707,10 +10707,10 @@ void MCRandom_KWayEdgeRefineHorizontal(CtrlType *ctrl, GraphType *graph, int npa
 /*************************************************************************
 * This function performs k-way refinement
 **************************************************************************/
-void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int nparts, 
+void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int nparts,
        float *ubvec, int npasses)
 {
-  int i, ii, j, k, pass, nvtxs, ncon, nbnd, myndegrees, oldgain, gain, nmoves; 
+  int i, ii, j, k, pass, nvtxs, ncon, nbnd, myndegrees, oldgain, gain, nmoves;
   int from, me, to, oldcut;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *perm, *bndptr, *bndind, *moved;
@@ -10730,7 +10730,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
 
   where = graph->where;
   npwgts = graph->npwgts;
-  
+
   /* Setup the weight intervals of the various subdomains */
   minwgt =  fwspacemalloc(ctrl, ncon*nparts);
   maxwgt = fwspacemalloc(ctrl, ncon*nparts);
@@ -10749,7 +10749,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
 
   if (ctrl->dbglvl&DBG_REFINE) {
     printf("Partitions: [%5.4f %5.4f], Nv-Nb[%6d %6d]. Cut: %6d, LB: ",
-            npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)], 
+            npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)],
             graph->nvtxs, graph->nbnd, graph->mincut);
     ComputeHKWayLoadImbalance(ncon, nparts, npwgts, tvec);
     for (i=0; i<ncon; i++)
@@ -10780,7 +10780,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
 
     nmoves = 0;
     for (;;) {
-      if ((i = PQueueGetMax(&queue)) == -1) 
+      if ((i = PQueueGetMax(&queue)) == -1)
         break;
       moved[i] = 1;
 
@@ -10799,12 +10799,12 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
         if (IsHBalanceBetterFT(ncon, nparts, npwgts+from*ncon, npwgts+to*ncon, nvwgt, ubvec))
           break;
       }
-      if (k == myndegrees) 
+      if (k == myndegrees)
         continue;  /* break out if you did not find a candidate */
 
       for (j=k+1; j<myndegrees; j++) {
         to = myedegrees[j].pid;
-        if (IsHBalanceBetterTT(ncon, nparts, npwgts+myedegrees[k].pid*ncon, npwgts+to*ncon, nvwgt, ubvec)) 
+        if (IsHBalanceBetterTT(ncon, nparts, npwgts+myedegrees[k].pid*ncon, npwgts+to*ncon, nvwgt, ubvec))
           k = j;
       }
 
@@ -10822,14 +10822,14 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
         continue;
 
 /* DELETE
-      if (myedegrees[k].ed-myrinfo->id < 0 && 
+      if (myedegrees[k].ed-myrinfo->id < 0 &&
           AreAllHVwgtsBelow(ncon, 1.0, npwgts+from*ncon, 0.0, nvwgt, maxwgt+from*ncon) &&
           AreAllHVwgtsAbove(ncon, 1.0, npwgts+to*ncon, 0.0, nvwgt, minwgt+to*ncon) &&
           AreAllHVwgtsBelow(ncon, 1.0, npwgts+to*ncon, 1.0, nvwgt, maxwgt+to*ncon))
         continue;
 */
       /*=====================================================================
-      * If we got here, we can now move the vertex from 'from' to 'to' 
+      * If we got here, we can now move the vertex from 'from' to 'to'
       *======================================================================*/
       graph->mincut -= myedegrees[k].ed-myrinfo->id;
 
@@ -10841,7 +10841,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
       where[i] = to;
       myrinfo->ed += myrinfo->id-myedegrees[k].ed;
       SWAP(myrinfo->id, myedegrees[k].ed, j);
-      if (myedegrees[k].ed == 0) 
+      if (myedegrees[k].ed == 0)
         myedegrees[k] = myedegrees[--myrinfo->ndegrees];
       else
         myedegrees[k].pid = from;
@@ -10907,7 +10907,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
 
 
         /* Update the queue */
-        if (me == to || me == from) { 
+        if (me == to || me == from) {
           gain = myrinfo->ed-myrinfo->id;
           if (moved[ii] == 2) {
             if (myrinfo->ed > 0)
@@ -10921,7 +10921,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
             PQueueInsert(&queue, ii, gain);
             moved[ii] = 2;
           }
-        } 
+        }
 
         ASSERT(myrinfo->ndegrees <= xadj[ii+1]-xadj[ii]);
         ASSERT(CheckRInfo(myrinfo));
@@ -10933,7 +10933,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
 
     if (ctrl->dbglvl&DBG_REFINE) {
       printf("\t [%5.4f %5.4f], Nb: %6d, Nmoves: %5d, Cut: %6d, LB: ",
-              npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)], 
+              npwgts[samin(ncon*nparts, npwgts)], npwgts[samax(ncon*nparts, npwgts)],
               nbnd, nmoves, graph->mincut);
       ComputeHKWayLoadImbalance(ncon, nparts, npwgts, tvec);
       for (i=0; i<ncon; i++)
@@ -10959,7 +10959,7 @@ void MCGreedy_KWayEdgeBalanceHorizontal(CtrlType *ctrl, GraphType *graph, int np
 
 
 /*************************************************************************
-* This function checks if the vertex weights of two vertices are below 
+* This function checks if the vertex weights of two vertices are below
 * a given set of values
 **************************************************************************/
 int AreAllHVwgtsBelow(int ncon, float alpha, float *vwgt1, float beta, float *vwgt2, float *limit)
@@ -10976,7 +10976,7 @@ int AreAllHVwgtsBelow(int ncon, float alpha, float *vwgt1, float beta, float *vw
 
 
 /*************************************************************************
-* This function checks if the vertex weights of two vertices are above 
+* This function checks if the vertex weights of two vertices are above
 * a given set of values
 **************************************************************************/
 int AreAllHVwgtsAbove(int ncon, float alpha, float *vwgt1, float beta, float *vwgt2, float *limit)
@@ -10994,7 +10994,7 @@ int AreAllHVwgtsAbove(int ncon, float alpha, float *vwgt1, float beta, float *vw
 /*************************************************************************
 * This function computes the load imbalance over all the constrains
 * For now assume that we just want balanced partitionings
-**************************************************************************/ 
+**************************************************************************/
 void ComputeHKWayLoadImbalance(int ncon, int nparts, float *npwgts, float *lbvec)
 {
   int i, j;
@@ -11039,7 +11039,7 @@ int MocIsHBalanced(int ncon, int nparts, float *npwgts, float *ubvec)
 
 
 /*************************************************************************
-* This function checks if the pairwise balance of the between the two 
+* This function checks if the pairwise balance of the between the two
 * partitions will improve by moving the vertex v from pfrom to pto,
 * subject to the target partition weights of tfrom, and tto respectively
 **************************************************************************/
@@ -11078,7 +11078,7 @@ int IsHBalanceBetterFT(int ncon, int nparts, float *pfrom, float *pto, float *vw
     return 1;
   if (blb2 < alb2)
     return 0;
-  
+
   return salb < sblb;
 
 }
@@ -11125,7 +11125,7 @@ int IsHBalanceBetterTT(int ncon, int nparts, float *pt1, float *pt2, float *vwgt
   if (m22 > m12)
     return 0;
 
-  return sm2 < sm1;  
+  return sm2 < sm1;
 }
 
 /*
@@ -11147,7 +11147,7 @@ int IsHBalanceBetterTT(int ncon, int nparts, float *pt1, float *pt2, float *vwgt
 /*************************************************************************
 * This function is the entry point of refinement
 **************************************************************************/
-void MocRefineKWayHorizontal(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int nparts, 
+void MocRefineKWayHorizontal(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int nparts,
        float *ubvec)
 {
 
@@ -11161,11 +11161,11 @@ void MocRefineKWayHorizontal(CtrlType *ctrl, GraphType *orggraph, GraphType *gra
 
     if (!MocIsHBalanced(graph->ncon, nparts, graph->npwgts, ubvec)) {
       MocComputeKWayBalanceBoundary(ctrl, graph, nparts);
-      MCGreedy_KWayEdgeBalanceHorizontal(ctrl, graph, nparts, ubvec, 4); 
+      MCGreedy_KWayEdgeBalanceHorizontal(ctrl, graph, nparts, ubvec, 4);
       ComputeKWayBoundary(ctrl, graph, nparts);
     }
 
-    MCRandom_KWayEdgeRefineHorizontal(ctrl, graph, nparts, ubvec, 10); 
+    MCRandom_KWayEdgeRefineHorizontal(ctrl, graph, nparts, ubvec, 10);
 
     IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->RefTmr));
 
@@ -11180,9 +11180,9 @@ void MocRefineKWayHorizontal(CtrlType *ctrl, GraphType *orggraph, GraphType *gra
 
   if (!MocIsHBalanced(graph->ncon, nparts, graph->npwgts, ubvec)) {
     MocComputeKWayBalanceBoundary(ctrl, graph, nparts);
-    MCGreedy_KWayEdgeBalanceHorizontal(ctrl, graph, nparts, ubvec, 4); 
+    MCGreedy_KWayEdgeBalanceHorizontal(ctrl, graph, nparts, ubvec, 4);
     ComputeKWayBoundary(ctrl, graph, nparts);
-    MCRandom_KWayEdgeRefineHorizontal(ctrl, graph, nparts, ubvec, 10); 
+    MCRandom_KWayEdgeRefineHorizontal(ctrl, graph, nparts, ubvec, 10);
   }
 
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->UncoarsenTmr));
@@ -11214,7 +11214,7 @@ void MocAllocateKWayPartitionMemory(CtrlType *ctrl, GraphType *graph, int nparts
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void MocComputeKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
 {
@@ -11257,14 +11257,14 @@ void MocComputeKWayPartitionParams(CtrlType *ctrl, GraphType *graph, int nparts)
     }
     myrinfo->id = graph->adjwgtsum[i] - myrinfo->ed;
 
-    if (myrinfo->ed > 0) 
+    if (myrinfo->ed > 0)
       mincut += myrinfo->ed;
 
     if (myrinfo->ed-myrinfo->id >= 0)
       BNDInsert(nbnd, bndind, bndptr, i);
 
     /* Time to compute the particular external degrees */
-    if (myrinfo->ed > 0) { 
+    if (myrinfo->ed > 0) {
       myedegrees = myrinfo->edegrees = ctrl->wspace.edegrees+ctrl->wspace.cdegree;
       ctrl->wspace.cdegree += xadj[i+1]-xadj[i];
 
@@ -11371,13 +11371,13 @@ void MocProjectKWayPartition(CtrlType *ctrl, GraphType *graph, int nparts)
       myrinfo->id -= myrinfo->ed;
 
       /* Remove space for edegrees if it was interior */
-      if (myrinfo->ed == 0) { 
+      if (myrinfo->ed == 0) {
         myrinfo->edegrees = NULL;
         ctrl->wspace.cdegree -= iend-istart;
       }
       else {
-        if (myrinfo->ed-myrinfo->id >= 0) 
-          BNDInsert(nbnd, bndind, bndptr, i); 
+        if (myrinfo->ed-myrinfo->id >= 0)
+          BNDInsert(nbnd, bndind, bndptr, i);
 
         myrinfo->ndegrees = ndegrees;
 
@@ -11418,7 +11418,7 @@ void MocComputeKWayBalanceBoundary(CtrlType *ctrl, GraphType *graph, int nparts)
   /* Compute the new boundary */
   nbnd = 0;
   for (i=0; i<nvtxs; i++) {
-    if (graph->rinfo[i].ed > 0) 
+    if (graph->rinfo[i].ed > 0)
       BNDInsert(nbnd, bndind, bndptr, i);
   }
 
@@ -11587,7 +11587,7 @@ void MCMatch_SHEM(CtrlType *ctrl, GraphType *graph)
 
   RandomPermute(nvtxs, tperm, 1);
   avgdegree = 0.7*(xadj[nvtxs]/nvtxs);
-  for (i=0; i<nvtxs; i++) 
+  for (i=0; i<nvtxs; i++)
     degrees[i] = (xadj[i+1]-xadj[i] > avgdegree ? avgdegree : xadj[i+1]-xadj[i]);
   BucketSortKeysInc(nvtxs, avgdegree, degrees, tperm, perm);
 
@@ -11681,7 +11681,7 @@ void MCMatch_SHEBM(CtrlType *ctrl, GraphType *graph, int norm)
 
   RandomPermute(nvtxs, tperm, 1);
   avgdegree = 0.7*(xadj[nvtxs]/nvtxs);
-  for (i=0; i<nvtxs; i++) 
+  for (i=0; i<nvtxs; i++)
     degrees[i] = (xadj[i+1]-xadj[i] > avgdegree ? avgdegree : xadj[i+1]-xadj[i]);
   BucketSortKeysInc(nvtxs, avgdegree, degrees, tperm, perm);
 
@@ -11722,10 +11722,10 @@ void MCMatch_SHEBM(CtrlType *ctrl, GraphType *graph, int norm)
       for (j=xadj[i]; j<xadj[i+1]; j++) {
         k = adjncy[j];
 
-        if (match[k] == UNMATCHED && 
+        if (match[k] == UNMATCHED &&
             AreAllVwgtsBelowFast(ncon, nvwgt+i*ncon, nvwgt+k*ncon, ctrl->nmaxvwgt) &&
-            (maxwgt < adjwgt[j] || 
-              (maxwgt == adjwgt[j] && 
+            (maxwgt < adjwgt[j] ||
+              (maxwgt == adjwgt[j] &&
                BetterVBalance(ncon, norm, nvwgt+i*ncon, nvwgt+maxidx*ncon, nvwgt+k*ncon) >= 0
               )
             )
@@ -11782,7 +11782,7 @@ void MCMatch_SBHEM(CtrlType *ctrl, GraphType *graph, int norm)
 
   RandomPermute(nvtxs, tperm, 1);
   avgdegree = 0.7*(xadj[nvtxs]/nvtxs);
-  for (i=0; i<nvtxs; i++) 
+  for (i=0; i<nvtxs; i++)
     degrees[i] = (xadj[i+1]-xadj[i] > avgdegree ? avgdegree : xadj[i+1]-xadj[i]);
   BucketSortKeysInc(nvtxs, avgdegree, degrees, tperm, perm);
 
@@ -11856,7 +11856,7 @@ void MCMatch_SBHEM(CtrlType *ctrl, GraphType *graph, int norm)
 
 
 /*************************************************************************
-* This function checks if v+u2 provides a better balance in the weight 
+* This function checks if v+u2 provides a better balance in the weight
 * vector that v+u1
 **************************************************************************/
 float BetterVBalance(int ncon, int norm, float *vwgt, float *u1wgt, float *u2wgt)
@@ -11917,7 +11917,7 @@ float BetterVBalance(int ncon, int norm, float *vwgt, float *u1wgt, float *u2wgt
 
 
 /*************************************************************************
-* This function checks if the vertex weights of two vertices are below 
+* This function checks if the vertex weights of two vertices are below
 * a given set of values
 **************************************************************************/
 int AreAllVwgtsBelowFast(int ncon, float *vwgt1, float *vwgt2, float limit)
@@ -11938,11 +11938,11 @@ int AreAllVwgtsBelowFast(int ncon, float *vwgt1, float *vwgt2, float limit)
  * The following C function was developed from a FORTRAN subroutine
  * in SPARSPAK written by Eleanor Chu, Alan George, Joseph Liu
  * and Esmond Ng.
- * 
+ *
  * The FORTRAN-to-C transformation and modifications such as dynamic
  * memory allocation and deallocation were performed by Chunguang
  * Sun.
- * ************************************************************** 
+ * **************************************************************
  *
  * Taken from SMMS, George 12/13/94
  *
@@ -11989,7 +11989,7 @@ void genmmd(int neqns, idxtype *xadj, idxtype *adjncy, idxtype *invp, idxtype *p
 {
     int  ehead, i, mdeg, mdlmt, mdeg_node, nextmd, num, tag;
 
-    if (neqns <= 0)  
+    if (neqns <= 0)
       return;
 
     /* Adjust from C to Fortran */
@@ -12014,7 +12014,7 @@ void genmmd(int neqns, idxtype *xadj, idxtype *adjncy, idxtype *invp, idxtype *p
 
     /* search for node of the minimum degree. 'mdeg' is the current */
     /* minimum degree; 'tag' is used to facilitate marking nodes.   */
-    if (num > neqns) 
+    if (num > neqns)
       goto n1000;
     tag = 1;
     head[1] = 0;
@@ -12022,7 +12022,7 @@ void genmmd(int neqns, idxtype *xadj, idxtype *adjncy, idxtype *invp, idxtype *p
 
     /* infinite loop here ! */
     while (1) {
-      while (head[mdeg] <= 0) 
+      while (head[mdeg] <= 0)
         mdeg++;
 
       /* use value of 'delta' to set up 'mdlmt', which governs */
@@ -12035,7 +12035,7 @@ n500:
       while (mdeg_node <= 0) {
         mdeg++;
 
-        if (mdeg > mdlmt) 
+        if (mdeg > mdlmt)
           goto n900;
         mdeg_node = head[mdeg];
       };
@@ -12043,11 +12043,11 @@ n500:
       /*  remove 'mdeg_node' from the degree structure. */
       nextmd = invp[mdeg_node];
       head[mdeg] = nextmd;
-      if (nextmd > 0)  
+      if (nextmd > 0)
         perm[nextmd] = -mdeg;
       invp[mdeg_node] = -num;
       *ncsub += mdeg + qsize[mdeg_node] - 2;
-      if ((num+qsize[mdeg_node]) > neqns)  
+      if ((num+qsize[mdeg_node]) > neqns)
         goto n1000;
 
       /*  eliminate 'mdeg_node' and perform quotient graph */
@@ -12056,7 +12056,7 @@ n500:
       if (tag >= maxint) {
         tag = 1;
         for (i = 1; i <= neqns; i++)
-          if (marker[i] < maxint)  
+          if (marker[i] < maxint)
             marker[i] = 0;
       };
 
@@ -12065,13 +12065,13 @@ n500:
       num += qsize[mdeg_node];
       list[mdeg_node] = ehead;
       ehead = mdeg_node;
-      if (delta >= 0) 
+      if (delta >= 0)
         goto n500;
 
  n900:
       /* update degrees of the nodes involved in the  */
       /* minimum degree nodes elimination.            */
-      if (num > neqns)  
+      if (num > neqns)
         goto n1000;
       mmdupd( ehead, neqns, xadj, adjncy, delta, &mdeg, head, invp, perm, qsize, list, marker, maxint, &tag);
     }; /* end of -- while ( 1 ) -- */
@@ -12478,7 +12478,7 @@ n1600:    if ( enode <= 0 )  goto n2300;
                 if ( marker[nabor] < *tag ) {
                      marker[nabor] = *tag;
                      link = nabor;
-                     if ( forward[nabor] >= 0 ) 
+                     if ( forward[nabor] >= 0 )
                           /*if uneliminated, include it in deg count.*/
                           deg += qsize[nabor];
                      else {
@@ -12547,8 +12547,8 @@ n2300:
 * This function is the entry point for PWMETIS that accepts exact weights
 * for the target partitions
 **************************************************************************/
-void METIS_mCPartGraphRecursive(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy, 
-       idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_mCPartGraphRecursive(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy,
+       idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
        int *options, int *edgecut, idxtype *part)
 {
   GraphType graph;
@@ -12600,8 +12600,8 @@ void METIS_mCPartGraphRecursive(int *nvtxs, int *ncon, idxtype *xadj, idxtype *a
 * This function is the entry point for PWMETIS that accepts exact weights
 * for the target partitions
 **************************************************************************/
-void METIS_mCHPartGraphRecursive(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy, 
-       idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_mCHPartGraphRecursive(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy,
+       idxtype *vwgt, idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
        float *ubvec, int *options, int *edgecut, idxtype *part)
 {
   GraphType graph;
@@ -12658,7 +12658,7 @@ void METIS_mCHPartGraphRecursive(int *nvtxs, int *ncon, idxtype *xadj, idxtype *
 * This function is the entry point for PWMETIS that accepts exact weights
 * for the target partitions
 **************************************************************************/
-void METIS_mCPartGraphRecursiveInternal(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy, 
+void METIS_mCPartGraphRecursiveInternal(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy,
        float *nvwgt, idxtype *adjwgt, int *nparts, int *options, int *edgecut, idxtype *part)
 {
   GraphType graph;
@@ -12704,8 +12704,8 @@ void METIS_mCPartGraphRecursiveInternal(int *nvtxs, int *ncon, idxtype *xadj, id
 * This function is the entry point for PWMETIS that accepts exact weights
 * for the target partitions
 **************************************************************************/
-void METIS_mCHPartGraphRecursiveInternal(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy, 
-       float *nvwgt, idxtype *adjwgt, int *nparts, float *ubvec, int *options, int *edgecut, 
+void METIS_mCHPartGraphRecursiveInternal(int *nvtxs, int *ncon, idxtype *xadj, idxtype *adjncy,
+       float *nvwgt, idxtype *adjwgt, int *nparts, float *ubvec, int *options, int *edgecut,
        idxtype *part)
 {
   GraphType graph;
@@ -12757,7 +12757,7 @@ void METIS_mCHPartGraphRecursiveInternal(int *nvtxs, int *ncon, idxtype *xadj, i
 /*************************************************************************
 * This function takes a graph and produces a bisection of it
 **************************************************************************/
-int MCMlevelRecursiveBisection(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part, 
+int MCMlevelRecursiveBisection(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part,
        float ubfactor, int fpart)
 {
   int i, nvtxs, cut;
@@ -12783,7 +12783,7 @@ int MCMlevelRecursiveBisection(CtrlType *ctrl, GraphType *graph, int nparts, idx
   for (i=0; i<nvtxs; i++)
     part[label[i]] = where[i] + fpart;
 
-  if (nparts > 2) 
+  if (nparts > 2)
     SplitGraphPart(ctrl, graph, &lgraph, &rgraph);
 
   /* Free the memory of the top level graph */
@@ -12810,7 +12810,7 @@ int MCMlevelRecursiveBisection(CtrlType *ctrl, GraphType *graph, int nparts, idx
 /*************************************************************************
 * This function takes a graph and produces a bisection of it
 **************************************************************************/
-int MCHMlevelRecursiveBisection(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part, 
+int MCHMlevelRecursiveBisection(CtrlType *ctrl, GraphType *graph, int nparts, idxtype *part,
       float *ubvec, int fpart)
 {
   int i, nvtxs, ncon, cut;
@@ -12895,7 +12895,7 @@ void MCMlevelEdgeBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, floa
 
   MocInit2WayPartition(ctrl, cgraph, tpwgts, ubfactor);
 
-  MocRefine2Way(ctrl, graph, cgraph, tpwgts, ubfactor); 
+  MocRefine2Way(ctrl, graph, cgraph, tpwgts, ubfactor);
 
 }
 
@@ -12912,7 +12912,7 @@ void MCHMlevelEdgeBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
 
   MocInit2WayPartition2(ctrl, cgraph, tpwgts, ubvec);
 
-  MocRefine2Way2(ctrl, graph, cgraph, tpwgts, ubvec); 
+  MocRefine2Way2(ctrl, graph, cgraph, tpwgts, ubvec);
 
 }
 
@@ -12936,7 +12936,7 @@ void MCHMlevelEdgeBisection(CtrlType *ctrl, GraphType *graph, float *tpwgts, flo
 /*************************************************************************
 * This function is the entry point of refinement
 **************************************************************************/
-void MocRefine2Way2(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, float *tpwgts, 
+void MocRefine2Way2(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, float *tpwgts,
        float *ubvec)
 {
 
@@ -12952,7 +12952,7 @@ void MocRefine2Way2(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, float
     switch (ctrl->RType) {
       case RTYPE_FM:
         MocBalance2Way2(ctrl, graph, tpwgts, ubvec);
-        MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 8); 
+        MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, ubvec, 8);
         break;
       default:
         errexit("Unknown refinement type: %d\n", ctrl->RType);
@@ -13011,11 +13011,11 @@ void MocRefine2Way(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, float 
     switch (ctrl->RType) {
       case RTYPE_FM:
         MocBalance2Way(ctrl, graph, tpwgts, 1.03);
-        MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 8); 
+        MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 8);
         break;
       case 2:
         MocBalance2Way(ctrl, graph, tpwgts, 1.03);
-        MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, tubvec, 8); 
+        MocFM_2WayEdgeRefine2(ctrl, graph, tpwgts, tubvec, 8);
         break;
       default:
         errexit("Unknown refinement type: %d\n", ctrl->RType);
@@ -13032,7 +13032,7 @@ void MocRefine2Way(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, float 
   }
 
   MocBalance2Way(ctrl, graph, tpwgts, 1.01);
-  MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 8); 
+  MocFM_2WayEdgeRefine(ctrl, graph, tpwgts, 8);
 
   IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->UncoarsenTmr));
 }
@@ -13060,7 +13060,7 @@ void MocAllocate2WayPartitionMemory(CtrlType *ctrl, GraphType *graph)
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void MocCompute2WayPartitionParams(CtrlType *ctrl, GraphType *graph)
 {
@@ -13193,7 +13193,7 @@ void MocProject2WayPartition(CtrlType *ctrl, GraphType *graph)
 }
 
 /*
- * mutil.c 
+ * mutil.c
  *
  * This file contains various utility functions for the MOC portion of the
  * code
@@ -13209,7 +13209,7 @@ void MocProject2WayPartition(CtrlType *ctrl, GraphType *graph)
 
 
 /*************************************************************************
-* This function checks if the vertex weights of two vertices are below 
+* This function checks if the vertex weights of two vertices are below
 * a given set of values
 **************************************************************************/
 int AreAllVwgtsBelow(int ncon, float alpha, float *vwgt1, float beta, float *vwgt2, float limit)
@@ -13225,7 +13225,7 @@ int AreAllVwgtsBelow(int ncon, float alpha, float *vwgt1, float beta, float *vwg
 
 
 /*************************************************************************
-* This function checks if the vertex weights of two vertices are below 
+* This function checks if the vertex weights of two vertices are below
 * a given set of values
 **************************************************************************/
 int AreAnyVwgtsBelow(int ncon, float alpha, float *vwgt1, float beta, float *vwgt2, float limit)
@@ -13242,7 +13242,7 @@ int AreAnyVwgtsBelow(int ncon, float alpha, float *vwgt1, float beta, float *vwg
 
 
 /*************************************************************************
-* This function checks if the vertex weights of two vertices are above 
+* This function checks if the vertex weights of two vertices are above
 * a given set of values
 **************************************************************************/
 int AreAllVwgtsAbove(int ncon, float alpha, float *vwgt1, float beta, float *vwgt2, float limit)
@@ -13260,7 +13260,7 @@ int AreAllVwgtsAbove(int ncon, float alpha, float *vwgt1, float beta, float *vwg
 /*************************************************************************
 * This function computes the load imbalance over all the constrains
 * For now assume that we just want balanced partitionings
-**************************************************************************/ 
+**************************************************************************/
 float ComputeLoadImbalance(int ncon, int nparts, float *npwgts, float *tpwgts)
 {
   int i, j;
@@ -13280,7 +13280,7 @@ float ComputeLoadImbalance(int ncon, int nparts, float *npwgts, float *tpwgts)
 }
 
 /*************************************************************************
-* This function checks if the vertex weights of two vertices are below 
+* This function checks if the vertex weights of two vertices are below
 * a given set of values
 **************************************************************************/
 int AreAllBelow(int ncon, float *v1, float *v2)
@@ -13297,13 +13297,13 @@ int AreAllBelow(int ncon, float *v1, float *v2)
  * Copyright 1997, Regents of the University of Minnesota
  *
  * myqsort.c
- * 
+ *
  * This file contains a fast idxtype increasing qsort algorithm.
  * Addopted from TeX
- * 
+ *
  * Started 10/18/96
  * George
- * 
+ *
  * $Id$
  */
 
@@ -13343,7 +13343,7 @@ void iidxsort(int n, idxtype *base)
     siqst(base, max);
     hi = base + THRESH;
   }
-  else 
+  else
     hi = max;
 
   for (j = lo = base; lo++ < hi;) {
@@ -13392,7 +13392,7 @@ static void siqst(idxtype *base, idxtype *max)
           j = tmp;
       }
 
-      if (j != mid) {  /* SWAP */ 
+      if (j != mid) {  /* SWAP */
         c = *mid;
         *mid = *j;
         *j = c;
@@ -13416,7 +13416,7 @@ static void siqst(idxtype *base, idxtype *max)
         goto swap;
       }
 
-      if (i == mid) 
+      if (i == mid)
 	break;
       else {		/* i <-> mid, new mid is i */
         jj = mid;
@@ -13471,7 +13471,7 @@ void iintsort(int n, int *base)
     iiqst(base, max);
     hi = base + THRESH;
   }
-  else 
+  else
     hi = max;
 
   for (j = lo = base; lo++ < hi;) {
@@ -13521,7 +13521,7 @@ static void iiqst(int *base, int *max)
           j = tmp;
       }
 
-      if (j != mid) {  /* SWAP */ 
+      if (j != mid) {  /* SWAP */
         c = *mid;
         *mid = *j;
         *j = c;
@@ -13545,7 +13545,7 @@ static void iiqst(int *base, int *max)
         goto swap;
       }
 
-      if (i == mid) 
+      if (i == mid)
 	break;
       else {		/* i <-> mid, new mid is i */
         jj = mid;
@@ -13600,7 +13600,7 @@ void ikeysort(int n, KeyValueType *base)
     keyiqst(base, max);
     hi = base + THRESH;
   }
-  else 
+  else
     hi = max;
 
   for (j = lo = base; lo++ < hi;) {
@@ -13626,7 +13626,7 @@ void ikeysort(int n, KeyValueType *base)
   }
 
   /* Sanity check */
-  { 
+  {
     int i;
     for (i=0; i<n-1; i++)
       if (base[i].key > base[i+1].key)
@@ -13658,7 +13658,7 @@ static void keyiqst(KeyValueType *base, KeyValueType *max)
           j = tmp;
       }
 
-      if (j != mid) {  /* SWAP */ 
+      if (j != mid) {  /* SWAP */
         c = *mid;
         *mid = *j;
         *j = c;
@@ -13682,7 +13682,7 @@ static void keyiqst(KeyValueType *base, KeyValueType *max)
         goto swap;
       }
 
-      if (i == mid) 
+      if (i == mid)
 	break;
       else {		/* i <-> mid, new mid is i */
         jj = mid;
@@ -13736,7 +13736,7 @@ void ikeyvalsort(int n, KeyValueType *base)
     keyvaliqst(base, max);
     hi = base + THRESH;
   }
-  else 
+  else
     hi = max;
 
   for (j = lo = base; lo++ < hi;) {
@@ -13786,7 +13786,7 @@ static void keyvaliqst(KeyValueType *base, KeyValueType *max)
           j = tmp;
       }
 
-      if (j != mid) {  /* SWAP */ 
+      if (j != mid) {  /* SWAP */
         c = *mid;
         *mid = *j;
         *j = c;
@@ -13810,7 +13810,7 @@ static void keyvaliqst(KeyValueType *base, KeyValueType *max)
         goto swap;
       }
 
-      if (i == mid) 
+      if (i == mid)
 	break;
       else {		/* i <-> mid, new mid is i */
         jj = mid;
@@ -13859,8 +13859,8 @@ swap:
 /*************************************************************************
 * This function is the entry point for OEMETIS
 **************************************************************************/
-void METIS_EdgeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options, 
-                  idxtype *perm, idxtype *iperm) 
+void METIS_EdgeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options,
+                  idxtype *perm, idxtype *iperm)
 {
   int i;
   GraphType graph;
@@ -13916,8 +13916,8 @@ void METIS_EdgeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
 /*************************************************************************
 * This function is the entry point for ONCMETIS
 **************************************************************************/
-void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options, 
-                  idxtype *perm, idxtype *iperm) 
+void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int *options,
+                  idxtype *perm, idxtype *iperm)
 {
   int i, ii, j, l;
   GraphType graph;
@@ -13956,7 +13956,7 @@ void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
 
   InitRandom(-1);
 
-  if (ctrl.pfactor > 0) { 
+  if (ctrl.pfactor > 0) {
     /*============================================================
     * Prune the dense columns
     ==============================================================*/
@@ -13966,7 +13966,7 @@ void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
   }
   else if (ctrl.oflags&OFLAG_COMPRESS) {
     /*============================================================
-    * Compress the graph 
+    * Compress the graph
     ==============================================================*/
     cptr = idxmalloc(*nvtxs+1, "ONMETIS: cptr");
     cind = idxmalloc(*nvtxs, "ONMETIS: cind");
@@ -13986,12 +13986,12 @@ void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
 
 
   /*=============================================================
-  * Do the nested dissection ordering 
+  * Do the nested dissection ordering
   --=============================================================*/
   ctrl.maxvwgt = 1.5*(idxsum(graph.nvtxs, graph.vwgt)/ctrl.CoarsenTo);
   AllocateWorkSpace(&ctrl, &graph, 2);
 
-  if (ctrl.oflags&OFLAG_CCMP) 
+  if (ctrl.oflags&OFLAG_CCMP)
     MlevelNestedDissectionCC(&ctrl, &graph, iperm, ORDER_UNBALANCE_FRACTION, graph.nvtxs);
   else
     MlevelNestedDissection(&ctrl, &graph, iperm, ORDER_UNBALANCE_FRACTION, graph.nvtxs);
@@ -13999,7 +13999,7 @@ void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
   FreeWorkSpace(&ctrl, &graph);
 
   if (ctrl.pfactor > 0) { /* Order any prunned vertices */
-    if (graph.nvtxs < *nvtxs) { 
+    if (graph.nvtxs < *nvtxs) {
       idxcopy(graph.nvtxs, iperm, perm);  /* Use perm as an auxiliary array */
       for (i=0; i<graph.nvtxs; i++)
         iperm[piperm[i]] = perm[i];
@@ -14010,10 +14010,10 @@ void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
     GKfree((void **) &piperm, LTERM);
   }
   else if (ctrl.oflags&OFLAG_COMPRESS) { /* Uncompress the ordering */
-    if (graph.nvtxs < COMPRESSION_FRACTION*(*nvtxs)) { 
+    if (graph.nvtxs < COMPRESSION_FRACTION*(*nvtxs)) {
       /* construct perm from iperm */
       for (i=0; i<graph.nvtxs; i++)
-        perm[iperm[i]] = i; 
+        perm[iperm[i]] = i;
       for (l=ii=0; ii<graph.nvtxs; ii++) {
         i = perm[ii];
         for (j=cptr[i]; j<cptr[i+1]; j++)
@@ -14041,8 +14041,8 @@ void METIS_NodeND(int *nvtxs, idxtype *xadj, idxtype *adjncy, int *numflag, int 
 * This function is the entry point for ONWMETIS. It requires weights on the
 * vertices. It is for the case that the matrix has been pre-compressed.
 **************************************************************************/
-void METIS_NodeWND(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, int *numflag, 
-                   int *options, idxtype *perm, idxtype *iperm) 
+void METIS_NodeWND(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, int *numflag,
+                   int *options, idxtype *perm, idxtype *iperm)
 {
   int i;
   GraphType graph;
@@ -14134,7 +14134,7 @@ void MlevelNestedDissection(CtrlType *ctrl, GraphType *graph, idxtype *order, fl
   nbnd = graph->nbnd;
   bndind = graph->bndind;
   label = graph->label;
-  for (i=0; i<nbnd; i++) 
+  for (i=0; i<nbnd; i++)
     order[label[bndind[i]]] = --lastvtx;
 
   SplitGraphOrder(ctrl, graph, &lgraph, &rgraph);
@@ -14143,17 +14143,17 @@ void MlevelNestedDissection(CtrlType *ctrl, GraphType *graph, idxtype *order, fl
   GKfree((void **) &graph->gdata, (void **) &graph->rdata,
          (void **) &graph->label, LTERM);
 
-  if (rgraph.nvtxs > MMDSWITCH) 
+  if (rgraph.nvtxs > MMDSWITCH)
     MlevelNestedDissection(ctrl, &rgraph, order, ubfactor, lastvtx);
   else {
-    MMDOrder(ctrl, &rgraph, order, lastvtx); 
+    MMDOrder(ctrl, &rgraph, order, lastvtx);
     GKfree((void **) &rgraph.gdata, (void **) &rgraph.rdata,
            (void **) &rgraph.label, LTERM);
   }
-  if (lgraph.nvtxs > MMDSWITCH) 
+  if (lgraph.nvtxs > MMDSWITCH)
     MlevelNestedDissection(ctrl, &lgraph, order, ubfactor, lastvtx-rgraph.nvtxs);
   else {
-    MMDOrder(ctrl, &lgraph, order, lastvtx-rgraph.nvtxs); 
+    MMDOrder(ctrl, &lgraph, order, lastvtx-rgraph.nvtxs);
     GKfree((void **) &lgraph.gdata, (void **) &lgraph.rdata,
            (void **) &lgraph.label, LTERM);
   }
@@ -14184,7 +14184,7 @@ void MlevelNestedDissectionCC(CtrlType *ctrl, GraphType *graph, idxtype *order, 
   nbnd = graph->nbnd;
   bndind = graph->bndind;
   label = graph->label;
-  for (i=0; i<nbnd; i++) 
+  for (i=0; i<nbnd; i++)
     order[label[bndind[i]]] = --lastvtx;
 
   cptr = idxmalloc(nvtxs, "MlevelNestedDissectionCC: cptr");
@@ -14224,13 +14224,13 @@ void MlevelNestedDissectionCC(CtrlType *ctrl, GraphType *graph, idxtype *order, 
 
 
 /*************************************************************************
-* This function performs multilevel bisection. It performs multiple 
+* This function performs multilevel bisection. It performs multiple
 * bisections and selects the best.
 **************************************************************************/
 void MlevelNodeBisectionMultiple(CtrlType *ctrl, GraphType *graph, int *tpwgts, float ubfactor)
 {
   int i, nvtxs, cnvtxs, mincut;
-  GraphType *cgraph; 
+  GraphType *cgraph;
   idxtype *bestwhere;
 
   if (ctrl->nseps == 1 || graph->nvtxs < (ctrl->oflags&OFLAG_COMPRESS ? 1000 : 2000)) {
@@ -14255,7 +14255,7 @@ void MlevelNodeBisectionMultiple(CtrlType *ctrl, GraphType *graph, int *tpwgts, 
       }
 
       GKfree((void **) &graph->rdata, LTERM);
-    
+
       if (mincut == 0)
         break;
     }
@@ -14289,7 +14289,7 @@ void MlevelNodeBisectionMultiple(CtrlType *ctrl, GraphType *graph, int *tpwgts, 
       }
 
       GKfree((void **) &cgraph->rdata, LTERM);
-    
+
       if (mincut == 0)
         break;
     }
@@ -14372,7 +14372,7 @@ void SplitGraphOrder(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphT
   ASSERT(bndptr != NULL);
 
   rename = idxwspacemalloc(ctrl, nvtxs);
-  
+
   snvtxs[0] = snvtxs[1] = snvtxs[2] = snedges[0] = snedges[1] = snedges[2] = 0;
   for (i=0; i<nvtxs; i++) {
     k = where[i];
@@ -14384,16 +14384,16 @@ void SplitGraphOrder(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphT
   sxadj[0] = lgraph->xadj;
   svwgt[0] = lgraph->vwgt;
   sadjwgtsum[0] = lgraph->adjwgtsum;
-  sadjncy[0] = lgraph->adjncy; 
-  sadjwgt[0] = lgraph->adjwgt; 
+  sadjncy[0] = lgraph->adjncy;
+  sadjwgt[0] = lgraph->adjwgt;
   slabel[0] = lgraph->label;
 
   SetUpSplitGraph(graph, rgraph, snvtxs[1], snedges[1]);
   sxadj[1] = rgraph->xadj;
   svwgt[1] = rgraph->vwgt;
   sadjwgtsum[1] = rgraph->adjwgtsum;
-  sadjncy[1] = rgraph->adjncy; 
-  sadjwgt[1] = rgraph->adjwgt; 
+  sadjncy[1] = rgraph->adjncy;
+  sadjwgt[1] = rgraph->adjwgt;
   slabel[1] = rgraph->label;
 
   /* Go and use bndptr to also mark the boundary nodes in the two partitions */
@@ -14413,7 +14413,7 @@ void SplitGraphOrder(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphT
     iend = xadj[i+1];
     if (bndptr[i] == -1) { /* This is an interior vertex */
       auxadjncy = sadjncy[mypart] + snedges[mypart] - istart;
-      for(j=istart; j<iend; j++) 
+      for(j=istart; j<iend; j++)
         auxadjncy[j] = adjncy[j];
       snedges[mypart] += iend-istart;
     }
@@ -14422,7 +14422,7 @@ void SplitGraphOrder(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphT
       l = snedges[mypart];
       for (j=istart; j<iend; j++) {
         k = adjncy[j];
-        if (where[k] == mypart) 
+        if (where[k] == mypart)
           auxadjncy[l++] = k;
       }
       snedges[mypart] = l;
@@ -14439,7 +14439,7 @@ void SplitGraphOrder(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphT
     idxset(iend, 1, sadjwgt[mypart]);
 
     auxadjncy = sadjncy[mypart];
-    for (i=0; i<iend; i++) 
+    for (i=0; i<iend; i++)
       auxadjncy[i] = rename[auxadjncy[i]];
   }
 
@@ -14534,7 +14534,7 @@ int SplitGraphOrderCC(CtrlType *ctrl, GraphType *graph, GraphType *sgraphs, int 
   }
 
   rename = idxwspacemalloc(ctrl, nvtxs);
-  
+
   /* Go and split the graph a component at a time */
   for (iii=0; iii<ncmps; iii++) {
     RandomPermute(cptr[iii+1]-cptr[iii], cind+cptr[iii], 0);
@@ -14562,7 +14562,7 @@ int SplitGraphOrderCC(CtrlType *ctrl, GraphType *graph, GraphType *sgraphs, int 
       if (bndptr[i] == -1) { /* This is an interior vertex */
         auxadjncy = sadjncy + snedges - istart;
         auxadjwgt = sadjwgt + snedges - istart;
-        for(j=istart; j<iend; j++) 
+        for(j=istart; j<iend; j++)
           auxadjncy[j] = adjncy[j];
         snedges += iend-istart;
       }
@@ -14570,7 +14570,7 @@ int SplitGraphOrderCC(CtrlType *ctrl, GraphType *graph, GraphType *sgraphs, int 
         l = snedges;
         for (j=istart; j<iend; j++) {
           k = adjncy[j];
-          if (where[k] != 2) 
+          if (where[k] != 2)
             sadjncy[l++] = k;
         }
         snedges = l;
@@ -14583,7 +14583,7 @@ int SplitGraphOrderCC(CtrlType *ctrl, GraphType *graph, GraphType *sgraphs, int 
     }
 
     idxset(snedges, 1, sadjwgt);
-    for (i=0; i<snedges; i++) 
+    for (i=0; i<snedges; i++)
       sadjncy[i] = rename[sadjncy[i]];
 
     sgraphs[iii].nvtxs = snvtxs;
@@ -14625,20 +14625,20 @@ int SplitGraphOrderCC(CtrlType *ctrl, GraphType *graph, GraphType *sgraphs, int 
 
 /*************************************************************************
 * This function is the entry point for KMETIS with seed specification
-* in options[7] 
+* in options[7]
 **************************************************************************/
-void METIS_PartGraphKway2(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                         idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_PartGraphKway2(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                         idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
                          int *options, int *edgecut, idxtype *part)
 {
   int i;
   float *tpwgts;
 
   tpwgts = fmalloc(*nparts, "KMETIS: tpwgts");
-  for (i=0; i<*nparts; i++) 
+  for (i=0; i<*nparts; i++)
     tpwgts[i] = 1.0/(1.0*(*nparts));
 
-  METIS_WPartGraphKway2(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts, 
+  METIS_WPartGraphKway2(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts,
                        tpwgts, options, edgecut, part);
 
   free(tpwgts);
@@ -14647,10 +14647,10 @@ void METIS_PartGraphKway2(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *v
 
 /*************************************************************************
 * This function is the entry point for KWMETIS with seed specification
-* in options[7] 
+* in options[7]
 **************************************************************************/
-void METIS_WPartGraphKway2(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                          idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_WPartGraphKway2(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                          idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
                           float *tpwgts, int *options, int *edgecut, idxtype *part)
 {
   GraphType graph;
@@ -14699,8 +14699,8 @@ void METIS_WPartGraphKway2(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *
 /*************************************************************************
 * This function is the entry point for the node ND code for ParMETIS
 **************************************************************************/
-void METIS_NodeNDP(int nvtxs, idxtype *xadj, idxtype *adjncy, int npes, 
-                   int *options, idxtype *perm, idxtype *iperm, idxtype *sizes) 
+void METIS_NodeNDP(int nvtxs, idxtype *xadj, idxtype *adjncy, int npes,
+                   int *options, idxtype *perm, idxtype *iperm, idxtype *sizes)
 {
   int i, ii, j, l;
   GraphType graph;
@@ -14738,7 +14738,7 @@ void METIS_NodeNDP(int nvtxs, idxtype *xadj, idxtype *adjncy, int npes,
 
   if (ctrl.oflags&OFLAG_COMPRESS) {
     /*============================================================
-    * Compress the graph 
+    * Compress the graph
     ==============================================================*/
     cptr = idxmalloc(nvtxs+1, "ONMETIS: cptr");
     cind = idxmalloc(nvtxs, "ONMETIS: cind");
@@ -14758,7 +14758,7 @@ void METIS_NodeNDP(int nvtxs, idxtype *xadj, idxtype *adjncy, int npes,
 
 
   /*=============================================================
-  * Do the nested dissection ordering 
+  * Do the nested dissection ordering
   --=============================================================*/
   ctrl.maxvwgt = 1.5*(idxsum(graph.nvtxs, graph.vwgt)/ctrl.CoarsenTo);
   AllocateWorkSpace(&ctrl, &graph, 2);
@@ -14769,10 +14769,10 @@ void METIS_NodeNDP(int nvtxs, idxtype *xadj, idxtype *adjncy, int npes,
   FreeWorkSpace(&ctrl, &graph);
 
   if (ctrl.oflags&OFLAG_COMPRESS) { /* Uncompress the ordering */
-    if (graph.nvtxs < COMPRESSION_FRACTION*(nvtxs)) { 
+    if (graph.nvtxs < COMPRESSION_FRACTION*(nvtxs)) {
       /* construct perm from iperm */
       for (i=0; i<graph.nvtxs; i++)
-        perm[iperm[i]] = i; 
+        perm[iperm[i]] = i;
       for (l=ii=0; ii<graph.nvtxs; ii++) {
         i = perm[ii];
         for (j=cptr[i]; j<cptr[i+1]; j++)
@@ -14797,7 +14797,7 @@ void METIS_NodeNDP(int nvtxs, idxtype *xadj, idxtype *adjncy, int npes,
 /*************************************************************************
 * This function takes a graph and produces a bisection of it
 **************************************************************************/
-void MlevelNestedDissectionP(CtrlType *ctrl, GraphType *graph, idxtype *order, int lastvtx, 
+void MlevelNestedDissectionP(CtrlType *ctrl, GraphType *graph, idxtype *order, int lastvtx,
                              int npes, int cpos, idxtype *sizes)
 {
   int i, nvtxs, nbnd, tvwgt, tpwgts2[2];
@@ -14818,9 +14818,9 @@ void MlevelNestedDissectionP(CtrlType *ctrl, GraphType *graph, idxtype *order, i
   tpwgts2[0] = tvwgt/2;
   tpwgts2[1] = tvwgt-tpwgts2[0];
 
-  if (cpos >= npes-1) 
+  if (cpos >= npes-1)
     ubfactor = ORDER_UNBALANCE_FRACTION;
-  else 
+  else
     ubfactor = 1.05;
 
 
@@ -14838,7 +14838,7 @@ void MlevelNestedDissectionP(CtrlType *ctrl, GraphType *graph, idxtype *order, i
   nbnd = graph->nbnd;
   bndind = graph->bndind;
   label = graph->label;
-  for (i=0; i<nbnd; i++) 
+  for (i=0; i<nbnd; i++)
     order[label[bndind[i]]] = --lastvtx;
 
   SplitGraphOrder(ctrl, graph, &lgraph, &rgraph);
@@ -14847,17 +14847,17 @@ void MlevelNestedDissectionP(CtrlType *ctrl, GraphType *graph, idxtype *order, i
   GKfree((void **) &graph->gdata, (void **) &graph->rdata,
          (void **) &graph->label, LTERM);
 
-  if (rgraph.nvtxs > MMDSWITCH || 2*cpos+1 < npes-1) 
+  if (rgraph.nvtxs > MMDSWITCH || 2*cpos+1 < npes-1)
     MlevelNestedDissectionP(ctrl, &rgraph, order, lastvtx, npes, 2*cpos+1, sizes);
   else {
-    MMDOrder(ctrl, &rgraph, order, lastvtx); 
+    MMDOrder(ctrl, &rgraph, order, lastvtx);
     GKfree((void **) &rgraph.gdata, (void **) &rgraph.rdata,
            (void **) &rgraph.label, LTERM);
   }
-  if (lgraph.nvtxs > MMDSWITCH || 2*cpos+2 < npes-1) 
+  if (lgraph.nvtxs > MMDSWITCH || 2*cpos+2 < npes-1)
     MlevelNestedDissectionP(ctrl, &lgraph, order, lastvtx-rgraph.nvtxs, npes, 2*cpos+2, sizes);
   else {
-    MMDOrder(ctrl, &lgraph, order, lastvtx-rgraph.nvtxs); 
+    MMDOrder(ctrl, &lgraph, order, lastvtx-rgraph.nvtxs);
     GKfree((void **) &lgraph.gdata, (void **) &lgraph.rdata,
            (void **) &lgraph.label, LTERM);
   }
@@ -14870,8 +14870,8 @@ void MlevelNestedDissectionP(CtrlType *ctrl, GraphType *graph, idxtype *order, i
 * This function is the entry point for ONWMETIS. It requires weights on the
 * vertices. It is for the case that the matrix has been pre-compressed.
 **************************************************************************/
-void METIS_NodeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-           idxtype *adjwgt, int *options, int *sepsize, idxtype *part) 
+void METIS_NodeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+           idxtype *adjwgt, int *options, int *sepsize, idxtype *part)
 {
   int tvwgt, tpwgts[2];
   GraphType graph;
@@ -14906,7 +14906,7 @@ void METIS_NodeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxt
 
   /*============================================================
    * Perform the bisection
-   *============================================================*/ 
+   *============================================================*/
   tpwgts[0] = tvwgt/2;
   tpwgts[1] = tvwgt-tpwgts[0];
 
@@ -14929,8 +14929,8 @@ void METIS_NodeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxt
 * This function is the entry point for ONWMETIS. It requires weights on the
 * vertices. It is for the case that the matrix has been pre-compressed.
 **************************************************************************/
-void METIS_EdgeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-           idxtype *adjwgt, int *options, int *sepsize, idxtype *part) 
+void METIS_EdgeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+           idxtype *adjwgt, int *options, int *sepsize, idxtype *part)
 {
   int tvwgt, tpwgts[2];
   GraphType graph;
@@ -14965,7 +14965,7 @@ void METIS_EdgeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxt
 
   /*============================================================
    * Perform the bisection
-   *============================================================*/ 
+   *============================================================*/
   tpwgts[0] = tvwgt/2;
   tpwgts[1] = tvwgt-tpwgts[0];
 
@@ -15003,18 +15003,18 @@ void METIS_EdgeComputeSeparator(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxt
 /*************************************************************************
 * This function is the entry point for PMETIS
 **************************************************************************/
-void METIS_PartGraphRecursive(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                              idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_PartGraphRecursive(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                              idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
                               int *options, int *edgecut, idxtype *part)
 {
   int i;
   float *tpwgts;
 
   tpwgts = fmalloc(*nparts, "KMETIS: tpwgts");
-  for (i=0; i<*nparts; i++) 
+  for (i=0; i<*nparts; i++)
     tpwgts[i] = 1.0/(1.0*(*nparts));
 
-  METIS_WPartGraphRecursive(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts, 
+  METIS_WPartGraphRecursive(nvtxs, xadj, adjncy, vwgt, adjwgt, wgtflag, numflag, nparts,
                             tpwgts, options, edgecut, part);
 
   free(tpwgts);
@@ -15026,8 +15026,8 @@ void METIS_PartGraphRecursive(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtyp
 * This function is the entry point for PWMETIS that accepts exact weights
 * for the target partitions
 **************************************************************************/
-void METIS_WPartGraphRecursive(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt, 
-                               idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts, 
+void METIS_WPartGraphRecursive(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt,
+                               idxtype *adjwgt, int *wgtflag, int *numflag, int *nparts,
                                float *tpwgts, int *options, int *edgecut, idxtype *part)
 {
   int i;
@@ -15057,7 +15057,7 @@ void METIS_WPartGraphRecursive(int *nvtxs, idxtype *xadj, idxtype *adjncy, idxty
   ctrl.maxvwgt = 1.5*(idxsum(*nvtxs, graph.vwgt)/ctrl.CoarsenTo);
 
   mytpwgts = fmalloc(*nparts, "PWMETIS: mytpwgts");
-  for (i=0; i<*nparts; i++) 
+  for (i=0; i<*nparts; i++)
     mytpwgts[i] = tpwgts[i];
 
   InitRandom(-1);
@@ -15200,7 +15200,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
   ASSERT(bndptr != NULL);
 
   rename = idxwspacemalloc(ctrl, nvtxs);
-  
+
   snvtxs[0] = snvtxs[1] = snedges[0] = snedges[1] = 0;
   for (i=0; i<nvtxs; i++) {
     k = where[i];
@@ -15214,7 +15214,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
   snvwgt[0] = lgraph->nvwgt;
   sadjwgtsum[0] = lgraph->adjwgtsum;
   sadjncy[0] = lgraph->adjncy; 	
-  sadjwgt[0] = lgraph->adjwgt; 
+  sadjwgt[0] = lgraph->adjwgt;
   slabel[0] = lgraph->label;
 
   SetUpSplitGraph(graph, rgraph, snvtxs[1], snedges[1]);
@@ -15223,7 +15223,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
   snvwgt[1] = rgraph->nvwgt;
   sadjwgtsum[1] = rgraph->adjwgtsum;
   sadjncy[1] = rgraph->adjncy; 	
-  sadjwgt[1] = rgraph->adjwgt; 
+  sadjwgt[1] = rgraph->adjwgt;
   slabel[1] = rgraph->label;
 
   snvtxs[0] = snvtxs[1] = snedges[0] = snedges[1] = 0;
@@ -15239,7 +15239,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
       auxadjwgt = sadjwgt[mypart] + snedges[mypart] - istart;
       for(j=istart; j<iend; j++) {
         auxadjncy[j] = adjncy[j];
-        auxadjwgt[j] = adjwgt[j]; 
+        auxadjwgt[j] = adjwgt[j];
       }
       snedges[mypart] += iend-istart;
     }
@@ -15251,7 +15251,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
         k = adjncy[j];
         if (where[k] == mypart) {
           auxadjncy[l] = k;
-          auxadjwgt[l++] = adjwgt[j]; 
+          auxadjwgt[l++] = adjwgt[j];
         }
         else {
           sum -= adjwgt[j];
@@ -15275,7 +15275,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
   for (mypart=0; mypart<2; mypart++) {
     iend = sxadj[mypart][snvtxs[mypart]];
     auxadjncy = sadjncy[mypart];
-    for (i=0; i<iend; i++) 
+    for (i=0; i<iend; i++)
       auxadjncy[i] = rename[auxadjncy[i]];
   }
 
@@ -15382,7 +15382,7 @@ void PQueueInit(CtrlType *ctrl, PQueueType *queue, int maxnodes, int maxgain)
       queue->mustfree = 1;
     }
 
-    for (i=0; i<maxnodes; i++) 
+    for (i=0; i<maxnodes; i++)
       queue->nodes[i].id = i;
 
     for (i=0; i<j; i++)
@@ -15412,10 +15412,10 @@ void PQueueReset(PQueueType *queue)
     queue->maxgain = -queue->ngainspan;
 
     j = queue->ngainspan+queue->pgainspan+1;
-    queue->buckets -= queue->ngainspan;  
+    queue->buckets -= queue->ngainspan;
     for (i=0; i<j; i++)
       queue->buckets[i] = NULL;
-    queue->buckets += queue->ngainspan;  
+    queue->buckets += queue->ngainspan;
   }
   else {
     idxset(queue->maxnodes, -1, queue->locator);
@@ -15432,9 +15432,9 @@ void PQueueFree(CtrlType *ctrl, PQueueType *queue)
 
   if (queue->type == 1) {
     if (queue->mustfree) {
-      queue->buckets -= queue->ngainspan;  
+      queue->buckets -= queue->ngainspan;
       GKfree((void **) &queue->nodes, (void **) &queue->buckets, LTERM);
-    } 
+    }
     else {
       idxwspacefree(ctrl, sizeof(ListNodeType *)*(queue->ngainspan+queue->pgainspan+1)/sizeof(idxtype));
       idxwspacefree(ctrl, sizeof(ListNodeType)*queue->maxnodes/sizeof(idxtype));
@@ -15501,7 +15501,7 @@ int PQueueInsert(PQueueType *queue, int node, int gain)
         locator[heap[i].val] = i;
         i = j;
       }
-      else 
+      else
         break;
     }
     ASSERT(i >= 0);
@@ -15544,9 +15544,9 @@ int PQueueDelete(PQueueType *queue, int node, int gain)
       newnode->next->prev = newnode->prev;
 
     if (buckets[gain] == NULL && gain == queue->maxgain) {
-      if (queue->nnodes == 0) 
+      if (queue->nnodes == 0)
         queue->maxgain = -queue->ngainspan;
-      else 
+      else
         for (; buckets[queue->maxgain]==NULL; queue->maxgain--);
     }
   }
@@ -15575,7 +15575,7 @@ int PQueueDelete(PQueueType *queue, int node, int gain)
             locator[heap[i].val] = i;
             i = j;
           }
-          else 
+          else
             break;
         }
       }
@@ -15622,7 +15622,7 @@ int PQueueUpdate(PQueueType *queue, int node, int oldgain, int newgain)
   idxtype *locator;
   KeyValueType *heap;
 
-  if (oldgain == newgain) 
+  if (oldgain == newgain)
     return 0;
 
   if (queue->type == 1) {
@@ -15649,7 +15649,7 @@ int PQueueUpdate(PQueueType *queue, int node, int oldgain, int newgain)
           locator[heap[i].val] = i;
           i = j;
         }
-        else 
+        else
           break;
       }
     }
@@ -15696,7 +15696,7 @@ void PQueueUpdateUp(PQueueType *queue, int node, int oldgain, int newgain)
   ListNodeType *newnode, **buckets;
   KeyValueType *heap;
 
-  if (oldgain == newgain) 
+  if (oldgain == newgain)
     return;
 
   if (queue->type == 1) {
@@ -15744,7 +15744,7 @@ void PQueueUpdateUp(PQueueType *queue, int node, int oldgain, int newgain)
         locator[heap[i].val] = i;
         i = j;
       }
-      else 
+      else
         break;
     }
 
@@ -15784,7 +15784,7 @@ int PQueueGetMax(PQueueType *queue)
       if (queue->nnodes == 0) {
         queue->maxgain = -queue->ngainspan;
       }
-      else 
+      else
         for (; queue->buckets[queue->maxgain]==NULL; queue->maxgain--);
     }
 
@@ -15828,7 +15828,7 @@ int PQueueGetMax(PQueueType *queue)
     return vtx;
   }
 }
-      
+
 
 /*************************************************************************
 * This function returns the vertex with the largest gain from a partition
@@ -15840,14 +15840,14 @@ int PQueueSeeMax(PQueueType *queue)
   if (queue->nnodes == 0)
     return -1;
 
-  if (queue->type == 1) 
+  if (queue->type == 1)
     vtx = queue->buckets[queue->maxgain]->id;
   else
     vtx = queue->heap[0].val;
 
   return vtx;
 }
-      
+
 
 /*************************************************************************
 * This function returns the vertex with the largest gain from a partition
@@ -15859,14 +15859,14 @@ int PQueueGetKey(PQueueType *queue)
   if (queue->nnodes == 0)
     return -1;
 
-  if (queue->type == 1) 
+  if (queue->type == 1)
     key = queue->maxgain;
   else
     key = queue->heap[0].key;
 
   return key;
 }
-      
+
 
 
 
@@ -15888,7 +15888,7 @@ int CheckHeap(PQueueType *queue)
 
   ASSERT(locator[heap[0].val] == 0);
   for (i=1; i<nnodes; i++) {
-    ASSERTP(locator[heap[i].val] == i, ("%d %d %d %d\n", nnodes, i, heap[i].val, locator[heap[i].val])); 
+    ASSERTP(locator[heap[i].val] == i, ("%d %d %d %d\n", nnodes, i, heap[i].val, locator[heap[i].val]));
     ASSERTP(heap[i].key <= heap[(i-1)/2].key, ("%d %d %d %d %d\n", i, (i-1)/2, nnodes, heap[i].key, heap[(i-1)/2].key));
   }
   for (i=1; i<nnodes; i++)
@@ -15936,7 +15936,7 @@ void Refine2Way(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, int *tpwg
     switch (ctrl->RType) {
       case 1:
         Balance2Way(ctrl, graph, tpwgts, ubfactor);
-        FM_2WayEdgeRefine(ctrl, graph, tpwgts, 8); 
+        FM_2WayEdgeRefine(ctrl, graph, tpwgts, 8);
         break;
       default:
         errexit("Unknown refinement type: %d\n", ctrl->RType);
@@ -15976,7 +15976,7 @@ void Allocate2WayPartitionMemory(CtrlType *ctrl, GraphType *graph)
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void Compute2WayPartitionParams(CtrlType *ctrl, GraphType *graph)
 {
@@ -16123,7 +16123,7 @@ void Project2WayPartition(CtrlType *ctrl, GraphType *graph)
 
 
 /*************************************************************************
-* This function takes a bisection and constructs a minimum weight vertex 
+* This function takes a bisection and constructs a minimum weight vertex
 * separator out of it. It uses the node-based separator refinement for it.
 **************************************************************************/
 void ConstructSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor)
@@ -16156,7 +16156,7 @@ void ConstructSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor)
 
   ASSERT(CheckNodePartitionParams(graph));
 
-  FM_2WayNodeRefine(ctrl, graph, ubfactor, 8); 
+  FM_2WayNodeRefine(ctrl, graph, ubfactor, 8);
 
   ASSERT(IsSeparable(graph));
 }
@@ -16164,7 +16164,7 @@ void ConstructSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor)
 
 
 /*************************************************************************
-* This function takes a bisection and constructs a minimum weight vertex 
+* This function takes a bisection and constructs a minimum weight vertex
 * separator out of it. It uses an unweighted minimum-cover algorithm
 * followed by node-based separator refinement.
 **************************************************************************/
@@ -16229,7 +16229,7 @@ void ConstructMinCoverSeparator0(CtrlType *ctrl, GraphType *graph, float ubfacto
           for (j=xadj[i]; j<xadj[i+1]; j++) {
             jj = adjncy[j];
             if (where[jj] != k) {
-              ASSERT(bndptr[jj] != -1); 
+              ASSERT(bndptr[jj] != -1);
               ASSERTP(vmap[jj] != -1, ("%d %d %d\n", jj, vmap[jj], graph->bndptr[jj]));
               badjncy[l++] = vmap[jj];
             }
@@ -16279,7 +16279,7 @@ void ConstructMinCoverSeparator0(CtrlType *ctrl, GraphType *graph, float ubfacto
 
 
 /*************************************************************************
-* This function takes a bisection and constructs a minimum weight vertex 
+* This function takes a bisection and constructs a minimum weight vertex
 * separator out of it. It uses an unweighted minimum-cover algorithm
 * followed by node-based separator refinement.
 **************************************************************************/
@@ -16344,7 +16344,7 @@ void ConstructMinCoverSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor
           for (j=xadj[i]; j<xadj[i+1]; j++) {
             jj = adjncy[j];
             if (where[jj] != k) {
-              ASSERT(bndptr[jj] != -1); 
+              ASSERT(bndptr[jj] != -1);
               ASSERTP(vmap[jj] != -1, ("%d %d %d\n", jj, vmap[jj], graph->bndptr[jj]));
               badjncy[l++] = vmap[jj];
             }
@@ -16385,7 +16385,7 @@ void ConstructMinCoverSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor
 
   ASSERT(CheckNodePartitionParams(graph));
 
-  FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 6); 
+  FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 6);
 
   ASSERT(IsSeparable(graph));
 }
@@ -16408,14 +16408,14 @@ void ConstructMinCoverSeparator(CtrlType *ctrl, GraphType *graph, float ubfactor
 
 
 /*************************************************************************
-* This function performs a node-based FM refinement 
+* This function performs a node-based FM refinement
 **************************************************************************/
 void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npasses)
 {
   int i, ii, j, k, jj, kk, nvtxs, nbnd, nswaps, nmind;
   idxtype *xadj, *vwgt, *adjncy, *where, *pwgts, *edegrees, *bndind, *bndptr;
   idxtype *mptr, *mind, *moved, *swaps, *perm;
-  PQueueType parts[2]; 
+  PQueueType parts[2];
   NRInfoType *rinfo;
   int higain, oldgain, mincut, initcut, mincutorder;	
   int pass, to, other, limit;
@@ -16478,16 +16478,16 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
     mindiff = abs(pwgts[0]-pwgts[1]);
     to = (pwgts[0] < pwgts[1] ? 0 : 1);
     for (nswaps=0; nswaps<nvtxs; nswaps++) {
-      u[0] = PQueueSeeMax(&parts[0]);  
+      u[0] = PQueueSeeMax(&parts[0]);
       u[1] = PQueueSeeMax(&parts[1]);
       if (u[0] != -1 && u[1] != -1) {
         g[0] = vwgt[u[0]]-rinfo[u[0]].edegrees[1];
         g[1] = vwgt[u[1]]-rinfo[u[1]].edegrees[0];
 
-        to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : pass%2)); 
+        to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : pass%2));
         /* to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : (pwgts[0] < pwgts[1] ? 0 : 1))); */
 
-        if (pwgts[to]+vwgt[u[to]] > badmaxpwgt) 
+        if (pwgts[to]+vwgt[u[to]] > badmaxpwgt)
           to = (to+1)%2;
       }
       else if (u[0] == -1 && u[1] == -1) {
@@ -16529,7 +16529,7 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
       pwgts[to] += vwgt[higain];
       where[higain] = to;
       moved[higain] = nswaps;
-      swaps[nswaps] = higain;  
+      swaps[nswaps] = higain;
 
 
       /**********************************************************
@@ -16555,7 +16555,7 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
           edegrees[0] = edegrees[1] = 0;
           for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
             kk = adjncy[jj];
-            if (where[kk] != 2) 
+            if (where[kk] != 2)
               edegrees[where[kk]] += vwgt[kk];
             else {
               oldgain = vwgt[kk]-rinfo[kk].edegrees[other];
@@ -16581,7 +16581,7 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
 
 
     /****************************************************************
-    * Roll back computation 
+    * Roll back computation
     *****************************************************************/
     for (nswaps--; nswaps>mincutorder; nswaps--) {
       higain = swaps[nswaps];
@@ -16598,7 +16598,7 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
       edegrees[0] = edegrees[1] = 0;
       for (j=xadj[higain]; j<xadj[higain+1]; j++) {
         k = adjncy[j];
-        if (where[k] == 2) 
+        if (where[k] == 2)
           rinfo[k].edegrees[to] -= vwgt[higain];
         else
           edegrees[where[k]] += vwgt[k];
@@ -16613,7 +16613,7 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
         BNDDelete(nbnd, bndind, bndptr, k);
         for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
           kk = adjncy[jj];
-          if (where[kk] == 2) 
+          if (where[kk] == 2)
             rinfo[kk].edegrees[other] += vwgt[k];
         }
       }
@@ -16643,14 +16643,14 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
 
 
 /*************************************************************************
-* This function performs a node-based FM refinement 
+* This function performs a node-based FM refinement
 **************************************************************************/
 void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int npasses)
 {
   int i, ii, j, k, jj, kk, nvtxs, nbnd, nswaps, nmind;
   idxtype *xadj, *vwgt, *adjncy, *where, *pwgts, *edegrees, *bndind, *bndptr;
   idxtype *mptr, *mind, *moved, *swaps, *perm;
-  PQueueType parts[2]; 
+  PQueueType parts[2];
   NRInfoType *rinfo;
   int higain, oldgain, mincut, initcut, mincutorder;	
   int pass, to, other, limit;
@@ -16715,16 +16715,16 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
     for (nswaps=0; nswaps<nvtxs; nswaps++) {
       badmaxpwgt = (int)(ubfactor*(pwgts[0]+pwgts[1]+pwgts[2]/2)/2);
 
-      u[0] = PQueueSeeMax(&parts[0]);  
+      u[0] = PQueueSeeMax(&parts[0]);
       u[1] = PQueueSeeMax(&parts[1]);
       if (u[0] != -1 && u[1] != -1) {
         g[0] = vwgt[u[0]]-rinfo[u[0]].edegrees[1];
         g[1] = vwgt[u[1]]-rinfo[u[1]].edegrees[0];
 
-        to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : pass%2)); 
+        to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : pass%2));
         /* to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : (pwgts[0] < pwgts[1] ? 0 : 1))); */
 
-        if (pwgts[to]+vwgt[u[to]] > badmaxpwgt) 
+        if (pwgts[to]+vwgt[u[to]] > badmaxpwgt)
           to = (to+1)%2;
       }
       else if (u[0] == -1 && u[1] == -1) {
@@ -16766,7 +16766,7 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
       pwgts[to] += vwgt[higain];
       where[higain] = to;
       moved[higain] = nswaps;
-      swaps[nswaps] = higain;  
+      swaps[nswaps] = higain;
 
 
       /**********************************************************
@@ -16792,7 +16792,7 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
           edegrees[0] = edegrees[1] = 0;
           for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
             kk = adjncy[jj];
-            if (where[kk] != 2) 
+            if (where[kk] != 2)
               edegrees[where[kk]] += vwgt[kk];
             else {
               oldgain = vwgt[kk]-rinfo[kk].edegrees[other];
@@ -16818,7 +16818,7 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
 
 
     /****************************************************************
-    * Roll back computation 
+    * Roll back computation
     *****************************************************************/
     for (nswaps--; nswaps>mincutorder; nswaps--) {
       higain = swaps[nswaps];
@@ -16835,7 +16835,7 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
       edegrees[0] = edegrees[1] = 0;
       for (j=xadj[higain]; j<xadj[higain+1]; j++) {
         k = adjncy[j];
-        if (where[k] == 2) 
+        if (where[k] == 2)
           rinfo[k].edegrees[to] -= vwgt[higain];
         else
           edegrees[where[k]] += vwgt[k];
@@ -16850,7 +16850,7 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
         BNDDelete(nbnd, bndind, bndptr, k);
         for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
           kk = adjncy[jj];
-          if (where[kk] == 2) 
+          if (where[kk] == 2)
             rinfo[kk].edegrees[other] += vwgt[k];
         }
       }
@@ -16880,14 +16880,14 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
 
 
 /*************************************************************************
-* This function performs a node-based FM refinement 
+* This function performs a node-based FM refinement
 **************************************************************************/
 void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
 {
   int i, ii, j, k, jj, kk, nvtxs, nbnd, nswaps, nmind;
   idxtype *xadj, *vwgt, *adjncy, *where, *pwgts, *edegrees, *bndind, *bndptr;
   idxtype *mptr, *mind, *moved, *swaps, *perm;
-  PQueueType parts[2]; 
+  PQueueType parts[2];
   NRInfoType *rinfo;
   int higain, oldgain, mincut, initcut, mincutorder;	
   int pass, to, other, limit;
@@ -16951,13 +16951,13 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
       to = (pwgts[0] < pwgts[1] ? 0 : 1);
 
       if (pwgts[0] == pwgts[1]) {
-        u[0] = PQueueSeeMax(&parts[0]);  
+        u[0] = PQueueSeeMax(&parts[0]);
         u[1] = PQueueSeeMax(&parts[1]);
         if (u[0] != -1 && u[1] != -1) {
           g[0] = vwgt[u[0]]-rinfo[u[0]].edegrees[1];
           g[1] = vwgt[u[1]]-rinfo[u[1]].edegrees[0];
 
-          to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : pass%2)); 
+          to = (g[0] > g[1] ? 0 : (g[0] < g[1] ? 1 : pass%2));
         }
       }
       other = (to+1)%2;
@@ -16989,7 +16989,7 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
       pwgts[to] += vwgt[higain];
       where[higain] = to;
       moved[higain] = nswaps;
-      swaps[nswaps] = higain;  
+      swaps[nswaps] = higain;
 
 
       /**********************************************************
@@ -17015,7 +17015,7 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
           edegrees[0] = edegrees[1] = 0;
           for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
             kk = adjncy[jj];
-            if (where[kk] != 2) 
+            if (where[kk] != 2)
               edegrees[where[kk]] += vwgt[kk];
             else {
               oldgain = vwgt[kk]-rinfo[kk].edegrees[other];
@@ -17041,7 +17041,7 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
 
 
     /****************************************************************
-    * Roll back computation 
+    * Roll back computation
     *****************************************************************/
     for (nswaps--; nswaps>mincutorder; nswaps--) {
       higain = swaps[nswaps];
@@ -17058,7 +17058,7 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
       edegrees[0] = edegrees[1] = 0;
       for (j=xadj[higain]; j<xadj[higain+1]; j++) {
         k = adjncy[j];
-        if (where[k] == 2) 
+        if (where[k] == 2)
           rinfo[k].edegrees[to] -= vwgt[higain];
         else
           edegrees[where[k]] += vwgt[k];
@@ -17073,7 +17073,7 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
         BNDDelete(nbnd, bndind, bndptr, k);
         for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
           kk = adjncy[jj];
-          if (where[kk] == 2) 
+          if (where[kk] == 2)
             rinfo[kk].edegrees[other] += vwgt[k];
         }
       }
@@ -17103,15 +17103,15 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
 
 
 /*************************************************************************
-* This function performs a node-based FM refinement. This is the 
-* one-way version 
+* This function performs a node-based FM refinement. This is the
+* one-way version
 **************************************************************************/
 void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor, int npasses)
 {
   int i, ii, j, k, jj, kk, nvtxs, nbnd, nswaps, nmind;
   idxtype *xadj, *vwgt, *adjncy, *where, *pwgts, *edegrees, *bndind, *bndptr;
   idxtype *mptr, *mind, *swaps, *perm;
-  PQueueType parts; 
+  PQueueType parts;
   NRInfoType *rinfo;
   int higain, oldgain, mincut, initcut, mincutorder;	
   int pass, to, other, limit;
@@ -17142,7 +17142,7 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
 
   to = (pwgts[0] < pwgts[1] ? 1 : 0);
   for (pass=0; pass<npasses; pass++) {
-    other = to; 
+    other = to;
     to = (to+1)%2;
 
     PQueueReset(&parts);
@@ -17196,7 +17196,7 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
       BNDDelete(nbnd, bndind, bndptr, higain);
       pwgts[to] += vwgt[higain];
       where[higain] = to;
-      swaps[nswaps] = higain;  
+      swaps[nswaps] = higain;
 
 
       /**********************************************************
@@ -17219,14 +17219,14 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
           edegrees[0] = edegrees[1] = 0;
           for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
             kk = adjncy[jj];
-            if (where[kk] != 2) 
+            if (where[kk] != 2)
               edegrees[where[kk]] += vwgt[kk];
             else {
               oldgain = vwgt[kk]-rinfo[kk].edegrees[other];
               rinfo[kk].edegrees[other] -= vwgt[k];
 
               /* Since the moves are one-sided this vertex has not been moved yet */
-              PQueueUpdateUp(&parts, kk, oldgain, oldgain+vwgt[k]); 
+              PQueueUpdateUp(&parts, kk, oldgain, oldgain+vwgt[k]);
             }
           }
 
@@ -17238,14 +17238,14 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
 
 
       IFSET(ctrl->dbglvl, DBG_MOVEINFO,
-            printf("Moved %6d to %3d, Gain: %5d [%5d] \t[%5d %5d %5d] [%3d %2d]\n", 
+            printf("Moved %6d to %3d, Gain: %5d [%5d] \t[%5d %5d %5d] [%3d %2d]\n",
                        higain, to, (vwgt[higain]-rinfo[higain].edegrees[other]), vwgt[higain], pwgts[0], pwgts[1], pwgts[2], nswaps, limit));
 
     }
 
 
     /****************************************************************
-    * Roll back computation 
+    * Roll back computation
     *****************************************************************/
     for (nswaps--; nswaps>mincutorder; nswaps--) {
       higain = swaps[nswaps];
@@ -17261,7 +17261,7 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
       edegrees[0] = edegrees[1] = 0;
       for (j=xadj[higain]; j<xadj[higain+1]; j++) {
         k = adjncy[j];
-        if (where[k] == 2) 
+        if (where[k] == 2)
           rinfo[k].edegrees[to] -= vwgt[higain];
         else
           edegrees[where[k]] += vwgt[k];
@@ -17276,7 +17276,7 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
         BNDDelete(nbnd, bndind, bndptr, k);
         for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
           kk = adjncy[jj];
-          if (where[kk] == 2) 
+          if (where[kk] == 2)
             rinfo[kk].edegrees[other] += vwgt[k];
         }
       }
@@ -17305,14 +17305,14 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
 
 
 /*************************************************************************
-* This function performs a node-based FM refinement 
+* This function performs a node-based FM refinement
 **************************************************************************/
 void FM_2WayNodeBalance(CtrlType *ctrl, GraphType *graph, float ubfactor)
 {
   int i, ii, j, k, jj, kk, nvtxs, nbnd, nswaps;
   idxtype *xadj, *vwgt, *adjncy, *where, *pwgts, *edegrees, *bndind, *bndptr;
   idxtype *perm, *moved;
-  PQueueType parts; 
+  PQueueType parts;
   NRInfoType *rinfo;
   int higain, oldgain;	
   int to, other;
@@ -17333,7 +17333,7 @@ void FM_2WayNodeBalance(CtrlType *ctrl, GraphType *graph, float ubfactor)
   if (abs(pwgts[0]-pwgts[1]) < 3*idxsum(nvtxs, vwgt)/nvtxs)
     return;
 
-  to = (pwgts[0] < pwgts[1] ? 0 : 1); 
+  to = (pwgts[0] < pwgts[1] ? 0 : 1);
   other = (to+1)%2;
 
   PQueueInit(ctrl, &parts, nvtxs, ComputeMaxNodeGain(nvtxs, xadj, adjncy, vwgt));
@@ -17364,10 +17364,10 @@ void FM_2WayNodeBalance(CtrlType *ctrl, GraphType *graph, float ubfactor)
 
     moved[higain] = 1;
 
-    if (pwgts[other] - rinfo[higain].edegrees[other] < (pwgts[0]+pwgts[1])/2) 
+    if (pwgts[other] - rinfo[higain].edegrees[other] < (pwgts[0]+pwgts[1])/2)
       continue;
 #ifdef XXX
-    if (pwgts[other] - rinfo[higain].edegrees[other] < pwgts[to]+vwgt[higain]) 
+    if (pwgts[other] - rinfo[higain].edegrees[other] < pwgts[to]+vwgt[higain])
       break;
 #endif
 
@@ -17402,7 +17402,7 @@ void FM_2WayNodeBalance(CtrlType *ctrl, GraphType *graph, float ubfactor)
         edegrees[0] = edegrees[1] = 0;
         for (jj=xadj[k]; jj<xadj[k+1]; jj++) {
           kk = adjncy[jj];
-          if (where[kk] != 2) 
+          if (where[kk] != 2)
             edegrees[where[kk]] += vwgt[kk];
           else {
             ASSERT(bndptr[kk] != -1);
@@ -17457,7 +17457,7 @@ int ComputeMaxNodeGain(int nvtxs, idxtype *xadj, idxtype *adjncy, idxtype *vwgt)
 
   return max;
 }
-   
+
 
 /*
  * Copyright 1997, Regents of the University of Minnesota
@@ -17487,30 +17487,30 @@ void Refine2WayNode(CtrlType *ctrl, GraphType *orggraph, GraphType *graph, float
   for (;;) {
     IFSET(ctrl->dbglvl, DBG_TIME, starttimer(ctrl->RefTmr));
     if (ctrl->RType != 15)
-      FM_2WayNodeBalance(ctrl, graph, ubfactor); 
+      FM_2WayNodeBalance(ctrl, graph, ubfactor);
 
     switch (ctrl->RType) {
       case 1:
-        FM_2WayNodeRefine(ctrl, graph, ubfactor, 8); 
+        FM_2WayNodeRefine(ctrl, graph, ubfactor, 8);
         break;
       case 2:
-        FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 8); 
+        FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 8);
         break;
       case 3:
-        FM_2WayNodeRefine(ctrl, graph, ubfactor, 8); 
-        FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 8); 
+        FM_2WayNodeRefine(ctrl, graph, ubfactor, 8);
+        FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 8);
         break;
       case 4:
-        FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 8); 
-        FM_2WayNodeRefine(ctrl, graph, ubfactor, 8); 
+        FM_2WayNodeRefine_OneSided(ctrl, graph, ubfactor, 8);
+        FM_2WayNodeRefine(ctrl, graph, ubfactor, 8);
         break;
       case 5:
-        FM_2WayNodeRefineEqWgt(ctrl, graph, 8); 
+        FM_2WayNodeRefineEqWgt(ctrl, graph, 8);
         break;
     }
     IFSET(ctrl->dbglvl, DBG_TIME, stoptimer(ctrl->RefTmr));
 
-    if (graph == orggraph) 
+    if (graph == orggraph)
       break;
 
     graph = graph->finer;
@@ -17545,7 +17545,7 @@ void Allocate2WayNodePartitionMemory(CtrlType *ctrl, GraphType *graph)
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void Compute2WayNodePartitionParams(CtrlType *ctrl, GraphType *graph)
 {
@@ -17600,7 +17600,7 @@ void Compute2WayNodePartitionParams(CtrlType *ctrl, GraphType *graph)
 
 
 /*************************************************************************
-* This function computes the initial id/ed 
+* This function computes the initial id/ed
 **************************************************************************/
 void Project2WayNodePartition(CtrlType *ctrl, GraphType *graph)
 {
@@ -17616,7 +17616,7 @@ void Project2WayNodePartition(CtrlType *ctrl, GraphType *graph)
 
   Allocate2WayNodePartitionMemory(ctrl, graph);
   where = graph->where;
-  
+
   /* Project the partition */
   for (i=0; i<nvtxs; i++) {
     where[i] = cwhere[cmap[i]];
@@ -17676,19 +17676,19 @@ void ComputePartitionInfo(GraphType *graph, int nparts, idxtype *where)
   kpwgts = idxsmalloc(ncon*nparts, 0, "ComputePartitionInfo: kpwgts");
 
   for (i=0; i<nvtxs; i++) {
-    for (j=0; j<ncon; j++) 
+    for (j=0; j<ncon; j++)
       kpwgts[where[i]*ncon+j] += vwgt[i*ncon+j];
   }
 
   if (ncon == 1) {
-    printf("\tBalance: %5.3f out of %5.3f\n", 
+    printf("\tBalance: %5.3f out of %5.3f\n",
             1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)),
             1.0*nparts*vwgt[idxamax(nvtxs, vwgt)]/(1.0*idxsum(nparts, kpwgts)));
   }
   else {
     printf("\tBalance:");
-    for (j=0; j<ncon; j++) 
-      printf(" (%5.3f out of %5.3f)", 
+    for (j=0; j<ncon; j++)
+      printf(" (%5.3f out of %5.3f)",
             1.0*nparts*kpwgts[ncon*idxamax_strd(nparts, kpwgts+j, ncon)+j]/(1.0*idxsum_strd(nparts, kpwgts+j, ncon)),
             1.0*nparts*vwgt[ncon*idxamax_strd(nvtxs, vwgt+j, ncon)+j]/(1.0*idxsum_strd(nparts, kpwgts+j, ncon)));
     printf("\n");
@@ -17712,27 +17712,27 @@ void ComputePartitionInfo(GraphType *graph, int nparts, idxtype *where)
         }
       }
     }
-    for (j=xadj[i]; j<xadj[i+1]; j++) 
+    for (j=xadj[i]; j<xadj[i+1]; j++)
       kpwgts[where[adjncy[j]]] = 0;
   }
 
   for (i=0; i<nparts; i++)
     kpwgts[i] = idxsum(nparts, padjncy+i*nparts);
   printf("Min/Max/Avg/Bal # of adjacent     subdomains: %5d %5d %5.2f %7.3f\n",
-    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], 
-    1.0*idxsum(nparts, kpwgts)/(1.0*nparts), 
+    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)],
+    1.0*idxsum(nparts, kpwgts)/(1.0*nparts),
     1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)));
 
   for (i=0; i<nparts; i++)
     kpwgts[i] = idxsum(nparts, padjcut+i*nparts);
   printf("Min/Max/Avg/Bal # of adjacent subdomain cuts: %5d %5d %5d %7.3f\n",
-    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts, 
+    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts,
     1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)));
 
   for (i=0; i<nparts; i++)
     kpwgts[i] = idxsum(nparts, padjwgt+i*nparts);
   printf("Min/Max/Avg/Bal/Frac # of interface    nodes: %5d %5d %5d %7.3f %7.3f\n",
-    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts, 
+    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts,
     1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)), 1.0*idxsum(nparts, kpwgts)/(1.0*nvtxs));
 
   tmpptr = graph->where;
@@ -17787,19 +17787,19 @@ void ComputePartitionInfoBipartite(GraphType *graph, int nparts, idxtype *where)
   kpwgts = idxsmalloc(ncon*nparts, 0, "ComputePartitionInfo: kpwgts");
 
   for (i=0; i<nvtxs; i++) {
-    for (j=0; j<ncon; j++) 
+    for (j=0; j<ncon; j++)
       kpwgts[where[i]*ncon+j] += vwgt[i*ncon+j];
   }
 
   if (ncon == 1) {
-    printf("\tBalance: %5.3f out of %5.3f\n", 
+    printf("\tBalance: %5.3f out of %5.3f\n",
             1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)),
             1.0*nparts*vwgt[idxamax(nvtxs, vwgt)]/(1.0*idxsum(nparts, kpwgts)));
   }
   else {
     printf("\tBalance:");
-    for (j=0; j<ncon; j++) 
-      printf(" (%5.3f out of %5.3f)", 
+    for (j=0; j<ncon; j++)
+      printf(" (%5.3f out of %5.3f)",
             1.0*nparts*kpwgts[ncon*idxamax_strd(nparts, kpwgts+j, ncon)+j]/(1.0*idxsum_strd(nparts, kpwgts+j, ncon)),
             1.0*nparts*vwgt[ncon*idxamax_strd(nvtxs, vwgt+j, ncon)+j]/(1.0*idxsum_strd(nparts, kpwgts+j, ncon)));
     printf("\n");
@@ -17823,26 +17823,26 @@ void ComputePartitionInfoBipartite(GraphType *graph, int nparts, idxtype *where)
         }
       }
     }
-    for (j=xadj[i]; j<xadj[i+1]; j++) 
+    for (j=xadj[i]; j<xadj[i+1]; j++)
       kpwgts[where[adjncy[j]]] = 0;
   }
 
   for (i=0; i<nparts; i++)
     kpwgts[i] = idxsum(nparts, padjncy+i*nparts);
   printf("Min/Max/Avg/Bal # of adjacent     subdomains: %5d %5d %5d %7.3f\n",
-    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts, 
+    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts,
     1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)));
 
   for (i=0; i<nparts; i++)
     kpwgts[i] = idxsum(nparts, padjcut+i*nparts);
   printf("Min/Max/Avg/Bal # of adjacent subdomain cuts: %5d %5d %5d %7.3f\n",
-    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts, 
+    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts,
     1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)));
 
   for (i=0; i<nparts; i++)
     kpwgts[i] = idxsum(nparts, padjwgt+i*nparts);
   printf("Min/Max/Avg/Bal/Frac # of interface    nodes: %5d %5d %5d %7.3f %7.3f\n",
-    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts, 
+    kpwgts[idxamin(nparts, kpwgts)], kpwgts[idxamax(nparts, kpwgts)], idxsum(nparts, kpwgts)/nparts,
     1.0*nparts*kpwgts[idxamax(nparts, kpwgts)]/(1.0*idxsum(nparts, kpwgts)), 1.0*idxsum(nparts, kpwgts)/(1.0*nvtxs));
 
 
@@ -17939,7 +17939,7 @@ float ComputeElementBalance(int ne, int nparts, idxtype *where)
 **************************************************************************/
 void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, float ubfactor, int npasses, int ffactor)
 {
-  int i, ii, iii, j, k, l, pass, nvtxs, nmoves, nbnd, tvwgt, myndegrees; 
+  int i, ii, iii, j, k, l, pass, nvtxs, nmoves, nbnd, tvwgt, myndegrees;
   int from, me, to, oldcut, vwgt, gain;
   int maxndoms, nadd;
   idxtype *xadj, *adjncy, *adjwgt;
@@ -17982,7 +17982,7 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d]-[%6d %6d], Balance: %5.3f, Nv-Nb[%6d %6d]. Cut: %6d\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut));
 
@@ -18007,7 +18007,7 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
         from = where[i];
         vwgt = graph->vwgt[i];
 
-        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from]) 
+        if (myrinfo->id > 0 && pwgts[from]-vwgt < minwgt[from])
           continue;   /* This cannot be moved! */
 
         myedegrees = myrinfo->edegrees;
@@ -18044,8 +18044,8 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
           to = myedegrees[k].pid;
           if (!phtable[to])
             continue;
-          gain = myedegrees[k].ed-j; /* j = myrinfo->id. Allow good nodes to move */ 
-          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*gain && gain >= 0)  
+          gain = myedegrees[k].ed-j; /* j = myrinfo->id. Allow good nodes to move */
+          if (pwgts[to]+vwgt <= maxwgt[to]+ffactor*gain && gain >= 0)
             break;
         }
         if (k == myndegrees)
@@ -18056,7 +18056,7 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
           if (!phtable[to])
             continue;
           if ((myedegrees[j].ed > myedegrees[k].ed && pwgts[to]+vwgt <= maxwgt[to]) ||
-              (myedegrees[j].ed == myedegrees[k].ed && 
+              (myedegrees[j].ed == myedegrees[k].ed &&
                itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid]))
             k = j;
         }
@@ -18072,9 +18072,9 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
         }
         if (j == 0)
           continue;
-          
+
         /*=====================================================================
-        * If we got here, we can now move the vertex from 'from' to 'to' 
+        * If we got here, we can now move the vertex from 'from' to 'to'
         *======================================================================*/
         graph->mincut -= myedegrees[k].ed-myrinfo->id;
 
@@ -18099,7 +18099,7 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
         INC_DEC(pwgts[to], pwgts[from], vwgt);
         myrinfo->ed += myrinfo->id-myedegrees[k].ed;
         SWAP(myrinfo->id, myedegrees[k].ed, j);
-        if (myedegrees[k].ed == 0) 
+        if (myedegrees[k].ed == 0)
           myedegrees[k] = myedegrees[--myrinfo->ndegrees];
         else
           myedegrees[k].pid = from;
@@ -18207,7 +18207,7 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
     IFSET(ctrl->dbglvl, DBG_REFINE,
        printf("\t[%6d %6d], Balance: %5.3f, Nb: %6d. Nmoves: %5d, Cut: %5d, Vol: %5d, %d\n",
                pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)],
-               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves, 
+               1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nbnd, nmoves,
                graph->mincut, ComputeVolume(graph, where), idxsum(nparts, ndoms)));
 
     if (graph->mincut == oldcut)
@@ -18229,7 +18229,7 @@ void Random_KWayEdgeRefineMConn(CtrlType *ctrl, GraphType *graph, int nparts, fl
 **************************************************************************/
 void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, float ubfactor, int npasses)
 {
-  int i, ii, j, k, l, pass, nvtxs, nbnd, tvwgt, myndegrees, oldgain, gain, nmoves; 
+  int i, ii, j, k, l, pass, nvtxs, nbnd, tvwgt, myndegrees, oldgain, gain, nmoves;
   int from, me, to, oldcut, vwgt, maxndoms, nadd;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *pwgts, *perm, *bndptr, *bndind, *minwgt, *maxwgt, *moved, *itpwgts;
@@ -18248,7 +18248,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
 
   where = graph->where;
   pwgts = graph->pwgts;
-  
+
   pmat = ctrl->wspace.pmat;
   phtable = idxwspacemalloc(ctrl, nparts);
   ndoms = idxwspacemalloc(ctrl, nparts);
@@ -18276,7 +18276,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
 
   IFSET(ctrl->dbglvl, DBG_REFINE,
      printf("Partitions: [%6d %6d]-[%6d %6d], Balance: %5.3f, Nv-Nb[%6d %6d]. Cut: %6d [B]\n",
-             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0], 
+             pwgts[idxamin(nparts, pwgts)], pwgts[idxamax(nparts, pwgts)], minwgt[0], maxwgt[0],
              1.0*nparts*pwgts[idxamax(nparts, pwgts)]/tvwgt, graph->nvtxs, graph->nbnd,
              graph->mincut));
 
@@ -18307,7 +18307,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
     maxndoms = ndoms[idxamax(nparts, ndoms)];
 
     for (nmoves=0;;) {
-      if ((i = PQueueGetMax(&queue)) == -1) 
+      if ((i = PQueueGetMax(&queue)) == -1)
         break;
       moved[i] = 1;
 
@@ -18315,7 +18315,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
       from = where[i];
       vwgt = graph->vwgt[i];
 
-      if (pwgts[from]-vwgt < minwgt[from]) 
+      if (pwgts[from]-vwgt < minwgt[from])
         continue;   /* This cannot be moved! */
 
       myedegrees = myrinfo->edegrees;
@@ -18348,7 +18348,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
         to = myedegrees[k].pid;
         if (!phtable[to])
           continue;
-        if (pwgts[to]+vwgt <= maxwgt[to] || itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from]) 
+        if (pwgts[to]+vwgt <= maxwgt[to] || itpwgts[from]*(pwgts[to]+vwgt) <= itpwgts[to]*pwgts[from])
           break;
       }
       if (k == myndegrees)
@@ -18358,17 +18358,17 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
         to = myedegrees[j].pid;
         if (!phtable[to])
           continue;
-        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid]) 
+        if (itpwgts[myedegrees[k].pid]*pwgts[to] < itpwgts[to]*pwgts[myedegrees[k].pid])
           k = j;
       }
 
       to = myedegrees[k].pid;
 
-      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] && myedegrees[k].ed-myrinfo->id < 0) 
+      if (pwgts[from] < maxwgt[from] && pwgts[to] > minwgt[to] && myedegrees[k].ed-myrinfo->id < 0)
         continue;
 
       /*=====================================================================
-      * If we got here, we can now move the vertex from 'from' to 'to' 
+      * If we got here, we can now move the vertex from 'from' to 'to'
       *======================================================================*/
       graph->mincut -= myedegrees[k].ed-myrinfo->id;
 
@@ -18394,7 +18394,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
       INC_DEC(pwgts[to], pwgts[from], vwgt);
       myrinfo->ed += myrinfo->id-myedegrees[k].ed;
       SWAP(myrinfo->id, myedegrees[k].ed, j);
-      if (myedegrees[k].ed == 0) 
+      if (myedegrees[k].ed == 0)
         myedegrees[k] = myedegrees[--myrinfo->ndegrees];
       else
         myedegrees[k].pid = from;
@@ -18492,7 +18492,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
         }
 
         /* Update the queue */
-        if (me == to || me == from) { 
+        if (me == to || me == from) {
           gain = myrinfo->ed-myrinfo->id;
           if (moved[ii] == 2) {
             if (myrinfo->ed > 0)
@@ -18506,7 +18506,7 @@ void Greedy_KWayEdgeBalanceMConn(CtrlType *ctrl, GraphType *graph, int nparts, f
             PQueueInsert(&queue, ii, gain);
             moved[ii] = 2;
           }
-        } 
+        }
 
         ASSERT(myrinfo->ndegrees <= xadj[ii+1]-xadj[ii]);
         ASSERT(CheckRInfo(myrinfo));
@@ -18556,7 +18556,7 @@ void PrintSubDomainGraph(GraphType *graph, int nparts, idxtype *where)
     me = where[i];
     for (j=xadj[i]; j<xadj[i+1]; j++) {
       k = adjncy[j];
-      if (where[k] != me) 
+      if (where[k] != me)
         pmat[me*nparts+where[k]] += adjwgt[j];
     }
   }
@@ -18614,7 +18614,7 @@ void ComputeSubDomainGraph(GraphType *graph, int nparts, idxtype *pmat, idxtype 
       edegrees = rinfo[i].edegrees;
 
       k = me*nparts;
-      for (j=0; j<ndegrees; j++) 
+      for (j=0; j<ndegrees; j++)
         pmat[k+edegrees[j].pid] += edegrees[j].ed;
     }
   }
@@ -18699,7 +18699,7 @@ void EliminateSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, float
 
     move = 0;
     for (min=0; min<ncand2; min++) {
-      if (cand2[min].key > totalout/(2*ndoms[me])) 
+      if (cand2[min].key > totalout/(2*ndoms[me]))
         break;
 
       other = cand2[min].val;
@@ -18725,7 +18725,7 @@ void EliminateSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, float
         i = ind[ii];
         cpwgt += vwgt[i];
 
-        for (j=xadj[i]; j<xadj[i+1]; j++) 
+        for (j=xadj[i]; j<xadj[i+1]; j++)
           otherpmat[where[adjncy[j]]] += adjwgt[j];
       }
       otherpmat[other] = 0;
@@ -18738,7 +18738,7 @@ void EliminateSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, float
       }
       ikeysort(ncand, cand);
 
-      /* 
+      /*
        * Go through and the select the first domain that is common with 'me', and
        * does not increase the ndoms[target] higher than my ndoms, subject to the
        * maxpwgt constraint. Traversal is done from the mostly connected to the least.
@@ -18810,7 +18810,7 @@ void EliminateSubDomainEdges(CtrlType *ctrl, GraphType *graph, int nparts, float
 void MoveGroupMConn(CtrlType *ctrl, GraphType *graph, idxtype *ndoms, idxtype *pmat,
                     int nparts, int to, int nind, idxtype *ind)
 {
-  int i, ii, iii, j, k, nvtxs, nbnd; 
+  int i, ii, iii, j, k, nvtxs, nbnd;
   int from, me;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *bndptr, *bndind;
@@ -18856,16 +18856,16 @@ void MoveGroupMConn(CtrlType *ctrl, GraphType *graph, idxtype *ndoms, idxtype *p
     /* Update pmat to reflect the move of 'i' */
     pmat[from*nparts+to] += (myrinfo->id-myedegrees[k].ed);
     pmat[to*nparts+from] += (myrinfo->id-myedegrees[k].ed);
-    if (pmat[from*nparts+to] == 0) 
+    if (pmat[from*nparts+to] == 0)
       ndoms[from]--;
-    if (pmat[to*nparts+from] == 0) 
+    if (pmat[to*nparts+from] == 0)
       ndoms[to]--;
 
     /* Update where, weight, and ID/ED information of the vertex you moved */
     where[i] = to;
     myrinfo->ed += myrinfo->id-myedegrees[k].ed;
     SWAP(myrinfo->id, myedegrees[k].ed, j);
-    if (myedegrees[k].ed == 0) 
+    if (myedegrees[k].ed == 0)
       myedegrees[k] = myedegrees[--myrinfo->ndegrees];
     else
       myedegrees[k].pid = from;
@@ -18931,14 +18931,14 @@ void MoveGroupMConn(CtrlType *ctrl, GraphType *graph, idxtype *ndoms, idxtype *p
       if (me != from && me != to) {
         pmat[me*nparts+from] -= adjwgt[j];
         pmat[from*nparts+me] -= adjwgt[j];
-        if (pmat[me*nparts+from] == 0) 
+        if (pmat[me*nparts+from] == 0)
           ndoms[me]--;
-        if (pmat[from*nparts+me] == 0) 
+        if (pmat[from*nparts+me] == 0)
           ndoms[from]--;
 
-        if (pmat[me*nparts+to] == 0) 
+        if (pmat[me*nparts+to] == 0)
           ndoms[me]++;
-        if (pmat[to*nparts+me] == 0) 
+        if (pmat[to*nparts+me] == 0)
           ndoms[to]++;
 
         pmat[me*nparts+to] += adjwgt[j];
@@ -18959,8 +18959,8 @@ void MoveGroupMConn(CtrlType *ctrl, GraphType *graph, idxtype *ndoms, idxtype *p
 
 
 /*************************************************************************
-* This function finds all the connected components induced by the 
-* partitioning vector in wgraph->where and tries to push them around to 
+* This function finds all the connected components induced by the
+* partitioning vector in wgraph->where and tries to push them around to
 * remove some of them
 **************************************************************************/
 void EliminateComponents(CtrlType *ctrl, GraphType *graph, int nparts, float *tpwgts, float ubfactor)
@@ -18987,7 +18987,7 @@ void EliminateComponents(CtrlType *ctrl, GraphType *graph, int nparts, float *tp
   cpvec = idxwspacemalloc(ctrl, nparts);
   npcmps = idxset(nparts, 0, idxwspacemalloc(ctrl, nparts));
 
-  for (i=0; i<nvtxs; i++) 
+  for (i=0; i<nvtxs; i++)
     perm[i] = todo[i] = i;
 
   /* Find the connected componends induced by the partition */
@@ -19038,7 +19038,7 @@ void EliminateComponents(CtrlType *ctrl, GraphType *graph, int nparts, float *tp
       /*printf("Trying to move %d from %d\n", i, me); */
 
       /* Determine the weight of the block to be moved and abort if too high */
-      for (cwgt=0, j=cptr[i]; j<cptr[i+1]; j++) 
+      for (cwgt=0, j=cptr[i]; j<cptr[i+1]; j++)
         cwgt += vwgt[cind[j]];
 
       if (cwgt > .30*pwgts[me])
@@ -19048,7 +19048,7 @@ void EliminateComponents(CtrlType *ctrl, GraphType *graph, int nparts, float *tp
       idxset(nparts, 0, cpvec);
       for (j=cptr[i]; j<cptr[i+1]; j++) {
         ii = cind[j];
-        for (jj=xadj[ii]; jj<xadj[ii+1]; jj++) 
+        for (jj=xadj[ii]; jj<xadj[ii+1]; jj++)
           cpvec[where[adjncy[jj]]] += adjwgt[jj];
       }
       cpvec[me] = 0;
@@ -19091,7 +19091,7 @@ void EliminateComponents(CtrlType *ctrl, GraphType *graph, int nparts, float *tp
 **************************************************************************/
 void MoveGroup(CtrlType *ctrl, GraphType *graph, int nparts, int to, int gid, idxtype *ptr, idxtype *ind)
 {
-  int i, ii, iii, j, k, nvtxs, nbnd; 
+  int i, ii, iii, j, k, nvtxs, nbnd;
   int from, me;
   idxtype *xadj, *adjncy, *adjwgt;
   idxtype *where, *bndptr, *bndind;
@@ -19139,7 +19139,7 @@ void MoveGroup(CtrlType *ctrl, GraphType *graph, int nparts, int to, int gid, id
     where[i] = to;
     myrinfo->ed += myrinfo->id-myedegrees[k].ed;
     SWAP(myrinfo->id, myedegrees[k].ed, j);
-    if (myedegrees[k].ed == 0) 
+    if (myedegrees[k].ed == 0)
       myedegrees[k] = myedegrees[--myrinfo->ndegrees];
     else
       myedegrees[k].pid = from;
@@ -19349,7 +19349,7 @@ idxtype *idxmalloc(int n, char *msg)
 
 
 /*************************************************************************
-* The following function allocates an array of float 
+* The following function allocates an array of float
 **************************************************************************/
 float *fmalloc(int n, char *msg)
 {
@@ -19396,7 +19396,7 @@ void *GKmalloc(int nbytes, char *msg)
     return NULL;
 
   ptr = (void *)malloc(nbytes);
-  if (ptr == NULL) 
+  if (ptr == NULL)
     errexit("***Memory allocation failed for %s. Requested size: %d bytes", msg, nbytes);
 
   return ptr;
@@ -19404,7 +19404,7 @@ void *GKmalloc(int nbytes, char *msg)
 #endif
 
 /*************************************************************************
-* This function is my wrapper around free, allows multiple pointers    
+* This function is my wrapper around free, allows multiple pointers
 **************************************************************************/
 void GKfree(void **ptr1,...)
 {
@@ -19425,7 +19425,7 @@ void GKfree(void **ptr1,...)
   }
 
   va_end(plist);
-}            
+}
 
 
 /*************************************************************************
@@ -19696,7 +19696,7 @@ float snorm2(int n, float *v)
 {
   int i;
   float partial = 0;
- 
+
   for (i = 0; i<n; i++)
     partial += v[i] * v[i];
 
@@ -19712,7 +19712,7 @@ float sdot(int n, float *x, float *y)
 {
   int i;
   float partial = 0;
- 
+
   for (i = 0; i<n; i++)
     partial += x[i] * y[i];
 
@@ -19726,8 +19726,8 @@ float sdot(int n, float *x, float *y)
 void saxpy(int n, float alpha, float *x, int incx, float *y, int incy)
 {
   int i;
- 
-  for (i=0; i<n; i++, x+=incx, y+=incy) 
+
+  for (i=0; i<n; i++, x+=incx, y+=incy)
     *y += alpha*(*x);
 }
 
@@ -19737,7 +19737,7 @@ void saxpy(int n, float alpha, float *x, int incx, float *y, int incy)
 /*************************************************************************
 * This file randomly permutes the contents of an array.
 * flag == 0, don't initialize perm
-* flag == 1, set p[i] = i 
+* flag == 1, set p[i] = i
 **************************************************************************/
 void RandomPermute(int n, idxtype *p, int flag)
 {
@@ -19781,15 +19781,15 @@ void InitRandom(int seed)
 {
   if (seed == -1) {
 #ifndef __VC__
-    srand48(7654321L);  
+    srand48(7654321L);
 #endif
-    srand(4321);  
+    srand(4321);
   }
   else {
 #ifndef __VC__
-    srand48(seed);  
+    srand48(seed);
 #endif
-    srand(seed);  
+    srand(seed);
   }
 }
 

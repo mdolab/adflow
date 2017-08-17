@@ -80,10 +80,6 @@ class ADFLOWWarning(object):
         msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
         print(msg)
 
-# Global constant for a constants.maxtringlen fortran character array.
-# Becuase Python 3 hates you.
-emptyString = ' '*256
-
 # =============================================================================
 # ADFLOW Class
 # =============================================================================
@@ -239,8 +235,14 @@ class ADFLOW(AeroSolver):
         ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
         n  = ncells*ntime
 
-        famList = self._processFortranStringArray(
-            self.adflow.surfacefamilies.famnames)
+        # Normally we would be able to just use the following...but
+        # sometimes f2py is grumpy and we get
+        # ValueError: data type must provide an itemsize
+        # So we do it he hard way...sigh
+        nFam = self.adflow.surfacefamilies.getnfam()
+        famList = []
+        for i in range(nFam):
+            famList.append(self.adflow.surfacefamilies.getfam(i+1).strip())
 
         # Add the initial families that already exist in the CGNS
         # file.
@@ -1266,6 +1268,11 @@ class ADFLOW(AeroSolver):
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
 
+        # We can stop here if we have failures in the mesh
+        if self.adflow.killsignals.fatalfail:
+            print('Cannot run CLSolve due to mesh failures.')
+            return
+
         # Set the startign value
         anm2 = aeroProblem.alpha
 
@@ -1706,11 +1713,8 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writesurface = False
 
         # Set filename in adflow
-        self.adflow.inputio.solfile[:] = emptyString
-        self.adflow.inputio.solfile[0:len(fileName)] = fileName
-
-        self.adflow.inputio.newgridfile[:] = emptyString
-        self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
+        self.adflow.inputio.solfile = self._expandString(fileName)
+        self.adflow.inputio.newgridfile = self._expandString(fileName)
 
         # Actual fortran write call. Family list doesn't matter.
         famList = self._getFamilyList(self.allFamilies)
@@ -1744,10 +1748,10 @@ class ADFLOW(AeroSolver):
 
         n = self.adflow.constants.maxstringlen
         # Set fileName in adflow
-        self.adflow.inputio.solfile = emptyString
-        self.adflow.inputio.solfile[0:len(fileName)] = fileName
-        self.adflow.inputio.newgridfile[:] = emptyString
-        self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
+        self.adflow.inputio.solfile = self._expandString(fileName)
+        #self.adflow.inputio.solfile[0:len(fileName)] = fileName
+        self.adflow.inputio.newgridfile = self._expandString(fileName)
+        #self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call. family list doesn't matter
         famList = self._getFamilyList(self.allFamilies)
@@ -1772,8 +1776,7 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writesurface=True
 
         # Set fileName in adflow
-        self.adflow.inputio.surfacesolfile[:] = emptyString
-        self.adflow.inputio.surfacesolfile[0:len(fileName)] = fileName
+        self.adflow.inputio.surfacesolfile = self._expandString(fileName)
 
         # Actual fortran write call. Fam list matters.
         famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
@@ -2987,7 +2990,7 @@ class ADFLOW(AeroSolver):
         """
         if relTol is None:
             relTol = self.getOption('adjointl2convergence')
-        outVec = self.adflow.solvedirectforrhs(inVec, relTol)
+        outVec = self.adflow.adjointapi.solvedirectforrhs(inVec, relTol)
 
         return outVec
 
@@ -3051,25 +3054,27 @@ class ADFLOW(AeroSolver):
                 n  = ncells*ntime
                 flag = numpy.zeros(n)
 
-                # Only need to call the cutCallBack if we're doing a
-                # full update.
+                # Only need to call the cutCallBack and regenerate the zipper mesh
+                # if we're doing a full update.
                 if self.getOption('oversetUpdateMode') == 'full':
                     cutCallBack = self.getOption('cutCallBack')
                     if cutCallBack is not None:
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
-                    # Verify if we already have previous failures, such as negative volumes
+                    # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = \
-                                  self.comm.allreduce(
-                                  bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+                        self.comm.allreduce(
+                        bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+                    self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
 
-                    # We will need to update the zipper mesh.
+                    # We will need to update the zipper mesh later on.
                     # But we only do this if we have a valid mesh, otherwise the
                     # code might halt during zipper mesh regeneration
-                    if not self.adflow.killsignals.routinefailed:
+                    if not self.adflow.killsignals.fatalfail:
                         self.zipperCreated = False
-                    else:
+                    else: # We got mesh failure!
+                        self.zipperCreated = True # Set flag to true to skip zipper mesh call
                         if self.myid == 0:
                             print('ATTENTION: Zipper mesh will not be regenerated due to previous failures.')
 
@@ -3721,7 +3726,7 @@ class ADFLOW(AeroSolver):
         nDOFCGNS = numpy.max(cgnsIndices) +1
         CGNSVec = numpy.zeros(nDOFCGNS)
         CGNSVec[cgnsIndices] = allPts
-        CGNSVec = CGNSVec.reshape((len(CGNSVec)/3, 3))
+        CGNSVec = CGNSVec.reshape((len(CGNSVec)//3, 3))
 
         # Run the pointReduce on the CGNS nodes
         uniquePts, linkTmp, nUnique = self.adflow.utils.pointreduce(CGNSVec.T, 1e-12)
@@ -3767,8 +3772,8 @@ class ADFLOW(AeroSolver):
         dXv    = numpy.hstack(self.comm.allgather(dXv))
         norm = None
         if self.myid == 0:
-            allPts = allPts.reshape((len(allPts)/3, 3))
-            dXv = dXv.reshape((len(dXv)/3,3))
+            allPts = allPts.reshape((len(allPts)//3, 3))
+            dXv = dXv.reshape((len(dXv)//3,3))
             # Run the pointReduce on all nodes
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(allPts.T, 1e-12)
             uniquePtsBar = numpy.zeros((nUnique,3))
@@ -4001,9 +4006,9 @@ class ADFLOW(AeroSolver):
                 # Loop over each of the block names and call the fortran setter:
                 for blkName in value:
                     setValue = self.adflow.oversetapi.setblockpriority(blkName.lower(), value[blkName])
-                    if not setValue:
-                        raise Error("The block name %s was not found in the CGNS file "
-                                    "and could not set it\'s priority"%blkName.lower())
+                    if not setValue and self.myid == 0:
+                        ADFLOWWarning("The block name %s was not found in the CGNS file "
+                                      "and could not set it\'s priority"%blkName.lower())
 
             # Special option has been set so return from function
             return
@@ -4178,16 +4183,22 @@ class ADFLOW(AeroSolver):
             'useanksolver':[bool, False],
             'ankuseturbdadi':[bool, True],
             'ankswitchtol':[float, 0.1],
-            'anksubspacesize':[int, 5],
+            'anksubspacesize':[int, 10],
             'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
-            'ankjacobianlag':[int, 5],
+            'ankjacobianlag':[int, 10],
             'ankinnerpreconits':[int, 1],
             'ankcfl0':[float, 1.0],
-            'ankcfllimit':[float, 10000.0],
+            'ankcfllimit':[float, 1e16],
             'ankstepfactor':[float, 0.8],
-            'anklocalcfl':[bool, False],
+            'anksecondordswitchtol':[float, 1e-7],
+            'ankstepinit':[float, 0.2],
+            'ankstepcutback':[float, 0.7],
+            'ankstepmin':[float, 0.4],
+            'ankstepexponent':[float, 0.75],
+            'ankcflexponent':[float, 1.0],
+            'ankcoupledswitchtol':[float, 1e-10],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4475,7 +4486,13 @@ class ADFLOW(AeroSolver):
             'ankcfl0':['ank', 'ank_cfl0'],
             'ankcfllimit':['ank','ank_cfllimit'],
             'ankstepfactor':['ank','ank_stepfactor'],
-            'anklocalcfl':['ank','ank_localcfl'],
+            'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
+            'ankstepinit':['ank','ank_stepinit'],
+            'ankstepcutback':['ank','ank_stepcutback'],
+            'ankstepmin':['ank','ank_stepmin'],
+            'ankstepexponent':['ank','ank_stepexponent'],
+            'ankcflexponent':['ank','ank_cflexponent'],
+            'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
@@ -4713,31 +4730,18 @@ class ADFLOW(AeroSolver):
         liftDistributionFileName = os.path.join(outputDir, baseName + "_lift")
 
         # Set fileName in adflow
-        self.adflow.inputio.solfile[:] = emptyString
-        self.adflow.inputio.solfile[0:len(volFileName)] = volFileName
+        self.adflow.inputio.solfile = self._expandString(volFileName)
 
         # Set the grid file to the same name so the grids will be written
         # to the volume files
-        self.adflow.inputio.newgridfile[:] = emptyString
-        self.adflow.inputio.newgridfile[0:len(volFileName)] = volFileName
-
-        self.adflow.inputio.surfacesolfile[:] = emptyString
-        self.adflow.inputio.surfacesolfile[0:len(surfFileName)] = surfFileName
-
-        self.adflow.inputio.slicesolfile[:] = emptyString
-        self.adflow.inputio.slicesolfile[0:len(sliceFileName)] = sliceFileName
-
-        self.adflow.inputio.liftdistributionfile[:] = emptyString
-        self.adflow.inputio.liftdistributionfile[0:len(liftDistributionFileName)] = liftDistributionFileName
+        self.adflow.inputio.newgridfile = self._expandString(volFileName)
+        self.adflow.inputio.surfacesolfile = self._expandString(surfFileName)
+        self.adflow.inputio.slicesolfile = self._expandString(sliceFileName)
+        self.adflow.inputio.liftdistributionfile = self._expandString(liftDistributionFileName)
 
     def _setForcedFileNames(self):
         # Set the filenames that will be used if the user forces a
         # write during a solution.
-
-        self.adflow.inputio.forcedvolumefile[:] = emptyString
-        self.adflow.inputio.forcedsurfacefile[:] = emptyString
-        self.adflow.inputio.forcedliftfile[:] = emptyString
-        self.adflow.inputio.forcedslicefile[:] = emptyString
 
         outputDir = self.getOption('outputDirectory')
         baseName = self.curAP.name
@@ -4748,15 +4752,20 @@ class ADFLOW(AeroSolver):
         liftFileName = base + '_forced_lift.dat'
         sliceFileName = base + '_forced_slices.dat'
 
-        self.adflow.inputio.forcedvolumefile[0:len(volFileName)] = volFileName
-        self.adflow.inputio.forcedsurfacefile[0:len(surfFileName)] = surfFileName
-        self.adflow.inputio.forcedliftfile[0:len(liftFileName)] = liftFileName
-        self.adflow.inputio.forcedslicefile[0:len(sliceFileName)] = sliceFileName
+        self.adflow.inputio.forcedvolumefile = self._expandString(volFileName)
+        self.adflow.inputio.forcedsurfacefile = self._expandString(surfFileName)
+        self.adflow.inputio.forcedliftfile = self._expandString(liftFileName)
+        self.adflow.inputio.forcedslicefile = self._expandString(sliceFileName)
 
     def _createZipperMesh(self):
         """Internal routine for generating the zipper mesh. This operation is
         postposted as long as possible and now it cannot wait any longer."""
-        if self.zipperCreated:
+
+        # Verify if we already have previous failures, such as negative volumes
+        self.adflow.killsignals.routinefailed = self.comm.allreduce(bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+
+        # Avoid zipper if we have failures or if it already exists
+        if self.zipperCreated or self.adflow.killsignals.routinefailed:
             return
 
         zipFam = self.getOption('zipperSurfaceFamily')
@@ -4783,20 +4792,10 @@ class ADFLOW(AeroSolver):
         self.adflow.usersurfaceintegrations.interpolateintegrationsurfaces()
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
-    def _processFortranStringArray(self, strArray):
-        """Getting arrays of strings out of Fortran can be kinda nasty. This
-        takes the array and returns a nice python list of strings"""
-        shp = strArray.shape
-        arr = strArray.reshape((shp[1],shp[0]), order='F')
-        tmp = []
-
-        for i in range(arr.shape[1]):
-            tmp.append("")
-            for j in range(arr.shape[0]):
-                tmp[-1] += arr[j, i].decode()
-            tmp[-1] = tmp[-1].strip().lower()
-
-        return tmp
+    def _expandString(self, s):
+        """Expand a supplied string 's' to be of the constants.maxstring
+        length so we can set them in fortran"""
+        return s + ' '*(256-len(s))
 
     def _createFortranStringArray(self, strList):
         """Setting arrays of strings in Fortran can be kinda nasty. This

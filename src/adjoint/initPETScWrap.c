@@ -19,7 +19,7 @@
        * The function initPETSc call the C interface that initializes   *
        * the PETSc library. This was necessary because a call to the    *
        * fortran PETSc interface causes a segmentation fault for some   *
-       * unknown reason.                                                * 
+       * unknown reason.                                                *
        *                                                                *
        * The original initialization PETSc C function is coded in       *
        * <petsc dir>/src/sys/objects/pinit.c line 396--                 *

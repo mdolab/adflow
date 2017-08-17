@@ -46,7 +46,7 @@ module cartMesh
     real(kind=realType), dimension(3) ::  pt1, pt2, pt3, pt4, newPt, v1, v2
     real(kind=realType) :: areaLocal, area, areaAvg, err1, err2, h
     real(kind=realType) :: coorAvg, scaleSize, length, u, v
-  
+
     DM cartArray
     AO cartOrdering
     Vec cartVecGlobal, cartVecLocal, blankVec, blankVecLocal, changedVecLocal, changedVecGlobal
@@ -84,7 +84,7 @@ module cartMesh
              case (kMax)
                 xx   => x(:,:,kl,:)
              end select
-             
+
              do j=jBeg+1, jEnd+1
                 do i=iBeg+1,iEnd+1
                    do iDim=1,3
@@ -142,7 +142,7 @@ module cartMesh
     ! corresponding to (iLow, iHigh, jLow, jHigh, kLow, kHigh). We set
     ! the value to 1 if the symmetry plane I'm looking at corresponds
     ! to that value. Then we all reduce so that everyone knows which
-    ! of the 6 faces cannot be extended. 
+    ! of the 6 faces cannot be extended.
 
     scaleSize = mynorm2(xMax-xMin)
 
@@ -150,7 +150,7 @@ module cartMesh
     do nn=1,nDom
        call setPointers(nn, level, sps)
        do mm=1,nBocos
-          if(  BCType(mm) ==symm) then 
+          if(  BCType(mm) ==symm) then
 
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
@@ -184,11 +184,11 @@ module cartMesh
              err1 = abs(coorAvg - xMin(iDim))/scaleSize
              err2 = abs(coorAvg - xMax(iDim))/scaleSize
 
-             if (err1 < 1e-8) then 
+             if (err1 < 1e-8) then
                 symOnFaceLocal(2*iDim-1) = 1
              end if
 
-             if (err2< 1e-8) then 
+             if (err2< 1e-8) then
                 symOnFaceLocal(2*iDim  ) = 1
              end if
           end if
@@ -196,7 +196,7 @@ module cartMesh
     end do
 
     ! Now we all reduce with max. Values that are not zero have
-    ! symmetry planes on them. 
+    ! symmetry planes on them.
 
     call MPI_Allreduce(symOnFaceLocal, symOnFace, 6, adflow_integer, MPI_MAX, adflow_comm_world, ierr)
     call EChk(ierr, __FILE__, __LINE__)
@@ -205,40 +205,40 @@ module cartMesh
     ! on the planes without symmetry conditions
 
     do iDim=1,3
-       if (symOnFace(2*iDim-1) == 0) then 
+       if (symOnFace(2*iDim-1) == 0) then
           xMin(iDim) = xMin(iDim) - 2*h
        end if
 
-       if (symOnFace(2*iDim  ) == 0) then 
+       if (symOnFace(2*iDim  ) == 0) then
           xMax(iDim) = xMax(iDim) + 2*h
        end if
     end do
 
     ! Ok. Now we have the final size of our cartesian block. The
-    ! next step is to determine how it is to be partitioned. 
+    ! next step is to determine how it is to be partitioned.
     call tripleFactor(nProc, procDims)
 
     ! And the dimensions in each direction. Remember the
-    ! distributed array is cell-centered based. 
+    ! distributed array is cell-centered based.
     cellDims = floor((xMax-xMin)/h) + 1
 
     ! Now reorder the procDims so that the largest dimension
     ! corresponds to largest number of procs. Since we know procDims
     ! are sorted, we can do the 6 cases:
 
-    if (cellDims(1) >= cellDims(2) .and. cellDims(2) >= cellDims(3)) then 
+    if (cellDims(1) >= cellDims(2) .and. cellDims(2) >= cellDims(3)) then
        procDims = (/procDims(3), procDims(2), procDims(1)/)
-    else if (cellDims(1) >= cellDims(3) .and. cellDims(3) >= cellDims(2)) then 
+    else if (cellDims(1) >= cellDims(3) .and. cellDims(3) >= cellDims(2)) then
        procDims = (/procDims(3), procDims(1), procDims(2)/)
 
-    else if (cellDims(2) >= cellDims(1) .and. cellDims(1) >= cellDims(3)) then 
+    else if (cellDims(2) >= cellDims(1) .and. cellDims(1) >= cellDims(3)) then
        procDims = (/procDims(2), procDims(3), procDims(1)/)
-    else if (cellDims(2) >= cellDims(3) .and. cellDims(3) >= cellDims(1)) then 
+    else if (cellDims(2) >= cellDims(3) .and. cellDims(3) >= cellDims(1)) then
        procDims = (/procDims(1), procDims(3), procDims(2)/)
 
-    else if (cellDims(3) >= cellDims(1) .and. cellDims(1) >= cellDims(2)) then 
+    else if (cellDims(3) >= cellDims(1) .and. cellDims(1) >= cellDims(2)) then
        procDims = (/procDims(2), procDims(1), procDims(3)/)
-    else if (cellDims(3) >= cellDims(2) .and. cellDims(2) >= cellDims(1)) then 
+    else if (cellDims(3) >= cellDims(2) .and. cellDims(2) >= cellDims(1)) then
        procDims = (/procDims(1), procDims(2), procDims(3)/)
     end if
 
@@ -251,13 +251,13 @@ module cartMesh
        do j=1, procDims(iDim)
 
           ii = cellDims(iDim)/procDims(iDim)
-          if (mod(cellDims(iDim), procDims(iDim)) > j-1) then 
+          if (mod(cellDims(iDim), procDims(iDim)) > j-1) then
              ii = ii + 1
           end if
           lSizes(j, iDim) = ii
        end do
     end do
-    if (myid == 0) then 
+    if (myid == 0) then
        print *,'xmin:', xmin
        print *,'xmax:', xmax
        print *,'dims:', cellDims
@@ -279,7 +279,7 @@ module cartMesh
     ! Now loop back over the surfaces. For each surface, determine
     ! it's global index of the point that will be flagged as a cut
     ! cell. Due to the stupid PETSC ordering crap, we have to store
-    ! all the indices as we go. 
+    ! all the indices as we go.
 
     i = 0
     do nn=1, nDom
@@ -321,7 +321,7 @@ module cartMesh
                 do i=iBeg, iEnd
 
                    ! Note that ii, jj, kk are zero based since we are
-                   ! working with PETSc indices. 
+                   ! working with PETSc indices.
                    ii = int((xx(i+1, j+1, 1) - xMin(1))/h)
                    jj = int((xx(i+1, j+1, 2) - xMin(2))/h)
                    kk = int((xx(i+1, j+1, 3) - xMin(3))/h)
@@ -445,7 +445,7 @@ module cartMesh
 
     ! Now we set all the values, with a simple single vecSet call
     allocate(values(count))
-    values = -three ! -3 is flood seed. Use the same notation here. 
+    values = -three ! -3 is flood seed. Use the same notation here.
 
     call vecSetValues(cartVecGlobal, count, indices, values, INSERT_VALUES, ierr)
     call EChk(ierr, __FILE__, __LINE__)
@@ -471,12 +471,12 @@ module cartMesh
     call DMGetGlobalVector(cartArray, changedVecGlobal, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
-    ! Now the next step is to perform the flooding from the outside in. 
+    ! Now the next step is to perform the flooding from the outside in.
     call DMGlobalToLocalBegin(cartArray, cartVecGlobal, INSERT_VALUES, cartVecLocal, ierr)
-    call EChk(ierr, __FILE__, __LINE__)    
+    call EChk(ierr, __FILE__, __LINE__)
 
     call DMGlobalToLocalEnd(cartArray, cartVecGlobal, INSERT_VALUES, cartVecLocal, ierr)
-    call EChk(ierr, __FILE__, __LINE__)    
+    call EChk(ierr, __FILE__, __LINE__)
 
     ! Determine the bounds of the arrays we will be getting back.
     call DMDAVecGetArrayF90(cartArray, cartVecLocal, arrVals, ierr)
@@ -501,7 +501,7 @@ module cartMesh
     allocate(stack(3, 6*iSize*jSize*kSize + 1))
     allocate(floodSeeds(3, 2*iSize*jSize + 2*iSize*kSize + 2*jSize*kSize))
 
-    parallelSyncLoop: do 
+    parallelSyncLoop: do
 
        call DMDAVecGetArrayF90(cartArray, cartVecLocal, arrVals, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
@@ -518,9 +518,9 @@ module cartMesh
        ! block will be blanked.
 
        nSeed = 0
-       if (loopIter == 1) then 
+       if (loopIter == 1) then
 
-          if (myid == 0) then 
+          if (myid == 0) then
 
              ! Set the single seed on the bottom corner of the root proc
 
@@ -540,10 +540,10 @@ module cartMesh
           ! iMin/iMax
           do k=kBeg+1, kEnd-1
              do j=jBeg+1, jEnd-1
-                if (int(changed(iBeg  , j, k)) == 1) then 
+                if (int(changed(iBeg  , j, k)) == 1) then
                    call addSeed(iBeg+1, j, k)
                 end if
-                if (int(changed(iEnd  , j, k)) == 1) then 
+                if (int(changed(iEnd  , j, k)) == 1) then
                    call addSeed(iEnd-1, j, k)
                 end if
              end do
@@ -552,10 +552,10 @@ module cartMesh
           ! jMin/jMax
           do k=kBeg+1, kEnd-1
              do i=iBeg+1, iEnd-1
-                if (int(changed(i, jBeg,   k)) == 1) then 
+                if (int(changed(i, jBeg,   k)) == 1) then
                    call addSeed(i, jBeg+1, k)
                 end if
-                if (int(changed(i, jEnd,   k)) == 1) then 
+                if (int(changed(i, jEnd,   k)) == 1) then
                    call addSeed(i, jEnd-1, k)
                 end if
              end do
@@ -593,7 +593,7 @@ module cartMesh
              k = stack(3, stackPointer)
              stackPointer = stackPointer - 1
 
-             if (int(arrVals(i, j, k)) == 1) then 
+             if (int(arrVals(i, j, k)) == 1) then
 
                 ! Flag the cell (using changed) as being changed
                 changed(i, j, k) = one
@@ -601,42 +601,42 @@ module cartMesh
                 ! Keep track of the total number we've changed.  For
                 ! reporting purposes...only count the ones that are
                 ! on actual compute cells:
-                if (onBlock(i, j, k)) then 
+                if (onBlock(i, j, k)) then
                    nChangedLocal = nChangedLocal + 1
                 end if
 
-                ! Set the value as flooded. Use 0 as per usual. 
+                ! Set the value as flooded. Use 0 as per usual.
                 arrVals(i, j, k) = zero
 
                 ! Now add the six nearest neighbours to the stack
                 ! provided they are in the owned cell range:
 
-                if (i-1 >= iBeg) then 
+                if (i-1 >= iBeg) then
                    stackPointer = stackPointer + 1
                    stack(:, stackPointer) = (/i-1, j  , k  /)
                 end if
 
-                if (i+1 <= iEnd) then 
+                if (i+1 <= iEnd) then
                    stackPointer = stackPointer + 1
                    stack(:, stackPointer) = (/i+1, j  , k  /)
                 end if
 
-                if (j-1 >= jBeg) then 
+                if (j-1 >= jBeg) then
                    stackPointer = stackPointer + 1
                    stack(:, stackPointer) = (/i  , j-1, k  /)
                 end if
 
-                if (j+1 <= jEnd) then 
+                if (j+1 <= jEnd) then
                    stackPointer = stackPointer + 1
                    stack(:, stackPointer) = (/i  , j+1, k  /)
                 end if
 
-                if (k-1 >= kBeg) then 
+                if (k-1 >= kBeg) then
                    stackPointer = stackPointer + 1
                    stack(:, stackPointer) = (/i  , j  , k-1/)
                 end if
 
-                if (k+1 <= kEnd) then 
+                if (k+1 <= kEnd) then
                    stackPointer = stackPointer + 1
                    stack(:, stackPointer) = (/i  , j , k+1 /)
                 end if
@@ -667,11 +667,11 @@ module cartMesh
        call mpi_allreduce(nChangedLocal, nChanged, 1, adflow_integer, MPI_SUM, &
             adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
-       if (myid == 0) then 
+       if (myid == 0) then
           print *, 'Cart Flood Iteration:', loopIter, 'Blanked ', nChanged, 'Interior Cells.'
        end if
 
-       if (nChanged == 0) then 
+       if (nChanged == 0) then
           exit parallelSyncLoop
        end if
 
@@ -681,7 +681,7 @@ module cartMesh
     deallocate(stack, floodSeeds)
 
     ! Now that we have flooded everything, any cells left over must
-    ! be *inside. Do one last pass through and flip those. 
+    ! be *inside. Do one last pass through and flip those.
 
     call DMDAVecGetArrayF90(cartArray, cartVecLocal, arrVals, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
@@ -689,7 +689,7 @@ module cartMesh
     do k=kBeg+1, kEnd-1
        do j=jBeg+1, jEnd-1
           do i=iBeg+1, iEnd-1
-             if (int(arrVals(i, j, k)) == 1) then 
+             if (int(arrVals(i, j, k)) == 1) then
                 arrVals(i, j, k) = -three
              end if
           end do
@@ -709,7 +709,7 @@ module cartMesh
     call DMRestoreGlobalVector(cartArray, changedVecGlobal, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
-    ! Now update the final global variables in cartArray. 
+    ! Now update the final global variables in cartArray.
     call DMLocalToGlobalBegin(cartArray, cartVecLocal, INSERT_VALUES, cartVecGlobal, ierr)
     call ECHK(ierr, __FILE__, __LINE__)
 
@@ -745,9 +745,9 @@ module cartMesh
     call VecScatterEnd(blankScatter, cartVecGlobal, blankVec, &
          INSERT_VALUES, SCATTER_FORWARD, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-  
+
     ! We are now done with everything petsc related except for
-    ! blankVec. That's all we  need now. 
+    ! blankVec. That's all we  need now.
     call VecScatterDestroy(blankScatter, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
@@ -768,8 +768,8 @@ module cartMesh
 
 
     ! Now what we have to do is to distribute parts of the cart mesh
-    ! to the processors that need it. For now, just do a create to all. 
-    
+    ! to the processors that need it. For now, just do a create to all.
+
     call vecScatterCreateToAll(blankVec, blankScatterLocal, blankVecLocal, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
@@ -802,12 +802,12 @@ module cartMesh
                         x(i-1, j  , k  , iDim) + &
                         x(i  , j  , k  , iDim))
                 end do
-                
+
                 ! Now Simply check if the cell this point is in has a value of -3
                 ii = int((pt1(1) - xMin(1))/h)
                 jj = int((pt1(2) - xMin(2))/h)
                 kk = int((pt1(3) - xMin(3))/h)
-                
+
                 ! Clip the bounds to the actual ranges:
                 ii = min(max(0, ii), cellDims(1)-1)
                 jj = min(max(0, jj), cellDims(2)-1)
@@ -815,19 +815,19 @@ module cartMesh
 
                 ! GlobalInd is 0 based
                 globalInd = cellDims(1)*cellDims(2)*kk + cellDims(1)*jj + ii
-                   
+
                 ! Only blank if we are more than sqrt(3)*h from our own wall:
                 if (xSeed(i, j, k, 1) < large) then
                    ! We have a wall: See how far we are away form it
                    length = mynorm2(pt1 - xSeed(i, j, k, :))
-                   if (length > 1.73205080*h) then 
-                      if (int(cartPointer(globalInd+1) ) == -3) then 
+                   if (length > 1.73205080*h) then
+                      if (int(cartPointer(globalInd+1) ) == -3) then
                          iblank(i, j, k) = -3
                       end if
                    end if
                 else
-                   ! No wall...no wall check. 
-                   if (int(cartPointer(globalInd+1) ) == -3) then 
+                   ! No wall...no wall check.
+                   if (int(cartPointer(globalInd+1) ) == -3) then
                       iblank(i, j, k) = -3
                    end if
                 end if
@@ -846,12 +846,12 @@ module cartMesh
     call VecDestroy(blankVecLocal, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Update the iblank info. 
+    ! Update the iblank info.
     domainLoop:do nn=1, nDom
        flowDoms(nn, level, sps)%intCommVars(1)%var => &
             flowDoms(nn, level, sps)%iblank(:, :, :)
     end do domainLoop
-  
+
     ! Run the generic integer exchange
     call wHalo1to1IntGeneric(1, level, sps, commPatternCell_2nd, internalCell_2nd)
 
@@ -874,8 +874,8 @@ module cartMesh
       integer(kind=intType), intent(in) :: i, j, k
       logical :: onBlock
 
-      if (i >= 0 .and. i <= iEnd-1 .and. j >= 0 .and. j<= jEnd-1 .and. k >= 0 .and. k <= kEnd-1) then 
-         onBlock = .True. 
+      if (i >= 0 .and. i <= iEnd-1 .and. j >= 0 .and. j<= jEnd-1 .and. k >= 0 .and. k <= kEnd-1) then
+         onBlock = .True.
       else
          onBlock = .False.
       end if
@@ -924,7 +924,7 @@ module cartMesh
          INSERT_VALUES, SCATTER_FORWARD, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (myid == 0) then 
+    if (myid == 0) then
        ! Open the CGNS File
        call cg_open_f("cartblock.cgns", mode_write, cg, ierr)
        base = 1
@@ -1010,8 +1010,8 @@ module cartMesh
     call qsortIntegers(s1, 3)
     call qsortIntegers(s2, 3)
 
-    ! And take the set that has the largest, smallest value. 
-    if (s1(1) > s2(1)) then 
+    ! And take the set that has the largest, smallest value.
+    if (s1(1) > s2(1)) then
        s = s1
     else
        s = s2
@@ -1026,7 +1026,7 @@ module cartMesh
 
     s = int(sqrt(dble(N)))
     do j=s, 1, -1
-       if (mod(N, j) == 0) then 
+       if (mod(N, j) == 0) then
           f1 = N/j
           f2 = j
           exit

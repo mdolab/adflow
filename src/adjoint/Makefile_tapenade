@@ -233,7 +233,7 @@ oversetUtilities%fracToWeights(frac) > \
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
 
 #================================================================
-# ====================== State-only reverse routines ============ 
+# ====================== State-only reverse routines ============
 
 # Note that is is only a subset of the the full set because we don't
 # don't have to redo the ones that don't have a spatial dependence
@@ -274,7 +274,7 @@ sa%saResScale(scratch) > (dw) \
 \
 turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev) \
 \
-turbutils%turbAdvection(w,scratch)>(w,scratch)" 
+turbutils%turbAdvection(w,scratch)>(w,scratch)"
 
 #================================================================
 

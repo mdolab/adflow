@@ -37,14 +37,14 @@ subroutine getForces(forces, npts, sps)
      call integrateSurfaces(localValues, fullFamList, .False., funcValues)
   end do domains
 
-  if (forcesAsTractions) then 
+  if (forcesAsTractions) then
      ! Compute tractions if necessary
      call computeNodalTractions(sps)
   else
      call computeNodalForces(sps)
   end if
 
-  ii = 0 
+  ii = 0
   domains2: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
 
@@ -53,14 +53,14 @@ subroutine getForces(forces, npts, sps)
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
 
-           ! This is easy, just copy out F or T in continuous ordering. 
+           ! This is easy, just copy out F or T in continuous ordering.
            do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
               do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                  ii = ii + 1
-                 if (forcesAsTractions) then 
+                 if (forcesAsTractions) then
                     Forces(:, ii) = bcData(mm)%Tp(i, j, :) + bcData(mm)%Tv(i, j, :)
                  else
-                    Forces(:, ii) = bcData(mm)%F(i, j, :) 
+                    Forces(:, ii) = bcData(mm)%F(i, j, :)
                  end if
               end do
            end do
@@ -69,18 +69,18 @@ subroutine getForces(forces, npts, sps)
   end do domains2
 
   ! We know must consider additional forces that are required by the
-  ! zipper mesh triangles on the root proc. 
+  ! zipper mesh triangles on the root proc.
 
-  ! Pointer for easier reading. 
+  ! Pointer for easier reading.
   zipper => zipperMeshes(iBCGroupWalls)
   exch => BCFamExchange(iBCGroupWalls, sps)
   ! No overset present or the zipper isn't allocated nothing to do:
-  if (.not. oversetPresent .or. .not. zipper%allocated) then 
-     return 
+  if (.not. oversetPresent .or. .not. zipper%allocated) then
+     return
   end if
 
-  if (.not. forcesAsTractions) then 
-     ! We have a zipper and regular forces are requested. This is not yet supported. 
+  if (.not. forcesAsTractions) then
+     ! We have a zipper and regular forces are requested. This is not yet supported.
      call terminate('getForces', 'getForces() is not implmented for zipper meshes and '&
           &'forcesAsTractions=False')
   end if
@@ -88,33 +88,33 @@ subroutine getForces(forces, npts, sps)
   ! Loop over each dimension individually since we have a scalar
   ! scatter.
   dimLoop: do iDim=1,3
-     
+
      call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Copy in the values we already have to the exchange. 
+     ! Copy in the values we already have to the exchange.
      ii = size(LocalPtr)
      localPtr = forces(iDim, 1:ii)
 
      ! Restore the pointer
      call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! Now scatter this to the zipper
      call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
           zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
           zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! The values we need are precisely what is in zipper%localVal
      call vecGetArrayF90(zipper%localVal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! Just copy the received data into the forces array. Just on root proc:
-     if (myid == 0) then 
+     if (myid == 0) then
         forces(iDim, ii+1:ii+size(localPtr)) = localPtr
      end if
 
@@ -129,7 +129,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   ! This routine performs the forward mode linearization getForces. It
   ! takes in perturbations defined on bcData(mm)%Fp, bcData(mm)%Fv and
   ! bcData(mm)%area and computes either the nodal forces or nodal
-  ! tractions. 
+  ! tractions.
   use constants
   use communication, only : myid
   use blockPointers, only : nDom, nBocos, BCData, BCType, nBocos, BCDatad
@@ -153,14 +153,14 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   type(zipperMesh), pointer :: zipper
   type(familyexchange), pointer :: exch
 
-  if (forcesAsTractions) then 
+  if (forcesAsTractions) then
      call computeNodalTractions_d(sps)
   else
      call computeNodalForces_d(sps)
   end if
 
   ! Extract the values out into the output derivative array
-  ii = 0 
+  ii = 0
   domains2: do nn=1,nDom
      call setPointers_d(nn, 1_intType, sps)
 
@@ -169,14 +169,14 @@ subroutine getForces_d(forces, forcesd, npts, sps)
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
 
-           ! This is easy, just copy out F or T in continuous ordering. 
+           ! This is easy, just copy out F or T in continuous ordering.
            do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
               do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                  ii = ii + 1
-                 if (forcesAsTractions) then 
+                 if (forcesAsTractions) then
                     Forcesd(:, ii) = bcDatad(mm)%Tp(i, j, :) + bcDatad(mm)%Tv(i, j, :)
                  else
-                    Forcesd(:, ii) = bcDatad(mm)%F(i, j, :) 
+                    Forcesd(:, ii) = bcDatad(mm)%F(i, j, :)
                  end if
               end do
            end do
@@ -185,18 +185,18 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   end do domains2
 
   ! We know must consider additional forces that are required by the
-  ! zipper mesh triangles on the root proc. 
+  ! zipper mesh triangles on the root proc.
 
-  ! Pointer for easier reading. 
+  ! Pointer for easier reading.
   zipper => zipperMeshes(iBCGroupWalls)
   exch => BCFamExchange(iBCGroupWalls, sps)
   ! No overset present or the zipper isn't allocated nothing to do:
-  if (.not. oversetPresent .or. .not. zipper%allocated) then 
-     return 
+  if (.not. oversetPresent .or. .not. zipper%allocated) then
+     return
   end if
 
-  if (.not. forcesAsTractions) then 
-     ! We have a zipper and regular forces are requested. This is not yet supported. 
+  if (.not. forcesAsTractions) then
+     ! We have a zipper and regular forces are requested. This is not yet supported.
      call terminate('getForces', 'getForces() is not implmented for zipper meshes and '&
           &'forcesAsTractions=False')
   end if
@@ -204,33 +204,33 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   ! Loop over each dimension individually since we have a scalar
   ! scatter.
   dimLoop: do iDim=1,3
-     
+
      call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
 
-     ! Copy in the values we already have to the exchange. 
+     ! Copy in the values we already have to the exchange.
      ii = size(LocalPtr)
      localPtr = forcesd(iDim, 1:ii)
 
      ! Restore the pointer
      call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! Now scatter this to the zipper
      call VecScatterBegin(zipper%scatter, exch%nodeValLocal,&
           zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      call VecScatterEnd(zipper%scatter, exch%nodeValLocal,&
           zipper%localVal, INSERT_VALUES, SCATTER_FORWARD, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! The values we need are precisely what is in zipper%localVal
      call vecGetArrayF90(zipper%localVal, localPtr, ierr)
      call EChk(ierr,__FILE__,__LINE__)
-     
+
      ! Just copy the received data into the forces array. Just on root proc:
-     if (myid == 0) then 
+     if (myid == 0) then
         forcesd(iDim, ii+1:ii+size(localPtr)) = localPtr
      end if
 
@@ -276,13 +276,13 @@ subroutine getForces_b(forcesd, npts, sps)
   call getForces(forces, npts, sps)
 
   ! We know must consider additional forces that are required by the
-  ! zipper mesh triangles on the root proc. 
+  ! zipper mesh triangles on the root proc.
 
-  ! Pointer for easier reading. 
+  ! Pointer for easier reading.
   zipper => zipperMeshes(iBCGroupWalls)
   exch => BCFamExchange(iBCGroupWalls, sps)
   ! No overset present or the zipper isn't allocated nothing to do:
-  zipperReverse: if (oversetPresent .and. zipper%allocated) then 
+  zipperReverse: if (oversetPresent .and. zipper%allocated) then
 
      ! Loop over each dimension individually since we have a scalar
      ! scatter.
@@ -293,13 +293,13 @@ subroutine getForces_b(forcesd, npts, sps)
 
         ii = exch%nNodes
         ! Just copy the received data into the forces array. Just on root proc:
-        if (myid == 0) then 
+        if (myid == 0) then
            do i=1, size(localPtr)
               localPtr(i) = forcesd(iDim, ii+i)
               forcesd(iDim, ii+i) = zero
            end do
         end if
-        
+
         call vecGetArrayF90(zipper%localVal, localPtr, ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
@@ -311,27 +311,27 @@ subroutine getForces_b(forcesd, npts, sps)
         call VecScatterBegin(zipper%scatter, zipper%localVal, &
              exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
+
         call VecScatterEnd(zipper%scatter, zipper%localVal, &
              exch%nodeValLocal, ADD_VALUES, SCATTER_REVERSE, ierr)
         call EChk(ierr,__FILE__,__LINE__)
-        
+
         call vecGetArrayF90(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr,__FILE__,__LINE__)
 
         ! Accumulate the scatted values onto forcesd
         ii = size(localPtr)
         forcesd(iDim, 1:ii) = forcesd(iDim, 1:ii) + localPtr
-        
+
         ! Restore the pointer
         call vecRestoreArrayF90(exch%nodeValLocal, localPtr, ierr)
         call EChk(ierr,__FILE__,__LINE__)
-           
+
      end do dimLoop
   end if zipperReverse
 
   ! Set the incoming derivative values
-  ii = 0 
+  ii = 0
   domains2: do nn=1,nDom
      call setPointers_d(nn, 1_intType, sps)
 
@@ -339,11 +339,11 @@ subroutine getForces_b(forcesd, npts, sps)
      bocos: do mm=1, nBocos
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
-           ! This is easy, just copy out F or T in continuous ordering. 
+           ! This is easy, just copy out F or T in continuous ordering.
            do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
               do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                  ii = ii + 1
-                 if (forcesAsTractions) then 
+                 if (forcesAsTractions) then
                     bcDatad(mm)%Tp(i, j, :) = forcesd(:, ii)
                     bcDatad(mm)%Tv(i, j, :) = forcesd(:, ii)
                  else
@@ -355,9 +355,9 @@ subroutine getForces_b(forcesd, npts, sps)
      end do bocos
   end do domains2
 
-  if (.not. forcesAsTractions) then 
+  if (.not. forcesAsTractions) then
      ! For forces, we can accumulate the nodal seeds on the Fp and Fv
-     ! values. The area seed is zeroed. 
+     ! values. The area seed is zeroed.
      call computeNodalForces_b(sps)
   else
      call computeNodalTractions_b(sps)
@@ -397,7 +397,7 @@ subroutine surfaceCellCenterToNode(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        famInclude: if (famInList(BCData(mm)%famID, exch%famList)) then 
+        famInclude: if (famInList(BCData(mm)%famID, exch%famList)) then
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
            ni = iEnd - iBeg + 1
@@ -408,8 +408,8 @@ subroutine surfaceCellCenterToNode(exch)
                  ! and always starts at one
                  qv = fourth * BCData(mm)%cellVal(i+1, j+1)
                  ind(1) = ii + (j  )*ni + i + 1
-                 ind(2) = ii + (j  )*ni + i + 2 
-                 ind(3) = ii + (j+1)*ni + i + 2 
+                 ind(2) = ii + (j  )*ni + i + 2
+                 ind(3) = ii + (j+1)*ni + i + 2
                  ind(4) = ii + (j+1)*ni + i + 1
                  do jj=1,4
                     localPtr(ind(jj)) = localPtr(ind(jj)) + qv
@@ -457,7 +457,7 @@ subroutine surfaceCellCenterToNode(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        famInclude2: if (famInList(BCData(mm)%famID, exch%famList)) then 
+        famInclude2: if (famInList(BCData(mm)%famID, exch%famList)) then
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
@@ -511,7 +511,7 @@ subroutine computeWeighting(exch)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        famInclude: if (famInList(BCData(mm)%famID, exch%famList)) then 
+        famInclude: if (famInList(BCData(mm)%famID, exch%famList)) then
            iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
            jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
            ni = iEnd - iBeg + 1
@@ -524,8 +524,8 @@ subroutine computeWeighting(exch)
                  ! and always starts at one
                  qa = fourth*BCData(mm)%cellVal(i+1, j+1)
                  ind(1) = ii + (j  )*ni + i + 1
-                 ind(2) = ii + (j  )*ni + i + 2 
-                 ind(3) = ii + (j+1)*ni + i + 2 
+                 ind(2) = ii + (j  )*ni + i + 2
+                 ind(3) = ii + (j+1)*ni + i + 2
                  ind(4) = ii + (j+1)*ni + i + 1
                  do jj=1,4
                     localPtr(ind(jj)) = localPtr(ind(jj)) + qa
@@ -554,12 +554,12 @@ subroutine computeWeighting(exch)
 
   ! Now compute the inverse of the weighting so that we can multiply
   ! instead of dividing. Note that we check dividing by zero and just
-  ! set those to zero. 
+  ! set those to zero.
 
   call vecGetArrayF90(exch%sumGlobal, localPtr, ierr)
   call EChk(ierr,__FILE__,__LINE__)
   do i=1, size(localPtr)
-     if (localPtr(i) == zero) then 
+     if (localPtr(i) == zero) then
         localPtr(i) = zero
      else
         localPtr(i) = one/localPtr(i)
@@ -596,7 +596,7 @@ subroutine computeNodalTractions(sps)
         iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
         jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
-        bocoType1: if(isWallType(BCType(mm))) then 
+        bocoType1: if(isWallType(BCType(mm))) then
            BCData(mm)%cellVal => BCData(mm)%area(:, :)
         end if bocoType1
      end do
@@ -609,8 +609,8 @@ subroutine computeNodalTractions(sps)
      do nn=1, nDom
         call setPointers(nn, 1_intType, sps)
         do mm=1, nBocos
-           bocoType2: if(isWallType(BCType(mm))) then 
-              if (iDim <= 3) then 
+           bocoType2: if(isWallType(BCType(mm))) then
+              if (iDim <= 3) then
                  BCData(mm)%cellVal => BCData(mm)%Fp(:, :, iDim)
                  BCData(mm)%nodeVal => BCData(mm)%Tp(:, :, iDim)
               else
@@ -621,7 +621,7 @@ subroutine computeNodalTractions(sps)
         end do
      end do
 
-     call surfaceCellCenterToNode(exch) 
+     call surfaceCellCenterToNode(exch)
 
   end do FpFVLoop
 
@@ -981,8 +981,8 @@ subroutine computeNodalTractions_b(sps)
                  ! Scatter a quarter of the area to each node:
                  qa = fourth*BCData(mm)%area(i+iBeg+1, j+jBeg+1)
                  ind(1) = ii + (j  )*ni + i + 1
-                 ind(2) = ii + (j  )*ni + i + 2 
-                 ind(3) = ii + (j+1)*ni + i + 2 
+                 ind(2) = ii + (j  )*ni + i + 2
+                 ind(3) = ii + (j+1)*ni + i + 2
                  ind(4) = ii + (j+1)*ni + i + 1
                  do jj=1,4
                     localPtr(ind(jj)) = localPtr(ind(jj)) + qa
@@ -1048,15 +1048,15 @@ subroutine computeNodalTractions_b(sps)
                 BCType(mm) == NSWallIsothermal) then
               do j=0,nj-2
                  do i=0,ni-2
-                    if (iDim <= 3) then 
+                    if (iDim <= 3) then
                        qf = fourth*BCData(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim)
                     else
                        qf = fourth*BCData(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3)
                     end if
 
                     ind(1) = ii + (j  )*ni + i + 1
-                    ind(2) = ii + (j  )*ni + i + 2 
-                    ind(3) = ii + (j+1)*ni + i + 2 
+                    ind(2) = ii + (j  )*ni + i + 2
+                    ind(3) = ii + (j+1)*ni + i + 2
                     ind(4) = ii + (j+1)*ni + i + 1
                     do jj=1,4
                        localPtr(ind(jj)) = localPtr(ind(jj)) + qf
@@ -1105,7 +1105,7 @@ subroutine computeNodalTractions_b(sps)
               do j=BCData(mm)%jnBeg, BCData(mm)%jnEnd
                  do i=BCData(mm)%inBeg, BCData(mm)%inEnd
                     ii = ii + 1
-                    if (iDim <= 3) then 
+                    if (iDim <= 3) then
                        localPtr_b(ii) = BCDatad(mm)%Tp(i, j, iDim)
                     else
                        localPtr_b(ii) = BCDatad(mm)%Tv(i, j, iDim-3)
@@ -1131,7 +1131,7 @@ subroutine computeNodalTractions_b(sps)
      call EChk(ierr,__FILE__,__LINE__)
 
      ! this is particularly nasty. This is why you don't do
-     ! derivatives by hand, kids. 
+     ! derivatives by hand, kids.
      ! exch%nodeValGlobal = F
      ! nodeValGlobal_b = F_b
      ! T_b = reverse seed for tractions
@@ -1186,8 +1186,8 @@ subroutine computeNodalTractions_b(sps)
                  do i=0,ni-2
 
                     ind(1) = ii + (j  )*ni + i + 1
-                    ind(2) = ii + (j  )*ni + i + 2 
-                    ind(3) = ii + (j+1)*ni + i + 2 
+                    ind(2) = ii + (j  )*ni + i + 2
+                    ind(3) = ii + (j+1)*ni + i + 2
                     ind(4) = ii + (j+1)*ni + i + 1
                     qf_b = zero
                     do jj=1,4
@@ -1195,11 +1195,11 @@ subroutine computeNodalTractions_b(sps)
                     end do
                     qf_b = qf_b*fourth
 
-                    if (iDim <= 3) then 
-                       BCDatad(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim) = & 
+                    if (iDim <= 3) then
+                       BCDatad(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim) = &
                             BCDatad(mm)%Fp(i+iBeg+1, j+jBeg+1, iDim) + qf_b
                     else
-                       BCDatad(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3) = & 
+                       BCDatad(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3) = &
                             BCDatad(mm)%Fv(i+iBeg+1, j+jBeg+1, iDim-3) + qf_b
                     end if
 
@@ -1233,7 +1233,7 @@ subroutine computeNodalTractions_b(sps)
   call EChk(ierr,__FILE__,__LINE__)
 
   ! Keep in mind localPtr points to sumGlobal which already has
-  ! been inversed so we just multiply. 
+  ! been inversed so we just multiply.
   localPtr_b = -localPtr_b*localPtr**2
 
   call vecRestoreArrayF90(sumGlobal_b, localPtr_b, ierr)
@@ -1271,15 +1271,15 @@ subroutine computeNodalTractions_b(sps)
               do i=0,ni-2
 
                  ind(1) = ii + (j  )*ni + i + 1
-                 ind(2) = ii + (j  )*ni + i + 2 
-                 ind(3) = ii + (j+1)*ni + i + 2 
+                 ind(2) = ii + (j  )*ni + i + 2
+                 ind(3) = ii + (j+1)*ni + i + 2
                  ind(4) = ii + (j+1)*ni + i + 1
                  qa_b = zero
                  do jj=1,4
                     qa_b = qa_b + localPtr_b(ind(jj))
                  end do
                  qa_b = fourth*qa_b
-                 BCDatad(mm)%area(i+iBeg+1, j+jBeg+1) = & 
+                 BCDatad(mm)%area(i+iBeg+1, j+jBeg+1) = &
                       BCDatad(mm)%area(i+iBeg+1, j+jBeg+1) + qa_b
               end do
            end do
@@ -1317,7 +1317,7 @@ subroutine computeNodalForces(sps)
 
   ! This subroutine averages the cell based forces and tractions to
   ! node based values. There is no need for communication since we are
-  ! simplying summing a quarter of each value to each corner. 
+  ! simplying summing a quarter of each value to each corner.
 
   use constants
   use blockPointers, only : nDom, nBocos, BCType, BCData
@@ -1456,9 +1456,9 @@ subroutine getHeatFlux(hflux, npts, sps)
         iBeg = BCdata(mm)%inBeg; iEnd=BCData(mm)%inEnd
         jBeg = BCdata(mm)%jnBeg; jEnd=BCData(mm)%jnEnd
 
-        bocoType1: if (BCType(mm) == NSWallIsoThermal) then 
+        bocoType1: if (BCType(mm) == NSWallIsoThermal) then
            BCData(mm)%cellVal => BCData(mm)%area(:, :)
-        else if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic) then 
+        else if (BCType(mm) == EulerWall .or. BCType(mm) == NSWallAdiabatic) then
            BCData(mm)%cellVal => zeroCellVal
            BCData(mm)%nodeVal => zeroNodeVal
         end if bocoType1
@@ -1470,7 +1470,7 @@ subroutine getHeatFlux(hflux, npts, sps)
   do nn=1, nDom
      call setPointers(nn, 1_intType, sps)
      do mm=1, nBocos
-        bocoType2: if (BCType(mm) == NSWallIsoThermal) then 
+        bocoType2: if (BCType(mm) == NSWallIsoThermal) then
            BCData(mm)%cellVal => BCData(mm)%cellHeatFlux(:, :)
            BCData(mm)%nodeVal => BCData(mm)%nodeHeatFlux(:, :)
         end if bocoType2
@@ -1480,7 +1480,7 @@ subroutine getHeatFlux(hflux, npts, sps)
   call surfaceCellCenterToNode(exch)
 
   ! Now extract into the flat array:
-  ii = 0 
+  ii = 0
   do nn=1,nDom
      call setPointers(nn,1_intType,sps)
 
@@ -1488,7 +1488,7 @@ subroutine getHeatFlux(hflux, npts, sps)
      ! According to preprocessing/viscSubfaceInfo, visc bocos are numbered
      ! before other bocos. Therefore, mm_nViscBocos == mm_nBocos
      do mm=1,nBocos
-        bocoType3: if (BCType(mm) == NSWallIsoThermal) then 
+        bocoType3: if (BCType(mm) == NSWallIsoThermal) then
            do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
               do i=BCData(mm)%inBeg,BCData(mm)%inEnd
                  ii = ii + 1
@@ -1496,7 +1496,7 @@ subroutine getHeatFlux(hflux, npts, sps)
               end do
            end do
            ! Simply put in zeros for the other wall BCs
-        else if (BCType(mm) == NSWallAdiabatic .or. BCType(mm) == EulerWall) then 
+        else if (BCType(mm) == NSWallAdiabatic .or. BCType(mm) == EulerWall) then
            do j=BCData(mm)%jnBeg,BCData(mm)%jnEnd
               do i=BCData(mm)%inBeg,BCData(mm)%inEnd
                  ii = ii + 1
@@ -1531,7 +1531,7 @@ subroutine heatFluxes
   bocos: do mm=1, nBocos
 
      ! Only do this on isoThermalWalls
-     if (BCType(mm) == NSWallIsoThermal) then 
+     if (BCType(mm) == NSWallIsoThermal) then
 
         ! Set a bunch of pointers depending on the face id to make
         ! a generic treatment possible. The routine setBcPointers
@@ -1549,7 +1549,7 @@ subroutine heatFluxes
         ! the nodal range of BCData must be used and not the cell
         ! range, because the latter may include the halo's in i and
         ! j-direction. The offset +1 is there, because inBeg and jnBeg
-        ! refer to nodal ranges and not to cell ranges. 
+        ! refer to nodal ranges and not to cell ranges.
         !
         do j=(BCData(mm)%jnBeg+1), BCData(mm)%jnEnd
            do i=(BCData(mm)%inBeg+1), BCData(mm)%inEnd
@@ -1582,12 +1582,12 @@ subroutine setTNSWall(tnsw, npts, sps)
   integer(kind=intType) :: mm, nn, i, j, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
-  ii = 0 
+  ii = 0
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
      ! Loop over the number of viscous boundary subfaces of this block.
      bocos: do mm=1,nBocos
-        isoWall: if (BCType(mm) == NSWallIsoThermal) then 
+        isoWall: if (BCType(mm) == NSWallIsoThermal) then
            jBeg = BCdata(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
            do j=jBeg,jEnd
@@ -1671,12 +1671,12 @@ subroutine getTNSWall(tnsw, npts, sps)
   integer(kind=intType) :: mm, nn, i, j, ii
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
 
-  ii = 0 
+  ii = 0
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
      ! Loop over the number of viscous boundary subfaces of this block.
      bocos: do mm=1,nBocos
-        isoWall: if (BCType(mm) == NSWallIsoThermal) then 
+        isoWall: if (BCType(mm) == NSWallIsoThermal) then
            do j=jBeg,jEnd
               do i=iBeg, iEnd
                  ii = ii + 1

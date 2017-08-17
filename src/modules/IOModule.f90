@@ -1,16 +1,16 @@
        module IOModule
 !
-!       Constants and variables used in the IO routines.               
+!       Constants and variables used in the IO routines.
 !
        use constants, only : intType, realType, mpi_offset_kind
        implicit none
        save
 !
-!       Definition of the parameters.                                  
+!       Definition of the parameters.
 !
        ! The maximum amount of data a processor can read in one call
        ! to su_file_read. This value is 2Gbyte.
- 
+
        integer(kind=mpi_offset_kind), parameter :: &
                                   maxSizeIO = 2147483648_mpi_offset_kind
 
@@ -21,8 +21,8 @@
        integer(kind=intType), parameter :: cellDataPlusHalo  = 3
 
 !
-!       Definition of the derived datatype IOType, which is used to    
-!       to make the IO as general as needed.                           
+!       Definition of the derived datatype IOType, which is used to
+!       to make the IO as general as needed.
 !
        type IOType
 
@@ -41,7 +41,7 @@
        end type IOType
 
 !
-!       Definition of the variables used for both CGNS                 
+!       Definition of the variables used for both CGNS
 !
        ! IOVar(nDom,nIOFiles): Array of the derived datatype IOType to
        !                       facilitate a general IO implementation.

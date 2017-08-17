@@ -16,8 +16,8 @@ contains
   subroutine computettot_d(rho, rhod, u, ud, v, vd, w, wd, p, pd, ttot, &
 &   ttotd)
 !
-!       computettot computes the total temperature for the given       
-!       pressures, densities and velocities.                           
+!       computettot computes the total temperature for the given
+!       pressures, densities and velocities.
 !
     use constants
     use inputphysics, only : cpmodel
@@ -38,8 +38,8 @@ contains
     real(kind=realtype) :: govgm1, t, kin
     real(kind=realtype) :: td, kind0
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -50,7 +50,7 @@ contains
       ttotd = td*(one+rho*kin/(govgm1*p)) + t*((rhod*kin+rho*kind0)*&
 &       govgm1*p-rho*kin*govgm1*pd)/(govgm1**2*p**2)
       ttot = t*(one+rho*kin/(govgm1*p))
-    case (cptempcurvefits) 
+    case (cptempcurvefits)
 !===============================================================
 ! cp is a function of the temperature. the formula used for
 ! constant cp is not valid anymore and a more complicated
@@ -61,8 +61,8 @@ contains
   end subroutine computettot_d
   subroutine computettot(rho, u, v, w, p, ttot)
 !
-!       computettot computes the total temperature for the given       
-!       pressures, densities and velocities.                           
+!       computettot computes the total temperature for the given
+!       pressures, densities and velocities.
 !
     use constants
     use inputphysics, only : cpmodel
@@ -80,15 +80,15 @@ contains
     integer(kind=inttype) :: i
     real(kind=realtype) :: govgm1, t, kin
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
       t = p/(rho*rgas)
       kin = half*(u*u+v*v+w*w)
       ttot = t*(one+rho*kin/(govgm1*p))
-    case (cptempcurvefits) 
+    case (cptempcurvefits)
 !===============================================================
 ! cp is a function of the temperature. the formula used for
 ! constant cp is not valid anymore and a more complicated
@@ -99,8 +99,8 @@ contains
   end subroutine computettot
   subroutine computegamma(t, gamma, mm)
 !
-!       computegamma computes the corresponding values of gamma for    
-!       the given dimensional temperatures.                            
+!       computegamma computes the corresponding values of gamma for
+!       the given dimensional temperatures.
 !
     use constants
     use cpcurvefits
@@ -119,8 +119,8 @@ contains
     real(kind=realtype) :: cp, t2
 !        ================================================================
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. set the values.
       do i=1,mm
         gamma(i) = gammaconstant
@@ -133,8 +133,8 @@ contains
   subroutine computeptot_d(rho, rhod, u, ud, v, vd, w, wd, p, pd, ptot, &
 &   ptotd)
 !
-!       computeptot computes the total pressure for the given          
-!       pressures, densities and velocities.                           
+!       computeptot computes the total pressure for the given
+!       pressures, densities and velocities.
 !
     use constants
     use cpcurvefits
@@ -164,8 +164,8 @@ contains
 !===============================================================
 !
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -189,8 +189,8 @@ contains
   end subroutine computeptot_d
   subroutine computeptot(rho, u, v, w, p, ptot)
 !
-!       computeptot computes the total pressure for the given          
-!       pressures, densities and velocities.                           
+!       computeptot computes the total pressure for the given
+!       pressures, densities and velocities.
 !
     use constants
     use cpcurvefits
@@ -215,8 +215,8 @@ contains
 !===============================================================
 !
 ! determine the cp model used.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -233,7 +233,7 @@ contains
 !   plus diff mem management of: aa:in p:in w:in
   subroutine computespeedofsoundsquared_d()
 !
-!       computespeedofsoundsquared does what it says.                  
+!       computespeedofsoundsquared does what it says.
 !
     use constants
     use blockpointers, only : ie, je, ke, w, wd, p, pd, aa, aad, gamma
@@ -279,7 +279,7 @@ contains
   end subroutine computespeedofsoundsquared_d
   subroutine computespeedofsoundsquared()
 !
-!       computespeedofsoundsquared does what it says.                  
+!       computespeedofsoundsquared does what it says.
 !
     use constants
     use blockpointers, only : ie, je, ke, w, p, aa, gamma
@@ -321,13 +321,13 @@ contains
   subroutine computeetotblock_d(istart, iend, jstart, jend, kstart, kend&
 &   , correctfork)
 !
-!       computeetot computes the total energy from the given density,  
-!       velocity and presssure. for a calorically and thermally        
-!       perfect gas the well-known expression is used; for only a      
-!       thermally perfect gas, cp is a function of temperature, curve  
-!       fits are used and a more complex expression is obtained.       
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       computeetot computes the total energy from the given density,
+!       velocity and presssure. for a calorically and thermally
+!       perfect gas the well-known expression is used; for only a
+!       thermally perfect gas, cp is a function of temperature, curve
+!       fits are used and a more complex expression is obtained.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : w, wd, p, pd
@@ -347,8 +347,8 @@ contains
     real(kind=realtype) :: ovgm1, factk, scale
 !
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
@@ -395,13 +395,13 @@ contains
   subroutine computeetotblock(istart, iend, jstart, jend, kstart, kend, &
 &   correctfork)
 !
-!       computeetot computes the total energy from the given density,  
-!       velocity and presssure. for a calorically and thermally        
-!       perfect gas the well-known expression is used; for only a      
-!       thermally perfect gas, cp is a function of temperature, curve  
-!       fits are used and a more complex expression is obtained.       
-!       it is assumed that the pointers in blockpointers already       
-!       point to the correct block.                                    
+!       computeetot computes the total energy from the given density,
+!       velocity and presssure. for a calorically and thermally
+!       perfect gas the well-known expression is used; for only a
+!       thermally perfect gas, cp is a function of temperature, curve
+!       fits are used and a more complex expression is obtained.
+!       it is assumed that the pointers in blockpointers already
+!       point to the correct block.
 !
     use constants
     use blockpointers, only : w, p
@@ -421,8 +421,8 @@ contains
     real(kind=realtype) :: ovgm1, factk, scale
 !
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
@@ -461,11 +461,11 @@ contains
   subroutine etot_d(rho, rhod, u, ud, v, vd, w, wd, p, pd, k, kd, etotal&
 &   , etotald, correctfork)
 !
-!       etotarray computes the total energy from the given density,    
-!       velocity and presssure.                                        
-!       first the internal energy per unit mass is computed and after  
-!       that the kinetic energy is added as well the conversion to     
-!       energy per unit volume.                                        
+!       etotarray computes the total energy from the given density,
+!       velocity and presssure.
+!       first the internal energy per unit mass is computed and after
+!       that the kinetic energy is added as well the conversion to
+!       energy per unit volume.
 !
     use constants
     implicit none
@@ -491,11 +491,11 @@ contains
   end subroutine etot_d
   subroutine etot(rho, u, v, w, p, k, etotal, correctfork)
 !
-!       etotarray computes the total energy from the given density,    
-!       velocity and presssure.                                        
-!       first the internal energy per unit mass is computed and after  
-!       that the kinetic energy is added as well the conversion to     
-!       energy per unit volume.                                        
+!       etotarray computes the total energy from the given density,
+!       velocity and presssure.
+!       first the internal energy per unit mass is computed and after
+!       that the kinetic energy is added as well the conversion to
+!       energy per unit volume.
 !
     use constants
     implicit none
@@ -521,12 +521,12 @@ contains
   subroutine eint_d(rho, rhod, p, pd, k, kd, einternal, einternald, &
 &   correctfork)
 !
-!       eintarray computes the internal energy per unit mass from the  
-!       given density and pressure (and possibly turbulent energy)     
-!       for a calorically and thermally perfect gas the well-known     
-!       expression is used; for only a thermally perfect gas, cp is a  
-!       function of temperature, curve fits are used and a more        
-!       complex expression is obtained.                                
+!       eintarray computes the internal energy per unit mass from the
+!       given density and pressure (and possibly turbulent energy)
+!       for a calorically and thermally perfect gas the well-known
+!       expression is used; for only a thermally perfect gas, cp is a
+!       function of temperature, curve fits are used and a more
+!       complex expression is obtained.
 !
     use constants
     use cpcurvefits
@@ -551,8 +551,8 @@ contains
     integer(kind=inttype) :: i, nn, mm, ii, start
     real(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
 ! loop over the number of elements of the array and compute
@@ -571,12 +571,12 @@ contains
 !      ==================================================================
   subroutine eint(rho, p, k, einternal, correctfork)
 !
-!       eintarray computes the internal energy per unit mass from the  
-!       given density and pressure (and possibly turbulent energy)     
-!       for a calorically and thermally perfect gas the well-known     
-!       expression is used; for only a thermally perfect gas, cp is a  
-!       function of temperature, curve fits are used and a more        
-!       complex expression is obtained.                                
+!       eintarray computes the internal energy per unit mass from the
+!       given density and pressure (and possibly turbulent energy)
+!       for a calorically and thermally perfect gas the well-known
+!       expression is used; for only a thermally perfect gas, cp is a
+!       function of temperature, curve fits are used and a more
+!       complex expression is obtained.
 !
     use constants
     use cpcurvefits
@@ -599,8 +599,8 @@ contains
     integer(kind=inttype) :: i, nn, mm, ii, start
     real(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
 ! loop over the number of elements of the array and compute
@@ -621,7 +621,7 @@ contains
 !   plus diff mem management of: p:in w:in
   subroutine computepressuresimple_d(includehalos)
 ! compute the pressure on a block with the pointers already set. this
-! routine is used by the forward mode ad code only. 
+! routine is used by the forward mode ad code only.
     use constants
     use blockpointers
     use flowvarrefstate
@@ -677,7 +677,7 @@ contains
   end subroutine computepressuresimple_d
   subroutine computepressuresimple(includehalos)
 ! compute the pressure on a block with the pointers already set. this
-! routine is used by the forward mode ad code only. 
+! routine is used by the forward mode ad code only.
     use constants
     use blockpointers
     use flowvarrefstate
@@ -726,11 +726,11 @@ contains
   subroutine computepressure(ibeg, iend, jbeg, jend, kbeg, kend, &
 &   pointeroffset)
 !
-!       computepressure computes the pressure from the total energy,   
-!       density and velocities in the given cell range of the block to 
-!       which the pointers in blockpointers currently point.           
-!       it is possible to specify a possible pointer offset, because   
-!       this routine is also used when reading a restart file.         
+!       computepressure computes the pressure from the total energy,
+!       density and velocities in the given cell range of the block to
+!       which the pointers in blockpointers currently point.
+!       it is possible to specify a possible pointer offset, because
+!       this routine is also used when reading a restart file.
 !
     use constants
     use inputphysics, only : cpmodel, gammaconstant
@@ -760,8 +760,8 @@ contains
     intrinsic abs
     real(kind=realtype) :: abs0
 ! determine the cp model used in the computation.
-    select case  (cpmodel) 
-    case (cpconstant) 
+    select case  (cpmodel)
+    case (cpconstant)
 ! constant cp and thus constant gamma. the relation
 ! eint = cv*t can be used and consequently the standard
 ! relation between pressure and internal energy is valid.
@@ -804,7 +804,7 @@ contains
           end do
         end do
       end if
-    case (cptempcurvefits) 
+    case (cptempcurvefits)
 !        ================================================================
 ! cp as function of the temperature is given via curve fits.
 ! store a scale factor when converting the nondimensional
@@ -854,7 +854,7 @@ contains
 ! first find the curve fit interval to be searched.
               ii = cpnparts
               start = 1
-     interval:do 
+     interval:do
 ! next guess for the interval.
                 nn = start + ii/2
 ! determine the situation we are having here.
@@ -872,7 +872,7 @@ contains
                   t = alp*cptrange(nn-1) + (one-alp)*cptrange(nn)
 ! the actual newton algorithm to compute the
 ! temperature.
-           newton:do 
+           newton:do
 ! compute the internal energy as well as the
 ! value of cv/r for the given temperature.
 ! cv/r = cp/r - 1.0
@@ -941,10 +941,10 @@ contains
 !   plus diff mem management of: p:in w:in rlv:in
   subroutine computelamviscosity_d(includehalos)
 !
-!       computelamviscosity computes the laminar viscosity ratio in    
-!       the owned cell centers of the given block. sutherland's law is 
-!       used. it is assumed that the pointes already point to the      
-!       correct block before entering this subroutine.                 
+!       computelamviscosity computes the laminar viscosity ratio in
+!       the owned cell centers of the given block. sutherland's law is
+!       used. it is assumed that the pointes already point to the
+!       correct block before entering this subroutine.
 !
     use blockpointers
     use constants
@@ -1050,10 +1050,10 @@ contains
   end subroutine computelamviscosity_d
   subroutine computelamviscosity(includehalos)
 !
-!       computelamviscosity computes the laminar viscosity ratio in    
-!       the owned cell centers of the given block. sutherland's law is 
-!       used. it is assumed that the pointes already point to the      
-!       correct block before entering this subroutine.                 
+!       computelamviscosity computes the laminar viscosity ratio in
+!       the owned cell centers of the given block. sutherland's law is
+!       used. it is assumed that the pointes already point to the
+!       correct block before entering this subroutine.
 !
     use blockpointers
     use constants
@@ -1199,12 +1199,12 @@ contains
   end subroutine adjustinflowangle
   subroutine derivativerotmatrixrigid(rotationmatrix, rotationpoint, t)
 !
-!       derivativerotmatrixrigid determines the derivative of the      
-!       rotation matrix at the given time for the rigid body rotation, 
-!       such that the grid velocities can be determined analytically.  
-!       also the rotation point of the current time level is           
-!       determined. this value can change due to translation of the    
-!       entire grid.                                                   
+!       derivativerotmatrixrigid determines the derivative of the
+!       rotation matrix at the given time for the rigid body rotation,
+!       such that the grid velocities can be determined analytically.
+!       also the rotation point of the current time level is
+!       determined. this value can change due to translation of the
+!       entire grid.
 !
     use constants
     use flowvarrefstate
@@ -1323,21 +1323,21 @@ contains
 &   winddirection, winddirectiond, liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
-!      convert the angle of attack and side slip angle to wind axes.  
-!      the components of the wind direction vector (xw,yw,zw) are     
-!      computed given the direction angles in radians and the body    
-!      direction by performing two rotations on the original          
-!      direction vector:                                              
-!        1) rotation about the zb or yb-axis: alpha clockwise (cw)    
-!           (xb,yb,zb) -> (x1,y1,z1)                                  
-!        2) rotation about the yl or z1-axis: beta counter-clockwise  
-!           (ccw)  (x1,y1,z1) -> (xw,yw,zw)                           
-!         input arguments:                                            
-!            alpha    = angle of attack in radians                    
-!            beta     = side slip angle in radians                    
-!            refdirection = reference direction vector                
-!         output arguments:                                           
-!            winddirection = unit wind vector in body axes            
+!      convert the angle of attack and side slip angle to wind axes.
+!      the components of the wind direction vector (xw,yw,zw) are
+!      computed given the direction angles in radians and the body
+!      direction by performing two rotations on the original
+!      direction vector:
+!        1) rotation about the zb or yb-axis: alpha clockwise (cw)
+!           (xb,yb,zb) -> (x1,y1,z1)
+!        2) rotation about the yl or z1-axis: beta counter-clockwise
+!           (ccw)  (x1,y1,z1) -> (xw,yw,zw)
+!         input arguments:
+!            alpha    = angle of attack in radians
+!            beta     = side slip angle in radians
+!            refdirection = reference direction vector
+!         output arguments:
+!            winddirection = unit wind vector in body axes
 !
     use constants
     use utils_d, only : terminate
@@ -1426,21 +1426,21 @@ contains
 &   liftindex)
 !(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
-!      convert the angle of attack and side slip angle to wind axes.  
-!      the components of the wind direction vector (xw,yw,zw) are     
-!      computed given the direction angles in radians and the body    
-!      direction by performing two rotations on the original          
-!      direction vector:                                              
-!        1) rotation about the zb or yb-axis: alpha clockwise (cw)    
-!           (xb,yb,zb) -> (x1,y1,z1)                                  
-!        2) rotation about the yl or z1-axis: beta counter-clockwise  
-!           (ccw)  (x1,y1,z1) -> (xw,yw,zw)                           
-!         input arguments:                                            
-!            alpha    = angle of attack in radians                    
-!            beta     = side slip angle in radians                    
-!            refdirection = reference direction vector                
-!         output arguments:                                           
-!            winddirection = unit wind vector in body axes            
+!      convert the angle of attack and side slip angle to wind axes.
+!      the components of the wind direction vector (xw,yw,zw) are
+!      computed given the direction angles in radians and the body
+!      direction by performing two rotations on the original
+!      direction vector:
+!        1) rotation about the zb or yb-axis: alpha clockwise (cw)
+!           (xb,yb,zb) -> (x1,y1,z1)
+!        2) rotation about the yl or z1-axis: beta counter-clockwise
+!           (ccw)  (x1,y1,z1) -> (xw,yw,zw)
+!         input arguments:
+!            alpha    = angle of attack in radians
+!            beta     = side slip angle in radians
+!            refdirection = reference direction vector
+!         output arguments:
+!            winddirection = unit wind vector in body axes
 !
     use constants
     use utils_d, only : terminate
@@ -1507,14 +1507,14 @@ contains
   subroutine vectorrotation_d(xp, xpd, yp, ypd, zp, zpd, iaxis, angle, &
 &   angled, x, xd, y, yd, z, zd)
 !
-!      vectorrotation rotates a given vector with respect to a      
-!      specified axis by a given angle.                             
-!         input arguments:                                          
-!            iaxis      = rotation axis (1-x, 2-y, 3-z)             
-!            angle      = rotation angle (measured ccw in radians)  
-!            x, y, z    = coordinates in original system            
-!         output arguments:                                         
-!            xp, yp, zp = coordinates in rotated system             
+!      vectorrotation rotates a given vector with respect to a
+!      specified axis by a given angle.
+!         input arguments:
+!            iaxis      = rotation axis (1-x, 2-y, 3-z)
+!            angle      = rotation angle (measured ccw in radians)
+!            x, y, z    = coordinates in original system
+!         output arguments:
+!            xp, yp, zp = coordinates in rotated system
 !
     use precision
     implicit none
@@ -1529,8 +1529,8 @@ contains
     intrinsic cos
     intrinsic sin
 ! rotation about specified axis by specified angle
-    select case  (iaxis) 
-    case (1) 
+    select case  (iaxis)
+    case (1)
 ! rotation about the x-axis
       xpd = xd
       xp = 1.*x + 0.*y + 0.*z
@@ -1540,7 +1540,7 @@ contains
       zpd = cos(angle)*zd - sin(angle)*yd - angled*cos(angle)*y - angled&
 &       *sin(angle)*z
       zp = 0.*x - sin(angle)*y + cos(angle)*z
-    case (2) 
+    case (2)
 ! rotation about the y-axis
       xpd = cos(angle)*xd - angled*sin(angle)*x - angled*cos(angle)*z - &
 &       sin(angle)*zd
@@ -1550,7 +1550,7 @@ contains
       zpd = angled*cos(angle)*x + sin(angle)*xd + cos(angle)*zd - angled&
 &       *sin(angle)*z
       zp = sin(angle)*x + 0.*y + cos(angle)*z
-    case (3) 
+    case (3)
 ! rotation about the z-axis
       xpd = cos(angle)*xd - angled*sin(angle)*x + angled*cos(angle)*y + &
 &       sin(angle)*yd
@@ -1567,14 +1567,14 @@ contains
   end subroutine vectorrotation_d
   subroutine vectorrotation(xp, yp, zp, iaxis, angle, x, y, z)
 !
-!      vectorrotation rotates a given vector with respect to a      
-!      specified axis by a given angle.                             
-!         input arguments:                                          
-!            iaxis      = rotation axis (1-x, 2-y, 3-z)             
-!            angle      = rotation angle (measured ccw in radians)  
-!            x, y, z    = coordinates in original system            
-!         output arguments:                                         
-!            xp, yp, zp = coordinates in rotated system             
+!      vectorrotation rotates a given vector with respect to a
+!      specified axis by a given angle.
+!         input arguments:
+!            iaxis      = rotation axis (1-x, 2-y, 3-z)
+!            angle      = rotation angle (measured ccw in radians)
+!            x, y, z    = coordinates in original system
+!         output arguments:
+!            xp, yp, zp = coordinates in rotated system
 !
     use precision
     implicit none
@@ -1587,18 +1587,18 @@ contains
     intrinsic cos
     intrinsic sin
 ! rotation about specified axis by specified angle
-    select case  (iaxis) 
-    case (1) 
+    select case  (iaxis)
+    case (1)
 ! rotation about the x-axis
       xp = 1.*x + 0.*y + 0.*z
       yp = 0.*x + cos(angle)*y + sin(angle)*z
       zp = 0.*x - sin(angle)*y + cos(angle)*z
-    case (2) 
+    case (2)
 ! rotation about the y-axis
       xp = cos(angle)*x + 0.*y - sin(angle)*z
       yp = 0.*x + 1.*y + 0.*z
       zp = sin(angle)*x + 0.*y + cos(angle)*z
-    case (3) 
+    case (3)
 ! rotation about the z-axis
       xp = cos(angle)*x + sin(angle)*y + 0.*z
       yp = -(sin(angle)*x) + cos(angle)*y + 0.*z
@@ -1621,10 +1621,10 @@ contains
 !                sk:in vx:in vy:in vz:in
   subroutine allnodalgradients_d()
 !
-!         nodalgradients computes the nodal velocity gradients and     
-!         minus the gradient of the speed of sound squared. the minus  
-!         sign is present, because this is the definition of the heat  
-!         flux. these gradients are computed for all nodes.            
+!         nodalgradients computes the nodal velocity gradients and
+!         minus the gradient of the speed of sound squared. the minus
+!         sign is present, because this is the definition of the heat
+!         flux. these gradients are computed for all nodes.
 !
     use constants
     use blockpointers
@@ -2036,10 +2036,10 @@ contains
   end subroutine allnodalgradients_d
   subroutine allnodalgradients()
 !
-!         nodalgradients computes the nodal velocity gradients and     
-!         minus the gradient of the speed of sound squared. the minus  
-!         sign is present, because this is the definition of the heat  
-!         flux. these gradients are computed for all nodes.            
+!         nodalgradients computes the nodal velocity gradients and
+!         minus the gradient of the speed of sound squared. the minus
+!         sign is present, because this is the definition of the heat
+!         flux. these gradients are computed for all nodes.
 !
     use constants
     use blockpointers

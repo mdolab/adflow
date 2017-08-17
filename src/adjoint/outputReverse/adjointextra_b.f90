@@ -122,13 +122,13 @@ contains
     subroutine volpym(xa, ya, za, xb, yb, zb, xc, yc, zc, xd, yd, zd, &
 &     volume)
 !
-!         volpym computes 6 times the volume of a pyramid. node p,     
-!         whose coordinates are set in the subroutine metric itself,   
-!         is the top node and a-b-c-d is the quadrilateral surface.    
-!         it is assumed that the cross product vca * vdb points in     
-!         the direction of the top node. here vca is the diagonal      
-!         running from node c to node a and vdb the diagonal from      
-!         node d to node b.                                            
+!         volpym computes 6 times the volume of a pyramid. node p,
+!         whose coordinates are set in the subroutine metric itself,
+!         is the top node and a-b-c-d is the quadrilateral surface.
+!         it is assumed that the cross product vca * vdb points in
+!         the direction of the top node. here vca is the diagonal
+!         running from node c to node a and vdb the diagonal from
+!         node d to node b.
 !
       use precision
       implicit none
@@ -479,13 +479,13 @@ contains
 &     , zbd, xc, xcd, yc, ycd, zc, zcd, xd, xdd, yd, ydd, zd, zdd, &
 &     volume, volumed)
 !
-!         volpym computes 6 times the volume of a pyramid. node p,     
-!         whose coordinates are set in the subroutine metric itself,   
-!         is the top node and a-b-c-d is the quadrilateral surface.    
-!         it is assumed that the cross product vca * vdb points in     
-!         the direction of the top node. here vca is the diagonal      
-!         running from node c to node a and vdb the diagonal from      
-!         node d to node b.                                            
+!         volpym computes 6 times the volume of a pyramid. node p,
+!         whose coordinates are set in the subroutine metric itself,
+!         is the top node and a-b-c-d is the quadrilateral surface.
+!         it is assumed that the cross product vca * vdb points in
+!         the direction of the top node. here vca is the diagonal
+!         running from node c to node a and vdb the diagonal from
+!         node d to node b.
 !
       use precision
       implicit none
@@ -538,13 +538,13 @@ contains
     subroutine volpym(xa, ya, za, xb, yb, zb, xc, yc, zc, xd, yd, zd, &
 &     volume)
 !
-!         volpym computes 6 times the volume of a pyramid. node p,     
-!         whose coordinates are set in the subroutine metric itself,   
-!         is the top node and a-b-c-d is the quadrilateral surface.    
-!         it is assumed that the cross product vca * vdb points in     
-!         the direction of the top node. here vca is the diagonal      
-!         running from node c to node a and vdb the diagonal from      
-!         node d to node b.                                            
+!         volpym computes 6 times the volume of a pyramid. node p,
+!         whose coordinates are set in the subroutine metric itself,
+!         is the top node and a-b-c-d is the quadrilateral surface.
+!         it is assumed that the cross product vca * vdb points in
+!         the direction of the top node. here vca is the diagonal
+!         running from node c to node a and vdb the diagonal from
+!         node d to node b.
 !
       use precision
       implicit none
@@ -602,14 +602,14 @@ contains
     call pushreal8array(v1, 3)
     call pushreal8array(v2, 3)
 !
-!  computation of the face normals in i-, j- and k-direction. 
-!  formula's are valid for a right handed block; for a left   
-!  handed block the correct orientation is obtained via fact. 
-!  the normals point in the direction of increasing index.    
-!  the absolute value of fact is 0.5, because the cross       
-!  product of the two diagonals is twice the normal vector.   
-!  note that also the normals of the first level halo cells   
-!  are computed. these are needed for the viscous fluxes.     
+!  computation of the face normals in i-, j- and k-direction.
+!  formula's are valid for a right handed block; for a left
+!  handed block the correct orientation is obtained via fact.
+!  the normals point in the direction of increasing index.
+!  the absolute value of fact is 0.5, because the cross
+!  product of the two diagonals is twice the normal vector.
+!  note that also the normals of the first level halo cells
+!  are computed. these are needed for the viscous fluxes.
 !
 ! projected areas of cell faces in the i direction.
     do ii=0,ke*je*(ie+1)-1
@@ -870,14 +870,14 @@ contains
       fact = -half
     end if
 !
-!  computation of the face normals in i-, j- and k-direction. 
-!  formula's are valid for a right handed block; for a left   
-!  handed block the correct orientation is obtained via fact. 
-!  the normals point in the direction of increasing index.    
-!  the absolute value of fact is 0.5, because the cross       
-!  product of the two diagonals is twice the normal vector.   
-!  note that also the normals of the first level halo cells   
-!  are computed. these are needed for the viscous fluxes.     
+!  computation of the face normals in i-, j- and k-direction.
+!  formula's are valid for a right handed block; for a left
+!  handed block the correct orientation is obtained via fact.
+!  the normals point in the direction of increasing index.
+!  the absolute value of fact is 0.5, because the cross
+!  product of the two diagonals is twice the normal vector.
+!  note that also the normals of the first level halo cells
+!  are computed. these are needed for the viscous fluxes.
 !
 ! projected areas of cell faces in the i direction.
     do ii=0,ke*je*(ie+1)-1
@@ -958,9 +958,9 @@ contains
 !   rw status of diff variables: *si:incr *sj:incr *sk:incr *(*bcdata.norm):in-out
 !   plus diff mem management of: si:in sj:in sk:in bcdata:in *bcdata.norm:in
   subroutine boundarynormals_b()
-!  the unit normals on the boundary faces. these always point 
-!  out of the domain, so a multiplication by -1 is needed for 
-!  the imin, jmin and kmin boundaries.                        
+!  the unit normals on the boundary faces. these always point
+!  out of the domain, so a multiplication by -1 is needed for
+!  the imin, jmin and kmin boundaries.
 !
     use constants
     use blockpointers
@@ -996,33 +996,33 @@ contains
         i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm&
 &         )%icbeg
         j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-        select case  (bcfaceid(mm)) 
-        case (imin) 
+        select case  (bcfaceid(mm))
+        case (imin)
           mult = -one
           xxp = si(1, i, j, 1)
           yyp = si(1, i, j, 2)
           zzp = si(1, i, j, 3)
-        case (imax) 
+        case (imax)
           mult = one
           xxp = si(il, i, j, 1)
           yyp = si(il, i, j, 2)
           zzp = si(il, i, j, 3)
-        case (jmin) 
+        case (jmin)
           mult = -one
           xxp = sj(i, 1, j, 1)
           yyp = sj(i, 1, j, 2)
           zzp = sj(i, 1, j, 3)
-        case (jmax) 
+        case (jmax)
           mult = one
           xxp = sj(i, jl, j, 1)
           yyp = sj(i, jl, j, 2)
           zzp = sj(i, jl, j, 3)
-        case (kmin) 
+        case (kmin)
           mult = -one
           xxp = sk(i, j, 1, 1)
           yyp = sk(i, j, 1, 2)
           zzp = sk(i, j, 1, 3)
-        case (kmax) 
+        case (kmax)
           mult = one
           xxp = sk(i, j, kl, 1)
           yyp = sk(i, j, kl, 2)
@@ -1047,38 +1047,38 @@ contains
         i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm&
 &         )%icbeg
         j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-        select case  (bcfaceid(mm)) 
-        case (imin) 
+        select case  (bcfaceid(mm))
+        case (imin)
           mult = -one
           xxp = si(1, i, j, 1)
           yyp = si(1, i, j, 2)
           zzp = si(1, i, j, 3)
           call pushcontrol3b(1)
-        case (imax) 
+        case (imax)
           mult = one
           xxp = si(il, i, j, 1)
           yyp = si(il, i, j, 2)
           zzp = si(il, i, j, 3)
           call pushcontrol3b(2)
-        case (jmin) 
+        case (jmin)
           mult = -one
           xxp = sj(i, 1, j, 1)
           yyp = sj(i, 1, j, 2)
           zzp = sj(i, 1, j, 3)
           call pushcontrol3b(3)
-        case (jmax) 
+        case (jmax)
           mult = one
           xxp = sj(i, jl, j, 1)
           yyp = sj(i, jl, j, 2)
           zzp = sj(i, jl, j, 3)
           call pushcontrol3b(4)
-        case (kmin) 
+        case (kmin)
           mult = -one
           xxp = sk(i, j, 1, 1)
           yyp = sk(i, j, 1, 2)
           zzp = sk(i, j, 1, 3)
           call pushcontrol3b(5)
-        case (kmax) 
+        case (kmax)
           mult = one
           xxp = sk(i, j, kl, 1)
           yyp = sk(i, j, kl, 2)
@@ -1179,9 +1179,9 @@ contains
     end do
   end subroutine boundarynormals_b
   subroutine boundarynormals()
-!  the unit normals on the boundary faces. these always point 
-!  out of the domain, so a multiplication by -1 is needed for 
-!  the imin, jmin and kmin boundaries.                        
+!  the unit normals on the boundary faces. these always point
+!  out of the domain, so a multiplication by -1 is needed for
+!  the imin, jmin and kmin boundaries.
 !
     use constants
     use blockpointers
@@ -1204,33 +1204,33 @@ bocoloop:do mm=1,nbocos
         i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm&
 &         )%icbeg
         j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-        select case  (bcfaceid(mm)) 
-        case (imin) 
+        select case  (bcfaceid(mm))
+        case (imin)
           mult = -one
           xxp = si(1, i, j, 1)
           yyp = si(1, i, j, 2)
           zzp = si(1, i, j, 3)
-        case (imax) 
+        case (imax)
           mult = one
           xxp = si(il, i, j, 1)
           yyp = si(il, i, j, 2)
           zzp = si(il, i, j, 3)
-        case (jmin) 
+        case (jmin)
           mult = -one
           xxp = sj(i, 1, j, 1)
           yyp = sj(i, 1, j, 2)
           zzp = sj(i, 1, j, 3)
-        case (jmax) 
+        case (jmax)
           mult = one
           xxp = sj(i, jl, j, 1)
           yyp = sj(i, jl, j, 2)
           zzp = sj(i, jl, j, 3)
-        case (kmin) 
+        case (kmin)
           mult = -one
           xxp = sk(i, j, 1, 1)
           yyp = sk(i, j, 1, 2)
           zzp = sk(i, j, 1, 3)
-        case (kmax) 
+        case (kmax)
           mult = one
           xxp = sk(i, j, kl, 1)
           yyp = sk(i, j, kl, 2)
@@ -1254,11 +1254,11 @@ bocoloop:do mm=1,nbocos
 !   plus diff mem management of: x:in
   subroutine xhalo_block_b()
 !
-!       xhalo determines the coordinates of the nodal halo's.          
-!       first it sets all halo coordinates by simple extrapolation,    
-!       then the symmetry planes are treated (also the unit normal of  
-!       symmetry planes are determined) and finally an exchange is     
-!       made for the internal halo's.                                  
+!       xhalo determines the coordinates of the nodal halo's.
+!       first it sets all halo coordinates by simple extrapolation,
+!       then the symmetry planes are treated (also the unit normal of
+!       symmetry planes are determined) and finally an exchange is
+!       made for the internal halo's.
 !
     use constants
     use blockpointers
@@ -1344,8 +1344,8 @@ bocoloop:do mm=1,nbocos
     real(kind=realtype) :: tmpd1
     real(kind=realtype) :: tmpd0
 !
-!           mirror the halo coordinates adjacent to the symmetry       
-!           planes                                                     
+!           mirror the halo coordinates adjacent to the symmetry
+!           planes
 !
 ! loop over boundary subfaces.
 loopbocos:do mm=1,nbocos
@@ -1370,8 +1370,8 @@ loopbocos:do mm=1,nbocos
         norm(3) = norm(3)/length
 ! see xhalo_block for comments for below:
         if (length .gt. eps) then
-          select case  (bcfaceid(mm)) 
-          case (imin) 
+          select case  (bcfaceid(mm))
+          case (imin)
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1392,7 +1392,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from0)
             call pushcontrol4b(7)
-          case (imax) 
+          case (imax)
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1413,7 +1413,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from2)
             call pushcontrol4b(6)
-          case (jmin) 
+          case (jmin)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1434,7 +1434,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from4)
             call pushcontrol4b(5)
-          case (jmax) 
+          case (jmax)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1455,7 +1455,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from6)
             call pushcontrol4b(4)
-          case (kmin) 
+          case (kmin)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1476,7 +1476,7 @@ loopbocos:do mm=1,nbocos
             call pushinteger4(j - 1)
             call pushinteger4(ad_from8)
             call pushcontrol4b(3)
-          case (kmax) 
+          case (kmax)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1791,11 +1791,11 @@ loopbocos:do mm=1,nbocos
   end subroutine xhalo_block_b
   subroutine xhalo_block()
 !
-!       xhalo determines the coordinates of the nodal halo's.          
-!       first it sets all halo coordinates by simple extrapolation,    
-!       then the symmetry planes are treated (also the unit normal of  
-!       symmetry planes are determined) and finally an exchange is     
-!       made for the internal halo's.                                  
+!       xhalo determines the coordinates of the nodal halo's.
+!       first it sets all halo coordinates by simple extrapolation,
+!       then the symmetry planes are treated (also the unit normal of
+!       symmetry planes are determined) and finally an exchange is
+!       made for the internal halo's.
 !
     use constants
     use blockpointers
@@ -1845,8 +1845,8 @@ loopbocos:do mm=1,nbocos
       end do
     end do
 !
-!           mirror the halo coordinates adjacent to the symmetry       
-!           planes                                                     
+!           mirror the halo coordinates adjacent to the symmetry
+!           planes
 !
 ! loop over boundary subfaces.
 loopbocos:do mm=1,nbocos
@@ -1865,8 +1865,8 @@ loopbocos:do mm=1,nbocos
         norm(3) = norm(3)/length
 ! see xhalo_block for comments for below:
         if (length .gt. eps) then
-          select case  (bcfaceid(mm)) 
-          case (imin) 
+          select case  (bcfaceid(mm))
+          case (imin)
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1888,7 +1888,7 @@ loopbocos:do mm=1,nbocos
                 x(0, i, j, 3) = x(2, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (imax) 
+          case (imax)
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1910,7 +1910,7 @@ loopbocos:do mm=1,nbocos
                 x(ie, i, j, 3) = x(nx, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmin) 
+          case (jmin)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1932,7 +1932,7 @@ loopbocos:do mm=1,nbocos
                 x(i, 0, j, 3) = x(i, 2, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmax) 
+          case (jmax)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1954,7 +1954,7 @@ loopbocos:do mm=1,nbocos
                 x(i, je, j, 3) = x(i, ny, j, 3) + dot*norm(3)
               end do
             end do
-          case (kmin) 
+          case (kmin)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1976,7 +1976,7 @@ loopbocos:do mm=1,nbocos
                 x(i, j, 0, 3) = x(i, j, 2, 3) + dot*norm(3)
               end do
             end do
-          case (kmax) 
+          case (kmax)
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il

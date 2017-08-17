@@ -1,14 +1,14 @@
   subroutine set_signal_write
     !
-    !       set_signal_write sets the localSignal to signalWrite. On the   
-    !       finest mesh this means that after the current iteration a      
-    !       solution is written. On the coarser grids this signal will be  
-    !       ignored.                                                       
-    !       This routine is only compiled when signalling is supported.    
+    !       set_signal_write sets the localSignal to signalWrite. On the
+    !       finest mesh this means that after the current iteration a
+    !       solution is written. On the coarser grids this signal will be
+    !       ignored.
+    !       This routine is only compiled when signalling is supported.
     !
 #ifndef USE_NO_SIGNALS
 
-    use constants  
+    use constants
     use communication, only : myID
     use inputPhysics, only : equationMode
     use killSignals, only : localSignal, noSignal, signalWrite
@@ -100,18 +100,18 @@
 
   subroutine set_signal_write_quit
     !
-    !       set_signal_write_quit sets the localSignal to                  
-    !       signalWriteQuit. On the finest mesh this means that after      
-    !       the current iteration the solution is written and the          
-    !       computation is stopped. On the coarser grids the solution is   
-    !       transferred to the next finer level and the computation is     
-    !       continued there.                                               
-    !       This routine is only compiled when signalling is supported.    
+    !       set_signal_write_quit sets the localSignal to
+    !       signalWriteQuit. On the finest mesh this means that after
+    !       the current iteration the solution is written and the
+    !       computation is stopped. On the coarser grids the solution is
+    !       transferred to the next finer level and the computation is
+    !       continued there.
+    !       This routine is only compiled when signalling is supported.
     !
 #ifndef USE_NO_SIGNALS
 
-  
-    use constants  
+
+    use constants
     use communication, only : myID
     use inputPhysics, only : equationMode
     use killSignals, only : localSignal, noSignal, signalWriteQuit

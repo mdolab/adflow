@@ -4,9 +4,9 @@ contains
 
   subroutine kw_block(resOnly)
     !
-    !       kw solves the transport equations for the standard and         
-    !       modified k-omega turbulence models in a segregated manner      
-    !       using a diagonal dominant adi-scheme.                          
+    !       kw solves the transport equations for the standard and
+    !       modified k-omega turbulence models in a segregated manner
+    !       using a diagonal dominant adi-scheme.
     !
     use constants
     use blockPointers, only : il, jl, kl
@@ -20,39 +20,39 @@ contains
     !      Subroutine argument.
     !
     logical, intent(in) :: resOnly
- 
+
     ! Set the arrays for the boundary condition treatment.
-    
+
     call bcTurbTreatment
-    
+
     ! Solve the transport equations for k and omega.
-    
+
     call kwSolve(resOnly)
 
     ! The eddy viscosity and the boundary conditions are only
     ! applied if an actual update has been computed in kwSolve.
-    
+
     if(.not. resOnly ) then
-       
+
        ! Compute the corresponding eddy viscosity.
-       
+
        call kwEddyViscosity(2, il, 2, jl, 2, kl)
-       
+
        ! Set the halo values for the turbulent variables.
        ! We are on the finest mesh, so the second layer of halo
        ! cells must be computed as well.
-       
+
        call applyAllTurbBCThisBlock(.true.)
 
     endif
-    
+
   end subroutine kw_block
 
   subroutine kwSolve(resOnly)
     !
-    !       kwSolve solves the k-omega transport equations of both         
-    !       the original and modified k-omega models                       
-    !       in a coupled manner using a diagonal dominant ADI-scheme.      
+    !       kwSolve solves the k-omega transport equations of both
+    !       the original and modified k-omega models
+    !       in a coupled manner using a diagonal dominant ADI-scheme.
     !
     use blockPointers
     use constants
@@ -114,7 +114,7 @@ contains
     vort => prod
     kwCD => scratch(1:,1:,1:,icd)
     !
-    !       Production term.                                               
+    !       Production term.
     !
     select case (turbProd)
     case (strain)
@@ -128,9 +128,9 @@ contains
 
     end select
     !
-    !       Source terms.                                                  
-    !       Determine the source term and its derivative w.r.t. k and      
-    !       omega for all internal cells of the block.                     
+    !       Source terms.
+    !       Determine the source term and its derivative w.r.t. k and
+    !       omega for all internal cells of the block.
     !
     do k=2,kl
        do j=2,jl
@@ -165,9 +165,9 @@ contains
        enddo
     enddo
     !
-    !       Compute the cross-diffusion term for the modified version of   
-    !       the k-omega model. It should cure the free-stream dependency   
-    !       of the original model.                                         
+    !       Compute the cross-diffusion term for the modified version of
+    !       the k-omega model. It should cure the free-stream dependency
+    !       of the original model.
     !
     if(turbModel == komegaModified) then
 
@@ -189,14 +189,14 @@ contains
 
     endif
     !
-    !       Advection and unsteady terms.                                  
+    !       Advection and unsteady terms.
     !
     nn = itu1 - 1
     call turbAdvection(2_intType, 2_intType, nn, qq)
 
     call unsteadyTurbTerm(2_intType, 2_intType, nn, qq)
     !
-    !       Viscous terms in k-direction.                                  
+    !       Viscous terms in k-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -294,7 +294,7 @@ contains
        enddo
     enddo
     !
-    !       Viscous terms in j-direction.                                  
+    !       Viscous terms in j-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -392,7 +392,7 @@ contains
        enddo
     enddo
     !
-    !       Viscous terms in i-direction.                                  
+    !       Viscous terms in i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -656,9 +656,9 @@ contains
 
     qs = zero
     !
-    !       dd-ADI step in j-direction. There is no particular reason to   
-    !       start in j-direction, it just happened to be so. As we solve   
-    !       in j-direction, the j-loop is the innermost loop.              
+    !       dd-ADI step in j-direction. There is no particular reason to
+    !       start in j-direction, it just happened to be so. As we solve
+    !       in j-direction, the j-loop is the innermost loop.
     !
     do k=2,kl
        do i=2,il
@@ -776,8 +776,8 @@ contains
        enddo
     enddo
     !
-    !       dd-ADI step in i-direction. As we solve in i-direction, the    
-    !       i-loop is the innermost loop.                                  
+    !       dd-ADI step in i-direction. As we solve in i-direction, the
+    !       i-loop is the innermost loop.
     !
     do k=2,kl
        do j=2,jl
@@ -895,8 +895,8 @@ contains
        enddo
     enddo
     !
-    !       dd-adi step in k-direction. As we solve in k-direction, the    
-    !       k-loop is the innermost loop.                                  
+    !       dd-adi step in k-direction. As we solve in k-direction, the
+    !       k-loop is the innermost loop.
     !
     do j=2,jl
        do i=2,il
@@ -1014,9 +1014,9 @@ contains
        enddo
     enddo
     !
-    !       Update the turbulent variables. For explicit relaxation the    
-    !       update must be relaxed; for implicit relaxation this has been  
-    !       done via the time step.                                        
+    !       Update the turbulent variables. For explicit relaxation the
+    !       update must be relaxed; for implicit relaxation this has been
+    !       done via the time step.
     !
     factor = one
     if(turbRelax == turbRelaxExplicit) factor = alfaTurb

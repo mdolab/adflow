@@ -5,7 +5,7 @@ module utils
   function char2str(charArray, n)
     use constants
     !
-    ! some gymnastics to cast a char array to string 
+    ! some gymnastics to cast a char array to string
     !
     implicit none
     !
@@ -31,8 +31,8 @@ module utils
        degreeFourBeta,  omegaFourBeta,     &
        cosCoefFourBeta, sinCoefFourBeta, t)
     !
-    !       TSbeta computes the angle of attack for a given Time interval 
-    !       in a time spectral solution.                                   
+    !       TSbeta computes the angle of attack for a given Time interval
+    !       in a time spectral solution.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -94,8 +94,8 @@ module utils
        degreeFourBeta,  omegaFourBeta,     &
        cosCoefFourBeta, sinCoefFourBeta, t)
     !
-    !       TSbeta computes the angle of attack for a given Time interval  
-    !       in a time spectral solution.                                   
+    !       TSbeta computes the angle of attack for a given Time interval
+    !       in a time spectral solution.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -156,8 +156,8 @@ module utils
        degreeFourMach,  omegaFourMach,     &
        cosCoefFourMach, sinCoefFourMach, t)
     !
-    !       TSMach computes the Mach Number for a given time interval      
-    !       in a time spectral solution.                                   
+    !       TSMach computes the Mach Number for a given time interval
+    !       in a time spectral solution.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -219,8 +219,8 @@ module utils
        degreeFourMach,  omegaFourMach,     &
        cosCoefFourMach, sinCoefFourMach, t)
     !
-    !       TSmach computes the angle of attack for a given Time interval 
-    !       in a time spectral solution.                                   
+    !       TSmach computes the angle of attack for a given Time interval
+    !       in a time spectral solution.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -281,8 +281,8 @@ module utils
        degreeFourAlpha,  omegaFourAlpha,     &
        cosCoefFourAlpha, sinCoefFourAlpha, t)
     !
-    !       TSalpha computes the angle of attack for a given Time interval 
-    !       in a time spectral solution.                                   
+    !       TSalpha computes the angle of attack for a given Time interval
+    !       in a time spectral solution.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -343,8 +343,8 @@ module utils
        degreeFourAlpha,  omegaFourAlpha,     &
        cosCoefFourAlpha, sinCoefFourAlpha, t)
     !
-    !       TSalpha computes the angle of attack for a given Time interval 
-    !       in a time spectral solution.                                   
+    !       TSalpha computes the angle of attack for a given Time interval
+    !       in a time spectral solution.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -409,10 +409,10 @@ module utils
        cosCoefFourRot, &
        sinCoefFourRot, t)
     !
-    !       derivativeRigidRotAngle computes the time derivative of the    
-    !       rigid body rotation angle at the given time for the given      
-    !       arguments. The angle is described by a combination of a        
-    !       polynomial and fourier series.                                 
+    !       derivativeRigidRotAngle computes the time derivative of the
+    !       rigid body rotation angle at the given time for the given
+    !       arguments. The angle is described by a combination of a
+    !       polynomial and fourier series.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -476,7 +476,7 @@ module utils
     real(kind=realType) x,y
     real(kind=realType) :: myDim
 
-    myDim = x - y 
+    myDim = x - y
     if (myDim < 0.0) then
        myDim = 0.0
     end if
@@ -500,8 +500,8 @@ module utils
   end function getCorrectForK
   subroutine terminate(routineName, errorMessage)
     !
-    !       terminate writes an error message to standard output and       
-    !       terminates the execution of the program.                       
+    !       terminate writes an error message to standard output and
+    !       terminates the execution of the program.
     !
     use constants
     use communication, only : adflow_comm_world, myid
@@ -612,9 +612,9 @@ module utils
   subroutine rotMatrixRigidBody(tNew, tOld, rotationMatrix, &
        rotationPoint)
     !
-    !       rotMatrixRigidBody determines the rotation matrix and the      
-    !       rotation point to determine the coordinates of the new time    
-    !       level starting from the coordinates of the old time level.     
+    !       rotMatrixRigidBody determines the rotation matrix and the
+    !       rotation point to determine the coordinates of the new time
+    !       level starting from the coordinates of the old time level.
     !
     use constants
     use inputMotion
@@ -754,10 +754,10 @@ module utils
        cosCoefFourRot, &
        sinCoefFourRot, t)
     !
-    !       2ndderivativeRigidRotAngle computes the 2nd time derivative of 
-    !       the rigid body rotation angle at the given time for the given  
-    !       arguments. The angle is described by a combination of a        
-    !       polynomial and fourier series.                                 
+    !       2ndderivativeRigidRotAngle computes the 2nd time derivative of
+    !       the rigid body rotation angle at the given time for the given
+    !       arguments. The angle is described by a combination of a
+    !       polynomial and fourier series.
     !
     use constants
     use flowVarRefState, only : timeRef
@@ -818,9 +818,9 @@ module utils
        degreeFourRot,  omegaFourRot,     &
        cosCoefFourRot, sinCoefFourRot, t)
     !
-    !       rigidRotAngle computes the rigid body rotation angle at the    
-    !       given time for the given arguments. The angle is described by  
-    !       a combination of a polynomial and fourier series.              
+    !       rigidRotAngle computes the rigid body rotation angle at the
+    !       given time for the given arguments. The angle is described by
+    !       a combination of a polynomial and fourier series.
     !
     use constants
     use inputPhysics, only : equationMode
@@ -880,14 +880,14 @@ module utils
 
   subroutine setBCPointers(nn, spatialPointers)
     !
-    !       setBCPointers sets the pointers needed for the boundary        
-    !       condition treatment on a general face, such that the boundary  
-    !       routines are only implemented once instead of 6 times.         
+    !       setBCPointers sets the pointers needed for the boundary
+    !       condition treatment on a general face, such that the boundary
+    !       routines are only implemented once instead of 6 times.
     !
-    use constants 
+    use constants
     use blockPointers, only : w, p, rlv, rev, gamma, x, d2wall, &
          si, sj, sk, s,  globalCell, BCData, nx, il, ie, ib, &
-         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID, & 
+         ny, jl, je, jb, nz, kl, ke, kb, BCFaceID, &
          addgridvelocities, sFaceI, sFaceJ, sFaceK, addGridVelocities
     use BCPointers, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
          rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, &
@@ -901,7 +901,7 @@ module utils
     logical, intent(in) :: spatialPointers
 
     ! Determine the sizes of each face and point to just the range we
-    ! need on each face. 
+    ! need on each face.
     iStart = BCData(nn)%icBeg
     iEnd   = BCData(nn)%icEnd
     jStart = BCData(nn)%jcBeg
@@ -1129,7 +1129,7 @@ module utils
           ssj => si(:,:,2,:)
           ssk => sj(:,:,2,:)
           ss  =>  s(:,:,2,:)
-       case (kMax) 
+       case (kMax)
           xx => x(:,:,kl,:)
           ssi => sk(:,:,kl,:)
           ssj => si(:,:,kl,:)
@@ -1137,7 +1137,7 @@ module utils
           ss  =>  s(:,:,kl,:)
        end select
 
-       if (addGridVelocities) then 
+       if (addGridVelocities) then
          select case (BCFaceID(nn))
          case (iMin)
             sFace => sFaceI(1,:,:)
@@ -1149,7 +1149,7 @@ module utils
             sFace => sFaceJ(:,jl,:)
          case (kMin)
             sFace => sFaceK(:,:,1)
-         case (kMax) 
+         case (kMax)
             sFace => sFaceK(:,:,kl)
          end select
       end if
@@ -1209,12 +1209,12 @@ module utils
 
   subroutine computeLeastSquaresRegression(y,x,npts,m,b)
     !
-    !       Computes the slope of best fit for a set of x,y data of length 
-    !       npts                                                           
+    !       Computes the slope of best fit for a set of x,y data of length
+    !       npts
     !
     use constants
     implicit none
-    !Subroutine arguments 
+    !Subroutine arguments
     integer(kind=intType)::npts
     real(kind=realType),dimension(npts)  :: x,y
     real(kind=realType)::m,b
@@ -1244,18 +1244,18 @@ module utils
   subroutine computeTSDerivatives(force, moment, coef0, dcdalpha, &
        dcdalphadot, dcdq, dcdqdot)
     !
-    !      Computes the stability derivatives based on the time spectral  
-    !      solution of a given mesh. Takes in the force coefficients at   
-    !      all time instantces and computes the agregate parameters       
+    !      Computes the stability derivatives based on the time spectral
+    !      solution of a given mesh. Takes in the force coefficients at
+    !      all time instantces and computes the agregate parameters
     !
     use constants
-    use communication     
-    use inputPhysics      
-    use inputTimeSpectral 
+    use communication
+    use inputPhysics
+    use inputTimeSpectral
     use inputTSStabDeriv
-    use flowvarrefstate   
-    use monitor           
-    use section           
+    use flowvarrefstate
+    use monitor
+    use section
     use inputMotion
     implicit none
 
@@ -1329,7 +1329,7 @@ module utils
        !    call computeLeastSquaresRegression(BaseCoef(:,i),dphiz,nTimeIntervalsSpectral,dcdq(i),coef0(i))
        ! end do
 
-       ! ! now subtract off estimated cl,cmz and use remainder to compute 
+       ! ! now subtract off estimated cl,cmz and use remainder to compute
        ! ! clqdot and cmzqdot.
        ! do i = 1,8
        !    do sps = 1,nTimeIntervalsSpectral
@@ -1368,7 +1368,7 @@ module utils
                degreeFourAlpha,  omegaFourAlpha,     &
                cosCoefFourAlpha, sinCoefFourAlpha, t(1))
 
-          ! THIS CALL IS WRONG!!!! 
+          ! THIS CALL IS WRONG!!!!
           !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha+intervalAlpha(sps), beta)
 
           BaseCoef(sps,1) = fact*(&
@@ -1392,7 +1392,7 @@ module utils
           call computeLeastSquaresRegression(BaseCoef(:,i),intervalAlpha,nTimeIntervalsSpectral,dcdAlpha(i),coef0(i))
        end do
 
-       ! now subtract off estimated cl,cmz and use remainder to compute 
+       ! now subtract off estimated cl,cmz and use remainder to compute
        ! clalphadot and cmzalphadot.
        do i = 1,8
           do sps = 1,nTimeIntervalsSpectral
@@ -1416,25 +1416,25 @@ module utils
 
   subroutine getDirAngle(freeStreamAxis,liftAxis,liftIndex,alpha,beta)
     !
-    !      Convert the wind axes to angle of attack and side slip angle.  
-    !      The direction angles alpha and beta are computed given the     
-    !      components of the wind direction vector (freeStreamAxis), the  
-    !      lift direction vector (liftAxis) and assuming that the         
-    !      body direction (xb,yb,zb) is in the default ijk coordinate     
-    !      system. The rotations are determined by first determining      
-    !      whether the lift is primarily in the j or k direction and then 
-    !      determining the angles accordingly.                            
-    !      direction vector:                                              
-    !        1) Rotation about the zb or yb -axis: alpha clockwise (CW)   
-    !           (xb,yb,zb) -> (x1,y1,z1)                                  
-    !        2) Rotation about the yl or z1 -axis: beta counter-clockwise 
-    !           (CCW) (x1,y1,z1) -> (xw,yw,zw)                            
-    !         input arguments:                                            
-    !            freeStreamAxis = wind vector in body axes                
-    !            liftAxis       = lift direction vector in body axis      
-    !         output arguments:                                           
-    !            alpha    = angle of attack in radians                    
-    !            beta     = side slip angle in radians                    
+    !      Convert the wind axes to angle of attack and side slip angle.
+    !      The direction angles alpha and beta are computed given the
+    !      components of the wind direction vector (freeStreamAxis), the
+    !      lift direction vector (liftAxis) and assuming that the
+    !      body direction (xb,yb,zb) is in the default ijk coordinate
+    !      system. The rotations are determined by first determining
+    !      whether the lift is primarily in the j or k direction and then
+    !      determining the angles accordingly.
+    !      direction vector:
+    !        1) Rotation about the zb or yb -axis: alpha clockwise (CW)
+    !           (xb,yb,zb) -> (x1,y1,z1)
+    !        2) Rotation about the yl or z1 -axis: beta counter-clockwise
+    !           (CCW) (x1,y1,z1) -> (xw,yw,zw)
+    !         input arguments:
+    !            freeStreamAxis = wind vector in body axes
+    !            liftAxis       = lift direction vector in body axis
+    !         output arguments:
+    !            alpha    = angle of attack in radians
+    !            beta     = side slip angle in radians
     !
     use constants
 
@@ -1508,14 +1508,14 @@ module utils
 
   subroutine stabilityDerivativeDriver
     !
-    !      Runs the Time spectral stability derivative routines from the  
-    !      main program file                                              
+    !      Runs the Time spectral stability derivative routines from the
+    !      main program file
     !
     use precision
     implicit none
     !
     !     Local variables.
-    ! 
+    !
     real(kind=realType),dimension(8)::dcdalpha,dcdalphadot,dcdbeta,&
          dcdbetadot,dcdMach,dcdMachdot
     real(kind=realType),dimension(8)::dcdp,dcdpdot,dcdq,dcdqdot,dcdr,dcdrdot
@@ -1526,11 +1526,11 @@ module utils
   end subroutine stabilityDerivativeDriver
   subroutine setCoefTimeIntegrator
     !
-    !       setCoefTimeIntegrator determines the coefficients of the       
-    !       time integration scheme in unsteady mode. Normally these are   
-    !       equal to the coefficients corresponding to the specified       
-    !       accuracy. However during the initial phase there are not       
-    !       enough states in the past and the accuracy is reduced.         
+    !       setCoefTimeIntegrator determines the coefficients of the
+    !       time integration scheme in unsteady mode. Normally these are
+    !       equal to the coefficients corresponding to the specified
+    !       accuracy. However during the initial phase there are not
+    !       enough states in the past and the accuracy is reduced.
     !
     use constants
     use inputUnsteady
@@ -1694,16 +1694,16 @@ module utils
   end function myNorm2
 
   function isWallType(bType)
-    
+
     use constants
     implicit none
     integer(kind=intType) :: bType
     logical :: isWallType
-    
+
     isWallType = .False.
     if (bType == NSWallAdiabatic .or. &
          bType == NSWallIsoThermal .or. &
-         bType == EulerWall) then 
+         bType == EulerWall) then
        isWallType = .True.
     end if
 
@@ -1764,11 +1764,11 @@ end subroutine cross_prod
 
   subroutine siDensity(mass, len, mult, trans)
     !
-    !       siDensity computes the conversion from the given density       
-    !       unit, which can be constructed from mass and length, to the    
-    !       SI-unit kg/m^3. The conversion will look like:                 
-    !       density in kg/m^3 = mult*(density in NCU) + trans.             
-    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !       siDensity computes the conversion from the given density
+    !       unit, which can be constructed from mass and length, to the
+    !       SI-unit kg/m^3. The conversion will look like:
+    !       density in kg/m^3 = mult*(density in NCU) + trans.
+    !       NCU means non-christian units, i.e. everything that is not SI.
     !
     use constants
     use su_cgns, only : Kilogram, meter
@@ -1799,10 +1799,10 @@ end subroutine cross_prod
 
   subroutine siLen(len, mult, trans)
     !
-    !       siLen computes the conversion from the given length unit to    
-    !       the SI-unit meter. The conversion will look like:              
-    !       length in meter = mult*(length in NCU) + trans.                
-    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !       siLen computes the conversion from the given length unit to
+    !       the SI-unit meter. The conversion will look like:
+    !       length in meter = mult*(length in NCU) + trans.
+    !       NCU means non-christian units, i.e. everything that is not SI.
     !
     use constants
     use su_cgns, only: Meter, Centimeter, millimeter, Foot, Inch
@@ -1842,11 +1842,11 @@ end subroutine cross_prod
 
   subroutine siPressure(mass, len, time, mult, trans)
     !
-    !       siPressure computes the conversion from the given pressure     
-    !       unit, which can be constructed from mass, length and time, to  
-    !       the SI-unit Pa. The conversion will look like:                 
-    !       pressure in Pa = mult*(pressure in NCU) + trans.               
-    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !       siPressure computes the conversion from the given pressure
+    !       unit, which can be constructed from mass, length and time, to
+    !       the SI-unit Pa. The conversion will look like:
+    !       pressure in Pa = mult*(pressure in NCU) + trans.
+    !       NCU means non-christian units, i.e. everything that is not SI.
     !
     use constants
     use su_cgns, only : Kilogram, Meter, Second
@@ -1877,11 +1877,11 @@ end subroutine cross_prod
 
   subroutine siTemperature(temp, mult, trans)
     !
-    !       siTemperature computes the conversion from the given           
-    !       temperature unit to the SI-unit kelvin. The conversion will    
-    !       look like:                                                     
-    !       temperature in K = mult*(temperature in NCU) + trans.          
-    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !       siTemperature computes the conversion from the given
+    !       temperature unit to the SI-unit kelvin. The conversion will
+    !       look like:
+    !       temperature in K = mult*(temperature in NCU) + trans.
+    !       NCU means non-christian units, i.e. everything that is not SI.
     !
     use constants
     use su_cgns, only : Kelvin, Celsius, Rankine, Fahrenheit
@@ -1938,11 +1938,11 @@ end subroutine cross_prod
   end subroutine siTemperature
   subroutine siTurb(mass, len, time, temp, turbName, mult, trans)
     !
-    !       siTurb computes the conversion from the given turbulence       
-    !       unit, which can be constructed from mass, len, time and temp,  
-    !       to the SI-unit for the given variable. The conversion will     
-    !       look like: var in SI = mult*(var in NCU) + trans.              
-    !       NCU means non-christian units, i.e. everything that is not SI. 
+    !       siTurb computes the conversion from the given turbulence
+    !       unit, which can be constructed from mass, len, time and temp,
+    !       to the SI-unit for the given variable. The conversion will
+    !       look like: var in SI = mult*(var in NCU) + trans.
+    !       NCU means non-christian units, i.e. everything that is not SI.
     !
     use constants
     use su_cgns, only : Kilogram, Meter, Second, Kelvin
@@ -1975,11 +1975,11 @@ end subroutine cross_prod
 
   subroutine siVelocity(length, time, mult, trans)
     !
-    !       siVelocity computes the conversion from the given velocity     
-    !       unit, which can be constructed from length and time, to the    
-    !       SI-unit m/s. The conversion will look like:                    
-    !       velocity in m/s = mult*(velocity in ncu) + trans.              
-    !       Ncu means non-christian units, i.e. everything that is not SI. 
+    !       siVelocity computes the conversion from the given velocity
+    !       unit, which can be constructed from length and time, to the
+    !       SI-unit m/s. The conversion will look like:
+    !       velocity in m/s = mult*(velocity in ncu) + trans.
+    !       Ncu means non-christian units, i.e. everything that is not SI.
     !
     use constants
     use su_cgns, only : Meter, CentiMeter, Millimeter, Foot, Inch, Second
@@ -2041,9 +2041,9 @@ end subroutine cross_prod
 #ifndef  USE_TAPENADE
   subroutine setbcpointers_d(nn, spatialpointers)
 !
-!       setbcpointers sets the pointers needed for the boundary        
-!       condition treatment on a general face, such that the boundary  
-!       routines are only implemented once instead of 6 times.         
+!       setbcpointers sets the pointers needed for the boundary
+!       condition treatment on a general face, such that the boundary
+!       routines are only implemented once instead of 6 times.
 !
     use constants
     use blockpointers, only : w, wd, p, pd, rlv, rlvd, rev, revd, &
@@ -2063,7 +2063,7 @@ end subroutine cross_prod
     integer(kind=inttype), intent(in) :: nn
     logical, intent(in) :: spatialpointers
 ! determine the sizes of each face and point to just the range we
-! need on each face. 
+! need on each face.
     istart = bcdata(nn)%icbeg
     iend = bcdata(nn)%icend
     jstart = bcdata(nn)%jcbeg
@@ -2073,8 +2073,8 @@ end subroutine cross_prod
     jsize = jend - jstart + 1
 ! determine the face id on which the subface is located and set
 ! the pointers accordinly.
-    select case  (bcfaceid(nn)) 
-    case (imin) 
+    select case  (bcfaceid(nn))
+    case (imin)
 !---------------------------------------------------------------------------
       ww3d => wd(3, 1:, 1:, :)
       ww3 => w(3, 1:, 1:, :)
@@ -2113,7 +2113,7 @@ end subroutine cross_prod
       gamma1 => gamma(1, 1:, 1:)
       gamma0 => gamma(0, 1:, 1:)
       gcp => globalcell(2, 1:, 1:)
-    case (imax) 
+    case (imax)
 !---------------------------------------------------------------------------
       ww3d => wd(nx, 1:, 1:, :)
       ww3 => w(nx, 1:, 1:, :)
@@ -2152,7 +2152,7 @@ end subroutine cross_prod
       gamma1 => gamma(ie, 1:, 1:)
       gamma0 => gamma(ib, 1:, 1:)
       gcp => globalcell(il, 1:, 1:)
-    case (jmin) 
+    case (jmin)
 !---------------------------------------------------------------------------
       ww3d => wd(1:, 3, 1:, :)
       ww3 => w(1:, 3, 1:, :)
@@ -2191,7 +2191,7 @@ end subroutine cross_prod
       gamma1 => gamma(1:, 1, 1:)
       gamma0 => gamma(1:, 0, 1:)
       gcp => globalcell(1:, 2, 1:)
-    case (jmax) 
+    case (jmax)
 !---------------------------------------------------------------------------
       ww3d => wd(1:, ny, 1:, :)
       ww3 => w(1:, ny, 1:, :)
@@ -2230,7 +2230,7 @@ end subroutine cross_prod
       gamma1 => gamma(1:, je, 1:)
       gamma0 => gamma(1:, jb, 1:)
       gcp => globalcell(1:, jl, 1:)
-    case (kmin) 
+    case (kmin)
 !---------------------------------------------------------------------------
       ww3d => wd(1:, 1:, 3, :)
       ww3 => w(1:, 1:, 3, :)
@@ -2269,7 +2269,7 @@ end subroutine cross_prod
       gamma1 => gamma(1:, 1:, 1)
       gamma0 => gamma(1:, 1:, 0)
       gcp => globalcell(1:, 1:, 2)
-    case (kmax) 
+    case (kmax)
 !---------------------------------------------------------------------------
       ww3d => wd(1:, 1:, nz, :)
       ww3 => w(1:, 1:, nz, :)
@@ -2310,8 +2310,8 @@ end subroutine cross_prod
       gcp => globalcell(1:, 1:, kl)
     end select
     if (spatialpointers) then
-      select case  (bcfaceid(nn)) 
-      case (imin) 
+      select case  (bcfaceid(nn))
+      case (imin)
         xxd => xd(1, :, :, :)
         xx => x(1, :, :, :)
         ssid => sid(1, :, :, :)
@@ -2322,7 +2322,7 @@ end subroutine cross_prod
         ssk => sk(2, :, :, :)
         ssd => sd(2, :, :, :)
         ss => s(2, :, :, :)
-      case (imax) 
+      case (imax)
         xxd => xd(il, :, :, :)
         xx => x(il, :, :, :)
         ssid => sid(il, :, :, :)
@@ -2333,7 +2333,7 @@ end subroutine cross_prod
         ssk => sk(il, :, :, :)
         ssd => sd(il, :, :, :)
         ss => s(il, :, :, :)
-      case (jmin) 
+      case (jmin)
         xxd => xd(:, 1, :, :)
         xx => x(:, 1, :, :)
         ssid => sjd(:, 1, :, :)
@@ -2344,7 +2344,7 @@ end subroutine cross_prod
         ssk => sk(:, 2, :, :)
         ssd => sd(:, 2, :, :)
         ss => s(:, 2, :, :)
-      case (jmax) 
+      case (jmax)
         xxd => xd(:, jl, :, :)
         xx => x(:, jl, :, :)
         ssid => sjd(:, jl, :, :)
@@ -2355,7 +2355,7 @@ end subroutine cross_prod
         ssk => sk(:, jl, :, :)
         ssd => sd(:, jl, :, :)
         ss => s(:, jl, :, :)
-      case (kmin) 
+      case (kmin)
         xxd => xd(:, :, 1, :)
         xx => x(:, :, 1, :)
         ssid => skd(:, :, 1, :)
@@ -2366,7 +2366,7 @@ end subroutine cross_prod
         ssk => sj(:, :, 2, :)
         ssd => sd(:, :, 2, :)
         ss => s(:, :, 2, :)
-      case (kmax) 
+      case (kmax)
         xxd => xd(:, :, kl, :)
         xx => x(:, :, kl, :)
         ssid => skd(:, :, kl, :)
@@ -2379,34 +2379,34 @@ end subroutine cross_prod
         ss => s(:, :, kl, :)
       end select
       if (addgridvelocities) then
-        select case  (bcfaceid(nn)) 
-        case (imin) 
+        select case  (bcfaceid(nn))
+        case (imin)
           sface => sfacei(1, :, :)
-        case (imax) 
+        case (imax)
           sface => sfacei(il, :, :)
-        case (jmin) 
+        case (jmin)
           sface => sfacej(:, 1, :)
-        case (jmax) 
+        case (jmax)
           sface => sfacej(:, jl, :)
-        case (kmin) 
+        case (kmin)
           sface => sfacek(:, :, 1)
-        case (kmax) 
+        case (kmax)
           sface => sfacek(:, :, kl)
         end select
       end if
       if (equations .eq. ransequations) then
-        select case  (bcfaceid(nn)) 
-        case (imin) 
+        select case  (bcfaceid(nn))
+        case (imin)
           dd2wall => d2wall(2, :, :)
-        case (imax) 
+        case (imax)
           dd2wall => d2wall(il, :, :)
-        case (jmin) 
+        case (jmin)
           dd2wall => d2wall(:, 2, :)
-        case (jmax) 
+        case (jmax)
           dd2wall => d2wall(:, jl, :)
-        case (kmin) 
+        case (kmin)
           dd2wall => d2wall(:, :, 2)
-        case (kmax) 
+        case (kmax)
           dd2wall => d2wall(:, :, kl)
         end select
       end if
@@ -2415,8 +2415,8 @@ end subroutine cross_prod
 
   subroutine maxEddyv(eddyvisMax)
     !
-    !       maxEddyv determines the maximum value of the eddy viscosity    
-    !       ratio of the block given by the pointers in blockPointes.      
+    !       maxEddyv determines the maximum value of the eddy viscosity
+    !       ratio of the block given by the pointers in blockPointes.
     !
     use constants
     use blockPointers, only : il, jl, kl, rlv, rev
@@ -2459,9 +2459,9 @@ end subroutine cross_prod
 
   subroutine maxHdiffMach(hdiffMax, MachMax)
     !
-    !       maxHdiffMach determines the maximum value of the Mach number   
-    !       and total enthalpy (or better the relative total enthalpy      
-    !       difference with the freestream).                               
+    !       maxHdiffMach determines the maximum value of the Mach number
+    !       and total enthalpy (or better the relative total enthalpy
+    !       difference with the freestream).
     !
     use constants
     use blockPointers, only : il, jl, kl, w, p, gamma
@@ -2528,10 +2528,10 @@ end subroutine cross_prod
 
   function delta(val1,val2)
     !
-    !       delta is a function used to determine the contents of the full 
-    !       transformation matrix from the shorthand form. It returns 1    
-    !       if the absolute value of the two arguments are identical.      
-    !       Otherwise it returns 0.                                        
+    !       delta is a function used to determine the contents of the full
+    !       transformation matrix from the shorthand form. It returns 1
+    !       if the absolute value of the two arguments are identical.
+    !       Otherwise it returns 0.
     !
     use constants
     implicit none
@@ -2555,8 +2555,8 @@ end subroutine cross_prod
 
   logical function myIsNAN(val)
     !
-    !       myIsNAN determines whether or not the given value is a NAN and 
-    !       returns the according logical.                                 
+    !       myIsNAN determines whether or not the given value is a NAN and
+    !       returns the according logical.
     !
     use constants
     implicit none
@@ -2580,8 +2580,8 @@ end subroutine cross_prod
   !
   subroutine nullifyCGNSDomPointers(nn)
     !
-    !       nullifyCGNSDomPointers nullifies all the pointers of the       
-    !       given CGNS block.                                              
+    !       nullifyCGNSDomPointers nullifies all the pointers of the
+    !       given CGNS block.
     !
     use constants
     use cgnsGrid, only : cgnsDoms
@@ -2600,8 +2600,8 @@ end subroutine cross_prod
 
   subroutine nullifyFlowDomPointers(nn,level,sps)
     !
-    !       nullifyFlowDomPointers nullifies all the pointers of the       
-    !       given block.                                                   
+    !       nullifyFlowDomPointers nullifies all the pointers of the
+    !       given block.
     !
     use constants
     use block, only : flowDoms
@@ -2802,9 +2802,9 @@ end subroutine cross_prod
   subroutine reallocateInteger(intArray, newSize, oldSize, &
        alwaysFreeMem)
     !
-    !       reallocateInteger reallocates the given integer array to the   
-    !       given new size. The old values of the array are copied. Note   
-    !       that newSize can be both smaller and larger than oldSize.      
+    !       reallocateInteger reallocates the given integer array to the
+    !       given new size. The old values of the array are copied. Note
+    !       that newSize can be both smaller and larger than oldSize.
     !
     use constants
     implicit none
@@ -2866,10 +2866,10 @@ end subroutine cross_prod
   subroutine reallocateMpiOffsetKindInteger(intArray, newSize, &
        oldSize, alwaysFreeMem)
     !
-    !       reallocateMpiOffsetKindInteger reallocates the given           
-    !       mpi_offset_kind integer array to the given new size. The old   
-    !       values of the array are copied. Note that newSize can be both  
-    !       smaller and larger than oldSize.                               
+    !       reallocateMpiOffsetKindInteger reallocates the given
+    !       mpi_offset_kind integer array to the given new size. The old
+    !       values of the array are copied. Note that newSize can be both
+    !       smaller and larger than oldSize.
     !
     use constants
     implicit none
@@ -2932,10 +2932,10 @@ end subroutine cross_prod
        oldSize1, oldSize2,           &
        alwaysFreeMem)
     !
-    !       reallocateInteger2 reallocates the given 2D integer array to   
-    !       the given new sizes. The old values of the array are copied.   
-    !       Note that the newSizes can be both smaller and larger than     
-    !       the oldSizes.                                                  
+    !       reallocateInteger2 reallocates the given 2D integer array to
+    !       the given new sizes. The old values of the array are copied.
+    !       Note that the newSizes can be both smaller and larger than
+    !       the oldSizes.
     !
     use constants
     implicit none
@@ -3007,9 +3007,9 @@ end subroutine cross_prod
   subroutine reallocateReal(realArray, newSize, oldSize, &
        alwaysFreeMem)
     !
-    !       ReallocateReal reallocates the given real array to the given   
-    !       new size. The old values of the array are copied. Note that    
-    !       newSize can be both smaller and larger than oldSize.           
+    !       ReallocateReal reallocates the given real array to the given
+    !       new size. The old values of the array are copied. Note that
+    !       newSize can be both smaller and larger than oldSize.
     !
     use constants
     implicit none
@@ -3068,10 +3068,10 @@ end subroutine cross_prod
        oldSize1, oldSize2,            &
        alwaysFreeMem)
     !
-    !       ReallocateReal2 reallocates the given 2d integer array to      
-    !       the given new sizes. The old values of the array are copied.   
-    !       Note that the newSizes can be both smaller and larger than     
-    !       the oldSizes.                                                  
+    !       ReallocateReal2 reallocates the given 2d integer array to
+    !       the given new sizes. The old values of the array are copied.
+    !       Note that the newSizes can be both smaller and larger than
+    !       the oldSizes.
     !
     use constants
     implicit none
@@ -3142,12 +3142,12 @@ end subroutine cross_prod
 
   subroutine setBufferSizes(level, sps, determine1to1Buf, determineOversetBuf)
     !
-    !       setBufferSizes determines the size of the send and receive     
-    !       buffers for this grid level. After that the maximum value of   
-    !       these sizes and the currently stored value is taken, such that 
-    !       for all mg levels the same buffer can be used. Normally the    
-    !       size on the finest grid should be enough, but it is just as    
-    !       safe to check on all mg levels.                             
+    !       setBufferSizes determines the size of the send and receive
+    !       buffers for this grid level. After that the maximum value of
+    !       these sizes and the currently stored value is taken, such that
+    !       for all mg levels the same buffer can be used. Normally the
+    !       size on the finest grid should be enough, but it is just as
+    !       safe to check on all mg levels.
     !
     use constants
     use communication, only : commPatternNode_1st, commPatternCell_2nd, &
@@ -3256,11 +3256,11 @@ end subroutine cross_prod
 
   subroutine setPointers(nn,mm,ll)
     !
-    !       setPointers makes the variables in blockPointers point to      
-    !       block nn for grid level mm and spectral solution ll.           
+    !       setPointers makes the variables in blockPointers point to
+    !       block nn for grid level mm and spectral solution ll.
     !
     ! Make an exception to use..only. We literally need everything
-    ! from blockPointers so use a bare use. 
+    ! from blockPointers so use a bare use.
     use constants
     use blockPointers
     implicit none
@@ -3566,6 +3566,9 @@ end subroutine cross_prod
     j_ipiv => flowDoms(nn,mm,ll)%j_ipiv
     k_ipiv => flowDoms(nn,mm,ll)%k_ipiv
 
+    ! Pointers for the Shock Sensor used in approx-flux routines
+    shockSensor => flowDoms(nn,mm,ll)%shockSensor
+
   end subroutine setPointers
 
   subroutine setPointers_b(nn, level, sps)
@@ -3681,15 +3684,15 @@ end subroutine cross_prod
 
   end subroutine setPointers_d
 
- 
+
   subroutine spectralInterpolCoef(nsps, t, alpScal, alpMat)
     !
-    !       spectralInterpolCoef determines the scalar and matrix          
-    !       spectral interpolation coefficients for the given number of    
-    !       spectral solutions for the given t, where t is the ratio of    
-    !       the time and the periodic interval time. Note that the index   
-    !       of the spectral solutions of both alpScal and alpMat start     
-    !       at 0. In this way these coefficients are easier to determine.  
+    !       spectralInterpolCoef determines the scalar and matrix
+    !       spectral interpolation coefficients for the given number of
+    !       spectral solutions for the given t, where t is the ratio of
+    !       the time and the periodic interval time. Note that the index
+    !       of the spectral solutions of both alpScal and alpMat start
+    !       at 0. In this way these coefficients are easier to determine.
     !
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral, rotMatrixSpectral
@@ -3713,7 +3716,7 @@ end subroutine cross_prod
 
     real(kind=realType), dimension(3,3) :: rp, tmp
 
-    !       Scalar coefficients.                                           
+    !       Scalar coefficients.
     !
     ! Loop over the number of spectral solutions to compute the
     ! coefficients. Note that the loop starts at 0.
@@ -3729,7 +3732,7 @@ end subroutine cross_prod
     do j=0,(nsps-1)
        if (mod(nsps,2).eq.0) then
           alpScal(j) = one + cos(j*pi)*cos(nsps*pi*t)
-       else 
+       else
           alpScal(j) = one + cos(j*pi*(nsps+1)/nsps)*cos((nsps+1)*pi*t)
        endif
 
@@ -3743,9 +3746,9 @@ end subroutine cross_prod
 
     enddo
     !
-    !       Matrix coefficients. These are (can be) different for every    
-    !       section and they must therefore be determined for every        
-    !       section.                                                       
+    !       Matrix coefficients. These are (can be) different for every
+    !       section and they must therefore be determined for every
+    !       section.
     !
     ! Loop over the number of sections in the grid.
 
@@ -3758,8 +3761,8 @@ end subroutine cross_prod
        m        = nsps*sections(nn)%nSlices
        if (mod(m,2).eq.0) then
           mhalfM1 = m/2 - 1
-       else 
-          mhalfM1 = (m-1)/2 
+       else
+          mhalfM1 = (m-1)/2
        endif
        mInv    = one/real(m,realType)
        tm       = t/real(sections(nn)%nSlices,realType)
@@ -3850,10 +3853,10 @@ end subroutine cross_prod
 
   subroutine deallocateTempMemory(resNeeded)
     !
-    !       deallocateTempMemory deallocates memory used in the solver,    
-    !       but which is not needed to store the actual solution. In this  
-    !       way the memory can be used differently, e.g. when writing the  
-    !       solution or computing the wall distances.                      
+    !       deallocateTempMemory deallocates memory used in the solver,
+    !       but which is not needed to store the actual solution. In this
+    !       way the memory can be used differently, e.g. when writing the
+    !       solution or computing the wall distances.
     !
     use constants
     use block, only : flowDoms, nDom
@@ -3924,8 +3927,8 @@ end subroutine cross_prod
 
   subroutine allocateTempMemory(resNeeded)
     !
-    !       AllocateTempMemory allocates the memory again that was         
-    !       temporarily deallocted by deallocateTempMemory.                
+    !       AllocateTempMemory allocates the memory again that was
+    !       temporarily deallocted by deallocateTempMemory.
     !
     use constants
     use block, only : flowDoms, nDom
@@ -4024,7 +4027,7 @@ end subroutine cross_prod
 
     ! The purpose of this function is to determine what coordinate
     ! direction the mirror plane is in. It does NOT handle multiple mirror
-    ! planes. It is used just to determine what the lift direction is. 
+    ! planes. It is used just to determine what the lift direction is.
 
     use constants
     use blockPointers, only : x, il, jl, kl, BCType, nDom, BCData, BCFaceID, nBocos
@@ -4073,7 +4076,7 @@ end subroutine cross_prod
              ! Cross Product
              cp(1) = (v1(2)*v2(3) - v1(3)*v2(2))
              cp(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-             cp(3) = (v1(1)*v2(2) - v1(2)*v2(1))  
+             cp(3) = (v1(1)*v2(2) - v1(2)*v2(1))
 
              ! Only interesed in abs values
              cp = abs(cp)
@@ -4112,10 +4115,10 @@ end subroutine cross_prod
 
   subroutine writeIntroMessage
     !
-    !       writeIntroMessage writes a message to stdout with              
-    !       information how the executable was built, e.g. whether single  
-    !       or double precision is used for the integers and reals, etc.   
-    !       To avoid a messy output only processor 0 prints this info.     
+    !       writeIntroMessage writes a message to stdout with
+    !       information how the executable was built, e.g. whether single
+    !       or double precision is used for the integers and reals, etc.
+    !       To avoid a messy output only processor 0 prints this info.
     !
     use constants
     use communication, only : myid, nProc
@@ -4213,9 +4216,9 @@ end subroutine cross_prod
     integer(kind=intType) :: nFound, i, j, nAlloc
     type(kdtree2_result), allocatable, dimension(:) :: results
 
-    if (N==0) then 
+    if (N==0) then
        nUnique = 0
-       return 
+       return
     end if
 
     ! We will use the KD_tree to do most of the heavy lifting here:
@@ -4235,24 +4238,24 @@ end subroutine cross_prod
 
     ! Loop over all nodes
     do i=1, N
-       if (link(i) == 0) then 
+       if (link(i) == 0) then
           call kdtree2_r_nearest(mytree, pts(:, i), tol2, nFound, nAlloc, results)
 
           ! Expand if necesary and re-run
-          if (nfound > nalloc) then 
+          if (nfound > nalloc) then
              deallocate(results)
              nalloc = nfound
              allocate(results(nalloc))
              call kdtree2_r_nearest(mytree, pts(:, i), tol2, nFound, nAlloc, results)
           end if
 
-          if (nFound == 1) then 
+          if (nFound == 1) then
              ! This one is easy, it is already a unique node
              nUnique = nUnique + 1
              link(i) = nUnique
              uniquePts(:, nUnique) = pts(:, i)
           else
-             if (link(i) == 0) then 
+             if (link(i) == 0) then
                 ! This node hasn't been assigned yet:
                 nUnique = nUnique + 1
                 uniquePts(:, nUnique) = pts(:, i)
@@ -4272,9 +4275,9 @@ end subroutine cross_prod
   end subroutine pointReduce
   subroutine releaseMemoryPart1
     !
-    !       releaseMemoryPart1 releases all the memory on the coarser      
-    !       grids of flowDoms and the fine grid memory which is not needed 
-    !       for the possible interpolation of the spectral solution.       
+    !       releaseMemoryPart1 releases all the memory on the coarser
+    !       grids of flowDoms and the fine grid memory which is not needed
+    !       for the possible interpolation of the spectral solution.
     !
 
     ! This is a free-for-all on the imports. Oh well.
@@ -4383,7 +4386,7 @@ end subroutine cross_prod
     enddo spectralLoop
 
     ! derivative values
-    if (derivVarsAllocated) then 
+    if (derivVarsAllocated) then
        call deallocDerivativeValues(1)
     end if
 
@@ -4392,23 +4395,23 @@ end subroutine cross_prod
        deallocate(cycleStrategy)
     end if
 
-    if (allocated(monNames)) then 
+    if (allocated(monNames)) then
        deallocate(monNames)
     end if
 
-    if (allocated(monLoc)) then 
+    if (allocated(monLoc)) then
        deallocate(monLoc)
     end if
 
-    if (allocated(monGlob)) then 
+    if (allocated(monGlob)) then
        deallocate(monGlob)
     end if
 
-    if (allocated(monRef)) then 
+    if (allocated(monRef)) then
        deallocate(monRef)
     end if
 
-    if (allocated(cgnsFamilies)) then 
+    if (allocated(cgnsFamilies)) then
        deallocate(cgnsFamilies)
     end if
 
@@ -4449,7 +4452,7 @@ end subroutine cross_prod
        deallocate(sendBuffer)
     end if
 
-    if (allocated(recvBuffer)) then 
+    if (allocated(recvBuffer)) then
        deallocate(recvBuffer)
     end if
 
@@ -4517,7 +4520,7 @@ end subroutine cross_prod
     deallocate(comm%indexrecvproc, stat=ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (comm%nPeriodic > 0) then 
+    if (comm%nPeriodic > 0) then
        do i=1,comm%nPeriodic
           deallocate(comm%periodicData(i)%block, stat=ierr)
           call EChk(ierr, __FILE__, __LINE__)
@@ -4554,7 +4557,7 @@ end subroutine cross_prod
     deallocate(comm%haloIndices, stat=ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (comm%nPeriodic > 0) then 
+    if (comm%nPeriodic > 0) then
        do i=1,comm%nPeriodic
           deallocate(comm%periodicData(i)%block, stat=ierr)
           call EChk(ierr, __FILE__, __LINE__)
@@ -4686,7 +4689,7 @@ end subroutine cross_prod
     call EChk(ierr,__FILE__,__LINE__)
 
     ! And the petsc vector(s)
-    if (.not. wallDistanceNeeded) then 
+    if (.not. wallDistanceNeeded) then
        do sps=1, nTimeIntervalsSpectral
           call VecDestroy(xSurfVec(1, sps), ierr)
        end do
@@ -4705,9 +4708,9 @@ end subroutine cross_prod
 
   subroutine releaseMemoryPart2
     !
-    !       releaseMemoryPart2 releases all the memory of flowDoms on the  
-    !       finest grid as well as the memory allocated in the other       
-    !       modules.                                                       
+    !       releaseMemoryPart2 releases all the memory of flowDoms on the
+    !       finest grid as well as the memory allocated in the other
+    !       modules.
     !
     use block
     use inputTimeSpectral
@@ -4783,8 +4786,8 @@ end subroutine cross_prod
 
   subroutine deallocateBlock(nn, level, sps)
     !
-    !       deallocateBlock deallocates all the allocated memory of the    
-    !       given block.                                                   
+    !       deallocateBlock deallocates all the allocated memory of the
+    !       given block.
     !
     use constants
     use block, only : viscSubfaceType, BCDataType, flowDoms
@@ -5529,10 +5532,10 @@ end subroutine cross_prod
 
   integer function setCGNSRealType()
     !
-    !       setCGNSRealType sets the cgns real type, depending on the      
-    !       compiler options. Note that quadrupole precision is not        
-    !       supported by CGNS; double precision is used instead for the    
-    !       CGNS IO.                                                       
+    !       setCGNSRealType sets the cgns real type, depending on the
+    !       compiler options. Note that quadrupole precision is not
+    !       supported by CGNS; double precision is used instead for the
+    !       CGNS IO.
     !
     use su_cgns, only : RealSingle, RealDouble
     implicit none
@@ -5557,8 +5560,8 @@ end subroutine cross_prod
 
   subroutine returnFail(routineName, errorMessage)
     !
-    !       returnFail writes an error message to standard output and      
-    !       sets fail flags to be returned to python.                      
+    !       returnFail writes an error message to standard output and
+    !       sets fail flags to be returned to python.
     !
     use constants
     use communication, only : adflow_comm_world, myid
@@ -5675,7 +5678,7 @@ end subroutine cross_prod
   subroutine EChk(ierr, file, line)
 
     ! Check if ierr that resulted from a petsc or MPI call is in fact an
-    ! error. 
+    ! error.
     use constants
     use communication, only : adflow_comm_world, myid
     implicit none
@@ -5712,7 +5715,7 @@ end subroutine cross_prod
 
   subroutine convertToLowerCase(string)
     !
-    !       convertToLowerCase converts the given string to lower case.    
+    !       convertToLowerCase converts the given string to lower case.
     !
     use constants
     implicit none
@@ -5786,12 +5789,12 @@ end subroutine cross_prod
   end function EulerWallsPresent
   subroutine allocConvArrays(nIterTot)
     !
-    !       allocConvArrays allocates the memory for the convergence       
-    !       arrays. The number of iterations allocated, nIterTot, is       
-    !       enough to store the maximum number of iterations specified     
-    !       plus possible earlier iterations read from the restart file.   
-    !       This routine MAY be called with data already inside of         
-    !       convArray and this will be saved.                              
+    !       allocConvArrays allocates the memory for the convergence
+    !       arrays. The number of iterations allocated, nIterTot, is
+    !       enough to store the maximum number of iterations specified
+    !       plus possible earlier iterations read from the restart file.
+    !       This routine MAY be called with data already inside of
+    !       convArray and this will be saved.
     !
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -5810,7 +5813,7 @@ end subroutine cross_prod
     ! Return immediately if the convergence history (of the inner
     ! iterations) does not need to be stored. This logical can
     ! only be .false. for an unsteady computation.
-    if(.not. storeConvInnerIter) return 
+    if(.not. storeConvInnerIter) return
 
     if (allocated(convArray)) then
        deallocate(convArray)
@@ -5866,7 +5869,7 @@ end subroutine cross_prod
 
   subroutine convergenceHeader
     !
-    !       convergenceHeader writes the convergence header to stdout.     
+    !       convergenceHeader writes the convergence header to stdout.
     !
     use cgnsNames
     use inputPhysics
@@ -5895,7 +5898,7 @@ end subroutine cross_prod
        ! and spectral computations a bit more info is written.
 
        nCharWrite = 10
-       if( writeIterations ) nCharWrite = nCharWrite + 7 + 7 + 7 + 10
+       if( writeIterations ) nCharWrite = nCharWrite + 7 + 7 + 7 + 7 + 10
        if(equationMode == unsteady) then
           nCharWrite = nCharWrite + 7 + fieldWidth + 1
        else if(equationMode == timeSpectral) then
@@ -5928,7 +5931,7 @@ end subroutine cross_prod
           write(*,"(a)",advance="no") " Spectral |"
        endif
 
-       if( writeIterations ) write(*,"(a)",advance="no") " Iter | Iter | Iter |   CFL   |"
+       if( writeIterations ) write(*,"(a)",advance="no") " Iter | Iter | Iter |   CFL   | Step |"
        if( showCPU )         write(*,"(a)",advance="no") "    Wall    |"
 
        ! Write the header for the variables to be monitored.
@@ -6026,7 +6029,7 @@ end subroutine cross_prod
 
           case (cgnsSepSensor)
              write(*,"(a)",advance="no") "        SepSensor       |"
-             
+
           case (cgnsCavitation)
              write(*,"(a)",advance="no") "       Cavitation       |"
 
@@ -6052,7 +6055,7 @@ end subroutine cross_prod
 
 
        if( writeIterations ) write(*,"(a)",advance="no") "      | Tot  | Type |         |"
-       if( showCPU )         write(*,"(a)",advance="no") " Clock (s)  |"
+       if( showCPU )         write(*,"(a)",advance="no") "      | Clock (s)  |"
 
        ! Loop over the variables to be monitored and write the
        ! second line.
@@ -6085,10 +6088,10 @@ end subroutine cross_prod
   end subroutine convergenceHeader
   subroutine sumResiduals(nn, mm)
     !
-    !       sumResiduals adds the sum of the residuals squared at          
-    !       position nn to the array monLoc at position mm. It is assumed  
-    !       that the arrays of blockPointers already point to the correct  
-    !       block.                                                         
+    !       sumResiduals adds the sum of the residuals squared at
+    !       position nn to the array monLoc at position mm. It is assumed
+    !       that the arrays of blockPointers already point to the correct
+    !       block.
     !
     use blockPointers
     use monitor
@@ -6117,8 +6120,8 @@ end subroutine cross_prod
 
   subroutine sumAllResiduals(mm)
     !
-    !       sumAllResiduals adds the sum of the ALL residuals squared at   
-    !       to monLoc at position mm.                                      
+    !       sumAllResiduals adds the sum of the ALL residuals squared at
+    !       to monLoc at position mm.
     !
     use blockPointers
     use monitor
@@ -6160,8 +6163,8 @@ end subroutine cross_prod
 
   subroutine unsteadyHeader
     !
-    !       unsteadyHeader writes a header to stdout when a new time step  
-    !       is started.                                                    
+    !       unsteadyHeader writes a header to stdout when a new time step
+    !       is started.
     !
     use constants
     use monitor, only : nTimeStepsRestart, timeUnsteadyRestart, &
@@ -6200,9 +6203,9 @@ end subroutine cross_prod
 102 format("# Unsteady time step ",a,", physical time ",a, " seconds")
 
   end subroutine unsteadyHeader
-  
+
   subroutine getCellCenters(level, n, xCen)
-    
+
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adjointVars, only : nCellsGlobal
@@ -6213,10 +6216,10 @@ end subroutine cross_prod
     ! Input/Output
     integer(kind=intType), intent(in) :: level, n
     real(kind=realType), dimension(3, n), intent(out) :: xCen
-    
+
     ! Working
     integer(kind=intType) :: i, j, k, ii, nn, sps
-    
+
     ii = 0
     do nn=1, nDom
        do sps=1, nTimeIntervalsSpectral
@@ -6226,7 +6229,7 @@ end subroutine cross_prod
              do j=2, jl
                 do i=2, il
                    ii = ii + 1
-                   
+
                    xCen(:, ii) = eighth*(&
                         x(i-1, j-1, k-1, :) + &
                         x(i  , j-1, k-1, :) + &

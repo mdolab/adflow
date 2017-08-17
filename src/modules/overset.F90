@@ -13,7 +13,7 @@ module overset
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only
   ! contains minimum amount of information required for computing
-  ! overset connectivities. 
+  ! overset connectivities.
 
   ! Store the coordinates from a block that will need to be searched.
 
@@ -31,7 +31,7 @@ module overset
   end type CSRMatrix
 
   ! This derived type contains sufficient information to perfom ADT
-  ! donor searches. 
+  ! donor searches.
   type oversetBlock
 
      ! Sizes for the block
@@ -78,8 +78,8 @@ module overset
      logical :: allocated = .False.
 
      ! Flag if the real/int Buffers are ready after receiving info
-     logical :: realBufferReady = .False. 
-     logical :: intBufferReady = .False. 
+     logical :: realBufferReady = .False.
+     logical :: intBufferReady = .False.
 
   end type oversetBlock
 
@@ -111,7 +111,7 @@ module overset
      integer(kind=intType), dimension(:), allocatable :: wallInd
 
      ! Flag specifying if this cell is next to a wall or not. 1 for
-     ! next to wall, 0 otherwise. 
+     ! next to wall, 0 otherwise.
      integer(kind=intType), dimension(:), allocatable  :: isWall
 
      ! This is where we will store all the potential donors that have
@@ -124,10 +124,10 @@ module overset
      logical :: allocated = .False.
 
      ! Flag if the real/int Buffers are ready after receiving info
-     logical :: realBufferReady = .False. 
-     logical :: intBufferReady = .False. 
+     logical :: realBufferReady = .False.
+     logical :: intBufferReady = .False.
 
-     ! The number of actual fringes that need to communicated. 
+     ! The number of actual fringes that need to communicated.
      integer(kind=intType) :: fringeReturnSize = 0
 
   end type oversetFringe
@@ -149,11 +149,11 @@ module overset
      real(kind=realType), dimension(:, :), pointer :: x => null()
 
      ! Only primal mesh cell centers for dual mesh. Only allocated as
-     ! needed. 
+     ! needed.
      real(kind=realType), dimension(:, :),  pointer :: xPrimalCen => null()
 
      ! Surface nonal used for determining if point is "underneath" the
-     ! surface. 
+     ! surface.
      real(kind=realType), dimension(:, :), pointer :: norm => null()
 
      ! Local estimate of surface error
@@ -186,8 +186,8 @@ module overset
      type(kdtree2), pointer :: tree
 
      ! Flag if the real/int Buffers are ready after receiving info
-     logical :: realBufferReady = .False. 
-     logical :: intBufferReady = .False. 
+     logical :: realBufferReady = .False.
+     logical :: intBufferReady = .False.
 
      ! Flag if this wall got allocated
      logical :: allocated = .False.
@@ -196,7 +196,7 @@ module overset
 
   type oversetString
      ! This is a generic type defining a string list. It may be used
-     ! as both a "parent" or a "child". 
+     ! as both a "parent" or a "child".
 
      ! Sizes
      integer(kind=intType) :: nNodes, nElems
@@ -235,7 +235,7 @@ module overset
 
      ! The orignal nodal index. Size nNodes. Pointer into intNodeData
      integer(kind=intType), dimension(:), pointer :: ind => null()
-     
+
      ! The cluster the node came from. Pointer into intNodeData
      integer(kind=intType), dimension(:), pointer :: cluster => null()
 
@@ -261,7 +261,7 @@ module overset
 
      ! The inverse of the connectivity node to elem array. Size (5,
      ! nNodes). First index is the number of elements, other 4 entries
-     ! are the up to 4 possible element neighbours. 
+     ! are the up to 4 possible element neighbours.
      integer(kind=intType), dimension(:, :), pointer :: nte => null()
 
      ! Two buffer used for storing element indices while creating
@@ -279,7 +279,7 @@ module overset
      ! crossZipping.
      integer(kind=intType), dimension(:), pointer :: XzipNodeUsed => null()
 
-     ! The KD tree for this string for performing fast seaches. 
+     ! The KD tree for this string for performing fast seaches.
      !type(tree_master_record), pointer :: tree
      type(kdtree2), pointer :: tree => null()
 
@@ -289,10 +289,10 @@ module overset
      ! Pointer for next string for a linked list
      type(oversetString), pointer :: next => null()
 
-     ! List of all all directed edges. 
+     ! List of all all directed edges.
      type(oversetEdge), pointer, dimension(:) :: edges => null()
 
-     ! nEdges: The number of new edges added due to triangles. 
+     ! nEdges: The number of new edges added due to triangles.
      integer(kind=intTYpe) :: nEdges
 
      ! List of all computed triangles
@@ -304,8 +304,8 @@ module overset
      ! surfCellID(1:nTris)
      ! Global cellID of the primal cell containing the triangle centroid
      integer(kind=intType), dimension(:), pointer :: surfCellID
-     
-     
+
+
   end type oversetString
 
   type oversetEdge
@@ -346,7 +346,7 @@ module overset
      integer(kind=intType), dimension(:, :), allocatable :: conn
      integer(kind=intType), dimension(:), allocatable :: fam, indices
      logical :: allocated=.False.
-#ifndef USE_TAPENADE    
+#ifndef USE_TAPENADE
      VecScatter :: scatter
      Vec :: localVal
 #endif
@@ -354,7 +354,7 @@ module overset
 
   ! This is the flattened list of the fringes next to the wall that we
   !  have actually found donors for.
-  ! tmpFringePtr is only used if we need to realloc. 
+  ! tmpFringePtr is only used if we need to realloc.
   type(fringeType), dimension(:), pointer :: localWallFringes, wallFringes, tmpFringePtr
   integer(kind=intType) :: nLocalWallFringe, nWallFringe
 
@@ -386,10 +386,10 @@ module overset
   ! ==============================
   logical function lessEqualEdgeType(e1, e2)
     !
-    !   lessEqualEdgeType returns .True. if e1<=e2 and .False. otherwise.  
-    !   Compared on the directed edge node indices n1 and n2.              
-    !   First compare wrt averaged node indices data. If same averaged     
-    !   node data, then compare wrt increasing or decreasing node indices. 
+    !   lessEqualEdgeType returns .True. if e1<=e2 and .False. otherwise.
+    !   Compared on the directed edge node indices n1 and n2.
+    !   First compare wrt averaged node indices data. If same averaged
+    !   node data, then compare wrt increasing or decreasing node indices.
 
     implicit none
 
@@ -401,11 +401,11 @@ module overset
 
     ! Compare the averaged (or just sum of) node indices values.
     ! Positive sign for increasing order of node indices.
-    nsum1 = e1%n1 + e1%n2 
+    nsum1 = e1%n1 + e1%n2
     nsum2 = e2%n1 + e2%n2
     ndiff1 = e1%n2 - e1%n1
     ndiff2 = e2%n2 - e2%n1
- 
+
     ! Compare based on averaged node indices values
     if (abs(nsum1) < abs(nsum2)) then
        lessEqualEdgeType = .True.
@@ -427,7 +427,7 @@ module overset
        return
     end if
 
-    ! here abs(ndiff1) == abs(ndiff2) and 
+    ! here abs(ndiff1) == abs(ndiff2) and
     ! abs(nsum1)== abs(nsum2), so same edge
     if (ndiff1 < ndiff2) then
        lessEqualEdgeType = .True.
@@ -440,16 +440,16 @@ module overset
     ! here ndiff1 == ndiff2, hence .True.
 
     lessEqualEdgeType = .True.
-    
+
   end function lessEqualEdgeType
 
   ! ---------------------------------
   logical function lessEdgeType(e1, e2)
     !
-    !   lessEdgeType returns .True. if e1<e2 and .False. otherwise.  
-    !   Compared on the directed edge node indices n1 and n2.              
-    !   First compare wrt averaged node indices data. If same averaged     
-    !   node data, then compare wrt increasing or decreasing node indices. 
+    !   lessEdgeType returns .True. if e1<e2 and .False. otherwise.
+    !   Compared on the directed edge node indices n1 and n2.
+    !   First compare wrt averaged node indices data. If same averaged
+    !   node data, then compare wrt increasing or decreasing node indices.
 
     implicit none
 
@@ -461,11 +461,11 @@ module overset
 
     ! Compare the averaged (or just sum of) node indices values.
     ! Positive sign for increasing order of node indices.
-    nsum1 = e1%n1 + e1%n2 
+    nsum1 = e1%n1 + e1%n2
     nsum2 = e2%n1 + e2%n2
     ndiff1 = e1%n2 - e1%n1
     ndiff2 = e2%n2 - e2%n1
- 
+
     ! Compare based on averaged node indices values
     if (abs(nsum1) < abs(nsum2)) then
        lessEdgeType = .True.
@@ -487,7 +487,7 @@ module overset
        return
     end if
 
-    ! here abs(ndiff1) == abs(ndiff2) and 
+    ! here abs(ndiff1) == abs(ndiff2) and
     ! abs(nsum1)== abs(nsum2), so same edge
     if (ndiff1 < ndiff2) then
        lessEdgeType = .True.
@@ -500,14 +500,14 @@ module overset
     ! here ndiff1 == ndiff2, hence .False.
 
     lessEdgeType = .False.
-    
+
   end function lessEdgeType
 
 
   logical function lessEqualPocketEdgeN2(e1, e2)
     !
-    !   lessEqualPocketEdgeN2 returns .True. if e1%n2<=e2%n2 and .False.   
-    !   otherwise. Compared on the directed edge node indices n1 and n2.   
+    !   lessEqualPocketEdgeN2 returns .True. if e1%n2<=e2%n2 and .False.
+    !   otherwise. Compared on the directed edge node indices n1 and n2.
 
     implicit none
 
@@ -516,7 +516,7 @@ module overset
 
     if (e1%n2 < e2%n2) then
        lessEqualPocketEdgeN2 = .True.
-       return 
+       return
     else if (e1%n2 > e2%n2) then
        lessEqualPocketEdgen2 = .False.
        return
@@ -524,13 +524,13 @@ module overset
 
     ! Here e1%n2==e2%n2, so edges are equal, hence .True.
     lessEqualPocketEdgeN2 = .True.
-    
+
   end function lessEqualPocketEdgeN2
 
   logical function lessPocketEdgeN2(e1, e2)
     !
-    !   lessPocketEdgeN2 returns .True. if e1%N2<e2%N2 and .False.         
-    !   otherwise. Compared on the directed edge node indices n1 and n2.   
+    !   lessPocketEdgeN2 returns .True. if e1%N2<e2%N2 and .False.
+    !   otherwise. Compared on the directed edge node indices n1 and n2.
 
     implicit none
 
@@ -539,7 +539,7 @@ module overset
 
     if (e1%N2 < e2%N2) then
        lessPocketEdgeN2 = .True.
-       return 
+       return
     else if (e1%N2 > e2%N2) then
        lessPocketEdgeN2 = .False.
        return
@@ -547,13 +547,13 @@ module overset
 
     ! Here e1%N2==e2%n2, so edges are equal, hence .False.
     lessPocketEdgeN2 = .False.
-    
+
   end function lessPocketEdgeN2
 
   logical function EqualPocketEdgeN2(e1, e2)
     !
-    !   EqualPocketEdgeN2 returns .True. if e1%N2==e2%N2 and .False.       
-    !   otherwise. Compared on the directed edge node indices n1 and n2.   
+    !   EqualPocketEdgeN2 returns .True. if e1%N2==e2%N2 and .False.
+    !   otherwise. Compared on the directed edge node indices n1 and n2.
 
     implicit none
 
@@ -562,8 +562,8 @@ module overset
 
     if (e1%N2 == e2%N2) then
        EqualPocketEdgeN2 = .True.
-       return 
-    else 
+       return
+    else
        EqualPocketEdgeN2 = .False.
        return
     end if

@@ -25,7 +25,7 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
   ! Compute the local forces (or tractions). Take the scaling
   ! factor into account to obtain the forces in SI-units,
   ! i.e. Newton.
-  ii = 0 
+  ii = 0
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
      if (flowDoms(nn,1_intType,sps)%rightHanded) then
@@ -33,15 +33,15 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
      else
         fact2 = -one
      end if
-     
+
      ! Loop over the number of boundary subfaces of this block.
      bocos: do mm=1,nBocos
-        
+
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
-           
+
            select case (BCFaceID(mm))
-              
+
               ! NOTE: The 'fact' here are NOT the same as you will
               ! find in ForcesAndMoment.f90. The reason is that, we
               ! are not using points to si, sj, sk. Those have teh
@@ -49,9 +49,9 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
               ! {i,j,k}. Here we are evaluating the normal from
               ! directly from the coordinates on the faces. As it
               ! happens, the normals for the jMin and jMax faces are
-              ! flipped. 
+              ! flipped.
            case (iMin)
-              fact = one 
+              fact = one
            case (iMax)
               fact = -one
            case (jMin)
@@ -63,25 +63,25 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
            case (kMax)
               fact = -one
            end select
-           
+
            ! Store the cell range of the subfaces a bit easier.
            ! As only owned faces must be considered the nodal range
            ! in BCData must be used to obtain this data.
-           
+
            jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-           
+
            ! Compute the dual area at each node. Just store in first dof
            do j=jBeg, jEnd ! This is a face loop
-              do i=iBeg, iEnd ! This is a face loop 
-                 
+              do i=iBeg, iEnd ! This is a face loop
+
                  ! Compute Normal
-                 
+
                  lower_left  = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
                  lower_right = lower_left + 1
                  upper_left  = lower_right + iend - ibeg + 1
                  upper_right = upper_left + 1
-             
+
                  call quad_area(&
                       pts(:, lower_left), pts(:, lower_right), &
                       pts(:, upper_left), pts(:, upper_right), &
@@ -102,7 +102,7 @@ subroutine getAreas(areas, pts, npts, sps_in, axis)
            ! then the starting node (used for looping over faces, not
            ! nodes)
            ii = ii + (jEnd-jBeg+2)*(iEnd-iBeg+2)
-           
+
         end if
      end do bocos
   end do domains
@@ -136,7 +136,7 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
   ! Compute the local forces (or tractions). Take the scaling
   ! factor into account to obtain the forces in SI-units,
   ! i.e. Newton.
-  ii = 0 
+  ii = 0
   domains: do nn=1,nDom
      call setPointers(nn,1_intType,sps)
      if (flowDoms(nn,1_intType,sps)%rightHanded) then
@@ -144,15 +144,15 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
      else
         fact2 = -one
      end if
-     
+
      ! Loop over the number of boundary subfaces of this block.
      bocos: do mm=1,nBocos
-        
+
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
-           
+
            select case (BCFaceID(mm))
-              
+
               ! NOTE: The 'fact' here are NOT the same as you will
               ! find in ForcesAndMoment.f90. The reason is that, we
               ! are not using points to si, sj, sk. Those have teh
@@ -160,9 +160,9 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
               ! {i,j,k}. Here we are evaluating the normal from
               ! directly from the coordinates on the faces. As it
               ! happens, the normals for the jMin and jMax faces are
-              ! flipped. 
+              ! flipped.
            case (iMin)
-              fact = one 
+              fact = one
            case (iMax)
               fact = -one
            case (jMin)
@@ -174,17 +174,17 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
            case (kMax)
               fact = -one
            end select
-       
+
            ! Store the cell range of the subfaces a bit easier.
            ! As only owned faces must be considered the nodal range
            ! in BCData must be used to obtain this data.
-           
+
            jBeg = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
            iBeg = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-           
+
            do j=jBeg, jEnd ! This is a face loop
-              do i=iBeg, iEnd ! This is a face loop 
-                 
+              do i=iBeg, iEnd ! This is a face loop
+
                  ! Extract 4 corner points
                  lower_left  = ii + (j-jBeg)*(iEnd-iBeg+2) + i-iBeg + 1
                  lower_right = lower_left + 1
@@ -217,12 +217,12 @@ subroutine getAreaSensitivity(darea, pts, npts, sps_in, axis)
                  end if
               end do
            end do
-           
+
            ! Note how iBeg,iBeg is defined above... it is one MORE
            ! then the starting node (used for looping over faces, not
            ! nodes)
            ii = ii + (jEnd-jBeg+2)*(iEnd-iBeg+2)
-           
+
         end if
      end do bocos
   end do domains

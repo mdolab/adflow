@@ -3,8 +3,8 @@ contains
 
   subroutine computeTtot(rho, u, v, w, p, Ttot)
     !
-    !       computeTtot computes the total temperature for the given       
-    !       pressures, densities and velocities.                           
+    !       computeTtot computes the total temperature for the given
+    !       pressures, densities and velocities.
     !
     use constants
     use inputPhysics, only : cpModel
@@ -54,8 +54,8 @@ contains
 
   subroutine computeGamma(T, gamma, mm)
     !
-    !       computeGamma computes the corresponding values of gamma for    
-    !       the given dimensional temperatures.                            
+    !       computeGamma computes the corresponding values of gamma for
+    !       the given dimensional temperatures.
     !
     use constants
     use cpCurveFits
@@ -169,8 +169,8 @@ contains
 
   subroutine computePtot(rho, u, v, w, p, ptot)
     !
-    !       ComputePtot computes the total pressure for the given          
-    !       pressures, densities and velocities.                           
+    !       ComputePtot computes the total pressure for the given
+    !       pressures, densities and velocities.
     !
     use constants
     use cpCurveFits
@@ -489,7 +489,7 @@ contains
   subroutine computeSpeedOfSoundSquared
 
     !
-    !       computeSpeedOfSoundSquared does what it says.                  
+    !       computeSpeedOfSoundSquared does what it says.
     !
     use constants
     use blockPointers, only : ie, je, ke, w, p, aa, gamma
@@ -506,7 +506,7 @@ contains
     ! Determine if we need to correct for K
     correctForK = getCorrectForK()
 
-    if (correctForK) then 
+    if (correctForK) then
 #ifdef TAPENADE_REVERSE
        !$AD II-LOOP
        do ii=0,ie*je*ke - 1
@@ -517,7 +517,7 @@ contains
           do k=1,ke
              do j=1,je
                 do i=1,ie
-#endif             
+#endif
                    pp = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
                    aa(i,j,k) = gamma(i,j,k)*pp/w(i,j,k,irho)
 #ifdef TAPENADE_REVERSE
@@ -526,7 +526,7 @@ contains
              enddo
           enddo
        enddo
-#endif   
+#endif
     else
 #ifdef TAPENADE_REVERSE
        !$AD II-LOOP
@@ -538,7 +538,7 @@ contains
           do k=1,ke
              do j=1,je
                 do i=1,ie
-#endif             
+#endif
                    aa(i,j,k) = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
 #ifdef TAPENADE_REVERSE
                 end do
@@ -546,19 +546,19 @@ contains
              enddo
           enddo
        enddo
-#endif   
+#endif
     end if
   end subroutine computeSpeedOfSoundSquared
  subroutine computeEtotBlock(iStart,iEnd, jStart,jEnd, kStart, kEnd, &
        correctForK)
     !
-    !       ComputeEtot computes the total energy from the given density,  
-    !       velocity and presssure. For a calorically and thermally        
-    !       perfect gas the well-known expression is used; for only a      
-    !       thermally perfect gas, cp is a function of temperature, curve  
-    !       fits are used and a more complex expression is obtained.       
-    !       It is assumed that the pointers in blockPointers already       
-    !       point to the correct block.                                    
+    !       ComputeEtot computes the total energy from the given density,
+    !       velocity and presssure. For a calorically and thermally
+    !       perfect gas the well-known expression is used; for only a
+    !       thermally perfect gas, cp is a function of temperature, curve
+    !       fits are used and a more complex expression is obtained.
+    !       It is assumed that the pointers in blockPointers already
+    !       point to the correct block.
     !
     use constants
     use blockPointers, only : w, p
@@ -596,7 +596,7 @@ contains
     kSize = (kEnd-kStart)+1
     factK = ovgm1*(five*third - gammaConstant)
 
-if (correctForK) then 
+if (correctForK) then
 #ifdef TAPENADE_REVERSE
     !$AD II-LOOP
     do ii=0, iSize*jSize*kSize-1
@@ -607,7 +607,7 @@ if (correctForK) then
        do k=kStart, kEnd
           do j=jStart, jEnd
              do i=iStart, iEnd
-#endif            
+#endif
                 w(i,j,k,irhoE) = ovgm1*p(i,j,k) &
                      + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
                      +                     w(i,j,k,ivy)**2 &
@@ -633,11 +633,11 @@ if (correctForK) then
        do k=kStart, kEnd
           do j=jStart, jEnd
              do i=iStart, iEnd
-#endif            
+#endif
                 w(i,j,k,irhoE) = ovgm1*p(i,j,k) &
                      + half*w(i,j,k,irho)*(w(i,j,k,ivx)**2 &
                      +                     w(i,j,k,ivy)**2 &
-                     +                     w(i,j,k,ivz)**2) 
+                     +                     w(i,j,k,ivz)**2)
 #ifdef TAPENADE_REVERSE
              end do
 #else
@@ -646,7 +646,7 @@ if (correctForK) then
     end do
 #endif
  end if
- 
+
 
 #ifndef USE_TAPENADE
     case (cpTempCurveFits)
@@ -675,11 +675,11 @@ if (correctForK) then
 
   subroutine etot(rho, u, v, w, p, k, etotal, correctForK)
     !
-    !       EtotArray computes the total energy from the given density,    
-    !       velocity and presssure.                                        
-    !       First the internal energy per unit mass is computed and after  
-    !       that the kinetic energy is added as well the conversion to     
-    !       energy per unit volume.                                        
+    !       EtotArray computes the total energy from the given density,
+    !       velocity and presssure.
+    !       First the internal energy per unit mass is computed and after
+    !       that the kinetic energy is added as well the conversion to
+    !       energy per unit volume.
     !
     use constants
     implicit none
@@ -708,12 +708,12 @@ if (correctForK) then
 
   subroutine eint(rho, p, k, einternal, correctForK)
     !
-    !       EintArray computes the internal energy per unit mass from the  
-    !       given density and pressure (and possibly turbulent energy)     
-    !       For a calorically and thermally perfect gas the well-known     
-    !       expression is used; for only a thermally perfect gas, cp is a  
-    !       function of temperature, curve fits are used and a more        
-    !       complex expression is obtained.                                
+    !       EintArray computes the internal energy per unit mass from the
+    !       given density and pressure (and possibly turbulent energy)
+    !       For a calorically and thermally perfect gas the well-known
+    !       expression is used; for only a thermally perfect gas, cp is a
+    !       function of temperature, curve fits are used and a more
+    !       complex expression is obtained.
     !
     use constants
     use cpCurveFits
@@ -763,7 +763,7 @@ if (correctForK) then
 
        endif
 
-#ifndef USE_TAPENADE       
+#ifndef USE_TAPENADE
     case (cpTempCurveFits)
 
        ! Cp as function of the temperature is given via curve fits.
@@ -867,10 +867,10 @@ if (correctForK) then
 
   end subroutine eint
 
-  subroutine computePressureSimple(includeHalos) 
+  subroutine computePressureSimple(includeHalos)
 
     ! Compute the pressure on a block with the pointers already set. This
-    ! routine is used by the forward mode AD code only. 
+    ! routine is used by the forward mode AD code only.
 
     use constants
     use blockPointers
@@ -888,7 +888,7 @@ if (correctForK) then
     ! Compute the pressures
     gm1 = gammaConstant - one
 
-    if (includeHalos) then 
+    if (includeHalos) then
        iBeg = 0
        jBeg = 0
        kBeg = 0
@@ -918,7 +918,7 @@ if (correctForK) then
        do k=kBeg, kEnd
           do j=jBeg, jEnd
              do i=iBeg, iEnd
-#endif             
+#endif
                 v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
                 p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
                 p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
@@ -935,11 +935,11 @@ if (correctForK) then
   subroutine computePressure(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
        pointerOffset)
     !
-    !       computePressure computes the pressure from the total energy,   
-    !       density and velocities in the given cell range of the block to 
-    !       which the pointers in blockPointers currently point.           
-    !       It is possible to specify a possible pointer offset, because   
-    !       this routine is also used when reading a restart file.         
+    !       computePressure computes the pressure from the total energy,
+    !       density and velocities in the given cell range of the block to
+    !       which the pointers in blockPointers currently point.
+    !       It is possible to specify a possible pointer offset, because
+    !       this routine is also used when reading a restart file.
     !
     use constants
     use inputPhysics, only : cpModel, gammaConstant
@@ -1201,12 +1201,12 @@ if (correctForK) then
 
   end subroutine computePressure
 
-subroutine computeLamViscosity(includeHalos) 
+subroutine computeLamViscosity(includeHalos)
   !
-  !       computeLamViscosity computes the laminar viscosity ratio in    
-  !       the owned cell centers of the given block. Sutherland's law is 
-  !       used. It is assumed that the pointes already point to the      
-  !       correct block before entering this subroutine.                 
+  !       computeLamViscosity computes the laminar viscosity ratio in
+  !       the owned cell centers of the given block. Sutherland's law is
+  !       used. It is assumed that the pointes already point to the
+  !       correct block before entering this subroutine.
   !
   use blockPointers
   use constants
@@ -1245,7 +1245,7 @@ subroutine computeLamViscosity(includeHalos)
   TSuth  = TSuthDim/Tref
   SSuth  = SSuthDim/Tref
 
-    if (includeHalos) then 
+    if (includeHalos) then
        iBeg = 1
        jBeg = 1
        kBeg = 1
@@ -1279,7 +1279,7 @@ subroutine computeLamViscosity(includeHalos)
         do k=kBeg, kEnd
            do j=jBeg, jEnd
               do i=iBeg, iEnd
-#endif             
+#endif
                  pp = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
                  T = pp/(RGas*w(i,j,k,irho))
                  rlv(i,j,k) = muSuth*((TSuth + SSuth)/(T + SSuth)) &
@@ -1290,7 +1290,7 @@ subroutine computeLamViscosity(includeHalos)
            enddo
         enddo
      enddo
-#endif   
+#endif
   else
      ! Loop over the owned cells *AND* first level halos of this
      ! block and compute the laminar viscosity ratio.
@@ -1308,7 +1308,7 @@ subroutine computeLamViscosity(includeHalos)
         do k=kBeg, kEnd
            do j=jBeg, jEnd
               do i=iBeg, iEnd
-#endif             
+#endif
 
                  ! Compute the nonDimensional temperature and the
                  ! nonDimensional laminar viscosity.
@@ -1321,7 +1321,7 @@ subroutine computeLamViscosity(includeHalos)
            enddo
         enddo
      enddo
-#endif   
+#endif
   end if
 end subroutine computeLamViscosity
 
@@ -1370,12 +1370,12 @@ end subroutine adjustInflowAngle
        subroutine derivativeRotMatrixRigid(rotationMatrix, &
                                            rotationPoint, t)
 !
-!       derivativeRotMatrixRigid determines the derivative of the      
-!       rotation matrix at the given time for the rigid body rotation, 
-!       such that the grid velocities can be determined analytically.  
-!       Also the rotation point of the current time level is           
-!       determined. This value can change due to translation of the    
-!       entire grid.                                                   
+!       derivativeRotMatrixRigid determines the derivative of the
+!       rotation matrix at the given time for the rigid body rotation,
+!       such that the grid velocities can be determined analytically.
+!       Also the rotation point of the current time level is
+!       determined. This value can change due to translation of the
+!       entire grid.
 !
        use constants
        use flowVarRefState
@@ -1537,21 +1537,21 @@ end subroutine adjustInflowAngle
            windDirection,liftIndex)
         !(xb,yb,zb,alpha,beta,xw,yw,zw)
 !
-!      Convert the angle of attack and side slip angle to wind axes.  
-!      The components of the wind direction vector (xw,yw,zw) are     
-!      computed given the direction angles in radians and the body    
-!      direction by performing two rotations on the original          
-!      direction vector:                                              
-!        1) Rotation about the zb or yb-axis: alpha clockwise (CW)    
-!           (xb,yb,zb) -> (x1,y1,z1)                                  
-!        2) Rotation about the yl or z1-axis: beta counter-clockwise  
-!           (CCW)  (x1,y1,z1) -> (xw,yw,zw)                           
-!         input arguments:                                            
-!            alpha    = angle of attack in radians                    
-!            beta     = side slip angle in radians                    
-!            refDirection = reference direction vector                
-!         output arguments:                                           
-!            windDirection = unit wind vector in body axes            
+!      Convert the angle of attack and side slip angle to wind axes.
+!      The components of the wind direction vector (xw,yw,zw) are
+!      computed given the direction angles in radians and the body
+!      direction by performing two rotations on the original
+!      direction vector:
+!        1) Rotation about the zb or yb-axis: alpha clockwise (CW)
+!           (xb,yb,zb) -> (x1,y1,z1)
+!        2) Rotation about the yl or z1-axis: beta counter-clockwise
+!           (CCW)  (x1,y1,z1) -> (xw,yw,zw)
+!         input arguments:
+!            alpha    = angle of attack in radians
+!            beta     = side slip angle in radians
+!            refDirection = reference direction vector
+!         output arguments:
+!            windDirection = unit wind vector in body axes
 !
       use constants
       use utils, only : terminate
@@ -1590,13 +1590,13 @@ end subroutine adjustInflowAngle
 
       if (liftIndex==2)then
          ! Compute the wind direction vector.Aerosurf axes different!!
-         
+
          ! 1) rotate alpha radians cw about z-axis
          !    ( <=> rotate z-axis alpha radians ccw)
-         
+
          tmp = -alpha
          call vectorRotation(x1, y1, z1, 3, tmp, xbn, ybn, zbn)
-         
+
          ! 2) rotate beta radians ccw about y-axis
          !    ( <=> rotate z-axis -beta radians ccw)
          tmp = -beta
@@ -1604,38 +1604,38 @@ end subroutine adjustInflowAngle
 
       elseif(liftIndex==3)then
          ! Compute the wind direction vector.Aerosurf axes different!!
-         
+
          ! 1) rotate alpha radians cw about z-axis
          !    ( <=> rotate z-axis alpha radians ccw)
-         
+
          call vectorRotation(x1, y1, z1, 2, alpha, xbn, ybn, zbn)
-         
+
          ! 2) rotate beta radians ccw about y-axis
          !    ( <=> rotate z-axis -beta radians ccw)
-         
+
          call vectorRotation(xw, yw, zw, 3, beta, x1, y1, z1)
-         
-         
+
+
       else
          call terminate('getDirVector', 'Invalid Lift Direction')
-         
+
       endif
-      
+
       windDirection(1) = xw
       windDirection(2) = yw
       windDirection(3) = zw
-      
+
       end subroutine getDirVector
       subroutine vectorRotation(xp, yp, zp, iaxis, angle, x, y, z)
 !
-!      vectorRotation rotates a given vector with respect to a      
-!      specified axis by a given angle.                             
-!         input arguments:                                          
-!            iaxis      = rotation axis (1-x, 2-y, 3-z)             
-!            angle      = rotation angle (measured ccw in radians)  
-!            x, y, z    = coordinates in original system            
-!         output arguments:                                         
-!            xp, yp, zp = coordinates in rotated system             
+!      vectorRotation rotates a given vector with respect to a
+!      specified axis by a given angle.
+!         input arguments:
+!            iaxis      = rotation axis (1-x, 2-y, 3-z)
+!            angle      = rotation angle (measured ccw in radians)
+!            x, y, z    = coordinates in original system
+!         output arguments:
+!            xp, yp, zp = coordinates in rotated system
 !
       use precision
       implicit none
@@ -1681,10 +1681,10 @@ end subroutine adjustInflowAngle
 
 subroutine allNodalGradients
   !
-  !         nodalGradients computes the nodal velocity gradients and     
-  !         minus the gradient of the speed of sound squared. The minus  
-  !         sign is present, because this is the definition of the heat  
-  !         flux. These gradients are computed for all nodes.            
+  !         nodalGradients computes the nodal velocity gradients and
+  !         minus the gradient of the speed of sound squared. The minus
+  !         sign is present, because this is the definition of the heat
+  !         flux. These gradients are computed for all nodes.
   !
   use constants
   use blockPointers
@@ -1720,7 +1720,7 @@ subroutine allNodalGradients
      do k=1, ke
         do j=1, jl
            do i=1, il
-#endif      
+#endif
               ! Compute 8 times the average normal for this part of
               ! the control volume. The factor 8 is taken care of later
               ! on when the division by the volume takes place.
@@ -1798,7 +1798,7 @@ subroutine allNodalGradients
         enddo
      enddo
   enddo
-#endif   
+#endif
 
   ! Second part. Contribution in the j-direction.
   ! The contribution is scattered to both the left and right node
@@ -1814,7 +1814,7 @@ subroutine allNodalGradients
      do k=1, kl
         do j=1, je
            do i=1, il
-#endif   
+#endif
 
               ! Compute 8 times the average normal for this part of
               ! the control volume. The factor 8 is taken care of later
@@ -1892,7 +1892,7 @@ subroutine allNodalGradients
         enddo
      enddo
   enddo
-#endif 
+#endif
 
   ! Third part. Contribution in the i-direction.
   ! The contribution is scattered to both the left and right node
@@ -1908,7 +1908,7 @@ subroutine allNodalGradients
      do k=1,kl
         do j=1,jl
            do i=1,ie
-#endif   
+#endif
 
               ! Compute 8 times the average normal for this part of
               ! the control volume. The factor 8 is taken care of later
@@ -1986,7 +1986,7 @@ subroutine allNodalGradients
         enddo
      enddo
   enddo
-#endif   
+#endif
   ! Divide by 8 times the volume to obtain the correct gradients.
 
 #ifdef TAPENADE_REVERSE
@@ -1999,7 +1999,7 @@ subroutine allNodalGradients
      do k=1,kl
         do j=1,jl
            do i=1,il
-#endif  
+#endif
               ! Compute the inverse of 8 times the volume for this node.
 
               oneOverV = one/(vol(i,  j,  k) + vol(i,  j,  k+1) &
@@ -2095,9 +2095,9 @@ end subroutine allNodalGradients
 
   subroutine computeEtotCellCpfit(i, j, k, scale, correctForK)
     !
-    !       ComputeEtotCellCpfit will compute the total energy for the     
-    !       given cell of the block given by the current pointers with the 
-    !       cp temperature curve fit model.                                
+    !       ComputeEtotCellCpfit will compute the total energy for the
+    !       given cell of the block given by the current pointers with the
+    !       cp temperature curve fit model.
     !
     use constants
     use cpCurveFits
@@ -2227,8 +2227,8 @@ end subroutine allNodalGradients
 
   subroutine updateGamma
     !
-    !       This is a utility routine to update the gamma variable from    
-    !       from gammaConstant if gammaConstant has changed.               
+    !       This is a utility routine to update the gamma variable from
+    !       from gammaConstant if gammaConstant has changed.
     !
     use constants
     use blockPointers, only : nDom, gamma

@@ -4,12 +4,12 @@ contains
 
   subroutine readBlockSizes
     !
-    !       readBlockSizes reads the number of blocks and their size       
-    !       from the given grid file. The data is stored in the module     
-    !       cgnsGrid.                                                      
-    !       If multiple grids need to be read for a consistent restart, it 
-    !       is checked that the number of blocks and the block sizes are   
-    !       identical.                                                     
+    !       readBlockSizes reads the number of blocks and their size
+    !       from the given grid file. The data is stored in the module
+    !       cgnsGrid.
+    !       If multiple grids need to be read for a consistent restart, it
+    !       is checked that the number of blocks and the block sizes are
+    !       identical.
     !
     use constants
     use su_cgns
@@ -143,7 +143,7 @@ contains
        famID(ii) = i
     enddo
 
-    ! Initialize whether the grid is changing to whether it is 
+    ! Initialize whether the grid is changing to whether it is
     ! deforming
 
     changing_Grid = deforming_Grid
@@ -268,9 +268,9 @@ contains
   end subroutine readBlockSizes
   subroutine readFamilyInfo(cgnsInd, cgnsBase)
     !
-    !       readFamilyInfo determines the number of families in the        
-    !       given base of the cgns grid and determines their possible      
-    !       boundary condition, including some user defined ones.          
+    !       readFamilyInfo determines the number of families in the
+    !       given base of the cgns grid and determines their possible
+    !       boundary condition, including some user defined ones.
     !
     use constants
     use su_cgns
@@ -437,8 +437,8 @@ contains
   subroutine readZoneInfo(cgnsBase, nZone, sortedFamName, &
        famID, noUnits)
     !
-    !       readZoneInfo reads the general information, like zone type     
-    !       and physical dimensions, for the given zone/block.             
+    !       readZoneInfo reads the general information, like zone type
+    !       and physical dimensions, for the given zone/block.
     !
     use constants
     use su_cgns
@@ -549,7 +549,7 @@ contains
          call terminate("readZoneInfo", &
          "Something wrong when calling cg_goto_f")
     !
-    !       Try to read the family name.                                   
+    !       Try to read the family name.
     !
     call cg_famname_read_f(familyName, ierr)
     if(ierr == error)                &
@@ -583,7 +583,7 @@ contains
 
     endif
     !
-    !       Try to determine the units of the coordinates.                 
+    !       Try to determine the units of the coordinates.
     !
     ! Determine the number of coordinates in this zone.
 
@@ -687,7 +687,7 @@ contains
 
     endif
     !
-    !       Try to determine the rotation rate and center.                 
+    !       Try to determine the rotation rate and center.
     !
     ! Some initializations.
 
@@ -820,8 +820,8 @@ contains
 
   subroutine countConnectivities(cgnsInd, cgnsBase, nZone)
     !
-    !       countConnectivities determines the number of connectivities    
-    !       for each of the supported types stored in 1to1 and general.    
+    !       countConnectivities determines the number of connectivities
+    !       for each of the supported types stored in 1to1 and general.
     !
     use constants
     use su_cgns
@@ -1004,12 +1004,12 @@ contains
          "Memory allocation failure for conn1to1 and &
          &connOver")
     !
-    !       For the non-matching abutting subfaces some more information   
-    !       needs to be extracted. The reason is that a subface abuts      
-    !       multiple blocks and in CGNS this info is stored in multiple    
-    !       connectivities. However it is a lot easier to store that info  
-    !       together. That's why the non-abbuting subfaces must be sorted  
-    !       in increasing order to extract this information.               
+    !       For the non-matching abutting subfaces some more information
+    !       needs to be extracted. The reason is that a subface abuts
+    !       multiple blocks and in CGNS this info is stored in multiple
+    !       connectivities. However it is a lot easier to store that info
+    !       together. That's why the non-abbuting subfaces must be sorted
+    !       in increasing order to extract this information.
     !
     ! Allocate the memory for subfaceNonMatch and copy the data
     ! from myRangeNonMatch and connIDNonMatch. Release the memory
@@ -1130,13 +1130,13 @@ contains
          call terminate("countConnectivities", &
          "Deallocation failure for subfaceNonMatch")
     !
-    !       Store the number of connectivities in cgnsDoms(nZone).         
+    !       Store the number of connectivities in cgnsDoms(nZone).
     !
     cgnsDoms(nZone)%n1to1             = n1to1
     cgnsDoms(nZone)%n1to1General      = n1to1General
     cgnsDoms(nZone)%nNonMatchAbutting = nNonMatch
     !
-    !       Format statements.                                             
+    !       Format statements.
     !
 101 format("Zone",1x,a,", connectivity", 1x,a, ": No support for &
          &this format of an abutting 1 to 1 connectivity")
@@ -1148,9 +1148,9 @@ contains
 
   subroutine read1to1Conn(cgnsInd, cgnsBase, nZone)
     !
-    !       read1to1Conn reads the 1 to 1 block to block, i.e.             
-    !       continuous grid lines across block boundaries, connectivities  
-    !       for the given zone/block.                                      
+    !       read1to1Conn reads the 1 to 1 block to block, i.e.
+    !       continuous grid lines across block boundaries, connectivities
+    !       for the given zone/block.
     !
     use constants
     use su_cgns
@@ -1253,9 +1253,9 @@ contains
   end subroutine read1to1Conn
   subroutine checkTransform(transform, nZone, n1to1, printWarning)
     !
-    !       checkTransform checks the transformation matrix between this   
-    !       zone and the donor for the given subrange. In case an error is 
-    !       found it is tried to correct this.                             
+    !       checkTransform checks the transformation matrix between this
+    !       zone and the donor for the given subrange. In case an error is
+    !       found it is tried to correct this.
     !
     use constants
     use cgnsGrid, only : cgnsDoms
@@ -1479,9 +1479,9 @@ contains
   end subroutine checkTransform
   subroutine readGeneralConn(cgnsInd, cgnsBase, nZone)
     !
-    !       readGeneralConn reads and converts the cgns general            
-    !       connectivities.  Supported connectivites are 1-to-1 and        
-    !       non-matching abutting.                                         
+    !       readGeneralConn reads and converts the cgns general
+    !       connectivities.  Supported connectivites are 1-to-1 and
+    !       non-matching abutting.
     !
     use constants
     use su_cgns
@@ -1590,9 +1590,9 @@ contains
 
        case (Abutting1to1)
           !
-          !             1-to-1 connectivity stored as a general one. Note that   
-          !             the check for a valid one has already been done in       
-          !             countConnectivities.                                     
+          !             1-to-1 connectivity stored as a general one. Note that
+          !             the check for a valid one has already been done in
+          !             countConnectivities.
           !
           ! Update the counter n1to1 and store some info in conn1to1.
 
@@ -1712,9 +1712,9 @@ contains
 
        case (Abutting)
           !
-          !             Non-matching abutting connectivity. Note that the        
-          !             check for a valid one has already been done in           
-          !             countConnectivities.                                     
+          !             Non-matching abutting connectivity. Note that the
+          !             check for a valid one has already been done in
+          !             countConnectivities.
           !
           ! Determine the indices in connNonMatch where the data of
           ! the current connectivity must be stored.
@@ -1892,8 +1892,8 @@ contains
   subroutine readBocos(cgnsInd, cgnsBase, nZone,                &
        nDoubleBoundFaces, sortedFamName, famID)
     !
-    !       ReadBocos reads the boundary condition info for the given      
-    !       zone/block.                                                    
+    !       ReadBocos reads the boundary condition info for the given
+    !       zone/block.
     !
     use constants
     use su_cgns
@@ -1952,8 +1952,8 @@ contains
 
     bocoLoop: do i=1,cgnsNBocos
        !
-       !         Read the general info for this boundary condition and set    
-       !         the dimensions of the subface.                               
+       !         Read the general info for this boundary condition and set
+       !         the dimensions of the subface.
        !
        call cg_boco_info_f(cgnsInd, cgnsBase, nZone, i,                &
             cgnsDoms(nZone)%bocoInfo(i)%bocoName,       &
@@ -2075,7 +2075,7 @@ contains
           endif
        endif
        !
-       !         Determine the internally used boundary condition and whether 
+       !         Determine the internally used boundary condition and whether
        !         or not the boundary condition is given on a per family basis.
        !
        cgnsDoms(nZone)%bocoInfo(i)%familyID = 0
@@ -2265,13 +2265,13 @@ contains
 
        endif checkActualFace
        !
-       !         Initialize slidingID to 0 to indicate that this boco does    
-       !         not belong to a sliding mesh interface. If it is, this will  
-       !         be overwritten after all bocos are read for every zone.      
+       !         Initialize slidingID to 0 to indicate that this boco does
+       !         not belong to a sliding mesh interface. If it is, this will
+       !         be overwritten after all bocos are read for every zone.
        !
        cgnsDoms(nzone)%bocoInfo(i)%slidingID = 0
        !
-       !         Determine the possible rotating rate of the boundary face.   
+       !         Determine the possible rotating rate of the boundary face.
        !
        ! Initialize the rotating center and the rotating rates to
        ! the values of the corresponding block.
@@ -2304,7 +2304,7 @@ contains
           endif
        endif
        !
-       !         Read and store the prescribed boundary condition data sets.  
+       !         Read and store the prescribed boundary condition data sets.
        !
        ! Initialize dataSetAllocated to .false. and nDataSet to 0.
 
@@ -2417,8 +2417,8 @@ contains
 
     subroutine readBCDataArrays(nArr, arr, DirNeu)
       !
-      !         readBCDataArrays reads the arrays of the given data set      
-      !         from the cgns file.                                          
+      !         readBCDataArrays reads the arrays of the given data set
+      !         from the cgns file.
       !
       implicit none
       !
@@ -2612,10 +2612,10 @@ contains
 
   logical function checkForDoubleBoundFace(nZone, nBound)
     !
-    !       CheckForDoubleBoundFace checks whether the given boundary      
-    !       range for the given zone has already been defined in the 1 to  
-    !       1 block connectivities. If so .true. is returned, otherwise    
-    !       .false.                                                        
+    !       CheckForDoubleBoundFace checks whether the given boundary
+    !       range for the given zone has already been defined in the 1 to
+    !       1 block connectivities. If so .true. is returned, otherwise
+    !       .false.
     !
     use cgnsGrid
     implicit none
@@ -2693,11 +2693,11 @@ contains
   end function checkForDoubleBoundFace
   function internalBC(cgnsBocoType, userDefinedName)
     !
-    !       internalBC determines the corresponding internally used        
-    !       boundary condition type for the given CGNS boundary condition. 
-    !       The flow equations to be solved are taken into account, e.g.   
-    !       a viscous wall BC for the Euler equations is set to an         
-    !       inviscid wall.                                                 
+    !       internalBC determines the corresponding internally used
+    !       boundary condition type for the given CGNS boundary condition.
+    !       The flow equations to be solved are taken into account, e.g.
+    !       a viscous wall BC for the Euler equations is set to an
+    !       inviscid wall.
     !
     use constants
     use su_cgns
@@ -2825,8 +2825,8 @@ contains
        rotationCenter, rotationAngles, &
        translation)
     !
-    !       readPeriodicSubface reads the possible periodic info for the   
-    !       given general subface connectivity.                            
+    !       readPeriodicSubface reads the possible periodic info for the
+    !       given general subface connectivity.
     !
     use constants
     use su_cgns
@@ -3107,8 +3107,8 @@ contains
 
   subroutine readGrid
     !
-    !       readGrid reads the coordinates for the blocks or block parts   
-    !       to be stored on this processor.                                
+    !       readGrid reads the coordinates for the blocks or block parts
+    !       to be stored on this processor.
     !
     use constants
     use cgnsNames

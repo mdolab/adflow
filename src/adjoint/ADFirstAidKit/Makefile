@@ -73,7 +73,7 @@ clean:
 #      *                                                                *
 #      ******************************************************************
 
-adkit:	$(ADKIT_OBJECTS) 
+adkit:	$(ADKIT_OBJECTS)
 
 .f.o: Makefile
 	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $(ADFLOW_OBJDIR)/$(@F)

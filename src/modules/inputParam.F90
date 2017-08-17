@@ -1,14 +1,14 @@
 module inputDiscretization
   !
-  !       Input parameters which are related to the discretization of    
-  !       the governing equations, i.e. scheme parameters, time accuracy 
-  !       (in case of an unsteady computation) and preconditioning info. 
+  !       Input parameters which are related to the discretization of
+  !       the governing equations, i.e. scheme parameters, time accuracy
+  !       (in case of an unsteady computation) and preconditioning info.
   !
   use constants, only : intType, realType
   implicit none
   save
   !
-  !       Definition of the discretization input parameters.             
+  !       Definition of the discretization input parameters.
   !
   ! spaceDiscr:             Fine grid discretization.
   ! spaceDiscrCoarse:       Coarse grid discretization.
@@ -53,18 +53,18 @@ module inputDiscretization
   !                         lumped dissipation is used for preconditioner
   ! sigma      :            Scaling parameter for dissipation lumping in
   !                         approximateprecondtioner
-  ! useApproxWallDistance : logical to determine if the user wants to 
+  ! useApproxWallDistance : logical to determine if the user wants to
   !                         use the fast approximate wall distance
-  !                         computations. Typically only used for 
+  !                         computations. Typically only used for
   !                         repeated calls when the wall distance would
   !                         not have changed significantly
   ! updateWallAssociation : Logical to determine if the full wall distance
   !                         assocation is to be performed on the next
   !                         wall distance calculation. This is only
-  !                         significant when useApproxWallDistance is 
-  !                         set to True. This allows the user to 
+  !                         significant when useApproxWallDistance is
+  !                         set to True. This allows the user to
   !                         reassociate the face a cell is associated
-  !                         with. 
+  !                         with.
   ! lowspeedpreconditoner:  Whether or not to use low-speed precondioner
 
   integer(kind=intType) :: spaceDiscr, spaceDiscrCoarse
@@ -95,14 +95,14 @@ end module inputDiscretization
 
 module inputIO
   !
-  !       Input parameters which are related to io issues, like file     
-  !       names and corresponding info.                                  
+  !       Input parameters which are related to io issues, like file
+  !       names and corresponding info.
   !
   use constants
   implicit none
   save
   !
-  !       Definition of the IO input parameters.                         
+  !       Definition of the IO input parameters.
   !
   ! paramFile:           Parameter file, command line argument.
   ! firstWrite:          Whether or not this is the first time a
@@ -165,7 +165,7 @@ module inputIO
 
   ! Extra file names (set from python) that specify the name of
   ! the volume, surface, lift and slice files written from an
-  ! interrupt. 
+  ! interrupt.
   character(len=maxStringLen) :: forcedSurfaceFile, forcedVolumeFile
   character(len=maxStringLen) :: forcedLiftFile, forcedSliceFile
 
@@ -178,15 +178,15 @@ end module inputIO
 
 module inputIteration
   !
-  !       Input parameters which are related to the iteration process,   
-  !       i.e. multigrid parameters, cfl numbers, smoothers and          
-  !       convergence.                                                   
+  !       Input parameters which are related to the iteration process,
+  !       i.e. multigrid parameters, cfl numbers, smoothers and
+  !       convergence.
   !
   use constants
   implicit none
   save
   !
-  !       Definition of the iteration input parameters.                  
+  !       Definition of the iteration input parameters.
   !
   ! nCycles:          Maximum number of multigrid cycles.
   ! nCyclesCoarse:    Idem, but on the coarse grids in full multigrid.
@@ -246,11 +246,11 @@ module inputIteration
   !                   stages specified.
   ! printIterations: If True, iterations are printed to stdout
   ! turbresscale: Scaling factor for turbulent residual. Necessary for
-  !            NKsolver with RANS. Only tested on SA. 
+  !            NKsolver with RANS. Only tested on SA.
   ! iterType : String used for specifying which type of iteration was taken
   !
-  ! Definition of the string, which stores the multigrid cycling   
-  ! strategy.                                                      
+  ! Definition of the string, which stores the multigrid cycling
+  ! strategy.
   !
 
   integer(kind=intType) :: nCycles, nCyclesCoarse
@@ -277,7 +277,7 @@ module inputIteration
   real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
   character (len=maxStringLen) :: mgDescription
   logical :: rkReset
-  
+
   logical :: freezeTurbSource
   logical :: printIterations
   logical :: printWarnings
@@ -297,10 +297,10 @@ end module inputCostFunctions
 
 module inputMotion
   !
-  !       Input parameters which are related to the rigid body motion of 
-  !       the entire mesh, i.e. translation and rotation.                
-  !       These parameters can only be specified for an external flow    
-  !       computation.                                                   
+  !       Input parameters which are related to the rigid body motion of
+  !       the entire mesh, i.e. translation and rotation.
+  !       These parameters can only be specified for an external flow
+  !       computation.
   !
   use precision
   implicit none
@@ -397,7 +397,7 @@ module inputMotion
 
   ! degreePolXRot: Degree of the Beta polynomial.
 
-  integer(kind=intType) :: degreePolBeta  
+  integer(kind=intType) :: degreePolBeta
 
   ! coefPolXRot(0:): coefficients of the Beta polynomial.
 
@@ -466,7 +466,7 @@ end module inputMotion
 
 module inputParallel
   !
-  !       Input parameters which are related to the parallelization.     
+  !       Input parameters which are related to the parallelization.
   !
   use precision
   implicit none
@@ -486,15 +486,15 @@ end module inputParallel
 
 module inputPhysics
   !
-  !       Input parameters which are related to the physics of the flow, 
-  !       like governing equations, mode of the equations, turbulence    
-  !       model and free stream conditions.                              
+  !       Input parameters which are related to the physics of the flow,
+  !       like governing equations, mode of the equations, turbulence
+  !       model and free stream conditions.
   !
   use precision
   implicit none
   save
 
-  !       Definition of the physics input parameters.                    
+  !       Definition of the physics input parameters.
   !
   ! equations:           Governing equations to be solved.
   ! equationMode:        Mode of the equations, steady, unsteady
@@ -519,7 +519,7 @@ module inputPhysics
   ! Mach:                Free stream Mach number.
   ! MachCoef:            Mach number used to compute coefficients;
   !                      only relevant for translating geometries.
-  ! MachGrid:            Mach number of the Mesh. Used in stability 
+  ! MachGrid:            Mach number of the Mesh. Used in stability
   !                      derivative calculations. Specified as the
   !                      negative of the desired freestream Mach number.
   !                      When this option is set, set Mach = 0.0...
@@ -602,7 +602,7 @@ end module inputPhysics
 
 module inputTimeSpectral
   !
-  !       Input parameters for time spectral problems.                   
+  !       Input parameters for time spectral problems.
   !
   use precision
   implicit none
@@ -670,7 +670,7 @@ end module inputTimeSpectral
 
 module inputUnsteady
   !
-  !       Input parameters for unsteady problems.                        
+  !       Input parameters for unsteady problems.
   !
   use constants
   implicit none
@@ -717,7 +717,7 @@ module inputUnsteady
 
   integer(kind=intType) :: nOldGridRead
 
-  ! useALE: Use the deforming mesh ale formuation. 
+  ! useALE: Use the deforming mesh ale formuation.
   logical :: useALE
 
   ! updateWallDistanceUnsteady: Whether or not to update the wall
@@ -735,26 +735,26 @@ end module inputUnsteady
 
 module inputADjoint
   !
-  !       Definition of some parameters ADjoint.                         
-  !       The actual values of this parameters are arbitrary;            
-  !       in the code always the symbolic names are (should be) used.    
+  !       Definition of some parameters ADjoint.
+  !       The actual values of this parameters are arbitrary;
+  !       in the code always the symbolic names are (should be) used.
   !
   use constants
   implicit none
   save
   !
-  !       Definition of the adjoint input parameters.                    
+  !       Definition of the adjoint input parameters.
   !
 
-  ! Monitor      : Whether or not to enable the monitor for the KSP 
+  ! Monitor      : Whether or not to enable the monitor for the KSP
   !                contexts.
-  ! ApproxPC     : Whether or not to use the approximate jacobian 
+  ! ApproxPC     : Whether or not to use the approximate jacobian
   !                preconditioner
   ! ADPC         : Whether or not to use AD for preconditioning
-  ! viscPC       : Whether or not to keep cross derivative terms 
-  !                in viscous preconditioner. 
+  ! viscPC       : Whether or not to keep cross derivative terms
+  !                in viscous preconditioner.
   ! FrozenTurbulence: Whether to use frozen turbulence assumption
-  ! restartADjoint: Whether or not we want to restart the adjoint 
+  ! restartADjoint: Whether or not we want to restart the adjoint
   !                 from the previous solution
   ! useDiagTSPC   : Whether or not the off time instance terms are
   !                 included in the TS preconditioner.
@@ -783,13 +783,13 @@ module inputADjoint
   !                 It has a high impact on the required memory!
   ! adjMonStep    : Convergence monitor step
 
-  real(kind=realType)    :: adjRelTol  
+  real(kind=realType)    :: adjRelTol
   real(kind=realType)    :: adjAbsTol
   real(kind=realType)    :: adjRelTolRel
-  real(kind=realType)    :: adjDivTol  
-  integer(kind=intType)  :: adjMaxIter 
-  integer(kind=intType)  :: adjRestart 
-  integer(kind=intType)  :: adjMonStep 
+  real(kind=realType)    :: adjDivTol
+  integer(kind=intType)  :: adjMaxIter
+  integer(kind=intType)  :: adjRestart
+  integer(kind=intType)  :: adjMonStep
 
   ! outerPCIts : Number of iterations to run for on (global) preconditioner
   ! intterPCIts : Number of iterations to run on local preconditioner
@@ -817,10 +817,10 @@ end module inputADjoint
 
 module inputTSStabDeriv
   !
-  !       Definition of some parameters for Time Spectral stability      
-  !       derivatives.                                                   
-  !       The actual values of this parameters are arbitrary;            
-  !       in the code always the symbolic names are (should be) used.    
+  !       Definition of some parameters for Time Spectral stability
+  !       derivatives.
+  !       The actual values of this parameters are arbitrary;
+  !       in the code always the symbolic names are (should be) used.
   !
 
   ! TSStability : Whether or not the TS stability derivatives should
@@ -842,7 +842,7 @@ module inputOverset
   implicit none
   save
   !
-  !       Definition of parameters for the overset implementation        
+  !       Definition of parameters for the overset implementation
   !
   logical :: useoversetLoadBalance=.True.
   real(kind=realType) :: overlapFactor=0.9

@@ -10,7 +10,7 @@ contains
 !   with respect to varying inputs: weights frac
 !   rw status of diff variables: weights:in-out frac:out
 ! --------------------------------------------------
-!           tapenade routine below this point 
+!           tapenade routine below this point
 ! --------------------------------------------------
   subroutine fractoweights_b(frac, fracd, weights, weightsd)
     use constants
@@ -68,7 +68,7 @@ contains
     weightsd(1) = 0.0_8
   end subroutine fractoweights_b
 ! --------------------------------------------------
-!           tapenade routine below this point 
+!           tapenade routine below this point
 ! --------------------------------------------------
   subroutine fractoweights(frac, weights)
     use constants
@@ -107,7 +107,7 @@ contains
 ! "frac" (u,v,w) for the point xcen. the actual search is performed
 ! on the the dual cell formed by the cell centers of the 3x3x3 block
 ! of primal nodes. this routine is ad'd with tapenade in both
-! forward and reverse. 
+! forward and reverse.
     use constants
     implicit none
 ! input
@@ -175,7 +175,7 @@ contains
     real(kind=realtype) :: temp5
     real(kind=realtype) :: temp4
 ! compute the cell center locations for the 8 nodes describing the
-! dual cell. note that this must be counter-clockwise ordering. 
+! dual cell. note that this must be counter-clockwise ordering.
     ii = 0
     do k=1,2
       do j=1,2
@@ -193,7 +193,7 @@ contains
       tmp(:) = xn(:, i) - xn(:, 1)
       xn(:, i) = tmp(:)
     end do
-! compute the location of our seach point relative to the first node. 
+! compute the location of our seach point relative to the first node.
     x = xcen - xn(:, 1)
 ! modify the coordinates of node 3, 6, 8 and 7 such that
 ! they correspond to the weights of the u*v, u*w, v*w and
@@ -567,7 +567,7 @@ newtonhexa:do ll=1,15
 ! "frac" (u,v,w) for the point xcen. the actual search is performed
 ! on the the dual cell formed by the cell centers of the 3x3x3 block
 ! of primal nodes. this routine is ad'd with tapenade in both
-! forward and reverse. 
+! forward and reverse.
     use constants
     implicit none
 ! input
@@ -594,7 +594,7 @@ newtonhexa:do ll=1,15
     real(kind=realtype) :: x1
     real(kind=realtype) :: max1
 ! compute the cell center locations for the 8 nodes describing the
-! dual cell. note that this must be counter-clockwise ordering. 
+! dual cell. note that this must be counter-clockwise ordering.
     ii = 0
     do k=1,2
       do j=1,2
@@ -610,7 +610,7 @@ newtonhexa:do ll=1,15
     do i=2,8
       xn(:, i) = xn(:, i) - xn(:, 1)
     end do
-! compute the location of our seach point relative to the first node. 
+! compute the location of our seach point relative to the first node.
     x = xcen - xn(:, 1)
 ! modify the coordinates of node 3, 6, 8 and 7 such that
 ! they correspond to the weights of the u*v, u*w, v*w and
@@ -692,7 +692,7 @@ newtonhexa:do ll=1,15
 ! we would *like* that all solutions fall inside the hexa, but we
 ! can't be picky here since we are not changing the donors. so
 ! whatever the u,v,w is we have to accept. even if it is greater than
-! 1 or less than zero, it shouldn't be by much.  
+! 1 or less than zero, it shouldn't be by much.
  100 frac(1) = u
     frac(2) = v
     frac(3) = w

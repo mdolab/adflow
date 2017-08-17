@@ -114,20 +114,20 @@ CONTAINS
   end subroutine DPREVREAL4ARRAY
 
   subroutine DPFWDINITDISPLAY(point)
-    CHARACTER point*(*) 
+    CHARACTER point*(*)
     dotp = 0.0
     dppoints(0)=point
     print *, point,' call#',unitcallcount
   end subroutine DPFWDINITDISPLAY
 
   subroutine DPREVINITDISPLAY(point)
-    CHARACTER point*(*) 
+    CHARACTER point*(*)
     dotp = 0.0
     print *, point,' call#',unitcallcount
   end subroutine DPREVINITDISPLAY
 
   subroutine DPFWDDISPLAY(point)
-    CHARACTER point*(*) 
+    CHARACTER point*(*)
     print *, 'DotProduct = ', dotp
     dppoints(indexinarray)=point
     fwdarray(indexinarray)=dotp
@@ -138,7 +138,7 @@ CONTAINS
   end subroutine DPFWDDISPLAY
 
   subroutine DPREVDISPLAY(point)
-    CHARACTER point*(*) 
+    CHARACTER point*(*)
     print *, 'DotProduct = ', dotp
     indexinarray = indexinarray-1
     revarray(indexinarray)=dotp
