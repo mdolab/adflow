@@ -45,7 +45,7 @@ contains
 
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, sps, level, iStr
-    integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nStrings, nodeFam(3)
+    integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nodeFam(3)
     integer(kind=intType) :: nNodeTotal, nTriTotal, offset, iBCGroup, nFam
     integer(kind=intType), dimension(:), allocatable :: famList
 
@@ -54,9 +54,9 @@ contains
     type(oversetWall), dimension(:), allocatable :: oSurfs
     integer(kind=intType), dimension(:), allocatable :: intRecvBuf
     type(oversetString), target :: master, pocketMaster
-    integer(kind=intType), dimension(:), allocatable :: nodeIndices
-    type(oversetString), dimension(:), allocatable, target :: strings
     type(oversetString), pointer :: str
+    integer(kind=intType), dimension(:), allocatable :: nodeIndices
+
     integer(kind=intType) :: nFullStrings, nUnique
     integer(kind=intType) :: nOSurfRecv, nOSurfSend
     integer(kind=intType) , dimension(:,:), allocatable :: oSurfRecvList, oSurfSendList
@@ -403,36 +403,15 @@ contains
              call writeZipperDebug(master)
           end if
 
-          call createOrderedStrings(master, strings, nStrings)
-
-          call performSelfZip(master, strings, nStrings)
-
-          ! Write out any self-zipped triangles
-          if (debugZipper) then
-             call writeOversetTriangles(master, "selfzipTriangulation.dat")
-          end if
-
-          call makeCrossZip(master, strings, nStrings)
-
-          if (debugZipper) then
-             call writeOversetTriangles(master, "fullTriangulation.dat")
-          end if
-
-          ! ---------------------------------------------------------------
-          ! Sort through zipped triangle edges and the edges which have not
-          ! been used twice (orphan edges) will be ultimately gathered to
-          ! form polygon pockets to be zipped.
-          call makePocketZip(master, strings, nStrings, pocketMaster)
-
-          if (debugZipper) then
-             call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
-          end if
+          ! Run the common core zipper routines
+          call zipperCore(master, pocketMaster, debugZipper)
 
           ! Before we create the final data structures for the zipper
           ! mesh; we will combine the master and pocketMaster
           ! strings, and unique-ify the indices to help keep amount of data
           ! transfer to a minimum. We also determine at this point which
           ! triangle belongs to which family.
+
           call setStringPointers(master)
           nTriTotal = master%ntris + pocketMaster%ntris
           nNodeTotal = master%nNodes + pocketMaster%nNodes
@@ -479,14 +458,8 @@ contains
              end do
           end do outerLoop
 
-          ! Clean up the reminder of the sting memory on the root proc
-          do i=1, nStrings
-             call deallocateString(strings(i))
-          end do
-          deallocate(strings)
           call deallocateString(master)
           call deallocateString(pocketMaster)
-
        else
           ! Other procs don't have any triangles *sniffle* :-(
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
@@ -557,6 +530,121 @@ contains
 
     end function selectNodeFamily
   end subroutine createZipperMesh
+
+  subroutine checkZipper(fileName)
+
+    ! Special routine for checking zipper mesh loaded from debug file
+    use constants
+    use stringOps
+    implicit none
+
+    ! Input/Output
+    character(*), intent(in) :: fileName
+
+    ! Working
+    type(oversetString) :: master, pocketMaster
+
+    call loadZipperDebug(fileName, master)
+    call zipperCore(master, pocketMaster, .True.)
+
+    print *, 'Zipper successfully completed'
+  end subroutine checkZipper
+
+  subroutine zipperCore(master, pocketMaster, debugZipper)
+
+    ! Common routine for creating the zipper from a given master
+    use constants
+    use stringOps
+    use kdtree2_module
+    implicit none
+
+    ! Input/Output
+    type(oversetString), intent(inout) :: master, pocketMaster
+    logical, intent(in):: debugZipper
+
+    ! Local
+    type(oversetString), dimension(:), allocatable, target :: strings
+    type(oversetString), pointer :: str
+    integer(kind=intType) :: nStrings, i, j
+
+    call createOrderedStrings(master, strings, nStrings)
+
+
+    master%myID = 99
+
+    ! Allocate space for the maximum number of directed edges. This
+    ! is equal to the initial number of edges (nElems) plus 3 times
+    ! the number of triangles we will add, which is also nElems. Now,
+    ! we will probably not actualy have that many since we save a
+    ! triangle and 3 edges for every self zip that is
+    ! applied. Therefore we know this will always be enough
+    allocate(master%edges(4*master%nElems))
+
+    master%nEdges = 0
+
+    do i=1, nStrings
+       str => strings(i)
+       do j=1, str%nElems
+          master%nEdges = master%nEdges + 1
+          master%edges(master%nEdges)%n1 = str%p%conn(1, str%pElems(j)) !<-- first node
+          master%edges(master%nEdges)%n2 = str%p%conn(2, str%pElems(j)) !<-- second node
+       end do
+    end do
+
+    ! Allocate space for the triangles. Again, this can be at most,
+    ! nElems, but the total number of elements will most likely be
+    ! smaller due to self zipping.
+    allocate(master%tris(3, master%nElems))
+    master%nTris = 0
+
+    ! Build the master tree
+    master%tree => kdtree2_create(master%x, sort=.True.)
+
+    ! Perform the string association:
+    call stringMatch(strings, nStrings, debugZipper)
+
+    if (debugZipper) then
+       open(unit=101, file="fullGapStrings.dat", form='formatted')
+       write(101,*) 'TITLE = "Gap Strings Data" '
+       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+       do i=1, nStrings
+          call writeOversetString(strings(i), strings, nStrings, 101)
+       end do
+       close(101)
+    end if
+
+    call performSelfZip(master, strings, nStrings, debugZipper)
+
+   ! Write out any self-zipped triangles
+    if (debugZipper) then
+       call writeOversetTriangles(master, "selfzipTriangulation.dat")
+    end if
+
+    call makeCrossZip(master, strings, nStrings, debugZipper)
+
+    if (debugZipper) then
+       call writeOversetTriangles(master, "fullTriangulation.dat")
+    end if
+
+    ! ---------------------------------------------------------------
+    ! Sort through zipped triangle edges and the edges which have not
+    ! been used twice (orphan edges) will be ultimately gathered to
+    ! form polygon pockets to be zipped.
+    call makePocketZip(master, strings, nStrings, pocketMaster, debugZipper)
+
+    if (debugZipper) then
+       call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
+    end if
+
+    ! Clean up the reminder of the sting memory on the root proc
+    do i=1, nStrings
+       call deallocateString(strings(i))
+    end do
+    deallocate(strings)
+
+  end subroutine zipperCore
+
   !
   !       determineClusterArea determine the average cell surface area
   !       for all blocks in a particular cluster. This is used for
