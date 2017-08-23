@@ -5898,7 +5898,7 @@ end subroutine cross_prod
        ! and spectral computations a bit more info is written.
 
        nCharWrite = 10
-       if( writeIterations ) nCharWrite = nCharWrite + 7 + 7 + 7 + 7 + 10
+       if( writeIterations ) nCharWrite = nCharWrite + 7 + 7 + 7 + 7 + 7 + 10
        if(equationMode == unsteady) then
           nCharWrite = nCharWrite + 7 + fieldWidth + 1
        else if(equationMode == timeSpectral) then
@@ -5931,7 +5931,7 @@ end subroutine cross_prod
           write(*,"(a)",advance="no") " Spectral |"
        endif
 
-       if( writeIterations ) write(*,"(a)",advance="no") " Iter | Iter | Iter |   CFL   | Step |"
+       if( writeIterations ) write(*,"(a)",advance="no") " Iter | Iter | Iter |   CFL   | Step | Lin  |"
        if( showCPU )         write(*,"(a)",advance="no") "    Wall    |"
 
        ! Write the header for the variables to be monitored.
@@ -6054,8 +6054,8 @@ end subroutine cross_prod
        endif
 
 
-       if( writeIterations ) write(*,"(a)",advance="no") "      | Tot  | Type |         |"
-       if( showCPU )         write(*,"(a)",advance="no") "      | Clock (s)  |"
+       if( writeIterations ) write(*,"(a)",advance="no") "      | Tot  | Type |         |      | Res  |"
+       if( showCPU )         write(*,"(a)",advance="no") " Clock (s)  |"
 
        ! Loop over the variables to be monitored and write the
        ! second line.
