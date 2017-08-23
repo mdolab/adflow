@@ -24,7 +24,7 @@ contains
     use overset, only : oversetString, oversetWall, CSRMatrix, cumDomProc, nDomTotal, &
          clusters, overlapMatrix, PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_OBJECT, &
          oversetPresent, zipperMesh, zipperMeshes
-    use wallDistanceData, only : xVolumeVec, IS1, IS2, PETSC_VIEWER_STDOUT_WORLD
+    use wallDistanceData, only : xVolumeVec, IS1, IS2
     use utils, only : setPointers, EChk
     use adjointvars, only :nNodesLocal
     use sorting, only : famInList
@@ -45,7 +45,7 @@ contains
 
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, sps, level, iStr
-    integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nStrings, nodeFam(3)
+    integer(kind=intType) :: iDom, jDom, nn, mm, n, ierr, iProc, iWork, nodeFam(3)
     integer(kind=intType) :: nNodeTotal, nTriTotal, offset, iBCGroup, nFam
     integer(kind=intType), dimension(:), allocatable :: famList
 
@@ -54,9 +54,9 @@ contains
     type(oversetWall), dimension(:), allocatable :: oSurfs
     integer(kind=intType), dimension(:), allocatable :: intRecvBuf
     type(oversetString), target :: master, pocketMaster
-    integer(kind=intType), dimension(:), allocatable :: nodeIndices
-    type(oversetString), dimension(:), allocatable, target :: strings
     type(oversetString), pointer :: str
+    integer(kind=intType), dimension(:), allocatable :: nodeIndices
+
     integer(kind=intType) :: nFullStrings, nUnique
     integer(kind=intType) :: nOSurfRecv, nOSurfSend
     integer(kind=intType) , dimension(:,:), allocatable :: oSurfRecvList, oSurfSendList
@@ -85,7 +85,6 @@ contains
 
     call initBCDataIblank(level, sps)
 
-
     ! We build the zipper meshes *independently* for each BCType.
     BCGroupLoop: do iBCGroup=1, nFamExchange
 
@@ -101,6 +100,7 @@ contains
           call ECHK(ierr, __FILE__, __LINE__)
           zipper%allocated = .False.
        end if
+
        ! Note that the zipper%conn could be allocated with size of
        ! zero, but the vecScatter and Vec are not petsc-allocated.
        if (allocated(zipper%conn)) then
@@ -129,7 +129,7 @@ contains
        if (nFam == 0) then
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
 
-          cycle
+          cycle ! to the next BCGroup
        else
           ! Do a second pass and fill up the famList
           allocate(famList(nFam))
@@ -160,16 +160,13 @@ contains
 
        ! Determine the average area of surfaces on each cluster. This
        ! will be independent of any block splitting distribution.
-
        call determineClusterAreas(famList)
-
 
        ! Set the boundary condition blank values
        call slitElimination(famList, level, sps)
 
        ! Create the surface deltas
        call surfaceDeviation(famList, level, sps)
-
 
        ! ================ WE NORMALLY GOT THIS FROM OVERSETCOMM =============
        ! Get the OSurf buffer sizes becuase we need that for getOSurfCommPattern
@@ -386,14 +383,6 @@ contains
        call deallocateOSurfs(OSurfs, nDomTotal)
        deallocate(oSurfs, intRecvBuf)
 
-       ! We are still left with an issue since we had only worked with
-       ! the owned cells, we don't know if if a halo surface iblank was
-       ! modified by another processor. The easiest way to deal with
-       ! this is do just do a halo-surface-iblank exchange. Essentially
-       ! we will put the surface iblankvalues into the volume iblank,
-       ! communicate and the extract again. Easy-peasy
-       ! call exchangeSurfaceIBlanks(famList, level, sps, commPatternCell_2nd, internalCell_2nd)
-
        ! Before we continue, we do a little more
        ! processing. bowTieElimination tries to eliminate cells
        call bowTieAndIsolationElimination(famList, level, sps)
@@ -414,36 +403,15 @@ contains
              call writeZipperDebug(master)
           end if
 
-          call createOrderedStrings(master, strings, nStrings)
-
-          call performSelfZip(master, strings, nStrings)
-
-          ! Write out any self-zipped triangles
-          if (debugZipper) then
-             call writeOversetTriangles(master, "selfzipTriangulation.dat")
-          end if
-
-          call makeCrossZip(master, strings, nStrings)
-
-          if (debugZipper) then
-             call writeOversetTriangles(master, "fullTriangulation.dat")
-          end if
-
-          ! ---------------------------------------------------------------
-          ! Sort through zipped triangle edges and the edges which have not
-          ! been used twice (orphan edges) will be ultimately gathered to
-          ! form polygon pockets to be zipped.
-          call makePocketZip(master, strings, nStrings, pocketMaster)
-
-          if (debugZipper) then
-             call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
-          end if
+          ! Run the common core zipper routines
+          call zipperCore(master, pocketMaster, debugZipper)
 
           ! Before we create the final data structures for the zipper
           ! mesh; we will combine the master and pocketMaster
           ! strings, and unique-ify the indices to help keep amount of data
           ! transfer to a minimum. We also determine at this point which
           ! triangle belongs to which family.
+
           call setStringPointers(master)
           nTriTotal = master%ntris + pocketMaster%ntris
           nNodeTotal = master%nNodes + pocketMaster%nNodes
@@ -490,14 +458,8 @@ contains
              end do
           end do outerLoop
 
-          ! Clean up the reminder of the sting memory on the root proc
-          do i=1, nStrings
-             call deallocateString(strings(i))
-          end do
-          deallocate(strings)
           call deallocateString(master)
           call deallocateString(pocketMaster)
-
        else
           ! Other procs don't have any triangles *sniffle* :-(
           allocate(zipper%conn(3, 0), zipper%fam(0), zipper%indices(0))
@@ -568,6 +530,121 @@ contains
 
     end function selectNodeFamily
   end subroutine createZipperMesh
+
+  subroutine checkZipper(fileName)
+
+    ! Special routine for checking zipper mesh loaded from debug file
+    use constants
+    use stringOps
+    implicit none
+
+    ! Input/Output
+    character(*), intent(in) :: fileName
+
+    ! Working
+    type(oversetString) :: master, pocketMaster
+
+    call loadZipperDebug(fileName, master)
+    call zipperCore(master, pocketMaster, .True.)
+
+    print *, 'Zipper successfully completed'
+  end subroutine checkZipper
+
+  subroutine zipperCore(master, pocketMaster, debugZipper)
+
+    ! Common routine for creating the zipper from a given master
+    use constants
+    use stringOps
+    use kdtree2_module
+    implicit none
+
+    ! Input/Output
+    type(oversetString), intent(inout) :: master, pocketMaster
+    logical, intent(in):: debugZipper
+
+    ! Local
+    type(oversetString), dimension(:), allocatable, target :: strings
+    type(oversetString), pointer :: str
+    integer(kind=intType) :: nStrings, i, j
+
+    call createOrderedStrings(master, strings, nStrings)
+
+
+    master%myID = 99
+
+    ! Allocate space for the maximum number of directed edges. This
+    ! is equal to the initial number of edges (nElems) plus 3 times
+    ! the number of triangles we will add, which is also nElems. Now,
+    ! we will probably not actualy have that many since we save a
+    ! triangle and 3 edges for every self zip that is
+    ! applied. Therefore we know this will always be enough
+    allocate(master%edges(4*master%nElems))
+
+    master%nEdges = 0
+
+    do i=1, nStrings
+       str => strings(i)
+       do j=1, str%nElems
+          master%nEdges = master%nEdges + 1
+          master%edges(master%nEdges)%n1 = str%p%conn(1, str%pElems(j)) !<-- first node
+          master%edges(master%nEdges)%n2 = str%p%conn(2, str%pElems(j)) !<-- second node
+       end do
+    end do
+
+    ! Allocate space for the triangles. Again, this can be at most,
+    ! nElems, but the total number of elements will most likely be
+    ! smaller due to self zipping.
+    allocate(master%tris(3, master%nElems))
+    master%nTris = 0
+
+    ! Build the master tree
+    master%tree => kdtree2_create(master%x, sort=.True.)
+
+    ! Perform the string association:
+    call stringMatch(strings, nStrings, debugZipper)
+
+    if (debugZipper) then
+       open(unit=101, file="fullGapStrings.dat", form='formatted')
+       write(101,*) 'TITLE = "Gap Strings Data" '
+       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+       do i=1, nStrings
+          call writeOversetString(strings(i), strings, nStrings, 101)
+       end do
+       close(101)
+    end if
+
+    call performSelfZip(master, strings, nStrings, debugZipper)
+
+   ! Write out any self-zipped triangles
+    if (debugZipper) then
+       call writeOversetTriangles(master, "selfzipTriangulation.dat")
+    end if
+
+    call makeCrossZip(master, strings, nStrings, debugZipper)
+
+    if (debugZipper) then
+       call writeOversetTriangles(master, "fullTriangulation.dat")
+    end if
+
+    ! ---------------------------------------------------------------
+    ! Sort through zipped triangle edges and the edges which have not
+    ! been used twice (orphan edges) will be ultimately gathered to
+    ! form polygon pockets to be zipped.
+    call makePocketZip(master, strings, nStrings, pocketMaster, debugZipper)
+
+    if (debugZipper) then
+       call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
+    end if
+
+    ! Clean up the reminder of the sting memory on the root proc
+    do i=1, nStrings
+       call deallocateString(strings(i))
+    end do
+    deallocate(strings)
+
+  end subroutine zipperCore
+
   !
   !       determineClusterArea determine the average cell surface area
   !       for all blocks in a particular cluster. This is used for
@@ -680,39 +757,7 @@ contains
     integer(kind=intType), dimension(:, :), allocatable :: toFlip
 
     ! This routine initializes the surface cell iblank based on the
-    ! volume iblank. It is not a straight copy since we a little
-    ! preprocessing
-
-    ! This is a little trickier than it seems. The reason is that we
-    ! will allow a limited number of interpolated cells to be used
-    ! directly in the integration provided the meet certain criteria.
-
-    ! Consider the following
-    !  +------+--------+-------+
-    !  |ib=1  |  ib=1  | ib= 1 |
-    !  |      |        |       |
-    !  |      |        |       |
-    !  +------+========+-------+
-    !  |ib=1  || ib=-1 || ib=1 |
-    !  |      ||       ||      |
-    !  |      ||       ||      |
-    !==+======+--------+=======+==
-    !  |ib=-1 |  ib=-1 | ib=-1 |
-    !  |      |        |       |
-    !  |      |        |       |
-    !  +------+--------+-------+
-    !
-    ! The boundary between real/interpolated cells is marked by double
-    ! lines. For zipper mesh purposes, it is generally going to be
-    ! better to treat the center cell, as a regular force integration
-    ! cell (ie surface iblank=1). The criteria for selection of these
-    ! cells is:
-
-    ! 1. The cell must not have been a forced receiver (ie at overset outer
-    ! bound)
-    ! 2. Any pair *opposite* sides of the cell must be compute cells.
-
-    ! This criterial allows one-cell wide 'slits' to be pre-eliminated.
+    ! volume iblank.
 
     domainLoop: do nn=1, nDom
        call setPointers(nn, level, sps)
@@ -1155,58 +1200,205 @@ contains
     use utils, only : setPointers, setBCPointers
     use BCPointers, only : xx
     use sorting, only : famInList
+    use communication, only : myid, adflow_comm_world
+    use utils, only : EChk
     implicit none
     integer(kind=intType), intent(in), dimension(:) :: famList
     character(80) :: fileName, zoneName
     integer(kind=intType) :: i, j, nn, iDom, iBeg, iEnd, jBeg, jEnd, mm, iDim
+    integer(kind=intType) :: nNode, nCell, tag, ierr, ii, iProc, nLocalBoco, tmp(5)
+    real(kind=realType), dimension(:), allocatable :: xBuffer
+    integer(kind=intType), dimension(:), allocatable :: iblankBuffer, bocosPerProc
+    integer(kind=intType), dimension(:,:,:), allocatable :: faceInfo
+    integer, dimension(mpi_status_size) :: mpiStatus
 
-    write (fileName,"(a,I5.5,a)") "wall_", myid, ".dat"
+    ! Write a gathered surface tecplot file.
+    if (myid == 0) then
+       write (fileName,"(a)") "zipper_wall.dat"
 
-    open(unit=101,file=trim(fileName),form='formatted')
-    write(101,*) 'TITLE = "mywalls"'
-    write(101,*) 'Variables = "X", "Y", "Z", "CellIBlank"'
+       open(unit=101,file=trim(fileName),form='formatted')
+       write(101,*) 'TITLE = "zipper walls"'
+       write(101,*) 'Variables = "X", "Y", "Z", "CellIBlank"'
+    end if
 
+    ! Before we start, the root processor needs to know how many
+    ! receives we can expect from each processor.
+
+    nLocalBoco = 0
     do nn=1,nDom
-       iDom = nn + cumDomProc(myid)
        call setPointers(nn, 1, 1)
-       if (nBocos > 0) then
+       do mm=1, nBocos
+          famInclude: if (famInList(BCData(mm)%famID, famList)) then
+             nLocalBoco = nLocalBoco + 1
+          end if famInclude
+       end do
+    end do
+
+    if (myid == 0) then
+       allocate(bocosPerProc(0:nProc-1))
+    end if
+
+    call mpi_gather(nLocalBoco, 1, adflow_integer, bocosPerProc, 1, &
+         adflow_integer, 0, adflow_comm_world, ierr)
+    call ECHK(ierr, __FILE__, __LINE__)
+    ! Now setup the info array on the root proc:
+    if (myid == 0) then
+       allocate(faceInfo(5, maxval(bocosPerProc), 0:nProc-1))
+    end if
+
+    if (myid /= 0) then
+       tag = 0
+       do nn=1, nDom
+          call setPointers(nn, 1, 1)
           do mm=1, nBocos
              jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
              iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
              famInclude2: if (famInList(BCData(mm)%famID, famList)) then
-                call setBCPointers(mm, .True.)
-
-                write(zoneName, "(a,I5.5,a,I5.5)") "Zone", iDom, "_Proc_", myid
-110             format('ZONE T=',a, " I=", i5, " J=", i5)
-                write(101, 110), trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
-                write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
-
-13              format (E14.6)
-                do iDim=1,3
-                   do j=jBeg, jEnd
-                      do i=iBeg, iEnd
-                         write(101, *) xx(i+1, j+1, iDim)
-                      end do
-                   end do
-                end do
-
-                do j=jBeg+1, jEnd
-                   do i=iBeg+1, iEnd
-                      write(101, *) BCData(mm)%iBlank(i, j)
-                   end do
-                end do
+                tag = tag + 1
+                tmp = (/iBeg, iEnd, jBeg, jEnd, nBkGlobal/)
+                call mpi_send(tmp, 5, &
+                     adflow_integer, 0, tag, adflow_comm_world, ierr)
+                call ECHK(ierr, __FILE__, __LINE__)
              end if famInclude2
           end do
-       else
-          ! Write dummy zone
-          write(zoneName, "(a,I1,a,I1)") "Zone", 0, "_Proc_", myid
-          write(101, 110), trim(zoneName), 1, 1
-          write (101,*) "DATAPACKING=POINT"
-          write(101, *) zero, zero, zero, one, one
-       end if
+       end do
+    else
+       ! Receive the size info:
+       do iProc=1, nProc-1
+          do tag=1, bocosPerProc(iProc)
+             call mpi_recv(tmp, 5, adflow_integer, iProc, tag, &
+                  adflow_comm_world, mpiStatus, ierr)
+             call ECHK(ierr, __FILE__, __LINE__)
+             faceInfo(:, tag, iProc) = tmp
+          end do
+       end do
+    end if
+
+    ! Need a barrier between the two sets of the comms just in case.
+    call MPI_Barrier(adflow_comm_world, ierr)
+    call ECHK(ierr, __FILE__, __LINE__)
+
+    tag = 0
+    do nn=1,nDom
+       call setPointers(nn, 1, 1)
+       do mm=1, nBocos
+          jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+          iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+          famInclude3: if (famInList(BCData(mm)%famID, famList)) then
+             call setBCPointers(mm, .True.)
+
+             nNode = (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+             nCell = (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+             allocate(iBlankBuffer(nCell), xBuffer(3*nNode))
+             ii = 0
+             do j=jBeg+1, jEnd
+                do i=iBeg+1, iEnd
+                   ii = ii + 1
+                   iBlankBuffer(ii) = BCData(mm)%iBlank(i, j)
+                end do
+             end do
+
+             ii = 0
+             do iDim=1,3
+                do j=jBeg, jEnd
+                   do i=iBeg, iEnd
+                      ii = ii + 1
+                      xBuffer(ii) = xx(i+1, j+1, iDim)
+                   end do
+                end do
+             end do
+
+             if (myid == 0) then
+                ! We can write it directly:
+                call writeZone(iBeg, iEnd, jBeg, jEnd, nBkGlobal, xBuffer, iBlankBuffer)
+             else
+
+                tag = tag + 1
+                call mpi_send(iBlankBuffer, nCell, adflow_integer, 0, tag, &
+                     adflow_comm_world, ierr)
+                call ECHK(ierr, __FILE__, __LINE__)
+
+                tag = tag + 1
+                call mpi_send(xBuffer, nNode*3, adflow_real, 0, tag, &
+                     adflow_comm_world, ierr)
+                call ECHK(ierr, __FILE__, __LINE__)
+
+             end if
+             deallocate(iBlankBuffer, xBuffer)
+          end if famInclude3
+       end do
     end do
-    close(101)
-  end subroutine writeWalls
+
+    ! Complete the receives and writes on the root proc:
+    if (myid == 0) then
+       ! Receive the nodes and iblank info
+       do iProc=1, nProc-1
+          do tag=1, bocosPerProc(iProc)
+
+             iBeg = faceInfo(1, tag, iProc)
+             iEnd = faceInfo(2, tag, iProc)
+
+             jBeg = faceInfo(3, tag, iProc)
+             jEnd = faceInfo(4, tag, iProc)
+
+             nBkGlobal =faceInfo(5, tag, iProc)
+
+             nNode = (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+             nCell = (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+
+             allocate(iBlankBuffer(nCell), xBuffer(3*nNode))
+
+             call mpi_recv(iBlankBuffer, nCell, adflow_integer, iProc, (2*tag-1), &
+                  adflow_comm_world, mpiStatus, ierr)
+             call ECHK(ierr, __FILE__, __LINE__)
+
+             call mpi_recv(xBuffer, nNode*3, adflow_real, iProc, 2*tag, &
+                  adflow_comm_world, mpiStatus, ierr)
+             call ECHK(ierr, __FILE__, __LINE__)
+
+             call writeZone(iBeg, iEnd, jBeg, jEnd, nBkGlobal, xBuffer, iBlankBuffer)
+
+             deallocate(iBlankBuffer, xBuffer)
+
+          end do
+       end do
+       deallocate(faceInfo, bocosPerProc)
+       close(101)
+    end if
+
+    contains
+
+      subroutine writeZone(iBeg, iEnd, jBeg, jEnd, nBkGlobal, xx, iblank)
+
+        implicit none
+        ! Input
+        integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, nBkGlobal
+        real(kind=realType), intent(in), dimension(:) :: xx
+        integer(kind=intType), intent(in), dimension(:) :: iblank
+
+        character(80) :: zoneName
+        integer(kind=intType) :: iDim
+
+        write(zoneName, "(a,I5.5)") "Zone_", nBkGlobal
+110     format('ZONE T=',a, " I=", i5, " J=", i5)
+        write(101, 110), trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
+        write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
+13      format (E14.6)
+
+        ! The 3 is for the three coordinate directions
+        nNode = (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
+        nCell = (iEnd - iBeg)*(jEnd - jBeg)
+
+        do i=1, 3*nNode
+           write(101, 13) xx(i)
+        end do
+
+        do i=1, nCell
+           write(101, *) iBlank(i)
+        end do
+      end subroutine writeZone
+    end subroutine writeWalls
+
   subroutine bowTieAndIsolationElimination(famList, level, sps)
 
     use constants
@@ -1275,15 +1467,15 @@ contains
 
                 ! Allocate two tmporary auxilary arrays 'eN'->
                 ! edgeNeighbours and 'cN'-> cornerNeighbous. For every
-                ! comute determine the number of compute neighbours
-                ! connected along edges and at corners
+                ! comupte cell determine the number of compute
+                ! neighbours connected along edges and at corners
                 allocate(nE(iBeg:iEnd, jBeg:jEnd), nC(iBeg:iEnd, jBeg:jEnd))!, &
 
                 call findBowTies()
 
                 do j=jBeg, jEnd
                    do i=iBeg, iEnd
-                      if (BCData(mm)%iBlank(i, j) > 0 .and. nC(i,j) >=1 .and. nE(i,j) <=E) then
+                      if (BCData(mm)%iBlank(i, j) > 0 .and. nC(i,j) >=1 .and. nE(i,j) <= E) then
                          BCData(mm)%iBlank(i, j) = 0
                       end if
                    end do
