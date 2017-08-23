@@ -1832,7 +1832,7 @@ contains
     localOrdering = 'rcm'
     outerPreConIts = 1
     ! Setup the KSP using the same code as used for the adjoint
-    if (ank_subspace < 0) then 
+    if (ank_subspace < 0) then
        subspace = ANK_maxIter
     else
        subspace = ANK_subspace
@@ -2388,10 +2388,10 @@ contains
 
     linResMonitor = resHist(kspIterations+1)/resHist(1)
 
-    if (kspIterations > .5 * ank_maxIter) then 
+    if (kspIterations > .5 * ank_maxIter .and. totalR > ANK_secondOrdSwitchTol*totalR0) then
        ! We should reform the PC since it took longer than we want.
        ANK_iter = -1
-     end if
+    end if
 
     ! Update the approximate iteration counter. The +1 is for the
     ! residual evaluations.
