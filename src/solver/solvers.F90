@@ -1533,9 +1533,9 @@ contains
                 write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
 #endif
 #ifndef USE_COMPLEX
-                write(*,"(f5.2,1x)",advance="no") stepMonitor
+                write(*,"(f5.2,2x)",advance="no") stepMonitor
 #else
-                write(*,"(f5.2,1x)",advance="no") real(stepMonitor)
+                write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
 #endif
                 if (linResMonitor < zero) then 
                    ! For RK/DADI just print dashes 
@@ -1543,9 +1543,9 @@ contains
                 else
                    
 #ifndef USE_COMPLEX
-                   write(*,"(f5.2,1x)",advance="no") linResMonitor
+                   write(*,"(f5.3,1x)",advance="no") linResMonitor
 #else
-                   write(*,"(f5.2,1x)",advance="no") real(linResMonitor)
+                   write(*,"(f5.3,1x)",advance="no") real(linResMonitor)
 #endif
                 end if
 
