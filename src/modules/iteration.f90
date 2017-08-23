@@ -94,8 +94,9 @@
 
        ! Variables for monitoring the current CFL and step depending
        ! on the type of iteration
-       real(kind=realType) :: CFLMonitor
-       real(kind=alwaysRealType) :: stepMonitor
+       real(kind=realType) :: CFLMonitor=0.0
+       real(kind=alwaysRealType) :: stepMonitor=1.0
+       real(kind=alwaysRealType) :: linResMonitor=-1.0
 
        ! Added by HDN
        ! nALEMeshes:                Number of ALE levels for intermediate mesh
