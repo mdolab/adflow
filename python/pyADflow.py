@@ -4181,7 +4181,8 @@ class ADFLOW(AeroSolver):
             'useanksolver':[bool, False],
             'ankuseturbdadi':[bool, True],
             'ankswitchtol':[float, 0.1],
-            'anksubspacesize':[int, 10],
+            'anksubspacesize':[int, -1],
+            'ankmaxiter':[int, 30],
             'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
@@ -4476,6 +4477,7 @@ class ADFLOW(AeroSolver):
             'ankuseturbdadi':['ank', 'ank_useturbdadi'],
             'ankswitchtol':['ank', 'ank_switchtol'],
             'anksubspacesize':['ank', 'ank_subspace'],
+            'ankmaxiter':['ank', 'ank_maxiter'],
             'anklinearsolvetol':['ank', 'ank_rtol'],
             'ankasmoverlap':['ank', 'ank_asmoverlap'],
             'ankpcilufill':['ank', 'ank_ilufill'],
@@ -4502,6 +4504,7 @@ class ADFLOW(AeroSolver):
             'printwarnings':['iter', 'printwarnings'],
             'printtiming':['adjoint', 'printtiming'],
             'setmonitor':['adjoint', 'setmonitor'],
+
 
             # Adjoint Params
             'adjointl2convergence':['adjoint', 'adjreltol'],

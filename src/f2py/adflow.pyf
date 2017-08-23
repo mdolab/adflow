@@ -213,6 +213,7 @@ python module libadflow
          logical :: useanksolver
          logical :: ank_useturbdadi
          integer(kind=inttype) :: ank_subspace
+         integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
          integer(kind=inttype) :: ank_ilufill

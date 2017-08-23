@@ -458,7 +458,7 @@ contains
     use inputPhysics, only : equations
     use flowVarRefState, only :  nw, nwf
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts, totalR0, stepMonitor
+    use iteration, only : approxTotalIts, totalR0, stepMonitor, linResMonitor
     use utils, only : EChk
     use killSignals, only : routineFailed
     implicit none
@@ -472,6 +472,7 @@ contains
     real(kind=alwaysRealType) :: norm, rtol, atol
     real(kind=alwaysrealType) :: fnorm, ynorm, gnorm
     logical :: flag
+    real(kind=alwaysRealType) :: resHist(NK_subspace+1)
 
     if (firstCall) then
        call setupNKSolver()
@@ -539,6 +540,9 @@ contains
          real(atol), real(NK_divTol), maxIt, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    call KSPSetResidualHistory(NK_KSP, resHist, maxIt+1, PETSC_TRUE, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
     ! Actually do the Linear Krylov Solve
     call KSPSolve(NK_KSP, rVec, deltaW, ierr)
 
@@ -581,8 +585,9 @@ contains
     call KSPGetIterationNumber(NK_KSP, kspIterations, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    approxTotalIts = approxTotalIts + nfEvals + kspIterations
+    linResMonitor = resHist(kspIterations+1)/resHist(1)
 
+    approxTotalIts = approxTotalIts + nfEvals + kspIterations
 
   end subroutine NKStep
 
@@ -1608,6 +1613,7 @@ module ANKSolver
   logical :: useANKSolver
   integer(kind=intType) :: ANK_jacobianLag
   integer(kind=intType) :: ANK_subSpace
+  integer(kind=intType) :: ANK_maxIter
   integer(kind=intType) :: ANK_asmOverlap
   integer(kind=intType) :: ANK_iluFill
   integer(kind=intType) :: ANK_innerPreConIts
@@ -1750,7 +1756,7 @@ contains
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
     real(kind=realType) ::  dt
-    integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts
+    integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
     real(kind=realType), pointer :: diag(:)
 
     ! Assemble the approximate PC (fine leve, level 1)
@@ -1826,7 +1832,12 @@ contains
     localOrdering = 'rcm'
     outerPreConIts = 1
     ! Setup the KSP using the same code as used for the adjoint
-    call setupStandardKSP(ANK_KSP, kspObjectType,  ANK_subSpace, &
+    if (ank_subspace < 0) then 
+       subspace = ANK_maxIter
+    else
+       subspace = ANK_subspace
+    end if
+    call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
          preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
          localOrdering, ANK_iluFill, ANK_innerPreConIts)
 
@@ -2179,23 +2190,24 @@ contains
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor
+    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor
     use utils, only : EChk
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, computeResidualNK, getEWTol
-
+    use communication
     implicit none
 
     ! Input Variables
     logical, intent(in) :: firstCall
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps
+    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist
     real(kind=realType) :: atol, val
-    real(kind=alwaysRealType) :: rtol, totalR_dummy
+    real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes
+    real(kind=alwaysRealType) :: resHist(ank_maxIter+1)
     logical :: secondOrdSave
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
@@ -2284,19 +2296,13 @@ contains
       ! Determine the relative convergence for the KSP solver
       rtol = ANK_rtol ! Just use the input relative tolerance for approximate fluxes
 
-      ! For initial convergence with approximate fluxes, set a relatively higher iteration
-      ! limit because we need 0.1 relative convergence for stability in this region.
-      maxIt = 4*ANK_subSpace
-    else
+   else
       ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive
       ! convergence tolerance helps with performance.
       totalR_dummy = totalR
       call getEWTol(totalR_dummy, totalR_old, rtolLast, rtol)
 
-      ! For second order fluxes, more aggressively limit the maximum iteration count for each
-      ! KSP solve because stability should not be an issue when second order fluxes are used
-      maxIt = 2*ANK_subSpace
-    end if
+   end if
 
     ! Record the total residual and relative convergence for next iteration
     totalR_old = totalR
@@ -2311,7 +2317,10 @@ contains
     ! If this happens, the preconditioner is re-computed and because of this,
     ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
     call KSPSetTolerances(ANK_KSP, rtol, &
-         real(atol), real(ANK_divTol), maxIt, ierr)
+         real(atol), real(ANK_divTol), ank_maxIter, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call KSPSetResidualHistory(ANK_KSP, resHist, ank_maxIter+1, PETSC_TRUE, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
@@ -2374,16 +2383,15 @@ contains
     call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Check if ksp iterations are above 2 times ANK_subSpace size,
-    ! if so, set ANK_iter to -1 to re-calculate the preconditioner on the next iteration.
+    call KSPGetConvergedReason(ANK_KSP, reason, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
-    ! If the second order flux routines are used, ksp takes more iterations than this limit
-    ! anyways, so don't check if preconditioner needs to be recalculated. Second order fluxes
-    ! should be turned on after 4-5 orders of convergence and after this region the stability
-    ! is no longer an issue. Preconditioner lagging is just done wrt the input option.
-    if (kspIterations > 2*ANK_subSpace .and. totalR > ANK_secondOrdSwitchTol*totalR0) then
-        ANK_iter = -1 ! -1 is because ANK_iter is incremented by 1 before the preconditioner check
-    end if
+    linResMonitor = resHist(kspIterations+1)/resHist(1)
+
+    if (kspIterations > .5 * ank_maxIter) then 
+       ! We should reform the PC since it took longer than we want.
+       ANK_iter = -1
+     end if
 
     ! Update the approximate iteration counter. The +1 is for the
     ! residual evaluations.
