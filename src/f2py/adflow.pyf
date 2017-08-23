@@ -605,6 +605,9 @@ python module libadflow
            integer(kind=inttype) dimension(nzipfam),intent(in) :: zipperfamlist
            integer(kind=inttype), optional,intent(in),check(len(zipperfamlist)>=nzipfam),depend(zipperfamlist) :: nzipfam=len(zipperfamlist)
          end subroutine createzippermesh
+         subroutine checkzipper(filename)
+           character*(*) intent(in) :: filename
+         end subroutine checkzipper
        end module zippermesh
 
        module overset
