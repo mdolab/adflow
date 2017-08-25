@@ -8,6 +8,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
   use inputOverset, only : nearWallDist
   use sorting, only : unique
   use utils, only : myNorm2
+  use wallSearches, only : quadOverlap
   implicit none
 
   ! Input/Output
