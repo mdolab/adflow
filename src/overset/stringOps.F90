@@ -1297,6 +1297,7 @@ module stringOps
           if (curOtherID == -1) then
              print *,'*************************************************************************'
              print *,'Error during makeCrossZip: Point ', iStart, 'does not have a matching point'
+             print *,'Position: ', s1%x(:, iStart)
              print *,'*************************************************************************'
              stop
           end if
