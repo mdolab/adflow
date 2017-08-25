@@ -37,6 +37,7 @@ contains
     use surfaceFamilies, only : BCFamExchange, famNames, BCFamGroups
     use stringOps
     use gapBoundaries
+    use wallSearches, only : wallSearch
     implicit none
 
     ! Input Parameters
