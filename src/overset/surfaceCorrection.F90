@@ -52,7 +52,6 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
      return
   end if
 
-
   ! Allocate the (pointer) memory that may be resized as necessary for
   ! the singlePoint search routine.
   allocate(BB(10), frontLeaves(25), frontLeavesNew(25))

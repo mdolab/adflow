@@ -84,6 +84,7 @@ contains
 
           call minDistanceTreeSearchSinglePoint(aSurf%ADT, xx, intInfo, uvw, &
                dummy, nInterpol, BB, frontLeaves, frontLeavesNew)
+          elemID = intInfo(3)
           tmpNodeElem(i) = elemID
        end if
     end do
