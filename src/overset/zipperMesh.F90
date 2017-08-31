@@ -108,7 +108,7 @@ contains
        end if
 
        ! Before we can proceed with the zipper, we need to generate
-       ! union of the zipperFamList() with the families on this
+       ! intersection of the zipperFamList() with the families on this
        ! BCGroup. This would be so much easier in Python...
 
        if (allocated(famList)) then
@@ -709,7 +709,7 @@ contains
 
                    ! Cross Product
                    call cross_prod(v1, v2, sss)
-                   da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2)
+                   da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2) ! Do we need a sqrt here?
                    localAreas(clusterID) = localAreas(clusterID) + da
                    localCount(clusterID) = localCount(clusterID) + 1
                 end do

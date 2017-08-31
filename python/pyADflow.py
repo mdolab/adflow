@@ -4004,10 +4004,10 @@ class ADFLOW(AeroSolver):
             elif name == 'oversetpriority':
                 # Loop over each of the block names and call the fortran setter:
                 for blkName in value:
-                    setValue = self.adflow.oversetapi.setblockpriority(blkName.lower(), value[blkName])
+                    setValue = self.adflow.oversetapi.setblockpriority(blkName, value[blkName])
                     if not setValue and self.myid == 0:
                         ADFLOWWarning("The block name %s was not found in the CGNS file "
-                                      "and could not set it\'s priority"%blkName.lower())
+                                      "and could not set it\'s priority"%blkName)
 
             # Special option has been set so return from function
             return
