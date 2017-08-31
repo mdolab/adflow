@@ -709,7 +709,7 @@ contains
 
                    ! Cross Product
                    call cross_prod(v1, v2, sss)
-                   da = fourth*(sss(1)**2 + sss(2)**2 + sss(3)**2) ! Do we need a sqrt here?
+                   da = half*sqrt(sss(1)**2 + sss(2)**2 + sss(3)**2)
                    localAreas(clusterID) = localAreas(clusterID) + da
                    localCount(clusterID) = localCount(clusterID) + 1
                 end do
