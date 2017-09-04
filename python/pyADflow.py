@@ -721,7 +721,7 @@ class ADFLOW(AeroSolver):
 
             # python 3.6 compatibility requires that we force things into a binary string 
             #       representation for the dictioanry key because the stuff coming out of f2py is binary-strings
-            if sys.version_info > (3,): 
+            if sys.version_info >= (3,6): 
                 if isinstance(groupName, str): 
                     groupName = bytes(groupName, encoding='utf-8')
 
@@ -3578,7 +3578,7 @@ class ADFLOW(AeroSolver):
             The input vector maped to the families defined in groupName2.
 
         """
-        if sys.version_info > (3,): 
+        if sys.version_info >= (3,6): 
             if isinstance(groupName1, str): 
                 groupName1 = bytes(groupName1, encoding='utf-8')
             if isinstance(groupName2, str): 
@@ -3855,7 +3855,7 @@ class ADFLOW(AeroSolver):
 
         # python 3.6 compatibility requires that we force things into a binary string 
         #       representation for the dictioanry key because the stuff coming out of f2py is binary-strings
-        if sys.version_info > (3,) and isinstance(groupName, str): 
+        if sys.version_info >= (3,6) and isinstance(groupName, str): 
             groupName = bytes(groupName.lower(), encoding='utf-8')
         else: 
             groupName = groupName.lower()
@@ -4795,7 +4795,7 @@ class ADFLOW(AeroSolver):
 
         # python 3.6 compatibility requires that we force things into a binary string 
         #       representation for the dictioanry key because the stuff coming out of f2py is binary-strings
-        if sys.version_info > (3,): 
+        if sys.version_info >= (3,6): 
             if isinstance(zipFam, str): 
                 zipFam = bytes(zipFam.lower(), encoding='utf-8')
 
