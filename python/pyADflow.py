@@ -719,6 +719,12 @@ class ADFLOW(AeroSolver):
             groupName = groupNames[i]
             name = names[i]
 
+            # python 3.6 compatibility requires that we force things into a binary string 
+            #       representation for the dictioanry key because the stuff coming out of f2py is binary-strings
+            if sys.version_info > (3,): 
+                if isinstance(groupName, str): 
+                    groupName = bytes(groupName, encoding='utf-8')
+
             # First make sure the supplied function is already known to adflow
             if funcName.lower() not in self.basicCostFunctions:
                 raise Error('Supplied function name %s is not known to ADflow'%funcName.lower())
@@ -3572,6 +3578,12 @@ class ADFLOW(AeroSolver):
             The input vector maped to the families defined in groupName2.
 
         """
+        if sys.version_info > (3,): 
+            if isinstance(groupName1, str): 
+                groupName1 = bytes(groupName1, encoding='utf-8')
+            if isinstance(groupName2, str): 
+                groupName2 = bytes(groupName2, encoding='utf-8')
+
         if groupName1 not in self.families or groupName2 not in self.families:
             raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%(groupName1, groupName2))
@@ -3840,6 +3852,13 @@ class ADFLOW(AeroSolver):
         does *NOT* set the actual family group"""
         if groupName is None:
             groupName = self.allFamilies
+
+        # python 3.6 compatibility requires that we force things into a binary string 
+        #       representation for the dictioanry key because the stuff coming out of f2py is binary-strings
+        if sys.version_info > (3,) and isinstance(groupName, str): 
+            groupName = bytes(groupName.lower(), encoding='utf-8')
+        else: 
+            groupName = groupName.lower()
 
         if groupName not in self.families:
             raise Error("'%s' is not a family in the CGNS file or has not been added"
@@ -4771,21 +4790,42 @@ class ADFLOW(AeroSolver):
             return
 
         zipFam = self.getOption('zipperSurfaceFamily')
+        families = self.families
+        allWallsGroup = self.allWallsGroup
+
+        # python 3.6 compatibility requires that we force things into a binary string 
+        #       representation for the dictioanry key because the stuff coming out of f2py is binary-strings
+        if sys.version_info > (3,): 
+            if isinstance(zipFam, str): 
+                zipFam = bytes(zipFam.lower(), encoding='utf-8')
+
+            if isinstance(allWallsGroup, str): 
+                allWallsGroup = bytes(allWallsGroup.lower(), encoding='utf-8')
+
+            # have to check here, because depending on how its called might or might not be binary already
+            b_families = []
+            for fam in families: 
+                if isinstance(fam, str): 
+                    b_families.append(bytes(fam, encoding='utf-8'))
+                else: 
+                    b_families.append(fam)
+            families = b_families
+
 
         if zipFam is None:
             # The user didn't tell us anything. So we will use all
             # walls. Remind the user what those are.
-            zipperFamList = self.families[self.allWallsGroup]
+            zipperFamList = self.families[allWallsGroup]
             if self.myid == 0:
                 ADFLOWWarning("'zipperSurfaceFamily' option was not given. Using all "
                               "wall boundary conditions for the zipper mesh.")
         else:
 
-            if zipFam not in self.families:
+            if zipFam not in families:
                 raise Error("Trying to create the zipper mesh, but '%s' is not a "
                             "family in the CGNS file or has not been added"
                             " as a combination of families"%zipFam)
-            zipperFamList = self.families[zipFam]
+            zipperFamList = families[zipFam]
 
         self.adflow.zippermesh.createzippermesh(zipperFamList)
         self.zipperCreated = True
