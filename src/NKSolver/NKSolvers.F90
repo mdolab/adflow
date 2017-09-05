@@ -45,6 +45,7 @@ module NKSolver
   real(kind=realType) :: NK_switchTol
   real(kind=realType) :: NK_rtolInit
   real(kind=realType) :: NK_divTol = 10
+  real(kind=realType) :: NK_fixedStep
 
   ! Misc variables
   logical :: NK_solverSetup=.False.
@@ -595,6 +596,8 @@ contains
 
     use constants
     use utils, only : EChk
+    use communication, only : myid
+    use initializeFlow, only : setUniformFlow
     implicit none
 
     ! Input/Output
@@ -619,10 +622,14 @@ contains
     real(kind=alwaysRealType) :: minlambda, lambda, lambdatemp
     real(kind=alwaysRealType) :: rellength
     integer(kind=intType) :: ierr, iter
+    real(kind=realType) :: turbRes1, turbRes2, flowRes1, flowRes2, totalRes1, totalRes2
+
+    ! Call to get the split norms
+    call setRVec(g, flowRes1, turbRes1, totalRes1)
 
     ! Set some defaults:
     alpha		= 1.e-2_realType
-    minlambda     = 1.e-7_realType
+    minlambda     = .01
     nfevals = 0
     flag = .True.
     lambda     = 1.0_realType
@@ -633,10 +640,6 @@ contains
     call VecNorm(f, NORM_2, fnorm, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call VecMaxPointwiseDivide(y, x, rellength, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    minlambda = minlambda/rellength ! Fix this
     call MatMult(dRdw, y, w, ierr)
     call EChk(ierr, __FILE__, __LINE__)
     nfevals = nfevals + 1
@@ -652,26 +655,45 @@ contains
        initslope = -1.0_realType
     end if
 #ifdef USE_COMPLEX
-           call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
-           call EChk(ierr, __FILE__, __LINE__)
+    call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 #else
-          call VecWAXPY(w, -lambda, y, x, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
+    call VecWAXPY(w, -lambda, y, x, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 #endif
 
     ! Compute Function:
     call setW(w)
     call computeResidualNK()
-    call setRVec(g)
+    call setRVec(g, flowRes2, turbRes2, gnorm)
 
     nfevals = nfevals + 1
 
-    call VecNorm(g, NORM_2, gnorm, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
+    ! Before we get to the actual line search we do two additional
+    ! checks:
 
-    if (isnan(gnorm)) then
+    ! 1. If the full step has a nan, we do a backtracking line search
+    ! util we don't get a nan. No attempt is made to reduce the res
+    !
+    ! 2. If the turbulence residual goes up by large-ish factor do a
+    ! separate back-tracking line search.
+
+    if (isnan(gnorm) .or. turbRes2 > 2.0*turbRes1) then
        ! Special testing for nans
-       lambda = 0.1
+
+       if (isnan(gnorm)) then
+          call setUniformFlow()
+       end if
+
+       if (.not. isnan(gnorm)) then
+          ! If we got here becuase of a big turb jump
+          lambda = lambda * (turbRes1 / turbRes2)
+          lambda = max(lambda, 0.1)
+       else
+          ! Just start the lambda at 0.5
+          lambda = 0.5
+       end if
+
        backtrack: do iter=1, 10
           ! Compute new x value:
 #ifdef USE_COMPLEX
@@ -681,30 +703,41 @@ contains
           call VecWAXPY(w, -lambda, y, x, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 #endif
-          call VecNorm(w, NORM_2, gnorm, ierr)
 
           ! Compute Function @ new x (w is the work vector
           call setW(w)
           call computeResidualNK()
-          call setRVec(g)
-          nfevals = nfevals + 1
+          call setRVec(g, flowRes2, turbRes2, gnorm)
 
-          ! Compute the norm at the new trial location
-          call VecNorm(g, NORM_2, gnorm, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
+          nfevals = nfevals + 1
 
           if (isnan(gnorm)) then
              ! Just apply the step limit and keep going (back to the loop start)
-             lambda = lambda * .1
+             call setUniformFlow()
+             lambda = lambda * .5
           else
-             ! We don't care what the value is...its screwed anyway
-             exit backtrack
+
+             ! Sufficient reduction! This is great we're done!
+             if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
+                return
+             end if
+
+             ! If we're less than min lambda, just take it
+             if (lambda < minlambda)  then
+                return
+             end if
+
+             ! Don't cut lambda back as agressively as with nan
+             lambda = lambda * 0.5
+
           end if
        end do backtrack
+
        return
     end if
 
-    ! Sufficient reduction
+    ! Sufficient reduction from the basic step if we never got stuck
+    ! in nan's or large turb updates.
     if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
        goto 100
     end if
@@ -755,7 +788,6 @@ contains
     cubic_loop: do while (.True.)
 
        if (lambda <= minlambda) then
-          flag = .False.
           exit cubic_loop
        end if
        t1 = 0.5_realType*(gnorm*gnorm - fnorm*fnorm) - lambda*initslope
@@ -821,6 +853,7 @@ contains
 
     use constants
     use utils, only : EChk
+    use communication
     implicit none
 
     ! Input/Output
@@ -835,10 +868,12 @@ contains
     integer(kind=intType) :: ierr
     logical :: flag
     real(kind=alwaysRealType) :: step
+
     flag = .True.
     ! We just accept the step and compute the new residual at the new iterate
     nfevals = 0
-    call VecWAXPY(w, -one, y, x, ierr)
+    step = nk_fixedStep
+    call VecWAXPY(w, -step, y, x, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Compute new function:
@@ -847,7 +882,6 @@ contains
     call setRVec(g)
 
     nfevals = nfevals + 1
-    step = one
   end subroutine LSNone
 
   subroutine LSNM(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, step)
@@ -1238,7 +1272,7 @@ contains
 
   end subroutine setWVec
 
-  subroutine setRVec(rVec)
+  subroutine setRVec(rVec, flowRes, turbRes, totalRes)
 
     ! Set the current residual in dw into the PETSc Vector
     use constants
@@ -1247,12 +1281,18 @@ contains
     use flowvarrefstate, only : nw, nwf, nt1, nt2
     use inputIteration, only : turbResScale
     use utils, only : setPointers, EChk
+    use communication, only : adflow_comm_world
     implicit none
 
     Vec    rVec
     integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
     real(kind=realType),pointer :: rvec_pointer(:)
     real(Kind=realType) :: ovv
+    real(kind=realType), intent(out), optional :: flowRes, turbRes, totalRes
+    real(kind=realType) :: tmp, tmp2(2), flowResLocal, turbResLocal
+
+    flowResLocal = zero
+    turbResLocal = zero
 
     call VecGetArrayF90(rVec,rvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -1267,12 +1307,16 @@ contains
                 do i=2, il
                    ovv = 1/volRef(i, j, k)
                    do l=1,nwf
-                      rvec_pointer(ii) = dw(i, j, k, l)*ovv
+                      tmp =  dw(i, j, k, l)*ovv
+                      rvec_pointer(ii) = tmp
                       ii = ii + 1
+                      flowResLocal = flowResLocal + tmp**2
                    end do
                    do l=nt1,nt2
-                      rvec_pointer(ii) = dw(i, j, k, l)*ovv*turbResScale(l-nt1+1)
+                      tmp = dw(i, j, k, l)*ovv*turbResScale(l-nt1+1)
+                      rvec_pointer(ii) = tmp
                       ii = ii + 1
+                      turbResLocal = turbResLocal + tmp**2
                    end do
                 end do
              end do
@@ -1282,6 +1326,18 @@ contains
 
     call VecRestoreArrayF90(rVec,rvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
+
+    if (present(flowRes) .and. present(turbRes) .and. present(totalRes)) then
+       call mpi_allreduce((/flowResLocal, turbResLocal/), tmp2, 2, adflow_real, &
+         mpi_sum, ADflow_comm_world, ierr)
+       flowRes = sqrt(tmp2(1))
+       totalRes = sqrt(tmp2(1) + tmp2(2))
+       if (tmp2(2) > zero) then
+          turbRes = sqrt(tmp2(2))
+       else
+          turbRes = zero
+       end if
+    end if
 
   end subroutine setRVec
 
@@ -1832,7 +1888,7 @@ contains
     localOrdering = 'rcm'
     outerPreConIts = 1
     ! Setup the KSP using the same code as used for the adjoint
-    if (ank_subspace < 0) then 
+    if (ank_subspace < 0) then
        subspace = ANK_maxIter
     else
        subspace = ANK_subspace
@@ -2388,10 +2444,10 @@ contains
 
     linResMonitor = resHist(kspIterations+1)/resHist(1)
 
-    if (kspIterations > .5 * ank_maxIter) then 
+    if (kspIterations > .5 * ank_maxIter .and. totalR > ANK_secondOrdSwitchTol*totalR0) then
        ! We should reform the PC since it took longer than we want.
        ANK_iter = -1
-     end if
+    end if
 
     ! Update the approximate iteration counter. The +1 is for the
     ! residual evaluations.
