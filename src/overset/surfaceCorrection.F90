@@ -8,6 +8,7 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
   use inputOverset, only : nearWallDist
   use sorting, only : unique
   use utils, only : myNorm2
+  use wallSearches, only : quadOverlap
   implicit none
 
   ! Input/Output
@@ -50,7 +51,6 @@ subroutine surfaceCorrection(oBlock, oFringe, offset, n)
      !  a surface-surface overlap!
      return
   end if
-
 
   ! Allocate the (pointer) memory that may be resized as necessary for
   ! the singlePoint search routine.
