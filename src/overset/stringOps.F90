@@ -1254,7 +1254,7 @@ module stringOps
     logical, intent(in) :: debugZipper
     ! Working
     integer(kind=intType) :: i, iStart, iEnd, jStart, jEnd, iStart_j, iEnd_j
-    integer(kind=intType) :: curOtherID, iString, ii, nextI, curIStart
+    integer(kind=intType) :: curOtherID, iString, ii, nextI, curIStart, nIElems_j
     integer(kind=intType) :: nIElemsBeg, nJElemsBeg, nIElemsEnd, nJElemsEnd
 
     logical :: fullLoop1, fullLoop2, dummy
@@ -1297,6 +1297,7 @@ module stringOps
           if (curOtherID == -1) then
              print *,'*************************************************************************'
              print *,'Error during makeCrossZip: Point ', iStart, 'does not have a matching point'
+             print *,'Position: ', s1%x(:, iStart)
              print *,'*************************************************************************'
              stop
           end if
@@ -1328,8 +1329,7 @@ module stringOps
 
           ! If the first jnode isnt' actually matched to me, like I am
           ! to him. Therefore skip me, and go to the next one.
-          if (jStart == jEnd .and. &
-               .not. fullLoop2 .and. &
+          if (jStart == jEnd .and. .not. fullLoop2 .and. &
                s2%otherID(1, jStart) /= s1%myID) then
              s1%xZipNodeUsed(curIStart) = 1
              curIStart = startNode(s1)
@@ -1357,7 +1357,6 @@ module stringOps
 
           if ((istart == iend .and. fullLoop1) .and. &
                (jstart == jend .and. fullLoop2)) then
-
              ! s1 fully attached to s2
 
              call closestSymmetricNode(s1, s2, istart, jstart)
@@ -1365,49 +1364,60 @@ module stringOps
              jEnd = jStart
 
           else if((iStart == iEnd .and. fullLoop1) .and. .not. fullLoop2) then
-
              ! s1 is fully attached to a part of s2. No need to modify the ranges
 
           else if((jStart == jEnd .and. fullLoop2) .and. .not. fullLoop1) then
 
              ! s2 is fully attached to a part of s1. No need to modify the ranges
           else
-
              ! part of s1 is attached to part of s2
 
-             ! Determine the number of elements we initial think we
-             ! want to zip for both strings.
+
              nIElemsBeg = elemsForRange(s1, iStart, iEnd, .True.)
              nJElemsBeg = elemsForRange(s2, jStart, jEnd, .False.)
 
-
-             ! Now we "project" the s2 increments back onto the the s1
-             ! range:
+             ! This the "projection" of the 'j' string on the 'i'
+             ! string. Basically this is the range the 'j' string
+             ! wants to "use up" on the i string.
              iStart_j = s2%otherID(2, jStart)
              iEnd_j   = s2%otherID(2, jEnd)
 
+             ! These could match up with iStart and iEnd or they could
+             ! not. That's what we need to determine here.
 
-             ! Now determine the smallest overlapping range. iStart and
-             ! iEnd are updated.
-             iStart = max(iStart, iStart_j)
-             iEnd = min(iEnd, iEnd_j)
+             ! Need to check if iStart_j is "larger" than istart. We
+             ! just increment using nextNode to take care of periodic
+             ! boundaries.
+             if (iStart_j /= iStart) then
+                ! The starting points are different. Increment iStart
+                ! until we find
+                i = iStart
+                do ii=1, nIElemsBeg
+                   i = nextNode(s, i)
+                   if (i == iStart_j) then
+                      iStart = iStart_j
+                      exit
+                   end if
+                end do
+             end if
+
+             if (iEnd_j /= iEnd) then
+                ! The starting points are different. Decrement jEnd
+                ! until we find
+                i = iEnd
+                do ii=1, nIElemsBeg
+                   i = prevNode(s, i)
+                   if (i == iEnd_j) then
+                      iEnd = iEnd_j
+                      exit
+                   end if
+                end do
+             end if
 
              ! Now with the updated range. Project the iRange back to the
              ! the final J range.
              jStart = s1%otherID(2, iStart)
              jEnd   = s1%otherID(2, iEnd)
-
-             ! Now determine the updated number of elements
-             nIElemsEnd = elemsForRange(s1, iStart, iEnd, .True.)
-             nJElemsEnd = elemsForRange(s2, jStart, jEnd, .False.)
-
-             if (nIElemsEnd > nIElemsBeg .or. nJElemsEnd > nJElemsBeg) then
-                ! Something happened and the strings became zero
-                ! length or went the wrong way.
-                s1%xZipNodeUsed(curIStart) = 1
-                curIStart = startNode(s1)
-                cycle
-             end if
 
           end if
 
@@ -1612,7 +1622,7 @@ module stringOps
 
     function elemsForRange(s, N1, N2, pos)
       ! Determine the number of elements between N1 and N2 for for the
-      ! "POSitive" or "not POSIitive (negative" direction.
+      ! "POSitive" or "not POSIitive" (negative) direction.
 
       implicit none
       type(oversetString) :: s
@@ -1877,7 +1887,6 @@ module stringOps
     end do
     deallocate(pocketStringsArr, polyEdges)
 
-
   end subroutine makePocketZip
 
   subroutine pocketZip(s)
@@ -1942,14 +1951,12 @@ module stringOps
           ! in the same direction.
           if (dot_product(norm, s%norm(:, ii)) > zero) then
              ! Dot product of im1 and ip1 nodes should be close
-             if (dot_product(s%norm(:, ip1), s%norm(:, im1)) > 0.80) then
-                costheta = dot_product(v1, v2)  / (v1nrm * v2nrm)
+             costheta = dot_product(v1, v2)  / (v1nrm * v2nrm)
 
-                ! cos(theta) is the largest for smallest angle
-                if (costhetaMax <= costheta) then
-                   costhetaMax = costheta
-                   iimin = ii
-                end if
+             ! cos(theta) is the largest for smallest angle
+             if (costheta >= costhetaMax) then
+                costhetaMax = costheta
+                iimin = ii
              end if
           end if
        end do nodeloop
