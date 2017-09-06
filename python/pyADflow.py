@@ -30,7 +30,7 @@ import numpy
 import sys
 from mpi4py import MPI
 from petsc4py import PETSc
-from baseclasses import AeroSolver, AeroProblem, getPy3BString, getPy3BStringList
+from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from . import MExt
 from pprint import pprint as pp
 import hashlib
@@ -241,7 +241,7 @@ class ADFLOW(AeroSolver):
         nFam = self.adflow.surfacefamilies.getnfam()
         famList = []
         for i in range(nFam):
-            famList.append(self.adflow.surfacefamilies.getfam(i+1).strip())
+            famList.append(getPy3SafeString(self.adflow.surfacefamilies.getfam(i+1).strip()))
 
         # Add the initial families that already exist in the CGNS
         # file.
@@ -718,8 +718,6 @@ class ADFLOW(AeroSolver):
             funcName = funcNames[i]
             groupName = groupNames[i]
             name = names[i]
-
-            groupName = getPy3BString(groupName)
 
             # First make sure the supplied function is already known to adflow
             if funcName.lower() not in self.basicCostFunctions:
@@ -3575,9 +3573,6 @@ class ADFLOW(AeroSolver):
 
         """
 
-        groupName1 = getPy3BString(groupName1)
-        groupName2 = getPy3BString(groupName2)
-
         if groupName1 not in self.families or groupName2 not in self.families:
             raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%(groupName1, groupName2))
@@ -3846,9 +3841,6 @@ class ADFLOW(AeroSolver):
         does *NOT* set the actual family group"""
         if groupName is None:
             groupName = self.allFamilies
-
-        groupName = getPy3BString(groupName)
-
         if groupName not in self.families:
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
@@ -4778,9 +4770,9 @@ class ADFLOW(AeroSolver):
         if self.zipperCreated or self.adflow.killsignals.routinefailed:
             return
 
-        zipFam = getPy3BString(self.getOption('zipperSurfaceFamily'))
-        families = getPy3BStringList(self.families)
-        allWallsGroup = getPy3BString(self.allWallsGroup)
+        zipFam = self.getOption('zipperSurfaceFamily')
+        families = self.families
+        allWallsGroup = self.allWallsGroup
 
         if zipFam is None:
             # The user didn't tell us anything. So we will use all
