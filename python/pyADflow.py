@@ -4771,23 +4771,21 @@ class ADFLOW(AeroSolver):
             return
 
         zipFam = self.getOption('zipperSurfaceFamily')
-        families = self.families
-        allWallsGroup = self.allWallsGroup
 
         if zipFam is None:
             # The user didn't tell us anything. So we will use all
             # walls. Remind the user what those are.
-            zipperFamList = self.families[allWallsGroup]
+            zipperFamList = self.families[self.allWallsGroup]
             if self.myid == 0:
                 ADFLOWWarning("'zipperSurfaceFamily' option was not given. Using all "
                               "wall boundary conditions for the zipper mesh.")
         else:
 
-            if zipFam not in families:
+            if zipFam not in self.families:
                 raise Error("Trying to create the zipper mesh, but '%s' is not a "
                             "family in the CGNS file or has not been added"
                             " as a combination of families"%zipFam)
-            zipperFamList = families[zipFam]
+            zipperFamList = self.families[zipFam]
 
         self.adflow.zippermesh.createzippermesh(zipperFamList)
         self.zipperCreated = True
