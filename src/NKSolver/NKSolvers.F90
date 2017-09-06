@@ -675,12 +675,12 @@ contains
 
     ! 1. If the full step has a nan, we backtrack until we get a valid
     ! step. We then lower the NK switch tol such that the solver is
-    ! forced back up to ANK or DADI/RK to keep going a bit further. 
+    ! forced back up to ANK or DADI/RK to keep going a bit further.
     !
     ! 2. If the turbulence residual goes up by large-ish factor (2.0),
     ! we pre-limit the step. The reason for this is that a unit step
     ! might lower the total residual, but the turb res could go up an
-    ! order of magnitude or more. 
+    ! order of magnitude or more.
 
     hadANan = .False.
     if (isnan(gnorm) .or. turbRes2 > 2.0*turbRes1) then
@@ -737,18 +737,18 @@ contains
           end if
        end do backtrack
 
-       if (hadANan) then 
+       if (hadANan) then
           ! Adjust the NK switch tolerance such that the ANK or DADI
           ! goes a little further.
           nk_switchtol = 0.8*(gnorm/totalR0)
        end if
 
-       ! All finished with this "pre" line search. 
+       ! All finished with this "pre" line search.
        return
     end if
 
     ! Sufficient reduction from the basic step. This is the return for
-    ! a unit step. This is what we want. 
+    ! a unit step. This is what we want.
     if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
        goto 100
     end if
@@ -2262,17 +2262,19 @@ contains
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
-    use NKSolver, only : setRVec, computeResidualNK, getEWTol
+    use NKSolver, only : setRVec, computeResidualNK, getEwTol
+    use initializeFlow, only : setUniformFlow
     use communication
+
     implicit none
 
     ! Input Variables
     logical, intent(in) :: firstCall
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist
-    real(kind=realType) :: atol, val
-    real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes
+    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter
+    real(kind=realType) :: atol, val, lambdaBT
+    real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
     real(kind=alwaysRealType) :: resHist(ank_maxIter+1)
     logical :: secondOrdSave
 
@@ -2290,13 +2292,13 @@ contains
        ! Copy the adflow 'w' into the petsc wVec
        call setwVecANK(wVec)
 
-       ! Evaluate the residual before we start 
+       ! Evaluate the residual before we start
        if (ANK_useTurbDADI) then
           call computeResidualANK() ! Only flow residual
           call setRVecANK(rVec)
        else
           call computeResidualNK() ! Compute full residual
-          call setRVec(rVec) 
+          call setRVec(rVec)
        end if
 
        totalR_old = totalR ! Record the old residual for the first iteration
@@ -2343,7 +2345,7 @@ contains
     else
       lambda = min(lambda*(totalR_old/totalR)**ANK_stepExponent, ANK_StepFactor)
     end if
-    stepMonitor = lambda
+
     ! ============== Flow Update =============
 
     ! For the approximate solver, we need the approximate flux routines
@@ -2425,6 +2427,7 @@ contains
     call VecAXPY(wVec, -lambda, deltaW, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    stepMonitor = lambda
     ! Set the updated state variables
     call setWANK(wVec)
 
@@ -2437,10 +2440,60 @@ contains
     ! does not do on its own
     call computeResidualNK()
     if (ANK_useTurbDADI) then
-      call setRVecANK(rVec)
+       call setRVecANK(rVec)
     else
-      call setRVec(rVec)
+       call setRVec(rVec)
     end if
+
+    ! Check if the norm of the rVec is bad:
+    call VecNorm(rVec, NORM_2, norm, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    if (isnan(norm)) then
+
+       ! Do backtracking linesearch:
+       call setUniformFlow()
+
+       ! Restore the starting (old) w value
+       call VecAXPY(wVec, lambda, deltaW, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       ! Set the initial new lambda
+       lambdaBT = 0.5 * lambda
+
+       backtrack: do iter=1, 10
+
+          ! Apply the new step
+          call VecAXPY(wVec, -lambdaBT, deltaW, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          ! Set and recompute
+          call setWANK(wVec)
+          call computeResidualNK()
+          if (ANK_useTurbDADI) then
+             call setRVecANK(rVec)
+          else
+             call setRVec(rVec)
+          end if
+          call VecNorm(rVec, NORM_2, norm, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+         if (isnan(norm)) then
+
+            ! Restore back to the original wVec
+            call VecAXPY(wVec, lambdaBT, deltaW, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Haven't backed off enough yet....keep going
+            call setUniformFlow()
+            lambdaBT = lambdaBT * .5
+         else
+            ! We don't have an nan anymore...break out
+            exit
+         end if
+      end do backtrack
+      stepMonitor = lambdaBT
+   end if
 
     ! Get the number of iterations from the KSP solver
     call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
