@@ -598,6 +598,7 @@ contains
     use utils, only : EChk
     use communication, only : myid
     use initializeFlow, only : setUniformFlow
+    use iteration, only : totalR0
     implicit none
 
     ! Input/Output
@@ -623,7 +624,7 @@ contains
     real(kind=alwaysRealType) :: rellength
     integer(kind=intType) :: ierr, iter
     real(kind=realType) :: turbRes1, turbRes2, flowRes1, flowRes2, totalRes1, totalRes2
-
+    logical :: hadANan
     ! Call to get the split norms
     call setRVec(g, flowRes1, turbRes1, totalRes1)
 
@@ -672,26 +673,27 @@ contains
     ! Before we get to the actual line search we do two additional
     ! checks:
 
-    ! 1. If the full step has a nan, we do a backtracking line search
-    ! util we don't get a nan. No attempt is made to reduce the res
+    ! 1. If the full step has a nan, we backtrack until we get a valid
+    ! step. We then lower the NK switch tol such that the solver is
+    ! forced back up to ANK or DADI/RK to keep going a bit further. 
     !
-    ! 2. If the turbulence residual goes up by large-ish factor do a
-    ! separate back-tracking line search.
+    ! 2. If the turbulence residual goes up by large-ish factor (2.0),
+    ! we pre-limit the step. The reason for this is that a unit step
+    ! might lower the total residual, but the turb res could go up an
+    ! order of magnitude or more. 
 
+    hadANan = .False.
     if (isnan(gnorm) .or. turbRes2 > 2.0*turbRes1) then
        ! Special testing for nans
 
        if (isnan(gnorm)) then
+          hadANan = .True.
           call setUniformFlow()
-       end if
-
-       if (.not. isnan(gnorm)) then
-          ! If we got here becuase of a big turb jump
+          lambda = 0.5
+       else
+          ! Large turb jump
           lambda = lambda * (turbRes1 / turbRes2)
           lambda = max(lambda, 0.1)
-       else
-          ! Just start the lambda at 0.5
-          lambda = 0.5
        end if
 
        backtrack: do iter=1, 10
@@ -704,7 +706,7 @@ contains
           call EChk(ierr, __FILE__, __LINE__)
 #endif
 
-          ! Compute Function @ new x (w is the work vector
+          ! Compute Function
           call setW(w)
           call computeResidualNK()
           call setRVec(g, flowRes2, turbRes2, gnorm)
@@ -712,32 +714,41 @@ contains
           nfevals = nfevals + 1
 
           if (isnan(gnorm)) then
-             ! Just apply the step limit and keep going (back to the loop start)
+             ! Just reset the flow, adjust the step back and keep
+             ! going
              call setUniformFlow()
              lambda = lambda * .5
           else
 
-             ! Sufficient reduction! This is great we're done!
+             ! Sufficient reduction! Whoo! This is great we're done!
              if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
-                return
+                exit
              end if
 
-             ! If we're less than min lambda, just take it
+             ! If we're less than min lambda, just take it. This could
+             ! let the residual go up slightly. That's ok.
              if (lambda < minlambda)  then
-                return
+                exit
              end if
 
-             ! Don't cut lambda back as agressively as with nan
+             ! Otherwise, cut back the lambda
              lambda = lambda * 0.5
 
           end if
        end do backtrack
 
+       if (hadANan) then 
+          ! Adjust the NK switch tolerance such that the ANK or DADI
+          ! goes a little further.
+          nk_switchtol = 0.8*(gnorm/totalR0)
+       end if
+
+       ! All finished with this "pre" line search. 
        return
     end if
 
-    ! Sufficient reduction from the basic step if we never got stuck
-    ! in nan's or large turb updates.
+    ! Sufficient reduction from the basic step. This is the return for
+    ! a unit step. This is what we want. 
     if (0.5_realType*gnorm*gnorm <= 0.5_realType*fnorm*fnorm + alpha*initslope) then
        goto 100
     end if
@@ -1628,7 +1639,7 @@ contains
     real(kind=alwaysrealType), intent(out) :: rtol
     real(kind=alwaysrealType) :: rtol_max, gamma, alpha, alpha2, threshold, stol
 
-    rtol_max  = 0.5_realType
+    rtol_max  = 0.8_realType
     gamma     = 1.0_realType
     alpha     = (1.0_realType+sqrt(five))/2.0_realType
     alpha2    = (1.0_realType+sqrt(five))/2.0_realType
@@ -1646,7 +1657,6 @@ contains
 
   end subroutine getEWTol
 end module NKSolver
-
 
 module ANKSolver
 
@@ -2276,20 +2286,17 @@ contains
        end if
 
        call setupANKSolver()
-       call destroyANKSolver()
-       call setupANKSolver()
 
        ! Copy the adflow 'w' into the petsc wVec
        call setwVecANK(wVec)
 
-       ! Evaluate the residual before we start and put the residual in
-       ! 'g', which is what would be the case after a linesearch.
+       ! Evaluate the residual before we start 
        if (ANK_useTurbDADI) then
           call computeResidualANK() ! Only flow residual
           call setRVecANK(rVec)
        else
           call computeResidualNK() ! Compute full residual
-          call setRVec(rVec) ! Use NKSolver's setRVec because it scales the turbulence correctly
+          call setRVec(rVec) 
        end if
 
        totalR_old = totalR ! Record the old residual for the first iteration
@@ -2301,6 +2308,12 @@ contains
        end if
     else
        ANK_iter = ANK_iter + 1
+    end if
+
+    ! ============== Turb Update =============
+    if (ANK_useTurbDADI .and. equations==RANSEquations) then
+      call computeUtau
+      call turbSolveSegregated
     end if
 
     ! ANK CFL calculation, use relative convergence w.r.t. totalR0 for better performance with restarts
@@ -2414,12 +2427,6 @@ contains
 
     ! Set the updated state variables
     call setWANK(wVec)
-
-    ! ============== Turb Update =============
-    if (ANK_useTurbDADI .and. equations==RANSEquations) then
-      call computeUtau
-      call turbSolveSegregated
-    end if
 
     ! Calculate the residual with the new values and set the R vec in PETSc
     ! We calculate the full residual using NK routine because the dw values
