@@ -202,10 +202,9 @@ module stringOps
 
   end subroutine createOrderedStrings
 
-  subroutine performSelfZip(master, strings, nStrings)
+  subroutine performSelfZip(master, strings, nStrings, debugZipper)
 
     use constants
-    use inputOverset, only : debugZipper
     use kdtree2_module
     implicit none
 
@@ -213,56 +212,12 @@ module stringOps
     type(oversetString) :: master
     type(oversetString), dimension(nStrings), target ::  strings
     integer(kind=intType) :: nStrings
+    logical, intent(in) :: debugZipper
 
     ! Workging
     type(oversetString), pointer :: str
     real(kind=realType) ::  cutOff
     integer(kind=intType) :: i, j, nZipped
-
-    ! =================== Initial Self Zipping -=================
-    master%myID = 99
-
-    ! Allocate space for the maximum number of directed edges. This
-    ! is equal to the initial number of edges (nElems) plus 3 times
-    ! the number of triangles we will add, which is also nElems. Now,
-    ! we will probably not actualy have that many since we save a
-    ! triangle and 3 edges for every self zip that is
-    ! applied. Therefore we know this will always be enough
-    allocate(master%edges(4*master%nElems))
-
-    master%nEdges = 0
-
-    do i=1, nStrings
-       str => strings(i)
-       do j=1, str%nElems
-          master%nEdges = master%nEdges + 1
-          master%edges(master%nEdges)%n1 = str%p%conn(1, str%pElems(j)) !<-- first node
-          master%edges(master%nEdges)%n2 = str%p%conn(2, str%pElems(j)) !<-- second node
-       end do
-    end do
-
-    ! Allocate space for the triangles. Again, this can be at most,
-    ! nElems, but the total number of elements will most likely be
-    ! smaller due to self zipping.
-    allocate(master%tris(3, master%nElems))
-    master%nTris = 0
-
-    ! Build the master tree
-    master%tree => kdtree2_create(master%x, sort=.True.)
-
-    ! Perform the string association:
-    call stringMatch(strings, nStrings)
-
-    if (debugZipper) then
-       open(unit=101, file="fullGapStrings.dat", form='formatted')
-       write(101,*) 'TITLE = "Gap Strings Data" '
-       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
-       do i=1, nStrings
-          call writeOversetString(strings(i), strings, nStrings, 101)
-       end do
-       close(101)
-    end if
 
     ! Now determine if there are any "holes" or periodic strings
     ! without anything inside of it. Ie closed loops. If there isn't
@@ -295,7 +250,7 @@ module stringOps
 
     ! Now we need to redo the string matching becuase the self-zip
     ! shorted the strings
-    call stringMatch(strings, nStrings)
+    call stringMatch(strings, nStrings, debugZipper)
 
   end subroutine performSelfZip
 
@@ -1287,17 +1242,16 @@ module stringOps
 
   end subroutine addTri
 
-  subroutine makeCrossZip(p, strings, nStrings)
+  subroutine makeCrossZip(p, strings, nStrings, debugZipper)
 
     use constants
-    use inputOverset, only : debugZipper
     implicit none
 
     ! Input/output
     integer(kind=intType), intent(in) :: nStrings
     type(oversetString), intent(inout), target :: p, strings(nStrings)
     type(oversetString), pointer :: s, s1, s2
-
+    logical, intent(in) :: debugZipper
     ! Working
     integer(kind=intType) :: i, iStart, iEnd, jStart, jEnd, iStart_j, iEnd_j
     integer(kind=intType) :: curOtherID, iString, ii, nextI, curIStart
@@ -1390,6 +1344,7 @@ module stringOps
           if ((iStart == iEnd .and. .not. fullLoop1)  .or.&
                (jStart == jEnd .and. .not. fullLoop2)) then
              ! Can't go anywhere. Flag this node and the next.
+
              s1%xZipNodeUsed(curIStart) = 1
              curIStart = startNode(s1)
              cycle
@@ -1425,10 +1380,12 @@ module stringOps
              nIElemsBeg = elemsForRange(s1, iStart, iEnd, .True.)
              nJElemsBeg = elemsForRange(s2, jStart, jEnd, .False.)
 
+
              ! Now we "project" the s2 increments back onto the the s1
              ! range:
              iStart_j = s2%otherID(2, jStart)
              iEnd_j   = s2%otherID(2, jEnd)
+
 
              ! Now determine the smallest overlapping range. iStart and
              ! iEnd are updated.
@@ -1692,11 +1649,10 @@ module stringOps
 
   end subroutine makeCrossZip
 
-  subroutine makePocketZip(p, strings, nStrings, pocketMaster)
+  subroutine makePocketZip(p, strings, nStrings, pocketMaster, debugZipper)
     use constants
     use overset, only : oversetString, oversetEdge
     use oversetUtilities, only : qsortEdgeType
-    use inputOverset, only : debugZipper
     use kdtree2_module
     implicit none
 
@@ -1704,6 +1660,7 @@ module stringOps
     integer(kind=intType), intent(in) :: nStrings
     type(oversetString), intent(in) :: p, strings(nStrings)
     type(oversetString) :: pocketMaster
+    logical, intent(in) :: debugZipper
 
     ! Local variables
     integer(kind=intType) :: i, nsum1, nsum2, ndiff1, ndiff2, ipedge, icur
@@ -2336,24 +2293,27 @@ module stringOps
 
   end subroutine closestSymmetricNode
 
-  subroutine stringMatch(strings, nStrings)
+  subroutine stringMatch(strings, nStrings, debugZipper)
     use constants
     use kdtree2_priority_queue_module
     use kdtree2_module
     use utils, only : mynorm2
-    use inputOverset, only : debugZipper
+
     implicit none
 
+    ! Input/output
     type(oversetString), dimension(nstrings), target :: strings
     integer(kind=intType), intent(in) :: nStrings
+    logical, intent(in) :: debugZipper
 
+    ! Working
     integer(kind=intType) :: i, j, k, idx, oid(4)
     integer(kind=intType) ::  nAlloc, nUnique, nSearch
     type(kdtree2_result), allocatable, dimension(:) :: results
     type(oversetString), pointer ::  str, master
     logical :: checkLeft, checkRight, concave
     logical :: checkLeft2, checkRight2, concave2
-    logical :: leftOK, rightOK
+    logical :: leftOK, rightOK, isEndNode
     real(kind=realType), dimension(3) :: xj, xjp1, xjm1, normj
     real(kind=realType), dimension(3) :: xk, xkp1, xkm1, normk
     real(kind=realType), dimension(3) :: myPt, otherPt, eNorm
@@ -2400,6 +2360,14 @@ module stringOps
 
           call getNodeInfo(str, j, checkLeft, checkRight, concave, &
                xj, xjm1, xjp1,  normj)
+          isEndNode = .False.
+          if (.not. (checkLeft .eqv. checkRight)) then
+             ! Since we don't need to check one side, this means we're
+             ! at the end of the chain. This is important since this
+             ! node *MUST* be attached to another node on another
+             ! chain at the end
+             isEndNode = .True.
+          end if
 
           outerLoop: do
              minDist = large
@@ -2517,6 +2485,16 @@ module stringOps
                 if (otherID /= closestOtherString) then
                    if (overlappedEdges2(&
                         strings(closestOtherString), xj, normj, pt)) then
+                      cycle
+                   end if
+                end if
+
+                ! ---------------------------------------------
+                ! Check 4d: If this is an end node, we need to check
+                ! if the potential canditate is also a end node
+                ! ---------------------------------------------
+                if (isEndNode) then
+                   if (checkRight2 .eqv. checkLeft2) then
                       cycle
                    end if
                 end if
@@ -2761,26 +2739,69 @@ module stringOps
     open(unit=101, file="debug.zipper", form='formatted')
     write(101, *), str%nNodes
     write(101, *), str%nElems
-    do j=1, 10
-       do i=1, str%nNodes
+    do i=1, str%nNodes
+       do j=1, 10
           write (101,*) str%nodeData(j, i)
        end do
     end do
 
-    do j=1, 2
-       do i=1, str%nElems
+    do i=1, str%nElems
+       do j=1, 2
           write (101,*) str%conn(j, i)
        end do
     end do
 
-    do j=1, 3
-       do i=1, str%nNodes
+    do i=1, str%nNodes
+       do j=1, 3
           write (101,*) str%intNodeData(j, i)
        end do
     end do
     close(101)
   end subroutine writeZipperDebug
 
+  subroutine loadZipperDebug(fileName, str)
+
+    ! Save the state of an unsplit string such that it can be debugged
+    ! later without running overset interpolation.
+
+    use constants
+    implicit none
+
+    character(*), intent(in) :: fileName
+    type(oversetString) :: str
+    integer(kind=intType) :: i, j
+
+    open(unit=101, file=fileName, form='formatted')
+    read(101, *), str%nNodes
+    read(101, *), str%nElems
+    call nullifyString(str)
+
+    allocate(str%nodeData(10, str%nNodes))
+    allocate(str%conn(2, str%nElems))
+    allocate(str%intNodeData(3, str%nNodes))
+
+    do i=1, str%nNodes
+       do j=1, 10
+          read (101,*) str%nodeData(j, i)
+       end do
+    end do
+
+    do i=1, str%nElems
+       do j=1, 2
+          read (101,*) str%conn(j, i)
+       end do
+    end do
+
+    do i=1, str%nNodes
+       do j=1, 3
+          read (101,*) str%intNodeData(j, i)
+       end do
+    end do
+    close(101)
+
+    call setStringPointers(str)
+
+  end subroutine loadZipperDebug
 
   subroutine pointInTriangle(x1, x2, x3, pt, inTri)
 
