@@ -29,7 +29,7 @@ contains
     integer(kind=intType), dimension(:, :), pointer :: gcp
     real(kind=realType), dimension(:, :, :), pointer :: xx
     real(kind=realType), dimension(3) :: s1, s2, s3, s4, v1, v2, v3, v4, x0
-    real(kind=realType) ::  fact, timeA
+    real(kind=realType) ::  fact, timeA, minNorm
 
     real(kind=realType), dimension(:, :, :), allocatable :: patchNormals
     real(kind=realType), dimension(:, :), allocatable :: patchH
@@ -49,6 +49,9 @@ contains
     type(oversetWall), dimension(:), allocatable, target :: walls
     type(oversetWall),  target :: fullWall
     character(80) :: fileName
+
+    ! Set small number to avoid division by zero when computing normal vectors
+    minNorm = 1.0e-14
 
     ! Loop over the wall faces counting up the edges that stradle a
     ! compute cell and a blanked (or interpolated) cell.
@@ -165,10 +168,15 @@ contains
                    call cross_prod(v3, v4, s3)
                    call cross_prod(v4, v1, s4)
 
-                   s1 = s1/mynorm2(s1)
-                   s2 = s2/mynorm2(s2)
-                   s3 = s3/mynorm2(s3)
-                   s4 = s4/mynorm2(s4)
+                   ! When we have an 0-grid node, two of the v vectors will be the same.
+                   ! Therefore, one of the s vectors will be zero. So we define minNorm
+                   ! to avoid a division by zero. This will not affect the averaged normal
+                   ! vector, since we will normalize it anyway in the end.
+
+                   s1 = s1/max(minNorm,mynorm2(s1))
+                   s2 = s2/max(minNorm,mynorm2(s2))
+                   s3 = s3/max(minNorm,mynorm2(s3))
+                   s4 = s4/max(minNorm,mynorm2(s4))
 
                    ! Average and do final normalization including
                    ! correcting for inward normals.
