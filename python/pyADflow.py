@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 from __future__ import print_function
 from __future__ import division
@@ -31,7 +30,7 @@ import numpy
 import sys
 from mpi4py import MPI
 from petsc4py import PETSc
-from baseclasses import AeroSolver, AeroProblem
+from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from . import MExt
 from pprint import pprint as pp
 import hashlib
@@ -242,7 +241,7 @@ class ADFLOW(AeroSolver):
         nFam = self.adflow.surfacefamilies.getnfam()
         famList = []
         for i in range(nFam):
-            famList.append(self.adflow.surfacefamilies.getfam(i+1).strip())
+            famList.append(getPy3SafeString(self.adflow.surfacefamilies.getfam(i+1).strip()))
 
         # Add the initial families that already exist in the CGNS
         # file.
@@ -3573,6 +3572,7 @@ class ADFLOW(AeroSolver):
             The input vector maped to the families defined in groupName2.
 
         """
+
         if groupName1 not in self.families or groupName2 not in self.families:
             raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%(groupName1, groupName2))
@@ -3841,7 +3841,6 @@ class ADFLOW(AeroSolver):
         does *NOT* set the actual family group"""
         if groupName is None:
             groupName = self.allFamilies
-
         if groupName not in self.families:
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
@@ -4005,10 +4004,10 @@ class ADFLOW(AeroSolver):
             elif name == 'oversetpriority':
                 # Loop over each of the block names and call the fortran setter:
                 for blkName in value:
-                    setValue = self.adflow.oversetapi.setblockpriority(blkName.lower(), value[blkName])
+                    setValue = self.adflow.oversetapi.setblockpriority(blkName, value[blkName])
                     if not setValue and self.myid == 0:
                         ADFLOWWarning("The block name %s was not found in the CGNS file "
-                                      "and could not set it\'s priority"%blkName.lower())
+                                      "and could not set it\'s priority"%blkName)
 
             # Special option has been set so return from function
             return
@@ -4183,7 +4182,8 @@ class ADFLOW(AeroSolver):
             'useanksolver':[bool, False],
             'ankuseturbdadi':[bool, True],
             'ankswitchtol':[float, 0.1],
-            'anksubspacesize':[int, 10],
+            'anksubspacesize':[int, -1],
+            'ankmaxiter':[int, 30],
             'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
@@ -4478,6 +4478,7 @@ class ADFLOW(AeroSolver):
             'ankuseturbdadi':['ank', 'ank_useturbdadi'],
             'ankswitchtol':['ank', 'ank_switchtol'],
             'anksubspacesize':['ank', 'ank_subspace'],
+            'ankmaxiter':['ank', 'ank_maxiter'],
             'anklinearsolvetol':['ank', 'ank_rtol'],
             'ankasmoverlap':['ank', 'ank_asmoverlap'],
             'ankpcilufill':['ank', 'ank_ilufill'],
@@ -4504,6 +4505,7 @@ class ADFLOW(AeroSolver):
             'printwarnings':['iter', 'printwarnings'],
             'printtiming':['adjoint', 'printtiming'],
             'setmonitor':['adjoint', 'setmonitor'],
+
 
             # Adjoint Params
             'adjointl2convergence':['adjoint', 'adjreltol'],
