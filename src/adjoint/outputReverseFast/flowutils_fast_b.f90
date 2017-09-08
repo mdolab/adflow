@@ -31,15 +31,15 @@ contains
     integer(kind=inttype) :: i
     real(kind=realtype) :: govgm1, t, kin
 ! determine the cp model used.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
       t = p/(rho*rgas)
       kin = half*(u*u+v*v+w*w)
       ttot = t*(one+rho*kin/(govgm1*p))
-    case (cptempcurvefits)
+    case (cptempcurvefits) 
 !===============================================================
 ! cp is a function of the temperature. the formula used for
 ! constant cp is not valid anymore and a more complicated
@@ -70,8 +70,8 @@ contains
     real(kind=realtype) :: cp, t2
 !        ================================================================
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma. set the values.
       do i=1,mm
         gamma(i) = gammaconstant
@@ -104,8 +104,8 @@ contains
 !===============================================================
 !
 ! determine the cp model used.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma. the well-known
 ! formula is valid.
       govgm1 = gammainf/(gammainf-one)
@@ -178,8 +178,8 @@ contains
     intrinsic mod
 !
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma.
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
@@ -312,8 +312,8 @@ contains
     real(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
     real(kind=realtype) :: tempd
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
 ! loop over the number of elements of the array and compute
@@ -360,8 +360,8 @@ contains
     integer(kind=inttype) :: i, nn, mm, ii, start
     real(kind=realtype) :: ovgm1, factk, pp, t, t2, scale
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! abbreviate 1/(gamma -1) a bit easier.
       ovgm1 = one/(gammaconstant-one)
 ! loop over the number of elements of the array and compute
@@ -462,8 +462,8 @@ contains
     intrinsic abs
     real(kind=realtype) :: abs0
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp and thus constant gamma. the relation
 ! eint = cv*t can be used and consequently the standard
 ! relation between pressure and internal energy is valid.
@@ -506,7 +506,7 @@ contains
           end do
         end do
       end if
-    case (cptempcurvefits)
+    case (cptempcurvefits) 
 !        ================================================================
 ! cp as function of the temperature is given via curve fits.
 ! store a scale factor when converting the nondimensional
@@ -556,7 +556,7 @@ contains
 ! first find the curve fit interval to be searched.
               ii = cpnparts
               start = 1
-     interval:do
+     interval:do 
 ! next guess for the interval.
                 nn = start + ii/2
 ! determine the situation we are having here.
@@ -574,7 +574,7 @@ contains
                   t = alp*cptrange(nn-1) + (one-alp)*cptrange(nn)
 ! the actual newton algorithm to compute the
 ! temperature.
-           newton:do
+           newton:do 
 ! compute the internal energy as well as the
 ! value of cv/r for the given temperature.
 ! cv/r = cp/r - 1.0
@@ -970,18 +970,18 @@ contains
     intrinsic cos
     intrinsic sin
 ! rotation about specified axis by specified angle
-    select case  (iaxis)
-    case (1)
+    select case  (iaxis) 
+    case (1) 
 ! rotation about the x-axis
       xp = 1.*x + 0.*y + 0.*z
       yp = 0.*x + cos(angle)*y + sin(angle)*z
       zp = 0.*x - sin(angle)*y + cos(angle)*z
-    case (2)
+    case (2) 
 ! rotation about the y-axis
       xp = cos(angle)*x + 0.*y - sin(angle)*z
       yp = 0.*x + 1.*y + 0.*z
       zp = sin(angle)*x + 0.*y + cos(angle)*z
-    case (3)
+    case (3) 
 ! rotation about the z-axis
       xp = cos(angle)*x + sin(angle)*y + 0.*z
       yp = -(sin(angle)*x) + cos(angle)*y + 0.*z

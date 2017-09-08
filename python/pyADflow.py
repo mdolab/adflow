@@ -4683,6 +4683,21 @@ class ADFLOW(AeroSolver):
             'sigmaptot':self.adflow.constants.costfuncsigmaptot,
             'axismoment':self.adflow.constants.costfuncaxismoment,
             'flowpower':self.adflow.constants.costfuncflowpower,
+            'forcexpressure':self.adflow.constants.costfuncforcexpressure,
+            'forceypressure':self.adflow.constants.costfuncforceypressure,
+            'forcezpressure':self.adflow.constants.costfuncforcezpressure,
+            'forcexviscous':self.adflow.constants.costfuncforcexviscous,
+            'forceyviscous':self.adflow.constants.costfuncforceyviscous,
+            'forcezviscous':self.adflow.constants.costfuncforcezviscous,
+            'forcexmomentum':self.adflow.constants.costfuncforcexmomentum,
+            'forceymomentum':self.adflow.constants.costfuncforceymomentum,
+            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,     
+            'dragpressure':self.adflow.constants.costfuncdragpressure,       
+            'dragviscous':self.adflow.constants.costfuncdragviscous,       
+            'dragmomentum':self.adflow.constants.costfuncdragmomentum,       
+            'liftpressure':self.adflow.constants.costfuncliftpressure,       
+            'liftviscous':self.adflow.constants.costfuncliftviscous,       
+            'liftmomentum':self.adflow.constants.costfuncliftmomentum,                   
             }
 
         return iDV, BCDV, adflowCostFunctions
@@ -4873,7 +4888,7 @@ class ADFLOW(AeroSolver):
             newConn = numpy.zeros_like(conn)
             for i in range(elemCount):
                 for j in range(4):
-                    newConn[i, j] = link[conn[i, j]]
+                    newConn[i, j] = link[int(conn[i, j])]
             conn = newConn
 
             # Now convert the connectivity to triangles if requested

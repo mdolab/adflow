@@ -13,15 +13,15 @@ contains
   function char2str(chararray, n)
     use constants
     implicit none
+!
+!      function arguments.
+!
+    character, dimension(maxcgnsnamelen), intent(in) :: chararray
     integer(kind=inttype), intent(in) :: n
 !
 !      function type
 !
     character(len=n) :: char2str
-!
-!      function arguments.
-!
-    character, dimension(maxcgnsnamelen), intent(in) :: chararray
 !
 !      local variables.
 !
@@ -588,8 +588,8 @@ contains
     jsize = jend - jstart + 1
 ! determine the face id on which the subface is located and set
 ! the pointers accordinly.
-    select case  (bcfaceid(nn))
-    case (imin)
+    select case  (bcfaceid(nn)) 
+    case (imin) 
 !---------------------------------------------------------------------------
       ww3 => w(3, 1:, 1:, :)
       ww2 => w(2, 1:, 1:, :)
@@ -612,7 +612,7 @@ contains
       gamma1 => gamma(1, 1:, 1:)
       gamma0 => gamma(0, 1:, 1:)
       gcp => globalcell(2, 1:, 1:)
-    case (imax)
+    case (imax) 
 !---------------------------------------------------------------------------
       ww3 => w(nx, 1:, 1:, :)
       ww2 => w(il, 1:, 1:, :)
@@ -635,7 +635,7 @@ contains
       gamma1 => gamma(ie, 1:, 1:)
       gamma0 => gamma(ib, 1:, 1:)
       gcp => globalcell(il, 1:, 1:)
-    case (jmin)
+    case (jmin) 
 !---------------------------------------------------------------------------
       ww3 => w(1:, 3, 1:, :)
       ww2 => w(1:, 2, 1:, :)
@@ -658,7 +658,7 @@ contains
       gamma1 => gamma(1:, 1, 1:)
       gamma0 => gamma(1:, 0, 1:)
       gcp => globalcell(1:, 2, 1:)
-    case (jmax)
+    case (jmax) 
 !---------------------------------------------------------------------------
       ww3 => w(1:, ny, 1:, :)
       ww2 => w(1:, jl, 1:, :)
@@ -681,7 +681,7 @@ contains
       gamma1 => gamma(1:, je, 1:)
       gamma0 => gamma(1:, jb, 1:)
       gcp => globalcell(1:, jl, 1:)
-    case (kmin)
+    case (kmin) 
 !---------------------------------------------------------------------------
       ww3 => w(1:, 1:, 3, :)
       ww2 => w(1:, 1:, 2, :)
@@ -704,7 +704,7 @@ contains
       gamma1 => gamma(1:, 1:, 1)
       gamma0 => gamma(1:, 1:, 0)
       gcp => globalcell(1:, 1:, 2)
-    case (kmax)
+    case (kmax) 
 !---------------------------------------------------------------------------
       ww3 => w(1:, 1:, nz, :)
       ww2 => w(1:, 1:, kl, :)
@@ -729,38 +729,38 @@ contains
       gcp => globalcell(1:, 1:, kl)
     end select
     if (spatialpointers) then
-      select case  (bcfaceid(nn))
-      case (imin)
+      select case  (bcfaceid(nn)) 
+      case (imin) 
         xx => x(1, :, :, :)
         ssi => si(1, :, :, :)
         ssj => sj(2, :, :, :)
         ssk => sk(2, :, :, :)
         ss => s(2, :, :, :)
-      case (imax)
+      case (imax) 
         xx => x(il, :, :, :)
         ssi => si(il, :, :, :)
         ssj => sj(il, :, :, :)
         ssk => sk(il, :, :, :)
         ss => s(il, :, :, :)
-      case (jmin)
+      case (jmin) 
         xx => x(:, 1, :, :)
         ssi => sj(:, 1, :, :)
         ssj => si(:, 2, :, :)
         ssk => sk(:, 2, :, :)
         ss => s(:, 2, :, :)
-      case (jmax)
+      case (jmax) 
         xx => x(:, jl, :, :)
         ssi => sj(:, jl, :, :)
         ssj => si(:, jl, :, :)
         ssk => sk(:, jl, :, :)
         ss => s(:, jl, :, :)
-      case (kmin)
+      case (kmin) 
         xx => x(:, :, 1, :)
         ssi => sk(:, :, 1, :)
         ssj => si(:, :, 2, :)
         ssk => sj(:, :, 2, :)
         ss => s(:, :, 2, :)
-      case (kmax)
+      case (kmax) 
         xx => x(:, :, kl, :)
         ssi => sk(:, :, kl, :)
         ssj => si(:, :, kl, :)
@@ -768,34 +768,34 @@ contains
         ss => s(:, :, kl, :)
       end select
       if (addgridvelocities) then
-        select case  (bcfaceid(nn))
-        case (imin)
+        select case  (bcfaceid(nn)) 
+        case (imin) 
           sface => sfacei(1, :, :)
-        case (imax)
+        case (imax) 
           sface => sfacei(il, :, :)
-        case (jmin)
+        case (jmin) 
           sface => sfacej(:, 1, :)
-        case (jmax)
+        case (jmax) 
           sface => sfacej(:, jl, :)
-        case (kmin)
+        case (kmin) 
           sface => sfacek(:, :, 1)
-        case (kmax)
+        case (kmax) 
           sface => sfacek(:, :, kl)
         end select
       end if
       if (equations .eq. ransequations) then
-        select case  (bcfaceid(nn))
-        case (imin)
+        select case  (bcfaceid(nn)) 
+        case (imin) 
           dd2wall => d2wall(2, :, :)
-        case (imax)
+        case (imax) 
           dd2wall => d2wall(il, :, :)
-        case (jmin)
+        case (jmin) 
           dd2wall => d2wall(:, 2, :)
-        case (jmax)
+        case (jmax) 
           dd2wall => d2wall(:, jl, :)
-        case (kmin)
+        case (kmin) 
           dd2wall => d2wall(:, :, 2)
-        case (kmax)
+        case (kmax) 
           dd2wall => d2wall(:, :, kl)
         end select
       end if
@@ -1301,8 +1301,8 @@ contains
     integer(kind=inttype) :: nn, nlevelsset
 ! determine which time integrator must be used.
 ! modified by hdn
-    select case  (timeaccuracy)
-    case (firstorder)
+    select case  (timeaccuracy) 
+    case (firstorder) 
 ! 1st order. no need to check the number of available
 ! states in the past. set the two coefficients and
 ! nlevelsset to 2.
@@ -1314,12 +1314,12 @@ contains
         coefmeshale(1, 2) = half
       end if
       nlevelsset = 2
-    case (secondorder)
+    case (secondorder) 
 !--------------------------------------------------
 ! second order time integrator. determine the amount of
 ! available states and set the coefficients accordingly.
-      select case  (noldsolavail)
-      case (1_inttype)
+      select case  (noldsolavail) 
+      case (1_inttype) 
         coeftime(0) = 1.0_realtype
         coeftime(1) = -1.0_realtype
         if (useale .and. equationmode .eq. unsteady) then
@@ -1350,12 +1350,12 @@ contains
         end if
         nlevelsset = 3
       end select
-    case (thirdorder)
+    case (thirdorder) 
 !--------------------------------------------------
 ! third order time integrator.  determine the amount of
 ! available states and set the coefficients accordingly.
-      select case  (noldsolavail)
-      case (1_inttype)
+      select case  (noldsolavail) 
+      case (1_inttype) 
         coeftime(0) = 1.0_realtype
         coeftime(1) = -1.0_realtype
         if (useale .and. equationmode .eq. unsteady) then
@@ -1364,7 +1364,7 @@ contains
           coefmeshale(1, 2) = half
         end if
         nlevelsset = 2
-      case (2_inttype)
+      case (2_inttype) 
         coeftime(0) = 1.5_realtype
         coeftime(1) = -2.0_realtype
         coeftime(2) = 0.5_realtype
@@ -1543,20 +1543,20 @@ contains
     integer, intent(in) :: len
     real(kind=realtype), intent(out) :: mult, trans
 ! determine the situation we are having here.
-    select case  (len)
-    case (meter)
+    select case  (len) 
+    case (meter) 
       mult = one
       trans = zero
-    case (centimeter)
+    case (centimeter) 
       mult = 0.01_realtype
       trans = zero
-    case (millimeter)
+    case (millimeter) 
       mult = 0.001_realtype
       trans = zero
-    case (foot)
+    case (foot) 
       mult = 0.3048_realtype
       trans = zero
-    case (inch)
+    case (inch) 
       mult = 0.0254_realtype
       trans = zero
     case default
@@ -1607,22 +1607,22 @@ contains
     integer, intent(in) :: temp
     real(kind=realtype), intent(out) :: mult, trans
 ! determine the situation we are having here.
-    select case  (temp)
-    case (kelvin)
+    select case  (temp) 
+    case (kelvin) 
 ! temperature is already given in kelvin. no need to convert.
       mult = one
       trans = zero
-    case (celsius)
+    case (celsius) 
 ! is it celcius or celsius?
 ! temperature is in celsius. only an offset must be applied.
       mult = one
       trans = 273.16_realtype
-    case (rankine)
+    case (rankine) 
 ! temperature is in rankine. only a multiplication needs to
 ! be performed.
       mult = 5.0_realtype/9.0_realtype
       trans = zero
-    case (fahrenheit)
+    case (fahrenheit) 
 ! temperature is in fahrenheit. both a multiplication and an
 ! offset must be applied.
       mult = 5.0_realtype/9.0_realtype
@@ -1680,20 +1680,20 @@ contains
     real(kind=realtype), intent(out) :: mult, trans
 ! determine the situation we are having here.
 ! first the length.
-    select case  (length)
-    case (meter)
+    select case  (length) 
+    case (meter) 
       mult = one
       trans = zero
-    case (centimeter)
+    case (centimeter) 
       mult = 0.01_realtype
       trans = zero
-    case (millimeter)
+    case (millimeter) 
       mult = 0.001_realtype
       trans = zero
-    case (foot)
+    case (foot) 
       mult = 0.3048_realtype
       trans = zero
-    case (inch)
+    case (inch) 
       mult = 0.0254_realtype
       trans = zero
     case default
@@ -1701,8 +1701,8 @@ contains
 &              'no idea how to convert this length to si units')
     end select
 ! and the time.
-    select case  (time)
-    case (second)
+    select case  (time) 
+    case (second) 
       mult = mult
     case default
       call terminate('sivelocity', &

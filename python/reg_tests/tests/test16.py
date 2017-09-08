@@ -60,6 +60,7 @@ ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                             'mavgmn_up', 'mavgmn_down', 
                             'thrust', 
                             'distortionmn', 'distortionptot',
+                            'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
 
 # Creat the solver
@@ -88,6 +89,10 @@ CFDSolver.addFunction('sigmamn', 'upstream', name="distortionmn")
 CFDSolver.addFunction('sigmaptot', 'upstream', name="distortionptot")
 
 CFDSolver.addFunction('drag', 'all_flow', name="thrust") # this naming makes it seem like wishful thinking
+
+CFDSolver.addFunction('dragpressure', 'all_flow', name="thrust_pressure")
+CFDSolver.addFunction('dragviscous', 'all_flow', name="thrust_viscous")
+CFDSolver.addFunction('dragmomentum', 'all_flow', name="thrust_momentum")
 
 CFDSolver(ap)
 
