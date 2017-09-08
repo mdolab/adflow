@@ -9,7 +9,7 @@ module initializeflow_d
 !                    no tapenade routine below this line               |
 !                                                                      |
 ! ----------------------------------------------------------------------
-  save
+  save 
 
 contains
 !  differentiation of referencestate in forward (tangent) mode (with options i4 dr8 r8):
@@ -168,25 +168,25 @@ contains
     if (nw .gt. nwf) then
       nuinfd = (muinfd*rhoinf-muinf*rhoinfd)/rhoinf**2
       nuinf = muinf/rhoinf
-      select case  (turbmodel)
-      case (spalartallmaras, spalartallmarasedwards)
+      select case  (turbmodel) 
+      case (spalartallmaras, spalartallmarasedwards) 
         winfd(itu1) = sanuknowneddyratio_d(eddyvisinfratio, nuinf, &
 &         nuinfd, winf(itu1))
-      case (komegawilcox, komegamodified, mentersst)
+      case (komegawilcox, komegamodified, mentersst) 
 !=============================================================
         winfd(itu1) = 1.5_realtype*turbintensityinf**2*uinf2d
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winfd(itu2) = (winfd(itu1)*eddyvisinfratio*nuinf-winf(itu1)*&
 &         eddyvisinfratio*nuinfd)/(eddyvisinfratio*nuinf)**2
         winf(itu2) = winf(itu1)/(eddyvisinfratio*nuinf)
-      case (ktau)
+      case (ktau) 
 !=============================================================
         winfd(itu1) = 1.5_realtype*turbintensityinf**2*uinf2d
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winfd(itu2) = (eddyvisinfratio*nuinfd*winf(itu1)-eddyvisinfratio&
 &         *nuinf*winfd(itu1))/winf(itu1)**2
         winf(itu2) = eddyvisinfratio*nuinf/winf(itu1)
-      case (v2f)
+      case (v2f) 
 !=============================================================
         winfd(itu1) = 1.5_realtype*turbintensityinf**2*uinf2d
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
@@ -325,18 +325,18 @@ contains
 ! will accomplish the same thing.
     if (nw .gt. nwf) then
       nuinf = muinf/rhoinf
-      select case  (turbmodel)
-      case (spalartallmaras, spalartallmarasedwards)
+      select case  (turbmodel) 
+      case (spalartallmaras, spalartallmarasedwards) 
         winf(itu1) = sanuknowneddyratio(eddyvisinfratio, nuinf)
-      case (komegawilcox, komegamodified, mentersst)
+      case (komegawilcox, komegamodified, mentersst) 
 !=============================================================
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = winf(itu1)/(eddyvisinfratio*nuinf)
-      case (ktau)
+      case (ktau) 
 !=============================================================
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = eddyvisinfratio*nuinf/winf(itu1)
-      case (v2f)
+      case (v2f) 
 !=============================================================
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = 0.09_realtype*winf(itu1)**2/(eddyvisinfratio*nuinf)

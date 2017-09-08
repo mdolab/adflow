@@ -794,6 +794,21 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncsigmaptot=52
          integer(kind=inttype) parameter,optional :: costfuncaxismoment=53
          integer(kind=inttype) parameter,optional :: costfuncflowpower=54
+         integer(kind=inttype) parameter,optional :: costfuncforcexpressure=55
+         integer(kind=inttype) parameter,optional :: costfuncforceypressure=56
+         integer(kind=inttype) parameter,optional :: costfuncforcezpressure=57
+         integer(kind=inttype) parameter,optional :: costfuncforcexviscous=58
+         integer(kind=inttype) parameter,optional :: costfuncforceyviscous=59
+         integer(kind=inttype) parameter,optional :: costfuncforcezviscous=60
+         integer(kind=inttype) parameter,optional :: costfuncforcexmomentum=61
+         integer(kind=inttype) parameter,optional :: costfuncforceymomentum=62
+         integer(kind=inttype) parameter,optional :: costfuncforcezmomentum=63
+         integer(kind=inttype) parameter,optional :: costfuncdragpressure=64      
+         integer(kind=inttype) parameter,optional :: costfuncdragviscous=65      
+         integer(kind=inttype) parameter,optional :: costfuncdragmomentum=66    
+         integer(kind=inttype) parameter,optional :: costfuncliftpressure=67      
+         integer(kind=inttype) parameter,optional :: costfuncliftviscous=68     
+         integer(kind=inttype) parameter,optional :: costfuncliftmomentum=69      
 
        end module constants
 

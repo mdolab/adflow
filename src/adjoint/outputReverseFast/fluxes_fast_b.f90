@@ -3485,8 +3485,8 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations)
-      case (eulerequations)
+      select case  (equations) 
+      case (eulerequations) 
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -3497,7 +3497,7 @@ branch = myIntStack(myIntPtr)
 ! just copy all anyway.
         ss = p
         call pushcontrol2b(1)
-      case (nsequations, ransequations)
+      case (nsequations, ransequations) 
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -4142,8 +4142,8 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations)
-      case (eulerequations)
+      select case  (equations) 
+      case (eulerequations) 
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
@@ -4153,7 +4153,7 @@ branch = myIntStack(myIntPtr)
 ! discretization, i.e. not including the corner halo's, but we'll
 ! just copy all anyway.
         ss = p
-      case (nsequations, ransequations)
+      case (nsequations, ransequations) 
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
@@ -4971,15 +4971,15 @@ branch = myIntStack(myIntPtr)
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused)
-      case (nolimiter)
+      select case  (limused) 
+      case (nolimiter) 
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda)
+      case (vanalbeda) 
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -5049,7 +5049,7 @@ branch = myIntStack(myIntPtr)
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod)
+      case (minmod) 
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -5199,11 +5199,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused)
-      case (roe)
+      select case  (riemannused) 
+      case (roe) 
 ! determine the preconditioner used.
-        select case  (precond)
-        case (noprecond)
+        select case  (precond) 
+        case (noprecond) 
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -5346,7 +5346,7 @@ branch = myIntStack(myIntPtr)
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel)
+        case (turkel) 
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -5355,14 +5355,14 @@ branch = myIntStack(myIntPtr)
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle)
+        case (choimerkle) 
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer)
+      case (vanleer) 
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv)
+      case (ausmdv) 
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -6491,10 +6491,10 @@ myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
       end if
 ! determine the limiter used.
-      select case  (limused)
-      case (nolimiter)
+      select case  (limused) 
+      case (nolimiter) 
         call pushcontrol2b(1)
-      case (vanalbeda)
+      case (vanalbeda) 
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -6603,7 +6603,7 @@ myIntPtr = myIntPtr + 1
 ! scheme.
         end do
         call pushcontrol2b(2)
-      case (minmod)
+      case (minmod) 
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -7159,15 +7159,15 @@ branch = myIntStack(myIntPtr)
         du3(ivz) = rot(3, 1)*dvx + rot(3, 2)*dvy + rot(3, 3)*dvz
       end if
 ! determine the limiter used.
-      select case  (limused)
-      case (nolimiter)
+      select case  (limused) 
+      case (nolimiter) 
 ! linear interpolation; no limiter.
 ! loop over the number of variables to be interpolated.
         do l=1,nwint
           left(l) = omk*du1(l) + opk*du2(l)
           right(l) = -(omk*du3(l)) - opk*du2(l)
         end do
-      case (vanalbeda)
+      case (vanalbeda) 
 !          ==============================================================
 ! nonlinear interpolation using the van albeda limiter.
 ! loop over the number of variables to be interpolated.
@@ -7237,7 +7237,7 @@ branch = myIntStack(myIntPtr)
           left(l) = omk*rl1*du1(l) + opk*rl2*du2(l)
           right(l) = -(opk*rr1*du2(l)) - omk*rr2*du3(l)
         end do
-      case (minmod)
+      case (minmod) 
 !          ==============================================================
 ! nonlinear interpolation using the minmod limiter.
 ! loop over the number of variables to be interpolated.
@@ -7431,11 +7431,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused)
-      case (roe)
+      select case  (riemannused) 
+      case (roe) 
 ! determine the preconditioner used.
-        select case  (precond)
-        case (noprecond)
+        select case  (precond) 
+        case (noprecond) 
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -7894,11 +7894,11 @@ branch = myIntStack(myIntPtr)
       gm1 = gammaface - one
       gm53 = gammaface - five*third
 ! determine which riemann solver must be solved.
-      select case  (riemannused)
-      case (roe)
+      select case  (riemannused) 
+      case (roe) 
 ! determine the preconditioner used.
-        select case  (precond)
-        case (noprecond)
+        select case  (precond) 
+        case (noprecond) 
 ! no preconditioner used. use the roe scheme of the
 ! standard equations.
 ! compute the square root of the left and right densities
@@ -8041,7 +8041,7 @@ branch = myIntStack(myIntPtr)
           flux(imy) = -(porflux*(lam3*drv+vavg*abv6+sy*abv7))
           flux(imz) = -(porflux*(lam3*drw+wavg*abv6+sz*abv7))
           flux(irhoe) = -(porflux*(lam3*dre+havg*abv6+unavg*abv7))
-        case (turkel)
+        case (turkel) 
 !          tmp = max(lam1,lam2,lam3)
 !          flux(irho)  = -porflux*(tmp*dr)
 !          flux(imx)   = -porflux*(tmp*dru)
@@ -8050,14 +8050,14 @@ branch = myIntStack(myIntPtr)
 !          flux(irhoe) = -porflux*(tmp*dre)
           call terminate('riemannflux', &
 &                  'turkel preconditioner not implemented yet')
-        case (choimerkle)
+        case (choimerkle) 
           call terminate('riemannflux', &
 &                  'choi merkle preconditioner not implemented yet')
         end select
-      case (vanleer)
+      case (vanleer) 
         call terminate('riemannflux', 'van leer fvs not implemented yet'&
 &               )
-      case (ausmdv)
+      case (ausmdv) 
         call terminate('riemannflux', 'ausmdv fvs not implemented yet')
       end select
     end subroutine riemannflux
@@ -10572,14 +10572,14 @@ branch = myIntStack(myIntPtr)
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
-      select case  (equations)
-      case (eulerequations)
+      select case  (equations) 
+      case (eulerequations) 
 ! inviscid case. pressure switch is based on the pressure.
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr
-      case (nsequations, ransequations)
+      case (nsequations, ransequations) 
 !===============================================================
 ! viscous case. pressure switch is based on the entropy.
 ! also set the value of sslim. to be fully consistent this
