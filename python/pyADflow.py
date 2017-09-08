@@ -4842,7 +4842,7 @@ class ADFLOW(AeroSolver):
 
             # Generate the uncompacted point and connectivity list:
             pts = numpy.zeros((nPts, 3), dtype=self.dtype)
-            conn = numpy.zeros((nElem, 4))
+            conn = numpy.zeros((nElem, 4),dtype=int)
 
             nodeCount = 0
             elemCount = 0
