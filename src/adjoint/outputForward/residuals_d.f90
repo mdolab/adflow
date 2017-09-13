@@ -106,8 +106,8 @@ contains
 !
 ! ===========================================================
     call inviscidcentralflux()
-    select case  (discr)
-    case (dissscalar)
+    select case  (discr) 
+    case (dissscalar) 
 ! standard scalar dissipation scheme.
       if (finegrid) then
         if (.not.lumpeddiss) then
@@ -116,7 +116,7 @@ contains
           call invisciddissfluxscalarapprox()
         end if
       end if
-    case (dissmatrix)
+    case (dissmatrix) 
 !===========================================================
 ! matrix dissipation scheme.
       if (finegrid) then
@@ -126,7 +126,7 @@ contains
           call invisciddissfluxmatrixapprox()
         end if
       end if
-    case (upwind)
+    case (upwind) 
 !===========================================================
 ! dissipation via an upwind scheme.
       call inviscidupwindflux(finegrid)

@@ -694,8 +694,8 @@ bocoloop:do mm=1,nbocos
         i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm&
 &         )%icbeg
         j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-        select case  (bcfaceid(mm))
-        case (imin)
+        select case  (bcfaceid(mm)) 
+        case (imin) 
           mult = -one
           xxpd = sid(1, i, j, 1)
           xxp = si(1, i, j, 1)
@@ -703,7 +703,7 @@ bocoloop:do mm=1,nbocos
           yyp = si(1, i, j, 2)
           zzpd = sid(1, i, j, 3)
           zzp = si(1, i, j, 3)
-        case (imax)
+        case (imax) 
           mult = one
           xxpd = sid(il, i, j, 1)
           xxp = si(il, i, j, 1)
@@ -711,7 +711,7 @@ bocoloop:do mm=1,nbocos
           yyp = si(il, i, j, 2)
           zzpd = sid(il, i, j, 3)
           zzp = si(il, i, j, 3)
-        case (jmin)
+        case (jmin) 
           mult = -one
           xxpd = sjd(i, 1, j, 1)
           xxp = sj(i, 1, j, 1)
@@ -719,7 +719,7 @@ bocoloop:do mm=1,nbocos
           yyp = sj(i, 1, j, 2)
           zzpd = sjd(i, 1, j, 3)
           zzp = sj(i, 1, j, 3)
-        case (jmax)
+        case (jmax) 
           mult = one
           xxpd = sjd(i, jl, j, 1)
           xxp = sj(i, jl, j, 1)
@@ -727,7 +727,7 @@ bocoloop:do mm=1,nbocos
           yyp = sj(i, jl, j, 2)
           zzpd = sjd(i, jl, j, 3)
           zzp = sj(i, jl, j, 3)
-        case (kmin)
+        case (kmin) 
           mult = -one
           xxpd = skd(i, j, 1, 1)
           xxp = sk(i, j, 1, 1)
@@ -735,7 +735,7 @@ bocoloop:do mm=1,nbocos
           yyp = sk(i, j, 1, 2)
           zzpd = skd(i, j, 1, 3)
           zzp = sk(i, j, 1, 3)
-        case (kmax)
+        case (kmax) 
           mult = one
           xxpd = skd(i, j, kl, 1)
           xxp = sk(i, j, kl, 1)
@@ -796,33 +796,33 @@ bocoloop:do mm=1,nbocos
         i = mod(ii, bcdata(mm)%icend - bcdata(mm)%icbeg + 1) + bcdata(mm&
 &         )%icbeg
         j = ii/(bcdata(mm)%icend-bcdata(mm)%icbeg+1) + bcdata(mm)%jcbeg
-        select case  (bcfaceid(mm))
-        case (imin)
+        select case  (bcfaceid(mm)) 
+        case (imin) 
           mult = -one
           xxp = si(1, i, j, 1)
           yyp = si(1, i, j, 2)
           zzp = si(1, i, j, 3)
-        case (imax)
+        case (imax) 
           mult = one
           xxp = si(il, i, j, 1)
           yyp = si(il, i, j, 2)
           zzp = si(il, i, j, 3)
-        case (jmin)
+        case (jmin) 
           mult = -one
           xxp = sj(i, 1, j, 1)
           yyp = sj(i, 1, j, 2)
           zzp = sj(i, 1, j, 3)
-        case (jmax)
+        case (jmax) 
           mult = one
           xxp = sj(i, jl, j, 1)
           yyp = sj(i, jl, j, 2)
           zzp = sj(i, jl, j, 3)
-        case (kmin)
+        case (kmin) 
           mult = -one
           xxp = sk(i, j, 1, 1)
           yyp = sk(i, j, 1, 2)
           zzp = sk(i, j, 1, 3)
-        case (kmax)
+        case (kmax) 
           mult = one
           xxp = sk(i, j, kl, 1)
           yyp = sk(i, j, kl, 2)
@@ -944,8 +944,8 @@ loopbocos:do mm=1,nbocos
         norm(3) = norm(3)/length
 ! see xhalo_block for comments for below:
         if (length .gt. eps) then
-          select case  (bcfaceid(mm))
-          case (imin)
+          select case  (bcfaceid(mm)) 
+          case (imin) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -975,7 +975,7 @@ loopbocos:do mm=1,nbocos
                 x(0, i, j, 3) = x(2, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (imax)
+          case (imax) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1005,7 +1005,7 @@ loopbocos:do mm=1,nbocos
                 x(ie, i, j, 3) = x(nx, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmin)
+          case (jmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1035,7 +1035,7 @@ loopbocos:do mm=1,nbocos
                 x(i, 0, j, 3) = x(i, 2, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmax)
+          case (jmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1065,7 +1065,7 @@ loopbocos:do mm=1,nbocos
                 x(i, je, j, 3) = x(i, ny, j, 3) + dot*norm(3)
               end do
             end do
-          case (kmin)
+          case (kmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1095,7 +1095,7 @@ loopbocos:do mm=1,nbocos
                 x(i, j, 0, 3) = x(i, j, 2, 3) + dot*norm(3)
               end do
             end do
-          case (kmax)
+          case (kmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1208,8 +1208,8 @@ loopbocos:do mm=1,nbocos
         norm(3) = norm(3)/length
 ! see xhalo_block for comments for below:
         if (length .gt. eps) then
-          select case  (bcfaceid(mm))
-          case (imin)
+          select case  (bcfaceid(mm)) 
+          case (imin) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1231,7 +1231,7 @@ loopbocos:do mm=1,nbocos
                 x(0, i, j, 3) = x(2, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (imax)
+          case (imax) 
             ibeg = jnbeg(mm)
             iend = jnend(mm)
             iimax = jl
@@ -1253,7 +1253,7 @@ loopbocos:do mm=1,nbocos
                 x(ie, i, j, 3) = x(nx, i, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmin)
+          case (jmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1275,7 +1275,7 @@ loopbocos:do mm=1,nbocos
                 x(i, 0, j, 3) = x(i, 2, j, 3) + dot*norm(3)
               end do
             end do
-          case (jmax)
+          case (jmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1297,7 +1297,7 @@ loopbocos:do mm=1,nbocos
                 x(i, je, j, 3) = x(i, ny, j, 3) + dot*norm(3)
               end do
             end do
-          case (kmin)
+          case (kmin) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
@@ -1319,7 +1319,7 @@ loopbocos:do mm=1,nbocos
                 x(i, j, 0, 3) = x(i, j, 2, 3) + dot*norm(3)
               end do
             end do
-          case (kmax)
+          case (kmax) 
             ibeg = inbeg(mm)
             iend = inend(mm)
             iimax = il
