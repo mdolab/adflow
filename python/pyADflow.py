@@ -2886,9 +2886,9 @@ class ADFLOW(AeroSolver):
 
                # Chain-rule to get the final derivative:
                funcsSens[dvName] = (
-                   tmp[self.curAP['P']][key]*dIdP +
-                   tmp[self.curAP['T']][key]*dIdT +
-                   tmp[self.curAP['rho']][key]*dIdrho)
+                   tmp[self.curAP['P']][dvName]*dIdP +
+                   tmp[self.curAP['T']][dvName]*dIdT +
+                   tmp[self.curAP['rho']][dvName]*dIdrho)
            elif key == 'mach':
                self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
                # Simular story for Mach: It is technically possible
@@ -2902,10 +2902,10 @@ class ADFLOW(AeroSolver):
                dIdP = dIda[self.possibleAeroDVs['p']]
                dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-               # Chain-rule to get the final derivative:
+               # Chain-rule to get the final derivative:             
                funcsSens[dvName] = (
-                   tmp[self.curAP['P']][key]*dIdP +
-                   tmp[self.curAP['rho']][key]*dIdrho +
+                   tmp[self.curAP['P']][dvName]*dIdP +
+                   tmp[self.curAP['rho']][dvName]*dIdrho +
                    dIda[self.possibleAeroDVs['mach']])
 
            elif key in self.possibleAeroDVs:
@@ -4857,7 +4857,7 @@ class ADFLOW(AeroSolver):
 
             # Generate the uncompacted point and connectivity list:
             pts = numpy.zeros((nPts, 3), dtype=self.dtype)
-            conn = numpy.zeros((nElem, 4))
+            conn = numpy.zeros((nElem, 4),dtype=int)
 
             nodeCount = 0
             elemCount = 0
