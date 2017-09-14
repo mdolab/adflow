@@ -2562,6 +2562,7 @@ contains
     volWriteBlank = .false.
     volWriteGC = .false.
     volWriteStatus = .false.
+    volWriteIntermittency = .false.
 
 
     ! Initialize nVarSpecified to 0. This serves as a test
@@ -2708,6 +2709,10 @@ contains
 
        case ("status")
           volWriteStatus = .true.
+          nVarSpecified = nVarSpecified + 1
+
+       case("intermittency")
+          volWriteIntermittency = .true.
           nVarSpecified = nVarSpecified + 1
 
        case default
@@ -3582,8 +3587,8 @@ contains
 
     case (5_intType)
        etaRK(1) = fourth
-       etaRK(2) = 0.16666667_realType
-       etaRK(3) = 0.37500000_realType
+       etaRK(2) = 0.16666667_realType !1/6
+       etaRK(3) = 0.37500000_realType !3/8
        etaRK(4) = half
        etaRK(5) = one
 

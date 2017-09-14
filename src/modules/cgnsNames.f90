@@ -168,6 +168,9 @@
        character(len=maxCGNSNameLen), parameter :: &
             cgnsStatus = "status"
 
+       character(len=maxCGNSNameLen), parameter :: &
+            cgnsIntermittency = "Intermittency"
+
 
 !
 !       Residual names.
