@@ -810,8 +810,22 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncliftpressure=67      
          integer(kind=inttype) parameter,optional :: costfuncliftviscous=68     
          integer(kind=inttype) parameter,optional :: costfuncliftmomentum=69      
-
-       end module constants
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefpressure=70
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefviscous=71
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefmomentum=72
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefpressure=73
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefviscous=74
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefmomentum=75
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefpressure=76
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefviscous=77
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefmomentum=78
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefpressure=79
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefviscous=80
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefmomentum=81
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefpressure=82
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefviscous=83
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefmomentum=84
+        end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
          use precision
