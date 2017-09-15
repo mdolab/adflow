@@ -27,7 +27,8 @@ contains
 ! working
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
-&   forcep, forcev, forcem, moment, cforce, cmoment
+&   forcep, forcev, forcem, moment, cforce, cforcep, cforcev, cforcem, &
+&   cmoment
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
 &   mavgmn, mavga, mavgvx, mavgvy, mavgvz, mavgnx, mavgny, mavgnz, mavgu&
@@ -53,6 +54,9 @@ contains
 &     globalvals(iflowmm:iflowmm+2, :)
     fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
     cforce = fact*force
+    cforcep = fact*forcep
+    cforcev = fact*forcev
+    cforcem = fact*forcem
 ! moment factor has an extra lengthref
     fact = fact/(lengthref*lref)
     cmoment = fact*moment
@@ -84,12 +88,32 @@ contains
 &       costfuncforceymomentum) + ovrnts*forcem(2, sps)
       funcvalues(costfuncforcezmomentum) = funcvalues(&
 &       costfuncforcezmomentum) + ovrnts*forcem(3, sps)
+! ------------
       funcvalues(costfuncforcexcoef) = funcvalues(costfuncforcexcoef) + &
 &       ovrnts*cforce(1, sps)
       funcvalues(costfuncforceycoef) = funcvalues(costfuncforceycoef) + &
 &       ovrnts*cforce(2, sps)
       funcvalues(costfuncforcezcoef) = funcvalues(costfuncforcezcoef) + &
 &       ovrnts*cforce(3, sps)
+      funcvalues(costfuncforcexcoefpressure) = funcvalues(&
+&       costfuncforcexcoefpressure) + ovrnts*cforcep(1, sps)
+      funcvalues(costfuncforceycoefpressure) = funcvalues(&
+&       costfuncforceycoefpressure) + ovrnts*cforcep(2, sps)
+      funcvalues(costfuncforcezcoefpressure) = funcvalues(&
+&       costfuncforcezcoefpressure) + ovrnts*cforcep(3, sps)
+      funcvalues(costfuncforcexcoefviscous) = funcvalues(&
+&       costfuncforcexcoefviscous) + ovrnts*cforcev(1, sps)
+      funcvalues(costfuncforceycoefviscous) = funcvalues(&
+&       costfuncforceycoefviscous) + ovrnts*cforcev(2, sps)
+      funcvalues(costfuncforcezcoefviscous) = funcvalues(&
+&       costfuncforcezcoefviscous) + ovrnts*cforcev(3, sps)
+      funcvalues(costfuncforcexcoefmomentum) = funcvalues(&
+&       costfuncforcexcoefmomentum) + ovrnts*cforcem(1, sps)
+      funcvalues(costfuncforceycoefmomentum) = funcvalues(&
+&       costfuncforceycoefmomentum) + ovrnts*cforcem(2, sps)
+      funcvalues(costfuncforcezcoefmomentum) = funcvalues(&
+&       costfuncforcezcoefmomentum) + ovrnts*cforcem(3, sps)
+! ------------
       funcvalues(costfuncmomx) = funcvalues(costfuncmomx) + ovrnts*&
 &       moment(1, sps)
       funcvalues(costfuncmomy) = funcvalues(costfuncmomy) + ovrnts*&
@@ -199,6 +223,7 @@ contains
 &     )*liftdirection(1) + funcvalues(costfuncforceymomentum)*&
 &     liftdirection(2) + funcvalues(costfuncforcezmomentum)*&
 &     liftdirection(3)
+!-----
     funcvalues(costfuncdrag) = funcvalues(costfuncforcex)*dragdirection(&
 &     1) + funcvalues(costfuncforcey)*dragdirection(2) + funcvalues(&
 &     costfuncforcez)*dragdirection(3)
@@ -213,12 +238,38 @@ contains
 &     )*dragdirection(1) + funcvalues(costfuncforceymomentum)*&
 &     dragdirection(2) + funcvalues(costfuncforcezmomentum)*&
 &     dragdirection(3)
+!-----
     funcvalues(costfuncliftcoef) = funcvalues(costfuncforcexcoef)*&
 &     liftdirection(1) + funcvalues(costfuncforceycoef)*liftdirection(2)&
 &     + funcvalues(costfuncforcezcoef)*liftdirection(3)
+    funcvalues(costfuncliftcoefpressure) = funcvalues(&
+&     costfuncforcexcoefpressure)*liftdirection(1) + funcvalues(&
+&     costfuncforceycoefpressure)*liftdirection(2) + funcvalues(&
+&     costfuncforcezcoefpressure)*liftdirection(3)
+    funcvalues(costfuncliftcoefviscous) = funcvalues(&
+&     costfuncforcexcoefviscous)*liftdirection(1) + funcvalues(&
+&     costfuncforceycoefviscous)*liftdirection(2) + funcvalues(&
+&     costfuncforcezcoefviscous)*liftdirection(3)
+    funcvalues(costfuncliftcoefmomentum) = funcvalues(&
+&     costfuncforcexcoefmomentum)*liftdirection(1) + funcvalues(&
+&     costfuncforceycoefmomentum)*liftdirection(2) + funcvalues(&
+&     costfuncforcezcoefmomentum)*liftdirection(3)
+!-----
     funcvalues(costfuncdragcoef) = funcvalues(costfuncforcexcoef)*&
 &     dragdirection(1) + funcvalues(costfuncforceycoef)*dragdirection(2)&
 &     + funcvalues(costfuncforcezcoef)*dragdirection(3)
+    funcvalues(costfuncdragcoefpressure) = funcvalues(&
+&     costfuncforcexcoefpressure)*dragdirection(1) + funcvalues(&
+&     costfuncforceycoefpressure)*dragdirection(2) + funcvalues(&
+&     costfuncforcezcoefpressure)*dragdirection(3)
+    funcvalues(costfuncdragcoefviscous) = funcvalues(&
+&     costfuncforcexcoefviscous)*dragdirection(1) + funcvalues(&
+&     costfuncforceycoefviscous)*dragdirection(2) + funcvalues(&
+&     costfuncforcezcoefviscous)*dragdirection(3)
+    funcvalues(costfuncdragcoefmomentum) = funcvalues(&
+&     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
+&     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
+&     costfuncforcezcoefmomentum)*dragdirection(3)
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &

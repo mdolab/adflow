@@ -336,7 +336,7 @@ module constants
   integer(kind=intType), parameter :: iTotal=16
 
   ! Cost functions.
-  integer(kind=intType), parameter :: nCostFunction = 69
+  integer(kind=intType), parameter :: nCostFunction = 84
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -406,7 +406,22 @@ module constants
        costFuncDragMomentum = 66, & 
        costFuncLiftPressure= 67, & 
        costFuncLiftViscous = 68, & 
-       costFuncLiftMomentum = 69    
+       costFuncLiftMomentum = 69, &
+       costFuncForceXCoefPressure = 70,&
+       costFuncForceXCoefViscous = 71,&
+       costFuncForceXCoefMomentum = 72,&
+       costFuncForceYCoefPressure = 73,&
+       costFuncForceYCoefViscous = 74,&
+       costFuncForceYCoefMomentum = 75,&
+       costFuncForceZCoefPressure = 76,&
+       costFuncForceZCoefViscous = 77,&
+       costFuncForceZCoefMomentum = 78,&
+       costFuncLiftCoefPressure = 79,&
+       costFuncLiftCoefViscous = 80, &
+       costFuncLiftCoefMomentum = 81, &
+       costFuncDragCoefPressure = 82,&
+       costFuncDragCoefViscous = 83, &
+       costFuncDragCoefMomentum = 84 
 
   integer(kind=intType), parameter :: nLocalValues=46
   integer(kind=intType), parameter :: &
