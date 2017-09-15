@@ -4175,6 +4175,7 @@ class ADFLOW(AeroSolver):
             'nkouterpreconits':[int, 1],
             'nkcfl0':[float, 100.0],
             'nkls':[str, 'cubic'],
+            'nkfixedstep':[float, 0.25],
             'rkreset':[bool, False],
             'nrkreset':[int, 5],
 
@@ -4470,6 +4471,7 @@ class ADFLOW(AeroSolver):
                     'cubic':self.adflow.constants.cubiclinesearch,
                     'non monotone':self.adflow.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
+            'nkfixedstep':['nk', 'nk_fixedstep'],
             'rkreset':['iter', 'rkreset'],
             'nrkreset':['iter', 'miniternum'],
 
