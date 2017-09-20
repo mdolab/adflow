@@ -2763,7 +2763,7 @@ contains
 
     character(len=10) :: integerString
 
-    logical :: checkK, checkJ, checkI, checkAll
+    logical :: checkK, checkJ, checkI, checkAll, checkBlank
     logical :: badVolume
 
     logical, dimension(:,:,:), pointer :: volumeIsNeg
@@ -2833,7 +2833,18 @@ contains
                    ! quality. Only owned volumes are checked, not halo's.
 
                    checkAll = .false.
-                   if(checkK .and. checkJ .and. checkI) checkAll = .true.
+
+                   ! Only care about the quality of compute cells (1)
+                   ! and fringe cells (-1)
+                   if (abs(iblank(i, j, k)) == 1) then 
+                      checkBlank = .True.
+                   else
+                      checkBlank = .False.
+                   end if
+
+                   if (checkK .and. checkJ .and. checkI .and. checkBlank) then 
+                      checkAll = .true.
+                   end if
 
                    ! Compute the coordinates of the center of gravity.
 
