@@ -135,7 +135,7 @@ contains
 
           ! We technically only should only need to add 1 here, but
           ! to be safer, we'll have at least two layers to check.
-          factor = floor(radius1/radius2) + 2
+          factor = int(radius1/radius2) + 2
 
           if (factor > maxLevels) then
              deallocate(tmpCellArr)

@@ -2764,7 +2764,7 @@ contains
     character(len=10) :: integerString
 
     logical :: checkK, checkJ, checkI, checkAll, checkBlank
-    logical :: badVolume
+    logical :: badVolume, iBlankAllocated
 
     logical, dimension(:,:,:), pointer :: volumeIsNeg
 
@@ -2786,7 +2786,11 @@ contains
           ! the code more readable.
 
           call setPointers(nn, level, sps)
-
+          if (associated(flowDoms(nn, level, sps)%iblank)) then 
+             iBlankAllocated = .True. 
+          else
+             iBlankAllocated = .False.
+          end if
           allocate(checkVolDoms(nn,sps)%volumeIsNeg(2:il,2:jl,2:kl), &
                stat=ierr)
           if(ierr /= 0)              &
@@ -2836,10 +2840,9 @@ contains
 
                    ! Only care about the quality of compute cells (1)
                    ! and fringe cells (-1)
-                   if (abs(iblank(i, j, k)) == 1) then 
+                   checkBlank = .False. 
+                   if (iblankAllocated .and. abs(iblank(i, j, k)) == 1) then 
                       checkBlank = .True.
-                   else
-                      checkBlank = .False.
                    end if
 
                    if (checkK .and. checkJ .and. checkI .and. checkBlank) then 
