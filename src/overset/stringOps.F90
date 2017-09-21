@@ -716,7 +716,7 @@ module stringOps
 
   end subroutine selfZip
 
-  subroutine crossZip(str1, N1, N2, str2, N3, N4)
+  subroutine crossZip(str1, N1, N2, str2, N3, N4, debugZipper)
 
     use constants
     use utils, only : myNorm2, cross_prod
@@ -725,19 +725,25 @@ module stringOps
 
     type(oversetString), intent(inout) :: str1, str2
     integer(kind=intType) :: N1, N2, N3, N4
-
+    logical :: debugZipper
     ! Working
+    type(oversetString), pointer :: p
     integer(kind=intType) :: stepsA, stepsB, nStepsA, nStepsB
     integer(kind=intType) :: nTriToAdd, ii, i, j, k, A, B, Ap, Bp
+    integer(kind=intType) :: aPrev, bPrev
     real(kind=realType), dimension(3) :: ptA, ptB, ptAp, ptBp
+    !real(kind=realType), dimension(3) :: ptAPrev, ptBPRev
     real(kind=realType), dimension(3) :: Aoff, Boff, ApOff, BpOff
     real(kind=realType), dimension(3) :: normA, normB, normAp, normBp
     real(kind=realType), dimension(3) :: perpA, perpB, perpAp, perpBp
+    !real(kind=realType), dimension(3) :: normAPrev, normBPrev
+    !real(kind=realType), dimension(3) :: perpAPrev, perpBPrev
     real(kind=realType), dimension(3) :: triNorm1, quadNorm1
     real(kind=realType), dimension(3) :: triNorm2, quadNorm2
     logical :: aValid, bValid, advanceA, aPreferred, area1, area2
     logical :: advanceB
     logical :: changeA, changeB
+    logical :: aValidPrev, bValidPrev, advanceAPrev, advanceBPrev
     real(kind=realType) ::  sum1, sum2, h, dpa, dpb
     !am real(kind=realType), parameter :: cutOff = 0.95*3
     real(kind=realType), parameter :: cutOff = 0.85*3
@@ -762,6 +768,10 @@ module stringOps
     else ! N3 == N4
        nStepsB =  str2%nElems
     end if
+
+    ! Initialize these out of bounds incase something goes very wrong.
+    APrev = -1
+    BPrev = -1
 
     ! The number of steps we've performed in each edge
     stepsA = 0
@@ -993,19 +1003,127 @@ module stringOps
 
        else
 
-          ! Ewww. neither triangle is valid. Do not add any triangle,
-          ! leave it for pocket zipping. Just move forward to Ap and Bp.
-          print *,' ****** eww, skipping both A and B:', A, B, aValid, bValid, aPreferred, ptA, ptB
+          ! Things are not looking good...but
+
+          if (avalidPRev .and. bvalidPrev) then
+             ! We might be able to save it! The last triangle we added
+             ! was a choice..both were valid, but we picked one
+             ! because it was preferred. Now we know the one we did
+             ! pick screwed us for the next triangle...go back and
+             ! pick the other one instead!
+
+             ! First 'delete' the triangle by decrementing the tri
+             ! counter and edge counters
+             p => str1%p
+             p%nTris = p%nTris - 1
+             p%nEdges = p%nEdges - 3
+
+             ! Now we determine which one was actually added and add
+             ! the other one instead
+
+             if (advanceAPrev) then
+                ! We need to add the old B triangle instead, which
+                ! means the A triangle we had added was bad
+                aValidPrev = .False.
+                stepsB = stepsB + 1
+                stepsA = stepsA - 1
+
+                call addTri(APrev, str1, B, str2, Bp, str2)
+
+                ! Reset the 'A' data by shuffling backwards: The 'A'
+                ! data is copied to 'Ap' and the 'A' data is restored from Aprev
+
+                Ap = A
+                ptAp= ptA
+                normAp = normA
+                perpAp = perpA
+
+                A = Aprev
+                ptA = str1%x(:, A)
+                normA = str1%norm(:, A)
+                perpA = str1%perpNorm(:, A)
+
+                ! Increment the 'B' data since we actually used B
+
+                B = Bp
+                ptB = ptBp
+                normB = normBp
+                perpB = perpBp
+
+                ! And get the new data for Bp
+                Bp = nextNode(str2, B, .False.)
+                ptBp = str2%x(:, Bp)
+                normBp = str2%norm(:, Bp)
+                perpBp = str2%perpNorm(:, Bp)
+
+                ! We *actually* advanced B so..
+                advanceBPrev = .True.
+                advanceAPrev = .False.
+             else
+
+                ! We need to add the old A triangle, which means the B
+                ! triangle we had added was bad
+                bValidPrev = .False.
+                stepsB = stepsB - 1
+                stepsA = stepsA + 1
+                call addTri(A, str1, Bprev, str2, Ap, str1)
+
+                ! Reset the 'B' data by shuffling backwards: The 'B'
+                ! data is copied to 'Bp' and the 'B' data is restored from Bprev
+
+                Bp = B
+                ptBp= ptB
+                normBp = normB
+                perpBp = perpB
+
+                B = Bprev
+                ptB = str2%x(:, B)
+                normB = str2%norm(:, B)
+                perpB = str2%perpNorm(:, B)
+
+                ! Increment the 'A' data since we actually used A
+
+                A = Ap
+                ptA = ptAp
+                normA = normAp
+                perpA = perpAp
+
+                ! And get the new data for Ap
+                Ap = nextNode(str2, A, .True.)
+                ptAp = str1%x(:, Ap)
+                normAp = str1%norm(:, Ap)
+                perpAp = str1%perpNorm(:, Ap)
+                ! We *actually* advanced A so..
+                advanceAPrev = .True.
+                advanceBPrev = .False.
+
+             end if
+
+             ! We *don't* increment ii since this is in essence still
+             ! the "last" iteration. We just cycle and try the current
+             ! one again.
+             if (debugZipper) then
+                print *,'Saved cross zip from bad front.'
+             end if
+             cycle
+
+          end  if
 
           advanceA = .False.
           advanceB = .False.
 
+          ! Ewww. neither triangle is valid. Do not add any triangle,
+          ! leave it for pocket zipping. Just move forward to Ap and Bp.
+          print *,' ****** eww, skipping both A and B:', A, B, aValid, bValid, aPreferred, ptA, ptB
        end if
 
        ! Now we have to shuffle along the string.
        if (advanceA .and. .not.advanceB) then
 
           stepsA = stepsA + 1
+
+          ! Save a copy of the previous A info
+          APrev = A
 
           ! Copy the Ap to A
           A = Ap
@@ -1022,6 +1140,9 @@ module stringOps
        else if (advanceB .and. .not.advanceA) then
 
           stepsB = stepsB + 1
+
+          ! Save a copy of the previous B info incase we need it
+          BPrev = B
 
           ! Copy the Bp to B
           B = Bp
@@ -1068,6 +1189,12 @@ module stringOps
           normBp = str2%norm(:, Bp)
           perpBp = str2%perpNorm(:, Bp)
        end if
+
+       ! Save the prevoius valid triangles and what was advanced
+       aValidPrev = aValid
+       bValidPrev = bValid
+       advanceAPrev = advanceA
+       advanceBPrev = advanceB
 
        ! Finally increment the number of triangles we've used so far.
        ii = ii + 1
@@ -1371,14 +1498,20 @@ module stringOps
              jEnd = jStart
 
           else if((iStart == iEnd .and. fullLoop1) .and. .not. fullLoop2) then
-             ! s1 is fully attached to a part of s2. No need to modify the ranges
+
+             ! Project jStart and jEnd onto s1
+             iStart = s2%otherID(2, jStart)
+             iEnd   = s2%otherID(2, jEnd)
 
           else if((jStart == jEnd .and. fullLoop2) .and. .not. fullLoop1) then
 
-             ! s2 is fully attached to a part of s1. No need to modify the ranges
-          else
-             ! part of s1 is attached to part of s2
+             ! Project iStart and iEnd onto s2
+             jStart = s1%otherID(2, iStart)
+             jEnd   = s1%otherID(2, iEnd)
 
+          else
+
+             ! part of s1 is attached to part of s2
 
              nIElemsBeg = elemsForRange(s1, iStart, iEnd, .True.)
              nJElemsBeg = elemsForRange(s2, jStart, jEnd, .False.)
@@ -1435,7 +1568,7 @@ module stringOps
           end if
 
           ! Do actual cross zip
-          call crossZip(s1, iStart, iEnd, s2, jStart, jEnd)
+          call crossZip(s1, iStart, iEnd, s2, jStart, jEnd, debugZipper)
 
           ! Find the next starting index:
           curIStart = startNode(s1)
@@ -1798,6 +1931,7 @@ module stringOps
     pocketMaster%elemUsed = 0
     curElem = 1
     nFullStrings = 0
+
     do while (curElem < pocketMaster%nElems)
 
        ! Arbitrarily get the first node for my element:
@@ -2729,7 +2863,7 @@ module stringOps
        write(101,"(1x)")
     end do
 
-15  format(I5, I5, I5)
+15  format(I7, I7, I7)
     do i=startTri, endTri
        write(101, 15) string%tris(1, i), string%tris(2, i), string%tris(3, i)
     end do
