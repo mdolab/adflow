@@ -623,7 +623,7 @@ contains
     real(kind=alwaysRealType) :: minlambda, lambda, lambdatemp
     real(kind=alwaysRealType) :: rellength
     integer(kind=intType) :: ierr, iter
-    real(kind=realType) :: turbRes1, turbRes2, flowRes1, flowRes2, totalRes1, totalRes2
+    real(kind=alwaysRealType) :: turbRes1, turbRes2, flowRes1, flowRes2, totalRes1, totalRes2
     logical :: hadANan
     ! Call to get the split norms
     call setRVec(g, flowRes1, turbRes1, totalRes1)
@@ -879,12 +879,13 @@ contains
     integer(kind=intType) :: ierr
     logical :: flag
     real(kind=alwaysRealType) :: step
-
+    real(kind=realType) :: tmp
     flag = .True.
     ! We just accept the step and compute the new residual at the new iterate
     nfevals = 0
     step = nk_fixedStep
-    call VecWAXPY(w, -step, y, x, ierr)
+    tmp = -step
+    call VecWAXPY(w, tmp, y, x, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Compute new function:
@@ -1299,7 +1300,7 @@ contains
     integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
     real(kind=realType),pointer :: rvec_pointer(:)
     real(Kind=realType) :: ovv
-    real(kind=realType), intent(out), optional :: flowRes, turbRes, totalRes
+    real(kind=alwaysRealType), intent(out), optional :: flowRes, turbRes, totalRes
     real(kind=realType) :: tmp, tmp2(2), flowResLocal, turbResLocal
 
     flowResLocal = zero
