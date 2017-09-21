@@ -2791,6 +2791,7 @@ contains
           else
              iBlankAllocated = .False.
           end if
+
           allocate(checkVolDoms(nn,sps)%volumeIsNeg(2:il,2:jl,2:kl), &
                stat=ierr)
           if(ierr /= 0)              &
@@ -2841,8 +2842,10 @@ contains
                    ! Only care about the quality of compute cells (1)
                    ! and fringe cells (-1)
                    checkBlank = .False. 
-                   if (iblankAllocated .and. abs(iblank(i, j, k)) == 1) then 
-                      checkBlank = .True.
+                   if (iblankAllocated) then 
+                      if (abs(iblank(i, j, k)) == 1) then 
+                         checkBlank = .True.
+                      end if
                    end if
 
                    if (checkK .and. checkJ .and. checkI .and. checkBlank) then 
