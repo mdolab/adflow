@@ -297,7 +297,6 @@ class ADFLOW(AeroSolver):
 
         famList = self._getFamilyList(self.closedFamilyGroup)
         self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
-
         self.adflow.tecplotio.initializeliftdistributiondata()
         self.adflow.initializeflow.updatebcdataalllevels()
         self.adflow.initializeflow.initflow()
