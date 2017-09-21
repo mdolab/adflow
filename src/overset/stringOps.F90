@@ -1355,6 +1355,13 @@ module stringOps
              print *,'Initial Range s2:', jstart, jend, fullLoop2
           end if
 
+          ! Flag all the nodes FROM THE INITIAL RANGE as used. Let the
+          ! pocket zip deal with the left-overs. We have do that here
+          ! becuase the ranges may be modified below before doing the
+          ! actual zip.
+           call flagNodesUsed(s1, iStart, iEnd, .True.)
+           call flagNodesUsed(s2, jStart, jEnd, .False.)
+
           if ((istart == iend .and. fullLoop1) .and. &
                (jstart == jend .and. fullLoop2)) then
              ! s1 fully attached to s2
@@ -1393,7 +1400,7 @@ module stringOps
                 ! until we find
                 i = iStart
                 do ii=1, nIElemsBeg
-                   i = nextNode(s, i)
+                   i = nextNode(s1, i)
                    if (i == iStart_j) then
                       iStart = iStart_j
                       exit
@@ -1406,7 +1413,7 @@ module stringOps
                 ! until we find
                 i = iEnd
                 do ii=1, nIElemsBeg
-                   i = prevNode(s, i)
+                   i = prevNode(s1, i)
                    if (i == iEnd_j) then
                       iEnd = iEnd_j
                       exit
@@ -1429,10 +1436,6 @@ module stringOps
 
           ! Do actual cross zip
           call crossZip(s1, iStart, iEnd, s2, jStart, jEnd)
-
-          ! Flag all the nodes in xZipUsed as used:
-          call flagNodesUsed(s1, iStart, iEnd, .True.)
-          call flagNodesUsed(s2, jStart, jEnd, .False.)
 
           ! Find the next starting index:
           curIStart = startNode(s1)
@@ -1847,7 +1850,7 @@ module stringOps
 
     ! Allocate space for pocket triangles.
     ! (n-sided polygon -> n-2 triangles)
-    allocate(pocketMaster%tris(3, pocketMaster%nElems))
+    allocate(pocketMaster%tris(3, 10*pocketMaster%nElems))
     allocate(pocketMaster%edges(4*pocketMaster%nElems))
     pocketMaster%nTris = 0
 
@@ -1855,7 +1858,7 @@ module stringOps
     pocketMaster%tree => kdtree2_create(pocketMaster%x, sort=.True.)
 
     if (debugZipper) then
-       open(unit=101, file="pocketStrings.dat", form='formatted')
+       open(unit=101, file="strings_pocket.dat", form='formatted')
        write(101,*) 'TITLE = "PocketStrings Data" '
 
        write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
@@ -2696,12 +2699,13 @@ module stringOps
 
   end subroutine writeOversetString
 
-  subroutine writeOversetTriangles(string, fileName)
+  subroutine writeOversetTriangles(string, fileName, startTri, endTri)
 
     use constants
     implicit none
 
     type(oversetString), intent(inout) :: string
+    integer(kind=intType), intent(in) :: startTri, endTri
     character(*) :: fileName
     integer(kind=intType) :: i, j
     character(80) :: zoneName
@@ -2713,7 +2717,7 @@ module stringOps
     write (zoneName,"(a,I5.5)") "Zone T=triangles_", string%myID
     write (101, *) trim(zoneName)
 
-    write (101,*) "Nodes = ", string%nNodes, " Elements= ", string%nTris, " ZONETYPE=FETRIANGLE"
+    write (101,*) "Nodes = ", string%nNodes, " Elements= ", (endTri-startTri+1), " ZONETYPE=FETRIANGLE"
     write (101,*) "DATAPACKING=POINT"
 13  format (E20.12)
 
@@ -2726,7 +2730,7 @@ module stringOps
     end do
 
 15  format(I5, I5, I5)
-    do i=1, string%nTris
+    do i=startTri, endTri
        write(101, 15) string%tris(1, i), string%tris(2, i), string%tris(3, i)
     end do
     close(101)

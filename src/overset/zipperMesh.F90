@@ -566,7 +566,7 @@ contains
     ! Local
     type(oversetString), dimension(:), allocatable, target :: strings
     type(oversetString), pointer :: str
-    integer(kind=intType) :: nStrings, i, j
+    integer(kind=intType) :: nStrings, i, j, nTriSelf
 
     call createOrderedStrings(master, strings, nStrings)
 
@@ -605,7 +605,7 @@ contains
     call stringMatch(strings, nStrings, debugZipper)
 
     if (debugZipper) then
-       open(unit=101, file="fullGapStrings.dat", form='formatted')
+       open(unit=101, file="strings_beforeSelfZip.dat", form='formatted')
        write(101,*) 'TITLE = "Gap Strings Data" '
        write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
             "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
@@ -618,14 +618,29 @@ contains
     call performSelfZip(master, strings, nStrings, debugZipper)
 
    ! Write out any self-zipped triangles
+    nTriSelf = master%nTris
     if (debugZipper) then
-       call writeOversetTriangles(master, "selfzipTriangulation.dat")
+       call writeOversetTriangles(master, "selfzipTriangulation.dat", 1, master%nTris)
     end if
 
+    ! Write out the gaps AFTER the self zip
+    if (debugZipper) then
+       open(unit=101, file="strings_afterSelfZip.dat", form='formatted')
+       write(101,*) 'TITLE = "Gap Strings Data" '
+       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+       do i=1, nStrings
+          call writeOversetString(strings(i), strings, nStrings, 101)
+       end do
+       close(101)
+    end if
+
+    ! Now do the cross zip
     call makeCrossZip(master, strings, nStrings, debugZipper)
 
+    ! And write out the triangle from the cross zip
     if (debugZipper) then
-       call writeOversetTriangles(master, "fullTriangulation.dat")
+       call writeOversetTriangles(master, "crossZipTriangulation.dat", nTriSelf+1, master%nTris)
     end if
 
     ! ---------------------------------------------------------------
@@ -633,13 +648,10 @@ contains
     ! been used twice (orphan edges) will be ultimately gathered to
     ! form polygon pockets to be zipped.
 
-    if (debugZipper) then
-       print *,'Performing pocket zipping'
-    end if
     call makePocketZip(master, strings, nStrings, pocketMaster, debugZipper)
 
     if (debugZipper) then
-       call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat")
+       call writeOversetTriangles(pocketMaster, "pocketTriangulation.dat", 1, pocketMaster%nTris)
     end if
 
     ! Clean up the reminder of the sting memory on the root proc
