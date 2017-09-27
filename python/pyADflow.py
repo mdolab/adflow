@@ -104,6 +104,8 @@ class ADFLOW(AeroSolver):
         """
     def __init__(self, comm=None, options=None, debug=False, dtype='d'):
 
+        startInitTime = time.time()
+        
         # Load the compiled module using MExt, allowing multiple
         # imports
         try:
@@ -111,6 +113,8 @@ class ADFLOW(AeroSolver):
         except:
             curDir = os.path.dirname(os.path.realpath(__file__))
             self.adflow = MExt.MExt('libadflow', [curDir], debug=debug)._module
+
+        libLoadTime = time.time()
 
         # Information for base class:
         name = 'ADFLOW'
@@ -159,9 +163,12 @@ class ADFLOW(AeroSolver):
         # Set all internal adflow default options before we set anything from python
         self.adflow.inputparamroutines.setdefaultvalues()
 
+        defSetupTime = time.time()
+        
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
 
+        baseClassTime = time.time()
         # Update turbresscale depending on the turbulence model specified
         self._updateTurbResScale()
 
@@ -226,8 +233,15 @@ class ADFLOW(AeroSolver):
             self.adflow.partitioning.partitionandreadgrid(True)
             return
 
+        introTime = time.time()
+
         self.adflow.partitioning.partitionandreadgrid(False)
+
+        partitioningTime = time.time()
+        
         self.adflow.preprocessingapi.preprocessing()
+
+        preprocessingTime = time.time()
 
         # Do explict hole cutting.
         ncells = self.adflow.adjointvars.ncellslocal[0]
@@ -275,6 +289,8 @@ class ADFLOW(AeroSolver):
         if self.meshFamilyGroup is None:
             self.meshFamilyGroup = self.allWallsGroup
 
+        familySetupTime = time.time()
+            
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption('cutCallBack')
         flag = numpy.zeros(n)
@@ -282,6 +298,8 @@ class ADFLOW(AeroSolver):
             xCen = self.adflow.utils.getcellcenters(1, n).T
             cutCallBack(xCen, flag)
 
+        cutCallBackTime = time.time()
+        
         # Need to reset the oversetPriority option since the CGNSGrid
         # structure wasn't available before;
         self.setOption('oversetPriority', self.getOption('oversetPriority'))
@@ -297,11 +315,37 @@ class ADFLOW(AeroSolver):
 
         famList = self._getFamilyList(self.closedFamilyGroup)
         self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
+
+        oversetPreTime = time.time()
+
         self.adflow.tecplotio.initializeliftdistributiondata()
         self.adflow.initializeflow.updatebcdataalllevels()
         self.adflow.initializeflow.initflow()
 
+        initFlowTime = time.time()
+
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
+
+        finalInitTime = time.time()
+
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('+--------------------------------------------------+')
+            print('|')
+            print('| Initialization Times:')
+            print('|')
+            print('| %-30s: %10.3f sec'%('Library Load Time',libLoadTime - startInitTime))
+            print('| %-30s: %10.3f sec'%('Set Defaults Time',defSetupTime - libLoadTime))
+            print('| %-30s: %10.3f sec'%('Base class init Time',baseClassTime - defSetupTime))
+            print('| %-30s: %10.3f sec'%('Introductory Time',introTime - baseClassTime))
+            print('| %-30s: %10.3f sec'%('Partitioning Time',partitioningTime - introTime))
+            print('| %-30s: %10.3f sec'%('Preprocessing Time',preprocessingTime - partitioningTime))
+            print('| %-30s: %10.3f sec'%('Family Setup Time',familySetupTime - preprocessingTime)) 
+            print('| %-30s: %10.3f sec'%('Cut callback Time',cutCallBackTime - familySetupTime))
+            print('| %-30s: %10.3f sec'%('Overset Preprocessing Time',oversetPreTime - cutCallBackTime))
+            print('| %-30s: %10.3f sec'%('Initialize Flow Time',initFlowTime - oversetPreTime))
+            print('|')
+            print('| %-30s: %10.3f sec'%('Total Init Time',finalInitTime - startInitTime))
+            print('+--------------------------------------------------+')
 
     def setMesh(self, mesh):
         """
@@ -821,6 +865,8 @@ class ADFLOW(AeroSolver):
             solver can suppress all I/O during intermediate solves.
             """
 
+        startCallTime = time.time()
+        
         # Make sure the user isn't trying to solve a slave
         # aeroproblem. Cannot do that
         if hasattr(aeroProblem, 'isSlave'):
@@ -829,9 +875,11 @@ class ADFLOW(AeroSolver):
 
         # Get option about adjoint memory
         releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
-
+        
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
+
+        aeroProblemSetTime = time.time()
 
         # Set filenames for possible forced write during solution
         self._setForcedFileNames()
@@ -847,6 +895,8 @@ class ADFLOW(AeroSolver):
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
 
+        memoryReleaseTime = time.time()
+        
         # Clear out any saved adjoint RHS since they are now out of
         # data. Also increment the counter for this case.
         self.curAP.adflowData.adjointRHS = OrderedDict()
@@ -897,7 +947,7 @@ class ADFLOW(AeroSolver):
         self.adflow.killsignals.routinefailed =  False
         self.adflow.killsignals.fatalfail = False
         sys.stdout.flush()
-        t1 = time.time()
+        t1 = time.time() #Signal check time
 
         # Solve the equations in appropriate mode
         mode = self.getOption('equationMode').lower()
@@ -945,17 +995,31 @@ class ADFLOW(AeroSolver):
         t2 = time.time()
         solTime = t2 - t1
 
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('Solution Time: %10.3f sec'% solTime)
-
         # Post-Processing
         # --------------------------------------------------------------
         # Solution is written if writeSolution argument true or does not exist
         if kwargs.pop('writeSolution', True):
             self.writeSolution()
 
+        writeSolutionTime = time.time()
+
         if self.getOption('TSStability'):
-            self.computeStabilityParameters()
+            self.computeStabilityParameters() # should this be in evalFuncs?
+
+        stabilityParameterTime = time.time()
+
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('+-------------------------------------------------+')
+            print('|')
+            print('| Solution Timings:')
+            print('|')
+            print('| %-30s: %10.3f sec'%('Set AeroProblem Time',t1 - startCallTime))
+            print('| %-30s: %10.3f sec'%('Solution Time',solTime))
+            print('| %-30s: %10.3f sec'%('Write Solution Time',writeSolutionTime - t2))
+            print('| %-30s: %10.3f sec'%('Stability Parameter Time',stabilityParameterTime - writeSolutionTime))
+            print('|')
+            print('| %-30s: %10.3f sec'%('Total Call Time',stabilityParameterTime - startCallTime))
+            print('+--------------------------------------------------+')
 
     def _solverunsteady(self, surfaceMeshCallback=None, volumeMeshCallback=None):
         """
@@ -1066,8 +1130,13 @@ class ADFLOW(AeroSolver):
         >>> # {'cl_c1':0.501, 'cd_c1':0.02750}
         """
 
+        startEvalTime = time.time()
+        
         # Set the AP
         self.setAeroProblem(aeroProblem)
+
+        aeroProblemTime = time.time()
+        
         if evalFuncs is None:
             evalFuncs = sorted(list(self.curAP.evalFuncs))
 
@@ -1125,6 +1194,8 @@ class ADFLOW(AeroSolver):
                 if g[1].lower() in callBackFuncs:
                     callBackFuncs[g[1]] = res[g[0]]
 
+        getSolutionTime = time.time()
+                    
         # Execute the user supplied functions if there are any
         for f in self.adflowUserCostFunctions:
             if f in evalFuncs:
@@ -1133,6 +1204,20 @@ class ADFLOW(AeroSolver):
                 value = callBackFuncs[key]
                 funcs[self.curAP.name + '_%s'%key] = value
 
+        userFuncTime = time.time()
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('+---------------------------------------------------+')
+            print('|')
+            print('| Function Timings:')
+            print('|')
+            print('| %-30s: %10.3f sec'%('Function AeroProblem Time',aeroProblemTime - startEvalTime))
+            print('| %-30s: %10.3f sec'%('Function Evaluation Time',getSolutionTime - aeroProblemTime)) 
+            print('| %-30s: %10.3f sec'%('User Function Evaluation Time',userFuncTime - getSolutionTime))
+            print('|')
+            print('| %-30s: %10.3f sec'%('Total Function Evaluation Time',userFuncTime - startEvalTime))
+            print('+--------------------------------------------------+')
+
+            
     def _getFuncsBar(self, f):
         # Internal routine to return the funcsBar dictionary for the
         # given objective. For regular functions this just sets a 1.0
@@ -1175,8 +1260,12 @@ class ADFLOW(AeroSolver):
         # out of adflow. If you want a derivative, it should come from
         # here.
 
+        startEvalSensTime = time.time()
+
         self.setAeroProblem(aeroProblem)
 
+        aeroProblemTime = time.time()
+        
         if evalFuncs is None:
             evalFuncs = sorted(list(self.curAP.evalFuncs))
 
@@ -1186,6 +1275,10 @@ class ADFLOW(AeroSolver):
             tmp.append(f.lower())
         evalFuncs = tmp
 
+        adjointStartTime = {}
+        adjointEndTime = {}
+        totalSensEndTime = {}
+        
         # Do the functions one at a time:
         for f in evalFuncs:
             if f in self.adflowCostFunctions:
@@ -1194,6 +1287,8 @@ class ADFLOW(AeroSolver):
                 pass
             else:
                 raise Error('Supplied %s function is not known to ADflow.'%f)
+
+            adjointStartTime[f] = time.time()
 
             if self.comm.rank == 0:
                 print('Solving adjoint: %s'%f)
@@ -1207,6 +1302,7 @@ class ADFLOW(AeroSolver):
             # Solve adjoint equation
             self.solveAdjoint(aeroProblem, f)
 
+            adjointEndTime[f] = time.time()
             # Now, due to the use of the super combined
             # computeJacobianVectorProductBwd() routine, we can complete
             # the total derivative computation in a single call. We
@@ -1222,6 +1318,22 @@ class ADFLOW(AeroSolver):
             # Compute everything and update into the dictionary
             funcsSens[key].update(self.computeJacobianVectorProductBwd(
                 resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True))
+
+            totalSensEndTime[f] = time.time()
+
+        finalEvalSensTime = time.time()
+        
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('+--------------------------------------------------+')
+            print('|')
+            print('| Adjoint Times:')
+            print('|')
+            for f in evalFuncs:
+                print('| %-30s: %10.3f sec'%('Adjoint Solve Time - %s'%(f),adjointEndTime[f]-adjointStartTime[f]))
+                print('| %-30s: %10.3f sec'%('Total Sensitivity Time - %s'%(f),totalSensEndTime[f] - adjointEndTime[f]))
+            print('|')
+            print('| %-30s: %10.3f sec'%('Complete Sensitivity Time',finalEvalSensTime - startEvalSensTime))
+            print('+--------------------------------------------------+')
 
     def solveCL(self, aeroProblem, CLStar, alpha0=None,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
