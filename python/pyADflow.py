@@ -4204,6 +4204,7 @@ class ADFLOW(AeroSolver):
             'ankcoupledswitchtol':[float, 1e-10],
             'anksarelax':[float, 0.0],
             'ankturbswitchtol' : [float, 1e-16],
+            'anknsubiterturb' : [int, 1],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4502,6 +4503,7 @@ class ADFLOW(AeroSolver):
             'ankcflexponent':['ank','ank_cflexponent'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
             'anksarelax':['ank', 'ank_sarelax'],
+            'anknsubiterturb':['ank', 'ank_nsubiterturb'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
