@@ -98,6 +98,7 @@ contains
     use paramTurb
     use section
     use inputPhysics
+    use inputDiscretization, only : sa_relax
     use flowVarRefState
     implicit none
 
@@ -321,12 +322,13 @@ contains
                 qq(i,j,k) = -two*term2*w(i,j,k,itu1)                      &
                      -  dist2Inv*w(i,j,k,itu1)*w(i,j,k,itu1)         &
                      * (rsaCb1*kar2Inv*(dfv2-ft2*dfv2-fv2*dft2+dft2) &
-                     -  rsaCw1*dfw)
+                     -  rsaCw1*dfw)&
+                      + (term1 - w(i,j,k,itu1)*dft2)*sa_relax ! Additional stuff that was ignored before
 
                 ! A couple of terms in qq may lead to a negative
                 ! contribution. Clip qq to zero, if the total is negative.
 
-                qq(i,j,k) = max(qq(i,j,k), zero)
+                qq(i,j,k) = max(qq(i,j,k), sa_relax*qq(i,j,k))
 #endif
 #ifdef TAPENADE_REVERSE
              end do
@@ -345,6 +347,7 @@ contains
 
     use blockPointers
     use paramTurb
+    use inputDiscretization, only : sa_relax
     implicit none
     ! Local variables.
     integer(kind=intType) :: i, j, k, nn, ii
@@ -453,10 +456,10 @@ contains
 
                 if(k == 2) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - b1*max(bmtk1(i,j,itu1,itu1),zero)
+                        - b1*max(bmtk1(i,j,itu1,itu1), sa_relax*bmtk1(i,j,itu1,itu1))
                 else if(k == kl) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - d1*max(bmtk2(i,j,itu1,itu1),zero)
+                        - d1*max(bmtk2(i,j,itu1,itu1), sa_relax*bmtk2(i,j,itu1,itu1))
                 else
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
@@ -552,10 +555,10 @@ contains
 
                 if(j == 2) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - b1*max(bmtj1(i,k,itu1,itu1),zero)
+                        - b1*max(bmtj1(i,k,itu1,itu1), sa_relax*bmtj1(i,k,itu1,itu1))
                 else if(j == jl) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - d1*max(bmtj2(i,k,itu1,itu1),zero)
+                        - d1*max(bmtj2(i,k,itu1,itu1), sa_relax*bmtj2(i,k,itu1,itu1))
                 else
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
@@ -651,10 +654,10 @@ contains
 
                 if(i == 2) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - b1*max(bmti1(j,k,itu1,itu1),zero)
+                        - b1*max(bmti1(j,k,itu1,itu1), sa_relax*bmtj1(i,k,itu1,itu1))
                 else if(i == il) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - d1*max(bmti2(j,k,itu1,itu1),zero)
+                        - d1*max(bmti2(j,k,itu1,itu1), sa_relax*bmtj2(i,k,itu1,itu1))
                 else
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
@@ -715,6 +718,7 @@ contains
     use blockPointers
     use inputIteration
     use inputPhysics
+    use inputDiscretization, only : sa_relax
     use paramTurb
     use turbutils
     use turbCurveFits, only : curveTupYp
@@ -915,8 +919,8 @@ contains
              cdm  = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
              cdp  = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
 
-             c1m = max(cdm+cam, zero)
-             c1p = max(cdp+cap, zero)
+             c1m = max(cdm+cam, sa_relax*(cdm+cam))
+             c1p = max(cdp+cap, sa_relax*(cdp+cap))
 
              bb(j) = -c1m
              dd(j) = -c1p
@@ -1039,8 +1043,8 @@ contains
              cdm  = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
              cdp  = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
 
-             c1m = max(cdm+cam, zero)
-             c1p = max(cdp+cap, zero)
+             c1m = max(cdm+cam, sa_relax*(cdm+cam))
+             c1p = max(cdp+cap, sa_relax*(cdp+cap))
 
              bb(i) = -c1m
              dd(i) = -c1p
@@ -1163,8 +1167,8 @@ contains
              cdm  = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
              cdp  = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
 
-             c1m = max(cdm+cam, zero)
-             c1p = max(cdp+cap, zero)
+             c1m = max(cdm+cam, sa_relax*(cdm+cam))
+             c1p = max(cdp+cap, sa_relax*(cdp+cap))
 
              bb(k) = -c1m
              dd(k) = -c1p
@@ -1259,4 +1263,3 @@ contains
   end subroutine saSolve
 #endif
 end module sa
-
