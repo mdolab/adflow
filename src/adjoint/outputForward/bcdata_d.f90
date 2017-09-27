@@ -93,16 +93,16 @@ contains
       return
     else
 ! determine the turbulence model and set the names accordingly.
-      select case  (turbmodel)
-      case (spalartallmaras, spalartallmarasedwards)
+      select case  (turbmodel) 
+      case (spalartallmaras, spalartallmarasedwards) 
         bcvarnames(offset+1) = cgnsturbsanu
-      case (komegawilcox, komegamodified, mentersst)
+      case (komegawilcox, komegamodified, mentersst) 
         bcvarnames(offset+1) = cgnsturbk
         bcvarnames(offset+2) = cgnsturbomega
-      case (ktau)
+      case (ktau) 
         bcvarnames(offset+1) = cgnsturbk
         bcvarnames(offset+2) = cgnsturbtau
-      case (v2f)
+      case (v2f) 
         bcvarnames(offset+1) = cgnsturbk
         bcvarnames(offset+2) = cgnsturbepsilon
         bcvarnames(offset+3) = cgnsturbv2
@@ -144,8 +144,8 @@ contains
     real(kind=realtype) :: t2
 !        ================================================================
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp. the total enthalpy is simply cp*tt.
       htd = gammaconstant*rgasdim*ttd/(gammaconstant-one)
       ht = gammaconstant*rgasdim*tt/(gammaconstant-one)
@@ -180,8 +180,8 @@ contains
     real(kind=realtype) :: t2
 !        ================================================================
 ! determine the cp model used in the computation.
-    select case  (cpmodel)
-    case (cpconstant)
+    select case  (cpmodel) 
+    case (cpconstant) 
 ! constant cp. the total enthalpy is simply cp*tt.
       ht = gammaconstant*rgasdim*tt/(gammaconstant-one)
     end select
@@ -217,28 +217,28 @@ contains
 ! set the pointers for coordinates and normals of the block
 ! face on which this subface is located. set factinlet
 ! such that factinlet*normals points into the domain.
-    select case  (bcfaceid(boco))
-    case (imin)
+    select case  (bcfaceid(boco)) 
+    case (imin) 
       xf => x(1, :, :, :)
       ss => si(1, :, :, :)
       factinlet = one
-    case (imax)
+    case (imax) 
       xf => x(il, :, :, :)
       ss => si(il, :, :, :)
       factinlet = -one
-    case (jmin)
+    case (jmin) 
       xf => x(:, 1, :, :)
       ss => sj(:, 1, :, :)
       factinlet = one
-    case (jmax)
+    case (jmax) 
       xf => x(:, jl, :, :)
       ss => sj(:, jl, :, :)
       factinlet = -one
-    case (kmin)
+    case (kmin) 
       xf => x(:, :, 1, :)
       ss => sk(:, :, 1, :)
       factinlet = one
-    case (kmax)
+    case (kmax) 
       xf => x(:, :, kl, :)
       ss => sk(:, :, kl, :)
       factinlet = -one
@@ -1593,14 +1593,14 @@ contains
     else
 ! not all variables are present. check what type of flow
 ! is to be solved.
-      select case  (flowtype)
-      case (internalflow)
+      select case  (flowtype) 
+      case (internalflow) 
 ! internal flow. data at the inlet must be specified;
 ! no free stream data can be taken.
         write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), &
 &       trim(cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
         call terminate('bcdatasupersonicinflow', errormessage)
-      case (externalflow)
+      case (externalflow) 
 !=============================================================
 ! external flow. free stream data is used.
         do j=jbeg,jend
@@ -1846,8 +1846,8 @@ contains
     else
 ! not all variables are present. check what type of flow
 ! is to be solved.
-      select case  (flowtype)
-      case (internalflow)
+      select case  (flowtype) 
+      case (internalflow) 
 ! internal flow. data at the inlet must be specified;
 ! no free stream data can be taken.
         write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), &
@@ -1871,7 +1871,7 @@ contains
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%ps = 0.0_8
         end do
-      case (externalflow)
+      case (externalflow) 
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%rho = 0.0_8
         end do
@@ -2331,24 +2331,24 @@ contains
 ! set the reference values depending on the turbulence model.
       nurefd = (murefd*rhoref-muref*rhorefd)/rhoref**2
       nuref = muref/rhoref
-      select case  (turbmodel)
-      case (spalartallmaras, spalartallmarasedwards)
+      select case  (turbmodel) 
+      case (spalartallmaras, spalartallmarasedwards) 
         refd = 0.0_8
         refd(itu1) = nurefd
         ref(itu1) = nuref
-      case (komegawilcox, komegamodified, mentersst)
+      case (komegawilcox, komegamodified, mentersst) 
         refd = 0.0_8
         refd(itu1) = (prefd*rhoref-pref*rhorefd)/rhoref**2
         ref(itu1) = pref/rhoref
         refd(itu2) = (refd(itu1)*nuref-ref(itu1)*nurefd)/nuref**2
         ref(itu2) = ref(itu1)/nuref
-      case (ktau)
+      case (ktau) 
         refd = 0.0_8
         refd(itu1) = (prefd*rhoref-pref*rhorefd)/rhoref**2
         ref(itu1) = pref/rhoref
         refd(itu2) = (nurefd*ref(itu1)-nuref*refd(itu1))/ref(itu1)**2
         ref(itu2) = nuref/ref(itu1)
-      case (v2f)
+      case (v2f) 
         refd = 0.0_8
         refd(itu1) = (prefd*rhoref-pref*rhorefd)/rhoref**2
         ref(itu1) = pref/rhoref
@@ -2433,16 +2433,16 @@ turbloop:do nn=nt1,nt2
     else
 ! set the reference values depending on the turbulence model.
       nuref = muref/rhoref
-      select case  (turbmodel)
-      case (spalartallmaras, spalartallmarasedwards)
+      select case  (turbmodel) 
+      case (spalartallmaras, spalartallmarasedwards) 
         ref(itu1) = nuref
-      case (komegawilcox, komegamodified, mentersst)
+      case (komegawilcox, komegamodified, mentersst) 
         ref(itu1) = pref/rhoref
         ref(itu2) = ref(itu1)/nuref
-      case (ktau)
+      case (ktau) 
         ref(itu1) = pref/rhoref
         ref(itu2) = nuref/ref(itu1)
-      case (v2f)
+      case (v2f) 
         ref(itu1) = pref/rhoref
         ref(itu4) = ref(itu1)/nuref
         ref(itu2) = ref(itu1)*ref(itu4)

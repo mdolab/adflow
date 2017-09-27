@@ -312,7 +312,7 @@ contains
         chi = eddyratio
       end if
 ! the actual newton algorithm.
-      do
+      do 
 ! compute the function value and the derivative.
         chi2 = chi*chi
         chi3 = chi*chi2
@@ -377,16 +377,16 @@ contains
     integer(kind=inttype) :: i, j, k, ii, jj, nn
     real(kind=realtype) :: oneoverdt, tmp
 ! determine the equation mode.
-    select case  (equationmode)
-    case (steady)
+    select case  (equationmode) 
+    case (steady) 
 ! steady computation. no time derivative present.
       return
-    case (unsteady)
+    case (unsteady) 
 !===============================================================
 ! the time deritvative term depends on the integration
 ! scheme used.
-      select case  (timeintegrationscheme)
-      case (bdf)
+      select case  (timeintegrationscheme) 
+      case (bdf) 
 ! backward difference formula is used as time
 ! integration scheme.
 ! store the inverse of the physical nondimensional
@@ -424,13 +424,13 @@ nadvloopunsteady:do ii=1,nadv
             end do
           end do
         end do nadvloopunsteady
-      case (explicitrk)
+      case (explicitrk) 
 !===========================================================
 ! explicit time integration scheme. the time derivative
 ! is handled differently.
         return
       end select
-    case (timespectral)
+    case (timespectral) 
 !===============================================================
 ! time spectral method.
 ! loop over the number of turbulent transport equations.
@@ -514,8 +514,8 @@ nadvloopspectral:do ii=1,nadv
         kbeg = 2
         kend = kl
       end if
-      select case  (turbmodel)
-      case (spalartallmaras, spalartallmarasedwards)
+      select case  (turbmodel) 
+      case (spalartallmaras, spalartallmarasedwards) 
         call saeddyviscosity_b(ibeg, iend, jbeg, jend, kbeg, kend)
       end select
     end if
@@ -570,8 +570,8 @@ nadvloopspectral:do ii=1,nadv
         kbeg = 2
         kend = kl
       end if
-      select case  (turbmodel)
-      case (spalartallmaras, spalartallmarasedwards)
+      select case  (turbmodel) 
+      case (spalartallmaras, spalartallmarasedwards) 
         call saeddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)
       end select
     end if

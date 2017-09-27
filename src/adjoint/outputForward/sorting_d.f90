@@ -50,7 +50,7 @@ contains
     ii = size(base)
     entryfound = .false.
 ! binary search to find key.
-    do 100
+    do 100 
 ! condition for breaking the loop
       if (ii .ne. 0) then
 ! determine the position in the array to compare.
