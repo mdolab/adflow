@@ -1694,6 +1694,7 @@ module ANKSolver
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
   logical :: ANK_coupled=.False.
+  real(kind=realType) :: ANK_saRelax
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
@@ -2749,7 +2750,7 @@ contains
     use communication, only : myid
     use inputPhysics, only : equations
     use inputIteration, only : L2conv, nsubiterturb, turbResScale
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : lumpedDiss, sa_relax
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor
     use utils, only : EChk
@@ -2935,6 +2936,8 @@ contains
     if ((.not. ANK_coupled) .and. equations == RANSEquations) then ! Turb either gets dadi or KSP
 
         if (ANK_useTurbDADI) then ! Do DDADI update
+            ! parameter to control the approximations in the ddadi jacobian for turbulence
+            sa_relax = min(ANK_saRelax*totalR0/totalR, one)
             call computeUtau
             call turbSolveSegregated
         else ! Do ksp update
