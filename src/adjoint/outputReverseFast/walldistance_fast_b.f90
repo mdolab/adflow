@@ -10,7 +10,7 @@ module walldistance_fast_b
 !                    no tapenade routine below this line               |
 !                                                                      |
 ! ----------------------------------------------------------------------
-  save
+  save 
 
 contains
   subroutine updatewalldistancesquickly(nn, level, sps)

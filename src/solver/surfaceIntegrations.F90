@@ -19,7 +19,8 @@ contains
 
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
-    real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment, cForce, cMoment
+    real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceP, forceV, forceM, &
+         moment, cForce, cForceP, cForceV, cForceM, cMoment
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                             mAvgVx, mAvgVy, mAvgVz, mAvgnx, mAvgny, mAvgnz, mAvgU, sigmaMN, sigmaPtot
@@ -33,13 +34,19 @@ contains
     ovrNTS = one/nTimeIntervalsSpectral
 
     ! Sum pressure and viscous contributions
-    Force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
+    force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
+    forceP = globalvals(iFp:iFp+2, :) 
+    forceV = globalvals(iFv:iFv+2, :)
+    forceM = globalvals(iFlowFm:iFlowFm+2, :)
 
     Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
          *surfaceRef*LRef*LRef*pRef)
     cForce = fact*force
+    cForceP = fact*forceP
+    cForceV = fact*forceV
+    cForceM = fact*forceM
 
     ! Moment factor has an extra lengthRef
     fact = fact/(lengthRef*LRef)
@@ -55,9 +62,37 @@ contains
        funcValues(costFuncForceY) = funcValues(costFuncForceY) + ovrNTS*force(2, sps)
        funcValues(costFuncForceZ) = funcValues(costFuncForceZ) + ovrNTS*force(3, sps)
 
+       funcValues(costFuncForceXPressure) = funcValues(costFuncForceXPressure) + ovrNTS*forceP(1, sps)
+       funcValues(costFuncForceYPressure) = funcValues(costFuncForceYPressure) + ovrNTS*forceP(2, sps)
+       funcValues(costFuncForceZPressure) = funcValues(costFuncForceZPressure) + ovrNTS*forceP(3, sps)
+
+       funcValues(costFuncForceXViscous) = funcValues(costFuncForceXViscous) + ovrNTS*forceV(1, sps)
+       funcValues(costFuncForceYViscous) = funcValues(costFuncForceYViscous) + ovrNTS*forceV(2, sps)
+       funcValues(costFuncForceZViscous) = funcValues(costFuncForceZViscous) + ovrNTS*forceV(3, sps)
+
+       funcValues(costFuncForceXMomentum) = funcValues(costFuncForceXMomentum) + ovrNTS*forceM(1, sps)
+       funcValues(costFuncForceYMomentum) = funcValues(costFuncForceYMomentum) + ovrNTS*forceM(2, sps)
+       funcValues(costFuncForceZMomentum) = funcValues(costFuncForceZMomentum) + ovrNTS*forceM(3, sps)
+
+       ! ------------
+
        funcValues(costFuncForceXCoef) = funcValues(costFuncForceXCoef) + ovrNTS*cForce(1, sps)
        funcValues(costFuncForceYCoef) = funcValues(costFuncForceYCoef) + ovrNTS*cForce(2, sps)
        funcValues(costFuncForceZCoef) = funcValues(costFuncForceZCoef) + ovrNTS*cForce(3, sps)
+
+       funcValues(costFuncForceXCoefPressure) = funcValues(costFuncForceXCoefPressure) + ovrNTS*cForceP(1, sps)
+       funcValues(costFuncForceYCoefPressure) = funcValues(costFuncForceYCoefPressure) + ovrNTS*cForceP(2, sps)
+       funcValues(costFuncForceZCoefPressure) = funcValues(costFuncForceZCoefPressure) + ovrNTS*cForceP(3, sps)
+
+       funcValues(costFuncForceXCoefViscous) = funcValues(costFuncForceXCoefViscous) + ovrNTS*cForceV(1, sps)
+       funcValues(costFuncForceYCoefViscous) = funcValues(costFuncForceYCoefViscous) + ovrNTS*cForceV(2, sps)
+       funcValues(costFuncForceZCoefViscous) = funcValues(costFuncForceZCoefViscous) + ovrNTS*cForceV(3, sps)
+
+       funcValues(costFuncForceXCoefMomentum) = funcValues(costFuncForceXCoefMomentum) + ovrNTS*cForceM(1, sps)
+       funcValues(costFuncForceYCoefMomentum) = funcValues(costFuncForceYCoefMomentum) + ovrNTS*cForceM(2, sps)
+       funcValues(costFuncForceZCoefMomentum) = funcValues(costFuncForceZCoefMomentum) + ovrNTS*cForceM(3, sps)
+
+       ! ------------
 
        funcValues(costFuncMomX) = funcValues(costFuncMomX) + ovrNTS*moment(1, sps)
        funcValues(costFuncMomY) = funcValues(costFuncMomY) + ovrNTS*moment(2, sps)
@@ -143,20 +178,87 @@ contains
          funcValues(costFuncForceY)*liftDirection(2) + &
          funcValues(costFuncForceZ)*liftDirection(3)
 
+    funcValues(costFuncLiftPressure) = &
+         funcValues(costFuncForceXPressure)*liftDirection(1) + &
+         funcValues(costFuncForceYPressure)*liftDirection(2) + &
+         funcValues(costFuncForceZPressure)*liftDirection(3)
+
+    funcValues(costFuncLiftViscous) = &
+         funcValues(costFuncForceXViscous)*liftDirection(1) + &
+         funcValues(costFuncForceYViscous)*liftDirection(2) + &
+         funcValues(costFuncForceZViscous)*liftDirection(3)
+
+    funcValues(costFuncLiftMomentum) = &
+         funcValues(costFuncForceXMomentum)*liftDirection(1) + &
+         funcValues(costFuncForceYMomentum)*liftDirection(2) + &
+         funcValues(costFuncForceZMomentum)*liftDirection(3)
+
+    !-----
+
     funcValues(costFuncDrag) = &
          funcValues(costFuncForceX)*dragDirection(1) + &
          funcValues(costFuncForceY)*dragDirection(2) + &
          funcValues(costFuncForceZ)*dragDirection(3)
+
+    funcValues(costFuncDragPressure) = &
+         funcValues(costFuncForceXPressure)*dragDirection(1) + &
+         funcValues(costFuncForceYPressure)*dragDirection(2) + &
+         funcValues(costFuncForceZPressure)*dragDirection(3)
+
+    funcValues(costFuncDragViscous) = &
+         funcValues(costFuncForceXViscous)*dragDirection(1) + &
+         funcValues(costFuncForceYViscous)*dragDirection(2) + &
+         funcValues(costFuncForceZViscous)*dragDirection(3)
+
+    funcValues(costFuncDragMomentum) = &
+         funcValues(costFuncForceXMomentum)*dragDirection(1) + &
+         funcValues(costFuncForceYMomentum)*dragDirection(2) + &
+         funcValues(costFuncForceZMomentum)*dragDirection(3)
+
+    !-----
 
     funcValues(costFuncLiftCoef) = &
          funcValues(costFuncForceXCoef)*liftDirection(1) + &
          funcValues(costFuncForceYCoef)*liftDirection(2) + &
          funcValues(costFuncForceZCoef)*liftDirection(3)
 
+    funcValues(costFuncLiftCoefPressure) = &
+         funcValues(costFuncForceXCoefPressure)*liftDirection(1) + &
+         funcValues(costFuncForceYCoefPressure)*liftDirection(2) + &
+         funcValues(costFuncForceZCoefPressure)*liftDirection(3)
+
+    funcValues(costFuncLiftCoefViscous) = &
+         funcValues(costFuncForceXCoefViscous)*liftDirection(1) + &
+         funcValues(costFuncForceYCoefViscous)*liftDirection(2) + &
+         funcValues(costFuncForceZCoefViscous)*liftDirection(3)
+
+    funcValues(costFuncLiftCoefMomentum) = &
+         funcValues(costFuncForceXCoefMomentum)*liftDirection(1) + &
+         funcValues(costFuncForceYCoefMomentum)*liftDirection(2) + &
+         funcValues(costFuncForceZCoefMomentum)*liftDirection(3)
+
+    !-----
+
     funcValues(costFuncDragCoef) = &
          funcValues(costFuncForceXCoef)*dragDirection(1) + &
          funcValues(costFuncForceYCoef)*dragDirection(2) + &
          funcValues(costFuncForceZCoef)*dragDirection(3)
+
+    funcValues(costFuncDragCoefPressure) = &
+         funcValues(costFuncForceXCoefPressure)*dragDirection(1) + &
+         funcValues(costFuncForceYCoefPressure)*dragDirection(2) + &
+         funcValues(costFuncForceZCoefPressure)*dragDirection(3)
+
+    funcValues(costFuncDragCoefViscous) = &
+         funcValues(costFuncForceXCoefViscous)*dragDirection(1) + &
+         funcValues(costFuncForceYCoefViscous)*dragDirection(2) + &
+         funcValues(costFuncForceZCoefViscous)*dragDirection(3)
+
+    funcValues(costFuncDragCoefMomentum) = &
+         funcValues(costFuncForceXCoefMomentum)*dragDirection(1) + &
+         funcValues(costFuncForceYCoefMomentum)*dragDirection(2) + &
+         funcValues(costFuncForceZCoefMomentum)*dragDirection(3)
+
 
     ! -------------------- Time Spectral Objectives ------------------
 

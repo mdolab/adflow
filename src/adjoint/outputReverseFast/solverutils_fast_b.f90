@@ -101,8 +101,8 @@ contains
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond)
-      case (noprecond)
+      select case  (precond) 
+      case (noprecond) 
         do ii=0,ie*je*ke-1
           i = mod(ii, ie) + 1
           j = mod(ii/ie, je) + 1
@@ -409,8 +409,8 @@ branch = myIntStack(myIntPtr)
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond)
-      case (noprecond)
+      select case  (precond) 
+      case (noprecond) 
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
         do ii=0,ie*je*ke-1
@@ -512,10 +512,10 @@ branch = myIntStack(myIntPtr)
             radk(i, j, k) = rk
           end if
         end do
-      case (turkel)
+      case (turkel) 
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
-      case (choimerkle)
+      case (choimerkle) 
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
@@ -725,18 +725,18 @@ branch = myIntStack(myIntPtr)
 ! loop over the three directions.
 loopdir:do mm=1,3
 ! set the upper boundaries depending on the direction.
-          select case  (mm)
-          case (1_inttype)
+          select case  (mm) 
+          case (1_inttype) 
 ! normals in i-direction
             iie = ie
             jje = je
             kke = ke
-          case (2_inttype)
+          case (2_inttype) 
 ! normals in j-direction
             iie = je
             jje = ie
             kke = ke
-          case (3_inttype)
+          case (3_inttype) 
 ! normals in k-direction
             iie = ke
             jje = ie
@@ -752,20 +752,20 @@ loopdir:do mm=1,3
 ! set the pointers for the coordinates, normals and
 ! normal velocities for this generalized i-plane.
 ! this depends on the value of mm.
-            select case  (mm)
-            case (1_inttype)
+            select case  (mm) 
+            case (1_inttype) 
 ! normals in i-direction
               xx => x(i, :, :, :)
               xxold => xold(:, i, :, :, :)
               ss => si(i, :, :, :)
               sface => sfacei(i, :, :)
-            case (2_inttype)
+            case (2_inttype) 
 ! normals in j-direction
               xx => x(:, i, :, :)
               xxold => xold(:, :, i, :, :)
               ss => sj(:, i, :, :)
               sface => sfacej(:, i, :)
-            case (3_inttype)
+            case (3_inttype) 
 ! normals in k-direction
               xx => x(:, :, i, :)
               xxold => xold(:, :, :, i, :)
@@ -881,18 +881,18 @@ loopdir:do mm=1,3
 ! loop over the three directions.
 loopdirection:do mm=1,3
 ! set the upper boundaries depending on the direction.
-          select case  (mm)
-          case (1_inttype)
+          select case  (mm) 
+          case (1_inttype) 
 ! normals in i-direction
             iie = ie
             jje = je
             kke = ke
-          case (2_inttype)
+          case (2_inttype) 
 ! normals in j-direction
             iie = je
             jje = ie
             kke = ke
-          case (3_inttype)
+          case (3_inttype) 
 ! normals in k-direction
             iie = ke
             jje = ie
@@ -908,18 +908,18 @@ loopdirection:do mm=1,3
 ! set the pointers for the coordinates, normals and
 ! normal velocities for this generalized i-plane.
 ! this depends on the value of mm.
-            select case  (mm)
-            case (1_inttype)
+            select case  (mm) 
+            case (1_inttype) 
 ! normals in i-direction
               xx => x(i, :, :, :)
               ss => si(i, :, :, :)
               sface => sfacei(i, :, :)
-            case (2_inttype)
+            case (2_inttype) 
 ! normals in j-direction
               xx => x(:, i, :, :)
               ss => sj(:, i, :, :)
               sface => sfacej(:, i, :)
-            case (3_inttype)
+            case (3_inttype) 
 ! normals in k-direction
               xx => x(:, :, i, :)
               ss => sk(:, :, i, :)
@@ -1045,23 +1045,23 @@ bocoloop1:do mm=1,nviscbocos
         uslip => bcdata(mm)%uslip
 ! determine the grid face on which the subface is located
 ! and set some variables accordingly.
-        select case  (bcfaceid(mm))
-        case (imin)
+        select case  (bcfaceid(mm)) 
+        case (imin) 
           xface => x(1, :, :, :)
           xfaceold => xold(:, 1, :, :, :)
-        case (imax)
+        case (imax) 
           xface => x(il, :, :, :)
           xfaceold => xold(:, il, :, :, :)
-        case (jmin)
+        case (jmin) 
           xface => x(:, 1, :, :)
           xfaceold => xold(:, :, 1, :, :)
-        case (jmax)
+        case (jmax) 
           xface => x(:, jl, :, :)
           xfaceold => xold(:, :, jl, :, :)
-        case (kmin)
+        case (kmin) 
           xface => x(:, :, 1, :)
           xfaceold => xold(:, :, :, 1, :)
-        case (kmax)
+        case (kmax) 
           xface => x(:, :, kl, :)
           xfaceold => xold(:, :, :, kl, :)
         end select
@@ -1235,18 +1235,18 @@ bocoloop1:do mm=1,nviscbocos
 bocoloop2:do mm=1,nviscbocos
 ! determine the grid face on which the subface is located
 ! and set some variables accordingly.
-        select case  (bcfaceid(mm))
-        case (imin)
+        select case  (bcfaceid(mm)) 
+        case (imin) 
           xface => x(1, :, :, :)
-        case (imax)
+        case (imax) 
           xface => x(il, :, :, :)
-        case (jmin)
+        case (jmin) 
           xface => x(:, 1, :, :)
-        case (jmax)
+        case (jmax) 
           xface => x(:, jl, :, :)
-        case (kmin)
+        case (kmin) 
           xface => x(:, :, 1, :)
-        case (kmax)
+        case (kmax) 
           xface => x(:, :, kl, :)
         end select
 ! store the rotation center and the rotation rate
@@ -1356,28 +1356,28 @@ bocoloop:do mm=1,nbocos
         if (associated(bcdata(mm)%rface)) then
 ! determine the block face on which the subface is
 ! located and set some variables accordingly.
-          select case  (bcfaceid(mm))
-          case (imin)
+          select case  (bcfaceid(mm)) 
+          case (imin) 
             mult = -one
             ss => si(1, :, :, :)
             sface => sfacei(1, :, :)
-          case (imax)
+          case (imax) 
             mult = one
             ss => si(il, :, :, :)
             sface => sfacei(il, :, :)
-          case (jmin)
+          case (jmin) 
             mult = -one
             ss => sj(:, 1, :, :)
             sface => sfacej(:, 1, :)
-          case (jmax)
+          case (jmax) 
             mult = one
             ss => sj(:, jl, :, :)
             sface => sfacej(:, jl, :)
-          case (kmin)
+          case (kmin) 
             mult = -one
             ss => sk(:, :, 1, :)
             sface => sfacek(:, :, 1)
-          case (kmax)
+          case (kmax) 
             mult = one
             ss => sk(:, :, kl, :)
             sface => sfacek(:, :, kl)

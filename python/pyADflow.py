@@ -30,7 +30,7 @@ import numpy
 import sys
 from mpi4py import MPI
 from petsc4py import PETSc
-from baseclasses import AeroSolver, AeroProblem
+from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from . import MExt
 from pprint import pprint as pp
 import hashlib
@@ -241,7 +241,7 @@ class ADFLOW(AeroSolver):
         nFam = self.adflow.surfacefamilies.getnfam()
         famList = []
         for i in range(nFam):
-            famList.append(self.adflow.surfacefamilies.getfam(i+1).strip())
+            famList.append(getPy3SafeString(self.adflow.surfacefamilies.getfam(i+1).strip()))
 
         # Add the initial families that already exist in the CGNS
         # file.
@@ -297,7 +297,6 @@ class ADFLOW(AeroSolver):
 
         famList = self._getFamilyList(self.closedFamilyGroup)
         self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
-
         self.adflow.tecplotio.initializeliftdistributiondata()
         self.adflow.initializeflow.updatebcdataalllevels()
         self.adflow.initializeflow.initflow()
@@ -2889,9 +2888,9 @@ class ADFLOW(AeroSolver):
 
                # Chain-rule to get the final derivative:
                funcsSens[dvName] = (
-                   tmp[self.curAP['P']][key]*dIdP +
-                   tmp[self.curAP['T']][key]*dIdT +
-                   tmp[self.curAP['rho']][key]*dIdrho)
+                   tmp[self.curAP['P']][dvName]*dIdP +
+                   tmp[self.curAP['T']][dvName]*dIdT +
+                   tmp[self.curAP['rho']][dvName]*dIdrho)
            elif key == 'mach':
                self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
                # Simular story for Mach: It is technically possible
@@ -2905,10 +2904,10 @@ class ADFLOW(AeroSolver):
                dIdP = dIda[self.possibleAeroDVs['p']]
                dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-               # Chain-rule to get the final derivative:
+               # Chain-rule to get the final derivative:             
                funcsSens[dvName] = (
-                   tmp[self.curAP['P']][key]*dIdP +
-                   tmp[self.curAP['rho']][key]*dIdrho +
+                   tmp[self.curAP['P']][dvName]*dIdP +
+                   tmp[self.curAP['rho']][dvName]*dIdrho +
                    dIda[self.possibleAeroDVs['mach']])
 
            elif key in self.possibleAeroDVs:
@@ -3575,6 +3574,7 @@ class ADFLOW(AeroSolver):
             The input vector maped to the families defined in groupName2.
 
         """
+
         if groupName1 not in self.families or groupName2 not in self.families:
             raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%(groupName1, groupName2))
@@ -3843,7 +3843,6 @@ class ADFLOW(AeroSolver):
         does *NOT* set the actual family group"""
         if groupName is None:
             groupName = self.allFamilies
-
         if groupName not in self.families:
             raise Error("'%s' is not a family in the CGNS file or has not been added"
                         " as a combination of families"%groupName)
@@ -4007,10 +4006,10 @@ class ADFLOW(AeroSolver):
             elif name == 'oversetpriority':
                 # Loop over each of the block names and call the fortran setter:
                 for blkName in value:
-                    setValue = self.adflow.oversetapi.setblockpriority(blkName.lower(), value[blkName])
+                    setValue = self.adflow.oversetapi.setblockpriority(blkName, value[blkName])
                     if not setValue and self.myid == 0:
                         ADFLOWWarning("The block name %s was not found in the CGNS file "
-                                      "and could not set it\'s priority"%blkName.lower())
+                                      "and could not set it\'s priority"%blkName)
 
             # Special option has been set so return from function
             return
@@ -4178,6 +4177,7 @@ class ADFLOW(AeroSolver):
             'nkouterpreconits':[int, 1],
             'nkcfl0':[float, 100.0],
             'nkls':[str, 'cubic'],
+            'nkfixedstep':[float, 0.25],
             'rkreset':[bool, False],
             'nrkreset':[int, 5],
 
@@ -4473,6 +4473,7 @@ class ADFLOW(AeroSolver):
                     'cubic':self.adflow.constants.cubiclinesearch,
                     'non monotone':self.adflow.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
+            'nkfixedstep':['nk', 'nk_fixedstep'],
             'rkreset':['iter', 'rkreset'],
             'nrkreset':['iter', 'miniternum'],
 
@@ -4643,12 +4644,27 @@ class ADFLOW(AeroSolver):
             'drag':self.adflow.constants.costfuncdrag,
             'cl'  :self.adflow.constants.costfuncliftcoef,
             'cd'  :self.adflow.constants.costfuncdragcoef,
+            'clp' :self.adflow.constants.costfuncliftcoefpressure,
+            'clv' :self.adflow.constants.costfuncliftcoefviscous,
+            'clm' :self.adflow.constants.costfuncliftcoefmomentum,
+            'cdp' :self.adflow.constants.costfuncdragcoefpressure,
+            'cdv' :self.adflow.constants.costfuncdragcoefviscous,
+            'cdm' :self.adflow.constants.costfuncdragcoefmomentum,
             'fx'  :self.adflow.constants.costfuncforcex,
             'fy'  :self.adflow.constants.costfuncforcey,
             'fz'  :self.adflow.constants.costfuncforcez,
             'cfx' :self.adflow.constants.costfuncforcexcoef,
+            'cfxp' :self.adflow.constants.costfuncforcexcoefpressure,
+            'cfxv' :self.adflow.constants.costfuncforcexcoefviscous,
+            'cfxm' :self.adflow.constants.costfuncforcexcoefmomentum,
             'cfy' :self.adflow.constants.costfuncforceycoef,
+            'cfyp' :self.adflow.constants.costfuncforceycoefpressure,
+            'cfyv' :self.adflow.constants.costfuncforceycoefviscous,
+            'cfym' :self.adflow.constants.costfuncforceycoefmomentum,
             'cfz' :self.adflow.constants.costfuncforcezcoef,
+            'cfzp' :self.adflow.constants.costfuncforcezcoefpressure,
+            'cfzv' :self.adflow.constants.costfuncforcezcoefviscous,
+            'cfzm' :self.adflow.constants.costfuncforcezcoefmomentum,
             'mx'  :self.adflow.constants.costfuncmomx,
             'my'  :self.adflow.constants.costfuncmomy,
             'mz'  :self.adflow.constants.costfuncmomz,
@@ -4686,6 +4702,21 @@ class ADFLOW(AeroSolver):
             'sigmaptot':self.adflow.constants.costfuncsigmaptot,
             'axismoment':self.adflow.constants.costfuncaxismoment,
             'flowpower':self.adflow.constants.costfuncflowpower,
+            'forcexpressure':self.adflow.constants.costfuncforcexpressure,
+            'forceypressure':self.adflow.constants.costfuncforceypressure,
+            'forcezpressure':self.adflow.constants.costfuncforcezpressure,
+            'forcexviscous':self.adflow.constants.costfuncforcexviscous,
+            'forceyviscous':self.adflow.constants.costfuncforceyviscous,
+            'forcezviscous':self.adflow.constants.costfuncforcezviscous,
+            'forcexmomentum':self.adflow.constants.costfuncforcexmomentum,
+            'forceymomentum':self.adflow.constants.costfuncforceymomentum,
+            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,     
+            'dragpressure':self.adflow.constants.costfuncdragpressure,       
+            'dragviscous':self.adflow.constants.costfuncdragviscous,       
+            'dragmomentum':self.adflow.constants.costfuncdragmomentum,       
+            'liftpressure':self.adflow.constants.costfuncliftpressure,       
+            'liftviscous':self.adflow.constants.costfuncliftviscous,       
+            'liftmomentum':self.adflow.constants.costfuncliftmomentum,                   
             }
 
         return iDV, BCDV, adflowCostFunctions
@@ -4845,7 +4876,7 @@ class ADFLOW(AeroSolver):
 
             # Generate the uncompacted point and connectivity list:
             pts = numpy.zeros((nPts, 3), dtype=self.dtype)
-            conn = numpy.zeros((nElem, 4))
+            conn = numpy.zeros((nElem, 4),dtype=int)
 
             nodeCount = 0
             elemCount = 0
@@ -4876,7 +4907,7 @@ class ADFLOW(AeroSolver):
             newConn = numpy.zeros_like(conn)
             for i in range(elemCount):
                 for j in range(4):
-                    newConn[i, j] = link[conn[i, j]]
+                    newConn[i, j] = link[int(conn[i, j])]
             conn = newConn
 
             # Now convert the connectivity to triangles if requested
