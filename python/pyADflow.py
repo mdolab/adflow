@@ -2638,6 +2638,9 @@ class ADFLOW(AeroSolver):
         if groupName is None:
             groupName = self.allWallsGroup
 
+        if includeZipper:
+            self._createZipperMesh()
+
         # Get the required size
         npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         pts = numpy.zeros((npts, 3), self.dtype)
