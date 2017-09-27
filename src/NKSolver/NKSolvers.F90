@@ -1696,6 +1696,7 @@ module ANKSolver
   logical :: ANK_coupled=.False.
   real(kind=realType) :: ANK_saRelax
   real(kind=realType) :: ANK_turbSwitchTol
+  integer(kind=intType) :: ANK_nSubIterTurb
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
@@ -2785,7 +2786,7 @@ contains
        if (totalR < ANK_coupledSwitchTol * totalR0) then
          ANK_coupled = .True.
          call destroyANKSolver()
-       else if (totalR < ANK_turbSwitchTol * totalR0)
+       else if (totalR < ANK_turbSwitchTol * totalR0) then
          ANK_useTurbDADI = .False.
          call destroyanksolver()
        else
@@ -2946,7 +2947,7 @@ contains
             call computeUtau
             call turbSolveSegregated
         else ! Do ksp update
-          do n_turb = 1, nsubiterturb ! Repeat for desired turbulent sub-iterations
+          do n_turb = 1, ANK_nsubiterturb ! Repeat for desired turbulent sub-iterations
 
             ! Re-calculate the turbulent residuals
             call computeResidualANKTurb()
