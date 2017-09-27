@@ -219,6 +219,8 @@ contains
     if( volWriteFilteredShock) nVolSolvar = nVolSolvar + 1
     if( volWriteGC  )          nVolSolvar = nVolSolvar + 1
     if( volWriteStatus )       nVolSolvar = nVolSolvar + 1
+    if( volWriteIntermittency ) nVolDiscrVar  = nVolDiscrVar + 1
+ 
     ! Check the discrete variables.
 
     if( volWriteResRho )  nVolDiscrVar  = nVolDiscrVar + 1
@@ -228,6 +230,7 @@ contains
          + (nw - nwf)
 
     if( volWriteBlank ) nVolDiscrVar  = nVolDiscrVar + 1
+
 
   end subroutine numberOfVolSolVariables
 
@@ -559,6 +562,11 @@ contains
        solNames(nn) = cgnsStatus
     endif
 
+    if( volWriteIntermittency) then
+       nn = nn + 1
+       solNames(nn) = cgnsIntermittency
+    endif
+
   end subroutine volSolNames
 
   subroutine surfSolNames(solNames)
@@ -726,6 +734,7 @@ contains
     use flowUtils, only : computePTot
     use utils, only : terminate
     use overset, only : oversetPresent
+    use inputIO, only : laminarToTurbulent
     implicit none
     !
     !      Subroutine arguments.
@@ -1279,6 +1288,20 @@ contains
           enddo
        enddo
 
+    case (cgnsintermittency)
+       if(laminartoturbulent)then
+          do k=kBeg,kEnd
+             kk = max(2_intType,k); kk = min(kl,kk)
+             do j=jBeg,jEnd
+                jj = max(2_intType,j); jj = min(jl,jj)
+                do i=iBeg,iEnd
+                   ii = max(2_intType,i); ii = min(il,ii)
+                    wIO(i,j,k,1) = intermittency(ii,jj,kk)
+                 enddo
+              enddo
+           enddo
+        endif
+       
     case (cgnsShock)
 
        do k=kBeg,kEnd

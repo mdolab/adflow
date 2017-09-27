@@ -929,7 +929,7 @@ contains
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
     logical :: absConv, relConv, firstNK, firstANK
-
+    real(kind=realType) :: nk_switchtol_save
 
     ! Allocate the memory for cycling.
     if (allocated(cycling)) then
@@ -1028,6 +1028,9 @@ contains
     ! Loop over the maximum number of nonlinear iterations
     firstANK = .True.
     firstNK = .True.
+
+    ! Save the NKSwitch tol since it may be modified in the loop
+    NK_SwitchTol_save = NK_switchtol
 
     nonlinearIteration: do while (approxTotalIts < nMGCycles)
 
@@ -1181,6 +1184,9 @@ contains
 
 
     enddo nonLinearIteration
+
+    ! Restore the switch tol in case it was changed
+    NK_switchtol = NK_SwitchTol_save
 
     ! deallocate space for storing hisotry of function evaluations for NK
     ! solver with non-monotone line search if necessary
