@@ -152,6 +152,7 @@ python module libadflow
          integer(kind=inttype) :: nk_ilufill
          real(kind=realtype) :: nk_switchtol
          real(kind=realtype) :: nk_cfl0
+         real(kind=realtype) :: nk_fixedstep
          integer(kind=inttype) :: applypcsubspacesize
          logical :: freestreamresset
 
@@ -794,8 +795,37 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncsigmaptot=52
          integer(kind=inttype) parameter,optional :: costfuncaxismoment=53
          integer(kind=inttype) parameter,optional :: costfuncflowpower=54
-
-       end module constants
+         integer(kind=inttype) parameter,optional :: costfuncforcexpressure=55
+         integer(kind=inttype) parameter,optional :: costfuncforceypressure=56
+         integer(kind=inttype) parameter,optional :: costfuncforcezpressure=57
+         integer(kind=inttype) parameter,optional :: costfuncforcexviscous=58
+         integer(kind=inttype) parameter,optional :: costfuncforceyviscous=59
+         integer(kind=inttype) parameter,optional :: costfuncforcezviscous=60
+         integer(kind=inttype) parameter,optional :: costfuncforcexmomentum=61
+         integer(kind=inttype) parameter,optional :: costfuncforceymomentum=62
+         integer(kind=inttype) parameter,optional :: costfuncforcezmomentum=63
+         integer(kind=inttype) parameter,optional :: costfuncdragpressure=64      
+         integer(kind=inttype) parameter,optional :: costfuncdragviscous=65      
+         integer(kind=inttype) parameter,optional :: costfuncdragmomentum=66    
+         integer(kind=inttype) parameter,optional :: costfuncliftpressure=67      
+         integer(kind=inttype) parameter,optional :: costfuncliftviscous=68     
+         integer(kind=inttype) parameter,optional :: costfuncliftmomentum=69      
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefpressure=70
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefviscous=71
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefmomentum=72
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefpressure=73
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefviscous=74
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefmomentum=75
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefpressure=76
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefviscous=77
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefmomentum=78
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefpressure=79
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefviscous=80
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefmomentum=81
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefpressure=82
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefviscous=83
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefmomentum=84
+        end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
          use precision

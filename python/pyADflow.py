@@ -4286,6 +4286,7 @@ class ADFLOW(AeroSolver):
             'nkouterpreconits':[int, 1],
             'nkcfl0':[float, 100.0],
             'nkls':[str, 'cubic'],
+            'nkfixedstep':[float, 0.25],
             'rkreset':[bool, False],
             'nrkreset':[int, 5],
 
@@ -4581,6 +4582,7 @@ class ADFLOW(AeroSolver):
                     'cubic':self.adflow.constants.cubiclinesearch,
                     'non monotone':self.adflow.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
+            'nkfixedstep':['nk', 'nk_fixedstep'],
             'rkreset':['iter', 'rkreset'],
             'nrkreset':['iter', 'miniternum'],
 
@@ -4751,12 +4753,27 @@ class ADFLOW(AeroSolver):
             'drag':self.adflow.constants.costfuncdrag,
             'cl'  :self.adflow.constants.costfuncliftcoef,
             'cd'  :self.adflow.constants.costfuncdragcoef,
+            'clp' :self.adflow.constants.costfuncliftcoefpressure,
+            'clv' :self.adflow.constants.costfuncliftcoefviscous,
+            'clm' :self.adflow.constants.costfuncliftcoefmomentum,
+            'cdp' :self.adflow.constants.costfuncdragcoefpressure,
+            'cdv' :self.adflow.constants.costfuncdragcoefviscous,
+            'cdm' :self.adflow.constants.costfuncdragcoefmomentum,
             'fx'  :self.adflow.constants.costfuncforcex,
             'fy'  :self.adflow.constants.costfuncforcey,
             'fz'  :self.adflow.constants.costfuncforcez,
             'cfx' :self.adflow.constants.costfuncforcexcoef,
+            'cfxp' :self.adflow.constants.costfuncforcexcoefpressure,
+            'cfxv' :self.adflow.constants.costfuncforcexcoefviscous,
+            'cfxm' :self.adflow.constants.costfuncforcexcoefmomentum,
             'cfy' :self.adflow.constants.costfuncforceycoef,
+            'cfyp' :self.adflow.constants.costfuncforceycoefpressure,
+            'cfyv' :self.adflow.constants.costfuncforceycoefviscous,
+            'cfym' :self.adflow.constants.costfuncforceycoefmomentum,
             'cfz' :self.adflow.constants.costfuncforcezcoef,
+            'cfzp' :self.adflow.constants.costfuncforcezcoefpressure,
+            'cfzv' :self.adflow.constants.costfuncforcezcoefviscous,
+            'cfzm' :self.adflow.constants.costfuncforcezcoefmomentum,
             'mx'  :self.adflow.constants.costfuncmomx,
             'my'  :self.adflow.constants.costfuncmomy,
             'mz'  :self.adflow.constants.costfuncmomz,
@@ -4794,6 +4811,21 @@ class ADFLOW(AeroSolver):
             'sigmaptot':self.adflow.constants.costfuncsigmaptot,
             'axismoment':self.adflow.constants.costfuncaxismoment,
             'flowpower':self.adflow.constants.costfuncflowpower,
+            'forcexpressure':self.adflow.constants.costfuncforcexpressure,
+            'forceypressure':self.adflow.constants.costfuncforceypressure,
+            'forcezpressure':self.adflow.constants.costfuncforcezpressure,
+            'forcexviscous':self.adflow.constants.costfuncforcexviscous,
+            'forceyviscous':self.adflow.constants.costfuncforceyviscous,
+            'forcezviscous':self.adflow.constants.costfuncforcezviscous,
+            'forcexmomentum':self.adflow.constants.costfuncforcexmomentum,
+            'forceymomentum':self.adflow.constants.costfuncforceymomentum,
+            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,     
+            'dragpressure':self.adflow.constants.costfuncdragpressure,       
+            'dragviscous':self.adflow.constants.costfuncdragviscous,       
+            'dragmomentum':self.adflow.constants.costfuncdragmomentum,       
+            'liftpressure':self.adflow.constants.costfuncliftpressure,       
+            'liftviscous':self.adflow.constants.costfuncliftviscous,       
+            'liftmomentum':self.adflow.constants.costfuncliftmomentum,                   
             }
 
         return iDV, BCDV, adflowCostFunctions
@@ -4984,7 +5016,7 @@ class ADFLOW(AeroSolver):
             newConn = numpy.zeros_like(conn)
             for i in range(elemCount):
                 for j in range(4):
-                    newConn[i, j] = link[conn[i, j]]
+                    newConn[i, j] = link[int(conn[i, j])]
             conn = newConn
 
             # Now convert the connectivity to triangles if requested

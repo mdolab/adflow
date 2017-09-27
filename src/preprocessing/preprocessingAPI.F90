@@ -2763,8 +2763,8 @@ contains
 
     character(len=10) :: integerString
 
-    logical :: checkK, checkJ, checkI, checkAll
-    logical :: badVolume
+    logical :: checkK, checkJ, checkI, checkAll, checkBlank
+    logical :: badVolume, iBlankAllocated
 
     logical, dimension(:,:,:), pointer :: volumeIsNeg
 
@@ -2786,6 +2786,11 @@ contains
           ! the code more readable.
 
           call setPointers(nn, level, sps)
+          if (associated(flowDoms(nn, level, sps)%iblank)) then 
+             iBlankAllocated = .True. 
+          else
+             iBlankAllocated = .False.
+          end if
 
           allocate(checkVolDoms(nn,sps)%volumeIsNeg(2:il,2:jl,2:kl), &
                stat=ierr)
@@ -2833,7 +2838,19 @@ contains
                    ! quality. Only owned volumes are checked, not halo's.
 
                    checkAll = .false.
-                   if(checkK .and. checkJ .and. checkI) checkAll = .true.
+
+                   ! Only care about the quality of compute cells (1)
+                   ! and fringe cells (-1)
+                   checkBlank = .False. 
+                   if (iblankAllocated) then 
+                      if (abs(iblank(i, j, k)) == 1) then 
+                         checkBlank = .True.
+                      end if
+                   end if
+
+                   if (checkK .and. checkJ .and. checkI .and. checkBlank) then 
+                      checkAll = .true.
+                   end if
 
                    ! Compute the coordinates of the center of gravity.
 
