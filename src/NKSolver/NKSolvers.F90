@@ -1695,6 +1695,7 @@ module ANKSolver
   logical :: ANK_useTurbDADI
   logical :: ANK_coupled=.False.
   real(kind=realType) :: ANK_saRelax
+  real(kind=realType) :: ANK_turbSwitchTol
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
@@ -2776,13 +2777,17 @@ contains
     logical :: secondOrdSave
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
-    if (firstCall .or. (totalR < ANK_coupledSwitchTol * totalR0 .and. (.not. ANK_coupled) )) then
+    if (firstCall .or. (totalR < ANK_coupledSwitchTol * totalR0 .and. (.not. ANK_coupled) ) &
+        .or. (totalR < ANK_turbSwitchTol * totalR0 .and. ANK_useTurbDADI) ) then
 
        ! If using segragated ANK and below the coupled switch tol, set ANK_useTurbDADI
        ! to .False. to create the PETSc objets required for the coupled ANK solver
        if (totalR < ANK_coupledSwitchTol * totalR0) then
          ANK_coupled = .True.
          call destroyANKSolver()
+       else if (totalR < ANK_turbSwitchTol * totalR0)
+         ANK_useTurbDADI = .False.
+         call destroyanksolver()
        else
          ANK_coupled = .False.
        end if
