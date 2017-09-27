@@ -66,6 +66,10 @@ module inputDiscretization
   !                         reassociate the face a cell is associated
   !                         with.
   ! lowspeedpreconditoner:  Whether or not to use low-speed precondioner
+  ! sa_relax:               Relaxation parameter for the DDADI solver for SA turb model.
+  !                         Small numbers (i.e. zero) yield the original DDADI scheme,
+  !                         as the number approaches one, the full jacobian is obtained
+  !                         during the saSolve calculations.
 
   integer(kind=intType) :: spaceDiscr, spaceDiscrCoarse
   integer(kind=intType) :: orderTurb, limiter
@@ -89,6 +93,8 @@ module inputDiscretization
 
   logical :: useApproxWallDistance
   logical :: lowSpeedPreconditioner
+
+  real(kind=realType) :: sa_relax
 end module inputDiscretization
 
 !      ==================================================================
@@ -856,4 +862,3 @@ module inputOverset
   integer(kind=intType)::nRefine
   logical :: useZipperMesh
 end module inputOverset
-
