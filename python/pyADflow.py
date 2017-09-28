@@ -3016,7 +3016,7 @@ class ADFLOW(AeroSolver):
                dIdP = dIda[self.possibleAeroDVs['p']]
                dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-               # Chain-rule to get the final derivative:             
+               # Chain-rule to get the final derivative:
                funcsSens[dvName] = (
                    tmp[self.curAP['P']][dvName]*dIdP +
                    tmp[self.curAP['rho']][dvName]*dIdrho +
@@ -4314,6 +4314,9 @@ class ADFLOW(AeroSolver):
             'ankstepexponent':[float, 0.75],
             'ankcflexponent':[float, 1.0],
             'ankcoupledswitchtol':[float, 1e-10],
+            'anksarelax':[float, 0.0],
+            'ankturbswitchtol' : [float, 1e-16],
+            'anknsubiterturb' : [int, 1],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4592,6 +4595,7 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Paramters
             'useanksolver':['ank', 'useanksolver'],
             'ankuseturbdadi':['ank', 'ank_useturbdadi'],
+            'ankturbswitchtol':['ank', 'ank_turbswitchtol'],
             'ankswitchtol':['ank', 'ank_switchtol'],
             'anksubspacesize':['ank', 'ank_subspace'],
             'ankmaxiter':['ank', 'ank_maxiter'],
@@ -4610,6 +4614,8 @@ class ADFLOW(AeroSolver):
             'ankstepexponent':['ank','ank_stepexponent'],
             'ankcflexponent':['ank','ank_cflexponent'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
+            'anksarelax':['ank', 'ank_sarelax'],
+            'anknsubiterturb':['ank', 'ank_nsubiterturb'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
@@ -4822,13 +4828,13 @@ class ADFLOW(AeroSolver):
             'forcezviscous':self.adflow.constants.costfuncforcezviscous,
             'forcexmomentum':self.adflow.constants.costfuncforcexmomentum,
             'forceymomentum':self.adflow.constants.costfuncforceymomentum,
-            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,     
-            'dragpressure':self.adflow.constants.costfuncdragpressure,       
-            'dragviscous':self.adflow.constants.costfuncdragviscous,       
-            'dragmomentum':self.adflow.constants.costfuncdragmomentum,       
-            'liftpressure':self.adflow.constants.costfuncliftpressure,       
-            'liftviscous':self.adflow.constants.costfuncliftviscous,       
-            'liftmomentum':self.adflow.constants.costfuncliftmomentum,                   
+            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,
+            'dragpressure':self.adflow.constants.costfuncdragpressure,
+            'dragviscous':self.adflow.constants.costfuncdragviscous,
+            'dragmomentum':self.adflow.constants.costfuncdragmomentum,
+            'liftpressure':self.adflow.constants.costfuncliftpressure,
+            'liftviscous':self.adflow.constants.costfuncliftviscous,
+            'liftmomentum':self.adflow.constants.costfuncliftmomentum,
             }
 
         return iDV, BCDV, adflowCostFunctions
