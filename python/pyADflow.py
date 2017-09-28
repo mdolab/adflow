@@ -324,7 +324,7 @@ class ADFLOW(AeroSolver):
 
         initFlowTime = time.time()
 
-        self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
+        self.coords0 = self.getSurfaceCoordinates(self.allFamilies,includeZipper=False)
 
         finalInitTime = time.time()
 
