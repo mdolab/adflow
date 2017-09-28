@@ -4042,6 +4042,9 @@ contains
     usematrixfreedrdw = .False.
     sepSensorOffset = zero
     sepSensorSharpness = 10_realType
+
+    ! Initialize the sa_relax to zero, to obtain the original ddadi scheme
+    sa_relax = zero
   end subroutine setDefaultValues
 
   subroutine initializeIsoSurfaceVariables(values, nValues)
