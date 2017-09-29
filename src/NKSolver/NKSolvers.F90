@@ -1358,7 +1358,7 @@ contains
     use constants
     use blockPointers, only : nDom, il, jl, kl, w
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use flowVarRefState, only : nw
+    use flowVarRefState, only : nwf, nt1, nt2, winf
     use utils, only : setPointers, EChk
 
     implicit none
@@ -1379,8 +1379,15 @@ contains
           do k=2,kl
              do j=2,jl
                 do i=2,il
-                   do l=1,nw
+                   do l=1,nwf
                       w(i,j,k,l) = wvec_pointer(ii)
+                      ii = ii + 1
+                   end do
+                   ! Clip the turb to prevent negative turb SA
+                   ! values. This is similar to the pressure
+                   ! clip. Need to check this for other Turb models. 
+                   do l=nt1, nt2
+                      w(i, j, k, l) = max(1e-6*winf(l), wvec_pointer(ii))
                       ii = ii + 1
                    end do
                 end do
