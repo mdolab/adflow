@@ -1385,7 +1385,7 @@ contains
                    end do
                    ! Clip the turb to prevent negative turb SA
                    ! values. This is similar to the pressure
-                   ! clip. Need to check this for other Turb models. 
+                   ! clip. Need to check this for other Turb models.
                    do l=nt1, nt2
                       w(i, j, k, l) = max(1e-6*winf(l), wvec_pointer(ii))
                       ii = ii + 1
@@ -2292,6 +2292,7 @@ contains
        ! If using segragated ANK and below the coupled switch tol, set ANK_useTurbDADI
        ! to .False. to create the PETSc objets required for the coupled ANK solver
        if (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI) then
+         call destroyANKsolver()
          ANK_useTurbDADI = .False.
        end if
 
