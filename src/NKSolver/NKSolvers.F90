@@ -2264,14 +2264,18 @@ contains
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor
-    use utils, only : EChk
+    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel
+    use utils, only : EChk, setPointers
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, computeResidualNK, getEwTol
     use initializeFlow, only : setUniformFlow
+    use BCRoutines, only : applyAllBC, applyAllBC_block
+    use haloExchange, only : whalo2
+    use overset, only : oversetPresent
+    use flowVarRefState, only : nw, nwf
     use communication
 
     implicit none
@@ -2319,12 +2323,6 @@ contains
        end if
     else
        ANK_iter = ANK_iter + 1
-    end if
-
-    ! ============== Turb Update =============
-    if (ANK_useTurbDADI .and. equations==RANSEquations) then
-      call computeUtau
-      call turbSolveSegregated
     end if
 
     ! ANK CFL calculation, use relative convergence w.r.t. totalR0 for better performance with restarts
@@ -2439,6 +2437,31 @@ contains
     stepMonitor = lambda
     ! Set the updated state variables
     call setWANK(wVec)
+
+    ! ============== Turb Update =============
+    if (ANK_useTurbDADI .and. equations==RANSEquations) then
+
+        ! We need to exchange halos after the flow update, otherwise the
+        ! turbulence solver might stall due to outdated velocity values
+        ! at the block boundaries
+        call applyAllBC(.true.)
+        call whalo2(currentLevel, 1_intType, nwf, .false.,&
+                    .false., .false.)
+
+        ! If overset is present, we need to re-apply the BCs due to interpolated cells
+        if (oversetPresent) then
+            do sps=1,nTimeIntervalsSpectral
+               do nn=1,nDom
+                  call setPointers(nn, 1, sps)
+                  call applyAllBC_block(.True.)
+               end do
+            end do
+        end if
+
+        ! actually do the turbulence update
+        call computeUtau
+        call turbSolveSegregated
+    end if
 
     ! Calculate the residual with the new values and set the R vec in PETSc
     ! We calculate the full residual using NK routine because the dw values
