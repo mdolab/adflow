@@ -982,6 +982,9 @@ class ADFLOW(AeroSolver):
         # Save the states into the aeroProblem
         self.curAP.adflowData.stateInfo = self._getInfo()
 
+        # Save the winf vector. (just the flow part)
+        self.curAP.adflowData.oldWinf = self.adflow.flowvarrefstate.winf[0:5].copy()
+
         # Assign Fail Flags
         self.curAP.solveFailed = bool(self.adflow.killsignals.routinefailed)
         self.curAP.fatalFail = bool(self.adflow.killsignals.fatalfail)
@@ -2141,6 +2144,15 @@ class ADFLOW(AeroSolver):
             The aeroproblem with the flow information we would like
             to reset the flow to.
             """
+
+        # The aeroProblem we're resetting to has an oldWinf in it, we
+        # must invalidate it since it would try to use that the next
+        # time this AP is used.
+        try:
+            aeroProblem.adflowData.oldWinf = None
+        except:
+            pass
+
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         self._resetFlow()
 
@@ -2353,6 +2365,11 @@ class ADFLOW(AeroSolver):
         stateInfo = aeroProblem.adflowData.stateInfo
         if stateInfo is not None and newAP:
             self._setInfo(stateInfo)
+
+        # Potentially correct the states based on the change in the alpha
+        oldWinf = aeroProblem.adflowData.oldWinf
+        if self.getOption('infChangeCorrection') and oldWinf is not None:
+            self.adflow.solverutils.infchangecorrection(oldWinf)
 
         self.adflow.killsignals.routinefailed = False
         self.adflow.killsignals.fatalFail = False
@@ -4216,7 +4233,8 @@ class ADFLOW(AeroSolver):
             'liftindex':[int, 2],
             'lowspeedpreconditioner':[bool, False],
             'walldistcutoff':[float, 1e20],
-
+            'infchangecorrection':[bool, False],
+            
             # Common Paramters
             'ncycles':[int, 500],
             'ncyclescoarse':[int, 500],
@@ -4703,6 +4721,7 @@ class ADFLOW(AeroSolver):
                              'zippersurfacefamily',
                              'outputsurfacefamily',
                              'cutcallback',
+                             'infchangecorrection',
                          ))
 
         # Deprecated options. These should not be used, but old
@@ -5052,7 +5071,7 @@ class adflowFlowCase(object):
         self.coords = None
         self.callCounter = -1
         self.disp = None
-
+        self.oldWinf = None
 
 class adflowUserFunc(object):
     """Class containing the user-supplied function information"""
