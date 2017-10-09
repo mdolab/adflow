@@ -427,6 +427,12 @@ python module libadflow
 
        end module solvers
 
+       module solverutils
+         subroutine infchangecorrection(oldwinf) ! in :test:solverUtils.F90:solverutils
+           real(kind=realtype) dimension(5),intent(in) :: oldwinf
+         end subroutine infchangecorrection
+       end module solverutils
+
        module aleutils
 
          subroutine shiftlevelale
