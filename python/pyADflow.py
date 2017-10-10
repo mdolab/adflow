@@ -2369,7 +2369,7 @@ class ADFLOW(AeroSolver):
         # Potentially correct the states based on the change in the alpha
         oldWinf = aeroProblem.adflowData.oldWinf
         if self.getOption('infChangeCorrection') and oldWinf is not None:
-            self.adflow.solverutils.infchangecorrection(oldWinf)
+            self.adflow.initializeflow.infchangecorrection(oldWinf)
 
         self.adflow.killsignals.routinefailed = False
         self.adflow.killsignals.fatalFail = False
