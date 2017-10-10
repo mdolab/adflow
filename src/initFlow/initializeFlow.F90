@@ -191,6 +191,87 @@ contains
 
 #ifndef  USE_TAPENADE
 
+
+  subroutine infChangeCorrection(oldWinf)
+
+
+     use constants
+     use blockPointers, only : il, jl, kl, w, nDom, d2wall
+     use flowVarRefState, only : wInf, nwf, nw
+     use inputPhysics , only : equations
+     use inputTimeSpectral, only : nTimeIntervalsSpectral
+     use haloExchange, only : whalo2
+     use flowUtils, only : adjustInflowAngle
+     use overset, only : oversetPresent
+     use iteration, only : currentLevel 
+     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
+     use BCRoutines, only : applyallBC_block
+     !use initializeFlow, only : referenceState
+     use utils, only : setPointers
+     implicit none
+
+    ! Input:
+    real(kind=realType), intent(in), dimension(nwf) :: oldWinf
+
+    ! Working variables
+    integer(kind=intType) :: sps, nn, i, j, k, l
+    real(kind=realType) :: deltaWinf(nwf)
+
+    ! Make sure we have the updated wInf
+    call adjustInflowAngle()
+    call referenceState
+
+    deltaWinf = Winf(1:nwf) - oldWinf(1:nwf)
+
+    if (norm2(deltaWinf) < 1e-12) then
+       ! The change deltaWinf is so small, (or zero) don't do the
+       ! update and just return. This will save some time when the
+       ! solver is called with the same AP conditions multiple times,
+       ! such as during a GS AS solution
+
+       return 
+    end if
+
+    ! Loop over all the blocks, adding the subtracting off the oldWinf
+    do sps=1, nTimeIntervalsSpectral
+       do nn=1, nDom
+          call setPointers(nn, 1_intType, sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=1, nwf
+                      w(i, j, k, l) = w(i, j, k, l) + deltaWinf(l)
+                   end do
+                end do
+             end do
+          end do
+          call applyAllBC_block(.True.)
+       end do
+    end do
+
+    ! Exchange values
+    call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset.
+    if (oversetPresent) then
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
+    end if
+
+end subroutine infChangeCorrection
+
+
   ! Section out the BCdata setup so that it can by called from python when needed
   subroutine updateBCDataAllLevels()
     ! sets the prescribed boundary data from the CGNS arrays
