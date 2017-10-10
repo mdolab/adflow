@@ -190,30 +190,23 @@ contains
   ! ----------------------------------------------------------------------
 
 #ifndef  USE_TAPENADE
-
-
   subroutine infChangeCorrection(oldWinf)
-
-
-     use constants
-     use blockPointers, only : il, jl, kl, w, nDom, d2wall
-     use flowVarRefState, only : wInf, nwf, nw
-     use inputPhysics , only : equations
-     use inputTimeSpectral, only : nTimeIntervalsSpectral
-     use haloExchange, only : whalo2
-     use flowUtils, only : adjustInflowAngle
-     use overset, only : oversetPresent
-     use iteration, only : currentLevel 
-     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
-     use BCRoutines, only : applyallBC_block
-     !use initializeFlow, only : referenceState
-     use utils, only : setPointers
-     implicit none
-
-    ! Input:
+    ! Adjust the flow states to a change in wInf
+    use constants
+    use blockPointers, only : il, jl, kl, w, nDom, d2wall
+    use flowVarRefState, only : wInf, nwf, nw
+    use inputPhysics , only : equations
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use haloExchange, only : whalo2
+    use flowUtils, only : adjustInflowAngle
+    use overset, only : oversetPresent
+    use iteration, only : currentLevel 
+    use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
+    use BCRoutines, only : applyallBC_block
+    use utils, only : setPointers, mynorm2
+    implicit none
+    
     real(kind=realType), intent(in), dimension(nwf) :: oldWinf
-
-    ! Working variables
     integer(kind=intType) :: sps, nn, i, j, k, l
     real(kind=realType) :: deltaWinf(nwf)
 
@@ -223,7 +216,7 @@ contains
 
     deltaWinf = Winf(1:nwf) - oldWinf(1:nwf)
 
-    if (norm2(deltaWinf) < 1e-12) then
+    if (mynorm2(deltaWinf) < 1e-12) then
        ! The change deltaWinf is so small, (or zero) don't do the
        ! update and just return. This will save some time when the
        ! solver is called with the same AP conditions multiple times,
