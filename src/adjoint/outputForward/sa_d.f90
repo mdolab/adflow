@@ -33,6 +33,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputDiscretization, only : lumpedDiss
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -363,11 +364,21 @@ contains
 ! linearization. the source term is stored in dvt.
             term1d = rsacb1*((one-ft2)*ssd-ft2d*ss)
             term1 = rsacb1*(one-ft2)*ss
+            if (lumpedDiss) then
+              !term1d = 0.0_realType
+              !term1 = 0.0_realType
+            end if
             term2d = dist2invd*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-&
 &             rsacw1*fwsa) + dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2d-&
 &             ft2d*fv2+ft2d)-rsacw1*fwsad)
             term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
 &             fwsa)
+
+            if (lumpedDiss) then
+              !term2d = 0.0_realType
+              !term2 = 0.0_realType
+            end if
+
             scratchd(i, j, k, idvt) = (term1d+term2d*w(i, j, k, itu1)+&
 &             term2*wd(i, j, k, itu1))*w(i, j, k, itu1) + (term1+term2*w&
 &             (i, j, k, itu1))*wd(i, j, k, itu1)

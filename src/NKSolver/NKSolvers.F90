@@ -1697,6 +1697,7 @@ module ANKSolver
   real(kind=realType) :: ANK_saRelax
   real(kind=realType) :: ANK_turbSwitchTol
   integer(kind=intType) :: ANK_nSubIterTurb
+  real(kind=realType) :: ANK_turbcflscale
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
@@ -2010,7 +2011,7 @@ contains
     ! Local Variables
     character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
     integer(kind=intType) ::ierr
-    logical :: useAD, usePC, useTranspose, useObjective, tmp
+    logical :: useAD, usePC, useTranspose, useObjective, tmp, secondOrdSave
     real(kind=realType) ::  dt
     integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
     real(kind=realType), pointer :: diag(:)
@@ -2026,7 +2027,7 @@ contains
     ! Only form the preconditioner matrix for turbulence variable
     call setupStateResidualMatrix(dRdwPreTurb, useAD, usePC, useTranspose, &
          useObjective, .False., 1_intType, .True.)
-    ! Reset saved value
+    ! Reset saved values
     viscPC = tmp
 
     ! ----------- Setup Turbulence KSP ----------
@@ -2038,7 +2039,7 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Calculate the contribution from the time-stepping term
-    dt = turbResScale(1)/ANK_CFL
+    dt = turbResScale(1)/(ANK_CFL*ANK_turbCFLScale)
     diag(:) = dt
 
     call VecRestoreArrayF90(deltaWTurb, diag, ierr)
@@ -2062,7 +2063,7 @@ contains
     end if
     call setupStandardKSP(ANK_KSP_Turb, kspObjectType, subSpace, &
          preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
-         localOrdering, ANK_iluFill, ANK_innerPreConIts)
+         localOrdering, ANK_iluFill+2, ANK_innerPreConIts)
 
     ! Don't do iterative refinement for the NKSolver.
     call KSPGMRESSetCGSRefinementType(ANK_KSP_Turb, &
@@ -2184,7 +2185,7 @@ contains
       call setRVecANKTurb(rVecTurb)
 
       ! Calculate the contribution from the time stepping term
-      dt = turbResScale(1)/ANK_CFL
+      dt = turbResScale(1)/(ANK_CFL*ANK_turbcflscale)
 
       ! For the segragated solver each variable gets the same dt value
       call VecAXPY(rVecTurb, dt, wVecTurb, ierr)
@@ -2399,30 +2400,6 @@ contains
        domainsState: do nn=1, nDom
           ! Set the pointers to this block.
           call setPointers(nn, currentLevel, sps)
-          factK = zero
-          do k=0, kb
-             do j=0, jb
-                do i=0, ib
-
-                   gm1  = gamma(i, j, k) - one
-                   factK = five*third - gamma(i, j ,k)
-                   v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
-                        + w(i,j,k,ivz)**2
-
-                   p(i,j,k) = gm1*(w(i,j,k,irhoE) &
-                        - half*w(i,j,k,irho)*v2)
-
-                   if( correctForK ) then
-                      p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
-                           * w(i, j, k, itu1)
-                   end if
-
-                   ! Clip to make sure it is positive.
-                   p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
-                end do
-             end do
-          end do
-
           ! Compute Viscosities
           call computeLamViscosity(.False.)
           call computeEddyViscosity (.False.)
@@ -2430,21 +2407,17 @@ contains
     end do spectralLoop
 
     ! Apply BCs
-    call applyAllBC(secondHalo)
-
-    if (equations == RANSequations) then
-       do nn=1,nDom
-          do sps=1,nTimeIntervalsSpectral
-             call setPointers(nn, currentLevel, sps)
-             call bcTurbTreatment
-             call applyAllTurbBCThisBLock(.True.)
-          end do
-       end do
-    end if
+    do nn=1,nDom
+      do sps=1,nTimeIntervalsSpectral
+         call setPointers(nn, currentLevel, sps)
+         call bcTurbTreatment
+         call applyAllTurbBCThisBLock(.True.)
+      end do
+    end do
 
     ! Exchange halos
-    call whalo2(currentLevel, 1_intType, nw, .true., &
-         .true., .true.)
+    call whalo2(currentLevel, nt1, nt2, .false., &
+         .false., .True.)
 
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
@@ -2454,11 +2427,8 @@ contains
        do sps=1,nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers(nn, 1, sps)
-             if (equations == RANSequations) then
-                call BCTurbTreatment
-                call applyAllTurbBCthisblock(.True.)
-             end if
-             call applyAllBC_block(.True.)
+             call BCTurbTreatment
+             call applyAllTurbBCthisblock(.True.)
           end do
        end do
     end if
@@ -2705,7 +2675,7 @@ contains
   end subroutine setWANKTurb
 
   ! for debugging/experimenting
-  subroutine scaleDeltaWTurb(deltaWTurb)
+  subroutine scaleDeltaWTurb(deltaWTurb, wVecTurb)
     ! Get the updated solution from the PETSc Vector
 
     use constants
@@ -2715,13 +2685,17 @@ contains
     use utils, only : setPointers, EChk
     implicit none
 
-    Vec  deltaWTurb
-    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
-    real(kind=realType), pointer :: dvecTurb_pointer(:)
+    Vec  deltaWTurb, wVecTurb
+    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii, counter
+    real(kind=realType), pointer :: dvecTurb_pointer(:), wVecTurb_pointer(:)
     call VecGetArrayReadF90(deltaWTurb, dvecTurb_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
+    call VecGetArrayReadF90(wVecTurb, wVecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
     ii = 0
+    counter = 0
     do nn=1, nDom
        do sps=1,nTimeIntervalsSpectral
           call setPointers(nn, 1_intType, sps)
@@ -2730,9 +2704,9 @@ contains
                 do i=2, il
                    do l=nt1, nt2
                       ii = ii + 1
-                      if (abs(max(dvecturb_pointer(ii), 0.0_realType)) > w(i,j,k,nt1)) then
-                        dvecturb_pointer(ii) = dvecturb_pointer(ii) * 0.9_realType &
-                            * w(i,j,k,nt1)/abs(dvecturb_pointer(ii))
+                      if (abs(max(dvecturb_pointer(ii), 0.0_realType)) > wVecTurb_pointer(ii)) then
+                        dvecturb_pointer(ii) = 0.9_realType*wVecTurb_pointer(ii)
+                        counter = counter + 1
                       end if
                    end do
                 end do
@@ -2742,6 +2716,12 @@ contains
     end do
     call VecRestoreArrayReadF90(deltaWTurb, dvecTurb_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)
+
+    call VecRestoreArrayReadF90(wVecTurb, wVecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    if (counter > 0)&
+        write(*,*) "Number of turb updates clipped: ",counter
 
   end subroutine scaleDeltaWTurb
 
@@ -2754,14 +2734,19 @@ contains
     use inputIteration, only : L2conv, nsubiterturb, turbResScale
     use inputDiscretization, only : lumpedDiss, sa_relax
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor
-    use utils, only : EChk
+    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentlevel
+    use utils, only : EChk, setpointers
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, computeResidualNK, getEwTol
     use initializeFlow, only : setUniformFlow
+    use haloexchange, only : whalo2
+    use BCRoutines, only : applyAllBC, applyAllBC_block
+    use flowvarrefstate, only : nwf, nw
+    use overset, only : oversetPresent
+
     use communication
 
     implicit none
@@ -2788,6 +2773,7 @@ contains
          call destroyANKSolver()
        else if (totalR < ANK_turbSwitchTol * totalR0) then
          ANK_useTurbDADI = .False.
+         ANK_coupled = .False.
          call destroyanksolver()
        else
          ANK_coupled = .False.
@@ -2940,10 +2926,29 @@ contains
 
     ! ============== Turb Update =============
     if ((.not. ANK_coupled) .and. equations == RANSEquations) then ! Turb either gets dadi or KSP
+        ! Apply BCs
+        call applyAllBC(.true.)
+
+        ! Exchange halos
+        call whalo2(currentLevel, 1_intType, nwf, .false., &
+             .false., .false.)
+
+        ! Need to re-apply the BCs. The reason is that BC halos behind
+        ! interpolated cells need to be recomputed with their new
+        ! interpolated values from actual compute cells. Only needed for
+        ! overset.
+        if (oversetPresent) then
+           do sps=1,nTimeIntervalsSpectral
+              do nn=1,nDom
+                 call setPointers(nn, 1, sps)
+                 call applyAllBC_block(.True.)
+              end do
+           end do
+        end if
 
         if (ANK_useTurbDADI) then ! Do DDADI update
             ! parameter to control the approximations in the ddadi jacobian for turbulence
-            sa_relax = min(ANK_saRelax*totalR0/totalR, one)
+            !sa_relax = min(ANK_saRelax*totalR0/totalR, one)
             call computeUtau
             call turbSolveSegregated
         else ! Do ksp update
@@ -3029,9 +3034,10 @@ contains
               secondOrd = secondOrdSave
             end if
 
-            ! Get the update (line search maybe)
-            call scaleDeltaWTurb(deltaWTurb)
+            ! Scale the update to prevent negative turbulence variables
+            call scaleDeltaWTurb(deltaWTurb, wVecTurb)
 
+            ! take the update
             call VecAXPY(wVecTurb, -lambda, deltaWTurb, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
