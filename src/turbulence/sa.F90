@@ -30,6 +30,7 @@ contains
     use paramTurb
     use turbutils
     use turbBCRoutines
+    use turbMod, only : secondOrd
     implicit none
     !
     !      Subroutine argument.
@@ -43,6 +44,9 @@ contains
 
     ! Set the arrays for the boundary condition treatment.
     call bcTurbTreatment
+
+    ! Apply the BCs
+    call applyAllTurbBCThisBlock(secondOrd)
 
     ! Alloc central jacobian memory
     allocate(qq(2:il,2:jl,2:kl))
@@ -98,7 +102,7 @@ contains
     use paramTurb
     use section
     use inputPhysics
-    use inputDiscretization, only : sa_relax
+    use inputDiscretization, only : sa_relax, lumpedDiss
     use flowVarRefState
     implicit none
 
@@ -295,6 +299,11 @@ contains
                 term1 = rsaCb1*(one-ft2)*ss
                 term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                      -           rsaCw1*fwSa)
+
+                if (lumpedDiss) then
+                   !term1 = 0.0_realType
+                   !term2 = 0.0_realType
+                end if
 
                 scratch(i,j,k,idvt) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 

@@ -40,7 +40,7 @@ contains
     use haloExchange, only : whalo2
     use masterRoutines, only : block_res_state, master
 #ifndef USE_COMPLEX
-    use masterRoutines, only : block_res_state_d
+    use masterRoutines, only : block_res_state_d, block_res_turb_d
 #endif
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -65,12 +65,13 @@ contains
     real(kind=realType), dimension(:,:), allocatable :: blk
 
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
-    logical :: resetToRANS, secondOrdSave
+    logical :: resetToRANS, secondOrdSave, turbPC
 
     if (present(splitMat)) then ! we are making a PC for turbulence only KSP
         nStateBeg = nt1
         nStateEnd = nt2
         nState = nt2 - nt1 + 1
+        turbPC = .True.
     else ! We are making a "matrix" for either NK or adjoint
         ! Setup number of state variable based on turbulence assumption
         if ( frozenTurb ) then
@@ -82,6 +83,7 @@ contains
            nStateEnd =nw
            nState = nw
         endif
+        turbPC = .False.
     end if
 
     ! Generic block to use while setting values
@@ -323,7 +325,11 @@ contains
                 ! Run Block-based residual
                 if (useAD) then
 #ifndef USE_COMPLEX
-                   call block_res_state_d(nn, sps)
+                   if (turbPC) then
+                     call block_res_turb_d(nn, sps)
+                   else
+                     call block_res_state_d(nn, sps)
+                   end if
 #else
                    print *, 'Forward AD routines are not complexified'
                    stop
