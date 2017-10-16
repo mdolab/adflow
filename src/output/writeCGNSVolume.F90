@@ -783,7 +783,7 @@ contains
     integer :: cgnsInd, cgnsBase, cgnsZone, cgnsSol, realTypeCGNS
 
     integer, dimension(mpi_status_size) :: mpiStatus
-    integer, dimension(9)               :: sizes
+    integer(kind=cgsize_t), dimension(9)               :: sizes
 
     integer(kind=intType) :: i, j, nn, mm, ll, ind, nVarWritten
     integer(kind=intType) :: nBlocks, nSubblocks, offset
@@ -1022,7 +1022,7 @@ contains
              sizes(4) = 0; sizes(5) = 0; sizes(6) = 0
           endif
 
-          call cg_rind_write_f(sizes, ierr)
+          call cg_rind_write_f(int(sizes, intType), ierr)
           if(ierr /= CG_OK)                   &
                call terminate("writeSolCGNSZone", &
                "Something wrong when calling &

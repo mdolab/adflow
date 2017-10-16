@@ -5,8 +5,6 @@
 !       included or the functionality is faked by just defining the
 !       parameters.
 !
-       implicit none
-       save
 
 #ifdef USE_TAPENADE
 !      ******************************************************************
@@ -15,6 +13,10 @@
 !      *                                                                *
 !      ******************************************************************
 !
+
+       implicit none
+       save
+
        integer, parameter :: Null = 0
        integer, parameter :: UserDefined = 1
 
@@ -40,7 +42,15 @@
        integer, parameter :: Radian = 3
 #else
 
+#ifdef USECGNSMODULE
+       use cgns
+       implicit none
+#else
+       implicit none
        include "cgnslib_f.h"
+       integer(kind=4), private :: dummyInt
+       integer, parameter :: cgsize_t=kind(dummyInt)
+#endif
 #endif
 
 

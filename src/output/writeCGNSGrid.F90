@@ -429,10 +429,10 @@ contains
     !      Local variables.
     !
     integer :: ierr, ii, jj, cgnsInd, cgnsBase
-    integer, dimension(9)   :: sizes
-    integer, dimension(3,2) :: zoneRange, donorRange
+    integer(kind=cgsize_t), dimension(9)   :: sizes
+    integer(kind=cgsize_t), dimension(3,2) :: zoneRange, donorRange
     integer, dimension(3)   :: transform
-    integer, dimension(:,:), allocatable :: donorData
+    integer(kind=cgsize_t), dimension(:,:), allocatable :: donorData
 
     integer(kind=intType) :: nn, mm, ll, i, j, k
     integer(kind=intType) :: s1, s2, s3
@@ -698,11 +698,11 @@ contains
              ii = ll
              call cg_conn_write_f(cgnsInd, cgnsBase, cgnsZone(nn),       &
                   cgnsDoms(nn)%conn1to1(mm)%connectName, &
-                  Vertex, Abutting1to1, PointRange, 2,   &
+                  Vertex, Abutting1to1, PointRange, int(2, cgsize_t),   &
                   zoneRange,                             &
                   cgnsDoms(nn)%conn1to1(mm)%donorName,   &
                   Structured, PointListDonor, Integer,   &
-                  ii, donorData, jj, ierr)
+                  int(ii, cgsize_t), donorData, jj, ierr)
              if(ierr /= CG_OK)                     &
                   call terminate("writeCGNSGridFrame", &
                   "Something wrong when calling &
@@ -814,7 +814,7 @@ contains
 
           call cg_boco_write_f(cgnsInd, cgnsBase, cgnsZone(nn),    &
                cgnsDoms(nn)%bocoInfo(mm)%bocoName, &
-               jj, PointRange, 2, zoneRange, ii, ierr)
+               jj, PointRange, int(2, cgsize_t), zoneRange, ii, ierr)
           if(ierr /= CG_OK)                     &
                call terminate("writeCGNSGridFrame", &
                "Something wrong when calling &
