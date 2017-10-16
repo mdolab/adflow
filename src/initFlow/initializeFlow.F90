@@ -200,12 +200,12 @@ contains
     use haloExchange, only : whalo2
     use flowUtils, only : adjustInflowAngle
     use overset, only : oversetPresent
-    use iteration, only : currentLevel 
+    use iteration, only : currentLevel
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
     use BCRoutines, only : applyallBC_block
     use utils, only : setPointers, mynorm2
     implicit none
-    
+
     real(kind=realType), intent(in), dimension(nwf) :: oldWinf
     integer(kind=intType) :: sps, nn, i, j, k, l
     real(kind=realType) :: deltaWinf(nwf)
@@ -222,7 +222,7 @@ contains
        ! solver is called with the same AP conditions multiple times,
        ! such as during a GS AS solution
 
-       return 
+       return
     end if
 
     ! Loop over all the blocks, adding the subtracting off the oldWinf
@@ -2787,7 +2787,8 @@ end subroutine infChangeCorrection
     !
     integer :: nZones, cellDim, physDim, ierr, nSols
 
-    integer, dimension(9) :: sizes
+    integer(cgsize_t), dimension(9) :: sizes
+    integer, dimension(9) :: rindSizes
     integer, dimension(nSolsRead) :: fileIDs
 
     integer(kind=intType) :: ii, jj, nn
@@ -2996,7 +2997,7 @@ end subroutine infChangeCorrection
                call terminate("readRestartFile", &
                "Something wrong when calling cg_goto_f")
 
-          call cg_rind_read_f(sizes, ierr)
+          call cg_rind_read_f(rindSizes, ierr)
           if(ierr /= all_ok)                  &
                call terminate("readRestartFile", &
                "Something wrong when calling &
@@ -3007,8 +3008,8 @@ end subroutine infChangeCorrection
           ! an unsteady computation.
 
           if(solID == 1 .or. equationMode == timeSpectral) then
-             if(sizes(1) == 0 .or. sizes(2) == 0 .or. sizes(3) == 0 .or. &
-                  sizes(4) == 0 .or. sizes(5) == 0 .or. sizes(6) == 0)     &
+             if(rindSizes(1) == 0 .or. rindSizes(2) == 0 .or. rindSizes(3) == 0 .or. &
+                  rindSizes(4) == 0 .or. rindSizes(5) == 0 .or. rindSizes(6) == 0)     &
                   halosRead = .false.
           endif
 
@@ -3041,16 +3042,16 @@ end subroutine infChangeCorrection
              ! unsteady computation.
 
              if(solID == 1 .or. equationMode == timeSpectral) then
-                if(sizes(1) > 0) nHiMin = 1; if(sizes(2) > 0) nHiMax = 1
-                if(sizes(3) > 0) nHjMin = 1; if(sizes(4) > 0) nHjMax = 1
-                if(sizes(5) > 0) nHkMin = 1; if(sizes(6) > 0) nHkMax = 1
+                if(rindSizes(1) > 0) nHiMin = 1; if(rindSizes(2) > 0) nHiMax = 1
+                if(rindSizes(3) > 0) nHjMin = 1; if(rindSizes(4) > 0) nHjMax = 1
+                if(rindSizes(5) > 0) nHkMin = 1; if(rindSizes(6) > 0) nHkMax = 1
              endif
 
              ! Set the cell range to be read from the CGNS file.
 
-             rangeMin(1) = iBegOr + sizes(1) - nHiMin
-             rangeMin(2) = jBegOr + sizes(3) - nHjMin
-             rangeMin(3) = kBegOr + sizes(5) - nHkMin
+             rangeMin(1) = iBegOr + rindSizes(1) - nHiMin
+             rangeMin(2) = jBegOr + rindSizes(3) - nHjMin
+             rangeMin(3) = kBegOr + rindSizes(5) - nHkMin
 
              rangeMax(1) = rangeMin(1) + nx-1 + nHiMin + nHiMax
              rangeMax(2) = rangeMin(2) + ny-1 + nHjMin + nHjMax
@@ -3065,9 +3066,9 @@ end subroutine infChangeCorrection
 
              halosRead   = .false.
 
-             rangeMin(1) = iBegor + sizes(1)
-             rangeMin(2) = jBegor + sizes(3)
-             rangeMin(3) = kBegor + sizes(5)
+             rangeMin(1) = iBegor + rindSizes(1)
+             rangeMin(2) = jBegor + rindSizes(3)
+             rangeMin(3) = kBegor + rindSizes(5)
 
              rangeMax(1) = rangeMin(1) + nx
              rangeMax(2) = rangeMin(2) + ny
@@ -3214,7 +3215,7 @@ end subroutine infChangeCorrection
     integer :: zone, zonetype, ncoords, pathLength
     integer :: pos
 
-    integer, dimension(9) :: sizesBlock
+    integer(kind=cgsize_t), dimension(9) :: sizesBlock
 
     integer(kind=intType) :: nn, ii
 

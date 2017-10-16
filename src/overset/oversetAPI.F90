@@ -1473,10 +1473,8 @@ contains
     use communication, only : adflow_comm_world, myID, nProc
     use blockPointers, only : il, jl, kl, nx, ny, nz, x, nDom
     use utils, only : EChk, setPointers
+    use su_cgns
     implicit none
-
-    include 'cgnslib_f.h'
-
 
     character(len=*), intent(in) :: fileName
     integer(kind=intType) :: nDomTotal, iProc, nn, i, j, k, iDim, iDom, ierr, ii
@@ -1487,7 +1485,8 @@ contains
     integer(kind=intType), dimension(:, :), allocatable :: dims
     real(kind=realType), dimension(:), allocatable :: buffer
     real(kind=realType), dimension(:, :, :, :), allocatable :: xtmp
-    integer(kind=intType) :: ier, zoneCOunter, sizes(9), base, zoneID, coordID, cg, zone
+    integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
+    integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
     character*40 :: tmpStr, zoneName
     character*32 :: coorNames(3)
@@ -1667,10 +1666,8 @@ contains
     use blockPointers, only : ie, je, ke, il, jl, kl, x, globalCell, vol, &
          nDom, iblank
     use utils, only : setPointers, EChk
+    use su_cgns
     implicit none
-
-    include 'cgnslib_f.h'
-
 
     character(len=*), intent(in) :: fileName
     integer(kind=intType) :: nDomTotal, iProc, nn, i, j, k, iDim, iDom, ierr, ii
@@ -1681,7 +1678,8 @@ contains
     integer(kind=intType), dimension(:, :), allocatable :: dims
     real(kind=realType), dimension(:), allocatable :: buffer
     real(kind=realType), dimension(:, :, :, :), allocatable :: xtmp
-    integer(kind=intType) :: ier, zoneCOunter, sizes(9), base, zoneID, coordID, cg, zone
+    integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
+    integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
     character*40 :: tmpStr, zoneName
     character*32 :: coorNames(3)

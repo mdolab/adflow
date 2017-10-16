@@ -11,6 +11,9 @@
 !       dimensions of the problem.
 !
        use constants, only : intType, realType, maxCGNSNameLen, one
+#ifndef USE_TAPENADE
+       use su_cgns
+#endif
        implicit none
        save
 !
@@ -34,7 +37,7 @@
          ! Number of data points of every dimensions. upper limit is
          ! three, although for BC data the maximum is usually 2.
 
-         integer(kind=intType), dimension(3) :: dataDim
+         integer(kind=cgsize_t), dimension(3) :: dataDim
 
          ! The actual data. Assumed is that only floating point data
          ! is prescribed and not integer or character data. Note that
@@ -239,7 +242,7 @@
          ! normalListFlag == 0: normals are not defined.
          ! normalListFlag == 1: normals are defined.
 
-         integer :: normalListFlag
+         integer(kind=cgsize_t) :: normalListFlag
 
          ! Data type used for the definition of the normals. Admissible
          ! types are realSingle and realDouble.

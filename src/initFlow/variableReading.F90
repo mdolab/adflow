@@ -2104,7 +2104,8 @@ contains
     !      Local variables.
     !
     integer :: ierr, realTypeCGNS, dummyInt
-    integer :: i, nConv, nDim, nSize
+    integer :: i, nConv, nDim
+    integer(kind=cgsize_t) :: nSize(1)
 
     integer(kind=intType) :: j, ii, nn
 
@@ -2207,7 +2208,7 @@ contains
           convNames(i) = convNames(i)//"#$@&^!#$%!"
        endif
 
-       if(nSize /= nTimeStepsRestart) then
+       if(nSize(1) /= nTimeStepsRestart) then
           print "(a)", "#"
           print "(a)", "#                 Warning"
           print 110, trim(convNames(i))
@@ -2369,8 +2370,9 @@ contains
     !      Local variables.
     !
     integer :: ierr, realTypeCGNS, typeCGNS
-    integer :: i, nsize, nDim, nRef
-
+    integer :: i, nDim, nRef
+    integer :: nsize
+    integer(kind=cgsize_t) :: nsize2(1)
     integer(kind=intType) :: ii, nn
 
     integer(kind=intType), dimension(:), allocatable :: ind
@@ -2408,11 +2410,11 @@ contains
          call terminate("scaleFactors", &
          "Something wrong when calling cg_goto_f")
 
-    ! Try to determine the size of the string describing the reference
-    ! state. If the error code is not all_ok, this means that no
-    ! reference node is present.
+    ! Try going to the reference state node. If we get an error code,
+    ! it doesn't exist.
 
-    call cg_state_size_f(nsize, ierr)
+    call cg_goto_f(cgnsInd, cgnsBase, ierr, &
+         "ReferenceState_t", 1, "end")
     if(ierr /= all_ok) then
 
        ! Reference state does not exist. Check if the restart solution
@@ -2461,7 +2463,7 @@ contains
 
     do i=1,nRef
        call cg_array_info_f(i, refNames(i), typeCGNS, nDim, &
-            nsize, ierr)
+            nsize2, ierr)
        if(ierr /= all_ok)                &
             call terminate("scaleFactors", &
             "Something wrong when calling cg_array_info_f")
@@ -2470,7 +2472,7 @@ contains
        ! Both should be 1. If not, screw up the name such that it
        ! will never be found in the search later on.
 
-       if(nDim /= 1 .or. nsize /= 1) &
+       if(nDim /= 1 .or. nsize2(1) /= 1) &
             refNames(i) = refNames(i)//"#$@&^!#$%!"
 
        ! And copy it in tmpNames.
