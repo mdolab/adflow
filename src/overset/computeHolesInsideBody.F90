@@ -12,7 +12,7 @@ subroutine computeHolesInsideBody(level, sps)
   use communication
   use inputphysics
   use inputTimeSpectral
-  use overset
+  use oversetData
   use inputOverset
   use adjointVars, only : totalVolumeNodes => nNodesLocal, totalVolumeCells => nCellsLocal
   implicit none
@@ -755,7 +755,7 @@ end subroutine computeHolesInsideBody
 
 subroutine buildUniqueNormal(wall)
 
-  use overset
+  use oversetData
   implicit none
 
   ! Input/Output parameters

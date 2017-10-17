@@ -9,7 +9,7 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
   use communication
   use inputphysics
   use inputTimeSpectral
-  use overset
+  use oversetData
   use inputOverset
   use utils, only : setPointers, EChk, pointReduce
   use warping, only : getCGNSMeshIndices

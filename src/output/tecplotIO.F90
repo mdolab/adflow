@@ -216,7 +216,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use surfaceFamilies, only : BCFamGroups, BCFamExchange
     use surfaceUtils, only : getSurfaceSize
-    use overset, only : zipperMeshes
+    use oversetData, only : zipperMeshes
     use outputMod, only : numberOfSurfSolVariables
     implicit none
 
@@ -704,7 +704,7 @@ contains
     use BCPointers, only : xx
     use sorting, only : famInList
     use extraOutput, only : surfWriteBlank
-    use overset, only : zipperMesh, zipperMeshes
+    use oversetData, only : zipperMesh, zipperMeshes
     use surfaceUtils
     implicit none
 
@@ -1271,7 +1271,7 @@ contains
     use surfaceUtils
     use utils, only : setPointers, EChk
     use sorting, only : famInList
-    use overset, only : zipperMesh
+    use oversetData, only : zipperMesh
     implicit none
 
 #define PETSC_AVOID_MPIF_H
