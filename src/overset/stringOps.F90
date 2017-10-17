@@ -1,7 +1,7 @@
 module stringOps
 
   ! Import oversetString becuase every routine uses this.
-  use overset, only : oversetString
+  use oversetData, only : oversetString
   contains
 
   subroutine nullifyString(string)
@@ -1797,7 +1797,7 @@ module stringOps
 
   subroutine makePocketZip(p, strings, nStrings, pocketMaster, debugZipper)
     use constants
-    use overset, only : oversetString, oversetEdge
+    use oversetData, only : oversetString, oversetEdge
     use oversetUtilities, only : qsortEdgeType
     use kdtree2_module
     implicit none

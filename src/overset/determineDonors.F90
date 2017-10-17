@@ -12,7 +12,7 @@ subroutine determineDonors(level, sps, fringeList, nFringe, useWall)
   use block, only : fringeType, flowDoms
   use communication, only : adflow_comm_world, myid, nProc, recvRequests, sendRequests
   use utils, only : Echk, setPointers
-  use overset, only : clusters, nDomTotal, nClusters
+  use oversetData, only : clusters, nDomTotal, nClusters
   use oversetUtilities, only : qsortFringeType, setIsDonor, setIsWallDonor, &
        computeFringeProcArray, unwindIndex
   implicit none

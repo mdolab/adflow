@@ -615,10 +615,10 @@ python module libadflow
          end subroutine checkzipper
        end module zippermesh
 
-       module overset
+       module oversetdata
          use constants
          real(kind=realtype) dimension(16) :: oversettimes
-       end module overset
+       end module oversetdata
 
 ! ================ bare subroutines =============
 

@@ -1021,7 +1021,7 @@ contains
     use BCRoutines, only : applyAllBC, applyAllBC_block
     use solverUtils, only : timeStep, computeUtau
     use residuals, only :residual, initRes, sourceTerms
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     implicit none
 
     ! Local Variables
@@ -2058,7 +2058,7 @@ contains
     use BCRoutines, only : applyAllBC
     use solverUtils, only : timeStep, computeUtau
     use residuals, only :residual, initRes, sourceTerms
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
 
     implicit none
 
@@ -2274,7 +2274,7 @@ contains
     use initializeFlow, only : setUniformFlow
     use BCRoutines, only : applyAllBC, applyAllBC_block
     use haloExchange, only : whalo2
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use flowVarRefState, only : nw, nwf
     use communication
 

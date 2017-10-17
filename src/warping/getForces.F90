@@ -7,7 +7,7 @@ subroutine getForces(forces, npts, sps)
   use utils, only : setPointers, terminate, EChk
   use surfaceIntegrations, only : integrateSurfaces
   use surfaceFamilies, only : fullfamList
-  use overset, only : zipperMeshes, zipperMesh, oversetPresent
+  use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
   use surfaceFamilies, only : familyExchange, BCFamExchange
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -136,7 +136,7 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   use inputPhysics, only : forcesAsTractions
   use surfaceFamilies, only: BCFamExchange, familyExchange
   use utils, only : setPointers, setPointers_d, EChk, terminate
-  use overset, only : zipperMeshes, zipperMesh, oversetPresent
+  use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
   use surfaceFamilies, only : familyExchange, BCFamExchange
   implicit none
 #define PETSC_AVOID_MPIF_H
@@ -253,7 +253,7 @@ subroutine getForces_b(forcesd, npts, sps)
   use surfaceFamilies, only: BCFamExchange, familyExchange
   use communication
   use utils, only : EChk, setPointers, setPointers_d
-  use overset, only : zipperMeshes, zipperMesh, oversetPresent
+  use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
   use surfaceFamilies, only : familyExchange, BCFamExchange
   implicit none
 
