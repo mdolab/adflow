@@ -199,7 +199,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use haloExchange, only : whalo2
     use flowUtils, only : adjustInflowAngle
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use iteration, only : currentLevel
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
     use BCRoutines, only : applyallBC_block

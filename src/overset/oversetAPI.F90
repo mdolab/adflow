@@ -14,7 +14,7 @@ contains
     use blockPointers, only : flowDoms, nDom, fringeType, fringes, &
          il, jl, kl, ie, je, ke, x, nx, ny, nz, iBlank, globalCell, ib, jb, kb, nDonors, &
          vol, fringePtr, forcedRecv, status, nbkglobal
-    use overset, only : CSRMatrix, oversetBlock, oversetFringe, &
+    use oversetData, only : CSRMatrix, oversetBlock, oversetFringe, &
          oversetWall, nClusters, cumDomProc, localWallFringes, nDomTotal, &
          nLocalWallFringe, clusterWalls, oversetPresent, nDomProc, &
          overlapMatrix, tmpFringePtr, oversetTimes
@@ -1289,7 +1289,7 @@ contains
 
     subroutine buildGLobalSparseOverlap(overlap)
 
-      use overset, only : clusters
+      use oversetData, only : clusters
       implicit none
 
       ! Input/Output
@@ -1904,7 +1904,7 @@ contains
     use blockPointers, only : nDom, flowDoms
     use cgnsGrid, only : CGNSDoms, cgnsNDom
     use communication, only : adflow_comm_world, myID
-    use overset, only :clusters, nDomTotal, nClusters, cumDomProc
+    use oversetData, only :clusters, nDomTotal, nClusters, cumDomProc
     implicit none
 
     ! Working variables
@@ -2077,7 +2077,7 @@ contains
     use block, only : flowDOms
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use oversetCommUtilities, onlY : updateOversetConnectivity
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     implicit none
 
     ! Input/Output

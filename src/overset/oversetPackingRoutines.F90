@@ -60,7 +60,7 @@ contains
   subroutine packOBlock(oBlock)
 
     use constants
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     implicit none
 
     ! Pack up everything we need for this block into its own buffer
@@ -184,7 +184,7 @@ contains
   subroutine unpackOBlock(oBlock)
 
     use constants
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     implicit none
 
     ! unPack everything we need for this block from its own buffer
@@ -371,7 +371,7 @@ contains
   subroutine packOFringe(oFringe)
 
     use constants
-    use overset, only : oversetFringe
+    use oversetData, only : oversetFringe
 
     implicit none
 
@@ -436,7 +436,7 @@ contains
   subroutine unpackOFringe(oFringe)
 
     use constants
-    use overset, only : oversetFringe
+    use oversetData, only : oversetFringe
     implicit none
 
     ! Pack up the search coordines in this oFringe into its own buffer
@@ -605,7 +605,7 @@ contains
   subroutine packOSurf(famList, oSurf, dualMesh)
 
     use constants
-    use overset, only : oversetWall
+    use oversetData, only : oversetWall
 
     implicit none
 
@@ -691,7 +691,7 @@ contains
   subroutine unpackOSurf(oSurf)
 
     use constants
-    use overset, only : oversetWall
+    use oversetData, only : oversetWall
     use kdtree2_module, only : kdtree2_create
     implicit none
 

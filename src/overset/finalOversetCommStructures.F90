@@ -7,7 +7,7 @@ subroutine finalOversetCommStructures(level, sps)
   use constants
   use block, only : flowDoms
   use blockPointers, only : nDom, fringes, ib, jb, kb, status, fringePtr
-  use overset, only: fringeType
+  use oversetData, only: fringeType
   use communication, only : adflow_comm_world, myid, nProc, sendRequests, recvRequests, &
        commPatternOverset, internalOverset
   use utils, only : setPointers, terminate, EChk

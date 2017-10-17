@@ -733,7 +733,7 @@ contains
     use IOModule
     use flowUtils, only : computePTot
     use utils, only : terminate
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use inputIO, only : laminarToTurbulent
     implicit none
     !
