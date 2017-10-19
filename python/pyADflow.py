@@ -105,7 +105,7 @@ class ADFLOW(AeroSolver):
     def __init__(self, comm=None, options=None, debug=False, dtype='d'):
 
         startInitTime = time.time()
-        
+
         # Load the compiled module using MExt, allowing multiple
         # imports
         try:
@@ -164,7 +164,7 @@ class ADFLOW(AeroSolver):
         self.adflow.inputparamroutines.setdefaultvalues()
 
         defSetupTime = time.time()
-        
+
         AeroSolver.__init__(self, name, category, defOpts, informs,
                             options=options)
 
@@ -238,7 +238,7 @@ class ADFLOW(AeroSolver):
         self.adflow.partitioning.partitionandreadgrid(False)
 
         partitioningTime = time.time()
-        
+
         self.adflow.preprocessingapi.preprocessing()
 
         preprocessingTime = time.time()
@@ -290,7 +290,7 @@ class ADFLOW(AeroSolver):
             self.meshFamilyGroup = self.allWallsGroup
 
         familySetupTime = time.time()
-            
+
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption('cutCallBack')
         flag = numpy.zeros(n)
@@ -299,7 +299,7 @@ class ADFLOW(AeroSolver):
             cutCallBack(xCen, flag)
 
         cutCallBackTime = time.time()
-        
+
         # Need to reset the oversetPriority option since the CGNSGrid
         # structure wasn't available before;
         self.setOption('oversetPriority', self.getOption('oversetPriority'))
@@ -339,7 +339,7 @@ class ADFLOW(AeroSolver):
             print('| %-30s: %10.3f sec'%('Introductory Time',introTime - baseClassTime))
             print('| %-30s: %10.3f sec'%('Partitioning Time',partitioningTime - introTime))
             print('| %-30s: %10.3f sec'%('Preprocessing Time',preprocessingTime - partitioningTime))
-            print('| %-30s: %10.3f sec'%('Family Setup Time',familySetupTime - preprocessingTime)) 
+            print('| %-30s: %10.3f sec'%('Family Setup Time',familySetupTime - preprocessingTime))
             print('| %-30s: %10.3f sec'%('Cut callback Time',cutCallBackTime - familySetupTime))
             print('| %-30s: %10.3f sec'%('Overset Preprocessing Time',oversetPreTime - cutCallBackTime))
             print('| %-30s: %10.3f sec'%('Initialize Flow Time',initFlowTime - oversetPreTime))
@@ -866,7 +866,7 @@ class ADFLOW(AeroSolver):
             """
 
         startCallTime = time.time()
-        
+
         # Make sure the user isn't trying to solve a slave
         # aeroproblem. Cannot do that
         if hasattr(aeroProblem, 'isSlave'):
@@ -875,7 +875,7 @@ class ADFLOW(AeroSolver):
 
         # Get option about adjoint memory
         releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
-        
+
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
 
@@ -896,7 +896,7 @@ class ADFLOW(AeroSolver):
             self.releaseAdjointMemory()
 
         memoryReleaseTime = time.time()
-        
+
         # Clear out any saved adjoint RHS since they are now out of
         # data. Also increment the counter for this case.
         self.curAP.adflowData.adjointRHS = OrderedDict()
@@ -1134,12 +1134,12 @@ class ADFLOW(AeroSolver):
         """
 
         startEvalTime = time.time()
-        
+
         # Set the AP
         self.setAeroProblem(aeroProblem)
 
         aeroProblemTime = time.time()
-        
+
         if evalFuncs is None:
             evalFuncs = sorted(list(self.curAP.evalFuncs))
 
@@ -1198,7 +1198,7 @@ class ADFLOW(AeroSolver):
                     callBackFuncs[g[1]] = res[g[0]]
 
         getSolutionTime = time.time()
-                    
+
         # Execute the user supplied functions if there are any
         for f in self.adflowUserCostFunctions:
             if f in evalFuncs:
@@ -1214,13 +1214,13 @@ class ADFLOW(AeroSolver):
             print('| Function Timings:')
             print('|')
             print('| %-30s: %10.3f sec'%('Function AeroProblem Time',aeroProblemTime - startEvalTime))
-            print('| %-30s: %10.3f sec'%('Function Evaluation Time',getSolutionTime - aeroProblemTime)) 
+            print('| %-30s: %10.3f sec'%('Function Evaluation Time',getSolutionTime - aeroProblemTime))
             print('| %-30s: %10.3f sec'%('User Function Evaluation Time',userFuncTime - getSolutionTime))
             print('|')
             print('| %-30s: %10.3f sec'%('Total Function Evaluation Time',userFuncTime - startEvalTime))
             print('+--------------------------------------------------+')
 
-            
+
     def _getFuncsBar(self, f):
         # Internal routine to return the funcsBar dictionary for the
         # given objective. For regular functions this just sets a 1.0
@@ -1268,7 +1268,7 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem)
 
         aeroProblemTime = time.time()
-        
+
         if evalFuncs is None:
             evalFuncs = sorted(list(self.curAP.evalFuncs))
 
@@ -1281,7 +1281,7 @@ class ADFLOW(AeroSolver):
         adjointStartTime = {}
         adjointEndTime = {}
         totalSensEndTime = {}
-        
+
         # Do the functions one at a time:
         for f in evalFuncs:
             if f in self.adflowCostFunctions:
@@ -1325,7 +1325,7 @@ class ADFLOW(AeroSolver):
             totalSensEndTime[f] = time.time()
 
         finalEvalSensTime = time.time()
-        
+
         if self.getOption('printTiming') and self.comm.rank == 0:
             print('+--------------------------------------------------+')
             print('|')
@@ -3033,7 +3033,7 @@ class ADFLOW(AeroSolver):
                dIdP = dIda[self.possibleAeroDVs['p']]
                dIdrho = dIda[self.possibleAeroDVs['rho']]
 
-               # Chain-rule to get the final derivative:             
+               # Chain-rule to get the final derivative:
                funcsSens[dvName] = (
                    tmp[self.curAP['P']][dvName]*dIdP +
                    tmp[self.curAP['rho']][dvName]*dIdrho +
@@ -4234,7 +4234,7 @@ class ADFLOW(AeroSolver):
             'lowspeedpreconditioner':[bool, False],
             'walldistcutoff':[float, 1e20],
             'infchangecorrection':[bool, False],
-            
+
             # Common Paramters
             'ncycles':[int, 500],
             'ncyclescoarse':[int, 500],
@@ -4260,6 +4260,7 @@ class ADFLOW(AeroSolver):
             'oversetupdatemode':[str, 'frozen'],
             'nrefine':[int,10],
             'usezippermesh':[bool, True],
+            'selfzipcutoff':[float, 120.0],
             'oversetpriority':[dict, {}],
 
             # Unsteady Paramters
@@ -4550,6 +4551,7 @@ class ADFLOW(AeroSolver):
                                  'location':['overset', 'oversetupdatemode']},
             'nrefine':['overset','nrefine'],
             'usezippermesh':['overset', 'usezippermesh'],
+            'selfzipcutoff':['overset', 'selfzipcutoff'],
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
@@ -4841,13 +4843,13 @@ class ADFLOW(AeroSolver):
             'forcezviscous':self.adflow.constants.costfuncforcezviscous,
             'forcexmomentum':self.adflow.constants.costfuncforcexmomentum,
             'forceymomentum':self.adflow.constants.costfuncforceymomentum,
-            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,     
-            'dragpressure':self.adflow.constants.costfuncdragpressure,       
-            'dragviscous':self.adflow.constants.costfuncdragviscous,       
-            'dragmomentum':self.adflow.constants.costfuncdragmomentum,       
-            'liftpressure':self.adflow.constants.costfuncliftpressure,       
-            'liftviscous':self.adflow.constants.costfuncliftviscous,       
-            'liftmomentum':self.adflow.constants.costfuncliftmomentum,                   
+            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,
+            'dragpressure':self.adflow.constants.costfuncdragpressure,
+            'dragviscous':self.adflow.constants.costfuncdragviscous,
+            'dragmomentum':self.adflow.constants.costfuncdragmomentum,
+            'liftpressure':self.adflow.constants.costfuncliftpressure,
+            'liftviscous':self.adflow.constants.costfuncliftviscous,
+            'liftmomentum':self.adflow.constants.costfuncliftmomentum,
             }
 
         return iDV, BCDV, adflowCostFunctions
