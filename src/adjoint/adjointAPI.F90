@@ -374,6 +374,12 @@ contains
     call VecSet(psi_like2, zero, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
+    ! Reset normType to default in case the globalPrecon function has been called
+    ! by the user.-1 is KSP_NORM_DEFAULT, which isn't in the fortran
+    ! header for some reason
+    call KSPSetNormType(adjointKSP, -1, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
     ! Set desired realtive tolerance
     call KSPSetTolerances(adjointKSP, relativeTolerance, adjAbsTol, adjDivTol, &
          adjMaxIter, ierr)
