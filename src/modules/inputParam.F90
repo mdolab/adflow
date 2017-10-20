@@ -851,9 +851,8 @@ module inputOverset
   real(kind=realType) :: backgroundVolScale = 1.0
   logical :: debugZipper=.False.
   integer(kind=intType) :: oversetUpdateMode
-
+  real(kind=realType) :: selfZipCutoff
   ! nRefine: number of connectivity loops to run
   integer(kind=intType)::nRefine
   logical :: useZipperMesh
 end module inputOverset
-
