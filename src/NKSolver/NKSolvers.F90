@@ -1701,7 +1701,6 @@ module ANKSolver
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
   logical :: ANK_coupled=.False.
-  real(kind=realType) :: ANK_saRelax
   real(kind=realType) :: ANK_turbSwitchTol
   integer(kind=intType) :: ANK_nSubIterTurb
   real(kind=realType) :: ANK_turbcflscale
@@ -2739,7 +2738,7 @@ contains
     use communication, only : myid
     use inputPhysics, only : equations
     use inputIteration, only : L2conv, nsubiterturb, turbResScale
-    use inputDiscretization, only : lumpedDiss, sa_relax
+    use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentlevel
     use utils, only : EChk, setpointers
@@ -2995,7 +2994,6 @@ contains
 
         if (ANK_useTurbDADI) then ! Do DDADI update
             ! parameter to control the approximations in the ddadi jacobian for turbulence
-            !sa_relax = min(ANK_saRelax*totalR0/totalR, one)
             call computeUtau
             call turbSolveSegregated
         else ! Do ksp update
