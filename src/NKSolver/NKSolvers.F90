@@ -2259,7 +2259,7 @@ contains
   subroutine ANKStep(firstCall)
 
     use constants
-    use blockPointers, only : nDom, flowDoms, shockSensor
+    use blockPointers, only : nDom, flowDoms, shockSensor, ib, jb, kb, p, w, gamma
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss
@@ -2275,7 +2275,9 @@ contains
     use BCRoutines, only : applyAllBC, applyAllBC_block
     use haloExchange, only : whalo2
     use oversetData, only : oversetPresent
-    use flowVarRefState, only : nw, nwf
+    use flowVarRefState, only : nw, nwf, kPresent, pInfCorr
+    use flowUtils, only : computeLamViscosity
+    use turbUtils, only : computeEddyViscosity
     use communication
 
     implicit none
@@ -2285,10 +2287,11 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter
-    real(kind=realType) :: atol, val, lambdaBT
+    integer(kind=intType) :: i,j,k
+    real(kind=realType) :: atol, val, lambdaBT, v2, factK, gm1
     real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
     real(kind=alwaysRealType) :: resHist(ank_maxIter+1)
-    logical :: secondOrdSave
+    logical :: secondOrdSave, correctForK
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
     if (firstCall .or. (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI)) then
@@ -2440,11 +2443,48 @@ contains
 
     ! ============== Turb Update =============
     if (ANK_useTurbDADI .and. equations==RANSEquations) then
+        ! Update the intermediate variables required for turb. solve
+        if (kPresent) then
+           correctForK = .True.
+        end if
+        ! because the flow variables has changed.
+        do sps=1,nTimeIntervalsSpectral
+           do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             ! Calculate pressure
+             factK = zero
+             do k=0, kb
+                do j=0, jb
+                   do i=0, ib
 
-        ! We need to exchange halos after the flow update, otherwise the
-        ! turbulence solver might stall due to outdated velocity values
-        ! at the block boundaries
+                      gm1  = gamma(i, j, k) - one
+                      v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
+                           + w(i,j,k,ivz)**2
+
+                      p(i,j,k) = gm1*(w(i,j,k,irhoE) &
+                           - half*w(i,j,k,irho)*v2)
+
+                      if( correctForK ) then
+                         factK = five*third - gamma(i, j ,k)
+                         p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
+                              * w(i, j, k, itu1)
+                      end if
+
+                      ! Clip to make sure it is positive.
+                      p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+                   end do
+                end do
+             end do
+             ! Compute Viscosities
+             call computeLamViscosity(.False.)
+             call computeEddyViscosity (.False.)
+           end do
+        end do
+
+        ! Apply BCs
         call applyAllBC(.true.)
+
+        ! Exchange halos
         call whalo2(currentLevel, 1_intType, nwf, .false.,&
                     .false., .false.)
 
