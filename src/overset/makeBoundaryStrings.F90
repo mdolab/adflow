@@ -7,7 +7,7 @@ contains
     use blockPointers, only : x, globalCell, globalNOde, BCData, nBocos, &
          il, jl, kl, nDom, rightHanded, BCFaceID, BCType
     use communication, only : adflow_comm_world, myid, nProc
-    use overset, only : oversetString, oversetWall, nClusters, clusters, cumDomProc
+    use oversetData, only : oversetString, oversetWall, nClusters, clusters, cumDomProc
     use stringOps
     use utils, only : setPointers, EChk, myNorm2, cross_prod
     use oversetPackingRoutines, only : getWallSize

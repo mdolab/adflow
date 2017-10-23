@@ -1,4 +1,4 @@
-module overset
+module oversetData
 
   use constants
   use adtData, only : adtType
@@ -569,4 +569,4 @@ module overset
     end if
 
   end function EqualPocketEdgeN2
-end module overset
+end module oversetData

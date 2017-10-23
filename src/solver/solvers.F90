@@ -1223,7 +1223,7 @@ contains
          CFLMonitor, stepMonitor, t0solver, converged, linResMonitor
     use killSignals, only : routineFailed, fromPython
     use iteration, only : rhoRes, rhoResStart, totalR, totalRStart, totalR0
-    use overset, only: oversetPresent
+    use oversetData, only: oversetPresent
     use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
          sumResiduals, sumAllResiduals
     use surfaceIntegrations, only : integrateSurfaces

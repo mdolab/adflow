@@ -4,7 +4,7 @@ contains
 
   subroutine tic(index)
     use constants
-    use overset, only : tStart
+    use oversetData, only : tStart
     implicit none
     integer(kind=intType), intent(in) :: index
     tStart(index) = mpi_wtime()
@@ -13,7 +13,7 @@ contains
 
   subroutine toc(index)
     use constants
-    use overset, only : tStart, oversetTimes
+    use oversetData, only : tStart, oversetTimes
     implicit none
     integer(kind=intType), intent(in) :: index
     oversetTimes(index) = oversetTimes(index) + mpi_wtime()- tStart(index)
@@ -57,7 +57,7 @@ contains
     ! This is a debugging routine to print out the overlap matrix.
     use constants
     use communication, only : myid
-    use overset, only : CSRMatrix
+    use oversetData, only : CSRMatrix
     implicit none
 
     ! Input/output
@@ -113,7 +113,7 @@ contains
     ! Create the matrix Create the matrix transpose.
     ! Inspired by: https://people.sc.fsu.edu/~jburkardt/f_src/sparsekit/sparsekit.f90
     use constants
-    use overset, only : CSRMatrix
+    use oversetData, only : CSRMatrix
     implicit none
 
     ! Input/Output
@@ -179,7 +179,7 @@ contains
   subroutine deallocateCSRMatrix(mat1)
 
     use constants
-    use overset, only : CSRMatrix
+    use oversetData, only : CSRMatrix
     implicit none
 
     type(CSRMatrix), intent(inout) :: mat1
@@ -200,7 +200,7 @@ contains
     ! processors. fringeProc is the processor number for each section.
     use constants
     use block, only : fringeType
-    use overset, only : CSRMatrix
+    use oversetData, only : CSRMatrix
     use communication, only : nProc
 
     implicit none
@@ -239,7 +239,7 @@ contains
     ! This subroutine deallocates all data stores in a list of oBlocks
     use constants
     use adtBuild, only : destroySerialHex
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     implicit none
 
     ! Input Params
@@ -273,7 +273,7 @@ contains
 
     ! This subroutine deallocates all data stores in a list of oFringes
     use constants
-    use overset, only : oversetFringe
+    use oversetData, only : oversetFringe
     implicit none
 
     ! Input Params
@@ -318,7 +318,7 @@ contains
 
     use constants
     use adtBuild, only : destroySerialQuad
-    use overset, only : oversetWall
+    use oversetData, only : oversetWall
     use kdtree2_module, only : kdtree2destroy
     implicit none
 
@@ -739,7 +739,7 @@ contains
     !  where 'search' lies in arr.
 
     use constants
-    use overset ! cannot use only becuase of <= operator
+    use oversetData ! cannot use only becuase of <= operator
     implicit none
 
     ! Input parameters
@@ -786,7 +786,7 @@ contains
     !       (Generously copied from qsortFringeType.F90)
     !
     use constants
-    use overset ! cannot use only becuase of <= operator
+    use oversetData ! cannot use only becuase of <= operator
     use utils, only : terminate
     implicit none
     !
@@ -1337,7 +1337,7 @@ contains
     !       (Generously copied from qsortFringeType.F90)
     !
     use constants
-    use overset ! Cannot use-only becuase of <= operator
+    use oversetData ! Cannot use-only becuase of <= operator
     use utils, onlY : terminate
     implicit none
     !
@@ -2311,7 +2311,7 @@ contains
 
     use constants
     use communication, only : myid
-    use overset, only : CSRMatrix, nDomTotal
+    use oversetData, only : CSRMatrix, nDomTotal
     implicit none
 
     ! Input/Output
@@ -2348,7 +2348,7 @@ contains
 
     ! debug routine to dumb an owall to a file
     use constants
-    use overset
+    use oversetData
     implicit none
     type(oversetWall) :: oWall
     character(len=*), intent(in) :: fName

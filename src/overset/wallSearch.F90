@@ -3,7 +3,7 @@ contains
   subroutine wallSearch(aSurf, bSurf)
 
     use constants
-    use overset, only : oversetWall, clusterAreas
+    use oversetData, only : oversetWall, clusterAreas
     use inputOverset, only : nearWallDist
     use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
     use adtData, only : adtBBoxTargetType, adtLeafType
@@ -196,7 +196,7 @@ contains
     ! there are no duplicates:
 
     use constants
-    use overset, only : oversetWall
+    use oversetData, only : oversetWall
     implicit none
 
     ! Input/Output

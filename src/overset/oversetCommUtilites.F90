@@ -5,7 +5,7 @@ contains
   subroutine getCommPattern(oMat,  sendList,  nSend, recvList, nRecv)
 
     use constants
-    use overset, only : cumDomProc, nDomProc, nDomTotal, CSRMatrix
+    use oversetData, only : cumDomProc, nDomProc, nDomTotal, CSRMatrix
     use blockPointers, only : nDom
     use communication , only : nProc, myid
     use sorting, only : unique
@@ -106,7 +106,7 @@ contains
     ! This subroutine get the the comm pattern to send the oWall types.
     use constants
     use blockPointers, only : nDom
-    use overset, only : nDomTotal, CSRMatrix, cumDomProc, nDomProc
+    use oversetData, only : nDomTotal, CSRMatrix, cumDomProc, nDomProc
     use communication, only : myid, nProc
     use sorting, only : unique
     implicit none
@@ -203,7 +203,7 @@ contains
 
     use constants
     use communication, only : adflow_comm_world, sendRequests
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     use utils, only : EChk
     implicit none
 
@@ -232,7 +232,7 @@ contains
 
     use constants
     use communication, only : adflow_comm_world, sendRequests
-    use overset, only : oversetFringe
+    use oversetData, only : oversetFringe
     use utils, only : EChk
     implicit none
 
@@ -261,7 +261,7 @@ contains
 
     use constants
     use communication, only : sendRequests, adflow_comm_world
-    use overset, only : oversetWall
+    use oversetData, only : oversetWall
     use utils, only : EChk
     implicit none
 
@@ -291,7 +291,7 @@ contains
 
     use constants
     use communication, only : adflow_comm_world, recvRequests
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     use utils, only : EChk
     implicit none
 
@@ -326,7 +326,7 @@ contains
 
     use constants
     use communication, only : adflow_comm_world, recvRequests
-    use overset, only : oversetFringe
+    use oversetData, only : oversetFringe
     use utils, only : EChk
     implicit none
 
@@ -361,7 +361,7 @@ contains
 
     use constants
     use communication, only : adflow_comm_world, recvRequests
-    use overset, only : oversetWall
+    use oversetData, only : oversetWall
     use utils, only : EChk
     implicit none
 
@@ -403,7 +403,7 @@ contains
     use constants
     use communication , only : sendRequests, recvRequests, adflow_comm_world
     use utils, only : EChk
-    use overset, onlY : oversetFringe
+    use oversetData, onlY : oversetFringe
     implicit none
 
     ! Input/output
@@ -478,7 +478,7 @@ contains
 
     use constants
     use communication, only : nProc
-    use overset, only : CSRMatrix
+    use oversetData, only : CSRMatrix
     implicit none
 
     ! Input/Output

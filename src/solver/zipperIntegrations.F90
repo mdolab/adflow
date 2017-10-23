@@ -391,7 +391,7 @@ contains
     ! flow-though surface integration.
 
     use constants
-    use overset, only : zipperMeshes, zipperMesh
+    use oversetData, only : zipperMeshes, zipperMesh
     use haloExchange, only : wallIntegrationZipperComm, flowIntegrationZipperComm
     implicit none
 
@@ -475,7 +475,7 @@ contains
     ! Forward mode linearization of the zipper integration.
 
     use constants
-    use overset, only : zipperMeshes, zipperMesh
+    use oversetData, only : zipperMeshes, zipperMesh
     use haloExchange, only : wallIntegrationZipperComm_d, flowIntegrationZipperComm_d
     use zipperIntegrations_d, only : flowIntegrationZipper_d, wallIntegrationZipper_d
     implicit none
@@ -558,7 +558,7 @@ contains
     ! Reverse mode linearization of the zipper integration.
 
     use constants
-    use overset, only : zipperMeshes, zipperMesh
+    use oversetData, only : zipperMeshes, zipperMesh
     use haloExchange, only : wallIntegrationZipperComm_b, flowIntegrationZipperComm_b, &
          wallIntegrationZipperComm, flowIntegrationZipperComm
     use zipperIntegrations_b, only : wallIntegrationZipper_b, flowIntegrationZipper_b

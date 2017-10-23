@@ -14,7 +14,7 @@ contains
     use blockPointers, only : flowDoms, nDom, fringeType, fringes, &
          il, jl, kl, ie, je, ke, x, nx, ny, nz, iBlank, globalCell, ib, jb, kb, nDonors, &
          vol, fringePtr, forcedRecv, status, nbkglobal
-    use overset, only : CSRMatrix, oversetBlock, oversetFringe, &
+    use oversetData, only : CSRMatrix, oversetBlock, oversetFringe, &
          oversetWall, nClusters, cumDomProc, localWallFringes, nDomTotal, &
          nLocalWallFringe, clusterWalls, oversetPresent, nDomProc, &
          overlapMatrix, tmpFringePtr, oversetTimes
@@ -1289,7 +1289,7 @@ contains
 
     subroutine buildGLobalSparseOverlap(overlap)
 
-      use overset, only : clusters
+      use oversetData, only : clusters
       implicit none
 
       ! Input/Output
@@ -1473,10 +1473,8 @@ contains
     use communication, only : adflow_comm_world, myID, nProc
     use blockPointers, only : il, jl, kl, nx, ny, nz, x, nDom
     use utils, only : EChk, setPointers
+    use su_cgns
     implicit none
-
-    include 'cgnslib_f.h'
-
 
     character(len=*), intent(in) :: fileName
     integer(kind=intType) :: nDomTotal, iProc, nn, i, j, k, iDim, iDom, ierr, ii
@@ -1487,7 +1485,8 @@ contains
     integer(kind=intType), dimension(:, :), allocatable :: dims
     real(kind=realType), dimension(:), allocatable :: buffer
     real(kind=realType), dimension(:, :, :, :), allocatable :: xtmp
-    integer(kind=intType) :: ier, zoneCOunter, sizes(9), base, zoneID, coordID, cg, zone
+    integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
+    integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
     character*40 :: tmpStr, zoneName
     character*32 :: coorNames(3)
@@ -1667,10 +1666,8 @@ contains
     use blockPointers, only : ie, je, ke, il, jl, kl, x, globalCell, vol, &
          nDom, iblank
     use utils, only : setPointers, EChk
+    use su_cgns
     implicit none
-
-    include 'cgnslib_f.h'
-
 
     character(len=*), intent(in) :: fileName
     integer(kind=intType) :: nDomTotal, iProc, nn, i, j, k, iDim, iDom, ierr, ii
@@ -1681,7 +1678,8 @@ contains
     integer(kind=intType), dimension(:, :), allocatable :: dims
     real(kind=realType), dimension(:), allocatable :: buffer
     real(kind=realType), dimension(:, :, :, :), allocatable :: xtmp
-    integer(kind=intType) :: ier, zoneCOunter, sizes(9), base, zoneID, coordID, cg, zone
+    integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
+    integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
     character*40 :: tmpStr, zoneName
     character*32 :: coorNames(3)
@@ -1906,7 +1904,7 @@ contains
     use blockPointers, only : nDom, flowDoms
     use cgnsGrid, only : CGNSDoms, cgnsNDom
     use communication, only : adflow_comm_world, myID
-    use overset, only :clusters, nDomTotal, nClusters, cumDomProc
+    use oversetData, only :clusters, nDomTotal, nClusters, cumDomProc
     implicit none
 
     ! Working variables
@@ -2079,7 +2077,7 @@ contains
     use block, only : flowDOms
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use oversetCommUtilities, onlY : updateOversetConnectivity
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     implicit none
 
     ! Input/Output

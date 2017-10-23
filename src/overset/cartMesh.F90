@@ -1,10 +1,11 @@
 module cartMesh
 
-  use overset
+  use oversetData
   use communication
   use utils
   use haloExchange
   use oversetPackingRoutines
+  use su_cgns
   implicit none
 
  contains
@@ -14,8 +15,8 @@ module cartMesh
     use constants
     use blockPointers
     use surfaceFamilies, only : BCFamGroups
+    use su_cgns
     implicit none
-    include 'cgnslib_f.h'
 
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
@@ -885,7 +886,7 @@ module cartMesh
   subroutine writeCartMesh(blankVec, cellDims, xMin, h)
 
     implicit none
-    include 'cgnslib_f.h'
+
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
@@ -930,8 +931,8 @@ module cartMesh
        base = 1
        call cg_base_write_f(cg, "Base#1", 3, 3, base, ierr)
 
-       call cg_zone_write_f(cg, base, "cartblock", (/cellDims(1)+1, cellDims(2)+1, cellDims(3)+1, &
-            cellDims(1), cellDims(2), cellDims(3), 0, 0, 0/), Structured, zoneID, ierr)
+       call cg_zone_write_f(cg, base, "cartblock", int((/cellDims(1)+1, cellDims(2)+1, cellDims(3)+1, &
+            cellDims(1), cellDims(2), cellDims(3), 0, 0, 0/), cgsize_t), Structured, zoneID, ierr)
 
        allocate(xtmp(cellDims(1)+1, cellDims(2)+1, cellDims(3)+1, 3))
 
