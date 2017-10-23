@@ -2382,7 +2382,7 @@ contains
     use BCRoutines, only : applyAllBC, applyAllBC_block
     use solverUtils, only : timeStep, computeUtau
     use residuals, only :residual, initRes, sourceTerms
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     implicit none
 
     ! Local Variables
@@ -2752,7 +2752,7 @@ contains
     use haloexchange, only : whalo2
     use BCRoutines, only : applyAllBC, applyAllBC_block
     use flowvarrefstate, only : nwf, nw, kPresent, pInfCorr
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use flowUtils, only : computeLamViscosity
     use turbUtils, only : computeEddyViscosity
     use communication
