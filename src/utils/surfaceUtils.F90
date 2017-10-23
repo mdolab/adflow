@@ -10,7 +10,7 @@ contains
     use utils, only : setPointers
     use sorting, only : famInList
     use surfaceFamilies, only  : BCFamGroups
-    use overset, only : zipperMeshes, zipperMesh, oversetPresent
+    use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
 
     implicit none
 
@@ -107,7 +107,7 @@ contains
     use utils, only : setPointers
     use sorting, only : famInList
     use surfaceFamilies, only : BCFamGroups
-    use overset, only : zipperMeshes, zipperMesh, oversetPresent
+    use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
 
     implicit none
 
@@ -282,7 +282,7 @@ contains
     use utils, only : setPointers
     use sorting, only : famInList
     use surfaceFamilies, only : BCFamGroups
-    use overset, only : zipperMeshes, zipperMesh, oversetPresent
+    use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
     implicit none
 
     ! Input/Output
@@ -375,7 +375,7 @@ contains
     use blockPointers, only : nDom, BCData, nBocos, x, BCFaceID, il, jl, kl
     use BCPointers, only : xx
     use surfaceFamilies, only : BCFamGroups, familyExchange, BCFamExchange
-    use overset, only : zipperMeshes, zipperMesh, oversetPresent
+    use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
     use sorting, only : famInList
     use utils, only : setPointers, EChk, setBCPointers
     implicit none
@@ -538,7 +538,7 @@ contains
     use blockPointers, onlY :nDom, flowDoms
     use sorting, only : famInList
     use surfaceFamilies, only : BCFamGroups
-    use overset, only : zipperMeshes, zipperMesh, oversetPresent
+    use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
 
     implicit none
 

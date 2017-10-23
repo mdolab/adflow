@@ -838,7 +838,7 @@ contains
       !
       !        Local variables.
       !
-      integer, dimension(6) :: sizes
+      integer(kind=cgsize_t), dimension(6) :: sizes
 
       integer(kind=intType) :: nn
 
@@ -980,7 +980,7 @@ contains
          sizes(3) = 0; sizes(4) = 0
       endif
 
-      call cg_rind_write_f(sizes, ierr)
+      call cg_rind_write_f(int(sizes, intType), ierr)
       if(ierr /= CG_OK)                    &
            call terminate("createSurfaceZone", &
            "Something wrong when calling cg_rind_write_f")
@@ -1621,7 +1621,7 @@ contains
           cgnsBase = cgnsIsoSurfBases(sps)
 
           ! Write the unstructured zone
-          call cg_zone_write_f(cgnsInd, cgnsBase, isoName, (/sum(nPtsProc), sum(nConnProc), 0/), &
+          call cg_zone_write_f(cgnsInd, cgnsBase, isoName, int((/sum(nPtsProc), sum(nConnProc), 0/), cgsize_t), &
                Unstructured, cgnsZone, ierr)
           if (ierr .eq. CG_ERROR) call cg_error_exit_f
 
@@ -1893,7 +1893,7 @@ contains
 
     subroutine writeEmptyZone
 
-      call cg_zone_write_f(cgnsInd, cgnsBase, isoName, (/3, 1, 0/), &
+      call cg_zone_write_f(cgnsInd, cgnsBase, isoName, int((/3, 1, 0/), cgsize_t), &
            Unstructured, cgnsZone, ierr)
       if (ierr .eq. CG_ERROR) call cg_error_exit_f
 

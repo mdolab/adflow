@@ -1,7 +1,7 @@
 module stringOps
 
   ! Import oversetString becuase every routine uses this.
-  use overset, only : oversetString
+  use oversetData, only : oversetString
   contains
 
   subroutine nullifyString(string)
@@ -206,6 +206,7 @@ module stringOps
 
     use constants
     use kdtree2_module
+    use inputOverset, only : selfZipCutoff
     implicit none
 
     ! Input/Output
@@ -236,7 +237,7 @@ module stringOps
        if (.not. str%isPocket) then
           zipperLoop: do j=1, 5
              if (j== 1) then
-                cutOff = 120_realType
+                cutOff = selfZipCutoff
              else
                 cutOff = 90_realType
              end if
@@ -675,6 +676,7 @@ module stringOps
 
        if (dot_product(norm, s%norm(:, ii)) > zero) then
 
+
           ! the dot product of the im1 and ip1 nodes have to be close
           if (dot_product(s%norm(:, ip1), s%norm(:, im1)) > 0.80) then
 
@@ -684,6 +686,7 @@ module stringOps
 
                 call addPotentialTriangle(s, im1, ii, ip1, nodeMap, &
                      results, added)
+
 
                 if (added) then
                    nZipped = nZipped + 1
@@ -1797,7 +1800,7 @@ module stringOps
 
   subroutine makePocketZip(p, strings, nStrings, pocketMaster, debugZipper)
     use constants
-    use overset, only : oversetString, oversetEdge
+    use oversetData, only : oversetString, oversetEdge
     use oversetUtilities, only : qsortEdgeType
     use kdtree2_module
     implicit none

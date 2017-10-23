@@ -2,7 +2,7 @@ subroutine fringeSearch(oBlock, oFringe)
 
   use constants
   use block, only : fringeType
-  use overset, only : oversetBlock, oversetFringe, localWallFringes, &
+  use oversetData, only : oversetBlock, oversetFringe, localWallFringes, &
        tmpFringePtr, nLocalWallFringe
   use inputOverset, onlY : overlapFactor, oversetProjTol
   use adtLocalSearch, only :  mindistancetreesearchsinglepoint, &

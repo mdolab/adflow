@@ -500,7 +500,7 @@ contains
     ! useDual.
 
     use constants
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     use blockPointers, only : nDom, x, ie, je, ke, il, jl, kl,  vol, ib, jb, kb,&
          iBlank, BCData, nBocos, BCFaceID, BCType
     use adtBuild, only : buildSerialHex
@@ -708,7 +708,7 @@ contains
     use constants
     use block, only : interpPtType
     use communication, only : adflow_comm_world, myid, nProc
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     use blockPointers, only : nDom, x, ie, je, ke, il, jl, kl, x, iBlank, vol
     use adtLocalSearch, only :  mindistancetreesearchsinglepoint, &
          containmenttreesearchsinglepoint
@@ -1109,7 +1109,7 @@ contains
 
     use constants
     use communication, only : adflow_comm_world, myid
-    use overset, only : oversetBlock
+    use oversetData, only : oversetBlock
     use blockPointers, only : nDom, ie, je, ke, il, jl, kl
     use adtBuild, only : buildSerialHex, destroySerialHex
     use utils, only : setPointers, EChk

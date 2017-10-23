@@ -15,10 +15,13 @@ import sys
 from . import MExt
 
 
-def checkZipper(fileName):
+def checkZipper(fileName, options=None):
     """Run the zipper code on the supplied zipper debug file"""
 
     # Import the adflow module, we won't be useing much of it
     curDir = os.path.dirname(os.path.realpath(__file__))
     adflow = MExt.MExt('libadflow', [curDir], debug=True)._module
+    if options is not None:
+        # There is only 1 zipper-specific option
+        adflow.inputoverset.selfzipcutoff = options.pop('selfZipCutoff', 120.0)
     adflow.zippermesh.checkzipper(fileName)

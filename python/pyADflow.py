@@ -1136,7 +1136,7 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem)
 
         aeroProblemTime = time.time()
- 
+
         if evalFuncs is None:
             evalFuncs = sorted(list(self.curAP.evalFuncs))
 

@@ -466,7 +466,7 @@ contains
     integer :: i, ierr, nCoords
     integer :: mass, len, time, temp, angle
 
-    integer, dimension(9) :: sizesBlock
+    integer(kind=cgsize_t), dimension(9) :: sizesBlock
 
     integer(kind=intType) :: ii, nn
 
@@ -840,13 +840,13 @@ contains
     integer :: i, ngeneral, ierr
     integer :: n1to1, n1to1General, nNonMatch
 
-    integer :: location, connectType, ptsetType, npnts
+    integer :: location, connectType, ptsetType
+    integer(kind=cgsize_t) :: npnts, ndataDonor
     integer :: donorZoneType, donorPtsetType, donorDatatype
-    integer :: ndataDonor
 
     integer, dimension(:),     allocatable :: connIDNonMatch
-    integer, dimension(:,:),   allocatable :: donorData
-    integer, dimension(:,:,:), allocatable :: myRangeNonMatch
+    integer(kind=cgsize_t), dimension(:,:),   allocatable :: donorData
+    integer(kind=cgsize_t), dimension(:,:,:), allocatable :: myRangeNonMatch
 
     integer(kind=intType) :: mm, nn
 
@@ -1168,11 +1168,11 @@ contains
     integer :: cgnsN1to1
     integer :: i, ierr
 
-    integer, dimension(3,2) :: zoneRange, donorRange
+    integer(kind=cgsize_t), dimension(3,2) :: zoneRange, donorRange
     integer, dimension(3)   :: transform
 
     character(len=maxCGNSNameLen) :: connectName
- 
+
     type(cgns1to1ConnType),    pointer, dimension(:) :: conn1to1
     real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
     real(kind=cgnsPerType), dimension(3) :: tlation
@@ -1473,8 +1473,7 @@ contains
                & matrix reversed")
           print "(a)", "#"
        endif
-
-    endif
+   endif
 
   end subroutine checkTransform
   subroutine readGeneralConn(cgnsInd, cgnsBase, nZone)
@@ -1501,16 +1500,17 @@ contains
     character(len=maxStringLen) :: errorMessage
 
     integer :: i, j, nn, nGeneral, n1to1, ierr
-    integer :: location, connectType, ptsetType, npnts
+    integer :: location, connectType, ptsetType
+    integer(kind=cgsize_t) :: npnts
     integer :: donorZoneType, donorPtsetType, donorDatatype
-    integer :: nDataDonor, id, jj
+    integer :: id, jj
     integer :: nArrays, dataType, dataDim
-
+    integer(kind=cgsize_t) :: nDataDonor
     integer, dimension(2)   :: dimVector
     integer, dimension(3)   :: ii, transform
-    integer, dimension(3,2) :: myRange
+    integer(kind=cgsize_t), dimension(3,2) :: myRange
 
-    integer, dimension(:,:), allocatable :: myData, donorData
+    integer(kind=cgsize_t), dimension(:,:), allocatable :: myData, donorData
     integer, dimension(:,:), allocatable :: map2NonMatch
 
     real(kind=realType), dimension(3) :: rotationCenter
@@ -1914,7 +1914,8 @@ contains
     !
     !      Local variables
     !
-    integer :: cgnsNBocos, cgnsNpnts, cgnsNDataSet, nUserData
+    integer :: cgnsNBocos, cgnsNDataSet, nUserData
+    integer(kind=cgsize_t) :: cgnsNpnts
     integer :: i, j, match
     integer :: ierr, dummy
     integer :: dirichletFlag, neumannFlag
