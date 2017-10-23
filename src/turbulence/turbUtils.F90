@@ -848,7 +848,6 @@ contains
          w, si, sj, sk, addGridVelocities, bmti1, bmti2, bmtj1, bmtj2, &
          bmtk1, bmtk2, scratch
     use turbMod, only : secondOrd
-    use inputDiscretization, only : sa_relax
     implicit none
     !
     !      Subroutine arguments.
@@ -988,7 +987,7 @@ contains
                             impl(kk) = bmtk1(i,j,jj,kk+offset)
                          enddo
 
-                         impl(ii) = max(impl(ii), sa_relax*impl(ii))
+                         impl(ii) = max(impl(ii), zero)
 
                          do kk=1,mAdv
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) + uu*impl(kk)
@@ -1075,7 +1074,7 @@ contains
                             impl(kk) = bmtk2(i,j,jj,kk+offset)
                          enddo
 
-                         impl(ii) = max(impl(ii), sa_relax*impl(ii))
+                         impl(ii) = max(impl(ii), zero)
 
                          do kk=1,mAdv
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) - uu*impl(kk)
@@ -1212,7 +1211,7 @@ contains
                             impl(kk) = bmtj1(i,k,jj,kk+offset)
                          enddo
 
-                         impl(ii) = max(impl(ii), sa_relax*impl(ii))
+                         impl(ii) = max(impl(ii), zero)
 
                          do kk=1,mAdv
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) + uu*impl(kk)
@@ -1298,7 +1297,7 @@ contains
                             impl(kk) = bmtj2(i,k,jj,kk+offset)
                          enddo
 
-                         impl(ii) = max(impl(ii), sa_relax*impl(ii))
+                         impl(ii) = max(impl(ii), zero)
 
                          do kk=1,mAdv
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) - uu*impl(kk)
@@ -1436,7 +1435,7 @@ contains
                             impl(kk) = bmti1(j,k,jj,kk+offset)
                          enddo
 
-                         impl(ii) = max(impl(ii), sa_relax*impl(ii))
+                         impl(ii) = max(impl(ii), zero)
 
                          do kk=1,mAdv
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) + uu*impl(kk)
@@ -1522,7 +1521,7 @@ contains
                             impl(kk) = bmti2(j,k,jj,kk+offset)
                          enddo
 
-                         impl(ii) = max(impl(ii), sa_relax*impl(ii))
+                         impl(ii) = max(impl(ii), zero)
 
                          do kk=1,mAdv
                             qq(i,j,k,ii,kk) = qq(i,j,k,ii,kk) - uu*impl(kk)

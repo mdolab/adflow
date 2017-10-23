@@ -4314,7 +4314,6 @@ class ADFLOW(AeroSolver):
             'ankstepexponent':[float, 0.75],
             'ankcflexponent':[float, 1.0],
             'ankcoupledswitchtol':[float, 1e-10],
-            'anksarelax':[float, 0.0],
             'ankturbswitchtol' : [float, 1e-16],
             'anknsubiterturb' : [int, 1],
             'ankturbcflscale' : [float, 1.0],
@@ -4615,7 +4614,6 @@ class ADFLOW(AeroSolver):
             'ankstepexponent':['ank','ank_stepexponent'],
             'ankcflexponent':['ank','ank_cflexponent'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
-            'anksarelax':['ank', 'ank_sarelax'],
             'anknsubiterturb':['ank', 'ank_nsubiterturb'],
             'ankturbcflscale':['ank', 'ank_turbcflscale'],
             # Load Balance Paramters
