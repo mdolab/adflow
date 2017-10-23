@@ -26,7 +26,7 @@ contains
     use wallDistance, only : xVolumeVec, xSurfVec, wallScatter, &
          wallDistanceDataAllocated, updateWallAssociation, &
          computeWallDistance
-    use overset, only : cumDomProc, nDomProc, wallFringes, nDomTotal, &
+    use oversetData, only : cumDomProc, nDomProc, wallFringes, nDomTotal, &
          overlapMatrix, oversetPresent, localWallFringes
     use utils, only : setPointers, EChk, setBufferSizes, terminate
     use coarseUtils, only : createCoarseBlocks

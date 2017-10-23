@@ -19,7 +19,7 @@ subroutine flagNearWallCells(level, sps)
   !  dual. Basically that means we're back to the primal.
 
   use constants
-  use overset
+  use oversetData
   use inputOverset
   use blockPointers
   use adtAPI

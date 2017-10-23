@@ -34,7 +34,7 @@ contains
     use surfaceIntegrations, only : getSolution
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
     implicit none
@@ -257,7 +257,7 @@ contains
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
     use bcdata, only : setBCData_d, setBCDataFineGrid_d
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
 
@@ -574,7 +574,7 @@ contains
          inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
     use BCExtra_b, only : applyAllBC_Block_b
     use bcdata, only : setBCData_b, setBCDataFineGrid_b
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_b
 
@@ -921,7 +921,7 @@ contains
     use solverutils_fast_b, only : timeStep_block_fast_b
     use flowutils_fast_b, only : allnodalgradients_fast_b
     use residuals_fast_b, only : sourceTerms_block_fast_b
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     implicit none
 
     ! Input variables:

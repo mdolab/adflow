@@ -270,7 +270,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk
     use sorting, only : famInList
-    use overset, only : zipperMeshes, zipperMesh, oversetPresent
+    use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only : BCFamGroups, familyExchange, BCFamExchange
 
     implicit none

@@ -76,6 +76,10 @@ python module libadflow
            integer(kind=inttype) :: i
          end subroutine setrestartfiles
 
+         subroutine infchangecorrection(oldwinf) ! in :test:solverUtils.F90:solverutils
+           real(kind=realtype) dimension(5),intent(in) :: oldwinf
+         end subroutine infchangecorrection
+
        end module initializeflow
 
        module bcdata
@@ -431,7 +435,7 @@ python module libadflow
 
        end module solvers
 
-       module aleutils
+      module aleutils
 
          subroutine shiftlevelale
          end subroutine shiftlevelale
@@ -615,10 +619,10 @@ python module libadflow
          end subroutine checkzipper
        end module zippermesh
 
-       module overset
+       module oversetdata
          use constants
          real(kind=realtype) dimension(16) :: oversettimes
-       end module overset
+       end module oversetdata
 
 ! ================ bare subroutines =============
 
@@ -1094,6 +1098,7 @@ python module libadflow
          integer(kind=inttype)::nrefine
          logical :: debugzipper
          logical :: usezippermesh
+         real(kind=realtype) :: selfzipcutoff
        end module inputoverset
 
        module inputunsteady ! in :test:inputParam.f90

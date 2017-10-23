@@ -190,6 +190,80 @@ contains
   ! ----------------------------------------------------------------------
 
 #ifndef  USE_TAPENADE
+  subroutine infChangeCorrection(oldWinf)
+    ! Adjust the flow states to a change in wInf
+    use constants
+    use blockPointers, only : il, jl, kl, w, nDom, d2wall
+    use flowVarRefState, only : wInf, nwf, nw
+    use inputPhysics , only : equations
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use haloExchange, only : whalo2
+    use flowUtils, only : adjustInflowAngle
+    use oversetData, only : oversetPresent
+    use iteration, only : currentLevel
+    use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
+    use BCRoutines, only : applyallBC_block
+    use utils, only : setPointers, mynorm2
+    implicit none
+
+    real(kind=realType), intent(in), dimension(nwf) :: oldWinf
+    integer(kind=intType) :: sps, nn, i, j, k, l
+    real(kind=realType) :: deltaWinf(nwf)
+
+    ! Make sure we have the updated wInf
+    call adjustInflowAngle()
+    call referenceState
+
+    deltaWinf = Winf(1:nwf) - oldWinf(1:nwf)
+
+    if (mynorm2(deltaWinf) < 1e-12) then
+       ! The change deltaWinf is so small, (or zero) don't do the
+       ! update and just return. This will save some time when the
+       ! solver is called with the same AP conditions multiple times,
+       ! such as during a GS AS solution
+
+       return
+    end if
+
+    ! Loop over all the blocks, adding the subtracting off the oldWinf
+    do sps=1, nTimeIntervalsSpectral
+       do nn=1, nDom
+          call setPointers(nn, 1_intType, sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=1, nwf
+                      w(i, j, k, l) = w(i, j, k, l) + deltaWinf(l)
+                   end do
+                end do
+             end do
+          end do
+          call applyAllBC_block(.True.)
+       end do
+    end do
+
+    ! Exchange values
+    call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset.
+    if (oversetPresent) then
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
+    end if
+
+end subroutine infChangeCorrection
+
 
   ! Section out the BCdata setup so that it can by called from python when needed
   subroutine updateBCDataAllLevels()
@@ -2713,7 +2787,8 @@ contains
     !
     integer :: nZones, cellDim, physDim, ierr, nSols
 
-    integer, dimension(9) :: sizes
+    integer(cgsize_t), dimension(9) :: sizes
+    integer, dimension(9) :: rindSizes
     integer, dimension(nSolsRead) :: fileIDs
 
     integer(kind=intType) :: ii, jj, nn
@@ -2922,7 +2997,7 @@ contains
                call terminate("readRestartFile", &
                "Something wrong when calling cg_goto_f")
 
-          call cg_rind_read_f(sizes, ierr)
+          call cg_rind_read_f(rindSizes, ierr)
           if(ierr /= all_ok)                  &
                call terminate("readRestartFile", &
                "Something wrong when calling &
@@ -2933,8 +3008,8 @@ contains
           ! an unsteady computation.
 
           if(solID == 1 .or. equationMode == timeSpectral) then
-             if(sizes(1) == 0 .or. sizes(2) == 0 .or. sizes(3) == 0 .or. &
-                  sizes(4) == 0 .or. sizes(5) == 0 .or. sizes(6) == 0)     &
+             if(rindSizes(1) == 0 .or. rindSizes(2) == 0 .or. rindSizes(3) == 0 .or. &
+                  rindSizes(4) == 0 .or. rindSizes(5) == 0 .or. rindSizes(6) == 0)     &
                   halosRead = .false.
           endif
 
@@ -2967,16 +3042,16 @@ contains
              ! unsteady computation.
 
              if(solID == 1 .or. equationMode == timeSpectral) then
-                if(sizes(1) > 0) nHiMin = 1; if(sizes(2) > 0) nHiMax = 1
-                if(sizes(3) > 0) nHjMin = 1; if(sizes(4) > 0) nHjMax = 1
-                if(sizes(5) > 0) nHkMin = 1; if(sizes(6) > 0) nHkMax = 1
+                if(rindSizes(1) > 0) nHiMin = 1; if(rindSizes(2) > 0) nHiMax = 1
+                if(rindSizes(3) > 0) nHjMin = 1; if(rindSizes(4) > 0) nHjMax = 1
+                if(rindSizes(5) > 0) nHkMin = 1; if(rindSizes(6) > 0) nHkMax = 1
              endif
 
              ! Set the cell range to be read from the CGNS file.
 
-             rangeMin(1) = iBegOr + sizes(1) - nHiMin
-             rangeMin(2) = jBegOr + sizes(3) - nHjMin
-             rangeMin(3) = kBegOr + sizes(5) - nHkMin
+             rangeMin(1) = iBegOr + rindSizes(1) - nHiMin
+             rangeMin(2) = jBegOr + rindSizes(3) - nHjMin
+             rangeMin(3) = kBegOr + rindSizes(5) - nHkMin
 
              rangeMax(1) = rangeMin(1) + nx-1 + nHiMin + nHiMax
              rangeMax(2) = rangeMin(2) + ny-1 + nHjMin + nHjMax
@@ -2991,9 +3066,9 @@ contains
 
              halosRead   = .false.
 
-             rangeMin(1) = iBegor + sizes(1)
-             rangeMin(2) = jBegor + sizes(3)
-             rangeMin(3) = kBegor + sizes(5)
+             rangeMin(1) = iBegor + rindSizes(1)
+             rangeMin(2) = jBegor + rindSizes(3)
+             rangeMin(3) = kBegor + rindSizes(5)
 
              rangeMax(1) = rangeMin(1) + nx
              rangeMax(2) = rangeMin(2) + ny
@@ -3140,7 +3215,7 @@ contains
     integer :: zone, zonetype, ncoords, pathLength
     integer :: pos
 
-    integer, dimension(9) :: sizesBlock
+    integer(kind=cgsize_t), dimension(9) :: sizesBlock
 
     integer(kind=intType) :: nn, ii
 

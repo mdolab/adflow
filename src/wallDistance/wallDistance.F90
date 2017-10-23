@@ -1676,7 +1676,7 @@ contains
     use communication
     use inputphysics
     use inputTimeSpectral
-    use overset, only : oversetPresent, oversetWall, nClusters, clusters, cumDomProc
+    use oversetData, only : oversetPresent, oversetWall, nClusters, clusters, cumDomProc
     use inputOverset
     use adjointVars
     use surfaceFamilies, only : BCFamGroups

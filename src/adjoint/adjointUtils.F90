@@ -808,7 +808,7 @@ contains
     use inputPhysics
     use BCPointers_b
     use communication
-    use overset, only : oversetPresent
+    use oversetData, only : oversetPresent
     use cgnsGrid, only : cgnsDoms, cgnsDomsd, cgnsNDom
     implicit none
 

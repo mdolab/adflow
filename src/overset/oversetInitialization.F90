@@ -85,7 +85,7 @@ contains
     ! This routine allocates the data for the supplied oBlock using the
     !  data currently in blockPointers
     use constants
-    use overset, only : oversetBlock, clusters, cumDomProc
+    use oversetData, only : oversetBlock, clusters, cumDomProc
     use inputOverset, only : backgroundVolScale, nearWallDist
     use blockPointers, only : x, globalCell, il, jl, kl, ib, jb, kb, &
          ie, je, ke, vol, iBlank, xSeed, forcedRecv, nbkglobal
@@ -259,7 +259,7 @@ contains
     use constants
     use communication, only : myID
     use blockPointers
-    use overset, only : oversetFringe, clusters, cumDomProc
+    use oversetData, only : oversetFringe, clusters, cumDomProc
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use inputOverset, only :  backgroundVolScale
     use sorting, only : famInList
@@ -386,7 +386,7 @@ contains
     ! This routine builds the ADT tree for any wall surfaces for the
     ! block currently being pointed to by block Pointers.
     use constants
-    use overset, only : oversetWall
+    use oversetData, only : oversetWall
     use blockPointers, only : nBocos, BCData, BCFaceID, il, jl, kl, &
          BCFaceID, x, BCType, rightHanded, nbklocal
     use adtBuild, only : buildSerialQuad

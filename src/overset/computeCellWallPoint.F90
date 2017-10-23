@@ -13,7 +13,7 @@ subroutine computeCellWallPoint(level, sps)
   use blockPointers
   use communication
   use kdtree2_module
-  use overset
+  use oversetData
   use utils, only : setPointers
   use haloExchange, only : whalo1to1realgeneric
   implicit none

@@ -21,7 +21,7 @@ contains
     use communication, only : myID, adflow_comm_world, nProc, recvRequests, &
          sendRequests, commPatternCell_2nd, internalCell_2nd
     use blockPointers, only : nDom, BCData, nBocos, BCType, il, jl, kl
-    use overset, only : oversetString, oversetWall, CSRMatrix, cumDomProc, nDomTotal, &
+    use oversetData, only : oversetString, oversetWall, CSRMatrix, cumDomProc, nDomTotal, &
          clusters, overlapMatrix, PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_OBJECT, &
          oversetPresent, zipperMesh, zipperMeshes
     use wallDistanceData, only : xVolumeVec, IS1, IS2
@@ -672,7 +672,7 @@ contains
     use constants
     use blockPointers, only : nDom, BCData, nBocos, BCType
     use communication, only : adflow_comm_world, myid
-    use overset, onlY : clusterAreas, nClusters, clusters, cumDomProc
+    use oversetData, onlY : clusterAreas, nClusters, clusters, cumDomProc
     use utils, only : setPointers, EChk, setBCPointers, cross_prod
     use BCPointers, only : xx
     use sorting, only : famInList
@@ -1211,7 +1211,7 @@ contains
   subroutine writeWalls(famList)
 
     use communication
-    use overset
+    use oversetData
     use constants
     use blockPointers
     use utils, only : setPointers, setBCPointers
