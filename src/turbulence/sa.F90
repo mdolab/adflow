@@ -30,7 +30,6 @@ contains
     use paramTurb
     use turbutils
     use turbBCRoutines
-    use turbMod, only : secondOrd
     implicit none
     !
     !      Subroutine argument.
@@ -44,9 +43,6 @@ contains
 
     ! Set the arrays for the boundary condition treatment.
     call bcTurbTreatment
-
-    ! Apply the BCs
-    call applyAllTurbBCThisBlock(secondOrd)
 
     ! Alloc central jacobian memory
     allocate(qq(2:il,2:jl,2:kl))
@@ -102,7 +98,6 @@ contains
     use paramTurb
     use section
     use inputPhysics
-    use inputDiscretization, only : lumpedDiss
     use flowVarRefState
     implicit none
 
@@ -300,11 +295,6 @@ contains
                 term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                      -           rsaCw1*fwSa)
 
-                if (lumpedDiss) then
-                   !term1 = 0.0_realType
-                   !term2 = 0.0_realType
-                end if
-
                 scratch(i,j,k,idvt) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 
 #ifndef USE_TAPENADE
@@ -463,10 +453,10 @@ contains
 
                 if(k == 2) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - b1*max(bmtk1(i,j,itu1,itu1), zero)
+                        - b1*max(bmtk1(i,j,itu1,itu1),zero)
                 else if(k == kl) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - d1*max(bmtk2(i,j,itu1,itu1), zero)
+                        - d1*max(bmtk2(i,j,itu1,itu1),zero)
                 else
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
@@ -562,10 +552,10 @@ contains
 
                 if(j == 2) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - b1*max(bmtj1(i,k,itu1,itu1), zero)
+                        - b1*max(bmtj1(i,k,itu1,itu1),zero)
                 else if(j == jl) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - d1*max(bmtj2(i,k,itu1,itu1), zero)
+                        - d1*max(bmtj2(i,k,itu1,itu1),zero)
                 else
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
@@ -661,10 +651,10 @@ contains
 
                 if(i == 2) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - b1*max(bmti1(j,k,itu1,itu1), zero)
+                        - b1*max(bmti1(j,k,itu1,itu1),zero)
                 else if(i == il) then
                    qq(i,j,k) = qq(i,j,k) + c1 &
-                        - d1*max(bmti2(j,k,itu1,itu1), zero)
+                        - d1*max(bmti2(j,k,itu1,itu1),zero)
                 else
                    qq(i,j,k) = qq(i,j,k) + c1
                 endif
