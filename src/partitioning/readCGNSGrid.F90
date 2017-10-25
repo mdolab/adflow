@@ -1920,7 +1920,7 @@ contains
     integer :: ierr, dummy
     integer :: dirichletFlag, neumannFlag
 
-    integer, dimension(3,2) :: bcRange
+    integer(kind=cgsize_t), dimension(3,2) :: bcRange
 
     integer(kind=intType) :: ii, nn
 
@@ -3130,7 +3130,7 @@ contains
     integer :: j, nCoords
     integer :: ierr, realTypeCGNS, datatype
 
-    integer, dimension(3) :: rangeMin, rangeMax
+    integer(kind=cgsize_t), dimension(3) :: rangeMin, rangeMax
 
     integer(kind=intType) :: i, ii, jj, kk, ll, nn
     integer(kind=intType) :: il, jl, kl
