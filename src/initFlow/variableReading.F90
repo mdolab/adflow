@@ -1,6 +1,7 @@
 module variableReading
 
   use constants, only : intType, maxCGNSNameLen, cgnsRealType, realType, maxStringLen
+  use su_cgns, only : cgsize_t
   ! halosRead:Determines if the halos where read or not.
   logical :: halosRead
 
@@ -28,7 +29,7 @@ module variableReading
   !                 range to be read.
   ! rangeMax(3):    Upper index in i, j and k direction of the
   !                 range to be read.
-  integer, dimension(3) :: rangeMin, rangeMax
+  integer(kind=cgsize_t), dimension(3) :: rangeMin, rangeMax
 
   ! nVar:     Number of variables stored in the solution file.
   ! solID:    Loop variables for the number of solutions to be read.
