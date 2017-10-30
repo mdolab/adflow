@@ -589,7 +589,7 @@ contains
              buf8(mm) = convArray(mm,conv,i)
           enddo
 
-          call cg_array_write_f(monNames(i), realTypeCGNS, 1, nn, &
+          call cg_array_write_f(monNames(i), realTypeCGNS, 1, int(nn, cgsize_t), &
                buf8, ierr)
           if(ierr /= CG_OK)                    &
                call terminate("writeCGNSConvInfo", &
@@ -694,7 +694,7 @@ contains
     ! Write the time values.
 
     cgnsName = cgnsTimeValue
-    call cg_array_write_f(cgnsName, realTypeCGNS, 1, nn, &
+    call cg_array_write_f(cgnsName, realTypeCGNS, 1, int(nn, cgsize_t), &
          timeArray, ierr)
     if(ierr /= CG_OK)                       &
          call terminate("writeCGNSTimeHistory", &
@@ -714,7 +714,7 @@ contains
              buf4(mm) = timeDataArray(mm,i)
           enddo
 
-          call cg_array_write_f(monNames(i), realTypeCGNS, 1, nn, &
+          call cg_array_write_f(monNames(i), realTypeCGNS, 1, int(nn, cgsize_t), &
                buf4, ierr)
 
           !=============================================================
@@ -724,7 +724,7 @@ contains
              buf8(mm) = timeDataArray(mm,i)
           enddo
 
-          call cg_array_write_f(monNames(i), realTypeCGNS, 1, nn, &
+          call cg_array_write_f(monNames(i), realTypeCGNS, 1, int(nn, cgsize_t), &
                buf8, ierr)
        end select
 
