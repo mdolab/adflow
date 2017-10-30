@@ -4,6 +4,7 @@ module outputMod
   !       grid and solution files.
   !
   use constants, only : intType, maxStringLen
+  use su_cgns, only : cgsize_t
   implicit none
 
   ! nblocksCGNSblock(0:cgnsNDom): The number of local blocks per
@@ -220,7 +221,7 @@ contains
     if( volWriteGC  )          nVolSolvar = nVolSolvar + 1
     if( volWriteStatus )       nVolSolvar = nVolSolvar + 1
     if( volWriteIntermittency ) nVolDiscrVar  = nVolDiscrVar + 1
- 
+
     ! Check the discrete variables.
 
     if( volWriteResRho )  nVolDiscrVar  = nVolDiscrVar + 1
@@ -1301,7 +1302,7 @@ contains
               enddo
            enddo
         endif
-       
+
     case (cgnsShock)
 
        do k=kBeg,kEnd
@@ -2811,7 +2812,7 @@ contains
 
        val = gammaConstant
        call cg_array_write_f(cgnsHeatRatio, realTypeCGNS, &
-            1, 1, val, ierr)
+            1, int(1, cgsize_t), val, ierr)
        if(ierr /= CG_OK)                  &
             call terminate("writeCGNSHeader", &
             "Something wrong when calling &
@@ -2884,7 +2885,7 @@ contains
             "Something wrong when calling cg_goto_f")
 
        val = prandtl
-       call cg_array_write_f(cgnsPrandtl, realTypeCGNS, 1, 1, &
+       call cg_array_write_f(cgnsPrandtl, realTypeCGNS, 1, int(1, cgsize_t), &
             val, ierr)
        if(ierr /= CG_OK)                  &
             call terminate("writeCGNSHeader", &
@@ -3007,7 +3008,7 @@ contains
 
     val = prandtlTurb
     call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
-         1, 1, val, ierr)
+         1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                              &
          call terminate("writeCGNSKomegaModifiedInfo", &
          "Something wrong when calling cg_array_write_f")
@@ -3089,7 +3090,7 @@ contains
 
     val = prandtlTurb
     call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
-         1, 1, val, ierr)
+         1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                            &
          call terminate("writeCGNSKomegaWilcoxInfo", &
          "Something wrong when calling cg_array_write_f")
@@ -3172,7 +3173,7 @@ contains
 
     val = prandtlTurb
     call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
-         1, 1, val, ierr)
+         1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                    &
          call terminate("writeCGNSKtauInfo", &
          "Something wrong when calling cg_array_write_f")
@@ -3255,7 +3256,7 @@ contains
 
     val = prandtlTurb
     call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
-         1, 1, val, ierr)
+         1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                         &
          call terminate("writeCGNSMenterSSTInfo", &
          "Something wrong when calling cg_array_write_f")
@@ -3336,7 +3337,7 @@ contains
     ! parameter
 
     val = Mach
-    call cg_array_write_f(cgnsMach, realTypeCGNS, 1, 1, val, ierr)
+    call cg_array_write_f(cgnsMach, realTypeCGNS, 1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                      &
          call terminate("writeReferenceState", &
          "Something wrong when calling cg_array_write_f")
@@ -3374,15 +3375,15 @@ contains
        case (1_intType)
 
           call cg_array_write_f(cgnsVelVecX, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
 
        case (2_intType)
           call cg_array_write_f(cgnsVelVecY, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
 
        case (3_intType)
           call cg_array_write_f(cgnsVelVecZ, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
        end select
 
        if(ierr /= CG_OK)                      &
@@ -3427,26 +3428,26 @@ contains
        case (1_intType)
           val = rhoref
           call cg_array_write_f(cgnsDensity, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
        case (2_intType)
           val = pref
           call cg_array_write_f(cgnsPressure, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
 
        case (3_intType)
           val = Tref
           call cg_array_write_f(cgnsTemp, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
 
        case (4_intType)
           val = sqrt(pref/rhoref)
           call cg_array_write_f(cgnsVelocity, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
 
        case (5_intType)
           val = one
           call cg_array_write_f(cgnsLength, realTypeCGNS, &
-               1, 1, val, ierr)
+               1, int(1, cgsize_t), val, ierr)
        end select
 
        if(ierr /= CG_OK)                      &
@@ -3542,7 +3543,7 @@ contains
 
     val = prandtlTurb
     call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
-         1, 1, val, ierr)
+         1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
          "Something wrong when calling cg_array_write_f")
@@ -3625,7 +3626,7 @@ contains
 
     val = prandtlTurb
     call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
-         1, 1, val, ierr)
+         1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                  &
          call terminate("writeCGNSSaInfo", &
          "Something wrong when calling cg_array_write_f")
@@ -3708,7 +3709,7 @@ contains
 
     val = prandtlTurb
     call cg_array_write_f(cgnsPrandtlTurb, realTypeCGNS, &
-         1, 1, val, ierr)
+         1, int(1, cgsize_t), val, ierr)
     if(ierr /= CG_OK)                   &
          call terminate("writeCGNSV2fInfo", &
          "Something wrong when calling cg_array_write_f")
