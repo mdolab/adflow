@@ -1969,13 +1969,13 @@ class ADFLOW(AeroSolver):
 
         # Now we need to gather the data:
         if cfdForcePts is None:
-            pts = self.comm.gather(self.getSurfacePoints(groupName, TS), root=0)
+            pts = self.comm.gather(self.getSurfacePoints(groupName, True, TS), root=0)
         else:
             pts = self.comm.gather(cfdForcePts)
 
         # Get the forces and connectivity
         forces = self.comm.gather(self.getForces(groupName, TS=TS), root=0)
-        conn, faceSize = self.getSurfaceConnectivity(groupName)
+        conn, faceSize = self.getSurfaceConnectivity(groupName, True)
         conn = self.comm.gather(conn, root=0)
 
         # Write out Data only on root proc:
