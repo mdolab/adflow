@@ -997,7 +997,7 @@ contains
          ! afterwards.
 
          call cg_array_write_f(arr(kk)%arrayName,   realTypeCGNS,    &
-              arr(kk)%nDimensions, arr(kk)%dataDim, &
+              arr(kk)%nDimensions, int(arr(kk)%dataDim, cgsize_t), &
               tmp, ierr)
          if(ierr /= CG_OK)                    &
               call terminate("writeBcdataArrays", &
