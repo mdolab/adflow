@@ -594,7 +594,7 @@ contains
 
     ! Allocate space for the triangles. Again, this can be at most,
     ! nElems, but the total number of elements will most likely be
-    ! smaller due to self zipping.
+    ! smaller due to self zipping. If someone puts
     allocate(master%tris(3, master%nElems))
     master%nTris = 0
 
@@ -619,6 +619,7 @@ contains
 
    ! Write out any self-zipped triangles
     nTriSelf = master%nTris
+
     if (debugZipper) then
        call writeOversetTriangles(master, "selfzipTriangulation.dat", 1, master%nTris)
     end if
@@ -647,7 +648,9 @@ contains
     ! Sort through zipped triangle edges and the edges which have not
     ! been used twice (orphan edges) will be ultimately gathered to
     ! form polygon pockets to be zipped.
-
+    if (debugZipper) then
+       print *,'Doing pocket zip'
+    end if
     call makePocketZip(master, strings, nStrings, pocketMaster, debugZipper)
 
     if (debugZipper) then
