@@ -250,7 +250,7 @@ module stringOps
     end do
 
     ! Now we need to redo the string matching becuase the self-zip
-    ! shorted the strings
+    ! shortened the strings
     call stringMatch(strings, nStrings, debugZipper)
 
   end subroutine performSelfZip
@@ -719,7 +719,7 @@ module stringOps
 
   end subroutine selfZip
 
-  subroutine crossZip(str1, N1, N2, str2, N3, N4, debugZipper)
+  subroutine crossZip(str1, N1, N2, str2, N3, N4, debugZipper, failed)
 
     use constants
     use utils, only : myNorm2, cross_prod
@@ -728,7 +728,7 @@ module stringOps
 
     type(oversetString), intent(inout) :: str1, str2
     integer(kind=intType) :: N1, N2, N3, N4
-    logical :: debugZipper
+    logical :: debugZipper, failed
     ! Working
     type(oversetString), pointer :: p
     integer(kind=intType) :: stepsA, stepsB, nStepsA, nStepsB
@@ -753,7 +753,7 @@ module stringOps
     ! First determine the the total number of triangles we will add
     ! total. It is equal to the total number of triangles on each
     ! string. This will form the index on the do loop.
-
+    failed = .False.
     ! Str1 goes forward
     if (N2 > N1) then
        nStepsA = N2 - N1
@@ -974,16 +974,23 @@ module stringOps
        if (aValid .and. .not. bValid) then
 
           ! We have no choice but to take A+
-
           call addTri(A, str1, B, str2, Ap, str1)
           advanceA = .True.
           advanceB = .False.
+          ! Flag the nodes as used
+          str1%xZipNOdeUsed(A) = 1
+          str1%xZipNOdeUsed(Ap) = 1
+          str2%xZipNOdeUsed(B) = 1
 
        else if (bValid .and. .not. aValid) then
 
           ! We have no choice but to take B+
 
           call addTri(A, str1, B, str2, Bp, str2)
+          str1%xZipNOdeUsed(A) = 1
+          str2%xZipNOdeUsed(B) = 1
+          str2%xZipNOdeUsed(Bp) = 1
+
           advanceA = .False.
           advanceB = .True.
 
@@ -993,12 +1000,21 @@ module stringOps
           if (aPreferred) then
 
              call addTri(A, str1, B, str2, Ap, str1)
+
+             str1%xZipNOdeUsed(A) = 1
+             str1%xZipNOdeUsed(Ap) = 1
+             str2%xZipNOdeUsed(B) = 1
+
              advanceA = .True.
              advanceB = .False.
 
           else
 
              call addTri(A, str1, B, str2, Bp, str2)
+             str1%xZipNOdeUsed(A) = 1
+             str2%xZipNOdeUsed(B) = 1
+             str2%xZipNOdeUsed(Bp) = 1
+
              advanceA = .False.
              advanceB = .True.
 
@@ -1115,9 +1131,13 @@ module stringOps
           advanceA = .False.
           advanceB = .False.
 
-          ! Ewww. neither triangle is valid. Do not add any triangle,
-          ! leave it for pocket zipping. Just move forward to Ap and Bp.
-          print *,' ****** eww, skipping both A and B:', A, B, aValid, bValid, aPreferred, ptA, ptB
+          ! Ewww. neither triangle is valid. Do not add the triangle
+          ! just return and let the cross zip restart. This should
+          ! skip over the bad area and the pocket zip can do the bad
+          ! region.
+          failed = .True.
+          return
+
        end if
 
        ! Now we have to shuffle along the string.
@@ -1158,39 +1178,6 @@ module stringOps
           ptBp = str2%x(:, Bp)
           normBp = str2%norm(:, Bp)
           perpBp = str2%perpNorm(:, Bp)
-
-       else if (.not.advanceA .and. .not.advanceB) then
-
-          ! Move A
-          stepsA = stepsA + 1
-
-          ! Copy the Ap to A
-          A = Ap
-          ptA = ptAp
-          normA = normAp
-          perpA = perpAp
-
-          ! And get the new data for Ap
-          Ap = nextNode(str1, A, .True.)
-          ptAp = str1%x(:, Ap)
-          normAp = str1%norm(:, Ap)
-          perpAp = str1%perpNorm(:, Ap)
-
-
-          ! Move B
-          stepsB = stepsB + 1
-
-          ! Copy the Bp to B
-          B = Bp
-          ptB = ptBp
-          normB = normBp
-          perpB = perpBp
-
-          ! And get the new data for Bp
-          Bp = nextNode(str2, B, .False.)
-          ptBp = str2%x(:, Bp)
-          normBp = str2%norm(:, Bp)
-          perpBp = str2%perpNorm(:, Bp)
        end if
 
        ! Save the prevoius valid triangles and what was advanced
@@ -1201,12 +1188,6 @@ module stringOps
 
        ! Finally increment the number of triangles we've used so far.
        ii = ii + 1
-
-       ! Account for two skipped triangles (i.e. one extra count)
-       ! if both A and B are skipped and advanced to Ap and Bp.
-       if (.not.advanceA .and. .not.advanceB) then
-          ii = ii + 1
-       end if
     end do
 
   contains
@@ -1385,9 +1366,9 @@ module stringOps
     ! Working
     integer(kind=intType) :: i, iStart, iEnd, jStart, jEnd, iStart_j, iEnd_j
     integer(kind=intType) :: curOtherID, iString, ii, nextI, curIStart, nIElems_j
-    integer(kind=intType) :: nIElemsBeg, nJElemsBeg, nIElemsEnd, nJElemsEnd
-
-    logical :: fullLoop1, fullLoop2, dummy
+    integer(kind=intType) :: nIElemsBeg, nJElemsBeg, nElem1, nElem2
+    integer(kind=intType) ::iStart_orig, iEnd_orig, jStart_orig, jEnd_orig
+    logical :: fullLoop1, fullLoop2, dummy, failed
     ! The purpose of this routine is to determine the ranges on two
     !  paired strings that are continuously paired and suitable for
     !  performing cross zipping.
@@ -1400,7 +1381,7 @@ module stringOps
        s%xZipNodeUsed = 0
     end do
 
-    strLoop: do iString=1, nStrings
+    strLoop: do iString=1,nStrings
 
        ! Skip strings that were pocekts
        if (strings(iString)%isPocket) then
@@ -1485,12 +1466,11 @@ module stringOps
              print *,'Initial Range s2:', jstart, jend, fullLoop2
           end if
 
-          ! Flag all the nodes FROM THE INITIAL RANGE as used. Let the
-          ! pocket zip deal with the left-overs. We have do that here
-          ! becuase the ranges may be modified below before doing the
-          ! actual zip.
-           call flagNodesUsed(s1, iStart, iEnd, .True.)
-           call flagNodesUsed(s2, jStart, jEnd, .False.)
+          ! Save the original start/endn locations
+          iStart_orig = iStart
+          iEnd_orig = iEnd
+          jStart_orig = jStart
+          jEnd_orig = jEnd
 
           if ((istart == iend .and. fullLoop1) .and. &
                (jstart == jend .and. fullLoop2)) then
@@ -1570,8 +1550,49 @@ module stringOps
              print *,'s2 range:', jstart, jend
           end if
 
-          ! Do actual cross zip
-          call crossZip(s1, iStart, iEnd, s2, jStart, jEnd, debugZipper)
+          ! Before we do the zip, make sure the ranges have not
+          ! degenerated to 0 elements
+          nElem1 = 1 ! Doesn't matter, just not zero
+          nElem2 = 1 ! Doesn't matter, just not zero
+          if (.not. fullLoop1) then
+             nElem1 = elemsForRange(s1, iStart, iEnd, .True.)
+             if (iStart == iEnd) then
+                nElem1 = 0
+             end if
+
+          end if
+          if (.not. fullLoop2) then
+             nElem2 = elemsForRange(s2, jStart, jEnd, .False.)
+             if (jStart == jEnd) then
+                nElem2 = 0
+             end if
+          end if
+
+          if  (nElem1 > 0 .and. nElem2 > 0) then
+             ! Do actual cross zip if we still have elements left on both strings
+             call crossZip(s1, iStart, iEnd, s2, jStart, jEnd, debugZipper, failed)
+
+             ! If we succefully cross zippered what we were suppoed to
+             ! flag all the nodes from the original region as done.
+             if (.not. failed) then
+                call flagNodesUsed(s1, iStart_orig, iEnd_orig, .True.)
+                call flagNodesUsed(s2, jStart_orig, jEnd_orig, .False.)
+             else
+                ! UhOh. We got stopped part way through. Flag just the
+                ! nodes at the beginning that we didn't use. Leave
+                ! those for the pocket. The nodes up to where theh
+                ! cross zip stopped were flagged internally in cross zip.
+                call flagNodesUsed(s1, iStart_orig, iStart, .True.)
+                call flagNodesUsed(s2, jStart_orig, jStart, .False.)
+             end if
+          else
+
+             ! Flag the full range of elements are consumed even
+             ! though we didn't do the cross zip. Leave it for the
+             ! pocket zipping.
+             call flagNodesUsed(s1, iStart_orig, iEnd_orig, .True.)
+             call flagNodesUsed(s2, jStart_orig, jEnd_orig, .False.)
+          end if
 
           ! Find the next starting index:
           curIStart = startNode(s1)
@@ -1812,7 +1833,7 @@ module stringOps
     logical, intent(in) :: debugZipper
 
     ! Local variables
-    integer(kind=intType) :: i, nsum1, nsum2, ndiff1, ndiff2, ipedge, icur
+    integer(kind=intType) :: i, j, nsum1, nsum2, ndiff1, ndiff2, ipedge, icur
     integer(kind=intType) :: n1, n2, npolyEdges
     integer(kind=intType) :: nNodes1, nNodes2, cn1, cn2, str1, str2
     type(oversetEdge), allocatable, dimension(:) :: polyEdges
@@ -1836,9 +1857,17 @@ module stringOps
     ! Eliminate the edges going through the ordered edges.
     ! The sorted opposite edges are canceled in pairs.
     npolyEdges = 0
-
     i = 1
-    do while (i < p%nEdges -1)
+    do while (i <= p%nEdges)
+
+       if (i == p%nEdges) then
+          ! This must be the last free edge:
+          e1 = p%Edges(i)
+          npolyEdges = npolyEdges + 1
+          polyEdges(npolyEdges) = e1
+          i = i + 1
+          cycle
+       end if
 
        ! Two edges in sequence
        e1 = p%Edges(i)
@@ -1860,7 +1889,6 @@ module stringOps
           if (.not.strings(str1)%isperiodic .and. &
                .not.strings(str2)%isperiodic .and. &
                (cn1==1 .or. cn1==nNodes1) .and. (cn2==1 .or. cn2==nNodes2)) then
-
              ! Increment just 1 in 1 to skip over edge e1.
              i = i + 1
              cycle
@@ -1879,17 +1907,9 @@ module stringOps
           i = i + 2
           cycle
        else
-          ! Add e1
+          ! Add just the first edge
           npolyEdges = npolyEdges + 1
           polyEdges(npolyEdges) = e1
-
-          ! And e2 if it is the very last edge
-          if (i+1 == p%nEdges) then
-             npolyEdges = npolyEdges + 1
-             polyEdges(npolyEdges) = e2
-             i = i + 1
-          end if
-
           i = i + 1
        end if
     end do
@@ -1913,6 +1933,16 @@ module stringOps
        pocketMaster%intNodeData(:, 2*i) = p%intNodeData(:, polyEdges(i)%n2)
        pocketMaster%conn(:, i) = (/2*i, 2*i-1/)
     end do
+
+    do i=1, nPolyEdges
+       write(101,*), p%nodeData(1, polyEdges(i)%n1), p%nodeData(2, polyEdges(i)%n1), p%nodeData(3, polyEdges(i)%n1)
+       write(101,*), p%nodeData(1, polyEdges(i)%n2), p%nodeData(2, polyEdges(i)%n2), p%nodeData(3, polyEdges(i)%n2)
+    end do
+
+    do i=1, nPolyEdges
+       write(101,*), 2*i-1, 2*i
+    end do
+    close(101)
 
     call setStringPointers(pocketMaster)
     call reduceGapString(pocketMaster)
@@ -2013,7 +2043,10 @@ module stringOps
 
     ! Loop over pocketStrings and begin pocketZip starting
     ! from smallest convex ear.
-    do i=1, nFullStrings
+    do i=1,nFullStrings
+       if (debugZipper) then
+          print *,'Pocket Zipping String ', i, ' of ', nFullStrings
+       end if
        pocketZiploop: do while (pocketStringsArr(i)%nNodes > 2)
           ! Each pass zips one triangle. Keep zipping
           ! until last triangle is zipped in the pocket polygon.
@@ -2045,16 +2078,16 @@ module stringOps
     integer(kind=intType) :: nNodes, nElems, iimin
     real(kind=realType), dimension(3) :: v1, v2, norm, c
     real(kind=realType) :: cosCutoff, cosTheta, r2, v1nrm, v2nrm, costhetaMax
+    real(kind=realType) :: dp, dpMax
 
     integer(Kind=intType), dimension(:), allocatable :: nodeMap, badNode
     type(kdtree2_result), dimension(:), allocatable  :: results
-    logical :: added
-
+    logical :: added, iiMinSet
+    real(kind=realType), parameter:: fact=0.95_realType
     N = s%nNodes
     allocate(results(25), nodeMap(N), badNode(N))
     nodeMap = 1
     badNode = 0 ! Will become 1 if bad
-
     outerZiploop: do
 
        ! No choice for the last triangle:
@@ -2070,11 +2103,15 @@ module stringOps
           exit outerZipLoop
        end if
 
-       ! Find min angled ear
-       costhetaMax = -Large
-       nodeloop: do ii=1, N
+       iiMinSet = .False.
 
-          if (badNode(ii) == 1) cycle nodeloop
+       ! First find the largest dot product:
+       dpMax = -one
+       nodeloop1: do ii=1, N
+
+          if (badNode(ii) == 1) then
+             cycle nodeLoop1
+          end if
 
           ip1 = nextNode(ii)
           im1 = prevNode(ii)
@@ -2086,35 +2123,60 @@ module stringOps
           v2nrm = mynorm2(v2)
           call cross_prod(v2, v1, norm)
           norm = norm / mynorm2(norm)
+          dpMax = max(dpmax, dot_product(norm, s%norm(:, ii)))
+       end do nodeloop1
 
-          ! Interior node norm and potential node norm should point
-          ! in the same direction.
-          if (dot_product(norm, s%norm(:, ii)) > zero) then
-             ! Dot product of im1 and ip1 nodes should be close
+       ! Next find the largest cosTheta that is winthin a factor
+       !  of dpMax
+       costhetaMax = -Large
+       nodeloop2: do ii=1, N
+
+          if (badNode(ii) == 1) then
+             cycle nodeLoop2
+          end if
+
+          ip1 = nextNode(ii)
+          im1 = prevNode(ii)
+
+          ! Determine the angle between the vectors
+          v1 = s%x(:, im1) - s%x(:, ii)
+          v2 = s%x(:, ip1) - s%x(:, ii)
+          v1nrm = mynorm2(v1)
+          v2nrm = mynorm2(v2)
+          call cross_prod(v2, v1, norm)
+          norm = norm / mynorm2(norm)
+          dp = dot_product(norm, s%norm(:, ii))
+          if (dp > dpMax*fact) then ! We take this
              costheta = dot_product(v1, v2)  / (v1nrm * v2nrm)
-
-             ! cos(theta) is the largest for smallest angle
-             if (costheta >= costhetaMax) then
+             if (cosTheta > cosThetaMax) then
                 costhetaMax = costheta
+                iiMinSet = .True.
                 iimin = ii
              end if
           end if
-       end do nodeloop
+       end do nodeloop2
 
-       ! Zip about node "iimin"
-       ii = iimin
-       ip1 = nextNode(ii)
-       im1 = prevNode(ii)
-
-       call addPotentialTriangle(s, ip1, ii, im1, nodeMap, results, added)
-       if (added) then
-          ! This triangle was good!
-          exit outerZipLoop
+       if (iiMinSet) then
+          ! Zip about node "iimin" if it was set:
+          ii = iimin
+          ip1 = nextNode(ii)
+          im1 = prevNode(ii)
+          call addPotentialTriangle(s, ip1, ii, im1, nodeMap, results, added)
+          if (added) then
+             ! This triangle was good!
+             exit outerZipLoop
+          else
+             ! Bad node. Need to cycle through rest of pocket nodes.
+             ! Remember this bad node in next cycle.
+             badNode(ii) = 1
+             cycle outerZiploop
+          end if
        else
-          ! Bad node. Need to cycle through rest of pocket nodes.
-          ! Remember this bad node in next cycle.
-          badNode(ii) = 1
-          cycle outerZiploop
+          ! What does this mean? We didn't find any node to zip. Are they all bad?
+          print *,'Problem with pocket zipper. Somehow we were not able to find "&
+               &"node to add a triangle on. This should not happen. Contact the "&
+               &"Developers.'
+          stop
        end if
     end do outerZiploop
 
@@ -2733,8 +2795,8 @@ module stringOps
     use utils, only : mynorm2
     implicit none
 
-    type(oversetString), intent(inout) :: str
-    type(oversetString), intent(inout), dimension(n) :: strings
+    type(oversetString), intent(in) :: str
+    type(oversetString), intent(in), dimension(n) :: strings
     integer(kind=intType), intent(in) :: fileID, n
     integer(kind=intType) :: i, j, id, index
     real(kind=realType), dimension(3) :: myPt, otherPT, vec
