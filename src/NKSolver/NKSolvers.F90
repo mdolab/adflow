@@ -330,8 +330,6 @@ contains
     logical :: useAD, usePC, useTranspose, useObjective, tmp
     integer(kind=intType) :: i, j, k, l, ii, nn, sps
     real(kind=realType) :: dt
-    real(kind=realType), pointer :: diag(:)
-
 
     ! Dummy assembly begin/end calls for the matrix-free Matrx
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -351,17 +349,6 @@ contains
          useObjective, .False., 1_intType)
     ! Reset saved value
     viscPC = tmp
-
-    call VecGetArrayF90(work, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    diag(:) = one/NK_CFL
-
-    call VecRestoreArrayF90(work, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    call MatDiagonalSet(dRdwPre, work, ADD_VALUES, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
 
     ! Setup KSP Options
     preConSide = 'right'
@@ -1895,7 +1882,7 @@ contains
 
     use constants
     use flowVarRefState, only : nw, nwf, nt1, nt2
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
@@ -1908,7 +1895,7 @@ contains
     character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
-    real(kind=realType) ::  dt
+    real(kind=realType) :: dtinv
     integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
     real(kind=realType), pointer :: diag(:)
 
@@ -1933,22 +1920,14 @@ contains
     ! Reset saved value
     viscPC = tmp
 
-    ! ----------- Setup Flow KSP ----------
+    ! Add the contribution from the time step term
 
-    !!! The routine of setting CFL can be done just by petsc functions, may consider changing here !!!
-    ! the turbulent cfl can be scaled separately by VecStrideScale, did not help
-
+    ! Save the diagonal contribution in deltaW vector in PETSc
     call VecGetArrayF90(deltaW, diag, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    ! Calculate the contribution from the time-stepping term
-    dt = one/ANK_CFL
-
     if (.not. ANK_coupled) then
-        ! For the segragated solver, no need for scaling, each variable gets the same value
-        diag(:) = dt
-    else
-        ! For the coupled solver, CFL number for the turbulent variable needs scaling
+        ! For the segragated solver, only calculate the time step for flow variables
         ii = 1
         do nn=1, nDom
            do sps=1, nTimeIntervalsSpectral
@@ -1956,12 +1935,43 @@ contains
               do k=2, kl
                  do j=2, jl
                     do i=2, il
+                        ! Calculate one over time step for this cell. Multiply
+                        ! the dtl by cell volume to get the actual time step
+                        ! required for a CFL of one, then multiply with the
+                        ! actual cfl number in the solver
+                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
                         do l = 1, nwf
-                          diag(ii) = dt
+                          diag(ii) = dtinv
+                          ii = ii + 1
+                        end do
+                    end do
+                 end do
+              end do
+           end do
+        end do
+    else
+        ! For the coupled solver, CFL number for the turbulent variable needs scaling
+        ! because the residuals are scaled, and additional scaling of the time step
+        ! for the turbulence variable might be required.
+        ii = 1
+        do nn=1, nDom
+           do sps=1, nTimeIntervalsSpectral
+              call setPointers(nn,1_intType,sps)
+              do k=2, kl
+                 do j=2, jl
+                    do i=2, il
+                        ! See the comment for the same calculation above
+                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                        do l = 1, nwf
+                          diag(ii) = dtinv
                           ii = ii + 1
                         end do
                         do l = nt1, nt2
-                          diag(ii) = turbResScale(l-nt1+1)*dt
+                          ! For the turbulence variable, additionally scale the cfl.
+                          ! turbresscale is required because the turbulent residuals
+                          ! are scaled with it. Furthermore, the turbulence variable
+                          ! can get a different CFL number. Scale it by turbCFLScale
+                          diag(ii) = turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
                           ii = ii + 1
                         end do
                     end do
@@ -2005,7 +2015,7 @@ contains
 
     use constants
     use flowVarRefState, only : nw, nwf, nt1, nt2
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
@@ -2018,7 +2028,7 @@ contains
     character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp, secondOrdSave
-    real(kind=realType) ::  dt
+    real(kind=realType) ::  dtinv
     integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
     real(kind=realType), pointer :: diag(:)
 
@@ -2036,17 +2046,30 @@ contains
     ! Reset saved values
     viscPC = tmp
 
-    ! ----------- Setup Turbulence KSP ----------
-
-    !!! The routine of setting CFL can be done just by petsc functions, may consider changing here !!!
-    ! the turbulent cfl can be scaled separately by VecStrideScale, did not help
-
+    ! Save the diagonal contribution in deltaWTurb vector in PETSc
     call VecGetArrayF90(deltaWTurb, diag, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Calculate the contribution from the time-stepping term
-    dt = turbResScale(1)/(ANK_CFL*ANK_turbCFLScale)
-    diag(:) = dt
+    ii = 1
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn,1_intType,sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                    ! See the comment for the same calculation above
+                    dtinv = turbResScale(1) / &
+                            (ANK_turbCFLScale* ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                    do l = nt1, nt2
+                      diag(ii) = dtinv
+                      ii = ii + 1
+                    end do
+                end do
+             end do
+          end do
+       end do
+    end do
 
     call VecRestoreArrayF90(deltaWTurb, diag, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -2069,7 +2092,7 @@ contains
     end if
     call setupStandardKSP(ANK_KSP_Turb, kspObjectType, subSpace, &
          preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
-         localOrdering, ANK_iluFill+2, ANK_innerPreConIts)
+         localOrdering, ANK_iluFill, ANK_innerPreConIts)
 
     ! Don't do iterative refinement for the NKSolver.
     call KSPGMRESSetCGSRefinementType(ANK_KSP_Turb, &
@@ -2084,7 +2107,7 @@ contains
     ! for the GMRES solver used in ANK
 
     use constants
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputtimespectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use flowvarrefstate, only : nwf, nt1, nt2
@@ -2095,7 +2118,7 @@ contains
     ! PETSc Variables
     PetscFortranAddr ctx(*)
     Vec     wVec, rVec
-    real(kind=realType) :: dt
+    real(kind=realType) :: dtinv
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: wvec_pointer(:)
@@ -2111,22 +2134,16 @@ contains
       call setRVecANK(rVec)
     end if
 
-    ! Calculate the contribution from the time stepping term
-    dt = one/ANK_CFL
+    ! Add the contribution from the time stepping term
 
-    ! Add the contribution from the diagonal time stepping term
+    call VecGetArrayF90(rVec,rvec_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
     if (.not. ANK_coupled) then
-      ! For the segragated solver each variable gets the same dt value
-      call VecAXPY(rVec, dt, wVec, ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-    else
-      ! For the coupled solver, time stepping term for turbulence needs to be scaled
-      call VecGetArrayF90(rVec,rvec_pointer,ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-
-      call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-
+      ! Only flow variables
       ii = 1
       do nn=1, nDom
          do sps=1, nTimeIntervalsSpectral
@@ -2135,12 +2152,9 @@ contains
             do k=2, kl
                do j=2, jl
                   do i=2, il
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
                       do l = 1, nwf
-                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dt
-                        ii = ii + 1
-                      end do
-                      do l = nt1, nt2
-                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*turbResScale(l-nt1+1)*dt
+                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dtinv
                         ii = ii + 1
                       end do
                   end do
@@ -2148,13 +2162,41 @@ contains
             end do
          end do
       end do
-
-      call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-
-      call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
-      call EChk(ierr,__FILE__,__LINE__)
+    else
+      ! Include time step for turbulence
+      ii = 1
+      do nn=1, nDom
+         do sps=1, nTimeIntervalsSpectral
+            call setPointers(nn,1_intType,sps)
+            ! read the density residuals and set local CFL
+            do k=2, kl
+               do j=2, jl
+                  do i=2, il
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                      do l = 1, nwf
+                        rvec_pointer(ii) = rvec_pointer(ii) + &
+                                           wvec_pointer(ii) * dtinv
+                        ii = ii + 1
+                      end do
+                      do l = nt1, nt2
+                        rvec_pointer(ii) = rvec_pointer(ii) + &
+                                           wvec_pointer(ii)*turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
+                        ii = ii + 1
+                      end do
+                  end do
+               end do
+            end do
+         end do
+      end do
     end if
+
+    call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+
     ! We don't check an error here, so just pass back zero
     ierr = 0
 
@@ -2165,7 +2207,7 @@ contains
       ! for the GMRES solver used in ANK
 
       use constants
-      use blockPointers, only : nDom, volRef, il, jl, kl, dw
+      use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
       use inputtimespectral, only : nTimeIntervalsSpectral
       use inputIteration, only : turbResScale
       use flowvarrefstate, only : nwf, nt1, nt2
@@ -2176,7 +2218,7 @@ contains
       ! PETSc Variables
       PetscFortranAddr ctx(*)
       Vec     wVecTurb, rVecTurb
-      real(kind=realType) :: dt
+      real(kind=realType) :: dtinv
       integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
       real(kind=realType),pointer :: rvecTurb_pointer(:)
       real(kind=realType),pointer :: wvecTurb_pointer(:)
@@ -2190,11 +2232,38 @@ contains
       ! set the R vec for turbulence in petsc
       call setRVecANKTurb(rVecTurb)
 
-      ! Calculate the contribution from the time stepping term
-      dt = turbResScale(1)/(ANK_CFL*ANK_turbcflscale)
+      call VecGetArrayF90(rVecTurb,rvecTurb_pointer,ierr)
+      call EChk(ierr,__FILE__,__LINE__)
 
-      ! For the segragated solver each variable gets the same dt value
-      call VecAXPY(rVecTurb, dt, wVecTurb, ierr)
+      call VecGetArrayReadF90(wVecTurb,wvecTurb_pointer,ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+
+      ! Calculate the contribution from the time-stepping term
+      ii = 1
+      do nn=1, nDom
+         do sps=1, nTimeIntervalsSpectral
+            call setPointers(nn,1_intType,sps)
+            do k=2, kl
+               do j=2, jl
+                  do i=2, il
+                      ! See the comment for the same calculation above
+                      dtinv = turbResScale(1) / &
+                              (ANK_turbCFLScale* ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                      do l = nt1, nt2
+                        rvecTurb_pointer(ii) = rvecTurb_pointer(ii) + &
+                                               wvecTurb_pointer(ii) * dtinv
+                        ii = ii + 1
+                      end do
+                  end do
+               end do
+            end do
+         end do
+      end do
+
+      call VecRestoreArrayF90(rVecTurb, rvecTurb_pointer, ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+
+      call VecRestoreArrayReadF90(wVecTurb, wvecTurb_pointer, ierr)
       call EChk(ierr,__FILE__,__LINE__)
 
       ! We don't check an error here, so just pass back zero
@@ -2710,7 +2779,7 @@ contains
                 do i=2, il
                    do l=nt1, nt2
                       ii = ii + 1
-                      if (abs(max(dvecturb_pointer(ii), 0.0_realType)) > wVecTurb_pointer(ii)) then
+                      if (max(dvecturb_pointer(ii), 0.0_realType) > wVecTurb_pointer(ii)) then
                         dvecturb_pointer(ii) = 0.9_realType*wVecTurb_pointer(ii)
                         counter = counter + 1
                       end if
