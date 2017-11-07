@@ -217,6 +217,7 @@ python module libadflow
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
          logical :: ank_useturbdadi
+         real(kind=realtype) :: ank_turbswitchtol
          integer(kind=inttype) :: ank_subspace
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
@@ -233,6 +234,8 @@ python module libadflow
          real(kind=realtype) :: ank_stepexponent
          real(kind=realtype) :: ank_cflexponent
          real(kind=realtype) :: ank_coupledswitchtol
+         real(kind=realtype) :: ank_turbcflscale
+         integer(kind=inttype) :: ank_nsubiterturb
          subroutine destroyanksolver
          end subroutine destroyanksolver
 

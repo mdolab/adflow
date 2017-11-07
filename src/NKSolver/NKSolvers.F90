@@ -330,8 +330,6 @@ contains
     logical :: useAD, usePC, useTranspose, useObjective, tmp
     integer(kind=intType) :: i, j, k, l, ii, nn, sps
     real(kind=realType) :: dt
-    real(kind=realType), pointer :: diag(:)
-
 
     ! Dummy assembly begin/end calls for the matrix-free Matrx
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -351,17 +349,6 @@ contains
          useObjective, .False., 1_intType)
     ! Reset saved value
     viscPC = tmp
-
-    call VecGetArrayF90(work, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    diag(:) = one/NK_CFL
-
-    call VecRestoreArrayF90(work, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    call MatDiagonalSet(dRdwPre, work, ADD_VALUES, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
 
     ! Setup KSP Options
     preConSide = 'right'
@@ -1681,6 +1668,11 @@ module ANKSolver
   Vec wVec, rVec, deltaW
   KSP  ANK_KSP
 
+  ! Additional stuff required for KSP for turbulence only
+  Mat dRdWTurb, dRdwPreTurb
+  Vec wVecTurb, rVecTurb, deltaWTurb
+  KSP ANK_KSP_Turb
+
   PetscFortranAddr   ctx(1)
 
   ! Options for ANK Solver
@@ -1695,14 +1687,19 @@ module ANKSolver
   real(kind=realType)   :: ANK_switchTol
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
+  logical :: ANK_coupled=.False.
+  real(kind=realType) :: ANK_turbSwitchTol
+  integer(kind=intType) :: ANK_nSubIterTurb
+  real(kind=realType) :: ANK_turbcflscale
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
   real(kind=realType) :: ANK_stepInit, ANK_stepCutback, ANK_stepMin, ANK_stepExponent, ANK_CFLExponent
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
   logical :: ANK_solverSetup=.False.
-  integer(kind=intTYpe) :: ANK_iter
-  integer(kind=intType) :: nState
+  logical :: ANK_turbSetup=.False.
+  integer(kind=intTYpe) :: ANK_iter, ANK_Turb_iter
+  integer(kind=intType) :: nState, nStateTurb
   real(kind=alwaysRealType) :: totalR_old ! for recording the previous residual
   real(kind=alwaysRealType) :: rtolLast ! for recording the previous relativel tolerance for Eisenstat-Walker
 
@@ -1726,7 +1723,7 @@ contains
     implicit none
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nDimw
+    integer(kind=intType) :: ierr, nDimw, nDimWTurb
     integer(kind=intType) , dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
     integer(kind=intType) :: n_stencil
     integer(kind=intType), dimension(:, :), pointer :: stencil
@@ -1738,11 +1735,12 @@ contains
 
     if (.not. ANK_solverSetup) then
 
-       if (ANK_useTurbDADI) then ! NK solver for flow variables, DADI for turbulence
-          nState = nwf ! don't include turbulent variable
-      else ! coupled NK solver for flow and turbulence
-          nState = nw ! include turbulent variable
-       endif
+        if (ANK_coupled) then ! NK solver for flow variables, DADI for turbulence
+            nState = nw ! coupled ank uses all variables
+        else
+            nState = nwf ! Frozen Turbulence
+            nStateTurb = nw-nwf ! Number of states in turbulence model
+        endif
 
        nDimW = nState * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
 
@@ -1806,8 +1804,76 @@ contains
        call KSPSetOperators(ANK_KSP, dRdw, dRdwPre, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       ! Setup vectors and KSP for turbulence
+       if ((.not. ANK_coupled) .and. (.not. ANK_useTurbDADI)) then
+           nDimWTurb = nStateTurb * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
+
+           call VecCreate(ADFLOW_COMM_WORLD, wVecTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call VecSetSizes(wVecTurb, nDimWTurb, PETSC_DECIDE, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call VecSetBlockSize(wVecTurb, nStateTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call VecSetType(wVecTurb, VECMPI, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           !  Create duplicates for residual and delta
+           call VecDuplicate(wVecTurb, rVecTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call VecDuplicate(wVecTurb, deltaWTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           ! Create Pre-Conditioning Matrix
+           allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
+                nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
+
+           stencil => euler_pc_stencil
+           n_stencil = N_euler_pc
+
+           level = 1
+           call statePreAllocation(nnzDiagonal, nnzOffDiag, nDimWTurb/nStateTurb, stencil, n_stencil, &
+                level, .False.)
+           call myMatCreate(dRdwPreTurb, nStateTurb, nDimWTurb, nDimWTurb, nnzDiagonal, nnzOffDiag, &
+                __FILE__, __LINE__)
+
+           call matSetOption(dRdwPreTurb, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+           deallocate(nnzDiagonal, nnzOffDiag)
+
+           ! Set the mat_row_oriented option to false so that dense
+           ! subblocks can be passed in in fortran column-oriented format
+           call MatSetOption(dRdWPreTurb, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           ! Setup Matrix-Free dRdw matrix and its function
+           call MatCreateMFFD(ADFLOW_COMM_WORLD, nDimWTurb, nDimWTurb, &
+                PETSC_DETERMINE, PETSC_DETERMINE, dRdwTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call MatMFFDSetFunction(dRdwTurb, FormFunction_mf_Turb, ctx, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call MatSetOption(dRdWTurb, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           !  Create the linear solver context
+           call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSP_Turb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           ! Set operators for the solver
+           call KSPSetOperators(ANK_KSP_Turb, dRdwTurb, dRdwPreTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           ANK_turbSetup = .True.
+       end if
+
        ANK_solverSetup = .True.
        ANK_iter = 0
+       ANK_Turb_iter = -1
     end if
 
   end subroutine setupANKsolver
@@ -1816,7 +1882,7 @@ contains
 
     use constants
     use flowVarRefState, only : nw, nwf, nt1, nt2
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
@@ -1829,7 +1895,7 @@ contains
     character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
-    real(kind=realType) ::  dt
+    real(kind=realType) :: dtinv
     integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
     real(kind=realType), pointer :: diag(:)
 
@@ -1841,35 +1907,27 @@ contains
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = .False.
 
-    if (ANK_useTurbDADI) then
-       call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
-            useObjective, .True., 1_intType)
-    else
+    if (ANK_coupled) then
        ! The turbulence jacobian will only be accuate with AD.
        useAD = .True.
        ! get the full jacobian with turbulent variables included
        call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
             useObjective, .False., 1_intType)
+    else
+       call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
+            useObjective, .True., 1_intType)
     end if
     ! Reset saved value
     viscPC = tmp
 
-    ! ----------- Setup Flow KSP ----------
+    ! Add the contribution from the time step term
 
-    !!! The routine of setting CFL can be done just by petsc functions, may consider changing here !!!
-    ! the turbulent cfl can be scaled separately by VecStrideScale, did not help
-
+    ! Save the diagonal contribution in deltaW vector in PETSc
     call VecGetArrayF90(deltaW, diag, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    ! Calculate the contribution from the time-stepping term
-    dt = one/ANK_CFL
-
-    if (ANK_useTurbDADI) then
-        ! For the segragated solver, no need for scaling, each variable gets the same value
-        diag(:) = dt
-    else
-        ! For the coupled solver, CFL number for the turbulent variable needs scaling
+    if (.not. ANK_coupled) then
+        ! For the segragated solver, only calculate the time step for flow variables
         ii = 1
         do nn=1, nDom
            do sps=1, nTimeIntervalsSpectral
@@ -1877,12 +1935,43 @@ contains
               do k=2, kl
                  do j=2, jl
                     do i=2, il
+                        ! Calculate one over time step for this cell. Multiply
+                        ! the dtl by cell volume to get the actual time step
+                        ! required for a CFL of one, then multiply with the
+                        ! actual cfl number in the solver
+                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
                         do l = 1, nwf
-                          diag(ii) = dt
+                          diag(ii) = dtinv
+                          ii = ii + 1
+                        end do
+                    end do
+                 end do
+              end do
+           end do
+        end do
+    else
+        ! For the coupled solver, CFL number for the turbulent variable needs scaling
+        ! because the residuals are scaled, and additional scaling of the time step
+        ! for the turbulence variable might be required.
+        ii = 1
+        do nn=1, nDom
+           do sps=1, nTimeIntervalsSpectral
+              call setPointers(nn,1_intType,sps)
+              do k=2, kl
+                 do j=2, jl
+                    do i=2, il
+                        ! See the comment for the same calculation above
+                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                        do l = 1, nwf
+                          diag(ii) = dtinv
                           ii = ii + 1
                         end do
                         do l = nt1, nt2
-                          diag(ii) = turbResScale(l-nt1+1)*dt
+                          ! For the turbulence variable, additionally scale the cfl.
+                          ! turbresscale is required because the turbulent residuals
+                          ! are scaled with it. Furthermore, the turbulence variable
+                          ! can get a different CFL number. Scale it by turbCFLScale
+                          diag(ii) = turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
                           ii = ii + 1
                         end do
                     end do
@@ -1922,13 +2011,103 @@ contains
 
   end subroutine FormJacobianANK
 
+  subroutine FormJacobianANKTurb
+
+    use constants
+    use flowVarRefState, only : nw, nwf, nt1, nt2
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputIteration, only : turbResScale
+    use inputADjoint, only : viscPC
+    use iteration, only : totalR0
+    use utils, only : EChk, setPointers
+    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
+    implicit none
+
+    ! Local Variables
+    character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
+    integer(kind=intType) ::ierr
+    logical :: useAD, usePC, useTranspose, useObjective, tmp, secondOrdSave
+    real(kind=realType) ::  dtinv
+    integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
+    real(kind=realType), pointer :: diag(:)
+
+    ! Assemble the approximate PC (fine leve, level 1)
+    useAD = .True. ! Turbulence Jacobian will only be accurate with AD
+    usePC = .True.
+    useTranspose = .False.
+    useObjective = .False.
+    tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+    viscPC = .False.
+
+    ! Only form the preconditioner matrix for turbulence variable
+    call setupStateResidualMatrix(dRdwPreTurb, useAD, usePC, useTranspose, &
+         useObjective, .False., 1_intType, .True.)
+    ! Reset saved values
+    viscPC = tmp
+
+    ! Save the diagonal contribution in deltaWTurb vector in PETSc
+    call VecGetArrayF90(deltaWTurb, diag, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Calculate the contribution from the time-stepping term
+    ii = 1
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn,1_intType,sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                    ! See the comment for the same calculation above
+                    dtinv = turbResScale(1) / &
+                            (ANK_turbCFLScale* ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                    do l = nt1, nt2
+                      diag(ii) = dtinv
+                      ii = ii + 1
+                    end do
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    call VecRestoreArrayF90(deltaWTurb, diag, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call MatDiagonalSet(dRdwPreTurb, deltaWTurb, ADD_VALUES, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Setup KSP Options
+    preConSide = 'right'
+    localPCType = 'ilu'
+    kspObjectType = 'gmres'
+    globalPCType = 'asm'
+    localOrdering = 'rcm'
+    outerPreConIts = 1
+    ! Setup the KSP using the same code as used for the adjoint
+    if (ank_subspace < 0) then
+       subspace = ANK_maxIter
+    else
+       subspace = ANK_subspace
+    end if
+    call setupStandardKSP(ANK_KSP_Turb, kspObjectType, subSpace, &
+         preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+         localOrdering, ANK_iluFill, ANK_innerPreConIts)
+
+    ! Don't do iterative refinement for the NKSolver.
+    call KSPGMRESSetCGSRefinementType(ANK_KSP_Turb, &
+         KSP_GMRES_CGS_REFINE_NEVER, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+  end subroutine FormJacobianANKTurb
+
   subroutine FormFunction_mf(ctx, wVec, rVec, ierr)
 
     ! This is the function used for the matrix-free matrix-vector products
     ! for the GMRES solver used in ANK
 
     use constants
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputtimespectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use flowvarrefstate, only : nwf, nt1, nt2
@@ -1939,7 +2118,7 @@ contains
     ! PETSc Variables
     PetscFortranAddr ctx(*)
     Vec     wVec, rVec
-    real(kind=realType) :: dt
+    real(kind=realType) :: dtinv
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: wvec_pointer(:)
@@ -1947,32 +2126,24 @@ contains
     ! get the input vector
     call setWANK(wVec)
 
-    ! if DADI is used for turbulence, use flow variables only
-    if (ANK_useTurbDADI) then
-      call computeResidualANK()
-      call setRVecANK(rVec)
-    ! if coupled solver is used, use all variables
-    else
+    if (ANK_coupled) then ! calculate all variables
       call computeResidualNK()
       call setRVec(rVec)
+    else ! Flow variables only
+      call computeResidualANK()
+      call setRVecANK(rVec)
     end if
 
-    ! Calculate the contribution from the time stepping term
-    dt = one/ANK_CFL
+    ! Add the contribution from the time stepping term
 
-    ! Add the contribution from the diagonal time stepping term
-    if (ANK_useTurbDADI) then
-      ! For the segragated solver each variable gets the same dt value
-      call VecAXPY(rVec, dt, wVec, ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-    else
-      ! For the coupled solver, time stepping term for turbulence needs to be scaled
-      call VecGetArrayF90(rVec,rvec_pointer,ierr)
-      call EChk(ierr,__FILE__,__LINE__)
+    call VecGetArrayF90(rVec,rvec_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
-      call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
-      call EChk(ierr,__FILE__,__LINE__)
+    call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
+    if (.not. ANK_coupled) then
+      ! Only flow variables
       ii = 1
       do nn=1, nDom
          do sps=1, nTimeIntervalsSpectral
@@ -1981,12 +2152,106 @@ contains
             do k=2, kl
                do j=2, jl
                   do i=2, il
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
                       do l = 1, nwf
-                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dt
+                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dtinv
+                        ii = ii + 1
+                      end do
+                  end do
+               end do
+            end do
+         end do
+      end do
+    else
+      ! Include time step for turbulence
+      ii = 1
+      do nn=1, nDom
+         do sps=1, nTimeIntervalsSpectral
+            call setPointers(nn,1_intType,sps)
+            ! read the density residuals and set local CFL
+            do k=2, kl
+               do j=2, jl
+                  do i=2, il
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                      do l = 1, nwf
+                        rvec_pointer(ii) = rvec_pointer(ii) + &
+                                           wvec_pointer(ii) * dtinv
                         ii = ii + 1
                       end do
                       do l = nt1, nt2
-                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*turbResScale(l-nt1+1)*dt
+                        rvec_pointer(ii) = rvec_pointer(ii) + &
+                                           wvec_pointer(ii)*turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
+                        ii = ii + 1
+                      end do
+                  end do
+               end do
+            end do
+         end do
+      end do
+    end if
+
+    call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+
+    ! We don't check an error here, so just pass back zero
+    ierr = 0
+
+  end subroutine FormFunction_mf
+
+  subroutine FormFunction_mf_Turb(ctx, wVecTurb, rVecTurb, ierr)
+      ! This is the function used for the matrix-free matrix-vector products
+      ! for the GMRES solver used in ANK
+
+      use constants
+      use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
+      use inputtimespectral, only : nTimeIntervalsSpectral
+      use inputIteration, only : turbResScale
+      use flowvarrefstate, only : nwf, nt1, nt2
+      use NKSolver, only : computeResidualNK, setRvec
+      use utils, only : setPointers, EChk
+      implicit none
+
+      ! PETSc Variables
+      PetscFortranAddr ctx(*)
+      Vec     wVecTurb, rVecTurb
+      real(kind=realType) :: dtinv
+      integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
+      real(kind=realType),pointer :: rvecTurb_pointer(:)
+      real(kind=realType),pointer :: wvecTurb_pointer(:)
+
+      ! get the input vector
+      call setWANKTurb(wVecTurb)
+
+      ! Compute turbulent residual only
+      call computeResidualANKTurb()
+
+      ! set the R vec for turbulence in petsc
+      call setRVecANKTurb(rVecTurb)
+
+      call VecGetArrayF90(rVecTurb,rvecTurb_pointer,ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+
+      call VecGetArrayReadF90(wVecTurb,wvecTurb_pointer,ierr)
+      call EChk(ierr,__FILE__,__LINE__)
+
+      ! Calculate the contribution from the time-stepping term
+      ii = 1
+      do nn=1, nDom
+         do sps=1, nTimeIntervalsSpectral
+            call setPointers(nn,1_intType,sps)
+            do k=2, kl
+               do j=2, jl
+                  do i=2, il
+                      ! See the comment for the same calculation above
+                      dtinv = turbResScale(1) / &
+                              (ANK_turbCFLScale* ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                      do l = nt1, nt2
+                        rvecTurb_pointer(ii) = rvecTurb_pointer(ii) + &
+                                               wvecTurb_pointer(ii) * dtinv
                         ii = ii + 1
                       end do
                   end do
@@ -1995,16 +2260,16 @@ contains
          end do
       end do
 
-      call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+      call VecRestoreArrayF90(rVecTurb, rvecTurb_pointer, ierr)
       call EChk(ierr,__FILE__,__LINE__)
 
-      call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+      call VecRestoreArrayReadF90(wVecTurb, wvecTurb_pointer, ierr)
       call EChk(ierr,__FILE__,__LINE__)
-    end if
-    ! We don't check an error here, so just pass back zero
-    ierr = 0
 
-  end subroutine FormFunction_mf
+      ! We don't check an error here, so just pass back zero
+      ierr = 0
+
+  end subroutine FormFunction_mf_Turb
 
   subroutine destroyANKsolver
 
@@ -2035,6 +2300,29 @@ contains
 
        call KSPDestroy(ANK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
+       if (ANK_turbSetup) then
+
+           call MatDestroy(dRdwTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call MatDestroy(dRdwPreTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call VecDestroy(wVecTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call VecDestroy(rVecTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call VecDestroy(deltaWTurb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           call KSPDestroy(ANK_KSP_Turb, ierr)
+           call EChk(ierr, __FILE__, __LINE__)
+
+           ANK_turbSetup = .False.
+       end if
 
        ANK_SolverSetup = .False.
     end if
@@ -2141,6 +2429,95 @@ contains
 
   end subroutine computeResidualANK
 
+  subroutine computeResidualANKTurb
+
+    ! This is the residual evaluation driver for the KSP for Turbulence in ANK
+
+    ! This routine might be cleaned up a bit, depending on what values we are using during turbulence residual calc
+
+    use constants
+    use blockPointers, only : nDom, ib, jb, kb, p, w, gamma
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use flowvarrefstate, only : nw, pInfCorr, nwf, kPresent, nt1, nt2
+    use iteration, only : groundLevel, currentLevel, rkStage
+    use inputPhysics, only : equations, gammaConstant
+    use utils, only : setPointers
+    use haloExchange, only : whalo2
+    use turbUtils, only : computeEddyViscosity
+    use turbAPI, only : turbResidual
+    use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
+    use flowUtils, only : computeLamViscosity
+    use BCRoutines, only : applyAllBC, applyAllBC_block
+    use solverUtils, only : timeStep, computeUtau
+    use residuals, only :residual, initRes, sourceTerms
+    use oversetData, only : oversetPresent
+    implicit none
+
+    ! Local Variables
+    integer(kind=intType) :: i, j, k, sps,nn
+    logical secondHalo, correctForK
+    real(kind=realType) :: gm1, factK, v2
+
+    gm1 = gammaConstant - one
+    rkStage = 0
+
+    secondHalo = .false.
+    correctForK = .false.
+    if(currentLevel <= groundLevel) then
+       secondHalo = .true.
+       if (kPresent) then
+          correctForK = .True.
+       end if
+    end if
+
+    ! Recompute pressure on ALL cells
+    spectralLoop: do sps=1, nTimeIntervalsSpectral
+       domainsState: do nn=1, nDom
+          ! Set the pointers to this block.
+          call setPointers(nn, currentLevel, sps)
+          ! Compute Viscosities
+          call computeLamViscosity(.False.)
+          call computeEddyViscosity (.False.)
+       end do domainsState
+    end do spectralLoop
+
+    ! Apply BCs
+    do nn=1,nDom
+      do sps=1,nTimeIntervalsSpectral
+         call setPointers(nn, currentLevel, sps)
+         call bcTurbTreatment
+         call applyAllTurbBCThisBLock(.True.)
+      end do
+    end do
+
+    ! Exchange halos
+    call whalo2(currentLevel, nt1, nt2, .false., &
+         .false., .True.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset.
+    if (oversetPresent) then
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             call BCTurbTreatment
+             call applyAllTurbBCthisblock(.True.)
+          end do
+       end do
+    end if
+
+    ! Compute time step (spectral radius is actually what we need)
+    call timestep(.false.)
+
+    ! Compute the skin-friction velocity (wall functions only)
+    call computeUtau
+    call initres(nt1, nt2) ! Initialize only the Turblent Variables
+    call turbResidual
+
+  end subroutine computeResidualANKTurb
+
   subroutine setWVecANK(wVec)
     ! Set the current FLOW variables in the PETSc Vector
 
@@ -2178,6 +2555,45 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
   end subroutine setWVecANK
+
+  subroutine setWVecANKTurb(wVecTurb)
+    ! Set the current Turbulence variables in the PETSc Vector
+
+    use constants
+    use blockPointers, only : nDom, il, jl, kl, w
+    use inputtimespectral, only : ntimeIntervalsSpectral
+    use flowvarrefstate, only : nt1, nt2
+    use utils, only : setPointers, EChk
+    implicit none
+
+    Vec   wVecTurb
+    integer(kind=intType) :: ierr,nn,sps,i,j,k,l,ii
+    real(kind=realType),pointer :: wvecTurb_pointer(:)
+
+    call VecGetArrayF90(wVecTurb,wvecTurb_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, 1_intType, sps)
+          ! Copy off w to wVec
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=nt1, nt2
+                      ii = ii + 1
+                      wvecTurb_pointer(ii) = w(i, j, k, l)
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    call VecRestoreArrayF90(wVecTurb, wvecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+  end subroutine setWVecANKTurb
 
   subroutine setRVecANK(rVec)
 
@@ -2219,6 +2635,46 @@ contains
 
   end subroutine setRVecANK
 
+  subroutine setRVecANKTurb(rVecTurb)
+
+    ! Set the current Turb residual in dw into the PETSc Vector
+    use constants
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use inputtimespectral, only : nTimeIntervalsSpectral
+    use flowvarrefstate, only : nt1, nt2
+    use inputIteration, only : turbResScale
+    use utils, only : setPointers, EChk
+    implicit none
+    Vec    rVecTurb
+    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
+    real(kind=realType),pointer :: rvecTurb_pointer(:)
+    real(Kind=realType) :: ovv
+    call VecGetArrayF90(rVecTurb,rvecTurb_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn,1_intType,sps)
+          ! Copy off dw/vol to rVec
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   ovv = one/volRef(i,j,k)
+                   do l=nt1, nt2
+                      ii = ii + 1
+                      rvecTurb_pointer(ii) = dw(i, j, k, l)*ovv*turbResScale(l-nt1+1)
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+
+     call VecRestoreArrayF90(rVecTurb, rvecTurb_pointer, ierr)
+     call EChk(ierr,__FILE__,__LINE__)
+
+ end subroutine setRVecANKTurb
+
   subroutine setWANK(wVec)
     ! Get the updated solution from the PETSc Vector
 
@@ -2256,26 +2712,115 @@ contains
 
   end subroutine setWANK
 
+  subroutine setWANKTurb(wVecTurb)
+    ! Get the updated solution from the PETSc Vector
+
+    use constants
+    use blockPointers, only : nDom, vol, il, jl, kl, w
+    use inputtimespectral, only : nTimeIntervalsSpectral
+    use flowvarrefstate, only : nt1, nt2
+    use utils, only : setPointers, EChk
+    implicit none
+
+    Vec  wVecTurb
+    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
+    real(kind=realType), pointer :: wvecTurb_pointer(:)
+    call VecGetArrayReadF90(wVecTurb, wvecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ii = 0
+    do nn=1, nDom
+       do sps=1,nTimeIntervalsSpectral
+          call setPointers(nn, 1_intType, sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=nt1, nt2
+                      ii = ii + 1
+                      w(i, j, k, l) = wvecTurb_pointer(ii)
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+    call VecRestoreArrayReadF90(wVecTurb, wvecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+  end subroutine setWANKTurb
+
+  ! for debugging/experimenting
+  subroutine scaleDeltaWTurb(deltaWTurb, wVecTurb)
+    ! Get the updated solution from the PETSc Vector
+
+    use constants
+    use blockPointers, only : nDom, vol, il, jl, kl, w, volRef
+    use inputtimespectral, only : nTimeIntervalsSpectral
+    use flowvarrefstate, only : nt1, nt2
+    use utils, only : setPointers, EChk
+    implicit none
+
+    Vec  deltaWTurb, wVecTurb
+    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii, counter
+    real(kind=realType), pointer :: dvecTurb_pointer(:), wVecTurb_pointer(:)
+    call VecGetArrayReadF90(deltaWTurb, dvecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call VecGetArrayReadF90(wVecTurb, wVecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ii = 0
+    counter = 0
+    do nn=1, nDom
+       do sps=1,nTimeIntervalsSpectral
+          call setPointers(nn, 1_intType, sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   do l=nt1, nt2
+                      ii = ii + 1
+                      if (max(dvecturb_pointer(ii), 0.0_realType) > wVecTurb_pointer(ii)) then
+                        dvecturb_pointer(ii) = 0.9_realType*wVecTurb_pointer(ii)
+                        counter = counter + 1
+                      end if
+                   end do
+                end do
+             end do
+          end do
+       end do
+    end do
+    call VecRestoreArrayReadF90(deltaWTurb, dvecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call VecRestoreArrayReadF90(wVecTurb, wVecTurb_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    if (counter > 0)&
+        write(*,*) "Number of turb updates clipped: ",counter
+
+  end subroutine scaleDeltaWTurb
+
   subroutine ANKStep(firstCall)
 
     use constants
     use blockPointers, only : nDom, flowDoms, shockSensor, ib, jb, kb, p, w, gamma
+    use communication, only : myid
     use inputPhysics, only : equations
-    use inputIteration, only : L2conv
+    use inputIteration, only : L2conv, nsubiterturb, turbResScale
     use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel
-    use utils, only : EChk, setPointers
+    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentlevel
+    use utils, only : EChk, setpointers
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, computeResidualNK, getEwTol
     use initializeFlow, only : setUniformFlow
+    use haloexchange, only : whalo2
     use BCRoutines, only : applyAllBC, applyAllBC_block
-    use haloExchange, only : whalo2
+    use flowvarrefstate, only : nwf, nw, kPresent, pInfCorr
     use oversetData, only : oversetPresent
-    use flowVarRefState, only : nw, nwf, kPresent, pInfCorr
     use flowUtils, only : computeLamViscosity
     use turbUtils, only : computeEddyViscosity
     use communication
@@ -2286,21 +2831,29 @@ contains
     logical, intent(in) :: firstCall
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter
+    integer(kind=intType) :: ierr, maxIt, kspIterations, kspIterations_Turb, nn, sps, reason, nHist, iter, n_turb
     integer(kind=intType) :: i,j,k
     real(kind=realType) :: atol, val, lambdaBT, v2, factK, gm1
     real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
     real(kind=alwaysRealType) :: resHist(ank_maxIter+1)
+    real(kind=alwaysRealType) :: resHist_turb(ank_maxIter+1)
     logical :: secondOrdSave, correctForK
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
-    if (firstCall .or. (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI)) then
+    if (firstCall .or. (totalR < ANK_coupledSwitchTol * totalR0 .and. (.not. ANK_coupled) ) &
+        .or. (totalR < ANK_turbSwitchTol * totalR0 .and. ANK_useTurbDADI) ) then
 
        ! If using segragated ANK and below the coupled switch tol, set ANK_useTurbDADI
        ! to .False. to create the PETSc objets required for the coupled ANK solver
-       if (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI) then
-         call destroyANKsolver()
+       if (totalR < ANK_coupledSwitchTol * totalR0) then
+         ANK_coupled = .True.
+         call destroyANKSolver()
+       else if (totalR < ANK_turbSwitchTol * totalR0) then
          ANK_useTurbDADI = .False.
+         ANK_coupled = .False.
+         call destroyanksolver()
+       else
+         ANK_coupled = .False.
        end if
 
        call setupANKSolver()
@@ -2309,12 +2862,19 @@ contains
        call setwVecANK(wVec)
 
        ! Evaluate the residual before we start
-       if (ANK_useTurbDADI) then
-          call computeResidualANK() ! Only flow residual
-          call setRVecANK(rVec)
-       else
-          call computeResidualNK() ! Compute full residual
+       if (ANK_coupled) then ! Compute and set the full residual
+          call computeResidualNK()
           call setRVec(rVec)
+       else
+          call computeResidualANK() ! Compute only flow residuals
+          call setRVecANK(rVec) ! Set flow residuals
+
+          ! If not DADI, Turb gets updates via KSP
+          if (.not. ANK_useTurbDADI) then ! Segragated ANK with KSP for turbulence
+              call computeResidualANKTurb() ! Compute turbulent residuals only
+              call setRVecANKTurb(rVecTurb) ! Set turbulence residual vector in PETSc
+              call setWVecANKTurb(wVecTurb) ! Set turbulence state vector in PETSc
+          end if
        end if
 
        totalR_old = totalR ! Record the old residual for the first iteration
@@ -2442,7 +3002,7 @@ contains
     call setWANK(wVec)
 
     ! ============== Turb Update =============
-    if (ANK_useTurbDADI .and. equations==RANSEquations) then
+    if ((.not. ANK_coupled) .and. equations == RANSEquations) then ! Turb either gets dadi or KSP
         ! Update the intermediate variables required for turb. solve
         if (kPresent) then
            correctForK = .True.
@@ -2485,22 +3045,138 @@ contains
         call applyAllBC(.true.)
 
         ! Exchange halos
-        call whalo2(currentLevel, 1_intType, nwf, .false.,&
-                    .false., .false.)
+        call whalo2(currentLevel, 1_intType, nwf, .True., &
+             .false., .true.)
 
-        ! If overset is present, we need to re-apply the BCs due to interpolated cells
+        ! Need to re-apply the BCs. The reason is that BC halos behind
+        ! interpolated cells need to be recomputed with their new
+        ! interpolated values from actual compute cells. Only needed for
+        ! overset.
         if (oversetPresent) then
-            do sps=1,nTimeIntervalsSpectral
-               do nn=1,nDom
-                  call setPointers(nn, 1, sps)
-                  call applyAllBC_block(.True.)
-               end do
-            end do
+           do sps=1,nTimeIntervalsSpectral
+              do nn=1,nDom
+                 call setPointers(nn, 1, sps)
+                 call applyAllBC_block(.True.)
+              end do
+           end do
         end if
 
-        ! actually do the turbulence update
-        call computeUtau
-        call turbSolveSegregated
+        if (ANK_useTurbDADI) then ! Do DDADI update
+            ! parameter to control the approximations in the ddadi jacobian for turbulence
+            call computeUtau
+            call turbSolveSegregated
+        else ! Do ksp update
+          do n_turb = 1, ANK_nsubiterturb ! Repeat for desired turbulent sub-iterations
+
+            ! Re-calculate the turbulent residuals
+            call computeResidualANKTurb()
+
+            ! Set the residual vector in Petsc
+            call setRVecANKTurb(rVecTurb)
+
+            ! Increment the iteration counter
+            ANK_Turb_iter = ANK_Turb_iter + 1
+
+            ! Check if PC needs a refresh
+            if (mod(ANK_Turb_iter, ANK_jacobianLag) == 0) then
+               call FormJacobianANKTurb()
+            end if
+
+            ! Dummy matrix assembly for the mat-free matrix
+            call MatAssemblyBegin(dRdwTurb, MAT_FINAL_ASSEMBLY, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+            call MatAssemblyEnd(dRdwTurb, MAT_FINAL_ASSEMBLY, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Set base vector of the MFFD matrix
+            call MatMFFDSetBase(dRdwTurb, wVecTurb, PETSC_NULL_OBJECT, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Set different stuff required for MFFD operations
+            if (totalR > ANK_secondOrdSwitchTol*totalR0) then
+              ! Setting lumped dissipation to true gives approximate fluxes
+              lumpedDiss =.True. ! Doesn't do anything for turbulence, might remove
+
+              ! Save if second order turbulence is used, we will only use 1st order until 2nd ord switchtol is reached
+              secondOrdSave = secondOrd
+              secondOrd =.False.
+
+              ! Determine the relative convergence for the KSP solver
+              rtol = ANK_rtol ! Use the same relative tolerance for the turbulence
+            else
+              ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive
+              ! convergence tolerance helps with performance.
+              !totalR_dummy = totalR
+              !call getEWTol(totalR_dummy, totalR_old, rtolLast, rtol)
+
+              rtol = ANK_rtol ! Use the same value for now
+            end if
+
+            ! Set R tol for the KSP. Turb residuals should already be scaled, so they should be same order wrt flow residuals
+            atol = totalR0*L2Conv
+
+            ! Set KSP tolerances, get residual history
+
+            ! Set the iteration limit to maxIt, determined by which fluxes are used.
+            ! This is because ANK step require 0.1 convergence for stability during initial stages.
+            ! Due to an outdated preconditioner, the KSP solve might take more iterations.
+            ! If this happens, the preconditioner is re-computed and because of this,
+            ! ANK iterations usually don't take more than 2 times number of ANK_subSpace size iterations
+            call KSPSetTolerances(ANK_KSP_Turb, rtol, &
+                 real(atol), real(ANK_divTol), ank_maxIter, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call KSPSetResidualHistory(ANK_KSP_turb, resHist_turb, ank_maxIter+1, PETSC_TRUE, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Actually do the KSP Solve
+            call KSPSolve(ANK_KSP_turb, rVecTurb, deltaWTurb, ierr)
+
+            ! Check for NaN
+            if (ierr == 72) then
+               ! The convergence check will get the nan
+            else
+               call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            ! Return previously changed variables back to normal, VERY IMPORTANT
+            if (totalR > ANK_secondOrdSwitchTol*totalR0) then
+              ! Set lumpedDiss back to False to go back to using actual flux routines
+              lumpedDiss =.False. ! again, shouldn't do anything for turbulence
+
+              ! Replace the second order turbulence option
+              secondOrd = secondOrdSave
+            end if
+
+            ! Scale the update to prevent negative turbulence variables
+            call scaleDeltaWTurb(deltaWTurb, wVecTurb)
+
+            ! take the update
+            call VecAXPY(wVecTurb, -lambda, deltaWTurb, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Set the updated state variables
+            call setWANKTurb(wVecTurb)
+
+            ! Get the number of iterations from the KSP solver
+            call KSPGetIterationNumber(ANK_KSP_Turb, kspIterations_Turb, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Get reason for convergence, for debugging purposes only
+            call KSPGetConvergedReason(ANK_KSP_Turb, reason, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Print some info about the turbulence ksp
+            if (myid == 0) then
+              Write(*,*) "LIN RES, ITER, INITRES, REASON", resHist_turb(kspIterations_turb+1)/resHist_turb(1),kspIterations_turb, &
+              reshist_turb(1), reason
+            end if
+            if (kspIterations_turb > .5 * ank_maxIter .and. totalR > ANK_secondOrdSwitchTol*totalR0) then
+               ! We should reform the PC since it took longer than we want.
+               ANK_Turb_iter = -1
+            end if
+          end do
+        end if
     end if
 
     ! Calculate the residual with the new values and set the R vec in PETSc
@@ -2511,10 +3187,10 @@ contains
     ! residuals after each ANK step, which the turbSolveSegregated routine
     ! does not do on its own
     call computeResidualNK()
-    if (ANK_useTurbDADI) then
-       call setRVecANK(rVec)
-    else
+    if (ANK_coupled) then
        call setRVec(rVec)
+    else
+       call setRVecANK(rVec)
     end if
 
     ! Check if the norm of the rVec is bad:
@@ -2542,10 +3218,10 @@ contains
           ! Set and recompute
           call setWANK(wVec)
           call computeResidualNK()
-          if (ANK_useTurbDADI) then
-             call setRVecANK(rVec)
-          else
+          if (ANK_coupled) then
              call setRVec(rVec)
+          else
+             call setRVecANK(rVec)
           end if
           call VecNorm(rVec, NORM_2, norm, ierr)
           call EChk(ierr, __FILE__, __LINE__)
