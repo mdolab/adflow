@@ -906,9 +906,9 @@ contains
     use inputio, only : forcedLiftFile, forcedSliceFile, forcedVolumeFile, &
          forcedSurfaceFile, solFile, newGridFile, surfaceSolFile
     use inputIteration, only: CFL, CFLCoarse, minIterNum, nCycles, &
-         nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset
+         nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset, timeLimit
     use iteration, only : cycling, approxTotalIts, converged, CFLMonitor, &
-         groundLevel, iterTot, iterType, currentLevel, rhoRes0, totalR, &
+         groundLevel, iterTot, iterType, currentLevel, rhoRes0, totalR, t0Solver,&
          rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor, linResMonitor
     use killSignals, only : globalSignal, localSignal, noSignal, routineFailed, signalWrite, &
          signalWriteQuit
@@ -929,7 +929,7 @@ contains
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
     logical :: absConv, relConv, firstNK, firstANK
-    real(kind=realType) :: nk_switchtol_save
+    real(kind=realType) :: nk_switchtol_save, curTime
 
     ! Allocate the memory for cycling.
     if (allocated(cycling)) then
@@ -982,7 +982,7 @@ contains
        ! Write a message about the number of multigrid iterations
        ! to be performed.
 
-       write(numberString,"(i6)") nMGCycles		
+       write(numberString,"(i6)") nMGCycles
        numberString = adjustl(numberString)
        numberString = trim(numberString)
        if (printIterations) then
@@ -1125,6 +1125,21 @@ contains
                 CFLMonitor = NK_CFL
 
              end if
+          end if
+       end if
+
+       if (timeLimit > zero) then
+          ! Check if we ran out of time but only if we are required to use the timeLimit
+          if (myid == 0) then
+             curTime = mpi_wtime() - t0solver
+          end if
+
+          call mpi_bcast(curTime, 1, adflow_real, 0, adflow_comm_world, ierr)
+
+          if (curTime > timeLimit) then
+             ! Set the iterTot to the limit directly so that convergence
+             ! info thinks we are just out of cycles
+             approxTotalIts = nMGCycles
           end if
        end if
 
@@ -1543,11 +1558,11 @@ contains
 #else
                 write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
 #endif
-                if (linResMonitor < zero) then 
-                   ! For RK/DADI just print dashes 
+                if (linResMonitor < zero) then
+                   ! For RK/DADI just print dashes
                    write(*,"(a,1x)", advance="no") " ----"
                 else
-                   
+
 #ifndef USE_COMPLEX
                    write(*,"(f5.3,1x)",advance="no") linResMonitor
 #else
