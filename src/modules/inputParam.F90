@@ -263,7 +263,7 @@ module inputIteration
   integer(kind=intType) :: turbTreatment, turbSmoother, turbRelax
   integer(kind=intType) :: mgBoundCorr, mgStartlevel
   integer(kind=intType) :: nMGSteps, nMGLevels
-
+  real(kind=realType) :: timeLimit
   integer(kind=intType), allocatable, dimension(:) :: cycleStrategy
   integer(kind=intType) :: miniterNum
   real(kind=realType) :: cfl, cflCoarse, fcoll, smoop
