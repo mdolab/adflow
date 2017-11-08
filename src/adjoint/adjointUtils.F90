@@ -1294,8 +1294,6 @@ contains
     KSP master_PC_KSP, subksp
     integer(kind=intType) :: nlocal, first, ierr
 
-    !write(*,*) "setting up ksp"
-
     ! First, KSPSetFromOptions MUST be called
     call KSPSetFromOptions(kspObject, ierr)
     call EChk(ierr, __FILE__, __LINE__)

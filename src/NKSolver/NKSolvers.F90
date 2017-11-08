@@ -2339,14 +2339,16 @@ contains
     use flowvarrefstate
     use iteration
     use inputPhysics
+    use inputDiscretization, only : lumpedDiss
     use utils, only : setPointers
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
     use flowUtils, only : computeLamViscosity
-    use BCRoutines, only : applyAllBC
+    use BCRoutines, only : applyAllBC, applyAllBC_block
     use solverUtils, only : timeStep, computeUtau
     use residuals, only :residual, initRes, sourceTerms
     use oversetData, only : oversetPresent
+    use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
 
     implicit none
 
@@ -2405,6 +2407,17 @@ contains
     ! Apply BCs
     call applyAllBC(secondHalo)
 
+    ! ! Also apply the viscous BCs
+    if (equations == RANSequations) then
+       do nn=1,nDom
+          do sps=1,nTimeIntervalsSpectral
+             call setPointers(nn, currentLevel, sps)
+             call bcTurbTreatment
+             call applyAllTurbBCThisBLock(.True.)
+          end do
+       end do
+    end if
+
     ! Exchange halos
     call whalo2(currentLevel, 1_intType, nwf, .true., &
          .true., .true.)
@@ -2414,11 +2427,21 @@ contains
     ! interpolated values from actual compute cells. Only needed for
     ! overset.
     if (oversetPresent) then
-       call applyAllBC(secondHalo)
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
     end if
 
-    ! Compute time step (spectral radius is actually what we need)
-    call timestep(.false.)
+    ! Compute time step, only if this is not a matrix-free computation
+    if (.not. lumpedDiss)&
+        call timestep(.false.)
 
     ! Initialize Flow residuals
     call initres(1_intType, nwf)
@@ -2823,7 +2846,6 @@ contains
     use oversetData, only : oversetPresent
     use flowUtils, only : computeLamViscosity
     use turbUtils, only : computeEddyViscosity
-    use communication
 
     implicit none
 
