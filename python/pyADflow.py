@@ -4245,6 +4245,7 @@ class ADFLOW(AeroSolver):
 
             # Common Paramters
             'ncycles':[int, 500],
+            'timelimit':[float, -1.0],
             'ncyclescoarse':[int, 500],
             'nsubiterturb':[int, 1],
             'nsubiter':[int, 1],
@@ -4532,6 +4533,7 @@ class ADFLOW(AeroSolver):
 
             # Common Paramters
             'ncycles':['iter', 'ncycles'],
+            'timelimit':['iter', 'timelimit'],
             'ncyclescoarse':['iter', 'ncyclescoarse'],
             'nsubiterturb':['iter', 'nsubiterturb'],
             'nsubiter':['iter', 'nsubiterations'],
