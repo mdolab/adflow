@@ -904,6 +904,7 @@ python module libadflow
          logical :: rkreset
          character(len=maxstringlen) :: mgdescription
          integer(kind=inttype) :: ncycles
+         real(kind=realtype) :: timelimit
          integer(kind=inttype) :: ncyclescoarse
          integer(kind=inttype) :: nsavevolume
          integer(kind=inttype) :: nsavesurface
