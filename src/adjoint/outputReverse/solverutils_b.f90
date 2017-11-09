@@ -526,7 +526,7 @@ contains
           end if
           rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! compute the inviscid contribution to the time step.
-          dtl(i, j, k) = ri + rj + rk
+          if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
 !
 !           adapt the spectral radii if directional scaling must be
 !           applied.

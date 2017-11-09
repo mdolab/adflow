@@ -2439,9 +2439,9 @@ contains
        end do
     end if
 
-    ! Compute time step, only if this is not a matrix-free computation
-    if (.not. lumpedDiss)&
-        call timestep(.false.)
+    ! Compute time step (spectral radius is actually what we need)
+    !if (.not. lumpedDiss)&
+    call timestep(lumpedDiss)
 
     ! Initialize Flow residuals
     call initres(1_intType, nwf)
@@ -3023,6 +3023,72 @@ contains
     ! Set the updated state variables
     call setWANK(wVec)
 
+    ! Calculate the residual with the new values and set the R vec in PETSc
+    ! We calculate the full residual using NK routine because the dw values
+    ! for turbulent variable has the update, not the residual and this
+    ! gives the wrong turbulent residual norm. This causes issues when
+    ! switching to NK or restarts after ANK. To fix, we calculate turbulent
+    ! residuals after each ANK step, which the turbSolveSegregated routine
+    ! does not do on its own
+    call computeResidualNK()
+    if (ANK_coupled) then
+       call setRVec(rVec)
+    else
+       call setRVecANK(rVec)
+    end if
+
+    ! Check if the norm of the rVec is bad:
+    call VecNorm(rVec, NORM_2, norm, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    if (isnan(norm)) then
+      ! refresh jacobian
+      ANK_iter = -1
+
+       ! Do backtracking linesearch:
+       call setUniformFlow()
+
+       ! Restore the starting (old) w value
+       call VecAXPY(wVec, lambda, deltaW, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       ! Set the initial new lambda
+       lambdaBT = 0.5 * lambda
+
+       do iter=1, 10
+
+          ! Apply the new step
+          call VecAXPY(wVec, -lambdaBT, deltaW, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          ! Set and recompute
+          call setWANK(wVec)
+          call computeResidualNK()
+          if (ANK_coupled) then
+             call setRVec(rVec)
+          else
+             call setRVecANK(rVec)
+          end if
+          call VecNorm(rVec, NORM_2, norm, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+         if (isnan(norm)) then
+
+            ! Restore back to the original wVec
+            call VecAXPY(wVec, lambdaBT, deltaW, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Haven't backed off enough yet....keep going
+            call setUniformFlow()
+            lambdaBT = lambdaBT * .5
+         else
+            ! We don't have an nan anymore...break out
+            exit
+         end if
+      end do
+      stepMonitor = lambdaBT
+   end if
+
     ! ============== Turb Update =============
     if ((.not. ANK_coupled) .and. equations == RANSEquations) then ! Turb either gets dadi or KSP
         ! Update the intermediate variables required for turb. solve
@@ -3220,6 +3286,8 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     if (isnan(norm)) then
+       ! Refresh jacobian
+       ANK_iter = -1
 
        ! Do backtracking linesearch:
        call setUniformFlow()
