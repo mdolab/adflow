@@ -191,8 +191,7 @@ contains
                         +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
                    ! Compute the inviscid contribution to the time step.
-
-                   dtl(i,j,k) = ri + rj + rk
+                   if (.not. onlyRadii) dtl(i,j,k) = ri + rj + rk
 
                    !
                    !           Adapt the spectral radii if directional scaling must be
