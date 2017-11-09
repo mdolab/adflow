@@ -1691,6 +1691,7 @@ module ANKSolver
   real(kind=realType) :: ANK_turbSwitchTol
   integer(kind=intType) :: ANK_nSubIterTurb
   real(kind=realType) :: ANK_turbcflscale
+  real(kind=realType) :: ANK_fullViscTol
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
@@ -2830,7 +2831,7 @@ contains
     use communication, only : myid
     use inputPhysics, only : equations
     use inputIteration, only : L2conv, nsubiterturb, turbResScale
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : lumpedDiss, fullVisc
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentlevel
     use utils, only : EChk, setpointers
@@ -3185,6 +3186,9 @@ contains
               ! Setting lumped dissipation to true gives approximate fluxes
               lumpedDiss =.True. ! Doesn't do anything for turbulence, might remove
 
+              ! Check if we want the full viscous terms
+              if (totalR < ANK_fullViscTol*totalR0) fullVisc = .True.
+
               ! Save if second order turbulence is used, we will only use 1st order until 2nd ord switchtol is reached
               secondOrdSave = secondOrd
               secondOrd =.False.
@@ -3231,6 +3235,9 @@ contains
             if (totalR > ANK_secondOrdSwitchTol*totalR0) then
               ! Set lumpedDiss back to False to go back to using actual flux routines
               lumpedDiss =.False. ! again, shouldn't do anything for turbulence
+
+              ! Set the full visc option back the the correct value
+              if (totalR < ANK_fullViscTol*totalR0) fullVisc = .False.
 
               ! Replace the second order turbulence option
               secondOrd = secondOrdSave
