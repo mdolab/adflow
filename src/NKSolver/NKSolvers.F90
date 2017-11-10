@@ -1695,6 +1695,8 @@ module ANKSolver
   real(kind=realType)   :: ANK_switchTol
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
+  real(kind=realType) :: ANK_turbcflscale
+  real(kind=realType) :: ANK_fullViscTol
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_StepFactor, lambda
@@ -1816,7 +1818,7 @@ contains
 
     use constants
     use flowVarRefState, only : nw, nwf, nt1, nt2
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
@@ -1829,7 +1831,7 @@ contains
     character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
-    real(kind=realType) ::  dt
+    real(kind=realType) :: dtinv
     integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
     real(kind=realType), pointer :: diag(:)
 
@@ -1854,22 +1856,14 @@ contains
     ! Reset saved value
     viscPC = tmp
 
-    ! ----------- Setup Flow KSP ----------
+    ! Add the contribution from the time step term
 
-    !!! The routine of setting CFL can be done just by petsc functions, may consider changing here !!!
-    ! the turbulent cfl can be scaled separately by VecStrideScale, did not help
-
+    ! Save the diagonal contribution in deltaW vector in PETSc
     call VecGetArrayF90(deltaW, diag, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    ! Calculate the contribution from the time-stepping term
-    dt = one/ANK_CFL
-
     if (ANK_useTurbDADI) then
-        ! For the segragated solver, no need for scaling, each variable gets the same value
-        diag(:) = dt
-    else
-        ! For the coupled solver, CFL number for the turbulent variable needs scaling
+        ! For the segragated solver, only calculate the time step for flow variables
         ii = 1
         do nn=1, nDom
            do sps=1, nTimeIntervalsSpectral
@@ -1877,12 +1871,43 @@ contains
               do k=2, kl
                  do j=2, jl
                     do i=2, il
+                        ! Calculate one over time step for this cell. Multiply
+                        ! the dtl by cell volume to get the actual time step
+                        ! required for a CFL of one, then multiply with the
+                        ! actual cfl number in the solver
+                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
                         do l = 1, nwf
-                          diag(ii) = dt
+                          diag(ii) = dtinv
+                          ii = ii + 1
+                        end do
+                    end do
+                 end do
+              end do
+           end do
+        end do
+    else
+        ! For the coupled solver, CFL number for the turbulent variable needs scaling
+        ! because the residuals are scaled, and additional scaling of the time step
+        ! for the turbulence variable might be required.
+        ii = 1
+        do nn=1, nDom
+           do sps=1, nTimeIntervalsSpectral
+              call setPointers(nn,1_intType,sps)
+              do k=2, kl
+                 do j=2, jl
+                    do i=2, il
+                        ! See the comment for the same calculation above
+                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                        do l = 1, nwf
+                          diag(ii) = dtinv
                           ii = ii + 1
                         end do
                         do l = nt1, nt2
-                          diag(ii) = turbResScale(l-nt1+1)*dt
+                          ! For the turbulence variable, additionally scale the cfl.
+                          ! turbresscale is required because the turbulent residuals
+                          ! are scaled with it. Furthermore, the turbulence variable
+                          ! can get a different CFL number. Scale it by turbCFLScale
+                          diag(ii) = turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
                           ii = ii + 1
                         end do
                     end do
@@ -1928,7 +1953,7 @@ contains
     ! for the GMRES solver used in ANK
 
     use constants
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw
+    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputtimespectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use flowvarrefstate, only : nwf, nt1, nt2
@@ -1939,7 +1964,7 @@ contains
     ! PETSc Variables
     PetscFortranAddr ctx(*)
     Vec     wVec, rVec
-    real(kind=realType) :: dt
+    real(kind=realType) :: dtinv
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: wvec_pointer(:)
@@ -1957,22 +1982,16 @@ contains
       call setRVec(rVec)
     end if
 
-    ! Calculate the contribution from the time stepping term
-    dt = one/ANK_CFL
+    ! Add the contribution from the time stepping term
 
-    ! Add the contribution from the diagonal time stepping term
+    call VecGetArrayF90(rVec,rvec_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
     if (ANK_useTurbDADI) then
-      ! For the segragated solver each variable gets the same dt value
-      call VecAXPY(rVec, dt, wVec, ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-    else
-      ! For the coupled solver, time stepping term for turbulence needs to be scaled
-      call VecGetArrayF90(rVec,rvec_pointer,ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-
-      call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-
+      ! Only flow variables
       ii = 1
       do nn=1, nDom
          do sps=1, nTimeIntervalsSpectral
@@ -1981,12 +2000,9 @@ contains
             do k=2, kl
                do j=2, jl
                   do i=2, il
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
                       do l = 1, nwf
-                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dt
-                        ii = ii + 1
-                      end do
-                      do l = nt1, nt2
-                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*turbResScale(l-nt1+1)*dt
+                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dtinv
                         ii = ii + 1
                       end do
                   end do
@@ -1994,13 +2010,40 @@ contains
             end do
          end do
       end do
-
-      call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
-      call EChk(ierr,__FILE__,__LINE__)
-
-      call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
-      call EChk(ierr,__FILE__,__LINE__)
+    else
+      ! Include time step for turbulence
+      ii = 1
+      do nn=1, nDom
+         do sps=1, nTimeIntervalsSpectral
+            call setPointers(nn,1_intType,sps)
+            ! read the density residuals and set local CFL
+            do k=2, kl
+               do j=2, jl
+                  do i=2, il
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                      do l = 1, nwf
+                        rvec_pointer(ii) = rvec_pointer(ii) + &
+                                           wvec_pointer(ii) * dtinv
+                        ii = ii + 1
+                      end do
+                      do l = nt1, nt2
+                        rvec_pointer(ii) = rvec_pointer(ii) + &
+                                           wvec_pointer(ii)*turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
+                        ii = ii + 1
+                      end do
+                  end do
+               end do
+            end do
+         end do
+      end do
     end if
+
+    call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call VecRestoreArrayReadF90(wVec, wvec_pointer, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
     ! We don't check an error here, so just pass back zero
     ierr = 0
 
@@ -2051,14 +2094,16 @@ contains
     use flowvarrefstate
     use iteration
     use inputPhysics
+    use inputDiscretization, only : lumpedDiss
     use utils, only : setPointers
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
     use flowUtils, only : computeLamViscosity
-    use BCRoutines, only : applyAllBC
+    use BCRoutines, only : applyAllBC, applyAllBC_block
     use solverUtils, only : timeStep, computeUtau
     use residuals, only :residual, initRes, sourceTerms
     use oversetData, only : oversetPresent
+    use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
 
     implicit none
 
@@ -2117,6 +2162,17 @@ contains
     ! Apply BCs
     call applyAllBC(secondHalo)
 
+    ! ! Also apply the viscous BCs
+    if (equations == RANSequations) then
+       do nn=1,nDom
+          do sps=1,nTimeIntervalsSpectral
+             call setPointers(nn, currentLevel, sps)
+             call bcTurbTreatment
+             call applyAllTurbBCThisBLock(.True.)
+          end do
+       end do
+    end if
+
     ! Exchange halos
     call whalo2(currentLevel, 1_intType, nwf, .true., &
          .true., .true.)
@@ -2126,11 +2182,24 @@ contains
     ! interpolated values from actual compute cells. Only needed for
     ! overset.
     if (oversetPresent) then
-       call applyAllBC(secondHalo)
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
     end if
 
-    ! Compute time step (spectral radius is actually what we need)
-    call timestep(.false.)
+    ! Compute the spectral radius and/or time step.
+    ! If this is not a matrix-free operation, also compute the time step.
+    ! If this is a matrix-free operation, we want the time step in dtl
+    ! to remain unchanged, but we need to re-calculate the spectral radius.
+    ! Passing lumpedDiss to timestep calculation (onlyRadii) achieves this.
+    call timestep(lumpedDiss)
 
     ! Initialize Flow residuals
     call initres(1_intType, nwf)
@@ -2262,7 +2331,7 @@ contains
     use blockPointers, only : nDom, flowDoms, shockSensor, ib, jb, kb, p, w, gamma
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : lumpedDiss, fullVisc
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel
     use utils, only : EChk, setPointers
@@ -2367,6 +2436,9 @@ contains
       ! Setting lumped dissipation to true gives approximate fluxes
       lumpedDiss =.True.
 
+      ! Check if we want the full viscous terms
+      if (totalR < ANK_fullViscTol*totalR0) fullVisc = .True.
+
       ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
       secondOrdSave = secondOrd
       secondOrd =.False.
@@ -2420,6 +2492,9 @@ contains
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
       ! Set lumpedDiss back to False to go back to using actual flux routines
       lumpedDiss =.False.
+
+      ! Set the full visc option back the the correct value
+      if (totalR < ANK_fullViscTol*totalR0) fullVisc = .False.
 
       ! Replace the second order turbulence option
       secondOrd = secondOrdSave
@@ -2485,8 +2560,8 @@ contains
         call applyAllBC(.true.)
 
         ! Exchange halos
-        call whalo2(currentLevel, 1_intType, nwf, .false.,&
-                    .false., .false.)
+        call whalo2(currentLevel, 1_intType, nwf, .True.,&
+                    .false., .True.)
 
         ! If overset is present, we need to re-apply the BCs due to interpolated cells
         if (oversetPresent) then
