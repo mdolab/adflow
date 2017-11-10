@@ -234,6 +234,7 @@ python module libadflow
          real(kind=realtype) :: ank_cflexponent
          real(kind=realtype) :: ank_coupledswitchtol
          real(kind=realtype) :: ank_turbcflscale
+         real(kind=realtype) :: ank_fullvisctol
          subroutine destroyanksolver
          end subroutine destroyanksolver
 
