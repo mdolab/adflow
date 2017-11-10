@@ -234,7 +234,7 @@ contains
               rkd = half*(abs2d+result1d)
               rk = half*(abs2+result1)
 ! compute the inviscid contribution to the time step.
-              dtl(i, j, k) = ri + rj + rk
+              if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
 !
 !           adapt the spectral radii if directional scaling must be
 !           applied.
@@ -481,7 +481,7 @@ contains
               result1 = sqrt(arg1)
               rk = half*(abs2+result1)
 ! compute the inviscid contribution to the time step.
-              dtl(i, j, k) = ri + rj + rk
+              if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
 !
 !           adapt the spectral radii if directional scaling must be
 !           applied.
