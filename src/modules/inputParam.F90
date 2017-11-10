@@ -52,7 +52,8 @@ module inputDiscretization
   ! lumpedDiss :            logical factor for determining whether or not
   !                         lumped dissipation is used for preconditioner
   ! fullVisc :              Flag to use the full viscous terms, even if
-  !                         the lumpedDsiss option is set to True.  ! sigma      :            Scaling parameter for dissipation lumping in
+  !                         the lumpedDsiss option is set to True.
+  ! sigma      :            Scaling parameter for dissipation lumping in
   !                         approximateprecondtioner
   ! useApproxWallDistance : logical to determine if the user wants to
   !                         use the fast approximate wall distance
