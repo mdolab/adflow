@@ -1012,6 +1012,7 @@ contains
     use flowvarrefstate, only : nw, pInfCorr, nwf, kPresent, nt1, nt2
     use iteration, only : groundLevel, currentLevel, rkStage
     use inputPhysics, only : equations, gammaConstant
+    use inputDiscretization, only : lumpedDiss
     use utils, only : setPointers
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
@@ -1111,7 +1112,12 @@ contains
     end if
 
     ! Compute time step (spectral radius is actually what we need)
-    call timestep(.false.)
+    ! Don't update the time step if we are doing a matrix-free operation
+    ! for coupled ANK. For general residual calculations, lumpedDiss
+    ! will be false, this routine will calculate both spectral radius
+    ! and time step. For ANK, lumpedDiss will be true, the routine will
+    ! only calculate the spectral radii.
+    call timestep(lumpedDiss)
 
     ! Possible Turblent Equations
     if( equations == RANSEquations ) then
