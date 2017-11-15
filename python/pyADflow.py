@@ -1226,12 +1226,15 @@ class ADFLOW(AeroSolver):
         # given objective. For regular functions this just sets a 1.0
         # for f. For the user-supplied functions, it linearizes the
         # user-supplied function and sets all required seeds.
+
         if f.lower() in self.adflowCostFunctions:
             funcsBar = {f.lower():1.0}
         elif f in self.adflowUserCostFunctions:
             # Need to get the funcs-bar derivative from the
             # user-supplied function
             funcsBar = self.adflowUserCostFunctions[f].evalFunctionsSens()
+        else:
+            funcsBar = {f.lower():0.0}
         return funcsBar
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
