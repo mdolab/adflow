@@ -3271,7 +3271,8 @@ class ADFLOW(AeroSolver):
         objective: string
             The objective to be tested.
         """
-        if objective.lower() in self.adflowCostFunctions.keys():
+        if objective.lower() in self.adflowCostFunctions.keys() or \
+           objective.lower() in self.adflowUserCostFunctions.keys():
             return True
         else:
             return False
