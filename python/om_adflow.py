@@ -1,3 +1,5 @@
+import types
+
 from pygeo import DVGeometry, DVConstraints
 from baseclasses import AeroProblem
 
@@ -10,20 +12,22 @@ from comp_states import StatesComp
 from comp_functionals import FunctionalsComp
 from comp_geocon import GeometryConstraintsComp
 
-from mach_opt_prob_utils import get_dvs_and_cons
+from om_utils import get_dvs_and_cons
 
 class OM_ADFLOW(Group):
+    """Group integrating the states, funcs, and geometry constraints into a single system"""
 
     def initialize(self):
-        self.metadata.declare('aero_options', required=True)
-        self.metadata.declare('mesh_options', required=True)
-        self.metadata.declare('family_groups', default={})
-        self.metadata.declare('functions', default={})
-        self.metadata.declare('ap', type_=AeroProblem, required=True)
-        self.metadata.declare('dvgeo', type_=DVGeometry, required=True)
-        self.metadata.declare('dvcon', default=None) # TODO: type check this, but still allow None
-        self.metadata.declare('use_OM_solver', default=False, type_=bool)
-        self.metadata.declare('max_procs', default=64, type_=int)
+        self.metadata.declare('ap', types=AeroProblem, required=True)
+        self.metadata.declare('aero_options')
+        self.metadata.declare('mesh_options' types=(dict, None))
+        self.metadata.declare('family_groups', types=(dict, None))
+        self.metadata.declare('setup_callback', types=(types.FunctionType, None))
+        self.metadata.declare('dvgeo', types=(DVGeometry, None), default=None)
+        self.metadata.declare('dvcon', types=(DVConstraints, None), default=None)
+        self.metadata.declare('use_OM_solver', default=False, types=bool)
+
+        # self.metadata.declare('max_procs', default=64, type_=int)
 
     def setup(self):
         ap = self.metadata['ap']

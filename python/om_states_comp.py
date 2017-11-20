@@ -3,13 +3,16 @@ from baseclasses import AeroProblem
 
 from adflow import ADFLOW
 
-from mach_opt_prob_utils import get_dvs_and_cons
-
 from openmdao.api import ImplicitComponent
 from openmdao.core.analysis_error import AnalysisError
 
+from om_utils import get_dvs_and_cons
 
-class StatesComp(ImplicitComponent):
+
+
+
+class OM_STATES_COMP(ImplicitComponent):
+    """OpenMDAO component that wraps the flow solve"""
 
     def initialize(self):
         self.metadata.declare('ap', type_=AeroProblem, required=True)
@@ -19,12 +22,6 @@ class StatesComp(ImplicitComponent):
         self.metadata.declare('max_procs', default=64, type_=int)
 
         self.distributed = True
-
-    def get_req_procs(self):
-        """
-        min/max number of procs that this component can use
-        """
-        return (1,self.metadata['max_procs'])
 
     def setup(self):
         solver = self.metadata['solver']
@@ -78,11 +75,11 @@ class StatesComp(ImplicitComponent):
         self._set_ap(inputs)
         self._set_geo(inputs)
         ap.solveFailed = False # might need to clear this out?
-        ap.fatalFail = False 
+        ap.fatalFail = False
         solver(ap)
 
-        if ap.solveFailed: 
-            if self.comm.rank == 0: 
+        if ap.solveFailed:
+            if self.comm.rank == 0:
                 print('###############################################################')
                 print('#Solve Tolerance Not Reached, attempting a clean restart!')
                 print('###############################################################')
@@ -90,11 +87,11 @@ class StatesComp(ImplicitComponent):
             solver.resetFlow(ap)
             solver(ap)
 
-        if ap.fatalFail: 
+        if ap.fatalFail:
             print('###############################################################')
             print('#Solve Fatal Fail. Analysis Error')
             print('###############################################################')
-            
+
             raise AnalysisError('ADFLOW Solver Fatal Fail')
 
         outputs['states'] = solver.getStates()
@@ -118,7 +115,7 @@ class StatesComp(ImplicitComponent):
         if mode == 'fwd':
             if 'states' in d_residuals:
                 xDvDot = {}
-                for var_name in d_inputs: 
+                for var_name in d_inputs:
                     xDvDot[var_name] = d_inputs[var_name]
                 if 'states' in d_outputs:
                     wDot = d_outputs['states']
@@ -158,6 +155,6 @@ class StatesComp(ImplicitComponent):
                 d_outputs['states'] = solver.solveDirectForRHS(d_residuals['states'])
             elif mode == 'rev':
                 d_residuals['states'] = solver.solveAdjointForRHS(d_outputs['states'])
-            
+
 
         return True, 0, 0
