@@ -6,9 +6,10 @@ from openmdao.api import ExplicitComponent
 
 from pygeo import DVConstraints, DVGeometry
 
-from mach_opt_prob_utils import get_dvs_and_cons
+from om_utils import get_dvs_and_cons
 
-class GeometryConstraintsComp(ExplicitComponent):
+class OM_GEOCON_COMP(ExplicitComponent):
+    """OpenMDAO Component that wraps the geometry constraints calculation"""
 
     def initialize(self):
         self.metadata.declare('dvgeo', type_=DVGeometry, required=True)
@@ -20,7 +21,7 @@ class GeometryConstraintsComp(ExplicitComponent):
             name = args[0]
             size = args[1]
             self.add_input(name, shape=size)
-            
+
         for cons in itervalues(self.metadata['dvcon'].constraints):
             for name, con in iteritems(cons):
                 #print('nonlinear con', name)
@@ -33,7 +34,7 @@ class GeometryConstraintsComp(ExplicitComponent):
             #print('linear_con', name)
             self.add_output(name, shape=con.ncon)
             jac = funcsSens[name]
-            for wrt_var, subjac in iteritems(jac): 
+            for wrt_var, subjac in iteritems(jac):
                 self.declare_partials(of=name, wrt=wrt_var, val=subjac)
 
 
@@ -64,13 +65,13 @@ class GeometryConstraintsComp(ExplicitComponent):
 
     def compute_partials(self, inputs, J):
         self._set_geo(inputs)
-        
+
         funcsSens = {}
 
         self.metadata['dvcon'].evalFunctionsSens(funcsSens)
-        
+
         for of_var, jac in funcsSens.items():
             #print('of: ', of_var)
-            for wrt_var, subjac in jac.items(): 
+            for wrt_var, subjac in jac.items():
                 #print('  wrt: ', wrt_var)
                 J[of_var, wrt_var] = subjac
