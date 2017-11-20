@@ -1824,7 +1824,7 @@ contains
 
     use constants
     use flowVarRefState, only : nw, nwf, nt1, nt2
-    use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
+    use blockPointers, only : nDom, volRef, il, jl, kl, w, dw, dtl, globalCell
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
@@ -1837,9 +1837,9 @@ contains
     character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
-    real(kind=realType) :: dtinv
-    integer(kind=intType) :: i, j, k, l, ii, nn, sps, outerPreConIts, subspace
-    real(kind=realType), pointer :: diag(:)
+    real(kind=realType) :: dtinv, rho
+    integer(kind=intType) :: i, j, k, l, ii, irow, nn, sps, outerPreConIts, subspace
+    real(kind=realType), dimension(:,:), allocatable :: blk
 
     ! Assemble the approximate PC (fine leve, level 1)
     useAD = .False.
@@ -1864,13 +1864,15 @@ contains
 
     ! Add the contribution from the time step term
 
-    ! Save the diagonal contribution in deltaW vector in PETSc
-    call VecGetArrayF90(deltaW, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+    ! Generic block to use while setting values
+    allocate(blk(nState, nState))
+
+    ! Zero the block once, since the previous entries will be overwritten
+    ! for each cell, and zero entries will remain zero.
+    blk = zero
 
     if (ANK_useTurbDADI) then
         ! For the segragated solver, only calculate the time step for flow variables
-        ii = 1
         do nn=1, nDom
            do sps=1, nTimeIntervalsSpectral
               call setPointers(nn,1_intType,sps)
@@ -1882,10 +1884,40 @@ contains
                         ! required for a CFL of one, then multiply with the
                         ! actual cfl number in the solver
                         dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-                        do l = 1, nwf
-                          diag(ii) = dtinv
-                          ii = ii + 1
-                        end do
+
+                        ! We need to convert the momentum residuals to velocity
+                        ! residuals to get the desired effect from time steps.
+                        ! To do this, save a "pseudo" jacobian for this cell,
+                        ! that has dU/du, where U is the vector of conservative
+                        ! variables, and u are the primitive variables. For this
+                        ! jacobian, only the velocity entries are modified,
+                        ! since ADflow saves density, velocities and total
+                        ! energy in the state vector w(:,:,:,:).
+
+                        ! Density and energy updates are unchanged.
+                        blk(iRho, iRho) = dtinv
+                        blk(iRhoE, iRhoE) = dtinv
+
+                        ! save the density
+                        rho = w(i,j,k,iRho)
+
+                        ! x-velocity
+                        blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
+                        blk(ivx, ivx)  = rho*dtinv
+
+                        ! y-velocity
+                        blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
+                        blk(ivy, ivy)  = rho*dtinv
+
+                        ! z-velocity
+                        blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
+                        blk(ivz, ivz)  = rho*dtinv
+
+                        ! get the global cell index
+                        irow = globalCell(i, j, k)
+
+                        ! Add the contribution to the matrix in PETSc
+                        call setBlock()
                     end do
                  end do
               end do
@@ -1904,18 +1936,48 @@ contains
                     do i=2, il
                         ! See the comment for the same calculation above
                         dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-                        do l = 1, nwf
-                          diag(ii) = dtinv
-                          ii = ii + 1
-                        end do
-                        do l = nt1, nt2
-                          ! For the turbulence variable, additionally scale the cfl.
-                          ! turbresscale is required because the turbulent residuals
-                          ! are scaled with it. Furthermore, the turbulence variable
-                          ! can get a different CFL number. Scale it by turbCFLScale
-                          diag(ii) = turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
-                          ii = ii + 1
-                        end do
+
+                        ! We need to convert the momentum residuals to velocity
+                        ! residuals to get the desired effect from time steps.
+                        ! To do this, save a "pseudo" jacobian for this cell,
+                        ! that has dU/du, where U is the vector of conservative
+                        ! variables, and u are the primitive variables. For this
+                        ! jacobian, only the velocity entries are modified,
+                        ! since ADflow saves density, velocities and total
+                        ! energy in the state vector w(:,:,:,:).
+
+                        ! Density update is unchanged.
+                        blk(iRho, iRho) = dtinv
+
+                        ! save the density
+                        rho = w(i,j,k,iRho)
+
+                        ! x-velocity
+                        blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
+                        blk(ivx, ivx)  = rho*dtinv
+
+                        ! y-velocity
+                        blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
+                        blk(ivy, ivy)  = rho*dtinv
+
+                        ! z-velocity
+                        blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
+                        blk(ivz, ivz)  = rho*dtinv
+
+                        ! Energy update is unchanged
+                        blk(iRhoE, iRhoE) = dtinv
+
+                        ! For the turbulence variable, additionally scale the cfl.
+                        ! turbresscale is required because the turbulent residuals
+                        ! are scaled with it. Furthermore, the turbulence variable
+                        ! can get a different CFL number. Scale it by turbCFLScale
+                        blk(nt1, nt1) = dtinv*turbResScale(1)/ANK_turbCFLScale
+
+                        ! get the global cell index
+                        irow = globalCell(i, j, k)
+
+                        ! Add the contribution to the matrix in PETSc
+                        call setBlock()
                     end do
                  end do
               end do
@@ -1923,11 +1985,9 @@ contains
         end do
     end if
 
-    call VecRestoreArrayF90(deltaW, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    call MatDiagonalSet(dRdwPre, deltaW, ADD_VALUES, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+    ! PETSc Matrix Assembly begin
+    call MatAssemblyBegin(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
 
     ! Setup KSP Options
     preConSide = 'right'
@@ -1942,6 +2002,14 @@ contains
     else
        subspace = ANK_subspace
     end if
+
+    ! de-allocate the generic block
+    deallocate(blk)
+
+    ! Complete the matrix assembly.
+    call MatAssemblyEnd  (dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
     call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
          preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
          localOrdering, ANK_iluFill, ANK_innerPreConIts)
@@ -1951,9 +2019,21 @@ contains
          KSP_GMRES_CGS_REFINE_NEVER, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+  contains
+    subroutine setBlock()
+      ! This subroutine is used to set the diagonal time stepping terms
+      ! for the Jacobians in ANK. It is only used to set diagonal blocks
+
+      implicit none
+
+      call MatSetValuesBlocked(dRdwPre, 1, irow, 1, irow, blk, &
+                               ADD_VALUES, ierr)
+      call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine setBlock
   end subroutine FormJacobianANK
 
-  subroutine FormFunction_mf(ctx, wVec, rVec, ierr)
+  subroutine FormFunction_mf(ctx, inVec, rVec, ierr)
 
     ! This is the function used for the matrix-free matrix-vector products
     ! for the GMRES solver used in ANK
@@ -1969,14 +2049,15 @@ contains
 
     ! PETSc Variables
     PetscFortranAddr ctx(*)
-    Vec     wVec, rVec
-    real(kind=realType) :: dtinv
-    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
+    Vec     inVec, rVec
+    real(kind=realType) :: dtinv, rho
+    integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii, iiRho
     real(kind=realType),pointer :: rvec_pointer(:)
+    real(kind=realType),pointer :: invec_pointer(:)
     real(kind=realType),pointer :: wvec_pointer(:)
 
     ! get the input vector
-    call setWANK(wVec)
+    call setWANK(inVec)
 
     ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
@@ -1993,6 +2074,11 @@ contains
     call VecGetArrayF90(rVec,rvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
+    ! inVec contains the perturbed state vector
+    call VecGetArrayReadF90(inVec,invec_pointer,ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Also read the wVec to access the un-perturbed state vector.
     call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -2007,10 +2093,35 @@ contains
                do j=2, jl
                   do i=2, il
                       dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-                      do l = 1, nwf
-                        rvec_pointer(ii) = rvec_pointer(ii) + wvec_pointer(ii)*dtinv
-                        ii = ii + 1
-                      end do
+
+                      ! Update the first entry in this block, corresponds to
+                      ! density. Also save this density value.
+                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
+                      rho = wvec_pointer(ii)
+                      iirho = ii
+                      ii = ii + 1
+
+                      ! updates 2nd-4th are velocities. They need to get converted
+                      ! to momentum residuals.
+
+                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
+                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
+                                         rho * invec_pointer(ii))
+                      ii = ii + 1
+
+                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
+                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
+                                         rho * invec_pointer(ii))
+                      ii = ii + 1
+
+                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
+                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
+                                         rho * invec_pointer(ii))
+                      ii = ii + 1
+
+                      ! Finally energy gets the same update
+                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
+                      ii = ii + 1
                   end do
                end do
             end do
@@ -2027,16 +2138,41 @@ contains
                do j=2, jl
                   do i=2, il
                       dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-                      do l = 1, nwf
-                        rvec_pointer(ii) = rvec_pointer(ii) + &
-                                           wvec_pointer(ii) * dtinv
-                        ii = ii + 1
-                      end do
-                      do l = nt1, nt2
-                        rvec_pointer(ii) = rvec_pointer(ii) + &
-                                           wvec_pointer(ii)*turbResScale(l-nt1+1)*dtinv/ANK_turbCFLScale
-                        ii = ii + 1
-                      end do
+
+                      ! Update the first entry in this block, corresponds to
+                      ! density. Also save this density value.
+                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
+                      rho = wvec_pointer(ii)
+                      iirho = ii
+                      ii = ii + 1
+
+                      ! updates 2nd-4th are velocities. They need to get converted
+                      ! to momentum residuals.
+
+                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
+                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
+                                         rho * invec_pointer(ii))
+                      ii = ii + 1
+
+                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
+                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
+                                         rho * invec_pointer(ii))
+                      ii = ii + 1
+
+                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
+                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
+                                         rho * invec_pointer(ii))
+                      ii = ii + 1
+
+                      ! energy gets the same update
+                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
+                      ii = ii + 1
+
+                      ! turbulence variable needs additional scaling, and it may
+                      ! get a different CFL number
+                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)* &
+                                         dtinv*turbResScale(1)/ANK_turbCFLScale
+                      ii = ii + 1
                   end do
                end do
             end do
@@ -2384,11 +2520,10 @@ contains
        call setwVecANK(wVec)
 
        ! Evaluate the residual before we start
+       call computeResidualNK()
        if (ANK_useTurbDADI) then
-          call computeResidualANK() ! Only flow residual
           call setRVecANK(rVec)
        else
-          call computeResidualNK() ! Compute full residual
           call setRVec(rVec)
        end if
 

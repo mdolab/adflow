@@ -1122,7 +1122,6 @@ contains
 
        select case (turbModel)
        case (spalartAllmaras)
-          call sa_block(.True.)
           allocate(qq(2:il,2:jl,2:kl))
           call saSource
           call turbAdvection(1_intType, 1_intType, itu1-1, qq)
