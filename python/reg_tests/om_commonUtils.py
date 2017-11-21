@@ -11,22 +11,17 @@ from commonUtils import defaultFuncList, defaultAeroDVs, adflowDefOpts, \
 from openmdao.api import Problem 
 from openmdao.devtools.testutil import assert_rel_error
 
-def standardAeroDVs(ap): 
-    # Standard test for solving the problem. 
-    for dv in defaultAeroDVs:
-        ap.addDV(dv)
-    return ap 
 
-def assert_funcs_equal(test, ap, funcs, prob):
+def assert_funcs_equal(test, ap, funcs, prob, tolerance):
     evalFuncs = ap.evalFuncs 
     for f_name in evalFuncs:
         adflow_name = '{}_{}'.format(ap.name, f_name)
         om_name = 'functionals.{}'.format(f_name)
-        assert_rel_error(test, funcs[adflow_name], prob[om_name], tolerance=1e-10)
+        assert_rel_error(test, funcs[adflow_name], prob[om_name], tolerance=tolerance)
 
 
 
-def solutionTest(CFDSolver, ap, solve):
+def standardCompare(test, CFDSolver, ap, OM_adflow, solve):
 
     # this call is needed to initialize the state and resid vectors
     state_size = CFDSolver.getStateSize()
@@ -50,7 +45,19 @@ def solutionTest(CFDSolver, ap, solve):
     # Get and check the states
     states = CFDSolver.getStates()
 
-    return states, res, funcs
+    prob = Problem()
+    prob.model = OM_adflow
+    prob.setup()
+
+    prob.model.states._do_solve = solve
+    prob.model.functionals._do_solve = solve
+    
+    prob.final_setup()
+    prob.run_model()
+
+    assert_rel_error(test, states, prob['states.states'], tolerance=1e-10)
+    assert_rel_error(test, res, prob.model._residuals['states.states'], tolerance=1e-10)
+    assert_funcs_equal(test, ap, funcs, prob, tolerance=1e-10)         
 
 
 def adjointTest(CFDSolver, ap):
