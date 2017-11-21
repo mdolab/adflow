@@ -72,10 +72,11 @@ class OM_ADFLOW(Group):
             for (args, kwargs) in des_vars: 
                 name = args[0]
                 size = args[1]
+                value= kwargs['value']
                 if 'units' in kwargs: 
-                    indeps.add_output(name, size, units=kwargs['units'])
+                    indeps.add_output(name, value, units=kwargs['units'])
                 else: 
-                    indeps.add_output(name, size)
+                    indeps.add_output(name, value)
 
         if dvcon is not None:
 
