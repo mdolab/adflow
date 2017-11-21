@@ -75,6 +75,7 @@ class OM_FUNC_COMP(ExplicitComponent):
             name = args[0]
             tmp[name] = inputs[name]
         self.metadata['ap'].setDesignVars(tmp)
+        self.metadata['solver'].setAeroProblem(self.metadata['ap'])
 
     def _set_geo(self, inputs):
         dvgeo = self.metadata['dvgeo']

@@ -122,7 +122,6 @@ class StandardCompareTests(unittest.TestCase):
         self.run_compare(aero_options, gridFile, ap)
 
 
-
 if __name__ == "__main__": 
     unittest.main()
 
