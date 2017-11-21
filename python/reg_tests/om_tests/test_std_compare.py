@@ -22,56 +22,94 @@ from python.pyADflow import ADFLOW
 sys.path.append(os.path.abspath('../'))
 from python.om_adflow import OM_ADFLOW
 
-from om_commonUtils import standardCompare
+from om_commonUtils import assert_funcs_equal
 
 
 class StandardCompareTests(unittest.TestCase):
 
+    def run_compare(self, aero_options, gridFile, ap): 
+
+        solve = True
+        if 'solve' not in sys.argv:
+            aero_options['restartfile'] = gridFile
+            solve = False
+
+
+        CFDSolver = ADFLOW(options=aero_options, debug=False)
+
+        ##########################################
+        # Run the strait ADflow code
+        ##########################################
+        # # this call is needed to initialize the state and resid vectors
+        CFDSolver.getStateSize()
+
+        for dv in defaultAeroDVs:
+            ap.addDV(dv)
+
+        if solve:
+            # We are told that we must first solve the problem, most likely
+            # for a training run. 
+            CFDSolver(ap)
+
+        # Check the residual
+        res = CFDSolver.getResidual(ap)
+        # res /= totalR0
+        
+        funcs = {}
+        CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
+
+        # # Get and check the states
+        states = CFDSolver.getStates()
+
+        #Some kind of fortran cross-contamination 
+        del(CFDSolver)
+
+        ##########################################
+        # Run things through OpenMDAO
+        ##########################################
+        prob = Problem()
+        prob.model = OM_ADFLOW(ap=ap, aero_options=aero_options, debug=True, owns_indeps=True)
+
+        prob.setup()
+        prob.model.states._do_solve = solve
+        prob.model.functionals._do_solve = solve    
+        prob.final_setup()
+        prob.run_model()
+        
+        assert_rel_error(self, res, prob.model._residuals['states.states'], tolerance=1e-7)    
+        assert_rel_error(self, prob['states.states'], states, tolerance=1e-10)
+        assert_funcs_equal(self, ap, prob, funcs, tolerance=1e-10)         
 
     def test1(self): 
         from tests.test1 import options as aero_options, gridFile, ap
 
-        solve = True
-        if 'solve' not in sys.argv:
-            aero_options['restartfile'] = gridFile
-            solve = False
-        
-        # Create the solver
-        CFDSolver = CFDSolver = ADFLOW(options=aero_options, debug=True)        
-        # Create the OM wrapped solver
-        OM_adflow = OM_ADFLOW(ap=ap, aero_options=aero_options, debug=True, owns_indeps=True)
-        
-        standardCompare(self, CFDSolver, ap, OM_adflow, solve)
+        self.run_compare(aero_options, gridFile, ap)
 
     def test2(self): 
         from tests.test2 import options as aero_options, gridFile, ap
 
-        solve = True
-        if 'solve' not in sys.argv:
-            aero_options['restartfile'] = gridFile
-            solve = False
-        
-        # Create the solver
-        CFDSolver = CFDSolver = ADFLOW(options=aero_options, debug=True)        
-        # Create the OM wrapped solver
-        OM_adflow = OM_ADFLOW(ap=ap, aero_options=aero_options, debug=True, owns_indeps=True)
-        
-        standardCompare(self, CFDSolver, ap, OM_adflow, solve)
+        self.run_compare(aero_options, gridFile, ap)
 
     def test3(self): 
         from tests.test3 import options as aero_options, gridFile, ap
 
-        solve = True
-        if 'solve' not in sys.argv:
-            aero_options['restartfile'] = gridFile
-            solve = False
-        
-        # Create the solver
-        CFDSolver = CFDSolver = ADFLOW(options=aero_options, debug=True)        
-        # Create the OM wrapped solver
-        OM_adflow = OM_ADFLOW(ap=ap, aero_options=aero_options, debug=True, owns_indeps=True)
-        
-        standardCompare(self, CFDSolver, ap, OM_adflow, solve)
+        self.run_compare(aero_options, gridFile, ap)
+
+    def test4(self): 
+        from tests.test4 import options as aero_options, gridFile, ap
+
+        self.run_compare(aero_options, gridFile, ap)
+
+    # def test5(self): 
+    #     from tests.test5 import options as aero_options, gridFile, ap
+
+    #     self.run_compare(aero_options, gridFile, ap)
+
+    def test6(self): 
+        from tests.test6 import options as aero_options, gridFile, ap
+
+        self.run_compare(aero_options, gridFile, ap)
+
 
 
 if __name__ == "__main__": 
