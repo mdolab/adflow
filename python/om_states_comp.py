@@ -15,13 +15,19 @@ class OM_STATES_COMP(ImplicitComponent):
     """OpenMDAO component that wraps the flow solve"""
 
     def initialize(self):
-        self.metadata.declare('ap', type_=AeroProblem, required=True)
-        self.metadata.declare('dvgeo', type_=DVGeometry, required=True)
-        self.metadata.declare('solver', type_=ADFLOW, required=True)
-        self.metadata.declare('use_OM_solver', default=False, type_=bool)
-        self.metadata.declare('max_procs', default=64, type_=int)
+        self.metadata.declare('ap', types=AeroProblem)
+        self.metadata.declare('dvgeo', types=DVGeometry, allow_none=True, default=None)
+        self.metadata.declare('solver', types=ADFLOW)
+        self.metadata.declare('use_OM_KSP', default=False, types=bool, 
+            desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
+
+        # self.metadata.declare('max_procs', default=64, types=int)
 
         self.distributed = True
+
+        # testing flag used for unit-testing to prevent the call to actually solve
+        # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
+        self._do_solve = True
 
     def setup(self):
         solver = self.metadata['solver']
@@ -41,17 +47,27 @@ class OM_STATES_COMP(ImplicitComponent):
             size = args[1]
             self.add_input(name, shape=size)
 
-        local_state_size = self.metadata['solver'].getStateSize()
+        local_state_size = solver.getStateSize()
+
+        # apparently needed to initialize the state arrays
+        solver.getResidual(ap)
+        
         self.add_output('states', shape=local_state_size)
+
+        self.declare_partials(of='states', wrt='*')
 
     def _set_ap(self, inputs):
         tmp = {}
         for (args, kwargs) in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
-        self.metadata['ap'].setDesignVars(tmp)
+        # self.metadata['ap'].setDesignVars(tmp)
 
     def _set_geo(self, inputs):
+        dvgeo = self.metadata['dvgeo']
+        if dvgeo is None: 
+            return 
+
         tmp = {}
         for (args, kwargs) in self.geo_vars:
             name = args[0]
@@ -76,23 +92,25 @@ class OM_STATES_COMP(ImplicitComponent):
         self._set_geo(inputs)
         ap.solveFailed = False # might need to clear this out?
         ap.fatalFail = False
-        solver(ap)
 
-        if ap.solveFailed:
-            if self.comm.rank == 0:
-                print('###############################################################')
-                print('#Solve Tolerance Not Reached, attempting a clean restart!')
-                print('###############################################################')
-
-            solver.resetFlow(ap)
+        if self._do_solve: 
             solver(ap)
 
-        if ap.fatalFail:
-            print('###############################################################')
-            print('#Solve Fatal Fail. Analysis Error')
-            print('###############################################################')
+            if ap.solveFailed:
+                if self.comm.rank == 0:
+                    print('###############################################################')
+                    print('#Solve Tolerance Not Reached, attempting a clean restart!')
+                    print('###############################################################')
 
-            raise AnalysisError('ADFLOW Solver Fatal Fail')
+                solver.resetFlow(ap)
+                solver(ap)
+
+            if ap.fatalFail:
+                print('###############################################################')
+                print('#Solve Fatal Fail. Analysis Error')
+                print('###############################################################')
+
+                raise AnalysisError('ADFLOW Solver Fatal Fail')
 
         outputs['states'] = solver.getStates()
 
@@ -145,7 +163,7 @@ class OM_STATES_COMP(ImplicitComponent):
     def solve_linear(self, d_outputs, d_residuals, mode):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
-        if self.metadata['use_OM_solver']:
+        if self.metadata['use_OM_KSP']:
                 if mode == 'fwd':
                     d_outputs['states'] = solver.globalNKPreCon(d_residuals['states'], d_outputs['states'])
                 elif mode == 'rev':
