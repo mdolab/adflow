@@ -78,22 +78,24 @@ class OM_STATES_COMP(ImplicitComponent):
         self.metadata['solver'].setStates(outputs['states'])
 
     def apply_nonlinear(self, inputs, outputs, residuals):
+        
         self._set_ap(inputs)
         self._set_geo(inputs)
         self._set_states(outputs)
+        
         ap = self.metadata['ap']
-        residuals['states'] = self.metadata['solver'].getResidual(ap, residuals['states'])
+        residuals['states'] = self.metadata['solver'].getResidual(ap)
 
     def solve_nonlinear(self, inputs, outputs):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
 
-        self._set_ap(inputs)
-        self._set_geo(inputs)
-        ap.solveFailed = False # might need to clear this out?
-        ap.fatalFail = False
-
         if self._do_solve: 
+            self._set_ap(inputs)
+            self._set_geo(inputs)
+            ap.solveFailed = False # might need to clear this out?
+            ap.fatalFail = False
+    
             solver(ap)
 
             if ap.solveFailed:
@@ -124,6 +126,7 @@ class OM_STATES_COMP(ImplicitComponent):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
         geo = self.metadata['dvgeo']
+
 
         self._set_ap(inputs)
         self._set_geo(inputs)
