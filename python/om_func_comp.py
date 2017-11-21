@@ -65,6 +65,7 @@ class OM_FUNC_COMP(ExplicitComponent):
                 units = FUNCS_UNITS[f_type]
             self.add_output(f_name, shape=1, units=units)
 
+
             self.declare_partials(of=f_name, wrt='*')
                 
 
@@ -90,7 +91,7 @@ class OM_FUNC_COMP(ExplicitComponent):
         self.metadata['solver'].setStates(inputs['states'])
 
     def _get_func_name(self, name):
-        return '%s_%s' % (self.metadata['ap'].name.lower(), name.lower())
+        return '%s_%s' % (self.metadata['ap'].name, name.lower())
 
     def compute(self, inputs, outputs):
         solver = self.metadata['solver']
@@ -104,6 +105,7 @@ class OM_FUNC_COMP(ExplicitComponent):
 
         funcs = {}
         solver.evalFunctions(ap, funcs, ap.evalFuncs)
+
         for name in ap.evalFuncs:
             outputs[name] = funcs[self._get_func_name(name)]
 
