@@ -12,8 +12,12 @@ class OM_GEOCON_COMP(ExplicitComponent):
     """OpenMDAO Component that wraps the geometry constraints calculation"""
 
     def initialize(self):
-        self.metadata.declare('dvgeo', type_=DVGeometry, required=True)
-        self.metadata.declare('dvcon', type_=DVConstraints, required=True)
+        self.metadata.declare('dvgeo', type_=DVGeometry)
+        self.metadata.declare('dvcon', type_=DVConstraints)
+
+        # testing flag used for unit-testing to prevent the call to actually solve
+        # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
+        self._do_solve = True
 
     def setup(self):
         self.dvs, _ = get_dvs_and_cons(self.metadata['dvgeo'])
@@ -49,7 +53,9 @@ class OM_GEOCON_COMP(ExplicitComponent):
         #self.metadata['dvcon'].setDesignVars(tmp)
 
     def compute(self, inputs, outputs):
-        self._set_geo(inputs)
+        
+        if self._do_solve: 
+            self._set_geo(inputs)
 
         funcs = {}
         self.metadata['dvcon'].evalFunctions(funcs, includeLinear=True)
@@ -64,7 +70,9 @@ class OM_GEOCON_COMP(ExplicitComponent):
             outputs[name] = funcs[name]
 
     def compute_partials(self, inputs, J):
-        self._set_geo(inputs)
+        
+        if self._do_solve:
+            self._set_geo(inputs)
 
         funcsSens = {}
 

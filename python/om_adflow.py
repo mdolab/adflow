@@ -6,45 +6,60 @@ from baseclasses import AeroProblem
 from pywarpustruct import USMesh
 from adflow import ADFLOW
 
-from openmdao.api import Group, PetscKSP, LinearRunOnce, LinearUserDefined
+from openmdao.api import Group, PetscKSP, LinearRunOnce, LinearUserDefined, IndepVarComp
 
-from comp_states import StatesComp
-from comp_functionals import FunctionalsComp
-from comp_geocon import GeometryConstraintsComp
+from om_states_comp import OM_STATES_COMP
+from om_func_comp import OM_FUNC_COMP
+from om_geocon_comp import OM_GEOCON_COMP
 
 from om_utils import get_dvs_and_cons
+
 
 class OM_ADFLOW(Group):
     """Group integrating the states, funcs, and geometry constraints into a single system"""
 
     def initialize(self):
-        self.metadata.declare('ap', types=AeroProblem, required=True)
-        self.metadata.declare('aero_options')
-        self.metadata.declare('mesh_options' types=(dict, None))
-        self.metadata.declare('family_groups', types=(dict, None))
-        self.metadata.declare('setup_callback', types=(types.FunctionType, None))
-        self.metadata.declare('dvgeo', types=(DVGeometry, None), default=None)
-        self.metadata.declare('dvcon', types=(DVConstraints, None), default=None)
-        self.metadata.declare('use_OM_solver', default=False, types=bool)
+        self.metadata.declare('ap', types=AeroProblem)
+        self.metadata.declare('aero_options', types=dict)
+        self.metadata.declare('mesh_options', types=dict, default={})
+        self.metadata.declare('family_groups', types=dict, default={})
+        self.metadata.declare('adflow_setup_cb', types=types.FunctionType, allow_none=True, default=None)
+        self.metadata.declare('dvgeo', types=DVGeometry, allow_none=True, default=None)
+        self.metadata.declare('dvcon', types=DVConstraints, allow_none=True, default=None)
+        self.metadata.declare('use_OM_KSP', default=False, types=bool, 
+            desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
+        self.metadata.declare('owns_indeps', default=False, 
+            desc="when True will create IndepVarComp with outputs for all des vars")
+        self.metadata.declare('debug', default=False)
 
-        # self.metadata.declare('max_procs', default=64, type_=int)
+        # self.metadata.declare('max_procs', default=64, types=int)
 
     def setup(self):
         ap = self.metadata['ap']
         dvgeo = self.metadata['dvgeo']
         dvcon = self.metadata['dvcon']
 
-        solver = ADFLOW(options=self.metadata['aero_options'], comm=self.comm)
+        solver = ADFLOW(options=self.metadata['aero_options'], 
+                        comm=self.comm, 
+                        debug=self.metadata['debug'])
+        self.solver = solver
+
         for fg in self.metadata['family_groups']:
             solver.addFamilyGroup(fg[0], fg[1])
-        for f_name, f_meta in self.metadata['functions'].items():
-            fg = f_meta[0]
-            f_type = f_meta[1]
-            solver.addFunction(f_type, fg, f_name)
 
-        mesh = USMesh(options=self.metadata['mesh_options'], comm=self.comm)
-        solver.setDVGeo(dvgeo)
-        solver.setMesh(mesh)
+        if self.metadata['adflow_setup_cb'] is not None: 
+           self.metadata['adflow_setup_cb'](solver)  
+        # for f_name, f_meta in self.metadata['functions'].items():
+        #     fg = f_meta[0]
+        #     f_type = f_meta[1]
+        #     solver.addFunction(f_type, fg, f_name)
+
+        if self.metadata['mesh_options']: 
+            mesh = USMesh(options=self.metadata['mesh_options'], comm=self.comm)
+            solver.setMesh(mesh)
+
+        if dvgeo is not None: 
+            solver.setDVGeo(dvgeo)
 
         des_vars, constraints = get_dvs_and_cons(ap, dvgeo, dvcon)
         geo_vars, _ = get_dvs_and_cons(geo=dvgeo)
@@ -52,9 +67,19 @@ class OM_ADFLOW(Group):
         des_var_names = [dv[0][0] for dv in des_vars]
         geo_var_names = [dv[0][0] for dv in geo_vars]
 
-        if dvcon:
+        if self.metadata['owns_indeps']: 
+            indeps = self.add_subsystem('idneps', IndepVarComp(), promotes=['*'])
+            for (args, kwargs) in des_vars: 
+                name = args[0]
+                size = args[1]
+                if 'units' in kwargs: 
+                    indeps.add_output(name, size, units=kwargs['units'])
+                else: 
+                    indeps.add_output(name, size)
 
-            geocon = GeometryConstraintsComp(dvgeo=dvgeo, dvcon=dvcon)
+        if dvcon is not None:
+
+            geocon = OM_GEOCON_COMP(dvgeo=dvgeo, dvcon=dvcon)
             self.add_subsystem('geocon', geocon, promotes_inputs=geo_var_names)
 
             #for cons in dvcon.constraints.values():
@@ -63,16 +88,17 @@ class OM_ADFLOW(Group):
             #for name, con in dvcon.linearCon.items():
             #    self.add_constraint('geocon.%s' % name, lower=con.lower, upper=con.upper, linear=True)
 
-        states = StatesComp(ap=ap, dvgeo=dvgeo, solver=solver,
-                            max_procs=self.metadata['max_procs'], use_OM_solver=self.metadata['use_OM_solver'])
+        states = OM_STATES_COMP(ap=ap, dvgeo=dvgeo, solver=solver,
+                            use_OM_KSP=self.metadata['use_OM_KSP'])
 
         self.add_subsystem('states', states, promotes_inputs=des_var_names)
 
-        if self.metadata['use_OM_solver']:
+        # this lets the OpenMDAO KSPsolver converge the adjoint using the ADflow PC
+        if self.metadata['use_OM_KSP']:
             states.linear_solver = PetscKSP(iprint=2, atol=1e-8, rtol=1e-8, maxiter=300, ksp_type='gmres')
             states.linear_solver.precon = LinearUserDefined()
 
-        functionals = FunctionalsComp(ap=ap, dvgeo=dvgeo, solver=solver, max_procs=self.metadata['max_procs'])
+        functionals = OM_FUNC_COMP(ap=ap, dvgeo=dvgeo, solver=solver)
         self.add_subsystem('functionals', functionals,
                            promotes_inputs=des_var_names)
         self.connect('states.states', 'functionals.states')

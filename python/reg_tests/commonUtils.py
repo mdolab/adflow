@@ -238,7 +238,9 @@ def solutionTest(CFDSolver, ap):
 
     # Get and check the states
     parPrint('Norm of state vector')
-    reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
+    states = CFDSolver.getStates()
+    reg_par_write_norm(states, 1e-10, 1e-10)
+
    
 
 def adjointTest(CFDSolver, ap):
@@ -259,6 +261,7 @@ def adjointTest(CFDSolver, ap):
     CFDSolver.evalFunctionsSens(ap, funcsSens)
     parPrint('Eval Functions Sens:')
     reg_root_write_dict(funcsSens, 1e-10, 1e-10)
+
 
 def standardTest(CFDSolver, ap, solve):
     # Run a standard set of tests which can be run an any steady grid
@@ -324,7 +327,8 @@ def standardTest(CFDSolver, ap, solve):
 
     # Get and check the states
     parPrint('Norm of state vector')
-    reg_par_write_norm(CFDSolver.getStates(), 1e-10)
+    states = CFDSolver.getStates()
+    reg_par_write_norm(states, 1e-10)
 
     # Now for the most fun part. Checking the derivatives. These are
     # generally the most important things to check. However, since the
@@ -525,3 +529,4 @@ def standardTest(CFDSolver, ap, solve):
     
     reg_par_write_sum(dotLocal1, 1e-10, 1e-10)
     reg_par_write_sum(dotLocal2, 1e-10, 1e-10)
+
