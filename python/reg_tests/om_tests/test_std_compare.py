@@ -100,13 +100,24 @@ class StandardCompareTests(unittest.TestCase):
 
         self.run_compare(aero_options, gridFile, ap)
 
-    # def test5(self): 
-    #     from tests.test5 import options as aero_options, gridFile, ap
+    def test5(self): 
+        self.skipTest('Skipping because of weird behavior')
+        from tests.test5 import options as aero_options, gridFile, ap
 
-    #     self.run_compare(aero_options, gridFile, ap)
+        self.run_compare(aero_options, gridFile, ap)
 
     def test6(self): 
         from tests.test6 import options as aero_options, gridFile, ap
+
+        self.run_compare(aero_options, gridFile, ap)
+
+    def test7(self): 
+        from tests.test7 import options as aero_options, gridFile, ap
+
+        self.run_compare(aero_options, gridFile, ap)
+
+    def test8(self): 
+        from tests.test8 import options as aero_options, gridFile, ap
 
         self.run_compare(aero_options, gridFile, ap)
 
