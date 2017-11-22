@@ -21,7 +21,7 @@ class OM_ADFLOW(Group):
     def initialize(self):
         self.metadata.declare('ap', types=AeroProblem)
         self.metadata.declare('aero_options', types=dict)
-        self.metadata.declare('mesh_options', types=dict, default={})
+        self.metadata.declare('mesh_options', types=dict, default={})   
         self.metadata.declare('family_groups', types=dict, default={})
         self.metadata.declare('adflow_setup_cb', types=types.FunctionType, allow_none=True, default=None)
         self.metadata.declare('dvgeo', types=DVGeometry, allow_none=True, default=None)
