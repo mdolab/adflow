@@ -6,7 +6,7 @@ from adflow import ADFLOW
 from openmdao.api import ImplicitComponent
 from openmdao.core.analysis_error import AnalysisError
 
-from om_utils import get_dvs_and_cons
+from .om_utils import get_dvs_and_cons
 
 
 

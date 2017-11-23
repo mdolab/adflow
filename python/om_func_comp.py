@@ -6,7 +6,7 @@ from baseclasses import AeroProblem
 from pygeo import DVGeometry
 from adflow import ADFLOW
 
-from om_utils import get_dvs_and_cons
+from .om_utils import get_dvs_and_cons
 
 FUNCS_UNITS={
     'mdot': 'kg/s', 

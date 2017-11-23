@@ -15,17 +15,16 @@ from commonUtils import *
 
 from openmdao.api import Problem, IndepVarComp
 from openmdao.devtools.testutil import assert_rel_error
-from adflow import ADFLOW
+from adflow import ADFLOW, OM_ADFLOW
 
 sys.path.append(os.path.abspath('../../'))
 
 sys.path.append(os.path.abspath('../'))
-from python.om_adflow import OM_ADFLOW
 
 from om_commonUtils import assert_funcs_equal
 
 
-class StandardCompareTests(unittest.TestCase):
+class Tests(unittest.TestCase):
 
     def run_compare(self, aero_options, gridFile, ap): 
 
