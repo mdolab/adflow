@@ -78,15 +78,17 @@ ap = AeroProblem(name=name, alpha=alpha_m,  mach=M, machRef=M, reynolds=4800000.
                  degreePol=0,coefPol=[0.0],degreeFourier=1,omegaFourier=omega,
                  cosCoefFourier=[0.0,0.0],sinCoefFourier=[deltaAlpha])
 
-CFDSolver = ADFLOW(options=options)
-CFDSolver.addSlices('z',[0.5])
-CFDSolver(ap)
+if __name__ == "__main__":
 
-funcs = {}
-CFDSolver.evalFunctions(ap, funcs)
-CFDSolver.checkSolutionFailure(ap, funcs)
-if MPI.COMM_WORLD.rank == 0:
-    print('Eval Functions:')
-    reg_write_dict(funcs, 1e-6, 1e-6)
+    CFDSolver = ADFLOW(options=options)
+    CFDSolver.addSlices('z',[0.5])
+    CFDSolver(ap)
 
-os.system('rm  0012pitching*')
+    funcs = {}
+    CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
+    if MPI.COMM_WORLD.rank == 0:
+        print('Eval Functions:')
+        reg_write_dict(funcs, 1e-6, 1e-6)
+
+    os.system('rm  0012pitching*')

@@ -1,6 +1,7 @@
 from __future__ import print_function
 # This file defines testing methods that match those in commonUtils.py, 
 # but that execute using the OpenMDAO wrapper instead of bare ADflow
+import numpy as np 
 
 from mpi4py import MPI
 from mdo_regression_helper import *
@@ -12,7 +13,7 @@ from openmdao.api import Problem
 from openmdao.devtools.testutil import assert_rel_error
 
 
-def assert_funcs_equal(test, ap, prob, funcs, tolerance):
+def assert_funcs_equal(test, ap, funcs, prob, tolerance):
     evalFuncs = sorted(ap.evalFuncs)
 
     for f_name in evalFuncs:
@@ -22,49 +23,19 @@ def assert_funcs_equal(test, ap, prob, funcs, tolerance):
         assert_rel_error(test, prob[om_name], funcs[adflow_name], tolerance=tolerance)
 
 
-def adjointTest(CFDSolver, ap):
+def assert_funcsSens_equal(test, ap, funcsSens, om_funcsSens, tolerance):
+     
+    for f_name in ap.evalFuncs: 
+        ap_f_name = '{}_{}'.format(ap.name, f_name)
+        jac = funcsSens[ap_f_name]
 
-    # this call is needed to initialize the state and resid vectors
-    state_size = CFDSolver.getStateSize()
+        om_jac = om_funcsSens['functionals.{}'.format(f_name)]
 
-    for dv in defaultAeroDVs:
-        ap.addDV(dv)
-
-    res = CFDSolver.getResidual(ap)
-    totalR0 = CFDSolver.getFreeStreamResidual(ap)
-    res /= totalR0
-    
-    funcsSens = {}
-    CFDSolver.evalFunctionsSens(ap, funcsSens)
-
-    return res, funcsSens
-   
-
-def solutionAdjointTest(CFDSolver, ap, solve):
-
-    # this call is needed to initialize the state and resid vectors
-    state_size = CFDSolver.getStateSize()
-
-    if solve:
-        # We are told that we must first solve the problem, most likely
-        # for a training run. 
-        CFDSolver(ap)
-
-
-    # Check the residual
-    res = CFDSolver.getResidual(ap)
-    totalR0 = CFDSolver.getFreeStreamResidual(ap)
-    res /= totalR0
-  
-    funcs = {}
-    # CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
-    funcs = {}
-    CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
-
-    # Get and check the states
-    states = CFDSolver.getStates()
-
-    funcsSens = {}
-    CFDSolver.evalFunctionsSens(ap, funcsSens)
-
-    return states, res, funcs, funcsSens
+        for dv_n in jac.keys(): 
+            # print(f_name, dv_n,  om_jac[dv_n], jac[dv_n])
+            if jac[dv_n].shape == (): # stupid trick to deal with scalars
+                jac[dv_n] = np.array([[jac[dv_n]]])
+            tol = tolerance
+            if np.linalg.norm(jac[dv_n]) < 1e-15: 
+                tol = 3
+            assert_rel_error(test, om_jac[dv_n], jac[dv_n], tolerance=tol)
