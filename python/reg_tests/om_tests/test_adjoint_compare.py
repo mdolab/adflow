@@ -17,11 +17,12 @@ from commonUtils import *
 from openmdao.api import Problem, IndepVarComp
 from openmdao.devtools.testutil import assert_rel_error
 
-sys.path.append(os.path.abspath('../../'))
-from python.pyADflow import ADFLOW
+from adflow import ADFLOW
 from pygeo import DVGeometry
 from pywarpustruct import USMesh
 from pyspline import Curve
+
+sys.path.append(os.path.abspath('../../'))
 
 sys.path.append(os.path.abspath('../'))
 from python.om_adflow import OM_ADFLOW
@@ -72,12 +73,6 @@ class StandardCompareTests(unittest.TestCase):
         funcsSens = {}
         CFDSolver.evalFunctionsSens(ap, funcsSens)
 
-        #Some kind of fortran memory cross-contamination 
-        del(CFDSolver)
-        del(DVGeo)
-        del(mesh)
-        gc.collect()
-
         ##########################################
         # Run things through OpenMDAO
         ##########################################
@@ -96,7 +91,8 @@ class StandardCompareTests(unittest.TestCase):
         mesh = USMesh(options=meshOptions)
         prob.model = OM_ADFLOW(ap=ap, aero_options=aeroOptions, mesh_options=meshOptions, 
                                dvgeo=DVGeo, 
-                               debug=True, owns_indeps=True)
+                               debug=True, owns_indeps=True, 
+                               solver=CFDSolver)
 
         prob.setup()
         # from openmdao.api import view_model 

@@ -32,8 +32,9 @@ class OM_ADFLOW(Group):
             desc="when True will create IndepVarComp with outputs for all des vars")
         self.metadata.declare('debug', default=False)
 
-        # These options have a very specifc use case and you should only 
-        #     use them if you really know what you are doing!'
+        # This option is mainly used in testing when the solver object needs to be run by itself 
+        #     and also used in the wrapper. You probably don't want to use this 
+        #     unless you really know what you're doing!!!
         self.metadata.declare('solver', types=ADFLOW, allow_none=True, default=None,
             desc='optional argument to allow an existing solver instance to be passed in.')
 
