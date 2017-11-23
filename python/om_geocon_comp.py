@@ -6,7 +6,7 @@ from openmdao.api import ExplicitComponent
 
 from pygeo import DVConstraints, DVGeometry
 
-from om_utils import get_dvs_and_cons
+from .om_utils import get_dvs_and_cons
 
 class OM_GEOCON_COMP(ExplicitComponent):
     """OpenMDAO Component that wraps the geometry constraints calculation"""
