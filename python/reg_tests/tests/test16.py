@@ -63,58 +63,64 @@ ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
 
-# Creat the solver
+def setupADFlow(solver): 
 
-CFDSolver = ADFLOW(options=options, debug=False)
+    solver.addFamilyGroup('upstream',['INFLOW'])
+    solver.addFamilyGroup('downstream',['OUTFLOW'])
+    solver.addFamilyGroup('all_flow',['INFLOW', 'OUTFLOW'])
+    solver.addFunction('mdot', 'upstream', name="mdot_up")
+    solver.addFunction('mdot', 'downstream', name="mdot_down")
 
-CFDSolver.addFamilyGroup('upstream',['INFLOW'])
-CFDSolver.addFamilyGroup('downstream',['OUTFLOW'])
-CFDSolver.addFamilyGroup('all_flow',['INFLOW', 'OUTFLOW'])
-CFDSolver.addFunction('mdot', 'upstream', name="mdot_up")
-CFDSolver.addFunction('mdot', 'downstream', name="mdot_down")
+    solver.addFunction('mavgptot', 'downstream', name="mavgptot_down")
+    solver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
 
-CFDSolver.addFunction('mavgptot', 'downstream', name="mavgptot_down")
-CFDSolver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
+    solver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
+    solver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
 
-CFDSolver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
-CFDSolver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
+    solver.addFunction('mavgps', 'downstream', name="mavgps_down")
+    solver.addFunction('mavgps', 'upstream', name="mavgps_up")
 
-CFDSolver.addFunction('mavgps', 'downstream', name="mavgps_down")
-CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
+    solver.addFunction('mavgmn', 'downstream', name="mavgmn_down")
+    solver.addFunction('mavgmn', 'upstream', name="mavgmn_up")
 
-CFDSolver.addFunction('mavgmn', 'downstream', name="mavgmn_down")
-CFDSolver.addFunction('mavgmn', 'upstream', name="mavgmn_up")
+    solver.addFunction('sigmamn', 'upstream', name="distortionmn")
+    solver.addFunction('sigmaptot', 'upstream', name="distortionptot")
 
-CFDSolver.addFunction('sigmamn', 'upstream', name="distortionmn")
-CFDSolver.addFunction('sigmaptot', 'upstream', name="distortionptot")
+    solver.addFunction('drag', 'all_flow', name="thrust") # this naming makes it seem like wishful thinking
 
-CFDSolver.addFunction('drag', 'all_flow', name="thrust") # this naming makes it seem like wishful thinking
-
-CFDSolver.addFunction('dragpressure', 'all_flow', name="thrust_pressure")
-CFDSolver.addFunction('dragviscous', 'all_flow', name="thrust_viscous")
-CFDSolver.addFunction('dragmomentum', 'all_flow', name="thrust_momentum")
-
-CFDSolver(ap)
+    solver.addFunction('dragpressure', 'all_flow', name="thrust_pressure")
+    solver.addFunction('dragviscous', 'all_flow', name="thrust_viscous")
+    solver.addFunction('dragmomentum', 'all_flow', name="thrust_momentum")
 
 
-# Check the residual
-res = CFDSolver.getResidual(ap)
-totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()
-res /= totalR0
+if __name__ == "__main__": 
 
-parPrint('Norm of residual')
-reg_par_write_norm(res, 1e-10, 1e-10)
+    # Creat the solver
 
-# Get and check the states
-parPrint('Norm of state vector')
-reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
+    CFDSolver = ADFLOW(options=options, debug=False)
+    setupADFlow(CFDSolver)
+    
+    CFDSolver(ap)
 
 
-funcs = {}
-CFDSolver.evalFunctions(ap, funcs)
-if MPI.COMM_WORLD.rank == 0:
-    print('Eval Functions:')
-    reg_write_dict(funcs, 1e-10, 1e-10)
+    # Check the residual
+    res = CFDSolver.getResidual(ap)
+    totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()
+    res /= totalR0
+
+    parPrint('Norm of residual')
+    reg_par_write_norm(res, 1e-10, 1e-10)
+
+    # Get and check the states
+    parPrint('Norm of state vector')
+    reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
+
+
+    funcs = {}
+    CFDSolver.evalFunctions(ap, funcs)
+    if MPI.COMM_WORLD.rank == 0:
+        print('Eval Functions:')
+        reg_write_dict(funcs, 1e-10, 1e-10)
 
 
 

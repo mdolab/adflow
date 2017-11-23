@@ -15,9 +15,9 @@ from commonUtils import *
 
 from openmdao.api import Problem, IndepVarComp
 from openmdao.devtools.testutil import assert_rel_error
+from adflow import ADFLOW
 
 sys.path.append(os.path.abspath('../../'))
-from python.pyADflow import ADFLOW
 
 sys.path.append(os.path.abspath('../'))
 from python.om_adflow import OM_ADFLOW
@@ -61,14 +61,18 @@ class StandardCompareTests(unittest.TestCase):
         # # Get and check the states
         states = CFDSolver.getStates()
 
-        #Some kind of fortran cross-contamination 
-        del(CFDSolver)
+        #force it to restart the flow
+        if CFDSolver.getOption('restartFile') is not None: 
+            CFDSolver.adflow.inputiteration.mgstartlevel = 1
+            CFDSolver.adflow.initializeflow.initflowrestart()
+
 
         ##########################################
         # Run things through OpenMDAO
         ##########################################
         prob = Problem()
-        prob.model = OM_ADFLOW(ap=ap, aero_options=aero_options, debug=True, owns_indeps=True)
+        prob.model = OM_ADFLOW(ap=ap, aero_options=aero_options, 
+                               debug=True, owns_indeps=True, solver=CFDSolver)
 
         prob.setup()
         prob.model.states._do_solve = solve
@@ -77,8 +81,8 @@ class StandardCompareTests(unittest.TestCase):
         prob.run_model()
         
         assert_rel_error(self, res, prob.model._residuals['states.states'], tolerance=1e-7)    
-        assert_rel_error(self, prob['states.states'], states, tolerance=1e-10)
-        assert_funcs_equal(self, ap, prob, funcs, tolerance=1e-10)         
+        assert_rel_error(self, states, prob['states.states'], tolerance=1e-10)
+        assert_funcs_equal(self, ap, funcs, prob, tolerance=1e-10)         
 
     def test1(self): 
         from tests.test1 import options as aero_options, gridFile, ap
@@ -101,7 +105,6 @@ class StandardCompareTests(unittest.TestCase):
         self.run_compare(aero_options, gridFile, ap)
 
     def test5(self): 
-        self.skipTest('Skipping because of weird behavior')
         from tests.test5 import options as aero_options, gridFile, ap
 
         self.run_compare(aero_options, gridFile, ap)
