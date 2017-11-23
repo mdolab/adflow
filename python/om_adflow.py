@@ -12,7 +12,7 @@ from .om_states_comp import OM_STATES_COMP
 from .om_func_comp import OM_FUNC_COMP
 from .om_geocon_comp import OM_GEOCON_COMP
 
-from om_utils import get_dvs_and_cons
+from .om_utils import get_dvs_and_cons
 
 
 class OM_ADFLOW(Group):
