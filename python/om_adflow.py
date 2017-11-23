@@ -8,9 +8,9 @@ from adflow import ADFLOW
 
 from openmdao.api import Group, PetscKSP, LinearRunOnce, LinearUserDefined, IndepVarComp
 
-from om_states_comp import OM_STATES_COMP
-from om_func_comp import OM_FUNC_COMP
-from om_geocon_comp import OM_GEOCON_COMP
+from .om_states_comp import OM_STATES_COMP
+from .om_func_comp import OM_FUNC_COMP
+from .om_geocon_comp import OM_GEOCON_COMP
 
 from om_utils import get_dvs_and_cons
 
@@ -22,7 +22,7 @@ class OM_ADFLOW(Group):
         self.metadata.declare('ap', types=AeroProblem)
         self.metadata.declare('aero_options', types=dict)
         self.metadata.declare('mesh_options', types=dict, default={})   
-        self.metadata.declare('family_groups', types=dict, default={})
+        # self.metadata.declare('family_groups', types=dict, default={})
         self.metadata.declare('adflow_setup_cb', types=types.FunctionType, allow_none=True, default=None)
         self.metadata.declare('dvgeo', types=DVGeometry, allow_none=True, default=None)
         self.metadata.declare('dvcon', types=DVConstraints, allow_none=True, default=None)
@@ -32,6 +32,11 @@ class OM_ADFLOW(Group):
             desc="when True will create IndepVarComp with outputs for all des vars")
         self.metadata.declare('debug', default=False)
 
+        # These options have a very specifc use case and you should only 
+        #     use them if you really know what you are doing!'
+        self.metadata.declare('solver', types=ADFLOW, allow_none=True, default=None,
+            desc='optional argument to allow an existing solver instance to be passed in.')
+
         # self.metadata.declare('max_procs', default=64, types=int)
 
     def setup(self):
@@ -39,13 +44,16 @@ class OM_ADFLOW(Group):
         dvgeo = self.metadata['dvgeo']
         dvcon = self.metadata['dvcon']
 
-        solver = ADFLOW(options=self.metadata['aero_options'], 
-                        comm=self.comm, 
-                        debug=self.metadata['debug'])
+        solver = self.metadata['solver']
+        if solver is None: 
+            solver = ADFLOW(options=self.metadata['aero_options'], 
+                            comm=self.comm, 
+                            debug=self.metadata['debug'])
+        print('foobar', solver)
         self.solver = solver
 
-        for fg in self.metadata['family_groups']:
-            solver.addFamilyGroup(fg[0], fg[1])
+        # for fg in self.metadata['family_groups']:
+        #     solver.addFamilyGroup(fg[0], fg[1])
 
         if self.metadata['adflow_setup_cb'] is not None: 
            self.metadata['adflow_setup_cb'](solver)  
@@ -53,6 +61,10 @@ class OM_ADFLOW(Group):
         #     fg = f_meta[0]
         #     f_type = f_meta[1]
         #     solver.addFunction(f_type, fg, f_name)
+
+        # necessary to get some memory properly allocated
+        solver.getResidual(ap)
+
 
         if self.metadata['mesh_options']: 
             mesh = USMesh(options=self.metadata['mesh_options'], comm=self.comm)
@@ -68,7 +80,7 @@ class OM_ADFLOW(Group):
         geo_var_names = [dv[0][0] for dv in geo_vars]
 
         if self.metadata['owns_indeps']: 
-            indeps = self.add_subsystem('idneps', IndepVarComp(), promotes=['*'])
+            indeps = self.add_subsystem('indeps', IndepVarComp(), promotes=['*'])
             for (args, kwargs) in des_vars: 
                 name = args[0]
                 size = args[1]

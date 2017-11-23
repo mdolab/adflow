@@ -163,6 +163,7 @@ class OM_STATES_COMP(ImplicitComponent):
                     if dv_name in d_inputs:
                         d_inputs[dv_name] += dv_bar.flatten()
 
+
     def solve_linear(self, d_outputs, d_residuals, mode):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
@@ -175,6 +176,8 @@ class OM_STATES_COMP(ImplicitComponent):
             if mode == 'fwd':
                 d_outputs['states'] = solver.solveDirectForRHS(d_residuals['states'])
             elif mode == 'rev':
+                # import numpy as np
+                # print('states seed', np.linalg.norm(d_outputs['states']))
                 d_residuals['states'] = solver.solveAdjointForRHS(d_outputs['states'])
 
 

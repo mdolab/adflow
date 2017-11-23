@@ -98,6 +98,8 @@ class OM_FUNC_COMP(ExplicitComponent):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
 
+
+
         #actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve: 
             self._set_ap(inputs)
@@ -110,16 +112,16 @@ class OM_FUNC_COMP(ExplicitComponent):
         for name in ap.evalFuncs:
             outputs[name] = funcs[self._get_func_name(name)]
 
-    def compute_jacvec_product(self, inputs, outputs, d_inputs, d_outputs, mode):
+
+    def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
-        
+
         if self._do_solve: 
             self._set_ap(inputs)
             self._set_geo(inputs)
             self._set_states(inputs)
-
-
+        
         if mode == 'fwd':
             xDvDot = {}
             for key in ap.DVs:
@@ -152,12 +154,14 @@ class OM_FUNC_COMP(ExplicitComponent):
                 if name in d_outputs:
                     funcsBar[func_name] = d_outputs[name] / self.comm.size
 
+            # print('funcsBar', funcsBar)
             wBar, xDVBar = solver.computeJacobianVectorProductBwd(
                 funcsBar=funcsBar,
                 wDeriv=True, xDvDeriv=True)
 
             if 'states' in d_inputs:
                 d_inputs['states'] += wBar
+                # print('wBar', np.linalg.norm(wBar))
 
             for dv_name, dv_bar in xDVBar.items():
                 if dv_name in d_inputs:
