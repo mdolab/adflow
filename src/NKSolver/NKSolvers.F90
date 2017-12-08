@@ -332,7 +332,6 @@ contains
     real(kind=realType) :: dt
     real(kind=realType), pointer :: diag(:)
 
-
     ! Dummy assembly begin/end calls for the matrix-free Matrx
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
@@ -459,7 +458,7 @@ contains
     use inputPhysics, only : equations
     use flowVarRefState, only :  nw, nwf
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts, totalR0, stepMonitor, linResMonitor
+    use iteration, only : approxTotalIts, totalR0, stepMonitor, linResMonitor, iterType
     use utils, only : EChk
     use killSignals, only : routineFailed
     implicit none
@@ -501,12 +500,14 @@ contains
     ! Determine if if we need to form the Preconditioner
     if (mod(NK_iter, NK_jacobianLag) == 0) then
        NK_CFL = NK_CFL0 * (totalR0 / norm)**1.5
+       iterType = "   *NK"
        call FormJacobianNK()
     else
        call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
        call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+       iterType = "    NK"
     end if
 
     ! set the BaseVector of the matrix-free matrix:
@@ -699,8 +700,8 @@ contains
        backtrack: do iter=1, 10
           ! Compute new x value:
 #ifdef USE_COMPLEX
-           call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
-           call EChk(ierr, __FILE__, __LINE__)
+          call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
 #else
           call VecWAXPY(w, -lambda, y, x, ierr)
           call EChk(ierr, __FILE__, __LINE__)
@@ -835,8 +836,8 @@ contains
        end if
 
 #ifdef USE_COMPLEX
-        call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
+       call VecWAXPY(w, cmplx(-lambda, 0.0), y, x, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
 #else
        call VecWAXPY(w, -lambda, y, x, ierr)
        call EChk(ierr, __FILE__, __LINE__)
@@ -1347,7 +1348,7 @@ contains
 
     if (present(flowRes) .and. present(turbRes) .and. present(totalRes)) then
        call mpi_allreduce((/flowResLocal, turbResLocal/), tmp2, 2, adflow_real, &
-         mpi_sum, ADflow_comm_world, ierr)
+            mpi_sum, ADflow_comm_world, ierr)
        flowRes = sqrt(tmp2(1))
        totalRes = sqrt(tmp2(1) + tmp2(2))
        if (tmp2(2) > zero) then
@@ -1752,7 +1753,7 @@ contains
 
        if (ANK_useTurbDADI) then ! NK solver for flow variables, DADI for turbulence
           nState = nwf ! don't include turbulent variable
-      else ! coupled NK solver for flow and turbulence
+       else ! coupled NK solver for flow and turbulence
           nState = nw ! include turbulent variable
        endif
 
@@ -1835,6 +1836,7 @@ contains
     use iteration, only : totalR0
     use utils, only : EChk, setPointers
     use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
+    use communication
     implicit none
 
     ! Local Variables
@@ -1876,117 +1878,117 @@ contains
     blk = zero
 
     if (ANK_useTurbDADI) then
-        ! For the segragated solver, only calculate the time step for flow variables
-        do nn=1, nDom
-           do sps=1, nTimeIntervalsSpectral
-              call setPointers(nn,1_intType,sps)
-              do k=2, kl
-                 do j=2, jl
-                    do i=2, il
-                        ! Calculate one over time step for this cell. Multiply
-                        ! the dtl by cell volume to get the actual time step
-                        ! required for a CFL of one, then multiply with the
-                        ! actual cfl number in the solver
-                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+       ! For the segragated solver, only calculate the time step for flow variables
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
+                      ! Calculate one over time step for this cell. Multiply
+                      ! the dtl by cell volume to get the actual time step
+                      ! required for a CFL of one, then multiply with the
+                      ! actual cfl number in the solver
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
-                        ! We need to convert the momentum residuals to velocity
-                        ! residuals to get the desired effect from time steps.
-                        ! To do this, save a "pseudo" jacobian for this cell,
-                        ! that has dU/du, where U is the vector of conservative
-                        ! variables, and u are the primitive variables. For this
-                        ! jacobian, only the velocity entries are modified,
-                        ! since ADflow saves density, velocities and total
-                        ! energy in the state vector w(:,:,:,:).
+                      ! We need to convert the momentum residuals to velocity
+                      ! residuals to get the desired effect from time steps.
+                      ! To do this, save a "pseudo" jacobian for this cell,
+                      ! that has dU/du, where U is the vector of conservative
+                      ! variables, and u are the primitive variables. For this
+                      ! jacobian, only the velocity entries are modified,
+                      ! since ADflow saves density, velocities and total
+                      ! energy in the state vector w(:,:,:,:).
 
-                        ! Density and energy updates are unchanged.
-                        blk(iRho, iRho) = dtinv
-                        blk(iRhoE, iRhoE) = dtinv
+                      ! Density and energy updates are unchanged.
+                      blk(iRho, iRho) = dtinv
+                      blk(iRhoE, iRhoE) = dtinv
 
-                        ! save the density
-                        rho = w(i,j,k,iRho)
+                      ! save the density
+                      rho = w(i,j,k,iRho)
 
-                        ! x-velocity
-                        blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
-                        blk(ivx, ivx)  = rho*dtinv
+                      ! x-velocity
+                      blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
+                      blk(ivx, ivx)  = rho*dtinv
 
-                        ! y-velocity
-                        blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
-                        blk(ivy, ivy)  = rho*dtinv
+                      ! y-velocity
+                      blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
+                      blk(ivy, ivy)  = rho*dtinv
 
-                        ! z-velocity
-                        blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
-                        blk(ivz, ivz)  = rho*dtinv
+                      ! z-velocity
+                      blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
+                      blk(ivz, ivz)  = rho*dtinv
 
-                        ! get the global cell index
-                        irow = globalCell(i, j, k)
+                      ! get the global cell index
+                      irow = globalCell(i, j, k)
 
-                        ! Add the contribution to the matrix in PETSc
-                        call setBlock()
-                    end do
-                 end do
-              end do
-           end do
-        end do
+                      ! Add the contribution to the matrix in PETSc
+                      call setBlock()
+                   end do
+                end do
+             end do
+          end do
+       end do
     else
-        ! For the coupled solver, CFL number for the turbulent variable needs scaling
-        ! because the residuals are scaled, and additional scaling of the time step
-        ! for the turbulence variable might be required.
-        ii = 1
-        do nn=1, nDom
-           do sps=1, nTimeIntervalsSpectral
-              call setPointers(nn,1_intType,sps)
-              do k=2, kl
-                 do j=2, jl
-                    do i=2, il
-                        ! See the comment for the same calculation above
-                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+       ! For the coupled solver, CFL number for the turbulent variable needs scaling
+       ! because the residuals are scaled, and additional scaling of the time step
+       ! for the turbulence variable might be required.
+       ii = 1
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
+                      ! See the comment for the same calculation above
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
-                        ! We need to convert the momentum residuals to velocity
-                        ! residuals to get the desired effect from time steps.
-                        ! To do this, save a "pseudo" jacobian for this cell,
-                        ! that has dU/du, where U is the vector of conservative
-                        ! variables, and u are the primitive variables. For this
-                        ! jacobian, only the velocity entries are modified,
-                        ! since ADflow saves density, velocities and total
-                        ! energy in the state vector w(:,:,:,:).
+                      ! We need to convert the momentum residuals to velocity
+                      ! residuals to get the desired effect from time steps.
+                      ! To do this, save a "pseudo" jacobian for this cell,
+                      ! that has dU/du, where U is the vector of conservative
+                      ! variables, and u are the primitive variables. For this
+                      ! jacobian, only the velocity entries are modified,
+                      ! since ADflow saves density, velocities and total
+                      ! energy in the state vector w(:,:,:,:).
 
-                        ! Density update is unchanged.
-                        blk(iRho, iRho) = dtinv
+                      ! Density update is unchanged.
+                      blk(iRho, iRho) = dtinv
 
-                        ! save the density
-                        rho = w(i,j,k,iRho)
+                      ! save the density
+                      rho = w(i,j,k,iRho)
 
-                        ! x-velocity
-                        blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
-                        blk(ivx, ivx)  = rho*dtinv
+                      ! x-velocity
+                      blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
+                      blk(ivx, ivx)  = rho*dtinv
 
-                        ! y-velocity
-                        blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
-                        blk(ivy, ivy)  = rho*dtinv
+                      ! y-velocity
+                      blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
+                      blk(ivy, ivy)  = rho*dtinv
 
-                        ! z-velocity
-                        blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
-                        blk(ivz, ivz)  = rho*dtinv
+                      ! z-velocity
+                      blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
+                      blk(ivz, ivz)  = rho*dtinv
 
-                        ! Energy update is unchanged
-                        blk(iRhoE, iRhoE) = dtinv
+                      ! Energy update is unchanged
+                      blk(iRhoE, iRhoE) = dtinv
 
-                        ! For the turbulence variable, additionally scale the cfl.
-                        ! turbresscale is required because the turbulent residuals
-                        ! are scaled with it. Furthermore, the turbulence variable
-                        ! can get a different CFL number. Scale it by turbCFLScale
-                        blk(nt1, nt1) = dtinv*turbResScale(1)/ANK_turbCFLScale
+                      ! For the turbulence variable, additionally scale the cfl.
+                      ! turbresscale is required because the turbulent residuals
+                      ! are scaled with it. Furthermore, the turbulence variable
+                      ! can get a different CFL number. Scale it by turbCFLScale
+                      blk(nt1, nt1) = dtinv*turbResScale(1)/ANK_turbCFLScale
 
-                        ! get the global cell index
-                        irow = globalCell(i, j, k)
+                      ! get the global cell index
+                      irow = globalCell(i, j, k)
 
-                        ! Add the contribution to the matrix in PETSc
-                        call setBlock()
-                    end do
-                 end do
-              end do
-           end do
-        end do
+                      ! Add the contribution to the matrix in PETSc
+                      call setBlock()
+                   end do
+                end do
+             end do
+          end do
+       end do
     end if
 
     ! PETSc Matrix Assembly begin
@@ -2031,7 +2033,7 @@ contains
       implicit none
 
       call MatSetValuesBlocked(dRdwPre, 1, irow, 1, irow, blk, &
-                               ADD_VALUES, ierr)
+           ADD_VALUES, ierr)
       call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine setBlock
@@ -2065,12 +2067,12 @@ contains
 
     ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
-      call computeResidualANK()
-      call setRVecANK(rVec)
-    ! if coupled solver is used, use all variables
+       call computeResidualANK()
+       call setRVecANK(rVec)
+       ! if coupled solver is used, use all variables
     else
-      call computeResidualNK()
-      call setRVec(rVec)
+       call computeResidualNK()
+       call setRVec(rVec)
     end if
 
     ! Add the contribution from the time stepping term
@@ -2087,15 +2089,15 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     if (ANK_useTurbDADI) then
-      ! Only flow variables
-      ii = 1
-      do nn=1, nDom
-         do sps=1, nTimeIntervalsSpectral
-            call setPointers(nn,1_intType,sps)
-            ! read the density residuals and set local CFL
-            do k=2, kl
-               do j=2, jl
-                  do i=2, il
+       ! Only flow variables
+       ii = 1
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             ! read the density residuals and set local CFL
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
                       dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
                       ! Update the first entry in this block, corresponds to
@@ -2109,38 +2111,38 @@ contains
                       ! to momentum residuals.
 
                       rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
-                                         rho * invec_pointer(ii))
+                           wvec_pointer(ii)*invec_pointer(iiRho)+&
+                           rho * invec_pointer(ii))
                       ii = ii + 1
 
                       rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
-                                         rho * invec_pointer(ii))
+                           wvec_pointer(ii)*invec_pointer(iiRho)+&
+                           rho * invec_pointer(ii))
                       ii = ii + 1
 
                       rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
-                                         rho * invec_pointer(ii))
+                           wvec_pointer(ii)*invec_pointer(iiRho)+&
+                           rho * invec_pointer(ii))
                       ii = ii + 1
 
                       ! Finally energy gets the same update
                       rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
                       ii = ii + 1
-                  end do
-               end do
-            end do
-         end do
-      end do
+                   end do
+                end do
+             end do
+          end do
+       end do
     else
-      ! Include time step for turbulence
-      ii = 1
-      do nn=1, nDom
-         do sps=1, nTimeIntervalsSpectral
-            call setPointers(nn,1_intType,sps)
-            ! read the density residuals and set local CFL
-            do k=2, kl
-               do j=2, jl
-                  do i=2, il
+       ! Include time step for turbulence
+       ii = 1
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             ! read the density residuals and set local CFL
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
                       dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
                       ! Update the first entry in this block, corresponds to
@@ -2154,18 +2156,18 @@ contains
                       ! to momentum residuals.
 
                       rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
-                                         rho * invec_pointer(ii))
+                           wvec_pointer(ii)*invec_pointer(iiRho)+&
+                           rho * invec_pointer(ii))
                       ii = ii + 1
 
                       rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
-                                         rho * invec_pointer(ii))
+                           wvec_pointer(ii)*invec_pointer(iiRho)+&
+                           rho * invec_pointer(ii))
                       ii = ii + 1
 
                       rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                                         wvec_pointer(ii)*invec_pointer(iiRho)+&
-                                         rho * invec_pointer(ii))
+                           wvec_pointer(ii)*invec_pointer(iiRho)+&
+                           rho * invec_pointer(ii))
                       ii = ii + 1
 
                       ! energy gets the same update
@@ -2175,13 +2177,13 @@ contains
                       ! turbulence variable needs additional scaling, and it may
                       ! get a different CFL number
                       rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)* &
-                                         dtinv*turbResScale(1)/ANK_turbCFLScale
+                           dtinv*turbResScale(1)/ANK_turbCFLScale
                       ii = ii + 1
-                  end do
-               end do
-            end do
-         end do
-      end do
+                   end do
+                end do
+             end do
+          end do
+       end do
     end if
 
     call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
@@ -2236,10 +2238,10 @@ contains
     ! Calculate the steady residuals, and update intermediate variables
     call computeResidualNK()
     if (ANK_useTurbDADI) then
-      call setRVecANK(rVec)
-    ! if coupled solver is used, use all variables
+       call setRVecANK(rVec)
+       ! if coupled solver is used, use all variables
     else
-      call setRVec(rVec)
+       call setRVec(rVec)
     end if
 
     ! Add the contribution from the time stepping term
@@ -2252,15 +2254,15 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     if (ANK_useTurbDADI) then
-      ! Only flow variables
-      ii = 1
-      do nn=1, nDom
-         do sps=1, nTimeIntervalsSpectral
-            call setPointers(nn,1_intType,sps)
-            ! read the density residuals and set local CFL
-            do k=2, kl
-               do j=2, jl
-                  do i=2, il
+       ! Only flow variables
+       ii = 1
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             ! read the density residuals and set local CFL
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
                       dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
                       ! Update the first entry in this block, corresponds to
@@ -2279,42 +2281,42 @@ contains
                       uu = w(i,j,k,ivx) + omega*dvec_pointer(ii)
 
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                                         uu*dvec_pointer(iiRho)+&
-                                         rho * dvec_pointer(ii))
+                           uu*dvec_pointer(iiRho)+&
+                           rho * dvec_pointer(ii))
                       ii = ii + 1
 
                       vv = w(i,j,k,ivx) + omega*dvec_pointer(ii)
 
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                                         vv*dvec_pointer(iiRho)+&
-                                         rho * dvec_pointer(ii))
+                           vv*dvec_pointer(iiRho)+&
+                           rho * dvec_pointer(ii))
                       ii = ii + 1
 
                       ww = w(i,j,k,ivx) + omega*dvec_pointer(ii)
 
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                                         ww*dvec_pointer(iiRho)+&
-                                         rho * dvec_pointer(ii))
+                           ww*dvec_pointer(iiRho)+&
+                           rho * dvec_pointer(ii))
                       ii = ii + 1
 
                       ! Finally energy gets the same update
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*dvec_pointer(ii)
                       ii = ii + 1
-                  end do
-               end do
-            end do
-         end do
-      end do
+                   end do
+                end do
+             end do
+          end do
+       end do
     else
-      ! Include time step for turbulence
-      ii = 1
-      do nn=1, nDom
-         do sps=1, nTimeIntervalsSpectral
-            call setPointers(nn,1_intType,sps)
-            ! read the density residuals and set local CFL
-            do k=2, kl
-               do j=2, jl
-                  do i=2, il
+       ! Include time step for turbulence
+       ii = 1
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             ! read the density residuals and set local CFL
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
                       dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
                       ! Update the first entry in this block, corresponds to
@@ -2333,22 +2335,22 @@ contains
                       uu = w(i,j,k,ivx) + omega*dvec_pointer(ii)
 
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                                         uu*dvec_pointer(iiRho)+&
-                                         rho * dvec_pointer(ii))
+                           uu*dvec_pointer(iiRho)+&
+                           rho * dvec_pointer(ii))
                       ii = ii + 1
 
                       vv = w(i,j,k,ivx) + omega*dvec_pointer(ii)
 
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                                         vv*dvec_pointer(iiRho)+&
-                                         rho * dvec_pointer(ii))
+                           vv*dvec_pointer(iiRho)+&
+                           rho * dvec_pointer(ii))
                       ii = ii + 1
 
                       ww = w(i,j,k,ivx) + omega*dvec_pointer(ii)
 
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                                         ww*dvec_pointer(iiRho)+&
-                                         rho * dvec_pointer(ii))
+                           ww*dvec_pointer(iiRho)+&
+                           rho * dvec_pointer(ii))
                       ii = ii + 1
 
                       ! Finally energy gets the same update
@@ -2358,13 +2360,13 @@ contains
                       ! turbulence variable needs additional scaling, and it may
                       ! get a different CFL number
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dvec_pointer(ii)* &
-                                         dtinv*turbResScale(1)/ANK_turbCFLScale
+                           dtinv*turbResScale(1)/ANK_turbCFLScale
                       ii = ii + 1
-                  end do
-               end do
-            end do
-         end do
-      end do
+                   end do
+                end do
+             end do
+          end do
+       end do
     end if
 
     call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
@@ -2769,66 +2771,66 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     if(ANK_useTurbDADI) then
-      ii = 1
-      do nn=1, nDom
-         do sps=1, nTimeIntervalsSpectral
-            call setPointers(nn,1_intType,sps)
-            do k=2, kl
-               do j=2, jl
-                  do i=2, il
-                    ! multiply the ratios by 10 to check if the change in a
-                    ! variable is greater than 10% of the variable itself.
+       ii = 1
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
+                      ! multiply the ratios by 10 to check if the change in a
+                      ! variable is greater than 10% of the variable itself.
 
-                    ! check density
-                    ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                    lambdaL = min(lambdaL, ratio)
+                      ! check density
+                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      lambdaL = min(lambdaL, ratio)
 
-                    ! increment by 4 because we want to skip momentum variables
-                    ii = ii + 4
+                      ! increment by 4 because we want to skip momentum variables
+                      ii = ii + 4
 
-                    ! check energy
-                    ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                    lambdaL = min(lambdaL, ratio)
-                    ii = ii + 1
-                  end do
-               end do
-            end do
-         end do
-      end do
+                      ! check energy
+                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      lambdaL = min(lambdaL, ratio)
+                      ii = ii + 1
+                   end do
+                end do
+             end do
+          end do
+       end do
     else
-      ii = 1
-      do nn=1, nDom
-         do sps=1, nTimeIntervalsSpectral
-            call setPointers(nn,1_intType,sps)
-            do k=2, kl
-               do j=2, jl
-                  do i=2, il
-                    ! multiply the ratios by 10 to check if the change in a
-                    ! variable is greater than 10% of the variable itself.
+       ii = 1
+       do nn=1, nDom
+          do sps=1, nTimeIntervalsSpectral
+             call setPointers(nn,1_intType,sps)
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
+                      ! multiply the ratios by 10 to check if the change in a
+                      ! variable is greater than 10% of the variable itself.
 
-                    ! check density
-                    ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                    lambdaL = min(lambdaL, ratio)
+                      ! check density
+                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      lambdaL = min(lambdaL, ratio)
 
-                    ! increment by 4 because we want to skip momentum variables
-                    ii = ii + 4
+                      ! increment by 4 because we want to skip momentum variables
+                      ii = ii + 4
 
-                    ! check energy
-                    ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                    lambdaL = min(lambdaL, ratio)
-                    ii = ii + 1
+                      ! check energy
+                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      lambdaL = min(lambdaL, ratio)
+                      ii = ii + 1
 
-                    ! if coupled ank is used, nstate = nw and this loop is executed
-                    ! if no turbulence variables, this loop will be automatically skipped
-                    ! check turbulence variable
-                    ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                    lambdaL = min(lambdaL, ratio)
-                    ii = ii + 1
-                  end do
-               end do
-            end do
-         end do
-      end do
+                      ! if coupled ank is used, nstate = nw and this loop is executed
+                      ! if no turbulence variables, this loop will be automatically skipped
+                      ! check turbulence variable
+                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      lambdaL = min(lambdaL, ratio)
+                      ii = ii + 1
+                   end do
+                end do
+             end do
+          end do
+       end do
     end if
 
     ! Restore the pointers to PETSc vectors
@@ -2857,7 +2859,7 @@ contains
     use inputIteration, only : L2conv
     use inputDiscretization, only : lumpedDiss, fullVisc
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel
+    use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
     use utils, only : EChk, setPointers
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
@@ -2893,8 +2895,8 @@ contains
        ! If using segragated ANK and below the coupled switch tol, set ANK_useTurbDADI
        ! to .False. to create the PETSc objets required for the coupled ANK solver
        if (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI) then
-         call destroyANKsolver()
-         ANK_useTurbDADI = .False.
+          call destroyANKsolver()
+          ANK_useTurbDADI = .False.
        end if
 
        call setupANKSolver()
@@ -2911,14 +2913,14 @@ contains
        end if
 
        if (firstCall) then
-         ! Start with the selected fraction of the ANK_StepFactor
-         lambda = ANK_StepFactor
+          ! Start with the selected fraction of the ANK_StepFactor
+          lambda = ANK_StepFactor
 
-         ! Initialize some variables
-         totalR_old = totalR ! Record the old residual for the first iteration
-         rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
-         ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
-         totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
+          ! Initialize some variables
+          totalR_old = totalR ! Record the old residual for the first iteration
+          rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
+          ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
+          totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
        end if
     else
        ANK_iter = ANK_iter + 1
@@ -2935,24 +2937,24 @@ contains
        ! Update the CFL number depending on the outcome of the last iteration
        if (lambda < ANK_stepMin * ANK_stepFactor) then
 
-         ! The step was too small, cut back the cfl
-         ANK_CFL = max(ANK_CFL*ANK_CFLCutback, ANK_CFLMin)
+          ! The step was too small, cut back the cfl
+          ANK_CFL = max(ANK_CFL*ANK_CFLCutback, ANK_CFLMin)
 
        else if (totalR < totalR_pcUpdate .and. lambda > ANK_constCFLStep * ANK_stepFactor) then
 
-         ! total residuals have decreased since the last cfl
-         ! change, or the step was large enough, we can ramp
-         ! the cfl up
-         ANK_CFL = max(min(ANK_CFL * ANK_CFLFactor**&
-                   ((totalR_pcUpdate-totalR)/totalR_pcUpdate), ANK_CFLLimit), ANK_CFLMin)
+          ! total residuals have decreased since the last cfl
+          ! change, or the step was large enough, we can ramp
+          ! the cfl up
+          ANK_CFL = max(min(ANK_CFL * ANK_CFLFactor**&
+               ((totalR_pcUpdate-totalR)/totalR_pcUpdate), ANK_CFLLimit), ANK_CFLMin)
 
        else
 
-         ! The step was not small, but it was not large enough
-         ! to ramp up the cfl, so we keep it constant. Just
-         ! make sure that the cfl does not go below the
-         ! minimum value.
-         ANK_CFL = max(ANK_CFL, ANK_CFLMin)
+          ! The step was not small, but it was not large enough
+          ! to ramp up the cfl, so we keep it constant. Just
+          ! make sure that the cfl does not go below the
+          ! minimum value.
+          ANK_CFL = max(ANK_CFL, ANK_CFLMin)
 
        end if
 
@@ -2960,7 +2962,11 @@ contains
        totalR_pcUpdate = totalR
 
        ! Actually form the preconditioner and factorize it.
+
        call FormJacobianANK()
+       iterType = "  *ANK"
+    else
+       iterType = "   ANK"
     end if
 
     ! Start with trying to take the full step set by the user.
@@ -2984,31 +2990,31 @@ contains
     ! Very important to set the variables back to their original values after each
     ! KSP solve because we want actual flux functions when calculating residuals
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
-      ! Setting lumped dissipation to true gives approximate fluxes
-      lumpedDiss =.True.
+       ! Setting lumped dissipation to true gives approximate fluxes
+       lumpedDiss =.True.
 
-      ! Check if we want the full viscous terms
-      if (totalR < ANK_fullViscTol*totalR0) fullVisc = .True.
+       ! Check if we want the full viscous terms
+       if (totalR < ANK_fullViscTol*totalR0) fullVisc = .True.
 
-      ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
-      secondOrdSave = secondOrd
-      secondOrd =.False.
+       ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
+       secondOrdSave = secondOrd
+       secondOrd =.False.
 
-      ! Calculate the shock sensor here because the approximate routines do not
-      call referenceShockSensor()
+       ! Calculate the shock sensor here because the approximate routines do not
+       call referenceShockSensor()
 
-      ! Determine the relative convergence for the KSP solver
-      rtol = ANK_rtol ! Just use the input relative tolerance for approximate fluxes
+       ! Determine the relative convergence for the KSP solver
+       rtol = ANK_rtol ! Just use the input relative tolerance for approximate fluxes
 
-   else
-      ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive
-      ! convergence tolerance helps with performance.
-      totalR_dummy = totalR
-      call getEWTol(totalR_dummy, totalR_old, rtolLast, rtol)
+    else
+       ! If the second order fluxes are used, Eisenstat-Walker algorithm to determine relateive
+       ! convergence tolerance helps with performance.
+       totalR_dummy = totalR
+       call getEWTol(totalR_dummy, totalR_old, rtolLast, rtol)
 
-      ! Use the ANK rtol if E-W algorithm is not picking anything lower
-      rtol = min(ANK_rtol, rtol)
-   end if
+       ! Use the ANK rtol if E-W algorithm is not picking anything lower
+       rtol = min(ANK_rtol, rtol)
+    end if
 
     ! Record the total residual and relative convergence for next iteration
     totalR_old = totalR
@@ -3043,21 +3049,21 @@ contains
 
     ! Return previously changed variables back to normal, VERY IMPORTANT
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
-      ! Set lumpedDiss back to False to go back to using actual flux routines
-      lumpedDiss =.False.
+       ! Set lumpedDiss back to False to go back to using actual flux routines
+       lumpedDiss =.False.
 
-      ! Set the full visc option back the the correct value
-      if (totalR < ANK_fullViscTol*totalR0) fullVisc = .False.
+       ! Set the full visc option back the the correct value
+       if (totalR < ANK_fullViscTol*totalR0) fullVisc = .False.
 
-      ! Replace the second order turbulence option
-      secondOrd = secondOrdSave
+       ! Replace the second order turbulence option
+       secondOrd = secondOrdSave
 
-      ! Deallocate the memory used for the shock sensor
-      do nn=1, nDom
+       ! Deallocate the memory used for the shock sensor
+       do nn=1, nDom
           do sps=1, nTimeIntervalsSpectral
-              deallocate(flowDoms(nn,1,sps)%shockSensor)
+             deallocate(flowDoms(nn,1,sps)%shockSensor)
           end do
-      end do
+       end do
     end if
 
     ! Check if density, energy, or turbulence variable (if coupled)
@@ -3068,21 +3074,21 @@ contains
     call physicalityCheckANK(lambda)
 
     if (lambda < ANK_stepFactor * ANK_stepMin .and. ANK_CFL > ANK_CFLMin) then
-      ! Don't take the step, we will try again with a lower cfl
-      lambda = zero
+       ! Don't take the step, we will try again with a lower cfl
+       lambda = zero
 
-      ! Also clear out the possible NaNs
-      if (ANK_useTurbDADI) then
-        call setUniformFlowANK
-      else
-        call setUniformFlow
-      end if
+       ! Also clear out the possible NaNs
+       if (ANK_useTurbDADI) then
+          call setUniformFlowANK
+       else
+          call setUniformFlow
+       end if
 
     else
-      ! Make sure that the step does not go below the minimum. This
-      ! might happen if we are at the lower limit for the CFL, but
-      ! physicality check yields a small step.
-      lambda = max(lambda, ANK_StepMin * ANK_stepFactor)
+       ! Make sure that the step does not go below the minimum. This
+       ! might happen if we are at the lower limit for the CFL, but
+       ! physicality check yields a small step.
+       lambda = max(lambda, ANK_StepMin * ANK_stepFactor)
     end if
 
     ! Take the uodate after the physicality check. Lambda value
@@ -3108,13 +3114,13 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) &
-       .and. lambda > zero) then
-       ! Do backtracking linesearch:
+         .and. lambda > zero) then
 
+       ! Do backtracking linesearch:
        if (ANK_useTurbDADI) then
-         call setUniformFlowANK
+          call setUniformFlowANK
        else
-         call setUniformFlow
+          call setUniformFlow
        end if
 
        ! Restore the starting (old) w value
@@ -3122,9 +3128,9 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Set the initial new lambda
-       lambda = 0.5_realType * lambda
+       lambda = 0.8_realType * lambda
 
-       backtrack: do iter=1, 3
+       backtrack: do iter=1, 10
 
           ! Apply the new step
           call VecAXPY(wVec, -lambda, deltaW, ierr)
@@ -3139,62 +3145,61 @@ contains
 
           call VecNorm(rVec, NORM_2, unsteadyNorm, ierr)
           call EChk(ierr, __FILE__, __LINE__)
-          !if (myID .eq. zero) write(*,*) "Change in unsteady Res: ", unsteadyNorm / unsteadyNorm_old
 
           if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
-            if (ANK_useTurbDADI) then
-              call setUniformFlowANK
-            else
-              call setUniformFlow
-            end if
+             if (ANK_useTurbDADI) then
+                call setUniformFlowANK
+             else
+                call setUniformFlow
+             end if
 
-            ! Restore back to the original wVec
-            call VecAXPY(wVec, lambda, deltaW, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
+             ! Restore back to the original wVec
+             call VecAXPY(wVec, lambda, deltaW, ierr)
+             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Haven't backed off enough yet....keep going
-            lambda = lambda * 0.5_realType
+             ! Haven't backed off enough yet....keep going
+             lambda = lambda * 0.8_realType
           else
-            ! We don't have an nan anymore...break out
-            exit
-         end if
-      end do backtrack
+             ! We don't have an nan anymore...break out
+             exit
+          end if
+       end do backtrack
 
-      if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
+       if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
-        if (ANK_CFL > ANK_CFLMin) then
-          ! the cfl number is not small enough, we can still
-          ! cut back the cfl and try again.
-          lambda = zero
-        else
-          ! cfl is as low as it goes, try taking the step
-          ! Apply the new step
-          call VecAXPY(wVec, -lambda, deltaW, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
-          ! or do sth else?
+          if (ANK_CFL > ANK_CFLMin) then
+             ! the cfl number is not small enough, we can still
+             ! cut back the cfl and try again.
+             lambda = zero
+          else
+             ! cfl is as low as it goes, try taking the step
+             ! Apply the new step
+             call VecAXPY(wVec, -lambda, deltaW, ierr)
+             call EChk(ierr, __FILE__, __LINE__)
+             ! or do sth else?
 
-        end if
+          end if
 
-        ! Clear out the possible NaNs
-        if (ANK_useTurbDADI) then
-          call setUniformFlowANK
-        else
-          call setUniformFlow
-        end if
+          ! Clear out the possible NaNs
+          if (ANK_useTurbDADI) then
+             call setUniformFlowANK
+          else
+             call setUniformFlow
+          end if
 
-        ! Get the state
-        call setWANK(wVec)
+          ! Get the state
+          call setWANK(wVec)
 
-        ! Compute the residuals. This also updates intermediate variables
-        call computeResidualNK()
-        feval = feval + 1
-      else
-      end if
-   end if
+          ! Compute the residuals. This also updates intermediate variables
+          call computeResidualNK()
+          feval = feval + 1
+       else
+       end if
+    end if
 
-   ! ============== Turb Update =============
-   if (ANK_useTurbDADI .and. equations==RANSEquations) then
+    ! ============== Turb Update =============
+    if (ANK_useTurbDADI .and. equations==RANSEquations) then
 
        ! Only update thurbulence if we take a meaningful step
        if (lambda > ANK_stepMin * ANK_stepFactor) then
@@ -3209,9 +3214,9 @@ contains
        ! Finally, copy the actual residuals to the rVec in PETSc
        ! for the next iteration
        call setRvecANK(rVec)
-   else
+    else
        call setRVec(rVec)
-   end if
+    end if
 
     ! Get the number of iterations from the KSP solver
     call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
@@ -3224,7 +3229,7 @@ contains
 
 
     if ((kspIterations > .8 * ank_maxIter .and. totalR > ANK_secondOrdSwitchTol*totalR0) &
-       .or. lambda < ANK_stepMin * ANK_stepFactor) then
+         .or. lambda < ANK_stepMin * ANK_stepFactor) then
        ! We should reform the PC since it took longer than we want,
        ! or we need to adjust the CFL because the last update was bad,
        ! or convergence since the last PC update was good enough and we
