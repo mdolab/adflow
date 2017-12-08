@@ -2940,7 +2940,7 @@ contains
           ! The step was too small, cut back the cfl
           ANK_CFL = max(ANK_CFL*ANK_CFLCutback, ANK_CFLMin)
 
-       else if (totalR < totalR_pcUpdate .and. lambda > ANK_constCFLStep * ANK_stepFactor) then
+     else if (totalR < totalR_pcUpdate .and. lambda .ge. ANK_constCFLStep * ANK_stepFactor) then
 
           ! total residuals have decreased since the last cfl
           ! change, or the step was large enough, we can ramp
