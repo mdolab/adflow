@@ -83,8 +83,6 @@ ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
                             'mavgptot_up', 'mavgptot_down',# 'mavgptot_plane', 
                             'mavgttot_up', 'mavgttot_down',# 'mavgttot_plane',
                             'mavgps_up', 'mavgps_down', #'mavgps_plane'
-                            'sigmamn_up',  #'sigmamn_plane'
-                            'sigmaptot_up', #'sigmaptot_plane'
                             ])
 
 
@@ -123,8 +121,6 @@ def setupADFlow(solver):
     solver.addFunction('mavgps', 'upstream', name="mavgps_up")
     #solver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
 
-    solver.addFunction('sigmamn', 'upstream', name="sigmamn_up")
-    solver.addFunction('sigmaptot', 'upstream', name="sigmaptot_up")
 
 
     solver.setOption('ncycles',1000)

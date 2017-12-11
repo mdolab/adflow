@@ -23,7 +23,8 @@ contains
          moment, cForce, cForceP, cForceV, cForceM, cMoment
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
-                            mAvgVx, mAvgVy, mAvgVz, mAvgnx, mAvgny, mAvgnz, mAvgU, sigmaMN, sigmaPtot
+                            mAvgVx, mAvgVy, mAvgVz
+
     real(kind=realType) ::  vdotn, mag, u, v, w
     integer(kind=intType) :: sps
     real(kind=realType), dimension(8):: dcdq, dcdqdot
@@ -129,13 +130,6 @@ contains
                     globalVals(iMassny, sps)**2 + &
                     globalVals(iMassnz, sps)**2)
 
-          mAvgnx   = globalVals(iMassnx, sps)/mag
-          mAvgny   = globalVals(iMassny, sps)/mag
-          mAvgnz   = globalVals(iMassnz, sps)/mag
-
-          sigmaMN = sqrt(globalVals(iSigmaMN, sps)/abs(mFlow))
-          sigmaPtot = sqrt(globalVals(iSigmaPtot, sps)/abs(mFlow))
-
        else
           mAvgPtot = zero
           mAvgTtot = zero
@@ -143,16 +137,9 @@ contains
           mAvgPs = zero
           mAvgMn = zero
           mAvga = zero
-
           mAvgVx   = zero
           mAvgVy   = zero
           mAvgVz   = zero
-          mAvgnx   = zero
-          mAvgny   = zero
-          mAvgnz   = zero
-
-          sigmaMN = zero
-          sigmaPtot = zero
 
        end if
 
@@ -163,9 +150,9 @@ contains
        funcValues(costFuncMavgPs)    = funcValues(costFuncMAvgPs) + ovrNTS*mAvgPs
        funcValues(costFuncMavgMn)    = funcValues(costFuncMAvgMn) + ovrNTS*mAvgMn
        funcValues(costFuncMavga)    = funcValues(costFuncMAvga) + ovrNTS*mAvga
-       funcValues(costFuncSigmaMN) = funcValues(costFuncSigmaMN) + ovrNTS*sigmaMN
-       funcValues(costFuncSigmaPtot) = funcValues(costFuncSigmaPtot) + ovrNTS*sigmaPtot
-
+       funcValues(costfuncmavgvx)    = funcValues(costfuncmavgvx) + ovrNTS*mAvgVx
+       funcValues(costfuncmavgvy)    = funcValues(costfuncmavgvy) + ovrNTS*mAvgVy
+       funcValues(costfuncmavgvz)    = funcValues(costfuncmavgvz) + ovrNTS*mAvgVz
        ! Bending moment calc - also broken.
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
        ! funcValues(costFuncBendingCoef) = funcValues(costFuncBendingCoef) + ovrNTS*bendingMoment
@@ -684,7 +671,7 @@ contains
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
                             mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
-    real(kind=realType) ::  mReDim, sigma_MN, sigma_Ptot
+    real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vnmFreeStreamRef, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
@@ -752,11 +739,6 @@ contains
     mass_ny = zero
     mass_nz = zero
 
-    sigma_Mn = zero
-    sigma_Ptot = zero
-
-
-
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -792,122 +774,116 @@ contains
 
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
 
-      if (withGathered) then
+      ! if (withGathered) then
+      ! else
 
-        sigma_Mn = sigma_Mn  + abs(massFlowRateLocal)*(MNm - funcValues(costFuncMavgMN))**2
-        Ptot = Ptot * pRef
-        sigma_Ptot = sigma_Ptot + abs(massFlowRateLocal)*(Ptot - funcValues(costFuncMavgPtot))**2
+      massFlowRate = massFlowRate + massFlowRateLocal
 
-      else
+      ! re-dimentionalize quantities
+      pm = pm*pRef
 
-        massFlowRate = massFlowRate + massFlowRateLocal
+      mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
+      mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
+      mass_rho  = mass_rho + rhom * massFlowRateLocal * rhoRef
+      mass_a  = mass_a + am * massFlowRateLocal * uRef
 
-        ! re-dimentionalize quantities
-        pm = pm*pRef
+      mass_Ps = mass_Ps + pm*massFlowRateLocal
+      mass_MN = mass_MN + MNm*massFlowRateLocal
 
-        mass_Ptot = mass_pTot + Ptot * massFlowRateLocal * Pref
-        mass_Ttot = mass_Ttot + Ttot * massFlowRateLocal * Tref
-        mass_rho  = mass_rho + rhom * massFlowRateLocal * rhoRef
-        mass_a  = mass_a + am * massFlowRateLocal * uRef
+      sFaceCoordRef(1) = sF * ssi(i,j,1)*overCellArea
+      sFaceCoordRef(2) = sF * ssi(i,j,2)*overCellArea
+      sFaceCoordRef(3) = sF * ssi(i,j,3)*overCellArea
 
-        mass_Ps = mass_Ps + pm*massFlowRateLocal
-        mass_MN = mass_MN + MNm*massFlowRateLocal
+      mass_Vx = mass_Vx + (vxm*uRef - sFaceCoordRef(1)) *massFlowRateLocal
+      mass_Vy = mass_Vy + (vym*uRef - sFaceCoordRef(2)) *massFlowRateLocal
+      mass_Vz = mass_Vz + (vzm*uRef - sFaceCoordRef(3)) *massFlowRateLocal
 
-        sFaceCoordRef(1) = sF * ssi(i,j,1)*overCellArea
-        sFaceCoordRef(2) = sF * ssi(i,j,2)*overCellArea
-        sFaceCoordRef(3) = sF * ssi(i,j,3)*overCellArea
+      mass_nx = mass_nx + ssi(i,j,1)*overCellArea * massFlowRateLocal
+      mass_ny = mass_ny + ssi(i,j,2)*overCellArea * massFlowRateLocal
+      mass_nz = mass_nz + ssi(i,j,3)*overCellArea * massFlowRateLocal
 
-        mass_Vx = mass_Vx + (vxm*uRef - sFaceCoordRef(1)) *massFlowRateLocal
-        mass_Vy = mass_Vy + (vym*uRef - sFaceCoordRef(2)) *massFlowRateLocal
-        mass_Vz = mass_Vz + (vzm*uRef - sFaceCoordRef(3)) *massFlowRateLocal
+      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+          +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+          +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+          +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
-        mass_nx = mass_nx + ssi(i,j,1)*overCellArea * massFlowRateLocal
-        mass_ny = mass_ny + ssi(i,j,2)*overCellArea * massFlowRateLocal
-        mass_nz = mass_nz + ssi(i,j,3)*overCellArea * massFlowRateLocal
+      ! Pressure forces. Note that these need a *negative* and to subtract
+      ! the reference pressure sign to be consistent with the force
+      ! computation on the walls.
+      pm = -(pm-pInf*pRef)*fact*blk
 
+      fx = pm*ssi(i,j,1)
+      fy = pm*ssi(i,j,2)
+      fz = pm*ssi(i,j,3)
 
-        xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-            +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
-        yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-            +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
-        zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-            +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
+      ! Update the pressure force and moment coefficients.
+      Fp(1) = Fp(1) + fx
+      Fp(2) = Fp(2) + fy
+      Fp(3) = Fp(3) + fz
 
-        ! Pressure forces. Note that these need a *negative* and to subtract
-        ! the reference pressure sign to be consistent with the force
-        ! computation on the walls.
-        pm = -(pm-pInf*pRef)*fact*blk
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
 
-        fx = pm*ssi(i,j,1)
-        fy = pm*ssi(i,j,2)
-        fz = pm*ssi(i,j,3)
+      Mp(1) = Mp(1) + mx
+      Mp(2) = Mp(2) + my
+      Mp(3) = Mp(3) + mz
 
-        ! Update the pressure force and moment coefficients.
-        Fp(1) = Fp(1) + fx
-        Fp(2) = Fp(2) + fy
-        Fp(3) = Fp(3) + fz
+      ! Momentum forces are a little tricky.  We negate because
+      ! have to re-apply fact to massFlowRateLocal to undoo it, because
+      ! we need the signed behavior of ssi to get the momentum forces correct.
+      ! Also, the sign is flipped between inflow and outflow types
 
-        mx = yc*fz - zc*fy
-        my = zc*fx - xc*fz
-        mz = xc*fy - yc*fx
+      massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
 
-        Mp(1) = Mp(1) + mx
-        Mp(2) = Mp(2) + my
-        Mp(3) = Mp(3) + mz
+      fx = massFlowRateLocal * ssi(i,j,1)*vxm
+      fy = massFlowRateLocal * ssi(i,j,2)*vym
+      fz = massFlowRateLocal * ssi(i,j,3)*vzm
 
-        ! Momentum forces are a little tricky.  We negate because
-        ! have to re-apply fact to massFlowRateLocal to undoo it, because
-        ! we need the signed behavior of ssi to get the momentum forces correct.
-        ! Also, the sign is flipped between inflow and outflow types
+      FMom(1) = FMom(1) + fx
+      FMom(2) = FMom(2) + fy
+      FMom(3) = FMom(3) + fz
 
-        massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
 
-        fx = massFlowRateLocal * ssi(i,j,1)*vxm
-        fy = massFlowRateLocal * ssi(i,j,2)*vym
-        fz = massFlowRateLocal * ssi(i,j,3)*vzm
+      MMom(1) = MMom(1) + mx
+      MMom(2) = MMom(2) + my
+      MMom(3) = MMom(3) + mz
 
-        FMom(1) = FMom(1) + fx
-        FMom(2) = FMom(2) + fy
-        FMom(3) = FMom(3) + fz
-
-        mx = yc*fz - zc*fy
-        my = zc*fx - xc*fz
-        mz = xc*fy - yc*fx
-
-        MMom(1) = MMom(1) + mx
-        MMom(2) = MMom(2) + my
-        MMom(3) = MMom(3) + mz
-
-     end if
+     ! end if ! end if(withGathered)
 
     enddo
 
-    if (withGathered) then
-      localValues(isigmaMN) = localValues(isigmaMN) + sigma_Mn
-      localValues(isigmaPtot) = localValues(isigmaPtot) + sigma_Ptot
-    else
-      ! Increment the local values array with what we computed here
-      localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
-      localValues(iArea) = localValues(iArea) + area
-      localValues(iMassRho) = localValues(iMassRho) + mass_rho
-      localValues(iMassa) = localValues(iMassa) + mass_a
-      localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
-      localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
-      localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
-      localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
-      localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
-      localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
-      localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
-      localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+    ! no withGathered right now
+    ! if (withGathered) then
+    ! else
+    
+    ! Increment the local values array with what we computed here
+    localValues(iMassFlow) = localValues(iMassFlow) + massFlowRate
+    localValues(iArea) = localValues(iArea) + area
+    localValues(iMassRho) = localValues(iMassRho) + mass_rho
+    localValues(iMassa) = localValues(iMassa) + mass_a
+    localValues(iMassPtot) = localValues(iMassPtot) + mass_Ptot
+    localValues(iMassTtot) = localValues(iMassTtot) + mass_Ttot
+    localValues(iMassPs)   = localValues(iMassPs)   + mass_Ps
+    localValues(iMassMN)   = localValues(iMassMN)   + mass_MN
+    localValues(iFp:iFp+2)   = localValues(iFp:iFp+2) + Fp
+    localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
+    localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
+    localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
-      localValues(iMassVx)   = localValues(iMassVx)   + mass_Vx
-      localValues(iMassVy)   = localValues(iMassVy)   + mass_Vy
-      localValues(iMassVz)   = localValues(iMassVz)   + mass_Vz
-      localValues(iMassnx)   = localValues(iMassnx)   + mass_nx
-      localValues(iMassny)   = localValues(iMassny)   + mass_ny
-      localValues(iMassnz)   = localValues(iMassnz)   + mass_nz
+    localValues(iMassVx)   = localValues(iMassVx)   + mass_Vx
+    localValues(iMassVy)   = localValues(iMassVy)   + mass_Vy
+    localValues(iMassVz)   = localValues(iMassVz)   + mass_Vz
+    localValues(iMassnx)   = localValues(iMassnx)   + mass_nx
+    localValues(iMassny)   = localValues(iMassny)   + mass_ny
+    localValues(iMassnz)   = localValues(iMassnz)   + mass_nz
 
-    end if
+    ! end if
 
   end subroutine flowIntegrationFace
 
