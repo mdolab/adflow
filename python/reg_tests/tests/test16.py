@@ -59,7 +59,6 @@ ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                             'mavgps_up', 'mavgps_down', 
                             'mavgmn_up', 'mavgmn_down', 
                             'thrust', 
-                            'distortionmn', 'distortionptot',
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
 
@@ -82,9 +81,6 @@ def setupADFlow(solver):
 
     solver.addFunction('mavgmn', 'downstream', name="mavgmn_down")
     solver.addFunction('mavgmn', 'upstream', name="mavgmn_up")
-
-    solver.addFunction('sigmamn', 'upstream', name="distortionmn")
-    solver.addFunction('sigmaptot', 'upstream', name="distortionptot")
 
     solver.addFunction('drag', 'all_flow', name="thrust") # this naming makes it seem like wishful thinking
 
