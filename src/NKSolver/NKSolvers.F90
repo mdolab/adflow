@@ -3093,11 +3093,6 @@ contains
           call setUniformFlow
        end if
 
-    else
-       ! Make sure that the step does not go below the minimum. This
-       ! might happen if we are at the lower limit for the CFL, but
-       ! physicality check yields a small step.
-       lambda = max(lambda, ANK_StepMin * ANK_stepFactor)
     end if
 
     ! Take the uodate after the physicality check. Lambda value
