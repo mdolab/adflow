@@ -51,6 +51,8 @@ module inputDiscretization
   ! radiiNeededCoarse:      Idem for the coarse grid.
   ! lumpedDiss :            logical factor for determining whether or not
   !                         lumped dissipation is used for preconditioner
+  ! updateDt :              Flag to determine if the time step will be
+  !                         updated in the residual calculations.
   ! fullVisc :              Flag to use the full viscous terms, even if
   !                         the lumpedDsiss option is set to True.
   ! sigma      :            Scaling parameter for dissipation lumping in
@@ -77,7 +79,7 @@ module inputDiscretization
 
   real(kind=realType) :: vis2, vis4, vis2Coarse, adis
   real(kind=realType) :: kappaCoef
-  logical :: lumpedDiss, fullVisc
+  logical :: lumpedDiss, fullVisc, updateDt
   real(kind=realType) :: sigma
 
 #ifndef USE_TAPENADE

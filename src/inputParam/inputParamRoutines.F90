@@ -4036,6 +4036,7 @@ contains
     routineFailed = .False.
     fatalFail     = .False.
     lumpedDiss    = .False.
+    updateDt      = .True.
     fullVisc      = .False.
     useApproxWallDistance = .False.
     cflLimit = 3.0

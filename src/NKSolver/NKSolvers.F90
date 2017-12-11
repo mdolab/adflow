@@ -1013,7 +1013,7 @@ contains
     use flowvarrefstate, only : nw, pInfCorr, nwf, kPresent, nt1, nt2
     use iteration, only : groundLevel, currentLevel, rkStage
     use inputPhysics, only : equations, gammaConstant
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : updateDt
     use utils, only : setPointers
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
@@ -1118,7 +1118,7 @@ contains
     ! will be false, this routine will calculate both spectral radius
     ! and time step. For ANK, lumpedDiss will be true, the routine will
     ! only calculate the spectral radii.
-    call timestep(lumpedDiss)
+    call timestep(.not. updateDt)
 
     ! Possible Turblent Equations
     if( equations == RANSEquations ) then
@@ -2425,7 +2425,7 @@ contains
     use flowvarrefstate
     use iteration
     use inputPhysics
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : updateDt
     use utils, only : setPointers
     use haloExchange, only : whalo2
     use turbUtils, only : computeEddyViscosity
@@ -2530,7 +2530,7 @@ contains
     ! If this is a matrix-free operation, we want the time step in dtl
     ! to remain unchanged, but we need to re-calculate the spectral radius.
     ! Passing lumpedDiss to timestep calculation (onlyRadii) achieves this.
-    call timestep(lumpedDiss)
+    call timestep(.not. updateDt)
 
     ! Initialize Flow residuals
     call initres(1_intType, nwf)
@@ -2857,7 +2857,7 @@ contains
     use blockPointers, only : nDom, flowDoms, shockSensor, ib, jb, kb, p, w, gamma
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
-    use inputDiscretization, only : lumpedDiss, fullVisc
+    use inputDiscretization, only : lumpedDiss, fullVisc, updateDt
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
     use utils, only : EChk, setPointers
@@ -2934,13 +2934,16 @@ contains
     ! Determine if if we need to form the Preconditioner
     if (mod(ANK_iter, ANK_jacobianLag) == 0 .or. totalR/totalR_pcUpdate < ANK_pcUpdateTol) then
 
+       ! First of all, update the minimum cfl wrt the overall convergence
+       ANK_CFLMin = min(ANK_CFLLimit, (totalR0/totalR))
+
        ! Update the CFL number depending on the outcome of the last iteration
        if (lambda < ANK_stepMin * ANK_stepFactor) then
 
           ! The step was too small, cut back the cfl
           ANK_CFL = max(ANK_CFL*ANK_CFLCutback, ANK_CFLMin)
 
-     else if (totalR < totalR_pcUpdate .and. lambda .ge. ANK_constCFLStep * ANK_stepFactor) then
+       else if (totalR < totalR_pcUpdate .and. lambda .ge. ANK_constCFLStep * ANK_stepFactor) then
 
           ! total residuals have decreased since the last cfl
           ! change, or the step was large enough, we can ramp
@@ -3016,6 +3019,9 @@ contains
        rtol = min(ANK_rtol, rtol)
     end if
 
+    ! Make sure we don't update the time step during the matrix-free operations
+    updateDt = .false.
+
     ! Record the total residual and relative convergence for next iteration
     totalR_old = totalR
     rtolLast = rtol
@@ -3065,6 +3071,9 @@ contains
           end do
        end do
     end if
+
+    ! Revert back the time step switch
+    updateDt = .true.
 
     ! Check if density, energy, or turbulence variable (if coupled)
     ! have changed more than 10%.
