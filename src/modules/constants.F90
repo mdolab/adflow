@@ -336,7 +336,7 @@ module constants
   integer(kind=intType), parameter :: iTotal=16
 
   ! Cost functions.
-  integer(kind=intType), parameter :: nCostFunction = 84
+  integer(kind=intType), parameter :: nCostFunction = 87
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -388,40 +388,43 @@ module constants
        costFuncMavgMN        = 48, &
        costFuncMavga         = 49, &
        costFuncArea          = 50, &
-       costFuncSigmaMN       = 51, &
-       costFuncSigmaPtot     = 52, &
-       costFuncAxisMoment    = 53, &
-       costFuncFlowPower     = 54, & 
-       costFuncForceXPressure = 55, & 
-       costFuncForceYPressure = 56, & 
-       costFuncForceZPressure = 57, & 
-       costFuncForceXViscous = 58, & 
-       costFuncForceYViscous = 59, & 
-       costFuncForceZViscous = 60, & 
-       costFuncForceXMomentum = 61, & 
-       costFuncForceYMomentum = 62, & 
-       costFuncForceZMomentum = 63, & 
-       costFuncDragPressure= 64, & 
-       costFuncDragViscous = 65, & 
-       costFuncDragMomentum = 66, & 
-       costFuncLiftPressure= 67, & 
-       costFuncLiftViscous = 68, & 
-       costFuncLiftMomentum = 69, &
-       costFuncForceXCoefPressure = 70,&
-       costFuncForceXCoefViscous = 71,&
-       costFuncForceXCoefMomentum = 72,&
-       costFuncForceYCoefPressure = 73,&
-       costFuncForceYCoefViscous = 74,&
-       costFuncForceYCoefMomentum = 75,&
-       costFuncForceZCoefPressure = 76,&
-       costFuncForceZCoefViscous = 77,&
-       costFuncForceZCoefMomentum = 78,&
-       costFuncLiftCoefPressure = 79,&
-       costFuncLiftCoefViscous = 80, &
-       costFuncLiftCoefMomentum = 81, &
-       costFuncDragCoefPressure = 82,&
-       costFuncDragCoefViscous = 83, &
-       costFuncDragCoefMomentum = 84 
+       costFuncAxisMoment    = 51, &
+       costFuncFlowPower     = 52, & 
+       costFuncForceXPressure = 53, & 
+       costFuncForceYPressure = 54, & 
+       costFuncForceZPressure = 55, & 
+       costFuncForceXViscous = 56, & 
+       costFuncForceYViscous = 57, & 
+       costFuncForceZViscous = 58, & 
+       costFuncForceXMomentum = 59, & 
+       costFuncForceYMomentum = 60, & 
+       costFuncForceZMomentum = 61, & 
+       costFuncDragPressure= 62, & 
+       costFuncDragViscous = 63, & 
+       costFuncDragMomentum = 64, & 
+       costFuncLiftPressure= 65, & 
+       costFuncLiftViscous = 66, & 
+       costFuncLiftMomentum = 67, &
+       costFuncForceXCoefPressure = 68,&
+       costFuncForceXCoefViscous = 69,&
+       costFuncForceXCoefMomentum = 70,&
+       costFuncForceYCoefPressure = 71,&
+       costFuncForceYCoefViscous = 72,&
+       costFuncForceYCoefMomentum = 73,&
+       costFuncForceZCoefPressure = 74,&
+       costFuncForceZCoefViscous = 75,&
+       costFuncForceZCoefMomentum = 76,&
+       costFuncLiftCoefPressure = 77,&
+       costFuncLiftCoefViscous = 78, &
+       costFuncLiftCoefMomentum = 79, &
+       costFuncDragCoefPressure = 80,&
+       costFuncDragCoefViscous = 81, &
+       costFuncDragCoefMomentum = 82, & 
+       costfuncmavgvx = 83, & 
+       costfuncmavgvy = 84, & 
+       costfuncmavgvz = 85, & 
+       costfuncsigmaptot = 86, &
+       costfuncsigmamn = 87
 
   integer(kind=intType), parameter :: nLocalValues=46
   integer(kind=intType), parameter :: &

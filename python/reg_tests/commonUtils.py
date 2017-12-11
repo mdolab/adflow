@@ -235,7 +235,6 @@ def solutionTest(CFDSolver, ap):
     CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
     parPrint('Eval Functions:')
     reg_root_write_dict(funcs, 1e-10, 1e-10)
-    exit()
 
     # Get and check the states
     parPrint('Norm of state vector')
