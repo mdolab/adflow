@@ -2969,6 +2969,7 @@ contains
 
        call FormJacobianANK()
        iterType = "  *ANK"
+       ANK_iter = 0
     else
        iterType = "   ANK"
     end if
