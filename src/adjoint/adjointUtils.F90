@@ -489,11 +489,6 @@ contains
           if (sps==1) then
              deallocate(flowDoms(nn, 1, 1)%color)
           end if
-
-          ! Deallocate the shock sensor refernce if usePC
-          if (usePC) then
-             deallocate(flowDoms(nn, 1, sps)%shockSensor)
-          end if
        end do
     end do
 
@@ -1717,14 +1712,6 @@ end subroutine statePreAllocation
        do sps=1, nTimeIntervalsSpectral
           call setPointers(nn, level, sps)
 
-          ! Allocate shockSensor in flowDoms *NOT* flowDomsd....and
-          ! compute the value depending on equations/dissipation
-          ! type. Note we are just doing all cells including corners
-          ! halos..those values are not used anyway.
-
-          allocate(flowDoms(nn, 1, sps)%shockSensor(0:ib, 0:jb, 0:kb))
-          shockSensor => flowDoms(nn,1,sps)%shockSensor
-
           if (equations == EulerEquations .or. spaceDiscr == dissMatrix) then
              !shockSensor is Pressure
              do k=0, kb
@@ -1789,7 +1776,6 @@ end subroutine statePreAllocation
        do sps=1, nTimeIntervalsSpectral
 
           call setPointers(nn, level, sps)
-          shockSensor => flowDoms(nn,level,sps)%shockSensor
           call block_res_state(nn, sps)
           ! Set the values
           do l=1, nw

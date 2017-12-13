@@ -642,6 +642,7 @@ end subroutine infChangeCorrection
                flowDoms(nn,level,sps)%radJ(1:ie,1:je,1:ke),     &
                flowDoms(nn,level,sps)%radK(1:ie,1:je,1:ke),     &
                flowDoms(nn,level,sps)%scratch(0:ib,0:jb,0:kb,10), &
+               flowDoms(nn,level,sps)%shockSensor(0:ib, 0:jb, 0:kb), &
                stat=ierr)
           if(ierr /= 0)                              &
                call terminate("allocMemFlovarPart2", &
