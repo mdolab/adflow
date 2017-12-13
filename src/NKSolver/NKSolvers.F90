@@ -2049,6 +2049,7 @@ contains
     use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputtimespectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
+    use inputDiscretization, only : lumpedDiss, fullVisc
     use flowvarrefstate, only : nwf, nt1, nt2
     use NKSolver, only : computeResidualNK, setRvec
     use utils, only : setPointers, EChk
@@ -2062,13 +2063,18 @@ contains
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: invec_pointer(:)
     real(kind=realType),pointer :: wvec_pointer(:)
+    logical :: viscApprox, dissApprox
 
     ! get the input vector
     call setWANK(inVec)
 
+    ! Determine if we want the full or approximate fluxes
+    viscApprox = (.not. fullVisc) .and. lumpedDiss
+    dissApprox = lumpedDiss
+
     ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
-       call computeResidualANK2(dissApprox=.True., viscApprox=.False.)
+       call computeResidualANK2(dissApprox=dissApprox, viscApprox=viscApprox)
        call setRVecANK(rVec)
     else
        call computeResidualNK()
@@ -2211,6 +2217,7 @@ contains
     !   w(:,:,:,:): Should contain the updated state with the given step size
     !               lambdaLS and given update deltaW
     !   ANK_CFL:    The CFL number used for this non-linear iteration
+    !   dtl:        Time step corresponding to a CFL number of 1 for each cell
     !
     ! The routine calculates the unsteady residual and leaves the result in
     ! rVec, which was previously used to keep the steady residual only. This
@@ -2235,13 +2242,12 @@ contains
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: dvec_pointer(:)
 
-    ! Calculate the steady residuals, and update intermediate variables
-    call computeResidualANK2(dissApprox=.False., viscApprox=.False.)
-    
+    ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
+       call computeResidualANK2(dissApprox=.False., viscApprox=.False.)
        call setRVecANK(rVec)
-       ! if coupled solver is used, use all variables
     else
+       call computeResidualNK()
        call setRVec(rVec)
     end if
 
@@ -2663,7 +2669,7 @@ contains
        end do
     end do
 
-    if (myid == 0) then 
+    if (myid == 0) then
        !print *,'ank time:',mpi_wtime()-timeA
     end if
 
@@ -2991,7 +2997,7 @@ contains
     use utils, only : EChk, setPointers
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
-    use solverUtils, only : computeUTau
+    use solverUtils, only : computeUTau, timestep
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, computeResidualNK, getEwTol
     use initializeFlow, only : setUniformFlow
@@ -3195,14 +3201,12 @@ contains
 
     end if
 
-    ! Revert back the time step switch
-    updateDt = .true.
-
     ! Check if density, energy, or turbulence variable (if coupled)
-    ! have changed more than 10%.
+    ! have changed more than the input physical ls tolerance.
     ! If so, the initial step going into the line search
     ! will be limited to get the maximum change in the state
-    ! to be 50%. This step size should be communicated globally.
+    ! to be equal to the physical ls tolerance.
+    ! This step size should be communicated globally.
     call physicalityCheckANK(lambda)
 
     if (lambda < ANK_stepFactor * ANK_stepMin .and. ANK_CFL > ANK_CFLMin) then
@@ -3325,6 +3329,9 @@ contains
        end if
     end if
 
+    ! Revert back the time step switch
+    updateDt = .true.
+
     ! ============== Turb Update =============
     if (ANK_useTurbDADI .and. equations==RANSEquations) then
 
@@ -3335,6 +3342,7 @@ contains
           call turbSolveSegregated
 
           ! Update the residuals with new eddy viscosities
+          ! Time step will be updated here
           call computeResidualNK
           feval = feval + 1
        end if
@@ -3343,6 +3351,11 @@ contains
        call setRvecANK(rVec)
     else
        call setRVec(rVec)
+
+       ! We also need to calculate the new time step.The unsteady
+       ! line search did not update it, and since we are not doing
+       ! turb separately, we must update it here.
+       call timestep(.false.)
     end if
 
     ! Get the number of iterations from the KSP solver
