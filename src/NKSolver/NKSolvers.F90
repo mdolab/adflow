@@ -2049,10 +2049,10 @@ contains
     use blockPointers, only : nDom, volRef, il, jl, kl, dw, dtl
     use inputtimespectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
-    use inputDiscretization, only : lumpedDiss, fullVisc
     use flowvarrefstate, only : nwf, nt1, nt2
     use NKSolver, only : computeResidualNK, setRvec
     use utils, only : setPointers, EChk
+    use blockette, only : blocketteRes2
     implicit none
 
     ! PETSc Variables
@@ -2063,18 +2063,13 @@ contains
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: invec_pointer(:)
     real(kind=realType),pointer :: wvec_pointer(:)
-    logical :: viscApprox, dissApprox
 
     ! get the input vector
     call setWANK(inVec)
 
-    ! Determine if we want the full or approximate fluxes
-    viscApprox = (.not. fullVisc) .and. lumpedDiss
-    dissApprox = lumpedDiss
-
     ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
-       call computeResidualANK2(dissApprox=dissApprox, viscApprox=viscApprox)
+       call blocketteRes2(useDissApprox=.True., useViscApprox=.False., useFlowOnly=.True.)
        call setRVecANK(rVec)
     else
        call computeResidualNK()
@@ -2217,7 +2212,6 @@ contains
     !   w(:,:,:,:): Should contain the updated state with the given step size
     !               lambdaLS and given update deltaW
     !   ANK_CFL:    The CFL number used for this non-linear iteration
-    !   dtl:        Time step corresponding to a CFL number of 1 for each cell
     !
     ! The routine calculates the unsteady residual and leaves the result in
     ! rVec, which was previously used to keep the steady residual only. This
@@ -2233,6 +2227,7 @@ contains
     use flowvarrefstate, only : nwf, nt1, nt2
     use NKSolver, only : computeResidualNK, setRvec
     use utils, only : setPointers, EChk
+    use blockette, only : blocketteRes2
     implicit none
 
     real(kind=realType), intent(in) :: omega
@@ -2242,12 +2237,15 @@ contains
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: dvec_pointer(:)
 
-    ! if DADI is used for turbulence, use flow variables only
+    ! Calculate the steady residuals, and update intermediate variables
+    !call computeResidualANK2(dissApprox=.False., viscApprox=.False.)
+    call blocketteRes2(useDissApprox=.False., useViscApprox=.False., useFlowOnly=.False.)
+    !call computeResidualNK
+    
     if (ANK_useTurbDADI) then
-       call computeResidualANK2(dissApprox=.False., viscApprox=.False.)
        call setRVecANK(rVec)
+       ! if coupled solver is used, use all variables
     else
-       call computeResidualNK()
        call setRVec(rVec)
     end if
 
@@ -2420,260 +2418,6 @@ contains
        ANK_SolverSetup = .False.
     end if
   end subroutine destroyANKsolver
-
-  subroutine computeResidualANK
-
-    ! This is the residual evaluation driver for the ANK solver. It
-    ! computes the residual for the mean flow but does not compute the
-    ! turbulent residuals.
-    use constants
-    use blockPointers
-    use inputTimeSpectral
-    use flowvarrefstate
-    use iteration
-    use inputPhysics
-    use inputDiscretization, only : updateDt
-    use utils, only : setPointers
-    use haloExchange, only : whalo2
-    use turbUtils, only : computeEddyViscosity
-    use flowUtils, only : computeLamViscosity
-    use BCRoutines, only : applyAllBC, applyAllBC_block
-    use solverUtils, only : timeStep, computeUtau
-    use residuals, only :residual, initRes, sourceTerms
-    use oversetData, only : oversetPresent
-    use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
-    implicit none
-
-    ! Local Variables
-    integer(kind=intType) :: i, j, k, sps,nn
-    logical secondHalo, correctForK
-    real(kind=realType) :: gm1, factK, v2
-
-    gm1 = gammaConstant - one
-    rkStage = 0
-
-    secondHalo = .false.
-    correctForK = .false.
-    if(currentLevel <= groundLevel) then
-       secondHalo = .true.
-       if (kPresent) then
-          correctForK = .True.
-       end if
-    end if
-
-    ! Recompute pressure on ALL cells
-    spectralLoop: do sps=1, nTimeIntervalsSpectral
-       domainsState: do nn=1, nDom
-          ! Set the pointers to this block.
-          call setPointers(nn, currentLevel, sps)
-          factK = zero
-          do k=0, kb
-             do j=0, jb
-                do i=0, ib
-
-                   gm1  = gamma(i, j, k) - one
-                   factK = five*third - gamma(i, j ,k)
-                   v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
-                        + w(i,j,k,ivz)**2
-
-                   p(i,j,k) = gm1*(w(i,j,k,irhoE) &
-                        - half*w(i,j,k,irho)*v2)
-
-                   if( correctForK ) then
-                      p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
-                           * w(i, j, k, itu1)
-                   end if
-
-                   ! Clip to make sure it is positive.
-                   p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
-                end do
-             end do
-          end do
-
-          ! Compute Viscosities
-          call computeLamViscosity(.False.)
-          call computeEddyViscosity(.False.)
-       end do domainsState
-    end do spectralLoop
-
-    ! Apply BCs
-    call applyAllBC(secondHalo)
-
-    ! ! Also apply the viscous BCs
-    if (equations == RANSequations) then
-       do nn=1,nDom
-          do sps=1,nTimeIntervalsSpectral
-             call setPointers(nn, currentLevel, sps)
-             call bcTurbTreatment
-             call applyAllTurbBCThisBLock(.True.)
-          end do
-       end do
-    end if
-
-    ! Exchange halos
-    call whalo2(currentLevel, 1_intType, nwf, .true., &
-         .true., .true.)
-
-    ! Need to re-apply the BCs. The reason is that BC halos behind
-    ! interpolated cells need to be recomputed with their new
-    ! interpolated values from actual compute cells. Only needed for
-    ! overset.
-    if (oversetPresent) then
-       do sps=1,nTimeIntervalsSpectral
-          do nn=1,nDom
-             call setPointers(nn, 1, sps)
-             if (equations == RANSequations) then
-                call BCTurbTreatment
-                call applyAllTurbBCthisblock(.True.)
-             end if
-             call applyAllBC_block(.True.)
-          end do
-       end do
-    end if
-
-    ! Compute the spectral radius and/or time step.
-    ! If this is not a matrix-free operation, also compute the time step.
-    ! If this is a matrix-free operation, we want the time step in dtl
-    ! to remain unchanged, but we need to re-calculate the spectral radius.
-    ! Passing lumpedDiss to timestep calculation (onlyRadii) achieves this.
-    call timestep(.not. updateDt)
-
-    ! Initialize Flow residuals
-    call initres(1_intType, nwf)
-    call sourceTerms
-
-    ! Actual Residual Calc
-    call residual
-
-  end subroutine computeResidualANK
-
-  subroutine computeResidualANK2(dissApprox, viscApprox)
-
-    ! This is the residual evaluation driver for the ANK solver. It
-    ! computes the residual for the mean flow but does not compute the
-    ! turbulent residuals.
-    use constants
-    use blockPointers
-    use inputTimeSpectral
-    use flowvarrefstate
-    use iteration
-    use inputPhysics
-    use inputDiscretization, only : updateDt
-    use utils, only : setPointers
-    use haloExchange, only : whalo2
-    use turbUtils, only : computeEddyViscosity
-    use flowUtils, only : computeLamViscosity
-    use BCRoutines, only : applyAllBC, applyAllBC_block
-    use solverUtils, only : timeStep, computeUtau
-    use residuals, only :residual, initRes, sourceTerms
-    use oversetData, only : oversetPresent
-    use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
-    use blockette, only : blocketteRes
-    use communication, only : myid
-    implicit none
-
-    ! Input variables
-    logical :: dissApprox, viscApprox
-
-    ! Local Variables
-    integer(kind=intType) :: i, j, k, sps,nn
-    logical secondHalo, correctForK
-    real(kind=realType) :: gm1, factK, v2, timeA
-    timeA = mpi_wtime()
-    gm1 = gammaConstant - one
-    rkStage = 0
-
-    secondHalo = .false.
-    correctForK = .false.
-    if(currentLevel <= groundLevel) then
-       secondHalo = .true.
-       if (kPresent) then
-          correctForK = .True.
-       end if
-    end if
-
-    ! Recompute pressure on ALL cells
-    spectralLoop: do sps=1, nTimeIntervalsSpectral
-       domainsState: do nn=1, nDom
-          ! Set the pointers to this block.
-          call setPointers(nn, currentLevel, sps)
-          factK = zero
-          do k=0, kb
-             do j=0, jb
-               do i=0, ib
-
-                   gm1  = gamma(i, j, k) - one
-                   factK = five*third - gamma(i, j ,k)
-                   v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
-                        + w(i,j,k,ivz)**2
-
-                   p(i,j,k) = gm1*(w(i,j,k,irhoE) &
-                        - half*w(i,j,k,irho)*v2)
-
-                   if( correctForK ) then
-                      p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
-                           * w(i, j, k, itu1)
-                   end if
-
-                   ! Clip to make sure it is positive.
-                   p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
-                end do
-             end do
-          end do
-
-          ! Compute Viscosities
-          call computeLamViscosity(.False.)
-          call computeEddyViscosity(.False.)
-       end do domainsState
-    end do spectralLoop
-
-    ! Apply BCs
-    call applyAllBC(secondHalo)
-
-    ! ! Also apply the viscous BCs
-    if (equations == RANSequations) then
-       do nn=1,nDom
-          do sps=1,nTimeIntervalsSpectral
-             call setPointers(nn, currentLevel, sps)
-             call bcTurbTreatment
-             call applyAllTurbBCThisBLock(.True.)
-          end do
-       end do
-    end if
-
-    ! Exchange halos
-    call whalo2(currentLevel, 1_intType, nwf, .true., &
-         .true., .true.)
-
-    ! Need to re-apply the BCs. The reason is that BC halos behind
-    ! interpolated cells need to be recomputed with their new
-    ! interpolated values from actual compute cells. Only needed for
-    ! overset.
-    if (oversetPresent) then
-       do sps=1,nTimeIntervalsSpectral
-          do nn=1,nDom
-             call setPointers(nn, 1, sps)
-             if (equations == RANSequations) then
-                call BCTurbTreatment
-                call applyAllTurbBCthisblock(.True.)
-             end if
-             call applyAllBC_block(.True.)
-          end do
-       end do
-    end if
-
-    do sps=1,nTimeIntervalsSpectral
-       do nn=1,nDom
-          call setPointers(nn, 1, sps)
-          call blocketteRes(dissApprox, viscApprox)
-       end do
-    end do
-
-    if (myid == 0) then
-       !print *,'ank time:',mpi_wtime()-timeA
-    end if
-
-  end subroutine computeResidualANK2
 
   subroutine setWVecANK(wVec)
     ! Set the current FLOW variables in the PETSc Vector
@@ -2997,7 +2741,7 @@ contains
     use utils, only : EChk, setPointers
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
-    use solverUtils, only : computeUTau, timestep
+    use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, computeResidualNK, getEwTol
     use initializeFlow, only : setUniformFlow
@@ -3201,12 +2945,14 @@ contains
 
     end if
 
+    ! Revert back the time step switch
+    updateDt = .true.
+
     ! Check if density, energy, or turbulence variable (if coupled)
-    ! have changed more than the input physical ls tolerance.
+    ! have changed more than 10%.
     ! If so, the initial step going into the line search
     ! will be limited to get the maximum change in the state
-    ! to be equal to the physical ls tolerance.
-    ! This step size should be communicated globally.
+    ! to be 50%. This step size should be communicated globally.
     call physicalityCheckANK(lambda)
 
     if (lambda < ANK_stepFactor * ANK_stepMin .and. ANK_CFL > ANK_CFLMin) then
@@ -3329,9 +3075,6 @@ contains
        end if
     end if
 
-    ! Revert back the time step switch
-    updateDt = .true.
-
     ! ============== Turb Update =============
     if (ANK_useTurbDADI .and. equations==RANSEquations) then
 
@@ -3342,7 +3085,6 @@ contains
           call turbSolveSegregated
 
           ! Update the residuals with new eddy viscosities
-          ! Time step will be updated here
           call computeResidualNK
           feval = feval + 1
        end if
@@ -3351,11 +3093,6 @@ contains
        call setRvecANK(rVec)
     else
        call setRVec(rVec)
-
-       ! We also need to calculate the new time step.The unsteady
-       ! line search did not update it, and since we are not doing
-       ! turb separately, we must update it here.
-       call timestep(.false.)
     end if
 
     ! Get the number of iterations from the KSP solver
@@ -3385,4 +3122,279 @@ contains
     approxTotalIts = approxTotalIts + feval + kspIterations
 
   end subroutine ANKStep
+
+
+  subroutine computeResidualANK2(dissApprox, viscApprox)
+
+    ! This is the residual evaluation driver for the ANK solver. It
+    ! computes the residual for the mean flow but does not compute the
+    ! turbulent residuals.
+    use constants
+    use blockPointers
+    use inputTimeSpectral
+    use flowvarrefstate
+    use iteration
+    use inputPhysics
+    use inputDiscretization, only : updateDt
+    use utils, only : setPointers
+    use haloExchange, only : whalo2
+    use turbUtils, only : computeEddyViscosity
+    use flowUtils, only : computeLamViscosity
+    use BCRoutines, only : applyAllBC, applyAllBC_block
+    use solverUtils, only : timeStep, computeUtau
+    use residuals, only :residual, initRes, sourceTerms
+    use oversetData, only : oversetPresent
+    use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
+    use blockette, only : blocketteRes
+    use communication, only : myid
+    implicit none
+
+    ! Input variables
+    logical :: dissApprox, viscApprox
+
+    ! Local Variables
+    integer(kind=intType) :: i, j, k, sps,nn
+    logical secondHalo, correctForK
+    real(kind=realType) :: gm1, factK, v2, timeA
+    timeA = mpi_wtime()
+    gm1 = gammaConstant - one
+    rkStage = 0
+
+    secondHalo = .false.
+    correctForK = .false.
+    if(currentLevel <= groundLevel) then
+       secondHalo = .true.
+       if (kPresent) then
+          correctForK = .True.
+       end if
+    end if
+
+    ! Recompute pressure on ALL cells
+    spectralLoop: do sps=1, nTimeIntervalsSpectral
+       domainsState: do nn=1, nDom
+          ! Set the pointers to this block.
+          call setPointers(nn, currentLevel, sps)
+          factK = zero
+          do k=0, kb
+             do j=0, jb
+               do i=0, ib
+
+                   gm1  = gamma(i, j, k) - one
+                   factK = five*third - gamma(i, j ,k)
+                   v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
+                        + w(i,j,k,ivz)**2
+
+                   p(i,j,k) = gm1*(w(i,j,k,irhoE) &
+                        - half*w(i,j,k,irho)*v2)
+
+                   if( correctForK ) then
+                      p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
+                           * w(i, j, k, itu1)
+                   end if
+
+                   ! Clip to make sure it is positive.
+                   p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+                end do
+             end do
+          end do
+
+          ! Compute Viscosities
+          call computeLamViscosity(.False.)
+          call computeEddyViscosity(.False.)
+       end do domainsState
+    end do spectralLoop
+
+    ! Apply BCs
+    call applyAllBC(secondHalo)
+
+    ! ! Also apply the viscous BCs
+    if (equations == RANSequations) then
+       do nn=1,nDom
+          do sps=1,nTimeIntervalsSpectral
+             call setPointers(nn, currentLevel, sps)
+             call bcTurbTreatment
+             call applyAllTurbBCThisBLock(.True.)
+          end do
+       end do
+    end if
+
+    ! Exchange halos
+    call whalo2(currentLevel, 1_intType, nwf, .true., &
+         .true., .true.)
+
+    ! Need to re-apply the BCs. The reason is that BC halos behind
+    ! interpolated cells need to be recomputed with their new
+    ! interpolated values from actual compute cells. Only needed for
+    ! overset.
+    if (oversetPresent) then
+       do sps=1,nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, 1, sps)
+             if (equations == RANSequations) then
+                call BCTurbTreatment
+                call applyAllTurbBCthisblock(.True.)
+             end if
+             call applyAllBC_block(.True.)
+          end do
+       end do
+    end if
+
+    do sps=1,nTimeIntervalsSpectral
+       do nn=1,nDom
+          call setPointers(nn, 1, sps)
+          call blocketteRes(dissApprox, viscApprox)
+       end do
+    end do
+
+    if (myid == 0) then 
+       !print *,'ank time:',mpi_wtime()-timeA
+    end if
+
+  end subroutine computeResidualANK2
+
+
 end module ANKSolver
+
+
+
+
+  ! subroutine computeResidualANK
+
+  !   ! This is the residual evaluation driver for the ANK solver. It
+  !   ! computes the residual for the mean flow but does not compute the
+  !   ! turbulent residuals.
+  !   use constants
+  !   use blockPointers
+  !   use inputTimeSpectral
+  !   use flowvarrefstate
+  !   use iteration
+  !   use inputPhysics
+  !   use inputDiscretization, only : updateDt
+  !   use utils, only : setPointers
+  !   use haloExchange, only : whalo2
+  !   use turbUtils, only : computeEddyViscosity
+  !   use flowUtils, only : computeLamViscosity
+  !   use BCRoutines, only : applyAllBC, applyAllBC_block
+  !   use solverUtils, only : timeStep, computeUtau
+  !   use residuals, only :residual, initRes, sourceTerms
+  !   use oversetData, only : oversetPresent
+  !   use turbBCRoutines, only : applyAllTurbBCThisBLock, bcturbTreatment
+  !   implicit none
+
+  !   ! Local Variables
+  !   integer(kind=intType) :: i, j, k, sps,nn
+  !   logical secondHalo, correctForK
+  !   real(kind=realType) :: gm1, factK, v2
+
+  !   gm1 = gammaConstant - one
+  !   rkStage = 0
+
+  !   secondHalo = .false.
+  !   correctForK = .false.
+  !   if(currentLevel <= groundLevel) then
+  !      secondHalo = .true.
+  !      if (kPresent) then
+  !         correctForK = .True.
+  !      end if
+  !   end if
+
+  !   ! Recompute pressure on ALL cells
+  !   spectralLoop: do sps=1, nTimeIntervalsSpectral
+  !      domainsState: do nn=1, nDom
+  !         ! Set the pointers to this block.
+  !         call setPointers(nn, currentLevel, sps)
+  !         factK = zero
+  !         do k=0, kb
+  !            do j=0, jb
+  !               do i=0, ib
+
+  !                  gm1  = gamma(i, j, k) - one
+  !                  factK = five*third - gamma(i, j ,k)
+  !                  v2 = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 &
+  !                       + w(i,j,k,ivz)**2
+
+  !                  p(i,j,k) = gm1*(w(i,j,k,irhoE) &
+  !                       - half*w(i,j,k,irho)*v2)
+
+  !                  if( correctForK ) then
+  !                     p(i, j ,K) = p(i,j, k) + factK*w(i, j, k, irho) &
+  !                          * w(i, j, k, itu1)
+  !                  end if
+
+  !                  ! Clip to make sure it is positive.
+  !                  p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+  !               end do
+  !            end do
+  !         end do
+
+  !         ! Compute Viscosities
+  !         call computeLamViscosity(.False.)
+  !         call computeEddyViscosity(.False.)
+  !      end do domainsState
+  !   end do spectralLoop
+
+  !   ! Apply BCs
+  !   call applyAllBC(secondHalo)
+
+  !   ! ! Also apply the viscous BCs
+  !   if (equations == RANSequations) then
+  !      do nn=1,nDom
+  !         do sps=1,nTimeIntervalsSpectral
+  !            call setPointers(nn, currentLevel, sps)
+  !            call bcTurbTreatment
+  !            call applyAllTurbBCThisBLock(.True.)
+  !         end do
+  !      end do
+  !   end if
+
+  !   ! Exchange halos
+  !   call whalo2(currentLevel, 1_intType, nwf, .true., &
+  !        .true., .true.)
+
+  !   ! Need to re-apply the BCs. The reason is that BC halos behind
+  !   ! interpolated cells need to be recomputed with their new
+  !   ! interpolated values from actual compute cells. Only needed for
+  !   ! overset.
+  !   if (oversetPresent) then
+  !      do sps=1,nTimeIntervalsSpectral
+  !         do nn=1,nDom
+  !            call setPointers(nn, 1, sps)
+  !            if (equations == RANSequations) then
+  !               call BCTurbTreatment
+  !               call applyAllTurbBCthisblock(.True.)
+  !            end if
+  !            call applyAllBC_block(.True.)
+  !         end do
+  !      end do
+  !   end if
+
+  !   ! Compute the spectral radius and/or time step.
+  !   ! If this is not a matrix-free operation, also compute the time step.
+  !   ! If this is a matrix-free operation, we want the time step in dtl
+  !   ! to remain unchanged, but we need to re-calculate the spectral radius.
+  !   ! Passing lumpedDiss to timestep calculation (onlyRadii) achieves this.
+  !   call timestep(.not. updateDt)
+
+  !   ! Initialize Flow residuals
+  !   call initres(1_intType, nwf)
+  !   call sourceTerms
+
+  !   ! Actual Residual Calc
+  !   call residual
+
+  ! end subroutine computeResidualANK
+
+  ! subroutine computeResidualANK3(dissApprox, viscApprox)
+
+  !   use constants
+  !   use blockette, only : blocketteRes2
+  !   implicit none
+
+  !   ! Input variables
+  !   logical :: dissApprox, viscApprox
+    
+  !   call blocketteRes2(useDissApprox=dissApprox, useViscApprox=viscApprox, useFlowOnly=.True.)
+         
+
+  ! end subroutine computeResidualANK3
+
