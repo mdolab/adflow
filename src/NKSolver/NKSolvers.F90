@@ -1703,10 +1703,11 @@ module ANKSolver
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
   real(kind=realType) :: ANK_turbcflscale
-  real(kind=realType) :: ANK_fullViscTol
+  logical :: ANK_useFullVisc
 
   ! Misc variables
-  real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_CFLMin, ANK_CFLFactor, ANK_CFLCutback
+  real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_CFLFactor, ANK_CFLCutback
+  real(kind=realType) :: ANK_CFLMin0, ANK_CFLMin, ANK_CFLExponent
   real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
   real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
@@ -3062,7 +3063,7 @@ contains
     if (mod(ANK_iter, ANK_jacobianLag) == 0 .or. totalR/totalR_pcUpdate < ANK_pcUpdateTol) then
 
        ! First of all, update the minimum cfl wrt the overall convergence
-       ANK_CFLMin = min(ANK_CFLLimit, (totalR0/totalR))
+       ANK_CFLMin = min(ANK_CFLLimit, ANK_CFLMin0*(totalR0/totalR)**ANK_CFLExponent)
 
        ! Update the CFL number depending on the outcome of the last iteration
        if (lambda < ANK_stepMin * ANK_stepFactor) then
@@ -3095,6 +3096,7 @@ contains
 
        call FormJacobianANK()
        iterType = "  *ANK"
+       ANK_iter = 0
     else
        iterType = "   ANK"
     end if
@@ -3124,7 +3126,7 @@ contains
        lumpedDiss =.True.
 
        ! Check if we want the full viscous terms
-       if (totalR < ANK_fullViscTol*totalR0) fullVisc = .True.
+       fullVisc = ANK_useFullVisc
 
        ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
        secondOrdSave = secondOrd
@@ -3185,8 +3187,8 @@ contains
        ! Set lumpedDiss back to False to go back to using actual flux routines
        lumpedDiss =.False.
 
-       ! Set the full visc option back the the correct value
-       if (totalR < ANK_fullViscTol*totalR0) fullVisc = .False.
+       ! Set the full visc option back the the default value
+       fullVisc = .False.
 
        ! Replace the second order turbulence option
        secondOrd = secondOrdSave
