@@ -4332,6 +4332,7 @@ class ADFLOW(AeroSolver):
             'ankcflmin':[float,1.0],
             'ankcfllimit':[float, 1e16],
             'ankcflfactor':[float,4.0],
+            'ankcflexponent':[float, 1.0],
             'ankcflcutback':[float,0.5],
             'ankstepfactor':[float, 0.8],
             'ankstepmin':[float, 0.1],
@@ -4341,7 +4342,7 @@ class ADFLOW(AeroSolver):
             'anksecondordswitchtol':[float, 1e-7],
             'ankcoupledswitchtol':[float, 1e-10],
             'ankturbcflscale' : [float, 1.0],
-            'ankfullvisctol' : [float, 1e-16],
+            'ankusefullvisc' : [bool, False],
             'ankpcupdatetol':[float,0.5],
 
             # Load Balance/partitioning parameters
@@ -4632,9 +4633,10 @@ class ADFLOW(AeroSolver):
             'ankjacobianlag':['ank', 'ank_jacobianlag'],
             'ankinnerpreconits':['ank', 'ank_innerpreconits'],
             'ankcfl0':['ank', 'ank_cfl0'],
-            'ankcflmin':['ank', 'ank_cflmin'],
+            'ankcflmin':['ank', 'ank_cflmin0'],
             'ankcfllimit':['ank','ank_cfllimit'],
             'ankcflfactor':['ank', 'ank_cflfactor'],
+            'ankcflexponent':['ank','ank_cflexponent'],
             'ankcflcutback':['ank', 'ank_cflcutback'],
             'ankstepfactor':['ank','ank_stepfactor'],
             'ankstepmin':['ank','ank_stepmin'],
@@ -4644,7 +4646,7 @@ class ADFLOW(AeroSolver):
             'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
             'ankturbcflscale':['ank', 'ank_turbcflscale'],
-            'ankfullvisctol':['ank', 'ank_fullvisctol'],
+            'ankusefullvisc':['ank', 'ank_usefullvisc'],
             'ankpcupdatetol':['ank', 'ank_pcupdatetol'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
