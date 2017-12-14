@@ -64,8 +64,8 @@ module blockette
   !$OMP THREADPRIVATE(sI, sJ, sK, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)
 contains
 
-  subroutine blocketteRes2(useDissApprox, useViscApprox, useUpdateDt, useFlowOnly, useSpatial, & 
-       famLists, funcValues, forces, bcDataNames, bcDataValues, bcDataFamLists)
+  subroutine blocketteRes(useDissApprox, useViscApprox, useUpdateDt, useFlowRes, useTurbRes, useSpatial, & 
+       useStoreWall, famLists, funcValues, forces, bcDataNames, bcDataValues, bcDataFamLists)
 
     ! Copy the values from blockPointers (assumed set) into the
     ! blockette
@@ -81,10 +81,11 @@ contains
          bShockSensor=>shockSensor, &
          bsi=>si, bsj=>sj, bsk=>sk, &
          bsFaceI=>sFaceI, bsFaceJ=>sFaceJ, bsFaceK=>sFaceK , &
+         bdtl=>dtl, &
          addGridVelocities
     use block, only : nDom
     use communication, only : myid
-    use flowVarRefState, only : nwf, nw, viscous
+    use flowVarRefState, only : nwf, nw, viscous, nt1, nt2
     use BCRoutines, only : applyallBC_block
     use bcdata, only : setBCData, setBCDataFineGrid
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
@@ -109,7 +110,8 @@ contains
     implicit none
 
     ! Input/Output
-    logical, intent(in), optional :: useDissApprox, useViscApprox, useUpdateDt, useFlowOnly, useSpatial
+    logical, intent(in), optional :: useDissApprox, useViscApprox, useUpdateDt, useFlowRes
+    logical, intent(in), optional :: useTurbRes, useSpatial, useStoreWall
     integer(kind=intType), optional, dimension(:, :), intent(in) :: famLists
     real(kind=realType), optional, dimension(:, :), intent(out) :: funcValues
     character, optional, dimension(:, :), intent(in) :: bcDataNames
@@ -118,8 +120,8 @@ contains
     real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
 
     ! Misc
-    logical :: dissApprox, viscApprox, updateDt, flowOnly, spatial
-    integer(kind=intType) :: nn, sps, i, j, k, l, iSize, nState, ierr, fSize
+    logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, spatial, storeWall
+    integer(kind=intType) :: nn, sps, i, j, k, l, iSize, ierr, fSize, lStart, lEnd
     real(kind=realType) ::  pLocal
 
     ! Set the defaults. The default is to compute the full, exact,
@@ -128,9 +130,10 @@ contains
     dissApprox = .False.
     viscApprox = .False.
     updateDt = .False.
-    flowOnly = .False.
+    flowRes = .True. 
+    turbRes = .True.
     spatial = .False. 
-
+    storeWall = .True.
     ! Parse the input variables
     if (present(useDissApprox)) then 
        dissApprox = useDissApprox
@@ -144,68 +147,84 @@ contains
        updateDt = useUpdateDt
     end if
 
-    if (present(useFlowOnly)) then 
-       flowOnly = useFlowOnly
+    if (present(useFlowRes)) then 
+       flowRes = useFlowRes
+    end if
+
+    if (present(useTurbRes)) then 
+       turbRes = useTurbRes
     end if
 
     if (present(useSpatial)) then 
        spatial = useSpatial
     end if
 
-    nState = nwf
-    if (equations == RANSEquations .and. (.not. flowOnly)) then 
-       nState = nw
+    if (present(useStoreWall)) then 
+       storeWall = useStoreWall 
     end if
 
+    ! Compute the ranges of the residuals we are dealing with:
+    if (flowRes .and. turbRes) then 
+       lStart = 1 
+       lEnd =  nw
 
-    ! ! Spatial-only updates first
-    ! if (spatial) then
-    !    call adjustInflowAngle()
+    else if (flowRes .and. .not. turbRes) then 
+       lStart = 1
+       lEnd = nwf
 
-    !    ! Update all the BCData
-    !    call referenceState
-    !    if (present(bcDataNames)) then
-    !       do sps=1,nTimeIntervalsSpectral
-    !          call setBCData(bcDataNames, bcDataValues, bcDataFamLists, sps, &
-    !               size(bcDataValues), size(bcDataFamLIsts, 2))
-    !       end do
-    !       call setBCDataFineGrid(.true.)
-    !    end if
+    else if (.not. flowRes .and. turbres) then 
+       lStart = nt1
+       lEnd   = nt2
+    end if
 
-    !    do sps=1, nTimeIntervalsSpectral
-    !       do nn=1, nDom
-    !          call setPointers(nn, 1, sps)
-    !          call xhalo_block()
-    !       end do
-    !    end do
+    ! Spatial-only updates first
+    if (spatial) then
+       call adjustInflowAngle()
+
+       ! Update all the BCData
+       call referenceState
+       if (present(bcDataNames)) then
+          do sps=1,nTimeIntervalsSpectral
+             call setBCData(bcDataNames, bcDataValues, bcDataFamLists, sps, &
+                  size(bcDataValues), size(bcDataFamLIsts, 2))
+          end do
+          call setBCDataFineGrid(.true.)
+       end if
+
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1, nDom
+             call setPointers(nn, 1, sps)
+             call xhalo_block()
+          end do
+       end do
        
-    !    ! Now exchange the coordinates (fine level only)
-    !    call exchangecoor(1)
+       ! Now exchange the coordinates (fine level only)
+       call exchangecoor(1)
 
-    !    do sps=1, nTimeIntervalsSpectral
-    !       ! Update overset connectivity if necessary
-    !       if (oversetPresent .and. &
-    !            (oversetUpdateMode == updateFast .or. &
-    !            oversetUpdateMode == updateFull)) then
-    !          call updateOversetConnectivity(1_intType, sps)
-    !       end if
-    !    end do
-    ! end if
+       do sps=1, nTimeIntervalsSpectral
+          ! Update overset connectivity if necessary
+          if (oversetPresent .and. &
+               (oversetUpdateMode == updateFast .or. &
+               oversetUpdateMode == updateFull)) then
+             call updateOversetConnectivity(1_intType, sps)
+          end if
+       end do
+    end if
 
     ! Compute the required derived values and apply the BCs
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
           call setPointers(nn, 1, sps)
 
-          ! if (spatial) then
-          !    call volume_block
-          !    call metric_block
-          !    call boundaryNormals
+          if (spatial) then
+             call volume_block
+             call metric_block
+             call boundaryNormals
 
-          !    if (equations == RANSEquations .and. useApproxWallDistance) then
-          !       call updateWallDistancesQuickly(nn, 1, sps)
-          !    end if
-          ! end if
+             if (equations == RANSEquations .and. useApproxWallDistance) then
+                call updateWallDistancesQuickly(nn, 1, sps)
+             end if
+          end if
 
           ! Compute the pressures/viscositites
           call computePressureSimple(.False.)
@@ -216,7 +235,7 @@ contains
 
           ! Make sure to call the turb BC's first incase we need to
           ! correct for K
-          if( equations == RANSEquations .and. (.not. flowOnly)) then
+          if( equations == RANSEquations .and. turbRes) then 
              call BCTurbTreatment
              call applyAllTurbBCthisblock(.True.)
           end if
@@ -225,11 +244,7 @@ contains
     end do
 
     ! Exchange values
-    if (flowOnly) then 
-       call whalo2(1_intType, 1_intType, nwf, .True., .True., .True.)
-    else
-       call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
-    end if
+    call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
 
     ! Need to re-apply the BCs. The reason is that BC halos behind
     ! interpolated cells need to be recomputed with their new
@@ -239,7 +254,7 @@ contains
        do sps=1,nTimeIntervalsSpectral
           do nn=1,nDom
              call setPointers(nn, 1, sps)
-             if( equations == RANSEquations .and. (.not. flowOnly)) then
+             if( equations == RANSEquations .and. turbRes) then
                 call BCTurbTreatment
                 call applyAllTurbBCthisblock(.True.)
              end if
@@ -379,63 +394,68 @@ contains
                    rFil = one
                    ! Call the routines in order:
                    call metrics
-                   call initres
+                   call initRes(lStart, lEnd)
 
-                   ! Compute turbulence residual for RANS equations
-                   if( equations == RANSEquations .and. (.not. flowOnly)) then
-                      
-                      ! Initialize only the Turblent Variables
-                      !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-                      
-                      select case (turbModel)
+                   if (turbRes) then 
+                      ! Compute turbulence residual for RANS equations
+                      if( equations == RANSEquations .and. turbRes) then 
+                         
+                         ! Initialize only the Turblent Variables
+                         !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
+                         
+                         select case (turbModel)
+                            
+                         case (spalartAllmaras)
+                            call saSource
+                            call saAdvection
+                            !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
+                            call saViscous
+                            call saResScale
+                         end select
+                      endif
+                   end if
 
-                      case (spalartAllmaras)
-                         call saSource
-                         call saAdvection
-                         !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
-                         call saViscous
-                         call saResScale
-                      end select
-                   endif
-                   
                    call timeStep(updateDt)
-                   call inviscidCentralFlux
-                   
-                   if (dissApprox) then 
-                      select case (spaceDiscr)
-                      case (dissScalar)
-                         call inviscidDissFluxScalarApprox
-                      case (dissMatrix)
-                         call inviscidDissFluxMatrixApprox
-                      case (upwind)
-                         call inviscidUpwindFlux(.False.)
-                      end select
-                   else
-                      select case (spaceDiscr)
-                      case (dissScalar)
-                         call inviscidDissFluxScalar
-                      case (dissMatrix)
-                         call inviscidDissFluxMatrix
-                      case (upwind)
-                         call inviscidUpwindFlux(.True.)
-                      end select
-                   end if
 
-                   if (viscous) then
-                      call computeSpeedOfSoundSquared
-                      if (viscApprox) then 
-                         call viscousFluxApprox
+                   if (flowRes) then 
+                      call inviscidCentralFlux
+                      
+                      if (dissApprox) then 
+                         select case (spaceDiscr)
+                         case (dissScalar)
+                            call inviscidDissFluxScalarApprox
+                         case (dissMatrix)
+                            call inviscidDissFluxMatrixApprox
+                         case (upwind)
+                            call inviscidUpwindFlux(.False.)
+                         end select
                       else
-                         call allNodalGradients
-                         call viscousFlux
+                         select case (spaceDiscr)
+                         case (dissScalar)
+                            call inviscidDissFluxScalar
+                         case (dissMatrix)
+                            call inviscidDissFluxMatrix
+                         case (upwind)
+                            call inviscidUpwindFlux(.True.)
+                         end select
                       end if
+                      
+                      if (viscous) then
+                         call computeSpeedOfSoundSquared
+                         if (viscApprox) then 
+                            call viscousFluxApprox
+                         else
+                            call allNodalGradients
+                            call viscousFlux(storeWall)
+                         end if
+                      end if
+                      
+                      call sumDwAndFw
                    end if
-
-                   call sumDwAndFw
 
                    ! Now we can just set the part of dw we computed
                    ! (owned cells only) and we're done!
-                   do l=1, nState
+                   do l=lStart, lEnd
                       do k=2, kl
                          do j=2, jl
                             do i=2, il
@@ -445,6 +465,16 @@ contains
                       end do
                    end do
 
+                   ! Also copy out the dtl if we were asked for it
+                   if (updateDt) then 
+                      do k=2, kl
+                         do j=2, jl
+                            do i=2, il
+                               bdtl(i+ii-2, j+jj-2, k+kk-2) = dtl(i, j, k)
+                            end do
+                         end do
+                      end do
+                   end if
                 end do
              end do
           end do
@@ -453,7 +483,6 @@ contains
           ! Lastly we need to compute the source terms since those cannot be
           ! done with the blockettes
           call sourceTerms_block(nn, .True., pLocal)
-         
        end do blockLoop
     end do spsLoop
     
@@ -470,230 +499,8 @@ contains
        end do
     end if
 
-  end subroutine blocketteRes2
-
-  subroutine blocketteRes(useDissApprox, useViscApprox, useUpdateDt, useFlowOnly)
-
-    ! Copy the values from blockPointers (assumed set) into the
-    ! blockette
-
-    use constants
-    use blockPointers, only : bnx=>nx, bny=>ny, bnz=>nz, &
-         bil=>il, bjl=>jl, bkl=>kl, &
-         bie=>ie, bje=>je, bke=>ke, &
-         bib=>ib, bjb=>jb, bkb=>kb, &
-         bw=>w, bp=>p, bgamma=>gamma, &
-         bx=>x, brlv=>rlv, brev=>rev, bvol=>vol, bVolRef=>volRef, bd2wall=>d2wall, &
-         biblank=>iblank, bPorI=>porI, bPorJ=>porJ, bPorK=>porK, bdw=>dw, bfw=>fw, &
-         bShockSensor=>shockSensor, &
-         bsi=>si, bsj=>sj, bsk=>sk, &
-         bsFaceI=>sFaceI, bsFaceJ=>sFaceJ, bsFaceK=>sFaceK , &
-         addGridVelocities
-    use block
-    use surfaceFamilies, only : fullFamList
-    use flowVarRefState, only : nwf, nw, viscous
-    use communication, only : myid, adflow_comm_world
-    implicit none
-
-    ! Input/Output
-    logical, intent(in), optional :: useDissApprox, useViscApprox, useUpdateDt, useFlowOnly
-
-    ! Misc
-    logical :: dissApprox, viscApprox, updateDt, flowOnly
-    
-    integer(kind=intType) :: i, j, k, l, iSize, nn, nIter, iiter, loopCount, ierr
-    real(kind=realType) ::  pLocal
-
-    ! Set the defaults. The default is to compute the full, exact,
-    ! RANS residual without updating the local timeStep.
-    dissApprox = .False.
-    viscApprox = .False.
-    updateDt = .False.
-    flowOnly = .False.
-    
-    ! Parse the input variables
-    if (present(useDissApprox)) then 
-       dissApprox = useDissApprox
-    end if
-
-    if (present(useViscApprox)) then 
-       viscApprox = useViscApprox
-    end if
-    
-    if (present(useUpdateDt)) then 
-       updateDt = useUpdateDt
-    end if
-
-    if (present(useFlowOnly)) then 
-       flowOnly = useFlowOnly
-    end if
-
-    ! Block loop over the owned cells
-    !$OMP parallel do private(i,j,k,l) collapse(2) 
-    do kk=2, bkl, BS
-       do jj=2, bjl, BS
-          do ii=2, bil, BS
-
-             ! Determine the actual size this block will be and set
-             ! the sizes in the blockette module for each of the
-             ! subroutines.
-
-             nx = min(ii+BS-1, bil) - ii + 1
-             ny = min(jj+BS-1, bjl) - jj + 1
-             nz = min(kk+BS-1, bkl) - kk + 1
-
-             il = nx + 1; jl = ny + 1; kl = nz + 1
-             ie = nx + 2; je = ny + 2; ke = nz + 2
-             ib = nx + 3; jb = ny + 3; kb = nz + 3
-
-             ! -------------------------------------
-             !      Fill in all values
-             ! -------------------------------------
-
-             ! Double halos
-             do k=0, kb
-                do j=0, jb
-                   do i=0, ib 
-                      w(i,j,k,:) = bw(i+ii-2, j+jj-2, k+kk-2, :)
-                      p(i,j,k) = bP(i+ii-2, j+jj-2, k+kk-2)
-                      gamma(i,j,k) = bgamma(i+ii-2, j+jj-2, k+kk-2)
-                      ss(i,j,k) = bShockSensor(i+ii-2, j+jj-2,k+kk-2)
-                   end do
-                end do
-             end do
-
-             ! Single halos
-             do k=1, ke
-                do j=1, je
-                   do i=1, ie 
-                      rlv(i,j,k) = brlv(i+ii-2, j+jj-2, k+kk-2)
-                      rev(i,j,k) = brev(i+ii-2, j+jj-2, k+kk-2)
-                      vol(i,j,k) = bvol(i+ii-2, j+jj-2, k+kk-2)
-                   end do
-                end do
-             end do
-
-             ! X
-             do k=0, ke
-                do j=0, je
-                   do i=0, ie
-                      x(i,j,k,:) = bx(i+ii-2, j+jj-2, k+kk-2, :)
-                   end do
-                end do
-             end do
-
-             ! No Halos (no change)
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                      iblank(i,j,k) = biblank(i+ii-2,j+jj-2,k+kk-2)
-                      d2wall(i,j,k) = bd2wall(i+ii-2,j+jj-2,k+kk-2)
-                      volRef(i,j,k) = bvolRef(i+ii-2,j+jj-2,k+kk-2)
-                   end do
-                end do
-             end do
-
-             ! Porosities (no change)
-             do k=2, kl
-                do j=2, jl
-                   do i=1, il
-                      porI(i,j,k) = bporI(i+ii-2,j+jj-2,k+kk-2)
-                   end do
-                end do
-             end do
-
-             do k=2, kl
-                do j=1, jl
-                   do i=2, il
-                      PorJ(i,j,k) = bporJ(i+ii-2,j+jj-2,k+kk-2)
-                   end do
-                end do
-             end do
-
-             do k=1, kl
-                do j=2, jl
-                   do i=2, il
-                      PorK(i,j,k) = bporK(i+ii-2,j+jj-2,k+kk-2)
-                   end do
-                end do
-             end do
-
-             ! Face velocities if necessary
-             if (addGridVelocities) then 
-                do k=1, ke
-                   do j=1, je
-                      do i=0, ie
-                         sFaceI(i, j, k) = bsFaceI(ii+ii-2, j+jj-2, k+kk-2)
-                      end do
-                   end do
-                end do
-
-                do k=1, ke
-                   do j=0, je
-                      do i=1, ie
-                         sFaceJ(i, j, k) = bsFaceJ(ii+ii-2, j+jj-2, k+kk-2)
-                      end do
-                   end do
-                end do
-
-                do k=0, ke
-                   do j=1, je
-                      do i=1, ie
-                         sFaceK(i, j, k) = bsFaceK(ii+ii-2, j+jj-2, k+kk-2)
-                      end do
-                   end do
-                end do
-             else
-                sFaceI = zero
-                sFaceJ = zero
-                sFaceK = zero
-             end if
-
-             ! Clear the viscous flux before we start. 
-             fw = zero
-
-             ! Call the routines in order:
-             call metrics
-             call initres
-             call timeStep
-             call inviscidCentralFlux
-             if (dissApprox) then 
-                call inviscidDissFluxScalarApprox
-             else
-                call inviscidDissFluxScalar
-             end if
-             if (viscous) then 
-                call computeSpeedOfSoundSquared
-                if (viscApprox) then 
-                   call viscousFluxApprox
-                else
-                   call allNodalGradients
-                   call viscousFlux
-                end if
-             end if
-             call sumDwandFw
-
-             ! Now we can just set the part of dw we computed
-             ! (owned cells only) and we're done!
-             do l=1, nwf
-                do k=2, kl
-                   do j=2, jl
-                      do i=2, il
-                         bdw(i+ii-2,j+jj-2,k+kk-2,l) = dw(i,j,k,l)
-                      end do
-                   end do
-                end do
-             end do
-          end do
-       end do
-    end do
-    !$OMP END PARALLEL DO 
-
-    ! Lastly we need to compute the source terms since those cannot be
-    ! done with the blockettes
-    !call sourceTerms_block(nBkLocal, .True., pLocal)
-
   end subroutine blocketteRes
+
 
   subroutine metrics
     ! ---------------------------------------------
@@ -798,7 +605,7 @@ contains
     enddo
   end subroutine metrics
 
-  subroutine initRes
+  subroutine initRes(varStart, varEnd)
     ! ---------------------------------------------
     !                     Init Res
     ! ---------------------------------------------
@@ -806,9 +613,9 @@ contains
     use constants
     implicit none
 
-
+    integer(kind=intType) :: varStart, varEnd
     ! Obviously this needs to be more complex for the actual code.
-    dw = zero
+    dw(:, :, :, varStart:varEnd) = zero
 
   end subroutine initRes
 
@@ -1726,7 +1533,7 @@ contains
           do j=2, jl
              do i=2, il
                 rblank = max(real(iblank(i,j,k), realType), zero)
-                dw(i,j,k,itu1) = -volRef(i,j,k)*dw(i,j,k,idvt)*rblank
+                dw(i,j,k,itu1) = -volRef(i,j,k)*dw(i,j,k,itu1)*rblank
           enddo
        enddo
     enddo
@@ -6667,6 +6474,7 @@ contains
     end do
   end subroutine sumDwandFw
 end module blockette
+
 
 
 
