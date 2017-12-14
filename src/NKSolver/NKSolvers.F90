@@ -2063,7 +2063,7 @@ contains
 
     ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
-       call blocketteRes(useDissApprox=.True., useViscApprox=ANK_useFullVisc, &
+       call blocketteRes(useDissApprox=.True., useViscApprox=(.not. ANK_useFullVisc), &
             useTurbRes=.False., useStoreWall=.False.)
        call setRVecANK(rVec)
     else
