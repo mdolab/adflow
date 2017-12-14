@@ -1712,7 +1712,7 @@ module ANKSolver
   integer(kind=intType) :: nState
   real(kind=alwaysRealType) :: totalR_old, totalR_pcUpdate ! for recording the previous residual
   real(kind=alwaysRealType) :: rtolLast ! for recording the previous relativel tolerance for Eisenstat-Walker
-  logical :: updateCFL
+  logical :: updateCFL, ANK_useDissApprox
 
 contains
 
@@ -1816,6 +1816,7 @@ contains
 
        ANK_solverSetup = .True.
        ANK_iter = 0
+       ANK_useDissApprox = .False.
     end if
 
   end subroutine setupANKsolver
@@ -2057,17 +2058,22 @@ contains
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: invec_pointer(:)
     real(kind=realType),pointer :: wvec_pointer(:)
+    logical :: useViscApprox
 
     ! get the input vector
     call setWANK(inVec)
 
+    ! determine if we want the approximate viscous fluxes
+    useViscApprox = (.not. ANK_useFullVisc) .and. ANK_useDissApprox
+
     ! if DADI is used for turbulence, use flow variables only
     if (ANK_useTurbDADI) then
-       call blocketteRes(useDissApprox=.True., useViscApprox=(.not. ANK_useFullVisc), &
+       call blocketteRes(useDissApprox=ANK_useDissApprox, useViscApprox=useViscApprox, &
             useTurbRes=.False., useStoreWall=.False.)
        call setRVecANK(rVec)
     else
-       call blocketteRes(useDissApprox=.True., useStoreWall=.False.)
+       call blocketteRes(useDissApprox=ANK_useDissApprox, useViscApprox=useViscApprox, &
+            useStoreWall=.False.)
        call setRVec(rVec)
     end if
 
@@ -2207,6 +2213,8 @@ contains
     !   w(:,:,:,:): Should contain the updated state with the given step size
     !               lambdaLS and given update deltaW
     !   ANK_CFL:    The CFL number used for this non-linear iteration
+    !   dtl:        Array containing time step values giving a CFL number of 1
+    !               on each cell.
     !
     ! The routine calculates the unsteady residual and leaves the result in
     ! rVec, which was previously used to keep the steady residual only. This
@@ -2728,7 +2736,6 @@ contains
     use blockPointers, only : nDom, flowDoms, shockSensor, ib, jb, kb, p, w, gamma
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
-    use inputDiscretization, only : lumpedDiss
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
     use utils, only : EChk, setPointers
@@ -2777,7 +2784,7 @@ contains
 
        ! Evaluate the residual before we start
        call blocketteRes(useUpdateDt=.True.)
-       if (ANK_useTurbDADI) then 
+       if (ANK_useTurbDADI) then
           call setRvecANK(rVec)
        else
           call setRVec(rVec)
@@ -2866,7 +2873,7 @@ contains
     ! KSP solve because we want actual flux functions when calculating residuals
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
        ! Setting lumped dissipation to true gives approximate fluxes
-       lumpedDiss =.True.
+       ANK_useDissApprox =.True.
 
        ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
        secondOrdSave = secondOrd
@@ -2921,8 +2928,8 @@ contains
 
     ! Return previously changed variables back to normal, VERY IMPORTANT
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
-       ! Set lumpedDiss back to False to go back to using actual flux routines
-       lumpedDiss =.False.
+       ! Set ANK_useDissApprox back to False to go back to using actual flux routines
+       ANK_useDissApprox =.False.
 
        ! Replace the second order turbulence option
        secondOrd = secondOrdSave
@@ -2930,7 +2937,7 @@ contains
     end if
 
     ! Compute the maximum step that will limit the change in pressure
-    ! and energy to some user defined fraction. 
+    ! and energy to some user defined fraction.
     call physicalityCheckANK(lambda)
 
     ! Take the uodate after the physicality check.
@@ -2954,9 +2961,9 @@ contains
     call VecNorm(rVec, NORM_2, unsteadyNorm, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then 
+    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then
        ! The unsteady residual is too high or we have a NAN. Do a
-       ! backtracking line search until we get a residual that is lower. 
+       ! backtracking line search until we get a residual that is lower.
 
        LSFailed = .True.
 
@@ -2965,7 +2972,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Set the initial new lambda. This is working off the
-       ! potentially already physically limited step. 
+       ! potentially already physically limited step.
        lambda = 0.7_realType * lambda
 
        backtrack: do iter=1, 10
@@ -2999,8 +3006,8 @@ contains
           end if
        end do backtrack
 
-       if (LSFailed .or. isnan(unsteadyNorm)) then 
-          ! the line search wasn't much help. 
+       if (LSFailed .or. isnan(unsteadyNorm)) then
+          ! the line search wasn't much help.
 
           if (ANK_CFL > ANK_CFLMin) then
              ! the cfl number is not already at the lower limit.  We
@@ -3030,7 +3037,7 @@ contains
     if (ANK_useTurbDADI .and. equations==RANSEquations) then
 
        ! Only update thurbulence if lambda was not zero
-       if (lambda > zero) then 
+       if (lambda > zero) then
           ! actually do the turbulence update
           call computeUtau
           call turbSolveSegregated
@@ -3040,7 +3047,7 @@ contains
     ! We need to now compute the residual for the next iteration.  We
     ! also need the to update the update the time step and the
     ! viscWall pointer stuff
-    
+
     call blocketteRes(useUpdateDt=.True.)
 
     feval = feval + 1
@@ -3060,7 +3067,7 @@ contains
     linResMonitor = resHist(kspIterations+1)/resHist(1)
 
     if ((kspIterations > .8 * ank_maxIter .and. totalR > ANK_secondOrdSwitchTol*totalR0) &
-         .or. lambda < ANK_stepMin * ANK_stepFactor) then
+         .or. LSFailed) then
        ! We should reform the PC since it took longer than we want,
        ! or we need to adjust the CFL because the last update was bad,
        ! or convergence since the last PC update was good enough and we
@@ -3077,4 +3084,3 @@ contains
 
   end subroutine ANKStep
 end module ANKSolver
-
