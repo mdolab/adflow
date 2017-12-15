@@ -71,54 +71,28 @@ contains
     ! blockette
 
     use constants
-    use blockPointers, only : bnx=>nx, bny=>ny, bnz=>nz, &
-         bil=>il, bjl=>jl, bkl=>kl, &
-         bie=>ie, bje=>je, bke=>ke, &
-         bib=>ib, bjb=>jb, bkb=>kb, &
-         bw=>w, bp=>p, bgamma=>gamma, &
-         bx=>x, brlv=>rlv, brev=>rev, bvol=>vol, bVolRef=>volRef, bd2wall=>d2wall, &
-         biblank=>iblank, bPorI=>porI, bPorJ=>porJ, bPorK=>porK, bdw=>dw, bfw=>fw, &
-         bShockSensor=>shockSensor, &
-         bsi=>si, bsj=>sj, bsk=>sk, &
-         bsFaceI=>sFaceI, bsFaceJ=>sFaceJ, bsFaceK=>sFaceK , &
-         bdtl=>dtl, &
-         addGridVelocities
     use block, only : nDom
-    use communication, only : myid
-    use flowVarRefState, only : nwf, nw, viscous, nt1, nt2
     use BCRoutines, only : applyallBC_block
     use bcdata, only : setBCData, setBCDataFineGrid
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
     use inputPhysics , only : turbProd, equationMode, equations, turbModel
-    use inputDiscretization, only : lowSpeedPreconditioner, spaceDiscr, useApproxWallDistance, useBlockettes
+    use inputDiscretization, only : lowSpeedPreconditioner, useApproxWallDistance, useBlockettes
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use iteration, only : rFil
+    use flowUtils, only : computeLamViscosity, computePressureSimple, adjustInflowAngle
+    use flowVarRefState, only : nwf, nw, nt1, nt2
     use initializeFlow, only : referenceState
     use section, only: sections, nSections
+    use iteration, only : rFil
     use haloExchange, only : exchangeCoor, whalo2
     use wallDistance, only : updateWallDistancesQuickly
-    use flowUtils, only : computeLamViscosity, computePressureSimple, adjustInflowAngle, & 
-         computeSpeedofSoundSquared_block => computeSpeedOfSoundSquared, &
-         allNodalGradients_block => allNodalGradients
-    use adjointExtra, only : sumDwandFw_block => sumDwandFw
     use utils, only : setPointers, EChk
     use turbUtils, only : computeEddyViscosity
-    use residuals, only : sourceTerms_block, initRes_block, residual_block
+    use residuals, only : sourceTerms_block
     use surfaceIntegrations, only : getSolution
     use adjointExtra, only : volume_block, metric_block, boundaryNormals, xhalo_block
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
-    use solverUtils, only : timeStep_block, computeUtau_block
-    use sa, only : sa_block
-    use fluxes, only : inviscidCentralFlux_block=>inviscidCentralFlux, &
-         inviscidDissFluxScalar_block=>inviscidDissFluxScalar, & 
-         inviscidDissFluxMatrix_block=>inviscidDissFluxMatrix, & 
-         inviscidUpwindFlux_block=>inviscidUpwindFlux, & 
-         inviscidDissFluxScalarApprox_block=>inviscidDissFluxScalarApprox, & 
-         inviscidDissFluxMatrixApprox_block=>inviscidDissFluxMatrix, & 
-         viscousFlux_block=>viscousFlux, & 
-         viscousFluxApprox_block=>viscousFluxApprox
     implicit none
 
     ! Input/Output
@@ -133,7 +107,7 @@ contains
 
     ! Misc
     logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, spatial, storeWall
-    integer(kind=intType) :: nn, sps, i, j, k, l, iSize, ierr, fSize, lStart, lEnd
+    integer(kind=intType) :: nn, sps, fSize, lstart, lend
     real(kind=realType) ::  pLocal
 
     ! Set the defaults. The default is to compute the full, exact,
@@ -146,6 +120,7 @@ contains
     turbRes = .True.
     spatial = .False. 
     storeWall = .True.
+
     ! Parse the input variables
     if (present(useDissApprox)) then 
        dissApprox = useDissApprox
@@ -173,20 +148,6 @@ contains
 
     if (present(useStoreWall)) then 
        storeWall = useStoreWall 
-    end if
-
-    ! Compute the ranges of the residuals we are dealing with:
-    if (flowRes .and. turbRes) then 
-       lStart = 1 
-       lEnd =  nw
-
-    else if (flowRes .and. (.not. turbRes)) then 
-       lStart = 1
-       lEnd = nwf
-
-    else if ((.not. flowRes) .and. turbres) then 
-       lStart = nt1
-       lEnd   = nt2
     end if
 
     ! Spatial-only updates first
@@ -255,6 +216,20 @@ contains
        end do
     end do
 
+    ! Compute the ranges of the residuals we are dealing with:
+    if (flowRes .and. turbRes) then 
+       lStart = 1 
+       lEnd =  nw
+
+    else if (flowRes .and. (.not. turbRes)) then 
+       lStart = 1
+       lEnd = nwf
+
+    else if ((.not. flowRes) .and. turbres) then 
+       lStart = nt1
+       lEnd   = nt2
+    end if
+
     ! Exchange values
     call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
 
@@ -280,15 +255,16 @@ contains
        blockLoop: do  nn=1, nDom
           call setPointers(nn, 1, sps)
 
+          rFil = one
           blockettes: if (useBlockettes) then 
-             call blocketteResCore
+             call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
           else
-             call blockResCore
+             call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
           end if blockettes
 
           ! Lastly we need to compute the source terms since those cannot be
           ! done with the blockettes
-          call sourceTerms_block(nn, .True., pLocal)
+           call sourceTerms_block(nn, .True., pLocal)
        end do blockLoop
     end do spsLoop
 
@@ -304,291 +280,368 @@ contains
           call getForces(forces(:, :, sps), fSize, sps)
        end do
     end if
-
-  contains 
-    subroutine blocketteResCore
-
-      ! Main subroutine for computing the reisdual for the given block
-      use constants
-      implicit none
-
-
-      ! Block loop over the owned cells
-      !$OMP parallel do private(i,j,k,l) collapse(2) 
-      do kk=2, bkl, BS
-         do jj=2, bjl, BS
-            do ii=2, bil, BS
-
-               ! Determine the actual size this block will be and set
-               ! the sizes in the blockette module for each of the
-               ! subroutines.
-
-               nx = min(ii+BS-1, bil) - ii + 1
-               ny = min(jj+BS-1, bjl) - jj + 1
-               nz = min(kk+BS-1, bkl) - kk + 1
-
-               il = nx + 1; jl = ny + 1; kl = nz + 1
-               ie = nx + 2; je = ny + 2; ke = nz + 2
-               ib = nx + 3; jb = ny + 3; kb = nz + 3
-
-               ! -------------------------------------
-               !      Fill in all values
-               ! -------------------------------------
-
-               ! Double halos
-               do k=0, kb
-                  do j=0, jb
-                     do i=0, ib 
-                        w(i,j,k,:) = bw(i+ii-2, j+jj-2, k+kk-2, :)
-                        p(i,j,k) = bP(i+ii-2, j+jj-2, k+kk-2)
-                        gamma(i,j,k) = bgamma(i+ii-2, j+jj-2, k+kk-2)
-                        ss(i,j,k) = bShockSensor(i+ii-2, j+jj-2,k+kk-2)
-                     end do
-                  end do
-               end do
-
-               ! Single halos
-               do k=1, ke
-                  do j=1, je
-                     do i=1, ie 
-                        rlv(i,j,k) = brlv(i+ii-2, j+jj-2, k+kk-2)
-                        rev(i,j,k) = brev(i+ii-2, j+jj-2, k+kk-2)
-                        vol(i,j,k) = bvol(i+ii-2, j+jj-2, k+kk-2)
-                     end do
-                  end do
-               end do
-
-               ! X
-               do k=0, ke
-                  do j=0, je
-                     do i=0, ie
-                        x(i,j,k,:) = bx(i+ii-2, j+jj-2, k+kk-2, :)
-                     end do
-                  end do
-               end do
-
-               ! No Halos (no change)
-               do k=2, kl
-                  do j=2, jl
-                     do i=2, il
-                        iblank(i,j,k) = biblank(i+ii-2,j+jj-2,k+kk-2)
-                        d2wall(i,j,k) = bd2wall(i+ii-2,j+jj-2,k+kk-2)
-                        volRef(i,j,k) = bvolRef(i+ii-2,j+jj-2,k+kk-2)
-                     end do
-                  end do
-               end do
-
-               ! Porosities (no change)
-               do k=2, kl
-                  do j=2, jl
-                     do i=1, il
-                        porI(i,j,k) = bporI(i+ii-2,j+jj-2,k+kk-2)
-                     end do
-                  end do
-               end do
-
-               do k=2, kl
-                  do j=1, jl
-                     do i=2, il
-                        PorJ(i,j,k) = bporJ(i+ii-2,j+jj-2,k+kk-2)
-                     end do
-                  end do
-               end do
-
-               do k=1, kl
-                  do j=2, jl
-                     do i=2, il
-                        PorK(i,j,k) = bporK(i+ii-2,j+jj-2,k+kk-2)
-                     end do
-                  end do
-               end do
-
-               ! Face velocities if necessary
-               if (addGridVelocities) then 
-                  do k=1, ke
-                     do j=1, je
-                        do i=0, ie
-                           sFaceI(i, j, k) = bsFaceI(ii+ii-2, j+jj-2, k+kk-2)
-                        end do
-                     end do
-                  end do
-
-                  do k=1, ke
-                     do j=0, je
-                        do i=1, ie
-                           sFaceJ(i, j, k) = bsFaceJ(ii+ii-2, j+jj-2, k+kk-2)
-                        end do
-                     end do
-                  end do
-
-                  do k=0, ke
-                     do j=1, je
-                        do i=1, ie
-                           sFaceK(i, j, k) = bsFaceK(ii+ii-2, j+jj-2, k+kk-2)
-                        end do
-                     end do
-                  end do
-               else
-                  sFaceI = zero
-                  sFaceJ = zero
-                  sFaceK = zero
-               end if
-
-               ! Clear the viscous flux before we start. 
-               fw = zero
-               rFil = one
-               ! Call the routines in order:
-               call metrics
-               call initRes(lStart, lEnd)
-
-               ! Compute turbulence residual for RANS equations
-               if( equations == RANSEquations .and. turbRes) then 
-
-                  ! Initialize only the Turblent Variables
-                  !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-                  
-                  select case (turbModel)
-                     
-                  case (spalartAllmaras)
-                     call saSource
-                     call saAdvection
-                     !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
-                     call saViscous
-                     call saResScale
-                  end select
-               endif
-            
-               call timeStep(updateDt)
-
-               if (flowRes) then 
-                  call inviscidCentralFlux
-
-                  if (dissApprox) then 
-                     select case (spaceDiscr)
-                     case (dissScalar)
-                        call inviscidDissFluxScalarApprox
-                     case (dissMatrix)
-                        call inviscidDissFluxMatrixApprox
-                     case (upwind)
-                        call inviscidUpwindFlux(.False.)
-                     end select
-                  else
-                     select case (spaceDiscr)
-                     case (dissScalar)
-                        call inviscidDissFluxScalar
-                     case (dissMatrix)
-                        call inviscidDissFluxMatrix
-                     case (upwind)
-                        call inviscidUpwindFlux(.True.)
-                     end select
-                  end if
-
-                  if (viscous) then
-                     call computeSpeedOfSoundSquared
-                     if (viscApprox) then 
-                        call viscousFluxApprox
-                     else
-                        call allNodalGradients
-                        call viscousFlux(storeWall)
-                     end if
-                  end if
-
-                  call sumDwAndFw
-               end if
-
-               ! Now we can just set the part of dw we computed
-               ! (owned cells only) and we're done!
-               do l=lStart, lEnd
-                  do k=2, kl
-                     do j=2, jl
-                        do i=2, il
-                           bdw(i+ii-2,j+jj-2,k+kk-2,l) = dw(i,j,k,l)
-                        end do
-                     end do
-                  end do
-               end do
-
-               ! Also copy out the dtl if we were asked for it
-               if (updateDt) then 
-                  do k=2, kl
-                     do j=2, jl
-                        do i=2, il
-                           bdtl(i+ii-2, j+jj-2, k+kk-2) = dtl(i, j, k)
-                        end do
-                     end do
-                  end do
-               end if
-            end do
-         end do
-      end do
-      !$OMP END PARALLEL DO 
-    end subroutine blocketteResCore
-
-    subroutine blockResCore
-
-      use constants
-      implicit none
-
-      ! Compute time step 
-      call timestep_block(.not. updateDt)
-
-      call initres_block(lStart, lEnd, nn, sps) ! Initialize only the Turblent Variables
-      
-      fw = zero
-      rFil = one
-   
-      ! Possible Turblent Equations
-      if(equations == RANSEquations .and. turbRes) then
-         ! Compute the skin-friction velocity (wall functions only)
-         !call computeUtau_block
-        
-         ! Now call the selected turbulence model
-         select case (turbModel)
-         case (spalartAllmaras)
-            call sa_block(.true.)
-         end select
-      endif
-
-      call timeStep_block(.not. updateDt)
-
-      if (flowRes) then 
-
-         call inviscidCentralFlux_block
-         if (dissApprox) then
-            select case (spaceDiscr)
-            case (dissScalar)
-               call inviscidDissFluxScalarApprox_block
-            case (dissMatrix)
-               call inviscidDissFluxMatrixApprox_block
-            case (upwind)
-               call inviscidUpwindFlux_block(.True.)
-            end select
-         else
-            select case (spaceDiscr)
-            case (dissScalar)
-               call inviscidDissFluxScalar_block
-            case (dissMatrix)
-               call inviscidDissFluxMatrix_block
-            case (upwind)
-               call inviscidUpwindFlux_block(.True.)
-            end select
-         end if
-         
-         if (viscous) then
-            call computeSpeedOfSoundSquared_block
-            if (viscApprox) then 
-               call viscousFluxApprox_block
-            else
-               call allNodalGradients_block
-               call viscousFlux_block
-            end if
-         end if
-         
-         call sumDwAndFw_block
-      end if
-    end subroutine blockResCore
-    
   end subroutine blocketteRes
+
+  subroutine blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
+
+    ! Main subroutine for computing the reisdual for the given block using blockettes
+    use constants
+
+    use constants
+    use blockPointers, only : & 
+         bnx=>nx, bny=>ny, bnz=>nz, &
+         bil=>il, bjl=>jl, bkl=>kl, &
+         bie=>ie, bje=>je, bke=>ke, &
+         bib=>ib, bjb=>jb, bkb=>kb, &
+         bw=>w, bp=>p, bgamma=>gamma, &
+         bx=>x, brlv=>rlv, brev=>rev, bvol=>vol, bVolRef=>volRef, bd2wall=>d2wall, &
+         biblank=>iblank, bPorI=>porI, bPorJ=>porJ, bPorK=>porK, bdw=>dw, bfw=>fw, &
+         bShockSensor=>shockSensor, &
+         bsi=>si, bsj=>sj, bsk=>sk, &
+         bsFaceI=>sFaceI, bsFaceJ=>sFaceJ, bsFaceK=>sFaceK , &
+         bdtl=>dtl, &
+         addGridVelocities
+    use flowVarRefState, only : nwf, nw, viscous, nt1, nt2
+    use inputPhysics , only : equationMode, equations, turbModel
+    use inputDiscretization, only : spaceDiscr
+    use utils, only : setPointers, EChk
+    use turbUtils, only : computeEddyViscosity
+    use oversetData, only : oversetPresent
+
+    implicit none
+
+    ! Input
+    logical, intent(in) :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
+
+    ! Working:
+    integer(kind=intType) :: i, j, k, l, lStart, lEnd
+
+    ! Compute the ranges of the residuals we are dealing with:
+    if (flowRes .and. turbRes) then 
+       lStart = 1 
+       lEnd =  nw
+
+    else if (flowRes .and. (.not. turbRes)) then 
+       lStart = 1
+       lEnd = nwf
+
+    else if ((.not. flowRes) .and. turbres) then 
+       lStart = nt1
+       lEnd   = nt2
+    end if
+
+    ! Block loop over the owned cells
+    !$OMP parallel do private(i,j,k,l) collapse(2) 
+    do kk=2, bkl, BS
+       do jj=2, bjl, BS
+          do ii=2, bil, BS
+
+             ! Determine the actual size this block will be and set
+             ! the sizes in the blockette module for each of the
+             ! subroutines.
+
+             nx = min(ii+BS-1, bil) - ii + 1
+             ny = min(jj+BS-1, bjl) - jj + 1
+             nz = min(kk+BS-1, bkl) - kk + 1
+
+             il = nx + 1; jl = ny + 1; kl = nz + 1
+             ie = nx + 2; je = ny + 2; ke = nz + 2
+             ib = nx + 3; jb = ny + 3; kb = nz + 3
+
+             ! -------------------------------------
+             !      Fill in all values
+             ! -------------------------------------
+
+             ! Double halos
+             do k=0, kb
+                do j=0, jb
+                   do i=0, ib 
+                      w(i,j,k,:) = bw(i+ii-2, j+jj-2, k+kk-2, :)
+                      p(i,j,k) = bP(i+ii-2, j+jj-2, k+kk-2)
+                      gamma(i,j,k) = bgamma(i+ii-2, j+jj-2, k+kk-2)
+                      ss(i,j,k) = bShockSensor(i+ii-2, j+jj-2,k+kk-2)
+                   end do
+                end do
+             end do
+
+             ! Single halos
+             do k=1, ke
+                do j=1, je
+                   do i=1, ie 
+                      rlv(i,j,k) = brlv(i+ii-2, j+jj-2, k+kk-2)
+                      rev(i,j,k) = brev(i+ii-2, j+jj-2, k+kk-2)
+                      vol(i,j,k) = bvol(i+ii-2, j+jj-2, k+kk-2)
+                   end do
+                end do
+             end do
+
+             ! X
+             do k=0, ke
+                do j=0, je
+                   do i=0, ie
+                      x(i,j,k,:) = bx(i+ii-2, j+jj-2, k+kk-2, :)
+                   end do
+                end do
+             end do
+
+             ! No Halos (no change)
+             do k=2, kl
+                do j=2, jl
+                   do i=2, il
+                      iblank(i,j,k) = biblank(i+ii-2,j+jj-2,k+kk-2)
+                      d2wall(i,j,k) = bd2wall(i+ii-2,j+jj-2,k+kk-2)
+                      volRef(i,j,k) = bvolRef(i+ii-2,j+jj-2,k+kk-2)
+                   end do
+                end do
+             end do
+
+             ! Porosities (no change)
+             do k=2, kl
+                do j=2, jl
+                   do i=1, il
+                      porI(i,j,k) = bporI(i+ii-2,j+jj-2,k+kk-2)
+                   end do
+                end do
+             end do
+
+             do k=2, kl
+                do j=1, jl
+                   do i=2, il
+                      PorJ(i,j,k) = bporJ(i+ii-2,j+jj-2,k+kk-2)
+                   end do
+                end do
+             end do
+
+             do k=1, kl
+                do j=2, jl
+                   do i=2, il
+                      PorK(i,j,k) = bporK(i+ii-2,j+jj-2,k+kk-2)
+                   end do
+                end do
+             end do
+
+             ! Face velocities if necessary
+             if (addGridVelocities) then 
+                do k=1, ke
+                   do j=1, je
+                      do i=0, ie
+                         sFaceI(i, j, k) = bsFaceI(ii+ii-2, j+jj-2, k+kk-2)
+                      end do
+                   end do
+                end do
+
+                do k=1, ke
+                   do j=0, je
+                      do i=1, ie
+                         sFaceJ(i, j, k) = bsFaceJ(ii+ii-2, j+jj-2, k+kk-2)
+                      end do
+                   end do
+                end do
+
+                do k=0, ke
+                   do j=1, je
+                      do i=1, ie
+                         sFaceK(i, j, k) = bsFaceK(ii+ii-2, j+jj-2, k+kk-2)
+                      end do
+                   end do
+                end do
+             else
+                sFaceI = zero
+                sFaceJ = zero
+                sFaceK = zero
+             end if
+
+             ! Clear the viscous flux before we start. 
+             fw = zero
+
+             ! Call the routines in order:
+             call metrics
+             call initRes(lStart, lEnd)
+
+             ! Compute turbulence residual for RANS equations
+             if( equations == RANSEquations .and. turbRes) then 
+
+                ! Initialize only the Turblent Variables
+                !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
+
+                select case (turbModel)
+
+                case (spalartAllmaras)
+                   call saSource
+                   call saAdvection
+                   !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
+                   call saViscous
+                   call saResScale
+                end select
+             endif
+
+             call timeStep(updateDt)
+
+             if (flowRes) then 
+                call inviscidCentralFlux
+
+                if (dissApprox) then 
+                   select case (spaceDiscr)
+                   case (dissScalar)
+                      call inviscidDissFluxScalarApprox
+                   case (dissMatrix)
+                      call inviscidDissFluxMatrixApprox
+                   case (upwind)
+                      call inviscidUpwindFlux(.False.)
+                   end select
+                else
+                   select case (spaceDiscr)
+                   case (dissScalar)
+                      call inviscidDissFluxScalar
+                   case (dissMatrix)
+                      call inviscidDissFluxMatrix
+                   case (upwind)
+                      call inviscidUpwindFlux(.True.)
+                   end select
+                end if
+
+                if (viscous) then
+                   call computeSpeedOfSoundSquared
+                   if (viscApprox) then 
+                      call viscousFluxApprox
+                   else
+                      call allNodalGradients
+                      call viscousFlux(storeWall)
+                   end if
+                end if
+
+                call sumDwAndFw
+             end if
+
+             ! Now we can just set the part of dw we computed
+             ! (owned cells only) and we're done!
+             do l=lStart, lEnd
+                do k=2, kl
+                   do j=2, jl
+                      do i=2, il
+                         bdw(i+ii-2,j+jj-2,k+kk-2,l) = dw(i,j,k,l)
+                      end do
+                   end do
+                end do
+             end do
+
+             ! Also copy out the dtl if we were asked for it
+             if (updateDt) then 
+                do k=2, kl
+                   do j=2, jl
+                      do i=2, il
+                         bdtl(i+ii-2, j+jj-2, k+kk-2) = dtl(i, j, k)
+                      end do
+                   end do
+                end do
+             end if
+          end do
+       end do
+    end do
+    !$OMP END PARALLEL DO 
+  end subroutine blocketteResCore
+
+  subroutine blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
+
+    use constants
+    use fluxes, only : inviscidCentralFlux_block=>inviscidCentralFlux, &
+         inviscidDissFluxScalar_block=>inviscidDissFluxScalar, & 
+         inviscidDissFluxMatrix_block=>inviscidDissFluxMatrix, & 
+         inviscidUpwindFlux_block=>inviscidUpwindFlux, & 
+         inviscidDissFluxScalarApprox_block=>inviscidDissFluxScalarApprox, & 
+         inviscidDissFluxMatrixApprox_block=>inviscidDissFluxMatrix, & 
+         viscousFlux_block=>viscousFlux, & 
+         viscousFluxApprox_block=>viscousFluxApprox
+    use solverUtils, only : timeStep_block
+    use flowVarRefState, only : nwf, nw, viscous, nt1, nt2
+    use inputPhysics , only : equationMode, equations, turbModel
+    use residuals, only : initres_block
+    use sa, only : sa_block
+    use adjointExtra, only : sumDwAndFw_block=>sumDwAndFw
+    use inputDiscretization, only : spaceDiscr
+    use flowUtils, only : allNodalGradients_block=>allNodalGradients, &
+         computeSpeedOfSoundSquared_block=>computeSpeedOfSoundSquared
+
+    implicit none
+    ! Input
+    logical, intent(in) :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
+    integer(kind=intType), intent(in) :: nn, sps
+
+    ! Working:
+    integer(kind=intType) :: i, j, k, lStart, lEnd
+
+    ! Compute the ranges of the residuals we are dealing with:
+    if (flowRes .and. turbRes) then 
+       lStart = 1 
+       lEnd =  nw
+
+    else if (flowRes .and. (.not. turbRes)) then 
+       lStart = 1
+       lEnd = nwf
+
+    else if ((.not. flowRes) .and. turbres) then 
+       lStart = nt1
+       lEnd   = nt2
+    end if
+
+    ! Compute time step 
+    call timestep_block(.not. updateDt)
+
+    call initres_block(lStart, lEnd, nn, sps) ! Initialize only the Turblent Variables
+
+    fw = zero
+    
+    ! Possible Turblent Equations
+    if(equations == RANSEquations .and. turbRes) then
+       ! Compute the skin-friction velocity (wall functions only)
+       !call computeUtau_block
+
+       ! Now call the selected turbulence model
+       select case (turbModel)
+       case (spalartAllmaras)
+          call sa_block(.true.)
+       end select
+    endif
+
+    call timeStep_block(.not. updateDt)
+
+    if (flowRes) then 
+
+       call inviscidCentralFlux_block
+       if (dissApprox) then
+          select case (spaceDiscr)
+          case (dissScalar)
+             call inviscidDissFluxScalarApprox_block
+          case (dissMatrix)
+             call inviscidDissFluxMatrixApprox_block
+          case (upwind)
+             call inviscidUpwindFlux_block(.True.)
+          end select
+       else
+          select case (spaceDiscr)
+          case (dissScalar)
+             call inviscidDissFluxScalar_block
+          case (dissMatrix)
+             call inviscidDissFluxMatrix_block
+          case (upwind)
+             call inviscidUpwindFlux_block(.True.)
+          end select
+       end if
+
+       if (viscous) then
+          call computeSpeedOfSoundSquared_block
+          if (viscApprox) then 
+             call viscousFluxApprox_block
+          else
+             call allNodalGradients_block
+             call viscousFlux_block
+          end if
+       end if
+
+       call sumDwAndFw_block
+    end if
+  end subroutine blockResCore
+
   subroutine metrics
     ! ---------------------------------------------
     !              Metric computation
@@ -6548,6 +6601,33 @@ contains
        end do
     end do
   end subroutine sumDwandFw
+
+  subroutine resScale
+
+    use constants
+    use flowVarRefState, only : nwf, nt1, nt2
+    use inputIteration, only : turbResScale
+    implicit none
+
+    ! Local Variables
+    integer(kind=intType) :: i, j, k, ii, nTurb
+    real(kind=realType) :: ovol
+
+    ! Divide through by the reference volume
+    nTurb = nt2-nt1+1
+    do k=2,kl
+       do j=2,jl
+          do i=2,il
+
+             oVol = one/volRef(i,j,k)
+             dw(i, j, k, 1:nwf) = dw(i,j, k, 1:nwf)* ovol
+             dw(i, j, k, nt1:nt2) = dw(i, j, k, nt1:nt2) * ovol * turbResScale(1:nTurb)
+          enddo
+       enddo
+    enddo
+
+  end subroutine resScale
+
 end module blockette
 
 

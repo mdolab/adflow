@@ -986,7 +986,7 @@ contains
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1018,6 +1018,7 @@ contains
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1)
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1049,6 +1050,7 @@ contains
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1) ! Just to get the correct sizes
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1085,7 +1087,7 @@ contains
     integer(kind=intType) :: i, j, k, modi, modj, modk
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1121,7 +1123,7 @@ contains
     integer(kind=intType) :: i, j, k, modi, modj, modk
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1158,7 +1160,7 @@ contains
     ! This is a REALLY brute force coloring for debugging
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
