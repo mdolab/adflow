@@ -871,6 +871,7 @@ python module libadflow
          real(kind=realtype) :: sigma
          logical :: useapproxwalldistance
          logical :: lowspeedpreconditioner
+         logical :: useblockettes
        end module inputdiscretization
 
        module cgnsgrid

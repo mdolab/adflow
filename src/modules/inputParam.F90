@@ -77,6 +77,7 @@ module inputDiscretization
   real(kind=realType) :: kappaCoef
   logical :: lumpedDiss
   real(kind=realType) :: sigma
+  logical :: useBlockettes
 
 #ifndef USE_TAPENADE
   real(kind=realType) :: vis2b, vis4b, vis2Coarseb, adisb
@@ -159,7 +160,6 @@ module inputIO
   logical :: storeRindLayer, checkRestartSol
   logical :: autoParameterUpdate, writeCoorMeter
   logical :: storeConvInnerIter
-
   logical :: firstWrite = .true.
   logical :: viscousSurfaceVelocities = .True.
 

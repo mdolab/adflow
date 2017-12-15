@@ -518,7 +518,7 @@ contains
        rotMatrix = periodicData(nn)%rotMatrix
 
        ! Loop over the number of halo cells for this transformation.
-
+       !DIR$ NOVECTOR 
        do ii=1,periodicData(nn)%nhalos
 
           ! Store the block and the indices a bit easier.
@@ -596,6 +596,7 @@ contains
        ! Copy the data in the correct part of the send buffer.
 
        jj = ii
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nsend(i)
 
           ! Store the block id and the indices of the donor
@@ -608,6 +609,7 @@ contains
 
           ! Copy the given range of the working variables for
           ! this cell in the buffer. Update the counter jj.
+          !DIR$ NOVECTOR
           do k=1, nvar
              sendBuffer(jj) = flowDoms(d1, level, sps)%realCommVars(k)%var(i1, j1, k1)
              jj = jj + 1
@@ -653,7 +655,7 @@ contains
     ! Copy the local data.
 
 
-
+    !DIR$ NOVECTOR
     localCopy: do i=1,internal(level)%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -692,6 +694,7 @@ contains
 
        ii = index
        jj = nVar*commPattern(level)%nrecvCum(ii-1)
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nrecv(ii)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -761,7 +764,7 @@ contains
        size    = nVar*commPattern(level)%nrecv(i)
 
        ! Copy the data into the buffer
-
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nrecv(i)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -814,7 +817,7 @@ contains
     enddo sends
 
     ! Copy the local data.
-
+    !DIR$ NOVECTOR
     localCopy: do i=1,internal(level)%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -856,7 +859,7 @@ contains
 
        ii = index
        jj = nVar*commPattern(level)%nsendCum(ii-1)
-
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nsend(ii)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -942,6 +945,7 @@ contains
        ! Copy the data in the correct part of the send buffer.
 
        jj = ii
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nsend(i)
 
           ! Store the block id and the indices of the donor
@@ -954,6 +958,7 @@ contains
 
           ! Copy the given range of the working variables for
           ! this cell in the buffer. Update the counter jj.
+          !DIR$ NOVECTOR
           do k=1, nvar
              sendBufInt(jj) = flowDoms(d1, level, sps)%intCommVars(k)%var(i1, j1, k1)
              jj = jj + 1
@@ -997,7 +1002,7 @@ contains
     enddo receives
 
     ! Copy the local data.
-
+    !DIR$ NOVECTOR
     localCopy: do i=1,internal(level)%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -1036,6 +1041,7 @@ contains
 
        ii = index
        jj = nVar*commPattern(level)%nrecvCum(ii-1)
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nrecv(ii)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -1118,7 +1124,7 @@ contains
        size    = nVar*commPattern(level)%nrecv(i)
 
        ! Copy the data into the buffer
-
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nrecv(i)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -1127,7 +1133,7 @@ contains
           i2 = commPattern(level)%recvList(i)%indices(j,1)+1
           j2 = commPattern(level)%recvList(i)%indices(j,2)+1
           k2 = commPattern(level)%recvList(i)%indices(j,3)+1
-
+          !DIR$ NOVECTOR
           do k=1, nVar
              recvBufInt(jj) = flowDoms(d2,level,sps)%intCommVars(k)%var(i2,j2,k2)
              flowDoms(d2,level,sps)%intCommVars(k)%var(i2, j2, k2) = 0
@@ -1171,7 +1177,7 @@ contains
     enddo sends
 
     ! Copy the local data.
-
+    !DIR$ NOVECTOR
     localCopy: do i=1,internal(level)%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -1189,6 +1195,7 @@ contains
        k2 = internal(level)%haloIndices(i,3)+1
 
        ! Sum into the '1' values from the '2' values (halos).
+       !DIR$ NOVECTOR
        do k=1, nVar
           flowDoms(d1, level, sps)%intCommVars(k)%var(i1, j1, k1) = &
                flowDoms(d1, level, sps)%intCommVars(k)%var(i1, j1, k1) + &
@@ -1213,7 +1220,7 @@ contains
 
        ii = index
        jj = nVar*commPattern(level)%nsendCum(ii-1)
-
+       !DIR$ NOVECTOR
        do j=1,commPattern(level)%nsend(ii)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -1224,7 +1231,7 @@ contains
           k2 = commPattern(level)%sendList(ii)%indices(j,3)+1
 
           ! Copy the conservative variables.
-
+          !DIR$ NOVECTOR
           do k=1, nVar
              jj = jj + 1
              flowDoms(d2, level, sps)%intCommVars(k)%var(i2, j2, k2) = &
@@ -1506,6 +1513,7 @@ contains
        ! Copy the data in the correct part of the send buffer.
 
        jj = ii
+       !DIR$ NOVECTOR
        do j=1,commPattern(level, sps)%nsend(i)
 
           ! Store the block id and the indices of the donor
@@ -1519,6 +1527,7 @@ contains
 
           ! Copy the given range of the working variables for
           ! this cell in the buffer. Update the counter jj.
+          !DIR$ NOVECTOR
           do k=1, nvar
              sendBuffer(jj) = &
                   weight(1)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1  ) + &
@@ -1570,6 +1579,7 @@ contains
     enddo receives
 
     ! Do the local interpolation.
+    !DIR$ NOVECTOR
     localInterp: do i=1,internal(level, sps)%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -1589,6 +1599,7 @@ contains
        k2 = internal(level,sps)%haloIndices(i, 3)+1
 
        ! Copy the given range of working variables.
+       !DIR$ NOVECTOR
        do k=1, nVar
           flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2) = &
                weight(1)*flowDoms(d1, level, sps)%realCommVars(k)%var(i1,   j1,   k1  ) + &
@@ -1617,6 +1628,7 @@ contains
 
        ii = index
        jj = nVar*commPattern(level,sps)%nrecvCum(ii-1)
+       !DIR$ NOVECTOR
        do j=1,commPattern(level,sps)%nrecv(ii)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -1625,7 +1637,7 @@ contains
           i2 = commPattern(level,sps)%recvList(ii)%indices(j,1)+1
           j2 = commPattern(level,sps)%recvList(ii)%indices(j,2)+1
           k2 = commPattern(level,sps)%recvList(ii)%indices(j,3)+1
-
+          !DIR$ NOVECTOR
           do k=1, nVar
              jj = jj + 1
              flowDoms(d2,level,sps)%realCommVars(k)%var(i2,j2,k2) = recvBuffer(jj)
@@ -1686,6 +1698,7 @@ contains
        ! Copy the data in the correct part of the send buffer.
 
        jj = ii
+       !DIR$ NOVECTOR
        do j=1,commPattern(level, sps)%nsend(i)
 
           ! Store the block id and the indices of the donor
@@ -1700,6 +1713,7 @@ contains
 
           ! Copy the given range of the working variables for
           ! this cell in the buffer. Update the counter jj.
+          !DIR$ NOVECTOR
           do k=1, nvar
              sendBuffer(jj) = &
                   weight(1)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1  ) + &
@@ -1761,6 +1775,7 @@ contains
     enddo receives
 
     ! Do the local interpolation.
+    !DIR$ NOVECTOR
     localInterp: do i=1,internal(level, sps)%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -1781,6 +1796,7 @@ contains
        k2 = internal(level,sps)%haloIndices(i, 3)+1
 
        ! Copy the given range of working variables.
+       !DIR$ NOVECTOR
        do k=1, nVar
           flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2) = &
                weight(1)*flowDoms(d1,level,sps)%realCommVars(k)%var(i1  , j1,   k1  ) + &
@@ -1818,6 +1834,7 @@ contains
 
        ii = index
        jj = nVar*commPattern(level,sps)%nrecvCum(ii-1)
+       !DIR$ NOVECTOR
        do j=1,commPattern(level,sps)%nrecv(ii)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -1886,7 +1903,7 @@ contains
        size    = nVar*commPattern(level, sps)%nrecv(i)
 
        ! Copy the data into the buffer
-
+       !DIR$ NOVECTOR
        do j=1,commPattern(level, sps)%nrecv(i)
 
           ! Store the block and the indices to make code a bit easier to read
@@ -1895,7 +1912,7 @@ contains
           i2 = commPattern(level, sps)%recvList(i)%indices(j,1)+1
           j2 = commPattern(level, sps)%recvList(i)%indices(j,2)+1
           k2 = commPattern(level, sps)%recvList(i)%indices(j,3)+1
-
+          !DIR$ NOVECTOR
           do k=1, nVar
              recvBuffer(jj) = flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2)
              jj = jj + 1
@@ -1939,7 +1956,7 @@ contains
     enddo sends
 
     ! Do the local interpolation.
-
+    !DIR$ NOVECTOR
     localInterp: do i=1,internal(level, sps)%ncopy
 
        ! Store the block and the indices of the donor a bit easier.
@@ -1960,7 +1977,7 @@ contains
        k2 = internal(level, sps)%haloIndices(i, 3)+1
 
        ! Sum into the '1' values from the '2' values accouting for the weights
-
+       !DIR$ NOVECTOR
        do k=1, nVar
           vard = flowDoms(d2, level, sps)%realCommVars(k)%var(i2, j2, k2)
           kk = 0
@@ -1998,6 +2015,7 @@ contains
        ii = index
 
        jj = nVar*commPattern(level, sps)%nsendCum(ii-1)
+       !DIR$ NOVECTOR
        do j=1,commPattern(level, sps)%nsend(ii)
 
           ! Store the block and the indices of the halo a bit easier.
@@ -2009,7 +2027,7 @@ contains
 
           weight => commPattern(level, sps)%sendList(ii)%interp(j, :)
           weightd => commPattern(level, sps)%sendList(ii)%interpd(j, :)
-
+          !DIR$ NOVECTOR
           do k=1, nVar
              jj =jj + 1
              vard = sendBuffer(jj)
@@ -2279,9 +2297,11 @@ contains
              end select
 
              ! Loop over the cell range of the subface.
-
+             !DIR$ NOVECTOR
              do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
+                !DIR$ NOVECTOR
                 do i=BCData(nn)%icBeg, BCData(nn)%icEnd
+                   !DIR$ NOVECTOR
                    do l=start,end
                       ddw1(i,j,l) = ddw2(i,j,l)
                    enddo
@@ -2306,6 +2326,7 @@ contains
           ! Copy the data in the correct part of the send buffer.
 
           jj = ii
+          !DIR$ NOVECTOR
           do j=1,commPatternCell_1st(level)%nsend(i)
 
              ! Store the block id and the indices of the donor
@@ -2318,7 +2339,7 @@ contains
 
              ! Copy the given range of the residuals for this cell
              ! in the buffer. Update the counter jj accordingly.
-
+             !DIR$ NOVECTOR
              do k=start,end
                 sendBuffer(jj) = flowDoms(dd1,level,sps)%dw(ii1,jj1,kk1,k)
                 jj = jj + 1
@@ -2363,7 +2384,7 @@ contains
        enddo receives
 
        ! Copy the local data.
-
+       !DIR$ NOVECTOR
        localCopy: do i=1,internalCell_1st(level)%ncopy
 
           ! Store the block and the indices of the donor a bit easier.
@@ -2381,7 +2402,7 @@ contains
           kk2 = internalCell_1st(level)%haloIndices(i,3)
 
           ! Copy the given range of residuals.
-
+          !DIR$ NOVECTOR
           do k=start,end
              flowDoms(dd2,level,sps)%dw(ii2,jj2,kk2,k) = &
                   flowDoms(dd1,level,sps)%dw(ii1,jj1,kk1,k)
@@ -2404,6 +2425,7 @@ contains
 
           ii = index
           jj = nVar*commPatternCell_1st(level)%nrecvCum(ii-1) +1
+          !DIR$ NOVECTOR
           do j=1,commPatternCell_1st(level)%nrecv(ii)
 
              ! Store the block and the indices of the halo a bit easier.
@@ -2414,7 +2436,7 @@ contains
              kk2 = commPatternCell_1st(level)%recvList(ii)%indices(j,3)
 
              ! Copy the residuals.
-
+             !DIR$ NOVECTOR
              do k=start,end
                 flowDoms(dd2,level,sps)%dw(ii2,jj2,kk2,k) = recvBuffer(jj)
                 jj = jj + 1
@@ -2477,6 +2499,7 @@ contains
           ! Copy the data in the correct part of the send buffer.
 
           jj = ii
+          !DIR$ NOVECTOR
           do j=1,commPatternNode_1st(level)%nSend(i)
 
              ! Store the block id and the indices of the donor
@@ -2534,7 +2557,7 @@ contains
        enddo receives
 
        ! Copy the local data.
-
+       !DIR$ NOVECTOR
        localCopy: do i=1,internalNode_1st(level)%nCopy
 
           ! Store the block and the indices of the donor a bit easier.
@@ -2581,6 +2604,7 @@ contains
 
           ii = index
           jj = 3*commPatternNode_1st(level)%nRecvCum(ii-1) +1
+          !DIR$ NOVECTOR
           do j=1,commPatternNode_1st(level)%nRecv(ii)
 
              ! Store the block and the indices of the halo a bit easier.
@@ -2656,7 +2680,7 @@ contains
        translation = periodicData(nn)%translation + rotCenter
 
        ! Loop over the number of halo nodes for this transformation.
-
+       !DIR$ NOVECTOR
        do ii=1,periodicData(nn)%nHalos
 
           ! Store the block and the indices a bit easier.
@@ -2734,7 +2758,7 @@ contains
           size   = 3*commPatternNode_1st(level)%nRecv(i)
 
           ! Copy the data in the correct part of the send buffer.
-
+          !DIR$ NOVECTOR
           do j=1,commPatternNode_1st(level)%nRecv(i)
 
              ! Store the block id and the indices of the donor
@@ -2792,7 +2816,7 @@ contains
        enddo send
 
        ! Copy the local data.
-
+       !DIR$ NOVECTOR
        localCopy: do i=1,internalNode_1st(level)%nCopy
 
           ! Store the block and the indices of the donor a bit easier.
@@ -2839,6 +2863,7 @@ contains
 
           ii = index
           jj = 3*commPatternNode_1st(level)%nSendCum(ii-1)
+          !DIR$ NOVECTOR
           do j=1,commPatternNode_1st(level)%nSend(ii)
 
              ! Store the block and the indices of the halo a bit easier.
@@ -2920,6 +2945,7 @@ contains
           ! Copy the data in the correct part of the send buffer.
 
           jj = ii
+          !DIR$ NOVECTOR
           do j=1,commPatternNode_1st(level)%nSend(i)
 
              ! Store the block id and the indices of the donor
@@ -2977,7 +3003,7 @@ contains
        enddo receives
 
        ! Copy the local data.
-
+       !DIR$ NOVECTOR
        localCopy: do i=1,internalNode_1st(level)%nCopy
 
           ! Store the block and the indices of the donor a bit easier.
@@ -3025,6 +3051,7 @@ contains
 
           ii = index
           jj = 3*commPatternNode_1st(level)%nRecvCum(ii-1) +1
+          !DIR$ NOVECTOR
           do j=1,commPatternNode_1st(level)%nRecv(ii)
 
              ! Store the block and the indices of the halo a bit easier.
