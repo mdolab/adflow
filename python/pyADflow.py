@@ -4252,6 +4252,7 @@ class ADFLOW(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
+            'useblockettes':[bool, True], 
 
             # Overset Parameters:
             'nearwalldist':[float, 0.1],
@@ -4549,6 +4550,7 @@ class ADFLOW(AeroSolver):
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
+            'useblockettes':['discr', 'useblockettes'],
 
             # Overset Parameters
             'nearwalldist':['overset','nearwalldist'],
