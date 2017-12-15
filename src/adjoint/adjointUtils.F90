@@ -225,6 +225,7 @@ contains
 
     ! For the PC we don't linearize the shock sensor so it must be
     ! computed here.
+
     if (usePC) then
        call referenceShockSensor
     end if
@@ -306,21 +307,32 @@ contains
                    end if
                 end do
 
-                ! Peturb w or set AD Seed according to iColor
-                do k=0, kb
-                   do j=0, jb
-                      do i=0, ib
-                         if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
-                            if (useAD) then
+                ! Peturb w or set AD Seed according to iColor. Note:
+                ! Do NOT try to putt he useAD if check inside the
+                ! color if check. ifort barfs hard-core on that and it
+                ! segfaults with AVX2
+                if (useAD) then 
+                   do k=0, kb
+                      do j=0, jb
+                         do i=0, ib
+                            if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
                                flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
-                            else
-                               w(i, j, k, l) = w(i, j, k, l) + delta_x
                             end if
-                         end if
+                         end do
                       end do
                    end do
-                end do
-
+                else
+                   do k=0, kb
+                      do j=0, jb
+                         do i=0, ib
+                            if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
+                               w(i, j, k, l) = w(i, j, k, l) + delta_x
+                            end if
+                         end do
+                      end do
+                   end do
+                end if
+                      
                 ! Run Block-based residual
                 if (useAD) then
 #ifndef USE_COMPLEX

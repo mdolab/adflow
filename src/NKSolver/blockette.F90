@@ -168,11 +168,11 @@ contains
        lStart = 1 
        lEnd =  nw
 
-    else if (flowRes .and. .not. turbRes) then 
+    else if (flowRes .and. (.not. turbRes)) then 
        lStart = 1
        lEnd = nwf
 
-    else if (.not. flowRes .and. turbres) then 
+    else if ((.not. flowRes) .and. turbres) then 
        lStart = nt1
        lEnd   = nt2
     end if
@@ -439,7 +439,7 @@ contains
                             call inviscidUpwindFlux(.True.)
                          end select
                       end if
-                      
+
                       if (viscous) then
                          call computeSpeedOfSoundSquared
                          if (viscApprox) then 
@@ -485,7 +485,7 @@ contains
           call sourceTerms_block(nn, .True., pLocal)
        end do blockLoop
     end do spsLoop
-    
+
     ! Compute the final solution values
     if (present(famLists)) then
        call getSolution(famLists, funcValues)
@@ -643,7 +643,7 @@ contains
     real(kind=realType) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
     real(kind=realType) :: vortx, vorty, vortz
     real(kind=realType) :: omegax, omegay, omegaz
-    real(kind=realType) :: strainMag2, strainProd, vortProd
+    real(kind=realType) :: strainMag2, prod
     real(kind=realType), parameter :: xminn = 1.e-10_realType
     real(kind=realType), parameter :: f23 = two*third
     integer(kind=intType) :: i, j, k
@@ -709,48 +709,37 @@ contains
 
              fact = fourth/vol(i,j,k)
 
-             if (turbProd .eq. strain) then
+             ! -- Calcs for strain --
+             sxx = two*fact*uux
+             syy = two*fact*vvy
+             szz = two*fact*wwz
+             
+             sxy = fact*(uuy + vvx)
+             sxz = fact*(uuz + wwx)
+             syz = fact*(vvz + wwy)
+             
+             ! Compute 2/3 * divergence of velocity squared
+             
+             div2 = f23*(sxx+syy+szz)**2
+             
+             ! Compute strain production term
+             
+             strainMag2 = two*(sxy**2 + sxz**2 + syz**2) &
+                  +           sxx**2 + syy**2 + szz**2
+             
+             ! -- Calcs for vorticity -- 
 
-                sxx = two*fact*uux
-                syy = two*fact*vvy
-                szz = two*fact*wwz
+             ! Compute the three components of the vorticity vector.
+             ! Substract the part coming from the rotating frame.
 
-                sxy = fact*(uuy + vvx)
-                sxz = fact*(uuz + wwx)
-                syz = fact*(vvz + wwy)
+             vortx = two*fact*(wwy - vvz) - two*omegax
+             vorty = two*fact*(uuz - wwx) - two*omegay
+             vortz = two*fact*(vvx - uuy) - two*omegaz
 
-                ! Compute 2/3 * divergence of velocity squared
-
-                div2 = f23*(sxx+syy+szz)**2
-
-                ! Compute strain production term
-
-                strainMag2 = two*(sxy**2 + sxz**2 + syz**2) &
-                     +           sxx**2 + syy**2 + szz**2
-
-                strainProd = two*strainMag2 - div2
-
-                sqrtProd = sqrt(strainProd)
-
-             else if (turbProd .eq. vorticity) then
-
-                ! Compute the three components of the vorticity vector.
-                ! Substract the part coming from the rotating frame.
-
-                vortx = two*fact*(wwy - vvz) - two*omegax
-                vorty = two*fact*(uuz - wwx) - two*omegay
-                vortz = two*fact*(vvx - uuy) - two*omegaz
-
-                ! Compute the vorticity production term
-
-                vortProd = vortx**2 + vorty**2 + vortz**2
-
-                ! First take the square root of the production term to
-                ! obtain the correct production term for spalart-allmaras.
-                ! We do this to avoid if statements.
-
-                sqrtProd = sqrt(vortProd)
-
+             if (turbProd == strain) then 
+                sqrtProd = sqrt(max(two*strainMag2-div2, eps))
+             else
+                sqrtProd = sqrt(vortx**2 + vorty**2 + vortz**2)
              end if
 
              ! Compute the laminar kinematic viscosity, the inverse of
@@ -770,12 +759,11 @@ contains
              ! solution laminar. When running in fully turbulent mode
              ! this function should be set to 0.0.
 
+             ft2 = zero
              if (useft2SA) then
                 ft2 = rsaCt3*exp(-rsaCt4*chi2)
-             else
-                ft2 = zero
              end if
-
+             
              ! Correct the production term to account for the influence
              ! of the wall.
 
@@ -786,7 +774,7 @@ contains
              if (useRotationSA) then
                 sst = sst + rsaCrot*min(zero,sqrt(two*strainMag2))
              end if
-
+             
              ! Make sure that this term remains positive
              ! (the function fv2 is negative between chi = 1 and 18.4,
              ! which can cause sst to go negative, which is undesirable).
@@ -811,7 +799,7 @@ contains
              term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                   -           rsaCw1*fwSa)
 
-             dw(i, j, k, itu1) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
+             dw(i, j, k, itu1) = dw(i, j, k, itu1) + (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 
           enddo
        enddo
