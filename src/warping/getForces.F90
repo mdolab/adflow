@@ -34,7 +34,7 @@ subroutine getForces(forces, npts, sps)
   domains: do nn=1,nDom
      call setPointers(nn, 1_intType, sps)
      localValues = zero
-     call integrateSurfaces(localValues, fullFamList, .False., funcValues)
+     call integrateSurfaces(localValues, fullFamList)
   end do domains
 
   if (forcesAsTractions) then
