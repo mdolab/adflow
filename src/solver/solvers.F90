@@ -1298,7 +1298,7 @@ contains
           ! we zero localValues before each call becuase we are
           ! summing into momLocal.
           localvalues = zero
-          call integrateSurfaces(localValues, fullFamList, .False., funcValues)
+          call integrateSurfaces(localValues, fullFamList)
 
           ! Convert to coefficients for monitoring:
           fact = two/(gammaInf*MachCoef*MachCoef &
@@ -1431,7 +1431,7 @@ contains
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then
           localValues = zero
-          call integrateZippers(localValues, fullFamList, sps, .False., funcValues)
+          call integrateZippers(localValues, fullFamList, sps)
 
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)

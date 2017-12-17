@@ -152,8 +152,10 @@ contains
         else
 ! this is a pc calc...only include viscous fluxes if viscpc
 ! is used
+! if full visc is true, also need full viscous terms, even if
+! lumpeddiss is true
           call computespeedofsoundsquared()
-          if (viscpc) then
+          if (viscpc .or. fullvisc) then
             call allnodalgradients()
             call viscousflux()
           else
