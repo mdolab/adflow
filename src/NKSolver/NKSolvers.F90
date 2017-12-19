@@ -1000,8 +1000,13 @@ contains
     use blockette, only : blocketteRes
     implicit none
 
+    logical :: updateDt
+
+    ! We want to update the time step
+    updateDt = .true.
+
     ! Shell function to maintain backward compatibility with code using computeResidualNK
-    call blocketteRes(useUpdateDT=.True.)
+    call blocketteRes(useUpdateDT = updateDt)
 
   end subroutine computeResidualNK
 
