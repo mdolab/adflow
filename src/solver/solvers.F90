@@ -1017,16 +1017,7 @@ contains
     approxTotalIts = 0
 
     ! Evaluate the initial residual
-    if (currentLevel == 1) then
-       ! use the NK driver if we are on the finest level
-       call computeResidualNK
-    else
-       ! we are on a coarse level, don't need turb residuals
-       call timeStep(.false.)
-       call initres(1_intType, nwf)
-       ! call sourceTerms()
-       call residual
-    end if
+    call computeResidualNK
 
     ! Extract the rhoResStart and totalRStart
     call getCurrentResidual(rhoResStart, totalRStart)
