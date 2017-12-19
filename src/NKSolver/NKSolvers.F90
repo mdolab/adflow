@@ -1590,7 +1590,7 @@ module ANKSolver
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   real(kind=alwaysRealType) :: totalR_old, totalR_pcUpdate ! for recording the previous residual
-  real(kind=alwaysRealType) :: rtolLast ! for recording the previous relativel tolerance for Eisenstat-Walker
+  real(kind=alwaysRealType) :: rtolLast, linResOld ! for recording the previous relativel tolerance for Eisenstat-Walker
   logical :: updateCFL, ANK_useDissApprox
 
 contains
@@ -2678,6 +2678,7 @@ contains
           rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
           ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
           totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
+          linResOld = zero
        end if
     else
        ANK_iter = ANK_iter + 1
@@ -2779,7 +2780,7 @@ contains
     rtolLast = rtol
 
     ! Set all tolerances for linear solve:
-    atol = totalR0*L2Conv
+    atol = totalR0*L2Conv*0.01_realType
 
     ! Set the iteration limit to maxIt, determined by which fluxes are used.
     ! This is because ANK step require 0.1 convergence for stability during initial stages.
@@ -2948,7 +2949,9 @@ contains
 
     linResMonitor = resHist(kspIterations+1)/resHist(1)
 
-    if ((kspIterations > .8 * ank_maxIter .and. totalR > ANK_secondOrdSwitchTol*totalR0) &
+    if ((linResMonitor .ge. ANK_rtol .and. &
+         totalR > ANK_secondOrdSwitchTol*totalR0 .and.&
+         linResOld .le. ANK_rtol) &
          .or. LSFailed) then
        ! We should reform the PC since it took longer than we want,
        ! or we need to adjust the CFL because the last update was bad,
@@ -2956,6 +2959,9 @@ contains
        ! would benefit from re-calculating the PC.
        ANK_iter = -1
     end if
+
+    ! update the linear residual for next iteration
+    linResOld = linResMonitor
 
     ! Update step monitor
     stepMonitor = lambda
