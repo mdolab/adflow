@@ -43,12 +43,13 @@ options = {
     'L2Convergence':1e-14,
     'L2ConvergenceCoarse':1e-2,
     'NKSwitchTol':1e-2,
-    'nkadpc': False, 
+    'nkadpc': False,
     'vis4':0.006,
-    'vis2': 0.0, 
-    'blocksplitting': True, 
-    'solutionPrecision':'double', 
-    'flowtype':'internal'
+    'vis2': 0.0,
+    'blocksplitting': True,
+    'solutionPrecision':'double',
+    'flowtype':'internal',
+    'useblockettes':False,
 }
 
 ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
@@ -56,9 +57,9 @@ ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                  evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
                             'mavgttot_up', 'mavgttot_down',
-                            'mavgps_up', 'mavgps_down', 
-                            'mavgmn_up', 'mavgmn_down', 
-                            'thrust', 
+                            'mavgps_up', 'mavgps_down',
+                            'mavgmn_up', 'mavgmn_down',
+                            'thrust',
                             'distortionmn', 'distortionptot',
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
@@ -115,6 +116,3 @@ CFDSolver.evalFunctions(ap, funcs)
 if MPI.COMM_WORLD.rank == 0:
     print('Eval Functions:')
     reg_write_dict(funcs, 1e-10, 1e-10)
-
-
-

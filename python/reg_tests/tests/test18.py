@@ -62,6 +62,7 @@ options = {
     'outerpreconits':3,
     'zipperSurfaceFamily':'output_fam',
     'flowtype':'internal',
+    'useblockettes':False,
     }
 
 solve = True
@@ -79,8 +80,8 @@ name = 'nozzle'
 # Aerodynamic problem description
 ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
                  areaRef=areaRef, chordRef=chordRef,
-                 evalFuncs=['mdot_up', 'mdot_down', #'mdot_plane', 
-                            'mavgptot_up', 'mavgptot_down',# 'mavgptot_plane', 
+                 evalFuncs=['mdot_up', 'mdot_down', #'mdot_plane',
+                            'mavgptot_up', 'mavgptot_down',# 'mavgptot_plane',
                             'mavgttot_up', 'mavgttot_down',# 'mavgttot_plane',
                             'mavgps_up', 'mavgps_down', #'mavgps_plane'
                             'sigmamn_up',  #'sigmamn_plane'
@@ -97,7 +98,7 @@ ap.addDV('PressureStagnation', family='upstream')
 ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
- 
+
 CFDSolver = ADFLOW(options=options, debug=True)
 
 #CFDSolver.addIntegrationSurface('integration_plane.fmt', 'coarse_plane')
@@ -132,8 +133,8 @@ CFDSolver.addFunction('sigmaptot', 'upstream', name="sigmaptot_up")
 CFDSolver.setOption('ncycles',1000)
 
 # Check the residual
-res = CFDSolver.getResidual(ap) 
-#TODO: getResNorms() doesn't work for overset? 
+res = CFDSolver.getResidual(ap)
+#TODO: getResNorms() doesn't work for overset?
 # totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()
 # print res, totalR0, totalRStart, totalRFinal
 # res /= totalR0
@@ -151,4 +152,3 @@ CFDSolver.evalFunctions(ap, funcs)
 if MPI.COMM_WORLD.rank == 0:
     print('Eval Functions:')
     reg_write_dict(funcs, 1e-10, 1e-10)
-
