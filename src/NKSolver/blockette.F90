@@ -3,12 +3,12 @@ module blockette
   use constants
   ! This temporary module contains all cache-blocked code. It also
   ! contains the statically allocated variables on which the blocked
-  ! code operates. 
+  ! code operates.
 
   ! Dummy Block dimensions
   integer(kind=intType), parameter :: BS=8
   integer(kind=intType), parameter :: bbil=BS+1, bbjl=BS+1, bbkl=BS+1
-  integer(kind=intType), parameter :: bbie=BS+2, bbje=BS+2, bbke=BS+2 
+  integer(kind=intType), parameter :: bbie=BS+2, bbje=BS+2, bbke=BS+2
   integer(kind=intType), parameter :: bbib=BS+3, bbjb=BS+3, bbkb=BS+3
 
   ! Actual dimensions to execute
@@ -55,7 +55,7 @@ module blockette
   real(kind=realType), dimension(1:bbil, 1:bbjl, 1:bbkl) :: ux, uy, uz
   real(kind=realType), dimension(1:bbil, 1:bbjl, 1:bbkl) :: vx, vy, vz
   real(kind=realType), dimension(1:bbil, 1:bbjl, 1:bbkl) :: wx, wy, wz
-  real(kind=realType), dimension(1:bbil, 1:bbjl, 1:bbkl) :: qx, qy, qz 
+  real(kind=realType), dimension(1:bbil, 1:bbjl, 1:bbkl) :: qx, qy, qz
 
   ! Make *all* of these variables tread-private
   !$OMP THREADPRIVATE(nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb)
@@ -64,7 +64,7 @@ module blockette
   !$OMP THREADPRIVATE(sI, sJ, sK, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)
 contains
 
-  subroutine blocketteRes(useDissApprox, useViscApprox, useUpdateDt, useFlowRes, useTurbRes, useSpatial, & 
+  subroutine blocketteRes(useDissApprox, useViscApprox, useUpdateDt, useFlowRes, useTurbRes, useSpatial, &
        useStoreWall, famLists, funcValues, forces, bcDataNames, bcDataValues, bcDataFamLists)
 
     ! Copy the values from blockPointers (assumed set) into the
@@ -116,38 +116,38 @@ contains
     dissApprox = .False.
     viscApprox = .False.
     updateDt = .False.
-    flowRes = .True. 
+    flowRes = .True.
     turbRes = .True.
-    spatial = .False. 
+    spatial = .False.
     storeWall = .True.
 
     ! Parse the input variables
-    if (present(useDissApprox)) then 
+    if (present(useDissApprox)) then
        dissApprox = useDissApprox
     end if
 
-    if (present(useViscApprox)) then 
+    if (present(useViscApprox)) then
        viscApprox = useViscApprox
     end if
 
-    if (present(useUpdateDt)) then 
+    if (present(useUpdateDt)) then
        updateDt = useUpdateDt
     end if
 
-    if (present(useFlowRes)) then 
+    if (present(useFlowRes)) then
        flowRes = useFlowRes
     end if
 
-    if (present(useTurbRes)) then 
+    if (present(useTurbRes)) then
        turbRes = useTurbRes
     end if
 
-    if (present(useSpatial)) then 
+    if (present(useSpatial)) then
        spatial = useSpatial
     end if
 
-    if (present(useStoreWall)) then 
-       storeWall = useStoreWall 
+    if (present(useStoreWall)) then
+       storeWall = useStoreWall
     end if
 
     ! Spatial-only updates first
@@ -208,7 +208,7 @@ contains
 
           ! Make sure to call the turb BC's first incase we need to
           ! correct for K
-          if( equations == RANSEquations .and. turbRes) then 
+          if( equations == RANSEquations .and. turbRes) then
              call BCTurbTreatment
              call applyAllTurbBCthisblock(.True.)
           end if
@@ -217,15 +217,15 @@ contains
     end do
 
     ! Compute the ranges of the residuals we are dealing with:
-    if (flowRes .and. turbRes) then 
-       lStart = 1 
+    if (flowRes .and. turbRes) then
+       lStart = 1
        lEnd =  nw
 
-    else if (flowRes .and. (.not. turbRes)) then 
+    else if (flowRes .and. (.not. turbRes)) then
        lStart = 1
        lEnd = nwf
 
-    else if ((.not. flowRes) .and. turbres) then 
+    else if ((.not. flowRes) .and. turbres) then
        lStart = nt1
        lEnd   = nt2
     end if
@@ -250,13 +250,13 @@ contains
        end do
     end if
 
-    ! Main loop for the residual...This is where the blockette magic happens. 
+    ! Main loop for the residual...This is where the blockette magic happens.
     spsLoop: do sps=1, nTimeIntervalsSpectral
        blockLoop: do  nn=1, nDom
           call setPointers(nn, 1, sps)
 
           rFil = one
-          blockettes: if (useBlockettes) then 
+          blockettes: if (useBlockettes) then
              call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
           else
              call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
@@ -288,7 +288,7 @@ contains
     use constants
 
     use constants
-    use blockPointers, only : & 
+    use blockPointers, only : &
          bnx=>nx, bny=>ny, bnz=>nz, &
          bil=>il, bjl=>jl, bkl=>kl, &
          bie=>ie, bje=>je, bke=>ke, &
@@ -317,21 +317,21 @@ contains
     integer(kind=intType) :: i, j, k, l, lStart, lEnd
 
     ! Compute the ranges of the residuals we are dealing with:
-    if (flowRes .and. turbRes) then 
-       lStart = 1 
+    if (flowRes .and. turbRes) then
+       lStart = 1
        lEnd =  nw
 
-    else if (flowRes .and. (.not. turbRes)) then 
+    else if (flowRes .and. (.not. turbRes)) then
        lStart = 1
        lEnd = nwf
 
-    else if ((.not. flowRes) .and. turbres) then 
+    else if ((.not. flowRes) .and. turbres) then
        lStart = nt1
        lEnd   = nt2
     end if
 
     ! Block loop over the owned cells
-    !$OMP parallel do private(i,j,k,l) collapse(2) 
+    !$OMP parallel do private(i,j,k,l) collapse(2)
     do kk=2, bkl, BS
        do jj=2, bjl, BS
           do ii=2, bil, BS
@@ -355,8 +355,8 @@ contains
              ! Double halos
              do k=0, kb
                 do j=0, jb
-                   do i=0, ib 
-                      w(i,j,k,:) = bw(i+ii-2, j+jj-2, k+kk-2, :)
+                   do i=0, ib
+                      w(i,j,k,1:nw) = bw(i+ii-2, j+jj-2, k+kk-2, 1:nw)
                       p(i,j,k) = bP(i+ii-2, j+jj-2, k+kk-2)
                       gamma(i,j,k) = bgamma(i+ii-2, j+jj-2, k+kk-2)
                       ss(i,j,k) = bShockSensor(i+ii-2, j+jj-2,k+kk-2)
@@ -367,7 +367,7 @@ contains
              ! Single halos
              do k=1, ke
                 do j=1, je
-                   do i=1, ie 
+                   do i=1, ie
                       rlv(i,j,k) = brlv(i+ii-2, j+jj-2, k+kk-2)
                       rev(i,j,k) = brev(i+ii-2, j+jj-2, k+kk-2)
                       vol(i,j,k) = bvol(i+ii-2, j+jj-2, k+kk-2)
@@ -389,6 +389,7 @@ contains
                 do j=2, jl
                    do i=2, il
                       iblank(i,j,k) = biblank(i+ii-2,j+jj-2,k+kk-2)
+                      if (equations .eq. ransequations) &
                       d2wall(i,j,k) = bd2wall(i+ii-2,j+jj-2,k+kk-2)
                       volRef(i,j,k) = bvolRef(i+ii-2,j+jj-2,k+kk-2)
                    end do
@@ -421,7 +422,7 @@ contains
              end do
 
              ! Face velocities if necessary
-             if (addGridVelocities) then 
+             if (addGridVelocities) then
                 do k=1, ke
                    do j=1, je
                       do i=0, ie
@@ -451,7 +452,7 @@ contains
                 sFaceK = zero
              end if
 
-             ! Clear the viscous flux before we start. 
+             ! Clear the viscous flux before we start.
              fw = zero
 
              ! Call the routines in order:
@@ -459,7 +460,7 @@ contains
              call initRes(lStart, lEnd)
 
              ! Compute turbulence residual for RANS equations
-             if( equations == RANSEquations .and. turbRes) then 
+             if( equations == RANSEquations .and. turbRes) then
 
                 ! Initialize only the Turblent Variables
                 !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -477,10 +478,10 @@ contains
 
              call timeStep(updateDt)
 
-             if (flowRes) then 
+             if (flowRes) then
                 call inviscidCentralFlux
 
-                if (dissApprox) then 
+                if (dissApprox) then
                    select case (spaceDiscr)
                    case (dissScalar)
                       call inviscidDissFluxScalarApprox
@@ -502,7 +503,7 @@ contains
 
                 if (viscous) then
                    call computeSpeedOfSoundSquared
-                   if (viscApprox) then 
+                   if (viscApprox) then
                       call viscousFluxApprox
                    else
                       call allNodalGradients
@@ -526,7 +527,7 @@ contains
              end do
 
              ! Also copy out the dtl if we were asked for it
-             if (updateDt) then 
+             if (updateDt) then
                 do k=2, kl
                    do j=2, jl
                       do i=2, il
@@ -538,19 +539,19 @@ contains
           end do
        end do
     end do
-    !$OMP END PARALLEL DO 
+    !$OMP END PARALLEL DO
   end subroutine blocketteResCore
 
   subroutine blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
 
     use constants
     use fluxes, only : inviscidCentralFlux_block=>inviscidCentralFlux, &
-         inviscidDissFluxScalar_block=>inviscidDissFluxScalar, & 
-         inviscidDissFluxMatrix_block=>inviscidDissFluxMatrix, & 
-         inviscidUpwindFlux_block=>inviscidUpwindFlux, & 
-         inviscidDissFluxScalarApprox_block=>inviscidDissFluxScalarApprox, & 
-         inviscidDissFluxMatrixApprox_block=>inviscidDissFluxMatrix, & 
-         viscousFlux_block=>viscousFlux, & 
+         inviscidDissFluxScalar_block=>inviscidDissFluxScalar, &
+         inviscidDissFluxMatrix_block=>inviscidDissFluxMatrix, &
+         inviscidUpwindFlux_block=>inviscidUpwindFlux, &
+         inviscidDissFluxScalarApprox_block=>inviscidDissFluxScalarApprox, &
+         inviscidDissFluxMatrixApprox_block=>inviscidDissFluxMatrix, &
+         viscousFlux_block=>viscousFlux, &
          viscousFluxApprox_block=>viscousFluxApprox
     use solverUtils, only : timeStep_block
     use flowVarRefState, only : nwf, nw, viscous, nt1, nt2
@@ -571,26 +572,26 @@ contains
     integer(kind=intType) :: i, j, k, lStart, lEnd
 
     ! Compute the ranges of the residuals we are dealing with:
-    if (flowRes .and. turbRes) then 
-       lStart = 1 
+    if (flowRes .and. turbRes) then
+       lStart = 1
        lEnd =  nw
 
-    else if (flowRes .and. (.not. turbRes)) then 
+    else if (flowRes .and. (.not. turbRes)) then
        lStart = 1
        lEnd = nwf
 
-    else if ((.not. flowRes) .and. turbres) then 
+    else if ((.not. flowRes) .and. turbres) then
        lStart = nt1
        lEnd   = nt2
     end if
 
-    ! Compute time step 
+    ! Compute time step
     call timestep_block(.not. updateDt)
 
     call initres_block(lStart, lEnd, nn, sps) ! Initialize only the Turblent Variables
 
     fw = zero
-    
+
     ! Possible Turblent Equations
     if(equations == RANSEquations .and. turbRes) then
        ! Compute the skin-friction velocity (wall functions only)
@@ -605,7 +606,7 @@ contains
 
     call timeStep_block(.not. updateDt)
 
-    if (flowRes) then 
+    if (flowRes) then
 
        call inviscidCentralFlux_block
        if (dissApprox) then
@@ -630,7 +631,7 @@ contains
 
        if (viscous) then
           call computeSpeedOfSoundSquared_block
-          if (viscApprox) then 
+          if (viscApprox) then
              call viscousFluxApprox_block
           else
              call allNodalGradients_block
@@ -764,7 +765,7 @@ contains
     !                    SA Source Term
     ! ---------------------------------------------
 
-    use constants 
+    use constants
     use paramTurb
     use blockPointers, only : sectionID
     use inputPhysics, only :useft2SA, useRotationSA, turbProd, equations
@@ -867,7 +868,7 @@ contains
              strainMag2 = two*(sxy**2 + sxz**2 + syz**2) &
                   +           sxx**2 + syy**2 + szz**2
 
-             ! -- Calcs for vorticity -- 
+             ! -- Calcs for vorticity --
 
              ! Compute the three components of the vorticity vector.
              ! Substract the part coming from the rotating frame.
@@ -876,7 +877,7 @@ contains
              vorty = two*fact*(uuz - wwx) - two*omegay
              vortz = two*fact*(vvx - uuy) - two*omegaz
 
-             if (turbProd == strain) then 
+             if (turbProd == strain) then
                 sqrtProd = sqrt(max(two*strainMag2-div2, eps))
              else
                 sqrtProd = sqrt(vortx**2 + vorty**2 + vortz**2)
@@ -1169,7 +1170,7 @@ contains
 
   subroutine saAdvection
     ! ---------------------------------------------
-    !                SA Advection 
+    !                SA Advection
     ! ---------------------------------------------
     use constants
     use turbMod, only : secondOrd
@@ -1331,11 +1332,11 @@ contains
     enddo
 
     !
-    !       Upwind discretization of the convective term in j (eta)        
-    !       direction. Either the 1st order upwind or the second order     
-    !       fully upwind interpolation scheme, kappa = -1, is used in      
-    !       combination with the minmod limiter.                           
-    !       The possible grid velocity must be taken into account.         
+    !       Upwind discretization of the convective term in j (eta)
+    !       direction. Either the 1st order upwind or the second order
+    !       fully upwind interpolation scheme, kappa = -1, is used in
+    !       combination with the minmod limiter.
+    !       The possible grid velocity must be taken into account.
     !
     do k=2, kl
        do j=2, jl
@@ -1484,11 +1485,11 @@ contains
        enddo
     enddo
     !
-    !       Upwind discretization of the convective term in i (xi)         
-    !       direction. Either the 1st order upwind or the second order     
-    !       fully upwind interpolation scheme, kappa = -1, is used in      
-    !       combination with the minmod limiter.                           
-    !       The possible grid velocity must be taken into account.         
+    !       Upwind discretization of the convective term in i (xi)
+    !       direction. Either the 1st order upwind or the second order
+    !       fully upwind interpolation scheme, kappa = -1, is used in
+    !       combination with the minmod limiter.
+    !       The possible grid velocity must be taken into account.
     !
     qs = zero
     do k=2, kl
@@ -1699,7 +1700,7 @@ contains
     integer(kind=intType) :: i, j, k
 
     updateDt = .False.
-    if (present(updateDtl)) then 
+    if (present(updateDtl)) then
        updateDt = .True.
     end if
 
@@ -1717,8 +1718,8 @@ contains
 
     sFace = zero
     !
-    !           Inviscid contribution, depending on the preconditioner.    
-    !           Compute the cell centered values of the spectral radii.    
+    !           Inviscid contribution, depending on the preconditioner.
+    !           Compute the cell centered values of the spectral radii.
     !
     do k=1,ke
        do j=1,je
@@ -1779,7 +1780,7 @@ contains
                   +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
              ! Store in tdl if required
-             if (updateDt) then 
+             if (updateDt) then
                 dtl(i,j,k) = ri + rj + rk
              end if
 
@@ -1811,7 +1812,7 @@ contains
 
 
     ! The rest is only necessary if the timeStep needs to be computed
-    if (updateDt) then 
+    if (updateDt) then
 
        viscousTerm: if( viscous ) then
 
@@ -2804,7 +2805,7 @@ contains
     !             Inviscid Diss Flux Scalar
     ! ---------------------------------------------
 
-    use constants 
+    use constants
     use flowVarRefState, only : pInfCorr
     use inputDiscretization, only: vis2, vis4
     use inputPhysics, only : equations
@@ -2836,7 +2837,7 @@ contains
 
        ! Copy the pressure in ss. Only need the entries used in the
        ! discretization, i.e. not including the corner halo's, but we'll
-       ! just copy all anyway. 
+       ! just copy all anyway.
 
        ss = P
        !===============================================================
@@ -2850,7 +2851,7 @@ contains
 
        sslim = 0.001_realType*pInfCorr/(rhoInf**gammaInf)
 
-       ! Store the entropy in ss. See above. 
+       ! Store the entropy in ss. See above.
        do k=0, kb
           do j=0, jb
              do i=0, ib
@@ -2888,7 +2889,7 @@ contains
 
     fw = sfil*fw
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -2953,7 +2954,7 @@ contains
        end do
     end do
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
     do k=2,kl
        do j=1,jl
@@ -3018,7 +3019,7 @@ contains
        end do
     end do
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
     do k=1,kl
        do j=2,jl
@@ -4116,7 +4117,7 @@ contains
     !             Inviscid Diss Flux Scalar
     ! ---------------------------------------------
 
-    use constants 
+    use constants
     use flowVarRefState, only : pInfCorr
     use inputDiscretization, only: vis2, vis4, sigma
     use inputPhysics, only : equations
@@ -4174,7 +4175,7 @@ contains
     fis2 = vis2
     fis4 = vis4
     !
-    !       Dissipative fluxes in the i-direction.                         
+    !       Dissipative fluxes in the i-direction.
     !
     do k=2,kl
        do j=2,jl
@@ -4232,7 +4233,7 @@ contains
        end do
     end do
     !
-    !       Dissipative fluxes in the j-direction.                         
+    !       Dissipative fluxes in the j-direction.
     !
     do k=2,kl
        do j=1,jl
@@ -4291,7 +4292,7 @@ contains
        end do
     end do
     !
-    !       Dissipative fluxes in the k-direction.                         
+    !       Dissipative fluxes in the k-direction.
     !
     do k=1,kl
        do j=2,jl
@@ -4916,7 +4917,7 @@ contains
     ! Determine if we need to correct for K
     correctForK = getCorrectForK()
 
-    if (correctForK) then 
+    if (correctForK) then
        do k=1,ke
           do j=1,je
              do i=1,ie
@@ -4951,20 +4952,20 @@ contains
     ! Zero just the required part of the nodal gradients since the
     ! first value may be useful.
     ux(:, :, :) = zero
-    uy(:, :, :) = zero 
-    uz(:, :, :) = zero 
+    uy(:, :, :) = zero
+    uz(:, :, :) = zero
 
     vx(:, :, :) = zero
-    vy(:, :, :) = zero 
-    vz(:, :, :) = zero 
+    vy(:, :, :) = zero
+    vz(:, :, :) = zero
 
     wx(:, :, :) = zero
-    wy(:, :, :) = zero 
-    wz(:, :, :) = zero 
+    wy(:, :, :) = zero
+    wz(:, :, :) = zero
 
     qx(:, :, :) = zero
-    qy(:, :, :) = zero 
-    qz(:, :, :) = zero 
+    qy(:, :, :) = zero
+    qz(:, :, :) = zero
 
     ! First part. Contribution in the k-direction.
     ! The contribution is scattered to both the left and right node
@@ -5259,12 +5260,12 @@ contains
     use flowvarRefState, only : eddyModel
     use iteration, only : rFil
     use blockPointers, only : bil => il, bjl=>jl, bkl=>kl, &
-         viscIminPointer, viscImaxPointer, viscSubFace, & 
-         viscJminPointer, viscJmaxPointer, & 
+         viscIminPointer, viscImaxPointer, viscSubFace, &
+         viscJminPointer, viscJmaxPointer, &
          viscKminPointer, viscKmaxPointer
     implicit none
 
-    ! Input 
+    ! Input
     logical, intent(in), optional :: storeWallTensor
 
     ! Variables for viscous flux
@@ -5291,7 +5292,7 @@ contains
     logical :: storeWall
 
     storeWall = .False.
-    if (present(storeWallTensor)) then 
+    if (present(storeWallTensor)) then
        storeWall = .True.
     end if
 
@@ -5304,7 +5305,7 @@ contains
     Wyy = zero
     Wzz = zero
     !
-    !         viscous fluxes in the k-direction.                           
+    !         viscous fluxes in the k-direction.
     !
     mue = zero
     do k=1,kl
@@ -5546,7 +5547,7 @@ contains
              ! Temporarily store the shear stress and heat flux, even
              ! if we won't need it. This can still vectorize
 
-             if (k == 1) then 
+             if (k == 1) then
                 tmpStore(1, i, j, 1) = tauxx
                 tmpStore(2, i, j, 1) = tauyy
                 tmpStore(3, i, j, 1) = tauzz
@@ -5559,7 +5560,7 @@ contains
                 tmpStore(9, i, j, 1) = q_z
              end if
 
-             if (k == kl) then 
+             if (k == kl) then
                 tmpStore(1, i, j, 2) = tauxx
                 tmpStore(2, i, j, 2) = tauyy
                 tmpStore(3, i, j, 2) = tauzz
@@ -5577,15 +5578,15 @@ contains
     end do
 
     ! Save into the subface if necessary
-    if (storeWall) then 
+    if (storeWall) then
 
-       origKMin: if (kk-1 == 1) then 
+       origKMin: if (kk-1 == 1) then
           do j=2, jl
              do i=2, il
                 io = i + ii - 2
                 jo = j + jj - 2
 
-                if (viscKminPointer(io, jo) > 0) then 
+                if (viscKminPointer(io, jo) > 0) then
                    viscSubface(viscKminPointer(io, jo))%tau(io, jo, :) = tmpStore(1:6, i, j, 1)
                    viscSubface(viscKminPointer(io, jo))%q(io, jo, :) = tmpStore(7:9, i, j, 1)
                 endif
@@ -5593,7 +5594,7 @@ contains
           end do
        end if origKMin
 
-       origKMax: if (kk + nx - 1 == bkl) then 
+       origKMax: if (kk + nx - 1 == bkl) then
           do j=2, jl
              do i=2, il
                 io = i + ii - 2
@@ -5607,7 +5608,7 @@ contains
        end if origKMax
     end if
     !
-    !         Viscous fluxes in the j-direction.                           
+    !         Viscous fluxes in the j-direction.
     !
     do k=2,kl
        do j=1,jl
@@ -5847,7 +5848,7 @@ contains
              ! Temporarily store the shear stress and heat flux, even
              ! if we won't need it. This can still vectorize
 
-             if (j == 1) then 
+             if (j == 1) then
                 tmpStore(1, i, k, 1) = tauxx
                 tmpStore(2, i, k, 1) = tauyy
                 tmpStore(3, i, k, 1) = tauzz
@@ -5860,7 +5861,7 @@ contains
                 tmpStore(9, i, k, 1) = q_z
              end if
 
-             if (j == jl) then 
+             if (j == jl) then
                 tmpStore(1, i, k, 2) = tauxx
                 tmpStore(2, i, k, 2) = tauyy
                 tmpStore(3, i, k, 2) = tauzz
@@ -5876,14 +5877,14 @@ contains
        enddo
     enddo
     ! Save into the subface if necessary
-    if (storeWall) then 
-       origJMin: if (jj-1 == 1) then 
+    if (storeWall) then
+       origJMin: if (jj-1 == 1) then
           do k=2, kl
              do i=2, il
                 io = i + ii - 2
                 ko = k + kk - 2
 
-                if (viscJminPointer(io, ko) > 0) then 
+                if (viscJminPointer(io, ko) > 0) then
                    viscSubface(viscJminPointer(io, ko))%tau(io, ko, :) = tmpStore(1:6, i, k, 1)
                    viscSubface(viscJminPointer(io, ko))%q(io, ko, :) = tmpStore(7:9, i, k, 1)
                 endif
@@ -5891,7 +5892,7 @@ contains
           end do
        end if origJMin
 
-       origJMax: if (jj + ny - 1 == bjl) then 
+       origJMax: if (jj + ny - 1 == bjl) then
           do k=2, kl
              do i=2, il
                 io = i + ii - 2
@@ -5905,7 +5906,7 @@ contains
        end if origJMax
     end if
     !
-    !         Viscous fluxes in the i-direction.                           
+    !         Viscous fluxes in the i-direction.
     !
     do k=2, kl
        do j=2, jl
@@ -6143,7 +6144,7 @@ contains
              ! Temporarily store the shear stress and heat flux, even
              ! if we won't need it. This can still vectorize
 
-             if (j == 1) then 
+             if (j == 1) then
                 tmpStore(1, j, k, 1) = tauxx
                 tmpStore(2, j, k, 1) = tauyy
                 tmpStore(3, j, k, 1) = tauzz
@@ -6156,7 +6157,7 @@ contains
                 tmpStore(9, j, k, 1) = q_z
              end if
 
-             if (j == jl) then 
+             if (j == jl) then
                 tmpStore(1, j, k, 2) = tauxx
                 tmpStore(2, j, k, 2) = tauyy
                 tmpStore(3, j, k, 2) = tauzz
@@ -6172,14 +6173,14 @@ contains
        enddo
     enddo
     ! Save into the subface if necessary
-    if (storeWall) then 
-       origIMin: if (ii-1 == 1) then 
+    if (storeWall) then
+       origIMin: if (ii-1 == 1) then
           do k=2, kl
              do j=2, jl
                 jo = j + jj - 2
                 ko = k + kk - 2
 
-                if (viscIminPointer(jo, ko) > 0) then 
+                if (viscIminPointer(jo, ko) > 0) then
                    viscSubface(viscIminPointer(jo, ko))%tau(jo, ko, :) = tmpStore(1:6, j, k, 1)
                    viscSubface(viscIminPointer(jo, ko))%q(jo, ko, :) = tmpStore(7:9, j, k, 1)
                 endif
@@ -6187,7 +6188,7 @@ contains
           end do
        end if origIMin
 
-       origIMax: if (ii + nx - 1 == bil) then 
+       origIMax: if (ii + nx - 1 == bil) then
           do k=2, kl
              do j=2, jl
                 jo = j + jj - 2
@@ -6629,7 +6630,3 @@ contains
   end subroutine resScale
 
 end module blockette
-
-
-
-

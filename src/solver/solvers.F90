@@ -917,6 +917,9 @@ contains
     use tecplotIO, only : writeTecplot
     use multiGrid, only : setCycleStrategy, executeMGCycle
     use surfaceFamilies, only : fullFamList
+    use flowVarRefState, only : nwf
+    use residuals, only : residual, initres, sourceTerms
+    use solverUtils, only : timeStep
     implicit none
     !
     !      Local parameter
@@ -1014,7 +1017,16 @@ contains
     approxTotalIts = 0
 
     ! Evaluate the initial residual
-    call computeResidualNK
+    if (currentLevel == 1) then
+       ! use the NK driver if we are on the finest level
+       call computeResidualNK
+    else
+       ! we are on a coarse level, don't need turb residuals
+       call timeStep(.false.)
+       call initres(1_intType, nwf)
+       ! call sourceTerms()
+       call residual
+    end if
 
     ! Extract the rhoResStart and totalRStart
     call getCurrentResidual(rhoResStart, totalRStart)
