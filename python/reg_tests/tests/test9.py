@@ -38,7 +38,6 @@ options.update(
      'adjointl2convergence': 1e-14,
      'solutionprecision':'double',
      'gridprecision':'double',
-     'useblockettes':False,
  })
 
 # Create the solver

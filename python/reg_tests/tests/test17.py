@@ -65,7 +65,6 @@ options = {
     'outerpreconits':3,
     'zipperSurfaceFamily':'output_fam',
     'flowtype':'internal',
-    'useblockettes':False,
     }
 
 solve = True
