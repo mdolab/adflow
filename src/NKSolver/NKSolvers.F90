@@ -2840,6 +2840,9 @@ contains
     call VecNorm(rVec, NORM_2, unsteadyNorm, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    ! initialize this outside the ls
+    LSFailed = .False.
+
     if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then
        ! The unsteady residual is too high or we have a NAN. Do a
        ! backtracking line search until we get a residual that is lower.
