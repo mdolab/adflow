@@ -649,6 +649,7 @@ contains
     ! ---------------------------------------------
 
     use constants
+    use blockPointers, only : rightHanded
     implicit none
 
     integer(kind=intType) :: i, j, k, l, m, n
@@ -656,7 +657,11 @@ contains
     real(kind=realType) :: fact
 
     ! Projected areas of cell faces in the i direction.
-    fact = half
+    if (rightHanded) then
+       fact = half
+    else
+       fact = -half
+    end if
     do k=1,ke
        n = k -1
        do j=1,je
