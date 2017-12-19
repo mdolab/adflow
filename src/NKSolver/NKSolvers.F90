@@ -2503,7 +2503,7 @@ contains
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
     real(kind=realType), pointer :: wvec_pointer(:)
     real(kind=realType), pointer :: dvec_pointer(:)
-    real(kind=realType) :: lambdaL ! L is for local
+    real(kind=alwaysRealType) :: lambdaL ! L is for local
     real(kind=realType) :: ratio
 
 
@@ -2513,7 +2513,7 @@ contains
 
     ! Initialize the local step size as ANK_stepFactor
     ! because the initial step is likely to be equal to this.
-    lambdaL = lambdaP
+    lambdaL = real(lambdaP)
 
     ! First we need to read both the update and the state
     ! from PETSc because the w in ADFlow currently contains
@@ -2643,7 +2643,7 @@ contains
     real(kind=realType) :: atol, val, v2, factK, gm1
     real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
     real(kind=alwaysRealType) :: resHist(ank_maxIter+1)
-    real(kind=realType) :: unsteadyNorm, unsteadyNorm_old
+    real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old
     logical :: secondOrdSave, correctForK, LSFailed
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
