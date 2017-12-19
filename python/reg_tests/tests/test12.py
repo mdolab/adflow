@@ -44,7 +44,6 @@ options.update(
      'nkswitchtol':1e-3,
      'adjointl2convergence': 1e-14,
      'frozenturbulence':False,
-     'useblockettes':False,
  }
 )
 

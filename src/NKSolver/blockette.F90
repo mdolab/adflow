@@ -262,8 +262,6 @@ contains
              call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
           end if blockettes
 
-          ! Lastly we need to compute the source terms since those cannot be
-          ! done with the blockettes
           if (currentLevel == 1) then
              call sourceTerms_block(nn, .True., pLocal)
           end if
@@ -301,9 +299,10 @@ contains
          bShockSensor=>shockSensor, &
          bsi=>si, bsj=>sj, bsk=>sk, &
          bsFaceI=>sFaceI, bsFaceJ=>sFaceJ, bsFaceK=>sFaceK , &
-         bdtl=>dtl, &
+         bdtl=>dtl,  &
          addGridVelocities
     use flowVarRefState, only : nwf, nw, viscous, nt1, nt2
+    use iteration, only : currentLevel
     use inputPhysics , only : equationMode, equations, turbModel
     use inputDiscretization, only : spaceDiscr
     use utils, only : setPointers, EChk
@@ -361,7 +360,9 @@ contains
                       w(i,j,k,1:nw) = bw(i+ii-2, j+jj-2, k+kk-2, 1:nw)
                       p(i,j,k) = bP(i+ii-2, j+jj-2, k+kk-2)
                       gamma(i,j,k) = bgamma(i+ii-2, j+jj-2, k+kk-2)
-                      ss(i,j,k) = bShockSensor(i+ii-2, j+jj-2,k+kk-2)
+                      if (currentLevel == 1) then
+                         ss(i,j,k) = bShockSensor(i+ii-2, j+jj-2,k+kk-2)
+                      end if
                    end do
                 end do
              end do
@@ -605,8 +606,6 @@ contains
           call sa_block(.true.)
        end select
     endif
-
-    call timeStep_block(.not. updateDt)
 
     if (flowRes) then
 
@@ -1879,6 +1878,7 @@ contains
              enddo
           enddo
        endif viscousTerm
+
 
        ! For the spectral mode an additional term term must be
        ! taken into account, which corresponds to the contribution

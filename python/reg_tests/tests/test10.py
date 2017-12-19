@@ -36,7 +36,6 @@ options.update(
      'adjointl2convergence': 1e-14,
      'solutionprecision':'single',
      'gridprecision':'double',
-     'useblockettes':False,
  })
 ap = AeroProblem(name='mdo_tutorial', alpha=1.20, mach=0.80, altitude=10000.0,
                  areaRef=45.5, chordRef=3.25)

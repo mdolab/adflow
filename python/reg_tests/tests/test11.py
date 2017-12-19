@@ -39,7 +39,6 @@ options.update(
          'l2Convergencecoarse':1e-2,
          'nkswitchtol':1e-2,
          'adjointl2convergence': 1e-14,
-         'useblockettes':False,
      }
 )
 
