@@ -7,7 +7,6 @@ from __future__ import print_function
 import sys, os, copy
 from mpi4py import MPI
 from baseclasses import AeroProblem
-sys.path.append(os.path.abspath('./'))
 from mdo_regression_helper import *
 from commonUtils import *
 
