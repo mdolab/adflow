@@ -7,6 +7,7 @@ from __future__ import print_function
 import sys, os, copy
 from mpi4py import MPI
 from baseclasses import AeroProblem
+sys.path.append(os.path.abspath('./'))
 from mdo_regression_helper import *
 from commonUtils import *
 
@@ -30,8 +31,8 @@ c = 1.0
 alpha_m = 2.77 # 2.89 #2.77 #Modified numbers
 alpha_0 = 2.34 # 2.41 #2.34
 
-omega = 2*M*numpy.sqrt(gamma*R*T)*k/c 
-deltaAlpha = -alpha_0*numpy.pi/180.0 
+omega = 2*M*numpy.sqrt(gamma*R*T)*k/c
+deltaAlpha = -alpha_0*numpy.pi/180.0
 
 # Set forcing frequency and other information
 f = 10.0 # [Hz] Forcing frequency of the flow
@@ -56,15 +57,15 @@ options.update(
      'ntimestepsfine':nfineSteps,
      'deltat':dt,
      'nsubiterturb':10,
-     'nsubiter':5,         
+     'nsubiter':5,
      'useale':False,
      'usegridmotion':True,
      'cfl':2.5,
      'cflcoarse':1.2,
-     'ncycles':2000,            
+     'ncycles':2000,
      'mgcycle':'3w',
      'mgstartlevel':1,
-     'monitorvariables':['cpu','resrho','cl','cd','cmz'],                            
+     'monitorvariables':['cpu','resrho','cl','cd','cmz'],
      'usenksolver':False,
      'l2convergence':1e-6,
      'l2convergencecoarse':1e-4,

@@ -82,7 +82,7 @@ contains
     use flowVarRefState, only : nwf, nw, nt1, nt2
     use initializeFlow, only : referenceState
     use section, only: sections, nSections
-    use iteration, only : rFil
+    use iteration, only : rFil, currentLevel
     use haloExchange, only : exchangeCoor, whalo2
     use wallDistance, only : updateWallDistancesQuickly
     use utils, only : setPointers, EChk
@@ -166,7 +166,7 @@ contains
 
        do sps=1, nTimeIntervalsSpectral
           do nn=1, nDom
-             call setPointers(nn, 1, sps)
+             call setPointers(nn, currentLevel, sps)
              call xhalo_block()
           end do
        end do
@@ -187,7 +187,7 @@ contains
     ! Compute the required derived values and apply the BCs
     do sps=1,nTimeIntervalsSpectral
        do nn=1,nDom
-          call setPointers(nn, 1, sps)
+          call setPointers(nn, currentLevel, sps)
 
           if (spatial) then
              call volume_block
@@ -240,7 +240,7 @@ contains
     if (oversetPresent) then
        do sps=1,nTimeIntervalsSpectral
           do nn=1,nDom
-             call setPointers(nn, 1, sps)
+             call setPointers(nn, currentLevel, sps)
              if( equations == RANSEquations .and. turbRes) then
                 call BCTurbTreatment
                 call applyAllTurbBCthisblock(.True.)
@@ -253,7 +253,7 @@ contains
     ! Main loop for the residual...This is where the blockette magic happens.
     spsLoop: do sps=1, nTimeIntervalsSpectral
        blockLoop: do  nn=1, nDom
-          call setPointers(nn, 1, sps)
+          call setPointers(nn, currentLevel, sps)
 
           rFil = one
           blockettes: if (useBlockettes) then
@@ -264,7 +264,9 @@ contains
 
           ! Lastly we need to compute the source terms since those cannot be
           ! done with the blockettes
-           call sourceTerms_block(nn, .True., pLocal)
+          if (currentLevel == 1) then
+             call sourceTerms_block(nn, .True., pLocal)
+          end if
        end do blockLoop
     end do spsLoop
 

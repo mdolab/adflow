@@ -1,16 +1,16 @@
 from __future__ import print_function
 # This file defines a few common variables that can be used for all
 # regression test scripts. This includes default option lists, default
-# function lists, and some priting routines. 
+# function lists, and some priting routines.
 from mpi4py import MPI
 from mdo_regression_helper import *
 defaultFuncList = ['lift', 'drag', 'cl', 'cd', 'fx', 'fy', 'fz', 'cfx', 'cfy', 'cfz',
-                   'mx', 'my', 'mz', 'cmx', 'cmy', 'cmz', 'sepsensor', 'sepsensoravgx', 
+                   'mx', 'my', 'mz', 'cmx', 'cmy', 'cmz', 'sepsensor', 'sepsensoravgx',
                    'sepsensoravgy', 'sepsensoravgz']
 
 defaultAeroDVs = ['alpha', 'beta', 'mach', 'P', 'T', 'xRef', 'yRef', 'zRef']
 
-# Note that the option keys here are all consistently LOWERCASE. 
+# Note that the option keys here are all consistently LOWERCASE.
 adflowDefOpts = {
     # Common Paramters
     'gridfile':'default.cgns',
@@ -217,7 +217,7 @@ def parPrint(s):
 
 def solutionTest(CFDSolver, ap):
 
-    # Standard test for solving the problem. 
+    # Standard test for solving the problem.
     for dv in defaultAeroDVs:
         ap.addDV(dv)
 
@@ -230,7 +230,7 @@ def solutionTest(CFDSolver, ap):
 
     parPrint('Norm of residual')
     reg_par_write_norm(res, 1e-10, 1e-10)
-    
+
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
     parPrint('Eval Functions:')
@@ -239,13 +239,13 @@ def solutionTest(CFDSolver, ap):
     # Get and check the states
     parPrint('Norm of state vector')
     reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
-   
+
 
 def adjointTest(CFDSolver, ap):
 
     # Standard test for solving multiple adjoints and going right back
     # to the DVs. This solves for whatever functions are in the
-    # aeroProblem. 
+    # aeroProblem.
     for dv in defaultAeroDVs:
         ap.addDV(dv)
 
@@ -254,7 +254,7 @@ def adjointTest(CFDSolver, ap):
     totalR0 = CFDSolver.getFreeStreamResidual(ap)
     res /= totalR0
     reg_par_write_norm(res, 1e-10, 1e-10)
-    
+
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
     parPrint('Eval Functions Sens:')
@@ -265,8 +265,8 @@ def standardTest(CFDSolver, ap, solve):
     # simulation. This will load in the solution (or solve if
     # solve==True), evaluate the default list of functions, check the
     # forces, and then do a full suite of forward mode, reverse mode
-    # and dot-product tests. 
-   
+    # and dot-product tests.
+
     # Now a few simple checks
     parPrint('Total number of state DOF')
     reg_par_write_sum(CFDSolver.getStateSize())
@@ -282,7 +282,7 @@ def standardTest(CFDSolver, ap, solve):
 
     if solve:
         # We are told that we must first solve the problem, most likely
-        # for a training run. 
+        # for a training run.
         CFDSolver(ap)
 
     # Check the residual
@@ -291,7 +291,7 @@ def standardTest(CFDSolver, ap, solve):
     res /= totalR0
     parPrint('Norm of residual')
     reg_par_write_norm(res, 1e-10, 1e-10)
-    
+
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
     parPrint('Eval Functions:')
@@ -319,7 +319,7 @@ def standardTest(CFDSolver, ap, solve):
     # Reset the option
     CFDSolver.setOption('forcesAsTractions', True)
 
-    # Make sure we can write the force file. 
+    # Make sure we can write the force file.
     CFDSolver.writeForceFile('forces.txt')
 
     # Get and check the states
@@ -333,7 +333,7 @@ def standardTest(CFDSolver, ap, solve):
     # to account for this we have to set the random set of numbers to
     # correspond to the full CGNS mesh volume ordering and then scatter
     # back to the correct locations. We have a special routine built into
-    # adflow specifically for this purpose. 
+    # adflow specifically for this purpose.
 
     # Our "full" jacobian looks like the following:
     #                       residuals  objectives   forces
@@ -421,7 +421,7 @@ def standardTest(CFDSolver, ap, solve):
 
     parPrint('||dwBar^T * dR/xDv||')
     reg_root_write_dict(xDvBar, 1e-10, 1e-10)
-        
+
     parPrint('-> F Bar Seed')
     fBar = CFDSolver.getSurfacePerturbation(314)
 
@@ -474,7 +474,7 @@ def standardTest(CFDSolver, ap, solve):
 
     dotLocal1 = numpy.sum(dwDot*dwBar)
     dotLocal2= numpy.sum(wDot*wBar)
-    
+
     reg_par_write_sum(dotLocal1, 1e-10, 1e-10)
     reg_par_write_sum(dotLocal2, 1e-10, 1e-10)
 
@@ -484,10 +484,10 @@ def standardTest(CFDSolver, ap, solve):
 
     dotLocal1 = numpy.sum(dwDot*dwBar)
     dotLocal2 = numpy.sum(xVDot*xVBar)
-    
+
     # For laminar/Rans the DP test for nodes is generally appears a
     # little less accurate. This is ok. It has to do with the very
-    # small offwall spacing on laminar/RANS meshes. 
+    # small offwall spacing on laminar/RANS meshes.
     reg_par_write_sum(dotLocal1, 1e-9, 1e-9)
     reg_par_write_sum(dotLocal2, 1e-9, 1e-9)
 
@@ -508,20 +508,20 @@ def standardTest(CFDSolver, ap, solve):
 
     dotLocal1 = numpy.sum(fDot.flatten()*fBar.flatten())
     dotLocal2 = numpy.sum(xVDot*xVBar)
-    
+
     reg_par_write_sum(dotLocal1, 1e-10, 1e-10)
     reg_par_write_sum(dotLocal2, 1e-10, 1e-10)
 
 
     parPrint ('Dot product test for (w, xV) -> (dw, F)')
 
-    dwDot, fDot = CFDSolver.computeJacobianVectorProductFwd(wDot=wDot, xVDot=xVDot, 
-                                                            residualDeriv=True, fDeriv=True)    
-    wBar, xVBar = CFDSolver.computeJacobianVectorProductBwd(resBar=dwBar, fBar=fBar,  
+    dwDot, fDot = CFDSolver.computeJacobianVectorProductFwd(wDot=wDot, xVDot=xVDot,
+                                                            residualDeriv=True, fDeriv=True)
+    wBar, xVBar = CFDSolver.computeJacobianVectorProductBwd(resBar=dwBar, fBar=fBar,
                                                             wDeriv=True, xVDeriv=True)
 
     dotLocal1 = numpy.sum(dwDot*dwBar) + numpy.sum(fDot.flatten()*fBar.flatten())
     dotLocal2= numpy.sum(wDot*wBar) + numpy.sum(xVDot*xVBar)
-    
+
     reg_par_write_sum(dotLocal1, 1e-10, 1e-10)
     reg_par_write_sum(dotLocal2, 1e-10, 1e-10)
