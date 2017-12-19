@@ -5293,7 +5293,8 @@ contains
     integer(kind=intType) :: i, j, k, io, jo, ko
     real(kind=realType), parameter :: xminn = 1.e-10_realType
     real(kind=realType), parameter :: twoThird = two*third
-    real(kind=realType), dimension(bbil, bbjl, 9, 2) :: tmpStore
+    real(kind=realType), dimension(9, 2:max(il,jl), 2: max(jl,kl), 2) :: tmpStore
+
     logical :: storeWall
 
     storeWall = .False.
@@ -5599,7 +5600,7 @@ contains
           end do
        end if origKMin
 
-       origKMax: if (kk + nx - 1 == bkl) then
+       origKMax: if (kk + nz - 1 == bkl) then
           do j=2, jl
              do i=2, il
                 io = i + ii - 2
@@ -6149,7 +6150,7 @@ contains
              ! Temporarily store the shear stress and heat flux, even
              ! if we won't need it. This can still vectorize
 
-             if (j == 1) then
+             if (i == 1) then
                 tmpStore(1, j, k, 1) = tauxx
                 tmpStore(2, j, k, 1) = tauyy
                 tmpStore(3, j, k, 1) = tauzz
@@ -6162,7 +6163,7 @@ contains
                 tmpStore(9, j, k, 1) = q_z
              end if
 
-             if (j == jl) then
+             if (i == il) then
                 tmpStore(1, j, k, 2) = tauxx
                 tmpStore(2, j, k, 2) = tauyy
                 tmpStore(3, j, k, 2) = tauzz
