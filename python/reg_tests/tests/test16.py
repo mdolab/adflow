@@ -49,7 +49,6 @@ options = {
     'blocksplitting': True,
     'solutionPrecision':'double',
     'flowtype':'internal',
-    'useblockettes':False,
 }
 
 ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,

@@ -968,8 +968,6 @@ contains
        allocate(NKLSFuncEvals(nMGCycles))
     end if
 
-
-
     ! Only compute the free stream resisudal once for efficiency on the
     ! fine grid only.
     if (groundLevel == 1)  then
@@ -1018,6 +1016,10 @@ contains
 
     ! Evaluate the initial residual
     call computeResidualNK
+
+    ! Need to run the time step here since the RK/DADI is expecting
+    ! the rad{i,j,k} to be computed.
+    call timeStep(.False.)
 
     ! Extract the rhoResStart and totalRStart
     call getCurrentResidual(rhoResStart, totalRStart)
