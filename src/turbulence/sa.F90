@@ -1259,4 +1259,3 @@ contains
   end subroutine saSolve
 #endif
 end module sa
-
