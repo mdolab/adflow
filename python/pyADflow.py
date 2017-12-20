@@ -1218,12 +1218,15 @@ class ADFLOW(AeroSolver):
         # given objective. For regular functions this just sets a 1.0
         # for f. For the user-supplied functions, it linearizes the
         # user-supplied function and sets all required seeds.
+
         if f.lower() in self.adflowCostFunctions:
             funcsBar = {f.lower():1.0}
         elif f in self.adflowUserCostFunctions:
             # Need to get the funcs-bar derivative from the
             # user-supplied function
             funcsBar = self.adflowUserCostFunctions[f].evalFunctionsSens()
+        else:
+            funcsBar = {f.lower():0.0}
         return funcsBar
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
@@ -3263,7 +3266,8 @@ class ADFLOW(AeroSolver):
         objective: string
             The objective to be tested.
         """
-        if objective.lower() in self.adflowCostFunctions.keys():
+        if objective.lower() in self.adflowCostFunctions.keys() or \
+           objective.lower() in self.adflowUserCostFunctions.keys():
             return True
         else:
             return False
@@ -4241,6 +4245,7 @@ class ADFLOW(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
+            'useblockettes':[bool, True],
 
             # Overset Parameters:
             'nearwalldist':[float, 0.1],
@@ -4309,24 +4314,30 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             'useanksolver':[bool, False],
             'ankuseturbdadi':[bool, True],
-            'ankswitchtol':[float, 0.1],
+            'ankswitchtol':[float, 1.0],
             'anksubspacesize':[int, -1],
-            'ankmaxiter':[int, 30],
+            'ankmaxiter':[int, 40],
             'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
             'ankjacobianlag':[int, 10],
             'ankinnerpreconits':[int, 1],
-            'ankcfl0':[float, 1.0],
-            'ankcfllimit':[float, 1e16],
-            'ankstepfactor':[float, 0.8],
-            'anksecondordswitchtol':[float, 1e-7],
-            'ankstepinit':[float, 0.2],
-            'ankstepcutback':[float, 0.7],
-            'ankstepmin':[float, 0.4],
-            'ankstepexponent':[float, 0.75],
+            'ankcfl0':[float, 5.0],
+            'ankcflmin':[float,1.0],
+            'ankcfllimit':[float, 250.0],
+            'ankcflfactor':[float, 10.0],
             'ankcflexponent':[float, 1.0],
-            'ankcoupledswitchtol':[float, 1e-10],
+            'ankcflcutback':[float,0.5],
+            'ankstepfactor':[float, 1.0],
+            'ankstepmin':[float, 0.05],
+            'ankconstcflstep':[float, 0.5],
+            'ankphysicallstol':[float, 0.2],
+            'ankunsteadylstol':[float, 1.0],
+            'anksecondordswitchtol':[float, 1e-16],
+            'ankcoupledswitchtol':[float, 1e-16],
+            'ankturbcflscale' : [float, 1.0],
+            'ankusefullvisc' : [bool, True],
+            'ankpcupdatetol':[float,0.5],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4532,6 +4543,7 @@ class ADFLOW(AeroSolver):
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
+            'useblockettes':['discr', 'useblockettes'],
 
             # Overset Parameters
             'nearwalldist':['overset','nearwalldist'],
@@ -4616,15 +4628,21 @@ class ADFLOW(AeroSolver):
             'ankjacobianlag':['ank', 'ank_jacobianlag'],
             'ankinnerpreconits':['ank', 'ank_innerpreconits'],
             'ankcfl0':['ank', 'ank_cfl0'],
+            'ankcflmin':['ank', 'ank_cflmin0'],
             'ankcfllimit':['ank','ank_cfllimit'],
-            'ankstepfactor':['ank','ank_stepfactor'],
-            'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
-            'ankstepinit':['ank','ank_stepinit'],
-            'ankstepcutback':['ank','ank_stepcutback'],
-            'ankstepmin':['ank','ank_stepmin'],
-            'ankstepexponent':['ank','ank_stepexponent'],
+            'ankcflfactor':['ank', 'ank_cflfactor'],
             'ankcflexponent':['ank','ank_cflexponent'],
+            'ankcflcutback':['ank', 'ank_cflcutback'],
+            'ankstepfactor':['ank','ank_stepfactor'],
+            'ankstepmin':['ank','ank_stepmin'],
+            'ankconstcflstep':['ank','ank_constcflstep'],
+            'ankphysicallstol':['ank', 'ank_physlstol'],
+            'ankunsteadylstol':['ank', 'ank_unstdylstol'],
+            'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
+            'ankturbcflscale':['ank', 'ank_turbcflscale'],
+            'ankusefullvisc':['ank', 'ank_usefullvisc'],
+            'ankpcupdatetol':['ank', 'ank_pcupdatetol'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
