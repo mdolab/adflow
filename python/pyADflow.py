@@ -590,7 +590,7 @@ class ADFLOW(AeroSolver):
             pts.T, conn.T, familyName, famID)
 
     def addActuatorRegion(self, fileName, axis1, axis2, familyName,
-                          smoothDistance, F=None, T=None):
+                          thrust=0.0, torque=0.0):
         """Add an actuator disk zone defined by the (closed) supplied
         in the plot3d file "fileName". Axis1 and Axis2 defines the
         physical extent of the region overwhich to apply the ramp
@@ -613,17 +613,15 @@ class ADFLOW(AeroSolver):
            The name to be associated with the functions defined on this
            region.
 
-        smoothDistance : scalar
-           The distance overwhich to smooth the implementatoin of the
-           actuation.
+        thrust : scalar 
+           The total amount of axial force to apply to this region, in the direction 
+           of axis1 -> axis2
 
-        F : numpy array, length 3
-           The total amount of force to apply to this region
-
-        T : scalar
-           The total amoun tof torque to apply to the region, about the
+        torque : scalar
+           The total amount of torque to apply to the region, about the
            specified axis.
-           """
+
+        """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
         if self.getOption('equationMode').lower() == 'time spectral':
             raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
@@ -651,16 +649,10 @@ class ADFLOW(AeroSolver):
         famID = maxInd + 1
         self.families[familyName.lower()] = [famID]
 
-        # Set defaults for T and P if not specified
-        if F is None:
-            F = numpy.zeros(3)
-        if T is None:
-            T = 0.0
-
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, F, T, smoothDistance)
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque)
 
 
     def addUserFunction(self, funcName, functions, callBack):
@@ -3640,8 +3632,9 @@ class ADFLOW(AeroSolver):
                 returns.append(xdvbar)
 
 
-        # Include the aerodynamic variables if requested to do so.
-        if xDvDerivAero:
+        # Include the aerodynamic variables if requested to do so and
+        # we haven't already done so with xDvDeriv:
+        if xDvDerivAero and not xDvDeriv:
             xdvaerobar = {}
             xdvaerobar.update(self._processAeroDerivatives(extrabar, bcdatavaluesbar))
             returns.append(xdvaerobar)

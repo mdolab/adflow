@@ -218,9 +218,9 @@ contains
                 ss = ss/cellArea
                 massFlowRateLocal = massFlowRateLocal/timeRef*internalFlowFact*inflowFact
 
-                fx = massFlowRateLocal*ss(1) * vxm/timeRef
-                fy = massFlowRateLocal*ss(2) * vym/timeRef
-                fz = massFlowRateLocal*ss(3) * vzm/timeRef
+                fx = massFlowRateLocal*ss(1) * vxm
+                fy = massFlowRateLocal*ss(2) * vym
+                fz = massFlowRateLocal*ss(3) * vzm
 
                 FMom(1) = FMom(1) - fx
                 FMom(2) = FMom(2) - fy

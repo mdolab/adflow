@@ -1295,7 +1295,7 @@ contains
        case (mDot)
           bcPrior(i) = 13
 
-       case (Thrust)
+       case (bcThrust)
           bcPrior(i) = 14
 
        case (Extrap)

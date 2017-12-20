@@ -260,7 +260,7 @@ module constants
   integer(kind=intType), parameter :: MassBleedInflow       = -11
   integer(kind=intType), parameter :: MassBleedOutflow      = -12
   integer(kind=intType), parameter :: mDot                  = -13
-  integer(kind=intType), parameter :: Thrust                = -14
+  integer(kind=intType), parameter :: bcThrust              = -14
   integer(kind=intType), parameter :: Extrap                = -15
   integer(kind=intType), parameter :: B2BMatch              = -16
   integer(kind=intType), parameter :: B2BMismatch           = -17
