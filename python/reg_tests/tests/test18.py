@@ -79,8 +79,8 @@ name = 'nozzle'
 # Aerodynamic problem description
 ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
                  areaRef=areaRef, chordRef=chordRef,
-                 evalFuncs=['mdot_up', 'mdot_down', #'mdot_plane', 
-                            'mavgptot_up', 'mavgptot_down',# 'mavgptot_plane', 
+                 evalFuncs=['mdot_up', 'mdot_down', #'mdot_plane',
+                            'mavgptot_up', 'mavgptot_down',# 'mavgptot_plane',
                             'mavgttot_up', 'mavgttot_down',# 'mavgttot_plane',
                             'mavgps_up', 'mavgps_down', #'mavgps_plane'
                             ])
@@ -94,6 +94,7 @@ ap.addDV('PressureStagnation', family='upstream')
 
 ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
+
 
 def setupADFlow(solver): 
     #solver.addIntegrationSurface('integration_plane.fmt', 'coarse_plane')
@@ -120,8 +121,6 @@ def setupADFlow(solver):
     solver.addFunction('mavgps', 'downstream', name="mavgps_down")
     solver.addFunction('mavgps', 'upstream', name="mavgps_up")
     #solver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
-
-
 
     solver.setOption('ncycles',1000)
 
@@ -152,4 +151,3 @@ if __name__ == "__main__":
     if MPI.COMM_WORLD.rank == 0:
         print('Eval Functions:')
         reg_write_dict(funcs, 1e-10, 1e-10)
-

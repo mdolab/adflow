@@ -3404,21 +3404,6 @@ contains
 
     ! TODO: Justin add back in error checking
 
-    ! do j=1, size(bcDataNamesIn, 1)
-    !    varAllowed = .false.
-    !    varName = char2str(bcDataNamesIn(j,:), maxCGNSNameLen)
-    !    do i=1,nbcVar
-    !       if( bcVarPresent(i) .and. bcVarNames(i) == varname) then
-    !          varAllowed = .true.
-    !          exit
-    !       end if
-    !    end do
-    !    if (.not. varAllowed) then
-    !       print *,'who the fuck is calling this'
-    !       call terminate(setSubroutineName, trim(varName)//" is not a valid variable for this boundary condition")
-    !    end if
-    ! end do
-
   end subroutine errorCheckbcDataNamesIn
 #endif
 end module BCData

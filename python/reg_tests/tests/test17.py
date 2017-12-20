@@ -82,10 +82,20 @@ name = 'nozzle'
 # Aerodynamic problem description
 ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
                  areaRef=areaRef, chordRef=chordRef,
-                 evalFuncs=['mdot_up', 'mdot_down', 'mdot_plane', 
-                            'mavgptot_up', 'mavgptot_down', 'mavgptot_plane', 
+                 evalFuncs=['mdot_up', 'mdot_down', 'mdot_plane',
+                            'mavgptot_up', 'mavgptot_down', 'mavgptot_plane',
                             'mavgttot_up', 'mavgttot_down', 'mavgttot_plane',
+<<<<<<< working copy
+                            'mavgps_up', 'mavgps_down', 'mavgps_plane',
+                            'sigmamn_up',  'sigmamn_plane',
+                            'sigmaptot_up', 'sigmaptot_plane',
+||||||| base
                             'mavgps_up', 'mavgps_down', 'mavgps_plane',     
+                            'sigmamn_up',  'sigmamn_plane',
+                            'sigmaptot_up', 'sigmaptot_plane',
+=======
+                            'mavgps_up', 'mavgps_down', 'mavgps_plane',     
+>>>>>>> merge rev
                             ])
 
 
@@ -98,6 +108,14 @@ ap.addDV('PressureStagnation', family='upstream')
 ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
+<<<<<<< working copy
+
+CFDSolver = ADFLOW(options=options, debug=True)
+||||||| base
+ 
+CFDSolver = ADFLOW(options=options, debug=True)
+=======
+>>>>>>> merge rev
 
 def setupADFlow(solver): 
 
@@ -148,7 +166,6 @@ if __name__ == "__main__":
     reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
 
 
-    funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
     if MPI.COMM_WORLD.rank == 0:
         print('Eval Functions:')
