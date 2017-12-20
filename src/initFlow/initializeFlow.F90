@@ -449,10 +449,11 @@ end subroutine infChangeCorrection
        ! levels, because the eddy viscosity might be frozen in the
        ! multigrid.
 
-       ! Always allocate rev due to reverse mode - Peter Lyu
-       !if( eddyModel ) then
+       ! Always allocate rev due to reverse mode AD- Peter Lyu. Also
+       ! zero so that it doesn't affect laminar cases.
        allocate(flowDoms(nn,level,sps)%rev(0:ib,0:jb,0:kb), &
             stat=ierr)
+       flowDoms(nn, level, sps)%rev = zero
        if(ierr /= 0)                           &
             call terminate("allocMemFlovarPart1", &
             "Memory allocation failure for rev")
