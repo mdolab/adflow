@@ -43,12 +43,12 @@ options = {
     'L2Convergence':1e-14,
     'L2ConvergenceCoarse':1e-2,
     'NKSwitchTol':1e-2,
-    'nkadpc': False, 
+    'nkadpc': False,
     'vis4':0.006,
-    'vis2': 0.0, 
-    'blocksplitting': True, 
-    'solutionPrecision':'double', 
-    'flowtype':'internal'
+    'vis2': 0.0,
+    'blocksplitting': True,
+    'solutionPrecision':'double',
+    'flowtype':'internal',
 }
 
 ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
@@ -117,6 +117,3 @@ if __name__ == "__main__":
     if MPI.COMM_WORLD.rank == 0:
         print('Eval Functions:')
         reg_write_dict(funcs, 1e-10, 1e-10)
-
-
-

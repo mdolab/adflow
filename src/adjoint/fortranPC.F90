@@ -254,7 +254,6 @@ module fortranPC
           else
              call setPointers(nn, level, sps)
           end if
-          shockSensor => flowDoms(nn,1,sps)%shockSensor
 
           ! Do Coloring and perturb states
           colorLoop: do iColor = 1, nColor
@@ -427,9 +426,6 @@ module fortranPC
           if (sps == 1) then
              deallocate(flowDoms(nn, 1, sps)%color)
           end if
-
-          ! Deallocate the shock sensor refernce if usePC
-          deallocate(flowDoms(nn, 1, sps)%shockSensor)
        end do
     end do
 
