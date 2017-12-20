@@ -817,6 +817,7 @@ contains
     use communication
     use oversetData, only : oversetPresent
     use cgnsGrid, only : cgnsDoms, cgnsDomsd, cgnsNDom
+    use actuatorRegionData, only : nActuatorRegions, actuatorRegionsd
     implicit none
 
     ! Input parameters
@@ -956,6 +957,12 @@ contains
        end do
     end do
 
+    ! And the reverse seeds in the actuator zones
+    do i=1, nActuatorRegions
+       actuatorRegionsd(i)%F = zero
+       actuatorRegionsd(i)%T = zero
+    end do
+    
   end subroutine zeroADSeeds
   ! This is a special function that is sued to dealloc derivative values
   ! in blockpointers_d for use with the AD code.

@@ -916,7 +916,7 @@ contains
                zonename = "MassBleedOutflow"
             case (mDot)
                zonename = "MDot"
-            case (Thrust)
+            case (bcThrust)
                zonename = "Thrust"
             case (SlidingInterface)
                zonename = "Sliding"
