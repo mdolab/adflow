@@ -152,8 +152,10 @@ contains
           else
              ! This is a PC calc...only include viscous fluxes if viscPC
              ! is used
+             ! if full visc is true, also need full viscous terms, even if
+             ! lumpedDiss is true
              call computeSpeedOfSoundSquared
-             if (viscPC) then
+             if (viscPC) then 
                 call allNodalGradients
                 call viscousFlux
              else
@@ -1399,7 +1401,7 @@ contains
        do j=2,jl
           do i=2,il
              xfact = one+spectral_i(i,j,k)+spectral_j(i,j,k) &
-                  +spectral_k(i,j,k)	
+                  +spectral_k(i,j,k)
              dw(i,j,k,1)=dw(i,j,k,1)*xfact
              dw(i,j,k,2)=dw(i,j,k,2)*xfact
              dw(i,j,k,3)=dw(i,j,k,3)*xfact
@@ -1536,7 +1538,7 @@ contains
        do j=2,jl
           do i=2,il
              xfact = one+spectral_i(i,j,k)+spectral_j(i,j,k) &
-                  +spectral_k(i,j,k)	
+                  +spectral_k(i,j,k)
              dw(i,j,k,1)=dw(i,j,k,1)*xfact
              dw(i,j,k,2)=dw(i,j,k,2)*xfact
              dw(i,j,k,3)=dw(i,j,k,3)*xfact

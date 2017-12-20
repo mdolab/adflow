@@ -425,7 +425,7 @@ contains
 
   subroutine executeDADIStep
     !
-    !       executeDADIStep executes one DADI step.        		
+    !       executeDADIStep executes one DADI step.
     !
     use blockPointers
     use constants

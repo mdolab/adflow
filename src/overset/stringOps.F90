@@ -1934,16 +1934,6 @@ module stringOps
        pocketMaster%conn(:, i) = (/2*i, 2*i-1/)
     end do
 
-    do i=1, nPolyEdges
-       write(101,*), p%nodeData(1, polyEdges(i)%n1), p%nodeData(2, polyEdges(i)%n1), p%nodeData(3, polyEdges(i)%n1)
-       write(101,*), p%nodeData(1, polyEdges(i)%n2), p%nodeData(2, polyEdges(i)%n2), p%nodeData(3, polyEdges(i)%n2)
-    end do
-
-    do i=1, nPolyEdges
-       write(101,*), 2*i-1, 2*i
-    end do
-    close(101)
-
     call setStringPointers(pocketMaster)
     call reduceGapString(pocketMaster)
     call createNodeToElem(pocketMaster)

@@ -260,9 +260,8 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
-
-    use inputPhysics
     implicit none
+
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
@@ -1080,17 +1079,12 @@ contains
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr
     use utils, only :  setPointers, EChk
     use residuals, only : sourceTerms_block
-    use sa, only : sa_block, saSource, saViscous, saResScale, qq
-    use turbutils, only : turbAdvection, computeEddyViscosity
-    use fluxes, only :inviscidDissFluxScalarApprox, inviscidDissFluxMatrixApprox, &
-         inviscidUpwindFlux, inviscidDissFluxScalar, inviscidDissFluxMatrix, &
-         inviscidUpwindFlux, viscousFlux, viscousFluxApprox, inviscidCentralFlux
-    use flowutils, only : computePressureSimple, computeLamViscosity, &
-         computeSpeedOfSoundSquared, allNodalGradients
-    use solverutils, only : timeStep_Block
+    use turbutils, only : computeEddyViscosity
     use turbbcroutines, only : applyAllTurbBCthisblock,  bcTurbTreatment
     use adjointExtra, only :  sumdwandfw, resScale
-    use iteration
+    use inputDiscretization, only : useBlockettes
+    use blockette, only : blocketteResCore, blockResCore
+    use flowUtils, only : computeLamViscosity, computePressureSimple
     implicit none
 
     ! Input Arguments:
@@ -1098,8 +1092,8 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
-    real(kind=realType) :: dummyReal
-
+    real(kind=realType) ::  pLocal
+    logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
     call computeEddyViscosity(.True.)
@@ -1112,65 +1106,21 @@ contains
     end if
 
     call applyAllBC_block(.True.)
-    call timeStep_block(.false.)
-    dw = zero ! This should be init_res
-    call sourceTerms_block(nn, .True., dummyReal)
 
-    !Compute turbulence residual for RANS equations
-    if( equations == RANSEquations) then
-       !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-
-       select case (turbModel)
-       case (spalartAllmaras)
-          call sa_block(.True.)
-          allocate(qq(2:il,2:jl,2:kl))
-          call saSource
-          call turbAdvection(1_intType, 1_intType, itu1-1, qq)
-          !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-          call saViscous
-          call saResScale
-          deallocate(qq)
-       end select
-    end if
-
-    rFil = one
-    ! compute the mean flow residual
-    call inviscidCentralFlux
-
-    if (lumpedDiss) then
-       select case (spaceDiscr)
-       case (dissScalar)
-          call inviscidDissFluxScalarApprox
-       case (dissMatrix)
-          call inviscidDissFluxMatrixApprox
-       case (upwind)
-          call inviscidUpwindFlux(.True.)
-       end select
+    ! Set the flags:
+    dissApprox = lumpedDiss
+    viscApprox = lumpedDiss
+    updateDt = .False.
+    flowRes = .True.
+    turbRes = .True.
+    storeWall = .True.
+    blockettes: if (useBlockettes) then 
+       call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
     else
-       select case (spaceDiscr)
-       case (dissScalar)
-          call inviscidDissFluxScalar
-       case (dissMatrix)
-          call inviscidDissFluxMatrix
-       case (upwind)
-          call inviscidUpwindFlux(.True.)
-       end select
-    end if
-
-    if (viscous) then
-       call computeSpeedOfSoundSquared
-       if (.not. lumpedDiss .or. viscPC) then
-          call allNodalGradients
-          call viscousFlux
-       else
-          call viscousFluxApprox
-       end if
-    end if
-
-    ! if (lowSpeedPreconditioner) then
-    !    call applyLowSpeedPreconditioner_d
-    ! end if
-    call sumDwAndFw
+       call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
+    end if blockettes
+  
+    call sourceTerms_block(nn, .True., pLocal)
     call resscale
 
   end subroutine block_res_state

@@ -917,6 +917,9 @@ contains
     use tecplotIO, only : writeTecplot
     use multiGrid, only : setCycleStrategy, executeMGCycle
     use surfaceFamilies, only : fullFamList
+    use flowVarRefState, only : nwf
+    use residuals, only : residual, initres, sourceTerms
+    use solverUtils, only : timeStep
     implicit none
     !
     !      Local parameter
@@ -964,8 +967,6 @@ contains
     if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then
        allocate(NKLSFuncEvals(nMGCycles))
     end if
-
-
 
     ! Only compute the free stream resisudal once for efficiency on the
     ! fine grid only.
@@ -1015,6 +1016,10 @@ contains
 
     ! Evaluate the initial residual
     call computeResidualNK
+
+    ! Need to run the time step here since the RK/DADI is expecting
+    ! the rad{i,j,k} to be computed.
+    call timeStep(.False.)
 
     ! Extract the rhoResStart and totalRStart
     call getCurrentResidual(rhoResStart, totalRStart)
@@ -1071,7 +1076,6 @@ contains
              else
                 call ANKStep(firstANK)
                 firstANK = .False.
-                iterType = "   ANK"
                 CFLMonitor = ANK_CFL
 
              end if
@@ -1088,7 +1092,6 @@ contains
 
                 call NKStep(firstNK)
                 firstNK = .False.
-                iterType = "    NK"
                 CFLMonitor = NK_CFL
 
              end if
@@ -1104,7 +1107,6 @@ contains
              else if (totalR <= ANK_switchTol*totalR0 .and. &
                   totalR > NK_switchTol*totalR0) then
 
-                iterType = "   ANK"
                 call ANKStep(firstANK)
                 firstANK = .False.
                 firstNK = .True.
@@ -1118,7 +1120,7 @@ contains
                 if (firstNK) then
                     call destroyANKSolver()
                 end if
-                iterType = "    NK"
+
                 call NKStep(firstNK)
                 firstNK = .False.
                 firstANK = .True.

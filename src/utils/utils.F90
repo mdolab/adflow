@@ -2716,6 +2716,7 @@ end subroutine cross_prod
     nullify(flowDoms(nn,level,sps)%dw)
     nullify(flowDoms(nn,level,sps)%fw)
     nullify(flowDoms(nn,level,sps)%scratch)
+    nullify(flowDoms(nn,level,sps)%shockSensor)
 
     nullify(flowDoms(nn,level,sps)%dwOldRK)
 
@@ -3433,6 +3434,7 @@ end subroutine cross_prod
     wOld  => flowDoms(nn,1, ll)%wOld
     p     => flowDoms(nn,mm,ll)%p
     aa    => flowDoms(nn,mm,ll)%aa
+    shockSensor => flowDoms(nn,mm,ll)%shockSensor
 
     gamma => flowDoms(nn,1, ll)%gamma
     rlv   => flowDoms(nn,1, ll)%rlv
@@ -3565,9 +3567,6 @@ end subroutine cross_prod
     i_ipiv => flowDoms(nn,mm,ll)%i_ipiv
     j_ipiv => flowDoms(nn,mm,ll)%j_ipiv
     k_ipiv => flowDoms(nn,mm,ll)%k_ipiv
-
-    ! Pointers for the Shock Sensor used in approx-flux routines
-    shockSensor => flowDoms(nn,mm,ll)%shockSensor
 
   end subroutine setPointers
 
@@ -4332,6 +4331,7 @@ end subroutine cross_prod
                flowDoms(nn,1,sps)%dwALE, flowDoms(nn,1,sps)%fwALE, &
                flowDoms(nn,1,sps)%dtl,   flowDoms(nn,1,sps)%radI,  &
                flowDoms(nn,1,sps)%radJ,  flowDoms(nn,1,sps)%radK,  &
+               flowDoms(nn,1,sps)%shockSensor, &
                stat=ierr)
           if(ierr /= 0)                          &
                call terminate("releaseMemoryPart1", &
@@ -4350,7 +4350,7 @@ end subroutine cross_prod
           nullify(flowDoms(nn,1,sps)%radJ)
           nullify(flowDoms(nn,1,sps)%radK)
           nullify(flowDoms(nn,1,sps)%scratch)
-
+          nullify(flowDoms(nn,1,sps)%shockSensor)
           ! Check if the zeroth stage runge kutta memory has been
           ! allocated. If so deallocate it and nullify the pointers.
 
