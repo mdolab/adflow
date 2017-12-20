@@ -155,7 +155,7 @@ contains
              ! if full visc is true, also need full viscous terms, even if
              ! lumpedDiss is true
              call computeSpeedOfSoundSquared
-             if (viscPC .or. fullVisc) then
+             if (viscPC) then 
                 call allNodalGradients
                 call viscousFlux
              else
