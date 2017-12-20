@@ -84,16 +84,11 @@ contains
     real(kind=realtype), dimension(3) :: arg2d
     logical :: res
     integer :: branch
-    real(kind=realtype) :: temp3
-    real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: abs1d
     real(kind=realtype) :: abs0d
-    real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd8
-    real(kind=realtype) :: tempd7
     real(kind=realtype) :: tempd6
     real(kind=realtype) :: tempd5
     real(kind=realtype) :: tempd4
@@ -104,7 +99,6 @@ contains
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
     real(kind=realtype) :: temp
-    real(kind=realtype) :: temp4
     mredim = sqrt(pref*rhoref)
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
@@ -306,11 +300,9 @@ contains
             call pushreal8(massflowratelocal)
             massflowratelocal = massflowratelocal/timeref*&
 &             internalflowfact*inflowfact
-            fx = massflowratelocal*ss(1)*vxm/timeref
-            fy = massflowratelocal*ss(2)*vym/timeref
-            fz = massflowratelocal*ss(3)*vzm/timeref
-            temp2 = ss(1)/timeref
-            temp3 = ss(2)/timeref
+            fx = massflowratelocal*ss(1)*vxm
+            fy = massflowratelocal*ss(2)*vym
+            fz = massflowratelocal*ss(3)*vzm
             mzd = mmomd(3)
             myd = mmomd(2)
             mxd = mmomd(1)
@@ -321,24 +313,19 @@ contains
             zcd = fx*myd - fy*mxd
             fzd = yc*mxd - fmomd(3) - xc*myd
             ssd = 0.0_8
-            tempd6 = massflowratelocal*vzm*fzd/timeref
-            temp4 = ss(3)/timeref
-            ssd(3) = ssd(3) + tempd6
-            massflowratelocald = temp3*vym*fyd + temp2*vxm*fxd + temp4*&
+            ssd(3) = ssd(3) + massflowratelocal*vzm*fzd
+            massflowratelocald = ss(2)*vym*fyd + ss(1)*vxm*fxd + ss(3)*&
 &             vzm*fzd
-            vzmd = temp4*massflowratelocal*fzd
-            tempd7 = massflowratelocal*vym*fyd/timeref
-            ssd(2) = ssd(2) + tempd7
-            vymd = temp3*massflowratelocal*fyd
-            tempd9 = massflowratelocal*vxm*fxd/timeref
-            ssd(1) = ssd(1) + tempd9
-            vxmd = temp2*massflowratelocal*fxd
+            vzmd = ss(3)*massflowratelocal*fzd
+            ssd(2) = ssd(2) + massflowratelocal*vym*fyd
+            vymd = ss(2)*massflowratelocal*fyd
+            ssd(1) = ssd(1) + massflowratelocal*vxm*fxd
+            vxmd = ss(1)*massflowratelocal*fxd
             call popreal8(massflowratelocal)
-            tempd8 = internalflowfact*inflowfact*massflowratelocald/&
+            tempd6 = internalflowfact*inflowfact*massflowratelocald/&
 &             timeref
-            timerefd = timerefd - temp3*tempd7 - massflowratelocal*&
-&             tempd8/timeref - temp2*tempd9 - temp4*tempd6
-            massflowratelocald = tempd8
+            timerefd = timerefd - massflowratelocal*tempd6/timeref
+            massflowratelocald = tempd6
             call popreal8array(ss, 3)
             cellaread = sum(-(ss*ssd/cellarea))/cellarea
             ssd = ssd/cellarea
@@ -720,9 +707,9 @@ contains
             ss = ss/cellarea
             massflowratelocal = massflowratelocal/timeref*&
 &             internalflowfact*inflowfact
-            fx = massflowratelocal*ss(1)*vxm/timeref
-            fy = massflowratelocal*ss(2)*vym/timeref
-            fz = massflowratelocal*ss(3)*vzm/timeref
+            fx = massflowratelocal*ss(1)*vxm
+            fy = massflowratelocal*ss(2)*vym
+            fz = massflowratelocal*ss(3)*vzm
             fmom(1) = fmom(1) - fx
             fmom(2) = fmom(2) - fy
             fmom(3) = fmom(3) - fz

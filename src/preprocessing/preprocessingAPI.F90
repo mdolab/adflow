@@ -1522,7 +1522,7 @@ contains
                            BCType(mm) == MassBleedInflow .or. &
                            BCType(mm) == MassbleedOutflow .or. &
                            BCType(mm) == mDot .or. &
-                           BCType(mm) == Thrust .or. &
+                           BCType(mm) == BCThrust .or. &
                            BCType(mm) == Extrap .or. &
                            BCType(mm) == B2BMatch .or. &
                            BCType(mm) == B2BMisMatch .or. &

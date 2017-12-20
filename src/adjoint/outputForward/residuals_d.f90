@@ -312,16 +312,17 @@ contains
   end subroutine residual_block
 !  differentiation of sourceterms_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw plocal
-!   with respect to varying inputs: uref pref *dw *w *vol plocal
+!   with respect to varying inputs: uref pref *dw *w actuatorregions.f
+!                plocal
 !   rw status of diff variables: uref:in pref:in *dw:in-out *w:in
-!                *vol:in plocal:in-out
-!   plus diff mem management of: dw:in w:in vol:in
+!                actuatorregions.f:in plocal:in-out
+!   plus diff mem management of: dw:in w:in
   subroutine sourceterms_block_d(nn, res, plocal, plocald)
 ! apply the source terms for the given block. assume that the
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : vol, vold, dw, dwd, w, wd
+    use blockpointers, only : volref, dw, dwd, w, wd
     use flowvarrefstate, only : pref, prefd, uref, urefd
     implicit none
 ! input
@@ -338,8 +339,9 @@ contains
 ! region loop
 regionloop:do iregion=1,nactuatorregions
 ! compute the constant force factor
-      factd = -(actuatorregions(iregion)%f*prefd/actuatorregions(iregion&
-&       )%volume/pref**2)
+      factd = (actuatorregionsd(iregion)%f*pref/actuatorregions(iregion)&
+&       %volume-actuatorregions(iregion)%f*prefd/actuatorregions(iregion&
+&       )%volume)/pref**2
       fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
 &       pref
 ! loop over the ranges for this block
@@ -351,8 +353,8 @@ regionloop:do iregion=1,nactuatorregions
         j = actuatorregions(iregion)%cellids(2, ii)
         k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmpd = vold(i, j, k)*fact + vol(i, j, k)*factd
-        ftmp = vol(i, j, k)*fact
+        ftmpd = volref(i, j, k)*factd
+        ftmp = volref(i, j, k)*fact
         vxd = wd(i, j, k, ivx)
         vx = w(i, j, k, ivx)
         vyd = wd(i, j, k, ivy)
@@ -384,7 +386,7 @@ regionloop:do iregion=1,nactuatorregions
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : vol, dw, w
+    use blockpointers, only : volref, dw, w
     use flowvarrefstate, only : pref, uref
     implicit none
 ! input
@@ -409,7 +411,7 @@ regionloop:do iregion=1,nactuatorregions
         j = actuatorregions(iregion)%cellids(2, ii)
         k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmp = vol(i, j, k)*fact
+        ftmp = volref(i, j, k)*fact
         vx = w(i, j, k, ivx)
         vy = w(i, j, k, ivy)
         vz = w(i, j, k, ivz)
