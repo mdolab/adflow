@@ -2337,13 +2337,21 @@ class ADFLOW(AeroSolver):
 
         self._setAeroProblemData(aeroProblem)
 
+        # Reset the fail flags here since the updateGeometry info
+        # updates the mesh which may result in a fatalFail.
+        self.adflow.killsignals.routinefailed = False
+        self.adflow.killsignals.fatalFail = False
+
         # Note that it is safe to call updateGeometryInfo since it
         # only updates the mesh if necessary
-        self.updateGeometryInfo()
 
+        self.updateGeometryInfo()
         # Create the zipper mesh if not done so
         self._createZipperMesh()
 
+        failedMesh = False
+        if self.adflow.killsignals.fatalfail:
+            failedMesh = True
         # If the state info none, initialize to the supplied
         # restart file or the free-stream values by calling
         # resetFlow()
@@ -2356,6 +2364,9 @@ class ADFLOW(AeroSolver):
             else:
                 self._resetFlow()
 
+        if failedMesh:
+            self.adflow.killsignals.fatalfail = True
+
         # Now set the data from the incomming aeroProblem:
         stateInfo = aeroProblem.adflowData.stateInfo
         if stateInfo is not None and newAP:
@@ -2365,9 +2376,6 @@ class ADFLOW(AeroSolver):
         oldWinf = aeroProblem.adflowData.oldWinf
         if self.getOption('infChangeCorrection') and oldWinf is not None:
             self.adflow.initializeflow.infchangecorrection(oldWinf)
-
-        self.adflow.killsignals.routinefailed = False
-        self.adflow.killsignals.fatalFail = False
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
