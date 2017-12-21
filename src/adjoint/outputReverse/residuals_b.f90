@@ -153,7 +153,7 @@ contains
 ! if full visc is true, also need full viscous terms, even if
 ! lumpeddiss is true
           call computespeedofsoundsquared()
-          if (viscpc .or. fullvisc) then
+          if (viscpc) then
             call allnodalgradients()
             call viscousflux()
           else
