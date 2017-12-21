@@ -5,7 +5,7 @@ module userSurfaceIntegrations
   use userSurfaceIntegrationData
 contains
 
-  subroutine integrateUserSurfaces(localValues, famList, sps, withGathered, funcValues)
+  subroutine integrateUserSurfaces(localValues, famList, sps)
 
     use constants
     use block, onlY : flowDoms, nDom
@@ -22,8 +22,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType), intent(in), dimension(:) :: funcValues
 
     ! Working parameters
     integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim, nPts
@@ -122,8 +120,7 @@ contains
              ! The family array is all the same value:
              fams = surf%famID
              ! Perform the actual integration
-             call flowIntegrationZipper(.True., surf%conn, fams, vars, localValues, famList, sps, &
-                  withGathered, funcValues, ptValid)
+             call flowIntegrationZipper(.True., surf%conn, fams, vars, localValues, famList, sps, ptValid)
              deallocate(ptValid, vars, fams)
           end if
           deallocate(recvBuffer1, recvBuffer2)
@@ -131,8 +128,7 @@ contains
     end do masterLoop
   end subroutine integrateUserSurfaces
 #ifndef USE_COMPLEX
-  subroutine integrateUserSurfaces_d(localValues, localValuesd, famList, sps, withGathered, &
-       funcValues, funcValuesd)
+  subroutine integrateUserSurfaces_d(localValues, localValuesd, famList, sps)
 
     use constants
     use block, onlY : flowDoms, flowDomsd, nDom
@@ -149,8 +145,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType), intent(in), dimension(:) :: funcValues, funcValuesd
 
     ! Working parameters
     integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim, nPts
@@ -272,7 +266,7 @@ contains
 
              ! Perform the actual integration
              call flowIntegrationZipper_d(.True., surf%conn, fams, vars, varsd, localValues, localValuesd, &
-                  famList, sps, withGathered, funcValues, funcValuesd, ptValid)
+                  famList, sps, ptValid)
              deallocate(ptValid, vars, varsd, fams)
           end if
           deallocate(recvBuffer1, recvBuffer2, recvBuffer1d, recvBuffer2d)
@@ -280,8 +274,7 @@ contains
     end do masterLoop
   end subroutine integrateUserSurfaces_d
 
- subroutine integrateUserSurfaces_b(localValues, localValuesd, famList, sps, withGathered, &
-       funcValues, funcValuesd)
+ subroutine integrateUserSurfaces_b(localValues, localValuesd, famList, sps)
 
     use constants
     use block, onlY : flowDoms, flowDomsd, nDom
@@ -298,8 +291,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType), intent(in), dimension(:) :: funcValues, funcValuesd
 
     ! Working parameters
     integer(kind=intType) :: iSurf, i, j, k, jj, ierr, nn, iDim, nPts
@@ -315,7 +306,7 @@ contains
     end if
 
     ! Run the foward mode code pass:
-    call IntegrateUserSurfaces(localValues, famLIst, sps, withGathered, funcValues)
+    call IntegrateUserSurfaces(localValues, famLIst, sps)
 
     ! Set the pointers for the required communication variables
     domainLoop:do nn=1, nDom
@@ -422,7 +413,7 @@ contains
 
              ! Perform the actual (reverse) integration
              call flowIntegrationZipper_b(.True., surf%conn, fams, vars, varsd, localValues, localValuesd, &
-                  famList, sps, withGathered, funcValues, funcValuesd, ptValid)
+                  famList, sps, ptValid)
 
              ! Accumulate into the receive buffers
              recvBuffer1d = zero
