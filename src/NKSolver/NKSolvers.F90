@@ -2819,6 +2819,7 @@ contains
     ! Compute the maximum step that will limit the change in pressure
     ! and energy to some user defined fraction.
     call physicalityCheckANK(lambda)
+    lambda = max(ANK_stepMin, lambda)
 
     ! Take the uodate after the physicality check.
     call VecAXPY(wVec, -lambda, deltaW, ierr)
