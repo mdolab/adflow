@@ -280,7 +280,3 @@ Dictionary Key: nozzle_mdot_down
 @value -1.0410862008518e+00 1e-10 1e-10
 Dictionary Key: nozzle_mdot_up
 @value  1.0496982236621e+00 1e-10 1e-10
-Dictionary Key: nozzle_sigmamn_up
-@value  2.9642726839777e-02 1e-10 1e-10
-Dictionary Key: nozzle_sigmaptot_up
-@value  6.5443342134951e+01 1e-10 1e-10

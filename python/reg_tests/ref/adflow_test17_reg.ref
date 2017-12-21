@@ -300,11 +300,3 @@ Dictionary Key: nozzle_mdot_plane
 @value -1.0459468815634e+00 1e-10 1e-10
 Dictionary Key: nozzle_mdot_up
 @value  1.0496918257764e+00 1e-10 1e-10
-Dictionary Key: nozzle_sigmamn_plane
-@value  3.4840327359805e-02 1e-10 1e-10
-Dictionary Key: nozzle_sigmamn_up
-@value  2.9696266114569e-02 1e-10 1e-10
-Dictionary Key: nozzle_sigmaptot_plane
-@value  7.0904044166402e+01 1e-10 1e-10
-Dictionary Key: nozzle_sigmaptot_up
-@value  6.5219986921741e+01 1e-10 1e-10
