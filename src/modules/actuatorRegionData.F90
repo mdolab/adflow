@@ -28,7 +28,7 @@ module actuatorRegionData
   type(actuatorRegionType), dimension(nActuatorRegionsMax), target :: actuatorRegions
   integer(kind=intTYpe) :: nActuatorRegions=0
 
-#ifndef USE_TAPENAD
+#ifndef USE_TAPENADE
   type(actuatorRegionType), dimension(nActuatorRegionsMax), target :: actuatorRegionsd
 #endif
 end module actuatorRegionData

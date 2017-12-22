@@ -381,8 +381,7 @@ contains
         factd = factd + volref(i, j, k)*ftmpd
       end do
       tempd = factd/(actuatorregions(iregion)%volume*pref)
-      actuatorregionsd0(iregion)%f = actuatorregionsd0(iregion)%f + &
-&       tempd
+      actuatorregionsd(iregion)%f = actuatorregionsd(iregion)%f + tempd
       prefd = prefd + actuatorregions(iregion)%volume*sum(-(&
 &       actuatorregions(iregion)%f*tempd/(actuatorregions(iregion)%&
 &       volume*pref)))
