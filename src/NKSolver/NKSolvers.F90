@@ -86,6 +86,7 @@ contains
     use stencils, only : visc_pc_stencil, euler_pc_stencil, N_visc_pc, N_euler_pc
     use communication, only : adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputIteration, only : useLinResMonitor
     use flowVarRefState, only : nw, viscous
     use InputAdjoint, only: viscPC
     use ADjointVars , only: nCellsLocal
@@ -188,11 +189,40 @@ contains
        call KSPSetOperators(NK_KSP, dRdw, dRdwPre, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       if (useLinResMonitor) then
+          call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_OBJECT, &
+               PETSC_NULL_FUNCTION, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       end if
+
        NK_solverSetup = .True.
        NK_iter = 0
     end if
 
   end subroutine setupNKsolver
+
+  subroutine linearResidualMonitor(myKSP, n, rnorm, dummy, ierr)
+    use communication, only : myid
+    implicit none
+    !
+    !     Subroutine arguments.
+    !
+    ! myKsp - Iterative context
+    ! n     - Iteration number
+    ! rnorm - 2-norm (preconditioned) residual value
+    ! dummy - Optional user-defined monitor context (unused here)
+    ! ierr  - Return error code
+
+    KSP myKSP
+    integer(kind=intType) :: n, dummy, ierr
+    real(kind=alwaysRealType)   :: rnorm
+
+    ! Write the residual norm to stdout every adjMonStep iterations.
+    if (myid == 0) then
+       print *, n, rnorm
+    end if
+    ierr = 0
+  end subroutine LinearResidualMonitor
 
   subroutine NKMatMult(A, vecX,  vecY, ierr)
 
@@ -458,7 +488,7 @@ contains
     use inputPhysics, only : equations
     use flowVarRefState, only :  nw, nwf
     use inputIteration, only : L2conv
-    use iteration, only : approxTotalIts, totalR0, stepMonitor, linResMonitor, iterType
+    use iteration, only : approxTotalIts, totalR0, stepMonitor, LinResMonitor, iterType
     use utils, only : EChk
     use killSignals, only : routineFailed
     implicit none
@@ -630,7 +660,7 @@ contains
     call setRVec(g, flowRes1, turbRes1, totalRes1)
 
     ! Set some defaults:
-    alpha		= 1.e-2_realType
+    alpha = 1.e-2_realType
     minlambda     = .01
     nfevals = 0
     flag = .True.
@@ -1605,9 +1635,10 @@ contains
     use stencils, only : euler_PC_stencil, N_euler_PC
     use communication, only : adflow_comm_world
     use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputIteration, only : useLinResMonitor
     use flowVarRefState, only : nw, viscous, nwf
     use ADjointVars , only: nCellsLocal
-    use NKSolver, only : destroyNKSolver
+    use NKSolver, only : destroyNKSolver, linearResidualMonitor
     use utils, only : EChk
     use adjointUtils, only : myMatCreate, statePreAllocation
     implicit none
@@ -1692,6 +1723,12 @@ contains
        ! Set operators for the solver
        call KSPSetOperators(ANK_KSP, dRdw, dRdwPre, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
+       if (useLinResMonitor) then
+          call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_OBJECT, &
+               PETSC_NULL_FUNCTION, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       end if
 
        ANK_solverSetup = .True.
        ANK_iter = 0
