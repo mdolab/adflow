@@ -341,9 +341,9 @@ contains
 ! region loop
 regionloop:do iregion=1,nactuatorregions
 ! compute the constant force factor
-      factd = (actuatorregionsd0(iregion)%f*pref/actuatorregions(iregion&
-&       )%volume-actuatorregions(iregion)%f*prefd/actuatorregions(&
-&       iregion)%volume)/pref**2
+      factd = (actuatorregionsd(iregion)%f*pref/actuatorregions(iregion)&
+&       %volume-actuatorregions(iregion)%f*prefd/actuatorregions(iregion&
+&       )%volume)/pref**2
       fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
 &       pref
 ! loop over the ranges for this block
