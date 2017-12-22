@@ -217,8 +217,8 @@ surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, 
 zipperIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \
                                          (vars, pointRef, localValues)\
 \
-zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues) > \
-                                        (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues)\
+zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues) > \
+                                        (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues)\
 \
 surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
 	                            (funcValues) \
