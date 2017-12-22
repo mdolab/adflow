@@ -422,7 +422,7 @@ contains
     end if
   end subroutine writeActuatorRegions
 
-  subroutine integrateActuatorRegions(localValues, famList, sps, withGathered, funcValues)
+  subroutine integrateActuatorRegions(localValues, famList, sps)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines.
@@ -441,8 +441,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues
 
     ! Working
     integer(kind=intType) :: nn, iRegion
@@ -473,8 +471,7 @@ contains
 
   end subroutine integrateActuatorRegions
 #ifndef USE_COMPLEX
-  subroutine integrateActuatorRegions_d(localValues, localValuesd, famList, sps, &
-       withGathered, funcValues, funcValuesd)
+  subroutine integrateActuatorRegions_d(localValues, localValuesd, famList, sps)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines.
@@ -493,8 +490,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
 
     ! Working
     integer(kind=intType) :: nn, iRegion
@@ -528,8 +523,7 @@ contains
 
   end subroutine integrateActuatorRegions_d
 
-  subroutine integrateActuatorRegions_b(localValues, localValuesd, famList, sps, &
-       withGathered, funcValues, funcValuesd)
+  subroutine integrateActuatorRegions_b(localValues, localValuesd, famList, sps)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines.
@@ -548,8 +542,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
 
     ! Working
     integer(kind=intType) :: nn, iRegion
