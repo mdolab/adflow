@@ -391,7 +391,6 @@ contains
           mp(3) = mp(3) + mz
 ! momentum forces
 ! get unit normal vector.
-<<<<<<< working copy
           ssd = (ssd*cellarea-ss*cellaread)/cellarea**2
           ss = ss/cellarea
           massflowratelocald = internalflowfact*inflowfact*(&
@@ -429,82 +428,6 @@ contains
           mmom(2) = mmom(2) + my
           mmomd(3) = mmomd(3) + mzd
           mmom(3) = mmom(3) + mz
-||||||| base
-            ssd = (ssd*cellarea-ss*cellaread)/cellarea**2
-            ss = ss/cellarea
-            massflowratelocald = internalflowfact*inflowfact*(&
-&             massflowratelocald*timeref-massflowratelocal*timerefd)/&
-&             timeref**2
-            massflowratelocal = massflowratelocal/timeref*&
-&             internalflowfact*inflowfact
-            fxd = (((massflowratelocald*vxm+massflowratelocal*vxmd)*ss(1&
-&             )+massflowratelocal*vxm*ssd(1))*timeref-massflowratelocal*&
-&             ss(1)*vxm*timerefd)/timeref**2
-            fx = massflowratelocal*ss(1)*vxm/timeref
-            fyd = (((massflowratelocald*vym+massflowratelocal*vymd)*ss(2&
-&             )+massflowratelocal*vym*ssd(2))*timeref-massflowratelocal*&
-&             ss(2)*vym*timerefd)/timeref**2
-            fy = massflowratelocal*ss(2)*vym/timeref
-            fzd = (((massflowratelocald*vzm+massflowratelocal*vzmd)*ss(3&
-&             )+massflowratelocal*vzm*ssd(3))*timeref-massflowratelocal*&
-&             ss(3)*vzm*timerefd)/timeref**2
-            fz = massflowratelocal*ss(3)*vzm/timeref
-            fmomd(1) = fmomd(1) - fxd
-            fmom(1) = fmom(1) - fx
-            fmomd(2) = fmomd(2) - fyd
-            fmom(2) = fmom(2) - fy
-            fmomd(3) = fmomd(3) - fzd
-            fmom(3) = fmom(3) - fz
-            mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
-            mx = yc*fz - zc*fy
-            myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
-            my = zc*fx - xc*fz
-            mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
-            mz = xc*fy - yc*fx
-            mmomd(1) = mmomd(1) + mxd
-            mmom(1) = mmom(1) + mx
-            mmomd(2) = mmomd(2) + myd
-            mmom(2) = mmom(2) + my
-            mmomd(3) = mmomd(3) + mzd
-            mmom(3) = mmom(3) + mz
-          end if
-=======
-            ssd = (ssd*cellarea-ss*cellaread)/cellarea**2
-            ss = ss/cellarea
-            massflowratelocald = internalflowfact*inflowfact*(&
-&             massflowratelocald*timeref-massflowratelocal*timerefd)/&
-&             timeref**2
-            massflowratelocal = massflowratelocal/timeref*&
-&             internalflowfact*inflowfact
-            fxd = (massflowratelocald*vxm+massflowratelocal*vxmd)*ss(1) &
-&             + massflowratelocal*vxm*ssd(1)
-            fx = massflowratelocal*ss(1)*vxm
-            fyd = (massflowratelocald*vym+massflowratelocal*vymd)*ss(2) &
-&             + massflowratelocal*vym*ssd(2)
-            fy = massflowratelocal*ss(2)*vym
-            fzd = (massflowratelocald*vzm+massflowratelocal*vzmd)*ss(3) &
-&             + massflowratelocal*vzm*ssd(3)
-            fz = massflowratelocal*ss(3)*vzm
-            fmomd(1) = fmomd(1) - fxd
-            fmom(1) = fmom(1) - fx
-            fmomd(2) = fmomd(2) - fyd
-            fmom(2) = fmom(2) - fy
-            fmomd(3) = fmomd(3) - fzd
-            fmom(3) = fmom(3) - fz
-            mxd = ycd*fz + yc*fzd - zcd*fy - zc*fyd
-            mx = yc*fz - zc*fy
-            myd = zcd*fx + zc*fxd - xcd*fz - xc*fzd
-            my = zc*fx - xc*fz
-            mzd = xcd*fy + xc*fyd - ycd*fx - yc*fxd
-            mz = xc*fy - yc*fx
-            mmomd(1) = mmomd(1) + mxd
-            mmom(1) = mmom(1) + mx
-            mmomd(2) = mmomd(2) + myd
-            mmom(2) = mmom(2) + my
-            mmomd(3) = mmomd(3) + mzd
-            mmom(3) = mmom(3) + mz
-          end if
->>>>>>> merge rev
         end if
       end if
     end do
@@ -733,7 +656,6 @@ contains
           mp(3) = mp(3) + mz
 ! momentum forces
 ! get unit normal vector.
-<<<<<<< working copy
           ss = ss/cellarea
           massflowratelocal = massflowratelocal/timeref*internalflowfact&
 &           *inflowfact
@@ -749,41 +671,6 @@ contains
           mmom(1) = mmom(1) + mx
           mmom(2) = mmom(2) + my
           mmom(3) = mmom(3) + mz
-||||||| base
-            ss = ss/cellarea
-            massflowratelocal = massflowratelocal/timeref*&
-&             internalflowfact*inflowfact
-            fx = massflowratelocal*ss(1)*vxm/timeref
-            fy = massflowratelocal*ss(2)*vym/timeref
-            fz = massflowratelocal*ss(3)*vzm/timeref
-            fmom(1) = fmom(1) - fx
-            fmom(2) = fmom(2) - fy
-            fmom(3) = fmom(3) - fz
-            mx = yc*fz - zc*fy
-            my = zc*fx - xc*fz
-            mz = xc*fy - yc*fx
-            mmom(1) = mmom(1) + mx
-            mmom(2) = mmom(2) + my
-            mmom(3) = mmom(3) + mz
-          end if
-=======
-            ss = ss/cellarea
-            massflowratelocal = massflowratelocal/timeref*&
-&             internalflowfact*inflowfact
-            fx = massflowratelocal*ss(1)*vxm
-            fy = massflowratelocal*ss(2)*vym
-            fz = massflowratelocal*ss(3)*vzm
-            fmom(1) = fmom(1) - fx
-            fmom(2) = fmom(2) - fy
-            fmom(3) = fmom(3) - fz
-            mx = yc*fz - zc*fy
-            my = zc*fx - xc*fz
-            mz = xc*fy - yc*fx
-            mmom(1) = mmom(1) + mx
-            mmom(2) = mmom(2) + my
-            mmom(3) = mmom(3) + mz
-          end if
->>>>>>> merge rev
         end if
       end if
     end do
