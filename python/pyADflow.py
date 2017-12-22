@@ -4852,8 +4852,6 @@ class ADFLOW(AeroSolver):
             'mavgttot':self.adflow.constants.costfuncmavgttot,
             'mavgps':self.adflow.constants.costfuncmavgps,
             'mavgmn':self.adflow.constants.costfuncmavgmn,
-            'sigmamn':self.adflow.constants.costfuncsigmamn,
-            'sigmaptot':self.adflow.constants.costfuncsigmaptot,
             'axismoment':self.adflow.constants.costfuncaxismoment,
             'flowpower':self.adflow.constants.costfuncflowpower,
             'forcexpressure':self.adflow.constants.costfuncforcexpressure,
@@ -4871,6 +4869,9 @@ class ADFLOW(AeroSolver):
             'liftpressure':self.adflow.constants.costfuncliftpressure,
             'liftviscous':self.adflow.constants.costfuncliftviscous,
             'liftmomentum':self.adflow.constants.costfuncliftmomentum,
+            'mavgvx': self.adflow.constants.costfuncmavgvx,
+            'mavgvy': self.adflow.constants.costfuncmavgvy,
+            'mavgvz': self.adflow.constants.costfuncmavgvz,
             }
 
         return iDV, BCDV, adflowCostFunctions
