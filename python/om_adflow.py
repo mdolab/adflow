@@ -32,11 +32,13 @@ class OM_ADFLOW(Group):
             desc="when True will create IndepVarComp with outputs for all des vars")
         self.metadata.declare('debug', default=False)
 
-        # This option is mainly used in testing when the solver object needs to be run by itself 
+        # These options are mainly used in testing when the solver object needs to be run by itself 
         #     and also used in the wrapper. You probably don't want to use this 
         #     unless you really know what you're doing!!!
         self.metadata.declare('solver', types=ADFLOW, allow_none=True, default=None,
             desc='optional argument to allow an existing solver instance to be passed in.')
+        self.metadata.declare('mesh', types=USMesh, allow_none=True, default=None,
+            desc='optional argument to allow an existing mesh instance to be passed in.')
 
         # self.metadata.declare('max_procs', default=64, types=int)
 
@@ -50,7 +52,6 @@ class OM_ADFLOW(Group):
             solver = ADFLOW(options=self.metadata['aero_options'], 
                             comm=self.comm, 
                             debug=self.metadata['debug'])
-        print('foobar', solver)
         self.solver = solver
 
         # for fg in self.metadata['family_groups']:
@@ -66,10 +67,10 @@ class OM_ADFLOW(Group):
         # necessary to get some memory properly allocated
         solver.getResidual(ap)
 
-
-        if self.metadata['mesh_options']: 
+        mesh = self.metadata['mesh']
+        if mesh is None: 
             mesh = USMesh(options=self.metadata['mesh_options'], comm=self.comm)
-            solver.setMesh(mesh)
+        solver.setMesh(mesh)
 
         if dvgeo is not None: 
             solver.setDVGeo(dvgeo)
