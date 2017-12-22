@@ -35,6 +35,7 @@ contains
     type(actuatorRegionType), pointer :: region
     real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, xCen, axisVec
     type(adtType) :: ADT
+    real(kind=realType) :: axisVecNorm
     real(kind=realType), dimension(:, :), allocatable :: norm
     integer(kind=intType), dimension(:), allocatable :: normCount
     integer(kind=intType), dimension(:, :), pointer :: tmp
@@ -62,16 +63,14 @@ contains
     ! dealing with rotating machinary, it is pretty good approximation
     ! to assume that the thrust is going to be in the direction of the
     ! axis.
-    if (myid == 0) then 
-       print *,'fuck shi:', axis2, axis1
-    end if
     axisVec = axis2-axis1
-    if (norm2(axisVec) < 1e-12) then 
+    axisVecNorm = (axisVec(1)**2 + axisvec(2)**2 + axisVec(3)**2)
+    if (axisVecNorm < 1e-12) then 
        print *,"Error: Axis cannot be determined by the supplied points. They are too close"
        stop
     end if
 
-    axisVec = axisVec / norm2(axisVec)
+    axisVec = axisVec / axisVecNorm
 
     region%F = axisVec*thrust
     region%axisVec = axisVec
