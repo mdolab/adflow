@@ -31,17 +31,13 @@ contains
 &   cmoment
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, mavgnx, mavgny, mavgnz, mavgu&
-&   , sigmamn, sigmaptot
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
-    intrinsic abs
-    real(kind=realtype) :: abs1
-    real(kind=realtype) :: abs0
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -156,21 +152,6 @@ contains
         mavgvz = globalvals(imassvz, sps)/mflow
         mag = sqrt(globalvals(imassnx, sps)**2 + globalvals(imassny, sps&
 &         )**2 + globalvals(imassnz, sps)**2)
-        mavgnx = globalvals(imassnx, sps)/mag
-        mavgny = globalvals(imassny, sps)/mag
-        mavgnz = globalvals(imassnz, sps)/mag
-        if (mflow .ge. 0.) then
-          abs0 = mflow
-        else
-          abs0 = -mflow
-        end if
-        sigmamn = sqrt(globalvals(isigmamn, sps)/abs0)
-        if (mflow .ge. 0.) then
-          abs1 = mflow
-        else
-          abs1 = -mflow
-        end if
-        sigmaptot = sqrt(globalvals(isigmaptot, sps)/abs1)
       else
         mavgptot = zero
         mavgttot = zero
@@ -181,11 +162,6 @@ contains
         mavgvx = zero
         mavgvy = zero
         mavgvz = zero
-        mavgnx = zero
-        mavgny = zero
-        mavgnz = zero
-        sigmamn = zero
-        sigmaptot = zero
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -200,10 +176,12 @@ contains
 &       mavgmn
       funcvalues(costfuncmavga) = funcvalues(costfuncmavga) + ovrnts*&
 &       mavga
-      funcvalues(costfuncsigmamn) = funcvalues(costfuncsigmamn) + ovrnts&
-&       *sigmamn
-      funcvalues(costfuncsigmaptot) = funcvalues(costfuncsigmaptot) + &
-&       ovrnts*sigmaptot
+      funcvalues(costfuncmavgvx) = funcvalues(costfuncmavgvx) + ovrnts*&
+&       mavgvx
+      funcvalues(costfuncmavgvy) = funcvalues(costfuncmavgvy) + ovrnts*&
+&       mavgvy
+      funcvalues(costfuncmavgvz) = funcvalues(costfuncmavgvz) + ovrnts*&
+&       mavgvz
     end do
 ! bending moment calc - also broken.
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -589,8 +567,7 @@ contains
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
 &     mvaxis
   end subroutine wallintegrationface
-  subroutine flowintegrationface(isinflow, localvalues, mm, withgathered&
-&   , funcvalues)
+  subroutine flowintegrationface(isinflow, localvalues, mm)
     use constants
     use blockpointers, only : bctype, bcfaceid, bcdata, &
 &   addgridvelocities
@@ -604,17 +581,14 @@ contains
     implicit none
 ! input/output variables
     logical, intent(in) :: isinflow
-    logical, intent(in) :: withgathered
     real(kind=realtype), dimension(nlocalvalues), intent(inout) :: &
 &   localvalues
     integer(kind=inttype), intent(in) :: mm
-    real(kind=realtype), dimension(:), optional, intent(in) :: &
-&   funcvalues
 ! local variables
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
 &   mass_ny, mass_nz
-    real(kind=realtype) :: mredim, sigma_mn, sigma_ptot
+    real(kind=realtype) :: mredim
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
 &   zc, mx, my, mz
@@ -628,9 +602,6 @@ contains
     intrinsic sqrt
     intrinsic mod
     intrinsic max
-    intrinsic abs
-    real(kind=realtype) :: abs1
-    real(kind=realtype) :: abs0
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -678,8 +649,6 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
-    sigma_mn = zero
-    sigma_ptot = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -712,112 +681,86 @@ contains
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
       massflowratelocal = rhom*vnm*blk*fact*mredim
-      if (withgathered) then
-        if (massflowratelocal .ge. 0.) then
-          abs0 = massflowratelocal
-        else
-          abs0 = -massflowratelocal
-        end if
-        sigma_mn = sigma_mn + abs0*(mnm-funcvalues(costfuncmavgmn))**2
-        ptot = ptot*pref
-        if (massflowratelocal .ge. 0.) then
-          abs1 = massflowratelocal
-        else
-          abs1 = -massflowratelocal
-        end if
-        sigma_ptot = sigma_ptot + abs1*(ptot-funcvalues(costfuncmavgptot&
-&         ))**2
-      else
-        massflowrate = massflowrate + massflowratelocal
+      massflowrate = massflowrate + massflowratelocal
 ! re-dimentionalize quantities
-        pm = pm*pref
-        mass_ptot = mass_ptot + ptot*massflowratelocal*pref
-        mass_ttot = mass_ttot + ttot*massflowratelocal*tref
-        mass_rho = mass_rho + rhom*massflowratelocal*rhoref
-        mass_a = mass_a + am*massflowratelocal*uref
-        mass_ps = mass_ps + pm*massflowratelocal
-        mass_mn = mass_mn + mnm*massflowratelocal
-        sfacecoordref(1) = sf*ssi(i, j, 1)*overcellarea
-        sfacecoordref(2) = sf*ssi(i, j, 2)*overcellarea
-        sfacecoordref(3) = sf*ssi(i, j, 3)*overcellarea
-        mass_vx = mass_vx + (vxm*uref-sfacecoordref(1))*&
-&         massflowratelocal
-        mass_vy = mass_vy + (vym*uref-sfacecoordref(2))*&
-&         massflowratelocal
-        mass_vz = mass_vz + (vzm*uref-sfacecoordref(3))*&
-&         massflowratelocal
-        mass_nx = mass_nx + ssi(i, j, 1)*overcellarea*massflowratelocal
-        mass_ny = mass_ny + ssi(i, j, 2)*overcellarea*massflowratelocal
-        mass_nz = mass_nz + ssi(i, j, 3)*overcellarea*massflowratelocal
-        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
-&         , 1)) - refpoint(1)
-        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
-&         , 2)) - refpoint(2)
-        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
-&         , 3)) - refpoint(3)
+      pm = pm*pref
+      mass_ptot = mass_ptot + ptot*massflowratelocal*pref
+      mass_ttot = mass_ttot + ttot*massflowratelocal*tref
+      mass_rho = mass_rho + rhom*massflowratelocal*rhoref
+      mass_a = mass_a + am*massflowratelocal*uref
+      mass_ps = mass_ps + pm*massflowratelocal
+      mass_mn = mass_mn + mnm*massflowratelocal
+      sfacecoordref(1) = sf*ssi(i, j, 1)*overcellarea
+      sfacecoordref(2) = sf*ssi(i, j, 2)*overcellarea
+      sfacecoordref(3) = sf*ssi(i, j, 3)*overcellarea
+      mass_vx = mass_vx + (vxm*uref-sfacecoordref(1))*massflowratelocal
+      mass_vy = mass_vy + (vym*uref-sfacecoordref(2))*massflowratelocal
+      mass_vz = mass_vz + (vzm*uref-sfacecoordref(3))*massflowratelocal
+      mass_nx = mass_nx + ssi(i, j, 1)*overcellarea*massflowratelocal
+      mass_ny = mass_ny + ssi(i, j, 2)*overcellarea*massflowratelocal
+      mass_nz = mass_nz + ssi(i, j, 3)*overcellarea*massflowratelocal
+      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
+&       1)) - refpoint(1)
+      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
+&       2)) - refpoint(2)
+      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
+&       3)) - refpoint(3)
 ! pressure forces. note that these need a *negative* and to subtract
 ! the reference pressure sign to be consistent with the force
 ! computation on the walls.
-        pm = -((pm-pinf*pref)*fact*blk)
-        fx = pm*ssi(i, j, 1)
-        fy = pm*ssi(i, j, 2)
-        fz = pm*ssi(i, j, 3)
+      pm = -((pm-pinf*pref)*fact*blk)
+      fx = pm*ssi(i, j, 1)
+      fy = pm*ssi(i, j, 2)
+      fz = pm*ssi(i, j, 3)
 ! update the pressure force and moment coefficients.
-        fp(1) = fp(1) + fx
-        fp(2) = fp(2) + fy
-        fp(3) = fp(3) + fz
-        mx = yc*fz - zc*fy
-        my = zc*fx - xc*fz
-        mz = xc*fy - yc*fx
-        mp(1) = mp(1) + mx
-        mp(2) = mp(2) + my
-        mp(3) = mp(3) + mz
+      fp(1) = fp(1) + fx
+      fp(2) = fp(2) + fy
+      fp(3) = fp(3) + fz
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
+      mp(1) = mp(1) + mx
+      mp(2) = mp(2) + my
+      mp(3) = mp(3) + mz
 ! momentum forces are a little tricky.  we negate because
 ! have to re-apply fact to massflowratelocal to undoo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.
 ! also, the sign is flipped between inflow and outflow types
-        massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
-&         internalflowfact*inflowfact
-        fx = massflowratelocal*ssi(i, j, 1)*vxm
-        fy = massflowratelocal*ssi(i, j, 2)*vym
-        fz = massflowratelocal*ssi(i, j, 3)*vzm
-        fmom(1) = fmom(1) + fx
-        fmom(2) = fmom(2) + fy
-        fmom(3) = fmom(3) + fz
-        mx = yc*fz - zc*fy
-        my = zc*fx - xc*fz
-        mz = xc*fy - yc*fx
-        mmom(1) = mmom(1) + mx
-        mmom(2) = mmom(2) + my
-        mmom(3) = mmom(3) + mz
-      end if
+      massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
+&       internalflowfact*inflowfact
+      fx = massflowratelocal*ssi(i, j, 1)*vxm
+      fy = massflowratelocal*ssi(i, j, 2)*vym
+      fz = massflowratelocal*ssi(i, j, 3)*vzm
+      fmom(1) = fmom(1) + fx
+      fmom(2) = fmom(2) + fy
+      fmom(3) = fmom(3) + fz
+      mx = yc*fz - zc*fy
+      my = zc*fx - xc*fz
+      mz = xc*fy - yc*fx
+      mmom(1) = mmom(1) + mx
+      mmom(2) = mmom(2) + my
+      mmom(3) = mmom(3) + mz
     end do
-    if (withgathered) then
-      localvalues(isigmamn) = localvalues(isigmamn) + sigma_mn
-      localvalues(isigmaptot) = localvalues(isigmaptot) + sigma_ptot
-    else
 ! increment the local values array with what we computed here
-      localvalues(imassflow) = localvalues(imassflow) + massflowrate
-      localvalues(iarea) = localvalues(iarea) + area
-      localvalues(imassrho) = localvalues(imassrho) + mass_rho
-      localvalues(imassa) = localvalues(imassa) + mass_a
-      localvalues(imassptot) = localvalues(imassptot) + mass_ptot
-      localvalues(imassttot) = localvalues(imassttot) + mass_ttot
-      localvalues(imassps) = localvalues(imassps) + mass_ps
-      localvalues(imassmn) = localvalues(imassmn) + mass_mn
-      localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
-      localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
-&       fmom
-      localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + &
-&       mp
-      localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
-&       mmom
-      localvalues(imassvx) = localvalues(imassvx) + mass_vx
-      localvalues(imassvy) = localvalues(imassvy) + mass_vy
-      localvalues(imassvz) = localvalues(imassvz) + mass_vz
-      localvalues(imassnx) = localvalues(imassnx) + mass_nx
-      localvalues(imassny) = localvalues(imassny) + mass_ny
-      localvalues(imassnz) = localvalues(imassnz) + mass_nz
-    end if
+    localvalues(imassflow) = localvalues(imassflow) + massflowrate
+    localvalues(iarea) = localvalues(iarea) + area
+    localvalues(imassrho) = localvalues(imassrho) + mass_rho
+    localvalues(imassa) = localvalues(imassa) + mass_a
+    localvalues(imassptot) = localvalues(imassptot) + mass_ptot
+    localvalues(imassttot) = localvalues(imassttot) + mass_ttot
+    localvalues(imassps) = localvalues(imassps) + mass_ps
+    localvalues(imassmn) = localvalues(imassmn) + mass_mn
+    localvalues(ifp:ifp+2) = localvalues(ifp:ifp+2) + fp
+    localvalues(iflowfm:iflowfm+2) = localvalues(iflowfm:iflowfm+2) + &
+&     fmom
+    localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
+    localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
+&     mmom
+    localvalues(imassvx) = localvalues(imassvx) + mass_vx
+    localvalues(imassvy) = localvalues(imassvy) + mass_vy
+    localvalues(imassvz) = localvalues(imassvz) + mass_vz
+    localvalues(imassnx) = localvalues(imassnx) + mass_nx
+    localvalues(imassny) = localvalues(imassny) + mass_ny
+    localvalues(imassnz) = localvalues(imassnz) + mass_nz
   end subroutine flowintegrationface
 end module surfaceintegrations_fast_b

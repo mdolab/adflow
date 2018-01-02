@@ -226,6 +226,7 @@ contains
 
     ! For the PC we don't linearize the shock sensor so it must be
     ! computed here.
+
     if (usePC) then
        call referenceShockSensor
     end if
@@ -307,21 +308,32 @@ contains
                    end if
                 end do
 
-                ! Peturb w or set AD Seed according to iColor
-                do k=0, kb
-                   do j=0, jb
-                      do i=0, ib
-                         if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
-                            if (useAD) then
+                ! Peturb w or set AD Seed according to iColor. Note:
+                ! Do NOT try to putt he useAD if check inside the
+                ! color if check. ifort barfs hard-core on that and it
+                ! segfaults with AVX2
+                if (useAD) then 
+                   do k=0, kb
+                      do j=0, jb
+                         do i=0, ib
+                            if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
                                flowDomsd(nn, 1, sps)%w(i, j, k, l) = one
-                            else
-                               w(i, j, k, l) = w(i, j, k, l) + delta_x
                             end if
-                         end if
+                         end do
                       end do
                    end do
-                end do
-
+                else
+                   do k=0, kb
+                      do j=0, jb
+                         do i=0, ib
+                            if (flowdoms(nn, 1, 1)%color(i, j, k) == icolor) then
+                               w(i, j, k, l) = w(i, j, k, l) + delta_x
+                            end if
+                         end do
+                      end do
+                   end do
+                end if
+                      
                 ! Run Block-based residual
                 if (useAD) then
 #ifndef USE_COMPLEX
@@ -489,11 +501,6 @@ contains
                flowDoms(nn, 1, sps)%dwTmp2)
           if (sps==1) then
              deallocate(flowDoms(nn, 1, 1)%color)
-          end if
-
-          ! Deallocate the shock sensor refernce if usePC
-          if (usePC) then
-             deallocate(flowDoms(nn, 1, sps)%shockSensor)
           end if
        end do
     end do
@@ -810,6 +817,7 @@ contains
     use communication
     use oversetData, only : oversetPresent
     use cgnsGrid, only : cgnsDoms, cgnsDomsd, cgnsNDom
+    use actuatorRegionData, only : nActuatorRegions, actuatorRegionsd
     implicit none
 
     ! Input parameters
@@ -949,6 +957,12 @@ contains
        end do
     end do
 
+    ! And the reverse seeds in the actuator zones
+    do i=1, nActuatorRegions
+       actuatorRegionsd(i)%F = zero
+       actuatorRegionsd(i)%T = zero
+    end do
+    
   end subroutine zeroADSeeds
   ! This is a special function that is sued to dealloc derivative values
   ! in blockpointers_d for use with the AD code.
@@ -972,7 +986,7 @@ contains
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1004,6 +1018,7 @@ contains
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1)
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1035,6 +1050,7 @@ contains
     integer(kind=intType) :: i, j, k
 
     call setPointers(nn, level, 1) ! Just to get the correct sizes
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1071,7 +1087,7 @@ contains
     integer(kind=intType) :: i, j, k, modi, modj, modk
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1107,7 +1123,7 @@ contains
     integer(kind=intType) :: i, j, k, modi, modj, modk
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1144,7 +1160,7 @@ contains
     ! This is a REALLY brute force coloring for debugging
 
     call setPointers(nn, level, 1)
-
+    !DIR$ NOVECTOR
     do k=0, kb
        do j=0, jb
           do i=0, ib
@@ -1710,14 +1726,6 @@ end subroutine statePreAllocation
        do sps=1, nTimeIntervalsSpectral
           call setPointers(nn, level, sps)
 
-          ! Allocate shockSensor in flowDoms *NOT* flowDomsd....and
-          ! compute the value depending on equations/dissipation
-          ! type. Note we are just doing all cells including corners
-          ! halos..those values are not used anyway.
-
-          allocate(flowDoms(nn, 1, sps)%shockSensor(0:ib, 0:jb, 0:kb))
-          shockSensor => flowDoms(nn,1,sps)%shockSensor
-
           if (equations == EulerEquations .or. spaceDiscr == dissMatrix) then
              !shockSensor is Pressure
              do k=0, kb
@@ -1782,7 +1790,6 @@ end subroutine statePreAllocation
        do sps=1, nTimeIntervalsSpectral
 
           call setPointers(nn, level, sps)
-          shockSensor => flowDoms(nn,level,sps)%shockSensor
           call block_res_state(nn, sps)
           ! Set the values
           do l=1, nw

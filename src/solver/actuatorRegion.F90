@@ -7,7 +7,7 @@ module actuatorRegion
 
 contains
   subroutine addActuatorRegion(pts, conn, axis1, axis2, famName, famID, &
-       F, T, smoothDistance, nPts, nConn)
+       thrust, torque, nPts, nConn)
     ! Add a user-supplied integration surface.
 
     use communication, only : myID, adflow_comm_world
@@ -27,14 +27,15 @@ contains
     integer(kind=intType), intent(in) :: nPts, nConn, famID
     real(kind=realType), intent(in), dimension(3) :: axis1, axis2
     character(len=*) :: famName
-    real(kind=realType) :: F(3), T, smoothDistance
+    real(kind=realType) :: thrust, torque
 
     ! Working variables
     integer(kind=intType) :: i, j, k, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
-    real(kind=realType) :: dStar, frac, sm2, volLocal
+    real(kind=realType) :: dStar, frac, volLocal
     type(actuatorRegionType), pointer :: region
-    real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, xCen
+    real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, xCen, axisVec
     type(adtType) :: ADT
+    real(kind=realType) :: axisVecNorm
     real(kind=realType), dimension(:, :), allocatable :: norm
     integer(kind=intType), dimension(:), allocatable :: normCount
     integer(kind=intType), dimension(:, :), pointer :: tmp
@@ -56,9 +57,24 @@ contains
     region => actuatorRegions(nActuatorRegions)
     region%famName = famName
     region%famID = famID
-    region%F = F
-    region%T = T
-    region%smoothDistance = smoothDistance
+    region%T = torque
+
+    ! We use the axis to define the direction of F. Since we are
+    ! dealing with rotating machinary, it is pretty good approximation
+    ! to assume that the thrust is going to be in the direction of the
+    ! axis.
+    axisVec = axis2-axis1
+    axisVecNorm = (axisVec(1)**2 + axisvec(2)**2 + axisVec(3)**2)
+    if (axisVecNorm < 1e-12) then 
+       print *,"Error: Axis cannot be determined by the supplied points. They are too close"
+       stop
+    end if
+
+    axisVec = axisVec / axisVecNorm
+
+    region%F = axisVec*thrust
+    region%axisVec = axisVec
+
     allocate(region%blkPtr(0:nDom))
     region%blkPtr(0) = 0
 
@@ -121,14 +137,13 @@ contains
     allocate(stack(100), BB(20), frontLeaves(25), frontLeavesNew(25))
 
     ! Allocate sufficient space for the maximum possible number of cellIDs
-    allocate(region%cellIDs(3, nCellsLocal(1)), &
-         region%factor(nCellsLocal(1)))
+    allocate(region%cellIDs(3, nCellsLocal(1)))
 
     ! Now search for all the coordinate. Note that We have explictly
     ! set sps to 1 becuase it is only implemented for single grid.
     sps = 1
     level = 1
-    sm2 = smoothDistance**2
+
     do nn=1, nDom
        call setPointers(nn, level, sps)
        do k=2, kl
@@ -157,14 +172,6 @@ contains
                          ! to the list.
                          region%nCellIDs = region%nCellIDs + 1
                          region%cellIDs(:, region%nCellIDs) = (/i, j, k/)
-
-                         ! Compute the factor we need for smoothing
-                         if (uvw(4) > sm2) then
-                            region%factor(region%nCellIDs) = one
-                         else
-                            frac = sqrt(uvw(4)) / region%smoothDistance
-                            region%factor(region%nCellIDs) = -two*frac**3 + three*frac**2
-                         end if
                       end if
                    end if
                 end if
@@ -196,7 +203,7 @@ contains
           i = region%cellIDs(1, iii)
           j = region%cellIDs(2, iii)
           k = region%cellIDs(3, iii)
-          volLocal = volLocal + vol(i, j, k)!*region%factor(iii)
+          volLocal = volLocal + vol(i, j, k)
        end do
     end do
 
@@ -264,7 +271,7 @@ contains
     integer(kind=intType) :: iRegion, nn, i, j, k, ii, jj, kk, iii, kkk, iDim
     integer(kind=intType) :: level, sps, iProc, ierr, totalCount, offset, nUnique
     integer(kind=intType), dimension(:), allocatable :: sizesProc, cumSizesProc
-    real(kind=realType) , dimension(:), allocatable :: pts, allPts, factor, allFactor
+    real(kind=realType) , dimension(:), allocatable :: pts, allPts
     real(kind=realType) , dimension(:,:), allocatable :: tmp, uniquePts
     real(kind=realType), parameter :: tol=1e-8
     integer(kind=intType), dimension(:), allocatable :: conn, allConn, link
@@ -277,7 +284,7 @@ contains
     if (myid == 0) then
        open(unit=101, file=trim(fileName), form='formatted')
        write(101,*) 'TITLE = "Actuator Regions"'
-       write(101,*) 'Variables = "CoordinateX", "CoordinateY", "CoordinateZ", "Factor"'
+       write(101,*) 'Variables = "CoordinateX", "CoordinateY", "CoordinateZ"'
     end if
 
     ! Region Loop
@@ -344,7 +351,7 @@ contains
        ! space we need on the root proc and it
        if (myid == 0) then
           totalCount = sum(sizesProc)
-          allocate(allConn(8*totalCount), allPts(24*totalCount), allFactor(totalCount))
+          allocate(allConn(8*totalCount), allPts(24*totalCount))
        end if
 
        ! Perform the two gatherV's
@@ -355,11 +362,6 @@ contains
 
        call mpi_gatherV(conn, region%nCellIDs*8, adflow_integer, &
             allConn, 8*sizesProc, 8*cumSizesProc, adflow_integer, &
-            0, adflow_comm_world, ierr)
-       call ECHK(ierr, __FILE__, __LINE__)
-
-       call mpi_gatherV(region%factor, region%nCellIDs, adflow_real, &
-            allFactor, sizesProc, cumSizesProc, adflow_real, &
             0, adflow_comm_world, ierr)
        call ECHK(ierr, __FILE__, __LINE__)
 
@@ -399,11 +401,6 @@ contains
              end do
           end do
 
-          ! Write out the factor
-          do i=1, totalCount
-             write(101,13) allFactor(i)
-          end do
-
           ! Write out the connectivity
 15        format(I8)
           do i=1, totalCount
@@ -414,7 +411,7 @@ contains
           end do
 
           ! Ditch the memory only allocated on this proc
-          deallocate(allConn, allFactor, link, tmp, uniquePts)
+          deallocate(allConn, link, tmp, uniquePts)
        end if
     end do regionLoop
 
@@ -424,7 +421,7 @@ contains
     end if
   end subroutine writeActuatorRegions
 
-  subroutine integrateActuatorRegions(localValues, famList, sps, withGathered, funcValues)
+  subroutine integrateActuatorRegions(localValues, famList, sps)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines.
@@ -443,8 +440,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues
 
     ! Working
     integer(kind=intType) :: nn, iRegion
@@ -475,8 +470,7 @@ contains
 
   end subroutine integrateActuatorRegions
 #ifndef USE_COMPLEX
-  subroutine integrateActuatorRegions_d(localValues, localValuesd, famList, sps, &
-       withGathered, funcValues, funcValuesd)
+  subroutine integrateActuatorRegions_d(localValues, localValuesd, famList, sps)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines.
@@ -495,8 +489,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
 
     ! Working
     integer(kind=intType) :: nn, iRegion
@@ -530,8 +522,7 @@ contains
 
   end subroutine integrateActuatorRegions_d
 
-  subroutine integrateActuatorRegions_b(localValues, localValuesd, famList, sps, &
-       withGathered, funcValues, funcValuesd)
+  subroutine integrateActuatorRegions_b(localValues, localValuesd, famList, sps)
     !--------------------------------------------------------------
     ! Manual Differentiation Warning: Modifying this routine requires
     ! modifying the hand-written forward and reverse routines.
@@ -550,8 +541,6 @@ contains
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues, localValuesd
     integer(kind=intType), dimension(:), intent(in) :: famList
     integer(kind=intType), intent(in) :: sps
-    logical, intent(in) :: withGathered
-    real(kind=realType),  dimension(:), intent(in) :: funcValues, funcValuesd
 
     ! Working
     integer(kind=intType) :: nn, iRegion

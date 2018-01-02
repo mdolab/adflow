@@ -590,7 +590,7 @@ class ADFLOW(AeroSolver):
             pts.T, conn.T, familyName, famID)
 
     def addActuatorRegion(self, fileName, axis1, axis2, familyName,
-                          smoothDistance, F=None, T=None):
+                          thrust=0.0, torque=0.0):
         """Add an actuator disk zone defined by the (closed) supplied
         in the plot3d file "fileName". Axis1 and Axis2 defines the
         physical extent of the region overwhich to apply the ramp
@@ -613,17 +613,15 @@ class ADFLOW(AeroSolver):
            The name to be associated with the functions defined on this
            region.
 
-        smoothDistance : scalar
-           The distance overwhich to smooth the implementatoin of the
-           actuation.
+        thrust : scalar
+           The total amount of axial force to apply to this region, in the direction
+           of axis1 -> axis2
 
-        F : numpy array, length 3
-           The total amount of force to apply to this region
-
-        T : scalar
-           The total amoun tof torque to apply to the region, about the
+        torque : scalar
+           The total amount of torque to apply to the region, about the
            specified axis.
-           """
+
+        """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
         if self.getOption('equationMode').lower() == 'time spectral':
             raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
@@ -651,16 +649,10 @@ class ADFLOW(AeroSolver):
         famID = maxInd + 1
         self.families[familyName.lower()] = [famID]
 
-        # Set defaults for T and P if not specified
-        if F is None:
-            F = numpy.zeros(3)
-        if T is None:
-            T = 0.0
-
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, F, T, smoothDistance)
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque)
 
 
     def addUserFunction(self, funcName, functions, callBack):
@@ -1226,12 +1218,15 @@ class ADFLOW(AeroSolver):
         # given objective. For regular functions this just sets a 1.0
         # for f. For the user-supplied functions, it linearizes the
         # user-supplied function and sets all required seeds.
+
         if f.lower() in self.adflowCostFunctions:
             funcsBar = {f.lower():1.0}
         elif f in self.adflowUserCostFunctions:
             # Need to get the funcs-bar derivative from the
             # user-supplied function
             funcsBar = self.adflowUserCostFunctions[f].evalFunctionsSens()
+        else:
+            funcsBar = {f.lower():0.0}
         return funcsBar
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
@@ -2342,13 +2337,21 @@ class ADFLOW(AeroSolver):
 
         self._setAeroProblemData(aeroProblem)
 
+        # Reset the fail flags here since the updateGeometry info
+        # updates the mesh which may result in a fatalFail.
+        self.adflow.killsignals.routinefailed = False
+        self.adflow.killsignals.fatalFail = False
+
         # Note that it is safe to call updateGeometryInfo since it
         # only updates the mesh if necessary
-        self.updateGeometryInfo()
 
+        self.updateGeometryInfo()
         # Create the zipper mesh if not done so
         self._createZipperMesh()
 
+        failedMesh = False
+        if self.adflow.killsignals.fatalfail:
+            failedMesh = True
         # If the state info none, initialize to the supplied
         # restart file or the free-stream values by calling
         # resetFlow()
@@ -2361,6 +2364,9 @@ class ADFLOW(AeroSolver):
             else:
                 self._resetFlow()
 
+        if failedMesh:
+            self.adflow.killsignals.fatalfail = True
+
         # Now set the data from the incomming aeroProblem:
         stateInfo = aeroProblem.adflowData.stateInfo
         if stateInfo is not None and newAP:
@@ -2370,9 +2376,6 @@ class ADFLOW(AeroSolver):
         oldWinf = aeroProblem.adflowData.oldWinf
         if self.getOption('infChangeCorrection') and oldWinf is not None:
             self.adflow.initializeflow.infchangecorrection(oldWinf)
-
-        self.adflow.killsignals.routinefailed = False
-        self.adflow.killsignals.fatalFail = False
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
@@ -3271,7 +3274,8 @@ class ADFLOW(AeroSolver):
         objective: string
             The objective to be tested.
         """
-        if objective.lower() in self.adflowCostFunctions.keys():
+        if objective.lower() in self.adflowCostFunctions.keys() or \
+           objective.lower() in self.adflowUserCostFunctions.keys():
             return True
         else:
             return False
@@ -3640,8 +3644,9 @@ class ADFLOW(AeroSolver):
                 returns.append(xdvbar)
 
 
-        # Include the aerodynamic variables if requested to do so.
-        if xDvDerivAero:
+        # Include the aerodynamic variables if requested to do so and
+        # we haven't already done so with xDvDeriv:
+        if xDvDerivAero and not xDvDeriv:
             xdvaerobar = {}
             xdvaerobar.update(self._processAeroDerivatives(extrabar, bcdatavaluesbar))
             returns.append(xdvaerobar)
@@ -4237,6 +4242,7 @@ class ADFLOW(AeroSolver):
 
             # Common Paramters
             'ncycles':[int, 500],
+            'timelimit':[float, -1.0],
             'ncyclescoarse':[int, 500],
             'nsubiterturb':[int, 1],
             'nsubiter':[int, 1],
@@ -4247,6 +4253,8 @@ class ADFLOW(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
+            'useblockettes':[bool, True],
+            'uselinresmonitor':[bool, False],
 
             # Overset Parameters:
             'nearwalldist':[float, 0.1],
@@ -4315,28 +4323,30 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             'useanksolver':[bool, False],
             'ankuseturbdadi':[bool, True],
-            'ankswitchtol':[float, 0.1],
+            'ankswitchtol':[float, 1.0],
             'anksubspacesize':[int, -1],
-            'ankmaxiter':[int, 30],
+            'ankmaxiter':[int, 40],
             'anklinearsolvetol':[float, 0.1],
             'ankasmoverlap':[int, 1],
             'ankpcilufill':[int, 1],
             'ankjacobianlag':[int, 10],
             'ankinnerpreconits':[int, 1],
-            'ankcfl0':[float, 1.0],
-            'ankcfllimit':[float, 1e16],
-            'ankstepfactor':[float, 0.8],
-            'anksecondordswitchtol':[float, 1e-7],
-            'ankstepinit':[float, 0.2],
-            'ankstepcutback':[float, 0.7],
-            'ankstepmin':[float, 0.4],
-            'ankstepexponent':[float, 0.75],
+            'ankcfl0':[float, 5.0],
+            'ankcflmin':[float,1.0],
+            'ankcfllimit':[float, 250.0],
+            'ankcflfactor':[float, 10.0],
             'ankcflexponent':[float, 1.0],
-            'ankcoupledswitchtol':[float, 1e-10],
-            'ankturbswitchtol' : [float, 1e-16],
-            'anknsubiterturb' : [int, 1],
+            'ankcflcutback':[float,0.5],
+            'ankstepfactor':[float, 1.0],
+            'ankstepmin':[float, 0.05],
+            'ankconstcflstep':[float, 0.5],
+            'ankphysicallstol':[float, 0.2],
+            'ankunsteadylstol':[float, 1.0],
+            'anksecondordswitchtol':[float, 1e-16],
+            'ankcoupledswitchtol':[float, 1e-16],
             'ankturbcflscale' : [float, 1.0],
-            'ankfullvisctol' : [float, 1e-16],
+            'ankusefullvisc' : [bool, True],
+            'ankpcupdatetol':[float,0.5],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4528,6 +4538,7 @@ class ADFLOW(AeroSolver):
 
             # Common Paramters
             'ncycles':['iter', 'ncycles'],
+            'timelimit':['iter', 'timelimit'],
             'ncyclescoarse':['iter', 'ncyclescoarse'],
             'nsubiterturb':['iter', 'nsubiterturb'],
             'nsubiter':['iter', 'nsubiterations'],
@@ -4541,7 +4552,8 @@ class ADFLOW(AeroSolver):
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
-
+            'useblockettes':['discr', 'useblockettes'],
+            'uselinresmonitor':['iter','uselinresmonitor'],
             # Overset Parameters
             'nearwalldist':['overset','nearwalldist'],
             'backgroundvolscale':['overset','backgroundvolscale'],
@@ -4616,7 +4628,6 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Paramters
             'useanksolver':['ank', 'useanksolver'],
             'ankuseturbdadi':['ank', 'ank_useturbdadi'],
-            'ankturbswitchtol':['ank', 'ank_turbswitchtol'],
             'ankswitchtol':['ank', 'ank_switchtol'],
             'anksubspacesize':['ank', 'ank_subspace'],
             'ankmaxiter':['ank', 'ank_maxiter'],
@@ -4626,18 +4637,21 @@ class ADFLOW(AeroSolver):
             'ankjacobianlag':['ank', 'ank_jacobianlag'],
             'ankinnerpreconits':['ank', 'ank_innerpreconits'],
             'ankcfl0':['ank', 'ank_cfl0'],
+            'ankcflmin':['ank', 'ank_cflmin0'],
             'ankcfllimit':['ank','ank_cfllimit'],
-            'ankstepfactor':['ank','ank_stepfactor'],
-            'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
-            'ankstepinit':['ank','ank_stepinit'],
-            'ankstepcutback':['ank','ank_stepcutback'],
-            'ankstepmin':['ank','ank_stepmin'],
-            'ankstepexponent':['ank','ank_stepexponent'],
+            'ankcflfactor':['ank', 'ank_cflfactor'],
             'ankcflexponent':['ank','ank_cflexponent'],
+            'ankcflcutback':['ank', 'ank_cflcutback'],
+            'ankstepfactor':['ank','ank_stepfactor'],
+            'ankstepmin':['ank','ank_stepmin'],
+            'ankconstcflstep':['ank','ank_constcflstep'],
+            'ankphysicallstol':['ank', 'ank_physlstol'],
+            'ankunsteadylstol':['ank', 'ank_unstdylstol'],
+            'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
-            'anknsubiterturb':['ank', 'ank_nsubiterturb'],
             'ankturbcflscale':['ank', 'ank_turbcflscale'],
-            'ankfullvisctol':['ank', 'ank_fullvisctol'],
+            'ankusefullvisc':['ank', 'ank_usefullvisc'],
+            'ankpcupdatetol':['ank', 'ank_pcupdatetol'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
@@ -4839,8 +4853,6 @@ class ADFLOW(AeroSolver):
             'mavgttot':self.adflow.constants.costfuncmavgttot,
             'mavgps':self.adflow.constants.costfuncmavgps,
             'mavgmn':self.adflow.constants.costfuncmavgmn,
-            'sigmamn':self.adflow.constants.costfuncsigmamn,
-            'sigmaptot':self.adflow.constants.costfuncsigmaptot,
             'axismoment':self.adflow.constants.costfuncaxismoment,
             'flowpower':self.adflow.constants.costfuncflowpower,
             'forcexpressure':self.adflow.constants.costfuncforcexpressure,
@@ -4858,6 +4870,9 @@ class ADFLOW(AeroSolver):
             'liftpressure':self.adflow.constants.costfuncliftpressure,
             'liftviscous':self.adflow.constants.costfuncliftviscous,
             'liftmomentum':self.adflow.constants.costfuncliftmomentum,
+            'mavgvx': self.adflow.constants.costfuncmavgvx,
+            'mavgvy': self.adflow.constants.costfuncmavgvy,
+            'mavgvz': self.adflow.constants.costfuncmavgvz,
             }
 
         return iDV, BCDV, adflowCostFunctions

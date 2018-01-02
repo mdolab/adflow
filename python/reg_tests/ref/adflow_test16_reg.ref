@@ -743,10 +743,6 @@ Norm of state vector
 @value  1.4641998475137e+02 1e-10 1e-10
 -> Alpha... 0.000000 
 Eval Functions:
-Dictionary Key: conv_nozzle_distortionmn
-@value  1.1278281385252e-02 1e-10 1e-10
-Dictionary Key: conv_nozzle_distortionptot
-@value  8.8655964127610e+01 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgmn_down
 @value  5.7637019081625e-01 1e-10 1e-10
 Dictionary Key: conv_nozzle_mavgmn_up
