@@ -217,7 +217,6 @@ python module libadflow
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
          logical :: ank_useturbdadi
-         real(kind=realtype) :: ank_turbswitchtol
          integer(kind=inttype) :: ank_subspace
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
@@ -225,18 +224,21 @@ python module libadflow
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
+         real(kind=realtype) :: ank_cflmin0
          real(kind=realtype) :: ank_cfllimit
-         real(kind=realtype) :: ank_stepfactor
-         real(kind=realtype) :: ank_secondordswitchtol
-         real(kind=realtype) :: ank_stepinit
-         real(kind=realtype) :: ank_stepcutback
-         real(kind=realtype) :: ank_stepmin
-         real(kind=realtype) :: ank_stepexponent
+         real(kind=realtype) :: ank_cflfactor
          real(kind=realtype) :: ank_cflexponent
+         real(kind=realtype) :: ank_cflcutback
+         real(kind=realtype) :: ank_stepfactor
+         real(kind=realtype) :: ank_stepmin
+         real(kind=realtype) :: ank_constcflstep
+         real(kind=realtype) :: ank_physlstol
+         real(kind=realtype) :: ank_unstdylstol
+         real(kind=realtype) :: ank_secondordswitchtol
          real(kind=realtype) :: ank_coupledswitchtol
          real(kind=realtype) :: ank_turbcflscale
-         integer(kind=inttype) :: ank_nsubiterturb
-         real(kind=realtype) :: ank_fullvisctol
+         logical :: ank_usefullvisc
+         real(kind=realtype) :: ank_pcupdatetol
          subroutine destroyanksolver
          end subroutine destroyanksolver
 
@@ -402,14 +404,15 @@ python module libadflow
        end module usersurfaceintegrations
 
        module actuatorregion ! in :test:actuatorDiskRegion.F90
-         subroutine addactuatorregion(pts,conn,axis1,axis2,famname,famid,f,t,smoothdistance,npts,nconn) ! in :test:actuatorDiskRegion.F90:actuatorregion
+         subroutine addactuatorregion(pts,conn,axis1,axis2,famname,famid,thrust,torque,npts,nconn) ! in :test:actuatorDiskRegion.F90:actuatorregion
            real(kind=realtype) dimension(3,npts),intent(in) :: pts
            integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
+           real(kind=realtype), dimension(3),intent(in) :: axis1
+           real(kind=realtype), dimension(3),intent(in) :: axis2
            character*(*) :: famname
            integer(kind=inttype) intent(in) :: famid
-           real(kind=realtype) dimension(3) :: f
-           real(kind=realtype) :: t
-           real(kind=realtype) intent(in) :: smoothdistance
+           real(kind=realtype) :: thrust
+           real(kind=realtype) :: torque
            integer(kind=inttype), optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
            integer(kind=inttype), optional,intent(in),check(shape(conn,1)==nconn),depend(conn) :: nconn=shape(conn,1)
          end subroutine addactuatorregion
@@ -799,40 +802,41 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncmavgmn=48
          integer(kind=inttype) parameter,optional :: costfuncmavga=49
          integer(kind=inttype) parameter,optional :: costfuncarea=50
-         integer(kind=inttype) parameter,optional :: costfuncsigmamn=51
-         integer(kind=inttype) parameter,optional :: costfuncsigmaptot=52
-         integer(kind=inttype) parameter,optional :: costfuncaxismoment=53
-         integer(kind=inttype) parameter,optional :: costfuncflowpower=54
-         integer(kind=inttype) parameter,optional :: costfuncforcexpressure=55
-         integer(kind=inttype) parameter,optional :: costfuncforceypressure=56
-         integer(kind=inttype) parameter,optional :: costfuncforcezpressure=57
-         integer(kind=inttype) parameter,optional :: costfuncforcexviscous=58
-         integer(kind=inttype) parameter,optional :: costfuncforceyviscous=59
-         integer(kind=inttype) parameter,optional :: costfuncforcezviscous=60
-         integer(kind=inttype) parameter,optional :: costfuncforcexmomentum=61
-         integer(kind=inttype) parameter,optional :: costfuncforceymomentum=62
-         integer(kind=inttype) parameter,optional :: costfuncforcezmomentum=63
-         integer(kind=inttype) parameter,optional :: costfuncdragpressure=64
-         integer(kind=inttype) parameter,optional :: costfuncdragviscous=65
-         integer(kind=inttype) parameter,optional :: costfuncdragmomentum=66
-         integer(kind=inttype) parameter,optional :: costfuncliftpressure=67
-         integer(kind=inttype) parameter,optional :: costfuncliftviscous=68
-         integer(kind=inttype) parameter,optional :: costfuncliftmomentum=69
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoefpressure=70
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoefviscous=71
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoefmomentum=72
-         integer(kind=inttype) parameter,optional :: costfuncforceycoefpressure=73
-         integer(kind=inttype) parameter,optional :: costfuncforceycoefviscous=74
-         integer(kind=inttype) parameter,optional :: costfuncforceycoefmomentum=75
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoefpressure=76
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoefviscous=77
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoefmomentum=78
-         integer(kind=inttype) parameter,optional :: costfuncliftcoefpressure=79
-         integer(kind=inttype) parameter,optional :: costfuncliftcoefviscous=80
-         integer(kind=inttype) parameter,optional :: costfuncliftcoefmomentum=81
-         integer(kind=inttype) parameter,optional :: costfuncdragcoefpressure=82
-         integer(kind=inttype) parameter,optional :: costfuncdragcoefviscous=83
-         integer(kind=inttype) parameter,optional :: costfuncdragcoefmomentum=84
+         integer(kind=inttype) parameter,optional :: costfuncaxismoment=51
+         integer(kind=inttype) parameter,optional :: costfuncflowpower=52
+         integer(kind=inttype) parameter,optional :: costfuncforcexpressure=53
+         integer(kind=inttype) parameter,optional :: costfuncforceypressure=54
+         integer(kind=inttype) parameter,optional :: costfuncforcezpressure=55
+         integer(kind=inttype) parameter,optional :: costfuncforcexviscous=56
+         integer(kind=inttype) parameter,optional :: costfuncforceyviscous=57
+         integer(kind=inttype) parameter,optional :: costfuncforcezviscous=58
+         integer(kind=inttype) parameter,optional :: costfuncforcexmomentum=59
+         integer(kind=inttype) parameter,optional :: costfuncforceymomentum=60
+         integer(kind=inttype) parameter,optional :: costfuncforcezmomentum=61
+         integer(kind=inttype) parameter,optional :: costfuncdragpressure=62
+         integer(kind=inttype) parameter,optional :: costfuncdragviscous=63
+         integer(kind=inttype) parameter,optional :: costfuncdragmomentum=64
+         integer(kind=inttype) parameter,optional :: costfuncliftpressure=65
+         integer(kind=inttype) parameter,optional :: costfuncliftviscous=66
+         integer(kind=inttype) parameter,optional :: costfuncliftmomentum=67
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefpressure=68
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefviscous=69
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefmomentum=70
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefpressure=71
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefviscous=72
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefmomentum=73
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefpressure=74
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefviscous=75
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefmomentum=76
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefpressure=77
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefviscous=78
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefmomentum=79
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefpressure=80
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefviscous=81
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefmomentum=82
+         integer(kind=inttype) parameter,optional :: costfuncmavgvx=83
+         integer(kind=inttype) parameter,optional :: costfuncmavgvy=84
+         integer(kind=inttype) parameter,optional :: costfuncmavgvz=85
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
@@ -869,6 +873,7 @@ python module libadflow
          real(kind=realtype) :: sigma
          logical :: useapproxwalldistance
          logical :: lowspeedpreconditioner
+         logical :: useblockettes
        end module inputdiscretization
 
        module cgnsgrid
@@ -908,6 +913,7 @@ python module libadflow
          logical :: rkreset
          character(len=maxstringlen) :: mgdescription
          integer(kind=inttype) :: ncycles
+         real(kind=realtype) :: timelimit
          integer(kind=inttype) :: ncyclescoarse
          integer(kind=inttype) :: nsavevolume
          integer(kind=inttype) :: nsavesurface
@@ -945,6 +951,7 @@ python module libadflow
          logical :: printiterations
          logical :: printwarnings
          real(kind=realtype) ::maxl2deviationfactor
+         logical :: uselinresmonitor
        end module inputiteration
 
        module inputmotion ! in :adflow:../../modules/inputParam.f90

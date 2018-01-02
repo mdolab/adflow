@@ -79,6 +79,7 @@ module inputDiscretization
   real(kind=realType) :: kappaCoef
   logical :: lumpedDiss, fullVisc
   real(kind=realType) :: sigma
+  logical :: useBlockettes
 
 #ifndef USE_TAPENADE
   real(kind=realType) :: vis2b, vis4b, vis2Coarseb, adisb
@@ -161,7 +162,6 @@ module inputIO
   logical :: storeRindLayer, checkRestartSol
   logical :: autoParameterUpdate, writeCoorMeter
   logical :: storeConvInnerIter
-
   logical :: firstWrite = .true.
   logical :: viscousSurfaceVelocities = .True.
 
@@ -265,7 +265,7 @@ module inputIteration
   integer(kind=intType) :: turbTreatment, turbSmoother, turbRelax
   integer(kind=intType) :: mgBoundCorr, mgStartlevel
   integer(kind=intType) :: nMGSteps, nMGLevels
-
+  real(kind=realType) :: timeLimit
   integer(kind=intType), allocatable, dimension(:) :: cycleStrategy
   integer(kind=intType) :: miniterNum
   real(kind=realType) :: cfl, cflCoarse, fcoll, smoop
@@ -279,7 +279,7 @@ module inputIteration
   real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
   character (len=maxStringLen) :: mgDescription
   logical :: rkReset
-
+  logical :: useLinResMonitor
   logical :: freezeTurbSource
   logical :: printIterations
   logical :: printWarnings

@@ -25,7 +25,7 @@ printHeader('Test14: MDO tutorial -- Rans -- Adjoint Test')
 
 # ****************************************************************************
 gridFile = '../inputFiles/mdo_tutorial_rans_scalar_jst.cgns'
-
+ffdFile = '../inputFiles/mdo_tutorial_ffd.fmt'
 options = copy.copy(adflowDefOpts)
 
 options.update(
@@ -51,28 +51,32 @@ options.update(
      'blockSplitting':False,
  }
 )
+
+meshOptions={'gridFile':gridFile}
+
 ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, P=20000.0, T=220.0,
                  areaRef=45.5, chordRef=3.25, beta=0.0, 
                  xRef=0.0, yRef=0.0, zRef=0.0, evalFuncs=['fx', 'mz'])
 
-ap.addDV('alpha')
-ap.addDV('mach')
-CFDSolver = ADFLOW(options=options)
-DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt')
-nTwist = 6
-DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
-                               y=numpy.zeros(nTwist),
-                               z=numpy.linspace(0,14, nTwist), k=2))
-def twist(val, geo):
-    for i in range(nTwist):
-        geo.rot_z['wing'].coef[i] = val[i]
+if __name__ == "__main__": 
 
-DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
-DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-mesh = USMesh(options={'gridFile':gridFile, 
-                   })
+    ap.addDV('alpha')
+    ap.addDV('mach')
+    CFDSolver = ADFLOW(options=options)
+    DVGeo = DVGeometry(ffdFile)
+    nTwist = 6
+    DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
+                                   y=numpy.zeros(nTwist),
+                                   z=numpy.linspace(0,14, nTwist), k=2))
+    def twist(val, geo):
+        for i in range(nTwist):
+            geo.rot_z['wing'].coef[i] = val[i]
 
-CFDSolver.setMesh(mesh)
-CFDSolver.setDVGeo(DVGeo)
-adjointTest(CFDSolver, ap)
+    DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
+    mesh = USMesh(meshOptions)
+
+    CFDSolver.setMesh(mesh)
+    CFDSolver.setDVGeo(DVGeo)
+    adjointTest(CFDSolver, ap)
 

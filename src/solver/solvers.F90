@@ -906,9 +906,9 @@ contains
     use inputio, only : forcedLiftFile, forcedSliceFile, forcedVolumeFile, &
          forcedSurfaceFile, solFile, newGridFile, surfaceSolFile
     use inputIteration, only: CFL, CFLCoarse, minIterNum, nCycles, &
-         nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset
+         nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset, timeLimit
     use iteration, only : cycling, approxTotalIts, converged, CFLMonitor, &
-         groundLevel, iterTot, iterType, currentLevel, rhoRes0, totalR, &
+         groundLevel, iterTot, iterType, currentLevel, rhoRes0, totalR, t0Solver,&
          rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor, linResMonitor
     use killSignals, only : globalSignal, localSignal, noSignal, routineFailed, signalWrite, &
          signalWriteQuit
@@ -917,6 +917,9 @@ contains
     use tecplotIO, only : writeTecplot
     use multiGrid, only : setCycleStrategy, executeMGCycle
     use surfaceFamilies, only : fullFamList
+    use flowVarRefState, only : nwf
+    use residuals, only : residual, initres, sourceTerms
+    use solverUtils, only : timeStep
     implicit none
     !
     !      Local parameter
@@ -929,7 +932,7 @@ contains
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
     logical :: absConv, relConv, firstNK, firstANK
-    real(kind=realType) :: nk_switchtol_save
+    real(kind=realType) :: nk_switchtol_save, curTime
 
     ! Allocate the memory for cycling.
     if (allocated(cycling)) then
@@ -965,8 +968,6 @@ contains
        allocate(NKLSFuncEvals(nMGCycles))
     end if
 
-
-
     ! Only compute the free stream resisudal once for efficiency on the
     ! fine grid only.
     if (groundLevel == 1)  then
@@ -982,7 +983,7 @@ contains
        ! Write a message about the number of multigrid iterations
        ! to be performed.
 
-       write(numberString,"(i6)") nMGCycles		
+       write(numberString,"(i6)") nMGCycles
        numberString = adjustl(numberString)
        numberString = trim(numberString)
        if (printIterations) then
@@ -1015,6 +1016,10 @@ contains
 
     ! Evaluate the initial residual
     call computeResidualNK
+
+    ! Need to run the time step here since the RK/DADI is expecting
+    ! the rad{i,j,k} to be computed.
+    call timeStep(.False.)
 
     ! Extract the rhoResStart and totalRStart
     call getCurrentResidual(rhoResStart, totalRStart)
@@ -1071,7 +1076,6 @@ contains
              else
                 call ANKStep(firstANK)
                 firstANK = .False.
-                iterType = "   ANK"
                 CFLMonitor = ANK_CFL
 
              end if
@@ -1088,7 +1092,6 @@ contains
 
                 call NKStep(firstNK)
                 firstNK = .False.
-                iterType = "    NK"
                 CFLMonitor = NK_CFL
 
              end if
@@ -1104,7 +1107,6 @@ contains
              else if (totalR <= ANK_switchTol*totalR0 .and. &
                   totalR > NK_switchTol*totalR0) then
 
-                iterType = "   ANK"
                 call ANKStep(firstANK)
                 firstANK = .False.
                 firstNK = .True.
@@ -1118,13 +1120,28 @@ contains
                 if (firstNK) then
                     call destroyANKSolver()
                 end if
-                iterType = "    NK"
+
                 call NKStep(firstNK)
                 firstNK = .False.
                 firstANK = .True.
                 CFLMonitor = NK_CFL
 
              end if
+          end if
+       end if
+
+       if (timeLimit > zero) then
+          ! Check if we ran out of time but only if we are required to use the timeLimit
+          if (myid == 0) then
+             curTime = mpi_wtime() - t0solver
+          end if
+
+          call mpi_bcast(curTime, 1, adflow_real, 0, adflow_comm_world, ierr)
+
+          if (curTime > timeLimit) then
+             ! Set the iterTot to the limit directly so that convergence
+             ! info thinks we are just out of cycles
+             approxTotalIts = nMGCycles
           end if
        end if
 
@@ -1283,7 +1300,7 @@ contains
           ! we zero localValues before each call becuase we are
           ! summing into momLocal.
           localvalues = zero
-          call integrateSurfaces(localValues, fullFamList, .False., funcValues)
+          call integrateSurfaces(localValues, fullFamList)
 
           ! Convert to coefficients for monitoring:
           fact = two/(gammaInf*MachCoef*MachCoef &
@@ -1416,7 +1433,7 @@ contains
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then
           localValues = zero
-          call integrateZippers(localValues, fullFamList, sps, .False., funcValues)
+          call integrateZippers(localValues, fullFamList, sps)
 
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)
@@ -1543,11 +1560,11 @@ contains
 #else
                 write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
 #endif
-                if (linResMonitor < zero) then 
-                   ! For RK/DADI just print dashes 
+                if (linResMonitor < zero) then
+                   ! For RK/DADI just print dashes
                    write(*,"(a,1x)", advance="no") " ----"
                 else
-                   
+
 #ifndef USE_COMPLEX
                    write(*,"(f5.3,1x)",advance="no") linResMonitor
 #else

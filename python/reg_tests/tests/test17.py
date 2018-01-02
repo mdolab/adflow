@@ -82,12 +82,10 @@ name = 'nozzle'
 # Aerodynamic problem description
 ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
                  areaRef=areaRef, chordRef=chordRef,
-                 evalFuncs=['mdot_up', 'mdot_down', 'mdot_plane', 
-                            'mavgptot_up', 'mavgptot_down', 'mavgptot_plane', 
+                 evalFuncs=['mdot_up', 'mdot_down', 'mdot_plane',
+                            'mavgptot_up', 'mavgptot_down', 'mavgptot_plane',
                             'mavgttot_up', 'mavgttot_down', 'mavgttot_plane',
                             'mavgps_up', 'mavgps_down', 'mavgps_plane',     
-                            'sigmamn_up',  'sigmamn_plane',
-                            'sigmaptot_up', 'sigmaptot_plane',
                             ])
 
 
@@ -100,60 +98,60 @@ ap.addDV('PressureStagnation', family='upstream')
 ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
+
+def setupADFlow(solver): 
+
+    solver.addIntegrationSurface('../inputFiles/integration_plane_viscous.fmt', 'viscous_plane')
+
+    solver.addFamilyGroup('upstream',['inlet'])
+    solver.addFamilyGroup('downstream',['outlet'])
+    solver.addFamilyGroup('all_flow',['inlet', 'outlet'])
+    solver.addFamilyGroup('output_fam',['all_flow', 'allWalls'])
+
+    solver.addFunction('mdot', 'upstream', name="mdot_up")
+    solver.addFunction('mdot', 'downstream', name="mdot_down")
+    solver.addFunction('mdot', 'viscous_plane', name="mdot_plane")
+
+    solver.addFunction('mavgptot', 'downstream', name="mavgptot_down")
+    solver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
+    solver.addFunction('mavgptot', 'viscous_plane', name="mavgptot_plane")
+
+    solver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
+    solver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
+    solver.addFunction('mavgttot', 'viscous_plane', name="mavgttot_plane")
+
+    solver.addFunction('mavgps', 'downstream', name="mavgps_down")
+    solver.addFunction('mavgps', 'upstream', name="mavgps_up")
+    solver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
+
+
+    solver.setOption('ncycles',1000)
  
-CFDSolver = ADFLOW(options=options, debug=True)
+if __name__ == "__main__": 
 
-CFDSolver.addIntegrationSurface('../inputFiles/integration_plane_viscous.fmt', 'viscous_plane')
+    CFDSolver = ADFLOW(options=options, debug=True)
 
-CFDSolver.addFamilyGroup('upstream',['inlet'])
-CFDSolver.addFamilyGroup('downstream',['outlet'])
-CFDSolver.addFamilyGroup('all_flow',['inlet', 'outlet'])
-CFDSolver.addFamilyGroup('output_fam',['all_flow', 'allWalls'])
+    setupADFlow(CFDSolver)
 
-CFDSolver.addFunction('mdot', 'upstream', name="mdot_up")
-CFDSolver.addFunction('mdot', 'downstream', name="mdot_down")
-CFDSolver.addFunction('mdot', 'viscous_plane', name="mdot_plane")
+    CFDSolver(ap)
 
-CFDSolver.addFunction('mavgptot', 'downstream', name="mavgptot_down")
-CFDSolver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
-CFDSolver.addFunction('mavgptot', 'viscous_plane', name="mavgptot_plane")
+    # Check the residual
+    res = CFDSolver.getResidual(ap)
+    totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()
+    res /= totalR0
 
-CFDSolver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
-CFDSolver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
-CFDSolver.addFunction('mavgttot', 'viscous_plane', name="mavgttot_plane")
+    parPrint('Norm of residual')
+    reg_par_write_norm(res, 1e-10, 1e-10)
 
-CFDSolver.addFunction('mavgps', 'downstream', name="mavgps_down")
-CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
-CFDSolver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
-
-CFDSolver.addFunction('sigmamn', 'upstream', name="sigmamn_up")
-CFDSolver.addFunction('sigmamn', 'viscous_plane', name="sigmamn_plane")
-
-CFDSolver.addFunction('sigmaptot', 'upstream', name="sigmaptot_up")
-CFDSolver.addFunction('sigmaptot', 'viscous_plane', name="sigmaptot_plane")
+    # Get and check the states
+    parPrint('Norm of state vector')
+    reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
 
 
-CFDSolver.setOption('ncycles',1000)
-
-CFDSolver(ap)
-
-# Check the residual
-res = CFDSolver.getResidual(ap)
-totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()
-res /= totalR0
-
-parPrint('Norm of residual')
-reg_par_write_norm(res, 1e-10, 1e-10)
-
-# Get and check the states
-parPrint('Norm of state vector')
-reg_par_write_norm(CFDSolver.getStates(), 1e-10, 1e-10)
-
-
-funcs = {}
-CFDSolver.evalFunctions(ap, funcs)
-if MPI.COMM_WORLD.rank == 0:
-    print('Eval Functions:')
-    reg_write_dict(funcs, 1e-10, 1e-10)
+    funcs = {}
+    CFDSolver.evalFunctions(ap, funcs)
+    if MPI.COMM_WORLD.rank == 0:
+        print('Eval Functions:')
+        reg_write_dict(funcs, 1e-10, 1e-10)
 
 
