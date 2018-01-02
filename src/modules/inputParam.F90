@@ -51,8 +51,6 @@ module inputDiscretization
   ! radiiNeededCoarse:      Idem for the coarse grid.
   ! lumpedDiss :            logical factor for determining whether or not
   !                         lumped dissipation is used for preconditioner
-  ! fullVisc :              Flag to use the full viscous terms, even if
-  !                         the lumpedDsiss option is set to True.
   ! sigma      :            Scaling parameter for dissipation lumping in
   !                         approximateprecondtioner
   ! useApproxWallDistance : logical to determine if the user wants to
@@ -77,7 +75,7 @@ module inputDiscretization
 
   real(kind=realType) :: vis2, vis4, vis2Coarse, adis
   real(kind=realType) :: kappaCoef
-  logical :: lumpedDiss, fullVisc
+  logical :: lumpedDiss
   real(kind=realType) :: sigma
   logical :: useBlockettes
 

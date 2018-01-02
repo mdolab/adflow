@@ -5,7 +5,7 @@ module adjointUtils
 contains
 
   subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-       useObjective, frozenTurb, level, splitMat)
+       useObjective, frozenTurb, level, matrixTurb)
 
     !      Compute the state derivative matrix using a forward mode calc
     !      There are three different flags that determine how this
@@ -40,7 +40,7 @@ contains
     use haloExchange, only : whalo2
     use masterRoutines, only : block_res_state, master
 #ifndef USE_COMPLEX
-    use masterRoutines, only : block_res_state_d, block_res_turb_d
+    use masterRoutines, only : block_res_state_d
 #endif
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -48,16 +48,16 @@ contains
 
     ! PETSc Matrix Variable
     Mat :: matrix
+    Mat, optional :: matrixTurb
 
     ! Input Variables
     logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
-    logical, optional :: splitMat
     integer(kind=intType), intent(in) :: level
 
     ! Local variables.
     integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
     integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
-    integer(kind=intType) :: nTransfer, nState, nStateBeg, nStateEnd, tmp, icount, cols(8), nCol
+    integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
     integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=alwaysRealType) :: delta_x, one_over_dx
@@ -65,26 +65,20 @@ contains
     real(kind=realType), dimension(:,:), allocatable :: blk
 
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
-    logical :: resetToRANS, secondOrdSave, turbPC
+    logical :: resetToRANS, secondOrdSave,  splitMat
 
-    if (present(splitMat)) then ! we are making a PC for turbulence only KSP
-        nStateBeg = nt1
-        nStateEnd = nt2
-        nState = nt2 - nt1 + 1
-        turbPC = .True.
-    else ! We are making a "matrix" for either NK or adjoint
-        ! Setup number of state variable based on turbulence assumption
-        if ( frozenTurb ) then
-           nStateBeg = 1
-           nStateEnd =nwf
-           nState = nwf
-        else
-           nStateBeg = 1
-           nStateEnd =nw
-           nState = nw
-        endif
-        turbPC = .False.
+    if (present(matrixTurb)) then
+       splitMat = .True.
+    else
+       splitMat = .False.
     end if
+
+    ! Setup number of state variable based on turbulence assumption
+    if ( frozenTurb ) then
+       nState = nwf
+    else
+       nState = nw
+    endif
 
     ! Generic block to use while setting values
     allocate(blk(nState, nState))
@@ -137,6 +131,11 @@ contains
           end do
        end do
     end do
+
+    if (splitMat) then
+       call MatZeroEntries(matrixTurb, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+    end if
 
     ! Set a pointer to the correct set of stencil depending on if we are
     ! using the first order stencil or the full jacobian
@@ -287,7 +286,7 @@ contains
              end do
 
              ! Master State Loop
-             stateLoop: do l=nStateBeg, nStateEnd
+             stateLoop: do l=1, nState
 
                 ! Reset All States and possibe AD seeds
                 do sps2 = 1, nTimeIntervalsSpectral
@@ -312,7 +311,7 @@ contains
                 ! Do NOT try to putt he useAD if check inside the
                 ! color if check. ifort barfs hard-core on that and it
                 ! segfaults with AVX2
-                if (useAD) then 
+                if (useAD) then
                    do k=0, kb
                       do j=0, jb
                          do i=0, ib
@@ -333,15 +332,11 @@ contains
                       end do
                    end do
                 end if
-                      
+
                 ! Run Block-based residual
                 if (useAD) then
 #ifndef USE_COMPLEX
-                   if (turbPC) then
-                     call block_res_turb_d(nn, sps)
-                   else
-                     call block_res_state_d(nn, sps)
-                   end if
+                   call block_res_state_d(nn, sps)
 #else
                    print *, 'Forward AD routines are not complexified'
                    stop
@@ -356,7 +351,7 @@ contains
 
                 ! Compute/Copy all derivatives
                 do sps2 = 1, nTimeIntervalsSpectral
-                   do ll=nStateBeg, nStateEnd
+                   do ll=1, nState
                       do k=2, kl
                          do j=2, jl
                             do i=2, il
@@ -449,7 +444,7 @@ contains
                                            ! to use TS diagonal form, only set
                                            ! values for on-time insintance
                                            blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                                nStateBeg:nStateEnd, nStateBeg:nStateEnd)
+                                                1:nstate, 1:nstate)
                                            call setBlock(blk)
                                         else
                                            ! Otherwise loop over spectral
@@ -458,14 +453,14 @@ contains
                                               irow = flowDoms(nn, level, sps2)%&
                                                    globalCell(i+ii, j+jj, k+kk)
                                               blk = flowDoms(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
-                                                   nStateBeg:nStateEnd, nStateBeg:nStateEnd)
+                                                   1:nstate, 1:nstate)
                                               call setBlock(blk)
                                            end do
                                         end if useDiagPC
                                      else
                                         ! ALl other cells just set.
                                         blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                             nStateBeg:nStateEnd, nStateBeg:nStateEnd)
+                                             1:nstate, 1:nstate)
                                         call setBlock(blk)
                                      end if centerCell
                                   end if rowBlank
@@ -484,6 +479,10 @@ contains
     call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    if (splitMat) then
+       call MatAssemblyBegin(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+    end if
     ! Maybe we can do something useful while the communication happens?
     ! Deallocate the temporary memory used in this routine.
 
@@ -525,6 +524,14 @@ contains
 
     call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
     call EChk(ierr, __FILE__, __LINE__)
+
+    if (splitMat) then
+       call MatAssemblyEnd(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       call MatSetOption(matrixTurb, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+    end if
 
     ! ================= Important ===================
 
@@ -962,7 +969,7 @@ contains
        actuatorRegionsd(i)%F = zero
        actuatorRegionsd(i)%T = zero
     end do
-    
+
   end subroutine zeroADSeeds
   ! This is a special function that is sued to dealloc derivative values
   ! in blockpointers_d for use with the AD code.

@@ -1114,12 +1114,12 @@ contains
     flowRes = .True.
     turbRes = .True.
     storeWall = .True.
-    blockettes: if (useBlockettes) then 
+    blockettes: if (useBlockettes) then
        call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
     else
        call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
     end if blockettes
-  
+
     call sourceTerms_block(nn, .True., pLocal)
     call resscale
 
@@ -1231,70 +1231,6 @@ contains
     call sumDwAndFw_d
     call resscale_d
   end subroutine block_res_state_d
-
-  subroutine block_res_turb_d(nn, sps)
-
-    ! This is a special turb-only forward mode linearization
-    ! computation used to assemble the turbulence jacobian.
-    use constants
-    use BCExtra_d, only : applyAllBC_Block_d
-    use inputAdjoint,  only : viscPC
-    use blockPointers, only : nDom, wd, xd, dw, dwd
-    use flowVarRefState, only : viscous
-    use inputPhysics, only : equations, turbModel
-    use inputDiscretization, only : lowSpeedPreconditioner, spaceDiscr
-    use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use utils, only : setPointers_d, EChk
-    use sa_d, only : saSource_d, saViscous_d, saResScale_d, qq
-    use turbutils_d, only : turbAdvection_d, computeEddyViscosity_d
-    use flowutils_d, only : computePressureSimple_d, computeLamViscosity_d, &
-         computeSpeedOfSoundSquared_d, allNodalGradients_d
-    use solverutils_d, only : timeStep_Block_d
-    use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
-    use adjointextra_d, only : resscale_D, sumdwandfw_d
-    use residuals_d, only: sourceterms_block_d
-    implicit none
-
-    ! Input Arguments:
-    integer(kind=intType), intent(in) :: nn, sps
-
-    ! Working Variables
-    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
-    real(kind=realType) :: dummyReal, dummyReald
-
-    call computePressureSimple_d(.True.)
-    call computeLamViscosity_d(.True.)
-    call computeEddyViscosity_d(.True.)
-
-    ! Make sure to call the turb BC's first incase we need to
-    ! correct for K
-    if (equations == RANSequations) then
-       call BCTurbTreatment_d
-       call applyAllTurbBCthisblock_d(.True.)
-    end if
-
-    call applyAllBC_block_d(.True.)
-    call timeStep_block_d(.false.)
-
-    dw = zero ! These two lines are init_res
-    dwd = zero
-
-    !Compute turbulence residual for RANS equations
-    if( equations == RANSEquations) then
-       !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
-
-       select case (turbModel)
-       case (spalartAllmaras)
-          call saSource_d
-          call turbAdvection_d(1_intType, 1_intType, itu1-1, qq)
-          !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-          call saViscous_d
-          call saResScale_d
-       end select
-    end if
-
-    call resscale_d
-  end subroutine block_res_turb_d
 #endif
 
 end module masterRoutines
