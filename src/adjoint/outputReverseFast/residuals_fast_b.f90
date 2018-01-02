@@ -150,6 +150,8 @@ contains
         else
 ! this is a pc calc...only include viscous fluxes if viscpc
 ! is used
+! if full visc is true, also need full viscous terms, even if
+! lumpeddiss is true
           call computespeedofsoundsquared()
           if (viscpc) then
             call allnodalgradients()
@@ -316,7 +318,7 @@ contains
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : vol, dw, dwd, w, wd
+    use blockpointers, only : volref, dw, dwd, w, wd
     use flowvarrefstate, only : pref, uref
     implicit none
 ! input
@@ -340,7 +342,7 @@ contains
         j = actuatorregions(iregion)%cellids(2, ii)
         k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmp = vol(i, j, k)*fact
+        ftmp = volref(i, j, k)*fact
         if (res) then
           vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
           vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
@@ -361,7 +363,7 @@ contains
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : vol, dw, w
+    use blockpointers, only : volref, dw, w
     use flowvarrefstate, only : pref, uref
     implicit none
 ! input
@@ -386,7 +388,7 @@ regionloop:do iregion=1,nactuatorregions
         j = actuatorregions(iregion)%cellids(2, ii)
         k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmp = vol(i, j, k)*fact
+        ftmp = volref(i, j, k)*fact
         vx = w(i, j, k, ivx)
         vy = w(i, j, k, ivy)
         vz = w(i, j, k, ivz)

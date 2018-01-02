@@ -171,8 +171,8 @@ sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
 sa%saResScale(scratch, dw) > \
              (dw) \
 \
-residuals%sourceTerms_block(w, vol, pref, uref, plocal, dw) > \
-                           (w, vol, pref, uref, plocal, dw) \
+residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%F) > \
+                           (w, pref, uref, plocal, dw, actuatorRegions%F) \
 \
 fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw) > \
                           (w, timeRef, vol, si, sj, sk, p, dw) \
@@ -211,14 +211,14 @@ adjointExtra%resScale(dw) > (dw) \
 surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCData%Fp, bcData%Fv, BCData%area, localValues) > \
                                        (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCdata%Fp, bcData%Fv, BCData%area, localValues)\
 \
-surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues) > \
-                                       (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues, funcValues)\
+surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues) > \
+                                       (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues)\
 \
 zipperIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > \
                                          (vars, pointRef, localValues)\
 \
-zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues) > \
-                                        (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues, funcValues)\
+zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues) > \
+                                        (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues)\
 \
 surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
 	                            (funcValues) \

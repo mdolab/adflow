@@ -191,6 +191,7 @@ contains
                         +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
                    ! Compute the inviscid contribution to the time step.
+
                    if (.not. onlyRadii) dtl(i,j,k) = ri + rj + rk
 
                    !

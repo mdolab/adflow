@@ -30,8 +30,8 @@ c = 1.0
 alpha_m = 2.77 # 2.89 #2.77 #Modified numbers
 alpha_0 = 2.34 # 2.41 #2.34
 
-omega = 2*M*numpy.sqrt(gamma*R*T)*k/c 
-deltaAlpha = -alpha_0*numpy.pi/180.0 
+omega = 2*M*numpy.sqrt(gamma*R*T)*k/c
+deltaAlpha = -alpha_0*numpy.pi/180.0
 
 # Set forcing frequency and other information
 f = 10.0 # [Hz] Forcing frequency of the flow
@@ -56,21 +56,22 @@ options.update(
      'ntimestepsfine':nfineSteps,
      'deltat':dt,
      'nsubiterturb':10,
-     'nsubiter':5,         
+     'nsubiter':5,
      'useale':False,
      'usegridmotion':True,
      'cfl':2.5,
      'cflcoarse':1.2,
-     'ncycles':2000,            
+     'ncycles':2000,
      'mgcycle':'3w',
      'mgstartlevel':1,
-     'monitorvariables':['cpu','resrho','cl','cd','cmz'],                            
+     'monitorvariables':['cpu','resrho','cl','cd','cmz'],
      'usenksolver':False,
      'l2convergence':1e-6,
      'l2convergencecoarse':1e-4,
      'qmode':True,
      'alphafollowing': False,
      'blockSplitting':True,
+     'useblockettes':False,
      }
 )
 ap = AeroProblem(name=name, alpha=alpha_m,  mach=M, machRef=M, reynolds=4800000.0,reynoldsLength=c, T=T, R=R,
@@ -78,15 +79,17 @@ ap = AeroProblem(name=name, alpha=alpha_m,  mach=M, machRef=M, reynolds=4800000.
                  degreePol=0,coefPol=[0.0],degreeFourier=1,omegaFourier=omega,
                  cosCoefFourier=[0.0,0.0],sinCoefFourier=[deltaAlpha])
 
-CFDSolver = ADFLOW(options=options)
-CFDSolver.addSlices('z',[0.5])
-CFDSolver(ap)
+if __name__ == "__main__":
 
-funcs = {}
-CFDSolver.evalFunctions(ap, funcs)
-CFDSolver.checkSolutionFailure(ap, funcs)
-if MPI.COMM_WORLD.rank == 0:
-    print('Eval Functions:')
-    reg_write_dict(funcs, 1e-6, 1e-6)
+    CFDSolver = ADFLOW(options=options)
+    CFDSolver.addSlices('z',[0.5])
+    CFDSolver(ap)
 
-os.system('rm  0012pitching*')
+    funcs = {}
+    CFDSolver.evalFunctions(ap, funcs)
+    CFDSolver.checkSolutionFailure(ap, funcs)
+    if MPI.COMM_WORLD.rank == 0:
+        print('Eval Functions:')
+        reg_write_dict(funcs, 1e-6, 1e-6)
+
+    os.system('rm  0012pitching*')
