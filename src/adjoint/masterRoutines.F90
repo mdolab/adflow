@@ -1066,7 +1066,7 @@ contains
     end do
   end subroutine master_state_b
 #endif
-  subroutine block_res_state(nn, sps)
+  subroutine block_res_state(nn, sps, useFlowRes, useTurbRes)
 
     ! This is a special state-only routine used only for finite
     ! differce computations of the jacobian
@@ -1089,11 +1089,23 @@ contains
 
     ! Input Arguments:
     integer(kind=intType), intent(in) :: nn, sps
+    logical, optional ,intent(in) :: useFlowRes, useTurbRes
 
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
     real(kind=realType) ::  pLocal
     logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
+
+    flowRes = .True.
+    if (present(useFlowRes)) then
+       flowRes = useFlowRes
+    end if
+
+    turbRes = .True.
+    if (present(useTurbRes)) then
+       turbRes = useTurbRes
+    end if
+
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
     call computeEddyViscosity(.True.)
@@ -1111,8 +1123,6 @@ contains
     dissApprox = lumpedDiss
     viscApprox = lumpedDiss
     updateDt = .False.
-    flowRes = .True.
-    turbRes = .True.
     storeWall = .True.
     blockettes: if (useBlockettes) then
        call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
