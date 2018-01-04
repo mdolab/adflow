@@ -35,6 +35,7 @@ class OM_GEOCON_COMP(ExplicitComponent):
             for name, con in iteritems(cons):
                 #print('nonlinear con', name)
                 self.add_output(name, shape=con.nCon)
+                jac = funcsSens[name]
                 for wrt_var, subjac in iteritems(jac):
                     self.declare_partials(of=name, wrt=wrt_var, val=subjac)
 
