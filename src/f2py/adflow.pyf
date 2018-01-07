@@ -233,6 +233,7 @@ python module libadflow
          real(kind=realtype) :: ank_stepmin
          real(kind=realtype) :: ank_constcflstep
          real(kind=realtype) :: ank_physlstol
+         real(kind=realtype) :: ank_physlstolturb
          real(kind=realtype) :: ank_unstdylstol
          real(kind=realtype) :: ank_secondordswitchtol
          real(kind=realtype) :: ank_coupledswitchtol
