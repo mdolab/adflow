@@ -27,7 +27,6 @@ class OM_GEOCON_COMP(ExplicitComponent):
             self.add_input(name, shape=size)
 
 
-
         funcsSens = {}
         self.metadata['dvcon'].evalFunctionsSens(funcsSens, includeLinear=True)
 
@@ -37,7 +36,7 @@ class OM_GEOCON_COMP(ExplicitComponent):
                 self.add_output(name, shape=con.nCon)
                 jac = funcsSens[name]
                 for wrt_var, subjac in iteritems(jac):
-                    self.declare_partials(of=name, wrt=wrt_var, val=subjac)
+                    self.declare_partials(of=name, wrt=wrt_var)
 
         for name, con in iteritems(self.metadata['dvcon'].linearCon):
             #print('linear_con', name)
@@ -67,11 +66,11 @@ class OM_GEOCON_COMP(ExplicitComponent):
 
         for cons in itervalues(self.metadata['dvcon'].constraints):
             for name, con in iteritems(cons):
-                #print('nonlinear foobar', con)
+                #print('nonlinear foobar', name, funcs[name])
                 outputs[name] = funcs[name]
 
         for name, con in iteritems(self.metadata['dvcon'].linearCon):
-            #print('linear foobar', con)
+            #print('linear foobar', name, funcs[name])
             outputs[name] = funcs[name]
 
     def compute_partials(self, inputs, J):
