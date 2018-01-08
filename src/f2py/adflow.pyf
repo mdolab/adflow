@@ -951,6 +951,7 @@ python module libadflow
          logical :: printiterations
          logical :: printwarnings
          real(kind=realtype) ::maxl2deviationfactor
+         logical :: uselinresmonitor
        end module inputiteration
 
        module inputmotion ! in :adflow:../../modules/inputParam.f90

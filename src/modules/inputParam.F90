@@ -277,7 +277,7 @@ module inputIteration
   real(kind=realType), allocatable, dimension(:) :: etaRK, cdisRK
   character (len=maxStringLen) :: mgDescription
   logical :: rkReset
-
+  logical :: useLinResMonitor
   logical :: freezeTurbSource
   logical :: printIterations
   logical :: printWarnings

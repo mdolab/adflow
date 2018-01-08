@@ -613,8 +613,8 @@ class ADFLOW(AeroSolver):
            The name to be associated with the functions defined on this
            region.
 
-        thrust : scalar 
-           The total amount of axial force to apply to this region, in the direction 
+        thrust : scalar
+           The total amount of axial force to apply to this region, in the direction
            of axis1 -> axis2
 
         torque : scalar
@@ -4254,6 +4254,7 @@ class ADFLOW(AeroSolver):
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
             'useblockettes':[bool, True],
+            'uselinresmonitor':[bool, False],
 
             # Overset Parameters:
             'nearwalldist':[float, 0.1],
@@ -4552,7 +4553,7 @@ class ADFLOW(AeroSolver):
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
             'useblockettes':['discr', 'useblockettes'],
-
+            'uselinresmonitor':['iter','uselinresmonitor'],
             # Overset Parameters
             'nearwalldist':['overset','nearwalldist'],
             'backgroundvolscale':['overset','backgroundvolscale'],
