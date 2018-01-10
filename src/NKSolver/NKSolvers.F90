@@ -359,8 +359,6 @@ contains
     integer(kind=intType) :: ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
     integer(kind=intType) :: i, j, k, l, ii, nn, sps
-    real(kind=realType) :: dt
-    real(kind=realType), pointer :: diag(:)
 
     ! Dummy assembly begin/end calls for the matrix-free Matrx
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -380,17 +378,6 @@ contains
          useObjective, .False., 1_intType)
     ! Reset saved value
     viscPC = tmp
-
-    call VecGetArrayF90(work, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    diag(:) = one/NK_CFL
-
-    call VecRestoreArrayF90(work, diag, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    call MatDiagonalSet(dRdwPre, work, ADD_VALUES, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
 
     ! Setup KSP Options
     preConSide = 'right'
