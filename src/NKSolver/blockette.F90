@@ -553,7 +553,7 @@ contains
          inviscidDissFluxMatrix_block=>inviscidDissFluxMatrix, &
          inviscidUpwindFlux_block=>inviscidUpwindFlux, &
          inviscidDissFluxScalarApprox_block=>inviscidDissFluxScalarApprox, &
-         inviscidDissFluxMatrixApprox_block=>inviscidDissFluxMatrix, &
+         inviscidDissFluxMatrixApprox_block=>inviscidDissFluxMatrixApprox, &
          viscousFlux_block=>viscousFlux, &
          viscousFluxApprox_block=>viscousFluxApprox
     use solverUtils, only : timeStep_block
@@ -4431,21 +4431,21 @@ contains
     do k=1,ke
        do j=1,je
           do i=1,ie
-             dss(i,j,k,1) =abs((p(i+1,j,k) - two*p(i,j,k) + p(i-1,j,k))        &
-                  /     (omega*(p(i+1,j,k) + two*p(i,j,k) + p(i-1,j,k)) &
-                  +      oneMinOmega*(abs(p(i+1,j,k) - p(i,j,k))      &
-                  +                   abs(p(i,j,k) - p(i-1,j,k))) + plim))
+             dss(i,j,k,1) =abs((ss(i+1,j,k) - two*ss(i,j,k) + ss(i-1,j,k))        &
+                  /     (omega*(ss(i+1,j,k) + two*ss(i,j,k) + ss(i-1,j,k)) &
+                  +      oneMinOmega*(abs(ss(i+1,j,k) - ss(i,j,k))      &
+                  +                   abs(ss(i,j,k) - ss(i-1,j,k))) + plim))
 
 
-             dss(i,j,k,2) =abs((p(i,j+1,k) - two*p(i,j,k) + p(i,j-1,k))        &
-                  /     (omega*(p(i,j+1,k) + two*p(i,j,k) + p(i,j-1,k)) &
-                  +      oneMinOmega*(abs(p(i,j+1,k) - p(i,j,k))      &
-                  +                   abs(p(i,j,k) - p(i,j-1,k))) + plim))
+             dss(i,j,k,2) =abs((ss(i,j+1,k) - two*ss(i,j,k) + ss(i,j-1,k))        &
+                  /     (omega*(ss(i,j+1,k) + two*ss(i,j,k) + ss(i,j-1,k)) &
+                  +      oneMinOmega*(abs(ss(i,j+1,k) - ss(i,j,k))      &
+                  +                   abs(ss(i,j,k) - ss(i,j-1,k))) + plim))
 
-             dss(i,j,k,3) =  abs((p(i,j,k+1) - two*p(i,j,k) + p(i,j,k-1))        &
-                  /     (omega*(p(i,j,k+1) + two*p(i,j,k) + p(i,j,k-1)) &
-                  +      oneMinOmega*(abs(p(i,j,k+1) - p(i,j,k))      &
-                  +                   abs(p(i,j,k) - p(i,j,k-1))) + plim))
+             dss(i,j,k,3) =  abs((ss(i,j,k+1) - two*ss(i,j,k) + ss(i,j,k-1))        &
+                  /     (omega*(ss(i,j,k+1) + two*ss(i,j,k) + ss(i,j,k-1)) &
+                  +      oneMinOmega*(abs(ss(i,j,k+1) - ss(i,j,k))      &
+                  +                   abs(ss(i,j,k) - ss(i,j,k-1))) + plim))
           end do
        end do
     end do
@@ -4461,7 +4461,8 @@ contains
              ppor = zero
              if(porI(i,j,k) == normalFlux) ppor = one
 
-             dis2 = fis2*ppor*min(dpMax,max(dp1,dp2))+sigma*fis4*ppor
+             dis2 = fis2*ppor*min(dpMax,max(dss(i,j,k,1),dss(i+1,j,k,1)))&
+                    +sigma*fis4*ppor
 
              ! Construct the vector of the first and third differences
              ! multiplied by the appropriate constants.
@@ -4613,7 +4614,8 @@ contains
              ppor = zero
              if(porJ(i,j,k) == normalFlux) ppor = one
 
-             dis2 = fis2*ppor*min(dpMax,max(dp1,dp2))+sigma*fis4*ppor
+             dis2 = fis2*ppor*min(dpMax,max(dss(i,j,k,2),dss(i,j+1,k,2)))&
+                    +sigma*fis4*ppor
 
              ! Construct the vector of the first and third differences
              ! multiplied by the appropriate constants.
@@ -4764,7 +4766,8 @@ contains
              ppor = zero
              if(porK(i,j,k) == normalFlux) ppor = one
 
-             dis2 = fis2*ppor*min(dpMax,max(dp1,dp2))+sigma*fis4*ppor
+             dis2 = fis2*ppor*min(dpMax,max(dss(i,j,k,3),dss(i,j,k+1,3)))&
+                    +sigma*fis4*ppor
 
              ! Construct the vector of the first and third differences
              ! multiplied by the appropriate constants.
