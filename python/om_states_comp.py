@@ -9,8 +9,6 @@ from openmdao.core.analysis_error import AnalysisError
 from .om_utils import get_dvs_and_cons
 
 
-
-
 class OM_STATES_COMP(ImplicitComponent):
     """OpenMDAO component that wraps the flow solve"""
 
@@ -48,20 +46,20 @@ class OM_STATES_COMP(ImplicitComponent):
             self.add_input(name, shape=size)
 
         local_state_size = solver.getStateSize()
-
-        # apparently needed to initialize the state arrays
-        solver.getResidual(ap)
-        
         self.add_output('states', shape=local_state_size)
 
-        self.declare_partials(of='states', wrt='*')
+        # apparently needed to initialize the state arrays
+        # but also somehow borks up the restarts
+        #solver.getResidual(ap)
+        
+        #self.declare_partials(of='states', wrt='*')
 
     def _set_ap(self, inputs):
         tmp = {}
         for (args, kwargs) in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
-        # self.metadata['ap'].setDesignVars(tmp)
+        self.metadata['ap'].setDesignVars(tmp)
 
     def _set_geo(self, inputs):
         dvgeo = self.metadata['dvgeo']
@@ -95,24 +93,25 @@ class OM_STATES_COMP(ImplicitComponent):
             self._set_geo(inputs)
             ap.solveFailed = False # might need to clear this out?
             ap.fatalFail = False
-    
+        
+            solver(ap)
+        
+        if ap.solveFailed:
+            if self.comm.rank == 0:
+                print('###############################################################')
+                print('#Solve Tolerance Not Reached, attempting a clean restart!')
+                print('###############################################################')
+
+            solver.resetFlow(ap)
             solver(ap)
 
-            if ap.solveFailed:
-                if self.comm.rank == 0:
-                    print('###############################################################')
-                    print('#Solve Tolerance Not Reached, attempting a clean restart!')
-                    print('###############################################################')
-
-                solver.resetFlow(ap)
-                solver(ap)
-
-            if ap.fatalFail:
+        if ap.fatalFail:
+            if self.comm.rank == 0:
                 print('###############################################################')
                 print('#Solve Fatal Fail. Analysis Error')
                 print('###############################################################')
 
-                raise AnalysisError('ADFLOW Solver Fatal Fail')
+            raise AnalysisError('ADFLOW Solver Fatal Fail')
 
         outputs['states'] = solver.getStates()
 
@@ -123,6 +122,7 @@ class OM_STATES_COMP(ImplicitComponent):
         self.metadata['solver']._setupAdjoint()
 
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
+
         solver = self.metadata['solver']
         ap = self.metadata['ap']
         geo = self.metadata['dvgeo']
@@ -176,8 +176,9 @@ class OM_STATES_COMP(ImplicitComponent):
             if mode == 'fwd':
                 d_outputs['states'] = solver.solveDirectForRHS(d_residuals['states'])
             elif mode == 'rev':
-                # import numpy as np
-                # print('states seed', np.linalg.norm(d_outputs['states']))
+                #print('foobar#############################################################################')
+                #import numpy as np
+                #print('states seed', np.linalg.norm(d_outputs['states']))
                 d_residuals['states'] = solver.solveAdjointForRHS(d_outputs['states'])
 
 
