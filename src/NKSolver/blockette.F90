@@ -14,6 +14,9 @@ module blockette
   ! Actual dimensions to execute
   integer(kind=intType) :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
 
+  ! Variables to track transferring variables between blockettes
+  integer(kind=intType) :: singleHaloStart, doubleHaloStart, nodeStart
+
   ! Current indices into the original block
   integer(kind=intType) :: ii, jj, kk
 
@@ -349,14 +352,144 @@ contains
              ie = nx + 2; je = ny + 2; ke = nz + 2
              ib = nx + 3; jb = ny + 3; kb = nz + 3
 
+             firstBlockette: if (ii==2) then
+
+                ! First loop. Need to compute the extra stuff. Set
+                ! the generic starts and copy the extra
+                ! variables in to the starting slots
+                singleHaloStart = 1
+                doubleHaloStart = 0
+                nodeStart = 1
+
+                ! Double halos
+                do k=0, kb
+                   do j=0, jb
+                      do i=0, 3
+                         w(i,j,k,1:nw) = bw(i+ii-2, j+jj-2, k+kk-2, 1:nw)
+                         p(i,j,k) = bP(i+ii-2, j+jj-2, k+kk-2)
+                         gamma(i,j,k) = bgamma(i+ii-2, j+jj-2, k+kk-2)
+                         if (currentLevel == 1) then
+                            ss(i,j,k) = bShockSensor(i+ii-2, j+jj-2,k+kk-2)
+                         end if
+                      end do
+                   end do
+                end do
+
+                ! Single halos
+                do k=1, ke
+                   do j=1, je
+                      do i=1, 2
+                         rlv(i,j,k) = brlv(i+ii-2, j+jj-2, k+kk-2)
+                         rev(i,j,k) = brev(i+ii-2, j+jj-2, k+kk-2)
+                         vol(i,j,k) = bvol(i+ii-2, j+jj-2, k+kk-2)
+                      end do
+                   end do
+                end do
+
+                ! X
+                do k=0, ke
+                   do j=0, je
+                      do i=0, 1
+                         x(i,j,k,:) = bx(i+ii-2, j+jj-2, k+kk-2, :)
+                      end do
+                   end do
+                end do
+             else
+
+                ! Subsequent loop. We can save a bunch of work by
+                ! copying some of the pre-computed values from the
+                ! previous blockette to this blockette. Basically the
+                ! values that are at the "I end" get shuffled back to
+                ! the I-start. We *also* do this for some of the
+                ! intermediate variables that are costly to compute
+                ! like the nodal gradients, and spectral radius which
+                ! helps cut back on the amount of data duplication.
+
+                ! Important Note: This cell is not the first cell. If
+                ! this code is being executed, the previous blockette
+                ! was copied fully in the i direction.
+                ! Therefore, we can just copy the values from
+                ! the end of the blockette as it is allocated.
+                ! To do this, we ignore the dimensions of the "current"
+                ! blockette, and just take the baseline BS dimensions
+                ! as the current blockette might be partially filled
+                ! in the i direction.
+
+                singleHaloStart = 3
+                doubleHaloStart = 4
+                nodeStart = 2
+
+                ! Double halos
+                do k=0, kb
+                   do j=0, jb
+                      do i=0, 3
+                         w(i,j,k,1:nw) = w(BS+i, j, k, 1:nw)
+                         p(i,j,k) = p(BS+i, j, k)
+                         gamma(i,j,k) = gamma(BS+i, j, k)
+                         ss(i,j,k) = ss(BS+i, j, k)
+                      end do
+                   end do
+                end do
+
+                ! Single halos
+                do k=1, ke
+                   do j=1, je
+                      do i=1, 2
+                         rlv(i,j,k) = rlv(BS+i, j, k)
+                         rev(i,j,k) = rev(BS+i, j, k)
+                         vol(i,j,k) = vol(BS+i, j, k)
+
+                         ! Computed variables
+
+                         ! DONT Copy the spectral-radii. The loop that calculates
+                         ! spectral radii also calculates portion of the time step,
+                         ! so we don't want to mess with its boundaries to keep
+                         ! it simple.
+                         aa(i,j,k) = aa(BS+i, j, k)
+                         dss(i,j,k,:) = dss(BS+i, j, k, :)
+                      end do
+                   end do
+                end do
+
+                ! X
+                do k=0, ke
+                   do j=0, je
+                      do i=0, 1
+                         x(i,j,k,:) = x(BS+i, j, k, :)
+                      end do
+                   end do
+                end do
+
+                ! Nodal gradients
+                do k=1, kl
+                   do j=1, jl
+                      ux(1, j, k) = ux(BS+1, j, k)
+                      uy(1, j, k) = uy(BS+1, j, k)
+                      uz(1, j, k) = uz(BS+1, j, k)
+
+                      vx(1, j, k) = vx(BS+1, j, k)
+                      vy(1, j, k) = vy(BS+1, j, k)
+                      vz(1, j, k) = vz(BS+1, j, k)
+
+                      wx(1, j, k) = wx(BS+1, j, k)
+                      wy(1, j, k) = wy(BS+1, j, k)
+                      wz(1, j, k) = wz(BS+1, j, k)
+
+                      qx(1, j, k) = qx(BS+1, j, k)
+                      qy(1, j, k) = qy(BS+1, j, k)
+                      qz(1, j, k) = qz(BS+1, j, k)
+                   end do
+                end do
+             end if firstBlockette
+
              ! -------------------------------------
-             !      Fill in all values
+             !      Fill in the remaining values
              ! -------------------------------------
 
              ! Double halos
              do k=0, kb
                 do j=0, jb
-                   do i=0, ib
+                   do i=4, ib
                       w(i,j,k,1:nw) = bw(i+ii-2, j+jj-2, k+kk-2, 1:nw)
                       p(i,j,k) = bP(i+ii-2, j+jj-2, k+kk-2)
                       gamma(i,j,k) = bgamma(i+ii-2, j+jj-2, k+kk-2)
@@ -370,7 +503,7 @@ contains
              ! Single halos
              do k=1, ke
                 do j=1, je
-                   do i=1, ie
+                   do i=3, ie
                       rlv(i,j,k) = brlv(i+ii-2, j+jj-2, k+kk-2)
                       rev(i,j,k) = brev(i+ii-2, j+jj-2, k+kk-2)
                       vol(i,j,k) = bvol(i+ii-2, j+jj-2, k+kk-2)
@@ -381,7 +514,7 @@ contains
              ! X
              do k=0, ke
                 do j=0, je
-                   do i=0, ie
+                   do i=2, ie
                       x(i,j,k,:) = bx(i+ii-2, j+jj-2, k+kk-2, :)
                    end do
                 end do
@@ -1727,6 +1860,10 @@ contains
     !           Inviscid contribution, depending on the preconditioner.
     !           Compute the cell centered values of the spectral radii.
     !
+    ! Note:  DON'T change the ranges for i. It will mess up dtl.
+    ! we don't copy the spectral-radii and dtl to keep the
+    ! code simple, therefore this loop needs the full single
+    ! halo range.
     do k=1,ke
        do j=1,je
           do i=1,ie
@@ -2304,7 +2441,7 @@ contains
     ! Compute the pressure sensor for each cell, in each direction:
     do k=1,ke
        do j=1,je
-          do i=1,ie
+          do i=singleHaloStart,ie
              dss(i,j,k,1) =abs((p(i+1,j,k) - two*p(i,j,k) + p(i-1,j,k))        &
                   /     (omega*(p(i+1,j,k) + two*p(i,j,k) + p(i-1,j,k)) &
                   +      oneMinOmega*(abs(p(i+1,j,k) - p(i,j,k))      &
@@ -2861,7 +2998,7 @@ contains
        ! Store the entropy in ss. See above.
        do k=0, kb
           do j=0, jb
-             do i=0, ib
+             do i=doubleHaloStart, ib
                 ss(i,j,k) = p(i,j,k)/(w(i,j,k,irho)**gamma(i,j,k))
              end do
           end do
@@ -2871,7 +3008,7 @@ contains
     ! Compute the pressure sensor for each cell, in each direction:
     do k=1,ke
        do j=1,je
-          do i=1,ie
+          do i=singleHaloStart,ie
              dss(i,j,k,1) = abs((ss(i+1,j,k) - two*ss(i,j,k) + ss(i-1,j,k)) &
                   /     (ss(i+1,j,k) + two*ss(i,j,k) + ss(i-1,j,k) + sslim))
 
@@ -4165,7 +4302,7 @@ contains
     ! Compute the pressure sensor for each cell, in each direction:
     do k=1,ke
        do j=1,je
-          do i=1,ie
+          do i=singleHaloStart,ie
              dss(i,j,k,1) = abs((ss(i+1,j,k) - two*ss(i,j,k) + ss(i-1,j,k)) &
                   /     (ss(i+1,j,k) + two*ss(i,j,k) + ss(i-1,j,k) + sslim))
 
@@ -4430,7 +4567,7 @@ contains
     ! Compute the pressure sensor for each cell, in each direction:
     do k=1,ke
        do j=1,je
-          do i=1,ie
+          do i=singleHaloStart,ie
              dss(i,j,k,1) =abs((ss(i+1,j,k) - two*ss(i,j,k) + ss(i-1,j,k))        &
                   /     (omega*(ss(i+1,j,k) + two*ss(i,j,k) + ss(i-1,j,k)) &
                   +      oneMinOmega*(abs(ss(i+1,j,k) - ss(i,j,k))      &
@@ -4930,7 +5067,7 @@ contains
     if (correctForK) then
        do k=1,ke
           do j=1,je
-             do i=1,ie
+             do i=singleHaloStart,ie
                 pp = p(i,j,k) - twoThird*w(i,j,k,irho)*w(i,j,k,itu1)
                 aa(i,j,k) = gamma(i,j,k)*pp/w(i,j,k,irho)
              enddo
@@ -4939,7 +5076,7 @@ contains
     else
        do k=1,ke
           do j=1,je
-             do i=1,ie
+             do i=singleHaloStart,ie
                 aa(i,j,k) = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
              enddo
           enddo
@@ -4961,21 +5098,21 @@ contains
 
     ! Zero just the required part of the nodal gradients since the
     ! first value may be useful.
-    ux(:, :, :) = zero
-    uy(:, :, :) = zero
-    uz(:, :, :) = zero
+    ux(nodeStart:, :, :) = zero
+    uy(nodeStart:, :, :) = zero
+    uz(nodeStart:, :, :) = zero
 
-    vx(:, :, :) = zero
-    vy(:, :, :) = zero
-    vz(:, :, :) = zero
+    vx(nodeStart:, :, :) = zero
+    vy(nodeStart:, :, :) = zero
+    vz(nodeStart:, :, :) = zero
 
-    wx(:, :, :) = zero
-    wy(:, :, :) = zero
-    wz(:, :, :) = zero
+    wx(nodeStart:, :, :) = zero
+    wy(nodeStart:, :, :) = zero
+    wz(nodeStart:, :, :) = zero
 
-    qx(:, :, :) = zero
-    qy(:, :, :) = zero
-    qz(:, :, :) = zero
+    qx(nodeStart:, :, :) = zero
+    qy(nodeStart:, :, :) = zero
+    qz(nodeStart:, :, :) = zero
 
     ! First part. Contribution in the k-direction.
     ! The contribution is scattered to both the left and right node
@@ -4983,7 +5120,7 @@ contains
 
     do k=1, ke
        do j=1, jl
-          do i=1, il
+          do i=nodeStart, il
 
              ! Compute 8 times the average normal for this part of
              ! the control volume. The factor 8 is taken care of later
@@ -5066,7 +5203,7 @@ contains
 
     do k=1, kl
        do j=1, je
-          do i=1, il
+          do i=nodeStart, il
 
              ! Compute 8 times the average normal for this part of
              ! the control volume. The factor 8 is taken care of later
@@ -5148,7 +5285,7 @@ contains
     !
     do k=1,kl
        do j=1,jl
-          do i=1, ie
+          do i=nodeStart,ie
 
              ! Compute 8 times the average normal for this part of
              ! the control volume. The factor 8 is taken care of later
@@ -5185,7 +5322,7 @@ contains
              ! is reversed, because the negative of the gradient of the
              ! speed of sound must be computed.
 
-             if(i > 1) then
+             if(i > nodeStart) then
                 ux(i-1,j,k) = ux(i-1,j,k) + ubar*sx
                 uy(i-1,j,k) = uy(i-1,j,k) + ubar*sy
                 uz(i-1,j,k) = uz(i-1,j,k) + ubar*sz
@@ -5228,7 +5365,7 @@ contains
 
     do k=1,kl
        do j=1,jl
-          do i=1,il
+          do i=nodeStart,il
 
              ! Compute the inverse of 8 times the volume for this node.
 
