@@ -31,6 +31,9 @@ class OM_FUNC_COMP(ExplicitComponent):
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
         self._do_solve = True
 
+
+
+
     def setup(self):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
@@ -65,8 +68,7 @@ class OM_FUNC_COMP(ExplicitComponent):
                 units = FUNCS_UNITS[f_type]
             self.add_output(f_name, shape=1, units=units)
 
-
-            self.declare_partials(of=f_name, wrt='*')
+            #self.declare_partials(of=f_name, wrt='*')
                 
 
     def _set_ap(self, inputs):
@@ -75,7 +77,7 @@ class OM_FUNC_COMP(ExplicitComponent):
             name = args[0]
             tmp[name] = inputs[name]
         self.metadata['ap'].setDesignVars(tmp)
-        self.metadata['solver'].setAeroProblem(self.metadata['ap'])
+        #self.metadata['solver'].setAeroProblem(self.metadata['ap'])
 
     def _set_geo(self, inputs):
         dvgeo = self.metadata['dvgeo']
@@ -97,8 +99,6 @@ class OM_FUNC_COMP(ExplicitComponent):
     def compute(self, inputs, outputs):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
-
-
 
         #actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve: 
@@ -153,15 +153,15 @@ class OM_FUNC_COMP(ExplicitComponent):
                 func_name = name.lower()
                 if name in d_outputs:
                     funcsBar[func_name] = d_outputs[name] / self.comm.size
+            
 
-            # print('funcsBar', funcsBar)
             wBar, xDVBar = solver.computeJacobianVectorProductBwd(
                 funcsBar=funcsBar,
                 wDeriv=True, xDvDeriv=True)
 
             if 'states' in d_inputs:
                 d_inputs['states'] += wBar
-                # print('wBar', np.linalg.norm(wBar))
+                #print('wBar',self.comm.rank,  np.linalg.norm(wBar))
 
             for dv_name, dv_bar in xDVBar.items():
                 if dv_name in d_inputs:
