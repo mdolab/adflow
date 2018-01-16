@@ -1557,7 +1557,7 @@ contains
     real(kind=alwaysrealType), intent(out) :: rtol
     real(kind=alwaysrealType) :: rtol_max, gamma, alpha, alpha2, threshold, stol
 
-    rtol_max  = 0.3_realType
+    rtol_max  = 0.8_realType
     gamma     = 1.0_realType
     alpha     = (1.0_realType+sqrt(five))/2.0_realType
     alpha2    = (1.0_realType+sqrt(five))/2.0_realType
