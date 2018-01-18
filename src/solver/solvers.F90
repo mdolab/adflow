@@ -1092,7 +1092,7 @@ contains
 
                 call NKStep(firstNK)
                 firstNK = .False.
-                CFLMonitor = NK_CFL
+                CFLMonitor = -1
 
              end if
 
@@ -1124,7 +1124,7 @@ contains
                 call NKStep(firstNK)
                 firstNK = .False.
                 firstANK = .True.
-                CFLMonitor = NK_CFL
+                CFLMonitor = -1
 
              end if
           end if
@@ -1550,11 +1550,17 @@ contains
                 write(*,"(i6,1x)",advance="no") iterTot
                 write(*,"(i6,1x)",advance="no") approxTotalIts
                 write(*,"(a,1x)", advance="no") iterType
+
+                if (CFLMonitor < zero) then
+                   ! Print dashes if no cfl term is used, i.e. NK solver
+                   write(*,"(a,1x)", advance="no") "    ----  "
+                else
 #ifndef USE_COMPLEX
-                write(*,"(e10.2,1x)",advance="no") CFLMonitor
+                   write(*,"(e10.2,1x)",advance="no") CFLMonitor
 #else
-                write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
+                   write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
 #endif
+                end if
 #ifndef USE_COMPLEX
                 write(*,"(f5.2,2x)",advance="no") stepMonitor
 #else
