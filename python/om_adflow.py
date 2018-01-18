@@ -24,19 +24,22 @@ class OM_ADFLOW(Group):
         self.metadata.declare('mesh_options', types=dict, default={})   
         # self.metadata.declare('family_groups', types=dict, default={})
         self.metadata.declare('adflow_setup_cb', types=types.FunctionType, allow_none=True, default=None)
-        self.metadata.declare('dvgeo', types=DVGeometry, allow_none=True, default=None)
-        self.metadata.declare('dvcon', types=DVConstraints, allow_none=True, default=None)
+        self.metadata.declare('dvgeo', types=DVGeometry)# , allow_none=True, default=None)
+        self.metadata.declare('dvcon', types=DVConstraints)# , allow_none=True, default=None)
         self.metadata.declare('use_OM_KSP', default=False, types=bool, 
             desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
+
         self.metadata.declare('owns_indeps', default=False, 
             desc="when True will create IndepVarComp with outputs for all des vars")
         self.metadata.declare('debug', default=False)
 
-        # This option is mainly used in testing when the solver object needs to be run by itself 
+        # These options are mainly used in testing when the solver object needs to be run by itself 
         #     and also used in the wrapper. You probably don't want to use this 
         #     unless you really know what you're doing!!!
         self.metadata.declare('solver', types=ADFLOW, allow_none=True, default=None,
             desc='optional argument to allow an existing solver instance to be passed in.')
+        self.metadata.declare('mesh', types=USMesh, allow_none=True, default=None,
+            desc='optional argument to allow an existing mesh instance to be passed in.')
 
         # self.metadata.declare('max_procs', default=64, types=int)
 
@@ -48,31 +51,32 @@ class OM_ADFLOW(Group):
         solver = self.metadata['solver']
         if solver is None: 
             solver = ADFLOW(options=self.metadata['aero_options'], 
-                            comm=self.comm, 
-                            debug=self.metadata['debug'])
-        print('foobar', solver)
+                            comm=self.comm)
         self.solver = solver
+
+        if self.metadata['adflow_setup_cb'] is not None: 
+           self.metadata['adflow_setup_cb'](solver)  
 
         # for fg in self.metadata['family_groups']:
         #     solver.addFamilyGroup(fg[0], fg[1])
 
-        if self.metadata['adflow_setup_cb'] is not None: 
-           self.metadata['adflow_setup_cb'](solver)  
         # for f_name, f_meta in self.metadata['functions'].items():
         #     fg = f_meta[0]
         #     f_type = f_meta[1]
         #     solver.addFunction(f_type, fg, f_name)
 
         # necessary to get some memory properly allocated
-        solver.getResidual(ap)
-
-
-        if self.metadata['mesh_options']: 
-            mesh = USMesh(options=self.metadata['mesh_options'], comm=self.comm)
-            solver.setMesh(mesh)
+        # solver.getResidual(ap)
 
         if dvgeo is not None: 
             solver.setDVGeo(dvgeo)
+
+
+        mesh = self.metadata['mesh']
+        if mesh is None: 
+            mesh = USMesh(options=self.metadata['mesh_options'], comm=self.comm)
+        solver.setMesh(mesh)
+
 
         des_vars, constraints = get_dvs_and_cons(ap, dvgeo, dvcon)
         geo_vars, _ = get_dvs_and_cons(geo=dvgeo)
@@ -103,7 +107,7 @@ class OM_ADFLOW(Group):
             #    self.add_constraint('geocon.%s' % name, lower=con.lower, upper=con.upper, linear=True)
 
         states = OM_STATES_COMP(ap=ap, dvgeo=dvgeo, solver=solver,
-                            use_OM_KSP=self.metadata['use_OM_KSP'])
+                                use_OM_KSP=self.metadata['use_OM_KSP'])
 
         self.add_subsystem('states', states, promotes_inputs=des_var_names)
 
@@ -114,5 +118,5 @@ class OM_ADFLOW(Group):
 
         functionals = OM_FUNC_COMP(ap=ap, dvgeo=dvgeo, solver=solver)
         self.add_subsystem('functionals', functionals,
-                           promotes_inputs=des_var_names)
+                           promotes_inputs=des_var_names, max_procs=self.comm.size)
         self.connect('states.states', 'functionals.states')

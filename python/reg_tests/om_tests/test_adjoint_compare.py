@@ -72,6 +72,10 @@ class Tests(unittest.TestCase):
         funcsSens = {}
         CFDSolver.evalFunctionsSens(ap, funcsSens)
 
+
+        del(CFDSolver)
+        gc.collect()
+
         ##########################################
         # Run things through OpenMDAO
         ##########################################
@@ -91,7 +95,9 @@ class Tests(unittest.TestCase):
         prob.model = OM_ADFLOW(ap=ap, aero_options=aeroOptions, mesh_options=meshOptions, 
                                dvgeo=DVGeo, 
                                debug=True, owns_indeps=True, 
-                               solver=CFDSolver)
+                               #solver=CFDSolver, 
+                               #mesh=mesh
+                               )
 
         prob.setup()
         # from openmdao.api import view_model 
