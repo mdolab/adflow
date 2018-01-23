@@ -908,7 +908,7 @@ contains
     use paramTurb
     use blockPointers, only : sectionID
     use inputPhysics, only :useft2SA, useRotationSA, turbProd, equations
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : approxSA
     use section, only : sections
     use sa, only : cv13, kar2Inv, cw36, cb3Inv
     use flowvarRefState, only : timeRef
@@ -938,7 +938,7 @@ contains
 
     ! set the approximate multiplier here
     term1Fact = one
-    if (lumpedDiss) term1Fact = zero
+    if (approxSA) term1Fact = zero
 
     ! Determine the non-dimensional wheel speed of this block.
 
