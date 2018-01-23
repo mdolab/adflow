@@ -3212,7 +3212,7 @@ contains
     use blockPointers, only : nDom, flowDoms
     use inputIteration, only : L2conv
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : approxSA
     use iteration, only : approxTotalIts, totalR0, totalR, currentLevel
     use utils, only : EChk, setPointers
     use turbMod, only : secondOrd
@@ -3275,7 +3275,7 @@ contains
 
         if (totalR > ANK_secondOrdSwitchTol*totalR0) then
             ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
-            lumpedDiss = .True.
+            approxSA = .True.
             secondOrdSave = secondOrd
             secondOrd =.False.
 
@@ -3326,7 +3326,7 @@ contains
         if (totalR > ANK_secondOrdSwitchTol*totalR0) then
             ! Replace the second order turbulence option
             secondOrd = secondOrdSave
-            lumpedDiss = .False.
+            approxSA = .False.
         end if
 
         ! Compute the maximum step that will limit the change
@@ -3477,7 +3477,7 @@ contains
     use inputPhysics, only : equations
     use inputIteration, only : L2conv
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use inputDiscretization, only : lumpedDiss
+    use inputDiscretization, only : lumpedDiss, approxSA
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
     use utils, only : EChk, setPointers
     use turbAPI, only : turbSolveSegregated
@@ -3630,6 +3630,7 @@ contains
        ! Setting lumped dissipation to true gives approximate fluxes
        ANK_useDissApprox =.True.
        lumpedDiss = .True.
+       approxSA = .True.
 
        ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
        secondOrdSave = secondOrd
@@ -3687,6 +3688,7 @@ contains
        ! Set ANK_useDissApprox back to False to go back to using actual flux routines
        ANK_useDissApprox =.False.
        lumpedDiss = .False.
+       approxSA = .False.
 
        ! Replace the second order turbulence option
        secondOrd = secondOrdSave
