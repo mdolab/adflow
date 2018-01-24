@@ -86,9 +86,9 @@ contains
     !  data currently in blockPointers
     use constants
     use oversetData, only : oversetBlock, clusters, cumDomProc
-    use inputOverset, only : backgroundVolScale, nearWallDist
+    use inputOverset, only : backgroundVolScale, nearWallDist, useOversetWallScaling
     use blockPointers, only : x, globalCell, il, jl, kl, ib, jb, kb, &
-         ie, je, ke, vol, iBlank, xSeed, forcedRecv, nbkglobal
+         ie, je, ke, vol, iBlank, xSeed, forcedRecv, nbkglobal, si, sj, sk
     use cgnsGrid, only : cgnsDoms
     use adtBuild, only : buildSerialHex
     use communication, only : myID
@@ -104,7 +104,7 @@ contains
     ! Working paramters
     integer(kind=intType) :: i, j, k, mm, nADT, nHexa, planeOffset
     integer(kind=intType) :: iStart, iEnd, jStart, jEnd, kStart, kEnd
-    real(kind=realType) :: factor, frac,  dist, xp(3)
+    real(kind=realType) :: factor, frac,  dist, xp(3),aspect(3), fact
     integer(kind=intType) :: i_stencil, ii, jj, iii
     logical :: wallsPresent
     logical, allocatable, dimension(:, :, :)  :: nearWallTmp
@@ -142,7 +142,21 @@ contains
           do i=1,ie
              mm = mm + 1
              if (wallsPresent) then
-                oBlock%qualDonor(1, mm) = vol(i, j, k)**third
+
+                ! Modify based on aspect ratio of the cell in the
+                ! k-direcion. High aspect ratioin BL
+                aspect = one
+                if (useOversetWallScaling) then
+                   if (CGNSDoms(nbkGlobal)%viscousDir(1)) &
+                        aspect(1) = (half*(norm2(si(i-1, j, k, :)) + norm2(si(i, j, k, :)))) / vol (i, j, k)
+                   if (CGNSDoms(nbkGlobal)%viscousDir(2)) &
+                        aspect(2) = (half*(norm2(sj(i, j-1, k, :)) + norm2(sj(i, j, k, :)))) / vol (i, j, k)
+                   if (CGNSDoms(nbkGlobal)%viscousDir(3)) &
+                        aspect(3) = (half*(norm2(sk(i, j, k-1, :)) + norm2(sk(i, j, k, :)))) / vol (i, j, k)
+                end if
+                fact = min(aspect(1)*aspect(2)*aspect(3), 100.0_realType)
+
+                oBlock%qualDonor(1, mm) = (vol(i, j, k)**third) / fact
              else
                 oBlock%qualDonor(1, mm) = (backGroundVolScale*vol(i, j, k))**third
              end if
