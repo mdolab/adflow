@@ -413,6 +413,9 @@
          ! it's stored here. Set from python options
          real(kind=realType) :: priority=one
 
+         ! ViscousDir is whether or no there is a viscous direction in I/J/K
+         logical, dimension(3) :: viscousDir = [.False., .False., .False.]
+
        end type cgnsBlockInfoType
 !
 !       The definition of the derived data type to store the data of a

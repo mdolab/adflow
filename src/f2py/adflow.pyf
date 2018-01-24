@@ -1105,6 +1105,7 @@ python module libadflow
          integer(kind=inttype)::nrefine
          logical :: debugzipper
          logical :: usezippermesh
+         logical :: useoversetwallscaling
          real(kind=realtype) :: selfzipcutoff
        end module inputoverset
 

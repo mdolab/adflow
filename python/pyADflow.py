@@ -4268,6 +4268,7 @@ class ADFLOW(AeroSolver):
             'oversetupdatemode':[str, 'frozen'],
             'nrefine':[int,10],
             'usezippermesh':[bool, True],
+            'useoversetwallscaling':[bool, False],
             'selfzipcutoff':[float, 120.0],
             'oversetpriority':[dict, {}],
 
@@ -4567,6 +4568,7 @@ class ADFLOW(AeroSolver):
                                  'location':['overset', 'oversetupdatemode']},
             'nrefine':['overset','nrefine'],
             'usezippermesh':['overset', 'usezippermesh'],
+            'useoversetwallscaling':['overset', 'useoversetwallscaling'],
             'selfzipcutoff':['overset', 'selfzipcutoff'],
 
             # Unsteady Params
