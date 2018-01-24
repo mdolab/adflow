@@ -31,7 +31,7 @@ contains
     use utils, only : setPointers, EChk, setBufferSizes, terminate
     use coarseUtils, only : createCoarseBlocks
     use pointMatchedCommPattern, only : determineCommPattern
-    use oversetAPI, only : oversetComm, determineClusters
+    use oversetAPI, only : oversetComm, determineClusters, determineViscousDirs
     implicit none
     !
     !      Local variables.
@@ -187,6 +187,9 @@ contains
 
     ! Determine the number of grid clusters
     call determineClusters()
+
+    ! Detertmine the viscous directions in the CGNSBlocks
+    call determineViscousDirs()
 
     ! Determine if we have overset mesh present:
     local = .False.
@@ -2786,8 +2789,8 @@ contains
           ! the code more readable.
 
           call setPointers(nn, level, sps)
-          if (associated(flowDoms(nn, level, sps)%iblank)) then 
-             iBlankAllocated = .True. 
+          if (associated(flowDoms(nn, level, sps)%iblank)) then
+             iBlankAllocated = .True.
           else
              iBlankAllocated = .False.
           end if
@@ -2841,14 +2844,14 @@ contains
 
                    ! Only care about the quality of compute cells (1)
                    ! and fringe cells (-1)
-                   checkBlank = .False. 
-                   if (iblankAllocated) then 
-                      if (abs(iblank(i, j, k)) == 1) then 
+                   checkBlank = .False.
+                   if (iblankAllocated) then
+                      if (abs(iblank(i, j, k)) == 1) then
                          checkBlank = .True.
                       end if
                    end if
 
-                   if (checkK .and. checkJ .and. checkI .and. checkBlank) then 
+                   if (checkK .and. checkJ .and. checkI .and. checkBlank) then
                       checkAll = .true.
                    end if
 
