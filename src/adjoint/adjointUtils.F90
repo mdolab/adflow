@@ -5,7 +5,7 @@ module adjointUtils
 contains
 
   subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-       useObjective, frozenTurb, level, matrixTurb)
+       useObjective, frozenTurb, level, useTurbOnly)
 
     !      Compute the state derivative matrix using a forward mode calc
     !      There are three different flags that determine how this
@@ -48,16 +48,16 @@ contains
 
     ! PETSc Matrix Variable
     Mat :: matrix
-    Mat, optional :: matrixTurb
 
     ! Input Variables
     logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
+    logical, intent(in), optional :: useTurbOnly
     integer(kind=intType), intent(in) :: level
 
     ! Local variables.
     integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
     integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
-    integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
+    integer(kind=intType) :: nTransfer, nState, lStart, lEnd, tmp, icount, cols(8), nCol
     integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=alwaysRealType) :: delta_x, one_over_dx
@@ -65,20 +65,38 @@ contains
     real(kind=realType), dimension(:,:), allocatable :: blk
 
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
-    logical :: resetToRANS, secondOrdSave,  splitMat
+    logical :: resetToRANS, secondOrdSave, turbOnly, flowRes, turbRes
 
-    if (present(matrixTurb)) then
-       splitMat = .True.
-    else
-       splitMat = .False.
+    ! Determine if we are assembling a turb only PC
+    turbOnly = .False.
+    if (present(useTurbOnly)) then
+       turbOnly = useTurbOnly
     end if
 
-    ! Setup number of state variable based on turbulence assumption
-    if ( frozenTurb ) then
-       nState = nwf
+    if (turbOnly) then
+       ! we are making a PC for turbulence only KSP
+       flowRes = .False.
+       turbRes = .True.
+       lStart = nt1
+       lEnd = nt2
+       nState = nt2 - nt1 + 1
     else
-       nState = nw
-    endif
+       ! We are making a "matrix" for either NK or adjoint
+       ! Setup number of state variable based on turbulence assumption
+       if ( frozenTurb ) then
+          flowRes = .True.
+          turbRes = .False.
+          lStart = 1
+          lEnd =nwf
+          nState = nwf
+       else
+          flowRes = .True.
+          turbRes = .True.
+          lStart = 1
+          lEnd =nw
+          nState = nw
+       endif
+    end if
 
     ! Generic block to use while setting values
     allocate(blk(nState, nState))
@@ -132,11 +150,6 @@ contains
        end do
     end do
 
-    if (splitMat) then
-       call MatZeroEntries(matrixTurb, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-    end if
-
     ! Set a pointer to the correct set of stencil depending on if we are
     ! using the first order stencil or the full jacobian
 
@@ -151,6 +164,7 @@ contains
 
        ! Very important to use only Second-Order dissipation for PC
        lumpedDiss=.True.
+       approxSA = .True.
        secondOrdSave = secondOrd
        secondOrd = .False.
     else
@@ -286,7 +300,7 @@ contains
              end do
 
              ! Master State Loop
-             stateLoop: do l=1, nState
+             stateLoop: do l=lStart, lEnd
 
                 ! Reset All States and possibe AD seeds
                 do sps2 = 1, nTimeIntervalsSpectral
@@ -342,7 +356,7 @@ contains
                    stop
 #endif
                 else
-                   call block_res_state(nn, sps)
+                   call block_res_state(nn, sps, useFlowRes=flowRes, useTurbRes=turbRes)
                 end if
 
                 ! Set the computed residual in dw_deriv. If using FD,
@@ -351,7 +365,7 @@ contains
 
                 ! Compute/Copy all derivatives
                 do sps2 = 1, nTimeIntervalsSpectral
-                   do ll=1, nState
+                   do ll=lStart, lEnd
                       do k=2, kl
                          do j=2, jl
                             do i=2, il
@@ -444,7 +458,7 @@ contains
                                            ! to use TS diagonal form, only set
                                            ! values for on-time insintance
                                            blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                                1:nstate, 1:nstate)
+                                                lStart:lEnd, lStart:lEnd)
                                            call setBlock(blk)
                                         else
                                            ! Otherwise loop over spectral
@@ -453,14 +467,14 @@ contains
                                               irow = flowDoms(nn, level, sps2)%&
                                                    globalCell(i+ii, j+jj, k+kk)
                                               blk = flowDoms(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
-                                                   1:nstate, 1:nstate)
+                                                   lStart:lEnd, lStart:lEnd)
                                               call setBlock(blk)
                                            end do
                                         end if useDiagPC
                                      else
                                         ! ALl other cells just set.
                                         blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                             1:nstate, 1:nstate)
+                                             lStart:lEnd, lStart:lEnd)
                                         call setBlock(blk)
                                      end if centerCell
                                   end if rowBlank
@@ -479,10 +493,6 @@ contains
     call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (splitMat) then
-       call MatAssemblyBegin(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-    end if
     ! Maybe we can do something useful while the communication happens?
     ! Deallocate the temporary memory used in this routine.
 
@@ -507,6 +517,7 @@ contains
     ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
     if (usePC) then
        lumpedDiss = .False.
+       approxSA = .False.
        secondOrd = secondOrdSave
     end if
 
@@ -524,14 +535,6 @@ contains
 
     call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-
-    if (splitMat) then
-       call MatAssemblyEnd(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-
-       call MatSetOption(matrixTurb, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-    end if
 
     ! ================= Important ===================
 
