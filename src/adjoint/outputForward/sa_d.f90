@@ -33,6 +33,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -41,8 +42,9 @@ contains
     integer(kind=inttype) :: i, j, k, nn, ii
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
-    real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
-    real(kind=realtype) :: ssd, sstd, nud, dist2invd, chid, chi2d, chi3d
+    real(kind=realtype) :: ss, sst, ssb, nu, dist2inv, chi, chi2, chi3
+    real(kind=realtype) :: ssd, sstd, ssbd, nud, dist2invd, chid, chi2d&
+&   , chi3d
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
     real(kind=realtype) :: rrd, ggd, gg6d, termfwd, fwsad, term1d, &
 &   term2d
@@ -63,7 +65,6 @@ contains
     intrinsic sqrt
     intrinsic exp
     intrinsic min
-    intrinsic max
     real(kind=realtype) :: pwx1
     real(kind=realtype) :: pwx1d
     real(kind=realtype) :: min1
@@ -302,9 +303,24 @@ contains
             end if
 ! correct the production term to account for the influence
 ! of the wall.
-            sstd = ssd + kar2inv*(wd(i, j, k, itu1)*fv2*dist2inv+w(i, j&
-&             , k, itu1)*(fv2d*dist2inv+fv2*dist2invd))
-            sst = ss + w(i, j, k, itu1)*fv2*kar2inv*dist2inv
+            ssbd = kar2inv*(wd(i, j, k, itu1)*fv2*dist2inv+w(i, j, k, &
+&             itu1)*(fv2d*dist2inv+fv2*dist2invd))
+            ssb = w(i, j, k, itu1)*fv2*kar2inv*dist2inv
+! correct the s tilde value such that it does not go below
+! 0.3*s. this modification is presented in the same paper with
+! negative sa (iccfd7-1902).
+            if (ssb .lt. -(rsacv2*ss)) then
+              sstd = ssd + ((ssd*(rsacv2*rsacv2*ss+rsacv3*ssb)+ss*(&
+&               rsacv2**2*ssd+rsacv3*ssbd))*((rsacv3-2.0_realtype*rsacv2&
+&               )*ss-ssb)-ss*(rsacv2*rsacv2*ss+rsacv3*ssb)*((rsacv3-&
+&               2.0_realtype*rsacv2)*ssd-ssbd))/((rsacv3-2.0_realtype*&
+&               rsacv2)*ss-ssb)**2
+              sst = ss + ss*(rsacv2*rsacv2*ss+rsacv3*ssb)/((rsacv3-&
+&               2.0_realtype*rsacv2)*ss-ssb)
+            else
+              sstd = ssd + ssbd
+              sst = ss + ssb
+            end if
 ! add rotation term (userotationsa defined in inputparams.f90)
             if (userotationsa) then
               if (two*strainmag2 .eq. 0.0_8) then
@@ -323,12 +339,10 @@ contains
               sstd = sstd + rsacrot*min1d
               sst = sst + rsacrot*min1
             end if
-            if (sst .lt. xminn) then
-              sst = xminn
-              sstd = 0.0_8
-            else
-              sst = sst
-            end if
+! make sure that this term remains positive
+! (the function fv2 is negative between chi = 1 and 18.4,
+! which can cause sst to go negative, which is undesirable).
+!sst = max(sst,xminn)
 ! compute the function fw. the argument rr is cut off at 10
 ! to avoid numerical problems. this is ok, because the
 ! asymptotical value of fw is then already reached.
@@ -361,13 +375,16 @@ contains
             fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-            term1d = rsacb1*((one-ft2)*ssd-ft2d*ss)
-            term1 = rsacb1*(one-ft2)*ss
-            term2d = dist2invd*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-&
-&             rsacw1*fwsa) + dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2d-&
-&             ft2d*fv2+ft2d)-rsacw1*fwsad)
-            term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
-&             fwsa)
+            if (approxsa) then
+              term1 = zero
+              term1d = 0.0_8
+            else
+              term1d = rsacb1*((one-ft2)*sstd-ft2d*sst)
+              term1 = rsacb1*(one-ft2)*sst
+            end if
+            term2d = dist2invd*(kar2inv*rsacb1*ft2-rsacw1*fwsa) + &
+&             dist2inv*(kar2inv*rsacb1*ft2d-rsacw1*fwsad)
+            term2 = dist2inv*(kar2inv*rsacb1*ft2-rsacw1*fwsa)
             scratchd(i, j, k, idvt) = (term1d+term2d*w(i, j, k, itu1)+&
 &             term2*wd(i, j, k, itu1))*w(i, j, k, itu1) + (term1+term2*w&
 &             (i, j, k, itu1))*wd(i, j, k, itu1)
@@ -389,6 +406,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -396,7 +414,7 @@ contains
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
     real(kind=realtype) :: fv1, fv2, ft2
-    real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
+    real(kind=realtype) :: ss, sst, ssb, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
     real(kind=realtype) :: dfv1, dfv2, dft2, drr, dgg, dfw
     real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
@@ -408,7 +426,6 @@ contains
     intrinsic sqrt
     intrinsic exp
     intrinsic min
-    intrinsic max
     real(kind=realtype) :: pwx1
     real(kind=realtype) :: min1
     real(kind=realtype) :: y1
@@ -525,7 +542,16 @@ contains
             end if
 ! correct the production term to account for the influence
 ! of the wall.
-            sst = ss + w(i, j, k, itu1)*fv2*kar2inv*dist2inv
+            ssb = w(i, j, k, itu1)*fv2*kar2inv*dist2inv
+! correct the s tilde value such that it does not go below
+! 0.3*s. this modification is presented in the same paper with
+! negative sa (iccfd7-1902).
+            if (ssb .lt. -(rsacv2*ss)) then
+              sst = ss + ss*(rsacv2*rsacv2*ss+rsacv3*ssb)/((rsacv3-&
+&               2.0_realtype*rsacv2)*ss-ssb)
+            else
+              sst = ss + ssb
+            end if
 ! add rotation term (userotationsa defined in inputparams.f90)
             if (userotationsa) then
               y1 = sqrt(two*strainmag2)
@@ -536,11 +562,10 @@ contains
               end if
               sst = sst + rsacrot*min1
             end if
-            if (sst .lt. xminn) then
-              sst = xminn
-            else
-              sst = sst
-            end if
+! make sure that this term remains positive
+! (the function fv2 is negative between chi = 1 and 18.4,
+! which can cause sst to go negative, which is undesirable).
+!sst = max(sst,xminn)
 ! compute the function fw. the argument rr is cut off at 10
 ! to avoid numerical problems. this is ok, because the
 ! asymptotical value of fw is then already reached.
@@ -557,9 +582,12 @@ contains
             fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-            term1 = rsacb1*(one-ft2)*ss
-            term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
-&             fwsa)
+            if (approxsa) then
+              term1 = zero
+            else
+              term1 = rsacb1*(one-ft2)*sst
+            end if
+            term2 = dist2inv*(kar2inv*rsacb1*ft2-rsacw1*fwsa)
             scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i&
 &             , j, k, itu1)
           end do
