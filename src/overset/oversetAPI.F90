@@ -24,7 +24,7 @@ contains
     use adtBuild, only : destroySerialQuad
     use inputOverset, onlY : useoversetLoadBalance, overlapFactor, nRefine, backgroundVolScale, &
          useOversetWallScaling
-    use utils, only : EChk, setPointers, setBufferSizes, terminate, returnFail
+    use utils, only : EChk, setPointers, setBufferSizes, terminate, returnFail, mynorm2
     use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
     use oversetInitialization, only : initializeOBlock, initializeOFringes, initializeStatus, &
@@ -847,11 +847,11 @@ contains
                          aspect = one
                          if (useOversetWallScaling) then
                             if (CGNSDoms(nbkGlobal)%viscousDir(1)) &
-                                 aspect(1) = (half*(norm2(si(i-1, j, k, :)) + norm2(si(i, j, k, :)))) / vol (i, j, k)
+                                 aspect(1) = (half*(mynorm2(si(i-1, j, k, :)) + mynorm2(si(i, j, k, :)))) / vol (i, j, k)
                             if (CGNSDoms(nbkGlobal)%viscousDir(2)) &
-                                 aspect(2) = (half*(norm2(sj(i, j-1, k, :)) + norm2(sj(i, j, k, :)))) / vol (i, j, k)
+                                 aspect(2) = (half*(mynorm2(sj(i, j-1, k, :)) + mynorm2(sj(i, j, k, :)))) / vol (i, j, k)
                             if (CGNSDoms(nbkGlobal)%viscousDir(3)) &
-                                 aspect(3) = (half*(norm2(sk(i, j, k-1, :)) + norm2(sk(i, j, k, :)))) / vol (i, j, k)
+                                 aspect(3) = (half*(mynorm2(sk(i, j, k-1, :)) + mynorm2(sk(i, j, k, :)))) / vol (i, j, k)
                          end if
                          fact = min(aspect(1)*aspect(2)*aspect(3), 100.0_realType)
 
