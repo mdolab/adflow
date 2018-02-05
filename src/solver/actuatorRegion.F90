@@ -435,7 +435,7 @@ contains
     use sorting, only : famInList
     use residuals, only : sourceTerms_block
     use actuatorRegionData
-
+    use communication
     ! Input/output Variables
     real(kind=realType), dimension(nLocalValues), intent(inout) :: localValues
     integer(kind=intType), dimension(:), intent(in) :: famList
@@ -459,7 +459,7 @@ contains
           famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then
 
              ! If so, call the regular sourceTerms_block routine
-             call sourceTerms_block(nn, .False., pLocal)
+             call sourceTerms_block(nn, .False., iRegion, pLocal)
 
           end if famInclude
        end do regionLoop
@@ -510,7 +510,7 @@ contains
           famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then
 
              ! If so, call the regular sourceTerms_block routine
-             call sourceTerms_block_d(nn, .False., pLocal, pLocald)
+             call sourceTerms_block_d(nn, .False., iRegion, pLocal, pLocald)
 
           end if famInclude
        end do regionLoop
@@ -565,7 +565,7 @@ contains
           famInclude: if (famInList(actuatorRegions(iRegion)%famID, famList)) then
 
              ! If so, call the regular sourceTerms_block routine
-             call sourceTerms_block_b(nn, .False., pLocal, pLocald)
+             call sourceTerms_block_b(nn, .False., iRegion, pLocal, pLocald)
 
           end if famInclude
        end do regionLoop

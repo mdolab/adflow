@@ -96,6 +96,7 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
+    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input/Output
@@ -110,7 +111,7 @@ contains
 
     ! Misc
     logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, spatial, storeWall
-    integer(kind=intType) :: nn, sps, fSize, lstart, lend
+    integer(kind=intType) :: nn, sps, fSize, lstart, lend, iRegion
     real(kind=realType) ::  pLocal
 
     ! Set the defaults. The default is to compute the full, exact,
@@ -266,7 +267,9 @@ contains
           end if blockettes
 
           if (currentLevel == 1) then
-             call sourceTerms_block(nn, .True., pLocal)
+             do iRegion=1, nActuatorRegions
+                call sourceTerms_block(nn, .True., iRegion, pLocal)
+             end do
           end if
        end do blockLoop
     end do spsLoop
