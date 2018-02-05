@@ -398,18 +398,15 @@ contains
 &           timeref**2
           massflowratelocal = massflowratelocal/timeref*internalflowfact&
 &           *inflowfact
-          fxd = (((massflowratelocald*vxm+massflowratelocal*vxmd)*ss(1)+&
-&           massflowratelocal*vxm*ssd(1))*timeref-massflowratelocal*ss(1&
-&           )*vxm*timerefd)/timeref**2
-          fx = massflowratelocal*ss(1)*vxm/timeref
-          fyd = (((massflowratelocald*vym+massflowratelocal*vymd)*ss(2)+&
-&           massflowratelocal*vym*ssd(2))*timeref-massflowratelocal*ss(2&
-&           )*vym*timerefd)/timeref**2
-          fy = massflowratelocal*ss(2)*vym/timeref
-          fzd = (((massflowratelocald*vzm+massflowratelocal*vzmd)*ss(3)+&
-&           massflowratelocal*vzm*ssd(3))*timeref-massflowratelocal*ss(3&
-&           )*vzm*timerefd)/timeref**2
-          fz = massflowratelocal*ss(3)*vzm/timeref
+          fxd = (massflowratelocald*vxm+massflowratelocal*vxmd)*ss(1) + &
+&           massflowratelocal*vxm*ssd(1)
+          fx = massflowratelocal*ss(1)*vxm
+          fyd = (massflowratelocald*vym+massflowratelocal*vymd)*ss(2) + &
+&           massflowratelocal*vym*ssd(2)
+          fy = massflowratelocal*ss(2)*vym
+          fzd = (massflowratelocald*vzm+massflowratelocal*vzmd)*ss(3) + &
+&           massflowratelocal*vzm*ssd(3)
+          fz = massflowratelocal*ss(3)*vzm
           fmomd(1) = fmomd(1) - fxd
           fmom(1) = fmom(1) - fx
           fmomd(2) = fmomd(2) - fyd
@@ -659,9 +656,9 @@ contains
           ss = ss/cellarea
           massflowratelocal = massflowratelocal/timeref*internalflowfact&
 &           *inflowfact
-          fx = massflowratelocal*ss(1)*vxm/timeref
-          fy = massflowratelocal*ss(2)*vym/timeref
-          fz = massflowratelocal*ss(3)*vzm/timeref
+          fx = massflowratelocal*ss(1)*vxm
+          fy = massflowratelocal*ss(2)*vym
+          fz = massflowratelocal*ss(3)*vzm
           fmom(1) = fmom(1) - fx
           fmom(2) = fmom(2) - fy
           fmom(3) = fmom(3) - fz

@@ -316,7 +316,7 @@ contains
 !   rw status of diff variables: uref:incr pref:incr *dw:in-out
 !                *w:incr actuatorregions.f:incr plocal:in-out
 !   plus diff mem management of: dw:in w:in
-  subroutine sourceterms_block_b(nn, res, plocal, plocald)
+  subroutine sourceterms_block_b(nn, res, iregion, plocal, plocald)
 ! apply the source terms for the given block. assume that the
 ! block pointers are already set.
     use constants
@@ -325,71 +325,68 @@ contains
     use flowvarrefstate, only : pref, prefd, uref, urefd
     implicit none
 ! input
-    integer(kind=inttype), intent(in) :: nn
+    integer(kind=inttype), intent(in) :: nn, iregion
     logical, intent(in) :: res
     real(kind=realtype), intent(inout) :: plocal
     real(kind=realtype) :: plocald
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
+    integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3), redim
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, factd(3), redimd
     real(kind=realtype) :: tempd(3)
     real(kind=realtype) :: tempd0
     redim = pref*uref
-    redimd = 0.0_8
-    do iregion=1,nactuatorregions
 ! compute the constant force factor
-      fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
-&       pref
+    fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
+&     pref
 ! loop over the ranges for this block
-      istart = actuatorregions(iregion)%blkptr(nn-1) + 1
-      iend = actuatorregions(iregion)%blkptr(nn)
-      factd = 0.0_8
-      do ii=istart,iend
+    istart = actuatorregions(iregion)%blkptr(nn-1) + 1
+    iend = actuatorregions(iregion)%blkptr(nn)
+    redimd = 0.0_8
+    factd = 0.0_8
+    do ii=istart,iend
 ! extract the cell id.
-        i = actuatorregions(iregion)%cellids(1, ii)
-        j = actuatorregions(iregion)%cellids(2, ii)
-        k = actuatorregions(iregion)%cellids(3, ii)
+      i = actuatorregions(iregion)%cellids(1, ii)
+      j = actuatorregions(iregion)%cellids(2, ii)
+      k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmp = volref(i, j, k)*fact
-        vx = w(i, j, k, ivx)
-        vy = w(i, j, k, ivy)
-        vz = w(i, j, k, ivz)
-        if (res) then
-          ftmpd = 0.0_8
-          ftmpd(1) = ftmpd(1) - vx*dwd(i, j, k, irhoe)
-          vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
-          ftmpd(2) = ftmpd(2) - vy*dwd(i, j, k, irhoe)
-          vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
-          ftmpd(3) = ftmpd(3) - vz*dwd(i, j, k, irhoe)
-          vzd = -(ftmp(3)*dwd(i, j, k, irhoe))
-          ftmpd = ftmpd - dwd(i, j, k, imx:imz)
-        else
-          ftmpd = 0.0_8
-          tempd0 = redim*plocald
-          vxd = ftmp(1)*tempd0
-          ftmpd(1) = ftmpd(1) + vx*tempd0
-          vyd = ftmp(2)*tempd0
-          ftmpd(2) = ftmpd(2) + vy*tempd0
-          vzd = ftmp(3)*tempd0
-          ftmpd(3) = ftmpd(3) + vz*tempd0
-          redimd = redimd + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*plocald
-        end if
-        wd(i, j, k, ivz) = wd(i, j, k, ivz) + vzd
-        wd(i, j, k, ivy) = wd(i, j, k, ivy) + vyd
-        wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
-        factd = factd + volref(i, j, k)*ftmpd
-      end do
-      tempd = factd/(actuatorregions(iregion)%volume*pref)
-      actuatorregionsd(iregion)%f = actuatorregionsd(iregion)%f + tempd
-      prefd = prefd + actuatorregions(iregion)%volume*sum(-(&
-&       actuatorregions(iregion)%f*tempd/(actuatorregions(iregion)%&
-&       volume*pref)))
+      ftmp = volref(i, j, k)*fact
+      vx = w(i, j, k, ivx)
+      vy = w(i, j, k, ivy)
+      vz = w(i, j, k, ivz)
+      if (res) then
+        ftmpd = 0.0_8
+        ftmpd(1) = ftmpd(1) - vx*dwd(i, j, k, irhoe)
+        vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
+        ftmpd(2) = ftmpd(2) - vy*dwd(i, j, k, irhoe)
+        vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
+        ftmpd(3) = ftmpd(3) - vz*dwd(i, j, k, irhoe)
+        vzd = -(ftmp(3)*dwd(i, j, k, irhoe))
+        ftmpd = ftmpd - dwd(i, j, k, imx:imz)
+      else
+        ftmpd = 0.0_8
+        tempd0 = redim*plocald
+        vxd = ftmp(1)*tempd0
+        ftmpd(1) = ftmpd(1) + vx*tempd0
+        vyd = ftmp(2)*tempd0
+        ftmpd(2) = ftmpd(2) + vy*tempd0
+        vzd = ftmp(3)*tempd0
+        ftmpd(3) = ftmpd(3) + vz*tempd0
+        redimd = redimd + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*plocald
+      end if
+      wd(i, j, k, ivz) = wd(i, j, k, ivz) + vzd
+      wd(i, j, k, ivy) = wd(i, j, k, ivy) + vyd
+      wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
+      factd = factd + volref(i, j, k)*ftmpd
     end do
-    prefd = prefd + uref*redimd
+    tempd = factd/(actuatorregions(iregion)%volume*pref)
+    actuatorregionsd(iregion)%f = actuatorregionsd(iregion)%f + tempd
+    prefd = prefd + uref*redimd + actuatorregions(iregion)%volume*sum(-(&
+&     actuatorregions(iregion)%f*tempd/(actuatorregions(iregion)%volume*&
+&     pref)))
     urefd = urefd + pref*redimd
   end subroutine sourceterms_block_b
-  subroutine sourceterms_block(nn, res, plocal)
+  subroutine sourceterms_block(nn, res, iregion, plocal)
 ! apply the source terms for the given block. assume that the
 ! block pointers are already set.
     use constants
@@ -398,42 +395,39 @@ contains
     use flowvarrefstate, only : pref, uref
     implicit none
 ! input
-    integer(kind=inttype), intent(in) :: nn
+    integer(kind=inttype), intent(in) :: nn, iregion
     logical, intent(in) :: res
     real(kind=realtype), intent(inout) :: plocal
 ! working
-    integer(kind=inttype) :: i, j, k, ii, iregion, istart, iend
+    integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3), redim
     redim = pref*uref
-! region loop
-regionloop:do iregion=1,nactuatorregions
 ! compute the constant force factor
-      fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
-&       pref
+    fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
+&     pref
 ! loop over the ranges for this block
-      istart = actuatorregions(iregion)%blkptr(nn-1) + 1
-      iend = actuatorregions(iregion)%blkptr(nn)
-      do ii=istart,iend
+    istart = actuatorregions(iregion)%blkptr(nn-1) + 1
+    iend = actuatorregions(iregion)%blkptr(nn)
+    do ii=istart,iend
 ! extract the cell id.
-        i = actuatorregions(iregion)%cellids(1, ii)
-        j = actuatorregions(iregion)%cellids(2, ii)
-        k = actuatorregions(iregion)%cellids(3, ii)
+      i = actuatorregions(iregion)%cellids(1, ii)
+      j = actuatorregions(iregion)%cellids(2, ii)
+      k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmp = volref(i, j, k)*fact
-        vx = w(i, j, k, ivx)
-        vy = w(i, j, k, ivy)
-        vz = w(i, j, k, ivz)
-        if (res) then
+      ftmp = volref(i, j, k)*fact
+      vx = w(i, j, k, ivx)
+      vy = w(i, j, k, ivy)
+      vz = w(i, j, k, ivz)
+      if (res) then
 ! momentum residuals
-          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
+        dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
 ! energy residuals
-          dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)&
-&           *vy - ftmp(3)*vz
-        else
+        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)*&
+&         vy - ftmp(3)*vz
+      else
 ! add in the local power contribution:
-          plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
-        end if
-      end do
-    end do regionloop
+        plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
+      end if
+    end do
   end subroutine sourceterms_block
 end module residuals_b
