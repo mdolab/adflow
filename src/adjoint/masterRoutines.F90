@@ -37,6 +37,7 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
+    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input Arguments:
@@ -51,7 +52,7 @@ contains
     real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nn, sps, fSize
+    integer(kind=intType) :: ierr, nn, sps, fSize, iRegion
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal
 
@@ -144,7 +145,9 @@ contains
        do nn=1, nDom
           call setPointers(nn, 1, sps)
           call initRes_block(1, nw, nn, sps)
-          call sourceTerms_block(nn, .True., dummyReal)
+          do iRegion=1, nActuatorRegions
+             call sourceTerms_block(nn, .True., iRegion, dummyReal)
+          end do
 
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
@@ -260,6 +263,7 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
+    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -280,7 +284,7 @@ contains
 
     ! Working Variables
     real(kind=realType), dimension(:, :, :), allocatable :: forces
-    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal, dummyReald
 
@@ -440,8 +444,9 @@ contains
           call timeStep_block_d(.false.)
           dw = zero
           dwd = zero
-          call sourceTerms_block_d(nn, .True., dummyReal, dummyReald)
-
+          do iRegion=1, nActuatorRegions
+             call sourceTerms_block_d(nn, .True., iRegion, dummyReal, dummyReald)
+          end do
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -576,6 +581,7 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_b
+    use actuatorRegionData, only : nActuatorRegions
 
     implicit none
 #define PETSC_AVOID_MPIF_H
@@ -597,7 +603,7 @@ contains
     real(kind=realType), optional, dimension(:), intent(out) :: bcDataValuesd
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level, iRegion
     real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
     real(kind=realType) :: dummyReal, dummyReald
     logical ::resetToRans
@@ -700,8 +706,9 @@ contains
 
           ! Just to be safe, zero the pLocald value...should not matter
           dummyReald = zero
-          call sourceTerms_block_b(nn, .True., dummyReal, dummyReald)
-
+          do iRegion=1, nActuatorRegions
+             call sourceTerms_block_b(nn, .True., iRegion, dummyReal, dummyReald)
+          end do
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
        end do domainLoop1
@@ -921,6 +928,7 @@ contains
     use flowutils_fast_b, only : allnodalgradients_fast_b
     use residuals_fast_b, only : sourceTerms_block_fast_b
     use oversetData, only : oversetPresent
+    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input variables:
@@ -931,7 +939,7 @@ contains
     real(kind=realType), intent(out), dimension(:) :: wBar
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level, iRegion
     real(kind=realType) :: dummyReal
 
     ! Set the residual seeds.
@@ -1002,7 +1010,9 @@ contains
           end if
 
           call timeStep_block_fast_b(.false.)
-          call sourceTerms_block_fast_b(nn, .true., dummyReal)
+          do iRegion=1, nActuatorRegions
+             call sourceTerms_block_fast_b(nn, .true., iRegion, dummyReal)
+          end do
 
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
@@ -1085,13 +1095,14 @@ contains
     use inputDiscretization, only : useBlockettes
     use blockette, only : blocketteResCore, blockResCore
     use flowUtils, only : computeLamViscosity, computePressureSimple
+    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input Arguments:
     integer(kind=intType), intent(in) :: nn, sps
 
     ! Working Variables
-    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
+    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType) ::  pLocal
     logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
     call computePressureSimple(.True.)
@@ -1119,8 +1130,9 @@ contains
     else
        call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
     end if blockettes
-
-    call sourceTerms_block(nn, .True., pLocal)
+    do iRegion=1, nActuatorRegions
+       call sourceTerms_block(nn, .True., iRegion, pLocal)
+    end do
     call resscale
 
   end subroutine block_res_state
@@ -1149,13 +1161,14 @@ contains
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
     use residuals_d, only: sourceterms_block_d
+    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input Arguments:
     integer(kind=intType), intent(in) :: nn, sps
 
     ! Working Variables
-    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
+    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType) :: dummyReal, dummyReald
 
     call computePressureSimple_d(.True.)
@@ -1176,7 +1189,9 @@ contains
     dwd = zero
 
     ! Compute any source terms
-    call sourceTerms_block_d(nn, .True. , dummyReal, dummyReald)
+    do iRegion=1, nActuatorRegions
+       call sourceTerms_block_d(nn, .True. , iRegion, dummyReal, dummyReald)
+    end do
 
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then

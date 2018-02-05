@@ -308,7 +308,7 @@ contains
   end subroutine residual_block
 
 
-  subroutine sourceTerms_block(nn, res, pLocal)
+  subroutine sourceTerms_block(nn, res, iRegion, pLocal)
 
     ! Apply the source terms for the given block. Assume that the
     ! block pointers are already set.
@@ -319,55 +319,50 @@ contains
     implicit none
 
     ! Input
-    integer(kind=intType), intent(in) ::  nn
+    integer(kind=intType), intent(in) ::  nn, iRegion
     logical, intent(in) :: res
     real(kind=realType), intent(inout) :: pLocal
 
     ! Working
-    integer(kind=intType) :: i, j, k, ii, iRegion, iStart, iEnd
+    integer(kind=intType) :: i, j, k, ii, iStart, iEnd
     real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3), reDim
 
     reDim = pRef*uRef
 
-    ! Region Loop
+    ! Compute the constant force factor
+    fact = actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume / pRef
+
+    ! Loop over the ranges for this block
+    iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
+    iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
+    
     !$AD II-LOOP
-    regionLoop: do iRegion=1, nActuatorRegions
-
-       ! Compute the constant force factor
-       fact = actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume / pRef
-
-       ! Loop over the ranges for this block
-       iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
-       iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
-
-       !$AD II-LOOP
-       do ii=iStart, iEnd
-
-          ! Extract the cell ID.
-          i = actuatorRegions(iRegion)%cellIDs(1, ii)
-          j = actuatorRegions(iRegion)%cellIDs(2, ii)
-          k = actuatorRegions(iRegion)%cellIDs(3, ii)
-
-          ! This actually gets the force
-          FTmp = volRef(i, j, k) * fact
-
-          Vx = w(i, j, k, iVx)
-          Vy = w(i, j, k, iVy)
-          Vz = w(i, j, k, iVz)
-
-          if (res) then
-             ! Momentum residuals
-             dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
-
-             ! energy residuals
-             dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
-                  Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
-          else
-             ! Add in the local power contribution:
-             pLocal = pLocal + (Vx*Ftmp(1) + Vy*FTmp(2) + Vz*Ftmp(3))*reDim
-          end if
-       end do
-    end do regionLoop
+    do ii=iStart, iEnd
+       
+       ! Extract the cell ID.
+       i = actuatorRegions(iRegion)%cellIDs(1, ii)
+       j = actuatorRegions(iRegion)%cellIDs(2, ii)
+       k = actuatorRegions(iRegion)%cellIDs(3, ii)
+       
+       ! This actually gets the force
+       FTmp = volRef(i, j, k) * fact
+       
+       Vx = w(i, j, k, iVx)
+       Vy = w(i, j, k, iVy)
+       Vz = w(i, j, k, iVz)
+       
+       if (res) then
+          ! Momentum residuals
+          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
+          
+          ! energy residuals
+          dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
+               Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
+       else
+          ! Add in the local power contribution:
+          pLocal = pLocal + (Vx*Ftmp(1) + Vy*FTmp(2) + Vz*Ftmp(3))*reDim
+       end if
+    end do
 
   end subroutine sourceTerms_block
 
@@ -966,7 +961,9 @@ contains
 
        ! Set the pointers for this block.
        call setPointers(nn, 1, 1)
-       call sourceTerms_block(nn, .True., dummy)
+       do iRegion=1, nActuatorRegions
+          call sourceTerms_block(nn, .True., iRegion, dummy)
+       end do
     end do domains
 
   end subroutine sourceTerms
