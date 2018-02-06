@@ -576,7 +576,7 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_b
-
+    use BCRoutines, only : applyAllBC_block
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -716,6 +716,7 @@ contains
           do nn=1,nDom
              call setPointers_b(nn, 1, sps)
              call applyAllBC_block_b(.True.)
+             call applyAllBC_block(.true.)
 
              if (equations == RANSequations) then
                 call applyAllTurbBCThisBlock_b(.True.)
@@ -746,6 +747,14 @@ contains
        domainLoop2: do nn=1,nDom
           call setPointers_b(nn, 1, sps)
           call applyAllBC_block_b(.True.)
+
+          ! Run the forward application of the BCs. The reason is that
+          ! the reverse application of the BCs can result in
+          ! inconsisent values in the halos. This has only been
+          ! observed to caluse problems with hot subsonic flow in an
+          ! engine core. This is the same reason we need the applyBCs
+          ! after the _b version above.
+          call applyAllBC_block(.true.)
 
           if (equations == RANSequations) then
              call applyAllTurbBCThisBlock_b(.True.)
@@ -921,6 +930,7 @@ contains
     use flowutils_fast_b, only : allnodalgradients_fast_b
     use residuals_fast_b, only : sourceTerms_block_fast_b
     use oversetData, only : oversetPresent
+    use bcroutines, only : applyallbc_block
     implicit none
 
     ! Input variables:
@@ -1018,6 +1028,7 @@ contains
           do nn=1,nDom
              call setPointers_d(nn, 1, sps)
              call applyAllBC_block_b(.True.)
+             call applyAllBC_block(.true.)
 
              if (equations == RANSequations) then
                 call applyAllTurbBCThisBlock_b(.True.)
@@ -1035,6 +1046,8 @@ contains
           call setPointers_d(nn, 1, sps)
 
           call applyAllBC_block_b(.True.)
+          call applyAllBC_block(.true.)
+
           if (equations == RANSequations) then
              call applyAllTurbBCThisBlock_b(.True.)
              call bcTurbTreatment_b
