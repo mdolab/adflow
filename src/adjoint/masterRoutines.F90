@@ -37,7 +37,6 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
-    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input Arguments:
@@ -52,7 +51,7 @@ contains
     real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nn, sps, fSize, iRegion
+    integer(kind=intType) :: ierr, nn, sps, fSize
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal
 
@@ -145,9 +144,7 @@ contains
        do nn=1, nDom
           call setPointers(nn, 1, sps)
           call initRes_block(1, nw, nn, sps)
-          do iRegion=1, nActuatorRegions
-             call sourceTerms_block(nn, .True., iRegion, dummyReal)
-          end do
+          call sourceTerms_block(nn, .True., dummyReal)
 
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
@@ -263,7 +260,6 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
-    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
 #define PETSC_AVOID_MPIF_H
@@ -284,7 +280,7 @@ contains
 
     ! Working Variables
     real(kind=realType), dimension(:, :, :), allocatable :: forces
-    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj, iRegion
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal, dummyReald
 
@@ -444,9 +440,8 @@ contains
           call timeStep_block_d(.false.)
           dw = zero
           dwd = zero
-          do iRegion=1, nActuatorRegions
-             call sourceTerms_block_d(nn, .True., iRegion, dummyReal, dummyReald)
-          end do
+          call sourceTerms_block_d(nn, .True., dummyReal, dummyReald)
+
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -581,8 +576,7 @@ contains
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_b
-    use actuatorRegionData, only : nActuatorRegions
-
+    use BCRoutines, only : applyAllBC_block
     implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
@@ -603,7 +597,7 @@ contains
     real(kind=realType), optional, dimension(:), intent(out) :: bcDataValuesd
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level, iRegion
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
     real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
     real(kind=realType) :: dummyReal, dummyReald
     logical ::resetToRans
@@ -706,9 +700,8 @@ contains
 
           ! Just to be safe, zero the pLocald value...should not matter
           dummyReald = zero
-          do iRegion=1, nActuatorRegions
-             call sourceTerms_block_b(nn, .True., iRegion, dummyReal, dummyReald)
-          end do
+          call sourceTerms_block_b(nn, .True., dummyReal, dummyReald)
+
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
        end do domainLoop1
@@ -723,6 +716,7 @@ contains
           do nn=1,nDom
              call setPointers_b(nn, 1, sps)
              call applyAllBC_block_b(.True.)
+             call applyAllBC_block(.true.)
 
              if (equations == RANSequations) then
                 call applyAllTurbBCThisBlock_b(.True.)
@@ -753,6 +747,14 @@ contains
        domainLoop2: do nn=1,nDom
           call setPointers_b(nn, 1, sps)
           call applyAllBC_block_b(.True.)
+
+          ! Run the forward application of the BCs. The reason is that
+          ! the reverse application of the BCs can result in
+          ! inconsisent values in the halos. This has only been
+          ! observed to caluse problems with hot subsonic flow in an
+          ! engine core. This is the same reason we need the applyBCs
+          ! after the _b version above.
+          call applyAllBC_block(.true.)
 
           if (equations == RANSequations) then
              call applyAllTurbBCThisBlock_b(.True.)
@@ -928,7 +930,7 @@ contains
     use flowutils_fast_b, only : allnodalgradients_fast_b
     use residuals_fast_b, only : sourceTerms_block_fast_b
     use oversetData, only : oversetPresent
-    use actuatorRegionData, only : nActuatorRegions
+    use bcroutines, only : applyallbc_block
     implicit none
 
     ! Input variables:
@@ -939,7 +941,7 @@ contains
     real(kind=realType), intent(out), dimension(:) :: wBar
 
     ! Working Variables
-    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level, iRegion
+    integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level
     real(kind=realType) :: dummyReal
 
     ! Set the residual seeds.
@@ -1010,9 +1012,7 @@ contains
           end if
 
           call timeStep_block_fast_b(.false.)
-          do iRegion=1, nActuatorRegions
-             call sourceTerms_block_fast_b(nn, .true., iRegion, dummyReal)
-          end do
+          call sourceTerms_block_fast_b(nn, .true., dummyReal)
 
           ! Initres_b should be called here. For steady just zero:
           dwd = zero
@@ -1028,6 +1028,7 @@ contains
           do nn=1,nDom
              call setPointers_d(nn, 1, sps)
              call applyAllBC_block_b(.True.)
+             call applyAllBC_block(.true.)
 
              if (equations == RANSequations) then
                 call applyAllTurbBCThisBlock_b(.True.)
@@ -1045,6 +1046,8 @@ contains
           call setPointers_d(nn, 1, sps)
 
           call applyAllBC_block_b(.True.)
+          call applyAllBC_block(.true.)
+
           if (equations == RANSequations) then
              call applyAllTurbBCThisBlock_b(.True.)
              call bcTurbTreatment_b
@@ -1095,14 +1098,13 @@ contains
     use inputDiscretization, only : useBlockettes
     use blockette, only : blocketteResCore, blockResCore
     use flowUtils, only : computeLamViscosity, computePressureSimple
-    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input Arguments:
     integer(kind=intType), intent(in) :: nn, sps
 
     ! Working Variables
-    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
+    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
     real(kind=realType) ::  pLocal
     logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
     call computePressureSimple(.True.)
@@ -1130,9 +1132,8 @@ contains
     else
        call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
     end if blockettes
-    do iRegion=1, nActuatorRegions
-       call sourceTerms_block(nn, .True., iRegion, pLocal)
-    end do
+
+    call sourceTerms_block(nn, .True., pLocal)
     call resscale
 
   end subroutine block_res_state
@@ -1161,14 +1162,13 @@ contains
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
     use residuals_d, only: sourceterms_block_d
-    use actuatorRegionData, only : nActuatorRegions
     implicit none
 
     ! Input Arguments:
     integer(kind=intType), intent(in) :: nn, sps
 
     ! Working Variables
-    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
+    integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj
     real(kind=realType) :: dummyReal, dummyReald
 
     call computePressureSimple_d(.True.)
@@ -1189,9 +1189,7 @@ contains
     dwd = zero
 
     ! Compute any source terms
-    do iRegion=1, nActuatorRegions
-       call sourceTerms_block_d(nn, .True. , iRegion, dummyReal, dummyReald)
-    end do
+    call sourceTerms_block_d(nn, .True. , dummyReal, dummyReald)
 
     !Compute turbulence residual for RANS equations
     if( equations == RANSEquations) then
