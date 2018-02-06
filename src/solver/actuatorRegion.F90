@@ -64,7 +64,7 @@ contains
     ! to assume that the thrust is going to be in the direction of the
     ! axis.
     axisVec = axis2-axis1
-    axisVecNorm = (axisVec(1)**2 + axisvec(2)**2 + axisVec(3)**2)
+    axisVecNorm = sqrt((axisVec(1)**2 + axisvec(2)**2 + axisVec(3)**2))
     if (axisVecNorm < 1e-12) then 
        print *,"Error: Axis cannot be determined by the supplied points. They are too close"
        stop
