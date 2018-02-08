@@ -4793,7 +4793,7 @@ class ADFLOW(AeroSolver):
             iDV[key] = iDV[key] - 1
 
             # Extra DVs for the Boundary condition variables
-        BCDV = ['pressure', 'pressurestagnation', 'temperaturestagnation']
+        BCDV = ['pressure', 'pressurestagnation', 'temperaturestagnation', 'thrust']
 
         # This is ADflow's internal mapping for cost functions
         adflowCostFunctions = {
