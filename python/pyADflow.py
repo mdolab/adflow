@@ -200,6 +200,8 @@ class ADFLOW(AeroSolver):
         self.mesh = None
         self.DVGeo = None
         self.zipperCreated = False
+        self.userSurfaceIntegrationsFinalized = False
+
         # Matrix Setup Flag
         self.adjointSetup = False
 
@@ -2180,6 +2182,9 @@ class ADFLOW(AeroSolver):
 
         """
 
+        # Check that the user surface integrations are interpolated
+        self._finalizeUserIntegrationSurfaces()
+
         # Extract the familiy list we want to use for evaluation. We
         # explictly have just the one group in the call.
         famLists = self._expandGroupNames([groupName])
@@ -2803,8 +2808,9 @@ class ADFLOW(AeroSolver):
 
         """
 
-        # Create the zipper mesh if not done so
-        self._createZipperMesh()
+        # Create the zipper mesh if we need it
+        if includeZipper:
+            self._createZipperMesh()
 
         if groupName is None:
             groupName = self.allWallsGroup
@@ -4954,7 +4960,7 @@ class ADFLOW(AeroSolver):
     def _createZipperMesh(self):
         """Internal routine for generating the zipper mesh. This operation is
         postposted as long as possible and now it cannot wait any longer."""
-
+        
         # Verify if we already have previous failures, such as negative volumes
         self.adflow.killsignals.routinefailed = self.comm.allreduce(bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
 
@@ -4981,10 +4987,14 @@ class ADFLOW(AeroSolver):
 
         self.adflow.zippermesh.createzippermesh(zipperFamList)
         self.zipperCreated = True
-
-        # We can also do the surface plane integrations here if necessary
-        self.adflow.usersurfaceintegrations.interpolateintegrationsurfaces()
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
+
+    def _finalizeUserIntegrationSurfaces(self):
+
+        if not self.userSurfaceIntegrationsFinalized:
+            # We can also do the surface plane integrations here if necessary
+            self.adflow.usersurfaceintegrations.interpolateintegrationsurfaces()
+            self.userSurfaceIntegrationsFinalized = True
 
     def _expandString(self, s):
         """Expand a supplied string 's' to be of the constants.maxstring
