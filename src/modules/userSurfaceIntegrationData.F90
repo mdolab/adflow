@@ -27,6 +27,7 @@ module userSurfaceIntegrationData
 
      character(len=maxStringLen) :: famName
      integer(Kind=intType) :: famID
+     logical :: isInflow
      real(kind=realType), dimension(:, :), allocatable :: pts
      integer(kind=intType), dimension(:, :), allocatable :: conn
 

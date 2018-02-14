@@ -552,7 +552,7 @@ class ADFLOW(AeroSolver):
 
         self.nSlice += N
 
-    def addIntegrationSurface(self, fileName, familyName):
+    def addIntegrationSurface(self, fileName, familyName, isInflow=True):
         """Add a specific integration surface for performing massflow-like
         computations.
 
@@ -567,6 +567,10 @@ class ADFLOW(AeroSolver):
            User supplied name to use for this family. It should not
            already be a name that is defined by the surfaces of the
            CGNS file.
+        
+        isInflow : bool
+           Flag to treat momentum forces as if it is an inflow or outflow
+           face. Default is True
         """
 
         # Check that the family name is not already defined:
@@ -589,7 +593,7 @@ class ADFLOW(AeroSolver):
 
         pts, conn = self._readPlot3DSurfFile(fileName)
         self.adflow.usersurfaceintegrations.addintegrationsurface(
-            pts.T, conn.T, familyName, famID)
+            pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(self, fileName, axis1, axis2, familyName,
                           thrust=0.0, torque=0.0):
