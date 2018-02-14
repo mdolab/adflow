@@ -120,7 +120,7 @@ contains
              ! The family array is all the same value:
              fams = surf%famID
              ! Perform the actual integration
-             call flowIntegrationZipper(.True., surf%conn, fams, vars, localValues, famList, sps, ptValid)
+             call flowIntegrationZipper(surf%isInflow, surf%conn, fams, vars, localValues, famList, sps, ptValid)
              deallocate(ptValid, vars, fams)
           end if
           deallocate(recvBuffer1, recvBuffer2)
@@ -265,7 +265,7 @@ contains
              fams = surf%famID
 
              ! Perform the actual integration
-             call flowIntegrationZipper_d(.True., surf%conn, fams, vars, varsd, localValues, localValuesd, &
+             call flowIntegrationZipper_d(surf%isInflow, surf%conn, fams, vars, varsd, localValues, localValuesd, &
                   famList, sps, ptValid)
              deallocate(ptValid, vars, varsd, fams)
           end if
@@ -412,7 +412,7 @@ contains
              fams = surf%famID
 
              ! Perform the actual (reverse) integration
-             call flowIntegrationZipper_b(.True., surf%conn, fams, vars, varsd, localValues, localValuesd, &
+             call flowIntegrationZipper_b(surf%isInflow, surf%conn, fams, vars, varsd, localValues, localValuesd, &
                   famList, sps, ptValid)
 
              ! Accumulate into the receive buffers
@@ -449,7 +449,7 @@ contains
 
 #endif
 
-  subroutine addIntegrationSurface(pts, conn, famName, famID, nPts, nConn)
+  subroutine addIntegrationSurface(pts, conn, famName, famID, isInflow, nPts, nConn)
     ! Add a user-supplied integration surface.
 
     use communication, only : myID
@@ -461,6 +461,7 @@ contains
     real(kind=realType), dimension(3, nPts), intent(in) :: pts
     integer(kind=intType), dimension(3, nConn), intent(in) :: conn
     integer(kind=intType), intent(in) :: nPts, nConn, famID
+    logical, intent(in) :: isInflow
     character(len=*) :: famName
     type(userIntSurf), pointer :: surf
 
@@ -482,6 +483,7 @@ contains
     end if
     surf%famName = famName
     surf%famID = famID
+    surf%isInflow = isInflow
   end subroutine addIntegrationSurface
 
   subroutine buildVolumeADTs(oBlocks, useDual)
