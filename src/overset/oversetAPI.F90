@@ -13,7 +13,7 @@ contains
          nProc
     use blockPointers, only : flowDoms, nDom, fringeType, fringes, &
          il, jl, kl, ie, je, ke, x, nx, ny, nz, iBlank, globalCell, ib, jb, kb, nDonors, &
-         vol, fringePtr, forcedRecv, status, nbkglobal
+         vol, fringePtr, forcedRecv, status, nbkglobal, si, sj, sk
     use oversetData, only : CSRMatrix, oversetBlock, oversetFringe, &
          oversetWall, nClusters, cumDomProc, localWallFringes, nDomTotal, &
          nLocalWallFringe, clusterWalls, oversetPresent, nDomProc, &
@@ -22,8 +22,9 @@ contains
     use stencils, only : N_visc_drdw, visc_drdw_stencil
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adtBuild, only : destroySerialQuad
-    use inputOverset, onlY : useoversetLoadBalance, overlapFactor, nRefine, backgroundVolScale
-    use utils, only : EChk, setPointers, setBufferSizes, terminate, returnFail
+    use inputOverset, onlY : useoversetLoadBalance, overlapFactor, nRefine, backgroundVolScale, &
+         useOversetWallScaling
+    use utils, only : EChk, setPointers, setBufferSizes, terminate, returnFail, mynorm2
     use surfaceFamilies, only : BCFamGroups
     use kdtree2_module, onlY : kdtree2_create, kdtree2destroy
     use oversetInitialization, only : initializeOBlock, initializeOFringes, initializeStatus, &
@@ -54,7 +55,7 @@ contains
     integer(kind=intType) :: nn, mm, n, ierr, iProc, iRefine
     integer(kind=intType) :: iWork, nWork, nLocalFringe, totalOrphans
     integer(kind=intType) :: myBlock, myINdex, dIndex, donorBlock, donorProc, absDBlock
-    real(kind=realType) :: startTime, endTime, curQuality
+    real(kind=realType) :: startTime, endTime, curQuality, aspect(3), fact
     logical :: localChanged, globalChanged, wallsPresent
 
     type(CSRMatrix), pointer :: overlap
@@ -843,7 +844,18 @@ contains
                       ! This is my original quality, accounting for
                       ! the overlap factor.
                       if (wallsPresent) then
-                         curQuality = vol(i, j, k)**third * overlapFactor
+                         aspect = one
+                         if (useOversetWallScaling) then
+                            if (CGNSDoms(nbkGlobal)%viscousDir(1)) &
+                                 aspect(1) = (half*(mynorm2(si(i-1, j, k, :)) + mynorm2(si(i, j, k, :)))) / vol (i, j, k)
+                            if (CGNSDoms(nbkGlobal)%viscousDir(2)) &
+                                 aspect(2) = (half*(mynorm2(sj(i, j-1, k, :)) + mynorm2(sj(i, j, k, :)))) / vol (i, j, k)
+                            if (CGNSDoms(nbkGlobal)%viscousDir(3)) &
+                                 aspect(3) = (half*(mynorm2(sk(i, j, k-1, :)) + mynorm2(sk(i, j, k, :)))) / vol (i, j, k)
+                         end if
+                         fact = min(aspect(1)*aspect(2)*aspect(3), 100.0_realType)
+
+                         curQuality = (vol(i, j, k)**third/fact) * overlapFactor
                       else
                          curQuality = (backGroundVolScale*vol(i, j, k))**third * overlapFactor
                       end if
@@ -2000,6 +2012,37 @@ contains
 
     end subroutine clusterSearch
   end subroutine determineClusters
+
+  subroutine determineViscousDirs()
+
+    ! Set the viscousDir flags in the CGNS grid based on the CGNS grid
+    ! boundary conditions
+    use constants
+    use cgnsGrid, only : CGNSDoms, cgnsNDom
+    use communication, only : myid
+    implicit none
+
+    ! Working variables
+    integer(kind=intType) :: i, j, bc
+
+    do i=1, cgnsNDom
+       do j=1, cgnsDoms(i)%nBocos
+          bc = cgnsDoms(i)%bocoInfo(j)%BCType
+
+          if (bc == NSWallAdiabatic .or. bc == NSWallIsoThermal .or. bc == EulerWall) then
+
+             if (cgnsDoms(i)%bocoInfo(j)%iBeg == cgnsDoms(i)%bocoInfo(j)%iEnd) &
+                  cgnsDoms(i)%viscousDir(1) = .True.
+
+             if (cgnsDoms(i)%bocoInfo(j)%jBeg == cgnsDoms(i)%bocoInfo(j)%jEnd) &
+                  cgnsDoms(i)%viscousDir(2) = .True.
+
+             if (cgnsDoms(i)%bocoInfo(j)%kBeg == cgnsDoms(i)%bocoInfo(j)%kEnd) &
+                  cgnsDoms(i)%viscousDir(3) = .True.
+          end if
+       end do
+    end do
+  end subroutine determineViscousDirs
 
   subroutine setExplicitHoleCut(flag)
 
