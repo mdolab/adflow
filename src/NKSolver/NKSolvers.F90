@@ -1831,6 +1831,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
+    use inputDiscretization, only : approxSA
     use iteration, only : totalR0
     use utils, only : EChk, setPointers
     use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
@@ -1853,6 +1854,7 @@ contains
     useObjective = .False.
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = .False.
+    approxSA = .True.
 
     ! Create the preconditoner matrix
     call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
@@ -1860,6 +1862,7 @@ contains
 
     ! Reset saved value
     viscPC = tmp
+    approxSA = .False.
 
     ! Add the contribution from the time step term
 
@@ -2040,6 +2043,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
+    use inputDiscretization, only : approxSA
     use iteration, only : totalR0
     use utils, only : EChk, setPointers
     use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
@@ -2062,6 +2066,7 @@ contains
     useObjective = .False.
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = .False.
+    approxSA = .True.
 
     ! Create the preconditoner matrix
     call setupStateResidualMatrix(dRdwPreTurb, useAD, usePC, useTranspose, &
@@ -2069,6 +2074,7 @@ contains
 
     ! Reset saved value
     viscPC = tmp
+    approxSA = .False.
 
     ! Add the contribution from the time step term
 
