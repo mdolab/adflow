@@ -4328,7 +4328,6 @@ end subroutine cross_prod
           ! Added dwALE, fwALE
           deallocate( &
                flowDoms(nn,1,sps)%dw,    flowDoms(nn,1,sps)%fw,    &
-               flowDoms(nn,1,sps)%dwALE, flowDoms(nn,1,sps)%fwALE, &
                flowDoms(nn,1,sps)%dtl,   flowDoms(nn,1,sps)%radI,  &
                flowDoms(nn,1,sps)%radJ,  flowDoms(nn,1,sps)%radK,  &
                flowDoms(nn,1,sps)%shockSensor, &
@@ -4337,6 +4336,17 @@ end subroutine cross_prod
                call terminate("releaseMemoryPart1", &
                "Deallocation error for dw, fw, dwALE, fwALE, dtl and &
                &spectral radii.")
+
+          ! Extra variables for ALE
+          if (equationMode == unSteady .and. useALE) then
+             deallocate( &
+                  flowDoms(nn,1,sps)%dwALE, &
+                  flowDoms(nn,1,sps)%fwALE, &
+                  stat=ierr)
+             if(ierr /= 0)                              &
+                  call terminate("releaseMemoryPart1", &
+                  "Deallocation error for dwALE, fwALE.")
+           end if
 
           ! Nullify the pointers, such that no attempt is made to
           ! release the memory again.
@@ -4416,9 +4426,9 @@ end subroutine cross_prod
     end if
 
     deallocate(cgnsDomsd)
-    deallocate(famIDsDomainInterfaces, &
-         bcIDsDomainInterfaces,  &
-         famIDsSliding)
+    ! deallocate(famIDsDomainInterfaces, &
+    !      bcIDsDomainInterfaces,  &
+    !      famIDsSliding)
     deallocate(sections)
 
     do j=1, size(BCFamExchange, 2)
@@ -4790,6 +4800,9 @@ end subroutine cross_prod
     !       given block.
     !
     use constants
+    use inputUnsteady
+    use inputPhysics
+    use iteration
     use block, only : viscSubfaceType, BCDataType, flowDoms
     implicit none
     !
@@ -5469,55 +5482,57 @@ end subroutine cross_prod
          deallocate(flowDoms(nn,level,sps)%globalNode, stat=ierr)
     if(ierr /= 0) deallocationFailure = .true.
 
+    if (equationMode == unSteady .and. useALE) then
 
-    ! Added by HDN
-    if( associated(flowDoms(nn,level,sps)%xALE) ) &
-         deallocate(flowDoms(nn,level,sps)%xALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      ! Added by HDN
+      if( associated(flowDoms(nn,level,sps)%xALE) ) &
+           deallocate(flowDoms(nn,level,sps)%xALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sIALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sIALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sIALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sIALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sJALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sJALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sJALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sJALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sKALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sKALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sKALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sKALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sVeloIALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sVeloIALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sVeloIALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sVeloIALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sVeloJALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sVeloJALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sVeloJALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sVeloJALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sVeloKALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sVeloKALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sVeloKALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sVeloKALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sFaceIALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sFaceIALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sFaceIALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sFaceIALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sFaceJALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sFaceJALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sFaceJALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sFaceJALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sFaceKALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sFaceKALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sFaceKALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sFaceKALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%dwALE) ) &
-         deallocate(flowDoms(nn,level,sps)%dwALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
-
-    if( associated(flowDoms(nn,level,sps)%fwALE) ) &
-         deallocate(flowDoms(nn,level,sps)%fwALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      ! if( associated(flowDoms(nn,level,sps)%dwALE) ) &
+      !      deallocate(flowDoms(nn,level,sps)%dwALE, stat=ierr)
+      ! if(ierr /= 0) deallocationFailure = .true.
+      !
+      ! if( associated(flowDoms(nn,level,sps)%fwALE) ) &
+      !      deallocate(flowDoms(nn,level,sps)%fwALE, stat=ierr)
+      ! if(ierr /= 0) deallocationFailure = .true.
+    end if
 
     ! Check for errors in the deallocation.
 
