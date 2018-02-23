@@ -1203,16 +1203,16 @@ contains
     integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
     character*(*) :: file
     integer(kind=intType) :: ierr, line
-    if (blockSize > 1) then
+    ! if (blockSize > 1) then
        call MatCreateBAIJ(ADFLOW_COMM_WORLD, blockSize, &
             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-    else
-       call MatCreateAIJ(ADFLOW_COMM_WORLD,&
-            m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-            0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+    ! else
+       ! call MatCreateAIJ(ADFLOW_COMM_WORLD,&
+            ! m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+            ! 0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
        call EChk(ierr, file, line)
-    end if
+    ! end if
 
     ! Warning: The array values is logically two-dimensional,
     ! containing the values that are to be inserted. By default the
