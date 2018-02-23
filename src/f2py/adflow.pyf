@@ -44,6 +44,12 @@ python module libadflow
            real(kind=realtype) dimension(3,n),intent(out),depend(n) :: xcen
          end subroutine getcellcenters
 
+         subroutine releasememorypart1
+         end subroutine releasememorypart1
+
+         subroutine releasememorypart2
+         end subroutine releasememorypart2
+
        end module utils
 
        module walldistance
