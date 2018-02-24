@@ -1002,7 +1002,12 @@ class ADFLOW(AeroSolver):
 
         t2 = time.time()
         solTime = t2 - t1
-        self.curAP.solTime = solTime
+        self.curAP.solTimeInter = numpy.real(self.adflow.iteration.timeinter)
+        self.curAP.solTimeFin = solTime
+        self.curAP.liIterInter = numpy.int(self.adflow.iteration.liiterinter)
+        self.curAP.liIterFin = numpy.int(self.adflow.iteration.liiterfin)
+        self.curAP.nlIterInter = numpy.int(self.adflow.iteration.nliterinter)
+        self.curAP.nlIterFin = numpy.int(self.adflow.iteration.nliterfin)
 
         # Post-Processing
         # --------------------------------------------------------------
