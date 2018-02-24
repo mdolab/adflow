@@ -1155,6 +1155,11 @@ python module libadflow
          real(kind=realtype) :: totalr0
          real(kind=realtype) :: totalrstart
          real(kind=realtype) :: totalrfinal
+         real(kind=realtype) :: timeinter
+         integer(kind=inttype) :: liiterinter
+         integer(kind=inttype) :: liiterfin
+         integer(kind=inttype) :: nliterinter
+         integer(kind=inttype) :: nliterfin
        end module iteration
 
        module monitor ! in :adflow:../../modules/monitor.f90
