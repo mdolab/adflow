@@ -552,7 +552,8 @@ contains
     ! convergnce check can't do anything either. By multiplying by
     ! 0.5, we make sure that the linear solver actually has to do
     ! *something* and not just kick out immediately.
-    atol = totalR0*L2Conv*0.01_realType
+    ! atol = totalR0*L2Conv*0.01_realType
+    atol = totalR0*L2Conv*0.5_realType
     maxIt = NK_subspace
 
     call KSPSetTolerances(NK_KSP, real(rtol), &
@@ -3460,7 +3461,8 @@ contains
         if ((linResMonitorTurb .ge. ANK_rtol .and. &
             totalR > ANK_secondOrdSwitchTol*totalR0 .and.&
             linResOldTurb .le. ANK_rtol) &
-            .or. LSFailed) then
+            !.or. LSFailed) then
+            .or. lambdaTurb .le. ANK_stepMin) then
 
             ! We should reform the PC since it took longer than we want,
             ! or we need to adjust the CFL because the last update was bad,
@@ -3853,7 +3855,8 @@ contains
     if ((linResMonitor .ge. ANK_rtol .and. &
          totalR > ANK_secondOrdSwitchTol*totalR0 .and.&
          linResOld .le. ANK_rtol) &
-         .or. LSFailed) then
+         !.or. LSFailed) then
+         .or. lambda .le. ANK_stepMin) then
        ! We should reform the PC since it took longer than we want,
        ! or we need to adjust the CFL because the last update was bad,
        ! or convergence since the last PC update was good enough and we
