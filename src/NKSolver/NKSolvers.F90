@@ -2703,6 +2703,7 @@ contains
           ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
           totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
           linResOld = zero
+          ANK_iter = 0
        end if
     else
        ANK_iter = ANK_iter + 1
