@@ -1618,7 +1618,8 @@ module ANKSolver
   integer(kind=intType) :: nState
   real(kind=alwaysRealType) :: totalR_old, totalR_pcUpdate ! for recording the previous residual
   real(kind=alwaysRealType) :: rtolLast, linResOld ! for recording the previous relativel tolerance for Eisenstat-Walker
-  logical :: updateCFL, ANK_useDissApprox
+  logical :: updateCFL, ANK_useDissApprox, ANK_getCond
+  real(kind=realType) :: ANK_condSolveTol
 
   ! Turb KSP related modifications
   logical :: ANK_coupled=.False.
@@ -1725,6 +1726,11 @@ contains
        call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       if (ANK_getCond) then
+          call KSPSetComputeSingularValues(ANK_KSP, PETSC_TRUE, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       end if
+
        ! Set operators for the solver
        if (ANK_useMatrixFree) then
            ! Matrix free drdw
@@ -1806,6 +1812,11 @@ contains
            !  Create the linear solver context
            call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSPTurb, ierr)
            call EChk(ierr, __FILE__, __LINE__)
+
+           if (ANK_getCond) then
+              call KSPSetComputeSingularValues(ANK_KSPTurb, PETSC_TRUE, ierr)
+              call EChk(ierr, __FILE__, __LINE__)
+           end if
 
            ! Set operators for the solver
            if (ANK_useMatrixFree) then
@@ -3247,11 +3258,11 @@ contains
     implicit none
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval
+    integer(kind=intType) :: ierr, maxIt, kspIterations, kspIterationsNew, nn, sps, reason, nHist, iter, feval
     integer(kind=intType) :: i,j,k,n
-    real(kind=realType) :: atol, val, v2, factK, gm1
+    real(kind=realType) :: atol, val, v2, factK, gm1, emin, emax
     real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
-    real(kind=alwaysRealType) :: resHist(ank_maxIter+1)
+    real(kind=alwaysRealType) :: resHist(ank_maxIter+1), resHistNew(ank_maxIter+1)
     real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old
     real(kind=alwaysRealType) :: linResMonitorTurb, totalRTurb
     logical :: secondOrdSave, correctForK, LSFailed
@@ -3340,6 +3351,41 @@ contains
             ! The convergence check will get the nan
         else
             call EChk(ierr, __FILE__, __LINE__)
+        end if
+
+        ! Get the number of iterations from the KSP solver
+        call KSPGetIterationNumber(ANK_KSPTurb, kspIterations, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call KSPGetConvergedReason(ANK_KSPTurb, reason, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        if (ANK_getCond) then
+          call KSPSetTolerances(ANK_KSPTurb, ANK_condSolveTol, &
+               real(ANK_condSolveTol), real(ANK_divTol), ank_maxIter, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          call KSPSetResidualHistory(ANK_KSPTurb, resHistNew, ank_maxIter+1, PETSC_TRUE, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          ! Actually do the Linear Krylov Solve
+          call KSPSolve(ANK_KSPTurb, rVecTurb, rVecTurb, ierr)
+
+          ! DON'T just check the error. We want to catch error code 72
+          ! which is a floating point error. This is ok, we just reset and
+          ! keep going
+          if (ierr == 72) then
+             ! The convergence check will get the nan
+          else
+             call EChk(ierr, __FILE__, __LINE__)
+          end if
+
+          ! Get the number of iterations from the KSP solver
+          call KSPGetIterationNumber(ANK_KSPTurb, kspIterationsNew, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          call KSPComputeExtremeSingularValues(ANK_KSPTurb, emax, emin, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
         end if
 
         ! Return previously changed variables back to normal, VERY IMPORTANT
@@ -3449,14 +3495,10 @@ contains
 
         call setRvecANKTurb(rVecTurb)
 
-        ! Get the number of iterations from the KSP solver
-        call KSPGetIterationNumber(ANK_KSPTurb, kspIterations, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
-        call KSPGetConvergedReason(ANK_KSPTurb, reason, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
         linResMonitorTurb = resHist(kspIterations+1)/resHist(1)
+
+        if (myid == zero .and. ANK_getCond) &
+          write(*,*)"Turb: linres, max, min, cond", resHistNew(kspIterationsNew+1)/resHistNew(1), emax, emin, emax/emin
 
         if ((linResMonitorTurb .ge. ANK_rtol .and. &
             totalR > ANK_secondOrdSwitchTol*totalR0 .and.&
@@ -3521,11 +3563,12 @@ contains
     logical, intent(in) :: firstCall
 
     ! Working Variables
-    integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval
+    integer(kind=intType) :: ierr, maxIt, kspIterations, kspIterationsNew, nn, sps, reason, nHist, iter, feval
     integer(kind=intType) :: i,j,k
-    real(kind=realType) :: atol, val, v2, factK, gm1
+    real(kind=realType) :: atol, val, v2, factK, gm1, emax, emin
     real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
     real(kind=alwaysRealType) :: resHist(ank_maxIter+1)
+    real(kind=alwaysRealType) :: resHistNew(401)
     real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old
     logical :: secondOrdSave, correctForK, LSFailed
 
@@ -3704,6 +3747,41 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
     end if
 
+    ! Get the number of iterations from the KSP solver
+    call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call KSPGetConvergedReason(ANK_KSP, reason, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    if (ANK_getCond) then
+      call KSPSetTolerances(ANK_KSP, ANK_condSolveTol, &
+           real(ANK_condSolveTol), real(ANK_divTol), ank_maxIter, ierr)
+      call EChk(ierr, __FILE__, __LINE__)
+
+      call KSPSetResidualHistory(ANK_KSP, resHistNew, ank_maxIter+1, PETSC_TRUE, ierr)
+      call EChk(ierr, __FILE__, __LINE__)
+
+      ! Actually do the Linear Krylov Solve
+      call KSPSolve(ANK_KSP, rVec, rVec, ierr)
+
+      ! DON'T just check the error. We want to catch error code 72
+      ! which is a floating point error. This is ok, we just reset and
+      ! keep going
+      if (ierr == 72) then
+         ! The convergence check will get the nan
+      else
+         call EChk(ierr, __FILE__, __LINE__)
+      end if
+
+      ! Get the number of iterations from the KSP solver
+      call KSPGetIterationNumber(ANK_KSP, kspIterationsNew, ierr)
+      call EChk(ierr, __FILE__, __LINE__)
+
+      call KSPComputeExtremeSingularValues(ANK_KSP, emax, emin, ierr)
+      call EChk(ierr, __FILE__, __LINE__)
+    end if
+
     ! Return previously changed variables back to normal, VERY IMPORTANT
     if (totalR > ANK_secondOrdSwitchTol*totalR0) then
        ! Set ANK_useDissApprox back to False to go back to using actual flux routines
@@ -3843,14 +3921,10 @@ contains
        call setRVecANK(rVec)
     end if
 
-    ! Get the number of iterations from the KSP solver
-    call KSPGetIterationNumber(ANK_KSP, kspIterations, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
-    call KSPGetConvergedReason(ANK_KSP, reason, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
     linResMonitor = resHist(kspIterations+1)/resHist(1)
+
+    if (myid == zero .and. ANK_getCond) &
+      write(*,*)"Flow: linres, max, min, cond", resHistNew(kspIterationsNew+1)/resHistNew(1), emax, emin, emax/emin
 
     if ((linResMonitor .ge. ANK_rtol .and. &
          totalR > ANK_secondOrdSwitchTol*totalR0 .and.&
