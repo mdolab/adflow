@@ -567,7 +567,7 @@ class ADFLOW(AeroSolver):
            User supplied name to use for this family. It should not
            already be a name that is defined by the surfaces of the
            CGNS file.
-        
+
         isInflow : bool
            Flag to treat momentum forces as if it is an inflow or outflow
            face. Default is True
@@ -1381,6 +1381,8 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem)
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
+        else:
+            alpha0 = aeroProblem.alpha
 
         # We can stop here if we have failures in the mesh
         if self.adflow.killsignals.fatalfail:
@@ -4964,7 +4966,7 @@ class ADFLOW(AeroSolver):
     def _createZipperMesh(self):
         """Internal routine for generating the zipper mesh. This operation is
         postposted as long as possible and now it cannot wait any longer."""
-        
+
         # Verify if we already have previous failures, such as negative volumes
         self.adflow.killsignals.routinefailed = self.comm.allreduce(bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
 
