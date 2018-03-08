@@ -3504,7 +3504,8 @@ contains
             totalR > ANK_secondOrdSwitchTol*totalR0 .and.&
             linResOldTurb .le. ANK_rtol) &
             !.or. LSFailed) then
-            .or. lambdaTurb .le. ANK_stepMin) then
+!            .or. lambdaTurb .le. ANK_stepMin) then
+            .or. lambdaTurb .eq. zero) then
 
             ! We should reform the PC since it took longer than we want,
             ! or we need to adjust the CFL because the last update was bad,
@@ -3930,7 +3931,8 @@ contains
          totalR > ANK_secondOrdSwitchTol*totalR0 .and.&
          linResOld .le. ANK_rtol) &
          !.or. LSFailed) then
-         .or. lambda .le. ANK_stepMin) then
+         !.or. lambda .le. ANK_stepMin) then
+         .or. lambda .eq. zero) then
        ! We should reform the PC since it took longer than we want,
        ! or we need to adjust the CFL because the last update was bad,
        ! or convergence since the last PC update was good enough and we
