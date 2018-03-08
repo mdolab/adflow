@@ -221,7 +221,7 @@ zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas
                                         (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues)\
 \
 surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > \
-	                            (funcValues) \
+	                            (liftDirection, dragDirection, pRef, rhoRef, machCoef, funcValues) \
 \
 oversetUtilities%newtonUpdate(xCen, blk, frac) > \
 	               (blk, frac)\
