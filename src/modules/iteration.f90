@@ -126,5 +126,5 @@
        ! Variables for monitoring the residuals
        real(kind=realType) :: totalR0, totalRStart, totalRFinal, totalR
        real(kind=realType) :: rhoRes0, rhoResStart, rhoResFinal, rhoRes
-
+       real(kind=realType) :: ordersConverged=16.0_realType
        end module iteration
