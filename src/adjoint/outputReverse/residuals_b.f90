@@ -323,6 +323,8 @@ contains
     use actuatorregiondata
     use blockpointers, only : volref, dw, dwd, w, wd
     use flowvarrefstate, only : pref, prefd, uref, urefd
+    use communication
+    use iteration, only : ordersconverged
     implicit none
 ! input
     integer(kind=inttype), intent(in) :: nn, iregion
@@ -331,14 +333,28 @@ contains
     real(kind=realtype) :: plocald
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
-    real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3), redim
+    real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3), redim, factor, &
+&   ostart, oend
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, factd(3), redimd
     real(kind=realtype) :: tempd(3)
     real(kind=realtype) :: tempd0
     redim = pref*uref
+! compute the relaxation factor based on the ordersconverged
+! how far we are into the ramp:
+    if (ordersconverged .lt. actuatorregions(iregion)%relaxstart) then
+      factor = zero
+    else if (ordersconverged .gt. actuatorregions(iregion)%relaxend) &
+&   then
+      factor = one
+    else
+! in between
+      ostart = actuatorregions(iregion)%relaxstart
+      oend = actuatorregions(iregion)%relaxend
+      factor = (ordersconverged-ostart)/(oend-ostart)
+    end if
 ! compute the constant force factor
-    fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
-&     pref
+    fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
+&     volume/pref
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
@@ -379,11 +395,12 @@ contains
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
       factd = factd + volref(i, j, k)*ftmpd
     end do
-    tempd = factd/(actuatorregions(iregion)%volume*pref)
+    tempd = factor*factd/(actuatorregions(iregion)%volume*pref)
     actuatorregionsd(iregion)%f = actuatorregionsd(iregion)%f + tempd
-    prefd = prefd + uref*redimd + actuatorregions(iregion)%volume*sum(-(&
+    prefd = prefd + actuatorregions(iregion)%volume*sum(-(&
 &     actuatorregions(iregion)%f*tempd/(actuatorregions(iregion)%volume*&
 &     pref)))
+    prefd = prefd + uref*redimd
     urefd = urefd + pref*redimd
   end subroutine sourceterms_block_b
   subroutine sourceterms_block(nn, res, iregion, plocal)
@@ -393,6 +410,8 @@ contains
     use actuatorregiondata
     use blockpointers, only : volref, dw, w
     use flowvarrefstate, only : pref, uref
+    use communication
+    use iteration, only : ordersconverged
     implicit none
 ! input
     integer(kind=inttype), intent(in) :: nn, iregion
@@ -400,11 +419,25 @@ contains
     real(kind=realtype), intent(inout) :: plocal
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
-    real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3), redim
+    real(kind=realtype) :: ftmp(3), vx, vy, vz, fact(3), redim, factor, &
+&   ostart, oend
     redim = pref*uref
+! compute the relaxation factor based on the ordersconverged
+! how far we are into the ramp:
+    if (ordersconverged .lt. actuatorregions(iregion)%relaxstart) then
+      factor = zero
+    else if (ordersconverged .gt. actuatorregions(iregion)%relaxend) &
+&   then
+      factor = one
+    else
+! in between
+      ostart = actuatorregions(iregion)%relaxstart
+      oend = actuatorregions(iregion)%relaxend
+      factor = (ordersconverged-ostart)/(oend-ostart)
+    end if
 ! compute the constant force factor
-    fact = actuatorregions(iregion)%f/actuatorregions(iregion)%volume/&
-&     pref
+    fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
+&     volume/pref
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)

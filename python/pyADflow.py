@@ -596,7 +596,8 @@ class ADFLOW(AeroSolver):
             pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(self, fileName, axis1, axis2, familyName,
-                          thrust=0.0, torque=0.0):
+                          thrust=0.0, torque=0.0, relaxStart=None,
+                          relaxEnd=None):
         """Add an actuator disk zone defined by the (closed) supplied
         in the plot3d file "fileName". Axis1 and Axis2 defines the
         physical extent of the region overwhich to apply the ramp
@@ -655,10 +656,23 @@ class ADFLOW(AeroSolver):
         famID = maxInd + 1
         self.families[familyName.lower()] = [famID]
 
+        if relaxStart is None and relaxEnd is None:
+            # No relaxation at all
+            relaxStart = -1.0
+            relaxEnd = -1.0
+
+        if relaxStart is None and relaxEnd is not None:
+            # Start at 0 orders if start is not given
+            relaxStart = 0.0
+            
+        if relaxEnd is None and relaxStart is not None:
+            raise Error("relaxEnd must be given is relaxStart is specified")
+
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque)
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, 
+            relaxStart, relaxEnd)
 
 
     def addUserFunction(self, funcName, functions, callBack):
