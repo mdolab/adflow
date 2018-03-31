@@ -99,7 +99,9 @@ ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
 
-def setupADFlow(solver): 
+def setup_cb(comm): 
+
+    solver = ADFLOW(options=options, comm=comm, debug=True)
 
     solver.addIntegrationSurface('../inputFiles/integration_plane_viscous.fmt', 'viscous_plane')
 
@@ -124,14 +126,14 @@ def setupADFlow(solver):
     solver.addFunction('mavgps', 'upstream', name="mavgps_up")
     solver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
 
-
     solver.setOption('ncycles',1000)
+
+    return solver, None, None, None
+
  
 if __name__ == "__main__": 
 
-    CFDSolver = ADFLOW(options=options, debug=True)
-
-    setupADFlow(CFDSolver)
+    CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
 
     CFDSolver(ap)
 

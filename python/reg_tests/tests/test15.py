@@ -79,11 +79,16 @@ ap = AeroProblem(name=name, alpha=alpha_m,  mach=M, machRef=M, reynolds=4800000.
                  degreePol=0,coefPol=[0.0],degreeFourier=1,omegaFourier=omega,
                  cosCoefFourier=[0.0,0.0],sinCoefFourier=[deltaAlpha])
 
-if __name__ == "__main__":
-
-    CFDSolver = ADFLOW(options=options)
+def setup_cb(comm): 
+    CFDSolver = ADFLOW(options=options, comm=comm)
     CFDSolver.addSlices('z',[0.5])
     CFDSolver(ap)
+
+    return CFDSolver, None, None, None
+
+if __name__ == "__main__":
+
+    CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
 
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
