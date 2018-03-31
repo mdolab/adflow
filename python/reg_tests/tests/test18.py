@@ -96,10 +96,12 @@ ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
 
-def setupADFlow(solver): 
+def setup_cb(comm): 
     #solver.addIntegrationSurface('integration_plane.fmt', 'coarse_plane')
     #solver.addIntegrationSurface('integration_plane_fine.fmt', 'fine_plane')
     #solver.addIntegrationSurface('integration_plane_viscous.fmt', 'viscous_plane')
+
+    solver = ADFLOW(options=options, comm=comm, debug=True)
 
     solver.addFamilyGroup('upstream',['inlet'])
     solver.addFamilyGroup('downstream',['outlet'])
@@ -124,12 +126,13 @@ def setupADFlow(solver):
 
     solver.setOption('ncycles',1000)
 
+    return solver, None, None, None
+
 
 if __name__ == "__main__": 
      
-    CFDSolver = ADFLOW(options=options, debug=True)
 
-    setupADFlow(CFDSolver)
+    CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
 
     # Check the residual
     res = CFDSolver.getResidual(ap) 
