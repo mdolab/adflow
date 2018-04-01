@@ -63,8 +63,10 @@ class OM_GEOCON_COMP(ExplicitComponent):
             name = args[0]
             tmp[name] = inputs[name]
         
-        self.metadata['dvgeo'].setDesignVars(tmp, updateJacobian)
-        #self.metadata['dvcon'].setDesignVars(tmp)
+        try: 
+            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+        except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
+            self.metadata['dvgeo'].setDesignVars(tmp)
 
     def compute(self, inputs, outputs):
     
