@@ -3,7 +3,6 @@ import numpy as np
 
 from openmdao.api import ExplicitComponent
 
-from openmdao.devtools.memory import diff_mem
 
 from baseclasses import AeroProblem
 from adflow import ADFLOW
@@ -38,7 +37,7 @@ class OM_FUNC_COMP(ExplicitComponent):
     def initialize(self):
         self.metadata.declare('ap', types=AeroProblem,)
         self.metadata.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
-        self.metadata.declare('solver', types=ADFLOW)
+        self.metadata.declare('solver')
 
         # testing flag used for unit-testing to prevent the call to actually solve
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
@@ -120,7 +119,7 @@ class OM_FUNC_COMP(ExplicitComponent):
     def _get_func_name(self, name):
         return '%s_%s' % (self.metadata['ap'].name, name.lower())
     
-    @diff_mem
+    
     def compute(self, inputs, outputs):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
@@ -153,7 +152,7 @@ class OM_FUNC_COMP(ExplicitComponent):
 
         pass
 
-    @diff_mem
+    
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.metadata['solver']
         ap = self.metadata['ap']

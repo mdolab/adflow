@@ -18,16 +18,13 @@ from openmdao.core.analysis_error import AnalysisError
 
 from .om_utils import get_dvs_and_cons
 
-
-from openmdao.devtools.memory import diff_mem
-
 class OM_STATES_COMP(ImplicitComponent):
     """OpenMDAO component that wraps the flow solve"""
 
     def initialize(self):
         self.metadata.declare('ap', types=AeroProblem)
         self.metadata.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
-        self.metadata.declare('solver', types=ADFLOW)
+        self.metadata.declare('solver')
         self.metadata.declare('use_OM_KSP', default=False, types=bool, 
             desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
 
@@ -97,7 +94,7 @@ class OM_STATES_COMP(ImplicitComponent):
     def _set_states(self, outputs):
         self.metadata['solver'].setStates(outputs['states'])
         
-    @diff_mem
+    
     def apply_nonlinear(self, inputs, outputs, residuals):
         
         self._set_ap(inputs)
@@ -107,7 +104,7 @@ class OM_STATES_COMP(ImplicitComponent):
         ap = self.metadata['ap']
         residuals['states'] = self.metadata['solver'].getResidual(ap)
 
-    @diff_mem
+    
     def solve_nonlinear(self, inputs, outputs):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
@@ -120,37 +117,37 @@ class OM_STATES_COMP(ImplicitComponent):
         
             solver(ap)
 
-        if ap.fatalFail:
-            if self.comm.rank == 0:
-                print('###############################################################')
-                print('#Solve Fatal Fail. Analysis Error')
-                print('###############################################################')
-
-            raise AnalysisError('ADFLOW Solver Fatal Fail')
-
-
-        if ap.solveFailed: # the mesh was fine, but it didn't converge
-            if self.comm.rank == 0:
-                print('###############################################################')
-                print('#Solve Failed, attempting a clean restart!')
-                print('###############################################################')
-
-            ap.solveFailed = False
-            ap.fatalFail = False
-            solver.resetFlow(ap)
-            solver(ap)
-
-            if ap.solveFailed or ap.fatalFail: # we tried, but there was no saving it
-                print('###############################################################')
-                print('#Clean Restart failed. There is no saving this one!')
-                print('###############################################################')
+            if ap.fatalFail:
+                if self.comm.rank == 0:
+                    print('###############################################################')
+                    print('#Solve Fatal Fail. Analysis Error')
+                    print('###############################################################')
 
                 raise AnalysisError('ADFLOW Solver Fatal Fail')
 
 
+            if ap.solveFailed: # the mesh was fine, but it didn't converge
+                if self.comm.rank == 0:
+                    print('###############################################################')
+                    print('#Solve Failed, attempting a clean restart!')
+                    print('###############################################################')
+
+                ap.solveFailed = False
+                ap.fatalFail = False
+                solver.resetFlow(ap)
+                solver(ap)
+
+                if ap.solveFailed or ap.fatalFail: # we tried, but there was no saving it
+                    print('###############################################################')
+                    print('#Clean Restart failed. There is no saving this one!')
+                    print('###############################################################')
+
+                    raise AnalysisError('ADFLOW Solver Fatal Fail')
+
+
         outputs['states'] = solver.getStates()
 
-    @diff_mem
+    
     def linearize(self, inputs, outputs, residuals):
 
         self.metadata['solver']._setupAdjoint()
@@ -161,7 +158,7 @@ class OM_STATES_COMP(ImplicitComponent):
 
         #print('om_states linearize')
         
-    @diff_mem
+    
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
 
         solver = self.metadata['solver']
@@ -204,7 +201,7 @@ class OM_STATES_COMP(ImplicitComponent):
                     if dv_name in d_inputs:
                         d_inputs[dv_name] += dv_bar.flatten()
 
-    @diff_mem
+    
     def solve_linear(self, d_outputs, d_residuals, mode):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
