@@ -15,7 +15,7 @@ from mdo_regression_helper import *
 from commonUtils import *
 
 from openmdao.api import Problem, IndepVarComp
-from openmdao.devtools.testutil import assert_rel_error
+from openmdao.utils.assert_utils import assert_rel_error
 
 from adflow import ADFLOW, OM_ADFLOW
 from pygeo import DVGeometry
@@ -32,82 +32,52 @@ from om_commonUtils import assert_funcs_equal, assert_funcsSens_equal
 
 class Tests(unittest.TestCase):
 
-    def run_compare(self, aeroOptions, meshOptions, gridFile, ffdFile, ap): 
-        solve = True
-        if 'solve' not in sys.argv:
-            aeroOptions['restartfile'] = gridFile
-            solve = False
-
+    def run_compare(self, setup_cb, ap, gridFile, ffdFile): 
+       
         for dv in defaultAeroDVs:
             ap.addDV(dv)
         ap.addDV('alpha')
         ap.addDV('mach')
         
         # Create the solver
-        CFDSolver = ADFLOW(options=aeroOptions, debug=False)
+        CFDSolver, mesh, DVGeo, _ = setup_cb(MPI.COMM_WORLD)
+
+        solve = True
+        if 'solve' not in sys.argv:
+            CFDSolver.setOption('restartfile', gridFile)
+            solve = False
 
         if solve:
             # We are told that we must first solve the problem, most likely
             # for a training run. 
             CFDSolver(ap)
 
-        # # Setup geometry/mesh
-        DVGeo = DVGeometry(ffdFile)
-        nTwist = 6
-        DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
-                                       y=numpy.zeros(nTwist),
-                                       z=numpy.linspace(0,14, nTwist), k=2))
-        def twist(val, geo):
-            for i in range(nTwist):
-                geo.rot_z['wing'].coef[i] = val[i]
-
-        DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
-        DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-        mesh = USMesh(options=meshOptions)
-        CFDSolver.setMesh(mesh)
-        CFDSolver.setDVGeo(DVGeo)
-
         res = CFDSolver.getResidual(ap)
         
         funcsSens = {}
         CFDSolver.evalFunctionsSens(ap, funcsSens)
 
-
-        del(CFDSolver)
-        gc.collect()
-
         ##########################################
         # Run things through OpenMDAO
         ##########################################
         prob = Problem()
-        DVGeo = DVGeometry(ffdFile)
-        nTwist = 6
-        DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
-                                       y=numpy.zeros(nTwist),
-                                       z=numpy.linspace(0,14, nTwist), k=2))
-        def twist(val, geo):
-            for i in range(nTwist):
-                geo.rot_z['wing'].coef[i] = val[i]
-
-        DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
-        DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-        mesh = USMesh(options=meshOptions)
-        prob.model = OM_ADFLOW(ap=ap, aero_options=aeroOptions, mesh_options=meshOptions, 
-                               dvgeo=DVGeo, 
-                               debug=True, owns_indeps=True, 
-                               #solver=CFDSolver, 
-                               #mesh=mesh
-                               )
+      
+        prob.model = OM_ADFLOW(ap=ap, setup_cb=setup_cb, 
+                               debug=True, owns_indeps=True)
 
         prob.setup()
-        # from openmdao.api import view_model 
-        # view_model(prob)
-        # exit()
+        if not solve:
+            prob.model.solver.resetFlow(ap)
+            prob.model.solver.setOption('restartfile', gridFile)
+            prob.model.solver.adflow.inputiteration.mgstartlevel = 1
+            prob.model.solver.adflow.initializeflow.initflowrestart()
+            prob.model.solver.getResidual(ap) # this does some kind of memory allocation that is needed
+
         prob.model.states._do_solve = solve
         prob.model.functionals._do_solve = solve    
+
         prob.final_setup()
         prob.run_model()
-        # prob.model.run_linearize()
 
         dvs, _ = get_dvs_and_cons(ap=ap, geo=DVGeo) 
         dv_names = [args[0] for args,kwargs in dvs]
@@ -126,14 +96,14 @@ class Tests(unittest.TestCase):
         assert_funcsSens_equal(self, ap, funcsSens, om_funcsSens, tolerance=1e-9)         
 
     def test13(self): 
-        from tests.test13 import options as aeroOptions, meshOptions, gridFile, ffdFile, ap
+        from tests.test13 import setup_cb, gridFile, ffdFile, ap
 
-        self.run_compare(aeroOptions, meshOptions, gridFile, ffdFile, ap)
+        self.run_compare(setup_cb, ap, gridFile, ffdFile)
 
     def test14(self): 
-        from tests.test14 import options as aeroOptions, meshOptions, gridFile, ffdFile, ap
+        from tests.test14 import setup_cb, gridFile, ffdFile, ap
 
-        self.run_compare(aeroOptions, meshOptions, gridFile, ffdFile, ap)
+        self.run_compare(setup_cb, ap, gridFile, ffdFile)
 
 
 

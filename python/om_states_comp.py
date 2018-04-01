@@ -89,7 +89,10 @@ class OM_STATES_COMP(ImplicitComponent):
         for (args, kwargs) in self.geo_vars:
             name = args[0]
             tmp[name] = inputs[name]
-        self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+        try: 
+            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+        except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
+            self.metadata['dvgeo'].setDesignVars(tmp)
 
     def _set_states(self, outputs):
         self.metadata['solver'].setStates(outputs['states'])

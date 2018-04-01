@@ -76,6 +76,8 @@ class Tests(unittest.TestCase):
             prob.model.solver.adflow.initializeflow.initflowrestart()
             prob.model.solver.getResidual(ap) # this does some kind of memory allocation that is needed
 
+        prob.model.states._do_solve = solve
+        prob.model.functionals._do_solve = solve    
         prob.run_model()
 
 
@@ -123,7 +125,7 @@ class Tests(unittest.TestCase):
     
     def test17(self): 
         from tests.test17 import setup_cb, gridFile, ap
-        
+
         self.run_compare(setup_cb, ap, gridFile,  
                          dvs=['areaRef', 'chordRef', 'alpha', 'altitude', 'mach'], 
                          defaultFuncs=False) 
