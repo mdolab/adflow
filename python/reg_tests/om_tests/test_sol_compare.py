@@ -15,7 +15,7 @@ from mdo_regression_helper import *
 from commonUtils import *
 
 from openmdao.api import Problem, IndepVarComp
-from openmdao.devtools.testutil import assert_rel_error
+from openmdao.utils.assert_utils import assert_rel_error
 from adflow import ADFLOW, OM_ADFLOW
 
 sys.path.append(os.path.abspath('../../'))
@@ -26,7 +26,7 @@ from om_commonUtils import assert_funcs_equal
 
 class Tests(unittest.TestCase):
 
-    def run_compare(self, aero_options, gridFile, ap, dvs=None, defaultFuncs=True, setup_cb=None): 
+    def run_compare(self, setup_cb, ap, gridFile, dvs=None, defaultFuncs=True, ): 
 
         if dvs is None: 
             for dv in defaultAeroDVs:
@@ -42,10 +42,12 @@ class Tests(unittest.TestCase):
         ##########################################
         # Run the strait ADflow code
         ##########################################
-        # # this call is needed to initialize the state and resid vectors
-        CFDSolver = ADFLOW(options=aero_options, debug=False)
-        if setup_cb is not None: 
-            setup_cb(CFDSolver)
+        CFDSolver, _, _, _, = setup_cb(MPI.COMM_WORLD)
+
+        solve = True
+        if 'solve' not in sys.argv:
+            CFDSolver.setOption('restartfile', gridFile)
+            solve = False
 
         CFDSolver(ap)
 
@@ -58,25 +60,22 @@ class Tests(unittest.TestCase):
         # # Get and check the states
         states = CFDSolver.getStates()
 
-            # #Some kind of fortran memory cross-contamination 
-            # del(CFDSolver)
-            # gc.collect()
-
         ##########################################
         # Run things through OpenMDAO
         ##########################################
 
-        #force it to restart the flow
-        if CFDSolver.getOption('restartFile') is not None: 
-            CFDSolver.adflow.inputiteration.mgstartlevel = 1
-            CFDSolver.adflow.initializeflow.initflowrestart()
-
         prob = Problem()
-        prob.model = OM_ADFLOW(ap=ap, aero_options=aero_options, 
-                               debug=False, owns_indeps=True, #adflow_setup_cb=setup_cb, 
-                               solver=CFDSolver)
+        prob.model = OM_ADFLOW(ap=ap, setup_cb=setup_cb, 
+                               debug=False, owns_indeps=True)
 
         prob.setup()
+        if not solve:
+            prob.model.solver.resetFlow(ap)
+            prob.model.solver.setOption('restartfile', gridFile)
+            prob.model.solver.adflow.inputiteration.mgstartlevel = 1
+            prob.model.solver.adflow.initializeflow.initflowrestart()
+            prob.model.solver.getResidual(ap) # this does some kind of memory allocation that is needed
+
         prob.run_model()
 
 
@@ -86,59 +85,56 @@ class Tests(unittest.TestCase):
         assert_funcs_equal(self, ap, funcs, prob, tolerance=1e-10)  
 
     def test9(self): 
-        from tests.test9 import options as aero_options, gridFile, ap
+        from tests.test9 import setup_cb, gridFile, ap
 
-        self.run_compare(aero_options, gridFile, ap)
+        self.run_compare(setup_cb, ap, gridFile)
 
 
     def test11(self): 
-        from tests.test11 import options as aero_options, gridFile, ap
+        from tests.test11 import setup_cb, gridFile, ap
 
-        self.run_compare(aero_options, gridFile, ap)
+        self.run_compare(setup_cb, ap, gridFile)
 
 
     def test12(self): 
-        from tests.test12 import options as aero_options, gridFile, ap
+        from tests.test12 import setup_cb, gridFile, ap
 
-        self.run_compare(aero_options, gridFile, ap)
+        self.run_compare(setup_cb, ap, gridFile)
 
-    def test15(self):
+    # def test15(self):
 
-        self.skipTest('time accurate stuff not working in OM yet')
-        # This test case runs, but OpeNMDAO runs to max iterations without converging
-        # OpenMDAO seems to start out at a different residual as well. 
-        # there is probably some restart stuff in the AP the needs to be cleared out
+    #     self.skipTest('time accurate stuff not working in OM yet')
+    #     # This test case runs, but OpeNMDAO runs to max iterations without converging
+    #     # OpenMDAO seems to start out at a different residual as well. 
+    #     # there is probably some restart stuff in the AP the needs to be cleared out
 
-        from tests.test15 import options as aero_options, gridFile, ap
-        self.run_compare(aero_options, gridFile, ap, 
-                         dvs=['alpha', 'chordRef', 'xRef', 'reynolds', 'xRot', 'areaRef', 'T', 'reynoldsLength', 'mach'])
+    #     from tests.test15 import options as aero_options, gridFile, ap
+    #     self.run_compare(aero_options, gridFile, ap, 
+    #                      dvs=['alpha', 'chordRef', 'xRef', 'reynolds', 'xRot', 'areaRef', 'T', 'reynoldsLength', 'mach'])
 
-        os.system('rm  0012pitching*')
+    #     os.system('rm  0012pitching*')
 
-    def test16(self): 
-
-        from tests.test16 import options as aero_options, gridFile, ap, setupADFlow
-        self.run_compare(aero_options, gridFile, ap, 
-                         dvs=['areaRef', 'T', 'chordRef', 'P', 'alpha', 'mach'], 
-                         defaultFuncs=False, 
-                         setup_cb=setupADFlow)
+    # def test16(self): 
+    #     from tests.test16 import setup_cb, gridFile, ap
+        
+    #     self.run_compare(setup_cb, ap, gridFile, 
+    #                      dvs=['areaRef', 'T', 'chordRef', 'P', 'alpha', 'mach'], 
+    #                      defaultFuncs=False)
     
     def test17(self): 
-
-        from tests.test17 import options as aero_options, gridFile, ap, setupADFlow
-        self.run_compare(aero_options, gridFile, ap, 
+        from tests.test17 import setup_cb, gridFile, ap
+        
+        self.run_compare(setup_cb, ap, gridFile,  
                          dvs=['areaRef', 'chordRef', 'alpha', 'altitude', 'mach'], 
-                         defaultFuncs=False, 
-                         setup_cb=setupADFlow) 
+                         defaultFuncs=False) 
 
     def test18(self): 
+        from tests.test18 import setup_cb, gridFile, ap
 
-
-        from tests.test18 import options as aero_options, gridFile, ap, setupADFlow
-        self.run_compare(aero_options, gridFile, ap, 
+        self.run_compare(setup_cb, ap, gridFile, 
                          dvs=['areaRef', 'chordRef', 'alpha', 'altitude', 'mach'], 
-                         defaultFuncs=False, 
-                         setup_cb=setupADFlow) 
+                         defaultFuncs=False) 
+
 if __name__ == "__main__": 
     unittest.main()
 
