@@ -111,7 +111,10 @@ class OM_FUNC_COMP(ExplicitComponent):
         # if self.comm.rank == 0: 
         #     import pprint 
         #     pprint.pprint(tmp)
-        self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+        try: 
+            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+        except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
+            self.metadata['dvgeo'].setDesignVars(tmp)
 
     def _set_states(self, inputs):
         self.metadata['solver'].setStates(inputs['states'])
