@@ -51,7 +51,7 @@ ap = AeroProblem(name='mdo_tutorial', alpha=1.8, beta=0.0, mach=0.50,
 def setup_cb(comm): 
 
     # Create the solver
-    CFDSolver = ADFLOW(options=options, debug=True)
+    CFDSolver = ADFLOW(options=options, debug=False)
     
     return CFDSolver, None, None, None
 

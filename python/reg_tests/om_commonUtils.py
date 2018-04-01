@@ -10,7 +10,7 @@ from commonUtils import defaultFuncList, defaultAeroDVs, adflowDefOpts, \
                         pyWarpDefOpts, pyWarpUStructDefOpts, printHeader, parPrint
 
 from openmdao.api import Problem 
-from openmdao.devtools.testutil import assert_rel_error
+from openmdao.utils.assert_utils import assert_rel_error
 
 
 def assert_funcs_equal(test, ap, funcs, prob, tolerance):
