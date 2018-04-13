@@ -45,10 +45,10 @@ options.update(
 
 # Setup aeroproblem, cfdsolver, mesh and geometry.
 ap = AeroProblem(name='CRM', alpha=1.8, mach=0.80, P=20000.0, T=220.0,
-                 areaRef=45.5, chordRef=3.25, beta=0.0, 
+                 areaRef=45.5, chordRef=3.25, beta=0.0, R=287.87,
                  xRef=0.0, yRef=0.0, zRef=0.0, evalFuncs=defaultFuncList)
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 
     solve = True
     if 'solve' not in sys.argv:
