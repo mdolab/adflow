@@ -517,14 +517,14 @@ contains
     ! Determine if if we need to form the Preconditioner
     if (mod(NK_iter, NK_jacobianLag) == 0) then
        NK_CFL = NK_CFL0 * (totalR0 / norm)**1.5
-       iterType = "   *NK"
+       iterType = "     *NK"
        call FormJacobianNK()
     else
        call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
        call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
-       iterType = "    NK"
+       iterType = "      NK"
     end if
 
     ! set the BaseVector of the matrix-free matrix:
@@ -2750,10 +2750,34 @@ contains
        ! Actually form the preconditioner and factorize it.
 
        call FormJacobianANK()
-       iterType = "  *ANK"
+       if (totalR .le. ANK_secondOrdSwitchTol*totalR0) then
+           if (ANK_useTurbDADI) then
+               iterType = "   *SANK"
+           else
+               iterType = "  *CSANK"
+           end if
+       else
+           if (ANK_useTurbDADI) then
+               iterType = "    *ANK"
+           else
+               iterType = "   *CANK"
+           end if
+       end if
        ANK_iter = 0
     else
-       iterType = "   ANK"
+       if (totalR .le. ANK_secondOrdSwitchTol*totalR0) then
+           if (ANK_useTurbDADI) then
+               iterType = "    SANK"
+           else
+               iterType = "   CSANK"
+           end if
+       else
+           if (ANK_useTurbDADI) then
+               iterType = "     ANK"
+           else
+               iterType = "    CANK"
+           end if
+       end if
     end if
 
     ! Start with trying to take the full step set by the user.
