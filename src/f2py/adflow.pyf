@@ -252,6 +252,9 @@ python module libadflow
          logical :: ank_usematrixfree
          logical :: ank_getcond
          real(kind=realtype) :: ank_condsolvetol
+         real(kind=realtype) :: ank_condrtol
+         integer(kind=inttype) :: ank_condmaxiter
+         integer(kind=inttype) :: ank_condlag
          subroutine destroyanksolver
          end subroutine destroyanksolver
 

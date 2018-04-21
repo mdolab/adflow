@@ -4374,6 +4374,9 @@ class ADFLOW(AeroSolver):
             'ankusematrixfree':[bool,True],
             'ankgetcond':[bool,False],
             'ankcondsolvetol':[float,1e-8],
+            'ankcondrtol':[float,1e-16],
+            'ankcondmaxiter':[int,1000],
+            'ankcondlag' : [int,10],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4687,6 +4690,9 @@ class ADFLOW(AeroSolver):
             'ankusematrixfree':['ank','ank_usematrixfree'],
             'ankgetcond':['ank', 'ank_getcond'],
             'ankcondsolvetol':['ank','ank_condsolvetol'],
+            'ankcondrtol':['ank','ank_condrtol'],
+            'ankcondmaxiter':['ank','ank_condmaxiter'],
+            'ankcondlag':['ank','ank_condlag'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
