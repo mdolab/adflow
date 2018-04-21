@@ -1025,7 +1025,7 @@ contains
     call getCurrentResidual(rhoResStart, totalRStart)
 
     ! No iteration type for first residual evaluation
-    iterType = "  None"
+    iterType = "    None"
 
     ! Determine and write the initial convergence info.
     call convergenceInfo

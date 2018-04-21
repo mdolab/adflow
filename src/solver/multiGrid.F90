@@ -897,10 +897,10 @@ contains
           select case (smoother)
           case (RungeKutta)
              call RungeKuttaSmoother
-             iterType = "    RK"
+             iterType = "      RK"
           case (DADI)
              call DADISmoother
-             iterType = "  DADI"
+             iterType = "    DADI"
           case (nlLusgs)
              call terminate("executeMGCycle", &
                   "nlLusgs smoother not implemented yet")
