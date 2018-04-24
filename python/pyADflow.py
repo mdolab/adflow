@@ -1353,6 +1353,72 @@ class ADFLOW(AeroSolver):
             print('| %-30s: %10.3f sec'%('Complete Sensitivity Time',finalEvalSensTime - startEvalSensTime))
             print('+--------------------------------------------------+')
 
+    def propagateUncertainty(self,aeroProblem,evalFuncs=None,UQDict=None):
+        """
+        Use the first order second moment method to predict output uncertainties for the current solution.
+
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem class
+            The aerodynamic problem to solve
+
+        evalFuncs : iterable object containing strings
+            The functions the user wants the uncertainty of
+
+        UQDict: dictionary containing the mean and std dev. of the
+            input parameters that are providing the uncertain input
+        """
+
+        # Set the current aeroProblem
+        self.setAeroProblem(aeroProblem)
+
+        # Check for functions to propagate to
+        if evalFuncs is None:
+            evalFuncs = sorted(list(self.curAP.evalFuncs))
+
+        # Make sure we have a list that has only lower-cased entries
+        tmp = []
+        for f in evalFuncs:
+            tmp.append(f.lower())
+        evalFuncs = tmp
+
+        #get the function values
+        funcs = {}
+        self.evalFunctions(aeroProblem,funcs,evalFuncs)
+
+        # Start by getting the total derivatives of the outputs of interest
+        # with respect to the variables providing the uncertainty.
+
+        derivs = {}
+        self.evalFunctionsSens(aeroProblem,derivs,evalFuncs)
+
+        UQOut = {}
+        for outKey in evalFuncs:
+            dictKey = aeroProblem.name+'_'+outKey
+            UQOut[dictKey] = {}
+
+            # compute sigma**2
+            sigma2 = 0
+            for key in UQDict.keys():
+                varKey = key+'_'+aeroProblem.name
+                for i in range(UQDict[key]['size']):
+                    if isinstance(derivs[dictKey][varKey], (list, tuple, numpy.ndarray)):
+                        dodsigma = derivs[dictKey][varKey][i]
+                        sigma = UQDict[key]['sigma'][i]
+                    else:
+                        dodsigma = derivs[dictKey][varKey]
+                        sigma = UQDict[key]['sigma']
+                        
+                    sigma2+= (dodsigma*sigma)**2
+                    
+            UQOut[dictKey]['mu'] = funcs[dictKey]
+            UQOut[dictKey]['sigma'] = numpy.sqrt(sigma2)
+        
+        return UQOut
+
+
+
+
     def solveCL(self, aeroProblem, CLStar, alpha0=None,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
                 maxIter = 20, nReset=25):
