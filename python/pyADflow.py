@@ -1282,6 +1282,9 @@ class ADFLOW(AeroSolver):
 
         self.setAeroProblem(aeroProblem)
 
+        # Create/Initialize the adjoint failure flag for this ap.
+        self.curAP.adjointFailed=False
+        
         aeroProblemTime = time.time()
 
         if evalFuncs is None:
@@ -3068,21 +3071,25 @@ class ADFLOW(AeroSolver):
             self.curAP.adflowData.adjoints[objective] = (
                 numpy.zeros(self.getAdjointStateSize(), float))
 
-        # Extract the psi:
-        psi = self.curAP.adflowData.adjoints[objective]
+        # Check for any previous adjoint failure. If any adjoint has failed
+        # on this AP, there is no point in solving the reset, so continue
+        # with psi set as zero
+        if not self.curAP.adjointFailed and self.getOption('skipafterfailedadjoint'):
+            # Extract the psi:
+            psi = self.curAP.adflowData.adjoints[objective]
 
-        # Actually Solve the adjoint system...psi is updated with the
-        # new solution.
-        self.adflow.adjointapi.solveadjoint(RHS, psi, True)
-
-        # Now set the flags and possibly reset adjoint
-        if self.adflow.killsignals.adjointfailed:
-            self.adjointFailed = True
-            # Reset stored adjoint
-            self.curAP.adflowData.adjoints[objective][:] = 0.0
-        else:
-            self.curAP.adflowData.adjoints[objective] = psi
-            self.adjointFailed = False
+            # Actually Solve the adjoint system...psi is updated with the
+            # new solution.
+            self.adflow.adjointapi.solveadjoint(RHS, psi, True)
+            
+            # Now set the flags and possibly reset adjoint
+            if self.adflow.killsignals.adjointfailed:
+                self.curAP.adjointFailed = True
+                # Reset stored adjoint
+                self.curAP.adflowData.adjoints[objective][:] = 0.0
+            else:
+                self.curAP.adflowData.adjoints[objective] = psi
+                self.curAP.adjointFailed = False
 
     def _processAeroDerivatives(self, dIda, dIdBC):
         """This internal furncion is used to convert the raw array ouput from
@@ -4489,6 +4496,7 @@ class ADFLOW(AeroSolver):
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, False],
             'usematrixfreedrdw':[bool, True],
+            'skipafterfailedadjoint':[bool,True],
 
             # ADjoint debugger
             'firstrun':[bool, True],
