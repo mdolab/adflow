@@ -1281,10 +1281,7 @@ class ADFLOW(AeroSolver):
         startEvalSensTime = time.time()
 
         self.setAeroProblem(aeroProblem)
-
-        # Create/Initialize the adjoint failure flag for this ap.
-        self.curAP.adjointFailed=False
-        
+       
         aeroProblemTime = time.time()
 
         if evalFuncs is None:
@@ -3071,6 +3068,10 @@ class ADFLOW(AeroSolver):
             self.curAP.adflowData.adjoints[objective] = (
                 numpy.zeros(self.getAdjointStateSize(), float))
 
+        # Initialize the fail flag in this AP if it doesn't exist
+        if not hasattr(self.curAP, 'adjointFailed'):
+            self.curAP.adjointFailed = False
+            
         # Check for any previous adjoint failure. If any adjoint has failed
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
