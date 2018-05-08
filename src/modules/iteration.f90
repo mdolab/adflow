@@ -81,7 +81,7 @@
 
        ! iterType: The type of iteration performed. Will be one of RK,
        ! DADI, ANK or NK ( or None on the 0th evaluation)
-       character(len=6) :: iterType
+       character(len=8) :: iterType
 
        ! approxTotalIts : A rough approximation of the total number of
        ! function evaluations. An RK or DADI multi grid iteration
