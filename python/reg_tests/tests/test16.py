@@ -52,19 +52,19 @@ options = {
 }
 
 ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
-                 areaRef=1., chordRef=2.,
+                 areaRef=1., chordRef=2., R=287.87,
                  evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
                             'mavgttot_up', 'mavgttot_down',
-                            'mavgps_up', 'mavgps_down', 
-                            'mavgmn_up', 'mavgmn_down', 
-                            'thrust', 
+                            'mavgps_up', 'mavgps_down',
+                            'mavgmn_up', 'mavgmn_down',
+                            'thrust',
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
 
-def setup_cb(comm): 
-    solver = ADFLOW(options=options, comm=comm, debug=False)
 
+def setup_cb(comm):
+    solver = ADFLOW(options=options, comm=comm, debug=False)
 
     solver.addFamilyGroup('upstream',['INFLOW'])
     solver.addFamilyGroup('downstream',['OUTFLOW'])
@@ -92,12 +92,12 @@ def setup_cb(comm):
 
     return solver, None, None, None
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 
     # Creat the solver
 
     CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
-    
+
     CFDSolver(ap)
 
 
