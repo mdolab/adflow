@@ -1281,7 +1281,7 @@ class ADFLOW(AeroSolver):
         startEvalSensTime = time.time()
 
         self.setAeroProblem(aeroProblem)
-
+       
         aeroProblemTime = time.time()
 
         if evalFuncs is None:
@@ -1352,6 +1352,72 @@ class ADFLOW(AeroSolver):
             print('|')
             print('| %-30s: %10.3f sec'%('Complete Sensitivity Time',finalEvalSensTime - startEvalSensTime))
             print('+--------------------------------------------------+')
+
+    def propagateUncertainty(self,aeroProblem,evalFuncs=None,UQDict=None):
+        """
+        Use the first order second moment method to predict output uncertainties for the current solution.
+
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem class
+            The aerodynamic problem to solve
+
+        evalFuncs : iterable object containing strings
+            The functions the user wants the uncertainty of
+
+        UQDict: dictionary containing the mean and std dev. of the
+            input parameters that are providing the uncertain input
+        """
+
+        # Set the current aeroProblem
+        self.setAeroProblem(aeroProblem)
+
+        # Check for functions to propagate to
+        if evalFuncs is None:
+            evalFuncs = sorted(list(self.curAP.evalFuncs))
+
+        # Make sure we have a list that has only lower-cased entries
+        tmp = []
+        for f in evalFuncs:
+            tmp.append(f.lower())
+        evalFuncs = tmp
+
+        #get the function values
+        funcs = {}
+        self.evalFunctions(aeroProblem,funcs,evalFuncs)
+
+        # Start by getting the total derivatives of the outputs of interest
+        # with respect to the variables providing the uncertainty.
+
+        derivs = {}
+        self.evalFunctionsSens(aeroProblem,derivs,evalFuncs)
+
+        UQOut = {}
+        for outKey in evalFuncs:
+            dictKey = aeroProblem.name+'_'+outKey
+            UQOut[dictKey] = {}
+
+            # compute sigma**2
+            sigma2 = 0
+            for key in UQDict.keys():
+                varKey = key+'_'+aeroProblem.name
+                for i in range(UQDict[key]['size']):
+                    if isinstance(derivs[dictKey][varKey], (list, tuple, numpy.ndarray)):
+                        dodsigma = derivs[dictKey][varKey][i]
+                        sigma = UQDict[key]['sigma'][i]
+                    else:
+                        dodsigma = derivs[dictKey][varKey]
+                        sigma = UQDict[key]['sigma']
+                        
+                    sigma2+= (dodsigma*sigma)**2
+                    
+            UQOut[dictKey]['mu'] = funcs[dictKey]
+            UQOut[dictKey]['sigma'] = numpy.sqrt(sigma2)
+        
+        return UQOut
+
+
+
 
     def solveCL(self, aeroProblem, CLStar, alpha0=None,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
@@ -3002,21 +3068,29 @@ class ADFLOW(AeroSolver):
             self.curAP.adflowData.adjoints[objective] = (
                 numpy.zeros(self.getAdjointStateSize(), float))
 
-        # Extract the psi:
-        psi = self.curAP.adflowData.adjoints[objective]
+        # Initialize the fail flag in this AP if it doesn't exist
+        if not hasattr(self.curAP, 'adjointFailed'):
+            self.curAP.adjointFailed = False
+            
+        # Check for any previous adjoint failure. If any adjoint has failed
+        # on this AP, there is no point in solving the reset, so continue
+        # with psi set as zero
+        if not self.curAP.adjointFailed and self.getOption('skipafterfailedadjoint'):
+            # Extract the psi:
+            psi = self.curAP.adflowData.adjoints[objective]
 
-        # Actually Solve the adjoint system...psi is updated with the
-        # new solution.
-        self.adflow.adjointapi.solveadjoint(RHS, psi, True)
-
-        # Now set the flags and possibly reset adjoint
-        if self.adflow.killsignals.adjointfailed:
-            self.adjointFailed = True
-            # Reset stored adjoint
-            self.curAP.adflowData.adjoints[objective][:] = 0.0
-        else:
-            self.curAP.adflowData.adjoints[objective] = psi
-            self.adjointFailed = False
+            # Actually Solve the adjoint system...psi is updated with the
+            # new solution.
+            self.adflow.adjointapi.solveadjoint(RHS, psi, True)
+            
+            # Now set the flags and possibly reset adjoint
+            if self.adflow.killsignals.adjointfailed:
+                self.curAP.adjointFailed = True
+                # Reset stored adjoint
+                self.curAP.adflowData.adjoints[objective][:] = 0.0
+            else:
+                self.curAP.adflowData.adjoints[objective] = psi
+                self.curAP.adjointFailed = False
 
     def _processAeroDerivatives(self, dIda, dIdBC):
         """This internal furncion is used to convert the raw array ouput from
@@ -4423,6 +4497,7 @@ class ADFLOW(AeroSolver):
             'applyadjointpcsubspacesize':[int, 20],
             'frozenturbulence':[bool, False],
             'usematrixfreedrdw':[bool, True],
+            'skipafterfailedadjoint':[bool,True],
 
             # ADjoint debugger
             'firstrun':[bool, True],
@@ -4774,6 +4849,7 @@ class ADFLOW(AeroSolver):
                              'outputsurfacefamily',
                              'cutcallback',
                              'infchangecorrection',
+                             'skipafterfailedadjoint',
                          ))
 
         # Deprecated options. These should not be used, but old
