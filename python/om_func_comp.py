@@ -113,10 +113,6 @@ class OM_FUNC_COMP(ExplicitComponent):
         for name in inputs.keys():
             tmp[name] = inputs[name]
 
-        import pprint
-        print("foobar", flush=True)
-        pprint.pprint(tmp)
-
         try: 
             dvgeo.setDesignVars(tmp, update_jacobian)
         except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
