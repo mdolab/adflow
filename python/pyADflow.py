@@ -201,6 +201,7 @@ class ADFLOW(AeroSolver):
         self.DVGeo = None
         self.zipperCreated = False
         self.userSurfaceIntegrationsFinalized = False
+        self.hasIntegrationSurfaces = False
 
         # Matrix Setup Flag
         self.adjointSetup = False
@@ -572,7 +573,9 @@ class ADFLOW(AeroSolver):
            Flag to treat momentum forces as if it is an inflow or outflow
            face. Default is True
         """
+        
 
+        self.hasIntegrationSurfaces = True
         # Check that the family name is not already defined:
         if familyName.lower() in self.families:
             raise Error("Cannot add integration surface with family name '%s'"
@@ -2203,7 +2206,10 @@ class ADFLOW(AeroSolver):
         """
 
         # Check that the user surface integrations are interpolated
-        self._finalizeUserIntegrationSurfaces()
+        # self.finalizeUserIntegrationSurfaces()
+        if self.hasIntegrationSurfaces and (not self.userSurfaceIntegrationsFinalized): 
+            raise Error('Integration surfaces have been added to the solver, but finalizeUserIntegrationSurfaces()'+
+                        ' has not been called. It must be called before evaluating the funcs')
 
         # Extract the familiy list we want to use for evaluation. We
         # explictly have just the one group in the call.
@@ -4862,7 +4868,7 @@ class ADFLOW(AeroSolver):
             'clalphadot':self.adflow.constants.costfuncclalphadot,
             'cfy0':self.adflow.constants.costfunccfy0,
             'cfyalpha':self.adflow.constants.costfunccfyalpha,
-            'cfyalphdDot':self.adflow.constants.costfunccfyalphadot,
+            'cfyalphddot':self.adflow.constants.costfunccfyalphadot,
             'cd0':self.adflow.constants.costfunccd0,
             'cdalpha':self.adflow.constants.costfunccdalpha,
             'cdalphadot':self.adflow.constants.costfunccdalphadot,
@@ -4881,6 +4887,7 @@ class ADFLOW(AeroSolver):
             'mavgttot':self.adflow.constants.costfuncmavgttot,
             'mavgps':self.adflow.constants.costfuncmavgps,
             'mavgmn':self.adflow.constants.costfuncmavgmn,
+            'area':self.adflow.constants.costfuncarea,
             'axismoment':self.adflow.constants.costfuncaxismoment,
             'flowpower':self.adflow.constants.costfuncflowpower,
             'forcexpressure':self.adflow.constants.costfuncforcexpressure,
@@ -5009,9 +5016,9 @@ class ADFLOW(AeroSolver):
         self.zipperCreated = True
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
-    def _finalizeUserIntegrationSurfaces(self):
+    def finalizeUserIntegrationSurfaces(self):
 
-        if not self.userSurfaceIntegrationsFinalized:
+        if self.hasIntegrationSurfaces and (not self.userSurfaceIntegrationsFinalized):
             # We can also do the surface plane integrations here if necessary
             self.adflow.usersurfaceintegrations.interpolateintegrationsurfaces()
             self.userSurfaceIntegrationsFinalized = True
