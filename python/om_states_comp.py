@@ -1,5 +1,6 @@
 
 import numpy as np 
+import pprint
 from pygeo import DVGeometry, DVConstraints
 
 DVGEO_CLASSES = (DVGeometry,)
@@ -72,27 +73,20 @@ class OM_STATES_COMP(ImplicitComponent):
         
         #self.declare_partials(of='states', wrt='*')
 
-    def _set_ap(self, inputs):
-        tmp = {}
-        for (args, kwargs) in self.ap_vars:
-            name = args[0]
-            tmp[name] = inputs[name]
-
-        self.metadata['ap'].setDesignVars(tmp)
-
-    def _set_geo(self, inputs, update_jacobian=True):
+    def _set_dvs(self, inputs, update_jacobian=True): 
         dvgeo = self.metadata['dvgeo']
-        if dvgeo is None: 
-            return 
+        ap = self.metadata['ap']
 
         tmp = {}
-        for (args, kwargs) in self.geo_vars:
-            name = args[0]
+        for name in inputs.keys():
             tmp[name] = inputs[name]
+
         try: 
-            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+            dvgeo.setDesignVars(tmp, update_jacobian)
         except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
-            self.metadata['dvgeo'].setDesignVars(tmp)
+            dvgeo.setDesignVars(tmp)
+
+        ap.setDesignVars(tmp) 
 
     def _set_states(self, outputs):
         self.metadata['solver'].setStates(outputs['states'])
@@ -100,8 +94,7 @@ class OM_STATES_COMP(ImplicitComponent):
     
     def apply_nonlinear(self, inputs, outputs, residuals):
         
-        self._set_ap(inputs)
-        self._set_geo(inputs, update_jacobian=False)
+        self._set_dvs(inputs)
         self._set_states(outputs)
         
         ap = self.metadata['ap']
@@ -109,12 +102,12 @@ class OM_STATES_COMP(ImplicitComponent):
 
     
     def solve_nonlinear(self, inputs, outputs):
+
         solver = self.metadata['solver']
         ap = self.metadata['ap']
 
         if self._do_solve: 
-            self._set_ap(inputs)
-            self._set_geo(inputs, update_jacobian=False)
+            self._set_dvs(inputs)
             ap.solveFailed = False # might need to clear this out?
             ap.fatalFail = False
         
@@ -155,8 +148,7 @@ class OM_STATES_COMP(ImplicitComponent):
 
         self.metadata['solver']._setupAdjoint()
 
-        self._set_ap(inputs)
-        self._set_geo(inputs)
+        self._set_dvs(inputs)
         self._set_states(outputs)
 
         #print('om_states linearize')
@@ -168,11 +160,9 @@ class OM_STATES_COMP(ImplicitComponent):
         ap = self.metadata['ap']
         geo = self.metadata['dvgeo']
 
-
         #self._set_ap(inputs)
         #self._set_geo(inputs)
         #self._set_states(outputs)
-
 
         if mode == 'fwd':
             if 'states' in d_residuals:
