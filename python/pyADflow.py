@@ -2271,8 +2271,7 @@ class ADFLOW(AeroSolver):
 
         """
 
-        # Check that the user surface integrations are interpolated
-        # self.finalizeUserIntegrationSurfaces()
+        # Check that the user surface integrations are finalized
         if self.hasIntegrationSurfaces and (not self.userSurfaceIntegrationsFinalized): 
             raise Error('Integration surfaces have been added to the solver, but finalizeUserIntegrationSurfaces()'+
                         ' has not been called. It must be called before evaluating the funcs')
