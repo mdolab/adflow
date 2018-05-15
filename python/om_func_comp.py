@@ -25,11 +25,28 @@ FUNCS_UNITS={
     'mavgptot': 'Pa', 
     'mavgps': 'Pa', 
     'mavgttot': 'degK',
+    'mavgvx':'m/s', 
+    'mavgvy':'m/s',
+    'mavgvz':'m/s', 
     'drag': 'N',
+    'lift': 'N', 
     'dragpressure': 'N', 
     'dragviscous': 'N',
     'dragmomentum': 'N',
-
+    'fx': 'N', 
+    'fy': 'N', 
+    'fz': 'N', 
+    'forcexpressure': 'N', 
+    'forceypressure': 'N', 
+    'forcezpressure': 'N', 
+    'forcexviscous': 'N', 
+    'forceyviscous': 'N', 
+    'forcezviscous': 'N', 
+    'forcexmomentum': 'N', 
+    'forceymomentum': 'N', 
+    'forcezmomentum': 'N', 
+    'flowpower': 'W', 
+    'area':'m**2', 
 }
 
 class OM_FUNC_COMP(ExplicitComponent):
@@ -88,55 +105,45 @@ class OM_FUNC_COMP(ExplicitComponent):
             
             #self.declare_partials(of=f_name, wrt='*')
                 
-
-    def _set_ap(self, inputs):
-        tmp = {}
-        for (args, kwargs) in self.ap_vars:
-            name = args[0]
-            tmp[name] = inputs[name][0]
-
-        self.metadata['ap'].setDesignVars(tmp)
-        #self.metadata['solver'].setAeroProblem(self.metadata['ap'])
-
-    def _set_geo(self, inputs, update_jacobian=True):
+    def _set_dvs(self, inputs, update_jacobian=True): 
         dvgeo = self.metadata['dvgeo']
-        if dvgeo is None: 
-            return 
+        ap = self.metadata['ap']
 
         tmp = {}
-        for (args, kwargs) in self.geo_vars:
-            name = args[0]
+        for name in inputs.keys():
             tmp[name] = inputs[name]
 
-        # if self.comm.rank == 0: 
-        #     import pprint 
-        #     pprint.pprint(tmp)
+        import pprint
+        print("foobar", flush=True)
+        pprint.pprint(tmp)
+
         try: 
-            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+            dvgeo.setDesignVars(tmp, update_jacobian)
         except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
-            self.metadata['dvgeo'].setDesignVars(tmp)
+            dvgeo.setDesignVars(tmp)
+
+        ap.setDesignVars(tmp) 
 
     def _set_states(self, inputs):
         self.metadata['solver'].setStates(inputs['states'])
 
     def _get_func_name(self, name):
         return '%s_%s' % (self.metadata['ap'].name, name.lower())
-    
-    
+        
     def compute(self, inputs, outputs):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
         #print('funcs compute')
         #actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve: 
-            self._set_ap(inputs)
-            self._set_geo(inputs, update_jacobian=False)
+            self._set_dvs(inputs)
             self._set_states(inputs)
+
 
         funcs = {}
 
         eval_funcs = [f_name for f_name, f_meta in solver.adflowCostFunctions.items()]
-        solver.evalFunctions(ap, funcs, eval_funcs, ignoreMissing=True)
+        solver.evalFunctions(ap, funcs, eval_funcs)
         #solver.evalFunctions(ap, funcs)
 
         #for name in ap.evalFuncs:
