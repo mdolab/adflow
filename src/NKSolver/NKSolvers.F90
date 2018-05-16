@@ -3509,7 +3509,7 @@ contains
           write(*,*)"Turb: cfl, linres, iter", ANK_CFL, &
           resHistNew(kspIterationsNew+1)/resHistNew(1), kspIterationsNew
           do i = 1, kspIterationsNew
-            write(*,*) 'n, real, complex', i, reig(i), ceig(i)
+            write(*,*) 'turbEig', i, reig(i), ceig(i)
           end do
         end if
 
@@ -3987,7 +3987,7 @@ contains
       write(*,*)"Flow: cfl, linres, iter", ANK_CFL, &
       resHistNew(kspIterationsNew+1)/resHistNew(1), kspIterationsNew
       do i = 1, kspIterationsNew
-        write(*,*) 'n, real, complex', i, reig(i), ceig(i)
+        write(*,*) 'flowEig', i, reig(i), ceig(i)
       end do
     end if
 
