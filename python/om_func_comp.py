@@ -132,21 +132,6 @@ class OM_FUNC_COMP(ExplicitComponent):
         except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
             self.options['dvgeo'].setDesignVars(tmp)
                 
-    def _set_dvs(self, inputs, update_jacobian=True): 
-        dvgeo = self.options['dvgeo']
-        ap = self.options['ap']
-
-        tmp = {}
-        for name in inputs.keys():
-            tmp[name] = inputs[name]
-
-        try: 
-            dvgeo.setDesignVars(tmp, update_jacobian)
-        except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
-            dvgeo.setDesignVars(tmp)
-
-        ap.setDesignVars(tmp) 
-
     def _set_states(self, inputs):
         self.options['solver'].setStates(inputs['states'])
 
