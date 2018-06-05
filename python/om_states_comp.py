@@ -23,13 +23,13 @@ class OM_STATES_COMP(ImplicitComponent):
     """OpenMDAO component that wraps the flow solve"""
 
     def initialize(self):
-        self.metadata.declare('ap', types=AeroProblem)
-        self.metadata.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
-        self.metadata.declare('solver')
-        self.metadata.declare('use_OM_KSP', default=False, types=bool, 
+        self.options.declare('ap', types=AeroProblem)
+        self.options.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
+        self.options.declare('solver')
+        self.options.declare('use_OM_KSP', default=False, types=bool, 
             desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
 
-        # self.metadata.declare('max_procs', default=64, types=int)
+        # self.options.declare('max_procs', default=64, types=int)
 
         self.distributed = True
 
@@ -38,9 +38,9 @@ class OM_STATES_COMP(ImplicitComponent):
         self._do_solve = True
 
     def setup(self):
-        solver = self.metadata['solver']
-        ap = self.metadata['ap']
-        geo = self.metadata['dvgeo']
+        solver = self.options['solver']
+        ap = self.options['ap']
+        geo = self.options['dvgeo']
 
         self.ap_vars,_ = get_dvs_and_cons(ap=ap)
         self.geo_vars,_ = get_dvs_and_cons(geo=geo)
@@ -74,8 +74,8 @@ class OM_STATES_COMP(ImplicitComponent):
         #self.declare_partials(of='states', wrt='*')
 
     def _set_dvs(self, inputs, update_jacobian=True): 
-        dvgeo = self.metadata['dvgeo']
-        ap = self.metadata['ap']
+        dvgeo = self.options['dvgeo']
+        ap = self.options['ap']
 
         tmp = {}
         for name in inputs.keys():
@@ -88,26 +88,53 @@ class OM_STATES_COMP(ImplicitComponent):
 
         ap.setDesignVars(tmp) 
 
+    def _set_ap(self, inputs):
+        tmp = {}
+        for (args, kwargs) in self.ap_vars:
+            name = args[0]
+            tmp[name] = inputs[name]
+
+        self.options['ap'].setDesignVars(tmp)
+
+    def _set_geo(self, inputs, update_jacobian=True):
+        dvgeo = self.options['dvgeo']
+        if dvgeo is None: 
+            return 
+
+        tmp = {}
+        for (args, kwargs) in self.geo_vars:
+            name = args[0]
+            tmp[name] = inputs[name]
+        try: 
+            self.options['dvgeo'].setDesignVars(tmp, update_jacobian)
+        except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
+            self.options['dvgeo'].setDesignVars(tmp)
+
+
     def _set_states(self, outputs):
-        self.metadata['solver'].setStates(outputs['states'])
+        self.options['solver'].setStates(outputs['states'])
         
     
     def apply_nonlinear(self, inputs, outputs, residuals):
         
         self._set_dvs(inputs)
-        self._set_states(outputs)
+        #self._set_states(outputs)
+        self._set_ap(inputs)
+        self._set_geo(inputs, update_jacobian=False)
         
-        ap = self.metadata['ap']
-        residuals['states'] = self.metadata['solver'].getResidual(ap)
+        ap = self.options['ap']
+        residuals['states'] = self.options['solver'].getResidual(ap)
 
     
     def solve_nonlinear(self, inputs, outputs):
 
-        solver = self.metadata['solver']
-        ap = self.metadata['ap']
+        solver = self.options['solver']
+        ap = self.options['ap']
 
         if self._do_solve: 
-            self._set_dvs(inputs)
+            #self._set_dvs(inputs)
+            self._set_ap(inputs)
+            self._set_geo(inputs, update_jacobian=False)
             ap.solveFailed = False # might need to clear this out?
             ap.fatalFail = False
         
@@ -146,9 +173,11 @@ class OM_STATES_COMP(ImplicitComponent):
     
     def linearize(self, inputs, outputs, residuals):
 
-        self.metadata['solver']._setupAdjoint()
+        self.options['solver']._setupAdjoint()
 
-        self._set_dvs(inputs)
+        #self._set_dvs(inputs)
+        self._set_ap(inputs)
+        self._set_geo(inputs, update_jacobian=False)
         self._set_states(outputs)
 
         #print('om_states linearize')
@@ -156,9 +185,9 @@ class OM_STATES_COMP(ImplicitComponent):
     
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
 
-        solver = self.metadata['solver']
-        ap = self.metadata['ap']
-        geo = self.metadata['dvgeo']
+        solver = self.options['solver']
+        ap = self.options['ap']
+        geo = self.options['dvgeo']
 
         #self._set_ap(inputs)
         #self._set_geo(inputs)
@@ -196,9 +225,9 @@ class OM_STATES_COMP(ImplicitComponent):
 
     
     def solve_linear(self, d_outputs, d_residuals, mode):
-        solver = self.metadata['solver']
-        ap = self.metadata['ap']
-        if self.metadata['use_OM_KSP']:
+        solver = self.options['solver']
+        ap = self.options['ap']
+        if self.options['use_OM_KSP']:
                 if mode == 'fwd':
                     d_outputs['states'] = solver.globalNKPreCon(d_residuals['states'], d_outputs['states'])
                 elif mode == 'rev':
