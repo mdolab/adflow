@@ -144,7 +144,6 @@ class OM_FUNC_COMP(ExplicitComponent):
         #print('funcs compute')
         #actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve: 
-            #self._set_dvs(inputs)
             self._set_ap(inputs)
             self._set_geo(inputs, update_jacobian=False)
             self._set_states(inputs)

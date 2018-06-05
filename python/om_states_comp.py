@@ -102,8 +102,7 @@ class OM_STATES_COMP(ImplicitComponent):
     
     def apply_nonlinear(self, inputs, outputs, residuals):
         
-        self._set_dvs(inputs)
-        #self._set_states(outputs)
+        self._set_states(outputs)
         self._set_ap(inputs)
         self._set_geo(inputs, update_jacobian=False)
         
@@ -117,7 +116,7 @@ class OM_STATES_COMP(ImplicitComponent):
         ap = self.options['ap']
 
         if self._do_solve: 
-            #self._set_dvs(inputs)
+
             self._set_ap(inputs)
             self._set_geo(inputs, update_jacobian=False)
             ap.solveFailed = False # might need to clear this out?
@@ -160,7 +159,6 @@ class OM_STATES_COMP(ImplicitComponent):
 
         self.options['solver']._setupAdjoint()
 
-        #self._set_dvs(inputs)
         self._set_ap(inputs)
         self._set_geo(inputs, update_jacobian=False)
         self._set_states(outputs)
