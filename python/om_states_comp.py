@@ -73,21 +73,6 @@ class OM_STATES_COMP(ImplicitComponent):
         
         #self.declare_partials(of='states', wrt='*')
 
-    def _set_dvs(self, inputs, update_jacobian=True): 
-        dvgeo = self.options['dvgeo']
-        ap = self.options['ap']
-
-        tmp = {}
-        for name in inputs.keys():
-            tmp[name] = inputs[name]
-
-        try: 
-            dvgeo.setDesignVars(tmp, update_jacobian)
-        except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
-            dvgeo.setDesignVars(tmp)
-
-        ap.setDesignVars(tmp) 
-
     def _set_ap(self, inputs):
         tmp = {}
         for (args, kwargs) in self.ap_vars:
