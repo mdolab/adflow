@@ -3965,10 +3965,16 @@ contains
     use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
          psi_like1, psi_like2, x_like, psi_like3
     use utils, only : setPointers, EChk
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#endif
 
     !     Local variables.
     !

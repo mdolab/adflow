@@ -9,12 +9,17 @@ subroutine getForces(forces, npts, sps)
   use surfaceFamilies, only : fullfamList
   use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
   use surfaceFamilies, only : familyExchange, BCFamExchange
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
   integer(kind=intType), intent(in) :: npts, sps
   real(kind=realType), intent(inout) :: forces(3,npts)
 
@@ -138,12 +143,17 @@ subroutine getForces_d(forces, forcesd, npts, sps)
   use utils, only : setPointers, setPointers_d, EChk, terminate
   use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
   use surfaceFamilies, only : familyExchange, BCFamExchange
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
   integer(kind=intType), intent(in) :: npts, sps
   real(kind=realType), intent(out), dimension(3, npts) :: forces, forcesd
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
@@ -255,13 +265,17 @@ subroutine getForces_b(forcesd, npts, sps)
   use utils, only : EChk, setPointers, setPointers_d
   use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
   use surfaceFamilies, only : familyExchange, BCFamExchange
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
-
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
   integer(kind=intType), intent(in) :: npts, sps
   real(kind=realType), intent(inout) :: forcesd(3, npts)
   integer(kind=intType) :: mm, nn, i, j, ii, iDim, ierr
@@ -373,12 +387,18 @@ subroutine surfaceCellCenterToNode(exch)
   use surfaceFamilies, only : familyExchange
   use utils, only : setPointers, EChk
   use sorting, only : famInList
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
-
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
+
   type(familyExchange) :: exch
   integer(kind=intType) ::  sps
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
@@ -487,12 +507,17 @@ subroutine computeWeighting(exch)
   use surfaceFamilies, only : familyExchange
   use utils, only : setPointers, EChk
   use sorting, only : famInList
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
-
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
   type(familyExchange) :: exch
   integer(kind=intType) ::  sps
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
@@ -636,12 +661,17 @@ subroutine computeNodalTractions_d(sps)
   use inputPhysics, only : forcesAsTractions
   use surfaceFamilies, only: BCFamExchange, familyExchange
   use utils, only : setPointers, setPointers_d, EChk
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
   integer(kind=intType), intent(in) :: sps
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, ind(4), ni, nj
@@ -918,12 +948,17 @@ subroutine computeNodalTractions_b(sps)
   use surfaceFamilies, only: BCFamExchange, familyExchange
   use communication
   use utils, only : EChk, setPointers, setPointers_d
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
   implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
 
   integer(kind=intType), intent(in) :: sps
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
