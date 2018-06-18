@@ -17,12 +17,13 @@ contains
 
   subroutine createZipperMesh(zipperFamList, nZipFam)
 
-    use constants
+    use constants, only : intType, realType, adflow_integer, nfamexchange, &
+          mpi_double_precision, mpi_integer, mpi_sum, mpi_status_size
     use communication, only : myID, adflow_comm_world, nProc, recvRequests, &
          sendRequests, commPatternCell_2nd, internalCell_2nd
     use blockPointers, only : nDom, BCData, nBocos, BCType, il, jl, kl
     use oversetData, only : oversetString, oversetWall, CSRMatrix, cumDomProc, nDomTotal, &
-         clusters, overlapMatrix, PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_OBJECT, &
+         clusters, overlapMatrix, &
          oversetPresent, zipperMesh, zipperMeshes
     use wallDistanceData, only : xVolumeVec, IS1, IS2
     use utils, only : setPointers, EChk
@@ -38,7 +39,18 @@ contains
     use stringOps
     use gapBoundaries
     use wallSearches, only : wallSearch
-    implicit none
+
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+    use petsc
+  implicit none
+#else
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#endif
 
     ! Input Parameters
     integer(kind=intType), intent(in), dimension(nZipFam) :: zipperFamList
@@ -476,8 +488,14 @@ contains
             zipper%indices-1, PETSC_COPY_VALUES, IS1, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
+
+#if PETSC_VERSION_GE(3,8,0)
+       call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
+            zipper%localVal, PETSC_NULL_VEC, zipper%scatter, ierr)
+#else
        call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
             zipper%localVal, PETSC_NULL_OBJECT, zipper%scatter, ierr)
+#endif
        call EChk(ierr,__FILE__,__LINE__)
 
        call ISDestroy(IS1, ierr)
@@ -1215,7 +1233,7 @@ contains
 
     use communication
     use oversetData
-    use constants
+    use constants, only : intType, mpi_status_size
     use blockPointers
     use utils, only : setPointers, setBCPointers
     use BCPointers, only : xx

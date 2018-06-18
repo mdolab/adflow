@@ -16,14 +16,20 @@ module cartMesh
     use blockPointers
     use surfaceFamilies, only : BCFamGroups
     use su_cgns
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscdmda.h"
 #include "petsc/finclude/petscvec.h90"
 #include "petsc/finclude/petscdmda.h90"
+#endif
 
     ! Input Params
     integer(kind=intType), intent(in) :: level, sps
@@ -885,12 +891,18 @@ module cartMesh
 
   subroutine writeCartMesh(blankVec, cellDims, xMin, h)
 
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
 
     ! Input
     integer(kind=intType), intent(in), dimension(3) :: cellDims
