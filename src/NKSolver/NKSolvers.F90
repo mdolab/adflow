@@ -1,12 +1,19 @@
 module NKSolver
 
   use constants
-  implicit none
 
   ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
 
   ! PETSc Matrices:
   ! dRdw: This is the actual matrix-free matrix computed with FD
@@ -190,8 +197,14 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        if (useLinResMonitor) then
+#if PETSC_VERSION_GE(3,8,0)
+          ! This could be wrong. There is no petsc_null_context???
+          call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_FUNCTION, &
+               PETSC_NULL_FUNCTION, ierr)
+#else
           call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_OBJECT, &
                PETSC_NULL_FUNCTION, ierr)
+#endif
           call EChk(ierr, __FILE__, __LINE__)
        end if
 
@@ -527,8 +540,12 @@ contains
        iterType = "      NK"
     end if
 
-    ! set the BaseVector of the matrix-free matrix:
+    ! set the BaseVector of the matrix-free matrix
+#if PETSC_VERSION_GE(3,8,0)
+    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_VEC, ierr)
+#else
     call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
+#endif
     call EChk(ierr, __FILE__, __LINE__)
 
     if (NK_iter == 0 .or. .not. NK_useEW) then
@@ -1064,8 +1081,11 @@ contains
 
     ! Set the base vec
     call setwVec(wVec)
-
+#if PETSC_VERSION_GE(3,8,0)
+    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_VEC, ierr)
+#else
     call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
+#endif
     call EChk(ierr, __FILE__, __LINE__)
 
     ! This needs to be a bit better...
@@ -1566,13 +1586,17 @@ end module NKSolver
 module ANKSolver
 
   use constants
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
-
-  ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
 
   Mat  dRdw, dRdwPre
   Vec wVec, rVec, deltaW
@@ -1712,8 +1736,20 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        if (useLinResMonitor) then
+
+#if PETSC_VERSION_GE(3,8,0)
+          ! This is probably wrong. NO petsc_null_context
+          call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_FUNCTION, &
+               PETSC_NULL_FUNCTION, ierr)
+#else
           call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_OBJECT, &
                PETSC_NULL_FUNCTION, ierr)
+
+#endif
+
+
+
+
           call EChk(ierr, __FILE__, __LINE__)
        end if
 
@@ -2790,7 +2826,12 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Set the BaseVector of the matrix-free matrix:
-    call MatMFFDSetBase(dRdw, wVec, PETSC_NULL_OBJECT, ierr)
+#if PETSC_VERSION_GE(3,8,0)
+    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_VEC, ierr)
+#else
+    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
+#endif
+
     call EChk(ierr, __FILE__, __LINE__)
 
     ! ============== Flow Update =============

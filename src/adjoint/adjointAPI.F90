@@ -341,6 +341,7 @@ contains
 
   subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
+
     use ADJointPETSc
     use inputADjoint
     use adjointVars
@@ -428,10 +429,16 @@ contains
     use ADjointPETSc, only: drdwt
     use communication, only : adflow_comm_world
     use utils, only : EChk
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#endif
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -457,10 +464,16 @@ contains
     use ADjointPETSc, only: drdwpret
     use communication, only : adflow_comm_world
     use utils, only : EChk
-    implicit none
-
-    PETSC_AVOID_MPIF_H
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
+#define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#endif
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -479,7 +492,6 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
   end subroutine saveAdjointPC
-
 
 
   subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
@@ -636,7 +648,9 @@ contains
     !      using preconditioned GMRES provided by PETSc. The values in psi
     !      are significant as they are used as the inital guess.
     !
-    use constants
+
+    use constants, only : realType, intType, alwaysRealType, one, adflow_real, &
+         mpi_max, mpi_sum, mpi_double_precision, mpi_integer
     use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
          adjResInit, adjResStart, adjResFinal
 
@@ -649,9 +663,16 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
     use utils, only : EChk
-    implicit none
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#endif
 
     ! Input Parameters
     real(kind=realType), dimension(nState) :: RHS, psi
@@ -771,8 +792,8 @@ contains
        ! Determine the maximum time using MPI reduce
        ! with operation mpi_max.
 
-       call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, &
-            mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
+       ! call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, &
+       !      mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
 
        call MatMult(dRdWT, psi_like1, adjointRes, ierr)
        call EChk(ierr,__FILE__,__LINE__)
@@ -846,11 +867,16 @@ contains
     use utils, only : ECHk, terminate
     use adjointUtils, only : mykspmonitor
     use adjointUtils, only : setupStateResidualMatrix, setupStandardKSP
-
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#endif
 
     !     Local variables.
     logical :: useAD, usePC, useTranspose, useObjective
@@ -889,7 +915,8 @@ contains
 
     ! Setup monitor if necessary:
     if (setMonitor) then
-       call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_OBJECT, &
+       ! PETSC_NULL_CONTEXT doesn't exit...
+       call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_FUNCTION, &
             PETSC_NULL_FUNCTION, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     endif
@@ -904,10 +931,17 @@ contains
     use adjointVars, only: nCellsLocal
     use communication
     use utils, only : setPointers, EChk
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
+#else
+    implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#endif
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -943,7 +977,7 @@ contains
                            +  x(i-1,j-1,k,  n) + x(i,j-1,k,  n)  &
                            +  x(i-1,j,  k,  n) + x(i,j,  k,  n))/8
                    end do
-                   call VecSetValues(cellCenters, 1, iRow, cellCenter, INSERT_VALUES, ierr)
+                   call VecSetValues(cellCenters, 1, [iRow], [cellCenter], INSERT_VALUES, ierr)
                    call EChk(ierr, __FILE__, __LINE__)
                 end do
              end do
@@ -984,10 +1018,18 @@ contains
     use ADjointVars
     use inputTimeSpectral
     use utils, only : EChk
-    implicit none
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
+
 
     ! PETSc Arguments
     Mat   A
@@ -1035,10 +1077,17 @@ contains
 #ifndef USE_COMPLEX
     use masterRoutines, only : master_d
 #endif
-    implicit none
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
 
     ! PETSc Arguments
     Mat   A
@@ -1112,10 +1161,17 @@ contains
          visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
     use utils, only : EChk, setPointers
     use adjointUtils, only : myMatCreate, destroyPETScVars, statePreAllocation
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
+#include "petsc/finclude/petscvec.h90"
+#endif
 
     !     Local variables.
     integer(kind=intType)  :: nDimW, nDimX
