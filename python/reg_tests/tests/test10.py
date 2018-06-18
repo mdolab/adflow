@@ -40,10 +40,22 @@ options.update(
 ap = AeroProblem(name='mdo_tutorial', alpha=1.20, mach=0.80, altitude=10000.0,
                  areaRef=45.5, chordRef=3.25)
 
-CFDSolver = ADFLOW(options=options, debug=True)
-CFDSolver.solveCL(ap, 0.475, alpha0=1.20, delta=0.025, tol=1e-4, autoReset=False)
-funcs = {}
-CFDSolver.evalFunctions(ap, funcs, evalFuncs=['cl'])
-if MPI.COMM_WORLD.rank == 0:
-    print('CL-CL*')
-    reg_write(funcs['mdo_tutorial_cl'] - 0.475, 1e-4, 1e-4)
+
+def setup_cb(comm): 
+
+    # Create the solver
+    CFDSolver = ADFLOW(options=options, debug=True)
+    
+    return CFDSolver, None, None, None
+
+if __name__ == "__main__": 
+
+    CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
+
+
+    CFDSolver.solveCL(ap, 0.475, alpha0=1.20, delta=0.025, tol=1e-4, autoReset=False)
+    funcs = {}
+    CFDSolver.evalFunctions(ap, funcs, evalFuncs=['cl'])
+    if MPI.COMM_WORLD.rank == 0:
+        print('CL-CL*')
+        reg_write(funcs['mdo_tutorial_cl'] - 0.475, 1e-4, 1e-4)

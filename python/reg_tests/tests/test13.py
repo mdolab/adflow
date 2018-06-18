@@ -50,19 +50,18 @@ meshOptions.update({'gridFile':gridFile})
 
 # Setup aeroproblem, cfdsolver, mesh and geometry.
 ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, P=20000.0, T=220.0,
-                 areaRef=45.5, chordRef=3.25, beta=0.0, 
+                 areaRef=45.5, chordRef=3.25, beta=0.0, R=287.87,
                  xRef=0.0, yRef=0.0, zRef=0.0, evalFuncs=['cl', 'cd'])
 
-
-if __name__ == "__main__":                  
+def setup_cb(comm):
 
     # Create the solver
-    CFDSolver = ADFLOW(options=options, debug=False)
+    CFDSolver = ADFLOW(options=options, comm=comm, debug=False)
 
     # Setup geometry/mesh
     DVGeo = DVGeometry(ffdFile)
     nTwist = 6
-    DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
+    DVGeo.addRefAxis('wing', Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist),
                                    y=numpy.zeros(nTwist),
                                    z=numpy.linspace(0,14, nTwist), k=2))
     def twist(val, geo):
@@ -71,11 +70,17 @@ if __name__ == "__main__":
 
     DVGeo.addGeoDVGlobal('twist', [0]*nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGeoDVLocal('shape', lower=-0.5, upper=0.5, axis='y', scale=10.0)
-    mesh = USMesh(options=meshOptions)
+    mesh = USMesh(options=meshOptions, comm=comm)
     CFDSolver.setMesh(mesh)
     CFDSolver.setDVGeo(DVGeo)
 
+    return CFDSolver, mesh, DVGeo, None
 
+
+if __name__ == "__main__":
+
+
+    CFDSolver, mesh, DVGeo, _ = setup_cb(MPI.COMM_WORLD)
 
     adjointTest(CFDSolver, ap)
 
