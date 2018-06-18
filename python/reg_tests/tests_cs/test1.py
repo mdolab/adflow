@@ -21,13 +21,13 @@ sys.path.append(os.path.abspath('../../'))
 if 'complex' in sys.argv:
     from python.pyADflow_C import ADFLOW_C as ADFLOW
     from pywarp import MBMesh_C as MBMesh
-else: 
+else:
     from python.pyADflow import ADFLOW
     from pywarp import  MBMesh
 # ###################################################################
 
 printHeader('MDO tutorial Euler Mesh - Python functionality testing')
-# 
+#
 aeroOptions = copy.deepcopy(adflowDefOpts)
 
 # Now set the options that need to be overwritten for this example:
@@ -51,7 +51,7 @@ aeroOptions.update(
 
 
 # Setup aeroproblem, cfdsolver
-ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80,
+ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, R=287.87,
                  altitude=10000.0, areaRef=45.5, chordRef=3.25,
                  evalFuncs=['cd','lift','cmz'])
 ap.addDV('alpha')

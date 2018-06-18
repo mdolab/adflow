@@ -1,10 +1,22 @@
+
 import numpy as np
 
 from openmdao.api import ExplicitComponent
 
+
 from baseclasses import AeroProblem
-from pygeo import DVGeometry
 from adflow import ADFLOW
+
+from pygeo import DVGeometry
+
+from collections import OrderedDict
+
+DVGEO_CLASSES = (DVGeometry,)
+try: 
+    from pygeo import DVGeometryVSP
+    DVGEO_CLASSES = (DVGeometry, DVGeometryVSP)
+except ImportError: 
+    pass
 
 from .om_utils import get_dvs_and_cons
 
@@ -24,15 +36,14 @@ class OM_FUNC_COMP(ExplicitComponent):
 
     def initialize(self):
         self.metadata.declare('ap', types=AeroProblem,)
-        self.metadata.declare('dvgeo', types=DVGeometry, allow_none=True, default=None)
-        self.metadata.declare('solver', types=ADFLOW)
+        self.metadata.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
+        self.metadata.declare('solver')
 
         # testing flag used for unit-testing to prevent the call to actually solve
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
         self._do_solve = True
 
-
-
+        #self.distributed=True
 
     def setup(self):
         solver = self.metadata['solver']
@@ -50,6 +61,10 @@ class OM_FUNC_COMP(ExplicitComponent):
         for (args, kwargs) in self.ap_vars:
             name = args[0]
             size = args[1]
+            value = 1.
+            if 'value' in kwargs:
+                value = kwargs['value']
+
             self.add_input(name, shape=size, units=kwargs['units'])
 
         local_state_size = self.metadata['solver'].getStateSize()
@@ -66,8 +81,11 @@ class OM_FUNC_COMP(ExplicitComponent):
             units = None
             if f_type in FUNCS_UNITS: 
                 units = FUNCS_UNITS[f_type]
-            self.add_output(f_name, shape=1, units=units)
 
+            if self.comm.rank == 0: 
+                print("adding adflow func as output: {}".format(f_name))
+            self.add_output(f_name, shape=1, units=units)
+            
             #self.declare_partials(of=f_name, wrt='*')
                 
 
@@ -75,11 +93,12 @@ class OM_FUNC_COMP(ExplicitComponent):
         tmp = {}
         for (args, kwargs) in self.ap_vars:
             name = args[0]
-            tmp[name] = inputs[name]
+            tmp[name] = inputs[name][0]
+
         self.metadata['ap'].setDesignVars(tmp)
         #self.metadata['solver'].setAeroProblem(self.metadata['ap'])
 
-    def _set_geo(self, inputs):
+    def _set_geo(self, inputs, update_jacobian=True):
         dvgeo = self.metadata['dvgeo']
         if dvgeo is None: 
             return 
@@ -88,39 +107,67 @@ class OM_FUNC_COMP(ExplicitComponent):
         for (args, kwargs) in self.geo_vars:
             name = args[0]
             tmp[name] = inputs[name]
-        self.metadata['dvgeo'].setDesignVars(tmp)
+
+        # if self.comm.rank == 0: 
+        #     import pprint 
+        #     pprint.pprint(tmp)
+        try: 
+            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+        except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
+            self.metadata['dvgeo'].setDesignVars(tmp)
 
     def _set_states(self, inputs):
         self.metadata['solver'].setStates(inputs['states'])
 
     def _get_func_name(self, name):
         return '%s_%s' % (self.metadata['ap'].name, name.lower())
-
+    
+    
     def compute(self, inputs, outputs):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
-
+        #print('funcs compute')
         #actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve: 
             self._set_ap(inputs)
-            self._set_geo(inputs)
+            self._set_geo(inputs, update_jacobian=False)
             self._set_states(inputs)
 
         funcs = {}
-        solver.evalFunctions(ap, funcs, ap.evalFuncs)
 
-        for name in ap.evalFuncs:
-            outputs[name] = funcs[self._get_func_name(name)]
+        eval_funcs = [f_name for f_name, f_meta in solver.adflowCostFunctions.items()]
+        solver.evalFunctions(ap, funcs, eval_funcs, ignoreMissing=True)
+        #solver.evalFunctions(ap, funcs)
 
+        #for name in ap.evalFuncs:
+        for name in solver.adflowCostFunctions.keys():
+            f_name = self._get_func_name(name)
+            if f_name in funcs: 
+                outputs[name.lower()] = funcs[f_name]
 
+    def _compute_partials(self, inputs, J): 
+
+        #self._set_ap(inputs)
+        #self._set_geo(inputs)
+        #self._set_states(inputs)
+        
+        #print('om_funcs linearize')
+
+        pass
+
+    
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.metadata['solver']
         ap = self.metadata['ap']
 
-        if self._do_solve: 
-            self._set_ap(inputs)
-            self._set_geo(inputs)
-            self._set_states(inputs)
+
+        #self.metadata['solver'].setAeroProblem(ap) 
+        #print('func matvec')
+
+        #if self._do_solve: 
+        #    self._set_ap(inputs)
+        #    self._set_geo(inputs)
+        #    self._set_states(inputs)
         
         if mode == 'fwd':
             xDvDot = {}
@@ -142,27 +189,58 @@ class OM_FUNC_COMP(ExplicitComponent):
                 wDot=wDot,
                 funcDeriv=True)
 
-            for name in ap.evalFuncs:
+            for name, meta  in solver.adflowCostFunctions.items():
                 func_name = name.lower()
                 if name in d_outputs:
                     d_outputs[name] += funcsdot[func_name]
 
         elif mode == 'rev':
             funcsBar = {}
-            for name in ap.evalFuncs:
+
+            for name, meta  in solver.adflowCostFunctions.items(): 
                 func_name = name.lower()
-                if name in d_outputs:
-                    funcsBar[func_name] = d_outputs[name] / self.comm.size
+
+                # we have to check for 0 here, so we don't include any unnecessary variables in funcsBar
+                # becasue it causes ADflow to do extra work internally even if you give it extra variables, even if the seed is 0
+                if func_name in d_outputs and d_outputs[func_name] != 0.: 
+                    funcsBar[func_name] = d_outputs[func_name][0] / self.comm.size
+
+            # because of the 0 checking, the funcsBar is now only correct on the root proc, 
+            # so we need to broadcast it to everyone. its not actually imporant that the seeds are the same everywhere,
+            # but the keys in the dictionary need to be the same. 
+            funcsBar = self.comm.bcast(funcsBar, root=0)
+
+
+            #print(funcsBar, flush=True)
+
+            d_input_vars = list(d_inputs.keys()) 
+            n_input_vars = len(d_input_vars)
+            
+            wBar = None 
+            xDVBar = None
+
+            if 'states' in d_inputs and n_input_vars==1 : 
+                wBar = solver.computeJacobianVectorProductBwd(
+                    funcsBar=funcsBar,
+                    wDeriv=True)
+            elif ('states' not in d_input_vars) and n_input_vars: 
+                xDVBar = solver.computeJacobianVectorProductBwd(
+                    funcsBar=funcsBar,
+                    xDvDeriv=True)
+            
+            elif ('states' in d_input_vars) and n_input_vars: 
+                wBar, xDVBar = solver.computeJacobianVectorProductBwd(
+                    funcsBar=funcsBar,
+                    wDeriv=True, xDvDeriv=True)
+            else: # nothing to do, so why is this being called? 
+                return 
+
+            if wBar is not None: 
+                d_inputs['states'] += wBar
+
+            if xDVBar is not None: 
+                for dv_name, dv_bar in xDVBar.items():
+                    if dv_name in d_inputs:
+                        d_inputs[dv_name] += dv_bar.flatten()
             
 
-            wBar, xDVBar = solver.computeJacobianVectorProductBwd(
-                funcsBar=funcsBar,
-                wDeriv=True, xDvDeriv=True)
-
-            if 'states' in d_inputs:
-                d_inputs['states'] += wBar
-                #print('wBar',self.comm.rank,  np.linalg.norm(wBar))
-
-            for dv_name, dv_bar in xDVBar.items():
-                if dv_name in d_inputs:
-                    d_inputs[dv_name] += dv_bar.flatten()

@@ -78,7 +78,7 @@ name = 'nozzle'
 
 # Aerodynamic problem description
 ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
-                 areaRef=areaRef, chordRef=chordRef,
+                 areaRef=areaRef, chordRef=chordRef, R=287.87,
                  evalFuncs=['mdot_up', 'mdot_down', #'mdot_plane',
                             'mavgptot_up', 'mavgptot_down',# 'mavgptot_plane',
                             'mavgttot_up', 'mavgttot_down',# 'mavgttot_plane',
@@ -96,10 +96,13 @@ ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
 
-def setupADFlow(solver): 
+def setup_cb(comm):
+
     #solver.addIntegrationSurface('integration_plane.fmt', 'coarse_plane')
     #solver.addIntegrationSurface('integration_plane_fine.fmt', 'fine_plane')
     #solver.addIntegrationSurface('integration_plane_viscous.fmt', 'viscous_plane')
+
+    solver = ADFLOW(options=options, comm=comm, debug=True)
 
     solver.addFamilyGroup('upstream',['inlet'])
     solver.addFamilyGroup('downstream',['outlet'])
@@ -124,16 +127,16 @@ def setupADFlow(solver):
 
     solver.setOption('ncycles',1000)
 
+    return solver, None, None, None
 
-if __name__ == "__main__": 
-     
-    CFDSolver = ADFLOW(options=options, debug=True)
 
-    setupADFlow(CFDSolver)
+if __name__ == "__main__":
+
+    CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
 
     # Check the residual
-    res = CFDSolver.getResidual(ap) 
-    #TODO: getResNorms() doesn't work for overset? 
+    res = CFDSolver.getResidual(ap)
+    #TODO: getResNorms() doesn't work for overset?
     # totalR0, totalRStart, totalRFinal = CFDSolver.getResNorms()
     # print res, totalR0, totalRStart, totalRFinal
     # res /= totalR0
