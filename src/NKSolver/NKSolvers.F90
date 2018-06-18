@@ -613,7 +613,7 @@ contains
   subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, lambda)
 
     use constants
-    use utils, only : EChk
+    use utils, only : EChk, myisnan
     use communication, only : myid
     use initializeFlow, only : setUniformFlow
     use iteration, only : totalR0
@@ -701,10 +701,10 @@ contains
     ! order of magnitude or more.
 
     hadANan = .False.
-    if (isnan(gnorm) .or. turbRes2 > 2.0*turbRes1) then
+    if (myisnan(gnorm) .or. turbRes2 > 2.0*turbRes1) then
        ! Special testing for nans
 
-       if (isnan(gnorm)) then
+       if (myisnan(gnorm)) then
           hadANan = .True.
           call setUniformFlow()
           lambda = 0.5
@@ -731,7 +731,7 @@ contains
 
           nfevals = nfevals + 1
 
-          if (isnan(gnorm)) then
+          if (myisnan(gnorm)) then
              ! Just reset the flow, adjust the step back and keep
              ! going
              call setUniformFlow()
@@ -847,7 +847,7 @@ contains
           lambda = lambdatemp
        end if
 
-       if (isnan(lambda)) then
+       if (myisnan(lambda)) then
           flag = .False.
           exit cubic_loop
        end if
@@ -2516,7 +2516,7 @@ contains
     use blockPointers, only : ndom, il, jl, kl
     use flowVarRefState, only : nw, nwf, nt1
     use inputtimespectral, only : nTimeIntervalsSpectral
-    use utils, only : setPointers, EChk
+    use utils, only : setPointers, EChk, myisnan
     use communication, only : ADflow_comm_world
     implicit none
 
@@ -2624,7 +2624,7 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (isnan(lambdaL)) lambdaL = zero
+    if (myisnan(lambdaL)) lambdaL = zero
 
     ! Finally, communicate the step size across processes and return
     call mpi_allreduce(lambdaL, lambdaP, 1_intType, adflow_real, &
@@ -2641,7 +2641,7 @@ contains
     use inputIteration, only : L2conv
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
-    use utils, only : EChk, setPointers
+    use utils, only : EChk, setPointers, myisnan
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
@@ -2870,7 +2870,7 @@ contains
     ! initialize this outside the ls
     LSFailed = .False.
 
-    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then
+    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. myisnan(unsteadyNorm))) then
        ! The unsteady residual is too high or we have a NAN. Do a
        ! backtracking line search until we get a residual that is lower.
 
@@ -2900,7 +2900,7 @@ contains
           call VecNorm(rVec, NORM_2, unsteadyNorm, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
-          if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
+          if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. myisnan(unsteadyNorm)) then
 
              ! Restore back to the original wVec
              call VecAXPY(wVec, lambda, deltaW, ierr)
@@ -2915,7 +2915,7 @@ contains
           end if
        end do backtrack
 
-       if (LSFailed .or. isnan(unsteadyNorm)) then
+       if (LSFailed .or. myisnan(unsteadyNorm)) then
           ! the line search wasn't much help.
 
           if (ANK_CFL > ANK_CFLMin) then

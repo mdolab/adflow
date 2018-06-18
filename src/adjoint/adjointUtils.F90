@@ -546,6 +546,7 @@ contains
       ! Sets a block at irow, icol, if useTranspose is False
       ! Sets a block at icol, irow with transpose of blk if useTranspose is True
 
+      use utils, only : myisnan
       implicit none
       real(kind=realType), dimension(nState, nState) :: blk
 
@@ -567,7 +568,7 @@ contains
       end do
 
       ! Check if the blk has nan
-      if (isnan(sum(blk))) then
+      if (myisnan(sum(blk))) then
          print *,'Bad Block:',blk
          print *,'irow:',irow
          print *,'icol',cols(1:ncol)
