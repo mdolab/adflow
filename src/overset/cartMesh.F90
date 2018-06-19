@@ -19,10 +19,9 @@ module cartMesh
 #include <petscversion.h>
 #if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
+    implicit none
 #else
-  implicit none
+    implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petscsys.h"
 #include "petsc/finclude/petscvec.h"
