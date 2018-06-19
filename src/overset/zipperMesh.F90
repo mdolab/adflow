@@ -17,8 +17,7 @@ contains
 
   subroutine createZipperMesh(zipperFamList, nZipFam)
 
-    use constants, only : intType, realType, adflow_integer, nfamexchange, &
-          mpi_double_precision, mpi_integer, mpi_sum, mpi_status_size
+    use constants
     use communication, only : myID, adflow_comm_world, nProc, recvRequests, &
          sendRequests, commPatternCell_2nd, internalCell_2nd
     use blockPointers, only : nDom, BCData, nBocos, BCType, il, jl, kl
@@ -43,7 +42,7 @@ contains
 #include <petscversion.h>
 #if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-    use petsc
+    use petsc, only : PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_VEC
   implicit none
 #else
   implicit none
@@ -1231,9 +1230,10 @@ contains
 
   subroutine writeWalls(famList)
 
+
     use communication
-    use oversetData
-    use constants, only : intType, mpi_status_size
+    !use oversetData
+    use constants
     use blockPointers
     use utils, only : setPointers, setBCPointers
     use BCPointers, only : xx
