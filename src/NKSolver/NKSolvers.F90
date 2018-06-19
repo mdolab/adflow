@@ -29,7 +29,7 @@ module NKSolver
   ! deltaW: Update to the wVec from linear solution
   ! diagV: Diagonal lumping term
 
-  Vec wVec, rVec, deltaW, work, g, wBase
+  Vec wVec, rVec, deltaW, work, g, baseRes
 
   ! NK_KSP: The ksp object for solving the newton udpate
   KSP  NK_KSP
@@ -132,6 +132,9 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        call VecDuplicate(wVec, deltaW, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       call VecDuplicate(wVec, baseRes, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Create the two additional work vectors for the line search:
@@ -467,6 +470,9 @@ contains
        call VecDestroy(deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       call VecDestroy(baseRes, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
        call VecDestroy(g, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -540,14 +546,6 @@ contains
        iterType = "      NK"
     end if
 
-    ! set the BaseVector of the matrix-free matrix
-#if PETSC_VERSION_GE(3,8,0)
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_VEC, ierr)
-#else
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
-#endif
-    call EChk(ierr, __FILE__, __LINE__)
-
     if (NK_iter == 0 .or. .not. NK_useEW) then
        rtol = NK_rtolInit
     else
@@ -577,6 +575,12 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     call KSPSetResidualHistory(NK_KSP, resHist, maxIt+1, PETSC_TRUE, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! set the BaseVector of the matrix-free matrix
+    call formFunction_mf(ctx, wVec, baseRes, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    call MatMFFDSetBase(dRdW, wVec, baseRes, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
@@ -1081,12 +1085,11 @@ contains
 
     ! Set the base vec
     call setwVec(wVec)
-#if PETSC_VERSION_GE(3,8,0)
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_VEC, ierr)
-#else
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
-#endif
-    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Set the base vec
+    call setwVec(wVec)
+    call formFunction_mf(ctx, wVec, baseRes, ierr)
+    call MatMFFDSetBase(dRdW, wVec, baseRes, ierr)
 
     ! This needs to be a bit better...
     call KSPSetTolerances(NK_KSP, 1e-8, 1e-16, 10.0, &
@@ -1599,7 +1602,7 @@ module ANKSolver
 #endif
 
   Mat  dRdw, dRdwPre
-  Vec wVec, rVec, deltaW
+  Vec wVec, rVec, deltaW, baseRes
   KSP  ANK_KSP
 
   PetscFortranAddr   ctx(1)
@@ -1692,6 +1695,9 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        call VecDuplicate(wVec, deltaW, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       call VecDuplicate(wVec, baseRes, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Create Pre-Conditioning Matrix
@@ -2352,6 +2358,9 @@ contains
        call VecDestroy(deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       call VecDestroy(baseRes, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
        call KSPDestroy(ANK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -2825,15 +2834,6 @@ contains
     call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Set the BaseVector of the matrix-free matrix:
-#if PETSC_VERSION_GE(3,8,0)
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_VEC, ierr)
-#else
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
-#endif
-
-    call EChk(ierr, __FILE__, __LINE__)
-
     ! ============== Flow Update =============
 
     ! For the approximate solver, we need the approximate flux routines
@@ -2882,6 +2882,12 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     call KSPSetResidualHistory(ANK_KSP, resHist, ank_maxIter+1, PETSC_TRUE, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Set the BaseVector of the matrix-free matrix:
+    call formFunction_mf(ctx, wVec, baseRes, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    call MatMFFDSetBase(dRdW, wVec, baseRes, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
