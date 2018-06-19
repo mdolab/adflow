@@ -1089,8 +1089,9 @@ contains
     ! Set the base vec
     call setwVec(wVec)
     call formFunction_mf(ctx, wVec, baseRes, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
     call MatMFFDSetBase(dRdW, wVec, baseRes, ierr)
-
+    call EChk(ierr, __FILE__, __LINE__)
     ! This needs to be a bit better...
     call KSPSetTolerances(NK_KSP, 1e-8, 1e-16, 10.0, &
          applyPCSubSpaceSize, ierr)
