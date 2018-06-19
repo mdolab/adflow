@@ -650,7 +650,7 @@ contains
     !
 
     use constants, only : realType, intType, alwaysRealType, one, adflow_real, &
-         mpi_max, mpi_sum, mpi_double_precision, mpi_integer
+         mpi_max, mpi_sum, mpi_double_precision, mpi_integer, mpi_double_complex
     use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
          adjResInit, adjResStart, adjResFinal
 
