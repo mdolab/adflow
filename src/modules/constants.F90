@@ -4,12 +4,13 @@ module constants
   ! that is allowed to be imported without an 'only' qualifier.
 
   use precision
+#ifndef USE_TAPENADE
 #include <petscversion.h>
 #if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
   use petsc
 #endif
-
+#endif
   implicit none
   save
 
