@@ -2724,6 +2724,9 @@ contains
        if (totalR < ANK_coupledSwitchTol * totalR0 .and. ANK_useTurbDADI) then
           call destroyANKsolver()
           ANK_useTurbDADI = .False.
+       else if (firstcall .and. (totalR > ANK_coupledSwitchTol * totalR0) .and. (.not. ANK_useTurbDADI)) then
+          call destroyANKsolver()
+          ANK_useTurbDADI = .True.
        end if
 
        call setupANKSolver()
