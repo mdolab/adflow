@@ -39,6 +39,12 @@
 
        real(kind=realType) :: t0Solver
 
+       ! These values are used to track the linear and non linear iteration counters
+       ! during intermediate stages of the solver. We also track the intermediate time
+       ! when the solver switches to the NK solver.
+       real(kind=realType) :: timeInter
+       integer(kind=intType) :: liIterFin, liIterInter, nlIterFin, nlIterInter
+
        ! converged:             Whether or not the solution has been
        !                        converged.
        ! exchangePressureEarly: Whether or not the pressure must be
