@@ -359,6 +359,9 @@ class ADFLOW(AeroSolver):
         self.adflow.anksolver.destroyanksolver()
 
         # Release Fortran memory
+        # Check these fortran routines, they are not complete.
+        # However, they do work and the left over memory
+        # is not too large.
         self.adflow.utils.releasememorypart1()
         self.adflow.utils.releasememorypart2()
 
@@ -677,14 +680,14 @@ class ADFLOW(AeroSolver):
         if relaxStart is None and relaxEnd is not None:
             # Start at 0 orders if start is not given
             relaxStart = 0.0
-            
+
         if relaxEnd is None and relaxStart is not None:
             raise Error("relaxEnd must be given is relaxStart is specified")
 
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, 
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque,
             relaxStart, relaxEnd)
 
 
@@ -1022,12 +1025,6 @@ class ADFLOW(AeroSolver):
 
         t2 = time.time()
         solTime = t2 - t1
-        self.curAP.solTimeInter = numpy.real(self.adflow.iteration.timeinter)
-        self.curAP.solTimeFin = solTime
-        self.curAP.liIterInter = numpy.int(self.adflow.iteration.liiterinter)
-        self.curAP.liIterFin = numpy.int(self.adflow.iteration.liiterfin)
-        self.curAP.nlIterInter = numpy.int(self.adflow.iteration.nliterinter)
-        self.curAP.nlIterFin = numpy.int(self.adflow.iteration.nliterfin)
 
         # Post-Processing
         # --------------------------------------------------------------
@@ -1300,7 +1297,7 @@ class ADFLOW(AeroSolver):
         startEvalSensTime = time.time()
 
         self.setAeroProblem(aeroProblem)
-       
+
         aeroProblemTime = time.time()
 
         if evalFuncs is None:
@@ -1427,12 +1424,12 @@ class ADFLOW(AeroSolver):
                     else:
                         dodsigma = derivs[dictKey][varKey]
                         sigma = UQDict[key]['sigma']
-                        
+
                     sigma2+= (dodsigma*sigma)**2
-                    
+
             UQOut[dictKey]['mu'] = funcs[dictKey]
             UQOut[dictKey]['sigma'] = numpy.sqrt(sigma2)
-        
+
         return UQOut
 
 
@@ -3090,7 +3087,7 @@ class ADFLOW(AeroSolver):
         # Initialize the fail flag in this AP if it doesn't exist
         if not hasattr(self.curAP, 'adjointFailed'):
             self.curAP.adjointFailed = False
-            
+
         # Check for any previous adjoint failure. If any adjoint has failed
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
@@ -3101,7 +3098,7 @@ class ADFLOW(AeroSolver):
             # Actually Solve the adjoint system...psi is updated with the
             # new solution.
             self.adflow.adjointapi.solveadjoint(RHS, psi, True)
-            
+
             # Now set the flags and possibly reset adjoint
             if self.adflow.killsignals.adjointfailed:
                 self.curAP.adjointFailed = True
@@ -4472,11 +4469,6 @@ class ADFLOW(AeroSolver):
             'anknsubiterturb':[int,1],
             'ankturbkspdebug':[bool,False],
             'ankusematrixfree':[bool,True],
-            'ankgetcond':[bool,False],
-            'ankcondsolvetol':[float,1e-8],
-            'ankcondrtol':[float,1e-16],
-            'ankcondmaxiter':[int,1000],
-            'ankcondlag' : [int,10],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4789,11 +4781,6 @@ class ADFLOW(AeroSolver):
             'anknsubiterturb':['ank','ank_nsubiterturb'],
             'ankturbkspdebug':['ank','ank_turbdebug'],
             'ankusematrixfree':['ank','ank_usematrixfree'],
-            'ankgetcond':['ank', 'ank_getcond'],
-            'ankcondsolvetol':['ank','ank_condsolvetol'],
-            'ankcondrtol':['ank','ank_condrtol'],
-            'ankcondmaxiter':['ank','ank_condmaxiter'],
-            'ankcondlag':['ank','ank_condlag'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],

@@ -909,8 +909,7 @@ contains
          nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset, timeLimit
     use iteration, only : cycling, approxTotalIts, converged, CFLMonitor, &
          groundLevel, iterTot, iterType, currentLevel, rhoRes0, totalR, t0Solver,&
-         rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor, linResMonitor, ordersConverged,&
-         liIterFin, liIterInter, nlIterFin, nlIterInter, timeInter
+         rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor, linResMonitor, ordersConverged
     use killSignals, only : globalSignal, localSignal, noSignal, routineFailed, signalWrite, &
          signalWriteQuit
     use monitor, only : writeGrid, writeSurface, writeVolume
@@ -932,7 +931,7 @@ contains
     integer :: ierr
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
-    logical :: absConv, relConv, firstNK, firstANK, intermedFlag
+    logical :: absConv, relConv, firstNK, firstANK
     real(kind=realType) :: nk_switchtol_save, curTime, ordersConvergedOld
 
     ! Allocate the memory for cycling.
@@ -1034,7 +1033,6 @@ contains
     ! Loop over the maximum number of nonlinear iterations
     firstANK = .True.
     firstNK = .True.
-    intermedFlag = .True.
 
     ! Save the NKSwitch tol since it may be modified in the loop
     NK_SwitchTol_save = NK_switchtol
@@ -1165,23 +1163,6 @@ contains
           exit NonLinearIteration
        endif
 
-       if (totalR .le. NK_switchTol*totalR0 .and. intermedFlag) then
-         ! We are switching to the NK solver, save the desired metrics now
-         ! First, calculate walltime
-         if (myid == 0) then
-            curTime = mpi_wtime() - t0solver
-         end if
-
-         call mpi_bcast(curTime, 1, adflow_real, 0, adflow_comm_world, ierr)
-
-         liIterInter = approxTotalIts
-         nlIterInter = iterTot
-         timeInter = curTime
-
-         ! finally, make sure we dont enter here again
-         intermedFlag = .false.
-       end if
-
        ! Exit the loop if we are converged
        if (converged) then
           exit nonLinearIteration
@@ -1228,20 +1209,6 @@ contains
 
 
     enddo nonLinearIteration
-
-    ! Save the total values
-    liIterFin = approxTotalIts
-    nlIterFin = iterTot
-    ! SolTime is already available at python level
-
-    ! Also, we might have not saved intermediate values, if we did not reach NK.
-    ! Check for this case and set these values
-    if (intermedFlag) then
-      liIterInter = liIterFin
-      nlIterInter = nlIterFin
-      timeInter = zero
-    end if
-
 
     ! Restore the switch tol in case it was changed
     NK_switchtol = NK_SwitchTol_save
