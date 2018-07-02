@@ -1,4 +1,4 @@
-       module cgnsGrid
+module cgnsGrid
 !
 !       This module contains the derived data type for storing the
 !       information of the original cgns grid file. Information stored
@@ -10,59 +10,59 @@
 !       module also contains the name of the base and the physical
 !       dimensions of the problem.
 !
-       use constants, only : intType, realType, maxCGNSNameLen, one
+use constants, only : intType, realType, maxCGNSNameLen, one
 #ifndef USE_TAPENADE
-       use su_cgns
+use su_cgns
 #endif
-       implicit none
-       save
+implicit none
+save
 !
 !       The definition of the derived datatype to store the actual
 !       data of the boundary conditions.
 !
-       type cgnsBCDataArray
+type cgnsBCDataArray
 
-         ! The units in which the data is specified.
+  ! The units in which the data is specified.
 
-         integer :: mass, len, time, temp, angle
+  integer :: mass, len, time, temp, angle
 
-         ! The name of the array.
+  ! The name of the array.
 
-         character(len=maxCGNSNameLen) :: arrayName
+  character(len=maxCGNSNameLen) :: arrayName
 
-         ! Number of dimensions for which the data is specified.
+  ! Number of dimensions for which the data is specified.
 
-         integer :: nDimensions
+  integer :: nDimensions
 
-         ! Number of data points of every dimensions. upper limit is
-         ! three, although for BC data the maximum is usually 2.
+  ! Number of data points of every dimensions. upper limit is
+  ! three, although for BC data the maximum is usually 2.
 
-         integer(kind=cgsize_t), dimension(3) :: dataDim
+  integer(kind=cgsize_t), dimension(3) :: dataDim
 
-         ! The actual data. Assumed is that only floating point data
-         ! is prescribed and not integer or character data. Note that
-         ! dataArr is a 1D array even if the data is multi-dimensional.
+  ! The actual data. Assumed is that only floating point data
+  ! is prescribed and not integer or character data. Note that
+  ! dataArr is a 1D array even if the data is multi-dimensional.
 
-         real(kind=realType), pointer, dimension(:) :: dataArr
+  real(kind=realType), pointer, dimension(:) :: dataArr
 
-       end type cgnsBCDataArray
+end type cgnsBCDataArray
 
 #ifndef USE_TAPENADE
-       TYPE CGNSBCDATASETTYPE_D
-          TYPE(CGNSBCDATAARRAY_D), DIMENSION(:), POINTER :: dirichletarrays
-       END TYPE CGNSBCDATASETTYPE_D
+TYPE CGNSBCDATASETTYPE_D
+   TYPE(CGNSBCDATAARRAY_D), DIMENSION(:), POINTER :: dirichletarrays
+END TYPE CGNSBCDATASETTYPE_D
 
-       TYPE CGNSBCDATAARRAY_D
-          REAL(kind=realtype), DIMENSION(:), POINTER :: dataarr
-       END TYPE CGNSBCDATAARRAY_D
+TYPE CGNSBCDATAARRAY_D
+   REAL(kind=realtype), DIMENSION(:), POINTER :: dataarr
+END TYPE CGNSBCDATAARRAY_D
 
-       TYPE CGNSBCDATASETTYPE_B
-          TYPE(CGNSBCDATAARRAY_B), DIMENSION(:), POINTER :: dirichletarrays
-       END TYPE CGNSBCDATASETTYPE_B
+TYPE CGNSBCDATASETTYPE_B
+   TYPE(CGNSBCDATAARRAY_B), DIMENSION(:), POINTER :: dirichletarrays
+END TYPE CGNSBCDATASETTYPE_B
 
-       TYPE CGNSBCDATAARRAY_B
-          REAL(kind=realtype), DIMENSION(:), POINTER :: dataarr
-       END TYPE CGNSBCDATAARRAY_B
+TYPE CGNSBCDATAARRAY_B
+   REAL(kind=realtype), DIMENSION(:), POINTER :: dataarr
+END TYPE CGNSBCDATAARRAY_B
 
 #endif
 
@@ -70,480 +70,480 @@
 !       The definition of the derived datatype to store the prescribed
 !       boundary data for a boundary subface.
 !
-       type cgnsBCDatasetType
+type cgnsBCDatasetType
 
-         ! Name of the dataset.
+  ! Name of the dataset.
 
-         character(len=maxCGNSNameLen) :: datasetName
+  character(len=maxCGNSNameLen) :: datasetName
 
-         ! Boundary condition type.
+  ! Boundary condition type.
 
-         integer :: BCType
+  integer :: BCType
 
-         ! The number of Dirichlet arrays in the data set.
+  ! The number of Dirichlet arrays in the data set.
 
-         integer(kind=intType) :: nDirichletArrays
+  integer(kind=intType) :: nDirichletArrays
 
-         ! The number of Neumann arrays in the data set.
+  ! The number of Neumann arrays in the data set.
 
-         integer(kind=intType) :: nNeumannArrays
+  integer(kind=intType) :: nNeumannArrays
 
-         ! The Dirichlet arrays.
+  ! The Dirichlet arrays.
 
-         type(cgnsBCDataArray), pointer, dimension(:) :: dirichletArrays
+  type(cgnsBCDataArray), pointer, dimension(:) :: dirichletArrays
 
-         ! The Neumann arrays.
+  ! The Neumann arrays.
 
-         type(cgnsBCDataArray), pointer, dimension(:) :: neumannArrays
+  type(cgnsBCDataArray), pointer, dimension(:) :: neumannArrays
 
-       end type cgnsBCDatasetType
+end type cgnsBCDatasetType
 !
 !       The definition of the derived data type to store cgns 1 to 1
 !       block to block, i.e. continuous grid lines across block
 !       boundaries, connectivities.
 !
-       type cgns1to1ConnType
+type cgns1to1ConnType
 
-         ! Name of the interface.
+  ! Name of the interface.
 
-         character(len=maxCGNSNameLen) :: connectName
+  character(len=maxCGNSNameLen) :: connectName
 
-         ! Name of the zone/block interfacing with the current zone/block.
+  ! Name of the zone/block interfacing with the current zone/block.
 
-         character(len=maxCGNSNameLen) :: donorName
+  character(len=maxCGNSNameLen) :: donorName
 
-         ! Zone/block ID of the zone/block interfacing with the current
-         ! zone/block.
+  ! Zone/block ID of the zone/block interfacing with the current
+  ! zone/block.
 
-         integer(kind=intType) :: donorBlock
+  integer(kind=intType) :: donorBlock
 
-         ! Range of points of this subface.
+  ! Range of points of this subface.
 
-         integer(kind=intType) :: iBeg, jBeg, kBeg
-         integer(kind=intType) :: iEnd, jEnd, kEnd
+  integer(kind=intType) :: iBeg, jBeg, kBeg
+  integer(kind=intType) :: iEnd, jEnd, kEnd
 
-         ! Range of points for the donor block.
+  ! Range of points for the donor block.
 
-         integer(kind=intType) :: diBeg, djBeg, dkBeg
-         integer(kind=intType) :: diEnd, djEnd, dkEnd
+  integer(kind=intType) :: diBeg, djBeg, dkBeg
+  integer(kind=intType) :: diEnd, djEnd, dkEnd
 
-         ! Short hand notation defining the relative orientation of the
-         ! two zones.
+  ! Short hand notation defining the relative orientation of the
+  ! two zones.
 
-         integer(kind=intType) :: l1, l2, l3
+  integer(kind=intType) :: l1, l2, l3
 
-         ! Whether or not the subface is a periodic boundary.
+  ! Whether or not the subface is a periodic boundary.
 
-         logical :: periodic
+  logical :: periodic
 
-         ! The center of rotation for a periodic boundary.
+  ! The center of rotation for a periodic boundary.
 
-         real(kind=realType), dimension(3) :: rotationCenter
+  real(kind=realType), dimension(3) :: rotationCenter
 
-         ! The rotation angles for a periodic boundary.
+  ! The rotation angles for a periodic boundary.
 
-         real(kind=realType), dimension(3) :: rotationAngles
+  real(kind=realType), dimension(3) :: rotationAngles
 
-         ! The translation vector for a periodic boundary.
+  ! The translation vector for a periodic boundary.
 
-         real(kind=realType), dimension(3) :: translation
+  real(kind=realType), dimension(3) :: translation
 
-       end type cgns1to1ConnType
+end type cgns1to1ConnType
 !
 !       The definition of the derived data type to store cgns
 !       non-matching abutting block to block connectivities.
 !
-       type cgnsNonMatchAbuttingConnType
+type cgnsNonMatchAbuttingConnType
 
-         ! Number of donor blocks. It is possible that the subface
-         ! abuts multiple donor blocks.
+  ! Number of donor blocks. It is possible that the subface
+  ! abuts multiple donor blocks.
 
-         integer(kind=intType) :: nDonorBlocks
+  integer(kind=intType) :: nDonorBlocks
 
-         ! Names of the interfaces. Dimension [nDonorBlocks].
+  ! Names of the interfaces. Dimension [nDonorBlocks].
 
-         character(len=maxCGNSNameLen), pointer, dimension(:) :: &
-                                                            connectNames
+  character(len=maxCGNSNameLen), pointer, dimension(:) :: &
+                                                     connectNames
 
-         ! Names of the zone/block interfacing with the current
-         ! zone/block. Dimension [nDonorBlocks].
+  ! Names of the zone/block interfacing with the current
+  ! zone/block. Dimension [nDonorBlocks].
 
-         character(len=maxCGNSNameLen), pointer, dimension(:) :: &
-                                                           donorNames
+  character(len=maxCGNSNameLen), pointer, dimension(:) :: &
+                                                    donorNames
 
-         ! Zone/block IDs of the zones/blocks interfacing with the
-         ! current zone/block. Dimension [nDonorBlocks].
+  ! Zone/block IDs of the zones/blocks interfacing with the
+  ! current zone/block. Dimension [nDonorBlocks].
 
-         integer(kind=intType), pointer, dimension(:) :: donorBlocks
+  integer(kind=intType), pointer, dimension(:) :: donorBlocks
 
-         ! Range of points of this subface.
+  ! Range of points of this subface.
 
-         integer(kind=intType) :: iBeg, jBeg, kBeg
-         integer(kind=intType) :: iEnd, jEnd, kEnd
+  integer(kind=intType) :: iBeg, jBeg, kBeg
+  integer(kind=intType) :: iEnd, jEnd, kEnd
 
-         ! Block face IDs of the donor blocks, which abut this subface.
-         ! Dimension [nDonorBlocks].
+  ! Block face IDs of the donor blocks, which abut this subface.
+  ! Dimension [nDonorBlocks].
 
-         integer(kind=intType), pointer, dimension(:) :: donorFaceIDs
+  integer(kind=intType), pointer, dimension(:) :: donorFaceIDs
 
-         ! Whether or not the subface is a periodic boundary.
+  ! Whether or not the subface is a periodic boundary.
 
-         logical :: periodic
+  logical :: periodic
 
-         ! The center of rotation for a periodic boundary.
+  ! The center of rotation for a periodic boundary.
 
-         real(kind=realType), dimension(3) :: rotationCenter
+  real(kind=realType), dimension(3) :: rotationCenter
 
-         ! The rotation angles for a periodic boundary.
+  ! The rotation angles for a periodic boundary.
 
-         real(kind=realType), dimension(3) :: rotationAngles
+  real(kind=realType), dimension(3) :: rotationAngles
 
-         ! The translation vector for a periodic boundary.
+  ! The translation vector for a periodic boundary.
 
-         real(kind=realType), dimension(3) :: translation
+  real(kind=realType), dimension(3) :: translation
 
-       end type cgnsNonMatchAbuttingConnType
+end type cgnsNonMatchAbuttingConnType
 !
 !       The definition of the derived data type to store cgns block
 !       boundary conditions.
 !
-       type cgnsBocoType
+type cgnsBocoType
 
-         ! Name of the boundary condition.
+  ! Name of the boundary condition.
 
-         character(len=maxCGNSNameLen) :: bocoName
+  character(len=maxCGNSNameLen) :: bocoName
 
-         ! CGNS and internal boundary condition type.
+  ! CGNS and internal boundary condition type.
 
-         integer :: BCTypeCGNS
-         integer(kind=intType) :: BCType
+  integer :: BCTypeCGNS
+  integer(kind=intType) :: BCType
 
-         ! Name of the CGNS user defined data node if the CGNS
-         ! boundary condition is UserDefined.
+  ! Name of the CGNS user defined data node if the CGNS
+  ! boundary condition is UserDefined.
 
-         character(len=maxCGNSNameLen) :: userDefinedName
+  character(len=maxCGNSNameLen) :: userDefinedName
 
-         ! The way the boundary condition faces are specified; either
-         ! a point range or an individual set of points.
+  ! The way the boundary condition faces are specified; either
+  ! a point range or an individual set of points.
 
-         integer :: ptSetType
+  integer :: ptSetType
 
-         ! Number of points in the boundary condition set defining this
-         ! boundary region. For a point range this is 2.
+  ! Number of points in the boundary condition set defining this
+  ! boundary region. For a point range this is 2.
 
-         integer(kind=intType) :: nPnts
+  integer(kind=intType) :: nPnts
 
-         ! Index vector indicating the computational coordinate
-         ! direction of the boundary condition patch normal.
+  ! Index vector indicating the computational coordinate
+  ! direction of the boundary condition patch normal.
 
-         integer :: normalIndex(3)
+  integer :: normalIndex(3)
 
-         ! A flag indicating whether or not boundary normals are defined.
-         ! normalListFlag == 0: normals are not defined.
-         ! normalListFlag == 1: normals are defined.
+  ! A flag indicating whether or not boundary normals are defined.
+  ! normalListFlag == 0: normals are not defined.
+  ! normalListFlag == 1: normals are defined.
 
-         integer(kind=cgsize_t) :: normalListFlag
+  integer(kind=cgsize_t) :: normalListFlag
 
-         ! Data type used for the definition of the normals. Admissible
-         ! types are realSingle and realDouble.
+  ! Data type used for the definition of the normals. Admissible
+  ! types are realSingle and realDouble.
 
-         integer :: normalDataType
+  integer :: normalDataType
 
-         ! Corresponding family number. If the face does not belong to
-         ! a family this value is 0.
+  ! Corresponding family number. If the face does not belong to
+  ! a family this value is 0.
 
-         integer(kind=intType) :: familyID
+  integer(kind=intType) :: familyID
 
-         ! The number of the sliding mesh interface of which this
-         ! boco is part. 0 means that this family is not part of a
-         ! sliding mesh interface. This value can be positive and
-         ! negative in order to distinguish between the two sides of the
-         ! interface. The absolute value is the actual ID of the
-         ! interface.
+  ! The number of the sliding mesh interface of which this
+  ! boco is part. 0 means that this family is not part of a
+  ! sliding mesh interface. This value can be positive and
+  ! negative in order to distinguish between the two sides of the
+  ! interface. The absolute value is the actual ID of the
+  ! interface.
 
-         integer(kind=intType) :: slidingID
+  integer(kind=intType) :: slidingID
 
-         ! Number of boundary condition datasets for the current
-         ! boundary condition.
+  ! Number of boundary condition datasets for the current
+  ! boundary condition.
 
-         integer(kind=intType) :: nDataSet
+  integer(kind=intType) :: nDataSet
 
-         ! The actual boundary condition data sets.
+  ! The actual boundary condition data sets.
 
-         type(cgnsBCDatasetType), pointer, dimension(:) :: dataSet
+  type(cgnsBCDatasetType), pointer, dimension(:) :: dataSet
 
-         ! Whether or not I actually allocated the memory for data_set.
-         ! It is possible that data_set points to corresponding entry
-         ! of a family.
+  ! Whether or not I actually allocated the memory for data_set.
+  ! It is possible that data_set points to corresponding entry
+  ! of a family.
 
-         logical :: dataSetAllocated
+  logical :: dataSetAllocated
 
-         ! The rotation center and rotation rate of the boundary face.
-         ! It is possible that this differs from the rotation rate of
-         ! the corresponding block, e.g. for a casing in a
-         ! turbomachinery problem.
+  ! The rotation center and rotation rate of the boundary face.
+  ! It is possible that this differs from the rotation rate of
+  ! the corresponding block, e.g. for a casing in a
+  ! turbomachinery problem.
 
-         real(kind=realType), dimension(3) :: rotCenter, rotRate
+  real(kind=realType), dimension(3) :: rotCenter, rotRate
 
-         ! Range of points of this subface.
+  ! Range of points of this subface.
 
-         integer(kind=intType) :: iBeg, jBeg, kBeg
-         integer(kind=intType) :: iEnd, jEnd, kEnd
+  integer(kind=intType) :: iBeg, jBeg, kBeg
+  integer(kind=intType) :: iEnd, jEnd, kEnd
 
-         ! Whether or not this subface is an actual face. Some mesh
-         ! generators (such as ICEM CFD hexa) include edges and points
-         ! as boundary conditions. These should not be considered by
-         ! the flow solver. in those cases, actual_face is .false.
+  ! Whether or not this subface is an actual face. Some mesh
+  ! generators (such as ICEM CFD hexa) include edges and points
+  ! as boundary conditions. These should not be considered by
+  ! the flow solver. in those cases, actual_face is .false.
 
-         logical :: actualFace
+  logical :: actualFace
 
-         character(len=maxCGNSNameLen)  :: wallBCName
+  character(len=maxCGNSNameLen)  :: wallBCName
 
-       end type cgnsBocoType
+end type cgnsBocoType
 !
 !       The definition of the derived data type to store the data of a
 !       cgns block.
 !
-       type cgnsBlockInfoType
+type cgnsBlockInfoType
 !
 !         Information read from the cgns file.
 !
-         ! The type of the zone. Should be structured. Note that this
-         ! is an integer and not integer(kind=intType).
+  ! The type of the zone. Should be structured. Note that this
+  ! is an integer and not integer(kind=intType).
 
-         integer :: zoneType
+  integer :: zoneType
 
-         ! Zone name for this block.
+  ! Zone name for this block.
 
-         character(len=maxCGNSNameLen) :: zoneName
+  character(len=maxCGNSNameLen) :: zoneName
 
-         ! The number or subblocks and the processor ID's on which they
-         ! are stored. Due to the possibility of splitting the block
-         ! during runtime, multiple processors could store a part of
-         ! the block.
+  ! The number or subblocks and the processor ID's on which they
+  ! are stored. Due to the possibility of splitting the block
+  ! during runtime, multiple processors could store a part of
+  ! the block.
 
-         integer                        :: nSubBlocks
-         integer, dimension(:), pointer :: procStored
+  integer                        :: nSubBlocks
+  integer, dimension(:), pointer :: procStored
 
-         ! The local block ID's of the subblocks.
+  ! The local block ID's of the subblocks.
 
-         integer, dimension(:), pointer :: localBlockID
+  integer, dimension(:), pointer :: localBlockID
 
-         ! The corresponding nodal ranges of the subblocks.
+  ! The corresponding nodal ranges of the subblocks.
 
-         integer, dimension(:), pointer :: iBegOr, jBegOr, kBegOr
-         integer, dimension(:), pointer :: iEndOr, jEndOr, kEndOr
+  integer, dimension(:), pointer :: iBegOr, jBegOr, kBegOr
+  integer, dimension(:), pointer :: iEndOr, jEndOr, kEndOr
 
-         ! The units in which the grid is specified.
+  ! The units in which the grid is specified.
 
-         integer :: mass, len, time, temp, angle
+  integer :: mass, len, time, temp, angle
 
-         ! Whether or not grid units are specified.
+  ! Whether or not grid units are specified.
 
-         logical :: gridUnitsSpecified
+  logical :: gridUnitsSpecified
 
-         ! The conversion factor to meters for this block.
+  ! The conversion factor to meters for this block.
 
-         real(kind=realType) :: LRef
+  real(kind=realType) :: LRef
 
-         ! Corresponding family number. If the block does not belong to
-         ! a family this value is 0.
+  ! Corresponding family number. If the block does not belong to
+  ! a family this value is 0.
 
-         integer(kind=intType) :: familyID
+  integer(kind=intType) :: familyID
 
-         ! Nodal block dimensions.
+  ! Nodal block dimensions.
 
-         integer(kind=intType) :: il, jl, kl
+  integer(kind=intType) :: il, jl, kl
 
-         ! Cell block dimensions.
+  ! Cell block dimensions.
 
-         integer(kind=intType) :: nx, ny, nz
+  integer(kind=intType) :: nx, ny, nz
 
-         ! Total number of 1 to 1 block to block connectivities, i.e.
-         ! continous grid lines, for this block. Also the number of
-         ! 1 to 1 connectivities stored in general connectivity nodes
-         ! is incorporated in n1to1.
+  ! Total number of 1 to 1 block to block connectivities, i.e.
+  ! continous grid lines, for this block. Also the number of
+  ! 1 to 1 connectivities stored in general connectivity nodes
+  ! is incorporated in n1to1.
 
-         integer(kind=intType) :: n1to1
+  integer(kind=intType) :: n1to1
 
-         ! Number of 1 to 1 block to block connectivities stored in
-         ! general connectivities.
+  ! Number of 1 to 1 block to block connectivities stored in
+  ! general connectivities.
 
-         integer(kind=intType) :: n1to1General
+  integer(kind=intType) :: n1to1General
 
-         ! Array of 1 to 1 block to block connectivities.
+  ! Array of 1 to 1 block to block connectivities.
 
-         type(cgns1to1ConnType), pointer, dimension(:) :: conn1to1
+  type(cgns1to1ConnType), pointer, dimension(:) :: conn1to1
 
-         ! Number of non-matching abutting block to block
-         ! connectivities.
+  ! Number of non-matching abutting block to block
+  ! connectivities.
 
-         integer(kind=intType) :: nNonMatchAbutting
+  integer(kind=intType) :: nNonMatchAbutting
 
-         ! Array of non-matching abutting block to block connectivities.
+  ! Array of non-matching abutting block to block connectivities.
 
-         type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
-                                                   connNonMatchAbutting
+  type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
+                                            connNonMatchAbutting
 
-         ! Number of boundary conditions for this block.
+  ! Number of boundary conditions for this block.
 
-         integer(kind=intType) :: nBocos
+  integer(kind=intType) :: nBocos
 
-         ! Array of boundary conditions.
+  ! Array of boundary conditions.
 
-         type(cgnsBocoType), pointer, dimension(:) :: bocoInfo
+  type(cgnsBocoType), pointer, dimension(:) :: bocoInfo
 
-         ! Whether or not a rotating frame is specified.
+  ! Whether or not a rotating frame is specified.
 
-         logical :: rotatingFrameSpecified
+  logical :: rotatingFrameSpecified
 
-         ! The corresponding rotation center and rotation rate.
+  ! The corresponding rotation center and rotation rate.
 
-         real(kind=realType), dimension(3) :: rotCenter, rotRate
+  real(kind=realType), dimension(3) :: rotCenter, rotRate
 
-         ! Whether or not a the BCs in this zone have families.
+  ! Whether or not a the BCs in this zone have families.
 
-         logical :: BCFamilies
+  logical :: BCFamilies
 
-         ! Cluster indentifier of multiblock "cluser" in overset mesh
-         integer(kind=intType) :: cluster
+  ! Cluster indentifier of multiblock "cluser" in overset mesh
+  integer(kind=intType) :: cluster
 
-         ! Overset Priority scaling. Not currently read from CGNS
-         ! file, but could be in the future. Property of CGNS block so
-         ! it's stored here. Set from python options
-         real(kind=realType) :: priority=one
+  ! Overset Priority scaling. Not currently read from CGNS
+  ! file, but could be in the future. Property of CGNS block so
+  ! it's stored here. Set from python options
+  real(kind=realType) :: priority=one
 
-         ! ViscousDir is whether or no there is a viscous direction in I/J/K
-         logical, dimension(3) :: viscousDir = [.False., .False., .False.]
+  ! ViscousDir is whether or no there is a viscous direction in I/J/K
+  logical, dimension(3) :: viscousDir = [.False., .False., .False.]
 
-       end type cgnsBlockInfoType
+end type cgnsBlockInfoType
 !
 !       The definition of the derived data type to store the data of a
 !       cgns family.
 !
-       type cgnsFamilyType
+type cgnsFamilyType
 
-         ! Name of the family.
+  ! Name of the family.
 
-         character(len=maxCGNSNameLen) :: familyName
+  character(len=maxCGNSNameLen) :: familyName
 
-         ! Type of the boundary condition and family BC name.
+  ! Type of the boundary condition and family BC name.
 
-         integer :: BCTypeCGNS
-         integer(kind=intType) :: BCType
+  integer :: BCTypeCGNS
+  integer(kind=intType) :: BCType
 
-         character(len=maxCGNSNameLen) :: bcName
+  character(len=maxCGNSNameLen) :: bcName
 
-         ! Name of the CGNS user defined data node if the CGNS
-         ! boundary condition is UserDefined.
+  ! Name of the CGNS user defined data node if the CGNS
+  ! boundary condition is UserDefined.
 
-         character(len=maxCGNSNameLen) :: userDefinedName
+  character(len=maxCGNSNameLen) :: userDefinedName
 
-         ! The number of the sliding mesh interface of which this
-         ! family is part. 0 means that this family is not part of a
-         ! sliding mesh interface. This value can be positive and
-         ! negative in order to distinguish between the two sides of the
-         ! interface. The absolute value is the actual ID of the
-         ! interface.
+  ! The number of the sliding mesh interface of which this
+  ! family is part. 0 means that this family is not part of a
+  ! sliding mesh interface. This value can be positive and
+  ! negative in order to distinguish between the two sides of the
+  ! interface. The absolute value is the actual ID of the
+  ! interface.
 
-         integer(kind=intType) :: slidingID
+  integer(kind=intType) :: slidingID
 
-         ! The number of the bleed flow region of which this family is
-         ! part. 0 means that this family does not belong to a bleed
-         ! flow region. There is no need to distinguish between an
-         ! inflow and an outflow bleed, because they have different
-         ! boundary conditions.
+  ! The number of the bleed flow region of which this family is
+  ! part. 0 means that this family does not belong to a bleed
+  ! flow region. There is no need to distinguish between an
+  ! inflow and an outflow bleed, because they have different
+  ! boundary conditions.
 
-         integer(kind=intType) :: bleedRegionID
+  integer(kind=intType) :: bleedRegionID
 
-         ! Whether or not the mass flow must be monitored for this family.
+  ! Whether or not the mass flow must be monitored for this family.
 
-         logical :: monitorMassFlow
+  logical :: monitorMassFlow
 
-         ! Number of boundary condition datasets for this family.
+  ! Number of boundary condition datasets for this family.
 
-         integer(kind=intType) :: nDataSet
+  integer(kind=intType) :: nDataSet
 
-         ! The actual boundary condition data sets.
+  ! The actual boundary condition data sets.
 
-         type(cgnsBCDatasetType), pointer, dimension(:) :: dataSet
+  type(cgnsBCDatasetType), pointer, dimension(:) :: dataSet
 
-         ! Whether or not a rotating frame is specified.
+  ! Whether or not a rotating frame is specified.
 
-         logical :: rotatingFrameSpecified
+  logical :: rotatingFrameSpecified
 
-         ! The corresponding rotation center and rotation rate.
+  ! The corresponding rotation center and rotation rate.
 
-         real(kind=realType), dimension(3) :: rotCenter, rotRate
+  real(kind=realType), dimension(3) :: rotCenter, rotRate
 
-       end type cgnsFamilyType
+end type cgnsFamilyType
 !
 !       Definition of the variables stored in this module.
 !
-       ! Dimensions of the cell and of the physical dimensions.
-       ! Both should be 3 for this code. Note that these are integers
-       ! and not integers(kind=intType).
+! Dimensions of the cell and of the physical dimensions.
+! Both should be 3 for this code. Note that these are integers
+! and not integers(kind=intType).
 
-       integer :: cgnsCellDim, cgnsPhysDim
+integer :: cgnsCellDim, cgnsPhysDim
 
-       ! Number of blocks (zones) in the cgns grid.
+! Number of blocks (zones) in the cgns grid.
 
-       integer(kind=intType) :: cgnsNDom
+integer(kind=intType) :: cgnsNDom
 
-       ! Array of cgns blocks.
+! Array of cgns blocks.
 
-       type(cgnsBlockInfoType), allocatable, dimension(:) :: cgnsDoms
-       type(cgnsBlockInfoType), allocatable, dimension(:) :: cgnsDomsd
+type(cgnsBlockInfoType), allocatable, dimension(:) :: cgnsDoms
+type(cgnsBlockInfoType), allocatable, dimension(:) :: cgnsDomsd
 
-       ! Number of families in the cgns grid.
+! Number of families in the cgns grid.
 
-       integer(kind=intType) :: cgnsNFamilies
+integer(kind=intType) :: cgnsNFamilies
 
-       ! Array of families.
+! Array of families.
 
-       type(cgnsFamilyType), allocatable, dimension(:) :: cgnsFamilies
+type(cgnsFamilyType), allocatable, dimension(:) :: cgnsFamilies
 
-       ! Number of sliding mesh interfaces in the grid.
+! Number of sliding mesh interfaces in the grid.
 
-       integer(kind=intType) :: cgnsNSliding
+integer(kind=intType) :: cgnsNSliding
 
-       ! The corresponding family ID's of the sliding interfaces.
+! The corresponding family ID's of the sliding interfaces.
 
-       integer(kind=intType), allocatable, dimension(:,:) :: famIDsSliding
+integer(kind=intType), allocatable, dimension(:,:) :: famIDsSliding
 
-       ! Number of domain interfaces, i.e. interfaces with other CFD
-       ! codes, in the grid.
+! Number of domain interfaces, i.e. interfaces with other CFD
+! codes, in the grid.
 
-       integer(kind=intType) :: cgnsNDomainInterfaces
+integer(kind=intType) :: cgnsNDomainInterfaces
 
-       ! The family and BC ID's of the domain interfaces.
+! The family and BC ID's of the domain interfaces.
 
-       integer(kind=intType), allocatable, dimension(:) :: &
-                                            famIDsDomainInterfaces
-       integer(kind=intType), allocatable, dimension(:,:) :: &
-                                            bcIDsDomainInterfaces
+integer(kind=intType), allocatable, dimension(:) :: &
+                                     famIDsDomainInterfaces
+integer(kind=intType), allocatable, dimension(:,:) :: &
+                                     bcIDsDomainInterfaces
 
-       ! Name of the cgns base.
+! Name of the cgns base.
 
-       character(len=maxCGNSNameLen) :: cgnsBaseName
+character(len=maxCGNSNameLen) :: cgnsBaseName
 
-       ! massFlowFamilyInv(:,:):  Array to store the local contributions
-       !                          from the central part of the flux to
-       !                          the mass flow of a family and the
-       !                          sliding mesh interfaces. Dimension is
-       !                          (0:nn,nTimeIntervalsSpectral, where
-       !                          nn is the number of families for which
-       !                          the mass flow must be monitored plus
-       !                          2*cgnsNSliding (if the mass flow through
-       !                          the sliding interfaces must be monitored).
-       !                          The reason for 2*cgnsNSliding is that each
-       !                          side of a sliding interface is monitored.
-       !                          The first index starts at 0 to store
-       !                          all the faces that are not on a
-       !                          sliding interface.
-       ! massFlowFamilyDiss(:,:): Idem for the dissipative part.
+! massFlowFamilyInv(:,:):  Array to store the local contributions
+!                          from the central part of the flux to
+!                          the mass flow of a family and the
+!                          sliding mesh interfaces. Dimension is
+!                          (0:nn,nTimeIntervalsSpectral, where
+!                          nn is the number of families for which
+!                          the mass flow must be monitored plus
+!                          2*cgnsNSliding (if the mass flow through
+!                          the sliding interfaces must be monitored).
+!                          The reason for 2*cgnsNSliding is that each
+!                          side of a sliding interface is monitored.
+!                          The first index starts at 0 to store
+!                          all the faces that are not on a
+!                          sliding interface.
+! massFlowFamilyDiss(:,:): Idem for the dissipative part.
 
-       real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyInv
-       real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyDiss
+real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyInv
+real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyDiss
 
-       end module cgnsGrid
+end module cgnsGrid

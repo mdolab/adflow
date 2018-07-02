@@ -51,6 +51,8 @@ module inputDiscretization
   ! radiiNeededCoarse:      Idem for the coarse grid.
   ! lumpedDiss :            logical factor for determining whether or not
   !                         lumped dissipation is used for preconditioner
+  ! approxSA:               Determines if the approximate source terms form
+  !                         the SA model is used.
   ! sigma      :            Scaling parameter for dissipation lumping in
   !                         approximateprecondtioner
   ! useApproxWallDistance : logical to determine if the user wants to
@@ -76,6 +78,7 @@ module inputDiscretization
   real(kind=realType) :: vis2, vis4, vis2Coarse, adis
   real(kind=realType) :: kappaCoef
   logical :: lumpedDiss
+  logical :: approxSA
   real(kind=realType) :: sigma
   logical :: useBlockettes
 

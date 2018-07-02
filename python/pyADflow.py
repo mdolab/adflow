@@ -349,6 +349,19 @@ class ADFLOW(AeroSolver):
             print('| %-30s: %10.3f sec'%('Total Init Time',finalInitTime - startInitTime))
             print('+--------------------------------------------------+')
 
+    def __del__(self):
+        """
+        Clean up allocated memory if necessary
+        """
+        # Release PETSc memory
+        self.releaseAdjointMemory()
+        self.adflow.nksolver.destroynksolver()
+        self.adflow.anksolver.destroyanksolver()
+
+        # Release Fortran memory
+        self.adflow.utils.releasememorypart1()
+        self.adflow.utils.releasememorypart2()
+
     def setMesh(self, mesh):
         """
         Set the mesh object to the aero_solver to do geometric deformations
@@ -1009,6 +1022,12 @@ class ADFLOW(AeroSolver):
 
         t2 = time.time()
         solTime = t2 - t1
+        self.curAP.solTimeInter = numpy.real(self.adflow.iteration.timeinter)
+        self.curAP.solTimeFin = solTime
+        self.curAP.liIterInter = numpy.int(self.adflow.iteration.liiterinter)
+        self.curAP.liIterFin = numpy.int(self.adflow.iteration.liiterfin)
+        self.curAP.nlIterInter = numpy.int(self.adflow.iteration.nliterinter)
+        self.curAP.nlIterFin = numpy.int(self.adflow.iteration.nliterfin)
 
         # Post-Processing
         # --------------------------------------------------------------
@@ -4442,12 +4461,22 @@ class ADFLOW(AeroSolver):
             'ankstepmin':[float, 0.05],
             'ankconstcflstep':[float, 0.5],
             'ankphysicallstol':[float, 0.2],
+            'ankphysicallstolturb':[float, 0.99],
             'ankunsteadylstol':[float, 1.0],
             'anksecondordswitchtol':[float, 1e-16],
             'ankcoupledswitchtol':[float, 1e-16],
             'ankturbcflscale' : [float, 1.0],
             'ankusefullvisc' : [bool, True],
             'ankpcupdatetol':[float,0.5],
+            'ankadpc':[bool, False],
+            'anknsubiterturb':[int,1],
+            'ankturbkspdebug':[bool,False],
+            'ankusematrixfree':[bool,True],
+            'ankgetcond':[bool,False],
+            'ankcondsolvetol':[float,1e-8],
+            'ankcondrtol':[float,1e-16],
+            'ankcondmaxiter':[int,1000],
+            'ankcondlag' : [int,10],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4749,12 +4778,22 @@ class ADFLOW(AeroSolver):
             'ankstepmin':['ank','ank_stepmin'],
             'ankconstcflstep':['ank','ank_constcflstep'],
             'ankphysicallstol':['ank', 'ank_physlstol'],
+            'ankphysicallstolturb':['ank','ank_physlstolturb'],
             'ankunsteadylstol':['ank', 'ank_unstdylstol'],
             'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
             'ankturbcflscale':['ank', 'ank_turbcflscale'],
             'ankusefullvisc':['ank', 'ank_usefullvisc'],
             'ankpcupdatetol':['ank', 'ank_pcupdatetol'],
+            'ankadpc':['ank','ank_adpc'],
+            'anknsubiterturb':['ank','ank_nsubiterturb'],
+            'ankturbkspdebug':['ank','ank_turbdebug'],
+            'ankusematrixfree':['ank','ank_usematrixfree'],
+            'ankgetcond':['ank', 'ank_getcond'],
+            'ankcondsolvetol':['ank','ank_condsolvetol'],
+            'ankcondrtol':['ank','ank_condrtol'],
+            'ankcondmaxiter':['ank','ank_condmaxiter'],
+            'ankcondlag':['ank','ank_condlag'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
