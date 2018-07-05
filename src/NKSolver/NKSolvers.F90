@@ -3583,14 +3583,26 @@ contains
     if (firstCall .or. &
        ((totalR .le. ANK_coupledSwitchTol * totalR0) .and. (.not. ANK_coupled))) then
 
-       ! If we are switching to coupled ANK
-       ! destroy the solver if created previously
-       ! and set the appropriate flag
-       if (totalR .le. ANK_coupledSwitchTol * totalR0 .and. (.not. ANK_coupled)) then
-          call destroyANKsolver()
-          ANK_coupled = .True.
+       ! If this is a first call, we need to change the coupled switch
+       ! to the correct value.
+       if (firstCall) then
+
+         ! Check if we are above or below the coupled switch tolerance
+         if (totalR .le. ANK_coupledSwitchTol * totalR0) then
+           ANK_coupled = .True.
+         else
+           ANK_coupled = .False.
+         end if
+
+       ! This is not a first call, and the only option left is that,
+       ! we may be switching from uncoupled to coupled
+       else
+         ANK_coupled = .True.
        end if
 
+       ! If we are in here, destroy the solver regardless,
+       ! and set up with the correct coupling mode.
+       call destroyANKSolver()
        call setupANKSolver()
 
        ! Copy the adflow 'w' into the petsc wVec
