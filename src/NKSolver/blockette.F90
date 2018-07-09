@@ -931,7 +931,7 @@ contains
     real(kind=realType), parameter :: xminn = 1.e-10_realType
     real(kind=realType), parameter :: f23 = two*third
     integer(kind=intType) :: i, j, k
-    real(kind=realType) :: ssb, ss, term1Fact
+    real(kind=realType) :: term1Fact
 
     ! Set model constants
     cv13    = rsaCv1**3
@@ -1044,22 +1044,6 @@ contains
              fv1      = chi3/(chi3+cv13)
              fv2      = one - chi/(one + chi*fv1)
 
-             ! Correct the production term to account for the influence
-             ! of the wall.
-             ss = sqrtProd
-             ssb = w(i,j,k,itu1)*fv2*kar2Inv*dist2Inv
-
-             ! Correct the S tilde value such that it does not go below
-             ! 0.3*S. This modification is presented in the same paper with
-             ! negative SA (ICCFD7-1902).
-
-             if (ssb .lt. -rsaCv2*ss) then
-               sst = ss + ss*(rsaCv2*rsaCv2*ss + rsaCv3*ssb) / &
-                     ((rsaCv3-2.0_realType*rsaCv2)*ss - ssb)
-             else
-               sst = ss + ssb
-             end if
-
              ! The function ft2, which is designed to keep a laminar
              ! solution laminar. When running in fully turbulent mode
              ! this function should be set to 0.0.
@@ -1069,11 +1053,22 @@ contains
                 ft2 = rsaCt3*exp(-rsaCt4*chi2)
              end if
 
+             ! Correct the production term to account for the influence
+             ! of the wall.
+
+             sst = sqrtProd + w(i,j,k,itu1)*fv2*kar2Inv*dist2Inv
+
              ! Add rotation term (useRotationSA defined in inputParams.F90)
 
              if (useRotationSA) then
                 sst = sst + rsaCrot*min(zero,sqrt(two*strainMag2))
              end if
+
+             ! Make sure that this term remains positive
+             ! (the function fv2 is negative between chi = 1 and 18.4,
+             ! which can cause sst to go negative, which is undesirable).
+
+             sst = max(sst,xminn)
 
              ! Compute the function fw. The argument rr is cut off at 10
              ! to avoid numerical problems. This is ok, because the
@@ -1089,9 +1084,9 @@ contains
              ! Compute the source term; some terms are saved for the
              ! linearization. The source term is stored in dvt.
 
-             term1 = rsaCb1*(one-ft2)*sst*term1Fact
-             term2 = dist2Inv*(kar2Inv*rsaCb1*ft2 &
-                  -           rsaCw1*fwSa)
+             term1 = rsaCb1*(one-ft2)*sqrtProd*term1Fact
+             term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
+             -           rsaCw1*fwSa)
 
              dw(i, j, k, itu1) = dw(i, j, k, itu1) + (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 

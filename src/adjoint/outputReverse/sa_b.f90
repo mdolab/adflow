@@ -44,9 +44,8 @@ contains
     integer(kind=inttype) :: i, j, k, nn, ii
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
-    real(kind=realtype) :: ss, sst, ssb, nu, dist2inv, chi, chi2, chi3
-    real(kind=realtype) :: ssd, sstd, ssbd, nud, dist2invd, chid, chi2d&
-&   , chi3d
+    real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
+    real(kind=realtype) :: ssd, sstd, nud, dist2invd, chid, chi2d, chi3d
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
     real(kind=realtype) :: rrd, ggd, gg6d, termfwd, fwsad, term1d, &
 &   term2d
@@ -68,12 +67,11 @@ contains
     intrinsic sqrt
     intrinsic exp
     intrinsic min
+    intrinsic max
     integer :: branch
-    real(kind=realtype) :: temp3
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
     real(kind=realtype) :: min1
     real(kind=realtype) :: min1d
@@ -91,7 +89,6 @@ contains
     real(kind=realtype) :: temp
     real(kind=realtype) :: y1
     real(kind=realtype) :: y1d
-    real(kind=realtype) :: temp4
 ! set model constants
     cv13 = rsacv1**3
     kar2inv = one/rsak**2
@@ -216,18 +213,7 @@ contains
         end if
 ! correct the production term to account for the influence
 ! of the wall.
-        ssb = w(i, j, k, itu1)*fv2*kar2inv*dist2inv
-! correct the s tilde value such that it does not go below
-! 0.3*s. this modification is presented in the same paper with
-! negative sa (iccfd7-1902).
-        if (ssb .lt. -(rsacv2*ss)) then
-          sst = ss + ss*(rsacv2*rsacv2*ss+rsacv3*ssb)/((rsacv3-&
-&           2.0_realtype*rsacv2)*ss-ssb)
-          call pushcontrol1b(0)
-        else
-          sst = ss + ssb
-          call pushcontrol1b(1)
-        end if
+        sst = ss + w(i, j, k, itu1)*fv2*kar2inv*dist2inv
 ! add rotation term (userotationsa defined in inputparams.f90)
         if (userotationsa) then
           y1 = sqrt(two*strainmag2)
@@ -243,10 +229,13 @@ contains
         else
           call pushcontrol1b(0)
         end if
-! make sure that this term remains positive
-! (the function fv2 is negative between chi = 1 and 18.4,
-! which can cause sst to go negative, which is undesirable).
-!sst = max(sst,xminn)
+        if (sst .lt. xminn) then
+          sst = xminn
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+          sst = sst
+        end if
 ! compute the function fw. the argument rr is cut off at 10
 ! to avoid numerical problems. this is ok, because the
 ! asymptotical value of fw is then already reached.
@@ -265,46 +254,50 @@ contains
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
         if (approxsa) then
-          term1 = zero
           call pushcontrol1b(0)
+          term1 = zero
         else
-          term1 = rsacb1*(one-ft2)*sst
+          term1 = rsacb1*(one-ft2)*ss
           call pushcontrol1b(1)
         end if
-        term2 = dist2inv*(kar2inv*rsacb1*ft2-rsacw1*fwsa)
-        tempd11 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
-        temp4 = w(i, j, k, itu1)
-        term1d = tempd11
-        term2d = temp4*tempd11
-        wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp4)*&
-&         scratchd(i, j, k, idvt) + term2*tempd11
+        term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
+&         )
+        tempd9 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
+        temp2 = w(i, j, k, itu1)
+        term1d = tempd9
+        term2d = temp2*tempd9
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp2)*&
+&         scratchd(i, j, k, idvt) + term2*tempd9
         scratchd(i, j, k, idvt) = 0.0_8
-        dist2invd = (kar2inv*rsacb1*ft2-rsacw1*fwsa)*term2d
-        ft2d = dist2inv*kar2inv*rsacb1*term2d
+        tempd10 = dist2inv*kar2inv*rsacb1*term2d
+        dist2invd = (kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa)*&
+&         term2d
+        ft2d = (1.0_8-fv2)*tempd10
+        fv2d = (one-ft2)*tempd10
         fwsad = -(dist2inv*rsacw1*term2d)
         call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          sstd = 0.0_8
-        else
-          ft2d = ft2d - sst*rsacb1*term1d
-          sstd = rsacb1*(one-ft2)*term1d
+        if (branch .ne. 0) then
+          ft2d = ft2d - ss*rsacb1*term1d
+          ssd = ssd + rsacb1*(one-ft2)*term1d
         end if
         termfwd = gg*fwsad
-        temp3 = (one+cw36)/(cw36+gg6)
-        if (temp3 .le. 0.0_8 .and. (sixth .eq. 0.0_8 .or. sixth .ne. int&
+        temp1 = (one+cw36)/(cw36+gg6)
+        if (temp1 .le. 0.0_8 .and. (sixth .eq. 0.0_8 .or. sixth .ne. int&
 &           (sixth))) then
           gg6d = 0.0
         else
-          gg6d = -(sixth*temp3**(sixth-1)*temp3*termfwd/(cw36+gg6))
+          gg6d = -(sixth*temp1**(sixth-1)*temp1*termfwd/(cw36+gg6))
         end if
         ggd = 6*gg**5*gg6d + termfw*fwsad
         rrd = (rsacw2*6*rr**5-rsacw2+1.0_8)*ggd
         call popcontrol1b(branch)
         if (branch .eq. 0) rrd = 0.0_8
-        tempd10 = w(i, j, k, itu1)*kar2inv*rrd/sst
+        tempd8 = w(i, j, k, itu1)*kar2inv*rrd/sst
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + kar2inv*dist2inv*rrd/sst
-        dist2invd = dist2invd + tempd10
-        sstd = sstd - dist2inv*tempd10/sst
+        dist2invd = dist2invd + tempd8
+        sstd = -(dist2inv*tempd8/sst)
+        call popcontrol1b(branch)
+        if (branch .eq. 0) sstd = 0.0_8
         call popcontrol1b(branch)
         if (branch .ne. 0) then
           min1d = rsacrot*sstd
@@ -317,23 +310,11 @@ contains
           if (.not.two*strainmag2 .eq. 0.0_8) strainmag2d = strainmag2d &
 &             + two*y1d/(2.0*sqrt(two*strainmag2))
         end if
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          temp2 = (rsacv3-2.0_realtype*rsacv2)*ss - ssb
-          temp1 = ss/temp2
-          tempd8 = (rsacv2**2*ss+rsacv3*ssb)*sstd/temp2
-          tempd9 = -(temp1*tempd8)
-          ssd = ssd + (rsacv3-rsacv2*2.0_realtype)*tempd9 + tempd8 + (&
-&           temp1*rsacv2**2+1.0_8)*sstd
-          ssbd = temp1*rsacv3*sstd - tempd9
-        else
-          ssd = ssd + sstd
-          ssbd = sstd
-        end if
-        tempd7 = kar2inv*w(i, j, k, itu1)*ssbd
+        tempd7 = kar2inv*w(i, j, k, itu1)*sstd
+        ssd = ssd + sstd
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + kar2inv*fv2*dist2inv*&
-&         ssbd
-        fv2d = dist2inv*tempd7
+&         sstd
+        fv2d = fv2d + dist2inv*tempd7
         dist2invd = dist2invd + fv2*tempd7
         call popcontrol1b(branch)
         if (branch .eq. 0) then
@@ -557,7 +538,7 @@ contains
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
     real(kind=realtype) :: fv1, fv2, ft2
-    real(kind=realtype) :: ss, sst, ssb, nu, dist2inv, chi, chi2, chi3
+    real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
     real(kind=realtype) :: dfv1, dfv2, dft2, drr, dgg, dfw
     real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
@@ -570,6 +551,7 @@ contains
     intrinsic sqrt
     intrinsic exp
     intrinsic min
+    intrinsic max
     real(kind=realtype) :: min1
     real(kind=realtype) :: y1
 ! set model constants
@@ -686,16 +668,7 @@ contains
         end if
 ! correct the production term to account for the influence
 ! of the wall.
-        ssb = w(i, j, k, itu1)*fv2*kar2inv*dist2inv
-! correct the s tilde value such that it does not go below
-! 0.3*s. this modification is presented in the same paper with
-! negative sa (iccfd7-1902).
-        if (ssb .lt. -(rsacv2*ss)) then
-          sst = ss + ss*(rsacv2*rsacv2*ss+rsacv3*ssb)/((rsacv3-&
-&           2.0_realtype*rsacv2)*ss-ssb)
-        else
-          sst = ss + ssb
-        end if
+        sst = ss + w(i, j, k, itu1)*fv2*kar2inv*dist2inv
 ! add rotation term (userotationsa defined in inputparams.f90)
         if (userotationsa) then
           y1 = sqrt(two*strainmag2)
@@ -706,10 +679,11 @@ contains
           end if
           sst = sst + rsacrot*min1
         end if
-! make sure that this term remains positive
-! (the function fv2 is negative between chi = 1 and 18.4,
-! which can cause sst to go negative, which is undesirable).
-!sst = max(sst,xminn)
+        if (sst .lt. xminn) then
+          sst = xminn
+        else
+          sst = sst
+        end if
 ! compute the function fw. the argument rr is cut off at 10
 ! to avoid numerical problems. this is ok, because the
 ! asymptotical value of fw is then already reached.
@@ -728,9 +702,10 @@ contains
         if (approxsa) then
           term1 = zero
         else
-          term1 = rsacb1*(one-ft2)*sst
+          term1 = rsacb1*(one-ft2)*ss
         end if
-        term2 = dist2inv*(kar2inv*rsacb1*ft2-rsacw1*fwsa)
+        term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
+&         )
         scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, &
 &         k, itu1)
       end do
