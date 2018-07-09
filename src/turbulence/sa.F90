@@ -108,7 +108,7 @@ contains
     ! Local variables.
     integer(kind=intType) :: i, j, k, nn, ii
     real(kind=realType) :: fv1, fv2, ft2
-    real(kind=realType) :: ss, sst, ssb, nu, dist2Inv, chi, chi2, chi3
+    real(kind=realType) :: ss, sst, nu, dist2Inv, chi, chi2, chi3
     real(kind=realType) :: rr, gg, gg6, termFw, fwSa, term1, term2
     real(kind=realType) :: dfv1, dfv2, dft2, drr, dgg, dfw
     real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
@@ -263,18 +263,8 @@ contains
 
                 ! Correct the production term to account for the influence
                 ! of the wall.
-                ssb = w(i,j,k,itu1)*fv2*kar2Inv*dist2Inv
 
-                ! Correct the S tilde value such that it does not go below
-                ! 0.3*S. This modification is presented in the same paper with
-                ! negative SA (ICCFD7-1902).
-
-                if (ssb .lt. -rsaCv2*ss) then
-                  sst = ss + ss*(rsaCv2*rsaCv2*ss + rsaCv3*ssb) / &
-                        ((rsaCv3-2.0_realType*rsaCv2)*ss - ssb)
-                else
-                  sst = ss + ssb
-                end if
+                sst = ss + w(i,j,k,itu1)*fv2*kar2Inv*dist2Inv
 
                 ! Add rotation term (useRotationSA defined in inputParams.F90)
 
@@ -286,7 +276,7 @@ contains
                 ! (the function fv2 is negative between chi = 1 and 18.4,
                 ! which can cause sst to go negative, which is undesirable).
 
-                !sst = max(sst,xminn)
+                sst = max(sst,xminn)
 
                 ! Compute the function fw. The argument rr is cut off at 10
                 ! to avoid numerical problems. This is ok, because the
@@ -305,9 +295,9 @@ contains
                 if (approxSA) then
                   term1 = zero
                 else
-                  term1 = rsaCb1*(one-ft2)*sst
+                  term1 = rsaCb1*(one-ft2)*ss
                 end if
-                term2 = dist2Inv*(kar2Inv*rsaCb1*ft2 &
+                term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                      -           rsaCw1*fwSa)
 
                 scratch(i,j,k,idvt) = (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
