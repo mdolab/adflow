@@ -1086,7 +1086,7 @@ contains
 
              term1 = rsaCb1*(one-ft2)*sqrtProd*term1Fact
              term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
-             -           rsaCw1*fwSa)
+                  -           rsaCw1*fwSa)
 
              dw(i, j, k, itu1) = dw(i, j, k, itu1) + (term1 + term2*w(i,j,k,itu1))*w(i,j,k,itu1)
 

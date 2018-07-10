@@ -1874,7 +1874,7 @@ contains
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
     use inputDiscretization, only : approxSA
-    use iteration, only : totalR0
+    use iteration, only : totalR0, totalR
     use utils, only : EChk, setPointers
     use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
     use communication
@@ -1896,7 +1896,9 @@ contains
     useObjective = .False.
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = .False.
-    approxSA = .True.
+
+    if (totalR > ANK_secondOrdSwitchTol*totalR0) &
+       approxSA = .True.
 
     ! Create the preconditoner matrix
     call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
@@ -2086,7 +2088,7 @@ contains
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
     use inputDiscretization, only : approxSA
-    use iteration, only : totalR0
+    use iteration, only : totalR0, totalR
     use utils, only : EChk, setPointers
     use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
     use communication
@@ -2108,7 +2110,9 @@ contains
     useObjective = .False.
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = .False.
-    approxSA = .True.
+
+    if (totalR > ANK_secondOrdSwitchTol*totalR0) &
+       approxSA = .True.
 
     ! Create the preconditoner matrix
     call setupStateResidualMatrix(dRdwPreTurb, useAD, usePC, useTranspose, &
@@ -2925,141 +2929,6 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
   end subroutine setWANK
-
-! not using these anymore
-  ! subroutine setUniformFlowANK()
-  !   !
-  !   !       setUniformFlow set the flow variables of all local blocks on
-  !   !       the start level to the uniform flow field.
-  !   !
-  !   use constants
-  !   use blockPointers, only : w, dw, fw, flowDoms, ib, jb, kb, &
-  !        rev, rlv, nDom, BCData, p
-  !   use communication
-  !   use flowVarRefState, only : eddyModel, viscous, muInf, nw, nwf, &
-  !        pInfCorr, wInf
-  !   use inputIteration, only : mgStartLevel
-  !   use inputPhysics, only : equationMode, flowType, eddyVisInfRatio
-  !   use inputTimeSpectral, only : nTimeIntervalsSpectral
-  !   use utils, only : setPointers
-  !   implicit none
-  !   !
-  !   !      Local variables.
-  !   !
-  !   integer :: ierr
-  !
-  !   integer(kind=intType) :: nn, mm, i, j, k, l
-  !
-  !   real(kind=realType) :: tmp
-  !
-  !   real(kind=realType), dimension(3) :: dirLoc, dirGlob
-  !
-  !   ! Loop over the number of spectral solutions and blocks.
-  !   spectralLoop: do mm=1,nTimeIntervalsSpectral
-  !      domains: do nn=1,nDom
-  !
-  !         ! Set the pointers for this block.
-  !
-  !         call setPointers(nn,mgStartlevel,mm)
-  !
-  !         ! Set the w-variables to the ones of the uniform flow field.
-  !         do l=1,nwf
-  !            do k=0,kb
-  !               do j=0,jb
-  !                  do i=0,ib
-  !                     w(i,j,k,l) = wInf(l)
-  !                     dw(i,j,k,l) = zero
-  !                  enddo
-  !               enddo
-  !            enddo
-  !         enddo
-  !         !set this here for a reinitialize flow to eliminate possible NAN's
-  !         do l=1,nwf
-  !            do k=0,kb
-  !               do j=0,jb
-  !                  do i=0,ib
-  !                     fw(i,j,k,l) = zero
-  !                  enddo
-  !               enddo
-  !            enddo
-  !         enddo
-  !
-  !         ! Set the pressure.
-  !
-  !         p = pInfCorr
-  !
-  !         ! Initialize the laminar and eddy viscosity, if appropriate,
-  !         ! such that no uninitialized memory is present.
-  !
-  !         if( viscous )   rlv = muInf
-  !         if( eddyModel ) rev = eddyVisInfRatio*muInf
-  !
-  !      enddo domains
-  !   enddo spectralLoop
-  !
-  ! end subroutine setUniformFlowANK
-  !
-  ! subroutine setUniformFlowANKTurb()
-  !     !
-  !     !       setUniformFlow set the flow variables of all local blocks on
-  !     !       the start level to the uniform flow field.
-  !     !
-  !     use constants
-  !     use blockPointers, only : w, dw, fw, flowDoms, ib, jb, kb, &
-  !     rev, rlv, nDom, BCData, p
-  !     use communication
-  !     use flowVarRefState, only : eddyModel, viscous, muInf, nw, nwf, &
-  !     pInfCorr, wInf, nt1, nt2
-  !     use inputIteration, only : mgStartLevel
-  !     use inputPhysics, only : equationMode, flowType, eddyVisInfRatio
-  !     use inputTimeSpectral, only : nTimeIntervalsSpectral
-  !     use utils, only : setPointers
-  !     implicit none
-  !     !
-  !     !      Local variables.
-  !     !
-  !     integer :: ierr
-  !
-  !     integer(kind=intType) :: nn, mm, i, j, k, l
-  !
-  !     real(kind=realType) :: tmp
-  !
-  !     real(kind=realType), dimension(3) :: dirLoc, dirGlob
-  !
-  !     ! Loop over the number of spectral solutions and blocks.
-  !     spectralLoop: do mm=1,nTimeIntervalsSpectral
-  !         domains: do nn=1,nDom
-  !
-  !             ! Set the pointers for this block.
-  !
-  !             call setPointers(nn,mgStartlevel,mm)
-  !
-  !             ! Set the w-variables to the ones of the uniform flow field.
-  !             do l=nt1,nt2
-  !                 do k=0,kb
-  !                     do j=0,jb
-  !                         do i=0,ib
-  !                             w(i,j,k,l) = wInf(l)
-  !                             dw(i,j,k,l) = zero
-  !                         enddo
-  !                     enddo
-  !                 enddo
-  !             enddo
-  !
-  !             ! Set the pressure.
-  !
-  !             p = pInfCorr
-  !
-  !             ! Initialize the laminar and eddy viscosity, if appropriate,
-  !             ! such that no uninitialized memory is present.
-  !
-  !             if( viscous )   rlv = muInf
-  !             if( eddyModel ) rev = eddyVisInfRatio*muInf
-  !
-  !         enddo domains
-  !     enddo spectralLoop
-  !
-  ! end subroutine setUniformFlowANKTurb
 
   subroutine physicalityCheckANK(lambdaP)
 
