@@ -15,8 +15,6 @@
        real(kind=realType), parameter :: rsaCb2 = 0.622_realType
        real(kind=realType), parameter :: rsaCb3 = 0.66666666667_realType
        real(kind=realType), parameter :: rsaCv1 = 7.1_realType
-       real(kind=realType), parameter :: rsaCv2 = 0.7_realType
-       real(kind=realType), parameter :: rsaCv3 = 0.9_realType
        real(kind=realType), parameter :: rsaCw1 = rsaCb1/(rsaK**2) &
                                                   + (1.+rsaCb2)/rsaCb3
        real(kind=realType), parameter :: rsaCw2 = 0.3_realType
