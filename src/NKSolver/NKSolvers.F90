@@ -1622,6 +1622,7 @@ module ANKSolver
   integer(kind=intType) :: ANK_iluFill
   integer(kind=intType) :: ANK_innerPreConIts
   real(kind=realType)   :: ANK_rtol
+  real(kind=realType)   :: ANK_linResMax
   real(kind=realType)   :: ANK_switchTol
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
@@ -1634,7 +1635,7 @@ module ANKSolver
 
   ! Misc variables
   real(kind=realType) :: ANK_CFL, ANK_CFL0, ANK_CFLLimit, ANK_CFLFactor, ANK_CFLCutback
-  real(kind=realType) :: ANK_CFLMin0, ANK_CFLMin, ANK_CFLExponent
+  real(kind=realType) :: ANK_CFLMin0, ANK_CFLMin, ANK_CFLMinBase, ANK_CFLExponent
   real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
   real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
@@ -3111,8 +3112,19 @@ contains
                         ! if no turbulence variables, this loop will be automatically skipped
                         ! check turbulence variable
                         ratio = (wvec_pointer(ii)/(dvec_pointer(ii)+eps))* ANK_physLSTolTurb
-                        ! only check the updates that drive turbulence negative
-                        if (ratio .lt. zero) ratio = one
+                        ! if the ratio is less than min step, the update is either
+                        ! in the positive direction, therefore we do not clip it,
+                        ! or the update is very limiting, so we just clip the
+                        ! individual update for this cell.
+                        if (ratio .lt. ANK_stepFactor*ANK_stepMin) then
+                          ratio = one
+                          ! The update was very limiting, so just clip this
+                          ! individual update and dont change the overall
+                          ! step size. To select the new update, instead of
+                          ! clipping to zero, we clip to 1 percent of the original.
+                          if (ratio .gt. zero) &
+                            dvec_pointer(ii) = wvec_pointer(ii)*ANK_physLSTolTurb
+                        end if
                         lambdaL = min(lambdaL, ratio)
                         ii = ii + 1
                     end do
@@ -3150,7 +3162,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputDiscretization, only : approxSA
     use iteration, only : approxTotalIts, totalR0, totalR, currentLevel
-    use utils, only : EChk, setPointers
+    use utils, only : EChk, setPointers, myisnan
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
     use NKSolver, only : getEwTol
@@ -3304,7 +3316,7 @@ contains
         ! initialize this outside the ls
         LSFailed = .False.
 
-        if ((unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then
+        if ((unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. myisnan(unsteadyNorm))) then
             ! The unsteady residual is too high or we have a NAN. Do a
             ! backtracking line search until we get a residual that is lower.
 
@@ -3334,7 +3346,7 @@ contains
                 call VecNorm(rVecTurb, NORM_2, unsteadyNorm, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
-                if (unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
+                if (unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. myisnan(unsteadyNorm)) then
 
                     ! Restore back to the original wVec
                     call VecAXPY(wVecTurb, lambdaTurb, deltaWTurb, ierr)
@@ -3349,7 +3361,7 @@ contains
                 end if
             end do backtrack
 
-            if (LSFailed .or. isnan(unsteadyNorm)) then
+            if (LSFailed .or. myisnan(unsteadyNorm)) then
                 ! the line search wasn't much help.
 
                 if (ANK_CFL > ANK_CFLMin) then
@@ -3500,6 +3512,7 @@ contains
           totalR_old = totalR ! Record the old residual for the first iteration
           rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
           ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
+          ANK_CFLMinBase = ANK_CFLMin0
           totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
           linResOld = zero
           linResOldTurb=zero
@@ -3518,7 +3531,7 @@ contains
     if (mod(ANK_iter, ANK_jacobianLag) == 0 .or. totalR/totalR_pcUpdate < ANK_pcUpdateTol) then
 
        ! First of all, update the minimum cfl wrt the overall convergence
-       ANK_CFLMin = min(ANK_CFLLimit, ANK_CFLMin0*(totalR0/totalR)**ANK_CFLExponent)
+       ANK_CFLMin = min(ANK_CFLLimit, ANK_CFLMinBase*(totalR0/totalR)**ANK_CFLExponent)
 
        ! Update the CFL number depending on the outcome of the last iteration
        if (lambda < ANK_stepMin * ANK_stepFactor) then
@@ -3711,7 +3724,7 @@ contains
     ! initialize this outside the ls
     LSFailed = .False.
 
-    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then
+    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. myisnan(unsteadyNorm))) then
        ! The unsteady residual is too high or we have a NAN. Do a
        ! backtracking line search until we get a residual that is lower.
 
@@ -3741,7 +3754,7 @@ contains
           call VecNorm(rVec, NORM_2, unsteadyNorm, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
-          if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
+          if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. myisnan(unsteadyNorm)) then
 
              ! Restore back to the original wVec
              call VecAXPY(wVec, lambda, deltaW, ierr)
@@ -3756,7 +3769,7 @@ contains
           end if
        end do backtrack
 
-       if (LSFailed .or. isnan(unsteadyNorm)) then
+       if (LSFailed .or. myisnan(unsteadyNorm)) then
           ! the line search wasn't much help.
 
           if (ANK_CFL > ANK_CFLMin) then
@@ -3828,6 +3841,20 @@ contains
 
     ! Update step monitor
     stepMonitor = lambda
+
+    ! Check if the linear solutions are failing.
+    ! If the lin res is above .5 or so, the solver
+    ! might stall, so we might be better off just
+    ! reducing the CFL and keep going. We Modify
+    ! the CFLMin by altering CFLMinBase.
+    if (linResMonitor .gt. ANK_linResMax) then
+      ! This will adjust MinBase such that we can halve the cfl
+      ! based on the current CFL.
+      ANK_CFLMinBase = ANK_CFLCutback*ANK_CFL*((totalR/totalR0)**ANK_CFLExponent)
+      ! flags to refresh the Jacobian and cut back the CFL
+      ANK_iter = -1
+      lambda = zero
+    end if
 
     ! Update the approximate iteration counter. The +1 is for the
     ! residual evaluations.
