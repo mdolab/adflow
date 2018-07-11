@@ -3117,13 +3117,17 @@ contains
                         ! or the update is very limiting, so we just clip the
                         ! individual update for this cell.
                         if (ratio .lt. ANK_stepFactor*ANK_stepMin) then
-                          ratio = one
                           ! The update was very limiting, so just clip this
                           ! individual update and dont change the overall
                           ! step size. To select the new update, instead of
                           ! clipping to zero, we clip to 1 percent of the original.
                           if (ratio .gt. zero) &
                             dvec_pointer(ii) = wvec_pointer(ii)*ANK_physLSTolTurb
+
+                          ! Either case, set the ratio to one. Positive updates
+                          ! do not limit the step, negative updates below minimum
+                          ! step were already clipped.
+                          ratio = one
                         end if
                         lambdaL = min(lambdaL, ratio)
                         ii = ii + 1
