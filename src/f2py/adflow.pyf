@@ -227,6 +227,7 @@ python module libadflow
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
+         real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
