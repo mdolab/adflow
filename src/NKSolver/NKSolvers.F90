@@ -3027,8 +3027,23 @@ contains
                       ! if no turbulence variables, this loop will be automatically skipped
                       ! check turbulence variable
                       ratio = (wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTolTurb
-                      ! only check the updates that drive turbulence negative
-                      if (ratio .lt. zero) ratio = one
+                      ! if the ratio is less than min step, the update is either
+                      ! in the positive direction, therefore we do not clip it,
+                      ! or the update is very limiting, so we just clip the
+                      ! individual update for this cell.
+                      if (ratio .lt. ANK_stepFactor*ANK_stepMin) then
+                        ! The update was very limiting, so just clip this
+                        ! individual update and dont change the overall
+                        ! step size. To select the new update, instead of
+                        ! clipping to zero, we clip to 1 percent of the original.
+                        if (ratio .gt. zero) &
+                          dvec_pointer(ii) = wvec_pointer(ii)*ANK_physLSTolTurb
+
+                        ! Either case, set the ratio to one. Positive updates
+                        ! do not limit the step, negative updates below minimum
+                        ! step were already clipped.
+                        ratio = one
+                      end if
                       lambdaL = min(lambdaL, ratio)
                       ii = ii + 1
                    end do
