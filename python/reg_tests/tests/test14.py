@@ -9,7 +9,7 @@ from mpi4py import MPI
 from baseclasses import AeroProblem
 from pyspline import Curve
 from pygeo import DVGeometry
-from pywarpustruct import USMesh
+from idwarp import USMesh
 from mdo_regression_helper import *
 from commonUtils import *
 

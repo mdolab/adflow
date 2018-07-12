@@ -19,7 +19,7 @@ from openmdao.utils.assert_utils import assert_rel_error
 
 from adflow import ADFLOW, OM_ADFLOW
 from pygeo import DVGeometry
-from pywarpustruct import USMesh
+from idwarp import USMesh
 from pyspline import Curve
 
 sys.path.append(os.path.abspath('../../'))
