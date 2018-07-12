@@ -36,9 +36,9 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/modules/precision_tapenade.f90\
 		$(SRC)/modules/iteration.f90\
 		$(SRC)/modules/section.f90\
-		$(SRC)/modules/communication.f90\
+		$(SRC)/modules/communication.F90\
 		$(SRC)/modules/paramTurb.F90\
-		$(SRC)/modules/cgnsGrid.f90 \
+		$(SRC)/modules/cgnsGrid.F90 \
 		$(SRC)/modules/CpCurveFits.f90\
 		$(SRC)/modules/blockPointers.F90 \
 		$(SRC)/modules/BCPointers.F90 \
