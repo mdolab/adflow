@@ -35,6 +35,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -252,7 +253,13 @@ contains
         fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-        term1 = rsacb1*(one-ft2)*ss
+        if (approxsa) then
+          call pushcontrol1b(0)
+          term1 = zero
+        else
+          term1 = rsacb1*(one-ft2)*ss
+          call pushcontrol1b(1)
+        end if
         term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
 &         )
         tempd9 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
@@ -265,10 +272,14 @@ contains
         tempd10 = dist2inv*kar2inv*rsacb1*term2d
         dist2invd = (kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa)*&
 &         term2d
-        ft2d = (1.0_8-fv2)*tempd10 - ss*rsacb1*term1d
+        ft2d = (1.0_8-fv2)*tempd10
         fv2d = (one-ft2)*tempd10
         fwsad = -(dist2inv*rsacw1*term2d)
-        ssd = ssd + rsacb1*(one-ft2)*term1d
+        call popcontrol1b(branch)
+        if (branch .ne. 0) then
+          ft2d = ft2d - ss*rsacb1*term1d
+          ssd = ssd + rsacb1*(one-ft2)*term1d
+        end if
         termfwd = gg*fwsad
         temp1 = (one+cw36)/(cw36+gg6)
         if (temp1 .le. 0.0_8 .and. (sixth .eq. 0.0_8 .or. sixth .ne. int&
@@ -519,6 +530,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -687,7 +699,11 @@ contains
         fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-        term1 = rsacb1*(one-ft2)*ss
+        if (approxsa) then
+          term1 = zero
+        else
+          term1 = rsacb1*(one-ft2)*ss
+        end if
         term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
 &         )
         scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, &

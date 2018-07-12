@@ -911,6 +911,7 @@ contains
     use paramTurb
     use blockPointers, only : sectionID
     use inputPhysics, only :useft2SA, useRotationSA, turbProd, equations
+    use inputDiscretization, only : approxSA
     use section, only : sections
     use sa, only : cv13, kar2Inv, cw36, cb3Inv
     use flowvarRefState, only : timeRef
@@ -930,12 +931,17 @@ contains
     real(kind=realType), parameter :: xminn = 1.e-10_realType
     real(kind=realType), parameter :: f23 = two*third
     integer(kind=intType) :: i, j, k
+    real(kind=realType) :: term1Fact
 
     ! Set model constants
     cv13    = rsaCv1**3
     kar2Inv = one/(rsaK**2)
     cw36    = rsaCw3**6
     cb3Inv  = one/rsaCb3
+
+    ! set the approximate multiplier here
+    term1Fact = one
+    if (approxSA) term1Fact = zero
 
     ! Determine the non-dimensional wheel speed of this block.
 
@@ -1078,7 +1084,7 @@ contains
              ! Compute the source term; some terms are saved for the
              ! linearization. The source term is stored in dvt.
 
-             term1 = rsaCb1*(one-ft2)*sqrtProd
+             term1 = rsaCb1*(one-ft2)*sqrtProd*term1Fact
              term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                   -           rsaCw1*fwSa)
 
