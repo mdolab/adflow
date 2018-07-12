@@ -1,12 +1,19 @@
 module NKSolver
 
   use constants
-  implicit none
 
   ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
 
   ! PETSc Matrices:
   ! dRdw: This is the actual matrix-free matrix computed with FD
@@ -22,7 +29,7 @@ module NKSolver
   ! deltaW: Update to the wVec from linear solution
   ! diagV: Diagonal lumping term
 
-  Vec wVec, rVec, deltaW, work, g, wBase
+  Vec wVec, rVec, deltaW, work, g, baseRes
 
   ! NK_KSP: The ksp object for solving the newton udpate
   KSP  NK_KSP
@@ -127,6 +134,9 @@ contains
        call VecDuplicate(wVec, deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       call VecDuplicate(wVec, baseRes, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
        ! Create the two additional work vectors for the line search:
        call VecDuplicate(wVec, g, ierr)
        call EChk(ierr, __FILE__, __LINE__)
@@ -190,8 +200,14 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        if (useLinResMonitor) then
+#if PETSC_VERSION_GE(3,8,0)
+          ! This could be wrong. There is no petsc_null_context???
+          call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_FUNCTION, &
+               PETSC_NULL_FUNCTION, ierr)
+#else
           call KSPMonitorSet(NK_KSP, linearResidualMonitor, PETSC_NULL_OBJECT, &
                PETSC_NULL_FUNCTION, ierr)
+#endif
           call EChk(ierr, __FILE__, __LINE__)
        end if
 
@@ -454,6 +470,9 @@ contains
        call VecDestroy(deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       call VecDestroy(baseRes, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
        call VecDestroy(g, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -527,10 +546,6 @@ contains
        iterType = "      NK"
     end if
 
-    ! set the BaseVector of the matrix-free matrix:
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
     if (NK_iter == 0 .or. .not. NK_useEW) then
        rtol = NK_rtolInit
     else
@@ -560,6 +575,12 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     call KSPSetResidualHistory(NK_KSP, resHist, maxIt+1, PETSC_TRUE, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! set the BaseVector of the matrix-free matrix
+    call formFunction_mf(ctx, wVec, baseRes, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    call MatMFFDSetBase(dRdW, wVec, baseRes, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
@@ -613,7 +634,7 @@ contains
   subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, lambda)
 
     use constants
-    use utils, only : EChk
+    use utils, only : EChk, myisnan
     use communication, only : myid
     use initializeFlow, only : setUniformFlow
     use iteration, only : totalR0
@@ -1065,9 +1086,12 @@ contains
     ! Set the base vec
     call setwVec(wVec)
 
-    call MatMFFDSetBase(dRdW, wVec, PETSC_NULL_OBJECT, ierr)
+    ! Set the base vec
+    call setwVec(wVec)
+    call formFunction_mf(ctx, wVec, baseRes, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-
+    call MatMFFDSetBase(dRdW, wVec, baseRes, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
     ! This needs to be a bit better...
     call KSPSetTolerances(NK_KSP, 1e-8, 1e-16, 10.0, &
          applyPCSubSpaceSize, ierr)
@@ -1566,16 +1590,20 @@ end module NKSolver
 module ANKSolver
 
   use constants
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
-
-  ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
 
   Mat  dRdw, dRdwPre
-  Vec wVec, rVec, deltaW
+  Vec wVec, rVec, deltaW, baseRes
   KSP  ANK_KSP
 
   PetscFortranAddr   ctx(1)
@@ -1670,6 +1698,9 @@ contains
        call VecDuplicate(wVec, deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       call VecDuplicate(wVec, baseRes, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
        ! Create Pre-Conditioning Matrix
        allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
             nnzOffDiag(nCellsLocal(1_intType)*nTimeIntervalsSpectral) )
@@ -1712,8 +1743,20 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        if (useLinResMonitor) then
+
+#if PETSC_VERSION_GE(3,8,0)
+          ! This is probably wrong. NO petsc_null_context
+          call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_FUNCTION, &
+               PETSC_NULL_FUNCTION, ierr)
+#else
           call KSPMonitorSet(ANK_KSP, LinearResidualMonitor, PETSC_NULL_OBJECT, &
                PETSC_NULL_FUNCTION, ierr)
+
+#endif
+
+
+
+
           call EChk(ierr, __FILE__, __LINE__)
        end if
 
@@ -2316,6 +2359,9 @@ contains
        call VecDestroy(deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       call VecDestroy(baseRes, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
        call KSPDestroy(ANK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -2516,7 +2562,7 @@ contains
     use blockPointers, only : ndom, il, jl, kl
     use flowVarRefState, only : nw, nwf, nt1
     use inputtimespectral, only : nTimeIntervalsSpectral
-    use utils, only : setPointers, EChk
+    use utils, only : setPointers, EChk, myisnan
     use communication, only : ADflow_comm_world
     implicit none
 
@@ -2641,7 +2687,7 @@ contains
     use inputIteration, only : L2conv
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
-    use utils, only : EChk, setPointers
+    use utils, only : EChk, setPointers, myisnan
     use turbAPI, only : turbSolveSegregated
     use turbMod, only : secondOrd
     use solverUtils, only : computeUTau
@@ -2789,10 +2835,6 @@ contains
     call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! Set the BaseVector of the matrix-free matrix:
-    call MatMFFDSetBase(dRdw, wVec, PETSC_NULL_OBJECT, ierr)
-    call EChk(ierr, __FILE__, __LINE__)
-
     ! ============== Flow Update =============
 
     ! For the approximate solver, we need the approximate flux routines
@@ -2841,6 +2883,12 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
     call KSPSetResidualHistory(ANK_KSP, resHist, ank_maxIter+1, PETSC_TRUE, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Set the BaseVector of the matrix-free matrix:
+    call formFunction_mf(ctx, wVec, baseRes, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    call MatMFFDSetBase(dRdW, wVec, baseRes, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Actually do the Linear Krylov Solve
