@@ -9,7 +9,7 @@ from mpi4py import MPI
 from baseclasses import AeroProblem
 from pyspline import Curve
 from pygeo import DVGeometry
-from pywarpustruct import USMesh
+from idwarp import USMesh
 from mdo_regression_helper import *
 from commonUtils import *
 
@@ -45,7 +45,7 @@ options.update(
      'gridprecision':'double',
  })
 
-meshOptions = copy.copy(pyWarpUStructDefOpts)
+meshOptions = copy.copy(IDWarpDefOpts)
 meshOptions.update({'gridFile':gridFile})
 
 # Setup aeroproblem, cfdsolver, mesh and geometry.
