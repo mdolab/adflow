@@ -349,6 +349,22 @@ class ADFLOW(AeroSolver):
             print('| %-30s: %10.3f sec'%('Total Init Time',finalInitTime - startInitTime))
             print('+--------------------------------------------------+')
 
+    def __del__(self):
+        """
+        Clean up allocated memory if necessary
+        """
+        # Release PETSc memory
+        self.releaseAdjointMemory()
+        self.adflow.nksolver.destroynksolver()
+        self.adflow.anksolver.destroyanksolver()
+
+        # Release Fortran memory
+        # Check these fortran routines, they are not complete.
+        # However, they do work and the left over memory
+        # is not too large.
+        self.adflow.utils.releasememorypart1()
+        self.adflow.utils.releasememorypart2()
+
     def setMesh(self, mesh):
         """
         Set the mesh object to the aero_solver to do geometric deformations
@@ -664,14 +680,14 @@ class ADFLOW(AeroSolver):
         if relaxStart is None and relaxEnd is not None:
             # Start at 0 orders if start is not given
             relaxStart = 0.0
-            
+
         if relaxEnd is None and relaxStart is not None:
             raise Error("relaxEnd must be given is relaxStart is specified")
 
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, 
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque,
             relaxStart, relaxEnd)
 
 
@@ -1281,7 +1297,7 @@ class ADFLOW(AeroSolver):
         startEvalSensTime = time.time()
 
         self.setAeroProblem(aeroProblem)
-       
+
         aeroProblemTime = time.time()
 
         if evalFuncs is None:
@@ -1408,12 +1424,12 @@ class ADFLOW(AeroSolver):
                     else:
                         dodsigma = derivs[dictKey][varKey]
                         sigma = UQDict[key]['sigma']
-                        
+
                     sigma2+= (dodsigma*sigma)**2
-                    
+
             UQOut[dictKey]['mu'] = funcs[dictKey]
             UQOut[dictKey]['sigma'] = numpy.sqrt(sigma2)
-        
+
         return UQOut
 
 
@@ -3071,7 +3087,7 @@ class ADFLOW(AeroSolver):
         # Initialize the fail flag in this AP if it doesn't exist
         if not hasattr(self.curAP, 'adjointFailed'):
             self.curAP.adjointFailed = False
-            
+
         # Check for any previous adjoint failure. If any adjoint has failed
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
@@ -3082,7 +3098,7 @@ class ADFLOW(AeroSolver):
             # Actually Solve the adjoint system...psi is updated with the
             # new solution.
             self.adflow.adjointapi.solveadjoint(RHS, psi, True)
-            
+
             # Now set the flags and possibly reset adjoint
             if self.adflow.killsignals.adjointfailed:
                 self.curAP.adjointFailed = True
@@ -4427,27 +4443,33 @@ class ADFLOW(AeroSolver):
             'ankswitchtol':[float, 1.0],
             'anksubspacesize':[int, -1],
             'ankmaxiter':[int, 40],
-            'anklinearsolvetol':[float, 0.1],
+            'anklinearsolvetol':[float, 0.05],
+            'anklinresmax':[float, 0.9],
             'ankasmoverlap':[int, 1],
-            'ankpcilufill':[int, 1],
+            'ankpcilufill':[int, 2],
             'ankjacobianlag':[int, 10],
             'ankinnerpreconits':[int, 1],
             'ankcfl0':[float, 5.0],
             'ankcflmin':[float,1.0],
-            'ankcfllimit':[float, 250.0],
+            'ankcfllimit':[float, 1e5],
             'ankcflfactor':[float, 10.0],
-            'ankcflexponent':[float, 1.0],
+            'ankcflexponent':[float, 0.5],
             'ankcflcutback':[float,0.5],
             'ankstepfactor':[float, 1.0],
-            'ankstepmin':[float, 0.05],
-            'ankconstcflstep':[float, 0.5],
+            'ankstepmin':[float, 0.01],
+            'ankconstcflstep':[float, 0.4],
             'ankphysicallstol':[float, 0.2],
+            'ankphysicallstolturb':[float, 0.99],
             'ankunsteadylstol':[float, 1.0],
             'anksecondordswitchtol':[float, 1e-16],
             'ankcoupledswitchtol':[float, 1e-16],
             'ankturbcflscale' : [float, 1.0],
             'ankusefullvisc' : [bool, True],
             'ankpcupdatetol':[float,0.5],
+            'ankadpc':[bool, False],
+            'anknsubiterturb':[int,1],
+            'ankturbkspdebug':[bool,False],
+            'ankusematrixfree':[bool,True],
 
             # Load Balance/partitioning parameters
             'blocksplitting':[bool, True],
@@ -4735,6 +4757,7 @@ class ADFLOW(AeroSolver):
             'anksubspacesize':['ank', 'ank_subspace'],
             'ankmaxiter':['ank', 'ank_maxiter'],
             'anklinearsolvetol':['ank', 'ank_rtol'],
+            'anklinresmax':['ank','ank_linresmax'],
             'ankasmoverlap':['ank', 'ank_asmoverlap'],
             'ankpcilufill':['ank', 'ank_ilufill'],
             'ankjacobianlag':['ank', 'ank_jacobianlag'],
@@ -4749,12 +4772,17 @@ class ADFLOW(AeroSolver):
             'ankstepmin':['ank','ank_stepmin'],
             'ankconstcflstep':['ank','ank_constcflstep'],
             'ankphysicallstol':['ank', 'ank_physlstol'],
+            'ankphysicallstolturb':['ank','ank_physlstolturb'],
             'ankunsteadylstol':['ank', 'ank_unstdylstol'],
             'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
             'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
             'ankturbcflscale':['ank', 'ank_turbcflscale'],
             'ankusefullvisc':['ank', 'ank_usefullvisc'],
             'ankpcupdatetol':['ank', 'ank_pcupdatetol'],
+            'ankadpc':['ank','ank_adpc'],
+            'anknsubiterturb':['ank','ank_nsubiterturb'],
+            'ankturbkspdebug':['ank','ank_turbdebug'],
+            'ankusematrixfree':['ank','ank_usematrixfree'],
             # Load Balance Paramters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
