@@ -44,6 +44,12 @@ python module libadflow
            real(kind=realtype) dimension(3,n),intent(out),depend(n) :: xcen
          end subroutine getcellcenters
 
+         subroutine releasememorypart1
+         end subroutine releasememorypart1
+
+         subroutine releasememorypart2
+         end subroutine releasememorypart2
+
        end module utils
 
        module walldistance
@@ -221,6 +227,7 @@ python module libadflow
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
+         real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
@@ -233,12 +240,17 @@ python module libadflow
          real(kind=realtype) :: ank_stepmin
          real(kind=realtype) :: ank_constcflstep
          real(kind=realtype) :: ank_physlstol
+         real(kind=realtype) :: ank_physlstolturb
          real(kind=realtype) :: ank_unstdylstol
          real(kind=realtype) :: ank_secondordswitchtol
          real(kind=realtype) :: ank_coupledswitchtol
          real(kind=realtype) :: ank_turbcflscale
          logical :: ank_usefullvisc
          real(kind=realtype) :: ank_pcupdatetol
+         logical :: ank_adpc
+         integer(kind=inttype) :: ank_nsubiterturb
+         logical :: ank_turbdebug
+         logical :: ank_usematrixfree
          subroutine destroyanksolver
          end subroutine destroyanksolver
 
