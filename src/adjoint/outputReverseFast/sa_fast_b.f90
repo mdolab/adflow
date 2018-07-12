@@ -30,6 +30,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -250,7 +251,15 @@ myIntPtr = myIntPtr + 1
         fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-        term1 = rsacb1*(one-ft2)*ss
+        if (approxsa) then
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+          term1 = zero
+        else
+          term1 = rsacb1*(one-ft2)*ss
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+        end if
         term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
 &         )
         tempd9 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
@@ -261,10 +270,15 @@ myIntPtr = myIntPtr + 1
 &         scratchd(i, j, k, idvt) + term2*tempd9
         scratchd(i, j, k, idvt) = 0.0_8
         tempd10 = dist2inv*kar2inv*rsacb1*term2d
-        ft2d = (1.0_8-fv2)*tempd10 - ss*rsacb1*term1d
+        ft2d = (1.0_8-fv2)*tempd10
         fv2d = (one-ft2)*tempd10
         fwsad = -(dist2inv*rsacw1*term2d)
-        ssd = ssd + rsacb1*(one-ft2)*term1d
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+        if (branch .ne. 0) then
+          ft2d = ft2d - ss*rsacb1*term1d
+          ssd = ssd + rsacb1*(one-ft2)*term1d
+        end if
         termfwd = gg*fwsad
         temp0 = (one+cw36)/(cw36+gg6)
         if (temp0 .le. 0.0_8 .and. (sixth .eq. 0.0_8 .or. sixth .ne. int&
@@ -449,6 +463,7 @@ branch = myIntStack(myIntPtr)
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -617,7 +632,11 @@ branch = myIntStack(myIntPtr)
         fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-        term1 = rsacb1*(one-ft2)*ss
+        if (approxsa) then
+          term1 = zero
+        else
+          term1 = rsacb1*(one-ft2)*ss
+        end if
         term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
 &         )
         scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i, j, &

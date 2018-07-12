@@ -33,6 +33,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -361,8 +362,13 @@ contains
             fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-            term1d = rsacb1*((one-ft2)*ssd-ft2d*ss)
-            term1 = rsacb1*(one-ft2)*ss
+            if (approxsa) then
+              term1 = zero
+              term1d = 0.0_8
+            else
+              term1d = rsacb1*((one-ft2)*ssd-ft2d*ss)
+              term1 = rsacb1*(one-ft2)*ss
+            end if
             term2d = dist2invd*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-&
 &             rsacw1*fwsa) + dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2d-&
 &             ft2d*fv2+ft2d)-rsacw1*fwsad)
@@ -389,6 +395,7 @@ contains
     use paramturb
     use section
     use inputphysics
+    use inputdiscretization, only : approxsa
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -557,7 +564,11 @@ contains
             fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-            term1 = rsacb1*(one-ft2)*ss
+            if (approxsa) then
+              term1 = zero
+            else
+              term1 = rsacb1*(one-ft2)*ss
+            end if
             term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*&
 &             fwsa)
             scratch(i, j, k, idvt) = (term1+term2*w(i, j, k, itu1))*w(i&
