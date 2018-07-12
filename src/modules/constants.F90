@@ -4,6 +4,13 @@ module constants
   ! that is allowed to be imported without an 'only' qualifier.
 
   use precision
+#ifndef USE_TAPENADE
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+#endif
+#endif
   implicit none
   save
 
@@ -389,21 +396,21 @@ module constants
        costFuncMavga         = 49, &
        costFuncArea          = 50, &
        costFuncAxisMoment    = 51, &
-       costFuncFlowPower     = 52, & 
-       costFuncForceXPressure = 53, & 
-       costFuncForceYPressure = 54, & 
-       costFuncForceZPressure = 55, & 
-       costFuncForceXViscous = 56, & 
-       costFuncForceYViscous = 57, & 
-       costFuncForceZViscous = 58, & 
-       costFuncForceXMomentum = 59, & 
-       costFuncForceYMomentum = 60, & 
-       costFuncForceZMomentum = 61, & 
-       costFuncDragPressure= 62, & 
-       costFuncDragViscous = 63, & 
-       costFuncDragMomentum = 64, & 
-       costFuncLiftPressure= 65, & 
-       costFuncLiftViscous = 66, & 
+       costFuncFlowPower     = 52, &
+       costFuncForceXPressure = 53, &
+       costFuncForceYPressure = 54, &
+       costFuncForceZPressure = 55, &
+       costFuncForceXViscous = 56, &
+       costFuncForceYViscous = 57, &
+       costFuncForceZViscous = 58, &
+       costFuncForceXMomentum = 59, &
+       costFuncForceYMomentum = 60, &
+       costFuncForceZMomentum = 61, &
+       costFuncDragPressure= 62, &
+       costFuncDragViscous = 63, &
+       costFuncDragMomentum = 64, &
+       costFuncLiftPressure= 65, &
+       costFuncLiftViscous = 66, &
        costFuncLiftMomentum = 67, &
        costFuncForceXCoefPressure = 68,&
        costFuncForceXCoefViscous = 69,&
@@ -419,9 +426,9 @@ module constants
        costFuncLiftCoefMomentum = 79, &
        costFuncDragCoefPressure = 80,&
        costFuncDragCoefViscous = 81, &
-       costFuncDragCoefMomentum = 82, & 
-       costfuncmavgvx = 83, & 
-       costfuncmavgvy = 84, & 
+       costFuncDragCoefMomentum = 82, &
+       costfuncmavgvx = 83, &
+       costfuncmavgvy = 84, &
        costfuncmavgvz = 85
 
   integer(kind=intType), parameter :: nLocalValues=46
