@@ -76,8 +76,6 @@ class Tests(unittest.TestCase):
             prob.model.solver.adflow.initializeflow.initflowrestart()
             prob.model.solver.getResidual(ap) # this does some kind of memory allocation that is needed
 
-        prob.model.states._do_solve = solve
-        prob.model.functionals._do_solve = solve    
         prob.run_model()
 
 
