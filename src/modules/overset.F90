@@ -4,11 +4,19 @@ module oversetData
   use adtData, only : adtType
   use block, only : fringeType
   use kdtree2_module, only : kdtree2
-  implicit none
 #ifndef USE_TAPENADE
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
+
 #endif
   ! Helper dataType for communicated overset grid points. This data
   ! structure mirrros the blockType structure in block.F90, but only

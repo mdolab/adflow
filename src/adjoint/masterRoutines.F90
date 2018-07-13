@@ -264,12 +264,17 @@ contains
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
     use actuatorRegionData, only : nActuatorRegions
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
     ! Input Arguments:
     real(kind=realType), intent(in), dimension(:) :: wDot, xDot
     integer(kind=intType), optional, dimension(:, :), intent(in) :: famLists
@@ -585,10 +590,17 @@ contains
     use oversetCommUtilities, only : updateOversetConnectivity_b
     use BCRoutines, only : applyAllBC_block
     use actuatorRegionData, only : nActuatorRegions
-    implicit none
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+    use petsc, only : add_values, scatter_reverse
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
 #include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
 
     ! Input variables:
     real(kind=realType), intent(in), dimension(:) :: dwBar
@@ -1092,7 +1104,7 @@ contains
     end do
   end subroutine master_state_b
 #endif
-  subroutine block_res_state(nn, sps)
+  subroutine block_res_state(nn, sps, useFlowRes, useTurbRes)
 
     ! This is a special state-only routine used only for finite
     ! differce computations of the jacobian
@@ -1116,11 +1128,23 @@ contains
 
     ! Input Arguments:
     integer(kind=intType), intent(in) :: nn, sps
+    logical, optional ,intent(in) :: useFlowRes, useTurbRes
 
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType) ::  pLocal
     logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
+
+    flowRes = .True.
+    if (present(useFlowRes)) then
+       flowRes = useFlowRes
+    end if
+
+    turbRes = .True.
+    if (present(useTurbRes)) then
+       turbRes = useTurbRes
+    end if
+
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
     call computeEddyViscosity(.True.)
@@ -1138,8 +1162,6 @@ contains
     dissApprox = lumpedDiss
     viscApprox = lumpedDiss
     updateDt = .False.
-    flowRes = .True.
-    turbRes = .True.
     storeWall = .True.
     blockettes: if (useBlockettes) then
        call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)

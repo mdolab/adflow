@@ -7,7 +7,7 @@ from mpi4py import MPI
 from mdo_regression_helper import *
 
 from commonUtils import defaultFuncList, defaultAeroDVs, adflowDefOpts, \
-                        pyWarpDefOpts, pyWarpUStructDefOpts, printHeader, parPrint
+                        pyWarpDefOpts, IDWarpDefOpts, printHeader, parPrint
 
 from openmdao.api import Problem 
 from openmdao.utils.assert_utils import assert_rel_error
