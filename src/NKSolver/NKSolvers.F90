@@ -3062,7 +3062,7 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (myisnan(lambdaL)) lambdaL = zero
+    if (isnan(lambdaL)) lambdaL = zero
 
     ! Finally, communicate the step size across processes and return
     call mpi_allreduce(lambdaL, lambdaP, 1_intType, adflow_real, &
@@ -3161,7 +3161,7 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (myisnan(lambdaL)) lambdaL = zero
+    if (isnan(lambdaL)) lambdaL = zero
 
     ! Finally, communicate the step size across processes and return
     call mpi_allreduce(lambdaL, lambdaP, 1_intType, adflow_real, &
@@ -3335,7 +3335,7 @@ contains
         ! initialize this outside the ls
         LSFailed = .False.
 
-        if ((unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. myisnan(unsteadyNorm))) then
+        if ((unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then
             ! The unsteady residual is too high or we have a NAN. Do a
             ! backtracking line search until we get a residual that is lower.
 
@@ -3365,7 +3365,7 @@ contains
                 call VecNorm(rVecTurb, NORM_2, unsteadyNorm, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
-                if (unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. myisnan(unsteadyNorm)) then
+                if (unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
                     ! Restore back to the original wVec
                     call VecAXPY(wVecTurb, lambdaTurb, deltaWTurb, ierr)
@@ -3380,7 +3380,7 @@ contains
                 end if
             end do backtrack
 
-            if (LSFailed .or. myisnan(unsteadyNorm)) then
+            if (LSFailed .or. isnan(unsteadyNorm)) then
                 ! the line search wasn't much help.
 
                 if (ANK_CFL > ANK_CFLMin) then
@@ -3412,7 +3412,7 @@ contains
             linResOldTurb .le. ANK_rtol) &
             !.or. LSFailed) then
 !            .or. lambdaTurb .le. ANK_stepMin) then
-            .or. lambdaTurb .eq. zero) then
+            .or. (lambdaTurb .eq. zero)) then
 
             ! We should reform the PC since it took longer than we want,
             ! or we need to adjust the CFL because the last update was bad,
@@ -3743,7 +3743,7 @@ contains
     ! initialize this outside the ls
     LSFailed = .False.
 
-    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. myisnan(unsteadyNorm))) then
+    if ((unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm))) then
        ! The unsteady residual is too high or we have a NAN. Do a
        ! backtracking line search until we get a residual that is lower.
 
@@ -3773,7 +3773,7 @@ contains
           call VecNorm(rVec, NORM_2, unsteadyNorm, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
-          if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. myisnan(unsteadyNorm)) then
+          if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
              ! Restore back to the original wVec
              call VecAXPY(wVec, lambda, deltaW, ierr)
@@ -3788,7 +3788,7 @@ contains
           end if
        end do backtrack
 
-       if (LSFailed .or. myisnan(unsteadyNorm)) then
+       if (LSFailed .or. isnan(unsteadyNorm)) then
           ! the line search wasn't much help.
 
           if (ANK_CFL > ANK_CFLMin) then
@@ -3847,7 +3847,7 @@ contains
          linResOld .le. ANK_rtol) &
          !.or. LSFailed) then
          !.or. lambda .le. ANK_stepMin) then
-         .or. lambda .eq. zero) then
+         .or. (lambda .eq. zero)) then
        ! We should reform the PC since it took longer than we want,
        ! or we need to adjust the CFL because the last update was bad,
        ! or convergence since the last PC update was good enough and we
