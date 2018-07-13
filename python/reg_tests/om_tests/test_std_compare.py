@@ -65,10 +65,9 @@ class Tests(unittest.TestCase):
         # Run things through OpenMDAO
         ##########################################
         prob = Problem()
-        prob.model = OM_ADFLOW(ap=ap, setup_cb=setup_cb, 
-                               debug=True, owns_indeps=True )
+        prob.model = OM_ADFLOW(ap=ap, setup_cb=setup_cb, debug=True, owns_indeps=True )
 
-        prob.setup()
+        prob.setup(mode='rev')
         if not solve:
             prob.model.solver.resetFlow(ap)
             prob.model.solver.setOption('restartfile', gridFile)
