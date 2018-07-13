@@ -21,5 +21,6 @@ multi-block and overset 3D CFD solver.
    meshing
    options
    pyADflow
+   solvers
    performance
    devguide
