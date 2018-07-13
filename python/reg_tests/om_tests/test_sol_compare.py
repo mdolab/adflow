@@ -68,7 +68,7 @@ class Tests(unittest.TestCase):
         prob.model = OM_ADFLOW(ap=ap, setup_cb=setup_cb, 
                                debug=False, owns_indeps=True)
 
-        prob.setup()
+        prob.setup(mode='rev')
         if not solve:
             prob.model.solver.resetFlow(ap)
             prob.model.solver.setOption('restartfile', gridFile)
@@ -76,15 +76,13 @@ class Tests(unittest.TestCase):
             prob.model.solver.adflow.initializeflow.initflowrestart()
             prob.model.solver.getResidual(ap) # this does some kind of memory allocation that is needed
 
-        prob.model.states._do_solve = solve
-        prob.model.functionals._do_solve = solve    
         prob.run_model()
 
 
         assert_rel_error(self, res, prob.model._residuals['states.states'], tolerance=5e-7)    
-        assert_rel_error(self, states, prob['states.states'], tolerance=2e-10)
+        assert_rel_error(self, states, prob['states.states'], tolerance=3e-10)
 
-        assert_funcs_equal(self, ap, funcs, prob, tolerance=2e-10)  
+        assert_funcs_equal(self, ap, funcs, prob, tolerance=3e-10)  
 
     def test9(self): 
         from tests.test9 import setup_cb, gridFile, ap

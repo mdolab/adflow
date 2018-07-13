@@ -18,34 +18,20 @@ class OM_ADFLOW(Group):
     """Group integrating the states, funcs, and geometry constraints into a single system"""
 
     def initialize(self):
-        self.metadata.declare('ap', types=AeroProblem)
-        #self.metadata.declare('aero_options', types=dict)
-        # self.metadata.declare('mesh_options', types=dict, default={})   
-        # self.metadata.declare('family_groups', types=dict, default={})
-        self.metadata.declare('setup_cb', types=types.FunctionType, allow_none=True, default=None)
-        #self.metadata.declare('dvgeo_class', types=DVGeometry)# , allow_none=True, default=None)
-        #self.metadata.declare('dvcon_class', types=DVConstraints)# , allow_none=True, default=None)
-        self.metadata.declare('use_OM_KSP', default=False, types=bool, 
+        self.options.declare('ap', types=AeroProblem)
+        self.options.declare('setup_cb', types=types.FunctionType, allow_none=True, default=None)
+
+        self.options.declare('use_OM_KSP', default=False, types=bool, 
             desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
 
-        self.metadata.declare('owns_indeps', default=False, 
+        self.options.declare('owns_indeps', default=False, 
             desc="when True will create IndepVarComp with outputs for all des vars")
-        self.metadata.declare('debug', default=False)
-
-        # These options are mainly used in testing when the solver object needs to be run by itself 
-        #     and also used in the wrapper. You probably don't want to use this 
-        #     unless you really know what you're doing!!!
-        # self.metadata.declare('solver', allow_none=True, default=None,
-        #     desc='optional argument to allow an existing solver instance to be passed in.')
-        # self.metadata.declare('mesh', types=USMesh, allow_none=True, default=None,
-        #     desc='optional argument to allow an existing mesh instance to be passed in.')
-
-        # self.metadata.declare('max_procs', default=64, types=int)
+        self.options.declare('debug', default=False)
 
     def setup(self):
-        ap = self.metadata['ap']
+        ap = self.options['ap']
         
-        self.solver, self.mesh, self.dvgeo, self.dvcon = self.metadata['setup_cb'](self.comm)
+        self.solver, self.mesh, self.dvgeo, self.dvcon = self.options['setup_cb'](self.comm)
 
         # necessary to get some memory properly allocated
         #self.solver.getResidual(ap)
@@ -60,7 +46,7 @@ class OM_ADFLOW(Group):
         des_var_names = [dv[0][0] for dv in des_vars]
         geo_var_names = [dv[0][0] for dv in geo_vars]
 
-        if self.metadata['owns_indeps']: 
+        if self.options['owns_indeps']: 
             indeps = self.add_subsystem('indeps', IndepVarComp(), promotes=['*'])
             for (args, kwargs) in des_vars: 
                 name = args[0]
@@ -72,12 +58,12 @@ class OM_ADFLOW(Group):
                     indeps.add_output(name, value)
   
         states = OM_STATES_COMP(ap=ap, dvgeo=self.dvgeo, solver=self.solver,
-                                use_OM_KSP=self.metadata['use_OM_KSP'])
+                                use_OM_KSP=self.options['use_OM_KSP'])
 
         self.add_subsystem('states', states, promotes_inputs=des_var_names)
 
         # this lets the OpenMDAO KSPsolver converge the adjoint using the ADflow PC
-        if self.metadata['use_OM_KSP']:
+        if self.options['use_OM_KSP']:
             states.linear_solver = PetscKSP(iprint=2, atol=1e-8, rtol=1e-8, maxiter=300, ksp_type='gmres')
             states.linear_solver.precon = LinearUserDefined()
 

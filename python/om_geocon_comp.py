@@ -21,15 +21,15 @@ class OM_GEOCON_COMP(ExplicitComponent):
     """OpenMDAO Component that wraps the geometry constraints calculation"""
 
     def initialize(self):
-        self.metadata.declare('dvgeo', types=DVGEO_CLASSES)
-        self.metadata.declare('dvcon', types=DVConstraints)
+        self.options.declare('dvgeo', types=DVGEO_CLASSES)
+        self.options.declare('dvcon', types=DVConstraints)
 
         # testing flag used for unit-testing to prevent the call to actually solve
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
         self._do_solve = True
 
     def setup(self):
-        self.dvs, _ = get_dvs_and_cons(self.metadata['dvgeo'])
+        self.dvs, _ = get_dvs_and_cons(self.options['dvgeo'])
         for (args, kwargs) in self.dvs:
             name = args[0]
             size = args[1]
@@ -37,9 +37,9 @@ class OM_GEOCON_COMP(ExplicitComponent):
 
 
         funcsSens = {}
-        self.metadata['dvcon'].evalFunctionsSens(funcsSens, includeLinear=True)
+        self.options['dvcon'].evalFunctionsSens(funcsSens, includeLinear=True)
 
-        for cons in itervalues(self.metadata['dvcon'].constraints):
+        for cons in itervalues(self.options['dvcon'].constraints):
             for name, con in iteritems(cons):
                 if self.comm.rank == 0: 
                     print('nonlinear con', name)
@@ -48,7 +48,7 @@ class OM_GEOCON_COMP(ExplicitComponent):
                 for wrt_var, subjac in iteritems(jac):
                     self.declare_partials(of=name, wrt=wrt_var)
 
-        for name, con in iteritems(self.metadata['dvcon'].linearCon):
+        for name, con in iteritems(self.options['dvcon'].linearCon):
             if self.comm.rank == 0: 
                 print('linear_con', name)
             self.add_output(name, shape=con.ncon)
@@ -64,9 +64,9 @@ class OM_GEOCON_COMP(ExplicitComponent):
             tmp[name] = inputs[name]
         
         try: 
-            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+            self.options['dvgeo'].setDesignVars(tmp, update_jacobian)
         except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
-            self.metadata['dvgeo'].setDesignVars(tmp)
+            self.options['dvgeo'].setDesignVars(tmp)
 
     def compute(self, inputs, outputs):
     
@@ -75,14 +75,14 @@ class OM_GEOCON_COMP(ExplicitComponent):
             pass 
 
         funcs = {}
-        self.metadata['dvcon'].evalFunctions(funcs, includeLinear=True)
+        self.options['dvcon'].evalFunctions(funcs, includeLinear=True)
 
-        for cons in itervalues(self.metadata['dvcon'].constraints):
+        for cons in itervalues(self.options['dvcon'].constraints):
             for name, con in iteritems(cons):
                 #print('nonlinear foobar', name, funcs[name])
                 outputs[name] = funcs[name]
 
-        for name, con in iteritems(self.metadata['dvcon'].linearCon):
+        for name, con in iteritems(self.options['dvcon'].linearCon):
             #print('linear foobar', name, funcs[name])
             outputs[name] = funcs[name]
 
@@ -94,7 +94,7 @@ class OM_GEOCON_COMP(ExplicitComponent):
 
         funcsSens = {}
 
-        self.metadata['dvcon'].evalFunctionsSens(funcsSens)
+        self.options['dvcon'].evalFunctionsSens(funcsSens)
 
         for of_var, jac in funcsSens.items():
             #print('of: ', of_var)
