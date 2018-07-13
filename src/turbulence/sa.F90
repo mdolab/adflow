@@ -98,6 +98,7 @@ contains
     use paramTurb
     use section
     use inputPhysics
+    use inputDiscretization, only : approxSA
     use flowVarRefState
     implicit none
 
@@ -291,7 +292,11 @@ contains
                 ! Compute the source term; some terms are saved for the
                 ! linearization. The source term is stored in dvt.
 
-                term1 = rsaCb1*(one-ft2)*ss
+                if (approxSA) then
+                  term1 = zero
+                else
+                  term1 = rsaCb1*(one-ft2)*ss
+                end if
                 term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                      -           rsaCw1*fwSa)
 

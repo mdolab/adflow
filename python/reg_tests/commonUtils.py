@@ -185,7 +185,7 @@ adflowDefOpts = {
 
 pyWarpDefOpts = {}
 
-pyWarpUStructDefOpts = {
+IDWarpDefOpts = {
     'gridFile':None,
     'fileType':'cgns',
     'specifiedSurfaces':None,
