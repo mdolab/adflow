@@ -105,6 +105,7 @@ def setup_cb(comm):
 
 
     solver.addIntegrationSurface('../inputFiles/integration_plane_viscous.fmt', 'viscous_plane')
+    solver.finalizeUserIntegrationSurfaces()
 
     solver.addFamilyGroup('upstream',['inlet'])
     solver.addFamilyGroup('downstream',['outlet'])

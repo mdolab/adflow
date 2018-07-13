@@ -25,19 +25,36 @@ FUNCS_UNITS={
     'mavgptot': 'Pa', 
     'mavgps': 'Pa', 
     'mavgttot': 'degK',
+    'mavgvx':'m/s', 
+    'mavgvy':'m/s',
+    'mavgvz':'m/s', 
     'drag': 'N',
+    'lift': 'N', 
     'dragpressure': 'N', 
     'dragviscous': 'N',
     'dragmomentum': 'N',
-
+    'fx': 'N', 
+    'fy': 'N', 
+    'fz': 'N', 
+    'forcexpressure': 'N', 
+    'forceypressure': 'N', 
+    'forcezpressure': 'N', 
+    'forcexviscous': 'N', 
+    'forceyviscous': 'N', 
+    'forcezviscous': 'N', 
+    'forcexmomentum': 'N', 
+    'forceymomentum': 'N', 
+    'forcezmomentum': 'N', 
+    'flowpower': 'W', 
+    'area':'m**2', 
 }
 
 class OM_FUNC_COMP(ExplicitComponent):
 
     def initialize(self):
-        self.metadata.declare('ap', types=AeroProblem,)
-        self.metadata.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
-        self.metadata.declare('solver')
+        self.options.declare('ap', types=AeroProblem,)
+        self.options.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
+        self.options.declare('solver')
 
         # testing flag used for unit-testing to prevent the call to actually solve
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
@@ -46,9 +63,9 @@ class OM_FUNC_COMP(ExplicitComponent):
         #self.distributed=True
 
     def setup(self):
-        solver = self.metadata['solver']
-        ap = self.metadata['ap']
-        geo = self.metadata['dvgeo']
+        solver = self.options['solver']
+        ap = self.options['ap']
+        geo = self.options['dvgeo']
 
         self.ap_vars,_ = get_dvs_and_cons(ap=ap)
         self.geo_vars,_ = get_dvs_and_cons(geo=geo)
@@ -67,7 +84,7 @@ class OM_FUNC_COMP(ExplicitComponent):
 
             self.add_input(name, shape=size, units=kwargs['units'])
 
-        local_state_size = self.metadata['solver'].getStateSize()
+        local_state_size = self.options['solver'].getStateSize()
         local_state_sizes = self.comm.allgather(local_state_size)
         iproc = self.comm.rank
 
@@ -87,7 +104,6 @@ class OM_FUNC_COMP(ExplicitComponent):
             self.add_output(f_name, shape=1, units=units)
             
             #self.declare_partials(of=f_name, wrt='*')
-                
 
     def _set_ap(self, inputs):
         tmp = {}
@@ -95,11 +111,11 @@ class OM_FUNC_COMP(ExplicitComponent):
             name = args[0]
             tmp[name] = inputs[name][0]
 
-        self.metadata['ap'].setDesignVars(tmp)
-        #self.metadata['solver'].setAeroProblem(self.metadata['ap'])
+        self.options['ap'].setDesignVars(tmp)
+        #self.options['solver'].setAeroProblem(self.options['ap'])
 
     def _set_geo(self, inputs, update_jacobian=True):
-        dvgeo = self.metadata['dvgeo']
+        dvgeo = self.options['dvgeo']
         if dvgeo is None: 
             return 
 
@@ -112,20 +128,19 @@ class OM_FUNC_COMP(ExplicitComponent):
         #     import pprint 
         #     pprint.pprint(tmp)
         try: 
-            self.metadata['dvgeo'].setDesignVars(tmp, update_jacobian)
+            self.options['dvgeo'].setDesignVars(tmp, update_jacobian)
         except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
-            self.metadata['dvgeo'].setDesignVars(tmp)
-
+            self.options['dvgeo'].setDesignVars(tmp)
+                
     def _set_states(self, inputs):
-        self.metadata['solver'].setStates(inputs['states'])
+        self.options['solver'].setStates(inputs['states'])
 
     def _get_func_name(self, name):
-        return '%s_%s' % (self.metadata['ap'].name, name.lower())
-    
-    
+        return '%s_%s' % (self.options['ap'].name, name.lower())
+        
     def compute(self, inputs, outputs):
-        solver = self.metadata['solver']
-        ap = self.metadata['ap']
+        solver = self.options['solver']
+        ap = self.options['ap']
         #print('funcs compute')
         #actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve: 
@@ -133,10 +148,11 @@ class OM_FUNC_COMP(ExplicitComponent):
             self._set_geo(inputs, update_jacobian=False)
             self._set_states(inputs)
 
+
         funcs = {}
 
         eval_funcs = [f_name for f_name, f_meta in solver.adflowCostFunctions.items()]
-        solver.evalFunctions(ap, funcs, eval_funcs, ignoreMissing=True)
+        solver.evalFunctions(ap, funcs, eval_funcs)
         #solver.evalFunctions(ap, funcs)
 
         #for name in ap.evalFuncs:
@@ -157,11 +173,11 @@ class OM_FUNC_COMP(ExplicitComponent):
 
     
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
-        solver = self.metadata['solver']
-        ap = self.metadata['ap']
+        solver = self.options['solver']
+        ap = self.options['ap']
 
 
-        #self.metadata['solver'].setAeroProblem(ap) 
+        #self.options['solver'].setAeroProblem(ap) 
         #print('func matvec')
 
         #if self._do_solve: 
@@ -175,7 +191,7 @@ class OM_FUNC_COMP(ExplicitComponent):
                 if key in d_inputs:
                     mach_name = key.split('_')[0]
                     xDvDot[mach_name] = d_inputs[key]
-            for (args, kwargs) in self.metadata['geo_vars'].variables:
+            for (args, kwargs) in self.options['geo_vars'].variables:
                 name = args[0]
                 xDvDot[name] = d_inputs[name]
 
