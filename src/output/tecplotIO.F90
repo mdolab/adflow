@@ -706,12 +706,16 @@ contains
     use extraOutput, only : surfWriteBlank
     use oversetData, only : zipperMesh, zipperMeshes
     use surfaceUtils
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
+#endif
 
     ! Input Params
     character*(*), intent(in) :: fileName
@@ -1272,13 +1276,17 @@ contains
     use utils, only : setPointers, EChk
     use sorting, only : famInList
     use oversetData, only : zipperMesh
-    implicit none
-
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
 #define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
+#include "petsc/finclude/petsc.h"
 #include "petsc/finclude/petscvec.h90"
-
+#endif
     ! Input Param
     type(familyExchange) :: exch
     logical :: includeTractions
