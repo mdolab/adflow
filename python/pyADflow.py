@@ -589,7 +589,7 @@ class ADFLOW(AeroSolver):
            Flag to treat momentum forces as if it is an inflow or outflow
            face. Default is True
         """
-        
+
 
         self.hasIntegrationSurfaces = True
         # Check that the family name is not already defined:
@@ -2288,7 +2288,7 @@ class ADFLOW(AeroSolver):
         """
 
         # Check that the user surface integrations are finalized
-        if self.hasIntegrationSurfaces and (not self.userSurfaceIntegrationsFinalized): 
+        if self.hasIntegrationSurfaces and (not self.userSurfaceIntegrationsFinalized):
             raise Error('Integration surfaces have been added to the solver, but finalizeUserIntegrationSurfaces()'+
                         ' has not been called. It must be called before evaluating the funcs')
 
