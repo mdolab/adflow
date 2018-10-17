@@ -272,6 +272,7 @@ In this section, we talk about the common failure modes and how to fix them.
 Before reading here, users should be familiar with the content presented in :ref:`interpreting_output`, as this will be the main source of information for our decisions.
 
 Step size going to zero
+***********************
 
 CFL limit
 
