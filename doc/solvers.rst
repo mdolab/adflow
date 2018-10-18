@@ -9,7 +9,7 @@ The additional options we mention here can be added to the baseline runscripts u
 
 ADflow is capable of switching between solver algorithms during a solution procedure.
 This process is controlled with the *relative convergence* metric, which is the ratio of current residual norm and the initial residual norm.
-A 2 orders of magnitude relative convergence in this sense refers to converging the simulations such that the L2 norm of the current residual vector is one hundredth of the initial norm.
+A 2 orders of magnitude relative convergence in this sense refers to converging the simulations such that the L2 norm of the current residual vector is two orders of magnitude lower the initial norm.
 Technically, all three solver algorithms can be used in a single simulation, however, users will typically use either the multigrid or approximate Newton--Krylov (ANK) for the startup, combined with the Newton--Krylov (NK) for the final stages of convergence.
 
 If all three solvers are used, ADflow uses the multigrid method until the relative convergence reaches ``'ankswitchtol'``.
@@ -70,7 +70,7 @@ For example, if the user wants to obtain 2 orders of magnitude convergence with 
 
 The ANK solver has a large number of tunable parameters, and a few different modes.
 The default set of tunings works well for a typical aeronautical application with transonic conditions, but there is always room for improvement.
-For a quick and dirty solution, simply include ``'useanksolver': True`` option in the runscripts.
+For a quick solution, simply include ``'useanksolver': True`` option in the runscripts.
 Furthermore, we recommend setting a relatively high turbulence sub-iteration number for RANS simulations, i.e. set ``'nsubiterturb'`` to somewhere between ``3`` and ``7``.
 However, there will be cases where the default set of parameters will not yield good performance, and some tuning might be required.
 To be able to understand why the solver is not working well, or even failing, the users need to understand the underlying algorithm to some level.
@@ -266,7 +266,7 @@ Expected Performance
 ~~~~~~~~~~~~~~~~~~~~
 
 Here, we give a few rules of thumb that users can use to determine if the ANK solver is performing at sub-optimal levels.
-The metrics we are concerned are nonlinear convergence, nonlinear iterations, and cumulative number of linear iterations, along with the step size and linear residual during each nonlinear iteration.
+The metrics we are concerned are nonlinear convergence, number of nonlinear iterations, and cumulative number of linear iterations, along with the step size and linear residual during each nonlinear iteration.
 
 The ANK solver should be able to reduce the total residual norm by 4-5 orders of magnitude in about 100 iterations for simple cases, such as a wing-only, or even a wing-body geometry.
 More complex geometries such as a wing-body-tail, or even geometries with nacelles, the ANK solver might take quite a few more nonlinear iterations, reaching 200 levels.
@@ -284,7 +284,7 @@ However, the solver taking tens of nonlinear iterations with small step sizes us
 The target linear residual at each nonlinear iteration is 0.05, however the solver might not achieve this level of linear convergence due to many reasons.
 Similar to the step size, it is okay if the solver is not matching this tolerance, or even getting stuck at 0.1 relative tolerance for the most of the nonlinear iterations.
 However, if the linear residual during iterations are repeatedly above 0.5 levels, then this indicates that either the linear system is too stiff, the preconditioner and the linear solver is not strong enough, or both.
-Successive iterations with high linear residuals usually indicate a problem with the solver algorithm that the user can usually fix.
+Successive iterations with high linear residuals usually indicate a problem with the solver algorithm that the users can usually fix.
 
 Troubleshooting
 ~~~~~~~~~~~~~~~
@@ -304,17 +304,20 @@ Very Small Step Sizes
 This case usually happens when the coupled ANK solver is used.
 If this is the case, simply reduce the coupled switch tolerance so that the solver can converge tighter before it switches to the coupled algorithm.
 
-If the step size is small even with the default ANK solver, and the CFL number has reached the upper limit, then a quick fix can be reducing the ``'ankcfllimit'`` option from its default value of ``1e5``.
+If the step size is small even with the default ANK solver (de-coupled mode for turbulence), and the CFL number has reached the upper limit, then a quick fix can be reducing the ``'ankcfllimit'`` option from its default value of ``1e5``.
 Lower CFL limits will yield a slower convergence, however the solver is usually more stable.
 Try not to set the CFL limit below a few hundreds, otherwise convergence may be very slow.
 
-If the problem occurs before the maximum CFL number is reached, the user can try relaxing the algorithms that determine the step size.
+If this solution still does not help, the users can try switching to the second order implicit formulation right before the solver starts taking small steps by modifying ``'anksecondordswitchtol'``.
+This mode will use an exact implicit formulation, and therefore the updates will be more accurate.
+
+If the problem occurs before the maximum CFL number is reached, and switching to the second order implicit formulation does not help, users can try relaxing the algorithms that determine the step size.
 To do this, the users can either increase the ``'ankunsteadylstol'`` from its default value of ``1.0``, e.g. ``1.5``, or set a larger ``'ankphysicallstol'`` from its default value ``0.2`` to a value between 0 and 1.
 The first modification will allow the unsteady residual norm to increase during the line search algorithm.
 This could potentially cause the solver the diverge, however it might also help it go over the *hills* easier.
 The second modification is related to the fraction of the change that is allowed for density and energy to change within a nonlinear update.
 Setting a higher value will enable more aggressive updates, however this might reduce robustness.
-The users should not set this value greater than 1, as this would enable updates to obtain negative density or energy values in some cells.
+Users should not set this value greater than 1, as this would enable updates to obtain negative density or energy values in some cells.
 
 If the problem continues, congratulations, you have found a problem that we have not solved yet.
 Reporting this case to the developers will be greatly appreciated, so that we can develop a fix for it.
@@ -323,7 +326,7 @@ High Linear Residuals
 *********************
 
 The solver might not reach the target linear convergence of 0.05, and as stated above, this is usually okay.
-Problems tend to occur when this value goes above 0.5, and above 0.8 relative convergence levels, the solver will practically stall.
+Problems tend to occur when this value goes above 0.5, and above 0.9 relative convergence levels, the solver will practically stall.
 However, we have added an automatic way to avoid this problem.
 If the linear residual goes above ``'anklinresmax'`` value that is set to 0.9 by default, the solver will reduce the CFL until the linear solver convergence goes below this value.
 
@@ -472,6 +475,8 @@ The option ``'nkasmoverlap'`` can be increased to increase the overlap between p
 This option can be useful if very large number of processors are used, and the linear solver is failing due to the aggressive domain decomposition.
 The users can increase ``'nkouterpreconits'`` and ``'nkinnerpreconits'`` values to perform more iterations with the global and local preconditioners within the NK solver.
 These options improve the preconditioner strength at no memory cost, however, each iteration will require more computations.
+All the options mentioned so far should be handled with care, as small changes in the parameter tuning will cause large changes in the resulting linear solver.
+Users should avoid going past a value of 3-4 for all the parameters mentioned in this paragraph so far.
 Finally, the users can increase the subpsace size used for the GMRES solver by modifying ``'nksubspacesize'``.
 The default subspace size is set to 60, and increasing this value will require more memory, along with increasingly more computational effort since each iteration of the GMRES solver uses an orthogonalization with respect to the previous vectors.
 
@@ -509,14 +514,14 @@ This is due to ADflow counting each line search iteration as a linear iteration,
 Very Small Step Sizes
 *********************
 
-This is a very common failure mode with the NK solver, where the solver practically cannot take any step.
-This prevents any progress, as the changes to the state vector becomes very small with small step sizes.
-Only way to avoid this problem is to reduce the NK switch tolerance and try again.
+This is a very common failure mode with the NK solver, where the solver practically cannot take any meaningful step.
+This prevents any progress, as the changes to the state vector become very small with small step sizes.
+The ideal way to avoid this problem is to reduce the NK switch tolerance and try again.
 This problem occurs if the NK solver is initiated before the transients has settled in the domain, or the flow and turbulence residual norms are not scaled properly.
 The ANK solver can handle both of these cases better, and therefore it is the recommended solution.
-However, users can pick a different line search method by modifying ``'nkls'``, or can even completely disable the line search by picking ``'none'``.
+However, users can relax line search criteria by setting the ``'nkls'`` option to ``'non monotone'``, or can even completely disable the line search by picking ``'none'``.
 This is not advised as it will usually cause the solver to either diverge, or get NaNs in the solution vector.
-Even if this method works, it will be slower than converging a few orders of magnitude more with the ANK solver and trying the NK solver again.
+Even if this method works, it will usually be slower than converging a few orders of magnitude more with the ANK solver and trying the NK solver again.
 
 EW Algorithm Stalling
 *********************
@@ -524,5 +529,5 @@ EW Algorithm Stalling
 In some cases, the EW algorithm might consistently pick very large linear convergence tolerances, and this will prevent the NK solver to achieve its full potential.
 This will happen due to the nonlinear convergence between nonlinear iterations being unsatisfactory.
 This outcome itself can occur due to different reasons, therefore it is easier to go back to the ANK solver and try to switch to the NK solver at a later point.
-If users just want to prescribe a constant linear convergence for each nonlinear NK iteration, they can set ``'nkuseew'`` to false, and use the option ``'nklinearsolvetol'`` to prescribe the new linear convergence target.
+If users just want to prescribe a constant linear convergence for each nonlinear NK iteration, they can set ``'nkuseew'`` to ``False``, and use the option ``'nklinearsolvetol'`` to prescribe the new linear convergence target.
 However, this approach may introduce unnecessary costs in the solver algorithm, as the lack of nonlinear convergence might be caused by small step sizes, but the solver will repeatedly try to solve linear systems to tight tolerances until the maximum iteration limit is reached.
