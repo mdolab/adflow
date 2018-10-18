@@ -466,11 +466,63 @@ Each option either increases memory requirements, CPU usage (more operations), o
 Most likely, the adjoint solver will be the bottleneck in terms of memory usage, and users can read the :ref:`adflow_performance` section to get some estimates.
 As a result, users will have bit of room to improve the linear solver used with the NK solver, as the default memory usage will be less than the adjoint solver.
 
-Talk about options.
+One way to improve the preconditioner is setting a higher value for ``'nkpcilufill'``.
+This option will increase the fill level of the ILU preconditioner, at the cost of more memory, and more computations per iteration.
+The option ``'nkasmoverlap'`` can be increased to increase the overlap between parallel subdomains, at the cost of more communication and memory costs.
+This option can be useful if very large number of processors are used, and the linear solver is failing due to the aggressive domain decomposition.
+The users can increase ``'nkouterpreconits'`` and ``'nkinnerpreconits'`` values to perform more iterations with the global and local preconditioners within the NK solver.
+These options improve the preconditioner strength at no memory cost, however, each iteration will require more computations.
+Finally, the users can increase the subpsace size used for the GMRES solver by modifying ``'nksubspacesize'``.
+The default subspace size is set to 60, and increasing this value will require more memory, along with increasingly more computational effort since each iteration of the GMRES solver uses an orthogonalization with respect to the previous vectors.
+
+By default, the preconditioner used with the NK solver is lagged by 20 nonlinear iterations.
+This value can be set with modifying ``'nkjacobianlag'``.
+If the solver is performing well in the first nonlinear iteration, however if linear solver performance degrades after a few iterations, users may benefit from reducing this number.
+However, forming and factorizing these preconditioners are expensive,  therefore some lag is usually recommended.
+
+The basis matrix for the preconditioner is an approximate Jacobian that is fully formed by using finite-differences and an efficient coloring algorithm.
+However, the finite-difference calculations might be inaccurate, resulting in a preconditioner that is unable to improve the linear solver performance even with a very strong tuning.
+In these cases, users can try setting the ``'nkadpc'`` option to ``True``, which will default the solver to using forward mode algorithmic differentiation to calculate the basis matrix for the preconditioner.
+This will result in the code obtaining analytical partial derivatives in the approximate Jacobian matrix, however cost of forming each preconditioner will increase considerably.
 
 Troubleshooting
 ~~~~~~~~~~~~~~~
 
-linear solver failing
-linear solver not picking a tighter tolerance
-step size going to zero (stall)
+There are three main modes of failure of the NK solver.
+Here, we will address how each failure mode can be avoided.
+However, in most cases, the users can simply reduce the NK switch tolerance, and converge further with the ANK solver.
+The problems may persist even with the ANK solver, however because it has more tunable parameters, it is more likely to fix the problems using ANK rather than NK.
+Furthermore, these failure modes will occur in coupled manners, and this makes troubleshooting more difficult with the NK solver.
+
+Failed Linear Solutions
+***********************
+
+The linear solver may fail to achieve the prescribed tolerance with the NK solver.
+Because the target linear convergence tolerance is varied using the EW algorithm, diagnosing failed linear solutions is usually not straightforward.
+To determine if the linear solver failed in a nonlinear iteration, the users can check the number of linear iterations within that nonlinear iteration.
+This can be calculated by looking at the difference in the total iteration number between the current and previous iterations.
+If this value has reached the upper limit set by ``'nksubspacesize'``, then the linear solver possibly failed to reach the prescribed tolerance.
+The default subspace size is 60, and we use the GMRES algorithm in the NK solver without restarts.
+The users should note that due to the line search algorithm after the linear solution, the reported total iteration change might be greater than 60.
+This is due to ADflow counting each line search iteration as a linear iteration, because the costs are similar (i.e. approximately one residual evaluation).
+
+Very Small Step Sizes
+*********************
+
+This is a very common failure mode with the NK solver, where the solver practically cannot take any step.
+This prevents any progress, as the changes to the state vector becomes very small with small step sizes.
+Only way to avoid this problem is to reduce the NK switch tolerance and try again.
+This problem occurs if the NK solver is initiated before the transients has settled in the domain, or the flow and turbulence residual norms are not scaled properly.
+The ANK solver can handle both of these cases better, and therefore it is the recommended solution.
+However, users can pick a different line search method by modifying ``'nkls'``, or can even completely disable the line search by picking ``'none'``.
+This is not advised as it will usually cause the solver to either diverge, or get NaNs in the solution vector.
+Even if this method works, it will be slower than converging a few orders of magnitude more with the ANK solver and trying the NK solver again.
+
+EW Algorithm Stalling
+*********************
+
+In some cases, the EW algorithm might consistently pick very large linear convergence tolerances, and this will prevent the NK solver to achieve its full potential.
+This will happen due to the nonlinear convergence between nonlinear iterations being unsatisfactory.
+This outcome itself can occur due to different reasons, therefore it is easier to go back to the ANK solver and try to switch to the NK solver at a later point.
+If users just want to prescribe a constant linear convergence for each nonlinear NK iteration, they can set ``'nkuseew'`` to false, and use the option ``'nklinearsolvetol'`` to prescribe the new linear convergence target.
+However, this approach may introduce unnecessary costs in the solver algorithm, as the lack of nonlinear convergence might be caused by small step sizes, but the solver will repeatedly try to solve linear systems to tight tolerances until the maximum iteration limit is reached.
