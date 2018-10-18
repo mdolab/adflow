@@ -262,6 +262,30 @@ The numbers correspond to these variables at each ``turbKSP`` iteration.
 
 * ``STEP``: Relaxation factor used for the update. Similar to the value printed with the default output. Note that this is only the relaxation for the turbulence update, and has nothing to do with the flow update.
 
+Expected Performance
+~~~~~~~~~~~~~~~~~~~~
+
+Here, we give a few rules of thumb that users can use to determine if the ANK solver is performing at sub-optimal levels.
+The metrics we are concerned are nonlinear convergence, nonlinear iterations, and cumulative number of linear iterations, along with the step size and linear residual during each nonlinear iteration.
+
+The ANK solver should be able to reduce the total residual norm by 4-5 orders of magnitude in about 100 iterations for simple cases, such as a wing-only, or even a wing-body geometry.
+More complex geometries such as a wing-body-tail, or even geometries with nacelles, the ANK solver might take quite a few more nonlinear iterations, reaching 200 levels.
+If the ANK solver is taking more than a few hundred nonlinear iterations to achieve 4-5 orders of magnitude relative convergence, users should try to diagnose the reason and consult to the next section for troubleshooting.
+
+Similarly, the cumulative number of linear iterations at 4-5 orders of magnitude relative convergence should be around a few thousand.
+If the solver is maxing out of linear iterations at each nonlinear iteration, this will possibly cause an additional computational load.
+Simple cases can achieve 4-5 orders of magnitude convergence with 2-3 thousand linear iterations, while more complex cases can go up to 5 thousands.
+
+The last two metrics we are concerned with are the step size, and the linear residual.
+If the ANK solver is repeatedly taking very small steps (<0.1), the nonlinear convergence will suffer greatly.
+It is okay for the solver to start with small step sizes, or even go through transients where it takes a few nonlinear iterations with limited steps.
+However, the solver taking tens of nonlinear iterations with small step sizes usually indicates a problem with the solver.
+
+The target linear residual at each nonlinear iteration is 0.05, however the solver might not achieve this level of linear convergence due to many reasons.
+Similar to the step size, it is okay if the solver is not matching this tolerance, or even getting stuck at 0.1 relative tolerance for the most of the nonlinear iterations.
+However, if the linear residual during iterations are repeatedly above 0.5 levels, then this indicates that either the linear system is too stiff, the preconditioner and the linear solver is not strong enough, or both.
+Successive iterations with high linear residuals usually indicate a problem with the solver algorithm that the user can usually fix.
+
 Troubleshooting
 ~~~~~~~~~~~~~~~
 
@@ -271,18 +295,85 @@ Besides performance improvements, the solver might fail for a range of critical 
 In this section, we talk about the common failure modes and how to fix them.
 Before reading here, users should be familiar with the content presented in :ref:`interpreting_output`, as this will be the main source of information for our decisions.
 
-Step size going to zero
-***********************
+It is practically impossible for us to write fixes for every failure mode, therefore, we will keep this section updated as we encounter new issues and respective fixes.
+Below, we list a number of failure modes that we have encountered so far.
 
-CFL limit
+Very Small Step Sizes
+*********************
 
-low ma flows, incompressible etc
+This case usually happens when the coupled ANK solver is used.
+If this is the case, simply reduce the coupled switch tolerance so that the solver can converge tighter before it switches to the coupled algorithm.
 
-turbulence not converging
+If the step size is small even with the default ANK solver, and the CFL number has reached the upper limit, then a quick fix can be reducing the ``'ankcfllimit'`` option from its default value of ``1e5``.
+Lower CFL limits will yield a slower convergence, however the solver is usually more stable.
+Try not to set the CFL limit below a few hundreds, otherwise convergence may be very slow.
 
-linear solver not converging
+If the problem occurs before the maximum CFL number is reached, the user can try relaxing the algorithms that determine the step size.
+To do this, the users can either increase the ``'ankunsteadylstol'`` from its default value of ``1.0``, e.g. ``1.5``, or set a larger ``'ankphysicallstol'`` from its default value ``0.2`` to a value between 0 and 1.
+The first modification will allow the unsteady residual norm to increase during the line search algorithm.
+This could potentially cause the solver the diverge, however it might also help it go over the *hills* easier.
+The second modification is related to the fraction of the change that is allowed for density and energy to change within a nonlinear update.
+Setting a higher value will enable more aggressive updates, however this might reduce robustness.
+The users should not set this value greater than 1, as this would enable updates to obtain negative density or energy values in some cells.
 
+If the problem continues, congratulations, you have found a problem that we have not solved yet.
+Reporting this case to the developers will be greatly appreciated, so that we can develop a fix for it.
 
+High Linear Residuals
+*********************
+
+The solver might not reach the target linear convergence of 0.05, and as stated above, this is usually okay.
+Problems tend to occur when this value goes above 0.5, and above 0.8 relative convergence levels, the solver will practically stall.
+However, we have added an automatic way to avoid this problem.
+If the linear residual goes above ``'anklinresmax'`` value that is set to 0.9 by default, the solver will reduce the CFL until the linear solver convergence goes below this value.
+
+Large Number of Nonlinear Iterations
+************************************
+
+With some cases, the solver converges the linear systems to the target value of 0.05, and takes full steps at each nonlinear iteration.
+However, despite these *healthy* signs, the nonlinear convergence either is very slow or has completely stalled.
+To solve this problem, users can try activating either second order, coupled, or both modes of the solver, to modify the implicit formulation.
+The point where nonlinear convergence starts to stall is a good initial guess.
+Simply record the relative convergence where the solver stalls and use a bit higher value to use for the second order or coupled switches.
+
+Turbulence Residuals not Converging
+***********************************
+
+In some cases, the flow variables may be converging well, while the turbulence residual norm stalls at a high value.
+As previously mentioned, we typically want the turbulence residual norm to be around 4 orders of magnitude lower than the residual norms of the mean flow variables.
+Because there are multiple solver algorithms available to solve the turbulence model, this problem can be caused by different reasons, and the typical solution would be switching between turbulence solver methods, or increasing the number of sub iterations for the turbulence model if not running in coupled mode.
+
+If the ``turbKSP`` solver is being used, the users can set ``'ankturbkspdebug'`` to ``True``, and monitor the information printed for each nonlinear turbulence iteration.
+All the fixes mentioned in this section will apply to the standalone ``turbKSP`` solver as it uses the same default algorithm with the ANK solver.
+
+Special Cases
+*************
+
+Even though there are a number of failure modes of the solver, these problems usually occur in a coupled manner, where there is a fundamental problem with the case itself.
+Here, we will share our experience with cases that are different than the default transonic application we tuned our code for.
+
+Complex configurations such as a full aircraft geometry with a full tail, nacelle, and pylon are usually difficult to converge.
+This is due to the fact that to achieve a grid for such a geometry, overset meshes must be heavily utilized.
+This introduces inter-block couplings in the global Jacobian matrices, as the overset connectivities between blocks must be represented.
+Furthermore, the overset grids may introduce large-small cell volume couplings, and this will further worsen the conditioning of the linear systems.
+Another problem with complex configurations such as the strut braced wing, or configurations with nacelles usually contain separation in the early stages of the optimization.
+In all these cases, the solver will take more nonlinear iterations to converge, and each linear solution is expected to be more expensive.
+
+Cases that utilize actuator regions to simulate the momentum gains due to a powered fan can have difficulties converging in the initial stages of convergence.
+To avoid these issues, users should use the feature in ADflow that gradually ramps up the momentum source terms as the solver converges, as the problem is usually caused by introducing a lot of momentum in a uniform flow field, which is far from a converged solution.
+
+Cases with massive separation should employ a higher turbulence sub-iteration number, and always start with either the ``turbDADI`` or the ``turbKSP`` solvers.
+We have converged three dimensional wing-body configurations at 90 degrees angle of attack, therefore users should be aware that the solver will be able to overcome the difficulties introduced by massive separation, if tuned properly.
+
+Supersonic cases introduce new challenges due to the increased strength of the shock waves present in the solution.
+One critical observation that we have made in the past is that, increasing ``'ankphysicallstol'`` value from its default value of 0.2 to 0.4-0.6 greatly helps with supersonic cases where the solver is taking very small steps.
+This is due to the moving shocks within the solution domain, and larger changes in the physical state allows the shock wave positions to settle with fewer nonlinear iterations.
+
+Cases with very low Mach numbers should ideally be simulated with an incompressible CFD code.
+However, we have some experience with simulating wind turbines, or automobile geometries with very low Mach numbers.
+The typical problem with these cases is that the solver takes a lot of nonlinear iterations due to the very sub-optimal nonlinear convergence rate.
+To solve this problem, users should experiment with the second order switch, as this will greatly influence the convergence rate.
+Furthermore, the users can try prescribing a lower linear solver tolerance, again for the same goal.
 
 Newton--Krylov
 --------------
