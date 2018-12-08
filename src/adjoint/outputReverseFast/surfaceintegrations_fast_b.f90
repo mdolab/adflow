@@ -138,6 +138,8 @@ contains
 &       globalvals(iarea, sps)
       funcvalues(costfuncflowpower) = funcvalues(costfuncflowpower) + &
 &       ovrnts*globalvals(ipower, sps)
+      funcvalues(costfunccperror2) = funcvalues(costfunccperror2) + &
+&       ovrnts*globalvals(icperror2, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -295,6 +297,7 @@ contains
     real(kind=realtype), dimension(3, 2) :: axispoints
     real(kind=realtype) :: mx, my, mz, cellarea, m0x, m0y, m0z, mvaxis, &
 &   mpaxis
+    real(kind=realtype) :: cperror, cperror2
     intrinsic mod
     intrinsic max
     intrinsic sqrt
@@ -329,6 +332,7 @@ contains
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
+    cperror2 = zero
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -359,6 +363,10 @@ contains
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
       pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
+      tmp = two/(gammainf*pinf*machcoef*machcoef)
+      cp = (half*(pp2(i, j)+pp1(i, j))-pinf)*tmp
+      cperror = cp - bcdata(mm)%cptarget(i, j)
+      cperror2 = cperror2 + cperror*cperror
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
 &       1)) - refpoint(1)
       yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
@@ -566,6 +574,7 @@ contains
 &     sepsensoravg
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
 &     mvaxis
+    localvalues(icperror2) = localvalues(icperror2) + cperror2
   end subroutine wallintegrationface
   subroutine flowintegrationface(isinflow, localvalues, mm)
     use constants

@@ -112,6 +112,8 @@ contains
        funcValues(costFuncArea)    = funcValues(costFuncArea) + ovrNTS*globalVals(iArea, sps)
        funcValues(costFuncFlowPower) = funcValues(costFuncFlowPower) + ovrNTS*globalVals(iPower, sps)
 
+       funcValues(costFuncCpError2) = funcValues(costFuncCpError2) + ovrNTS*globalVals(iCpError2,sps)
+
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
        if (mFlow /= zero) then
@@ -324,6 +326,7 @@ contains
     real(kind=realType), dimension(3) :: refPoint
     real(kind=realType), dimension(3,2) :: axisPoints
     real(kind=realType) :: mx, my, mz, cellArea, m0x, m0y, m0z, Mvaxis, Mpaxis
+    real(kind=realType) :: CpError, CpError2
 
     select case (BCFaceID(mm))
     case (iMin, jMin, kMin)
@@ -357,6 +360,7 @@ contains
     Cavitation = zero
     sepSensorAvg = zero
     Mpaxis = zero; Mvaxis = zero;
+    CpError2 = zero;
 
     !
     !         Integrate the inviscid contribution over the solid walls,
@@ -392,6 +396,11 @@ contains
        ! outward pointing normal.
 
        pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*pRef
+
+       tmp = two/(gammaInf*pInf*MachCoef*MachCoef)
+       cp = (half*(pp2(i,j) + pp1(i,j)) - pInf)*tmp
+       CpError = (cp - BCData(mm)%CpTarget(i,j))
+       CPError2 = CpError2 + CpError*CpError
 
        xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
             +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
@@ -644,6 +653,7 @@ contains
     localValues(iCavitation) = localValues(iCavitation) + cavitation
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
     localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis
+    localValues(iCpError2) = localValues(iCpError2) + CpError2
 
 #ifndef USE_TAPENADE
     localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
