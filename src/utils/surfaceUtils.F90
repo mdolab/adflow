@@ -533,7 +533,7 @@ contains
     end do
   end subroutine getSurfacePoints
 
-  subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2, includeZipper)
+  subroutine mapVector(vec1, n1, famList1, nf1, vec2, n2, famList2, nf2, includeZipper,nDim)
 
     ! Map one vector, vec1 of size (3,n1) defined on family list 'famList1' onto
     ! vector, vec2, of size (3, n2) defined on family list 'famList2'
@@ -549,10 +549,10 @@ contains
     implicit none
 
     ! Input/Output
-    integer(kind=intType) :: n1, n2, nf1, nf2
+    integer(kind=intType) :: n1, n2, nf1, nf2,nDim
     integer(kind=intType), intent(in) :: famList1(nf1), famList2(nf2)
-    real(kind=realType), intent(in) :: vec1(3, n1)
-    real(kind=realType), intent(inout) :: vec2(3, n2)
+    real(kind=realType), intent(in) :: vec1(nDim, n1)
+    real(kind=realType), intent(inout) :: vec2(nDim, n2)
     logical, intent(in) :: includeZipper
 
     ! Working

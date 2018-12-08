@@ -2247,12 +2247,13 @@ contains
                         BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
+                        BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
                         "Memory allocation failure for &
                         &an adiabatic wall")
-
+                   BCData(mm)%CpTarget = zero
                    !=======================================================
 
                 case (NSWallIsothermal)
@@ -2269,12 +2270,13 @@ contains
                         BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
-
+                        BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
                         "Memory allocation failure for &
                         &an isothermal wall")
+                   BCData(mm)%CpTarget = zero
 
                    !=======================================================
 
@@ -2289,12 +2291,13 @@ contains
                         BCData(mm)%Fp(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%Fv(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd, 3), &
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
+                        BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         stat=ierr)
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
                         "Memory allocation failure for &
                         &an Euler wall")
-
+                   BCData(mm)%CpTarget = zero
                    !=======================================================
 
                 case (farField)
@@ -2629,6 +2632,7 @@ contains
                 nullify(BCData(j)%surfIndex)
                 nullify(BCData(j)%uSlip)
                 nullify(BCData(j)%TNS_Wall)
+                nullify(BCData(j)%CpTarget)
 
                 nullify(BCData(j)%normALE)
                 nullify(BCData(j)%rfaceALE)

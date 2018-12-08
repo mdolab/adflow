@@ -125,6 +125,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		warping/warping.F90\
 		warping/getForces.F90\
 		warping/getAreas.f90\
+		warping/setCpTarget.f90\
 		\
 		adjoint/outputForward/utils_d.f90\
 		adjoint/outputForward/flowutils_d.f90\

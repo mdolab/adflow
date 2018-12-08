@@ -248,6 +248,10 @@ contains
 &       ovrnts*globalvalsd(ipower, sps)
       funcvalues(costfuncflowpower) = funcvalues(costfuncflowpower) + &
 &       ovrnts*globalvals(ipower, sps)
+      funcvaluesd(costfunccperror2) = funcvaluesd(costfunccperror2) + &
+&       ovrnts*globalvalsd(icperror2, sps)
+      funcvalues(costfunccperror2) = funcvalues(costfunccperror2) + &
+&       ovrnts*globalvals(icperror2, sps)
 ! mass flow like objective
       mflowd = globalvalsd(imassflow, sps)
       mflow = globalvals(imassflow, sps)
@@ -650,6 +654,8 @@ contains
 &       globalvals(iarea, sps)
       funcvalues(costfuncflowpower) = funcvalues(costfuncflowpower) + &
 &       ovrnts*globalvals(ipower, sps)
+      funcvalues(costfunccperror2) = funcvalues(costfunccperror2) + &
+&       ovrnts*globalvals(icperror2, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -833,6 +839,8 @@ contains
 &   mpaxis
     real(kind=realtype) :: mxd, myd, mzd, cellaread, m0xd, m0yd, m0zd, &
 &   mvaxisd, mpaxisd
+    real(kind=realtype) :: cperror, cperror2
+    real(kind=realtype) :: cperrord, cperror2d
     intrinsic mod
     intrinsic max
     intrinsic sqrt
@@ -875,10 +883,12 @@ contains
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
+    cperror2 = zero
     sepsensoravgd = 0.0_8
     rd = 0.0_8
     vd = 0.0_8
     mpaxisd = 0.0_8
+    cperror2d = 0.0_8
     fpd = 0.0_8
     mpd = 0.0_8
     cavitationd = 0.0_8
@@ -915,6 +925,16 @@ contains
       pm1d = fact*((half*(pp2d(i, j)+pp1d(i, j))-pinfd)*pref+(half*(pp2(&
 &       i, j)+pp1(i, j))-pinf)*prefd)
       pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
+      tmpd = -(two*gammainf*((pinfd*machcoef+pinf*machcoefd)*machcoef+&
+&       pinf*machcoef*machcoefd)/(gammainf*pinf*machcoef*machcoef)**2)
+      tmp = two/(gammainf*pinf*machcoef*machcoef)
+      cpd = (half*(pp2d(i, j)+pp1d(i, j))-pinfd)*tmp + (half*(pp2(i, j)+&
+&       pp1(i, j))-pinf)*tmpd
+      cp = (half*(pp2(i, j)+pp1(i, j))-pinf)*tmp
+      cperrord = cpd
+      cperror = cp - bcdata(mm)%cptarget(i, j)
+      cperror2d = cperror2d + cperrord*cperror + cperror*cperrord
+      cperror2 = cperror2 + cperror*cperror
       xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i+1, &
 &       j+1, 1)) - refpointd(1)
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
@@ -1263,6 +1283,8 @@ contains
 &     mvaxisd
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
 &     mvaxis
+    localvaluesd(icperror2) = localvaluesd(icperror2) + cperror2d
+    localvalues(icperror2) = localvalues(icperror2) + cperror2
   end subroutine wallintegrationface_d
   subroutine wallintegrationface(localvalues, mm)
 !
@@ -1303,6 +1325,7 @@ contains
     real(kind=realtype), dimension(3, 2) :: axispoints
     real(kind=realtype) :: mx, my, mz, cellarea, m0x, m0y, m0z, mvaxis, &
 &   mpaxis
+    real(kind=realtype) :: cperror, cperror2
     intrinsic mod
     intrinsic max
     intrinsic sqrt
@@ -1339,6 +1362,7 @@ contains
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
+    cperror2 = zero
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -1369,6 +1393,10 @@ contains
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
       pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
+      tmp = two/(gammainf*pinf*machcoef*machcoef)
+      cp = (half*(pp2(i, j)+pp1(i, j))-pinf)*tmp
+      cperror = cp - bcdata(mm)%cptarget(i, j)
+      cperror2 = cperror2 + cperror*cperror
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
 &       1)) - refpoint(1)
       yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
@@ -1580,6 +1608,7 @@ contains
 &     sepsensoravg
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
 &     mvaxis
+    localvalues(icperror2) = localvalues(icperror2) + cperror2
   end subroutine wallintegrationface
 !  differentiation of flowintegrationface in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: localvalues
