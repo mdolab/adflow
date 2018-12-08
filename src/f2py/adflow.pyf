@@ -330,16 +330,34 @@ python module libadflow
            logical intent(in) :: includezipper
          end subroutine getsurfacepoints
 
-         subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2,includezipper) ! in :test:surfaceUtils.F90:surfaceutils
-           real(kind=realtype) dimension(3,n1),intent(in) :: vec1
+         ! subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2,includezipper) ! in :test:surfaceUtils.F90:surfaceutils
+         !   real(kind=realtype) dimension(3,n1),intent(in) :: vec1
+         !   integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
+         !   integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
+         !   integer(kind=inttype), optional,check(len(famlist1)>=nf1),depend(famlist1) :: nf1=len(famlist1)
+         !   real(kind=realtype) dimension(3,n2),intent(inout) :: vec2
+         !   integer(kind=inttype), optional,check(shape(vec2,1)==n2),depend(vec2) :: n2=shape(vec2,1)
+         !   integer(kind=inttype) dimension(nf2),intent(in) :: famlist2
+         !   integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
+         !   logical intent(in) :: includezipper
+         ! end subroutine mapvector
+
+         subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2,includezipper,ndim) ! in ../utils/surfaceUtils.F90:surfaceutils
+           use blockpointers, only: ndom,flowdoms
+           use sorting, only: faminlist
+           use surfacefamilies, only: bcfamgroups
+           use constants
+           use oversetdata, only: oversetpresent,zippermeshes,zippermesh
+           real(kind=realtype) dimension(ndim,n1),intent(in) :: vec1
            integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
            integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
            integer(kind=inttype), optional,check(len(famlist1)>=nf1),depend(famlist1) :: nf1=len(famlist1)
-           real(kind=realtype) dimension(3,n2),intent(inout) :: vec2
+           real(kind=realtype) dimension(ndim,n2),intent(inout),depend(ndim) :: vec2
            integer(kind=inttype), optional,check(shape(vec2,1)==n2),depend(vec2) :: n2=shape(vec2,1)
            integer(kind=inttype) dimension(nf2),intent(in) :: famlist2
            integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
            logical intent(in) :: includezipper
+           integer(kind=inttype), optional,check(shape(vec1,0)==ndim),depend(vec1) :: ndim=shape(vec1,0)
          end subroutine mapvector
 
          subroutine getwalllist(walllist,nwalllist,nfamtotal) ! in :test:surfaceUtils.F90:surfaceutils
@@ -673,6 +691,18 @@ python module libadflow
          integer(kind=inttype) intent(in) :: sps
        end subroutine gettnswall
 
+       subroutine setcptargets(cptarget,npts,sps_in) ! in :test:setCpTarget.f90
+         real(kind=realtype) dimension(npts),intent(in) :: cptarget
+         integer(kind=inttype) optional,intent(in),check(len(cptarget)>=npts),depend(cptarget) :: npts=len(cptarget)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine setcptargets
+
+       subroutine getcptargets(cptarget,npts,sps) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: cptarget
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine getcptargets
+
        subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
@@ -852,6 +882,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncmavgvx=83
          integer(kind=inttype) parameter,optional :: costfuncmavgvy=84
          integer(kind=inttype) parameter,optional :: costfuncmavgvz=85
+         integer(kind=inttype) parameter,optional :: costfunccperror2=86
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90

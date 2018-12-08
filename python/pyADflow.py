@@ -2862,6 +2862,42 @@ class ADFLOW(AeroSolver):
         fullTemp = self.mapVector(temperature, groupName, self.allWallsGroup, fullTemp)
         self.adflow.settnswall(fullTemp, TS+1)
 
+    def setTargetCp(self, CpTargets, groupName=None, TS=0):
+        """Set the CpTarget distribution for am inverse design problem.
+
+        Parameters
+        ----------
+        CpSurf :  numpy array
+
+            Array of CP targets to set for the surface. This size must
+            correpsond to the size of the surface obtained using the
+            same groupName.
+
+        groupName : str
+
+            Group identifier to set only CPtargets corresponding to
+            the desired group. The group must be a family or a
+            user-supplied group of families. The default is None which
+            corresponds to all wall-type surfaces.
+
+        TS : int
+            Time spectral instance to set.
+        """
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        # For the mapVector to work correctly, we need to retrieve the
+        # existing values and just overwrite the ones we've changed
+        # using mapVector.
+        npts, ncell = self._getSurfaceSize(self.allWallsGroup)
+        fullCpTarget = numpy.atleast_2d(self.adflow.getcptargets(npts, TS+1))
+        
+        # Now map new values in and set.
+        fullCpTarget = self.mapVector(numpy.atleast_2d(CpTargets).T, groupName, self.allWallsGroup, fullCpTarget.T)
+        fullCpTarget = fullCpTarget.T
+        self.adflow.setcptargets(numpy.ravel(fullCpTarget), TS+1)
+
+
     def getSurfacePoints(self, groupName=None, includeZipper=True, TS=0):
 
         """Return the coordinates for the surfaces defined by groupName.
@@ -5011,6 +5047,7 @@ class ADFLOW(AeroSolver):
             'mavgvx': self.adflow.constants.costfuncmavgvx,
             'mavgvy': self.adflow.constants.costfuncmavgvy,
             'mavgvz': self.adflow.constants.costfuncmavgvz,
+            'cperror2':self.adflow.constants.costfunccperror2,
             }
 
         return iDV, BCDV, adflowCostFunctions

@@ -69,6 +69,7 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: F, Fv, Fp
      real(kind=realType), dimension(:,:,:), pointer :: T, Tv, Tp
      real(kind=realType), dimension(:,:), pointer :: area
+     real(kind=realType), dimension(:,:), pointer :: CpTarget
      integer(kind=realType), dimension(:,:), pointer :: surfIndex
 
      ! Generic pointers for performing a globalized reduction.
