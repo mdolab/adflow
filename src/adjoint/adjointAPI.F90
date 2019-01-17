@@ -493,6 +493,50 @@ contains
 
   end subroutine saveAdjointPC
 
+  subroutine saveAdjointRHS(RHS, fileName, nstate)
+
+    use constants
+    use ADjointPETSc, only: psi_like1
+    use communication, only : adflow_comm_world
+    use utils, only : EChk
+#include <petscversion.h>
+#if PETSC_VERSION_GE(3,8,0)
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
+#else
+  implicit none
+#define PETSC_AVOID_MPIF_H
+#include "petsc/finclude/petsc.h"
+#endif
+
+    ! Input params
+    character*(*), intent(in) :: fileName
+    real(kind=realType), dimension(nState) :: RHS
+    integer(kind=intType) :: nstate
+
+    ! Working parameters
+    PetscViewer binViewer
+    integer(kind=intType) :: ierr
+
+    ! Dump RHS into psi_like1
+    call VecPlaceArray(psi_like1, RHS, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call PetscViewerBinaryOpen(adflow_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call VecView(psi_like1, binViewer, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call PetscViewerDestroy(binViewer,ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call VecResetArray(psi_like1, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+  end subroutine saveAdjointRHS
+
 
   subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 
@@ -866,7 +910,9 @@ contains
     use inputADjoint
     use utils, only : ECHk, terminate
     use adjointUtils, only : mykspmonitor
-    use adjointUtils, only : setupStateResidualMatrix, setupStandardKSP
+    use adjointUtils, only : setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
+    use communication
+    use agmg, only : setupShellPC, destroyShellPC, applyShellPC
 #include <petscversion.h>
 #if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
@@ -879,19 +925,27 @@ contains
 #endif
 
     !     Local variables.
-    logical :: useAD, usePC, useTranspose, useObjective
+    logical :: useAD, usePC, useTranspose, useObjective, useCoarseMats
     integer(kind=intType) :: ierr
-
+    real(kind=realType) :: timeA
+    PC shellPC
     if (ApproxPC)then
        !setup the approximate PC Matrix
        useAD = ADPC
        useTranspose = .True.
        usePC = .True.
        useObjective = .False.
+       useCoarseMats = .False.
+       if (preCondType == 'mg') then
+          useCoarseMats = .True.
+       end if
+
        call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose, &
-            useObjective, frozenTurbulence, 1_intType)
+            useObjective, frozenTurbulence, 1_intType, useCoarseMats=useCoarseMats)
+
        call KSPSetOperators(adjointKSP, dRdwT, dRdWPreT, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
     else
        ! Use the exact jacobian.  Here the matrix that defines the
        ! linear system also serves as the preconditioning matrix. This
@@ -905,12 +959,14 @@ contains
 
     if (PreCondType == 'asm') then
        ! Run the super-dee-duper function to setup the ksp object:
+
        call setupStandardKSP(adjointKSP, ADjointSolverType, adjRestart, adjointpcside, &
             PreCondType, overlap, outerPreConIts, localPCType, &
             matrixOrdering, FillLevel, innerPreConIts)
     else if (PreCondType == 'mg') then
-       print *,'Only ASM precondtype is usable'
-       stop
+
+       call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, & 
+            adjointPCSide, overlap, outerPreconIts, matrixOrdering,  fillLevel)
     end if
 
     ! Setup monitor if necessary:
@@ -1153,7 +1209,7 @@ contains
     use ADjointPETSc, only: dRdwT, dRdwPreT, &
          adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
     use ADjointVars
-    use communication, only : adflow_comm_world
+    use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : nwf, nw, viscous
     use inputADjoint, only : approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
@@ -1161,6 +1217,7 @@ contains
          visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
     use utils, only : EChk, setPointers
     use adjointUtils, only : myMatCreate, destroyPETScVars, statePreAllocation
+    use agmg, only : setupAGMG
 #include <petscversion.h>
 #if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
@@ -1197,6 +1254,7 @@ contains
     nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
     nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
+   
     if (.not. useMatrixFreedRdw) then
        ! Setup matrix-based dRdwT
        allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
@@ -1265,6 +1323,9 @@ contains
 
        deallocate(nnzDiagonal, nnzOffDiag)
     end if
+
+   
+    call setupAGMG(drdwpret, nDimW/nState, nState)
 
     ! Create the KSP Object
     call KSPCreate(ADFLOW_COMM_WORLD, adjointKSP, ierr)
