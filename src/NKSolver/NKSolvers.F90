@@ -95,10 +95,11 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : useLinResMonitor
     use flowVarRefState, only : nw, viscous
-    use InputAdjoint, only: viscPC
+    use InputAdjoint, only: viscPC, precondtype
     use ADjointVars , only: nCellsLocal
     use utils, only : EChk
     use adjointUtils, only : myMatCreate, statePreAllocation
+    use agmg, only : setupAGMG
     implicit none
 
     ! Working Variables
@@ -190,6 +191,10 @@ contains
 
        call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
+       if (preCondType == 'mg') then 
+          call setupAGMG(drdwpre, nDimW/nw, nw)
+       end if
 
        !  Create the linear solver context
        call KSPCreate(ADFLOW_COMM_WORLD, NK_KSP, ierr)
@@ -365,9 +370,9 @@ contains
   subroutine FormJacobianNK
 
     use constants
-    use inputADjoint, only : viscPC
+    use inputADjoint, only : viscPC, precondType
     use utils, only : EChk
-    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
+    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
     implicit none
 
     ! Local Variables
@@ -375,6 +380,7 @@ contains
     integer(kind=intType) :: ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp
     integer(kind=intType) :: i, j, k, l, ii, nn, sps
+    logical :: useCoarseMats
 
     ! Dummy assembly begin/end calls for the matrix-free Matrx
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -390,8 +396,14 @@ contains
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = NK_viscPC
 
+    if (preCondType == 'mg') then 
+       useCoarseMats = .True.
+    else
+       useCoarseMats = .False.
+    end if
+
     call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
-         useObjective, .False., 1_intType)
+         useObjective, .False., 1_intType, useCoarseMats=useCoarseMats)
     ! Reset saved value
     viscPC = tmp
 
@@ -403,9 +415,16 @@ contains
     localOrdering = 'rcm'
 
     ! Setup the KSP using the same code as used for the adjoint
-    call setupStandardKSP(NK_KSP, kspObjectType, NK_subSpace, &
-         preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
-         localOrdering, NK_iluFill, NK_innerPreConIts)
+    if (PreCondType == 'asm') then
+       call setupStandardKSP(NK_KSP, kspObjectType, NK_subSpace, &
+            preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
+            localOrdering, NK_iluFill, NK_innerPreConIts)
+    else
+       call setupStandardMultigrid(NK_KSP, kspObjectType, NK_subSpace, &
+            preConSide, NK_asmOverlap, NK_outerPreConIts, &
+            localOrdering, NK_iluFill)
+    end if
+ 
 
     ! Don't do iterative refinement for the NKSolver.
     call KSPGMRESSetCGSRefinementType(NK_KSP, &
@@ -447,6 +466,7 @@ contains
 
     use constants
     use utils, only: EChk
+    use agmg, only : destroyAGMG
     implicit none
     integer(kind=intType) :: ierr
 
@@ -481,6 +501,8 @@ contains
 
        call KSPDestroy(NK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
+       call destroyAGMG()
 
        NK_solverSetup = .False.
     end if
@@ -1621,6 +1643,7 @@ module ANKSolver
   integer(kind=intType) :: ANK_asmOverlap
   integer(kind=intType) :: ANK_iluFill
   integer(kind=intType) :: ANK_innerPreConIts
+  integer(kind=intType) :: ANK_outerPreConIts
   real(kind=realType)   :: ANK_rtol
   real(kind=realType)   :: ANK_linResMax
   real(kind=realType)   :: ANK_switchTol
@@ -1665,7 +1688,7 @@ contains
 
     use constants
     use stencils, only : euler_PC_stencil, N_euler_PC
-    use communication, only : adflow_comm_world
+    use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : useLinResMonitor
     use flowVarRefState, only : nw, viscous, nwf, nt1, nt2
@@ -1673,6 +1696,8 @@ contains
     use NKSolver, only : destroyNKSolver, linearResidualMonitor
     use utils, only : EChk
     use adjointUtils, only : myMatCreate, statePreAllocation
+    use inputadjoint, only : precondtype
+    use agmg, only : setupAGMG
     implicit none
 
     ! Working Variables
@@ -1751,6 +1776,10 @@ contains
 
        call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
+       if (preCondType == 'mg') then 
+          call setupAGMG(drdwpre, nDimW/nState, nState)
+       end if
 
        !  Create the linear solver context
        call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSP, ierr)
@@ -1870,15 +1899,17 @@ contains
 
     use constants
     use flowVarRefState, only : nw, nwf, nt1, nt2
-    use blockPointers, only : nDom, volRef, il, jl, kl, w, dw, dtl, globalCell
+    use blockPointers, only : nDom, volRef, il, jl, kl, w, dw, dtl, globalCell, iblank
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
     use inputADjoint, only : viscPC
     use inputDiscretization, only : approxSA
     use iteration, only : totalR0, totalR
     use utils, only : EChk, setPointers
-    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
+    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
     use communication
+    use agmg, only : setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
+    use inputadjoint, only : precondtype
     implicit none
 
     ! Local Variables
@@ -1886,8 +1917,17 @@ contains
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp, frozenTurb
     real(kind=realType) :: dtinv, rho
-    integer(kind=intType) :: i, j, k, l, ii, irow, nn, sps, outerPreConIts, subspace
+    integer(kind=intType) :: i, j, k, l, ii, irow, nn, sps, outerPreConIts, subspace, lvl
+    integer(kind=intType), dimension(2:10) :: coarseRows
     real(kind=realType), dimension(:,:), allocatable :: blk
+    logical :: useCoarseMats
+    PC shellPC
+
+    if (preCondType == 'mg') then 
+       useCoarseMats = .True.
+    else
+       useCoarseMats = .False.
+    end if
 
     ! Assemble the approximate PC (fine leve, level 1)
     useAD = ANK_ADPC
@@ -1903,7 +1943,7 @@ contains
 
     ! Create the preconditoner matrix
     call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
-         useObjective, frozenTurb, 1_intType)
+         useObjective, frozenTurb, 1_intType, useCoarseMats=useCoarseMats)
 
     ! Reset saved value
     viscPC = tmp
@@ -1962,6 +2002,12 @@ contains
 
                       ! get the global cell index
                       irow = globalCell(i, j, k)
+
+                      if (useCoarseMats) then 
+                         do lvl=1, agmgLevels-1
+                            coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
+                         end do
+                      end if
 
                       ! Add the contribution to the matrix in PETSc
                       call setBlock()
@@ -2042,7 +2088,8 @@ contains
     kspObjectType = 'gmres'
     globalPCType = 'asm'
     localOrdering = 'rcm'
-    outerPreConIts = 1
+    outerPreConIts = ank_outerPreconIts
+
     ! Setup the KSP using the same code as used for the adjoint
     if (ank_subspace < 0) then
        subspace = ANK_maxIter
@@ -2057,9 +2104,29 @@ contains
     call MatAssemblyEnd  (dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
-         preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
-         localOrdering, ANK_iluFill, ANK_innerPreConIts)
+    if (useCoarseMats) then
+       do lvl=2, agmgLevels
+          call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+          call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+       end do
+    end if
+
+    if (PreCondType == 'asm') then
+       ! Run the super-dee-duper function to setup the ksp object:
+       
+       call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
+            preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+            localOrdering, ANK_iluFill, ANK_innerPreConIts)
+    else if (PreCondType == 'mg') then
+
+       ! Setup the MG preconditioner!
+       call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
+            preConSide, ANK_asmOverlap, outerPreConIts, &
+            localOrdering, ANK_iluFill)
+    end if
 
     ! Don't do iterative refinement for the NKSolver.
     call KSPGMRESSetCGSRefinementType(ANK_KSP, &
@@ -2076,6 +2143,15 @@ contains
       call MatSetValuesBlocked(dRdwPre, 1, irow, 1, irow, blk, &
            ADD_VALUES, ierr)
       call EChk(ierr, __FILE__, __LINE__)
+
+      ! Extension for setting coarse grids:
+      if (useCoarseMats) then 
+         do lvl=2, agmgLevels
+            call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
+                 blk, ADD_VALUES, ierr)
+         end do
+      end if
+   
 
     end subroutine setBlock
   end subroutine FormJacobianANK
@@ -2186,6 +2262,7 @@ contains
     ! Complete the matrix assembly.
     call MatAssemblyEnd  (dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
+
 
     call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
          preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
@@ -2718,6 +2795,7 @@ contains
 
     use constants
     use utils, only : EChk
+    use agmg, only : destroyAGMG
     implicit none
     integer(kind=intType) :: ierr
 
@@ -2743,6 +2821,8 @@ contains
 
        call KSPDestroy(ANK_KSP, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
+       call destroyAGMG()
 
        ANK_SolverSetup = .False.
 
