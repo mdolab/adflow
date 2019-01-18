@@ -192,7 +192,7 @@ contains
        call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       if (preCondType == 'mg') then 
+       if (preCondType == 'mg') then
           call setupAGMG(drdwpre, nDimW/nw, nw)
        end if
 
@@ -396,7 +396,7 @@ contains
     tmp = viscPC ! Save what is in viscPC and set to the NKvarible
     viscPC = NK_viscPC
 
-    if (preCondType == 'mg') then 
+    if (preCondType == 'mg') then
        useCoarseMats = .True.
     else
        useCoarseMats = .False.
@@ -424,7 +424,7 @@ contains
             preConSide, NK_asmOverlap, NK_outerPreConIts, &
             localOrdering, NK_iluFill)
     end if
- 
+
 
     ! Don't do iterative refinement for the NKSolver.
     call KSPGMRESSetCGSRefinementType(NK_KSP, &
@@ -1777,7 +1777,7 @@ contains
        call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       if (preCondType == 'mg') then 
+       if (preCondType == 'mg') then
           call setupAGMG(drdwpre, nDimW/nState, nState)
        end if
 
@@ -1923,7 +1923,7 @@ contains
     logical :: useCoarseMats
     PC shellPC
 
-    if (preCondType == 'mg') then 
+    if (preCondType == 'mg') then
        useCoarseMats = .True.
     else
        useCoarseMats = .False.
@@ -2003,7 +2003,7 @@ contains
                       ! get the global cell index
                       irow = globalCell(i, j, k)
 
-                      if (useCoarseMats) then 
+                      if (useCoarseMats) then
                          do lvl=1, agmgLevels-1
                             coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
                          end do
@@ -2116,7 +2116,7 @@ contains
 
     if (PreCondType == 'asm') then
        ! Run the super-dee-duper function to setup the ksp object:
-       
+
        call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
             preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
             localOrdering, ANK_iluFill, ANK_innerPreConIts)
@@ -2145,13 +2145,13 @@ contains
       call EChk(ierr, __FILE__, __LINE__)
 
       ! Extension for setting coarse grids:
-      if (useCoarseMats) then 
+      if (useCoarseMats) then
          do lvl=2, agmgLevels
             call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
                  blk, ADD_VALUES, ierr)
          end do
       end if
-   
+
 
     end subroutine setBlock
   end subroutine FormJacobianANK
@@ -3561,14 +3561,15 @@ contains
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
     if (firstCall .or. &
-       ((totalR .le. ANK_coupledSwitchTol * totalR0) .and. (.not. ANK_coupled))) then
+       ((totalR .le. ANK_coupledSwitchTol * totalR0) .and. (.not. ANK_coupled) &
+        .and. (equations .eq. RANSEquations))) then
 
        ! If this is a first call, we need to change the coupled switch
        ! to the correct value.
        if (firstCall) then
 
          ! Check if we are above or below the coupled switch tolerance
-         if (totalR .le. ANK_coupledSwitchTol * totalR0) then
+         if (totalR .le. ANK_coupledSwitchTol * totalR0 .and. equations .eq. RANSEquations) then
            ANK_coupled = .True.
          else
            ANK_coupled = .False.
