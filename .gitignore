@@ -13,13 +13,11 @@ config/config*
 src_cs/*
 src/adjoint/temp*
 *.orig
-*.cgns
 *.cgnsSpectral*
 *~
 .*~
 *.orig
 *.mod
-*.cgns
 doc/*
 *.fmt
 *.bak
@@ -29,3 +27,4 @@ src/build/libadflowmodule.c
 python/reg_tests/adflow_test*_reg
 python/reg_tests/adflow_reg.ref
 python/reg_tests/adflow_reg
+src/build/importTest.py
