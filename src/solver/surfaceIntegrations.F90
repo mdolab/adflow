@@ -36,7 +36,7 @@ contains
 
     ! Sum pressure and viscous contributions
     force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
-    forceP = globalvals(iFp:iFp+2, :) 
+    forceP = globalvals(iFp:iFp+2, :)
     forceV = globalvals(iFv:iFv+2, :)
     forceM = globalvals(iFlowFm:iFlowFm+2, :)
 
@@ -1261,20 +1261,21 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        do sps=1, nTimeIntervalsSpectral
+
+          ! Integrate any actuator regions we have:
+          call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
+          ! Integrate any user-supplied planes as have as well.
+          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
+          ! Integrate any zippers we have
+          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
           ! Integrate the normal block surfaces.
           do nn=1, nDom
              call setPointers_b(nn, 1, sps)
              call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList)
           end do
-
-          ! Integrate any zippers we have
-          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-          ! Integrate any user-supplied planes as have as well.
-          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-          ! Integrate any actuator regions we have:
-           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps)
 
        end do
     end do groupLoop
