@@ -1441,7 +1441,7 @@ contains
        ! Add the corrections from zipper meshes from proc 0
        if (oversetPresent) then
           localValues = zero
-          ! call integrateZippers(localValues, fullFamList, sps)
+          call integrateZippers(localValues, fullFamList, sps)
 
           fact = two/(gammaInf*MachCoef*MachCoef &
                *surfaceRef*LRef*LRef*pRef)
