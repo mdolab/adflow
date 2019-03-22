@@ -953,7 +953,7 @@ contains
           end do
 
           ! Integrate any zippers we have
-          call integrateZippers(localVal(:, sps), famList, sps)
+          ! call integrateZippers(localVal(:, sps), famList, sps)
 
           ! Integrate any user-supplied surfaces as have as well.
           call integrateUserSurfaces(localVal(:, sps), famList, sps)
@@ -1174,7 +1174,7 @@ contains
           end do
 
           ! Integrate any zippers we have
-          call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps)
+          ! call integrateZippers_d(localVal(:, sps), localVald(:, sps), famList, sps)
 
           ! Integrate any user-supplied surface as have as well.
           call integrateUserSurfaces_d(localVal(:, sps), localVald(:, sps), famList, sps)
@@ -1269,7 +1269,7 @@ contains
           call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
 
           ! Integrate any zippers we have
-          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
+          ! call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
 
           ! Integrate the normal block surfaces.
           do nn=1, nDom
