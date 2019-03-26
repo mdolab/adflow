@@ -205,7 +205,7 @@ class OM_FUNC_COMP(ExplicitComponent):
                 wDot=wDot,
                 funcDeriv=True)
 
-            for name, meta  in solver.adflowCostFunctions.items():
+            for name, meta in ap.evalFuncs:
                 func_name = name.lower()
                 if name in d_outputs:
                     d_outputs[name] += funcsdot[func_name]
