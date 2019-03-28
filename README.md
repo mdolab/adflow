@@ -21,7 +21,7 @@ See the MDOLab website for setting up the prerequresites.
 
    Then re-run 
 
-   $ mkae
+   $ make
 
    If this is successful and the end of output contains
 
