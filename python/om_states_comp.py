@@ -1,13 +1,13 @@
 
-import numpy as np 
+import numpy as np
 import pprint
 from pygeo import DVGeometry, DVConstraints
 
 DVGEO_CLASSES = (DVGeometry,)
-try: 
+try:
     from pygeo import DVGeometryVSP
     DVGEO_CLASSES = (DVGeometry, DVGeometryVSP)
-except ImportError: 
+except ImportError:
     pass
 
 from baseclasses import AeroProblem
@@ -26,12 +26,12 @@ class OM_STATES_COMP(ImplicitComponent):
         self.options.declare('ap', types=AeroProblem)
         self.options.declare('dvgeo', types=DVGEO_CLASSES, allow_none=True, default=None)
         self.options.declare('solver')
-        self.options.declare('use_OM_KSP', default=False, types=bool, 
+        self.options.declare('use_OM_KSP', default=False, types=bool,
             desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
 
         # self.options.declare('max_procs', default=64, types=int)
 
-        self.distributed = True
+        self.options['distributed'] = True
 
         # testing flag used for unit-testing to prevent the call to actually solve
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
@@ -45,23 +45,23 @@ class OM_STATES_COMP(ImplicitComponent):
         self.ap_vars,_ = get_dvs_and_cons(ap=ap)
         self.geo_vars,_ = get_dvs_and_cons(geo=geo)
 
-        if self.comm.rank == 0: 
+        if self.comm.rank == 0:
             print('adding ap var inputs')
         for (args, kwargs) in self.ap_vars:
             name = args[0]
             size = args[1]
             self.add_input(name, shape=size, units=kwargs['units'])
-            if self.comm.rank == 0: 
+            if self.comm.rank == 0:
                 print(name)
 
-        if self.comm.rank == 0: 
+        if self.comm.rank == 0:
             print('adding geo var inputs')
 
         for (args, kwargs) in self.geo_vars:
             name = args[0]
             size = args[1]
             self.add_input(name, shape=size)
-            if self.comm.rank == 0: 
+            if self.comm.rank == 0:
                 print(name)
 
         local_state_size = solver.getStateSize()
@@ -70,7 +70,7 @@ class OM_STATES_COMP(ImplicitComponent):
         # apparently needed to initialize the state arrays
         # but also somehow borks up the restarts
         # solver.getResidual(ap)
-        
+
         #self.declare_partials(of='states', wrt='*')
 
     def _set_ap(self, inputs):
@@ -83,14 +83,14 @@ class OM_STATES_COMP(ImplicitComponent):
 
     def _set_geo(self, inputs, update_jacobian=True):
         dvgeo = self.options['dvgeo']
-        if dvgeo is None: 
-            return 
+        if dvgeo is None:
+            return
 
         tmp = {}
         for (args, kwargs) in self.geo_vars:
             name = args[0]
             tmp[name] = inputs[name]
-        try: 
+        try:
             self.options['dvgeo'].setDesignVars(tmp, update_jacobian)
         except TypeError: # this is needed because dvGeo and dvGeoVSP have different APIs
             self.options['dvgeo'].setDesignVars(tmp)
@@ -98,30 +98,30 @@ class OM_STATES_COMP(ImplicitComponent):
 
     def _set_states(self, outputs):
         self.options['solver'].setStates(outputs['states'])
-        
-    
+
+
     def apply_nonlinear(self, inputs, outputs, residuals):
-        
+
         self._set_states(outputs)
         self._set_ap(inputs)
         self._set_geo(inputs, update_jacobian=False)
-        
+
         ap = self.options['ap']
         residuals['states'] = self.options['solver'].getResidual(ap)
 
-    
+
     def solve_nonlinear(self, inputs, outputs):
 
         solver = self.options['solver']
         ap = self.options['ap']
 
-        if self._do_solve: 
+        if self._do_solve:
 
             self._set_ap(inputs)
             self._set_geo(inputs, update_jacobian=False)
             ap.solveFailed = False # might need to clear this out?
             ap.fatalFail = False
-        
+
             solver(ap)
 
             if ap.fatalFail:
@@ -154,7 +154,7 @@ class OM_STATES_COMP(ImplicitComponent):
 
         outputs['states'] = solver.getStates()
 
-    
+
     def linearize(self, inputs, outputs, residuals):
 
         self.options['solver']._setupAdjoint()
@@ -164,8 +164,8 @@ class OM_STATES_COMP(ImplicitComponent):
         self._set_states(outputs)
 
         #print('om_states linearize')
-        
-    
+
+
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
 
         solver = self.options['solver']
@@ -206,7 +206,7 @@ class OM_STATES_COMP(ImplicitComponent):
                     if dv_name in d_inputs:
                         d_inputs[dv_name] += dv_bar.flatten()
 
-    
+
     def solve_linear(self, d_outputs, d_residuals, mode):
         solver = self.options['solver']
         ap = self.options['ap']
