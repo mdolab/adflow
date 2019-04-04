@@ -1,85 +1,22 @@
-This is the ADflow README. Please read this before trying to compile.
+# ADflow
+ADflow is a multi-block structured flow solver developed by the MDO Lab at the University of Michigan.
+It solves the compressible Euler, laminar Navier-Stokes and Reynolds-Averaged Navier-Stokes equations.
+ADflow's features include the following:
 
+- Discrete adjoint implementation
+- "Complexified" code for complex-step derivative verification
+- Massively parallel (both CPU and memory scalable) implementation using MPI.
 
-----------------
-Prerequisites:
------------------
-See the MDOLab website for setting up the prerequresites. 
+## Documentation
+Please see the [documentation](http://mdolab.engin.umich.edu/doc/packages/adflow/doc/index.html) for installation details and API documentation.
 
----------------------
-   ADflow -- Build
----------------------
+To locally build the documentation, enter the `doc` folder and enter `make html` in terminal.
+You can then view the built documentation in the `_build` folder.
 
-   With all the prerequisites installed ADflow can now be compiled. To
-   begin type:
+## Citation
 
-   $ make
+## License
+Copyright 2019 MDO Lab
 
-   A set of instructions on how to setup a config files will be
-   displayed. Do as requested and modify the config.mk file
-   accordingly. 
-
-   Then re-run 
-
-   $ mkae
-
-   If this is successful and the end of output contains
-
-   "module adflow was successfully imported"
-
-   The ADflow build was successful and we're done.
-
-   If there was an issue compiling it will be necessary to modify the
-   config file.
-
----------------------
-     ADflow -- Verify
----------------------
-
-    ADflow contains a set of simple tests that can be run automatically
-    to ensure ADflow reproduces the expected reference results. You should
-    a diff-viewer installed. xxdiff is used by default which can be installed
-    using 
-
-    $ sudo apt-get install xxdiff
-
-    Change to the regression tests directory at:
-    $ cd python/reg_tests/
-
-    Command line arguemnts for run_reg_tests.py can be found by running:
-
-    $ python run_reg_tests.py --help
-
-    To run all regression tests, now simply run:
-    
-    $ python run_reg_tests.py
-
-    
-    If the tests are successful a 'adflow: Success!' message
-    will be printed, otherwise a diff window will appear hihglighting
-    the differences between the reference case and the most recently
-    completed verification run.
-
----------------------
-     ADflow -- Complex
----------------------
-	
-    ADflow contains scripts to automatically build a "complexified"
-    version of ADflow directly from the real version.
-
-    ADflow_CS REQUIRES a complex build of petsc to build and run. The
-    petsc configuration script must be re-run with the following
-    options:
-
-   $ ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debuggig=yes --with-scalar-type=complex --PETSC_ARCH=complex-debug
-
-   Follow instructions as before to complete complex build. 
-
-   Now, to build complex ADflow do:
-
-   $ export PETSC_ARCH=complex-debug
-   $ make -f Makefile_CS <ARCH>
-
-   where arch is the same architecture used for the real version. Note
-   that the correct, complex PETSC_ARCH MUST be set before the code is
-   compiled and also must be set when running in complex mode. 
+Distributed using the GNU Lesser General Public License (LGPL), verstion 2.1; see
+the LICENSE file for details.
