@@ -13,11 +13,10 @@ ______________________________________________________________________________
    version 2.1 (the "License"); you may not use this software except in
    compliance with the License. You may obtain a copy of the License at:
      https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html
+______________________________________________________________________________
 
    University of Michigan's Multidisciplinary Design Optimization Laboratory (MDO Lab)
    College of Engineering, Aerospace Engineering Department
    http://mdolab.engin.umich.edu/
 ______________________________________________________________________________
-
-
 
