@@ -1448,18 +1448,18 @@ subroutine computeNodalForces_b(sps)
         jBeg = BCdata(mm)%jnBeg+1; jEnd=BCData(mm)%jnEnd
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
-           BCDatad(mm)%F = zero
            do j=jBeg, jEnd
-              do i=iBeg, iEnd
-
+              do i=iBeg, iEnd                 
                  qf_b = fourth*(BCDatad(mm)%F(i, j, :) + BCdatad(mm)%F(i-1, j, :) + &
                       BCDatad(mm)%F(i, j-1, :) + BCDatad(mm)%F(i-1, j-1, :))
-
+              
                  ! Fp and Fv are face-based values
                  BCDatad(mm)%Fp(i, j, :) = BCDatad(mm)%Fp(i, j, :) + qf_b
                  BCDatad(mm)%Fv(i, j, :) = BCDatad(mm)%Fv(i, j, :) + qf_b
               end do
            end do
+           ! this needs to be after the update to be the reverse of the forward mode.
+           BCDatad(mm)%F = zero
         end if
      end do
   end do domains
