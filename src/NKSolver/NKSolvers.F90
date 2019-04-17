@@ -2176,7 +2176,7 @@ contains
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp, frozenTurb
     real(kind=realType) :: dtinv, rho
-    integer(kind=intType) :: i, j, k, l, ii, irow, nn, sps, outerPreConIts, subspace
+    integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace
     real(kind=realType), dimension(:,:), allocatable :: blk
 
     ! Assemble the approximate PC (fine leve, level 1)
@@ -2218,20 +2218,27 @@ contains
             do k=2, kl
                 do j=2, jl
                     do i=2, il
-                        ! See the comment for the same calculation above
-                        dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+
+                      ! See the comment for the same calculation above
+                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+
+                      do l=nt1, nt2
+
+                        ! l1 is just l that starts with 1 on the turb variables
+                        l1 = l-nt1+1
 
                         ! For the turbulence variable, additionally scale the cfl.
                         ! turbresscale is required because the turbulent residuals
                         ! are scaled with it. Furthermore, the turbulence variable
                         ! can get a different CFL number. Scale it by turbCFLScale
-                        blk(1, 1) = dtinv*turbResScale(1)/ANK_turbCFLScale
+                        blk(l1, l1) = dtinv*turbResScale(l1)/ANK_turbCFLScale
+                      end do
 
-                        ! get the global cell index
-                        irow = globalCell(i, j, k)
+                      ! get the global cell index
+                      irow = globalCell(i, j, k)
 
-                        ! Add the contribution to the matrix in PETSc
-                        call setBlock()
+                      ! Add the contribution to the matrix in PETSc
+                      call setBlock()
                     end do
                 end do
             end do
@@ -2428,11 +2435,13 @@ contains
                       rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
                       ii = ii + 1
 
-                      ! turbulence variable needs additional scaling, and it may
-                      ! get a different CFL number
-                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)* &
-                           dtinv*turbResScale(1)/ANK_turbCFLScale
-                      ii = ii + 1
+                      do l=nt1, nt2
+                         ! turbulence variable needs additional scaling, and it may
+                         ! get a different CFL number
+                         rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)* &
+                              dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
+                         ii = ii + 1
+                      end do
                    end do
                 end do
              end do
@@ -2501,13 +2510,16 @@ contains
             do k=2, kl
                 do j=2, jl
                     do i=2, il
+                     ! needs to be modified
                         dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
-                        ! turbulence variable needs additional scaling, and it may
-                        ! get a different CFL number
-                        rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)* &
-                        dtinv*turbResScale(1)/ANK_turbCFLScale
-                        ii = ii + 1
+                        do l=nt1, nt2
+                           ! turbulence variable needs additional scaling, and it may
+                           ! get a different CFL number
+                           rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)* &
+                           dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
+                           ii = ii + 1
+                        end do
                     end do
                 end do
             end do
@@ -2681,11 +2693,13 @@ contains
                       rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*dvec_pointer(ii)
                       ii = ii + 1
 
-                      ! turbulence variable needs additional scaling, and it may
-                      ! get a different CFL number
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dvec_pointer(ii)* &
-                           dtinv*turbResScale(1)/ANK_turbCFLScale
-                      ii = ii + 1
+                      do l=nt1, nt2
+                         ! turbulence variable needs additional scaling, and it may
+                         ! get a different CFL number
+                         rvec_pointer(ii) = rvec_pointer(ii) - omega*dvec_pointer(ii)* &
+                              dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
+                         ii = ii + 1
+                      end do
                    end do
                 end do
              end do
@@ -2766,11 +2780,13 @@ contains
                     do i=2, il
                         dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
 
-                        ! turbulence variable needs additional scaling, and it may
-                        ! get a different CFL number
-                        rvec_pointer(ii) = rvec_pointer(ii) - omega*dvec_pointer(ii)* &
-                        dtinv*turbResScale(1)/ANK_turbCFLScale
-                        ii = ii + 1
+                        do l=nt1, nt2
+                           ! turbulence variable needs additional scaling, and it may
+                           ! get a different CFL number
+                           rvec_pointer(ii) = rvec_pointer(ii) - omega*dvec_pointer(ii)* &
+                                dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
+                           ii = ii + 1
+                        end do
                     end do
                 end do
             end do
@@ -3015,7 +3031,7 @@ contains
 
     use constants
     use blockPointers, only : ndom, il, jl, kl
-    use flowVarRefState, only : nw, nwf, nt1
+    use flowVarRefState, only : nw, nwf, nt1, nt2
     use inputtimespectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk, myisnan
     use communication, only : ADflow_comm_world
@@ -3103,6 +3119,7 @@ contains
                       lambdaL = min(lambdaL, ratio)
                       ii = ii + 1
 
+                        ! needs to be modified
                       ! if coupled ank is used, nstate = nw and this loop is executed
                       ! if no turbulence variables, this loop will be automatically skipped
                       ! check turbulence variable
@@ -3126,6 +3143,15 @@ contains
                       end if
                       lambdaL = min(lambdaL, ratio)
                       ii = ii + 1
+
+                      ! TODO: Do we need physicality checks for the additional turbulence model variables?
+                     !  do l=nt1+1, nt2
+                     !     ii = ii + 1
+                     !  end do
+                      ! do this instead of the above loop for now...
+                      ! Will need to modify this if we want physicality check
+                      ! for the new turb model variables.
+                      ii = ii + (nt2-nt1)
                    end do
                 end do
              end do
@@ -3203,6 +3229,7 @@ contains
                         ! multiply the ratios by 10 to check if the change in a
                         ! variable is greater than 10% of the variable itself.
 
+                        ! needs to be modified
                         ! if coupled ank is used, nstate = nw and this loop is executed
                         ! if no turbulence variables, this loop will be automatically skipped
                         ! check turbulence variable
@@ -3226,6 +3253,15 @@ contains
                         end if
                         lambdaL = min(lambdaL, ratio)
                         ii = ii + 1
+
+                        ! TODO: Do we need physicality checks for the additional turbulence model variables?
+                        !  do l=nt1+1, nt2
+                        !     ii = ii + 1
+                        !  end do
+                        ! do this instead of the above loop for now...
+                        ! Will need to modify this if we want physicality check
+                        ! for the new turb model variables.
+                        ii = ii + (nt2-nt1)
                     end do
                 end do
             end do
