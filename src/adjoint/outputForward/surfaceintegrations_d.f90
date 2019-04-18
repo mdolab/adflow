@@ -45,9 +45,9 @@ contains
 &   cforcemd, cmomentd
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgrhod, mavgpsd, &
-&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd
+&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -306,6 +306,22 @@ contains
         mavgptotd = 0.0_8
         mavgvxd = 0.0_8
       end if
+! area averaged objectives
+      garead = globalvalsd(iarea, sps)
+      garea = globalvals(iarea, sps)
+      if (garea .ne. zero) then
+! area averaged pressure
+        funcvaluesd(costfuncaavgptot) = funcvaluesd(costfuncaavgptot) + &
+&         (globalvalsd(iareaptot, sps)*garea-globalvals(iareaptot, sps)*&
+&         garead)/garea**2
+        funcvalues(costfuncaavgptot) = funcvalues(costfuncaavgptot) + &
+&         globalvals(iareaptot, sps)/garea
+      end if
+! total pressure
+      funcvaluesd(costfuncpabs) = funcvaluesd(costfuncpabs) + &
+&       globalvalsd(iareaptot, sps)
+      funcvalues(costfuncpabs) = funcvalues(costfuncpabs) + globalvals(&
+&       iareaptot, sps)
       funcvaluesd(costfuncmdot) = funcvaluesd(costfuncmdot) + ovrnts*&
 &       mflowd
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
@@ -546,7 +562,7 @@ contains
 &   cmoment
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -682,6 +698,14 @@ contains
         mavgvy = zero
         mavgvz = zero
       end if
+! area averaged objectives
+      garea = globalvals(iarea, sps)
+      if (garea .ne. zero) funcvalues(costfuncaavgptot) = funcvalues(&
+&         costfuncaavgptot) + globalvals(iareaptot, sps)/garea
+! area averaged pressure
+! total pressure
+      funcvalues(costfuncpabs) = funcvalues(costfuncpabs) + globalvals(&
+&       iareaptot, sps)
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
 &       ovrnts*mavgptot
@@ -1648,6 +1672,8 @@ contains
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
 &   mass_psd, mass_mnd, mass_ad, mass_rhod, mass_vxd, mass_vyd, mass_vzd&
 &   , mass_nxd, mass_nyd, mass_nzd
+    real(kind=realtype) :: area_ptot
+    real(kind=realtype) :: area_ptotd
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
     integer(kind=inttype) :: i, j, ii, blk
@@ -1731,6 +1757,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    area_ptot = zero
     mass_ptotd = 0.0_8
     aread = 0.0_8
     mmomd = 0.0_8
@@ -1742,6 +1769,7 @@ contains
     mass_psd = 0.0_8
     mass_mnd = 0.0_8
     sfacecoordrefd = 0.0_8
+    area_ptotd = 0.0_8
     mass_rhod = 0.0_8
     mass_ttotd = 0.0_8
     mass_nxd = 0.0_8
@@ -1844,6 +1872,9 @@ contains
       mass_mnd = mass_mnd + mnmd*massflowratelocal + mnm*&
 &       massflowratelocald
       mass_mn = mass_mn + mnm*massflowratelocal
+      area_ptotd = area_ptotd + blk*((ptotd*pref+ptot*prefd)*cellarea+&
+&       ptot*pref*cellaread)
+      area_ptot = area_ptot + ptot*pref*cellarea*blk
       sfacecoordrefd(1) = sf*(ssid(i, j, 1)*overcellarea+ssi(i, j, 1)*&
 &       overcellaread)
       sfacecoordref(1) = sf*ssi(i, j, 1)*overcellarea
@@ -1987,6 +2018,8 @@ contains
 &     mmomd
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
+    localvaluesd(iareaptot) = localvaluesd(iareaptot) + area_ptotd
+    localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvaluesd(imassvx) = localvaluesd(imassvx) + mass_vxd
     localvalues(imassvx) = localvalues(imassvx) + mass_vx
     localvaluesd(imassvy) = localvaluesd(imassvy) + mass_vyd
@@ -2021,6 +2054,7 @@ contains
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
 &   mass_ny, mass_nz
+    real(kind=realtype) :: area_ptot
     real(kind=realtype) :: mredim
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
@@ -2084,6 +2118,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    area_ptot = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -2128,6 +2163,7 @@ contains
       mass_a = mass_a + am*massflowratelocal*uref
       mass_ps = mass_ps + pm*massflowratelocal
       mass_mn = mass_mn + mnm*massflowratelocal
+      area_ptot = area_ptot + ptot*pref*cellarea*blk
       sfacecoordref(1) = sf*ssi(i, j, 1)*overcellarea
       sfacecoordref(2) = sf*ssi(i, j, 2)*overcellarea
       sfacecoordref(3) = sf*ssi(i, j, 3)*overcellarea
@@ -2194,6 +2230,7 @@ contains
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
+    localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvalues(imassvx) = localvalues(imassvx) + mass_vx
     localvalues(imassvy) = localvalues(imassvy) + mass_vy
     localvalues(imassvz) = localvalues(imassvz) + mass_vz
