@@ -23,7 +23,7 @@ contains
          moment, cForce, cForceP, cForceV, cForceM, cMoment
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
-                            mAvgVx, mAvgVy, mAvgVz
+                            mAvgVx, mAvgVy, mAvgVz, gArea
 
     real(kind=realType) ::  vdotn, mag, u, v, w
     integer(kind=intType) :: sps
@@ -36,7 +36,7 @@ contains
 
     ! Sum pressure and viscous contributions
     force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
-    forceP = globalvals(iFp:iFp+2, :) 
+    forceP = globalvals(iFp:iFp+2, :)
     forceV = globalvals(iFv:iFv+2, :)
     forceM = globalvals(iFlowFm:iFlowFm+2, :)
 
@@ -144,6 +144,16 @@ contains
           mAvgVz   = zero
 
        end if
+
+       ! area averaged objectives
+       gArea = globalVals(iArea, sps)
+       if (gArea /= zero) then
+          ! area averaged pressure
+          funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + globalVals(iAreaPTot, sps) / gArea
+       end if
+
+       ! total pressure
+       funcValues(costFuncPAbs) = funcValues(costFuncPAbs) + globalVals(iAreaPTot, sps)
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
        funcValues(costFuncMavgPtot ) = funcValues(costFuncMavgPtot) + ovrNTS*mAvgPtot
@@ -679,6 +689,7 @@ contains
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
                             mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
+    real(kind=realType) ::  area_Ptot
     real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, mx, my, mz
@@ -747,6 +758,8 @@ contains
     mass_ny = zero
     mass_nz = zero
 
+    area_Ptot = zero
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -796,6 +809,8 @@ contains
 
       mass_Ps = mass_Ps + pm*massFlowRateLocal
       mass_MN = mass_MN + MNm*massFlowRateLocal
+
+      area_pTot = area_pTot + Ptot * Pref * cellArea * blk
 
       sFaceCoordRef(1) = sF * ssi(i,j,1)*overCellArea
       sFaceCoordRef(2) = sF * ssi(i,j,2)*overCellArea
@@ -876,6 +891,8 @@ contains
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+
+    localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
 
     localValues(iMassVx)   = localValues(iMassVx)   + mass_Vx
     localValues(iMassVy)   = localValues(iMassVy)   + mass_Vy
