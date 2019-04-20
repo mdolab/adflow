@@ -787,7 +787,7 @@ contains
       MNm = vmag/am
 
       cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
-      area = area + cellArea
+      area = area + cellArea*blk
       overCellArea = 1/cellArea
 
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)

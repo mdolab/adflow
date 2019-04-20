@@ -695,7 +695,7 @@ contains
       mnm = vmag/am
       cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
 &       2)
-      area = area + cellarea
+      area = area + cellarea*blk
       overcellarea = 1/cellarea
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)

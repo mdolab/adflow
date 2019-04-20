@@ -2355,8 +2355,8 @@ contains
       sfacecoordrefd(2) = 0.0_8
       ssid(i, j, 1) = ssid(i, j, 1) + sf*overcellarea*sfacecoordrefd(1)
       overcellaread = overcellaread + sf*ssi(i, j, 1)*sfacecoordrefd(1)
-      cellaread = ptot*pref*tempd5 + aread - overcellaread/cellarea**2 +&
-&       timeref*tempd4
+      cellaread = ptot*pref*tempd5 + blk*aread - overcellaread/cellarea&
+&       **2 + timeref*tempd4
       sfacecoordrefd(1) = 0.0_8
       ptotd = ptotd + pref*massflowratelocal*mass_ptotd + cellarea*pref*&
 &       tempd5
@@ -2541,7 +2541,7 @@ contains
       mnm = vmag/am
       cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
 &       2)
-      area = area + cellarea
+      area = area + cellarea*blk
       overcellarea = 1/cellarea
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
