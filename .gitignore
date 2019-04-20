@@ -34,3 +34,6 @@ python/reg_tests/*.cgns
 python/reg_tests/*.dat
 python/reg_tests/*.txt
 python/reg_tests/*.zipper
+
+# optimization reports from intel compilers
+*.optrpt
