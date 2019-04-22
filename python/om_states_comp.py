@@ -145,6 +145,7 @@ class OM_STATES_COMP(ImplicitComponent):
                 solver(ap)
 
                 if ap.solveFailed or ap.fatalFail: # we tried, but there was no saving it
+                    solver.resetFlow(ap)
                     print('###############################################################')
                     print('#Clean Restart failed. There is no saving this one!')
                     print('###############################################################')
