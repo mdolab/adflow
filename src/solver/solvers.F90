@@ -1014,6 +1014,9 @@ contains
     ! call, "Iter" and "Iter Total" will both display 0.
     approxTotalIts = 0
 
+    ! we need to re-set the orders converged to 16 as it might have been modified in the previous iteration
+    ordersConverged = 16.0_realType
+
     ! Evaluate the initial residual
     call computeResidualNK
 
