@@ -5047,7 +5047,6 @@ class ADFLOW(AeroSolver):
             'mdot':self.adflow.constants.costfuncmdot,
             'mavgptot':self.adflow.constants.costfuncmavgptot,
             'aavgptot':self.adflow.constants.costfuncaavgptot,
-            'pabs':self.adflow.constants.costfuncpabs,
             'mavgttot':self.adflow.constants.costfuncmavgttot,
             'mavgps':self.adflow.constants.costfuncmavgps,
             'mavgmn':self.adflow.constants.costfuncmavgmn,

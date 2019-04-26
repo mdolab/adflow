@@ -152,9 +152,6 @@ contains
           funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + globalVals(iAreaPTot, sps) / gArea
        end if
 
-       ! total pressure
-       funcValues(costFuncPAbs) = funcValues(costFuncPAbs) + globalVals(iAreaPTot, sps)
-
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
        funcValues(costFuncMavgPtot ) = funcValues(costFuncMavgPtot) + ovrNTS*mAvgPtot
        funcValues(costFuncMavgTtot)  = funcValues(costFuncMavgTtot) + ovrNTS*mAvgTtot

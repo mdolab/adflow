@@ -906,7 +906,6 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncmavgvz=85
          integer(kind=inttype) parameter,optional :: costfunccperror2=86
          integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
-         integer(kind=inttype) parameter,optional :: costfuncpabs=88
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90

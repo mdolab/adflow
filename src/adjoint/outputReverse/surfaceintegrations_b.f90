@@ -224,9 +224,6 @@ contains
       if (garea .ne. zero) funcvalues(costfuncaavgptot) = funcvalues(&
 &         costfuncaavgptot) + globalvals(iareaptot, sps)/garea
 ! area averaged pressure
-! total pressure
-      funcvalues(costfuncpabs) = funcvalues(costfuncpabs) + globalvals(&
-&       iareaptot, sps)
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
 &       ovrnts*mavgptot
@@ -610,8 +607,6 @@ contains
         mavgttotd = ovrnts*funcvaluesd(costfuncmavgttot)
         mavgptotd = ovrnts*funcvaluesd(costfuncmavgptot)
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
-        globalvalsd(iareaptot, sps) = globalvalsd(iareaptot, sps) + &
-&         funcvaluesd(costfuncpabs)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           globalvalsd(iareaptot, sps) = globalvalsd(iareaptot, sps) + &
@@ -921,9 +916,6 @@ contains
       if (garea .ne. zero) funcvalues(costfuncaavgptot) = funcvalues(&
 &         costfuncaavgptot) + globalvals(iareaptot, sps)/garea
 ! area averaged pressure
-! total pressure
-      funcvalues(costfuncpabs) = funcvalues(costfuncpabs) + globalvals(&
-&       iareaptot, sps)
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
 &       ovrnts*mavgptot
