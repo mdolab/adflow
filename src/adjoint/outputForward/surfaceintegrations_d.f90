@@ -317,11 +317,6 @@ contains
         funcvalues(costfuncaavgptot) = funcvalues(costfuncaavgptot) + &
 &         globalvals(iareaptot, sps)/garea
       end if
-! total pressure
-      funcvaluesd(costfuncpabs) = funcvaluesd(costfuncpabs) + &
-&       globalvalsd(iareaptot, sps)
-      funcvalues(costfuncpabs) = funcvalues(costfuncpabs) + globalvals(&
-&       iareaptot, sps)
       funcvaluesd(costfuncmdot) = funcvaluesd(costfuncmdot) + ovrnts*&
 &       mflowd
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
@@ -703,9 +698,6 @@ contains
       if (garea .ne. zero) funcvalues(costfuncaavgptot) = funcvalues(&
 &         costfuncaavgptot) + globalvals(iareaptot, sps)/garea
 ! area averaged pressure
-! total pressure
-      funcvalues(costfuncpabs) = funcvalues(costfuncpabs) + globalvals(&
-&       iareaptot, sps)
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
 &       ovrnts*mavgptot
