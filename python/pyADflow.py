@@ -2891,7 +2891,7 @@ class ADFLOW(AeroSolver):
         # using mapVector.
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
         fullCpTarget = numpy.atleast_2d(self.adflow.getcptargets(npts, TS+1))
-        
+
         # Now map new values in and set.
         fullCpTarget = self.mapVector(numpy.atleast_2d(CpTargets).T, groupName, self.allWallsGroup, fullCpTarget.T)
         fullCpTarget = fullCpTarget.T
@@ -5046,6 +5046,7 @@ class ADFLOW(AeroSolver):
             'cavitation':self.adflow.constants.costfunccavitation,
             'mdot':self.adflow.constants.costfuncmdot,
             'mavgptot':self.adflow.constants.costfuncmavgptot,
+            'aavgptot':self.adflow.constants.costfuncaavgptot,
             'mavgttot':self.adflow.constants.costfuncmavgttot,
             'mavgps':self.adflow.constants.costfuncmavgps,
             'mavgmn':self.adflow.constants.costfuncmavgmn,
