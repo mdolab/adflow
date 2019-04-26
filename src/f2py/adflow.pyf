@@ -29,7 +29,7 @@ python module libadflow
          subroutine unsteadyheader
          end subroutine unsteadyheader
 
-        
+
          subroutine pointreduce(pts,n,tol,uniquepts,link,nunique) ! in :test:utils.F90:utils
            real(kind=realtype) dimension(3,n),intent(in) :: pts
            integer(kind=inttype), optional,intent(in),check(shape(pts,1)==n),depend(pts) :: n=shape(pts,1)
@@ -105,15 +105,15 @@ python module libadflow
        module agmg
          integer(kind=inttype) :: agmglevels
          integer(kind=inttype) :: agmgnsmooth
-         
+
          subroutine setupagmg
          end subroutine setupagmg
 
          subroutine destroyagmg
          end subroutine destroyagmg
-         
+
        end module agmg
-       
+
        module flowutils
 
          subroutine updategamma
@@ -905,6 +905,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncmavgvy=84
          integer(kind=inttype) parameter,optional :: costfuncmavgvz=85
          integer(kind=inttype) parameter,optional :: costfunccperror2=86
+         integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
