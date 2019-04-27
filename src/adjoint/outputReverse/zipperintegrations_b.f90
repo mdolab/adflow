@@ -62,8 +62,8 @@ contains
 &   , mass_nxd, mass_nyd, mass_nzd
     real(kind=realtype) :: area, cellarea, overcellarea
     real(kind=realtype) :: aread, cellaread, overcellaread
-    real(kind=realtype) :: area_ptot
-    real(kind=realtype) :: area_ptotd
+    real(kind=realtype) :: area_ptot, area_ps
+    real(kind=realtype) :: area_ptotd, area_psd
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
@@ -101,6 +101,7 @@ contains
     mass_vzd = localvaluesd(imassvz)
     mass_vyd = localvaluesd(imassvy)
     mass_vxd = localvaluesd(imassvx)
+    area_psd = localvaluesd(iareaps)
     area_ptotd = localvaluesd(iareaptot)
     mmomd = 0.0_8
     mmomd = localvaluesd(iflowmm:iflowmm+2)
@@ -299,12 +300,12 @@ contains
           overcellaread = overcellaread + ss(2)*sf*sfacecoordrefd(2)
           sfacecoordrefd(2) = 0.0_8
           overcellaread = overcellaread + ss(1)*sf*sfacecoordrefd(1)
+          pmd = pmd + massflowratelocal*mass_psd + cellarea*area_psd
+          cellaread = cellaread + ptot*pref*area_ptotd + aread - &
+&           overcellaread/cellarea**2 + pm*area_psd
           ptotd = ptotd + pref*massflowratelocal*mass_ptotd + cellarea*&
 &           pref*area_ptotd
-          cellaread = cellaread + aread - overcellaread/cellarea**2 + &
-&           ptot*pref*area_ptotd
           mnmd = massflowratelocal*mass_mnd
-          pmd = pmd + massflowratelocal*mass_psd
           amd = uref*massflowratelocal*mass_ad
           rhorefd = rhorefd + rhom*massflowratelocal*mass_rhod
           ttotd = ttotd + tref*massflowratelocal*mass_ttotd
@@ -446,7 +447,7 @@ contains
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
 &   mass_ny, mass_nz
     real(kind=realtype) :: area, cellarea, overcellarea
-    real(kind=realtype) :: area_ptot
+    real(kind=realtype) :: area_ptot, area_ps
     real(kind=realtype) :: mredim
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
 &   , my, mz
@@ -476,6 +477,7 @@ contains
     mass_ny = zero
     mass_nz = zero
     area_ptot = zero
+    area_ps = zero
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -548,6 +550,7 @@ contains
           mass_ps = mass_ps + pm*massflowratelocal
           mass_mn = mass_mn + mnm*massflowratelocal
           area_ptot = area_ptot + ptot*pref*cellarea
+          area_ps = area_ps + pm*cellarea
           sfacecoordref(1) = sf*ss(1)*overcellarea
           sfacecoordref(2) = sf*ss(2)*overcellarea
           sfacecoordref(3) = sf*ss(3)*overcellarea
@@ -626,6 +629,7 @@ contains
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
     localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
+    localvalues(iareaps) = localvalues(iareaps) + area_ps
     localvalues(imassvx) = localvalues(imassvx) + mass_vx
     localvalues(imassvy) = localvalues(imassvy) + mass_vy
     localvalues(imassvz) = localvalues(imassvz) + mass_vz
