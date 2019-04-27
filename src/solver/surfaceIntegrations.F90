@@ -149,7 +149,8 @@ contains
        gArea = globalVals(iArea, sps)
        if (gArea /= zero) then
           ! area averaged pressure
-          funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + globalVals(iAreaPTot, sps) / gArea
+          funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + ovrNTS*globalVals(iAreaPTot, sps) / gArea
+          funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + ovrNTS*globalVals(iAreaPs, sps) / gArea
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
@@ -686,7 +687,7 @@ contains
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
                             mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
-    real(kind=realType) ::  area_Ptot
+    real(kind=realType) ::  area_Ptot, area_Ps
     real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, mx, my, mz
@@ -756,6 +757,7 @@ contains
     mass_nz = zero
 
     area_Ptot = zero
+    area_Ps   = zero
 
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
@@ -808,6 +810,7 @@ contains
       mass_MN = mass_MN + MNm*massFlowRateLocal
 
       area_pTot = area_pTot + Ptot * Pref * cellArea * blk
+      area_Ps = area_Ps + pm * cellArea * blk
 
       sFaceCoordRef(1) = sF * ssi(i,j,1)*overCellArea
       sFaceCoordRef(2) = sF * ssi(i,j,2)*overCellArea
@@ -890,6 +893,7 @@ contains
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
     localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
+    localValues(iAreaPs) = localValues(iAreaPs) + area_Ps
 
     localValues(iMassVx)   = localValues(iMassVx)   + mass_Vx
     localValues(iMassVy)   = localValues(iMassVy)   + mass_Vy
