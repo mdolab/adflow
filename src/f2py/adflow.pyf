@@ -1117,6 +1117,7 @@ python module libadflow
          real(kind=realtype) :: alpha
          real(kind=realtype) :: beta
          integer(kind=inttype) :: liftindex
+         real(kind=realtype) :: cavitationnumber
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90
