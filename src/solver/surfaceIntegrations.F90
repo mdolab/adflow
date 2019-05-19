@@ -310,7 +310,7 @@ contains
     use blockPointers
     use flowVarRefState
     use inputCostFunctions
-    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis, cavitationnumber
     use BCPointers
     implicit none
 
@@ -323,7 +323,7 @@ contains
     real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation
     integer(kind=intType) :: i, j, ii, blk
 
-    real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
+    real(kind=realType) :: pm1, fx, fy, fz, fn
     real(kind=realType) :: xc, yc, zc, qf(3), r(3), n(3), L
     real(kind=realType) :: fact, rho, mul, yplus, dwall
     real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
@@ -503,8 +503,7 @@ contains
           plocal = pp2(i,j)
           tmp = two/(gammaInf*MachCoef*MachCoef)
           Cp = tmp*(plocal-pinf)
-          Sigma = 1.4
-          Sensor1 = -Cp - Sigma
+          Sensor1 = -Cp - cavitationnumber
           Sensor1 = one/(one+exp(-2*10*Sensor1))
           Sensor1 = Sensor1 * cellArea * blk
           Cavitation = Cavitation + Sensor1
