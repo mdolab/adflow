@@ -821,7 +821,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
-&   veldirfreestream, veldirfreestreamd, equations, momentaxis
+&   veldirfreestream, veldirfreestreamd, equations, momentaxis, cavitationnumber
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -837,7 +837,7 @@ contains
 &   cavitation
     real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
+    real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: xcd, ycd, zcd, rd(3)
@@ -1104,9 +1104,8 @@ contains
         tmp = two/(gammainf*machcoef*machcoef)
         cpd = tmpd*(plocal-pinf) + tmp*(plocald-pinfd)
         cp = tmp*(plocal-pinf)
-        sigma = 1.4
         sensor1d = -cpd
-        sensor1 = -cp - sigma
+        sensor1 = -cp - cavitationnumber
         sensor1d = -((-(one*2*10*sensor1d*exp(-(2*10*sensor1))))/(one+&
 &         exp(-(2*10*sensor1)))**2)
         sensor1 = one/(one+exp(-(2*10*sensor1)))
@@ -1319,7 +1318,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis
+&   equations, momentaxis, cavitationnumber
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1331,7 +1330,7 @@ contains
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
 &   cavitation
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
+    real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
@@ -1497,8 +1496,7 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sigma = 1.4
-        sensor1 = -cp - sigma
+        sensor1 = -cp - cavitationnumber
         sensor1 = one/(one+exp(-(2*10*sensor1)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1

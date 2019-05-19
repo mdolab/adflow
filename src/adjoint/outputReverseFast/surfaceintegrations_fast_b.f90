@@ -280,7 +280,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis
+&   equations, momentaxis, cavitationnumber
     use bcpointers_fast_b
     implicit none
 ! input/output variables
@@ -292,7 +292,7 @@ contains
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
 &   cavitation
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
+    real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
@@ -453,8 +453,7 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sigma = 1.4
-        sensor1 = -cp - sigma
+        sensor1 = -cp - cavitationnumber
         sensor1 = one/(one+exp(-(2*10*sensor1)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
