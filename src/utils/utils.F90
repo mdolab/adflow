@@ -5717,7 +5717,7 @@ end subroutine cross_prod
        write(*,901) "Error at line: ",line," in file: ",file
        print *,'-----------------------------------------------------------------'
 #endif
-       call MPI_Abort(adflow_comm_world,ierr)
+       call MPI_Abort(adflow_comm_world,1,ierr)
        stop ! Just in case
 #else
        stop

@@ -1279,7 +1279,7 @@ contains
 
     integer(kind=intType), dimension(3) :: haloDir, donorDir
     integer(kind=intType), dimension(3,2) :: zoneRange, donorRange
-    integer(kind=intType), dimension(3,3) :: tMat
+    integer(kind=intType), dimension(3,3) :: trMat
 
     character(len=maxCGNSNameLen) :: zoneName, connectName
     character(len=2*maxStringLen)  :: errorMessage
@@ -1412,17 +1412,17 @@ contains
     L2 = transform(2)
     l3 = transform(3)
 
-    tMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
-    tMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
-    tMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
+    trMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
+    trMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
+    trMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
 
-    tMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
-    tMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
-    tMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
+    trMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
+    trMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
+    trMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
 
-    tMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
-    tMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
-    tMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
+    trMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
+    trMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
+    trMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
 
     ! Apply the transformation matrix to haloDir.
 
@@ -1430,9 +1430,9 @@ contains
     L2 = haloDir(2)
     l3 = haloDir(3)
 
-    haloDir(1) = tMat(1,1)*l1 + tMat(1,2)*l2 + tMat(1,3)*l3
-    haloDir(2) = tMat(2,1)*l1 + tMat(2,2)*l2 + tMat(2,3)*l3
-    haloDir(3) = tMat(3,1)*l1 + tMat(3,2)*l2 + tMat(3,3)*l3
+    haloDir(1) = trMat(1,1)*l1 + trMat(1,2)*l2 + trMat(1,3)*l3
+    haloDir(2) = trMat(2,1)*l1 + trMat(2,2)*l2 + trMat(2,3)*l3
+    haloDir(3) = trMat(3,1)*l1 + trMat(3,2)*l2 + trMat(3,3)*l3
 
     ! If the transformation matrix is correct haloDir == donorDir.
     ! If this is not the case, there are two possibilities. Either
