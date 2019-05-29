@@ -578,6 +578,7 @@ module inputPhysics
   real(kind=realType), dimension(3) :: pointRef
   real(kind=realType), dimension(3,2) :: momentAxis
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
+  real(kind=realType) :: cavitationnumber
 
 #ifndef USE_TAPENADE
   real(kind=realType) :: alphad, betad

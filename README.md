@@ -8,7 +8,7 @@ ADflow's features include the following:
 - Massively parallel (both CPU and memory scalable) implementation using MPI.
 
 ## Documentation
-Please see the [documentation](http://mdolab.engin.umich.edu/doc/packages/adflow/doc/index.html) for installation details and API documentation.
+Please see the [documentation](http://mdolab.engin.umich.edu/docs/packages/adflow/doc/index.html) for installation details and API documentation.
 
 To locally build the documentation, enter the `doc` folder and enter `make html` in terminal.
 You can then view the built documentation in the `_build` folder.
