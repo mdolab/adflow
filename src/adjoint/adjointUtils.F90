@@ -714,7 +714,7 @@ contains
     use inputDiscretization, only : useApproxWallDistance
     use inputPhysics, only : wallDistanceNeeded
     use communication, only : adflow_comm_world
-    use wallDistanceData, only : xSurfVec, xSurfVecd, PETSC_DETERMINE
+    use wallDistanceData, only : xSurfVec, xSurfVecd!, PETSC_DETERMINE
     use BCPointers_b
     use adjointVars, only : derivVarsAllocated
     use utils, only : EChk, setPointers, getDirAngle

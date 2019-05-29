@@ -1697,7 +1697,7 @@ contains
     ! 3. Node-based output for tecplot files.
     use constants
     use communication, only : adflow_comm_world, myid, nProc
-    use surfaceFamilies, only : familyExchange, IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
+    use surfaceFamilies, only : familyExchange, IS1, IS2!, PETSC_COPY_VALUES, PETSC_DETERMINE
     use utils, only : pointReduce, eChk
     use surfaceUtils
     implicit none
