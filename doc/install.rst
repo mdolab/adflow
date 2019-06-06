@@ -52,6 +52,15 @@ using::
 
     $ sudo apt-get install xxdiff
 
+After that, you will need to install other MACH packages in order to run the
+full regression suite successfully.
+Specifically, install
+`baseclasses <https://github.com/mdolab/baseclasses/>`__,
+`pyspline <https://github.com/mdolab/pyspline/>`__,
+`pygeo <https://github.com/mdolab/pygeo/>`__, and
+`idwarp <https://github.com/mdolab/idwarp/>`__.
+With all of these packages installed, you can fully verify your ADflow installation.
+
 Change to the regression tests directory at::
 
     $ cd python/reg_tests/
@@ -65,7 +74,7 @@ To run all regression tests, now simply run::
     $ python run_reg_tests.py
 
 If the tests are successful a 'adflow: Success!' message
-will be printed, otherwise a diff window will appear hihglighting
+will be printed, otherwise a diff window will appear highlighting
 the differences between the reference case and the most recently
 completed verification run.
 
@@ -78,7 +87,7 @@ ADflow_CS REQUIRES a complex build of petsc to build and run. The
 petsc configuration script must be re-run with the following
 options::
 
-    $ ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debuggig=yes --with-scalar-type=complex --PETSC_ARCH=complex-debug
+    $ ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debugging=yes --with-scalar-type=complex --PETSC_ARCH=complex-debug
 
 Follow instructions as before to complete complex build.
 

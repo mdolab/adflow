@@ -19,7 +19,7 @@ Use ``Meshing Parameters->Edge Params`` to specify the spacing and distribution 
 
 *3. Pre-mesh and check grid quality, check grid distribution*
 
-In the hierarchy tree window on the left,  click on ``Blocking->Pre-Mesh``, then use ``Blocking->Pre-Mesh Quality Histoframs`` to check the mesh
+In the hierarchy tree window on the left,  click on ``Blocking->Pre-Mesh``, then use ``Blocking->Pre-Mesh Quality Histograms`` to check the mesh
 quality. If negative volume exists somewhere, you have to fix them (that's another very long story..)
 
 In the hierarchy tree window, use ``Blocking->Pre-Mesh->Scan Planes`` to scan the mesh on the slices of the grid. If the grid distribution
@@ -35,7 +35,7 @@ is not smooth, you have to change the spacing and distribution law of the relate
 3. Use ``Output->Select Solver`` to specify the ``Output Solver`` type as ``CGNS``.
    Use ``Output->Boundary Condition`` to specify the boundary condition type on each surfaces.
    ``BCWallViscous`` for the wall boundary such as 'wing'
-   ``BCFarField`` for the farfield boundary such as 'farfiled'
+   ``BCFarField`` for the farfield boundary such as 'farfield'
    ``BCSymmetryPlane`` for the symmetry boundary such as 'symmetry'
    Then select accept.
 
