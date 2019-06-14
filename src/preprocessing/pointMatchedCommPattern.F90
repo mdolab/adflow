@@ -827,7 +827,7 @@ contains
     integer(kind=intType), dimension(3) :: myOffset, donorOffset
     integer(kind=intType), dimension(3) :: step
 
-    integer(kind=intType), dimension(3,3) :: tMat
+    integer(kind=intType), dimension(3,3) :: trMat
     integer(kind=intType), dimension(3,2) :: myCellRange
     integer(kind=intType), dimension(3,2) :: myNodeRange
     integer(kind=intType), dimension(3,2) :: donorCellRange
@@ -1011,29 +1011,29 @@ contains
           ! Determine the complete transformation matrix from the
           ! given shorthand.
 
-          tMat(1,1) = sign(1_intType,l1(mm)) * delta(l1(mm),1_intType)
-          tMat(2,1) = sign(1_intType,l1(mm)) * delta(l1(mm),2_intType)
-          tMat(3,1) = sign(1_intType,l1(mm)) * delta(l1(mm),3_intType)
+          trMat(1,1) = sign(1_intType,l1(mm)) * delta(l1(mm),1_intType)
+          trMat(2,1) = sign(1_intType,l1(mm)) * delta(l1(mm),2_intType)
+          trMat(3,1) = sign(1_intType,l1(mm)) * delta(l1(mm),3_intType)
 
-          tMat(1,2) = sign(1_intType,l2(mm)) * delta(l2(mm),1_intType)
-          tMat(2,2) = sign(1_intType,l2(mm)) * delta(l2(mm),2_intType)
-          tMat(3,2) = sign(1_intType,l2(mm)) * delta(l2(mm),3_intType)
+          trMat(1,2) = sign(1_intType,l2(mm)) * delta(l2(mm),1_intType)
+          trMat(2,2) = sign(1_intType,l2(mm)) * delta(l2(mm),2_intType)
+          trMat(3,2) = sign(1_intType,l2(mm)) * delta(l2(mm),3_intType)
 
-          tMat(1,3) = sign(1_intType,l3(mm)) * delta(l3(mm),1_intType)
-          tMat(2,3) = sign(1_intType,l3(mm)) * delta(l3(mm),2_intType)
-          tMat(3,3) = sign(1_intType,l3(mm)) * delta(l3(mm),3_intType)
+          trMat(1,3) = sign(1_intType,l3(mm)) * delta(l3(mm),1_intType)
+          trMat(2,3) = sign(1_intType,l3(mm)) * delta(l3(mm),2_intType)
+          trMat(3,3) = sign(1_intType,l3(mm)) * delta(l3(mm),3_intType)
 
           ! Determine the offset of the donor block.
 
-          donorOffset(1) = tMat(1,1)*myOffset(1) &
-               + tMat(1,2)*myOffset(2) &
-               + tMat(1,3)*myOffset(3)
-          donorOffset(2) = tMat(2,1)*myOffset(1) &
-               + tMat(2,2)*myOffset(2) &
-               + tMat(2,3)*myOffset(3)
-          donorOffset(3) = tMat(3,1)*myOffset(1) &
-               + tMat(3,2)*myOffset(2) &
-               + tMat(3,3)*myOffset(3)
+          donorOffset(1) = trMat(1,1)*myOffset(1) &
+               + trMat(1,2)*myOffset(2) &
+               + trMat(1,3)*myOffset(3)
+          donorOffset(2) = trMat(2,1)*myOffset(1) &
+               + trMat(2,2)*myOffset(2) &
+               + trMat(2,3)*myOffset(3)
+          donorOffset(3) = trMat(3,1)*myOffset(1) &
+               + trMat(3,2)*myOffset(2) &
+               + trMat(3,3)*myOffset(3)
           !
           !           First treat the nodes on the subface.
           !
@@ -1052,11 +1052,11 @@ contains
                    kk = k - myNodeRange(3,1)
 
                    iD = donorOffset(1) + dinBeg(mm) &
-                        + tMat(1,1)*ii + tMat(1,2)*jj + tMat(1,3)*kk
+                        + trMat(1,1)*ii + trMat(1,2)*jj + trMat(1,3)*kk
                    jD = donorOffset(2) + djnBeg(mm) &
-                        + tMat(2,1)*ii + tMat(2,2)*jj + tMat(2,3)*kk
+                        + trMat(2,1)*ii + trMat(2,2)*jj + trMat(2,3)*kk
                    kD = donorOffset(3) + dknBeg(mm) &
-                        + tMat(3,1)*ii + tMat(3,2)*jj + tMat(3,3)*kk
+                        + trMat(3,1)*ii + trMat(3,2)*jj + trMat(3,3)*kk
 
                    ! Determine the indices of my nodal halo node.
 
@@ -1194,11 +1194,11 @@ contains
                    kk = k - myCellRange(3,1)
 
                    iD = donorCellRange(1,1) &
-                        + tMat(1,1)*ii + tMat(1,2)*jj + tMat(1,3)*kk
+                        + trMat(1,1)*ii + trMat(1,2)*jj + trMat(1,3)*kk
                    jD = donorCellRange(2,1) &
-                        + tMat(2,1)*ii + tMat(2,2)*jj + tMat(2,3)*kk
+                        + trMat(2,1)*ii + trMat(2,2)*jj + trMat(2,3)*kk
                    kD = donorCellRange(3,1) &
-                        + tMat(3,1)*ii + tMat(3,2)*jj + tMat(3,3)*kk
+                        + trMat(3,1)*ii + trMat(3,2)*jj + trMat(3,3)*kk
 
                    ! Update the counter iicell1st and store its value a
                    ! bit easier in ii and set entryList accordingly.
@@ -2875,7 +2875,7 @@ contains
     integer(kind=intType) :: i, ii, jj, m
     integer(kind=intType) :: l1, l2, l3
 
-    integer(kind=intType), dimension(3,3) :: tMat
+    integer(kind=intType), dimension(3,3) :: trMat
 
 
     ! Initialize m to 0.
@@ -2899,17 +2899,17 @@ contains
        l2 = transform(jj,2)
        l3 = transform(jj,3)
 
-       tMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
-       tMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
-       tMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
+       trMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
+       trMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
+       trMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
 
-       tMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
-       tMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
-       tMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
+       trMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
+       trMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
+       trMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
 
-       tMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
-       tMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
-       tMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
+       trMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
+       trMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
+       trMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
 
        ! Store the direction from the direct to the indirect
        ! halo in l1, l2 and l3
@@ -2929,9 +2929,9 @@ contains
        m = m+1; sendBuf(m) = entityHalo(jj)%dJ
        m = m+1; sendBuf(m) = entityHalo(jj)%dK
 
-       m = m+1; sendBuf(m) = tMat(1,1)*l1 + tMat(1,2)*l2 + tMat(1,3)*l3
-       m = m+1; sendBuf(m) = tMat(2,1)*l1 + tMat(2,2)*l2 + tMat(2,3)*l3
-       m = m+1; sendBuf(m) = tMat(3,1)*l1 + tMat(3,2)*l2 + tMat(3,3)*l3
+       m = m+1; sendBuf(m) = trMat(1,1)*l1 + trMat(1,2)*l2 + trMat(1,3)*l3
+       m = m+1; sendBuf(m) = trMat(2,1)*l1 + trMat(2,2)*l2 + trMat(2,3)*l3
+       m = m+1; sendBuf(m) = trMat(3,1)*l1 + trMat(3,2)*l2 + trMat(3,3)*l3
 
     enddo
 

@@ -490,7 +490,7 @@ contains
 
 #if PETSC_VERSION_GE(3,8,0)
        call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
-            zipper%localVal, PETSC_NULL_VEC, zipper%scatter, ierr)
+            zipper%localVal, PETSC_NULL_IS, zipper%scatter, ierr)
 #else
        call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
             zipper%localVal, PETSC_NULL_OBJECT, zipper%scatter, ierr)
