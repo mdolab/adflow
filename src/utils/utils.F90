@@ -5690,7 +5690,7 @@ end subroutine cross_prod
   end subroutine returnFail
 
 
-  subroutine EChk(ierr, file, line)
+  subroutine EChk(errorcode, file, line)
 
     ! Check if ierr that resulted from a petsc or MPI call is in fact an
     ! error.
@@ -5698,26 +5698,27 @@ end subroutine cross_prod
     use communication, only : adflow_comm_world, myid
     implicit none
 
-    integer(kind=intType),intent(in) :: ierr
+    integer(kind=intType),intent(in) :: errorcode
     character*(*),intent(in) :: file
     integer(kind=intType),intent(in) :: line
+    integer::ierr
 
-    if (ierr == 0) then
+    if (errorcode == 0) then
        return ! No error, return immediately
     else
 #ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
        print *,'---------------------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
+       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
        write(*,901) "Error at line: ",line," in file: ",file
        print *,'---------------------------------------------------------------------------'
 #else
        print *,'-----------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
+       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
        write(*,901) "Error at line: ",line," in file: ",file
        print *,'-----------------------------------------------------------------'
 #endif
-       call MPI_Abort(adflow_comm_world,1,ierr)
+       call MPI_Abort(adflow_comm_world,errorcode,ierr)
        stop ! Just in case
 #else
        stop
