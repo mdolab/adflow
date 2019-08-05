@@ -1660,9 +1660,11 @@ contains
 
        ! Complete the nonblocking sends of the interpolated data.
 
-       nProcRecvCur = 2*nProcRecvCur
+       !nProcRecvCur = 2*nProcRecvCur
        do i=1,nProcRecvCur
-          call mpi_waitany(nProcRecvCur, sendRecvRequest, sizeMessage, &
+          call mpi_waitany(nProcRecvCur, sendRecvRequest(1,:), sizeMessage, &
+               mpiStatus,       ierr)
+          call mpi_waitany(nProcRecvCur, sendRecvRequest(2,:), sizeMessage, &
                mpiStatus,       ierr)
        enddo
 
