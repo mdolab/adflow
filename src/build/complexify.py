@@ -74,7 +74,7 @@ def main():
             + ' [-lucky_logic|-MIPS_logic|-fudge_format] file-pattern \t\n' + \
             '\tpython ' + sys.argv[0]
             + ' [-lucky_logic|-MIPS_logic|-fudge_format] file-pattern \n\n' )
-	sys.exit(2)
+        sys.exit(2)
 
     for arg in sys.argv[1:]:
         if arg == "-lucky_logic":
@@ -166,7 +166,7 @@ def is_fortran(name, root):
 def fix_file(file):
     try:
         f = open(file, 'r')
-    except IOError, msg:
+    except (IOError, msg):
         err(file + ': cannot open: ' + `msg` + '\n')
         return 1
     #rep(file + ':\n')
@@ -184,7 +184,7 @@ def fix_file(file):
             break
         i_line = i_line + 1
     if not routine_found: # include file
-	#print i_line, 'Routine not found in file, must be include file'
+        #print i_line, 'Routine not found in file, must be include file'
         i_line = 0
         i_line, is_EOF = fix_routine(i_line, lines)
         if is_EOF:
@@ -246,7 +246,7 @@ def write_output(filename, lines):
     newname = os.path.join(head, 'c_' + tail)
     try:
         g = open(newname, 'w')
-    except IOError, msg:
+    except (IOError, msg):
         f.close()
         err(newname+': cannot create: '+\
             `msg`+'\n')
@@ -514,7 +514,7 @@ def skip_continuation(i, lines):
         elif patt_blankline.match(lines[i]):
             is_continuation = 1
         elif (patt_amperend.match(lines[i-1])):
-              is_continuation = 1
+            is_continuation = 1
         else: is_continuation = 0
         i = i+1 # i += 1
     i = i - 1   # i -= 1

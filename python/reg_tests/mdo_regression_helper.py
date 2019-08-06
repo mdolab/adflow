@@ -32,8 +32,8 @@ def reg_par_write(values, rel_tol=1e-12, abs_tol=1e-12):
     """Write value(values) from parallel process in sorted order"""
     values = MPI.COMM_WORLD.gather(values)
     if MPI.COMM_WORLD.rank == 0:
-        for i in xrange(len(values)):
-            print ('Value(s) on processor: %d'%i)
+        for i in range(len(values)):
+            print('Value(s) on processor: %d'%i)
             reg_write(values[i], rel_tol, abs_tol)
 
 def reg_root_write(values, rel_tol=1e-12, abs_tol=1e-12):
@@ -56,7 +56,7 @@ def reg_par_write_norm(values, rel_tol=1e-12, abs_tol=1e-12):
 def reg_write_dict(d, rel_tol=1e-12, abs_tol=1e-12):
     """Write all values in a dictionary in sorted key order"""
     for key in sorted(d.keys()):
-        print ('Dictionary Key: %s'%key)
+        print('Dictionary Key: %s'%key)
         if isinstance(d[key],dict):
             reg_write_dict(d[key], rel_tol, abs_tol)
         elif type(d[key]) == bool:
@@ -200,7 +200,7 @@ if __name__ == '__main__':
     else:
         res = reg_file_comp(sys.argv[1], sys.argv[2])
         if res == 0: 
-            print ('Success!')
+            print('Success!')
         elif res == 1: 
-            print ('Failure!')
+            print('Failure!')
 

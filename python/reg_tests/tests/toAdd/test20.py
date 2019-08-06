@@ -119,7 +119,7 @@ CFDSolver.addSlices('z',[0.5])
 CFDSolver(ap)
 
 refCoor = CFDSolver.getSurfaceCoordinates('allWalls')
-for tdx in xrange(1, nfineSteps+1):
+for tdx in range(1, nfineSteps+1):
     curTime, curTimeStep = CFDSolver.advanceTimeStepCounter()
     newCoor = callback(refCoor, curTime, curTimeStep)
     # Set displacements

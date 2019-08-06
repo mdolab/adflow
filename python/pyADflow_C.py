@@ -64,7 +64,7 @@ class ADFLOW_C(ADFLOW):
         if name in self.special_options:
             if name in ['monitorvariables','surfacevariables','volumevariables']:
                 varStr = ''
-                for i in xrange(len(value)):
+                for i in range(len(value)):
                     varStr = varStr + value[i] + '_'
                 # end if
                 varStr = varStr[0:-1] # Get rid of last '_'

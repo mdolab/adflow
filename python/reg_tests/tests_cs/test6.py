@@ -106,22 +106,22 @@ if not 'complex' in sys.argv:
             print 'funcs[%s]:'%key
             reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
         # Now write the derivatives in the same order the CS will do them:
-        print ('Twist[0] Derivatives:')
+        print('Twist[0] Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-10,1e-10)
 
-        print ('Span Derivatives:')
+        print('Span Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-10,1e-10)
 
-        print ('shape[13] Derivatives:')
+        print('shape[13] Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-10,1e-10)
 
-        print ('mach Derivatives:')
+        print('mach Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['mach_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['mach_mdo_tutorial'], 1e-10,1e-10)
@@ -153,13 +153,13 @@ else:
                     reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
             if ii == 0:
-                print ('Twist[0] Derivatives:')
+                print('Twist[0] Derivatives:')
             elif ii == 1:
-                print ('Span Derivatives:')
+                print('Span Derivatives:')
             elif ii == 2:
-                print ('shape[13] Derivatives:')
+                print('shape[13] Derivatives:')
             elif ii == 3:
-                print ('mach Derivatives:')
+                print('mach Derivatives:')
 
             for key in ['cl','cmz','drag']:
                 deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h

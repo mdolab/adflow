@@ -337,7 +337,7 @@ class PERFORMANCE(object):
         SMderiv = {}
         for key in xw.keys():
             SMderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 xw[key][i] = xref[key][i]+deltax
                 geo.setValues(xw,scaled=True)
                 geo.update('wing')
@@ -373,7 +373,7 @@ class PERFORMANCE(object):
         for key in xw.keys():
             CAPderiv[key] =[]
             Dampderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #print 'key',key
                 xw[key][i] = xref[key][i]+deltax
                 geo.setValues(xw,scaled=True)
@@ -385,7 +385,7 @@ class PERFORMANCE(object):
                 thick_con = con.getThicknessConstraints()
                 thick_con_c = thick_con.astype('D')
                 if key in geo.DV_namesGlobal.keys():
-                    for j in xrange(len(thick_con)):
+                    for j in range(len(thick_con)):
                         thick_con_c[j]+=dCondx[j,geo.DV_namesGlobal[key]]*deltax
                     #end
                 
@@ -429,7 +429,7 @@ class PERFORMANCE(object):
         for key in xw.keys():
             CAPderiv[key] =[]
             Dampderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #print 'key',key
                 xw[key][i] = xref[key][i]+deltax
                 geo.setValues(xw,scaled=True)
@@ -442,7 +442,7 @@ class PERFORMANCE(object):
                 #thick_con = con.getThicknessConstraints()
                 #thick_con_c = thick_con.astype('D')
                 #if key in geo.DV_namesGlobal.keys():
-                #    for j in xrange(len(thick_con)):
+                #    for j in range(len(thick_con)):
                 #        thick_con_c[j]+=dCondx[j,geo.DV_namesGlobal[key]]*deltax
                 #    #end
                
@@ -497,7 +497,7 @@ class PERFORMANCE(object):
         for key in xw.keys():
             CAPderiv[key] =[]
             Dampderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #print 'key',key
                 xw[key][i] = xref[key][i]+deltax
                 geo.setValues(xw,scaled=True)
@@ -510,7 +510,7 @@ class PERFORMANCE(object):
                 #thick_con = con.getThicknessConstraints()
                 #thick_con_c = thick_con.astype('D')
                 #if key in geo.DV_namesGlobal.keys():
-                #    for j in xrange(len(thick_con)):
+                #    for j in range(len(thick_con)):
                 #        thick_con_c[j]+=dCondx[j,geo.DV_namesGlobal[key]]*deltax
                 #    #end
                
@@ -555,7 +555,7 @@ class PERFORMANCE(object):
         #geo.complex = True
         for key in xw.keys():
             TPderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #print 'key',key
                 xw[key][i] = xref[key][i]+deltax
                 geo.setValues(xw,scaled=True)
@@ -567,7 +567,7 @@ class PERFORMANCE(object):
                 thick_con = con.getThicknessConstraints()
                 thick_con_c = thick_con.astype('D')
                 if key in geo.DV_namesGlobal.keys():
-                    for j in xrange(len(thick_con)):
+                    for j in range(len(thick_con)):
                         thick_con_c[j]+=dCondx[j,geo.DV_namesGlobal[key]]*deltax
                     #end
                 
@@ -610,7 +610,7 @@ class PERFORMANCE(object):
         #geo.complex = True
         for key in xw.keys():
             TPderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #print 'key',key
                 xw[key][i] = xref[key][i]+deltax
                 geo.setValues(xw,scaled=True)
@@ -641,6 +641,6 @@ class PERFORMANCE(object):
 if __name__ == '__main__':
     
     # Test ADflow
-    print 'Testing ...'
+    print('Testing ...')
     acp = PERFORMANCE()
-    print acp
+    print(acp)

@@ -78,7 +78,7 @@ def calculateWingMAC(acg):
     #determine the number of surfaces in geometry
     ncomp = len(acg)
     #loop over surfaces
-    for i in xrange(ncomp):
+    for i in range(ncomp):
         #print 'ncomp',i,ncomp
         #deal only with the lifting surfaces
         #print 'isisnstance',isinstance(acg[i],LiftingSurface)
@@ -90,7 +90,7 @@ def calculateWingMAC(acg):
 
                 sumSpan = 0.0
                 sumArea = 0.0
-                for j in xrange(nseg):
+                for j in range(nseg):
                     Span = acg[i][j].Span
                     Area = acg[i][j].Area
                     sumSpan = sumSpan+Span
@@ -105,7 +105,7 @@ def calculateWingMAC(acg):
                 sweepsum = 0.0
                 xC4sum = 0.0
                 #loop over wing segments
-                for j in xrange(nseg):
+                for j in range(nseg):
                    #Segments are linear therfore single trapezoid gives exact answer
 
                    #Copy parameters from geometry
@@ -226,7 +226,7 @@ def calculateWingInertias(acg):
     #determine the number of surfaces in geometry
     ncomp = len(acg)
     #loop over surfaces
-    for i in xrange(ncomp):
+    for i in range(ncomp):
         #print 'ncomp',i,ncomp
         #deal only with the lifting surfaces
         #print 'isisnstance',isinstance(acg[i],LiftingSurface)
@@ -236,7 +236,7 @@ def calculateWingInertias(acg):
                 #Determin the number of segments that make up the wing
                 nseg=len(acg[i])
                 #loop over wing segments
-                for j in xrange(nseg):
+                for j in range(nseg):
                    
                    #Copy parameters from geometry
                    tc_root = acg[i][j].root_Thickness #thickness to chord ratio...
@@ -337,20 +337,20 @@ def calculateWingInertias(acg):
 
 ## def getAverageThickness(acg,surface,forwardSparPercent,rearSparPercent,npts):
 ##     percentchord = numpy.zeros([npts],numpy.float)
-##     for i in xrange(npts):
+##     for i in range(npts):
 ##         percentchord[i] =forwardSparPercent+(rearSparPercent-forwardSparPercent)*( float(i)/float(npts-1))
 ##     #endfor
 ##     thickness =surface.getThickness(npts,percentchord)
 
 ##     ncomp = len(acg)
     
-##     for i in xrange(ncomp):
+##     for i in range(ncomp):
 ##         if isinstance(acg[i],LiftingSurface):
 ##             #Deal only with the wing
 ##             if acg[i].Name.lower()=='wing':
 ##                 rootIndex = 0
 ##                 nseg=len(acg[i])
-##                 for j in xrange(nseg):
+##                 for j in range(nseg):
                     
 ##                     if j ==0:
 ##                         tipIndex = rootIndex+acg[i][j].surface_SW_segments
@@ -392,13 +392,13 @@ def getAverageThickness(acg,thickness):
     '''
     ncomp = len(acg)
     
-    for i in xrange(ncomp):
+    for i in range(ncomp):
         if isinstance(acg[i],LiftingSurface):
             #Deal only with the wing
             if acg[i].Name.lower()=='wing':
                 rootIndex = 0
                 nseg=len(acg[i])
-                for j in xrange(nseg):
+                for j in range(nseg):
                     
                    ##  if j ==0:
 ##                         tipIndex = rootIndex+acg[i][j].surface_SW_segments
@@ -439,13 +439,13 @@ def calculateSegmentWeights(acg,Weight):
 
     ncomp = len(acg)
     
-    for i in xrange(ncomp):
+    for i in range(ncomp):
         if isinstance(acg[i],LiftingSurface):
             #Deal only with the wing
             if acg[i].Name.lower()=='wing':
                 TotalVolume = 0.0
                 nseg=len(acg[i])
-                for j in xrange(nseg):
+                for j in range(nseg):
 
                     #thickness to chord ratios...
                     tc_root =acg[i][j].root_Thickness_act
@@ -474,12 +474,12 @@ def calculateSegmentWeights(acg,Weight):
             #endif
         #endif
     #endfor
-    for i in xrange(ncomp):
+    for i in range(ncomp):
         if isinstance(acg[i],LiftingSurface):
             #Deal only with the wing
             if acg[i].Name.lower()=='wing':
                 nseg=len(acg[i])
-                for j in xrange(nseg):
+                for j in range(nseg):
                     
                     acg[i][j].Weight = Weight*(acg[i][j].volumeWeight/TotalVolume)
                 #endfor
