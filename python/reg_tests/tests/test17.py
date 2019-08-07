@@ -84,8 +84,10 @@ ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
                  areaRef=areaRef, chordRef=chordRef, R=287.87,
                  evalFuncs=['mdot_up', 'mdot_down', 'mdot_plane',
                             'mavgptot_up', 'mavgptot_down', 'mavgptot_plane',
+                            'aavgptot_up', 'aavgptot_down', 'aavgptot_plane',
                             'mavgttot_up', 'mavgttot_down', 'mavgttot_plane',
                             'mavgps_up', 'mavgps_down', 'mavgps_plane',
+                            'aavgps_up', 'aavgps_down', 'aavgps_plane',
                             ])
 
 
@@ -120,6 +122,10 @@ def setup_cb(comm):
     solver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
     solver.addFunction('mavgptot', 'viscous_plane', name="mavgptot_plane")
 
+    solver.addFunction('aavgptot', 'downstream', name="aavgptot_down")
+    solver.addFunction('aavgptot', 'upstream', name="aavgptot_up")
+    solver.addFunction('aavgptot', 'viscous_plane', name="aavgptot_plane")
+
     solver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
     solver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
     solver.addFunction('mavgttot', 'viscous_plane', name="mavgttot_plane")
@@ -127,6 +133,10 @@ def setup_cb(comm):
     solver.addFunction('mavgps', 'downstream', name="mavgps_down")
     solver.addFunction('mavgps', 'upstream', name="mavgps_up")
     solver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
+
+    solver.addFunction('aavgps', 'downstream', name="aavgps_down")
+    solver.addFunction('aavgps', 'upstream', name="aavgps_up")
+    solver.addFunction('aavgps', 'viscous_plane', name="aavgps_plane")
 
     solver.setOption('ncycles',1000)
 

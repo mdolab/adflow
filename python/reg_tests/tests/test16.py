@@ -55,8 +55,10 @@ ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                  areaRef=1., chordRef=2., R=287.87,
                  evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
+                            'aavgptot_up', 'aavgptot_down',
                             'mavgttot_up', 'mavgttot_down',
                             'mavgps_up', 'mavgps_down',
+                            'aavgps_up', 'aavgps_down',
                             'mavgmn_up', 'mavgmn_down',
                             'thrust',
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
@@ -75,11 +77,17 @@ def setup_cb(comm):
     solver.addFunction('mavgptot', 'downstream', name="mavgptot_down")
     solver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
 
+    solver.addFunction('aavgptot', 'downstream', name="aavgptot_down")
+    solver.addFunction('aavgptot', 'upstream', name="aavgptot_up")
+
     solver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
     solver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
 
     solver.addFunction('mavgps', 'downstream', name="mavgps_down")
     solver.addFunction('mavgps', 'upstream', name="mavgps_up")
+
+    solver.addFunction('aavgps', 'downstream', name="aavgps_down")
+    solver.addFunction('aavgps', 'upstream', name="aavgps_up")
 
     solver.addFunction('mavgmn', 'downstream', name="mavgmn_down")
     solver.addFunction('mavgmn', 'upstream', name="mavgmn_up")
