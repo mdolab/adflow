@@ -3,6 +3,7 @@
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
+from __future__ import print_function
 import sys, os, copy
 from mpi4py import MPI
 from mdo_regression_helper import *
@@ -181,9 +182,9 @@ defOpts = {
 
 def printHeader(testName):
     if MPI.COMM_WORLD.rank == 0:
-        print '+' + '-'*78 + '+'
-        print '| Test Name: ' + '%-66s'%testName + '|'
-        print '+' + '-'*78 + '+'
+        print('+' + '-'*78 + '+')
+        print('| Test Name: ' + '%-66s'%testName + '|')
+        print('+' + '-'*78 + '+')
 h = 1e-40
 
 
@@ -233,7 +234,7 @@ def test1():
         # Write values and derivatives out:
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cd','cmz','lift']:
-                print 'funcs[%s]:'%key
+                print('funcs[%s]:'%key)
                 reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print('Alpha Derivatives:')
@@ -272,7 +273,7 @@ def test1():
             if MPI.COMM_WORLD.rank == 0:
                 if ii == 0:
                     for key in ['cd','cmz','lift']:
-                        print 'funcs[%s]:'%key
+                        print('funcs[%s]:'%key)
                         reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
@@ -368,7 +369,7 @@ def test2():
         # Write values and derivatives out:
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cl','cmz','drag']:
-                print 'funcs[%s]:'%key
+                print('funcs[%s]:'%key)
                 reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print('Twist[0] Derivatives:')
@@ -405,7 +406,7 @@ def test2():
             if MPI.COMM_WORLD.rank == 0:
                 if ii == 0:
                     for key in ['cl','cmz','drag']:
-                        print 'funcs[%s]:'%key
+                        print('funcs[%s]:'%key)
                         reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
@@ -469,7 +470,7 @@ def test3():
         # Write values and derivatives out:
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cd','cmz','lift']:
-                print 'funcs[%s]:'%key
+                print('funcs[%s]:'%key)
                 reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print('Alpha Derivatives:')
@@ -501,7 +502,7 @@ def test3():
             if MPI.COMM_WORLD.rank == 0:
                 if ii == 0:
                     for key in ['cd','cmz','lift']:
-                        print 'funcs[%s]:'%key
+                        print('funcs[%s]:'%key)
                         reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
@@ -587,7 +588,7 @@ def test4():
         # Write values and derivatives out:
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cl','cmz','drag']:
-                print 'funcs[%s]:'%key
+                print('funcs[%s]:'%key)
                 reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print('Twist[0] Derivatives:')
@@ -624,7 +625,7 @@ def test4():
             if MPI.COMM_WORLD.rank == 0:
                 if ii == 0:
                     for key in ['cl','cmz','drag']:
-                        print 'funcs[%s]:'%key
+                        print('funcs[%s]:'%key)
                         reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
@@ -721,7 +722,7 @@ def test5():
         # Write values and derivatives out:
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cd','cmz','lift']:
-                print 'funcs[%s]:'%key
+                print('funcs[%s]:'%key)
                 reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print('Alpha Derivatives:')
@@ -760,7 +761,7 @@ def test5():
             if MPI.COMM_WORLD.rank == 0:
                 if ii == 0:
                     for key in ['cd','cmz','lift']:
-                        print 'funcs[%s]:'%key
+                        print('funcs[%s]:'%key)
                         reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:
@@ -862,7 +863,7 @@ def test6():
         # Write values and derivatives out:
         if MPI.COMM_WORLD.rank == 0:
             for key in ['cl','cmz','drag']:
-                print 'funcs[%s]:'%key
+                print('funcs[%s]:'%key)
                 reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
             # Now write the derivatives in the same order the CS will do them:
             print('Twist[0] Derivatives:')
@@ -908,7 +909,7 @@ def test6():
             if MPI.COMM_WORLD.rank == 0:
                 if ii == 0:
                     for key in ['cl','cmz','drag']:
-                        print 'funcs[%s]:'%key
+                        print('funcs[%s]:'%key)
                         reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
                 if ii == 0:

@@ -3,6 +3,7 @@
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
+from __future__ import print_function
 import sys, os, copy
 from mpi4py import MPI
 
@@ -73,7 +74,7 @@ if not 'complex' in sys.argv:
     # Write values and derivatives out:
     if MPI.COMM_WORLD.rank == 0:
         for key in ['cd','cmz','lift']:
-            print 'funcs[%s]:'%key
+            print('funcs[%s]:'%key)
             reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
         # Now write the derivatives in the same order the CS will do them:
         print('Alpha Derivatives:')
@@ -105,7 +106,7 @@ else:
         if MPI.COMM_WORLD.rank == 0:
             if ii == 0:
                 for key in ['cd','cmz','lift']:
-                    print 'funcs[%s]:'%key
+                    print('funcs[%s]:'%key)
                     reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
             if ii == 0:

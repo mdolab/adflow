@@ -22,6 +22,7 @@ python numOfProcsLB.py fine_L0.cgns  256 512 --sequence --mgCycle 4w
 
 """
 
+from __future__ import print_function
 from adflow import ADFLOW
 import argparse
 import numpy

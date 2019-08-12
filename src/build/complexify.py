@@ -1,5 +1,6 @@
 #! /usr/local/bin/python
 
+from __future__ import print_function
 header_string = """
      ___________________________________
     |                                   |
@@ -167,7 +168,7 @@ def fix_file(file):
     try:
         f = open(file, 'r')
     except (IOError, msg):
-        err(file + ': cannot open: ' + `msg` + '\n')
+        err(file + ': cannot open: ' + repr(msg) + '\n')
         return 1
     #rep(file + ':\n')
     # Read file to memory
@@ -188,7 +189,7 @@ def fix_file(file):
         i_line = 0
         i_line, is_EOF = fix_routine(i_line, lines)
         if is_EOF:
-            print 'EOF'
+            print('EOF')
     else:                  # routine file
         while 1:
             if (i_line >= len(lines)): break
@@ -249,7 +250,7 @@ def write_output(filename, lines):
     except (IOError, msg):
         f.close()
         err(newname+': cannot create: '+\
-            `msg`+'\n')
+            repr(msg)+'\n')
         return 1
     for line in lines: g.write(line)
     g.close()

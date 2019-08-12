@@ -16,6 +16,7 @@ History
 	v. 1.0	- Original pyHF Framework Implementation (SM 2010)
 '''
 
+from __future__ import print_function
 __version__ = '$Revision: $'
 
 '''
@@ -582,7 +583,7 @@ class WEIGHTANDBALANCE(Base):
                             multiple = len(thickness)/nseg
                             #print multiple
                         else:
-                            print 'Number of spanwise thicknesses must be a multiple of %d'%(nseg)
+                            print('Number of spanwise thicknesses must be a multiple of %d'%(nseg))
                         #endif
                         ##  if j ==0:
 ##                         tipIndex = rootIndex+acg[i][j].surface_SW_segments
@@ -822,6 +823,6 @@ class WEIGHTANDBALANCE(Base):
 if __name__ == '__main__':
     
     # Test ADflow
-    print 'Testing ...'
+    print('Testing ...')
     wbc = WEIGHTANDBALANCE()
-    print wbc
+    print(wbc)
