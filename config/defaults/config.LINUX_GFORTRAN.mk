@@ -28,8 +28,8 @@ CC_REAL_PRECISION_FLAG      =
 
 # ----------- CGNS 3.2.x ------------------
 CGNS_VERSION_FLAG=
-CGNS_INCLUDE_FLAGS=-I$(HOME)/packages/cgnslib_3.2.1/src
-CGNS_LINKER_FLAGS=-L$(HOME)/packages/cgnslib_3.2.1/src -lcgns
+CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
+CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
 # # ----------- CGNS 3.3.x ------------------
 # CGNS_VERSION_FLAG=-DUSECGNSMODULE
