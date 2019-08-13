@@ -3,7 +3,8 @@ include ../../config/config.mk
 
 # Group all the fortran, C and compiler flags together.
 FF90_ALL_FLAGS   = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. -DUSE_COMPLEX \
-		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
+		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS) \
+		   $(CGNS_VERSION_FLAG)
 
 CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDES) \
 		   $(CC_PRECISION_FLAGS)
@@ -76,7 +77,7 @@ sources: $(OFILES) $(DEP_FILE)
 $(DEP_FILE): $(fortranFiles)
 	@echo "Making dependencies!\n"
 	@echo "fortran Files" $(fortranFiles)
-	python ../../src/build/fort_depend.py -w -o $(DEP_FILE) -f $(fortranFiles)
+	$(PYTHON) ../../src/build/fort_depend.py -w -o $(DEP_FILE) -f $(fortranFiles)
 	@echo "VPATH" $(dirs)
 # Include the automatically generated file.
 include $(DEP_FILE)
@@ -104,7 +105,7 @@ python: lib ../f2py/adflow.pyf
 	 @echo "#------------------------------------------------------#"
 
 # Generate Numpy inlude directory
-	$(eval NUMPY_INCLUDES = $(shell $(PYTHON) -c 'import numpy; print numpy.get_include()'))
+	$(eval NUMPY_INCLUDES = $(shell $(PYTHON) -c 'from __future__ import print_function; import numpy; print(numpy.get_include())'))
 	@echo "#------------------------------------------------------#"
 	@echo Numpy Include Directory: $(NUMPY_INCLUDES)
 	@echo "#------------------------------------------------------#"
@@ -122,7 +123,7 @@ python: lib ../f2py/adflow.pyf
 	python ../f2py/pyf_preprocessor.py complex ../f2py/adflow.pyf
 
 # Run f2py to get adflowmodule.c and adflow-f2pywrapper2.f90
-	f2py ../f2py/adflow.pyf.autogen
+	$(F2PY) ../f2py/adflow.pyf.autogen
 
 # Compile c wrapper. Don't use CC_ALL_FLAGS...PETSc wil F-up this command.
 	$(CC) $(CC_ALL_FLAGS) $(PYTHON_INCLUDES) -I$(NUMPY_INCLUDES) \
@@ -137,5 +138,5 @@ python: lib ../f2py/adflow.pyf
 
 # Final Link:
 	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow_cs.so
-	python ../f2py/importTest.py
+	$(PYTHON) ../f2py/importTest.py
 	mv libadflow_cs.so ../../python
