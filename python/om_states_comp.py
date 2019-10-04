@@ -42,6 +42,12 @@ class OM_STATES_COMP(ImplicitComponent):
         ap = self.options['ap']
         geo = self.options['dvgeo']
 
+        # flag to keep track of clean restarts. We need this because sometimes
+        # the current solution fails even if it already was a clean restart because
+        # the previous one also failed. In these cases, we dont want to retry
+        # with a clean restart because there is no point.
+        self.cleanRestart = True
+
         self.ap_vars,_ = get_dvs_and_cons(ap=ap)
         self.geo_vars,_ = get_dvs_and_cons(geo=geo)
 
@@ -127,29 +133,55 @@ class OM_STATES_COMP(ImplicitComponent):
             if ap.fatalFail:
                 if self.comm.rank == 0:
                     print('###############################################################')
-                    print('#Solve Fatal Fail. Analysis Error')
+                    print('# Solve Fatal Fail. Analysis Error')
                     print('###############################################################')
 
                 raise AnalysisError('ADFLOW Solver Fatal Fail')
 
 
             if ap.solveFailed: # the mesh was fine, but it didn't converge
-                if self.comm.rank == 0:
+                # if the previous iteration was already a clean restart, dont try again
+                if self.cleanRestart:
                     print('###############################################################')
-                    print('#Solve Failed, attempting a clean restart!')
+                    print('# This was a clean restart. Will not try another one.')
                     print('###############################################################')
-
-                ap.solveFailed = False
-                ap.fatalFail = False
-                solver.resetFlow(ap)
-                solver(ap)
-
-                if ap.solveFailed or ap.fatalFail: # we tried, but there was no saving it
-                    print('###############################################################')
-                    print('#Clean Restart failed. There is no saving this one!')
-                    print('###############################################################')
-
+                    solver.resetFlow(ap)
+                    self.cleanRestart = True
                     raise AnalysisError('ADFLOW Solver Fatal Fail')
+
+                # the previous iteration restarted from another solution, so we can try again
+                # with a re-set flowfield for the initial guess.
+                else:
+                    if self.comm.rank == 0:
+                        print('###############################################################')
+                        print('# Solve Failed, attempting a clean restart!')
+                        print('###############################################################')
+
+                    ap.solveFailed = False
+                    ap.fatalFail = False
+                    solver.resetFlow(ap)
+                    solver(ap)
+
+                    if ap.solveFailed or ap.fatalFail: # we tried, but there was no saving it
+                        print('###############################################################')
+                        print('# Clean Restart failed. There is no saving this one!')
+                        print('###############################################################')
+
+                        # re-set the flow for the next iteration:
+                        solver.resetFlow(ap)
+                        # set the reset flow flag
+                        self.cleanRestart = True
+                        raise AnalysisError('ADFLOW Solver Fatal Fail')
+
+                    # see comment for the same flag below
+                    else:
+                        self.cleanRestart = False
+
+            # solve did not fail, therefore we will re-use this converged flowfield for the next iteration.
+            # change the flag so that if the next iteration fails with current initial guess, it can retry
+            # with a clean restart
+            else:
+                self.cleanRestart = False
 
 
         outputs['states'] = solver.getStates()
