@@ -23,7 +23,7 @@ contains
          moment, cForce, cForceP, cForceV, cForceM, cMoment
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
-                            mAvgVx, mAvgVy, mAvgVz
+                            mAvgVx, mAvgVy, mAvgVz, gArea
 
     real(kind=realType) ::  vdotn, mag, u, v, w
     integer(kind=intType) :: sps
@@ -36,7 +36,7 @@ contains
 
     ! Sum pressure and viscous contributions
     force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
-    forceP = globalvals(iFp:iFp+2, :) 
+    forceP = globalvals(iFp:iFp+2, :)
     forceV = globalvals(iFv:iFv+2, :)
     forceM = globalvals(iFlowFm:iFlowFm+2, :)
 
@@ -143,6 +143,14 @@ contains
           mAvgVy   = zero
           mAvgVz   = zero
 
+       end if
+
+       ! area averaged objectives
+       gArea = globalVals(iArea, sps)
+       if (gArea /= zero) then
+          ! area averaged pressure
+          funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + ovrNTS*globalVals(iAreaPTot, sps) / gArea
+          funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + ovrNTS*globalVals(iAreaPs, sps) / gArea
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
@@ -678,6 +686,7 @@ contains
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
                             mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
+    real(kind=realType) ::  area_Ptot, area_Ps
     real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, mx, my, mz
@@ -746,6 +755,9 @@ contains
     mass_ny = zero
     mass_nz = zero
 
+    area_Ptot = zero
+    area_Ps   = zero
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -773,7 +785,7 @@ contains
       MNm = vmag/am
 
       cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
-      area = area + cellArea
+      area = area + cellArea*blk
       overCellArea = 1/cellArea
 
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
@@ -795,6 +807,9 @@ contains
 
       mass_Ps = mass_Ps + pm*massFlowRateLocal
       mass_MN = mass_MN + MNm*massFlowRateLocal
+
+      area_pTot = area_pTot + Ptot * Pref * cellArea * blk
+      area_Ps = area_Ps + pm * cellArea * blk
 
       sFaceCoordRef(1) = sF * ssi(i,j,1)*overCellArea
       sFaceCoordRef(2) = sF * ssi(i,j,2)*overCellArea
@@ -875,6 +890,9 @@ contains
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+
+    localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
+    localValues(iAreaPs) = localValues(iAreaPs) + area_Ps
 
     localValues(iMassVx)   = localValues(iMassVx)   + mass_Vx
     localValues(iMassVy)   = localValues(iMassVy)   + mass_Vy
@@ -1260,20 +1278,21 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        do sps=1, nTimeIntervalsSpectral
+
+          ! Integrate any actuator regions we have:
+          call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
+          ! Integrate any user-supplied planes as have as well.
+          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
+          ! Integrate any zippers we have
+          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
           ! Integrate the normal block surfaces.
           do nn=1, nDom
              call setPointers_b(nn, 1, sps)
              call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList)
           end do
-
-          ! Integrate any zippers we have
-          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-          ! Integrate any user-supplied planes as have as well.
-          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-          ! Integrate any actuator regions we have:
-           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps)
 
        end do
     end do groupLoop
