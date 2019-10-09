@@ -59,15 +59,16 @@ class RegTest16(unittest.TestCase):
 
         # Setup aeroproblem
         ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
-                 areaRef=1., chordRef=2., R=287.87,
-                 evalFuncs=['mdot', 'mdot_up', 'mdot_down',
+                areaRef=1., chordRef=2., R=287.87,
+                evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
+                            'aavgptot_up', 'aavgptot_down',
                             'mavgttot_up', 'mavgttot_down',
                             'mavgps_up', 'mavgps_down',
+                            'aavgps_up', 'aavgps_down',
                             'mavgmn_up', 'mavgmn_down',
-                            'thrust',
-                            'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
-                            ], )
+                            'thrust', 'thrust_pressure',
+                            'thrust_viscous', 'thrust_momentum'])
 
         # Create the solver
         CFDSolver = ADFLOW(options=options)
@@ -80,11 +81,17 @@ class RegTest16(unittest.TestCase):
         CFDSolver.addFunction('mavgptot', 'downstream', name="mavgptot_down")
         CFDSolver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
 
+        CFDSolver.addFunction('aavgptot', 'downstream', name="aavgptot_down")
+        CFDSolver.addFunction('aavgptot', 'upstream', name="aavgptot_up")
+
         CFDSolver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
         CFDSolver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
 
         CFDSolver.addFunction('mavgps', 'downstream', name="mavgps_down")
         CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
+
+        CFDSolver.addFunction('aavgps', 'downstream', name="aavgps_down")
+        CFDSolver.addFunction('aavgps', 'upstream', name="aavgps_up")
 
         CFDSolver.addFunction('mavgmn', 'downstream', name="mavgmn_down")
         CFDSolver.addFunction('mavgmn', 'upstream', name="mavgmn_up")

@@ -245,8 +245,8 @@ def adjoint_test(handler, CFDSolver, ap):
 
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens)
-    # handler.root_print('Eval Functions Sens:')
-    # handler.root_add_dict(funcsSens, 1e-10, 1e-10)
+    handler.root_print('Eval Functions Sens:')
+    handler.root_add_dict(funcsSens, 1e-10, 1e-10)
 
 def standard_test(handler, CFDSolver, ap, solve):
     # Run a standard set of tests which can be run an any steady grid

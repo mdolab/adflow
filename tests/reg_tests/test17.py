@@ -75,8 +75,10 @@ class RegTest17(unittest.TestCase):
                  areaRef=1.0, chordRef=1.0, R=287.87,
                  evalFuncs=['mdot_up', 'mdot_down', 'mdot_plane',
                             'mavgptot_up', 'mavgptot_down', 'mavgptot_plane',
+                            'aavgptot_up', 'aavgptot_down', 'aavgptot_plane',
                             'mavgttot_up', 'mavgttot_down', 'mavgttot_plane',
                             'mavgps_up', 'mavgps_down', 'mavgps_plane',
+                            'aavgps_up', 'aavgps_down', 'aavgps_plane',
                             ])
 
         ap.setBCVar('Pressure',  79326.7, 'downstream')
@@ -106,6 +108,10 @@ class RegTest17(unittest.TestCase):
         CFDSolver.addFunction('mavgptot', 'upstream', name="mavgptot_up")
         CFDSolver.addFunction('mavgptot', 'viscous_plane', name="mavgptot_plane")
 
+        CFDSolver.addFunction('aavgptot', 'downstream', name="aavgptot_down")
+        CFDSolver.addFunction('aavgptot', 'upstream', name="aavgptot_up")
+        CFDSolver.addFunction('aavgptot', 'viscous_plane', name="aavgptot_plane")
+
         CFDSolver.addFunction('mavgttot', 'downstream', name="mavgttot_down")
         CFDSolver.addFunction('mavgttot', 'upstream', name="mavgttot_up")
         CFDSolver.addFunction('mavgttot', 'viscous_plane', name="mavgttot_plane")
@@ -113,6 +119,10 @@ class RegTest17(unittest.TestCase):
         CFDSolver.addFunction('mavgps', 'downstream', name="mavgps_down")
         CFDSolver.addFunction('mavgps', 'upstream', name="mavgps_up")
         CFDSolver.addFunction('mavgps', 'viscous_plane', name="mavgps_plane")
+
+        CFDSolver.addFunction('aavgps', 'downstream', name="aavgps_down")
+        CFDSolver.addFunction('aavgps', 'upstream', name="aavgps_up")
+        CFDSolver.addFunction('aavgps', 'viscous_plane', name="aavgps_plane")
 
         CFDSolver.setOption('ncycles',1000)
 
