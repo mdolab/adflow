@@ -18,3 +18,4 @@ Its possible to build either documentation independently. General documentation 
 ## Dependencies
 - Sphinx >= 1.6.7
 - Doxygen >= 1.8.6
+- graphviz >= 2.3  (to generate Doxygen call/caller graph, older versions should also work)
