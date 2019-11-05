@@ -5,9 +5,9 @@
 
 .. _adflow:
 
-====
+======
 ADflow
-====
+======
 
 ADflow -- Automatic Differentation Flow Solver -- is a structured
 multi-block and overset 3D CFD solver.
@@ -24,3 +24,5 @@ multi-block and overset 3D CFD solver.
    solvers
    performance
    devguide
+   
+See Fortran code documentation `here <_static/doxydoc/html/index.html>`_
