@@ -294,12 +294,22 @@ class ADFLOW(AeroSolver):
 
         familySetupTime = time.time()
 
+        # Get the CGNS zone name info for the user
+        self.nZones = self.adflow.utils.getncgnszones()
+        self.CGNSZoneNameIDs = {}
+        for i in range(self.nZones):
+            # index needs to go in as fortran numbering, so add 1
+            name = getPy3SafeString(self.adflow.utils.getcgnszonename(i+1).strip()) 
+            self.CGNSZoneNameIDs[name] = i+1
+            # do we need to do this on root and broadcast?
+            
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption('cutCallBack')
         flag = numpy.zeros(n)
         if cutCallBack is not None:
             xCen = self.adflow.utils.getcellcenters(1, n).T
-            cutCallBack(xCen, flag)
+            cellIDs = self.adflow.utils.getcellcgnsblockids(1,n)
+            cutCallBack(xCen,self.CGNSZoneNameIDs,cellIDs, flag)
 
         cutCallBackTime = time.time()
 
