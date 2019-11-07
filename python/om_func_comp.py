@@ -24,6 +24,8 @@ FUNCS_UNITS={
     'mdot': 'kg/s',
     'mavgptot': 'Pa',
     'mavgps': 'Pa',
+    'aavgptot': 'Pa',
+    'aavgps': 'Pa',
     'mavgttot': 'degK',
     'mavgvx':'m/s',
     'mavgvy':'m/s',
