@@ -20,10 +20,10 @@ sys.path.append(os.path.abspath('../../'))
 
 if 'complex' in sys.argv:
     from python.pyADflow_C import ADFLOW_C as ADFLOW
-    from pywarp import MBMesh_C as MBMesh
+   # from pywarp import MBMesh_C as MBMesh
 else:
     from python.pyADflow import ADFLOW
-    from pywarp import  MBMesh
+    #from pywarp import  MBMesh
 # ###################################################################
 
 printHeader('MDO tutorial Viscous Aerodynamic Variables')
