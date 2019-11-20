@@ -6,7 +6,7 @@ import os, sys, argparse, glob
 # =============================================================================
 # Extension modules
 # =============================================================================
-import mdo_regression_helper as reg
+import mdo_regression_compare as reg
 
 # define scripts to run:
 module_name = 'adflow'

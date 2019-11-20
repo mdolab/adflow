@@ -176,7 +176,7 @@ Parameter                                  Type       Default                   
                                                                                                     use `sg`. To run 3 multigrid levels with a 'w' cycle use `3w`. To use a 'v' cycle use
                                                                                                     `3v` etc. 
                                                           
-`mgStartLevel`                           `int`      -1                                              Specify the starting grid level. This is ued to perform a "full multigrid startup"
+`mgStartLevel`                           `int`      -1                                              Specify the starting grid level. This is used to perform a "full multigrid startup"
                                                                                                     procedure. This can lead to significantly reduced simulation times since a good starting
                                                                                                     point can be obtained from approximate solutions on the coarser grids. A -1 indicated
                                                                                                     that the coarsest grid level should be used. For RANS simulations, it is often not
@@ -216,19 +216,19 @@ Parameter                                  Type       Default                   
                                                           
 `betaaMode`                              `bool`      False                                          Use a specified beta motion for the Time spectral analysis.  Untested.
                                                           
-`machMode`                               `bool`      False                                          Use a specified mach number motion for the Time spectral analysis. Untested
+`machMode`                               `bool`      False                                          Use a specified Mach number motion for the Time spectral analysis. Untested
                                                           
 `pmode`                                  `bool`      False                                          Use a specified p-motion (rolling) motion for the Time spectral analysis. Untested.
                                                           
-`qmode`                                  `bool`      False                                          Use a specified q-motion (pictch) motion for the Time spectral analysis. 
+`qmode`                                  `bool`      False                                          Use a specified q-motion (pitch) motion for the Time spectral analysis. 
                                                           
-`rmode`                                  `bool`      False                                          Use a specified r-motino (yaw) motion for the Time spectral analysis. Untested
+`rmode`                                  `bool`      False                                          Use a specified r-motion (yaw) motion for the Time spectral analysis. Untested
                                                           
 `altitudeMode`                           `bool`      False                                          Use a specified h-variation  motion for the Time spectral analysis. Untested
                                                           
 `windAxis`                               `bool`      False                                          Not sure?
                                                           
-`TSStability`                            `bool`      Flag                                           Flag to compute time spectral stability information from a timespectral CFD solution
+`TSStability`                            `bool`      Flag                                           Flag to compute time spectral stability information from a time-spectral CFD solution
                                                           
 `l2Convergence`                          `float`     1e-6                                           This specifies the desired convergence factor. For the RK solver, this is taken 
                                                                                                     relative initial residual on the **fine** grid. Since this prolonged solution
@@ -249,10 +249,10 @@ Parameter                                  Type       Default                   
                                                                                                     above the target residual (as determined by l2Convergence) and still be considered
                                                                                                     "converged". 
                                                           
-`minIterationNum`                        `int`       10                                             This option ensures that a minmum number of iterations are performed when using the 
+`minIterationNum`                        `int`       10                                             This option ensures that a minimum number of iterations are performed when using the 
                                                                                                     RK solver. This can be useful when only changing the angle of attack; A small 
-                                                                                                    change in the anlge attack is not sufficient to increase the residual and the 
-                                                                                                    solver may stop prematurely before the peturbation is actually solved. 
+                                                                                                    change in the angle attack is not sufficient to increase the residual and the 
+                                                                                                    solver may stop prematurely before the perturbation is actually solved. 
 
 `useNKSolver`                            `bool`      False                                          Flag to turn on the Newton--Krylov solver. If this flag is `False`, the remainder of the
                                                                                                     of the options that begin with `nk` will have no effect. The Newton solver only works 
@@ -271,7 +271,7 @@ Parameter                                  Type       Default                   
 `NKSubSpaceSize`                         `int`       60                                             The size of the GMRES subspace for the NK solver. For difficult problems, convergence
                                                                                                     may be improved by increasing this value at the expense of more memory. 
 
-`NKLinearSolveTol`                       `float`     1e-1                                           The inital tolerance to solve the linear system resulting from the Newton approximation. 
+`NKLinearSolveTol`                       `float`     1e-1                                           The initial tolerance to solve the linear system resulting from the Newton approximation. 
                                                                                                     This value is only used for the first solution; thereafter the forcing tolerance
                                                                                                     is updated dynamically using the Einstat-Walker forcing criteria. 
 
@@ -383,7 +383,7 @@ Parameter                                  Type       Default                   
                                                                                                     * `ch` (Stanton number), 
                                                                                                     * `yplus` (y+ value of the cell center of the first cell), 
                                                                                                     * `lift` (lift force),
-                                                                                                    * `blank` (cell iblank values used for visualiztion or other post-processing).
+                                                                                                    * `blank` (cell iblank values used for visualization or other post-processing).
 
 `volumeVariables`                        `list`     ['resrho']                                      The variables which are, additionally to the variables needed for the restart, written
                                                                                                     to the CGNS volume solution file. The available keywords are: 
@@ -408,9 +408,9 @@ Parameter                                  Type       Default                   
                                                                                                     * `resmom` (momentum residuals), 
                                                                                                     * `resrhoe` (total energy residual), 
                                                                                                     * `resturb` (turbulence residuals),
-                                                                                                    * `blank` (cell iblank values used for visualiztion or other post-processing).
+                                                                                                    * `blank` (cell iblank values used for visualization or other post-processing).
 
-`sliceFileTractions`                     `bool`      False                                          Flag to set whether tractions (Tx,Ty,Tz) are writtten to slice files.
+`sliceFileTractions`                     `bool`      False                                          Flag to set whether tractions (Tx,Ty,Tz) are written to slice files.
 
 `forcesAsTractions`                      `bool`      True                                           Flag to set whether to return tractive force instead forces.
 
@@ -418,7 +418,7 @@ Parameter                                  Type       Default                   
 
 `adjointL2ConvergenceRel`                `float`     1e-16                                          Adjoint solution relative tolerance.
 
-`adjointL2ConvergenceAbs`                `float`     1e-16                                          Adjoint solution absalute tolerance.
+`adjointL2ConvergenceAbs`                `float`     1e-16                                          Adjoint solution absolute tolerance.
 
 `adjointDivTol`                          `float`     1e5                                            The tolerance of divergence for adjoint solution.
 
@@ -432,7 +432,7 @@ Parameter                                  Type       Default                   
                  
 `restartADjoint`                         `bool`      True                                           Whether or not we want to restart the adjoint from the previous solution.
 
-`adjointSolver`                          `str`       `gmres`                                        Type of linear solver for the ADjoint. You can choice from `gmres`, `tfqmr`, 
+`adjointSolver`                          `str`       `gmres`                                        Type of linear solver for the ADjoint. You can choose from `gmres`, `tfqmr`, 
                                                                                                     `rechardson`, `bcgs`, `ibcgs`. Typically, `gmres` will give you the best performance.
 
 `adjointMaxIter`                         `int`       500                                            Maximum number of iterations for adjoint solution.
@@ -489,4 +489,3 @@ Parameter                                  Type       Default                   
 
 `verifyExtra`                            `bool`      True                                           This option is for debugging adjoint only. It is used to verify dIda.
 ======================================  ==========  ===========================================   ================================================================================================================================================================================
-

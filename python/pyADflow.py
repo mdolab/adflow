@@ -294,12 +294,22 @@ class ADFLOW(AeroSolver):
 
         familySetupTime = time.time()
 
+        # Get the CGNS zone name info for the user
+        self.nZones = self.adflow.utils.getncgnszones()
+        self.CGNSZoneNameIDs = {}
+        for i in range(self.nZones):
+            # index needs to go in as fortran numbering, so add 1
+            name = getPy3SafeString(self.adflow.utils.getcgnszonename(i+1).strip()) 
+            self.CGNSZoneNameIDs[name] = i+1
+            # do we need to do this on root and broadcast?
+            
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption('cutCallBack')
         flag = numpy.zeros(n)
         if cutCallBack is not None:
             xCen = self.adflow.utils.getcellcenters(1, n).T
-            cutCallBack(xCen, flag)
+            cellIDs = self.adflow.utils.getcellcgnsblockids(1,n)
+            cutCallBack(xCen,self.CGNSZoneNameIDs,cellIDs, flag)
 
         cutCallBackTime = time.time()
 
@@ -3031,7 +3041,7 @@ class ADFLOW(AeroSolver):
         # using mapVector.
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
         fullCpTarget = numpy.atleast_2d(self.adflow.getcptargets(npts, TS+1))
-        
+
         # Now map new values in and set.
         fullCpTarget = self.mapVector(numpy.atleast_2d(CpTargets).T, groupName, self.allWallsGroup, fullCpTarget.T)
         fullCpTarget = fullCpTarget.T
@@ -5188,6 +5198,8 @@ class ADFLOW(AeroSolver):
             'cavitation':self.adflow.constants.costfunccavitation,
             'mdot':self.adflow.constants.costfuncmdot,
             'mavgptot':self.adflow.constants.costfuncmavgptot,
+            'aavgptot':self.adflow.constants.costfuncaavgptot,
+            'aavgps':self.adflow.constants.costfuncaavgps,
             'mavgttot':self.adflow.constants.costfuncmavgttot,
             'mavgps':self.adflow.constants.costfuncmavgps,
             'mavgmn':self.adflow.constants.costfuncmavgmn,

@@ -598,7 +598,7 @@ contains
 
           ! Write the rotation rate and rotation center.
 
-          call cg_rotating_write_f(rotRate, rotCenter, ierr)
+          call cg_rotating_write_f(real(rotRate,4), real(rotCenter,4), ierr)
           if(ierr /= CG_OK) &
                call terminate("writeCGNSGridFrame", &
                "Something wrong when calling &
@@ -728,8 +728,8 @@ contains
                   * 180.0_realType/pi
 
              call cg_conn_periodic_write_f(cgnsInd, cgnsBase,           &
-                  cgnsZone(nn), jj, rotCenter, &
-                  rotRate, translation, ierr)
+                  cgnsZone(nn), jj, real(rotCenter,4), &
+                  real(rotRate,4), real(translation,4), ierr)
              if(ierr /= CG_OK)                     &
                   call terminate("writeCGNSGridFrame", &
                   "Something wrong when calling &
