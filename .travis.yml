@@ -32,7 +32,7 @@ install:
 
 script:
   # We need to source the mdolab bashrc before running anything
-  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd repos/$REPO_NAME/python/reg_tests && python run_reg_tests.py -nodiff"
+  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd repos/$REPO_NAME/python/reg_tests && python run_reg_tests.py"
 
 after_script:
   - docker rm -f app
