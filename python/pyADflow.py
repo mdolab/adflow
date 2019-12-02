@@ -3282,7 +3282,7 @@ class ADFLOW(AeroSolver):
         # Check for any previous adjoint failure. If any adjoint has failed
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
-        if not self.curAP.adjointFailed and self.getOption('skipafterfailedadjoint'):
+        if not (self.curAP.adjointFailed and self.getOption('skipafterfailedadjoint')):
             # Extract the psi:
             psi = self.curAP.adflowData.adjoints[objective]
 
