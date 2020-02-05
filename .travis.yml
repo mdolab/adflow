@@ -28,11 +28,11 @@ before_install:
 install:
   # We thrown away the existing repo in Docker, and copy the new one in-place
   - docker exec -it app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
-  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make"
+  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make"
 
 script:
   # We need to source the mdolab bashrc before running anything
-  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd repos/$REPO_NAME/python/reg_tests && python run_reg_tests.py"
+  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc && cd repos/$REPO_NAME/python/reg_tests && python run_reg_tests.py"
 
 after_script:
   - docker rm -f app
