@@ -470,7 +470,7 @@ contains
 
     integer(kind=intType) :: ii, nn
 
-    real(kind=cgnsPertype), dimension(3) :: rotCenter, rotRate
+    real(kind=realType), dimension(3) :: rotCenter, rotRate
 
     real(kind=realType) :: mult, trans
 
@@ -732,7 +732,7 @@ contains
        ! No family information specified.
        ! Try to read the rotation rate and center.
 
-       call cg_rotating_read_f(rotRate, rotCenter, ierr)
+       call cg_rotating_read_f(real(rotRate,4), real(rotCenter,4), ierr)
        if(ierr == error)                &
             call terminate("readZoneInfo", &
             "Something wrong when calling &
@@ -1174,8 +1174,8 @@ contains
     character(len=maxCGNSNameLen) :: connectName
 
     type(cgns1to1ConnType),    pointer, dimension(:) :: conn1to1
-    real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
-    real(kind=cgnsPerType), dimension(3) :: tlation
+    real(kind=realType), dimension(3) :: rotCenter, rotAngles
+    real(kind=realType), dimension(3) :: tlation
 
     ! Determine the number of 1 to 1 connectivities stored in the
     ! CGNS file for this zone.
@@ -1236,7 +1236,7 @@ contains
 
 
        call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, nZone, i, &
-            rotCenter, rotAngles, tlation, ierr)
+            real(rotCenter,4), real(rotAngles,4), real(tlation,4), ierr)
        if(ierr == CG_OK)then
           call readPeriodicSubface1to1(cgnsInd, cgnsBase, nZone, i,    &
                cgnsDoms(nZone)%conn1to1(i)%connectName,                       &
@@ -2854,15 +2854,15 @@ contains
     integer :: jj
     integer :: mass, len, time, temp, angle
 
-    real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
-    real(kind=cgnsPerType), dimension(3) :: tlation
+    real(kind=realType), dimension(3) :: rotCenter, rotAngles
+    real(kind=realType), dimension(3) :: tlation
 
     real(kind=realType) :: mult, trans
 
     ! Check if this is a periodic boundary.
 
     call cg_conn_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-         rotCenter, rotAngles, tlation, ierr)
+         real(rotCenter,4), real(rotAngles,4), real(tlation,4), ierr)
 
     testPeriodic: if(ierr == CG_OK) then
 
@@ -2997,14 +2997,14 @@ contains
     integer :: jj
     integer :: mass, len, time, temp, angle
 
-    real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
-    real(kind=cgnsPerType), dimension(3) :: tlation
+    real(kind=realType), dimension(3) :: rotCenter, rotAngles
+    real(kind=realType), dimension(3) :: tlation
 
     real(kind=realType) :: mult, trans
 
     ! Check if this is a periodic boundary.
     call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-         rotCenter, rotAngles, tlation, ierr)
+         real(rotCenter,4), real(rotAngles,4), real(tlation,4), ierr)
 
     testPeriodic: if(ierr == CG_OK) then
 
