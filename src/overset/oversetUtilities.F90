@@ -2409,18 +2409,9 @@ contains
     use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk, terminate
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input/Output
     integer(kind=intType), intent(in) :: n
