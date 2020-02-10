@@ -264,17 +264,10 @@ contains
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity_d
     use actuatorRegionData, only : nActuatorRegions
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
+
     ! Input Arguments:
     real(kind=realType), intent(in), dimension(:) :: wDot, xDot
     integer(kind=intType), optional, dimension(:, :), intent(in) :: famLists
@@ -590,17 +583,9 @@ contains
     use oversetCommUtilities, only : updateOversetConnectivity_b
     use BCRoutines, only : applyAllBC_block
     use actuatorRegionData, only : nActuatorRegions
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-    use petsc, only : add_values, scatter_reverse
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input variables:
     real(kind=realType), intent(in), dimension(:) :: dwBar
