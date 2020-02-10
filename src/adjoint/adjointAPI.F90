@@ -727,7 +727,7 @@ contains
     real(kind=alwaysRealType)   :: norm
     real(kind=alwaysRealType), dimension(2) :: time
     real(kind=alwaysRealType)               :: timeAdjLocal, timeAdj
-    real(kind=realType) :: l2abs, l2rel
+    real(kind=alwaysRealType) :: l2abs, l2rel
     integer(kind=intType) :: ierr, nn, sps
     integer(kind=intType) :: adjConvIts
     KSPConvergedReason adjointConvergedReason
