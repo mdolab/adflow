@@ -11,18 +11,15 @@ env:
     - DOCKER_WORKING_DIR=/home/mdolabuser/repos/$REPO_NAME
     - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
   jobs:
-    - DOCKER_TAG=current
-    - DOCKER_TAG=new-baseline
+    - DOCKER_TAG=py2
 
 before_install:
-  # login to Docker using Travis encrypted credentials
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker pull mdolab/public:$DOCKER_TAG
   # run Docker, key is we mount the current Travis directory into Docker to access content of repo
   - docker run -t -d 
         --name app
         --mount "type=bind,src=$(pwd),target=$DOCKER_MOUNT_DIR"
-        mdolab/public:current
+        mdolab/public:$DOCKER_TAG
         /bin/bash
 
 install:
