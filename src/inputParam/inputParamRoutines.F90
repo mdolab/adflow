@@ -3817,10 +3817,12 @@ contains
 #ifdef USE_SINGLE_PRECISION
     precisionGrid = precisionSingle   ! Default IO precision depends
     precisionSol  = precisionSingle   ! on the default floating
-#else                                    ! point type used. Note that
+                                      ! point type used. Note that
+#else
     precisionGrid = precisionDouble   ! for quadrupole precision the
     precisionSol  = precisionDouble   ! IO takes place in double
-#endif                                   ! precision.
+                                      ! precision.
+#endif
 
     ! Surface solution defaults to single precision
     precisionSurfGrid = precisionSingle
