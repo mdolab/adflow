@@ -1544,8 +1544,8 @@ contains
     use agmg, only : agmgOuterIts, agmgASMOverlap, agmgFillLevel, agmgMatrixOrdering, & 
          setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
-         use petsc
-         implicit none
+    use petsc
+    implicit none
 
     ! Input Params
     KSP kspObject
