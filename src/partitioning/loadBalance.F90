@@ -1809,7 +1809,7 @@ contains
     integer(kind=intType) :: diBeg, diEnd, djBeg, djEnd
     integer(kind=intType) :: dkBeg, dkEnd
 
-    integer(kind=intType), dimension(3,3) :: tMat
+    integer(kind=intType), dimension(3,3) :: trMat
 
     integer(kind=intType), dimension(:,:,:), pointer :: ranges
 
@@ -1922,17 +1922,17 @@ contains
           L2 = cgnsDoms(cgnsID)%conn1to1(j)%l2
           l3 = cgnsDoms(cgnsID)%conn1to1(j)%l3
 
-          tMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
-          tMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
-          tMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
+          trMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
+          trMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
+          trMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
 
-          tMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
-          tMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
-          tMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
+          trMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
+          trMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
+          trMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
 
-          tMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
-          tMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
-          tMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
+          trMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
+          trMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
+          trMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
 
           ! Determine the corresponding donor range of the subface
           ! iBeg, iEnd; jBeg, jEnd; kBeg, kEnd.
@@ -1942,22 +1942,22 @@ contains
           l3 = kBeg - cgnsDoms(cgnsID)%conn1to1(j)%kBeg
 
           diBeg = cgnsDoms(cgnsID)%conn1to1(j)%diBeg &
-               + tMat(1,1)*l1 + tMat(1,2)*l2 + tMat(1,3)*l3
+               + trMat(1,1)*l1 + trMat(1,2)*l2 + trMat(1,3)*l3
           djBeg = cgnsDoms(cgnsID)%conn1to1(j)%djBeg &
-               + tMat(2,1)*l1 + tMat(2,2)*l2 + tMat(2,3)*l3
+               + trMat(2,1)*l1 + trMat(2,2)*l2 + trMat(2,3)*l3
           dkBeg = cgnsDoms(cgnsID)%conn1to1(j)%dkBeg &
-               + tMat(3,1)*l1 + tMat(3,2)*l2 + tMat(3,3)*l3
+               + trMat(3,1)*l1 + trMat(3,2)*l2 + trMat(3,3)*l3
 
           l1 = iEnd - cgnsDoms(cgnsID)%conn1to1(j)%iBeg
           L2 = jEnd - cgnsDoms(cgnsID)%conn1to1(j)%jBeg
           l3 = kEnd - cgnsDoms(cgnsID)%conn1to1(j)%kBeg
 
           diEnd = cgnsDoms(cgnsID)%conn1to1(j)%diBeg &
-               + tMat(1,1)*l1 + tMat(1,2)*l2 + tMat(1,3)*l3
+               + trMat(1,1)*l1 + trMat(1,2)*l2 + trMat(1,3)*l3
           djEnd = cgnsDoms(cgnsID)%conn1to1(j)%djBeg &
-               + tMat(2,1)*l1 + tMat(2,2)*l2 + tMat(2,3)*l3
+               + trMat(2,1)*l1 + trMat(2,2)*l2 + trMat(2,3)*l3
           dkEnd = cgnsDoms(cgnsID)%conn1to1(j)%dkBeg &
-               + tMat(3,1)*l1 + tMat(3,2)*l2 + tMat(3,3)*l3
+               + trMat(3,1)*l1 + trMat(3,2)*l2 + trMat(3,3)*l3
 
           ! Make sure that the donor indices are positive running
           ! indices. If they must be swapped, the corresponding
@@ -2067,7 +2067,7 @@ contains
 
                 ! Transform the donor range in the original donor block
                 ! back the a subface range in the original cgns block.
-                ! The inverse of the transformation matrix tMat is
+                ! The inverse of the transformation matrix trMat is
                 ! the transpose.
 
                 l1 = iBeg - cgnsDoms(cgnsID)%conn1to1(j)%diBeg
@@ -2075,22 +2075,22 @@ contains
                 l3 = kBeg - cgnsDoms(cgnsID)%conn1to1(j)%dkBeg
 
                 iBeg = cgnsDoms(cgnsID)%conn1to1(j)%iBeg &
-                     + tMat(1,1)*l1 + tMat(2,1)*l2 + tMat(3,1)*l3
+                     + trMat(1,1)*l1 + trMat(2,1)*l2 + trMat(3,1)*l3
                 jBeg = cgnsDoms(cgnsID)%conn1to1(j)%jBeg &
-                     + tMat(1,2)*l1 + tMat(2,2)*l2 + tMat(3,2)*l3
+                     + trMat(1,2)*l1 + trMat(2,2)*l2 + trMat(3,2)*l3
                 kBeg = cgnsDoms(cgnsID)%conn1to1(j)%kBeg &
-                     + tMat(1,3)*l1 + tMat(2,3)*l2 + tMat(3,3)*l3
+                     + trMat(1,3)*l1 + trMat(2,3)*l2 + trMat(3,3)*l3
 
                 l1 = iEnd - cgnsDoms(cgnsID)%conn1to1(j)%diBeg
                 L2 = jEnd - cgnsDoms(cgnsID)%conn1to1(j)%djBeg
                 l3 = kEnd - cgnsDoms(cgnsID)%conn1to1(j)%dkBeg
 
                 iEnd = cgnsDoms(cgnsID)%conn1to1(j)%iBeg &
-                     + tMat(1,1)*l1 + tMat(2,1)*l2 + tMat(3,1)*l3
+                     + trMat(1,1)*l1 + trMat(2,1)*l2 + trMat(3,1)*l3
                 jEnd = cgnsDoms(cgnsID)%conn1to1(j)%jBeg &
-                     + tMat(1,2)*l1 + tMat(2,2)*l2 + tMat(3,2)*l3
+                     + trMat(1,2)*l1 + trMat(2,2)*l2 + trMat(3,2)*l3
                 kEnd = cgnsDoms(cgnsID)%conn1to1(j)%kBeg &
-                     + tMat(1,3)*l1 + tMat(2,3)*l2 + tMat(3,3)*l3
+                     + trMat(1,3)*l1 + trMat(2,3)*l2 + trMat(3,3)*l3
 
                 ! Store the subface range of the new block, i.e.
                 ! An offset must be subtracted.

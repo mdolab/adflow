@@ -3109,18 +3109,9 @@ contains
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers, setBCPointers, EChk
 
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input variables
     logical, intent(in) :: isInflow
@@ -3236,18 +3227,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_d, setBCPointers_d, EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
     ! Input variables
     logical, intent(in) :: isInflow
     real(kind=realType), dimension(:, :) :: vars, varsd
@@ -3364,18 +3346,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_b, setBCPointers_d, EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input variables
     logical, intent(in) :: isInflow
@@ -3514,18 +3487,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers, setBCPointers, EChk, isWallType
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
     ! Input variables
     real(kind=realType), dimension(:, :) :: vars
     integer(kind=intType) :: sps
@@ -3613,18 +3577,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_d, setBCPointers_d, EChk, isWallType
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input variables
     real(kind=realType), dimension(:, :):: vars, varsd
@@ -3716,18 +3671,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_b, setBCPointers_d, EChk, isWallType
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input variables
     real(kind=realType), dimension(:, :) :: vars, varsd

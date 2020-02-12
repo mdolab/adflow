@@ -39,17 +39,9 @@ contains
     use gapBoundaries
     use wallSearches, only : wallSearch
 
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-    use petsc, only : PETSC_COPY_VALUES, PETSC_DETERMINE, PETSC_NULL_VEC
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input Parameters
     integer(kind=intType), intent(in), dimension(nZipFam) :: zipperFamList
@@ -490,7 +482,7 @@ contains
 
 #if PETSC_VERSION_GE(3,8,0)
        call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
-            zipper%localVal, PETSC_NULL_VEC, zipper%scatter, ierr)
+            zipper%localVal, PETSC_NULL_IS, zipper%scatter, ierr)
 #else
        call VecScatterCreate(BCFamExchange(iBCGroup, sps)%nodeValLocal, IS1, &
             zipper%localVal, PETSC_NULL_OBJECT, zipper%scatter, ierr)

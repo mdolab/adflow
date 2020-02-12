@@ -2,18 +2,9 @@ module agmg
 
   use constants
   use utils, only : EChk
-    ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
   use petsc
   implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
 
   ! Structure used for storing the interpolation indices
   type arr1int4
@@ -314,7 +305,7 @@ contains
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Create the scatter
-       call VecScatterCreate(indexVec, IS1, recvVec, PETSC_NULL_OBJECT, scat, ierr)
+       call VecScatterCreate(indexVec, IS1, recvVec, PETSC_NULL_IS, scat, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Do the actual scatter

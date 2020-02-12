@@ -1,13 +1,13 @@
 from __future__ import print_function
 # =============================================================================
-# Standard Python modules                                           
+# Standard Python modules
 # =============================================================================
 import os, sys, argparse, glob
 
 # =============================================================================
 # Extension modules
 # =============================================================================
-import mdo_regression_helper as reg
+import mdo_regression_compare as reg
 
 # define scripts to run:
 module_name = 'adflow'
@@ -23,7 +23,7 @@ parser.add_argument("--procs",default=4, type=int,
 parser.add_argument("--diff_cmd",default='xxdiff',
                     help='Command to run for displaying diff. Default: xxdiff')
 
-parser.add_argument("--diff", action='store_true', default=False, 
+parser.add_argument("--diff", action='store_true', default=False,
                     help='Display error diffs for each test.')
 
 parser.add_argument("--mpiexec",default='mpirun',
@@ -32,7 +32,7 @@ parser.add_argument("--mpiexec",default='mpirun',
 parser.add_argument('--test', metavar='test', type=int, nargs='+',
                     help='tests to run')
 
-parser.add_argument("--solve", action='store_true', default=False, 
+parser.add_argument("--solve", action='store_true', default=False,
                     help="Force solving on tests that use restart files.")
 args = parser.parse_args()
 
@@ -61,7 +61,7 @@ if args.mode == 'train':
         print('Running reference for test%d'%iTest)
         os.system('%s -np %d python tests/test%d.py %s > ref/%s_test%d_reg.ref 2>&1'%(
             args.mpiexec, args.procs, iTest, solveStr, module_name, iTest))
-            
+
     # If we're training, we done (no comparison)
     sys.exit(0)
 else:
@@ -104,7 +104,6 @@ else:
             os.system('cat %s >> adflow_reg.ref'%(refFile))
             os.system('cat %s >> adflow_reg'%(curFile))
             os.system('cat %s.orig >> adflow_reg.orig'%(curFile))
-                          
+
 # Exit with code equal to the number of failures
 sys.exit(masterRes)
-

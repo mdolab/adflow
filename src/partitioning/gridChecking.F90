@@ -445,7 +445,7 @@ contains
     integer(kind=intType) :: nMessagesSend, nMessagesReceive
     integer(kind=intType) :: nBad, nBadGlobal
 
-    integer(kind=intType), dimension(3,3) :: tMat
+    integer(kind=intType), dimension(3,3) :: trMat
 
     integer(kind=intType), dimension(0:nProc) :: nFSend, nCoor
     integer(kind=intType), dimension(nProc)   :: nFCount, nCCount
@@ -585,17 +585,17 @@ contains
 
              ll1 = l1(ll); ll2 = L2(ll); ll3 = l3(ll)
 
-             tMat(1,1) = sign(1_intType,ll1) * delta(ll1,1_intType)
-             tMat(1,2) = sign(1_intType,ll1) * delta(ll1,2_intType)
-             tMat(1,3) = sign(1_intType,ll1) * delta(ll1,3_intType)
+             trMat(1,1) = sign(1_intType,ll1) * delta(ll1,1_intType)
+             trMat(1,2) = sign(1_intType,ll1) * delta(ll1,2_intType)
+             trMat(1,3) = sign(1_intType,ll1) * delta(ll1,3_intType)
 
-             tMat(2,1) = sign(1_intType,ll2) * delta(ll2,1_intType)
-             tMat(2,2) = sign(1_intType,ll2) * delta(ll2,2_intType)
-             tMat(2,3) = sign(1_intType,ll2) * delta(ll2,3_intType)
+             trMat(2,1) = sign(1_intType,ll2) * delta(ll2,1_intType)
+             trMat(2,2) = sign(1_intType,ll2) * delta(ll2,2_intType)
+             trMat(2,3) = sign(1_intType,ll2) * delta(ll2,3_intType)
 
-             tMat(3,1) = sign(1_intType,ll3) * delta(ll3,1_intType)
-             tMat(3,2) = sign(1_intType,ll3) * delta(ll3,2_intType)
-             tMat(3,3) = sign(1_intType,ll3) * delta(ll3,3_intType)
+             trMat(3,1) = sign(1_intType,ll3) * delta(ll3,1_intType)
+             trMat(3,2) = sign(1_intType,ll3) * delta(ll3,2_intType)
+             trMat(3,3) = sign(1_intType,ll3) * delta(ll3,3_intType)
 
              ! Store the coordinates in realBuf by looping over the
              ! points of the subface.
@@ -613,11 +613,11 @@ contains
                       ll3 = k - dknBeg(ll)
 
                       ic = inBeg(ll) &
-                           + tMat(1,1)*ll1 + tMat(1,2)*ll2 + tMat(1,3)*ll3
+                           + trMat(1,1)*ll1 + trMat(1,2)*ll2 + trMat(1,3)*ll3
                       jc = jnBeg(ll) &
-                           + tMat(2,1)*ll1 + tMat(2,2)*ll2 + tMat(2,3)*ll3
+                           + trMat(2,1)*ll1 + trMat(2,2)*ll2 + trMat(2,3)*ll3
                       kc = knBeg(ll) &
-                           + tMat(3,1)*ll1 + tMat(3,2)*ll2 + tMat(3,3)*ll3
+                           + trMat(3,1)*ll1 + trMat(3,2)*ll2 + trMat(3,3)*ll3
 
                       ! Store the coordinates in the buffer.
 
