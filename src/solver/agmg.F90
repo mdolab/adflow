@@ -305,7 +305,6 @@ contains
        call EChk(ierr,__FILE__,__LINE__)
 
        ! Create the scatter
-       !call VecScatterCreate(indexVec, IS1, recvVec, PETSC_NULL_OBJECT, scat, ierr)
        call VecScatterCreate(indexVec, IS1, recvVec, PETSC_NULL_IS, scat, ierr)
        call EChk(ierr,__FILE__,__LINE__)
 
