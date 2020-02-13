@@ -24,18 +24,18 @@ before_install:
 
 install:
   # We thrown away the existing repo in Docker, and copy the new one in-place
-  - docker exec -it app "rm -rf $DOCKER_WORKING_DIR && cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
+  - docker exec -it app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
   # Now download the regression input files
-  - docker exec -it app ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR\python && wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz && tar -xzf adflow_input_files.tar.gz"
+  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR\python && wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz && tar -xzf adflow_input_files.tar.gz"
   # Compile real and complex builds
-  - docker exec -it app ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make && make -f Makefile_CS PETSC_ARCH=complex-opt-$COMPILERS-$PETSCVERSION"
+  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make && make -f Makefile_CS PETSC_ARCH=complex-opt-$COMPILERS-$PETSCVERSION"
   
 
 script:
   # Real tests
-  - docker exec -it app ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && python run_reg_tests.py -nodiff"
+  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && python run_reg_tests.py -nodiff"
   # Complex tests
-  - docker exec -it app ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && export PETSC_ARCH=complex-opt-$COMPILERS-$PETSCVERSION && python run_reg_tests_cs.py -nodiff"
+  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && export PETSC_ARCH=complex-opt-$COMPILERS-$PETSCVERSION && python run_reg_tests_cs.py -nodiff"
 
 after_script:
   - docker rm -f app
