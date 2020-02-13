@@ -305,7 +305,7 @@ Dictionary Key: lift
 Dictionary Key: mx
 @value -1.5697062202258e+05 1e-10 1e-10
 Dictionary Key: my
-@value  4.2675900979361e+02 1e-10 1e-10
+@value  4.2675900979361e+02 1e-9 1e-9
 Dictionary Key: mz
 @value  1.2857041112516e+05 1e-10 1e-10
 Dictionary Key: sepsensor

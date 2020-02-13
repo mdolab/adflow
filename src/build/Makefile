@@ -1,4 +1,4 @@
-# Include the user supplied makefil
+# Include the user supplied makefile
 include ../../config/config.mk
 
 # Group all the fortran, C and compiler flags together.

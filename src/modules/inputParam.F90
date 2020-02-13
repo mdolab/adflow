@@ -787,10 +787,10 @@ module inputADjoint
   !                 It has a high impact on the required memory!
   ! adjMonStep    : Convergence monitor step
 
-  real(kind=realType)    :: adjRelTol
-  real(kind=realType)    :: adjAbsTol
-  real(kind=realType)    :: adjRelTolRel
-  real(kind=realType)    :: adjDivTol
+  real(kind=alwaysRealType)    :: adjRelTol
+  real(kind=alwaysRealType)    :: adjAbsTol
+  real(kind=alwaysRealType)    :: adjRelTolRel
+  real(kind=alwaysRealType)    :: adjDivTol
   integer(kind=intType)  :: adjMaxIter
   integer(kind=intType)  :: adjRestart
   integer(kind=intType)  :: adjMonStep
