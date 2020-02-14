@@ -10,6 +10,9 @@ env:
     - REPO_NAME=adflow
     - DOCKER_WORKING_DIR=/home/mdolabuser/repos/$REPO_NAME
     - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
+  # We split it into two builds, real and complex to parallelize
+  - TEST_TYPE=REAL
+  - TEST_TYPE=COMPLEX
   jobs:
     - DOCKER_TAG=py2
 
@@ -28,16 +31,20 @@ install:
   # Now download the regression input files
   - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python && wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz && tar -xzf adflow_input_files.tar.gz"
   # Compile real and complex builds
-  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION"
-  
+  - if [ "$TEST_TYPE" == "REAL" ]; then
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make"
+    else
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION"
+    fi
 
 script:
-  # Real tests
-  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && python run_reg_tests.py"
-  # Complex tests
-  # Some of these tests take >10 min, so adding travis_wait to stop travis from timing out after 10min
+  # Some of the complex tests take >10 min, so adding travis_wait to stop travis from timing out after 10min
   # the sleep infinity is a workaround since docker exec forks another process which won't work directly with travis_wait
-  - travis_wait 60 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && python run_reg_tests_cs.py"
+  - if [ "$TEST_TYPE" == "REAL" ]; then
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && python run_reg_tests.py"
+    else
+      travis_wait 60 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && python run_reg_tests_cs.py"
+    fi
 
 after_script:
   - docker rm -f app
