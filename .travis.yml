@@ -5,14 +5,15 @@ language: generic
 
 services:
   - docker
+# We split it into two builds, real and complex to parallelize
+TEST_TYPE:
+  - REAL
+  - COMPLEX
 env:
   global:
     - REPO_NAME=adflow
     - DOCKER_WORKING_DIR=/home/mdolabuser/repos/$REPO_NAME
     - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
-  # We split it into two builds, real and complex to parallelize
-  - TEST_TYPE=REAL
-  - TEST_TYPE=COMPLEX
   jobs:
     - DOCKER_TAG=py2
 
