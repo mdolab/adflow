@@ -2314,7 +2314,7 @@ contains
                         &a farfield")
                    !=======================================================
 
-                case (symm, symmPolar)
+                case (symm, antiSymm, symmPolar)
 
                    ! Allocate for symm as well. This is not necessary
                    ! but we need it for the reverse AD.

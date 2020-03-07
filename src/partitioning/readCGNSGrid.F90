@@ -2735,6 +2735,9 @@ contains
     case (BCSymmetryPlane)
        internalBC = Symm
 
+    case (BCAntiSymmetry)
+       internalBC = AntiSymm
+
     case (BCSymmetryPolar)
        internalBC = SymmPolar
 
