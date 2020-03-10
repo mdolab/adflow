@@ -13,8 +13,12 @@ env:
     - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
   jobs:
     # We split it into two builds, real and complex to parallelize
-    - DOCKER_TAG=py2 TEST_TYPE=REAL
-    - DOCKER_TAG=py2 TEST_TYPE=COMPLEX
+    - DOCKER_TAG=py2-stable TEST_TYPE=REAL
+    - DOCKER_TAG=py2-stable TEST_TYPE=COMPLEX
+    - DOCKER_TAG=py2-latest TEST_TYPE=REAL
+    - DOCKER_TAG=py2-latest TEST_TYPE=COMPLEX
+    - DOCKER_TAG=py2-impi TEST_TYPE=REAL
+    - DOCKER_TAG=py2-impi TEST_TYPE=COMPLEX
     
 
 before_install:
