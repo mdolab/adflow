@@ -3,17 +3,9 @@ module NKSolver
   use constants
 
   ! MPI comes from constants, so we need to avoid MPIF_H in PETSc
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
   use petsc
   implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
 
   ! PETSc Matrices:
   ! dRdw: This is the actual matrix-free matrix computed with FD
@@ -1612,17 +1604,9 @@ end module NKSolver
 module ANKSolver
 
   use constants
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
   use petsc
   implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
 
   Mat  dRdw, dRdwPre
   Vec wVec, rVec, deltaW, baseRes

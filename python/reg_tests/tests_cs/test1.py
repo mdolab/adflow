@@ -7,8 +7,6 @@ import sys, os, copy
 from mpi4py import MPI
 
 from baseclasses import AeroProblem
-from pygeo import DVGeometry
-import pyspline
 
 from mdo_regression_helper import *
 from commonUtils import *
@@ -20,10 +18,8 @@ sys.path.append(os.path.abspath('../../'))
 
 if 'complex' in sys.argv:
     from python.pyADflow_C import ADFLOW_C as ADFLOW
-    from pywarp import MBMesh_C as MBMesh
 else:
     from python.pyADflow import ADFLOW
-    from pywarp import  MBMesh
 # ###################################################################
 
 printHeader('MDO tutorial Euler Mesh - Python functionality testing')

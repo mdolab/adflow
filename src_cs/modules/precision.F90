@@ -16,9 +16,10 @@ module precision
   !
 
   use complexify
+  use mpi
   implicit none
   save
-#include "mpif.h"
+  
   !
   !       Definition of the integer type used in the entire code. There
   !       might be a more elegant solution to do this, but be sure that
@@ -100,9 +101,6 @@ module precision
   !
   integer(kind=1), private :: adtDummyElementInt
 
-  !       Definition of the cgns periodic type.
-  !
-  real(kind=4), private :: dummyCGNSPer
   !
   !       Definition of the kind parameters for the integer and real
   !       types.
@@ -112,7 +110,6 @@ module precision
   integer, parameter :: realType     = kind(dummyReal)
   integer, parameter :: adtElementType = kind(adtDummyElementInt)
   integer, parameter :: cgnsRealType = kind(dummyCGNSReal)
-  integer, parameter :: cgnsPerType  = kind(dummyCGNSPer)
   integer, parameter :: alwaysRealType = kind(dummyReal)
   integer, parameter :: singleType   = kind(dummySingle)
   integer, parameter :: doubleType   = kind(dummyDouble)
