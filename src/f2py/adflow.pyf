@@ -55,9 +55,9 @@ python module libadflow
            integer(kind=inttype) intent(out) :: nzones
          end subroutine getncgnszones
          subroutine getcgnszonename(i,zone) ! in :test:utils.F90
-            integer(kind=inttype) intent(in) :: i
-            character(32) intent(out) :: zone
-          end subroutine getfam
+           integer(kind=inttype) intent(in) :: i
+           character(32) intent(out) :: zone
+         end subroutine getcgnszonename
 
          subroutine releasememorypart1
          end subroutine releasememorypart1

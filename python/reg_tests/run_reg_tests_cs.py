@@ -42,7 +42,7 @@ testFiles = glob.glob(testDir)
 nTestMax = len(testFiles)
 
 if args.test is None:
-    tests = range(1, nTestMax+1)
+    tests = [1,3,5,7,8,9]
 else:
     tests = args.test
 

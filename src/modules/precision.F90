@@ -18,7 +18,6 @@ module precision
   implicit none
 
   save
-!#include "mpif.h"
 
   !
   !       Definition of the integer type used in the entire code. There
