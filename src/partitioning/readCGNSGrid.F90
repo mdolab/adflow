@@ -1236,11 +1236,7 @@ contains
 
 
        call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, nZone, i, &
-<<<<<<< HEAD
             real(rotCenter,cgnsPerType), real(rotAngles,cgnsPerType), real(tlation,cgnsPerType), ierr)
-=======
-            real(rotCenter,4), real(rotAngles,4), real(tlation,4), ierr)
->>>>>>> 05b691ce4f2da5a3d02f830df60e4f2b92b6c7dd
        if(ierr == CG_OK)then
           call readPeriodicSubface1to1(cgnsInd, cgnsBase, nZone, i,    &
                cgnsDoms(nZone)%conn1to1(i)%connectName,                       &
@@ -2866,11 +2862,7 @@ contains
     ! Check if this is a periodic boundary.
 
     call cg_conn_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-<<<<<<< HEAD
          real(rotCenter,cgnsPerType), real(rotAngles,cgnsPerType), real(tlation,cgnsPerType), ierr)
-=======
-         real(rotCenter,4), real(rotAngles,4), real(tlation,4), ierr)
->>>>>>> 05b691ce4f2da5a3d02f830df60e4f2b92b6c7dd
 
     testPeriodic: if(ierr == CG_OK) then
 
@@ -3012,11 +3004,7 @@ contains
 
     ! Check if this is a periodic boundary.
     call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-<<<<<<< HEAD
          real(rotCenter,cgnsPerType), real(rotAngles,cgnsPerType), real(tlation,cgnsPerType), ierr)
-=======
-         real(rotCenter,4), real(rotAngles,4), real(tlation,4), ierr)
->>>>>>> 05b691ce4f2da5a3d02f830df60e4f2b92b6c7dd
 
     testPeriodic: if(ierr == CG_OK) then
 
