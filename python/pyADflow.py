@@ -294,12 +294,22 @@ class ADFLOW(AeroSolver):
 
         familySetupTime = time.time()
 
+        # Get the CGNS zone name info for the user
+        self.nZones = self.adflow.utils.getncgnszones()
+        self.CGNSZoneNameIDs = {}
+        for i in range(self.nZones):
+            # index needs to go in as fortran numbering, so add 1
+            name = getPy3SafeString(self.adflow.utils.getcgnszonename(i+1).strip()) 
+            self.CGNSZoneNameIDs[name] = i+1
+            # do we need to do this on root and broadcast?
+            
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption('cutCallBack')
         flag = numpy.zeros(n)
         if cutCallBack is not None:
             xCen = self.adflow.utils.getcellcenters(1, n).T
-            cutCallBack(xCen, flag)
+            cellIDs = self.adflow.utils.getcellcgnsblockids(1,n)
+            cutCallBack(xCen,self.CGNSZoneNameIDs,cellIDs, flag)
 
         cutCallBackTime = time.time()
 
@@ -1679,6 +1689,153 @@ class ADFLOW(AeroSolver):
             if numpy.linalg.norm(Fn) < tol:
                 if self.comm.rank == 0:
                     print ('Converged!', jj, Fn, Xn)
+                break
+        return Xn
+
+    def solveTargetFuncs(self, aeroProblem, funcDict, tol=1e-4, nIter=10, Jac0=None):
+        """
+        Solve the an arbitrary set of function-dv sets using a Broyden method.
+
+        Parameters
+        ----------
+        AeroProblem : AeroProblem instance
+            The aerodynamic problem to be solved
+        funcDict : dict
+            Dictionary of function DV pairs to solve:
+            {'func':{'dv':str, 'dvIdx':idx,'target':val,'initVal':val,'initStep':val}}
+            func : Name of function that is being solved for
+            dv : design variable that has dominant control of this function value
+            dvIdx : index into dv array if dv is not scalar
+            target : target function value
+            initVal : initial design variable value
+            initStep : initial step for this dv in when generating finite difference starting jacobian
+        tol : float
+            Tolerance for the L2 norm of function error from target values
+        nIter : int
+            Maximum number of iterations.
+        Jac0 : nxn numpy array
+            Initial guess for the func-dv jacobian. Usually obtained
+            from a previous analysis and saves n function
+            evaluations to produce the intial jacobian.
+        """
+
+        self.setAeroProblem(aeroProblem)
+        apDVList = aeroProblem.allVarFuncs
+        # get a sorted list of keys so that we always access the dict in the same order
+        funcKeys = sorted(funcDict.keys())
+
+        # now parse everything out of the dictionary into lists
+        dvKeys = []
+        dvIndices = []
+        targetVals = []
+        initVals = []
+        initStep = []
+        for key in funcKeys:
+            if 'dv' in funcDict[key]:
+                dvKey = funcDict[key]['dv']
+                if dvKey in apDVList:
+                    dvKey+='_%s'%aeroProblem.name
+                dvKeys.append(dvKey)
+            else:
+                raise Error('dv key not defined for function %s.'%key)
+                # Todo put in a check to see if the DVs selected are present?
+
+            if 'dvIdx' in funcDict[key]:
+                dvIndices.append(funcDict[key]['dvIdx'])
+            else:
+                dvIndices.append(None)
+
+            if 'target' in funcDict[key]:
+                targetVals.append(funcDict[key]['target'])
+            else:
+                targetVals.append(0.0)
+            
+            if 'initVal' in funcDict[key]:
+                initVals.append(funcDict[key]['initVal'])
+            else:
+                initVals.append(0.0)
+
+            if 'initStep' in funcDict[key]:
+                initStep.append(funcDict[key]['initStep'])
+            else:
+                initStep.append(1e-1)
+
+        nVars = len(funcKeys)
+
+        def Func(Xn, targetVals):
+            x = self.DVGeo.getValues()
+            for i in range(nVars):
+                if dvKeys[i] in x:
+                    dvIdx = dvIndices[i]
+                    if dvIdx is not None:
+                        x[dvKeys[i]][dvIdx] = Xn[i]
+                    else:
+                        x[dvKeys[i]] = Xn[i]
+                else:
+                    x[dvKeys[i]] = Xn[i]
+
+            self.curAP.setDesignVars(x)
+            self.DVGeo.setDesignVars(x)
+
+            self.__call__(self.curAP, writeSolution=False)
+            self.curAP.adflowData.callCounter -= 1
+            funcs = {}
+            self.evalFunctions(self.curAP, funcs, evalFuncs=funcKeys)
+            F = numpy.zeros([nVars])
+            for i in range(nVars):
+                F[i] = funcs['%s_%s'%(self.curAP.name,funcKeys[i])]-targetVals[i]
+
+            return F
+
+        # Generate initial point
+        Xn = numpy.array(initVals)
+        Fn = Func(Xn, targetVals)
+
+        # Next we generate the initial jacobian if we haven't been
+        # provided with one.
+        if Jac0 is not None:
+            J = Jac0.copy()
+        else:
+            J = numpy.zeros((nVars,nVars))
+
+            # Perturb each var in succession
+            for i in range(nVars):
+                Xn[i]+=initStep[i]
+                Fpdelta = Func(Xn, targetVals)
+                J[:, i] = (Fpdelta - Fn)/initStep[i]
+                Xn[i] -= initStep[i]
+
+        # Main iteration loop
+        for jj in range(nIter):
+            if self.comm.rank == 0:
+                print ('Fn:', Fn)
+
+            # We now have a point and a jacobian...Newton's Method!
+            Xnp1 = Xn - numpy.linalg.solve(J, Fn)
+            if self.comm.rank == 0:
+                print ("Xnp1:", Xnp1)
+
+            # Solve the new Xnp1
+            Fnp1 = Func(Xnp1, targetVals)
+            if self.comm.rank == 0:
+                print ("Fnp1:", Fnp1)
+
+            # Update the jacobian using Broyden's method
+            dx = Xnp1 - Xn
+            dF = Fnp1 - Fn
+            J = J + numpy.outer((dF - numpy.dot(J, dx))/(numpy.linalg.norm(dx)**2), dx)
+
+            if self.comm.rank == 0:
+                print ("New J:", J)
+
+            # Shuffle the Fn and Xn backwards
+            Fn = Fnp1.copy()
+            Xn = Xnp1.copy()
+
+            # Check for convergence
+            if numpy.linalg.norm(Fn) < tol:
+                if self.comm.rank == 0:
+                    print ('Converged!', 'Iterations: ', jj, 'Function Error:', Fn, 'Variables: ', Xn)
                 break
         return Xn
 
@@ -3132,7 +3289,7 @@ class ADFLOW(AeroSolver):
         # Check for any previous adjoint failure. If any adjoint has failed
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
-        if not self.curAP.adjointFailed and self.getOption('skipafterfailedadjoint'):
+        if not (self.curAP.adjointFailed and self.getOption('skipafterfailedadjoint')):
             # Extract the psi:
             psi = self.curAP.adflowData.adjoints[objective]
 

@@ -270,11 +270,13 @@ module stringOps
 
     ! Working:
     real(kind=realType) :: minEdge
-    integer(kind=intType) :: nUnqiue, i, n1, n2, nUnique
+    integer(kind=intType) :: nUnqiue, i, n1, n2, nUnique,idx
     integer(kind=intType), dimension(:), allocatable :: link
     real(kind=realType), dimension(:, :), allocatable :: uniqueNodes
     real(kind=realType), dimension(:, :), pointer :: nodeDataPtr
     integer(kind=intType) , dimension(:, :), pointer :: intNodeDataPtr
+    integer(kind=intType), dimension(:), allocatable :: normCounter
+    real(kind=realType), dimension(:, :), allocatable :: uniqueNorms
 
     ! We will do a sort of adaptive tolernace here: Get the minium edge
     ! length and base the tolerance on that:
@@ -291,6 +293,26 @@ module stringOps
 
     call pointReduce(string%x, string%nNodes, minEdge/1000.0, uniqueNodes, link, nUnique)
 
+    ! Now average the normals for any duplicate nodes. This is to handle any discrepancies
+    ! for h-type mesh topologies where the surface block is fully represented by the volume connectivity
+    allocate(normCounter(nUnique), uniqueNorms(3, nUnique))
+    normCounter(:)=zero
+    uniqueNorms(:,:) = zero
+    ! sum the norms for the unique node and count how many duplicates there are for a given node
+    do i = 1,string%nNodes
+       idx = link(i)
+       uniqueNorms(:,idx) =  uniqueNorms(:,idx)+ string%nodeData(4:6,i)
+       normCounter(idx) = normCounter(idx)+1
+    end do
+
+    ! Now divide to get the average and assign back to original data storage
+    do i = 1,string%nNodes
+       idx = link(i)
+       string%nodeData(4:6,i) = uniqueNorms(:,idx)/normCounter(idx)
+    end do
+    deallocate(normCounter, uniqueNorms)
+    ! Averageing is complete
+    
     ! Update the connectivity to use the new set of nodes
     do i=1, string%nElems
        string%conn(1, i) = link(string%conn(1, i))
@@ -357,7 +379,6 @@ module stringOps
 
              if (m(1) == n(1) .and. m(2) == n(2)) then
                 duplicateElement = .True.
-
              else if(m(1) == n(2) .and. m(2) == n(1)) then
                 ! Element exists, but it is the wrong order...don't
                 ! know what to do with this, probably an error or
@@ -1718,7 +1739,6 @@ module stringOps
          else
             nextI = prevNode(s, i)
          end if
-
          if (nextI == i .or. s%otherID(1, nextI) /= checkID) then
             ! We can't go any further than we already are
             iEnd = i
@@ -2888,6 +2908,43 @@ module stringOps
 
   end subroutine writeOversetString
 
+  subroutine writeOversetMaster(str,fileID)
+
+    use constants
+    use utils, only : mynorm2
+    implicit none
+
+    type(oversetString), intent(in) :: str
+    integer(kind=intType), intent(in) :: fileID
+    integer(kind=intType) :: i, j, id, index
+    real(kind=realType), dimension(3) :: myPt, otherPT, vec
+    real(kind=realType) :: maxH, dist, ratio
+
+    character(80) :: zoneName
+
+
+    write (zoneName,"(a,I5.5)") "Zone T=gap_", str%myID
+    write (fileID, *) trim(zoneName)
+
+    write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
+    write(fileID, *) "DATAPACKING=BLOCK"
+13  format (E20.12)
+
+    ! Nodes
+    do j=1,3
+       do i=1, str%nNodes
+          write(fileID,13) str%x(j, i)
+       end do
+    end do
+
+15  format(I5, I5)
+    do i=1, str%nElems
+       write(fileID, 15) str%conn(1, i), str%conn(2, i)
+    end do
+
+  end subroutine writeOversetMaster
+
+  
   subroutine writeOversetTriangles(string, fileName, startTri, endTri)
 
     use constants

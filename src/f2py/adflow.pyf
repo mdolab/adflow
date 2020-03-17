@@ -45,6 +45,20 @@ python module libadflow
            real(kind=realtype) dimension(3,n),intent(out),depend(n) :: xcen
          end subroutine getcellcenters
 
+         subroutine getcellcgnsblockids(level,n,cellid) ! in :test:utils.F90:utils
+           integer(kind=inttype) intent(in) :: level
+           integer(kind=inttype) intent(in) :: n
+           real(kind=realtype) dimension(n),intent(out),depend(n) :: cellid
+         end subroutine getcellcgnsblockids
+
+         subroutine getncgnszones(nzones) ! in :test:utils.F90
+           integer(kind=inttype) intent(out) :: nzones
+         end subroutine getncgnszones
+         subroutine getcgnszonename(i,zone) ! in :test:utils.F90
+           integer(kind=inttype) intent(in) :: i
+           character(32) intent(out) :: zone
+         end subroutine getcgnszonename
+
          subroutine releasememorypart1
          end subroutine releasememorypart1
 
