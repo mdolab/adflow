@@ -577,6 +577,14 @@ contains
     type(oversetString), pointer :: str
     integer(kind=intType) :: nStrings, i, j, nTriSelf
 
+    if (debugZipper) then
+       open(unit=101, file="master_beforeStrings.dat", form='formatted')
+       write(101,*) 'TITLE = "Master Data" '
+       write(101,*) 'Variables = "X" "Y" "Z"'
+       call writeOversetMaster(master, 101)
+       close(101)
+    end if
+    
     call createOrderedStrings(master, strings, nStrings)
 
 

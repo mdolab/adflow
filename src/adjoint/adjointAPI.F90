@@ -705,6 +705,7 @@ contains
     KSPConvergedReason adjointConvergedReason
     Vec adjointRes, RHSVec
 
+#ifndef USE_COMPLEX
     ! Send some feedback to screen.
 
     if(myid ==0 .and. printTiming)  &
@@ -874,6 +875,8 @@ contains
 30  format(1x,a,1x,e10.4,4x,a,1x,i4)
 40  format(1x,a,1x,i5,1x,a)
 
+#endif
+
   end subroutine solveAdjoint
 
   subroutine setupPETScKsp
@@ -930,7 +933,7 @@ contains
             matrixOrdering, FillLevel, innerPreConIts)
     else if (PreCondType == 'mg') then
 
-       call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, & 
+       call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, &
             adjointPCSide, overlap, outerPreconIts, matrixOrdering,  fillLevel)
     end if
 
@@ -1187,7 +1190,7 @@ contains
     nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
     nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
-   
+
     if (.not. useMatrixFreedRdw) then
        ! Setup matrix-based dRdwT
        allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
@@ -1257,7 +1260,7 @@ contains
        deallocate(nnzDiagonal, nnzOffDiag)
     end if
 
-   
+
     call setupAGMG(drdwpret, nDimW/nState, nState)
 
     ! Create the KSP Object
