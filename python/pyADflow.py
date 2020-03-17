@@ -1701,9 +1701,16 @@ class ADFLOW(AeroSolver):
         AeroProblem : AeroProblem instance
             The aerodynamic problem to be solved
         funcDict : dict
-            Dictionary of function DV pairs to solve...add dv index {'func':{'dv':str, 'dvIdx':idx,'target':val,'initVal':val,'initStep':val}}
+            Dictionary of function DV pairs to solve:
+            {'func':{'dv':str, 'dvIdx':idx,'target':val,'initVal':val,'initStep':val}}
+            func : Name of function that is being solved for
+            dv : design variable that has dominant control of this function value
+            dvIdx : index into dv array if dv is not scalar
+            target : target function value
+            initVal : initial design variable value
+            initStep : initial step for this dv in when generating finite difference starting jacobian
         tol : float
-            Tolerance for trimCL solve solution
+            Tolerance for the L2 norm of function error from target values
         nIter : int
             Maximum number of iterations.
         Jac0 : nxn numpy array
@@ -1713,7 +1720,7 @@ class ADFLOW(AeroSolver):
         """
 
         self.setAeroProblem(aeroProblem)
-        apDVList = ['alpha','altitude']
+        apDVList = aeroProblem.allVarFuncs
         # get a sorted list of keys so that we always access the dict in the same order
         funcKeys = sorted(funcDict.keys())
 
@@ -1828,7 +1835,7 @@ class ADFLOW(AeroSolver):
             # Check for convergence
             if numpy.linalg.norm(Fn) < tol:
                 if self.comm.rank == 0:
-                    print ('Converged!', jj, Fn, Xn)
+                    print ('Converged!', 'Iterations: ', jj, 'Function Error:', Fn, 'Variables: ', Xn)
                 break
         return Xn
 

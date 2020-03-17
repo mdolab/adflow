@@ -367,7 +367,7 @@ def standardTest(CFDSolver, ap, solve):
     reg_par_write_norm(resDot, 1e-10, 1e-10)
 
     parPrint('dFuncs/dw * wDot')
-    reg_root_write_dict(funcsDot, 1e-9, 1e-9)
+    reg_root_write_dict(funcsDot, 1e-10, 1e-10)
 
     parPrint('||dF/dw * wDot||')
     reg_par_write_norm(fDot, 1e-10, 1e-10)
