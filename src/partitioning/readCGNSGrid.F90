@@ -470,7 +470,7 @@ contains
 
     integer(kind=intType) :: ii, nn
 
-    real(kind=cgnsPertype), dimension(3) :: rotCenter, rotRate
+    real(kind=realType), dimension(3) :: rotCenter, rotRate
 
     real(kind=realType) :: mult, trans
 
@@ -731,8 +731,8 @@ contains
 
        ! No family information specified.
        ! Try to read the rotation rate and center.
-
-       call cg_rotating_read_f(rotRate, rotCenter, ierr)
+       call cg_rotating_read_f(real(rotRate,cgnsPerType), real(rotCenter,cgnsPerType), ierr)
+       
        if(ierr == error)                &
             call terminate("readZoneInfo", &
             "Something wrong when calling &
@@ -1174,8 +1174,8 @@ contains
     character(len=maxCGNSNameLen) :: connectName
 
     type(cgns1to1ConnType),    pointer, dimension(:) :: conn1to1
-    real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
-    real(kind=cgnsPerType), dimension(3) :: tlation
+    real(kind=realType), dimension(3) :: rotCenter, rotAngles
+    real(kind=realType), dimension(3) :: tlation
 
     ! Determine the number of 1 to 1 connectivities stored in the
     ! CGNS file for this zone.
@@ -1236,7 +1236,7 @@ contains
 
 
        call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, nZone, i, &
-            rotCenter, rotAngles, tlation, ierr)
+            real(rotCenter,cgnsPerType), real(rotAngles,cgnsPerType), real(tlation,cgnsPerType), ierr)
        if(ierr == CG_OK)then
           call readPeriodicSubface1to1(cgnsInd, cgnsBase, nZone, i,    &
                cgnsDoms(nZone)%conn1to1(i)%connectName,                       &
@@ -1279,7 +1279,7 @@ contains
 
     integer(kind=intType), dimension(3) :: haloDir, donorDir
     integer(kind=intType), dimension(3,2) :: zoneRange, donorRange
-    integer(kind=intType), dimension(3,3) :: tMat
+    integer(kind=intType), dimension(3,3) :: trMat
 
     character(len=maxCGNSNameLen) :: zoneName, connectName
     character(len=2*maxStringLen)  :: errorMessage
@@ -1412,17 +1412,17 @@ contains
     L2 = transform(2)
     l3 = transform(3)
 
-    tMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
-    tMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
-    tMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
+    trMat(1,1) = sign(1_intType,l1) * delta(l1,1_intType)
+    trMat(2,1) = sign(1_intType,l1) * delta(l1,2_intType)
+    trMat(3,1) = sign(1_intType,l1) * delta(l1,3_intType)
 
-    tMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
-    tMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
-    tMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
+    trMat(1,2) = sign(1_intType,l2) * delta(l2,1_intType)
+    trMat(2,2) = sign(1_intType,l2) * delta(l2,2_intType)
+    trMat(3,2) = sign(1_intType,l2) * delta(l2,3_intType)
 
-    tMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
-    tMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
-    tMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
+    trMat(1,3) = sign(1_intType,l3) * delta(l3,1_intType)
+    trMat(2,3) = sign(1_intType,l3) * delta(l3,2_intType)
+    trMat(3,3) = sign(1_intType,l3) * delta(l3,3_intType)
 
     ! Apply the transformation matrix to haloDir.
 
@@ -1430,9 +1430,9 @@ contains
     L2 = haloDir(2)
     l3 = haloDir(3)
 
-    haloDir(1) = tMat(1,1)*l1 + tMat(1,2)*l2 + tMat(1,3)*l3
-    haloDir(2) = tMat(2,1)*l1 + tMat(2,2)*l2 + tMat(2,3)*l3
-    haloDir(3) = tMat(3,1)*l1 + tMat(3,2)*l2 + tMat(3,3)*l3
+    haloDir(1) = trMat(1,1)*l1 + trMat(1,2)*l2 + trMat(1,3)*l3
+    haloDir(2) = trMat(2,1)*l1 + trMat(2,2)*l2 + trMat(2,3)*l3
+    haloDir(3) = trMat(3,1)*l1 + trMat(3,2)*l2 + trMat(3,3)*l3
 
     ! If the transformation matrix is correct haloDir == donorDir.
     ! If this is not the case, there are two possibilities. Either
@@ -2854,15 +2854,15 @@ contains
     integer :: jj
     integer :: mass, len, time, temp, angle
 
-    real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
-    real(kind=cgnsPerType), dimension(3) :: tlation
+    real(kind=realType), dimension(3) :: rotCenter, rotAngles
+    real(kind=realType), dimension(3) :: tlation
 
     real(kind=realType) :: mult, trans
 
     ! Check if this is a periodic boundary.
 
     call cg_conn_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-         rotCenter, rotAngles, tlation, ierr)
+         real(rotCenter,cgnsPerType), real(rotAngles,cgnsPerType), real(tlation,cgnsPerType), ierr)
 
     testPeriodic: if(ierr == CG_OK) then
 
@@ -2997,14 +2997,14 @@ contains
     integer :: jj
     integer :: mass, len, time, temp, angle
 
-    real(kind=cgnsPerType), dimension(3) :: rotCenter, rotAngles
-    real(kind=cgnsPerType), dimension(3) :: tlation
+    real(kind=realType), dimension(3) :: rotCenter, rotAngles
+    real(kind=realType), dimension(3) :: tlation
 
     real(kind=realType) :: mult, trans
 
     ! Check if this is a periodic boundary.
     call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-         rotCenter, rotAngles, tlation, ierr)
+         real(rotCenter,cgnsPerType), real(rotAngles,cgnsPerType), real(tlation,cgnsPerType), ierr)
 
     testPeriodic: if(ierr == CG_OK) then
 

@@ -2215,8 +2215,10 @@ contains
           do j=2, jl
              do i=2, il
 
+                if (iblank(i,j,k) == -4) then
+                   nExplicitBlanked = nExplicitBlanked + 1
 
-                if (isReceiver(status(i, j, k))) then
+                else if (isReceiver(status(i, j, k))) then
                    iblank(i, j, k) = -1
                    nFringe = nFringe + 1
 
@@ -2233,22 +2235,17 @@ contains
                    nBlank = nBlank + 1
 
                 else
-                   if (iblank(i,j,k) == -4) then
-                      ! do nothing. It is an explict hole.
-                      nExplicitBlanked = nExplicitBlanked + 1
+                   ! We need to explictly make sure forced receivers
+                   ! *NEVER EVER EVER EVER* get set as compute cells.
+                   if (forcedRecv(i,j,k) .ne. 0) then
+                      ! This is REALLY Bad. This cell must be a forced
+                      ! receiver but never found a donor.
+                      iblank(i,j,k) = 0
+                      nBlank = nBlank + 1
                    else
-                      ! We need to explictly make sure forced receivers
-                      ! *NEVER EVER EVER EVER* get set as compute cells.
-                      if (forcedRecv(i,j,k) .ne. 0) then
-                         ! This is REALLY Bad. This cell must be a forced
-                         ! receiver but never found a donor.
-                         iblank(i,j,k) = 0
-                         nBlank = nBlank + 1
-                      else
-                         ! Compute cell
-                         nCompute = nCompute + 1
-                         iblank(i,j,k) = 1
-                      end if
+                      ! Compute cell
+                      nCompute = nCompute + 1
+                      iblank(i,j,k) = 1
                    end if
                 end if
              end do
@@ -2409,18 +2406,9 @@ contains
     use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk, terminate
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input/Output
     integer(kind=intType), intent(in) :: n

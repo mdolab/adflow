@@ -660,17 +660,9 @@ module fortranPC
     use ADjointVars
     use inputTimeSpectral
     use utils, only : EChk, setPointers
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! PETSc Arguments
     Mat   A
@@ -738,17 +730,9 @@ module fortranPC
     use inputTimeSpectral
     use flowvarrefstate
     use communication
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! PETSc Arguments
     PC   pc
@@ -780,17 +764,9 @@ module fortranPC
     use inputTimeSpectral
     use flowVarRefState
     use utils, only : EChk, setPointers
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! PETSc Arguments
     Vec   vecX

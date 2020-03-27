@@ -6,11 +6,8 @@ syntax:glob
 *.so
 *.pyc
 *.autogen
-bin/SUmb
-SUmb_Common.mk
 config.mk
 config/config*
-src_cs/*
 src/adjoint/temp*
 *.orig
 *.cgnsSpectral*
@@ -18,7 +15,8 @@ src/adjoint/temp*
 .*~
 *.orig
 *.mod
-doc/*
+doc/_build/*
+doc/_static/doxydoc/*
 *.fmt
 *.bak
 src/build/adflow_project.dep
@@ -28,3 +26,16 @@ python/reg_tests/adflow_test*_reg
 python/reg_tests/adflow_reg.ref
 python/reg_tests/adflow_reg
 src/build/importTest.py
+
+#reg test aux files:
+python/reg_tests/*.cgns
+python/reg_tests/*.dat
+python/reg_tests/*.txt
+python/reg_tests/*.zipper
+python/inputFiles.tar.gz
+
+# optimization reports from intel compilers
+*.optrpt
+
+# for mac users
+*.DS_Store

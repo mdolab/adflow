@@ -7,7 +7,7 @@ from __future__ import print_function
 import sys, os, copy
 from mpi4py import MPI
 from baseclasses import AeroProblem
-from pywarp import MBMesh
+from idwarp import USMesh
 from mdo_regression_helper import *
 from commonUtils import *
 
@@ -67,7 +67,7 @@ optMesh = {
     'skew_exp':           0.0,
     'useRotationCorrection': False,
     }
-mesh = MBMesh(options = optMesh)
+mesh = USMesh(options = optMesh)
 
 options.update(
     {'gridfile': '../inputFiles/naca0012_rans-L2.cgns',

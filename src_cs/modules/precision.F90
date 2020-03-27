@@ -16,9 +16,10 @@ module precision
   !
 
   use complexify
+  use mpi
   implicit none
   save
-#include "mpif.h"
+
   !
   !       Definition of the integer type used in the entire code. There
   !       might be a more elegant solution to do this, but be sure that

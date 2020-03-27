@@ -1697,7 +1697,7 @@ contains
     ! 3. Node-based output for tecplot files.
     use constants
     use communication, only : adflow_comm_world, myid, nProc
-    use surfaceFamilies, only : familyExchange, IS1, IS2, PETSC_COPY_VALUES, PETSC_DETERMINE
+    use surfaceFamilies, only : familyExchange, IS1, IS2!, PETSC_COPY_VALUES, PETSC_DETERMINE
     use utils, only : pointReduce, eChk
     use surfaceUtils
     implicit none
@@ -3965,16 +3965,9 @@ contains
     use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
          psi_like1, psi_like2, x_like, psi_like3
     use utils, only : setPointers, EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#endif
+    use petsc
+    implicit none
 
     !     Local variables.
     !

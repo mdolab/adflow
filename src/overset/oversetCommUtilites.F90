@@ -1600,7 +1600,14 @@ contains
              do i=0,ib
                 ii =ii + 1
                 iBlankSave(ii) = iblank(i,j,k)
-                iblank(i,j,k) = 0
+                ! The following algorithm uses the volume iblank array to communicate surface blocking
+                ! across block boundaries. However, for h-topology meshes, for example at a sharp
+                ! trailing edge this breaks, because the surface on the top an bottom of the shape are
+                ! not topologically adjacent in the block structure. If we leave the existing volume
+                ! blanking in place the correct values are communicated, if we zero it as done originally
+                ! the connection is broken. Therefore the following line is commented out.
+                !iblank(i,j,k) = 0 !commented out to fix issue with h-topology blocks on the zipper
+                
              end do
           end do
        end do

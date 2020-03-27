@@ -69,7 +69,7 @@ contains
     end do domainLoop
 
 
-    ! Allocate the spae we need in the local strings.
+    ! Allocate the space we need in the local strings.
     allocate(localStrings(nClusters))
     do c=1, nClusters
        call nullifyString(localStrings(c))

@@ -3,7 +3,7 @@ from __future__ import print_function
 # first is used to format float values with a specified absolute and
 # relative tolerance. This information is used by the second function
 # when it takes in two such formatted strings and decides if they are
-# sufficiently close to be considered equal. 
+# sufficiently close to be considered equal.
 import numpy, os
 from mpi4py import MPI
 import sys

@@ -429,16 +429,9 @@ contains
     use ADjointPETSc, only: drdwt
     use communication, only : adflow_comm_world
     use utils, only : EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#endif
+    use petsc
+    implicit none
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -464,16 +457,9 @@ contains
     use ADjointPETSc, only: drdwpret
     use communication, only : adflow_comm_world
     use utils, only : EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#endif
+    use petsc
+    implicit none
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -499,16 +485,9 @@ contains
     use ADjointPETSc, only: psi_like1
     use communication, only : adflow_comm_world
     use utils, only : EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#endif
+    use petsc
+    implicit none
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -707,16 +686,9 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
     use utils, only : EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! Input Parameters
     real(kind=realType), dimension(nState) :: RHS, psi
@@ -727,12 +699,13 @@ contains
     real(kind=alwaysRealType)   :: norm
     real(kind=alwaysRealType), dimension(2) :: time
     real(kind=alwaysRealType)               :: timeAdjLocal, timeAdj
-    real(kind=realType) :: l2abs, l2rel
+    real(kind=alwaysRealType) :: l2abs, l2rel
     integer(kind=intType) :: ierr, nn, sps
     integer(kind=intType) :: adjConvIts
     KSPConvergedReason adjointConvergedReason
     Vec adjointRes, RHSVec
 
+#ifndef USE_COMPLEX
     ! Send some feedback to screen.
 
     if(myid ==0 .and. printTiming)  &
@@ -902,6 +875,8 @@ contains
 30  format(1x,a,1x,e10.4,4x,a,1x,i4)
 40  format(1x,a,1x,i5,1x,a)
 
+#endif
+
   end subroutine solveAdjoint
 
   subroutine setupPETScKsp
@@ -913,16 +888,9 @@ contains
     use adjointUtils, only : setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
     use communication
     use agmg, only : setupShellPC, destroyShellPC, applyShellPC
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#endif
+    use petsc
+    implicit none
 
     !     Local variables.
     logical :: useAD, usePC, useTranspose, useObjective, useCoarseMats
@@ -965,7 +933,7 @@ contains
             matrixOrdering, FillLevel, innerPreConIts)
     else if (PreCondType == 'mg') then
 
-       call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, & 
+       call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, &
             adjointPCSide, overlap, outerPreconIts, matrixOrdering,  fillLevel)
     end if
 
@@ -987,17 +955,9 @@ contains
     use adjointVars, only: nCellsLocal
     use communication
     use utils, only : setPointers, EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
     use petsc
     implicit none
-#else
-    implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -1074,17 +1034,9 @@ contains
     use ADjointVars
     use inputTimeSpectral
     use utils, only : EChk
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
 
     ! PETSc Arguments
@@ -1133,17 +1085,9 @@ contains
 #ifndef USE_COMPLEX
     use masterRoutines, only : master_d
 #endif
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     ! PETSc Arguments
     Mat   A
@@ -1218,17 +1162,9 @@ contains
     use utils, only : EChk, setPointers
     use adjointUtils, only : myMatCreate, destroyPETScVars, statePreAllocation
     use agmg, only : setupAGMG
-#include <petscversion.h>
-#if PETSC_VERSION_GE(3,8,0)
 #include <petsc/finclude/petsc.h>
-  use petsc
-  implicit none
-#else
-  implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
-#endif
+    use petsc
+    implicit none
 
     !     Local variables.
     integer(kind=intType)  :: nDimW, nDimX
@@ -1254,7 +1190,7 @@ contains
     nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
     nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
 
-   
+
     if (.not. useMatrixFreedRdw) then
        ! Setup matrix-based dRdwT
        allocate(nnzDiagonal(nCellsLocal(1_intType)*nTimeIntervalsSpectral), &
@@ -1324,7 +1260,7 @@ contains
        deallocate(nnzDiagonal, nnzOffDiag)
     end if
 
-   
+
     call setupAGMG(drdwpret, nDimW/nState, nState)
 
     ! Create the KSP Object
