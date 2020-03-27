@@ -1,4 +1,3 @@
-from __future__ import print_function
 #------------- VERY IMPORTANT ------------
 
 # This script is necessary since f2py INSISTS on priting crap out when

@@ -16,7 +16,6 @@ History
 	v. 1.0	- Original MACH Framework Implementation (SM 2010)
 '''
 
-from __future__ import print_function
 __version__ = '$Revision: $'
 
 '''

@@ -3,7 +3,6 @@
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS
 # SUBJECT TO CHANGE!!
 ############################################################
-from __future__ import print_function
 import sys, os, copy
 from mpi4py import MPI
 from mdo_regression_helper import *

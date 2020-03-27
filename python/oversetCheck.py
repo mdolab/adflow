@@ -1,6 +1,4 @@
 #!/usr/bin/python
-from __future__ import print_function
-from __future__ import division
 """
 Overset Check: A minimal interface for checking overset connectivity
 

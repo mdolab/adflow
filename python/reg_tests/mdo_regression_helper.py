@@ -1,4 +1,3 @@
-from __future__ import print_function
 # This file contains two functions to help regression testing. The
 # first is used to format float values with a specified absolute and
 # relative tolerance. This information is used by the second function

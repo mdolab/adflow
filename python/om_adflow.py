@@ -1,4 +1,3 @@
-from __future__ import print_function
 import types
 from pygeo import DVGeometry, DVConstraints
 from baseclasses import AeroProblem

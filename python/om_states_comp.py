@@ -1,5 +1,3 @@
-
-from __future__ import print_function
 import numpy as np
 import pprint
 from pygeo import DVGeometry, DVConstraints
