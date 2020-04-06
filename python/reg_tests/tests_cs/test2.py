@@ -67,14 +67,14 @@ DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, n
                                         y=numpy.zeros(nTwist),
                                         z=numpy.linspace(0,14, nTwist), k=2))
 def twist(val, geo):
-    for i in xrange(nTwist):
+    for i in range(nTwist):
         geo.rot_z['wing'].coef[i] = val[i]
 
 def span(val, geo):
     # Span
     C = geo.extractCoef('wing')
     s = geo.extractS('wing')
-    for i in xrange(len(C)-1):
+    for i in range(len(C)-1):
         C[-1, 2] = C[-1, 2] + val[0]
     geo.restoreCoef(C, 'wing')
 
