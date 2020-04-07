@@ -46,7 +46,7 @@ script:
   # Some of the complex tests take >10 min, so adding travis_wait to stop travis from timing out after 10min
   # the sleep infinity is a workaround since docker exec forks another process which won't work directly with travis_wait
   - if [ "$TEST_TYPE" = "REAL" ]; then
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && python run_reg_tests.py";
+      travis_wait 120 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && python run_reg_tests.py";
     else
       travis_wait 120 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python/reg_tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && python run_reg_tests_cs.py";
     fi
