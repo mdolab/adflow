@@ -37,9 +37,9 @@ install:
   - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python && wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz && tar -xzf adflow_input_files.tar.gz"
   # Compile real and complex builds
   - if [ "$TEST_TYPE" = "REAL" ]; then
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make";
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make";
     else
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
     fi
 
 script:
