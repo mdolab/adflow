@@ -569,7 +569,6 @@ contains
          computeSpeedOfSoundSquared_b, allNodalGradients_b, adjustInflowAngle_b
     use solverutils_b, only : timeStep_Block_b
     use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
-    use turbbcroutines, only : applyAllTurbBCthisblock,  bcTurbTreatment
     use initializeflow_b, only : referenceState_b
     use wallDistance_b, only : updateWallDistancesQuickly_b
     use sa_b, only : saSource_b, saViscous_b, saResScale_b, qq
@@ -928,7 +927,7 @@ contains
     use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
     use turbUtils_b, only : computeEddyViscosity_b
     use BCExtra_b, only : applyAllBC_Block_b
-    
+
     use sa_fast_b, only : saresscale_fast_b, saviscous_fast_b, &
          sasource_fast_b, qq
     use turbutils_fast_b, only : turbAdvection_fast_b
