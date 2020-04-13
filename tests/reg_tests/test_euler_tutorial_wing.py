@@ -14,7 +14,7 @@ from commonUtils import *
 from runpy import run_path
 
 
-class TestSolution(unittest.TestCase):
+class TestSolve(unittest.TestCase):
     '''
     Test 9: MDO tutorial -- Euler -- Solution Test
     '''
@@ -22,13 +22,12 @@ class TestSolution(unittest.TestCase):
 
     def setUp(self):
 
-        self.ref_file = os.path.join(baseDir, 'ref/ref9.py')
-        ref = run_path(self.ref_file)['ref']
+        self.ref_file = os.path.join(baseDir, 'ref/ref9.json')
+        
+        ref = readJSONRef(self.ref_file)
 
         self.handler = BaseRegTest(ref, train=False)
-
-
-
+        
 
         gridFile = os.path.join(baseDir, '../input_files/mdo_tutorial_euler_scalar_jst.cgns')
 
@@ -79,7 +78,8 @@ class TestSolution(unittest.TestCase):
 
 
         trained_ref = self.handler.getRef()
-        writeRef(self.ref_file, trained_ref)
+        # writeRef(self.ref_file, trained_ref)
+        writeRefToJson('ref/ref9.json', trained_ref)
 
 
 class TestFunctionals(unittest.TestCase):
@@ -91,8 +91,9 @@ class TestFunctionals(unittest.TestCase):
 
     def setUp(self, train=False):
 
-        self.ref_file = os.path.join(baseDir, 'ref/ref1.py')
-        ref = run_path(self.ref_file)['ref']
+        self.ref_file = os.path.join(baseDir, 'ref/ref1.json')
+        
+        ref = readJSONRef(self.ref_file)
 
         self.handler = BaseRegTest(ref, train=False)
 
@@ -114,6 +115,7 @@ class TestFunctionals(unittest.TestCase):
             'adjointl2convergence': 1e-14,
             'solutionprecision':'double',
             'gridprecision':'double',
+            'useblockettes': False,
         })
 
         # Setup aeroproblem, cfdsolver, mesh and geometry.
@@ -176,7 +178,6 @@ class TestFunctionals(unittest.TestCase):
         self.handler.setRef({})
 
         
-        self.test_solve()
         self.test_restart_read()
         self.test_residuals()
         self.test_functions()
@@ -186,7 +187,8 @@ class TestFunctionals(unittest.TestCase):
         self.test_dot_products()
 
         trained_ref = self.handler.getRef()
-        writeRef(self.ref_file, trained_ref)
+        # writeRef(self.ref_file, trained_ref)
+        writeRefToJson('ref/ref1.json', trained_ref)
 
 
 if __name__ == '__main__':

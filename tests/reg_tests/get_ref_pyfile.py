@@ -1,4 +1,4 @@
-from commonUtils import convertRegFileToPyRegFile
+from commonUtils import convertRegFileToJSONRegFile
 import glob
 import os 
 
@@ -12,5 +12,5 @@ for refFile in refFiles:
     ref_id = int(refFile.split('_')[-2][4:])
 
     print('Running reference for ref%d'%ref_id)
-    convertRegFileToPyRegFile(refFile, 'ref/ref%d.py'%(ref_id))
+    convertRegFileToJSONRegFile(refFile, 'ref/ref%d.json'%(ref_id))
     
