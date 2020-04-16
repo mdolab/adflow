@@ -169,8 +169,8 @@ def is_fortran(name, root):
 def fix_file(file):
     try:
         f = open(file, 'r')
-    except (IOError, msg):
-        err(file + ': cannot open: ' + msg + '\n')
+    except IOError as err:
+        print('{} could not be opened: {}'.format(file,err))
         return 1
 
     # Read file to memory
@@ -248,10 +248,9 @@ def write_output(filename, lines):
 
     try:
         g = open(newname, 'w')
-    except (IOError, msg):
+    except IOError as err:
         f.close()
-        err(newname+': cannot create: '+\
-            msg+'\n')
+        print('{} could not be opened: {}'.format(newname,err))
         return 1
     for line in lines: g.write(line)
     g.close()

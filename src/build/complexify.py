@@ -56,7 +56,7 @@ Mon Aug 14 19:53:53 PDT 2000:
 """
 
 import sys, os, glob
-import string, re
+import re
 from stat import *
 
 err = sys.stderr.write
@@ -166,8 +166,8 @@ def is_fortran(name, root):
 def fix_file(file):
     try:
         f = open(file, 'r')
-    except (IOError, msg):
-        err(file + ': cannot open: ' + repr(msg) + '\n')
+    except IOError as err:
+        print('Could not open file: {}'.format(err))
         return 1
     #rep(file + ':\n')
     # Read file to memory
@@ -246,10 +246,9 @@ def write_output(filename, lines):
     newname = os.path.join(head, 'c_' + tail)
     try:
         g = open(newname, 'w')
-    except (IOError, msg):
+    except IOError as err:
         f.close()
-        err(newname+': cannot create: '+\
-            repr(msg)+'\n')
+        print('Could not open file {}: {}'.format(newname, err))
         return 1
     for line in lines: g.write(line)
     g.close()
@@ -433,7 +432,7 @@ def fix_logic_expression(expression):
             rhs = fix_logic_rhs(rhs)
             split_expression[i] = lhs + operator + rhs
             # end for
-        expression = string.join(split_expression,'') # don't add spaces
+        expression = split_expression.join('') # don't add spaces
     return expression
 
 def fix_logic_lhs(lhs):
@@ -478,7 +477,7 @@ def fix_intrinsics(line):
     # this next part works only for fixed format files
     patt_char6colB = re.compile(r'\n\s{5,5}\S')
     tmpline=patt_char6colB.sub('',line) #join lines
-    tmpline=string.strip(tmpline)       #strip away white space
+    tmpline=tmpline.strip()       #strip away white space
     patt_intrinsicB = re.compile(r'^.*intrinsic\b(?:\s*:\s*:)?$',
                                  re.IGNORECASE)
     if patt_intrinsicB.match(tmpline): # then return empty line
