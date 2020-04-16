@@ -8,7 +8,7 @@ syntax:glob
 *.autogen
 config.mk
 config/config*
-src_cs/* 
+src_cs/*
 src/adjoint/temp*
 *.orig
 *.cgnsSpectral*
