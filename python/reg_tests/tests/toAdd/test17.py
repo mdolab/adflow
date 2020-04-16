@@ -85,7 +85,7 @@ funcs = {}
 CFDSolver.evalFunctions(ap, funcs)
 CFDSolver.checkSolutionFailure(ap, funcs)
 if MPI.COMM_WORLD.rank == 0:
-    print 'Eval Functions:'
+    print('Eval Functions:')
     reg_write_dict(funcs, 1e-6, 1e-6)
 
 os.system('rm  0012pitching*')

@@ -1,4 +1,3 @@
-from __future__ import print_function
 ############################################################
 # DO NOT USE THIS SCRIPT AS A REFERENCE FOR HOW TO USE ADFLOW
 # THIS SCRIPT USES PRIVATE INTERNAL FUNCTIONALITY THAT IS

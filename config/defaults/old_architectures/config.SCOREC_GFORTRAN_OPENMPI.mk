@@ -47,5 +47,5 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) $(CC_REAL_PRECISION_FLAG)
 
 # Define potentially different python, python-config and f2py executables:
 PYTHON = python
-PYTHON-CONFIG = python-config
+PYTHON-CONFIG = python3-config # use python-config for python 2
 F2PY = f2py

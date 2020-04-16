@@ -119,7 +119,7 @@ CFDSolver.addSlices('z',[0.5])
 CFDSolver(ap)
 
 refCoor = CFDSolver.getSurfaceCoordinates('allWalls')
-for tdx in xrange(1, nfineSteps+1):
+for tdx in range(1, nfineSteps+1):
     curTime, curTimeStep = CFDSolver.advanceTimeStepCounter()
     newCoor = callback(refCoor, curTime, curTimeStep)
     # Set displacements
@@ -132,7 +132,7 @@ funcs = {}
 CFDSolver.evalFunctions(ap, funcs)
 CFDSolver.checkSolutionFailure(ap, funcs)
 if MPI.COMM_WORLD.rank == 0:
-    print 'Eval Functions:'
+    print('Eval Functions:')
     reg_write_dict(funcs, 1e-6, 1e-6)
 
 os.system('rm  0012pitching*')

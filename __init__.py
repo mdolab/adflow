@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from mpi4py import MPI
 
 from .python.pyADflow import ADFLOW

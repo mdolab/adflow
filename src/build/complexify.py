@@ -56,7 +56,7 @@ Mon Aug 14 19:53:53 PDT 2000:
 """
 
 import sys, os, glob
-import string, re
+import re
 from stat import *
 
 err = sys.stderr.write
@@ -74,7 +74,7 @@ def main():
             + ' [-lucky_logic|-MIPS_logic|-fudge_format] file-pattern \t\n' + \
             '\tpython ' + sys.argv[0]
             + ' [-lucky_logic|-MIPS_logic|-fudge_format] file-pattern \n\n' )
-	sys.exit(2)
+        sys.exit(2)
 
     for arg in sys.argv[1:]:
         if arg == "-lucky_logic":
@@ -166,8 +166,8 @@ def is_fortran(name, root):
 def fix_file(file):
     try:
         f = open(file, 'r')
-    except IOError, msg:
-        err(file + ': cannot open: ' + `msg` + '\n')
+    except IOError as err:
+        print('Could not open file: {}'.format(err))
         return 1
     #rep(file + ':\n')
     # Read file to memory
@@ -184,11 +184,11 @@ def fix_file(file):
             break
         i_line = i_line + 1
     if not routine_found: # include file
-	#print i_line, 'Routine not found in file, must be include file'
+        #print i_line, 'Routine not found in file, must be include file'
         i_line = 0
         i_line, is_EOF = fix_routine(i_line, lines)
         if is_EOF:
-            print 'EOF'
+            print('EOF')
     else:                  # routine file
         while 1:
             if (i_line >= len(lines)): break
@@ -246,10 +246,9 @@ def write_output(filename, lines):
     newname = os.path.join(head, 'c_' + tail)
     try:
         g = open(newname, 'w')
-    except IOError, msg:
+    except IOError as err:
         f.close()
-        err(newname+': cannot create: '+\
-            `msg`+'\n')
+        print('Could not open file {}: {}'.format(newname, err))
         return 1
     for line in lines: g.write(line)
     g.close()
@@ -433,7 +432,7 @@ def fix_logic_expression(expression):
             rhs = fix_logic_rhs(rhs)
             split_expression[i] = lhs + operator + rhs
             # end for
-        expression = string.join(split_expression,'') # don't add spaces
+        expression = split_expression.join('') # don't add spaces
     return expression
 
 def fix_logic_lhs(lhs):
@@ -478,7 +477,7 @@ def fix_intrinsics(line):
     # this next part works only for fixed format files
     patt_char6colB = re.compile(r'\n\s{5,5}\S')
     tmpline=patt_char6colB.sub('',line) #join lines
-    tmpline=string.strip(tmpline)       #strip away white space
+    tmpline=tmpline.strip()       #strip away white space
     patt_intrinsicB = re.compile(r'^.*intrinsic\b(?:\s*:\s*:)?$',
                                  re.IGNORECASE)
     if patt_intrinsicB.match(tmpline): # then return empty line
@@ -514,7 +513,7 @@ def skip_continuation(i, lines):
         elif patt_blankline.match(lines[i]):
             is_continuation = 1
         elif (patt_amperend.match(lines[i-1])):
-              is_continuation = 1
+            is_continuation = 1
         else: is_continuation = 0
         i = i+1 # i += 1
     i = i - 1   # i -= 1

@@ -105,7 +105,7 @@ class WEIGHTANDBALANCE(Base):
         #determine the number of surfaces in geometry
         ncomp = len(acg)
         #loop over surfaces
-        for i in xrange(ncomp):
+        for i in range(ncomp):
             #print 'ncomp',i,ncomp
             #deal only with the lifting surfaces
             #print 'isisnstance',isinstance(acg[i],LiftingSurface)
@@ -118,7 +118,7 @@ class WEIGHTANDBALANCE(Base):
                     #Compute total area and span for this lifting surface
                     sumSpan = 0.0
                     sumArea = 0.0
-                    for j in xrange(nseg):
+                    for j in range(nseg):
                         Span = acg[i][j].Span
                         Area = acg[i][j].Area
                         sumSpan = sumSpan+Span
@@ -134,7 +134,7 @@ class WEIGHTANDBALANCE(Base):
                     xC4sum = 0.0
                     counter = 0
                     #loop over wing segments
-                    for j in xrange(nseg):
+                    for j in range(nseg):
                         #Segments are linear therfore single a
                         #trapezoid gives exact answer
 
@@ -258,7 +258,7 @@ class WEIGHTANDBALANCE(Base):
         #determine the number of surfaces in geometry
         ncomp = len(acg)
         #loop over surfaces
-        for i in xrange(ncomp):
+        for i in range(ncomp):
             #print 'ncomp',i,ncomp
             #deal only with the lifting surfaces
             #print 'isisnstance',isinstance(acg[i],LiftingSurface)
@@ -268,7 +268,7 @@ class WEIGHTANDBALANCE(Base):
                     #Determine the number of segments that make up the wing
                     nseg=len(acg[i])
                     #loop over wing segments
-                    for j in xrange(nseg):
+                    for j in range(nseg):
                         #Copy parameters from geometry
                         tc_root = acg[i][j].root_Thickness #thickness to chord ratio...
                         tc_tip = acg[i][j].tip_Thickness
@@ -422,8 +422,8 @@ class WEIGHTANDBALANCE(Base):
         totalInertia = numpy.zeros([3],dtype)
        #  Uc = numpy.zeros([nv-1,nu-1],dtype)
 #         Vc = numpy.zeros([nv-1,nu-1],dtype)
-#         for i in xrange(nv-1):
-#             for j in xrange(nu-1):
+#         for i in range(nv-1):
+#             for j in range(nu-1):
 #                 #print 'UV',V[i,j],V[i,j+1],U[i,j],U[i+1,j]
 #                 Uc[i,j] = U[i,j]+0.5*(U[i+1,j]-U[i,j])
 #                 #print 'Uc',Uc[i,j],i,j
@@ -432,12 +432,12 @@ class WEIGHTANDBALANCE(Base):
 #             #end
 #         #end
         Xcg = [xcg,0.0,0.0]
-        for i in xrange(nSurf):
+        for i in range(nSurf):
             tempX =  X[i,:,:,:]
             tempXc = Xc[i,:,:,:]
             sz = tempX.shape
-            for j in xrange(sz[0]-1):
-                for k in xrange(sz[1]-1):
+            for j in range(sz[0]-1):
+                for k in range(sz[1]-1):
                     #print temp[j,k],j,k
                     v1[0] = tempX[j+1,k+1,0]-tempX[j,k,0]
                     v1[1] = tempX[j+1,k+1,1]-tempX[j,k,1]
@@ -477,7 +477,7 @@ class WEIGHTANDBALANCE(Base):
         #print 'area2',Area
         #print SurfaceInertia
         self.totalMass = totalMass
-        for i in xrange(nSurf):
+        for i in range(nSurf):
             totalInertia = totalInertia+SurfaceInertia[:,i]
         #end
         temp = self.getOption('inertiaModifier')
@@ -515,20 +515,20 @@ class WEIGHTANDBALANCE(Base):
 
 ## def getAverageThickness(acg,surface,forwardSparPercent,rearSparPercent,npts):
 ##     percentchord = numpy.zeros([npts],numpy.float)
-##     for i in xrange(npts):
+##     for i in range(npts):
 ##         percentchord[i] =forwardSparPercent+(rearSparPercent-forwardSparPercent)*( float(i)/float(npts-1))
 ##     #endfor
 ##     thickness =surface.getThickness(npts,percentchord)
 
 ##     ncomp = len(acg)
     
-##     for i in xrange(ncomp):
+##     for i in range(ncomp):
 ##         if isinstance(acg[i],LiftingSurface):
 ##             #Deal only with the wing
 ##             if acg[i].Name.lower()=='wing':
 ##                 rootIndex = 0
 ##                 nseg=len(acg[i])
-##                 for j in xrange(nseg):
+##                 for j in range(nseg):
                     
 ##                     if j ==0:
 ##                         tipIndex = rootIndex+acg[i][j].surface_SW_segments
@@ -570,19 +570,19 @@ class WEIGHTANDBALANCE(Base):
         '''
         ncomp = len(acg)
         
-        for i in xrange(ncomp):
+        for i in range(ncomp):
             if isinstance(acg[i],LiftingSurface):
                 #Deal only with the wing
                 if acg[i].Name.lower()=='wing':
                     rootIndex = 0
                     nseg=len(acg[i])
-                    for j in xrange(nseg):
+                    for j in range(nseg):
                         if (numpy.mod(len(thickness),nseg)==0):
                             #print 'thickness ok',numpy.mod(len(thickness),nseg)
                             multiple = len(thickness)/nseg
                             #print multiple
                         else:
-                            print 'Number of spanwise thicknesses must be a multiple of %d'%(nseg)
+                            print('Number of spanwise thicknesses must be a multiple of %d'%(nseg))
                         #endif
                         ##  if j ==0:
 ##                         tipIndex = rootIndex+acg[i][j].surface_SW_segments
@@ -626,13 +626,13 @@ class WEIGHTANDBALANCE(Base):
 
         ncomp = len(acg)
         
-        for i in xrange(ncomp):
+        for i in range(ncomp):
             if isinstance(acg[i],LiftingSurface):
                 #Deal only with the wing
                 if acg[i].Name.lower()=='wing':
                     TotalVolume = 0.0
                     nseg=len(acg[i])
-                    for j in xrange(nseg):
+                    for j in range(nseg):
                         #thickness to chord ratios...
                         tc_root =acg[i][j].root_Thickness_act
                         tc_tip = acg[i][j].tip_Thickness_act
@@ -660,12 +660,12 @@ class WEIGHTANDBALANCE(Base):
                 #endif
             #endif
         #endfor
-        for i in xrange(ncomp):
+        for i in range(ncomp):
             if isinstance(acg[i],LiftingSurface):
                 #Deal only with the wing
                 if acg[i].Name.lower()=='wing':
                     nseg=len(acg[i])
-                    for j in xrange(nseg):
+                    for j in range(nseg):
                         #print 'weights',nseg,Weight,acg[i][j].volumeWeight,
                         acg[i][j].Weight = Weight*(acg[i][j].volumeWeight/TotalVolume)
                         #print 'acg weight',acg[i][j].Weight,acg[i][j].volumeWeight,TotalVolume,i,j
@@ -692,7 +692,7 @@ class WEIGHTANDBALANCE(Base):
         #geo.complex = True
         for key in xw.keys():
             CGderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #if comm.rank == 0: print 'test',xw[key][i],xref[key][i],deltax,key,i
                 xw[key][i] = xref[key][i]+deltax
                 #if comm.rank == 0:print 'xw',xw
@@ -734,7 +734,7 @@ class WEIGHTANDBALANCE(Base):
         for key in xw.keys():
             MACDeriv[key] =[]
             MACc4Deriv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #if comm.rank == 0: print 'test',xw[key][i],xref[key][i],deltax,key,i
                 xw[key][i] = xref[key][i]+deltax
                 #if comm.rank == 0:print 'xw',xw
@@ -772,7 +772,7 @@ class WEIGHTANDBALANCE(Base):
         #geo.complex = True
         for key in xw.keys():
             BMderiv[key] =[]
-            for i in xrange(len(xw[key])):
+            for i in range(len(xw[key])):
                 #if comm.rank == 0: print 'test',xw[key][i],xref[key][i],deltax,key,i
                 xw[key][i] = xref[key][i]+deltax
                 #if comm.rank == 0:print 'xw',xw
@@ -822,6 +822,6 @@ class WEIGHTANDBALANCE(Base):
 if __name__ == '__main__':
     
     # Test ADflow
-    print 'Testing ...'
+    print('Testing ...')
     wbc = WEIGHTANDBALANCE()
-    print wbc
+    print(wbc)
