@@ -3,6 +3,12 @@
 Tutorial
 ========
 
+Meshing
+-------
+
+Before running ADflow we need a CGNS mesh. For a complete tutorial on using MACH, including meshing, please refer to the `MACH aero tutorial <https://github.com/mdolab/MACH_Aero_Tutorials>`_.
+
+
 Basic Run Script
 ----------------
 
@@ -192,3 +198,5 @@ THIS DEPENDS ON THE COORDINATES
 
   * negative rotation (-deltaAlpha) will pitch the wing upwards
   * positive rotation (+deltaAlpha) will pitch the wing downwards
+
+
