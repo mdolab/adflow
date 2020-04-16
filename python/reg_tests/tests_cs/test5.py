@@ -74,20 +74,20 @@ if not 'complex' in sys.argv:
     # Write values and derivatives out:
     if MPI.COMM_WORLD.rank == 0:
         for key in ['cd','cmz','lift']:
-            print 'funcs[%s]:'%key
+            print('funcs[%s]:'%key)
             reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
         # Now write the derivatives in the same order the CS will do them:
-        print ('Alpha Derivatives:')
+        print('Alpha Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cd']['alpha_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['alpha_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_lift']['alpha_mdo_tutorial'], 1e-10,1e-10)
 
-        print ('Mach Derivatives:')
+        print('Mach Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cd']['mach_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_lift']['mach_mdo_tutorial'], 1e-10,1e-10)
 
-        print ('Altitude Derivatives:')
+        print('Altitude Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cd']['altitude_mdo_tutorial'], 1e-8,1e-8)
         reg_write(funcsSens['mdo_tutorial_cmz']['altitude_mdo_tutorial'], 1e-8,1e-8)
         reg_write(funcsSens['mdo_tutorial_lift']['altitude_mdo_tutorial'], 1e-8,1e-8)
@@ -113,23 +113,23 @@ else:
         if MPI.COMM_WORLD.rank == 0:
             if ii == 0:
                 for key in ['cd','cmz','lift']:
-                    print 'funcs[%s]:'%key
+                    print('funcs[%s]:'%key)
                     reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
             if ii == 0:
-                print ('Alpha Derivatives:')
+                print('Alpha Derivatives:')
                 for key in ['cd','cmz','lift']:
                     deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
                     reg_write(deriv,1e-10,1e-10)
 
             elif ii == 1:
-                print ('Mach Derivatives:')
+                print('Mach Derivatives:')
                 for key in ['cd','cmz','lift']:
                     deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
                     reg_write(deriv,1e-10,1e-10)
 
             else:
-                print ('AltitudeDerivatives:')
+                print('AltitudeDerivatives:')
                 for key in ['cd','cmz','lift']:
                     deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
                     reg_write(deriv,1e-10,1e-10)

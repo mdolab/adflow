@@ -58,7 +58,7 @@ if args.mode == 'train':
 
     # Run each script
     for iTest in tests:
-        print 'Running reference for test%d'%iTest
+        print('Running reference for test%d'%iTest)
         os.system('%s -np %d python tests_cs/test%d.py %s > ref_cs/%s_test%d_reg.ref 2>&1'%(
             args.mpiexec, args.procs, iTest, solveStr, module_name, iTest))
             
@@ -88,14 +88,14 @@ else:
 
         # Set the proper return codes for the script running this:
         if res == reg.REG_FILES_MATCH:
-            print '%s test%d: Success!'%(module_name, iTest)
+            print('%s test%d: Success!'%(module_name, iTest))
         elif res == reg.REG_FILES_DO_NOT_MATCH:
-            print '%s test%d: Failure!'%(module_name, iTest)
+            print('%s test%d: Failure!'%(module_name, iTest))
             if  args.diff:
                 os.system('%s %s %s'%(args.diff_cmd, refFile, curFile))
             masterRes += 1
         elif res == reg.REG_ERROR:
-            print '%s test%d: Error in regression. Missing files.'%(module_name, iTest)
+            print('%s test%d: Error in regression. Missing files.'%(module_name, iTest))
             masterRes += 1
 
         # Concentenate outputs for reference if it failed:

@@ -1,4 +1,3 @@
-from __future__ import print_function
 # This file defines testing methods that match those in commonUtils.py, 
 # but that execute using the OpenMDAO wrapper instead of bare ADflow
 import numpy as np 
