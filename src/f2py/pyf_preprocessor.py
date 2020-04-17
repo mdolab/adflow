@@ -1,4 +1,3 @@
-from __future__ import print_function
 
 header_str = ''' pyf_processor.py is used to automatically process a
 particular form of pyf file that allows the specification of both the

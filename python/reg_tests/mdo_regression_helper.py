@@ -1,4 +1,3 @@
-from __future__ import print_function
 # This file contains two functions to help regression testing. The
 # first is used to format float values with a specified absolute and
 # relative tolerance. This information is used by the second function
@@ -25,15 +24,15 @@ def reg_write(values, rel_tol=1e-12, abs_tol=1e-12):
     for val in values:
         s = '@value %20.13e %g %g'% (val, rel_tol, abs_tol)
         print(s)
-
+ 
     return
 
 def reg_par_write(values, rel_tol=1e-12, abs_tol=1e-12):
     """Write value(values) from parallel process in sorted order"""
     values = MPI.COMM_WORLD.gather(values)
     if MPI.COMM_WORLD.rank == 0:
-        for i in xrange(len(values)):
-            print ('Value(s) on processor: %d'%i)
+        for i in range(len(values)):
+            print('Value(s) on processor: %d'%i)
             reg_write(values[i], rel_tol, abs_tol)
 
 def reg_root_write(values, rel_tol=1e-12, abs_tol=1e-12):
@@ -56,7 +55,7 @@ def reg_par_write_norm(values, rel_tol=1e-12, abs_tol=1e-12):
 def reg_write_dict(d, rel_tol=1e-12, abs_tol=1e-12):
     """Write all values in a dictionary in sorted key order"""
     for key in sorted(d.keys()):
-        print ('Dictionary Key: %s'%key)
+        print('Dictionary Key: %s'%key)
         if isinstance(d[key],dict):
             reg_write_dict(d[key], rel_tol, abs_tol)
         elif type(d[key]) == bool:
@@ -79,19 +78,19 @@ def _reg_str_comp(str1, str2):
     if not aux1[0] == aux2[0] == '@value':
         # This line does not need to be compared
         return True
-
+    
     # Extract required tolerances and values
     rel_tol = float(aux1[2])
     abs_tol = float(aux1[3])
     val1 = float(aux1[1])
     val2 = float(aux2[1])
-
+    
     rel_err = 0
     if val2 != 0:
         rel_err = abs((val1-val2)/val2)
     else:
         rel_err = abs((val1-val2)/(val2 + 1e-16))
-
+        
     abs_err = abs(val1-val2)
 
     if abs_err < abs_tol or rel_err < rel_tol:
@@ -106,7 +105,7 @@ def reg_file_comp(ref_file, comp_file):
     first. Only values specified by reg_write() are compared.  All
     other lines are ignored. Floating point values are compared based
     on rel_tol and abs_tol'''
-
+    
     all_ref_lines = []
     ref_values = []
     comp_values = []
@@ -141,20 +140,20 @@ def reg_file_comp(ref_file, comp_file):
     if len(ref_values) != len(comp_values):
         print('Error: number of @value lines in file not the same!')
         return REG_FILES_DO_NOT_MATCH
-
+    
     # Open the (new) comp_file:
     f = open(comp_file,'w')
 
     # Loop over all the ref_lines, for value lines, do the
     # comparison. If comparison is ok, write the ref line, otherwise
-    # write orig line.
+    # write orig line. 
 
     j = 0
     res = REG_FILES_MATCH
     for i in range(len(all_ref_lines)):
         line = all_ref_lines[i]
         if line[0:6] == '@value':
-            if _reg_str_comp(line, comp_values[j]) is False:
+            if _reg_str_comp(line, comp_values[j]) is False:            
                 f.write(comp_values[j])
                 res = REG_FILES_DO_NOT_MATCH
             else:
@@ -199,7 +198,8 @@ if __name__ == '__main__':
 
     else:
         res = reg_file_comp(sys.argv[1], sys.argv[2])
-        if res == 0:
-            print ('Success!')
-        elif res == 1:
-            print ('Failure!')
+        if res == 0: 
+            print('Success!')
+        elif res == 1: 
+            print('Failure!')
+

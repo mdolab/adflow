@@ -90,6 +90,6 @@ numpy.savetxt(fd, minFace, fmt="%5d %5.3f %5.3f")
 
 fd.close()    
 
-print 90*"=" + "\n"
-print "Loal balance analysis written to: \n" + outName
-print "\n" + 90*"="
+print(90*"=" + "\n")
+print("Loal balance analysis written to: \n" + outName)
+print("\n" + 90*"=")

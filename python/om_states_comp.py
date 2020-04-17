@@ -1,4 +1,3 @@
-
 import numpy as np
 import pprint
 from pygeo import DVGeometry, DVConstraints

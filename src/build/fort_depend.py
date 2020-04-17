@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from __future__ import print_function
 import os
 import re
 
@@ -14,7 +13,7 @@ def run(files=None,verbose=True,overwrite=None,output=None,macros={},build=''):
     if verbose:
         for i in depends.keys():
             print("\033[032m"+i+"\033[039m depends on :\033[034m")
-            for j in depends[i]: print ("\t"+j)
+            for j in depends[i]: print("\t"+j)
             print("\033[039m")
 
     if output is None:

@@ -72,14 +72,14 @@ DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, n
                                         y=numpy.zeros(nTwist),
                                         z=numpy.linspace(0,14, nTwist), k=2))
 def twist(val, geo):
-    for i in xrange(nTwist):
+    for i in range(nTwist):
         geo.rot_z['wing'].coef[i] = val[i]
 
 def span(val, geo):
     # Span
     C = geo.extractCoef('wing')
     s = geo.extractS('wing')
-    for i in xrange(len(C)-1):
+    for i in range(len(C)-1):
         C[-1, 2] = C[-1, 2] + val[0]
     geo.restoreCoef(C, 'wing')
 
@@ -103,25 +103,25 @@ if not 'complex' in sys.argv:
     # Write values and derivatives out:
     if MPI.COMM_WORLD.rank == 0:
         for key in ['cl','cmz','drag']:
-            print 'funcs[%s]:'%key
+            print('funcs[%s]:'%key)
             reg_write(funcs['mdo_tutorial_%s'%key],1e-10,1e-10)
         # Now write the derivatives in the same order the CS will do them:
-        print ('Twist[0] Derivatives:')
+        print('Twist[0] Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['twist'][0][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['twist'][0][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['twist'][0][0], 1e-10,1e-10)
 
-        print ('Span Derivatives:')
+        print('Span Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['span'][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['span'][0], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['span'][0], 1e-10,1e-10)
 
-        print ('shape[13] Derivatives:')
+        print('shape[13] Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['shape'][0][13], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['shape'][0][13], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['shape'][0][13], 1e-10,1e-10)
 
-        print ('mach Derivatives:')
+        print('mach Derivatives:')
         reg_write(funcsSens['mdo_tutorial_cl']['mach_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_cmz']['mach_mdo_tutorial'], 1e-10,1e-10)
         reg_write(funcsSens['mdo_tutorial_drag']['mach_mdo_tutorial'], 1e-10,1e-10)
@@ -149,17 +149,17 @@ else:
         if MPI.COMM_WORLD.rank == 0:
             if ii == 0:
                 for key in ['cl','cmz','drag']:
-                    print 'funcs[%s]:'%key
+                    print('funcs[%s]:'%key)
                     reg_write(numpy.real(funcs['mdo_tutorial_%s'%key]),1e-10,1e-10)
 
             if ii == 0:
-                print ('Twist[0] Derivatives:')
+                print('Twist[0] Derivatives:')
             elif ii == 1:
-                print ('Span Derivatives:')
+                print('Span Derivatives:')
             elif ii == 2:
-                print ('shape[13] Derivatives:')
+                print('shape[13] Derivatives:')
             elif ii == 3:
-                print ('mach Derivatives:')
+                print('mach Derivatives:')
 
             for key in ['cl','cmz','drag']:
                 deriv = numpy.imag(funcs['mdo_tutorial_%s'%key])/h
