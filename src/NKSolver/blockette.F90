@@ -300,6 +300,7 @@ contains
          bie=>ie, bje=>je, bke=>ke, &
          bib=>ib, bjb=>jb, bkb=>kb, &
          bw=>w, bp=>p, bgamma=>gamma, &
+         bradi=>radi, bradj=>radj, bradk=>radk, &
          bx=>x, brlv=>rlv, brev=>rev, bvol=>vol, bVolRef=>volRef, bd2wall=>d2wall, &
          biblank=>iblank, bPorI=>porI, bPorJ=>porJ, bPorK=>porK, bdw=>dw, bfw=>fw, &
          bShockSensor=>shockSensor, &
@@ -674,6 +675,22 @@ contains
                       end do
                    end do
                 end do
+
+                ! also copy rad i j k
+                ! we need these to be updated in main memory because
+                ! the reverse mode AD routines do use these variables.
+                ! after every ANK and NK step, blocketteRes is called
+                ! with updateDt = True, and it will update these
+                ! arrays in main memory.
+                do k=1, ke
+                  do j=1, je
+                     do i=1, ie
+                        bradi(i+ii-2, j+jj-2, k+kk-2) = radi(i, j, k)
+                        bradj(i+ii-2, j+jj-2, k+kk-2) = radj(i, j, k)
+                        bradk(i+ii-2, j+jj-2, k+kk-2) = radk(i, j, k)
+                     end do
+                  end do
+               end do
              end if
           end do
        end do
