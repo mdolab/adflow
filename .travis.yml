@@ -13,12 +13,16 @@ env:
     - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
   jobs:
     # We split it into two builds, real and complex to parallelize
-    - DOCKER_TAG=py2-stable TEST_TYPE=REAL
-    - DOCKER_TAG=py2-stable TEST_TYPE=COMPLEX
     - DOCKER_TAG=py2-latest TEST_TYPE=REAL
     - DOCKER_TAG=py2-latest TEST_TYPE=COMPLEX
-    - DOCKER_TAG=py2-impi TEST_TYPE=REAL
-    - DOCKER_TAG=py2-impi TEST_TYPE=COMPLEX
+    - DOCKER_TAG=py3-stable TEST_TYPE=REAL
+    - DOCKER_TAG=py3-stable TEST_TYPE=COMPLEX
+    - DOCKER_TAG=py3-latest TEST_TYPE=REAL
+    - DOCKER_TAG=py3-latest TEST_TYPE=COMPLEX
+    - DOCKER_TAG=py3-impi TEST_TYPE=REAL
+    - DOCKER_TAG=py3-impi TEST_TYPE=COMPLEX
+    - DOCKER_TAG=py3-centos7-impi TEST_TYPE=REAL
+    - DOCKER_TAG=py3-centos7-impi TEST_TYPE=COMPLEX
     
 
 before_install:
@@ -37,9 +41,17 @@ install:
   - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python && wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz && tar -xzf adflow_input_files.tar.gz"
   # Compile real and complex builds
   - if [ "$TEST_TYPE" = "REAL" ]; then
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make";
+    - if [[ "$DOCKER_TAG" == "py2"* ]]; then
+        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make";
+      else
+        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make";
+      fi
     else
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
+    - if [[ "$DOCKER_TAG" == "py2"* ]]; then
+        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
+      else
+        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
+      fi
     fi
 
 script:
