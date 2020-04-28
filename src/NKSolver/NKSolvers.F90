@@ -312,7 +312,7 @@ contains
     end do spectralLoop4b
 
     ! Evaluate the residual now
-    call computeResidualNK()
+    call computeResidualNK(useUpdateIntermed = .True.)
     call getCurrentResidual(rhoRes, totalRRes)
 
     ! Put everything back
@@ -444,7 +444,7 @@ contains
     ! computeResidualNK subroutine
 
     call setW(wVec)
-    call computeResidualNK()
+    call computeResidualNK(useUpdateIntermed = .False.)
     call setRVec(rVec)
     ! We don't check an error here, so just pass back zero
     ierr = 0
@@ -532,7 +532,7 @@ contains
 
        ! Evaluate the residual before we start and put the residual in
        ! 'g', which is what would be the case after a linesearch.
-       call computeResidualNK()
+       call computeResidualNK(useUpdateIntermed = .False.)
        call setRVec(rVec)
        iter_k = 1
        iter_m = 0
@@ -718,7 +718,7 @@ contains
 
     ! Compute Function:
     call setW(w)
-    call computeResidualNK()
+    call computeResidualNK(useUpdateIntermed = .True.)
     call setRVec(g, flowRes2, turbRes2, gnorm)
 
     nfevals = nfevals + 1
@@ -761,7 +761,7 @@ contains
 
           ! Compute Function
           call setW(w)
-          call computeResidualNK()
+          call computeResidualNK(useUpdateIntermed = .True.)
           call setRVec(g, flowRes2, turbRes2, gnorm)
 
           nfevals = nfevals + 1
@@ -831,7 +831,7 @@ contains
 
     ! Compute new function again:
     call setW(w)
-    call computeResidualNK()
+    call computeResidualNK(useUpdateIntermed = .True.)
     call setRVec(g)
 
     nfevals = nfevals + 1
@@ -896,7 +896,7 @@ contains
 #endif
        ! Compute new function again:
        call setW(w)
-       call computeResidualNK()
+       call computeResidualNK(useUpdateIntermed = .True.)
        call setRVec(g)
        nfevals = nfevals + 1
 
@@ -943,7 +943,7 @@ contains
 
     ! Compute new function:
     call setW(w)
-    call computeResidualNK()
+    call computeResidualNK(useUpdateIntermed = .True.)
     call setRVec(g)
 
     nfevals = nfevals + 1
@@ -1016,7 +1016,7 @@ contains
 
        ! Compute Function @ new x (w is the work vector
        call setW(w)
-       call computeResidualNK()
+       call computeResidualNK(useUpdateIntermed = .True.)
        call setRVec(g)
        nfevals = nfevals + 1
 
@@ -1046,19 +1046,24 @@ contains
     step = alpha
   end subroutine LSNM
 
-  subroutine computeResidualNK()
+  subroutine computeResidualNK(useUpdateIntermed)
 
     use constants
     use blockette, only : blocketteRes
     implicit none
 
-    logical :: updateDt
+    logical, intent(in), optional :: useUpdateIntermed
+    logical :: updateIntermed
 
-    ! We want to update the time step
-    updateDt = .true.
+    ! Only update the time step if explicitly requested
+    updateIntermed = .false.
+
+    if (present(useUpdateIntermed)) then
+      updateIntermed = useUpdateIntermed
+    end if
 
     ! Shell function to maintain backward compatibility with code using computeResidualNK
-    call blocketteRes(useUpdateDT = updateDt)
+    call blocketteRes(useUpdateIntermed = updateIntermed)
 
   end subroutine computeResidualNK
 
@@ -1389,7 +1394,7 @@ contains
     integer(kind=intType) :: nn,i,j,k,l,counter,sps
     real(kind=realType) :: ovv
 
-    call computeResidualNK()
+    call computeResidualNK(useUpdateIntermed = .True.)
     counter = 0
     do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
@@ -3611,7 +3616,7 @@ contains
        call setwVecANK(wVec,1,nstate)
 
        ! Evaluate the residual before we start
-       call blocketteRes(useUpdateDt=.True.)
+       call blocketteRes(useUpdateIntermed=.True.)
        if (ANK_coupled) then
           call setRvec(rVec)
        else
@@ -3933,7 +3938,7 @@ contains
     ! also need the to update the update the time step and the
     ! viscWall pointer stuff
 
-    call blocketteRes(useUpdateDt=.True.)
+    call blocketteRes(useUpdateIntermed=.True.)
 
     feval = feval + 1
     if (ANK_coupled) then
