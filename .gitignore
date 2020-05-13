@@ -37,6 +37,11 @@ python/reg_tests/*.txt
 python/reg_tests/*.zipper
 python/inputFiles.tar.gz
 
+python/inputFiles/*
+
+tests/*.cgns
+tests/*out
+
 # optimization reports from intel compilers
 *.optrpt
 

@@ -135,7 +135,12 @@ def get_depends(fob=[],m2f=[]):
                 if m2f[j.lower()] != i.file_name:
                     tmp.append(m2f[j.lower()])
             except:
-                print("\033[031mError\033[039m module \033[032m"+j+"\033[039m not defined in any files. Skipping...")
+                if j == 'petsc' or j == 'mpi' or j=='iso_fortran_env' or 'cgns':
+                    # these dependence will be resolved through the included libraries
+                    # there is no need to scare the user with the error message 
+                    continue
+                else:
+                    print("\033[031mError\033[039m module \033[032m"+j+"\033[039m not defined in any files. Skipping...")
         deps[i.file_name]=tmp
 
     return deps

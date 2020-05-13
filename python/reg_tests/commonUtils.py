@@ -293,7 +293,8 @@ def standardTest(CFDSolver, ap, solve):
     res /= totalR0
     parPrint('Norm of residual')
     reg_par_write_norm(res, 1e-10, 1e-10)
-
+    
+    import ipdb; ipdb.set_trace()
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs, defaultFuncList)
     parPrint('Eval Functions:')

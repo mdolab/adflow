@@ -34,12 +34,13 @@ options.update(
      'monitorvariables':['cpu', 'resrho','cl','cd','cmz','totalr'],
      'usenksolver':True,
      'vis4':0.1,
-     'l2convergence':1e-14,
+     'l2convergence':1e-13,
      'l2convergencecoarse':1e-2,
      'nkswitchtol':1e-2,
      'adjointl2convergence': 1e-14,
      'solutionprecision':'double',
      'gridprecision':'double',
+     'useblockettes': False
  })
 
 
