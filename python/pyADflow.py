@@ -4541,7 +4541,7 @@ class ADFLOW(AeroSolver):
             'coarsediscretization':[str, 'central plus scalar dissipation'],
             'limiter':[str, 'vanalbeda'],
             'smoother':[str, 'runge kutta'],
-            'equationtype': [str, 'euler'],
+            'equationtype': [str, 'rans'],
             'equationmode': [str, 'steady'],
             'flowtype':[str, 'external'],
             'turbulencemodel':[str, 'sa'],
@@ -4564,14 +4564,14 @@ class ADFLOW(AeroSolver):
             'liftindex':[int, 2],
             'lowspeedpreconditioner':[bool, False],
             'walldistcutoff':[float, 1e20],
-            'infchangecorrection':[bool, False],
+            'infchangecorrection':[bool, True],
             'cavitationnumber':[float, 1.4],
 
             # Common Paramters
             'ncycles':[int, 500],
             'timelimit':[float, -1.0],
             'ncyclescoarse':[int, 500],
-            'nsubiterturb':[int, 1],
+            'nsubiterturb':[int, 3],
             'nsubiter':[int, 1],
             'cfl':[float, 1.7],
             'cflcoarse':[float, 1.0],
@@ -4580,7 +4580,7 @@ class ADFLOW(AeroSolver):
             'resaveraging':[str,'alternateresaveraging'],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
-            'useblockettes':[bool, True],
+            'useblockettes':[bool, False],
             'uselinresmonitor':[bool, False],
 
             # Overset Parameters:
@@ -4653,7 +4653,7 @@ class ADFLOW(AeroSolver):
             'agmgnsmooth':[int, 3],
 
             # Approximate Newton-Krylov Parameters
-            'useanksolver':[bool, False],
+            'useanksolver':[bool, True],
             'ankuseturbdadi':[bool, True],
             'ankswitchtol':[float, 1.0],
             'anksubspacesize':[int, -1],
