@@ -39,19 +39,20 @@ install:
   - docker exec -it app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
   # Now download the regression input files
   - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/python && wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz && tar -xzf adflow_input_files.tar.gz"
+  # Copy over the correct config file and modify as needed
+  - if [[ "$DOCKER_TAG" == "py3-centos7-impi" ]]; then
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_INTEL.mk config/config.mk";
+    else
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk";
+      if [[ "$DOCKER_TAG" == "py2"* ]]; then
+        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && sed -i 's/python3-config/python-config/g' config/config.mk";
+      fi
+    fi
   # Compile real and complex builds
   - if [ "$TEST_TYPE" = "REAL" ]; then
-      if [[ "$DOCKER_TAG" == "py2"* ]]; then
-        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make";
-      else
-        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make";
-      fi
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && make";
     else
-      if [[ "$DOCKER_TAG" == "py2"* ]]; then
-        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && sed -i 's/python3-config/python-config/g' config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
-      else
-        docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
-      fi
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
     fi
 
 script:
