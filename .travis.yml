@@ -1,7 +1,8 @@
-os:
-  - linux
+dist: xenial
 
-language: generic
+branches:
+  only:
+    - master
 
 services:
   - docker
