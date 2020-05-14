@@ -1118,7 +1118,7 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType) ::  pLocal
-    logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
+    logical :: dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall
 
     flowRes = .True.
     if (present(useFlowRes)) then
@@ -1146,12 +1146,12 @@ contains
     ! Set the flags:
     dissApprox = lumpedDiss
     viscApprox = lumpedDiss
-    updateDt = .False.
+    updateIntermed = .False.
     storeWall = .True.
     blockettes: if (useBlockettes) then
-       call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
+       call blocketteResCore(dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall)
     else
-       call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
+       call blockResCore(dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall, nn, sps)
     end if blockettes
     do iRegion=1, nActuatorRegions
        call sourceTerms_block(nn, .True., iRegion, pLocal)
