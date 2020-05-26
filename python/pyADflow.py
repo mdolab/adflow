@@ -3298,8 +3298,11 @@ class ADFLOW(AeroSolver):
             # Now set the flags and possibly reset adjoint
             if self.adflow.killsignals.adjointfailed:
                 self.curAP.adjointFailed = True
-                # Reset stored adjoint
-                self.curAP.adflowData.adjoints[objective][:] = 0.0
+                # Reset stored adjoint if we want to skip
+                if self.getOption('skipafterfailedadjoint'):
+                    self.curAP.adflowData.adjoints[objective][:] = 0.0
+                else:
+                    self.curAP.adflowData.adjoints[objective] = psi
             else:
                 self.curAP.adflowData.adjoints[objective] = psi
                 self.curAP.adjointFailed = False
