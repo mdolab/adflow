@@ -320,6 +320,10 @@ contains
 
     deallocate(tmp)
 
+    ! propogate the old values throught the code. 
+    call computeResidualNK(useUpdateIntermed = .True.)
+    
+
   end subroutine getFreeStreamResidual
 
   subroutine getCurrentResidual(rhoRes,totalRRes)
