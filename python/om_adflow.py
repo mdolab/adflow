@@ -5,7 +5,7 @@ from baseclasses import AeroProblem
 from idwarp import USMesh
 from adflow import ADFLOW
 
-from openmdao.api import Group, PetscKSP, LinearRunOnce, LinearUserDefined, IndepVarComp
+from openmdao.api import Group, PETScKrylov, LinearRunOnce, LinearUserDefined, IndepVarComp
 
 from .om_states_comp import OM_STATES_COMP
 from .om_func_comp import OM_FUNC_COMP
@@ -21,16 +21,16 @@ class OM_ADFLOW(Group):
         self.options.declare('ap', types=AeroProblem)
         self.options.declare('setup_cb', types=types.FunctionType, allow_none=True, default=None)
 
-        self.options.declare('use_OM_KSP', default=False, types=bool, 
+        self.options.declare('use_OM_KSP', default=False, types=bool,
             desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
 
-        self.options.declare('owns_indeps', default=False, 
+        self.options.declare('owns_indeps', default=False,
             desc="when True will create IndepVarComp with outputs for all des vars")
         self.options.declare('debug', default=False)
 
     def setup(self):
         ap = self.options['ap']
-        
+
         self.solver, self.mesh, self.dvgeo, self.dvcon = self.options['setup_cb'](self.comm)
 
         # necessary to get some memory properly allocated
@@ -46,17 +46,17 @@ class OM_ADFLOW(Group):
         des_var_names = [dv[0][0] for dv in des_vars]
         geo_var_names = [dv[0][0] for dv in geo_vars]
 
-        if self.options['owns_indeps']: 
+        if self.options['owns_indeps']:
             indeps = self.add_subsystem('indeps', IndepVarComp(), promotes=['*'])
-            for (args, kwargs) in des_vars: 
+            for (args, kwargs) in des_vars:
                 name = args[0]
                 size = args[1]
                 value= kwargs['value']
-                if 'units' in kwargs: 
+                if 'units' in kwargs:
                     indeps.add_output(name, value, units=kwargs['units'])
-                else: 
+                else:
                     indeps.add_output(name, value)
-  
+
         states = OM_STATES_COMP(ap=ap, dvgeo=self.dvgeo, solver=self.solver,
                                 use_OM_KSP=self.options['use_OM_KSP'])
 
@@ -64,7 +64,7 @@ class OM_ADFLOW(Group):
 
         # this lets the OpenMDAO KSPsolver converge the adjoint using the ADflow PC
         if self.options['use_OM_KSP']:
-            states.linear_solver = PetscKSP(iprint=2, atol=1e-8, rtol=1e-8, maxiter=300, ksp_type='gmres')
+            states.linear_solver = PETScKrylov(iprint=2, atol=1e-8, rtol=1e-8, maxiter=300, ksp_type='gmres')
             states.linear_solver.precon = LinearUserDefined()
 
         functionals = OM_FUNC_COMP(ap=ap, dvgeo=self.dvgeo, solver=self.solver)
@@ -80,11 +80,11 @@ class OM_ADFLOW(Group):
 
             for cons in self.dvcon.constraints.values():
                 for name, con in cons.items():
-                    if self.comm.rank == 0: 
+                    if self.comm.rank == 0:
                         print('adding nonlinear dvcon constarint: ', name)
                     self.add_constraint('geocon.%s' % name, lower=con.lower, upper=con.upper, ref=1/con.scale, vectorize_derivs=True)
             for name, con in self.dvcon.linearCon.items():
-                if self.comm.rank == 0: 
+                if self.comm.rank == 0:
                     print('adding linear dvcon constraint: ', name)
                 self.add_constraint('geocon.%s' % name, lower=con.lower, upper=con.upper, linear=True, vectorize_derivs=True)
 
