@@ -297,10 +297,10 @@ class ADFLOW(AeroSolver):
         self.CGNSZoneNameIDs = {}
         for i in range(self.nZones):
             # index needs to go in as fortran numbering, so add 1
-            name = getPy3SafeString(self.adflow.utils.getcgnszonename(i+1).strip()) 
+            name = getPy3SafeString(self.adflow.utils.getcgnszonename(i+1).strip())
             self.CGNSZoneNameIDs[name] = i+1
             # do we need to do this on root and broadcast?
-            
+
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption('cutCallBack')
         flag = numpy.zeros(n)
@@ -1309,6 +1309,13 @@ class ADFLOW(AeroSolver):
 
         self.setAeroProblem(aeroProblem)
 
+        # we now need to reset the adjoint fail flag. This may be the
+        # first time we are setting this for this AP, or we may have
+        # a fail flag remaining from a previous call. Either way, we
+        # want to at least try solving the adjoints here, regardless
+        # of what happened in the previous iterations.
+        self.curAP.adjointFailed = False
+
         aeroProblemTime = time.time()
 
         if evalFuncs is None:
@@ -1747,7 +1754,7 @@ class ADFLOW(AeroSolver):
                 targetVals.append(funcDict[key]['target'])
             else:
                 targetVals.append(0.0)
-            
+
             if 'initVal' in funcDict[key]:
                 initVals.append(funcDict[key]['initVal'])
             else:
@@ -3300,8 +3307,12 @@ class ADFLOW(AeroSolver):
                 self.curAP.adjointFailed = True
                 # Reset stored adjoint if we want to skip
                 if self.getOption('skipafterfailedadjoint'):
+                    if self.comm.rank == 0:
+                        ADFLOWWarning('Current adjoint failed to converge, so the remaining adjoints will be skipped. Use the checkAdjointFailure method to get the correct fail flag for sensitivity evaluations. Finally, if you want to solve the remaining adjoints regardless of the current failure, set skipAfterFailedAdjoint to False.')
                     self.curAP.adflowData.adjoints[objective][:] = 0.0
                 else:
+                    if self.comm.rank == 0:
+                        ADFLOWWarning('Current adjoint failed to converge. The partially converged solution will be used to compute the total derivatives. It is up to the user to check for adjoint failures and pass the correct failure flag to the optimizer using the checkAdjointFailure method.')
                     self.curAP.adflowData.adjoints[objective] = psi
             else:
                 self.curAP.adflowData.adjoints[objective] = psi
