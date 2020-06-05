@@ -216,7 +216,7 @@ contains
              call computeIsoVariable(isoSurfaceNames(iSurf), ll, isoValues(iSurf))
 
 11           format(A,A,A,F7.4)
-             write(contourName, 11), "Contour ", trim(isoSurfaceNames(iSurf)), "=", isoValues(iSurf)
+             write(contourName, 11) "Contour ", trim(isoSurfaceNames(iSurf)), "=", isoValues(iSurf)
              call writeIsoSurface(contourName, ll, nIsoSurfVar, isoSurfSolNames)
           end do
 

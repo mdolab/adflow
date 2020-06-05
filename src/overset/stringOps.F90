@@ -312,7 +312,7 @@ module stringOps
     end do
     deallocate(normCounter, uniqueNorms)
     ! Averageing is complete
-    
+
     ! Update the connectivity to use the new set of nodes
     do i=1, string%nElems
        string%conn(1, i) = link(string%conn(1, i))
@@ -2944,7 +2944,7 @@ module stringOps
 
   end subroutine writeOversetMaster
 
-  
+
   subroutine writeOversetTriangles(string, fileName, startTri, endTri)
 
     use constants
@@ -2994,8 +2994,8 @@ module stringOps
     integer(kind=intType) :: i, j
 
     open(unit=101, file="debug.zipper", form='formatted')
-    write(101, *), str%nNodes
-    write(101, *), str%nElems
+    write(101, *) str%nNodes
+    write(101, *) str%nElems
     do i=1, str%nNodes
        do j=1, 10
           write (101,*) str%nodeData(j, i)
@@ -3029,8 +3029,8 @@ module stringOps
     integer(kind=intType) :: i, j
 
     open(unit=101, file=fileName, form='formatted')
-    read(101, *), str%nNodes
-    read(101, *), str%nElems
+    read(101, *) str%nNodes
+    read(101, *) str%nElems
     call nullifyString(str)
 
     allocate(str%nodeData(10, str%nNodes))
