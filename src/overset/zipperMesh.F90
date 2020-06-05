@@ -1231,14 +1231,13 @@ contains
   subroutine writeWalls(famList)
 
 
-    use communication
     !use oversetData
     use constants
     use blockPointers
     use utils, only : setPointers, setBCPointers
     use BCPointers, only : xx
     use sorting, only : famInList
-    use communication, only : myid, adflow_comm_world
+    use communication, only : myid, adflow_comm_world, nProc
     use utils, only : EChk
     implicit none
     integer(kind=intType), intent(in), dimension(:) :: famList
