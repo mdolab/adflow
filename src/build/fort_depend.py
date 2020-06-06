@@ -138,17 +138,12 @@ def get_depends(fob=[],m2f=[]):
                     # these dependence will be resolved through the included libraries
                     # there is no need to scare the user with the error message
                     continue
+                elif j[-2:] == "_b" or j[-2:] == "_d":
+                    # these are AD routines
+                    continue
                 else:
-                    # skip the complex modules
-                    # first the _b and _d modules
-                    cplx = ["adjointextra", "bcdata", "bcextra", "flowutils", "fluxes", "initializeflow", "oversetutilities", "residuals", "sa", "solverutils", "surfaceintegrations", "turbbcroutines", "turbutils", "walldistance", "zipperintegrations"]
-                    cplx2 = [i + "_b" for i in cplx]
-                    cplx2 += [i + "_d" for i in cplx]
-                    # add in fast modules
-                    cplx2 += ["flowutils_fast_b", "fluxes_fast_b", "residuals_fast_b", "sa_fast_b", "solverutils_fast_b", "turbutils_fast_b"]
-                    if j.lower() not in cplx2:
-                        # actual missing dependencies
-                        print("\033[031mError\033[039m module \033[032m"+j+"\033[039m not defined in any files. Skipping...")
+                    # actual missing dependencies
+                    print("\033[031mError\033[039m module \033[032m"+j+"\033[039m not defined in any files. Skipping...")
 
         deps[i.file_name]=tmp
 
