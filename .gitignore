@@ -34,6 +34,13 @@ python/reg_tests/*.dat
 python/reg_tests/*.txt
 python/reg_tests/*.zipper
 python/inputFiles.tar.gz
+python/adflow_input_files.tar.gz
+
+# also ignore the input files to regtests after we extract from archine
+python/inputFiles/*.cgns
+python/inputFiles/split_file
+python/inputFiles/tecplot.phy
+
 
 # optimization reports from intel compilers
 *.optrpt
