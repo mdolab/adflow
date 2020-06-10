@@ -46,7 +46,7 @@ After changes to the configuration file, run ``make clean`` before attempting a 
 Verification
 ------------
 ADflow contains a set of simple tests that can be run automatically
-to ensure ADflow reproduces the expected reference results. You should
+to ensure ADflow reproduces the expected reference results. You should have
 a diff-viewer installed. xxdiff is used by default which can be installed
 using::
 
@@ -61,11 +61,10 @@ Specifically, install
 `idwarp <https://github.com/mdolab/idwarp/>`__.
 With all of these packages installed, you can fully verify your ADflow installation.
 
-Change to the regression tests directory at::
+First, follow the instructions in `python/inputFiles/Readme.md` to download the necessary files.
+Then navigate to the regression tests directory in `python/reg_tests/`.
 
-    $ cd python/reg_tests/
-
-Command line arguemnts for run_reg_tests.py can be found by running::
+Command line arguments for run_reg_tests.py can be found by running::
 
     $ python run_reg_tests.py --help
 
@@ -73,8 +72,8 @@ To run all regression tests, now simply run::
 
     $ python run_reg_tests.py
 
-If the tests are successful a 'adflow: Success!' message
-will be printed, otherwise a diff window will appear highlighting
+If the tests are successful an 'adflow: Success!' message will be printed.
+Otherwise, if using the `--diff` option, a diff window will appear highlighting
 the differences between the reference case and the most recently
 completed verification run.
 
