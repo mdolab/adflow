@@ -1,0 +1,463 @@
++------------------------------------------------------------------------------+
+|  Test13: MDO tutorial -- Euler -- Adjoint Test                               |
++------------------------------------------------------------------------------+
+#
+# ADflow, multiblock structured flow solver
+#
+# This code solves the 3D RANS, laminar NS or Euler equations
+# on multiblock structured hexahedral grids.
+# This is a parallel executable running on 1 processors.
+# It has been compiled with the following options:
+# - Optimized mode.
+# - Size of standard integers: 4 bytes.
+# - Size of standard floating point types: 8 bytes.
+# - With cgns support
+# - With support for signals.
+#
++---------------------------------------+
+|          All ADFLOW Options:            |
++---------------------------------------+
+{'adjointdivtol': 100000.0,
+ 'adjointl2convergence': 1e-14,
+ 'adjointl2convergenceabs': 1e-16,
+ 'adjointl2convergencerel': 1e-16,
+ 'adjointmaxiter': 500,
+ 'adjointmonitorstep': 10,
+ 'adjointsolver': 'gmres',
+ 'adjointsubspacesize': 100,
+ 'adpc': False,
+ 'alphafollowing': True,
+ 'alphamode': False,
+ 'altitudemode': False,
+ 'ankasmoverlap': 1,
+ 'ankcfl0': 1.0,
+ 'ankinnerpreconits': 1,
+ 'ankjacobianlag': 20,
+ 'anklinearsolvetol': 0.5,
+ 'ankpcilufill': 1,
+ 'anksubspacesize': 5,
+ 'ankswitchtol': 0.01,
+ 'ankuseturbdadi': True,
+ 'applyadjointpcsubspacesize': 20,
+ 'applypcsubspacesize': 10,
+ 'approxpc': True,
+ 'asmoverlap': 1,
+ 'autoadjointretry': False,
+ 'autosolveretry': False,
+ 'backgroundvolscale': 1.0,
+ 'betamode': False,
+ 'blocksplitting': False,
+ 'cfl': 1.7,
+ 'cflcoarse': 1.0,
+ 'cfllimit': 1.5,
+ 'coarsediscretization': 'central plus scalar dissipation',
+ 'debugzipper': False,
+ 'deltat': 0.01,
+ 'designsurfacefamily': None,
+ 'discretization': 'central plus scalar dissipation',
+ 'dissipationlumpingparameter': 6.0,
+ 'dissipationscalingexponent': 0.67,
+ 'eddyvisinfratio': 0.009,
+ 'equationmode': 'steady',
+ 'equationtype': 'euler',
+ 'eulerwalltreatment': 'linear pressure extrapolation',
+ 'firstrun': True,
+ 'flowtype': 'external',
+ 'forcesastractions': True,
+ 'frozenturbulence': True,
+ 'globalpreconditioner': 'additive schwartz',
+ 'gridfile': '../inputFiles/mdo_tutorial_euler_scalar_jst.cgns',
+ 'gridprecision': 'double',
+ 'gridprecisionsurface': 'single',
+ 'ilufill': 2,
+ 'innerpreconits': 1,
+ 'isosurface': {},
+ 'isovariables': [],
+ 'l2convergence': 1e-14,
+ 'l2convergencecoarse': 0.01,
+ 'l2convergencerel': 1e-16,
+ 'liftindex': 2,
+ 'limiter': 'vanalbeda',
+ 'loadbalanceiter': 10,
+ 'loadimbalance': 0.1,
+ 'localpreconditioner': 'ilu',
+ 'lowspeedpreconditioner': False,
+ 'machmode': False,
+ 'matrixordering': 'rcm',
+ 'maxl2deviationfactor': 1.0,
+ 'meshsurfacefamily': None,
+ 'mgcycle': '2w',
+ 'mgstartlevel': -1,
+ 'monitorvariables': ['cpu', 'resrho', 'cl', 'cd', 'cmz', 'totalr'],
+ 'ncycles': 500,
+ 'ncyclescoarse': 250,
+ 'nearwalldist': 0.1,
+ 'nkadpc': False,
+ 'nkasmoverlap': 1,
+ 'nkcfl0': 1000000000000.0,
+ 'nkinnerpreconits': 1,
+ 'nkjacobianlag': 20,
+ 'nklinearsolvetol': 0.3,
+ 'nkls': 'cubic',
+ 'nkouterpreconits': 1,
+ 'nkpcilufill': 2,
+ 'nksubspacesize': 60,
+ 'nkswitchtol': 0.01,
+ 'nkuseew': True,
+ 'nkviscpc': False,
+ 'nodaloutput': True,
+ 'nrkreset': 5,
+ 'nsavesurface': 1,
+ 'nsavevolume': 1,
+ 'nsubiter': 1,
+ 'nsubiterturb': 1,
+ 'ntimestepscoarse': 48,
+ 'ntimestepsfine': 400,
+ 'numbersolutions': True,
+ 'outerpreconits': 3,
+ 'outputdirectory': './',
+ 'overlapfactor': 0.9,
+ 'oversetprojtol': 1e-12,
+ 'partitionlikenproc': -1,
+ 'partitiononly': False,
+ 'pmode': False,
+ 'preconditionerside': 'right',
+ 'printiterations': True,
+ 'printtiming': True,
+ 'printwarnings': True,
+ 'qmode': False,
+ 'resaveraging': 'alternateresaveraging',
+ 'restartadjoint': True,
+ 'restartfile': '../inputFiles/mdo_tutorial_euler_scalar_jst.cgns',
+ 'restrictionrelaxation': 0.8,
+ 'rkreset': False,
+ 'rmode': False,
+ 'sepsensoroffset': 0.0,
+ 'sepsensorsharpness': 10.0,
+ 'setmonitor': True,
+ 'smoother': 'runge kutta',
+ 'smoothparameter': 1.5,
+ 'solutionprecision': 'double',
+ 'solutionprecisionsurface': 'single',
+ 'storerindlayer': True,
+ 'surfacevariables': ['cp', 'vx', 'vy', 'vz', 'mach'],
+ 'timeaccuracy': 2,
+ 'timeintegrationscheme': 'bdf',
+ 'timeintervals': 1,
+ 'tsstability': False,
+ 'turbresscale': 10000.0,
+ 'turbulencemodel': 'sa',
+ 'turbulenceorder': 'first order',
+ 'useale': True,
+ 'useanksolver': False,
+ 'useapproxwalldistance': True,
+ 'usediagtspc': True,
+ 'usegridmotion': False,
+ 'usematrixfreedrdw': True,
+ 'usenksolver': True,
+ 'usewallfunctions': False,
+ 'verifyextra': True,
+ 'verifyspatial': True,
+ 'verifystate': True,
+ 'vis2': 0.25,
+ 'vis2coarse': 0.5,
+ 'vis4': 0.0156,
+ 'viscoussurfacevelocities': True,
+ 'viscpc': False,
+ 'viscwalltreatment': 'constant pressure extrapolation',
+ 'volumevariables': [],
+ 'walldistcutoff': 1e+20,
+ 'windaxis': False,
+ 'writefarfield': False,
+ 'writesurfacesolution': True,
+ 'writesymmetry': True,
+ 'writetecplotsurfacesolution': False,
+ 'writevolumesolution': True}
+-> Alpha... 0.000000 
+#
+# Specified load imbalance tolerance  0.100 acheived
+# Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
+#
+#
+# Grid level: 1, Total number of cells: 12096
+#
+#
+# Grid level: 2, Total number of cells: 1512
+#
++---------------------------------------+
+|     All pyWarpUstruct Options:        |
++---------------------------------------+
+{'LdefFact': 1.0,
+ 'aExp': 3.0,
+ 'alpha': 0.25,
+ 'bExp': 5.0,
+ 'bucketSize': 8,
+ 'cornerAngle': 30.0,
+ 'errTol': 0.0005,
+ 'evalMode': 'fast',
+ 'fileType': 'cgns',
+ 'gridFile': '../inputFiles/mdo_tutorial_euler_scalar_jst.cgns',
+ 'restartFile': None,
+ 'specifiedSurfaces': None,
+ 'symmTol': 1e-06,
+ 'symmetryPlanes': None,
+ 'symmetrySurfaces': None,
+ 'useRotations': True,
+ 'zeroCornerRotations': True}
+  -> Reading CGNS File: ../inputFiles/mdo_tutorial_euler_scalar_jst.cgns
+    -> Number of Zones:          38
+#------------------------------#
+ Total Volume Nodes :     19058 
+#------------------------------#
++-------------------- Symmetry Planes -------------------+
+|           Point                        Normal          |
+| (  0.000   0.000   0.000)    (  0.000   0.000  -1.000) |
++--------------------------------------------------------+
+#--------------------------------#
+ Unique Surface Nodes :      1031 
+#--------------------------------#
+ Computing Denomenator Estimate...
+ Load Balancing...
+ Finished Mesh Initialization.
++----------------------------------------------------------------------+
+|  Switching to Aero Problem: mdo_tutorial                             |
++----------------------------------------------------------------------+
+-> Alpha... 1.800000 
+#
+# Found restart file: ../inputFiles/mdo_tutorial_euler_scalar_jst.cgns
+#
+Norm of residual
+-> Alpha... 1.800000 
+@value  1.6617622800195e-11 1e-10 1e-10
+-> Alpha... 1.800000 
+Solving adjoint: cd
+-> Alpha... 1.800000 
+Solving ADjoint Transpose with PETSc...
+   0 KSP Residual norm 0.2785082327E-01
+  10 KSP Residual norm 0.1845063715E-01
+  20 KSP Residual norm 0.9753221994E-03
+  30 KSP Residual norm 0.4735696191E-04
+  40 KSP Residual norm 0.9763808217E-06
+  50 KSP Residual norm 0.3619604580E-07
+  60 KSP Residual norm 0.1003016876E-08
+  70 KSP Residual norm 0.1274241767E-10
+  80 KSP Residual norm 0.1812541118E-12
+  90 KSP Residual norm 0.2868317395E-14
+Solving ADjoint Transpose with PETSc time (s) =     5.48
+ Norm of error = 0.1728E-14    Iterations =   96
+ ------------------------------------------------
+ PETSc solver converged after    96 iterations.
+ ------------------------------------------------
+Solving adjoint: cl
+-> Alpha... 1.800000 
+Solving ADjoint Transpose with PETSc...
+   0 KSP Residual norm 0.2406751577E+00
+  10 KSP Residual norm 0.1532750472E+00
+  20 KSP Residual norm 0.1757771621E-01
+  30 KSP Residual norm 0.2976531293E-03
+  40 KSP Residual norm 0.1055235197E-04
+  50 KSP Residual norm 0.2263227205E-06
+  60 KSP Residual norm 0.4400428989E-08
+  70 KSP Residual norm 0.1187548959E-09
+  80 KSP Residual norm 0.1922001804E-11
+  90 KSP Residual norm 0.4566415478E-13
+Solving ADjoint Transpose with PETSc time (s) =     5.49
+ Norm of error = 0.2696E-13    Iterations =   97
+ ------------------------------------------------
+ PETSc solver converged after    97 iterations.
+ ------------------------------------------------
+Eval Functions Sens:
+Dictionary Key: mdo_tutorial_cd
+Dictionary Key: P_mdo_tutorial
+@value  3.4410713482206e-22 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value  1.0929721615817e-02 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -1.4473778375180e-01 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value  3.3452527495170e-01 1e-10 1e-10
+Dictionary Key: shape
+@value  1.4160826826118e-03 1e-10 1e-10
+@value -7.1466964958479e-04 1e-10 1e-10
+@value -4.5223308518423e-02 1e-10 1e-10
+@value -3.4352032779552e-02 1e-10 1e-10
+@value  3.2387054523256e-03 1e-10 1e-10
+@value  6.6649168643393e-03 1e-10 1e-10
+@value -2.1748030601536e-02 1e-10 1e-10
+@value -1.7115922666367e-02 1e-10 1e-10
+@value  1.0840817235356e-03 1e-10 1e-10
+@value -3.8383776824893e-04 1e-10 1e-10
+@value  6.2088878320206e-03 1e-10 1e-10
+@value  1.8098302244251e-02 1e-10 1e-10
+@value -8.5794535782409e-03 1e-10 1e-10
+@value  9.4111803639361e-03 1e-10 1e-10
+@value  2.5994639257842e-02 1e-10 1e-10
+@value  2.6287093475065e-02 1e-10 1e-10
+@value -1.5718258015966e-04 1e-10 1e-10
+@value -1.1550547325709e-03 1e-10 1e-10
+@value  2.1122733022788e-03 1e-10 1e-10
+@value  7.7351188794685e-03 1e-10 1e-10
+@value  8.5045222752836e-03 1e-10 1e-10
+@value  6.0905328477289e-03 1e-10 1e-10
+@value -4.2381251649783e-04 1e-10 1e-10
+@value  7.5821983273553e-03 1e-10 1e-10
+@value  1.5270291570244e-03 1e-10 1e-10
+@value  9.1071466208411e-04 1e-10 1e-10
+@value  5.7725296204940e-04 1e-10 1e-10
+@value  1.5423206398995e-03 1e-10 1e-10
+@value -5.4793444437017e-02 1e-10 1e-10
+@value -5.4978379998177e-02 1e-10 1e-10
+@value -5.0496218502058e-02 1e-10 1e-10
+@value -3.9877116982692e-02 1e-10 1e-10
+@value -3.5948420638801e-03 1e-10 1e-10
+@value -5.3791526710975e-03 1e-10 1e-10
+@value -4.4707938200393e-03 1e-10 1e-10
+@value  6.7479188731573e-04 1e-10 1e-10
+@value -4.2640855034666e-02 1e-10 1e-10
+@value -4.3019856327873e-02 1e-10 1e-10
+@value -3.9783253193035e-02 1e-10 1e-10
+@value -3.1564511509645e-02 1e-10 1e-10
+@value  2.7489440758721e-04 1e-10 1e-10
+@value  8.8817163214576e-05 1e-10 1e-10
+@value  3.5637178656115e-04 1e-10 1e-10
+@value  6.2132806404012e-04 1e-10 1e-10
+@value  1.9799143218471e-04 1e-10 1e-10
+@value  6.7278856811665e-04 1e-10 1e-10
+@value  7.1460745872229e-04 1e-10 1e-10
+@value  2.8164745753022e-05 1e-10 1e-10
+@value  7.1692705426035e-03 1e-10 1e-10
+@value  6.1191006866958e-03 1e-10 1e-10
+@value  4.8263468818675e-03 1e-10 1e-10
+@value  3.3838765545035e-03 1e-10 1e-10
+@value  1.9212531812100e-02 1e-10 1e-10
+@value  1.8110349562936e-02 1e-10 1e-10
+@value  1.6107166442745e-02 1e-10 1e-10
+@value  1.2782074374564e-02 1e-10 1e-10
+@value -5.2645463508904e-03 1e-10 1e-10
+@value  4.5385517225053e-03 1e-10 1e-10
+@value  1.3597457954090e-02 1e-10 1e-10
+@value  1.7073333147675e-02 1e-10 1e-10
+@value  2.5687578735120e-02 1e-10 1e-10
+@value  3.4365503644145e-02 1e-10 1e-10
+@value  3.3767705115398e-02 1e-10 1e-10
+@value  2.3196394423560e-02 1e-10 1e-10
+@value  2.9374872885656e-02 1e-10 1e-10
+@value  2.1606156697669e-02 1e-10 1e-10
+@value  1.1959411781962e-02 1e-10 1e-10
+@value  2.5240398954146e-03 1e-10 1e-10
+@value  2.2629847802520e-02 1e-10 1e-10
+@value  1.6904356803352e-02 1e-10 1e-10
+@value  1.2661513501772e-02 1e-10 1e-10
+@value  9.5032268508039e-03 1e-10 1e-10
+Dictionary Key: twist
+@value -2.0056181970250e-03 1e-10 1e-10
+@value -2.4880560856569e-03 1e-10 1e-10
+@value -2.4420549108700e-03 1e-10 1e-10
+@value -2.0773440642823e-03 1e-10 1e-10
+@value -1.4512170172364e-03 1e-10 1e-10
+@value -6.1719273109067e-04 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: mdo_tutorial_cl
+Dictionary Key: P_mdo_tutorial
+@value -2.6469779601697e-20 1e-10 1e-10
+Dictionary Key: T_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: alpha_mdo_tutorial
+@value  1.3569359289467e-01 1e-10 1e-10
+Dictionary Key: beta_mdo_tutorial
+@value -7.9570939433276e-01 1e-10 1e-10
+Dictionary Key: mach_mdo_tutorial
+@value  1.5633352545545e+00 1e-10 1e-10
+Dictionary Key: shape
+@value  1.1160085968842e-02 1e-10 1e-10
+@value -5.6458883040157e-03 1e-10 1e-10
+@value -6.0858847298937e-01 1e-10 1e-10
+@value -4.2754827497797e-01 1e-10 1e-10
+@value  3.5088230814154e-04 1e-10 1e-10
+@value -2.5826193795073e-03 1e-10 1e-10
+@value -2.7635963491755e-01 1e-10 1e-10
+@value -2.1470448189587e-01 1e-10 1e-10
+@value  2.4080112358531e-02 1e-10 1e-10
+@value  4.9338831070919e-02 1e-10 1e-10
+@value  9.1018191961317e-02 1e-10 1e-10
+@value  2.7554488047668e-01 1e-10 1e-10
+@value  1.8015143463996e-02 1e-10 1e-10
+@value  6.8120940849117e-02 1e-10 1e-10
+@value  1.2634833227118e-01 1e-10 1e-10
+@value  3.7048243419674e-01 1e-10 1e-10
+@value  2.8752889646203e-02 1e-10 1e-10
+@value  2.7667807991663e-02 1e-10 1e-10
+@value  4.2740205641774e-02 1e-10 1e-10
+@value  1.0115651507624e-01 1e-10 1e-10
+@value  4.1199374069405e-02 1e-10 1e-10
+@value  3.3517567088899e-02 1e-10 1e-10
+@value  7.6764615998422e-02 1e-10 1e-10
+@value  1.4864082860777e-01 1e-10 1e-10
+@value  9.7743987223730e-03 1e-10 1e-10
+@value  6.5967302301817e-03 1e-10 1e-10
+@value  2.9613765292845e-03 1e-10 1e-10
+@value  1.5070709871446e-03 1e-10 1e-10
+@value -7.3837227937745e-01 1e-10 1e-10
+@value -7.3864857465379e-01 1e-10 1e-10
+@value -6.7772190734742e-01 1e-10 1e-10
+@value -5.3470663849604e-01 1e-10 1e-10
+@value -6.2614660436047e-03 1e-10 1e-10
+@value  5.1488265916778e-03 1e-10 1e-10
+@value  1.3892683320766e-02 1e-10 1e-10
+@value  1.1594217864179e-02 1e-10 1e-10
+@value -5.3732287702388e-01 1e-10 1e-10
+@value -5.4656276282981e-01 1e-10 1e-10
+@value -5.0938078576109e-01 1e-10 1e-10
+@value -4.0968504603621e-01 1e-10 1e-10
+@value  4.7024639931124e-02 1e-10 1e-10
+@value  6.0784625974785e-02 1e-10 1e-10
+@value  6.4235106827383e-02 1e-10 1e-10
+@value  5.4972120708393e-02 1e-10 1e-10
+@value  6.9195402095764e-02 1e-10 1e-10
+@value  7.0288741439505e-02 1e-10 1e-10
+@value  6.4909755256664e-02 1e-10 1e-10
+@value  5.2680463005447e-02 1e-10 1e-10
+@value  1.1028412037679e-01 1e-10 1e-10
+@value  1.0884691941302e-01 1e-10 1e-10
+@value  1.0213747889926e-01 1e-10 1e-10
+@value  8.3161173299521e-02 1e-10 1e-10
+@value  3.0723259356902e-01 1e-10 1e-10
+@value  2.9744268575076e-01 1e-10 1e-10
+@value  2.6758400650041e-01 1e-10 1e-10
+@value  2.0442114965468e-01 1e-10 1e-10
+@value  7.5723677010948e-02 1e-10 1e-10
+@value  1.1688517085566e-01 1e-10 1e-10
+@value  1.1940814121007e-01 1e-10 1e-10
+@value  8.7013096779103e-02 1e-10 1e-10
+@value  9.4373552916212e-02 1e-10 1e-10
+@value  6.7794916954070e-02 1e-10 1e-10
+@value  3.4613493390274e-02 1e-10 1e-10
+@value  2.3914095490986e-02 1e-10 1e-10
+@value  1.4406275939610e-01 1e-10 1e-10
+@value  1.3224165109772e-01 1e-10 1e-10
+@value  1.2916083658779e-01 1e-10 1e-10
+@value  1.2291504551686e-01 1e-10 1e-10
+@value  4.2341390485619e-01 1e-10 1e-10
+@value  4.2069271883041e-01 1e-10 1e-10
+@value  3.8891426640779e-01 1e-10 1e-10
+@value  3.0138845673939e-01 1e-10 1e-10
+Dictionary Key: twist
+@value -2.9488954083819e-02 1e-10 1e-10
+@value -3.4065600928564e-02 1e-10 1e-10
+@value -3.0221580878077e-02 1e-10 1e-10
+@value -2.2931303559402e-02 1e-10 1e-10
+@value -1.4004195316306e-02 1e-10 1e-10
+@value -5.1169675853194e-03 1e-10 1e-10
+Dictionary Key: xRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: yRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10
+Dictionary Key: zRef_mdo_tutorial
+@value  0.0000000000000e+00 1e-10 1e-10

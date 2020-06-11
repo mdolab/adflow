@@ -1,0 +1,387 @@
+#
+# ADflow, multiblock structured flow solver
+#
+# This code solves the 3D RANS, laminar NS or Euler equations
+# on multiblock structured hexahedral grids.
+# This is a parallel executable running on 4 processors.
+# It has been compiled with the following options:
+# - Optimized mode.
+# - Size of standard integers: 4 bytes.
+# - Size of standard floating point types: 8 bytes.
+# - With cgns support
+# - With support for signals.
+#
++---------------------------------------+
+|          All ADFLOW Options:          |
++---------------------------------------+
+{'adjointdivtol': 100000.0,
+ 'adjointl2convergence': 1e-06,
+ 'adjointl2convergenceabs': 1e-16,
+ 'adjointl2convergencerel': 1e-16,
+ 'adjointmaxiter': 500,
+ 'adjointmonitorstep': 10,
+ 'adjointsolver': 'gmres',
+ 'adjointsubspacesize': 200,
+ 'adpc': False,
+ 'agmglevels': 1,
+ 'agmgnsmooth': 3,
+ 'alphafollowing': True,
+ 'alphamode': False,
+ 'altitudemode': False,
+ 'ankadpc': False,
+ 'ankasmoverlap': 1,
+ 'ankcfl0': 5.0,
+ 'ankcflcutback': 0.5,
+ 'ankcflexponent': 0.5,
+ 'ankcflfactor': 10.0,
+ 'ankcfllimit': 100000.0,
+ 'ankcflmin': 1.0,
+ 'ankconstcflstep': 0.4,
+ 'ankcoupledswitchtol': 1e-16,
+ 'ankinnerpreconits': 1,
+ 'ankjacobianlag': 10,
+ 'anklinearsolvetol': 0.05,
+ 'anklinresmax': 0.9,
+ 'ankmaxiter': 40,
+ 'anknsubiterturb': 1,
+ 'ankouterpreconits': 1,
+ 'ankpcilufill': 2,
+ 'ankpcupdatetol': 0.5,
+ 'ankphysicallstol': 0.2,
+ 'ankphysicallstolturb': 0.99,
+ 'anksecondordswitchtol': 1e-16,
+ 'ankstepfactor': 1.0,
+ 'ankstepmin': 0.01,
+ 'anksubspacesize': -1,
+ 'ankswitchtol': 1.0,
+ 'ankturbcflscale': 1.0,
+ 'ankturbkspdebug': False,
+ 'ankunsteadylstol': 1.0,
+ 'ankusefullvisc': True,
+ 'ankusematrixfree': True,
+ 'ankuseturbdadi': True,
+ 'applyadjointpcsubspacesize': 20,
+ 'applypcsubspacesize': 10,
+ 'approxpc': True,
+ 'asmoverlap': 1,
+ 'autoadjointretry': False,
+ 'autosolveretry': False,
+ 'backgroundvolscale': 1.0,
+ 'betamode': False,
+ 'blocksplitting': True,
+ 'cavitationnumber': 1.4,
+ 'cfl': 4.0,
+ 'cflcoarse': 1.25,
+ 'cfllimit': 1.5,
+ 'closedsurfacefamilies': None,
+ 'coarsediscretization': 'central plus scalar dissipation',
+ 'computecavitation': False,
+ 'coupledsolution': False,
+ 'cutcallback': None,
+ 'debugzipper': True,
+ 'deltat': 0.01,
+ 'designsurfacefamily': None,
+ 'discretization': 'central plus scalar dissipation',
+ 'dissipationlumpingparameter': 6.0,
+ 'dissipationscalingexponent': 0.67,
+ 'eddyvisinfratio': 0.009,
+ 'equationmode': 'steady',
+ 'equationtype': 'euler',
+ 'eulerwalltreatment': 'linear pressure extrapolation',
+ 'firstrun': True,
+ 'flowtype': 'internal',
+ 'forcesastractions': True,
+ 'frozenturbulence': False,
+ 'globalpreconditioner': 'additive schwartz',
+ 'gridfile': '../inputFiles/conic_conv_nozzle_mb.cgns',
+ 'gridprecision': 'double',
+ 'gridprecisionsurface': 'single',
+ 'ilufill': 2,
+ 'infchangecorrection': False,
+ 'innerpreconits': 1,
+ 'isosurface': {},
+ 'isovariables': [],
+ 'l2convergence': 1e-10,
+ 'l2convergencecoarse': 0.0001,
+ 'l2convergencerel': 1e-16,
+ 'liftindex': 2,
+ 'limiter': 'vanalbeda',
+ 'loadbalanceiter': 10,
+ 'loadimbalance': 0.1,
+ 'localpreconditioner': 'ilu',
+ 'lowspeedpreconditioner': False,
+ 'machmode': False,
+ 'matrixordering': 'rcm',
+ 'maxl2deviationfactor': 1.0,
+ 'meshsurfacefamily': None,
+ 'mgcycle': '3w',
+ 'mgstartlevel': -1,
+ 'monitorvariables': ['cpu', 'resrho', 'cl', 'cd'],
+ 'ncycles': 1000,
+ 'ncyclescoarse': 250,
+ 'nearwalldist': 0.001,
+ 'nkadpc': True,
+ 'nkasmoverlap': 1,
+ 'nkcfl0': 10000000000.0,
+ 'nkfixedstep': 0.25,
+ 'nkinnerpreconits': 2,
+ 'nkjacobianlag': 5,
+ 'nklinearsolvetol': 0.3,
+ 'nkls': 'none',
+ 'nkouterpreconits': 3,
+ 'nkpcilufill': 2,
+ 'nksubspacesize': 60,
+ 'nkswitchtol': 0.01,
+ 'nkuseew': True,
+ 'nkviscpc': False,
+ 'nrefine': 10,
+ 'nrkreset': 5,
+ 'nsavesurface': 1,
+ 'nsavevolume': 1,
+ 'nsubiter': 3,
+ 'nsubiterturb': 1,
+ 'ntimestepscoarse': 48,
+ 'ntimestepsfine': 400,
+ 'numbersolutions': True,
+ 'outerpreconits': 3,
+ 'outputdirectory': './',
+ 'outputsurfacefamily': 'allSurfaces',
+ 'overlapfactor': 0.9,
+ 'oversetloadbalance': True,
+ 'oversetpriority': {},
+ 'oversetprojtol': 1e-12,
+ 'oversetupdatemode': 'frozen',
+ 'partitionlikenproc': -1,
+ 'partitiononly': False,
+ 'pmode': False,
+ 'preconditionerside': 'right',
+ 'printiterations': True,
+ 'printtiming': True,
+ 'printwarnings': True,
+ 'qmode': False,
+ 'resaveraging': 'alternateresaveraging',
+ 'restartadjoint': True,
+ 'restartfile': '../inputFiles/conic_conv_nozzle_mb.cgns',
+ 'restrictionrelaxation': 0.8,
+ 'rkreset': False,
+ 'rmode': False,
+ 'selfzipcutoff': 120.0,
+ 'sepsensoroffset': 0.0,
+ 'sepsensorsharpness': 10.0,
+ 'setmonitor': True,
+ 'skipafterfailedadjoint': True,
+ 'smoother': 'dadi',
+ 'smoothparameter': 1.5,
+ 'solutionprecision': 'double',
+ 'solutionprecisionsurface': 'single',
+ 'storerindlayer': True,
+ 'surfacevariables': ['mach', 'cp', 'vx', 'vy', 'vz', 'blank'],
+ 'timeaccuracy': 2,
+ 'timeintegrationscheme': 'bdf',
+ 'timeintervals': 1,
+ 'timelimit': -1.0,
+ 'tsstability': False,
+ 'turbresscale': 10000.0,
+ 'turbulencemodel': 'sa',
+ 'turbulenceorder': 'first order',
+ 'turbulenceproduction': 'strain',
+ 'useale': True,
+ 'useanksolver': False,
+ 'useapproxwalldistance': True,
+ 'useblockettes': True,
+ 'usediagtspc': True,
+ 'useft2sa': True,
+ 'usegridmotion': False,
+ 'uselinresmonitor': False,
+ 'usematrixfreedrdw': True,
+ 'usenksolver': True,
+ 'useoversetwallscaling': False,
+ 'useqcr': False,
+ 'userotationsa': False,
+ 'usewallfunctions': False,
+ 'usezippermesh': True,
+ 'verifyextra': True,
+ 'verifyspatial': True,
+ 'verifystate': True,
+ 'vis2': 0.25,
+ 'vis2coarse': 0.5,
+ 'vis4': 0.0156,
+ 'viscoussurfacevelocities': True,
+ 'viscpc': False,
+ 'viscwalltreatment': 'constant pressure extrapolation',
+ 'volumevariables': ['blank'],
+ 'walldistcutoff': 1e+20,
+ 'windaxis': False,
+ 'writesurfacesolution': True,
+ 'writetecplotsurfacesolution': False,
+ 'writevolumesolution': True,
+ 'zippersurfacefamily': 'output_fam'}
+-> Alpha... 0.000000
+#
+#                      Warning
+# Mach number specified for an internal flow problem.
+# This information is ignored.
+#
+#
+# Specified load imbalance tolerance  0.100 acheived
+# Continuing with  0.000 load imbalance for the cells and  0.000 for the faces
+#
+#
+# Grid level: 1, Total number of cells: 163840
+#
+#
+# Grid level: 2, Total number of cells: 20480
+#
+#
+# Grid level: 3, Total number of cells: 2560
+#
++--------------------------------------------------+
+  CGNS Surface Families by Boundary Condition Type
++--------------------------------------------------+
+| Wall Types           : nozzle_wall
+| Inflow Types : inlet
+| Outflow Types : outlet
+| Symmetry Types       :
+| Farfield Types       :
+| Oveset Types         :
++--------------------------------------------------+
++--------------------------------------------------+
+|
+| Initialization Times:
+|
+| Library Load Time             :      0.018 sec
+| Set Defaults Time             :      0.000 sec
+| Base class init Time          :      0.001 sec
+| Introductory Time             :      0.003 sec
+| Partitioning Time             :      0.006 sec
+| Preprocessing Time            :      0.040 sec
+| Family Setup Time             :      0.000 sec
+| Cut callback Time             :      0.000 sec
+| Overset Preprocessing Time    :      0.000 sec
+| Initialize Flow Time          :      0.004 sec
+|
+| Total Init Time               :      0.073 sec
++--------------------------------------------------+
++----------------------------------------------------------------------+
+|  Switching to Aero Problem: nozzle                                   |
++----------------------------------------------------------------------+
+-> Alpha... 90.000000
+#
+# Found restart file: ../inputFiles/conic_conv_nozzle_mb.cgns
+#
++---------------------------------------+
+|      All Modified ADFLOW Options:     |
++---------------------------------------+
+{'adjointsubspacesize': 200,
+ 'cfl': 4.0,
+ 'cflcoarse': 1.25,
+ 'debugzipper': True,
+ 'flowtype': 'internal',
+ 'gridfile': '../inputFiles/conic_conv_nozzle_mb.cgns',
+ 'l2convergence': 1e-10,
+ 'l2convergencecoarse': 0.0001,
+ 'monitorvariables': ['cpu', 'resrho', 'cl', 'cd'],
+ 'ncycles': 1000,
+ 'ncyclescoarse': 250,
+ 'nearwalldist': 0.001,
+ 'nkadpc': True,
+ 'nkcfl0': 10000000000.0,
+ 'nkinnerpreconits': 2,
+ 'nkjacobianlag': 5,
+ 'nkls': 'none',
+ 'nkouterpreconits': 3,
+ 'nkswitchtol': 0.01,
+ 'nsubiter': 3,
+ 'restartfile': '../inputFiles/conic_conv_nozzle_mb.cgns',
+ 'smoother': 'dadi',
+ 'solutionprecision': 'double',
+ 'surfacevariables': ['mach', 'cp', 'vx', 'vy', 'vz', 'blank'],
+ 'turbresscale': 10000.0,
+ 'usenksolver': True,
+ 'volumevariables': ['blank'],
+ 'zippersurfacefamily': 'output_fam'}
+#
+# Grid 1: Performing 1000 iterations, unless converged earlier. Minimum required iteration before NK switch:      5. Switch to NK at totalR of:   0.71E+03
+#
+#-----------------------------------------------------------------------------------------------------------------------
+#  Grid  | Iter | Iter |  Iter  |   CFL   | Step | Lin  |    Wall    |        Res rho         |        totalRes        |
+#  level |      | Tot  |  Type  |         |      | Res  | Clock (s)  |                        |                        |
+#-----------------------------------------------------------------------------------------------------------------------
+      1       0      0     None   0.00E+00  1.00   ----  0.63839E-01   0.4044298957623186E-10   0.7251484982652283E-07
+      1       1      2      *NK     ----    0.25  0.910  0.35311E+01   0.3918685213702329E-10   0.6973225584783472E-07
+#
+# Writing grid file(s): ./nozzle_000_vol.cgns
+# Grid file(s) written
+#
+#
+# Writing volume solution file(s): ./nozzle_000_vol.cgns
+# Volume solution file(s) written
+#
+#
+# Writing surface solution file(s): ./nozzle_000_surf.cgns
+# Surface solution file(s) written
+#
++-------------------------------------------------+
+|
+| Solution Timings:
+|
+| Set AeroProblem Time          :      0.016 sec
+| Solution Time                 :      3.532 sec
+| Write Solution Time           :      0.052 sec
+| Stability Parameter Time      :      0.000 sec
+|
+| Total Call Time               :      3.600 sec
++--------------------------------------------------+
+-> Alpha... 90.000000
+Norm of residual
+@value  9.8081865854303e-13 1e-10 1e-10
+Norm of state vector
+@value  1.0137970300714e+03 1e-10 1e-10
+-> Alpha... 90.000000
++---------------------------------------------------+
+|
+| Function Timings:
+|
+| Function AeroProblem Time     :      0.001 sec
+| Function Evaluation Time      :      0.008 sec
+| User Function Evaluation Time :      0.000 sec
+|
+| Total Function Evaluation Time:      0.009 sec
++--------------------------------------------------+
+Eval Functions:
+Dictionary Key: nozzle_aavgps_down
+@value  8.1895048977581e+04 1e-10 1e-10
+Dictionary Key: nozzle_aavgps_plane
+@value  9.7919443878822e+04 1e-10 1e-10
+Dictionary Key: nozzle_aavgps_up
+@value  9.9735194744879e+04 1e-10 1e-10
+Dictionary Key: nozzle_aavgptot_down
+@value  9.9905358506993e+04 1e-10 1e-10
+Dictionary Key: nozzle_aavgptot_plane
+@value  1.0012699093417e+05 1e-10 1e-10
+Dictionary Key: nozzle_aavgptot_up
+@value  1.0013413884951e+05 1e-10 1e-10
+Dictionary Key: nozzle_mavgps_down
+@value  8.1845854918160e+04 1e-10 1e-10
+Dictionary Key: nozzle_mavgps_plane
+@value  9.7647539517864e+04 1e-10 1e-10
+Dictionary Key: nozzle_mavgps_up
+@value  9.9561159806049e+04 1e-10 1e-10
+Dictionary Key: nozzle_mavgptot_down
+@value  9.9901252439901e+04 1e-10 1e-10
+Dictionary Key: nozzle_mavgptot_plane
+@value  1.0011202267002e+05 1e-10 1e-10
+Dictionary Key: nozzle_mavgptot_up
+@value  1.0010125513168e+05 1e-10 1e-10
+Dictionary Key: nozzle_mavgttot_down
+@value  4.9918887766730e+02 1e-10 1e-10
+Dictionary Key: nozzle_mavgttot_plane
+@value  4.9999322278995e+02 1e-10 1e-10
+Dictionary Key: nozzle_mavgttot_up
+@value  4.9999786408754e+02 1e-10 1e-10
+Dictionary Key: nozzle_mdot_down
+@value -1.0409659187017e+00 1e-10 1e-10
+Dictionary Key: nozzle_mdot_plane
+@value -1.0459468815625e+00 1e-10 1e-10
+Dictionary Key: nozzle_mdot_up
+@value  1.0496918257760e+00 1e-10 1e-10

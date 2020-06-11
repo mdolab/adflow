@@ -1,0 +1,5 @@
+ TITLE = "Triangles"
+ Variables = "X", "Y", "Z"
+ Zone T=triangles_00088
+ Nodes =            0  Elements=            0  ZONETYPE=FETRIANGLE
+ DATAPACKING=POINT
