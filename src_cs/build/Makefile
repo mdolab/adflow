@@ -140,4 +140,4 @@ python: lib ../f2py/adflow.pyf
 	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow_cs.so
 	cp -fr ../f2py/importTest.py .
 	$(PYTHON) ../f2py/importTest.py
-	mv libadflow_cs.so ../../python
+	mv libadflow_cs.so ../../adflow
