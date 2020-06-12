@@ -39,7 +39,11 @@ setup(name='adflow',
           'adflow': ['*.so']
       },
       install_requires=[
-            'numpy>=1.16.4'
+            'numpy>=1.16.4',
+            'baseclasses>=1.1.0',
+            'mpi4py>=3.0.2',
+            'petsc4py>=3.11.0',
+
       ],
       classifiers=[
         "Operating System :: Linux",
