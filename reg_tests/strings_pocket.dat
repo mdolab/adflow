@@ -1,2 +1,0 @@
- TITLE = "PocketStrings Data" 
- Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" "gapID" "gapIndex" "otherID" "otherIndex" "ratio"

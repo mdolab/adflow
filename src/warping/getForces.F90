@@ -245,7 +245,6 @@ subroutine getForces_b(forcesd, npts, sps)
   use blockPointers, only : nDom, nBocos, BCData, BCType, nBocos, BCDatad
   use inputPhysics, only : forcesAsTractions
   use surfaceFamilies, only: BCFamExchange, familyExchange
-  use communication
   use utils, only : EChk, setPointers, setPointers_d
   use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
   use surfaceFamilies, only : familyExchange, BCFamExchange
@@ -1393,10 +1392,10 @@ subroutine computeNodalForces_b(sps)
         if(BCType(mm) == EulerWall.or.BCType(mm) == NSWallAdiabatic .or. &
              BCType(mm) == NSWallIsothermal) then
            do j=jBeg, jEnd
-              do i=iBeg, iEnd                 
+              do i=iBeg, iEnd
                  qf_b = fourth*(BCDatad(mm)%F(i, j, :) + BCdatad(mm)%F(i-1, j, :) + &
                       BCDatad(mm)%F(i, j-1, :) + BCDatad(mm)%F(i-1, j-1, :))
-              
+
                  ! Fp and Fv are face-based values
                  BCDatad(mm)%Fp(i, j, :) = BCDatad(mm)%Fp(i, j, :) + qf_b
                  BCDatad(mm)%Fv(i, j, :) = BCDatad(mm)%Fv(i, j, :) + qf_b

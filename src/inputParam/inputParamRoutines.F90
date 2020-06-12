@@ -2761,7 +2761,6 @@ contains
     use inputADjoint
     use inputTSStabDeriv
     !  ------------------------------------------------
-    use inputPhysics, only : velDirFreeStream, liftDirection, dragDirection
     use communication, only : myid, adflow_comm_world
     use iteration, only : coefTime, coefTimeALE, coefMeshALE, &
          oldSolWritten, nALEMeshes, nALESteps, nOldLevels
