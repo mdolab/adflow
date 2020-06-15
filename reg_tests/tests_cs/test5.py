@@ -5,21 +5,13 @@
 ############################################################
 import sys, os, copy
 from mpi4py import MPI
-
 from baseclasses import AeroProblem
-
 from mdo_regression_helper import *
 from commonUtils import *
-
-# ###################################################################
-# DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
-# SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
-sys.path.append(os.path.abspath('../../'))
-
 if 'complex' in sys.argv:
-    from python.pyADflow_C import ADFLOW_C as ADFLOW
+    from adflow import ADFLOW_C as ADFLOW
 else:
-    from python.pyADflow import ADFLOW
+    from adflow import ADFLOW
 
 # ###################################################################
 
