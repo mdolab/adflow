@@ -1353,7 +1353,6 @@ contains
     defaultFamName(BCOutflowSubsonic) = 'outflow'
     defaultFamName(BCOutflowSupersonic)  ='outflow'
     defaultFamName(BCSymmetryPlane) = 'sym'
-    defaultFamName(BCAntiSymmetry) = 'sym'
     defaultFamName(BCSymmetryPolar) = 'sympolar'
     defaultFamName(BCTunnelInflow) = 'inflow'
     defaultFamName(BCTunnelOutflow) = 'outflow'

@@ -2735,9 +2735,6 @@ contains
     case (BCSymmetryPlane)
        internalBC = Symm
 
-    case (BCAntiSymmetry)
-       internalBC = AntiSymm
-
     case (BCSymmetryPolar)
        internalBC = SymmPolar
 
@@ -2798,6 +2795,9 @@ contains
 
        case ("BCDomainInterfaceTotal")
           internalBC = DomainInterfaceTotal
+
+       case ("BCAntiSymmetry")
+          internalBC = AntiSymm
 
        case default
           internalBC = bcNull
