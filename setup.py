@@ -40,7 +40,7 @@ setup(name='adflow',
       },
       install_requires=[
             'numpy>=1.16.4',
-            'baseclasses>=1.1.0',
+            'baseclasses>=1.2.0',
             'mpi4py>=3.0.2',
             'petsc4py>=3.11.0',
 
