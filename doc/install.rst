@@ -7,7 +7,12 @@ It is therefore necessary to build this library before using ``ADflow``.
 
 Requirements
 ------------
-See :ref:`install3rdPartyPackages` for details on installing required 3rd party packages.
+ADflow requires the following dependencies:
+- CGNS Library
+- PETSc
+- MPI
+
+See the MDO Lab installation guide `here <http://mdolab.engin.umich.edu/docs/installInstructions/install3rdPartyPackages.html>`_ for the supported versions and installation instructions.
 
 Building
 --------
@@ -24,7 +29,7 @@ If you are a beginner user installing the packages on a linux desktop,
 you should use the ``config.LINUX_GFORTRAN`` versions of the configuration 
 files. The ``config.LINUX_INTEL`` versions are usually used on clusters.
 ADflow has been successfully compiled on LINUX with either
-ifort or gfortran.
+``ifort`` or ``gfortran``.
 
 Once you have copied the config file, compile ADflow by running::
 
@@ -36,12 +41,16 @@ the screen (near the end)::
    Testing if module adflow can be imported...
    Module adflow was successfully imported.
 
-If you don't see this, it will be necessary to configure the build
-manually. To configure manually, open ``config/config.mk`` and modify options as necessary.
+If you don't see this, it will be necessary to configure the build manually.
+To configure manually, open ``config/config.mk`` and modify options as necessary.
 
 It is most likely that you need to modify the ``CGNS_INCLUDE_FLAGS`` and the ``CGNS_LINKER_FLAGS`` variables.
-It is also necessary to have``PETSc`` already compiled. 
 After changes to the configuration file, run ``make clean`` before attempting a new build.
+
+Lastly, to build and install the Python interface, type::
+
+    pip install .
+
 
 Verification
 ------------
