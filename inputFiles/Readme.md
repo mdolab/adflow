@@ -7,4 +7,4 @@ From the command line, navigate to the root directory and download and extract t
 wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz
 tar -xzvf adflow_input_files.tar.gz 
 
-The above should extract the files to the roor directory.
+The above should extract the files to the root directory.
