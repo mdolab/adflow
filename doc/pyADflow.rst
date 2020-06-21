@@ -4,5 +4,5 @@ pyADflow
 ---------
 .. currentmodule:: python.pyADflow
 
-.. autoclass:: python.pyADflow.ADFLOW
+.. autoclass:: adflow.pyADflow.ADFLOW
     :members: 
