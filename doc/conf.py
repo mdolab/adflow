@@ -29,6 +29,7 @@ extensions = ['sphinx.ext.viewcode', 'sphinx.ext.imgmath', 'sphinx.ext.autodoc',
 # mock import for autodoc
 autodoc_mock_imports = ['numpy', 'mpi4py', 'petsc4py', 'baseclasses']
 
+numpydoc_show_class_members = False
 # The master toctree document.
 master_doc = 'index'
 
