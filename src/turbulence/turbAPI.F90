@@ -1,10 +1,10 @@
 module turbAPI
 
 contains
-  subroutine turbSolveSegregated
+  subroutine turbSolveDDADI
     !
-    !       turbSolveSegregated solves the turbulent transport equations
-    !       segregatedly, i.e. the mean flow variables are kept constant
+    !       turbSolveDDADI solves the turbulent transport equations
+    !       separately, i.e. the mean flow variables are kept constant
     !       and the turbulent variables are updated.
     !
     use constants
@@ -92,7 +92,7 @@ contains
 
     enddo
 
-  end subroutine turbSolveSegregated
+  end subroutine turbSolveDDADI
 
   subroutine turbResidual
     !
