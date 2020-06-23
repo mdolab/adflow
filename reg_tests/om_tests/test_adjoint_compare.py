@@ -24,7 +24,7 @@ from pyspline import Curve
 sys.path.append(os.path.abspath('../../'))
 
 sys.path.append(os.path.abspath('../'))
-from python.om_utils import get_dvs_and_cons
+from adflow.om_utils import get_dvs_and_cons
 
 from om_commonUtils import assert_funcs_equal, assert_funcsSens_equal
 
