@@ -5,7 +5,7 @@ contains
   subroutine kw_block(resOnly)
     !
     !       kw solves the transport equations for the standard and
-    !       modified k-omega turbulence models in a segregated manner
+    !       modified k-omega turbulence models in a decoupled manner
     !       using a diagonal dominant adi-scheme.
     !
     use constants

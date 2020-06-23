@@ -833,7 +833,7 @@ contains
     use inputIteration
     use inputPhysics
     use utils, only : terminate
-    use turbAPI, only : turbSolveSegregated
+    use turbAPI, only : turbSolveDDADI
     use solverUtils, only : timeStep, computeUtau
     use smoothers, only : rungeKuttaSmoother, DADISmoother
     use residuals, only : residual, initRes, sourceTerms
@@ -934,10 +934,10 @@ contains
     call computeUtau
 
     ! Apply an iteration to the turbulent transport equations in
-    ! case these must be solved segregatedly.
+    ! case these must be solved separately.
 
     if (equations == RANSEquations) then
-       call turbSolveSegregated
+       call turbSolveDDADI
     end if
 
     ! Compute the time step.

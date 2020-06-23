@@ -3556,7 +3556,7 @@ contains
     use inputDiscretization, only : lumpedDiss, approxSA, orderturb
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
     use utils, only : EChk, setPointers, myisnan
-    use turbAPI, only : turbSolveSegregated
+    use turbAPI, only : turbSolveDDADI
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, getEwTol
@@ -3926,7 +3926,7 @@ contains
         if (ANK_useTurbDADI) then
             ! actually do the turbulence update
             call computeUtau
-            call turbSolveSegregated
+            call turbSolveDDADI
         else
             call ANKTurbSolveKSP
         end if
