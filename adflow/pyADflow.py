@@ -419,6 +419,7 @@ class ADFLOW(AeroSolver):
         allows the jig shape to designed, but performing anlysis on
         the flying shape. Note that the fixed set of displacements do
         not affect the sensitivities.
+
         Parameters
         ----------
         aeroProblem : aeroProblem class
@@ -707,16 +708,6 @@ class ADFLOW(AeroSolver):
         user-supplied way. The allows the user to define a function
         such as L/D while only requiring a single adjoint solution.
 
-        example>>>
-        ap = AeroProblem(....,evalFuncs=['L/D'])
-        CFDSolver=ADFLOW(options=....)
-        def LoverD(funcs):
-             funcs['L/D'] = funcs['cl']/funcs['cd']
-             return funcs
-        CFDSolver.addUserFunction('L/D',['cl','cd'],LoverD)
-
-
-
         Parameters
         ----------
         funcName : str
@@ -728,6 +719,15 @@ class ADFLOW(AeroSolver):
             The user supplied function that will produce the user function.
             This routine must be complex-step safe for the purpose of
             computing sensitivities.
+
+        Examples
+        --------
+        >>> ap = AeroProblem(....,evalFuncs=['L/D'])
+        >>> CFDSolver = ADFLOW(options=....)
+        >>> def LoverD(funcs):
+                funcs['L/D'] = funcs['cl']/funcs['cd']
+                return funcs
+        >>> CFDSolver.addUserFunction('L/D', ['cl','cd'], LoverD)
         """
         funcName = funcName.lower()
 
@@ -2442,8 +2442,8 @@ class ADFLOW(AeroSolver):
         specified group. This is a lower level function than
         evalFunctions() which should be used for optimization.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         groupName : str
             The family group on which to evaluate the functions.
 
@@ -3658,7 +3658,7 @@ class ADFLOW(AeroSolver):
         Returns
         -------
         dwdot, funcsdot, fDot : array, dict, array
-            One or more of the these are return depending ont he *Deriv flags
+            One or more of the these are return depending on the \*Deriv flags
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
@@ -3840,7 +3840,7 @@ class ADFLOW(AeroSolver):
         Returns
         -------
         wbar, xvbar, xsbar, xdvbar, xdvaerobar : array, array, array, dict, dict
-            One or more of these are returned depending on the *Deriv flags provided.
+            One or more of these are returned depending on the \*Deriv flags provided.
 
         """
         # Error Checking
@@ -4014,11 +4014,13 @@ class ADFLOW(AeroSolver):
         and the new values from 'fam3' set to zero. The values from
         fam1 are lost. The returned vec has size 15.
 
-            fam1     fam2      fam3
-        |---------+----------+------|
+        ::
 
-        |xxxxxxxxx xxxxxxxxxx|        <- vec1
-                  |xxxxxxxxxx 000000| <- returned vec (vec2)
+                fam1     fam2      fam3
+            |---------+----------+------|
+
+            |xxxxxxxxx xxxxxxxxxx|        <- vec1
+                      |xxxxxxxxxx 000000| <- returned vec (vec2)
 
         It is also possible to pass in vec2 into this routine. For
         that case, the existing values in the array will not be
@@ -4548,7 +4550,7 @@ class ADFLOW(AeroSolver):
             'isovariables':[list, []],
             'viscoussurfacevelocities':[bool, True],
 
-            # Physics Paramters
+            # Physics Parameters
             'discretization':[str, 'central plus scalar dissipation'],
             'coarsediscretization':[str, 'central plus scalar dissipation'],
             'limiter':[str, 'vanalbeda'],
@@ -4579,7 +4581,7 @@ class ADFLOW(AeroSolver):
             'infchangecorrection':[bool, False],
             'cavitationnumber':[float, 1.4],
 
-            # Common Paramters
+            # Common Parameters
             'ncycles':[int, 500],
             'timelimit':[float, -1.0],
             'ncyclescoarse':[int, 500],
@@ -4611,7 +4613,7 @@ class ADFLOW(AeroSolver):
             'selfzipcutoff':[float, 120.0],
             'oversetpriority':[dict, {}],
 
-            # Unsteady Paramters
+            # Unsteady Parameters
             'timeintegrationscheme':[str, 'bdf'],
             'timeaccuracy':[int, 2],
             'ntimestepscoarse':[int, 48],
@@ -4621,7 +4623,7 @@ class ADFLOW(AeroSolver):
             'usegridmotion':[bool, False],
             'coupledsolution':[bool, False],
 
-            # Time Spectral Paramters
+            # Time Spectral Parameters
             'timeintervals': [int, 1],
             'alphamode':[bool, False],
             'betamode':[bool, False],
@@ -4634,7 +4636,7 @@ class ADFLOW(AeroSolver):
             'alphafollowing':[bool,True],
             'tsstability': [bool, False],
 
-            # Convergence Paramters
+            # Convergence Parameters
             'l2convergence':[float, 1e-6],
             'l2convergencerel':[float, 1e-16],
             'l2convergencecoarse':[float, 1e-2],
@@ -4706,7 +4708,7 @@ class ADFLOW(AeroSolver):
             'partitiononly':[bool, False],
             'partitionlikenproc':[int, -1],
 
-            # Misc Paramters
+            # Misc Parameters
             'autosolveretry':[bool, False],
             'autoadjointretry':[bool, False],
             'numbersolutions':[bool, True],
@@ -4721,7 +4723,7 @@ class ADFLOW(AeroSolver):
             # Multidisciplinary Coupling Parameters:
             'forcesastractions':[bool, True],
 
-            # Adjoint Paramters
+            # Adjoint Parameters
             'adjointl2convergence':[float, 1e-6],
             'adjointl2convergencerel':[float, 1e-16],
             'adjointl2convergenceabs':[float, 1e-16],
@@ -4800,7 +4802,7 @@ class ADFLOW(AeroSolver):
         # module map, and "variable" the variable to set in that module.
 
         optionMap = {
-            # Common Paramters
+            # Common Parameters
             'gridfile':['io', 'gridfile'],
             'storerindlayer':['io', 'storerindlayer'],
             'nsavevolume':['io', 'nsavevolume'],
@@ -4818,7 +4820,7 @@ class ADFLOW(AeroSolver):
             'gridprecisionsurface':{'single':self.adflow.constants.precisionsingle,
                                     'double':self.adflow.constants.precisiondouble,
                                     'location':['io', 'precisionsurfgrid']},
-            # Physics Paramters
+            # Physics Parameters
             'discretization':{'central plus scalar dissipation': self.adflow.constants.dissscalar,
                               'central plus matrix dissipation': self.adflow.constants.dissmatrix,
                               'central plus cusp dissipation':self.adflow.constants.disscusp,
@@ -4890,7 +4892,7 @@ class ADFLOW(AeroSolver):
             'lowspeedpreconditioner':['discr', 'lowspeedpreconditioner'],
             'cavitationnumber':['physics','cavitationnumber'],
 
-            # Common Paramters
+            # Common Parameters
             'ncycles':['iter', 'ncycles'],
             'timelimit':['iter', 'timelimit'],
             'ncyclescoarse':['iter', 'ncyclescoarse'],
@@ -4938,7 +4940,7 @@ class ADFLOW(AeroSolver):
             # Grid motion Params
             'usegridmotion':['motion', 'gridmotionspecified'],
 
-            # Time Spectral Paramters
+            # Time Spectral Parameters
             'timeintervals':['ts', 'ntimeintervalsspectral'],
             'alphamode':['stab', 'tsalphamode'],
             'betamode':['stab', 'tsbetamode'],
@@ -4951,13 +4953,13 @@ class ADFLOW(AeroSolver):
             'alphafollowing':['stab', 'tsalphafollowing'],
             'tsstability':['stab', 'tsstability'],
 
-            # Convergence Paramters
+            # Convergence Parameters
             'l2convergence':['iter', 'l2conv'],
             'l2convergencerel':['iter', 'l2convrel'],
             'l2convergencecoarse':['iter', 'l2convcoarse'],
             'maxl2deviationfactor':['iter', 'maxl2deviationfactor'],
 
-            # Newton-Krylov Paramters
+            # Newton-Krylov Parameters
             'usenksolver':['nk', 'usenksolver'],
             'nkuseew':['nk', 'nk_useew'],
             'nkswitchtol':['nk', 'nk_switchtol'],
@@ -4984,7 +4986,7 @@ class ADFLOW(AeroSolver):
             'agmglevels':['agmg', 'agmglevels'],
             'agmgnsmooth':['agmg', 'agmgnsmooth'],
 
-            # Approximate Newton-Krylov Paramters
+            # Approximate Newton-Krylov Parameters
             'useanksolver':['ank', 'useanksolver'],
             'ankuseturbdadi':['ank', 'ank_useturbdadi'],
             'ankswitchtol':['ank', 'ank_switchtol'],
@@ -5018,13 +5020,13 @@ class ADFLOW(AeroSolver):
             'anknsubiterturb':['ank','ank_nsubiterturb'],
             'ankturbkspdebug':['ank','ank_turbdebug'],
             'ankusematrixfree':['ank','ank_usematrixfree'],
-            # Load Balance Paramters
+            # Load Balance Parameters
             'blocksplitting':['parallel', 'splitblocks'],
             'loadimbalance':['parallel', 'loadimbalance'],
             'loadbalanceiter':['parallel', 'loadbalanceiter'],
             'partitionlikenproc':['parallel', 'partitionlikenproc'],
 
-            # Misc Paramters
+            # Misc Parameters
             'printiterations':['iter', 'printiterations'],
             'printwarnings':['iter', 'printwarnings'],
             'printtiming':['adjoint', 'printtiming'],
