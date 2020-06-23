@@ -30,13 +30,6 @@ contains
     !
     integer(kind=intType) :: iter, sps, nn
 
-    ! Determine whether or not a second order discretization for the
-    ! advective terms must be used.
-
-    secondOrd = .false.
-    if(groundLevel == 1_intType .and. &
-         orderTurb   == secondOrder) secondOrd = .true.
-
     ! Loop over the number of iterations for the turbulence.
 
     do iter=1,nSubIterTurb
@@ -122,13 +115,6 @@ contains
     implicit none
 
     integer(kind=intType) :: nn, sps
-
-    ! Determine whether or not a second order discretization for the
-    ! advective terms must be used.
-
-    secondOrd = .false.
-    if(currentLevel == 1_intType .and. &
-         orderTurb    == secondOrder) secondOrd = .true.
 
     ! Compute the quantities for certain turbulence models that
     ! need to be communicated between blocks.
