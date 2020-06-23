@@ -22,7 +22,7 @@ mgcycle = '3w'
 
 options = copy.copy(adflowDefOpts)
 
-options = {
+options.update({
     # Common Parameters
     'gridFile':gridFile,
     # Physics Parameters
@@ -58,7 +58,7 @@ options = {
     'outerpreconits':3,
     'zipperSurfaceFamily':'output_fam',
     'flowtype':'internal',
-    }
+    })
 
 solve = True
 if 'solve' not in sys.argv:

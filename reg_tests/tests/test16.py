@@ -18,7 +18,7 @@ gridFile = '../inputFiles/euler_conv_nozzle.cgns'
 
 options = copy.copy(adflowDefOpts)
 
-options = {
+options.update({
     'gridFile':gridFile,
     'equationType':'euler',
     'smoother':'dadi',
@@ -42,7 +42,7 @@ options = {
     'blocksplitting': True,
     'solutionPrecision':'double',
     'flowtype':'internal',
-}
+})
 
 ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                  areaRef=1., chordRef=2., R=287.87,

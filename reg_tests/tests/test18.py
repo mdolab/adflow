@@ -19,7 +19,7 @@ gridFile = '../inputFiles/conic_conv_nozzle.cgns'
 
 options = copy.copy(adflowDefOpts)
 
-options = {
+options.update({
     # Common Parameters
     'gridFile':gridFile,
     # Physics Parameters
@@ -55,7 +55,8 @@ options = {
     'outerpreconits':3,
     'zipperSurfaceFamily':'output_fam',
     'flowtype':'internal',
-    }
+    'blocksplitting': True,
+    })
 
 solve = True
 if 'solve' not in sys.argv:
