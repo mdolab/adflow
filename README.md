@@ -2,13 +2,18 @@
 [![Build Status](https://travis-ci.com/mdolab/adflow.svg?branch=master)](https://travis-ci.com/mdolab/adflow) 
 [![Documentation Status](https://readthedocs.com/projects/mdolab-adflow/badge/?version=latest)](https://mdolab-adflow.readthedocs-hosted.com/?badge=latest)
 
-ADflow is a multi-block structured flow solver developed by the MDO Lab at the University of Michigan.
-It solves the compressible Euler, laminar Navier-Stokes and Reynolds-Averaged Navier-Stokes equations.
+ADflow is a flow solver developed by the MDO Lab at the University of Michigan.
+It solves the compressible Euler, laminar Navier–Stokes and Reynolds-averaged Navier–Stokes equations using structured multi-block and overset meshes.
 ADflow's features include the following:
 
 - Discrete adjoint implementation
 - "Complexified" code for complex-step derivative verification
-- Massively parallel (both CPU and memory scalable) implementation using MPI.
+- Massively parallel (both CPU and memory scalable) implementation using MPI
+
+ADflow has been used in aerodynamic, aerostructural, and aeropropulsive design optimization of aircraft configurations.
+Furthermore, we used ADflow to perform design optimization of hydrofoils and wind turbines.
+
+![](./images/adflow_applications.png)
 
 ## Documentation
 Please see the [documentation](https://mdolab-adflow.readthedocs-hosted.com/en/latest/) for installation details and API documentation.
@@ -22,7 +27,7 @@ Please cite ADflow in any publication for which you find it useful. The major de
 
 ### Python API
 
-The Python API for ADflow and its advantages are detailed in [this paper](https://mdolab.github.io/bibliography/Mader2020a.html).
+The Python API for ADflow and its advantages are detailed in [this paper](https://www.researchgate.net/profile/Joaquim_Martins/publication/342358808_ADflow_An_Open-Source_Computational_Fluid_Dynamics_Solver_for_Aerodynamic_and_Multidisciplinary_Optimization/links/5ef48e27299bf15a2ea0a345/ADflow-An-Open-Source-Computational-Fluid-Dynamics-Solver-for-Aerodynamic-and-Multidisciplinary-Optimization.pdf).
 
 Charles A. Mader, Gaetan K. W. Kenway, Anil Yildirim, and Joaquim R. R. A. Martins, “ADflow: An Open-Source Computational Fluid Dynamics Solver for Aerodynamic and Multidisciplinary Optimization”, _Journal of Aerospace Information Systems_, 2020. doi: [10.2514/1.I010796](https://doi.org/10.2514/1.I010796)
 
