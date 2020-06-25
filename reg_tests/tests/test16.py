@@ -18,31 +18,31 @@ gridFile = '../inputFiles/euler_conv_nozzle.cgns'
 
 options = copy.copy(adflowDefOpts)
 
-options = {
-    'gridFile':gridFile,
-    'equationType':'euler',
+options.update({
+    'gridfile':gridFile,
+    'equationtype':'euler',
     'smoother':'dadi',
-    'liftIndex':2,
-    'CFL':3.,
-    'CFLCoarse':1.5,
-    'MGCycle':'2w',
-    'MGStartLevel':2,
-    'nCyclesCoarse':500,
-    'nCycles':2500,
+    'liftindex':2,
+    'cfl':3.,
+    'cflcoarse':1.5,
+    'mgcycle':'2w',
+    'mgstartlevel':2,
+    'ncyclescoarse':500,
+    'ncycles':2500,
     'monitorvariables':['resrho','cl','cd', 'yplus'],
     'nsubiterturb':3,
-    'useNKSolver':True,
-    'NKSubSpaceSize':60,
-    'L2Convergence':1e-14,
-    'L2ConvergenceCoarse':1e-2,
-    'NKSwitchTol':1e-2,
+    'usenksolver':True,
+    'nksubspacesize':60,
+    'l2convergence':1e-14,
+    'l2convergencecoarse':1e-2,
+    'nkswitchtol':1e-2,
     'nkadpc': False,
     'vis4':0.006,
     'vis2': 0.0,
     'blocksplitting': True,
-    'solutionPrecision':'double',
+    'solutionprecision':'double',
     'flowtype':'internal',
-}
+})
 
 ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                  areaRef=1., chordRef=2., R=287.87,
