@@ -19,43 +19,44 @@ gridFile = '../inputFiles/conic_conv_nozzle.cgns'
 
 options = copy.copy(adflowDefOpts)
 
-options = {
+options.update({
     # Common Parameters
-    'gridFile':gridFile,
+    'gridfile':gridFile,
     # Physics Parameters
-    'equationType':'euler',
+    'equationtype':'euler',
     'smoother':'dadi',
     'nsubiter':3,
-    'CFL':4.0,
-    'CFLCoarse':1.25,
-    'MGCycle':'sg',
-    'MGStartLevel':-1,
-    'nCyclesCoarse':250,
-    'nCycles':1000,
+    'cfl':4.0,
+    'cflcoarse':1.25,
+    'mgcycle':'sg',
+    'mgstartlevel':-1,
+    'ncyclescoarse':250,
+    'ncycles':1000,
     'nkcfl0':1e10,
     'monitorvariables':['cpu', 'resrho','cl','cd'],
     'volumevariables':['blank'],
     'surfacevariables':['mach', 'cp', 'vx', 'vy','vz', 'blank'],
-    'useNKSolver':True,
+    'usenksolver':True,
     'nkswitchtol':.01,
     'nkadpc':True,
     'nkjacobianlag':5,
     'nkouterpreconits':3,
     'nkinnerpreconits':2,
     # Convergence Parameters
-    'L2Convergence':1e-10,
-    'L2ConvergenceCoarse':1e-4,
+    'l2convergence':1e-10,
+    'l2convergencecoarse':1e-4,
     'adjointl2convergence':1e-6,
-    'forcesAsTractions':True,
+    'forcesastractions':True,
     'debugzipper':True,
     'nearwalldist':.001,
     'nkls':'none',
     'solutionprecision':'double',
     'adjointsubspacesize':200,
     'outerpreconits':3,
-    'zipperSurfaceFamily':'output_fam',
+    'zippersurfacefamily':'output_fam',
     'flowtype':'internal',
-    }
+    'blocksplitting': True,
+    })
 
 solve = True
 if 'solve' not in sys.argv:
