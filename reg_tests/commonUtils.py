@@ -127,6 +127,7 @@ adflowDefOpts = {
     'loadimbalance':0.1,
     'loadbalanceiter':10,
     'partitiononly':False,
+    'partitionlikenproc':4,
 
     # Misc Paramters
     'autosolveretry':False,
