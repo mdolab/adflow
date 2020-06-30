@@ -3846,7 +3846,7 @@ contains
     resAveraging =  noResAveraging
     smoop        = 1.5_realType
 
-    turbTreatment     = segregated     ! Segregated solver for the
+    turbTreatment     = decoupled      ! Decoupled solver for the
     ! turbulent equations
     turbSmoother      = adi            ! solved using an adi scheme.
     freezeTurbSource = .true.          ! Freeze the coarse grid source

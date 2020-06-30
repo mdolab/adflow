@@ -806,7 +806,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: dadi=2_inttype
          integer(kind=inttype) parameter,optional :: nllusgs=3_inttype
          integer(kind=inttype) parameter,optional :: nllusgsline=4_inttype
-         integer(kind=inttype) parameter,optional :: segregated=1_inttype
+         integer(kind=inttype) parameter,optional :: decoupled=1_inttype
          integer(kind=inttype) parameter,optional :: coupled=2_inttype
          integer(kind=inttype) parameter,optional :: gmres=1_inttype
          integer(kind=inttype) parameter,optional :: adi=2_inttype

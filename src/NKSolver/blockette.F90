@@ -1393,6 +1393,8 @@ contains
     !                SA Advection
     ! ---------------------------------------------
     use constants
+    use inputDiscretization, only : orderTurb
+    use iteration, only : groundlevel
     use turbMod, only : secondOrd
     implicit none
 
@@ -1402,6 +1404,11 @@ contains
     integer(kind=intType), parameter :: nAdv=1
     integer(kind=intType) :: offset, i, j, k, ii, jj
 
+    ! Determine whether or not a second order discretization for the
+    ! advective terms must be used.
+    secondOrd = .false.
+    if(groundLevel == 1_intType .and. &
+         orderTurb == secondOrder) secondOrd = .true.
 
     offset=itu1-1
     do k=2, kl

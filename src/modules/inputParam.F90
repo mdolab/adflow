@@ -201,7 +201,7 @@ module inputIteration
   !                   switching to multigrid. Could be useful for
   !                   supersonic problems with strong shocks.
   ! nSubIterTurb:     Number of turbulent subiterations when using
-  !                   a segregated approach for the turbulence.
+  !                   a decoupled approach for the turbulence.
   ! nUpdateBleeds:    Number of iterations after which the bleed
   !                   boundary conditions must be updated.
   ! smoother:         Smoother to be used.
@@ -209,8 +209,8 @@ module inputIteration
   ! nSubiterations:   Maximum number of subiterations used in
   !                   DADI.
   ! turbTreatment:    Treatment of the turbulent transport equations;
-  !                   either segregated or coupled.
-  ! turbSmoother:     Smoother to use in case a segregated solver
+  !                   either decoupled or coupled.
+  ! turbSmoother:     Smoother to use in case a decoupled solver
   !                   is to be used.
   ! turbRelax:        What kind of turbulent relaxation to use.
   !                   Either turbRelaxExplicit or

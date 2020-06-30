@@ -201,7 +201,7 @@ module constants
        nlLusgsLine = 4
 
   integer(kind=intType), parameter :: &
-       segregated = 1,   &
+       decoupled  = 1,   &
        coupled    = 2
   integer(kind=intType), parameter :: &
        gmres = 1,        &
