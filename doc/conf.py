@@ -12,10 +12,14 @@
 
 import os
 import sys
+import subprocess
 sys.path.insert(0, os.path.abspath("../"))
+# build doxygen
+read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+if read_the_docs_build:
+    subprocess.call('doxygen', shell=True)
 
 # -- Project information -----------------------------------------------------
-
 project = 'ADflow'
 copyright = '2020, MDO Lab'
 
