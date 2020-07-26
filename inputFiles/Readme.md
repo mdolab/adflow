@@ -1,10 +1,1 @@
-# Input files used by regression tests and some examples have to be downloaded
-
-The input files for test need to be downloaded.
-
-From the command line, navigate to the root directory and download and extract the archive
-
-wget http://mdolab.engin.umich.edu/sites/default/files/mdolabwebsite/repos/adflow/adflow_input_files.tar.gz
-tar -xzvf adflow_input_files.tar.gz 
-
-The above should extract the files to the root directory.
+Run the script `get-input-files.sh` to download and extract the input files for regression testing.
