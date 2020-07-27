@@ -70,8 +70,8 @@ Specifically, install
 `idwarp <https://github.com/mdolab/idwarp/>`__.
 With all of these packages installed, you can fully verify your ADflow installation.
 
-First, follow the instructions in ``python/inputFiles/Readme.md`` to download the necessary files.
-Then navigate to the regression tests directory in ``python/reg_tests/``.
+First, run the script  ``inputFiles/get-input-files.sh`` to download and extract the necessary files.
+Then navigate to the regression tests directory in ``reg_tests/``.
 
 Command line arguments for run_reg_tests.py can be found by running::
 
