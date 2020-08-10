@@ -379,7 +379,7 @@ end subroutine applyAllBC
     ! Local variables.
     integer(kind=intType) :: i, j, l, ii
     real(kind=realType) :: vn, nnx, nny, nnz
-    real(kind=realType), dimension(3) :: dww2
+    real(kind=realType), dimension(5) :: dww2
 
     ! Loop over the generic subface to set the state in the
     ! 1-st level halos
@@ -393,9 +393,11 @@ end subroutine applyAllBC
        ! which must be substracted from the donor velocity
        ! to obtain the halo velocity.
 
+       dww2(irho) = ww2(i,j,irho) - wInf(irho)
        dww2(ivx) = ww2(i,j,ivx) - wInf(ivx)
        dww2(ivy) = ww2(i,j,ivy) - wInf(ivy)
        dww2(ivz) = ww2(i,j,ivz) - wInf(ivz)
+       dww2(irhoE) = ww2(i,j,irhoE) - wInf(irhoE)
 
        vn = two*(dww2(ivx)*BCData(nn)%norm(i,j,1) + &
             dww2(ivy)*BCData(nn)%norm(i,j,2) + &
@@ -403,25 +405,23 @@ end subroutine applyAllBC
 
        ! Determine the flow variables in the halo cell.
 
-       ww1(i,j,irho) = ww2(i,j,irho)
        ww1(i,j,ivx) = - dww2(ivx) + vn*BCData(nn)%norm(i,j,1)
        ww1(i,j,ivy) = - dww2(ivy) + vn*BCData(nn)%norm(i,j,2)
        ww1(i,j,ivz) = - dww2(ivz) + vn*BCData(nn)%norm(i,j,3)
-       ww1(i,j,irhoE) = ww2(i,j,irhoE)
 
+       ww1(i,j,irho) = - dww2(irho) + wInf(irho)
        ww1(i,j,ivx) = wInf(ivx) + ww1(i,j,ivx)
        ww1(i,j,ivy) = wInf(ivy) + ww1(i,j,ivy)
        ww1(i,j,ivz) = wInf(ivz) + ww1(i,j,ivz)
-
-
+       ww1(i,j,irhoE) = - dww2(irhoE) + wInf(irhoE)
 
        ! Set the pressure and gamma and possibly the
        ! laminar and eddy viscosity in the halo.
 
        gamma1(i,j) = gamma2(i,j)
        pp1(i,j)    = pInf - (pp2(i,j) - pInf)
-       if( viscous )   rlv1(i,j) = rlv2(i,j)
-       if( eddyModel ) rev1(i,j) = rev2(i,j)
+       if( viscous )   rlv1(i,j) = - rlv2(i,j)
+       if( eddyModel ) rev1(i,j) = - rev2(i,j)
     enddo
   end subroutine bcAntiSymm1stHalo
 
@@ -443,7 +443,7 @@ end subroutine applyAllBC
     ! Local variables.
     integer(kind=intType) :: i, j, l, ii
     real(kind=realType) :: vn, nnx, nny, nnz
-    real(kind=realType), dimension(3) :: dww3
+    real(kind=realType), dimension(5) :: dww3
 
     ! If we need the second halo, do everything again, but using ww0,
     ! ww3 etc instead of ww2 and ww1.
@@ -453,32 +453,34 @@ end subroutine applyAllBC
        i = mod(ii, isize) + iStart
        j = ii/isize + jStart
 
+       dww3(irho) = ww3(i,j,irho) - wInf(irho)
        dww3(ivx) = ww3(i,j,ivx) - wInf(ivx)
        dww3(ivy) = ww3(i,j,ivy) - wInf(ivy)
        dww3(ivz) = ww3(i,j,ivz) - wInf(ivz)
+       dww3(irhoE) = ww3(i,j,irhoE) - wInf(irhoE)
 
        vn = two*(dww3(ivx)*BCData(nn)%norm(i,j,1) + &
             dww3(ivy)*BCData(nn)%norm(i,j,2) + &
             dww3(ivz)*BCData(nn)%norm(i,j,3))
 
        ! Determine the flow variables in the halo cell.
-       ww0(i,j,irho) = ww3(i,j,irho)
-       ww0(i,j,ivx) = - ww3(i,j,ivx) + vn*BCData(nn)%norm(i,j,1)
-       ww0(i,j,ivy) = - ww3(i,j,ivy) + vn*BCData(nn)%norm(i,j,2)
-       ww0(i,j,ivz) = - ww3(i,j,ivz) + vn*BCData(nn)%norm(i,j,3)
-       ww0(i,j,irhoE) = ww3(i,j,irhoE)
+       ww0(i,j,ivx) = - dww3(ivx) + vn*BCData(nn)%norm(i,j,1)
+       ww0(i,j,ivy) = - dww3(ivy) + vn*BCData(nn)%norm(i,j,2)
+       ww0(i,j,ivz) = - dww3(ivz) + vn*BCData(nn)%norm(i,j,3)
 
+       ww0(i,j,irho) =  - dww3(irho) + wInf(irho) 
        ww0(i,j,ivx) = wInf(ivx) + ww0(i,j,ivx)
        ww0(i,j,ivy) = wInf(ivy) + ww0(i,j,ivy)
        ww0(i,j,ivz) = wInf(ivz) + ww0(i,j,ivz)
+       ww0(i,j,irhoE) = - dww3(irhoE) + wInf(irhoE)
 
        ! Set the pressure and gamma and possibly the
        ! laminar and eddy viscosity in the halo.
 
        gamma0(i,j) = gamma3(i,j)
        pp0(i,j)    = pInf - (pp3(i,j) - pInf)
-       if( viscous )   rlv0(i,j) = rlv3(i,j)
-       if( eddyModel ) rev0(i,j) = rev3(i,j)
+       if( viscous )   rlv0(i,j) = - rlv3(i,j)
+       if( eddyModel ) rev0(i,j) = - rev3(i,j)
     enddo
 
   end subroutine bcAntiSymm2ndHalo
