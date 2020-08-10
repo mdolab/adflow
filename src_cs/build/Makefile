@@ -105,7 +105,7 @@ python: lib ../f2py/adflow.pyf
 	 @echo "#------------------------------------------------------#"
 
 # Generate Numpy inlude directory
-	$(eval NUMPY_INCLUDES = $(shell $(PYTHON) -c 'from __future__ import print_function; import numpy; print(numpy.get_include())'))
+	$(eval NUMPY_INCLUDES = $(shell $(PYTHON) -c 'import numpy; print(numpy.get_include())'))
 	@echo "#------------------------------------------------------#"
 	@echo Numpy Include Directory: $(NUMPY_INCLUDES)
 	@echo "#------------------------------------------------------#"
@@ -138,5 +138,5 @@ python: lib ../f2py/adflow.pyf
 
 # Final Link:
 	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow_cs.so
-	$(PYTHON) ../f2py/importTest.py
-	mv libadflow_cs.so ../../python
+	$(PYTHON) importTest.py
+	mv libadflow_cs.so ../../adflow

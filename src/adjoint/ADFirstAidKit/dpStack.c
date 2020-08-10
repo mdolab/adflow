@@ -106,7 +106,7 @@ void dppushN(char *x, unsigned int nbChars) {
 void dppopN(char *x, unsigned int nbChars) {
   dpcheckBack() ;
   if (dpcurStackTop-dpcurStackBottom < nbChars) {
-    printf("Help! DP stack corrupted, height:%i !!",dpcurStackTop-dpcurStackBottom-nbChars) ;
+    printf("Help! DP stack corrupted, height:%li !!",dpcurStackTop-dpcurStackBottom-nbChars) ;
     exit(0) ;
   }
   dpcurStackTop-=nbChars ;
@@ -436,7 +436,7 @@ void dpprinttopplace_() {
 	stack = stack->prev ;
 	nbBlocks++ ;
     }
-    printf("DP Stack  top: %i+%i\n",nbBlocks,dpcurStackTop - dpcurStackBottom) ;
+    printf("DP Stack  top: %i+%li\n",nbBlocks,dpcurStackTop - dpcurStackBottom) ;
 }
 
 void dpprintlookingplace_() {
@@ -449,7 +449,7 @@ void dpprintlookingplace_() {
 	    stack = stack->prev ;
 	    nbBlocks++ ;
 	}
-	printf("DP Stack look: %i+%i\n",nbBlocks,dplookStackTop - dplookStackBottom) ;
+	printf("DP Stack look: %i+%li\n",nbBlocks,dplookStackTop - dplookStackBottom) ;
     }
 }
 

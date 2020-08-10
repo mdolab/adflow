@@ -56,7 +56,7 @@ Mon Aug 14 19:53:53 PDT 2000:
 """
 
 import sys, os, glob
-import string, re
+import re
 from stat import *
 
 err = sys.stderr.write
@@ -74,7 +74,7 @@ def main():
             + ' [-lucky_logic|-MIPS_logic|-fudge_format] file-pattern \t\n' + \
             '\tpython ' + sys.argv[0]
             + ' [-lucky_logic|-MIPS_logic|-fudge_format] file-pattern \n\n' )
-	sys.exit(2)
+        sys.exit(2)
 
     for arg in sys.argv[1:]:
         if arg == "-lucky_logic":
@@ -169,8 +169,8 @@ def is_fortran(name, root):
 def fix_file(file):
     try:
         f = open(file, 'r')
-    except IOError, msg:
-        err(file + ': cannot open: ' + `msg` + '\n')
+    except IOError as err:
+        print('{} could not be opened: {}'.format(file,err))
         return 1
 
     # Read file to memory
@@ -191,7 +191,7 @@ def fix_file(file):
         i_line = 0
         i_line, is_EOF = fix_routine(i_line, lines)
         if is_EOF:
-            print 'EOF'
+            print('EOF')
     else:                  # routine file
         while 1:
             if (i_line >= len(lines)): break
@@ -248,10 +248,9 @@ def write_output(filename, lines):
 
     try:
         g = open(newname, 'w')
-    except IOError, msg:
+    except IOError as err:
         f.close()
-        err(newname+': cannot create: '+\
-            `msg`+'\n')
+        print('{} could not be opened: {}'.format(newname,err))
         return 1
     for line in lines: g.write(line)
     g.close()
@@ -387,13 +386,13 @@ def fix_implicit(line):
 
 def fix_if(line):
     # fixes the logical expression inside the if assertion
-    #print "_________________________________"
-    #print "Fixing if:"
-    #print '['+line+']'
-    #print "_________________________________"
+    #print("_________________________________")
+    #print("Fixing if:")
+    #print('['+line+']')
+    #print("_________________________________")
 
     preif, ifitself, tmptail = patt_if.match(line).group(1,2,3)
-    #print 'tmptail = ' + tmptail
+    #print('tmptail = ' + tmptail)
     tail = tmptail
     assertion = ''
     count = 1
@@ -430,10 +429,10 @@ def fix_logic_expression(expression):
     # for .eq., .ne., .ge. or ==, /=, >= as necessary.
     #
 
-    #print "_________________________________"
-    #print "\tFixing logic expression:"
-    #print "\t["+expression+"]"
-    #print "_________________________________"
+    #print("_________________________________")
+    #print("\tFixing logic expression:")
+    #print("\t["+expression+"]")
+    #print("_________________________________")
 
     #patt_connective = re.compile('(\s*\.\s*(?:and|or|not|eqv|neqv)\s*\.[ \t]*)', re.IGNORECASE) # ORIGINAL
     patt_connective = re.compile('(\s*\.\s*(?:and|or|not|eqv|neqv)\s*\.\s*(?:&|)\s*(?:\n|))', re.IGNORECASE)
@@ -441,7 +440,7 @@ def fix_logic_expression(expression):
     split_expression = patt_connective.split(expression)
     if len(split_expression) > 1:
         for i in range(len(split_expression)):
-            #print i, "\t["+split_expression[i]+']'
+            #print(i, "\t["+split_expression[i]+']')
             strings = patt_operator.split(split_expression[i])
             if len(strings) == 1: continue # no operator, no change
             lhs = strings[0]
@@ -451,11 +450,11 @@ def fix_logic_expression(expression):
             rhs = fix_logic_rhs(rhs)
             split_expression[i] = lhs + operator + rhs
             # end for
-        expression = string.join(split_expression,'') # don't add spaces
+        expression = ''.join(split_expression) # don't add spaces
     return expression
 
 def fix_logic_lhs(lhs):
-    #print 'lhs=' + lhs
+    #print('lhs=' + lhs)
     count = 0
     for i in range(len(lhs)):
         j = len(lhs)-(i+1)  # start from end
@@ -467,11 +466,11 @@ def fix_logic_lhs(lhs):
             break
     head = lhs[:j]
     expr = lhs[j:]
-    #print 'head=' + head + '\t expr=' + expr
+    #print('head=' + head + '\t expr=' + expr)
     return head + '(' + expr
 
 def fix_logic_rhs(rhs):
-    #print 'rhs=' + rhs
+    #print('rhs=' + rhs)
     count = 0
     for i in range(len(rhs)):
         char = rhs[i]
@@ -494,7 +493,7 @@ def fix_intrinsics(line):
     # this next part works only for fixed format files
     patt_char6colB = re.compile(r'\n\s{5,5}\S')
     tmpline=patt_char6colB.sub('',line) #join lines
-    tmpline=string.strip(tmpline)       #strip away white space
+    tmpline=tmpline.strip()       #strip away white space
     patt_intrinsicB = re.compile(r'^.*intrinsic\b(?:\s*:\s*:)?$',
                                  re.IGNORECASE)
     if patt_intrinsicB.match(tmpline): # then return empty line
@@ -529,7 +528,7 @@ def skip_continuation(i, lines):
         elif patt_blankline.match(lines[i]):
             is_continuation = 1
         elif (patt_amperend.match(lines[i-1])):
-              is_continuation = 1
+            is_continuation = 1
         else:
             is_continuation = 0
         i = i+1

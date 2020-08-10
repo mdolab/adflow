@@ -3427,7 +3427,7 @@ end subroutine cross_prod
     ! Flow variables. Note that wOld, gamma and the laminar viscosity
     ! point to the entries on the finest mesh. The reason is that
     ! they are computed from the other variables. For the eddy
-    ! viscosity this is not the case because in a segregated solver
+    ! viscosity this is not the case because in a decoupled solver
     ! its values are obtained from the fine grid level.
 
     w     => flowDoms(nn,mm,ll)%w
@@ -3615,7 +3615,7 @@ end subroutine cross_prod
     ! Flow variables. Note that wOld, gamma and the laminar viscosity
     ! point to the entries on the finest mesh. The reason is that
     ! they are computed from the other variables. For the eddy
-    ! viscosity this is not the case because in a segregated solver
+    ! viscosity this is not the case because in a decoupled solver
     ! its values are obtained from the fine grid level.
 
     wd     => flowDomsd(nn,1,sps)%w
@@ -6224,7 +6224,6 @@ end subroutine cross_prod
 
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use adjointVars, only : nCellsGlobal
     use blockPointers, only : nDom, il, jl, kl, x
 
     implicit none
@@ -6261,5 +6260,60 @@ end subroutine cross_prod
        end do
     end do
   end subroutine getCellCenters
+
+  subroutine getCellCGNSBlockIDs(level, n, cellID)
+
+    use constants
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use blockPointers, only : nDom, il, jl, kl, nbkGlobal
+
+    implicit none
+
+    ! Input/Output
+    integer(kind=intType), intent(in) :: level, n
+    real(kind=realType), dimension(n), intent(out) :: cellID
+
+    ! Working
+    integer(kind=intType) :: i, j, k, ii, nn, sps
+
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, level, sps)
+
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   ii = ii + 1
+
+                   cellID(ii) = nbkGlobal
+
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine getCellCGNSBlockIDs
+
+
+  subroutine getNCGNSZones(nZones)
+    use cgnsGrid
+    implicit none
+    integer(kind=inttype), intent(out) :: nZones
+
+    nZones = cgnsNDom
+
+  end subroutine getNCGNSZones
+
+  subroutine getCGNSZoneName(i, zone)
+    use cgnsGrid
+      implicit none
+      character(len=maxCGNSNameLen), intent(out) :: zone
+      integer(kind=intType), intent(in) :: i
+
+      zone = cgnsDoms(i)%zoneName
+
+    end subroutine getCGNSZoneName
+
 #endif
 end module utils

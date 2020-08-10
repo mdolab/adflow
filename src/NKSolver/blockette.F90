@@ -67,7 +67,7 @@ module blockette
   !$OMP THREADPRIVATE(sI, sJ, sK, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)
 contains
 
-  subroutine blocketteRes(useDissApprox, useViscApprox, useUpdateDt, useFlowRes, useTurbRes, useSpatial, &
+  subroutine blocketteRes(useDissApprox, useViscApprox, useUpdateIntermed, useFlowRes, useTurbRes, useSpatial, &
        useStoreWall, famLists, funcValues, forces, bcDataNames, bcDataValues, bcDataFamLists)
 
     ! Copy the values from blockPointers (assumed set) into the
@@ -100,7 +100,7 @@ contains
     implicit none
 
     ! Input/Output
-    logical, intent(in), optional :: useDissApprox, useViscApprox, useUpdateDt, useFlowRes
+    logical, intent(in), optional :: useDissApprox, useViscApprox, useUpdateIntermed, useFlowRes
     logical, intent(in), optional :: useTurbRes, useSpatial, useStoreWall
     integer(kind=intType), optional, dimension(:, :), intent(in) :: famLists
     real(kind=realType), optional, dimension(:, :), intent(out) :: funcValues
@@ -110,7 +110,7 @@ contains
     real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
 
     ! Misc
-    logical :: dissApprox, viscApprox, updateDt, flowRes, turbRes, spatial, storeWall
+    logical :: dissApprox, viscApprox, updateIntermed, flowRes, turbRes, spatial, storeWall
     integer(kind=intType) :: nn, sps, fSize, lstart, lend, iRegion
     real(kind=realType) ::  pLocal
 
@@ -119,7 +119,16 @@ contains
     ! timeStep.
     dissApprox = .False.
     viscApprox = .False.
-    updateDt = .False.
+    ! Update intermediate flag is to copy out intermediate variables
+    ! that are computed during the blockette residual computation from
+    ! blockette memory back to the main memory. These are the time
+    ! step, spectral radii for all cases, and nodal gradients and
+    ! speed of sound squared for viscous simulations. The regular
+    ! "block" residuals do not need to copy out these since they
+    ! are already computed in place. For the block residual, this
+    ! flag only determines if we update the time step along with
+    ! the spectral radii.
+    updateIntermed = .False.
     flowRes = .True.
     turbRes = .True.
     spatial = .False.
@@ -134,8 +143,8 @@ contains
        viscApprox = useViscApprox
     end if
 
-    if (present(useUpdateDt)) then
-       updateDt = useUpdateDt
+    if (present(useUpdateIntermed)) then
+      updateIntermed = useUpdateIntermed
     end if
 
     if (present(useFlowRes)) then
@@ -261,9 +270,9 @@ contains
 
           rFil = one
           blockettes: if (useBlockettes) then
-             call blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
+             call blocketteResCore(dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall)
           else
-             call blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
+             call blockResCore(dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall, nn, sps)
           end if blockettes
 
           if (currentLevel == 1) then
@@ -288,7 +297,7 @@ contains
     end if
   end subroutine blocketteRes
 
-  subroutine blocketteResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall)
+  subroutine blocketteResCore(dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall)
 
     ! Main subroutine for computing the reisdual for the given block using blockettes
     use constants
@@ -300,12 +309,17 @@ contains
          bie=>ie, bje=>je, bke=>ke, &
          bib=>ib, bjb=>jb, bkb=>kb, &
          bw=>w, bp=>p, bgamma=>gamma, &
+         bradi=>radi, bradj=>radj, bradk=>radk, &
+         bux=>ux, buy=>uy, buz=>uz, &
+         bvx=>vx, bvy=>vy, bvz=>vz, &
+         bwx=>wx, bwy=>wy, bwz=>wz, &
+         bqx=>qx, bqy=>qy, bqz=>qz, &
          bx=>x, brlv=>rlv, brev=>rev, bvol=>vol, bVolRef=>volRef, bd2wall=>d2wall, &
          biblank=>iblank, bPorI=>porI, bPorJ=>porJ, bPorK=>porK, bdw=>dw, bfw=>fw, &
          bShockSensor=>shockSensor, &
          bsi=>si, bsj=>sj, bsk=>sk, &
          bsFaceI=>sFaceI, bsFaceJ=>sFaceJ, bsFaceK=>sFaceK , &
-         bdtl=>dtl,  &
+         bdtl=>dtl, baa=>aa, &
          addGridVelocities
     use flowVarRefState, only : nwf, nw, viscous, nt1, nt2
     use iteration, only : currentLevel
@@ -318,7 +332,7 @@ contains
     implicit none
 
     ! Input
-    logical, intent(in) :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
+    logical, intent(in) :: dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall
 
     ! Working:
     integer(kind=intType) :: i, j, k, l, lStart, lEnd
@@ -615,7 +629,7 @@ contains
                 end select
              endif
 
-             call timeStep(updateDt)
+             call timeStep(updateIntermed)
 
              if (flowRes) then
                 call inviscidCentralFlux
@@ -665,23 +679,81 @@ contains
                 end do
              end do
 
-             ! Also copy out the dtl if we were asked for it
-             if (updateDt) then
-                do k=2, kl
-                   do j=2, jl
-                      do i=2, il
-                         bdtl(i+ii-2, j+jj-2, k+kk-2) = dtl(i, j, k)
-                      end do
-                   end do
-                end do
-             end if
+             ! Also copy out the intermediate variables if asked for them
+             ! we need these to be updated in main memory because
+             ! the reverse mode AD routines do use these variables.
+             ! after every ANK and NK step, blocketteRes is called
+             ! with updateIntermed = True, and it will update these
+             ! arrays in main memory. The time step is required
+             ! for the ANK and MG solver steps.
+             intermed: if (updateIntermed) then
+               ! time step
+               do k=2, kl
+                  do j=2, jl
+                     do i=2, il
+                        bdtl(i+ii-2, j+jj-2, k+kk-2) = dtl(i, j, k)
+                     end do
+                  end do
+               end do
+
+               ! Spectral radii
+               do k=1, ke
+                  do j=1, je
+                     do i=1, ie
+                        bradi(i+ii-2, j+jj-2, k+kk-2) = radi(i, j, k)
+                        bradj(i+ii-2, j+jj-2, k+kk-2) = radj(i, j, k)
+                        bradk(i+ii-2, j+jj-2, k+kk-2) = radk(i, j, k)
+                     end do
+                  end do
+               end do
+
+               ! need aa and nodal gradients if we have viscous fluxes
+               visc: if (viscous .and. flowRes) then
+
+                  ! speed of sound squared
+                  do k=1, ke
+                     do j=1, je
+                        do i=1, ie
+                           baa(i+ii-2, j+jj-2, k+kk-2) = aa(i, j, k)
+                        end do
+                     end do
+                  end do
+
+                  ! nodal gradients
+                  do k=1, kl
+                     do j=1, jl
+                        do i=1, il
+
+                           bux(i+ii-2, j+jj-2, k+kk-2) = ux(i, j, k)
+                           buy(i+ii-2, j+jj-2, k+kk-2) = uy(i, j, k)
+                           buz(i+ii-2, j+jj-2, k+kk-2) = uz(i, j, k)
+
+                           bvx(i+ii-2, j+jj-2, k+kk-2) = vx(i, j, k)
+                           bvy(i+ii-2, j+jj-2, k+kk-2) = vy(i, j, k)
+                           bvz(i+ii-2, j+jj-2, k+kk-2) = vz(i, j, k)
+
+                           bwx(i+ii-2, j+jj-2, k+kk-2) = wx(i, j, k)
+                           bwy(i+ii-2, j+jj-2, k+kk-2) = wy(i, j, k)
+                           bwz(i+ii-2, j+jj-2, k+kk-2) = wz(i, j, k)
+
+                           bqx(i+ii-2, j+jj-2, k+kk-2) = qx(i, j, k)
+                           bqy(i+ii-2, j+jj-2, k+kk-2) = qy(i, j, k)
+                           bqz(i+ii-2, j+jj-2, k+kk-2) = qz(i, j, k)
+
+                        end do
+                     end do
+                  end do
+               end if visc
+
+             end if intermed
+
           end do
        end do
     end do
     !$OMP END PARALLEL DO
   end subroutine blocketteResCore
 
-  subroutine blockResCore(dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall, nn, sps)
+  subroutine blockResCore(dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall, nn, sps)
 
     use constants
     use fluxes, only : inviscidCentralFlux_block=>inviscidCentralFlux, &
@@ -704,7 +776,7 @@ contains
 
     implicit none
     ! Input
-    logical, intent(in) :: dissApprox, viscApprox, updateDt, flowRes, turbRes, storeWall
+    logical, intent(in) :: dissApprox, viscApprox, updateIntermed, flowRes, turbRes, storeWall
     integer(kind=intType), intent(in) :: nn, sps
 
     ! Working:
@@ -725,7 +797,7 @@ contains
     end if
 
     ! Compute time step
-    call timestep_block(.not. updateDt)
+    call timestep_block(.not. updateIntermed)
 
     call initres_block(lStart, lEnd, nn, sps) ! Initialize only the Turblent Variables
 
@@ -1321,6 +1393,8 @@ contains
     !                SA Advection
     ! ---------------------------------------------
     use constants
+    use inputDiscretization, only : orderTurb
+    use iteration, only : groundlevel
     use turbMod, only : secondOrd
     implicit none
 
@@ -1330,6 +1404,11 @@ contains
     integer(kind=intType), parameter :: nAdv=1
     integer(kind=intType) :: offset, i, j, k, ii, jj
 
+    ! Determine whether or not a second order discretization for the
+    ! advective terms must be used.
+    secondOrd = .false.
+    if(groundLevel == 1_intType .and. &
+         orderTurb == secondOrder) secondOrd = .true.
 
     offset=itu1-1
     do k=2, kl

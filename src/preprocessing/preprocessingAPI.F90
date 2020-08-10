@@ -1374,7 +1374,7 @@ contains
              if (trim(cgnsDoms(i)%bocoInfo(j)%wallBCName) == "") then
                 if (myid == 0) then
                    ! Tell the user we are adding an automatic family name
-                   write(*, 101), i, j, trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
+                   write(*, 101) i, j, trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
                         trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
                 end if
                 cgnsDoms(i)%bocoInfo(j)%wallBCName = trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
