@@ -39,6 +39,8 @@ contains
          nw, nwf, kPresent, wInf
     use flowUtils, only : computeGamma, eTot
     use turbUtils, only : saNuKnownEddyRatio
+    ! mham
+    use communication, only: myID
     implicit none
 
     integer(kind=intType) :: sps, nn, mm, ierr
@@ -177,6 +179,14 @@ contains
     zInf = zero
     call etot(rhoInf, uInf, vInf, zInf, pInfCorr, ktmp, &
          wInf(irhoE), kPresent)
+
+    if(myID == 0) then
+       ! mham 
+       PRINT*,'' 
+       PRINT*,'ADFLOW: Velocity normalisation constant, uRef:' 
+       PRINT*,'#',uRef 
+       PRINT*,''
+    endif
 
   end subroutine referenceState
 

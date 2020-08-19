@@ -223,7 +223,7 @@ module block
      integer(kind=intType) :: il, jl, kl
      integer(kind=intType) :: ie, je, ke
      integer(kind=intType) :: ib, jb, kb
-
+     
      logical :: rightHanded
      !
      !         Block boundary conditions.
@@ -477,7 +477,7 @@ module block
 
      !
      !         Flow variables.
-     !
+     ! x(0:ie,0:je,0:ke,3)
      ! w(0:ib,0:jb,0:kb,1:nw)       - The set of independent variables
      !                                w(i,j,k,1:nwf) flow field
      !                                variables, which are rho, u,

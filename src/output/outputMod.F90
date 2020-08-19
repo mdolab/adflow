@@ -1393,6 +1393,16 @@ contains
     use utils, only : setPointers
     use flowUtils, only : computePtot
     use inputCostFunctions
+    ! mham:
+    ! funny thing is, it seems the types:
+    ! cgnsFamilyType,cgnsBlockInfoType,cgnsFamilyType all have rotrat BUT that
+    ! the type cgnsDoms does not have rotrat !?! check cgnsGrid.F90..
+    ! well, we get it from cgnsDoms regardless...
+    use cgnsGrid, only : cgnsDoms,cgnsNDom ! see l. 4105 in preprocessingAPI.F90
+    ! from where it is clear that the derived data type cgnsDoms owns the item
+    ! called rotRate... The cgnsNDom is the number of cgns domains...
+    !
+    use inputphysics, only: lengthref ! see inputParam.F90
     implicit none
     !
     !      Subroutine arguments.
@@ -1431,6 +1441,13 @@ contains
     real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
     real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
+    ! mham:
+    real(kind=realType) :: factDim !correct factor for rotating Cp-normalisation
+    real(kind=realType) :: rot_speed ! norm of wCrossR
+    real(kind=realType),Dimension(3) :: r_ ! spanwise position for given point
+    real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
+    real(kind=realType),Dimension(3) :: wCrossR ! rotationrate cross radius    
+    real(kind=realType), dimension(:,:,:), pointer :: xx1, xx2 ! for the coords
     ! Set the pointers to this block.
 
     call setPointers(blockID, 1_intType, sps)
@@ -1499,7 +1516,25 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
-       ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
+       ! mham have to get the mesh coordinates further down in order to compute
+       ! the correct Cp-normalisation for rotational setups with Wind Turbines.
+       ! Careful now; the flow variables, w(0:ib,0:jb,0:kb,1:nw), we point to
+       ! below uses what is defined in l.216-217, block.F90 as
+       !   !  ib, jb, kb - Block integer dimensions for double halo
+       !   !               cell-centered quantities.
+       ! BUT the mesh, x(0:ie,0:je,0:ke,3), is defined with the single halos:
+       !   !  ie, je, ke - Block integer dimensions for single halo
+       !   !               cell-centered quantities.
+       ! so... Now we can explain e.g. the (iMax)-case below where we see
+       ! the line:        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
+       ! ... i.e., they use single halo's for w(:,:,:,:) which is usually
+       ! defined with double halos...
+
+       ! mham: do NOT cut an idx like they do (w starts from 0 usually)...
+       ! why don't have double halo structure, so we do not cut one off.
+       xx1    => x(0,:,:,:);   xx2    => x(1,:,:,:) ! 1 is our 2 since we are
+       ! single haloed...
+       ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:) 
        pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
        ss => si(1,:,:,:) ; fact = -one
 
@@ -1526,6 +1561,9 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
+       ! mham
+       xx1    => x(ie-1,:,:,:);  xx2   => x(il-1,:,:,:)
+       !
        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
        ss => si(il,:,:,:) ; fact = one
 
@@ -1552,6 +1590,9 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
+       ! mham
+       xx1    => x(:,0,:,:);  xx2   => x(:,1,:,:)
+       !
        ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
        ss => sj(:,1,:,:) ; fact = -one
 
@@ -1578,6 +1619,9 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
+       ! mham
+       xx1    => x(:,je-1,:,:);  xx2   => x(:,jl-1,:,:)
+       !
        ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
        ss => sj(:,jl,:,:); fact = one
 
@@ -1604,6 +1648,9 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
+       ! mham
+       xx1    => x(:,:,0,:);  xx2   => x(:,:,1,:)
+       !
        ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
        ss => sk(:,:,1,:);  fact = -one
 
@@ -1630,6 +1677,9 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
+       ! mham
+       xx1    => x(:,:,ke-1,:);  xx2   => x(:,:,kl-1,:)
+       !
        ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
        ss => sk(:,:,kl,:);  fact = one
 
@@ -1782,17 +1832,119 @@ contains
        !================================================================
 
     case (cgnsCp)
-
+       ! mham:
+       ! [two] l 68, constants.F90
+       ! [gammaInf] l. 88 initializeFlow.F90
+       ! nonDimensional constant?
+       !   real(kind=realType), parameter :: two   = 2.0_realType
+       ! [MachCoef] l. 520 inputParam.F90
+       ! Mach number used to compute coefficients;
+       ! only relevant for translating geometries.
+       !
        ! Factor multiplying p-pInf
-
-       fact = two/(gammaInf*pInf*MachCoef*MachCoef)
+       fact = two/(gammaInf*pInf*MachCoef*MachCoef) ! = uInf2*rhoInf 
+       ! Above line makes mores sense in light of l.116 in initializeFlow.F90.
+       ! clearly fact = uInf2*rhoInf 
+       !
+       ! mham:
+       ! from Sandy; the two/(gammaInf*pInf*MachCoef*MachCoef) should be equiva-
+       ! lent to 0.5*rho*v^2... But I need the rotational speed to get the
+       ! apparent velocity of the blade.
+       !
+       ! mham: check if fact == factDIM / rhoRef / uRef / uRef
+       ! factDim = two / (rhoInfDim*((uInf*uRef)**2))
+       ! below the check is clearly ok. I simply take the dimensions out
+       ! of my factDIM and get the ADflow fact...So far so good. Now add (r*w)^2
+       !PRINT*,'OK'
+       !PRINT*,'fact',fact
+       !PRINT*,'factDIM w.o. dims',(factDIM * rhoRef * uRef * uRef) ! U squared
+       !
+       ! (r*w)**2
 
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
              nn = nn + 1
-             buffer(nn) = fact*(half*(pp1(i,j) + pp2(i,j)) - pInf)
+             !buffer(nn) = fact*(half*(pp1(i,j) + pp2(i,j)) - pInf)
+             ! mham Cp normalisation:
+             rrate_=cgnsdoms(1)%rotrate
+             r_(1) =   (half*(xx1(i,j,1) + xx2(i,j,1)))
+             r_(2) =   (half*(xx1(i,j,2) + xx2(i,j,2)))
+             r_(3) =   (half*(xx1(i,j,3) + xx2(i,j,3)))
+             ! calc cross-product between rotation rate and r_
+             wCrossR(1) = rrate_(2)*r_(3) - rrate_(3)*r_(2)
+             wCrossR(2) = rrate_(3)*r_(1) - rrate_(1)*r_(3)
+             wCrossR(3) = rrate_(1)*r_(2) - rrate_(2)*r_(1)
+             rot_speed = SQRT(wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2 )
+             buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
+                  / (half*(rhoInfDim)*((uInf*uRef)**2 + (rot_speed)**2 ))
+             ! Note, that we take rrate_(1) since we rotate 
+             !
+             ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
+             !
+             ! Nominator: (P_i-P_0) -> (half*(pp1Dim(i,j)+pp2Dim(i,j))-pInfDim)
+             ! pp1Dim  = pp1 * pRef
+             ! pp2Dim  = pp2 * pRef
+             ! pInfDim = pInf * pRef             
+             ! mham: pRef is defined in  module flowVarRefState (see the 'save')
+             !       but pRef is first set in the subr referenceState. However,
+             !       since it is defined in module flowVarRefState and we load
+             !       that module above it should be available to us.
+             !
+             ! Denominator: (0.5*rho*(U_a)^2) -> 
+             !       factDIM = two/(rhoDim * ((V_infDim)**2) + ((rDim*wDim)**2))
+             ! rhoDim  = rhoInfDim ! l. 81, initializeFlow.F90
+             ! V_infDim   = uInf*uRef ! also from initializeFlow.F90, l. 83
           enddo
+          ! mham: pp1 and pp2 are just pressure-pointers, e.g.
+          ! pp1    => p(1,1:,1:);
+          ! Thus, they point to p and should be rescaled back to SI
+          ! mham: as explained in the opening paragraph of this subroutine, we
+          ! have to get the average of the p in the first cell and the p in the
+          ! ghostcell/halo. This explains: half*(pp1(i,j) + pp2(i,j))
+          ! From start of subr:
+          !       As the solution
+          !       must be stored in the center of the boundary face the average
+          !       value of the first internal cell and its corresponding halo is
+          !       computed. The counter nn is updated in this routine. However
+          !       it is not initialized, because multiple contributions may be
+          !       stored in buffer.
        enddo
+       ! mham:
+       ! [pRef] l. 19 flowVarRefState.F90
+       ! Reference pressure (in Pa) used to nondimensionalize
+       ! the flow equations. See e.g. two lines below.
+       ! [pInf] l. 81, initializeFlow.90
+       ! non-dimensional pressure
+       !    pInf   = pInfDim/pRef
+       ! [pInfDim] l. 52 flowVarRefState.F90
+       ! Free stream pressure in Pa.,
+       ! [p] l. 515 block.F90, p(:,:,:) is a pointer for static pressure
+       ! [x] l. 432 block.F90, the actual mesh for a given block. We need
+       ! these to compute the apparent velocity. Size(x) is:
+       ! x(0:ie,0:je,0:ke,3)
+       ! Well, wrt mesh it seems:
+       ! block.F90, l. 432 has the 'x'
+       ! AND
+       ! blockPointers.F90 l. 94 both have an 'x' pointer. This blockPointers
+       ! has holds the pointers for all variables inside a block.
+       !
+       ! mham: Necessities                       units
+       ! U_i - inflow speed                      [m/s]
+       ! w   - rotational rate                   [rad/sec]
+       ! L_  - the span at point (i,j,k)         [m]
+       ! P_i - farfield pressure                 [N/m^2]
+       ! P_0 - pressure at surface point (i,j,k) [N/m^2]
+       !
+       ! fomula for apparent velocity:
+       ! (U_a)^2 = ([U_i,0,0]^T - [0,0,(2*pi*L_)/(2*pi)[m/rad]*w[rad/sec]])^2
+       ! (U_a)^2 = ([U_i,0,0]^T - [0,0,L_*w [m/sec] ])^2
+       ! (U_a)^2 = ([U_i,0,0]^T - [0,0,L_*w])^2 (just removing units ...)
+       ! (U_a)^2 = (U_i)^2 + (L_*w)^2
+       ! formula for Cp:
+       !
+       ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
+       !
+
 
        !===============================================================
 

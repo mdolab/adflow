@@ -57,9 +57,9 @@ ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
 
-
-def setup_cb(comm):
+def setup_cb(comm): 
     solver = ADFLOW(options=options, comm=comm, debug=False)
+
 
     solver.addFamilyGroup('upstream',['INFLOW'])
     solver.addFamilyGroup('downstream',['OUTFLOW'])
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     # Creat the solver
 
     CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
-
+    
     CFDSolver(ap)
 
 

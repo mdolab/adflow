@@ -581,7 +581,8 @@ contains
     ! convergnce check can't do anything either. By multiplying by
     ! 0.5, we make sure that the linear solver actually has to do
     ! *something* and not just kick out immediately.
-    atol = totalR0*L2Conv*0.01_realType
+    ! atol = totalR0*L2Conv*0.01_realType
+    atol = totalR0*L2Conv*0.5_realType
     maxIt = NK_subspace
 
     call KSPSetTolerances(NK_KSP, real(rtol), &
@@ -1796,6 +1797,10 @@ contains
                PETSC_NULL_FUNCTION, ierr)
 
 #endif
+
+
+
+
           call EChk(ierr, __FILE__, __LINE__)
        end if
 

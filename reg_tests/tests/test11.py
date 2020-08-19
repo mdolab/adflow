@@ -41,16 +41,15 @@ ap = AeroProblem(name='mdo_tutorial', alpha=1.8, beta=0.0, mach=0.50,
                  areaRef=45.5, chordRef=3.25, xRef=0.0, yRef=0.0, zRef=0.0,
                  evalFuncs=defaultFuncList)
 
-
-def setup_cb(comm):
+def setup_cb(comm): 
 
     # Create the solver
     CFDSolver = ADFLOW(options=options, debug=False)
-
+    
     return CFDSolver, None, None, None
 
-if __name__ == "__main__":
+if __name__ == "__main__":                  
 
     CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
-
+    
     solutionTest(CFDSolver, ap)

@@ -1321,6 +1321,10 @@ contains
           fact = fact/(lengthRef*Lref)
           cmp = fact*localValues(iMp:iMp+2)
           cmv = fact*localValues(iMv:iMv+2)
+!
+          ! cmp = localValues(iMp:iMp+2) ! MHAM:NOW THE cmx is actually MX 
+          ! cmv = localValues(iMv:iMv+2)
+
           yplusmax = localValues(iYplus)
           ! Determine the maximum values of the monitoring variables
           ! of this block.
