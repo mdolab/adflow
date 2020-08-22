@@ -187,8 +187,8 @@ Usually there is only one mode set at a time. When doing a rigid rotation beawar
 
 There are two common cases. The span of the wing is in, y direction (rotation about y-axis) or z direction (rotation about y-axis):
 
-NEED TO REFINE
-THIS DEPENDS ON THE COORDINATES
+.. NEED TO REFINE
+.. THIS DEPENDS ON THE COORDINATES
 1. Span is in y direction / rotation is about the y-axis. (rmode needs to be set to true)
 
   * positive rotation (+deltaAlpha) will pitch the wing upwards
