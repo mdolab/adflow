@@ -5522,7 +5522,7 @@ contains
 
     storeWall = .False.
     if (present(storeWallTensor)) then
-       storeWall = .True.
+       storeWall = storeWallTensor
     end if
 
     ! Set QCR parameters
