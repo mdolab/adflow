@@ -1,10 +1,10 @@
 module turbAPI
 
 contains
-  subroutine turbSolveSegregated
+  subroutine turbSolveDDADI
     !
-    !       turbSolveSegregated solves the turbulent transport equations
-    !       segregatedly, i.e. the mean flow variables are kept constant
+    !       turbSolveDDADI solves the turbulent transport equations
+    !       separately, i.e. the mean flow variables are kept constant
     !       and the turbulent variables are updated.
     !
     use constants
@@ -29,13 +29,6 @@ contains
     !      Local variables.
     !
     integer(kind=intType) :: iter, sps, nn
-
-    ! Determine whether or not a second order discretization for the
-    ! advective terms must be used.
-
-    secondOrd = .false.
-    if(groundLevel == 1_intType .and. &
-         orderTurb   == secondOrder) secondOrd = .true.
 
     ! Loop over the number of iterations for the turbulence.
 
@@ -99,7 +92,7 @@ contains
 
     enddo
 
-  end subroutine turbSolveSegregated
+  end subroutine turbSolveDDADI
 
   subroutine turbResidual
     !
@@ -122,13 +115,6 @@ contains
     implicit none
 
     integer(kind=intType) :: nn, sps
-
-    ! Determine whether or not a second order discretization for the
-    ! advective terms must be used.
-
-    secondOrd = .false.
-    if(currentLevel == 1_intType .and. &
-         orderTurb    == secondOrder) secondOrd = .true.
 
     ! Compute the quantities for certain turbulence models that
     ! need to be communicated between blocks.

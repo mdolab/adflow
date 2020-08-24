@@ -98,7 +98,7 @@ module fortranPC
     integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
     integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
     integer(kind=intType) :: nTransfer, nState, tmp, icount
-    integer(kind=intType) :: n_stencil, i_stencil, ind1
+    integer(kind=intType) :: n_stencil, i_stencil, ind1, orderturbsave
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=realType) :: delta_x, one_over_dx
     real(kind=realType) :: delta_x_turb, one_over_dx_turb
@@ -109,7 +109,7 @@ module fortranPC
     real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
-    logical :: resetToRANS, secondOrdSave,  splitMat
+    logical :: resetToRANS,  splitMat
     real :: val
 
     ! Setup number of state variable based on turbulence assumption
@@ -148,8 +148,9 @@ module fortranPC
 
     ! Very important to use only Second-Order dissipation for PC
     lumpedDiss=.True.
-    secondOrdSave = secondOrd
-    secondOrd = .False.
+    ! also use first order advection terms for turbulence
+    orderturbsave = orderturb
+    orderturb = firstOrder
 
     ! Need to trick the residual evalution to use coupled (mean flow and
     ! turbulent) together.
@@ -431,7 +432,7 @@ module fortranPC
 
     ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
     lumpedDiss = .False.
-    secondOrd = secondOrdSave
+    orderturb = orderturbsave
 
     ! Reset the correct equation parameters if we were useing the frozen
     ! Turbulent

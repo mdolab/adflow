@@ -3427,7 +3427,7 @@ end subroutine cross_prod
     ! Flow variables. Note that wOld, gamma and the laminar viscosity
     ! point to the entries on the finest mesh. The reason is that
     ! they are computed from the other variables. For the eddy
-    ! viscosity this is not the case because in a segregated solver
+    ! viscosity this is not the case because in a decoupled solver
     ! its values are obtained from the fine grid level.
 
     w     => flowDoms(nn,mm,ll)%w
@@ -3615,7 +3615,7 @@ end subroutine cross_prod
     ! Flow variables. Note that wOld, gamma and the laminar viscosity
     ! point to the entries on the finest mesh. The reason is that
     ! they are computed from the other variables. For the eddy
-    ! viscosity this is not the case because in a segregated solver
+    ! viscosity this is not the case because in a decoupled solver
     ! its values are obtained from the fine grid level.
 
     wd     => flowDomsd(nn,1,sps)%w
@@ -6260,7 +6260,7 @@ end subroutine cross_prod
        end do
     end do
   end subroutine getCellCenters
-  
+
   subroutine getCellCGNSBlockIDs(level, n, cellID)
 
     use constants
@@ -6302,7 +6302,7 @@ end subroutine cross_prod
     integer(kind=inttype), intent(out) :: nZones
 
     nZones = cgnsNDom
-    
+
   end subroutine getNCGNSZones
 
   subroutine getCGNSZoneName(i, zone)

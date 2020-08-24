@@ -7,7 +7,12 @@ It is therefore necessary to build this library before using ``ADflow``.
 
 Requirements
 ------------
-See :ref:`install3rdPartyPackages` for details on installing required 3rd party packages.
+ADflow requires the following dependencies:
+- CGNS Library
+- PETSc
+- MPI
+
+See the MDO Lab installation guide `here <http://mdolab.engin.umich.edu/docs/installInstructions/install3rdPartyPackages.html>`_ for the supported versions and installation instructions.
 
 Building
 --------
@@ -24,7 +29,7 @@ If you are a beginner user installing the packages on a linux desktop,
 you should use the ``config.LINUX_GFORTRAN`` versions of the configuration 
 files. The ``config.LINUX_INTEL`` versions are usually used on clusters.
 ADflow has been successfully compiled on LINUX with either
-ifort or gfortran.
+``ifort`` or ``gfortran``.
 
 Once you have copied the config file, compile ADflow by running::
 
@@ -36,17 +41,21 @@ the screen (near the end)::
    Testing if module adflow can be imported...
    Module adflow was successfully imported.
 
-If you don't see this, it will be necessary to configure the build
-manually. To configure manually, open ``config/config.mk`` and modify options as necessary.
+If you don't see this, it will be necessary to configure the build manually.
+To configure manually, open ``config/config.mk`` and modify options as necessary.
 
 It is most likely that you need to modify the ``CGNS_INCLUDE_FLAGS`` and the ``CGNS_LINKER_FLAGS`` variables.
-It is also necessary to have``PETSc`` already compiled. 
 After changes to the configuration file, run ``make clean`` before attempting a new build.
+
+Lastly, to build and install the Python interface, type::
+
+    pip install .
+
 
 Verification
 ------------
 ADflow contains a set of simple tests that can be run automatically
-to ensure ADflow reproduces the expected reference results. You should
+to ensure ADflow reproduces the expected reference results. You should have
 a diff-viewer installed. xxdiff is used by default which can be installed
 using::
 
@@ -61,11 +70,10 @@ Specifically, install
 `idwarp <https://github.com/mdolab/idwarp/>`__.
 With all of these packages installed, you can fully verify your ADflow installation.
 
-Change to the regression tests directory at::
+First, run the script  ``inputFiles/get-input-files.sh`` to download and extract the necessary files.
+Then navigate to the regression tests directory in ``reg_tests/``.
 
-    $ cd python/reg_tests/
-
-Command line arguemnts for run_reg_tests.py can be found by running::
+Command line arguments for run_reg_tests.py can be found by running::
 
     $ python run_reg_tests.py --help
 
@@ -73,8 +81,8 @@ To run all regression tests, now simply run::
 
     $ python run_reg_tests.py
 
-If the tests are successful a 'adflow: Success!' message
-will be printed, otherwise a diff window will appear highlighting
+If the tests are successful an 'adflow: Success!' message will be printed.
+Otherwise, if using the ``--diff`` option, a diff window will appear highlighting
 the differences between the reference case and the most recently
 completed verification run.
 

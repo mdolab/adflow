@@ -13,7 +13,7 @@ default:
 	echo "The modify this config file as required. Typically the CGNS directory "; \
 	echo "will have to be modified. With the config file specified, rerun "; \
 	echo "'make' and the build will start"; \
-	else make adflow;\
+	else make adflow_build;\
 	fi;
 
 clean:
@@ -26,7 +26,7 @@ clean:
 
 
 
-adflow:
+adflow_build:
 	ln -sf config/config.mk config.mk;
 	(cd src/build/ && make)
 
