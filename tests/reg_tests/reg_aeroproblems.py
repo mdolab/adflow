@@ -6,7 +6,7 @@ ap_tutorial_wing = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, P=2000
                 areaRef=45.5, chordRef=3.25, beta=0.0, R=287.87,
                 xRef=0.0, yRef=0.0, zRef=0.0, evalFuncs=defaultFuncList)
 
-ap_tutorial_wing_laminar = AeroProblem(name='mdo_tutorial_laminar', alpha=1.8, beta=0.0, mach=0.50,
+ap_tutorial_wing_laminar = AeroProblem(name='mdo_tutorial', alpha=1.8, beta=0.0, mach=0.50,
                                         P=137.0, T=293.15, R=287.87,
                                         areaRef=45.5, chordRef=3.25, xRef=0.0, yRef=0.0, zRef=0.0,
                                         evalFuncs=defaultFuncList)
@@ -59,5 +59,3 @@ ap_conic_conv_nozzle = AeroProblem(name='conic_conv_nozzle', alpha=90.0, mach=0.
                             'mavgps_up', 'mavgps_down',
                             'aavgps_up', 'aavgps_down',
                             ])
-
-

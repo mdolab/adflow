@@ -20,7 +20,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 BaseRegTest.setLocalPaths(baseDir, sys.path)
 
 # import the ADFLOW module this test lives in 
-from python.pyADflow import ADFLOW
+from adflow import ADFLOW
 
 # import the testing utilities that live a few directories up 
 import reg_test_utils as utils
@@ -28,14 +28,16 @@ import reg_test_utils as utils
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
 from reg_aeroproblems import ap_naca0012_time_acc 
-from reg_test_classes import SolveRegTest, FunctionalsRegTest, AdjointRegTest
+from reg_test_classes import test_objects
 from reg_default_options import defaultFuncList
 
 
 refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
 
 
-class TestSolve(SolveRegTest, unittest.TestCase):
+
+
+class TestSolve(test_objects.RegTest):
     '''
     Tests that ADflow can converge the wing from the mdo tutorial using the euler
     equation to the required accuracy as meassure by the norm of the residuals,
@@ -46,21 +48,13 @@ class TestSolve(SolveRegTest, unittest.TestCase):
     Test 15: NACA 0012 2D Time-Accurate, Forced motion, Rigid Rotation of Mesh - DADI Smoother
     '''
     N_PROCS = 4
-
+    ref_file = 'solve_rans_time_acc_naca0012.json'
+    
     def setUp(self):
-
-        self.ref_file = os.path.join(refDir, 'ref15.json')      
-
-        # create the object used to compare the values to the references 
-        ref = utils.readJSONRef(self.ref_file)
-        self.handler = BaseRegTest(ref, train=False)
+        super().setUp()
         
-        gridFile = os.path.join(inputDir, 'naca0012_rans-L2.cgns.cgns')
-        print(gridFile)
-        gridFile = '../../python/inputFiles/naca0012_rans-L2.cgns'
-        # print(gridFile)
-        # quit()
-        # import ipdb; ipdb.set_trace()
+        gridFile = os.path.join(inputDir, 'naca0012_rans-L2.cgns')
+        
         f = 10.0 # [Hz] Forcing frequency of the flow
         period = 1.0/f # [sec]
         nStepPerPeriod = 8
@@ -72,36 +66,6 @@ class TestSolve(SolveRegTest, unittest.TestCase):
         options.update({
             'gridfile': gridFile,
             'outputdirectory':outputDir,
-
-            # 'mgcycle':'sg',
-            # 'equationtype':'RANS',
-            # 'smoother':'dadi',
-            # 'cfl':1.5,
-            # 'cflcoarse':1.25,
-            # 'resaveraging':'noresaveraging',
-            # 'nsubiter':3,
-            # 'nsubiterturb':3,
-            # 'ncyclescoarse':100,
-            # 'ncycles':1000,
-            # 'monitorvariables':['cpu', 'resrho','resturb','cl','cd','cmz','yplus','totalr'],
-            # 'usenksolver':True,
-            # 'l2convergence':1e-14,
-            # 'l2convergencecoarse':1e-4,
-            # 'nkswitchtol':1e-3,
-            # 'adjointl2convergence': 1e-14,
-            # 'frozenturbulence':False,
-
-            # 'solutionprecision':'double',
-            # 'gridprecision':'double',
-
-            # 'mgcycle':'2w',
-            # 'ncyclescoarse':250,
-            # 'ncycles':500,
-            # 'usenksolver':True,
-            # 'nkswitchtol':1e-2,
-
-            # 'l2convergence':1e-14,
-            # 'l2convergencecoarse':1e-2,
 
             'writevolumesolution':False,
             'vis4':.025,
@@ -135,8 +99,6 @@ class TestSolve(SolveRegTest, unittest.TestCase):
 
         # Setup aeroproblem
         self.ap = copy.copy(ap_naca0012_time_acc)
-
-        # add the default dvs to the problem 
 
 
         # Create the solver

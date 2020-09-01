@@ -20,7 +20,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 BaseRegTest.setLocalPaths(baseDir, sys.path)
 
 # import the ADFLOW module this test lives in 
-from python.pyADflow import ADFLOW
+from adflow import ADFLOW
 
 # import the testing utilities that live a few directories up 
 import reg_test_utils as utils
@@ -28,15 +28,14 @@ import reg_test_utils as utils
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
 from reg_aeroproblems import ap_2D_conv_nozzle 
-from reg_test_classes import SolveRegTest, FunctionalsRegTest, AdjointRegTest
-
+from reg_test_classes import test_objects
 
 refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
 
 
 
 
-class TestSolve(SolveRegTest, unittest.TestCase):
+class TestSolve(test_objects.RegTest):
     '''
     Tests that ADflow can converge the wing from the mdo tutorial using the euler
     equation to the required accuracy as meassure by the norm of the residuals,
@@ -47,49 +46,44 @@ class TestSolve(SolveRegTest, unittest.TestCase):
     Test 9: MDO tutorial -- Euler -- Solution Test
     '''
     N_PROCS = 4
-
+    ref_file = 'solve_2D_conv_nozzle.json'
+    options = {
+        'gridfile': os.path.join(inputDir, 'euler_conv_nozzle.cgns'),
+        'outputdirectory':outputDir,
+        'solutionprecision':'double',
+        'gridprecision':'double',
+        'liftIndex':2,
+        'CFL':3.,
+        'CFLCoarse':1.5,
+        'MGCycle':'2w',
+        'MGStartLevel':2,
+        'nCyclesCoarse':500,
+        'nCycles':2500,
+        'monitorvariables':['resrho','cl','cd', 'yplus'],
+        'nsubiterturb':3,
+        'useNKSolver':True,
+        'NKSubSpaceSize':60,
+        'L2Convergence':1e-14,
+        'L2ConvergenceCoarse':1e-2,
+        'NKSwitchTol':1e-2,
+        'nkadpc': False,
+        'vis4':0.006,
+        'vis2': 0.0,
+        'blocksplitting': True,
+        'solutionPrecision':'double',
+        'flowtype':'internal',
+    }
+    ap = ap_2D_conv_nozzle
     def setUp(self):
+        super().setUp()
 
-        self.ref_file = os.path.join(refDir, 'ref16.json')      
+        # self.ref_file = os.path.join(refDir, 'ref16.json')      
 
-        # create the object used to compare the values to the references 
-        ref = utils.readJSONRef(self.ref_file)
-        self.handler = BaseRegTest(ref, train=False)
-        
-        gridFile = os.path.join(inputDir, 'euler_conv_nozzle.cgns')
+
 
 
         options = copy.copy(adflowDefOpts)
-        options.update({
-            'gridfile': gridFile,
-            'outputdirectory':outputDir,
-
-            'solutionprecision':'double',
-            'gridprecision':'double',
-            'liftIndex':2,
-            'CFL':3.,
-            'CFLCoarse':1.5,
-            'MGCycle':'2w',
-            'MGStartLevel':2,
-            'nCyclesCoarse':500,
-            'nCycles':2500,
-            'monitorvariables':['resrho','cl','cd', 'yplus'],
-            'nsubiterturb':3,
-            'useNKSolver':True,
-            'NKSubSpaceSize':60,
-            'L2Convergence':1e-14,
-            'L2ConvergenceCoarse':1e-2,
-            'NKSwitchTol':1e-2,
-            'nkadpc': False,
-            'vis4':0.006,
-            'vis2': 0.0,
-            'blocksplitting': True,
-            'solutionPrecision':'double',
-            'flowtype':'internal',
-        })
-
-        # Setup aeroproblem
-        self.ap = copy.copy(ap_2D_conv_nozzle)
+        options.update(self.options)
 
 
         # Create the solver
@@ -126,6 +120,17 @@ class TestSolve(SolveRegTest, unittest.TestCase):
         self.CFDSolver.addFunction('dragviscous', 'all_flow', name="thrust_viscous")
         self.CFDSolver.addFunction('dragmomentum', 'all_flow', name="thrust_momentum")
 
+
+    
+    def test_solve(self):
+
+        # do the solve
+        self.CFDSolver(self.ap)
+
+        # check its accuracy
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_states_allclose(self.handler, self.CFDSolver)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
 
 
 

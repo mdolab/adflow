@@ -5,6 +5,7 @@ import os
 from collections import deque
 import json
 
+import unittest
 # =============================================================================
 #                         Assert Statements 
 # =============================================================================
@@ -41,6 +42,16 @@ def assert_residuals_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10):
     res /= totalR0
     handler.root_print('Norm of residual')
     handler.par_add_norm(res, 'Norm of residual', rel_tol=rtol, abs_tol=atol)
+
+# def assert_residuals_lessthan(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10):
+#     # Check the residual
+#     res = CFDSolver.getResidual(ap)
+#     totalR0 = CFDSolver.getFreeStreamResidual(ap)
+#     res /= totalR0
+#     unittest.TestCase.assertLessEqual(totalR0, atol)
+#     unittest.TestCase.assertLessEqual(res, rtol)
+#     # handler.root_print('Norm of residual')
+#     # handler.par_add_norm(res, 'Norm of residual', rel_tol=rtol, abs_tol=atol)
 
 def assert_forces_allclose(handler, CFDSolver, rtol=1e-10, atol=1e-10):
     CFDSolver.setOption('forcesAsTractions', False)
@@ -410,8 +421,10 @@ def writeRefToJson(file_name, ref):
                 return dict(__ndarray__=obj.tolist(),
                             dtype=str(obj.dtype),
                             shape=shape)
-                            
-            # Let the base class default method raise the TypeError
+            if isinstance(obj, numpy.integer):
+                return int(obj)
+            elif isinstance(obj, numpy.floating):
+                return float(obj)            # Let the base class default method raise the TypeError
             super(NumpyEncoder, self).default(obj)
 
     with open(file_name,'w') as json_file: 

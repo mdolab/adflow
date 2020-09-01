@@ -106,7 +106,7 @@ class TestSolve(SolveRegTest, unittest.TestCase):
         # Create the solver
         self.CFDSolver = ADFLOW(options=options, debug=False)
 
-@unittest.skip('Broken')
+@unittest.skip('Brocken')
 class TestFunctionals(FunctionalsRegTest, unittest.TestCase):
     '''
     Tests that given a flow state the residuals, function, forces/tractions, 

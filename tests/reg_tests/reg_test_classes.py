@@ -2,7 +2,7 @@ import unittest
 import os
 
 import reg_test_utils as utils
-
+from baseclasses import BaseRegTest
 
 # this is based on 
 # https://stackoverflow.com/questions/1323455/python-unit-test-with-base-and-sub-class
@@ -10,8 +10,35 @@ import reg_test_utils as utils
 # https://stackoverflow.com/questions/48234672/how-to-use-same-unit-test-for-different-implementations-in-python
 # or yet another is to define a new classed like a parameterized class
 # https://eli.thegreenplace.net/2011/08/02/python-unit-testing-parametrized-test-cases
+baseDir = os.path.dirname(os.path.abspath(__file__))
+
+refDir = os.path.join(baseDir,'refs')
+
+class test_objects():
+    class RegTest(unittest.TestCase):
+        def setUp(self):
+
+            ref_file = os.path.join(refDir, self.ref_file)
+            
+            ref = utils.readJSONRef(ref_file)
+            self.handler = BaseRegTest(ref)
 
 
+        def train(self):
+
+            self.handler.train = True
+            self.handler.setRef({})
+
+            # get all of the testing methods
+            # all of the tests written in this framework must start with "test_"
+            tests = [x for x in dir(self) if x.startswith('test_')]
+            for test in tests:
+                test_func = getattr(self, test)
+                test_func()
+
+            trained_ref = self.handler.getRef()
+    
+            utils.writeRefToJson(self.ref_file, trained_ref)
 
 
 class RegTest(object):
@@ -97,7 +124,6 @@ class AdjointRegTest(RegTest):
     # Standard test for solving multiple adjoints and going right back
     # to the DVs. This solves for whatever functions are in the
     # aeroProblem.
-
     def test_residuals(self):
         utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
         

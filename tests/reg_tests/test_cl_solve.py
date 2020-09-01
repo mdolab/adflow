@@ -20,7 +20,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 BaseRegTest.setLocalPaths(baseDir, sys.path)
 
 # import the ADFLOW module this test lives in 
-from python.pyADflow import ADFLOW
+from adflow import ADFLOW
 
 # import the testing utilities that live a few directories up 
 import reg_test_utils as utils
@@ -28,7 +28,7 @@ import reg_test_utils as utils
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
 from reg_aeroproblems import ap_tutorial_wing 
-from reg_test_classes import SolveRegTest, FunctionalsRegTest, AdjointRegTest
+from reg_test_classes import test_objects
 
 
 refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
@@ -36,7 +36,7 @@ refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
 
 
 
-class TestSolve(SolveRegTest, unittest.TestCase):
+class TestSolve(test_objects.RegTest):
     '''
     Tests that ADflow can converge the wing from the mdo tutorial using the euler
     equation to the required accuracy as meassure by the norm of the residuals,
@@ -47,14 +47,12 @@ class TestSolve(SolveRegTest, unittest.TestCase):
     Test 9: MDO tutorial -- Euler -- Solution Test
     '''
     N_PROCS = 4
-
+    ref_file = 'solve_cl.json'
     def setUp(self):
+        super().setUp()
 
-        self.ref_file = os.path.join(refDir, 'ref10.json')      
+        # self.ref_file = os.path.join(refDir, 'ref10.json')      
 
-        # create the object used to compare the values to the references 
-        ref = utils.readJSONRef(self.ref_file)
-        self.handler = BaseRegTest(ref, train=False)
         
         gridFile = os.path.join(inputDir, 'mdo_tutorial_euler_scalar_jst.cgns')
 
