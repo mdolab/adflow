@@ -1,4 +1,3 @@
-from __future__ import print_function
 #! /usr/bin/env python
 """
 autoEdit - A Python tool to automatically edit a set of files

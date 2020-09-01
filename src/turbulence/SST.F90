@@ -56,7 +56,7 @@ contains
   subroutine SSTSolve(resOnly)
     !
     !       SSTSolve solves the turbulent transport equations for
-    !       menter's SST variant of the k-omega model in a segregated
+    !       menter's SST variant of the k-omega model in a decoupled
     !       manner using a diagonal dominant ADI-scheme.
     !
     use blockPointers

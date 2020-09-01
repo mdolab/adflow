@@ -5,7 +5,7 @@ contains
   subroutine kt_block(resOnly)
     !
     !       kt solves the transport equations for the k-tau turbulence
-    !       model, including a cross-diffusion term, in a segregated
+    !       model, including a cross-diffusion term, in a decoupled
     !       manner using a diagonal dominant ADI-scheme.
     !
     use constants
