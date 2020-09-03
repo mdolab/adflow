@@ -6,20 +6,6 @@ import sys
 import copy
 
 # MACH classes
-from pygeo import DVGeometry
-from pyspline import Curve
-from idwarp import USMesh
-
-
-# MACH testing class
-from baseclasses import BaseRegTest
-
-# get the directories that we will use to import some packages in this repo 
-baseDir = os.path.dirname(os.path.abspath(__file__))
-
-BaseRegTest.setLocalPaths(baseDir, sys.path)
-
-# import the ADFLOW module this test lives in 
 from adflow import ADFLOW
 
 # import the testing utilities that live a few directories up 
@@ -31,9 +17,9 @@ from reg_aeroproblems import ap_conic_conv_nozzle
 from reg_test_classes import test_objects
 
 
-refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
 
-@unittest.skip('')
+baseDir = os.path.dirname(os.path.abspath(__file__))
+
 class TestSolveIntegrationPlane(test_objects.RegTest):
     '''
     Tests that ADflow can converge the wing from the mdo tutorial using the euler
@@ -44,12 +30,11 @@ class TestSolveIntegrationPlane(test_objects.RegTest):
 
     Test 9: MDO tutorial -- Euler -- Solution Test
     '''
-    N_PROCS = 2
+    N_PROCS = 4
     
     options = {
-            'gridfile': os.path.join(inputDir, 'conic_conv_nozzle_mb.cgns'),
-            'outputdirectory':outputDir,
-
+            'gridfile': os.path.join(baseDir, '../input_files/conic_conv_nozzle_mb.cgns'),
+            'outputdirectory': os.path.join(baseDir, '../output_files'),
             # Physics Parameters
             'equationType':'euler',
             'smoother':'dadi',
@@ -96,7 +81,7 @@ class TestSolveIntegrationPlane(test_objects.RegTest):
 
         # Setup aeroproblem
 
-        planeFile = os.path.join(inputDir, 'integration_plane_viscous.fmt')
+        planeFile = os.path.join(baseDir, '../input_files/integration_plane_viscous.fmt')
 
 
         options = copy.copy(adflowDefOpts)
@@ -164,16 +149,13 @@ class TestSolveOverset(test_objects.RegTest):
     equation to the required accuracy as meassure by the norm of the residuals,
     and states, and the accuracy of the functions
 
-    based on the old regression test 
-
-    Test 9: MDO tutorial -- Euler -- Solution Test
+    based on the old regression test 17 and 18
     '''
     N_PROCS =2
     
     options = {
-            'gridfile': os.path.join(inputDir, 'conic_conv_nozzle.cgns'),
-            'outputdirectory':outputDir,
-
+            'gridfile': os.path.join(baseDir, '../input_files/conic_conv_nozzle.cgns'),
+            'outputdirectory': os.path.join(baseDir, '../output_files'),
             # Physics Parameters
             'equationType':'euler',
             'smoother':'dadi',
@@ -211,7 +193,7 @@ class TestSolveOverset(test_objects.RegTest):
 
         }
     ap= copy.copy(ap_conic_conv_nozzle)
-    ref_file = 'ref18.json'
+    ref_file = 'solve_conic_overset.json'
     def setUp(self):
         super().setUp()
 
@@ -264,18 +246,18 @@ class TestSolveOverset(test_objects.RegTest):
         # do the solve
         self.CFDSolver(self.ap)
 
-        # # check its accuracy
-        # utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
-        # utils.assert_states_allclose(self.handler, self.CFDSolver)
-        # # Check the residual
-        # res = self.CFDSolver.getResidual(self.ap)
-        # totalR0 = self.CFDSolver.getFreeStreamResidual(self.ap)
-        # res /= totalR0
+        # check its accuracy
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_states_allclose(self.handler, self.CFDSolver)
+        # Check the residual
+        res = self.CFDSolver.getResidual(self.ap)
+        totalR0 = self.CFDSolver.getFreeStreamResidual(self.ap)
+        res /= totalR0
 
 
-        # reducedSum = self.CFDSolver.comm.reduce(np.sum(res**2))
-        # if self.CFDSolver.comm.rank == 0:
-        #     self.assertLessEqual(np.sqrt(reducedSum), self.options['L2Convergence'])
+        reducedSum = self.CFDSolver.comm.reduce(np.sum(res**2))
+        if self.CFDSolver.comm.rank == 0:
+            self.assertLessEqual(np.sqrt(reducedSum), self.options['L2Convergence'])
 
 
 if __name__ == '__main__':

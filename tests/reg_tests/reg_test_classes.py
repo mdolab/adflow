@@ -25,6 +25,11 @@ class test_objects():
 
 
         def train(self):
+            if self.name == None :
+                    # return immediately when the train method is being called on the based class and NOT the 
+                    # classes created using parametrized 
+                    # this will happen when testing, but will hopefully be fixed down the line
+                    return
 
             self.handler.train = True
             self.handler.setRef({})

@@ -13,10 +13,10 @@ adflowDefOpts = {
     # Common Paramters
     'gridfile':'default.cgns',
     'restartfile':None,
+    'outputdirectory':'../output_files',
 
     # Output Parameters
     'storerindlayer':True,
-    'outputdirectory':'./',
     'writesurfacesolution':True,
     'writevolumesolution':True,
     'nsavevolume':1,

@@ -12,14 +12,8 @@ from idwarp import USMesh
 
 
 # MACH testing class
-from baseclasses import BaseRegTest, AeroProblem
+from baseclasses import AeroProblem
 
-# get the directories that we will use to import some packages in this repo 
-baseDir = os.path.dirname(os.path.abspath(__file__))
-
-BaseRegTest.setLocalPaths(baseDir, sys.path)
-
-# import the ADFLOW module this test lives in 
 from adflow import ADFLOW
 
 # import the testing utilities that live a few directories up 
@@ -32,8 +26,8 @@ from reg_test_classes import test_objects
 from reg_default_options import defaultFuncList
 
 
-refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
 
+baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
 
@@ -43,9 +37,7 @@ class TestSolve(test_objects.RegTest):
     equation to the required accuracy as meassure by the norm of the residuals,
     and states, and the accuracy of the functions
 
-    based on the old regression test 
-
-    Test 15: NACA 0012 2D Time-Accurate, Forced motion, Rigid Rotation of Mesh - DADI Smoother
+    based on the old regression test 15
     '''
     N_PROCS = 4
     ref_file = 'solve_rans_time_acc_naca0012.json'
@@ -53,7 +45,7 @@ class TestSolve(test_objects.RegTest):
     def setUp(self):
         super().setUp()
         
-        gridFile = os.path.join(inputDir, 'naca0012_rans-L2.cgns')
+        gridFile = os.path.join(baseDir, '../input_files/naca0012_rans-L2.cgns')
         
         f = 10.0 # [Hz] Forcing frequency of the flow
         period = 1.0/f # [sec]
@@ -65,8 +57,7 @@ class TestSolve(test_objects.RegTest):
         options = copy.copy(adflowDefOpts)
         options.update({
             'gridfile': gridFile,
-            'outputdirectory':outputDir,
-
+            'outputdirectory': os.path.join(baseDir, '../output_files'),
             'writevolumesolution':False,
             'vis4':.025,
             'vis2':0.5,

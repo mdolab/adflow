@@ -551,10 +551,8 @@ contains
     if (mod(NK_iter, NK_jacobianLag) == 0) then
        NK_CFL = NK_CFL0 * (totalR0 / norm)**1.5
        iterType = "     *NK"
-       write(*,*) 'remaking PC'
        call FormJacobianNK()
     else
-       write(*,*) 'keep PC'
 
        call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)

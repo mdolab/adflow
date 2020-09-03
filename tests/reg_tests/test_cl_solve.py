@@ -6,20 +6,6 @@ import sys
 import copy
 
 # MACH classes
-from pygeo import DVGeometry
-from pyspline import Curve
-from idwarp import USMesh
-
-
-# MACH testing class
-from baseclasses import BaseRegTest
-
-# get the directories that we will use to import some packages in this repo 
-baseDir = os.path.dirname(os.path.abspath(__file__))
-
-BaseRegTest.setLocalPaths(baseDir, sys.path)
-
-# import the ADFLOW module this test lives in 
 from adflow import ADFLOW
 
 # import the testing utilities that live a few directories up 
@@ -31,20 +17,17 @@ from reg_aeroproblems import ap_tutorial_wing
 from reg_test_classes import test_objects
 
 
-refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
 
-
-
+baseDir = os.path.dirname(os.path.abspath(__file__))
 
 class TestSolve(test_objects.RegTest):
     '''
-    Tests that ADflow can converge the wing from the mdo tutorial using the euler
-    equation to the required accuracy as meassure by the norm of the residuals,
-    and states, and the accuracy of the functions
+    Tests that ADflow can change the dvs to achieve the target cl to the given tolerance.
+    
+    Compares the norm of the residuals, norm of states, and the functionals.
 
-    based on the old regression test 
+    based on the old regression test 10
 
-    Test 9: MDO tutorial -- Euler -- Solution Test
     '''
     N_PROCS = 4
     ref_file = 'solve_cl.json'
@@ -54,13 +37,13 @@ class TestSolve(test_objects.RegTest):
         # self.ref_file = os.path.join(refDir, 'ref10.json')      
 
         
-        gridFile = os.path.join(inputDir, 'mdo_tutorial_euler_scalar_jst.cgns')
+        gridFile = os.path.join(baseDir, '../input_files/mdo_tutorial_euler_scalar_jst.cgns')
 
 
         options = copy.copy(adflowDefOpts)
+        options['outputdirectory'] = os.path.join(baseDir, options['outputdirectory'])
         options.update({
             'gridfile': gridFile,
-            'outputdirectory':outputDir,
 
             'solutionprecision':'double',
             'gridprecision':'double',
@@ -77,10 +60,6 @@ class TestSolve(test_objects.RegTest):
 
         # Setup aeroproblem
         self.ap = copy.copy(ap_tutorial_wing)
-
-        # add the default dvs to the problem 
-        for dv in defaultAeroDVs:
-            self.ap.addDV(dv)
 
         # Create the solver
         self.CFDSolver = ADFLOW(options=options, debug=False)

@@ -11,66 +11,23 @@ from pyspline import Curve
 from idwarp import USMesh
 
 # MACH testing class
-from baseclasses import BaseRegTest
-
-# get the directories that we will use to import some packages in this repo 
-baseDir = os.path.dirname(os.path.abspath(__file__))
-
-BaseRegTest.setLocalPaths(baseDir, sys.path)
-
-
-# import the ADFLOW module this test lives in 
-# from pyADflow import ADFLOW
 from adflow import ADFLOW
 
-# import the testing utilities that live a few directories up 
 import reg_test_utils as utils
 
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
 from reg_aeroproblems import ap_tutorial_wing , ap_CRM, ap_tutorial_wing_laminar
-# from reg_test_classes import SolveRegTest, FunctionalsRegTest, AdjointRegTest
+from reg_test_classes import test_objects
 
-
-refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
-
-
-
-class test_objects():
-    class RegTest(unittest.TestCase):
-        def setUp(self):
-
-            ref_file = os.path.join(refDir, self.ref_file)
-            
-            ref = utils.readJSONRef(ref_file)
-            self.handler = BaseRegTest(ref)
-
-
-        def train(self):
-
-            self.handler.train = True
-            self.handler.setRef({})
-
-            # get all of the testing methods
-            # all of the tests written in this framework must start with "test_"
-            tests = [x for x in dir(self) if x.startswith('test_')]
-            for test in tests:
-                test_func = getattr(self, test)
-                test_func()
-
-            trained_ref = self.handler.getRef()
-    
-            utils.writeRefToJson(self.ref_file, trained_ref)
-
-
-
-refDir = '/home/josh/repos/MACH/adflow_clean/tests/reg_tests/refs'
+baseDir = os.path.dirname(os.path.abspath(__file__))
 
 @parameterized_class([
     # Tutorial scalar JST 
-    { "options": {
-        'gridfile':os.path.join(inputDir, 'mdo_tutorial_euler_scalar_jst.cgns'),
-        'restartfile':os.path.join(inputDir, 'mdo_tutorial_euler_scalar_jst.cgns'),
+    { "name": 'euler_scalar_JST_tut_wing_1core',
+        "options": {
+        'gridfile': os.path.join(baseDir, '../input_files/mdo_tutorial_euler_scalar_jst.cgns'),
+        'restartfile': os.path.join(baseDir, '../input_files/mdo_tutorial_euler_scalar_jst.cgns'),
         'l2convergence': 1e-14,
         'adjointl2convergence': 1e-14,
 
@@ -89,9 +46,10 @@ refDir = '/home/josh/repos/MACH/adflow_clean/tests/reg_tests/refs'
 
     }, 
     # Tutorial scalar JST
-    { "options": {
-        'gridfile':os.path.join(inputDir, 'mdo_tutorial_euler_scalar_jst.cgns'),
-        'restartfile':os.path.join(inputDir, 'mdo_tutorial_euler_scalar_jst.cgns'),
+    { "name": 'euler_scalar_JST_tut_wing',
+        "options": {
+        'gridfile': os.path.join(baseDir, '../input_files/mdo_tutorial_euler_scalar_jst.cgns'),
+        'restartfile': os.path.join(baseDir, '../input_files/mdo_tutorial_euler_scalar_jst.cgns'),
         'l2convergence': 1e-14,
         'adjointl2convergence': 1e-14,
 
@@ -109,25 +67,10 @@ refDir = '/home/josh/repos/MACH/adflow_clean/tests/reg_tests/refs'
     }, 
 
     # Tutorial wing RANS
-    { "options": {
-        'gridfile':os.path.join(inputDir, 'mdo_tutorial_rans_scalar_jst.cgns'),
-        'restartfile':os.path.join(inputDir, 'mdo_tutorial_rans_scalar_jst.cgns'),
-        # 'l2convergence': 1e-14,
-        # 'l2convergencecoarse':1e-4,
-        # 'ncycles':10000,
-
-        # 'mgcycle':'sg',
-        # 'equationtype':'RANS',
-        # 'smoother':'dadi',
-
-        # 'ncyclescoarse':100,
-
-        # 'usenksolver':True,
-        
-        # 'nkswitchtol':1e-3,
-        # 'equationtype':'RANS',
-        # 'frozenturbulence':False,
-        
+    { "name": 'rans_tut_wing',
+        "options": {
+        'gridfile': os.path.join(baseDir, '../input_files/mdo_tutorial_rans_scalar_jst.cgns'),
+        'restartfile': os.path.join(baseDir, '../input_files/mdo_tutorial_rans_scalar_jst.cgns'),
         'mgcycle':'2w',
         'equationtype':'RANS',
         'smoother':'dadi',
@@ -156,10 +99,10 @@ refDir = '/home/josh/repos/MACH/adflow_clean/tests/reg_tests/refs'
 ])  
 class TestAdjoint(test_objects.RegTest):
     '''
-    Tests that given a flow state the residuals, function, forces/tractions, 
+    Tests that sensitives calculated from solving an adjoint are correct.
     and jacobian vector products are accurate.
 
-    Test 1: MDO tutorial -- Euler -- Scalar JST
+    based on old regression tests 12, and 14
     '''
     N_PROCS = 4
 
@@ -167,18 +110,10 @@ class TestAdjoint(test_objects.RegTest):
     ap = None
     ref_file = None
 
-    def train(self):
-        if self.options == None and self.ap == None and self.ref_file == None:
-                # return imeediately when the train method is being called on the based class and NOT the 
-                # classes created using paramertized 
-                # this will happen when testing, but will hopefully be fixed down the line
-                return
-        super().train()
-
     def setUp(self, train=False):
-        if self.options == None and self.ap == None and self.ref_file == None:
+        if self.name == None:
                 # return immediately when the setup method is being called on the based class and NOT the 
-                # classes created using paramertized 
+                # classes created using parametrized 
                 # this will happen when testing, but will hopefully be fixed down the line
                 return
 
@@ -186,10 +121,11 @@ class TestAdjoint(test_objects.RegTest):
 
 
         options = copy.copy(adflowDefOpts)
+        options['outputdirectory'] = os.path.join(baseDir, options['outputdirectory'])
         options.update(self.options)
 
 
-        ffdFile = os.path.join(inputDir, 'mdo_tutorial_ffd.fmt')
+        ffdFile =  os.path.join(baseDir, '../input_files/mdo_tutorial_ffd.fmt')
 
         mesh_options = copy.copy(IDWarpDefOpts)
         mesh_options.update({

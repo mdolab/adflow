@@ -6,23 +6,8 @@ import sys
 import copy
 
 # MACH classes
-from pygeo import DVGeometry
-from pyspline import Curve
-from idwarp import USMesh
-
-
-# MACH testing class
-from baseclasses import BaseRegTest
-
-# get the directories that we will use to import some packages in this repo 
-baseDir = os.path.dirname(os.path.abspath(__file__))
-
-BaseRegTest.setLocalPaths(baseDir, sys.path)
-
-# import the ADFLOW module this test lives in 
 from adflow import ADFLOW
 
-# import the testing utilities that live a few directories up 
 import reg_test_utils as utils
 
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
@@ -30,9 +15,8 @@ from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 from reg_aeroproblems import ap_2D_conv_nozzle 
 from reg_test_classes import test_objects
 
-refDir, inputDir, outputDir = BaseRegTest.getLocalDirPaths(baseDir)
 
-
+baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
 class TestSolve(test_objects.RegTest):
@@ -41,15 +25,12 @@ class TestSolve(test_objects.RegTest):
     equation to the required accuracy as meassure by the norm of the residuals,
     and states, and the accuracy of the functions
 
-    based on the old regression test 
-
-    Test 9: MDO tutorial -- Euler -- Solution Test
+    based on the old regresson test 16
     '''
     N_PROCS = 4
     ref_file = 'solve_2D_conv_nozzle.json'
     options = {
-        'gridfile': os.path.join(inputDir, 'euler_conv_nozzle.cgns'),
-        'outputdirectory':outputDir,
+        'gridfile': os.path.join(baseDir, '../input_files/euler_conv_nozzle.cgns'),
         'solutionprecision':'double',
         'gridprecision':'double',
         'liftIndex':2,
@@ -77,18 +58,12 @@ class TestSolve(test_objects.RegTest):
     def setUp(self):
         super().setUp()
 
-        # self.ref_file = os.path.join(refDir, 'ref16.json')      
-
-
-
-
         options = copy.copy(adflowDefOpts)
+        options['outputdirectory'] = os.path.join(baseDir, options['outputdirectory'])
         options.update(self.options)
-
 
         # Create the solver
         self.CFDSolver = ADFLOW(options=options, debug=False)
-        
 
         self.CFDSolver.addFamilyGroup('upstream',['INFLOW'])
         self.CFDSolver.addFamilyGroup('downstream',['OUTFLOW'])
@@ -120,8 +95,6 @@ class TestSolve(test_objects.RegTest):
         self.CFDSolver.addFunction('dragviscous', 'all_flow', name="thrust_viscous")
         self.CFDSolver.addFunction('dragmomentum', 'all_flow', name="thrust_momentum")
 
-
-    
     def test_solve(self):
 
         # do the solve
@@ -131,7 +104,6 @@ class TestSolve(test_objects.RegTest):
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
         utils.assert_states_allclose(self.handler, self.CFDSolver)
         utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
-
 
 
 if __name__ == '__main__':
