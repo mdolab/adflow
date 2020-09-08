@@ -25,7 +25,7 @@ class test_objects():
 
 
         def train(self):
-            if self.name == None :
+            if not hasattr(self, 'name'):
                     # return immediately when the train method is being called on the based class and NOT the 
                     # classes created using parametrized 
                     # this will happen when testing, but will hopefully be fixed down the line
@@ -43,7 +43,7 @@ class test_objects():
 
             trained_ref = self.handler.getRef()
     
-            utils.writeRefToJson(self.ref_file, trained_ref)
+            utils.writeRefToJson(os.path.join(refDir, self.ref_file), trained_ref)
 
 
 class RegTest(object):

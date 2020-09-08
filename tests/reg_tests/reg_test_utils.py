@@ -4,6 +4,7 @@ import sys
 import os
 from collections import deque
 import json
+from mpi4py import MPI
 
 import unittest
 # =============================================================================
@@ -11,11 +12,10 @@ import unittest
 # =============================================================================
 
 
-def assert_adjoint_sens_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10):
+def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, rtol=1e-10, atol=1e-10):
     funcsSens = {}
-    CFDSolver.evalFunctionsSens(ap, funcsSens)
+    CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
     handler.root_print('Eval Functions Sens:')
-    print(funcsSens)
     handler.root_add_dict(funcsSens, 'Eval Functions Sens:', rel_tol=rtol, abs_tol=atol)
 
 def assert_problem_size_equal(handler, CFDSolver, rtol=1e-10, atol=1e-10):
@@ -426,9 +426,9 @@ def writeRefToJson(file_name, ref):
             elif isinstance(obj, numpy.floating):
                 return float(obj)            # Let the base class default method raise the TypeError
             super(NumpyEncoder, self).default(obj)
-
-    with open(file_name,'w') as json_file: 
-        json.dump(ref, json_file, sort_keys=True, indent=4, separators=(',', ': '), cls=NumpyEncoder) 
+    if MPI.COMM_WORLD.rank == 0: 
+        with open(file_name,'w') as json_file: 
+            json.dump(ref, json_file, sort_keys=True, indent=4, separators=(',', ': '), cls=NumpyEncoder) 
 
 
 # based on this stack overflow answer https://stackoverflow.com/questions/3488934/simplejson-and-numpy-array/24375113#24375113

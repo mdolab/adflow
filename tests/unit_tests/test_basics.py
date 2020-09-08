@@ -6,7 +6,7 @@ import os
 import sys
 baseDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(baseDir,'../../'))
-from python.pyADflow import ADFLOW
+from adflow import ADFLOW
 
 
 class BasicTests(unittest.TestCase):
