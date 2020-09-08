@@ -64,7 +64,7 @@ script:
   - if [ "$TEST_TYPE" = "REAL" ]; then
       travis_wait 120 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests/reg_tests && python run_all_reg_tests.py";
     else
-      travis_wait 120 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests/reg_tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && python run_all_cmplx_reg_tests.py";
+      travis_wait 120 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests/reg_tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && python run_all_reg_cmplx_tests.py";
     fi
 
 after_script:
