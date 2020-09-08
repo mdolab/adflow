@@ -31,15 +31,10 @@ class TestSolve(test_objects.RegTest):
     '''
     N_PROCS = 4
     ref_file = 'solve_cl.json'
+
     def setUp(self):
         super().setUp()
-
-        # self.ref_file = os.path.join(refDir, 'ref10.json')      
-
-        
-        gridFile = os.path.join(baseDir, '../input_files/mdo_tutorial_euler_scalar_jst.cgns')
-
-
+        gridFile = os.path.join(baseDir, '../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns')
         options = copy.copy(adflowDefOpts)
         options['outputdirectory'] = os.path.join(baseDir, options['outputdirectory'])
         options.update({
@@ -72,7 +67,7 @@ class TestSolve(test_objects.RegTest):
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=['cl'])
 
-        self.handler.root_add_val(funcs['mdo_tutorial_cl'] - 0.475, 'CL-CL*', rel_tol=1e-4, abs_tol=1e-4)
+        self.handler.root_add_val(funcs['mdo_tutorial_cl'] - 0.475, 'CL-CL*', rtol=1e-4, atol=1e-4)
 
 if __name__ == '__main__':
     unittest.main()

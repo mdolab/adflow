@@ -30,7 +30,7 @@ class TestSolve(test_objects.RegTest):
     N_PROCS = 4
     ref_file = 'solve_2D_conv_nozzle.json'
     options = {
-        'gridfile': os.path.join(baseDir, '../input_files/euler_conv_nozzle.cgns'),
+        'gridfile': os.path.join(baseDir, '../../inputFiles/euler_conv_nozzle.cgns'),
         'solutionprecision':'double',
         'gridprecision':'double',
         'liftIndex':2,

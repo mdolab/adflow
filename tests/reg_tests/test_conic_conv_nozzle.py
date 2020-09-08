@@ -33,7 +33,7 @@ class TestSolveIntegrationPlane(test_objects.RegTest):
     N_PROCS = 4
     
     options = {
-            'gridfile': os.path.join(baseDir, '../input_files/conic_conv_nozzle_mb.cgns'),
+            'gridfile': os.path.join(baseDir, '../../inputFiles/conic_conv_nozzle_mb.cgns'),
             'outputdirectory': os.path.join(baseDir, '../output_files'),
             # Physics Parameters
             'equationType':'euler',
@@ -81,7 +81,7 @@ class TestSolveIntegrationPlane(test_objects.RegTest):
 
         # Setup aeroproblem
 
-        planeFile = os.path.join(baseDir, '../input_files/integration_plane_viscous.fmt')
+        planeFile = os.path.join(baseDir, '../../inputFiles/integration_plane_viscous.fmt')
 
 
         options = copy.copy(adflowDefOpts)
@@ -154,7 +154,7 @@ class TestSolveOverset(test_objects.RegTest):
     N_PROCS =2
     
     options = {
-            'gridfile': os.path.join(baseDir, '../input_files/conic_conv_nozzle.cgns'),
+            'gridfile': os.path.join(baseDir, '../../inputFiles/conic_conv_nozzle.cgns'),
             'outputdirectory': os.path.join(baseDir, '../output_files'),
             # Physics Parameters
             'equationType':'euler',
