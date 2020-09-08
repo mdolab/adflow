@@ -51,7 +51,7 @@ ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, P=20000.0, T=220.0,
                  areaRef=45.5, chordRef=3.25, beta=0.0, R=287.87,
                  xRef=0.0, yRef=0.0, zRef=0.0, evalFuncs=['fx', 'mz'])
 
-def setup_cb(comm): 
+def setup_cb(comm):
 
     # Create the solver
     CFDSolver = ADFLOW(options=options, comm=comm, debug=False)
@@ -75,9 +75,9 @@ def setup_cb(comm):
     return CFDSolver, mesh, DVGeo, None
 
 
-if __name__ == "__main__":                  
+if __name__ == "__main__":
 
-   
+
     CFDSolver, mesh, DVGeo, _ = setup_cb(MPI.COMM_WORLD)
 
     adjointTest(CFDSolver, ap)

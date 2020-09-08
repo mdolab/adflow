@@ -94,9 +94,10 @@ ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
 
-def setup_cb(comm): 
+def setup_cb(comm):
 
     solver = ADFLOW(options=options, comm=comm, debug=True)
+
 
     solver.addIntegrationSurface('../inputFiles/integration_plane_viscous.fmt', 'viscous_plane')
     solver.finalizeUserIntegrationSurfaces()
@@ -134,8 +135,8 @@ def setup_cb(comm):
 
     return solver, None, None, None
 
- 
-if __name__ == "__main__": 
+
+if __name__ == "__main__":
 
     CFDSolver, _, _, _ = setup_cb(MPI.COMM_WORLD)
 
