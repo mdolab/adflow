@@ -17,11 +17,8 @@ refDir = os.path.join(baseDir,'refs')
 class test_objects():
     class RegTest(unittest.TestCase):
         def setUp(self):
-
             ref_file = os.path.join(refDir, self.ref_file)
-            
-            ref = utils.readJSONRef(ref_file)
-            self.handler = BaseRegTest(ref)
+            self.handler = BaseRegTest(ref_file)
 
 
         def train(self):
