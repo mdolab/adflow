@@ -1,6 +1,6 @@
 import glob
 import os 
-from reg_test_utils import convertRegFileToJSONRegFile
+from baseclasses.BaseRegTest import convertRegFileToJSONRegFile
 
 
 

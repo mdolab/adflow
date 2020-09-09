@@ -38,9 +38,7 @@ class test_objects():
                 test_func = getattr(self, test)
                 test_func()
 
-            trained_ref = self.handler.getRef()
-    
-            utils.writeRefToJson(os.path.join(refDir, self.ref_file), trained_ref)
+            self.handler.writeRef(os.path.join(refDir, self.ref_file))
 
 
 class RegTest(object):
@@ -55,9 +53,7 @@ class RegTest(object):
             test_func = getattr(self, test)
             test_func()
 
-        trained_ref = self.handler.getRef()
- 
-        utils.writeRefToJson(self.ref_file, trained_ref)
+        self.handler.writeRef(os.path.join(refDir, self.ref_file))
 
 class SolveRegTest(RegTest):
     """ this is a base class for use with in the mdolab regression tests
