@@ -66,7 +66,7 @@ contains
     ! axis.
     axisVec = axis2-axis1
     axisVecNorm = sqrt((axisVec(1)**2 + axisvec(2)**2 + axisVec(3)**2))
-    if (axisVecNorm < 1e-12) then 
+    if (axisVecNorm < 1e-12) then
        print *,"Error: Axis cannot be determined by the supplied points. They are too close"
        stop
     end if
@@ -481,7 +481,7 @@ contains
     use constants
     use blockPointers, only : vol, dw, w, nDom
     use flowVarRefState, only : Pref, uRef
-    use utils, only : setPointers
+    use utils, only : setPointers_d
     use sorting, only : famInList
     use actuatorRegionData
     use residuals_d, only : sourceTerms_block_d
@@ -502,7 +502,7 @@ contains
     PLocald = zero
 
     domainLoop: do nn=1, nDom
-       call setPointers(nn, 1, sps)
+       call setPointers_d(nn, 1, sps)
 
        ! Loop over each region
        regionLoop: do iRegion=1, nActuatorRegions
@@ -533,7 +533,7 @@ contains
     use constants
     use blockPointers, only : vol, dw, w, nDom
     use flowVarRefState, only : Pref, uRef
-    use utils, only : setPointers
+    use utils, only : setPointers_b
     use sorting, only : famInList
     use actuatorRegionData
     use residuals_b, only : sourceTerms_block_b
@@ -557,7 +557,7 @@ contains
     PLocald = localValuesd(iPower)
 
     domainLoop: do nn=1, nDom
-       call setPointers(nn, 1, sps)
+       call setPointers_b(nn, 1, sps)
 
        ! Loop over each region
        regionLoop: do iRegion=1, nActuatorRegions
