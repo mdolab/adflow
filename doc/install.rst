@@ -12,7 +12,7 @@ ADflow requires the following dependencies:
 - PETSc
 - MPI
 
-See the MDO Lab installation guide `here <http://mdolab.engin.umich.edu/docs/installInstructions/install3rdPartyPackages.html>`_ for the supported versions and installation instructions.
+See the MDO Lab installation guide `here <https://mdolab-mach-aero.readthedocs-hosted.com/en/latest/installInstructions/install3rdPartyPackages.html>`_ for the supported versions and installation instructions.
 
 Building
 --------
