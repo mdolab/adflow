@@ -45,11 +45,11 @@ install:
   # Now download the regression input files
   - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/inputFiles && ./get-input-files.sh"
   # Copy over the correct config file and modify as needed
-  - if [[ "$DOCKER_TAG" == "py3-centos7-impi" ]]; then
+  - if [[ "$DOCKER_TAG" == *"intel"* ]]; then
       docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_INTEL.mk config/config.mk";
     else
       docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk";
-      if [[ "$DOCKER_TAG" == "py2"* ]]; then
+      if [[ "$DOCKER_TAG" == *"py2"* ]]; then
         docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && sed -i 's/python3-config/python-config/g' config/config.mk";
       fi
     fi
