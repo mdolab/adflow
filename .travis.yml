@@ -14,16 +14,20 @@ env:
     - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
   jobs:
     # We split it into two builds, real and complex to parallelize
-    - DOCKER_TAG=py2-latest TEST_TYPE=REAL
-    - DOCKER_TAG=py2-latest TEST_TYPE=COMPLEX
-    - DOCKER_TAG=py3-stable TEST_TYPE=REAL
-    - DOCKER_TAG=py3-stable TEST_TYPE=COMPLEX
-    - DOCKER_TAG=py3-latest TEST_TYPE=REAL
-    - DOCKER_TAG=py3-latest TEST_TYPE=COMPLEX
-    - DOCKER_TAG=py3-impi TEST_TYPE=REAL
-    - DOCKER_TAG=py3-impi TEST_TYPE=COMPLEX
-    - DOCKER_TAG=py3-centos7-impi TEST_TYPE=REAL
-    - DOCKER_TAG=py3-centos7-impi TEST_TYPE=COMPLEX
+    # - DOCKER_TAG=c7-gcc-ompi-py3-latest TEST_TYPE=REAL
+    # - DOCKER_TAG=c7-gcc-ompi-py3-latest TEST_TYPE=COMPLEX
+    - DOCKER_TAG=c7-intel-impi-py3-latest TEST_TYPE=REAL
+    - DOCKER_TAG=c7-intel-impi-py3-latest TEST_TYPE=COMPLEX
+    - DOCKER_TAG=u18-gcc-ompi-py2-stable TEST_TYPE=REAL
+    - DOCKER_TAG=u18-gcc-ompi-py2-stable TEST_TYPE=COMPLEX
+    - DOCKER_TAG=u18-gcc-ompi-py3-latest TEST_TYPE=REAL
+    - DOCKER_TAG=u18-gcc-ompi-py3-latest TEST_TYPE=COMPLEX
+    - DOCKER_TAG=u18-gcc-ompi-py3-stable TEST_TYPE=REAL
+    - DOCKER_TAG=u18-gcc-ompi-py3-stable TEST_TYPE=COMPLEX
+    - DOCKER_TAG=u20-gcc-ompi-py3-latest TEST_TYPE=REAL
+    - DOCKER_TAG=u20-gcc-ompi-py3-latest TEST_TYPE=COMPLEX
+    - DOCKER_TAG=u20-gcc-ompi-py3-stable TEST_TYPE=REAL
+    - DOCKER_TAG=u20-gcc-ompi-py3-stable TEST_TYPE=COMPLEX
     
 
 before_install:
@@ -41,11 +45,11 @@ install:
   # Now download the regression input files
   - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/inputFiles && ./get-input-files.sh"
   # Copy over the correct config file and modify as needed
-  - if [[ "$DOCKER_TAG" == "py3-centos7-impi" ]]; then
+  - if [[ "$DOCKER_TAG" == *"intel"* ]]; then
       docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_INTEL.mk config/config.mk";
     else
       docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk";
-      if [[ "$DOCKER_TAG" == "py2"* ]]; then
+      if [[ "$DOCKER_TAG" == *"py2"* ]]; then
         docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && sed -i 's/python3-config/python-config/g' config/config.mk";
       fi
     fi
