@@ -67,7 +67,7 @@ class TestSolve(test_objects.RegTest):
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=['cl'])
 
-        self.handler.root_add_val(funcs['mdo_tutorial_cl'] - 0.475, 'CL-CL*', rtol=1e-4, atol=1e-4)
+        self.handler.root_add_val('CL-CL*', funcs['mdo_tutorial_cl'] - 0.475, rtol=1e-4, atol=1e-4)
 
 if __name__ == '__main__':
     unittest.main()
