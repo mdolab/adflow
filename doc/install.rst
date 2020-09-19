@@ -47,6 +47,14 @@ To configure manually, open ``config/config.mk`` and modify options as necessary
 It is most likely that you need to modify the ``CGNS_INCLUDE_FLAGS`` and the ``CGNS_LINKER_FLAGS`` variables.
 After changes to the configuration file, run ``make clean`` before attempting a new build.
 
+.. NOTE::
+
+    Some HPC architectures might require modifications on additional flags in the ``config.mk`` file. Users have documented cases of abrupt ADflow crashes, despite a successful build, right after the job submission, together with other issues with interactive jobs. For example, problems were reported for a cluster where login nodes use newer Cascade Lake CPUs while compute nodes are based on older Sandy Bridge CPUs.
+
+    We recommend to contact your local HPC team to address these hardware specific issues. To provide an example fix, the issue on the above mentioned HPC was fixed using the following ``FF90_FLAGS`` option instead of the default one::
+
+        FF90_FLAGS = -DHAS_ISNAN  -fPIC -fdefault-real-8 -fdefault-double-8 -g  -O3  -march=sandybridge -mtune=broadwell -ffast-math
+
 Lastly, to build and install the Python interface, type::
 
     pip install .
