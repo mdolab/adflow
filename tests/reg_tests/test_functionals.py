@@ -220,7 +220,7 @@ class TestFunctionals(test_objects.RegTest):
     and jacobian vector products are accurate.
 
     '''
-    N_PROCS = 2
+    N_PROCS = 4
 
     def setUp(self):
         if self.name == None :

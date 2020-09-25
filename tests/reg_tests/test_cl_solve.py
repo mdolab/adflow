@@ -29,7 +29,7 @@ class TestSolve(test_objects.RegTest):
     based on the old regression test 10
 
     '''
-    N_PROCS = 2
+    N_PROCS = 4
     ref_file = 'solve_cl.json'
 
     def setUp(self):

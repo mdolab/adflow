@@ -91,7 +91,7 @@ class TestSolve(test_objects.RegTest):
 
     based on the old regression tests 9, 11, 12
     '''
-    N_PROCS = 2
+    N_PROCS = 4
 
     name = None
     

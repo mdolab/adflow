@@ -176,7 +176,7 @@ class TestAdjoint(test_objects.RegTest):
 
     based on old regression tests 12, and 14
     '''
-    N_PROCS = 2
+    N_PROCS = 4
 
     options = None
     ap = None
@@ -234,7 +234,7 @@ class TestCmplxStep(unittest.TestCase):
 
     based on old regression tests_cs 12, and 14
     '''
-    N_PROCS = 2 
+    N_PROCS = 4 
 
     h = 1e-40
     def setUp(self):
