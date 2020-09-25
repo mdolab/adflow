@@ -14,8 +14,8 @@ env:
     - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
   jobs:
     # We split it into two builds, real and complex to parallelize
-    # - DOCKER_TAG=c7-gcc-ompi-latest TEST_TYPE=REAL
-    # - DOCKER_TAG=c7-gcc-ompi-latest TEST_TYPE=COMPLEX
+    - DOCKER_TAG=c7-gcc-ompi-latest TEST_TYPE=REAL
+    - DOCKER_TAG=c7-gcc-ompi-latest TEST_TYPE=COMPLEX
     - DOCKER_TAG=c7-intel-impi-latest TEST_TYPE=REAL
     - DOCKER_TAG=c7-intel-impi-latest TEST_TYPE=COMPLEX
     - DOCKER_TAG=u18-gcc-ompi-latest TEST_TYPE=REAL
