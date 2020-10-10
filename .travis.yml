@@ -7,8 +7,8 @@ import:
 env:
   global:
     - DOCKER_REPO=public
-    - GCC_CONFIG=config/defaults/config.LINUX_INTEL.mk
-    - INTEL_CONFIG=config/defaults/config.LINUX_GFORTRAN.mk
+    - GCC_CONFIG=config/defaults/config.LINUX_GFORTRAN.mk
+    - INTEL_CONFIG=config/defaults/config.LINUX_INTEL.mk
 
 script:
   - |
