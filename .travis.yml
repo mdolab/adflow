@@ -1,70 +1,26 @@
-dist: xenial
-
-branches:
-  only:
-    - master
-
-services:
-  - docker
+import:
+  - mdolab/.github:travis/jobs-env.yml
+  - mdolab/.github:travis/before-install.yml
+  - mdolab/.github:travis/install.yml
+  - mdolab/.github:travis/script.yml
 
 env:
   global:
-    - REPO_NAME=adflow
-    - DOCKER_WORKING_DIR=/home/mdolabuser/repos/$REPO_NAME
-    - DOCKER_MOUNT_DIR=/home/mdolabuser/travis/$REPO_NAME
-  jobs:
-    # We split it into two builds, real and complex to parallelize
-    - DOCKER_TAG=c7-gcc-ompi-latest TEST_TYPE=REAL
-    - DOCKER_TAG=c7-gcc-ompi-latest TEST_TYPE=COMPLEX
-    - DOCKER_TAG=c7-intel-impi-latest TEST_TYPE=REAL
-    - DOCKER_TAG=c7-intel-impi-latest TEST_TYPE=COMPLEX
-    - DOCKER_TAG=u18-gcc-ompi-latest TEST_TYPE=REAL
-    - DOCKER_TAG=u18-gcc-ompi-latest TEST_TYPE=COMPLEX
-    - DOCKER_TAG=u18-gcc-ompi-stable TEST_TYPE=REAL
-    - DOCKER_TAG=u18-gcc-ompi-stable TEST_TYPE=COMPLEX
-    - DOCKER_TAG=u20-gcc-ompi-latest TEST_TYPE=REAL
-    - DOCKER_TAG=u20-gcc-ompi-latest TEST_TYPE=COMPLEX
-    - DOCKER_TAG=u20-gcc-ompi-stable TEST_TYPE=REAL
-    - DOCKER_TAG=u20-gcc-ompi-stable TEST_TYPE=COMPLEX
-    
-
-before_install:
-  - docker pull mdolab/public:$DOCKER_TAG
-  # run Docker, mounting the current Travis directory into Docker to access content of repo
-  - docker run -t -d 
-        --name app
-        --mount "type=bind,src=$(pwd),target=$DOCKER_MOUNT_DIR"
-        mdolab/public:$DOCKER_TAG
-        /bin/bash
-
-install:
-  # We thrown away the existing repo in Docker, and copy the new one in-place
-  - docker exec -it app /bin/bash -c "rm -rf $DOCKER_WORKING_DIR && cp -r $DOCKER_MOUNT_DIR $DOCKER_WORKING_DIR"
-  # Now download the regression input files
-  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/inputFiles && ./get-input-files.sh"
-  # Copy over the correct config file and modify as needed
-  - if [[ "$DOCKER_TAG" == *"intel"* ]]; then
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_INTEL.mk config/config.mk && sed -i 's/DHAS_ISNAN/DHAS_ISNAN -fPIC -xCORE-AVX2/g' config/config.mk";
-    else
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk";
-    fi
-  # Compile real and complex builds
-  - if [ "$TEST_TYPE" = "REAL" ]; then
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && make";
-    else
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION";
-    fi
-  # Install Python interface
-  - docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR && pip install ."
+    - DOCKER_REPO=public
+    - GCC_CONFIG=config/defaults/config.LINUX_INTEL.mk
+    - INTEL_CONFIG=config/defaults/config.LINUX_GFORTRAN.mk
 
 script:
-  # Some of the complex tests take >10 min, so adding travis_wait to stop travis from timing out after 10min
-  # the sleep infinity is a workaround since docker exec forks another process which won't work directly with travis_wait
-  - if [ "$TEST_TYPE" = "REAL" ]; then
+  - |
+    if [ $TEST_TYPE == "docker" ]; then
+      # download the regression input files
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/inputFiles && ./get-input-files.sh"
+      # Some of the complex tests take >10 min, so adding travis_wait to stop travis from timing out after 10min
+      # the sleep infinity is a workaround since docker exec forks another process which won't work directly with travis_wait
+      # first run real tests
       travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && testflo . -v";
-    else
+      # now complex tests
       travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo . -v -m 'cmplx_test_*' ";
     fi
-
 after_script:
   - docker rm -f app
