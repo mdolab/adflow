@@ -49,11 +49,23 @@ After changes to the configuration file, run ``make clean`` before attempting a 
 
 .. NOTE::
 
-    Some HPC architectures might require modifications on additional flags in the ``config.mk`` file. Users have documented cases of abrupt ADflow crashes, despite a successful build, right after the job submission, together with other issues with interactive jobs. For example, problems were reported for a cluster where login nodes use newer Cascade Lake CPUs while compute nodes are based on older Sandy Bridge CPUs.
+    Compiling ADflow on HPC clusters requires additional care, as some systems do not have a homogeneous CPU architecture across all nodes.
+    For example, the architecture of the login nodes may differ from the architecture of compute nodes available on the same cluster. 
 
-    We recommend to contact your local HPC team to address these hardware specific issues. To provide an example fix, the issue on the above mentioned HPC was fixed using the following ``FF90_FLAGS`` option instead of the default one::
+    Compiling the code on/for a specific login node type may result in unexpected crashes if the compute nodes have an incompatible (newer) architecture.
+    You can append the ``-march=<HPC-ARCH>`` flag to the ``config.mk`` file to specify the architecture of the compute node and avoid such issues. 
+    To optimize the compiled code for a specific architecture, one can add the ``-mtune=<HPC-ARCH>`` flag. However, this is rarely needed. 
+    An example of the updated flags in the config file is:: 
 
-        FF90_FLAGS = -DHAS_ISNAN  -fPIC -fdefault-real-8 -fdefault-double-8 -g  -O3  -march=sandybridge -mtune=broadwell -ffast-math
+        FF90_FLAGS = <normal-flags> -march=<HPC-ARCH> -mtune=<HPC-ARCH>
+
+    Note that the ``<HPC-ARCH>`` should be replaced with the name of the correct compute node architecture. This name is compiler-specific and also depends on the compiler version.
+
+    For example, if the login nodes use newer Cascade Lake CPUs while the compute nodes are based on older Sandy Bridge CPUs it may be necessary to set ``-march=sandybridge`` in your ``config.mk`` file::
+
+        FF90_FLAGS = <normal-flags> -march=sandybridge
+
+    We recommend to contact your local HPC team to get more information about hardware specific issues. 
 
 Lastly, to build and install the Python interface, type::
 
