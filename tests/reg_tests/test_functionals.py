@@ -261,7 +261,7 @@ class TestFunctionals(test_objects.RegTest):
 
     # ------------------- Derivative routine checks ----------------------------
     def test_jac_vec_prod_fwd(self):
-        utils.assert_fwd_mode_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_fwd_mode_allclose(self.handler, self.CFDSolver, self.ap, rtol=5e-9, atol=5e-9)
 
     def test_jac_vec_prod_bwd(self):
         utils.assert_bwd_mode_allclose(self.handler, self.CFDSolver, self.ap)
