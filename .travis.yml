@@ -9,6 +9,7 @@ env:
     - DOCKER_REPO=public
     - GCC_CONFIG=config/defaults/config.LINUX_GFORTRAN.mk
     - INTEL_CONFIG=config/defaults/config.LINUX_INTEL.mk
+    - SEPARATE_COMPLEX_BUILD=true
 
 script:
   - |
@@ -17,10 +18,13 @@ script:
       docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/inputFiles && ./get-input-files.sh"
       # Some of the complex tests take >10 min, so adding travis_wait to stop travis from timing out after 10min
       # the sleep infinity is a workaround since docker exec forks another process which won't work directly with travis_wait
-      # first run real tests
-      travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && testflo . -v";
-      # now complex tests
-      travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo . -v -m 'cmplx_test_*' ";
+      if [ $DOCKER_TEST_TYPE == "real" ]; then
+        # run real tests
+        travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && testflo . -v";
+      elif [ $DOCKER_TEST_TYPE == "complex" ]; then
+        # complex tests
+        travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo . -v -m 'cmplx_test_*' ";
+      fi
     fi
 after_script:
   - docker rm -f app
