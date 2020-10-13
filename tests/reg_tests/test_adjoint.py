@@ -302,7 +302,7 @@ class TestCmplxStep(unittest.TestCase):
             print(self.name, funcsSens)
             print("====================================")
 
-        self.handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=1e-10, atol=1e-10)
+        self.handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=5e-9, atol=1e-10)
 
     def cmplx_test_geom_dvs(self):
         if not hasattr(self, "name"):
