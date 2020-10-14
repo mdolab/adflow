@@ -31,7 +31,7 @@ class TestSolveIntegrationPlane(test_objects.RegTest):
     Test 9: MDO tutorial -- Euler -- Solution Test
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     options = {
         "gridfile": os.path.join(baseDir, "../../inputFiles/conic_conv_nozzle_mb.cgns"),

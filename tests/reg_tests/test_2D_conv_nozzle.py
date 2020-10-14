@@ -28,7 +28,7 @@ class TestSolve(test_objects.RegTest):
     based on the old regresson test 16
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
     ref_file = "solve_2D_conv_nozzle.json"
     options = {
         "gridfile": os.path.join(baseDir, "../../inputFiles/euler_conv_nozzle.cgns"),

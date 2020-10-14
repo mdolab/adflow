@@ -29,7 +29,7 @@ class TestSolve(test_objects.RegTest):
     based on the old regression test 15
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
     ref_file = "solve_rans_time_acc_naca0012.json"
 
     def setUp(self):

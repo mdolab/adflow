@@ -20,10 +20,10 @@ script:
       # the sleep infinity is a workaround since docker exec forks another process which won't work directly with travis_wait
       if [ $DOCKER_TEST_TYPE == "real" ]; then
         # run real tests
-        travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && testflo . -v";
+        travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && testflo . -v -n 1";
       elif [ $DOCKER_TEST_TYPE == "complex" ]; then
         # complex tests
-        travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo . -v -m 'cmplx_test_*' ";
+        travis_wait 180 sleep infinity & docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/tests && export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo . -v -n 1 -m 'cmplx_test_*' ";
       fi
     fi
 after_script:

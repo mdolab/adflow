@@ -87,7 +87,6 @@ test_params = [
         "ref_file": "adjoint_euler_scalar_jst_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
         "evalFuncs": ["cl", "cd"],
-        "N_PROCS": 1,
     },
     # Tutorial scalar JST
     {
@@ -176,7 +175,7 @@ class TestAdjoint(test_objects.RegTest):
     based on old regression tests 12, and 14
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     options = None
     ap = None
@@ -233,7 +232,7 @@ class TestCmplxStep(unittest.TestCase):
     based on old regression tests_cs 12, and 14
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     h = 1e-40
 
