@@ -87,6 +87,7 @@ test_params = [
         "ref_file": "adjoint_euler_scalar_jst_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
         "evalFuncs": ["cl", "cd"],
+        "N_PROCS": 1,
     },
     # Tutorial scalar JST
     {

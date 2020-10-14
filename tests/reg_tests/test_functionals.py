@@ -36,6 +36,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_euler_scalar_jst_tut_wing.json",
             "aero_prob": copy.deepcopy(ap_tutorial_wing),
+            "N_PROCS": 1,
         },
         # scalar JST
         {
