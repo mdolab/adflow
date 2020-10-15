@@ -1,8 +1,6 @@
 # built-ins
 import unittest
-import numpy
 import os
-import sys
 import copy
 
 # MACH classes
@@ -10,7 +8,7 @@ from adflow import ADFLOW
 
 import reg_test_utils as utils
 
-from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
+from reg_default_options import adflowDefOpts
 
 from reg_aeroproblems import ap_2D_conv_nozzle
 from reg_test_classes import test_objects
@@ -103,9 +101,9 @@ class TestSolve(test_objects.RegTest):
         self.CFDSolver(self.ap)
 
         # check its accuracy
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
-        utils.assert_states_allclose(self.handler, self.CFDSolver)
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
 
 if __name__ == "__main__":

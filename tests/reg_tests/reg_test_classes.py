@@ -72,9 +72,9 @@ class SolveRegTest(RegTest):
         self.CFDSolver(self.ap)
 
         # check its accuracy
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
-        utils.assert_states_allclose(self.handler, self.CFDSolver)
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
 
 class FunctionalsRegTest(RegTest):
@@ -90,18 +90,18 @@ class FunctionalsRegTest(RegTest):
     """
 
     def test_restart_read(self):
-        utils.assert_problem_size_equal(self.handler, self.CFDSolver)
-        utils.assert_states_allclose(self.handler, self.CFDSolver)
+        utils.assert_problem_size_equal(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
 
     def test_residuals(self):
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_functions(self):
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
 
     def test_forces_and_tractions(self):
-        utils.assert_forces_allclose(self.handler, self.CFDSolver)
-        utils.assert_tractions_allclose(self.handler, self.CFDSolver)
+        utils.assert_forces_allclose(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_tractions_allclose(self.handler, self.CFDSolver, tol=1e-10)
 
         # Reset the option
         self.CFDSolver.setOption("forcesAsTractions", True)
@@ -112,13 +112,13 @@ class FunctionalsRegTest(RegTest):
 
     # ------------------- Derivative routine checks ----------------------------
     def test_jac_vec_prod_fwd(self):
-        utils.assert_fwd_mode_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_fwd_mode_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_jac_vec_prod_bwd(self):
-        utils.assert_bwd_mode_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_bwd_mode_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_dot_products(self):
-        utils.assert_dot_products_allclose(self.handler, self.CFDSolver)
+        utils.assert_dot_products_allclose(self.handler, self.CFDSolver, tol=1e-10)
 
 
 class AdjointRegTest(RegTest):
@@ -126,7 +126,7 @@ class AdjointRegTest(RegTest):
     # to the DVs. This solves for whatever functions are in the
     # aeroProblem.
     def test_residuals(self):
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_adjoint(self):
-        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)

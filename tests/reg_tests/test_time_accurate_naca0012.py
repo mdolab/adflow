@@ -1,6 +1,5 @@
 # built-ins
 import unittest
-import numpy
 import os
 import copy
 
@@ -92,7 +91,7 @@ class TestSolve(test_objects.RegTest):
         self.CFDSolver(self.ap)
 
         # check its accuracy
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, rtol=1e-8, atol=1e-8)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-8)
 
 
 if __name__ == "__main__":

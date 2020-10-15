@@ -2,7 +2,6 @@
 import unittest
 import numpy
 import os
-import sys
 import copy
 from collections import defaultdict
 from parameterized import parameterized_class
@@ -26,7 +25,7 @@ import reg_test_utils as utils
 
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
-from reg_aeroproblems import ap_tutorial_wing,  ap_tutorial_wing_laminar
+from reg_aeroproblems import ap_tutorial_wing, ap_tutorial_wing_laminar
 from reg_test_classes import test_objects
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -218,10 +217,10 @@ class TestAdjoint(test_objects.RegTest):
         self.CFDSolver.getResidual(self.ap)
 
     def test_residuals(self):
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_adjoint(self):
-        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
 
 @parameterized_class(test_params)
