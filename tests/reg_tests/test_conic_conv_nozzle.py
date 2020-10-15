@@ -2,7 +2,6 @@
 import unittest
 import numpy as np
 import os
-import sys
 import copy
 
 # MACH classes
@@ -11,7 +10,7 @@ from adflow import ADFLOW
 # import the testing utilities
 import reg_test_utils as utils
 
-from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
+from reg_default_options import adflowDefOpts
 
 from reg_aeroproblems import ap_conic_conv_nozzle
 from reg_test_classes import test_objects
@@ -31,7 +30,7 @@ class TestSolveIntegrationPlane(test_objects.RegTest):
     Test 9: MDO tutorial -- Euler -- Solution Test
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     options = {
         "gridfile": os.path.join(baseDir, "../../inputFiles/conic_conv_nozzle_mb.cgns"),
@@ -132,9 +131,9 @@ class TestSolveIntegrationPlane(test_objects.RegTest):
         self.CFDSolver(self.ap)
 
         # check its accuracy
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
-        utils.assert_states_allclose(self.handler, self.CFDSolver)
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
 
 class TestSolveOverset(test_objects.RegTest):
@@ -238,8 +237,8 @@ class TestSolveOverset(test_objects.RegTest):
         self.CFDSolver(self.ap)
 
         # check its accuracy
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
-        utils.assert_states_allclose(self.handler, self.CFDSolver)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
         # Check the residual
         res = self.CFDSolver.getResidual(self.ap)
         totalR0 = self.CFDSolver.getFreeStreamResidual(self.ap)

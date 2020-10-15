@@ -2,7 +2,6 @@
 import unittest
 import numpy
 import os
-import sys
 import copy
 from collections import defaultdict
 from parameterized import parameterized_class
@@ -26,7 +25,7 @@ import reg_test_utils as utils
 
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
-from reg_aeroproblems import ap_tutorial_wing,  ap_tutorial_wing_laminar
+from reg_aeroproblems import ap_tutorial_wing, ap_tutorial_wing_laminar
 from reg_test_classes import test_objects
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -176,7 +175,7 @@ class TestAdjoint(test_objects.RegTest):
     based on old regression tests 12, and 14
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     options = None
     ap = None
@@ -218,10 +217,10 @@ class TestAdjoint(test_objects.RegTest):
         self.CFDSolver.getResidual(self.ap)
 
     def test_residuals(self):
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_adjoint(self):
-        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
 
 @parameterized_class(test_params)
@@ -233,7 +232,7 @@ class TestCmplxStep(unittest.TestCase):
     based on old regression tests_cs 12, and 14
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     h = 1e-40
 
@@ -339,7 +338,7 @@ class TestCmplxStep(unittest.TestCase):
                 ref_val = self.handler.db["Eval Functions Sens:"][key][dv_key]
                 ref_val = ref_val.flatten()[0]
 
-                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, rtol=5e-9, err_msg=err_msg)
+                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=5e-9, rtol=5e-9, err_msg=err_msg)
 
         if MPI.COMM_WORLD.rank == 0:
             print("====================================")

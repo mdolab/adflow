@@ -1,8 +1,6 @@
 # built-ins
 import unittest
-import numpy
 import os
-import sys
 import copy
 from parameterized import parameterized_class
 
@@ -91,12 +89,12 @@ class TestSolve(test_objects.RegTest):
     based on the old regression tests 9, 11, 12
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     name = None
 
     def setUp(self, train=False):
-        if self.name == None:
+        if self.name is None:
             # return immediately when the setup method is being called on the based class and NOT the
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
@@ -119,9 +117,9 @@ class TestSolve(test_objects.RegTest):
         self.CFDSolver(self.ap)
 
         # check its accuracy
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
-        utils.assert_states_allclose(self.handler, self.CFDSolver)
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
 
 if __name__ == "__main__":

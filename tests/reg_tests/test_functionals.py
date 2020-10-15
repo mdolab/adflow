@@ -1,6 +1,5 @@
 # built-ins
 import unittest
-import numpy
 import os
 import copy
 from parameterized import parameterized_class
@@ -212,7 +211,7 @@ class TestFunctionals(test_objects.RegTest):
 
     """
 
-    N_PROCS = 4
+    N_PROCS = 2
 
     def setUp(self):
         if self.name is None:
@@ -239,18 +238,18 @@ class TestFunctionals(test_objects.RegTest):
         self.CFDSolver.getResidual(self.ap)
 
     def test_restart_read(self):
-        utils.assert_problem_size_equal(self.handler, self.CFDSolver)
-        utils.assert_states_allclose(self.handler, self.CFDSolver)
+        utils.assert_problem_size_equal(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
 
     def test_residuals(self):
-        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_functions(self):
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
 
     def test_forces_and_tractions(self):
-        utils.assert_forces_allclose(self.handler, self.CFDSolver)
-        utils.assert_tractions_allclose(self.handler, self.CFDSolver)
+        utils.assert_forces_allclose(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_tractions_allclose(self.handler, self.CFDSolver, tol=1e-10)
 
         # Reset the option
         self.CFDSolver.setOption("forcesAsTractions", True)
@@ -261,13 +260,13 @@ class TestFunctionals(test_objects.RegTest):
 
     # ------------------- Derivative routine checks ----------------------------
     def test_jac_vec_prod_fwd(self):
-        utils.assert_fwd_mode_allclose(self.handler, self.CFDSolver, self.ap, rtol=5e-9, atol=5e-9)
+        utils.assert_fwd_mode_allclose(self.handler, self.CFDSolver, self.ap, tol=5e-9)
 
     def test_jac_vec_prod_bwd(self):
-        utils.assert_bwd_mode_allclose(self.handler, self.CFDSolver, self.ap)
+        utils.assert_bwd_mode_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_dot_products(self):
-        utils.assert_dot_products_allclose(self.handler, self.CFDSolver)
+        utils.assert_dot_products_allclose(self.handler, self.CFDSolver, tol=1e-10)
 
 
 if __name__ == "__main__":

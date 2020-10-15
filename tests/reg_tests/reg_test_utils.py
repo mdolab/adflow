@@ -1,18 +1,21 @@
 import numpy
+from baseclasses.BaseRegTest import getTol
 
 # =============================================================================
 #                         Assert Statements
 # =============================================================================
 
 
-def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, rtol=1e-10, atol=1e-10):
+def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwargs):
+    rtol, atol = getTol(**kwargs)
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
     handler.root_print("Eval Functions Sens:")
     handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=rtol, atol=atol)
 
 
-def assert_problem_size_equal(handler, CFDSolver, rtol=1e-10, atol=1e-10):
+def assert_problem_size_equal(handler, CFDSolver, **kwargs):
+    rtol, atol = getTol(**kwargs)
     # Now a few simple checks
     handler.root_print("Total number of state DOF")
     handler.par_add_sum("Total number of state DOF", CFDSolver.getStateSize())
@@ -24,14 +27,16 @@ def assert_problem_size_equal(handler, CFDSolver, rtol=1e-10, atol=1e-10):
     handler.par_add_sum("Total number of spatial DOF", CFDSolver.getSpatialSize())
 
 
-def assert_functions_allclose(handler, CFDSolver, ap, rtol=1e-9, atol=1e-9):
+def assert_functions_allclose(handler, CFDSolver, ap, **kwargs):
+    rtol, atol = getTol(**kwargs)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
     handler.root_print("Eval Functions:")
     handler.root_add_dict("Eval Functions:", funcs, rtol=rtol, atol=atol)
 
 
-def assert_residuals_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10):
+def assert_residuals_allclose(handler, CFDSolver, ap, **kwargs):
+    rtol, atol = getTol(**kwargs)
     # Check the residual
     res = CFDSolver.getResidual(ap)
     totalR0 = CFDSolver.getFreeStreamResidual(ap)
@@ -40,7 +45,8 @@ def assert_residuals_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10):
     handler.par_add_norm("Norm of residual", res, rtol=rtol, atol=atol)
 
 
-# def assert_residuals_lessthan(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10):
+# def assert_residuals_lessthan(handler, CFDSolver, ap, **kwargs):
+#     rtol, atol = getTol(**kwargs)
 #     # Check the residual
 #     res = CFDSolver.getResidual(ap)
 #     totalR0 = CFDSolver.getFreeStreamResidual(ap)
@@ -51,7 +57,8 @@ def assert_residuals_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10):
 #     # handler.par_add_norm('Norm of residual', res, rtol=rtol, atol=atol)
 
 
-def assert_forces_allclose(handler, CFDSolver, rtol=1e-10, atol=1e-10):
+def assert_forces_allclose(handler, CFDSolver, **kwargs):
+    rtol, atol = getTol(**kwargs)
     CFDSolver.setOption("forcesAsTractions", False)
 
     forces = CFDSolver.getForces()
@@ -63,7 +70,8 @@ def assert_forces_allclose(handler, CFDSolver, rtol=1e-10, atol=1e-10):
     handler.par_add_sum("Sum of Forces z", forces[:, 2], rtol=rtol, atol=atol)
 
 
-def assert_tractions_allclose(handler, CFDSolver, rtol=1e-10, atol=1e-10):
+def assert_tractions_allclose(handler, CFDSolver, **kwargs):
+    rtol, atol = getTol(**kwargs)
     # Reset the option
     CFDSolver.setOption("forcesAsTractions", True)
 
@@ -80,14 +88,16 @@ def assert_tractions_allclose(handler, CFDSolver, rtol=1e-10, atol=1e-10):
     CFDSolver.setOption("forcesAsTractions", False)
 
 
-def assert_states_allclose(handler, CFDSolver, rtol=1e-10, atol=1e-10):
+def assert_states_allclose(handler, CFDSolver, **kwargs):
+    rtol, atol = getTol(**kwargs)
     # Get and check the states
     handler.root_print("Norm of state vector")
     states = CFDSolver.getStates()
     handler.par_add_norm("Norm of state vector", states, rtol=rtol, atol=atol)
 
 
-def assert_fwd_mode_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10, seed=314):
+def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
+    rtol, atol = getTol(**kwargs)
     # Now for the most fun part. Checking the derivatives. These are
     # generally the most important things to check. However, since the
     # checking requires random seeds, it is quite tricky to ensure that we
@@ -170,7 +180,8 @@ def assert_fwd_mode_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10, see
         handler.par_add_norm("||dF/d%s||" % key, fDot, rtol=rtol, atol=atol)
 
 
-def assert_bwd_mode_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10, seed=314):
+def assert_bwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
+    rtol, atol = getTol(**kwargs)
     handler.root_print("# ---------------------------------------------------#")
     handler.root_print("#             Reverse mode testing                   #")
     handler.root_print("# ---------------------------------------------------#")
@@ -230,7 +241,8 @@ def assert_bwd_mode_allclose(handler, CFDSolver, ap, rtol=1e-10, atol=1e-10, see
         handler.root_add_dict("||d%s/dXdv||" % key, xDvBar, rtol=rtol, atol=atol)
 
 
-def assert_dot_products_allclose(handler, CFDSolver, rtol=1e-10, atol=1e-10, seed=314):
+def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
+    rtol, atol = getTol(**kwargs)
     handler.root_print("# ---------------------------------------------------#")
     handler.root_print("#                 Dot product Tests                  #")
     handler.root_print("# ---------------------------------------------------#")
