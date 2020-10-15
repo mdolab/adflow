@@ -339,7 +339,7 @@ class TestCmplxStep(unittest.TestCase):
                 ref_val = self.handler.db["Eval Functions Sens:"][key][dv_key]
                 ref_val = ref_val.flatten()[0]
 
-                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, rtol=5e-9, err_msg=err_msg)
+                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=5e-9, rtol=5e-9, err_msg=err_msg)
 
         if MPI.COMM_WORLD.rank == 0:
             print("====================================")
