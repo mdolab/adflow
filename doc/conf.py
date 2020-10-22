@@ -25,4 +25,4 @@ project = 'ADflow'
 extensions.extend(["numpydoc"])
 
 # mock import for autodoc
-autodoc_mock_imports = ['numpy', 'mpi4py', 'petsc4py', 'baseclasses']
+autodoc_mock_imports = ['numpy', 'mpi4py', 'petsc4py', 'adflow.om_adflow']
