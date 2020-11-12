@@ -2837,7 +2837,7 @@ class ADFLOW(AeroSolver):
         # Update gamma only if it has changed from what currently is set
         if abs(self.adflow.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
             self.adflow.inputphysics.gammaconstant = gammaConstant
-            self.adflow.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+            self.adflow.flowutils.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
 
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
