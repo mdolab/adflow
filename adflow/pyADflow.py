@@ -413,20 +413,27 @@ class ADFLOW(AeroSolver):
 
     def setDisplacements(self, aeroProblem, dispFile):
         """
-        This function allows the user to perform aerodyanmic
+        This function allows the user to perform aerodynamic
         analysis/optimization while using a fixed set of displacements
         computed from a previous structural analysis. Essentially this
-        allows the jig shape to designed, but performing anlysis on
-        the flying shape. Note that the fixed set of displacements do
-        not affect the sensitivities.
+        allows the jig shape to designed, but performing analysis on
+        the flying shape.
 
         Parameters
         ----------
         aeroProblem : aeroProblem class
            The AP object that the displacements should be applied to.
         dispFile : str
-           The file contaning the displacments. This file should have
+           The file contaning the displacements. This file should have
            been obtained from TACS
+
+        Notes
+        -----
+        The fixed set of displacements do not affect the sensitivities.
+
+        Also, in the case where the current surface mesh was not used
+        to generate the displacements file, a nearest neighbor search
+        is used to apply the displacements.
         """
         self.setAeroProblem(aeroProblem)
 
@@ -446,8 +453,8 @@ class ADFLOW(AeroSolver):
         # Now we need to search each localX in X to find the corresponding D
         try:
             from scipy.spatial import KDTree
-        except:
-            raise Error('scip.spatial must be available to use setDisplacements')
+        except ImportError:
+            raise Error('scipy must be available to use setDisplacements')
         tree = KDTree(numpy.array(X))
         d, index = tree.query(localX)
         for j in range(len(localX)):
