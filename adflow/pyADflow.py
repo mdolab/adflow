@@ -2601,12 +2601,13 @@ class ADFLOW(AeroSolver):
                 self.DVGeo.addPointSet(coords0, ptSetName)
 
             # Check if our point-set is up to date:
-            if not self.DVGeo.pointSetUpToDate(ptSetName):
+            if not self.DVGeo.pointSetUpToDate(ptSetName) or aeroProblem.adflowData.disp is not None:
                 coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
 
                 # Potentially add a fixed set of displacements to it.
                 if aeroProblem.adflowData.disp is not None:
                     coords += self.curAP.adflowData.disp
+
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
 
         self._setAeroProblemData(aeroProblem)
