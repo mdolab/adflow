@@ -429,7 +429,8 @@ class ADFLOW(AeroSolver):
 
         Notes
         -----
-        The fixed set of displacements do not affect the sensitivities.
+        The fixed set of displacements do not affect the sensitivities,
+        since they are fixed and not affected by any DVs.
 
         Also, in the case where the current surface mesh was not used
         to generate the displacements file, a nearest neighbor search
