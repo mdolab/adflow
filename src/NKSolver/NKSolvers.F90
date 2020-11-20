@@ -553,6 +553,7 @@ contains
        iterType = "     *NK"
        call FormJacobianNK()
     else
+
        call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
        call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)

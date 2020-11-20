@@ -41,6 +41,16 @@ inputFiles/tecplot.phy
 
 adflow.egg-info/*
 
+python/inputFiles/*
+
+tests/*.cgns
+tests/*out
+*.cgns 
+*.txt
+*.dat
+*.out
+*.tar.gz
+*.vscode
 # optimization reports from intel compilers
 *.optrpt
 

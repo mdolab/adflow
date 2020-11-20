@@ -13,6 +13,7 @@ processors possible. This will generally mean that memory usage will
 be at, or near the maximum per core on the specific machine you are
 using. Smaller processor counts minimize parallel losses, especially
 from the breakdown of the effectiveness of the ASM/ILU preconditioner.
+A strong scaling study for ADflow can be found in Table 7 of `this paper <http://www.umich.edu/~mdolaboratory/pdf/Kenway2019a.pdf>`__.
 
 For the following analysis options:
 
