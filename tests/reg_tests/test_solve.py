@@ -49,7 +49,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
                 "l2convergence": 1e-14,
                 "useblockettes": False,
             },
-            "ref_file": "euler_matrix_jst_tut_wing.json",
+            "ref_file": "solve_euler_matrix_jst_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
         },
         # Tutorial wing RANS
