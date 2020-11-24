@@ -52,17 +52,17 @@ options = {
 }
 
 ap = AeroProblem(name='conv_nozzle', alpha=00.0,  mach=0.25, T=500, P=79326.7,
-                 areaRef=1., chordRef=2.,
+                 areaRef=1., chordRef=2., R=287.87,
                  evalFuncs=['mdot', 'mdot_up', 'mdot_down',
                             'mavgptot_up', 'mavgptot_down',
                             'mavgttot_up', 'mavgttot_down',
-                            'mavgps_up', 'mavgps_down', 
-                            'mavgmn_up', 'mavgmn_down', 
-                            'thrust', 
+                            'mavgps_up', 'mavgps_down',
+                            'mavgmn_up', 'mavgmn_down',
+                            'thrust',
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
 
-def setupADFlow(solver): 
+def setupADFlow(solver):
 
     solver.addFamilyGroup('upstream',['INFLOW'])
     solver.addFamilyGroup('downstream',['OUTFLOW'])
@@ -89,13 +89,13 @@ def setupADFlow(solver):
     solver.addFunction('dragmomentum', 'all_flow', name="thrust_momentum")
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
 
     # Creat the solver
 
     CFDSolver = ADFLOW(options=options, debug=False)
     setupADFlow(CFDSolver)
-    
+
     CFDSolver(ap)
 
 

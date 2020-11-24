@@ -1600,7 +1600,7 @@ contains
              do i=0,ib
                 ii =ii + 1
                 iBlankSave(ii) = iblank(i,j,k)
-                iblank(i,j,k) = 1
+                iblank(i,j,k) = 0
              end do
           end do
        end do

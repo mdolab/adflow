@@ -11,11 +11,12 @@ module surfaceintegrations_b
 
 contains
 !  differentiation of getcostfunctions in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: funcvalues
+!   gradient     of useful results: machcoef dragdirection liftdirection
+!                pref funcvalues
 !   with respect to varying inputs: machcoef dragdirection liftdirection
 !                pref globalvals funcvalues
-!   rw status of diff variables: machcoef:out dragdirection:out
-!                liftdirection:out pref:out globalvals:out funcvalues:in-zero
+!   rw status of diff variables: machcoef:incr dragdirection:incr
+!                liftdirection:incr pref:incr globalvals:out funcvalues:in-zero
   subroutine getcostfunctions_b(globalvals, globalvalsd, funcvalues, &
 &   funcvaluesd)
     use constants
@@ -322,10 +323,8 @@ contains
     if (tsstability) then
       stop
     else
-      dragdirectiond = 0.0_8
       tmpd = funcvaluesd(costfuncdragcoefmomentum)
       funcvaluesd(costfuncdragcoefmomentum) = 0.0_8
-      dragdirectiond = 0.0_8
       funcvaluesd(costfuncforcexcoefmomentum) = funcvaluesd(&
 &       costfuncforcexcoefmomentum) + dragdirection(1)*tmpd
       dragdirectiond(1) = dragdirectiond(1) + funcvalues(&
@@ -383,11 +382,9 @@ contains
 &       + dragdirection(3)*tmpd2
       dragdirectiond(3) = dragdirectiond(3) + funcvalues(&
 &       costfuncforcezcoef)*tmpd2
-      liftdirectiond = 0.0_8
       call popreal8(funcvalues(costfuncliftcoefmomentum))
       tmpd3 = funcvaluesd(costfuncliftcoefmomentum)
       funcvaluesd(costfuncliftcoefmomentum) = 0.0_8
-      liftdirectiond = 0.0_8
       funcvaluesd(costfuncforcexcoefmomentum) = funcvaluesd(&
 &       costfuncforcexcoefmomentum) + liftdirection(1)*tmpd3
       liftdirectiond(1) = liftdirectiond(1) + funcvalues(&
@@ -716,8 +713,8 @@ contains
       temp0 = gammainf*surfaceref*lref**2
       temp = temp0*machcoef**2*pref
       tempd = -(two*temp0*factd/temp**2)
-      machcoefd = pref*2*machcoef*tempd
-      prefd = machcoef**2*tempd
+      machcoefd = machcoefd + pref*2*machcoef*tempd
+      prefd = prefd + machcoef**2*tempd
       globalvalsd(imp:imp+2, :) = globalvalsd(imp:imp+2, :) + momentd
       globalvalsd(imv:imv+2, :) = globalvalsd(imv:imv+2, :) + momentd
       globalvalsd(iflowmm:iflowmm+2, :) = globalvalsd(iflowmm:iflowmm+2&
