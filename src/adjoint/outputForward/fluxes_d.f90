@@ -690,11 +690,12 @@ contains
   end subroutine inviscidcentralflux
 !  differentiation of invisciddissfluxmatrix in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: pinfcorr *p *w *si *sj *sk
-!                *fw
-!   rw status of diff variables: pinfcorr:in *p:in *w:in *si:in
-!                *sj:in *sk:in *fw:in-out
-!   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
+!   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
+!                *sfacek *w *si *sj *sk *fw
+!   rw status of diff variables: pinfcorr:in *p:in *sfacei:in *sfacej:in
+!                *sfacek:in *w:in *si:in *sj:in *sk:in *fw:in-out
+!   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
+!                w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrix_d()
 !
 !       invisciddissfluxmatrix computes the matrix artificial
@@ -1115,7 +1116,7 @@ contains
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
             if (addgridvelocities) then
-              sfaced = sfacei(i, j, k)*tmpd
+              sfaced = sfaceid(i, j, k)*tmp + sfacei(i, j, k)*tmpd
               sface = sfacei(i, j, k)*tmp
             end if
             if (unavg - sface + aavg .ge. 0.) then
@@ -1406,7 +1407,7 @@ contains
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
             if (addgridvelocities) then
-              sfaced = sfacej(i, j, k)*tmpd
+              sfaced = sfacejd(i, j, k)*tmp + sfacej(i, j, k)*tmpd
               sface = sfacej(i, j, k)*tmp
             end if
             if (unavg - sface + aavg .ge. 0.) then
@@ -1697,7 +1698,7 @@ contains
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
             if (addgridvelocities) then
-              sfaced = sfacek(i, j, k)*tmpd
+              sfaced = sfacekd(i, j, k)*tmp + sfacek(i, j, k)*tmpd
               sface = sfacek(i, j, k)*tmp
             end if
             if (unavg - sface + aavg .ge. 0.) then
@@ -2463,10 +2464,10 @@ contains
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: rhoinf pinfcorr *p *w *fw *radi
-!                *radj *radk
-!   rw status of diff variables: rhoinf:in pinfcorr:in *p:in *w:in
-!                *fw:in-out *radi:in *radj:in *radk:in
+!   with respect to varying inputs: gammainf rhoinf pinfcorr *p
+!                *w *fw *radi *radj *radk
+!   rw status of diff variables: gammainf:in rhoinf:in pinfcorr:in
+!                *p:in *w:in *fw:in-out *radi:in *radj:in *radk:in
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_d()
@@ -2563,11 +2564,17 @@ contains
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
-        if (rhoinf .gt. 0.0_8 .or. (rhoinf .lt. 0.0_8 .and. gammainf &
-&           .eq. int(gammainf))) then
+        if (rhoinf .gt. 0.0_8) then
+          pwr1d = rhoinf**gammainf*(log(rhoinf)*gammainfd+gammainf*&
+&           rhoinfd/rhoinf)
+        else if (rhoinf .eq. 0.0_8) then
+          if (gammainf .eq. 1.0) then
+            pwr1d = rhoinfd
+          else
+            pwr1d = 0.0_8
+          end if
+        else if (gammainf .eq. int(gammainf)) then
           pwr1d = gammainf*rhoinf**(gammainf-1)*rhoinfd
-        else if (rhoinf .eq. 0.0_8 .and. gammainf .eq. 1.0) then
-          pwr1d = rhoinfd
         else
           pwr1d = 0.0_8
         end if
@@ -4301,10 +4308,12 @@ contains
   end subroutine inviscidupwindflux
 !  differentiation of inviscidupwindflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: *p *w *si *sj *sk *fw
-!   rw status of diff variables: *p:in *w:in *si:in *sj:in *sk:in
-!                *fw:in-out
-!   plus diff mem management of: p:in w:in si:in sj:in sk:in fw:in
+!   with respect to varying inputs: *p *sfacei *sfacej *sfacek
+!                *w *si *sj *sk *fw
+!   rw status of diff variables: *p:in *sfacei:in *sfacej:in *sfacek:in
+!                *w:in *si:in *sj:in *sk:in *fw:in-out
+!   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
+!                w:in si:in sj:in sk:in fw:in
   subroutine inviscidupwindflux_d(finegrid)
 !
 !       inviscidupwindflux computes the artificial dissipation part of
@@ -4348,6 +4357,7 @@ contains
     real(kind=realtype) :: sx, sy, sz, omk, opk, sfil, gammaface
     real(kind=realtype) :: sxd, syd, szd
     real(kind=realtype) :: factminmod, sface
+    real(kind=realtype) :: sfaced
     real(kind=realtype), dimension(nw) :: left, right
     real(kind=realtype), dimension(nw) :: leftd, rightd
     real(kind=realtype), dimension(nw) :: du1, du2, du3
@@ -4450,6 +4460,7 @@ contains
         fluxd = 0.0_8
         leftd = 0.0_8
         rightd = 0.0_8
+        sfaced = 0.0_8
 !
 !         first order reconstruction. the states in the cells are
 !         constant. the left and right states are constructed easily.
@@ -4467,7 +4478,10 @@ contains
               szd = sid(i, j, k, 3)
               sz = si(i, j, k, 3)
               por = pori(i, j, k)
-              if (addgridvelocities) sface = sfacei(i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfaceid(i, j, k)
+                sface = sfacei(i, j, k)
+              end if
 ! determine the left and right state.
               leftd(irho) = wd(i, j, k, irho)
               left(irho) = w(i, j, k, irho)
@@ -4543,7 +4557,10 @@ contains
               szd = sjd(i, j, k, 3)
               sz = sj(i, j, k, 3)
               por = porj(i, j, k)
-              if (addgridvelocities) sface = sfacej(i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfacejd(i, j, k)
+                sface = sfacej(i, j, k)
+              end if
 ! determine the left and right state.
               leftd(irho) = wd(i, j, k, irho)
               left(irho) = w(i, j, k, irho)
@@ -4619,7 +4636,10 @@ contains
               szd = skd(i, j, k, 3)
               sz = sk(i, j, k, 3)
               por = pork(i, j, k)
-              if (addgridvelocities) sface = sfacek(i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfacekd(i, j, k)
+                sface = sfacek(i, j, k)
+              end if
 ! determine the left and right state.
               leftd(irho) = wd(i, j, k, irho)
               left(irho) = w(i, j, k, irho)
@@ -4687,6 +4707,7 @@ contains
         du1d = 0.0_8
         du2d = 0.0_8
         du3d = 0.0_8
+        sfaced = 0.0_8
 ! store the density flux in the mass flow of the
 ! appropriate sliding mesh interface.
 !      ==================================================================
@@ -4784,7 +4805,10 @@ contains
               szd = sid(i, j, k, 3)
               sz = si(i, j, k, 3)
               por = pori(i, j, k)
-              if (addgridvelocities) sface = sfacei(i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfaceid(i, j, k)
+                sface = sfacei(i, j, k)
+              end if
 ! compute the value of gamma on the face. take an
 ! arithmetic average of the two states.
               gammaface = half*(gamma(i, j, k)+gamma(i+1, j, k))
@@ -4903,7 +4927,10 @@ contains
               szd = sjd(i, j, k, 3)
               sz = sj(i, j, k, 3)
               por = porj(i, j, k)
-              if (addgridvelocities) sface = sfacej(i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfacejd(i, j, k)
+                sface = sfacej(i, j, k)
+              end if
 ! compute the value of gamma on the face. take an
 ! arithmetic average of the two states.
               gammaface = half*(gamma(i, j, k)+gamma(i, j+1, k))
@@ -5022,7 +5049,10 @@ contains
               szd = skd(i, j, k, 3)
               sz = sk(i, j, k, 3)
               por = pork(i, j, k)
-              if (addgridvelocities) sface = sfacek(i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfacekd(i, j, k)
+                sface = sfacek(i, j, k)
+              end if
 ! compute the value of gamma on the face. take an
 ! arithmetic average of the two states.
               gammaface = half*(gamma(i, j, k)+gamma(i, j, k+1))
@@ -5733,7 +5763,7 @@ contains
     end subroutine leftrightstate
 !  differentiation of riemannflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: flux
-!   with respect to varying inputs: sx sy sz flux left right
+!   with respect to varying inputs: sface sx sy sz flux left right
 !        ================================================================
     subroutine riemannflux_d(left, leftd, right, rightd, flux, fluxd)
       implicit none
@@ -5917,7 +5947,7 @@ contains
           sy = sy*tmp
           szd = szd*tmp + sz*tmpd
           sz = sz*tmp
-          rfaced = sface*tmpd
+          rfaced = sfaced*tmp + sface*tmpd
           rface = sface*tmp
 ! compute some dependent variables at the roe
 ! average state.
@@ -9176,9 +9206,10 @@ contains
   end subroutine viscousfluxapprox
 !  differentiation of invisciddissfluxscalarapprox in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *w *fw
-!   with respect to varying inputs: *p *w *fw *radi *radj *radk
-!   rw status of diff variables: *p:in *w:in-out *fw:in-out *radi:in
-!                *radj:in *radk:in
+!   with respect to varying inputs: gammainf rhoinf pinfcorr *p
+!                *w *fw *radi *radj *radk
+!   rw status of diff variables: gammainf:in rhoinf:in pinfcorr:in
+!                *p:in *w:in-out *fw:in-out *radi:in *radj:in *radk:in
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalarapprox_d()
@@ -9205,29 +9236,42 @@ contains
 !
     integer(kind=inttype) :: i, j, k, ind
     real(kind=realtype) :: sslim, rhoi
-    real(kind=realtype) :: rhoid
+    real(kind=realtype) :: sslimd, rhoid
     real(kind=realtype) :: sfil, fis2, fis4
     real(kind=realtype) :: ppor, rrad, dis2
     real(kind=realtype) :: rradd, dis2d
     real(kind=realtype) :: dss1, dss2, ddw, fs
-    real(kind=realtype) :: ddwd, fsd
+    real(kind=realtype) :: dss1d, dss2d, ddwd, fsd
     intrinsic abs
     intrinsic max
     intrinsic min
     real(kind=realtype) :: pwr1
+    real(kind=realtype) :: pwr1d
+    real(kind=realtype) :: x6d
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
     real(kind=realtype) :: min1
     real(kind=realtype) :: x6
     real(kind=realtype) :: x5
+    real(kind=realtype) :: min1d
     real(kind=realtype) :: x4
     real(kind=realtype) :: x3
     real(kind=realtype) :: x2
+    real(kind=realtype) :: x2d
     real(kind=realtype) :: x1
+    real(kind=realtype) :: x5d
+    real(kind=realtype) :: y3d
+    real(kind=realtype) :: x1d
+    real(kind=realtype) :: min3d
+    real(kind=realtype) :: x4d
+    real(kind=realtype) :: y2d
     real(kind=realtype) :: abs0
+    real(kind=realtype) :: min2d
     real(kind=realtype) :: y3
     real(kind=realtype) :: y2
+    real(kind=realtype) :: x3d
     real(kind=realtype) :: y1
+    real(kind=realtype) :: y1d
     if (rfil .ge. 0.) then
       abs0 = rfil
     else
@@ -9247,6 +9291,7 @@ contains
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of pressure and it is therefore
 ! set to a fraction of the free stream value.
+        sslimd = 0.001_realtype*pinfcorrd
         sslim = 0.001_realtype*pinfcorr
       case (nsequations, ransequations) 
 !===============================================================
@@ -9254,8 +9299,26 @@ contains
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
+        if (rhoinf .gt. 0.0_8) then
+          pwr1d = rhoinf**gammainf*(log(rhoinf)*gammainfd+gammainf*&
+&           rhoinfd/rhoinf)
+        else if (rhoinf .eq. 0.0_8) then
+          if (gammainf .eq. 1.0) then
+            pwr1d = rhoinfd
+          else
+            pwr1d = 0.0_8
+          end if
+        else if (gammainf .eq. int(gammainf)) then
+          pwr1d = gammainf*rhoinf**(gammainf-1)*rhoinfd
+        else
+          pwr1d = 0.0_8
+        end if
         pwr1 = rhoinf**gammainf
+        sslimd = (0.001_realtype*pinfcorrd*pwr1-0.001_realtype*pinfcorr*&
+&         pwr1d)/pwr1**2
         sslim = 0.001_realtype*pinfcorr/pwr1
+      case default
+        sslimd = 0.0_8
       end select
 ! set a couple of constants for the scheme.
       fis2 = rfil*vis2
@@ -9403,22 +9466,32 @@ contains
 !
       do k=2,kl
         do j=2,jl
+          x1d = -((shocksensor(2, j, k)-two*shocksensor(1, j, k)+&
+&           shocksensor(0, j, k))*sslimd/(shocksensor(2, j, k)+two*&
+&           shocksensor(1, j, k)+shocksensor(0, j, k)+sslim)**2)
           x1 = (shocksensor(2, j, k)-two*shocksensor(1, j, k)+&
 &           shocksensor(0, j, k))/(shocksensor(2, j, k)+two*shocksensor(&
 &           1, j, k)+shocksensor(0, j, k)+sslim)
           if (x1 .ge. 0.) then
+            dss1d = x1d
             dss1 = x1
           else
+            dss1d = -x1d
             dss1 = -x1
           end if
 ! loop in i-direction.
           do i=1,il
+            x2d = -((shocksensor(i+2, j, k)-two*shocksensor(i+1, j, k)+&
+&             shocksensor(i, j, k))*sslimd/(shocksensor(i+2, j, k)+two*&
+&             shocksensor(i+1, j, k)+shocksensor(i, j, k)+sslim)**2)
             x2 = (shocksensor(i+2, j, k)-two*shocksensor(i+1, j, k)+&
 &             shocksensor(i, j, k))/(shocksensor(i+2, j, k)+two*&
 &             shocksensor(i+1, j, k)+shocksensor(i, j, k)+sslim)
             if (x2 .ge. 0.) then
+              dss2d = x2d
               dss2 = x2
             else
+              dss2d = -x2d
               dss2 = -x2
             end if
 ! compute the dissipation coefficients for this face.
@@ -9427,21 +9500,25 @@ contains
             rradd = ppor*(radid(i, j, k)+radid(i+1, j, k))
             rrad = ppor*(radi(i, j, k)+radi(i+1, j, k))
             if (dss1 .lt. dss2) then
+              y1d = dss2d
               y1 = dss2
             else
+              y1d = dss1d
               y1 = dss1
             end if
             if (dssmax .gt. y1) then
+              min1d = y1d
               min1 = y1
             else
               min1 = dssmax
+              min1d = 0.0_8
             end if
 ! modification for fd preconditioner note: this lumping
 ! actually still results in a greater than 3 cell stencil
 ! in any direction. since this seems to work slightly
 ! better than the dis2=sigma*fis4*rrad, we will just use
 ! a 5-cell stencil for doing the pc
-            dis2d = fis2*min1*rradd + sigma*fis4*rradd
+            dis2d = fis2*(rradd*min1+rrad*min1d) + sigma*fis4*rradd
             dis2 = fis2*rrad*min1 + sigma*fis4*rrad
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
@@ -9491,6 +9568,7 @@ contains
             fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
             fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
 ! set dss1 to dss2 for the next face.
+            dss1d = dss2d
             dss1 = dss2
           end do
         end do
@@ -9500,22 +9578,32 @@ contains
 !
       do k=2,kl
         do i=2,il
+          x3d = -((shocksensor(i, 2, k)-two*shocksensor(i, 1, k)+&
+&           shocksensor(i, 0, k))*sslimd/(shocksensor(i, 2, k)+two*&
+&           shocksensor(i, 1, k)+shocksensor(i, 0, k)+sslim)**2)
           x3 = (shocksensor(i, 2, k)-two*shocksensor(i, 1, k)+&
 &           shocksensor(i, 0, k))/(shocksensor(i, 2, k)+two*shocksensor(&
 &           i, 1, k)+shocksensor(i, 0, k)+sslim)
           if (x3 .ge. 0.) then
+            dss1d = x3d
             dss1 = x3
           else
+            dss1d = -x3d
             dss1 = -x3
           end if
 ! loop in j-direction.
           do j=1,jl
+            x4d = -((shocksensor(i, j+2, k)-two*shocksensor(i, j+1, k)+&
+&             shocksensor(i, j, k))*sslimd/(shocksensor(i, j+2, k)+two*&
+&             shocksensor(i, j+1, k)+shocksensor(i, j, k)+sslim)**2)
             x4 = (shocksensor(i, j+2, k)-two*shocksensor(i, j+1, k)+&
 &             shocksensor(i, j, k))/(shocksensor(i, j+2, k)+two*&
 &             shocksensor(i, j+1, k)+shocksensor(i, j, k)+sslim)
             if (x4 .ge. 0.) then
+              dss2d = x4d
               dss2 = x4
             else
+              dss2d = -x4d
               dss2 = -x4
             end if
 ! compute the dissipation coefficients for this face.
@@ -9524,17 +9612,21 @@ contains
             rradd = ppor*(radjd(i, j, k)+radjd(i, j+1, k))
             rrad = ppor*(radj(i, j, k)+radj(i, j+1, k))
             if (dss1 .lt. dss2) then
+              y2d = dss2d
               y2 = dss2
             else
+              y2d = dss1d
               y2 = dss1
             end if
             if (dssmax .gt. y2) then
+              min2d = y2d
               min2 = y2
             else
               min2 = dssmax
+              min2d = 0.0_8
             end if
 ! modification for fd preconditioner
-            dis2d = fis2*min2*rradd + sigma*fis4*rradd
+            dis2d = fis2*(rradd*min2+rrad*min2d) + sigma*fis4*rradd
             dis2 = fis2*rrad*min2 + sigma*fis4*rrad
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
@@ -9584,6 +9676,7 @@ contains
             fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
             fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
 ! set dss1 to dss2 for the next face.
+            dss1d = dss2d
             dss1 = dss2
           end do
         end do
@@ -9593,22 +9686,32 @@ contains
 !
       do j=2,jl
         do i=2,il
+          x5d = -((shocksensor(i, j, 2)-two*shocksensor(i, j, 1)+&
+&           shocksensor(i, j, 0))*sslimd/(shocksensor(i, j, 2)+two*&
+&           shocksensor(i, j, 1)+shocksensor(i, j, 0)+sslim)**2)
           x5 = (shocksensor(i, j, 2)-two*shocksensor(i, j, 1)+&
 &           shocksensor(i, j, 0))/(shocksensor(i, j, 2)+two*shocksensor(&
 &           i, j, 1)+shocksensor(i, j, 0)+sslim)
           if (x5 .ge. 0.) then
+            dss1d = x5d
             dss1 = x5
           else
+            dss1d = -x5d
             dss1 = -x5
           end if
 ! loop in k-direction.
           do k=1,kl
+            x6d = -((shocksensor(i, j, k+2)-two*shocksensor(i, j, k+1)+&
+&             shocksensor(i, j, k))*sslimd/(shocksensor(i, j, k+2)+two*&
+&             shocksensor(i, j, k+1)+shocksensor(i, j, k)+sslim)**2)
             x6 = (shocksensor(i, j, k+2)-two*shocksensor(i, j, k+1)+&
 &             shocksensor(i, j, k))/(shocksensor(i, j, k+2)+two*&
 &             shocksensor(i, j, k+1)+shocksensor(i, j, k)+sslim)
             if (x6 .ge. 0.) then
+              dss2d = x6d
               dss2 = x6
             else
+              dss2d = -x6d
               dss2 = -x6
             end if
 ! compute the dissipation coefficients for this face.
@@ -9617,17 +9720,21 @@ contains
             rradd = ppor*(radkd(i, j, k)+radkd(i, j, k+1))
             rrad = ppor*(radk(i, j, k)+radk(i, j, k+1))
             if (dss1 .lt. dss2) then
+              y3d = dss2d
               y3 = dss2
             else
+              y3d = dss1d
               y3 = dss1
             end if
             if (dssmax .gt. y3) then
+              min3d = y3d
               min3 = y3
             else
               min3 = dssmax
+              min3d = 0.0_8
             end if
 ! modification for fd preconditioner
-            dis2d = fis2*min3*rradd + sigma*fis4*rradd
+            dis2d = fis2*(rradd*min3+rrad*min3d) + sigma*fis4*rradd
             dis2 = fis2*rrad*min3 + sigma*fis4*rrad
 ! compute and scatter the dissipative flux.
 ! density. store it in the mass flow of the
@@ -9677,6 +9784,7 @@ contains
             fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
             fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
 ! set dss1 to dss2 for the next face.
+            dss1d = dss2d
             dss1 = dss2
           end do
         end do
@@ -10248,9 +10356,12 @@ contains
   end subroutine invisciddissfluxscalarapprox
 !  differentiation of invisciddissfluxmatrixapprox in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: *p *w *fw
-!   rw status of diff variables: *p:in *w:in *fw:in-out
-!   plus diff mem management of: p:in w:in fw:in
+!   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
+!                *sfacek *w *si *sj *sk *fw
+!   rw status of diff variables: pinfcorr:in *p:in *sfacei:in *sfacej:in
+!                *sfacek:in *w:in *si:in *sj:in *sk:in *fw:in-out
+!   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
+!                w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrixapprox_d()
 !
 !       invisciddissfluxmatrix computes the matrix artificial
@@ -10282,20 +10393,22 @@ contains
 !
     integer(kind=inttype) :: i, j, k, ind
     real(kind=realtype) :: plim, sface
+    real(kind=realtype) :: plimd, sfaced
     real(kind=realtype) :: sfil, fis2, fis4
     real(kind=realtype) :: gammaavg, gm1, ovgm1, gm53
     real(kind=realtype) :: ppor, rrad, dis2
-    real(kind=realtype) :: rradd
+    real(kind=realtype) :: rradd, dis2d
     real(kind=realtype) :: dp1, dp2, ddw, tmp, fs
-    real(kind=realtype) :: ddwd, fsd
+    real(kind=realtype) :: dp1d, dp2d, ddwd, tmpd, fsd
     real(kind=realtype) :: dr, dru, drv, drw, dre, drk, sx, sy, sz
-    real(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd
+    real(kind=realtype) :: drd, drud, drvd, drwd, dred, drkd, sxd, syd, &
+&   szd
     real(kind=realtype) :: uavg, vavg, wavg, a2avg, aavg, havg
     real(kind=realtype) :: uavgd, vavgd, wavgd, a2avgd, aavgd, havgd
     real(kind=realtype) :: alphaavg, unavg, ovaavg, ova2avg
     real(kind=realtype) :: alphaavgd, unavgd, ovaavgd, ova2avgd
     real(kind=realtype) :: kavg, lam1, lam2, lam3, area
-    real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d
+    real(kind=realtype) :: kavgd, lam1d, lam2d, lam3d, aread
     real(kind=realtype) :: abv1, abv2, abv3, abv4, abv5, abv6, abv7
     real(kind=realtype) :: abv1d, abv2d, abv3d, abv4d, abv5d, abv6d, &
 &   abv7d
@@ -10305,18 +10418,30 @@ contains
     intrinsic min
     intrinsic sqrt
     real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+    real(kind=realtype) :: x6d
+    real(kind=realtype) :: max2d
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
     real(kind=realtype) :: min1
     real(kind=realtype) :: x6
     real(kind=realtype) :: x5
+    real(kind=realtype) :: min1d
     real(kind=realtype) :: x4
     real(kind=realtype) :: x3
     real(kind=realtype) :: x2
+    real(kind=realtype) :: x2d
     real(kind=realtype) :: x1
+    real(kind=realtype) :: x5d
+    real(kind=realtype) :: y3d
+    real(kind=realtype) :: max1d
     real(kind=realtype) :: abs12
+    real(kind=realtype) :: x1d
     real(kind=realtype) :: abs11
     real(kind=realtype) :: abs10
+    real(kind=realtype) :: min3d
+    real(kind=realtype) :: x4d
+    real(kind=realtype) :: y2d
     real(kind=realtype) :: abs9
     real(kind=realtype) :: abs8
     real(kind=realtype) :: abs7
@@ -10327,12 +10452,16 @@ contains
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
+    real(kind=realtype) :: max3d
     real(kind=realtype) :: max3
     real(kind=realtype) :: max2
     real(kind=realtype) :: max1
+    real(kind=realtype) :: min2d
     real(kind=realtype) :: y3
     real(kind=realtype) :: y2
+    real(kind=realtype) :: x3d
     real(kind=realtype) :: y1
+    real(kind=realtype) :: y1d
     if (rfil .ge. 0.) then
       abs0 = rfil
     else
@@ -10346,6 +10475,7 @@ contains
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
+      plimd = 0.001_realtype*pinfcorrd
       plim = 0.001_realtype*pinfcorr
 ! determine whether or not the total energy must be corrected
 ! for the presence of the turbulent kinetic energy.
@@ -10376,6 +10506,7 @@ contains
           end do
         end do
       end do
+      sfaced = 0.0_8
 !
 !       dissipative fluxes in the i-direction.
 !
@@ -10391,13 +10522,19 @@ contains
           else
             abs7 = -(shocksensor(1, j, k)-shocksensor(0, j, k))
           end if
+          x1d = -((shocksensor(2, j, k)-two*shocksensor(1, j, k)+&
+&           shocksensor(0, j, k))*plimd/(omega*(shocksensor(2, j, k)+two&
+&           *shocksensor(1, j, k)+shocksensor(0, j, k))+oneminomega*(&
+&           abs1+abs7)+plim)**2)
           x1 = (shocksensor(2, j, k)-two*shocksensor(1, j, k)+&
 &           shocksensor(0, j, k))/(omega*(shocksensor(2, j, k)+two*&
 &           shocksensor(1, j, k)+shocksensor(0, j, k))+oneminomega*(abs1&
 &           +abs7)+plim)
           if (x1 .ge. 0.) then
+            dp1d = x1d
             dp1 = x1
           else
+            dp1d = -x1d
             dp1 = -x1
           end if
 ! loop in i-direction.
@@ -10414,59 +10551,70 @@ contains
             else
               abs8 = -(shocksensor(i+1, j, k)-shocksensor(i, j, k))
             end if
+            x2d = -((shocksensor(i+2, j, k)-two*shocksensor(i+1, j, k)+&
+&             shocksensor(i, j, k))*plimd/(omega*(shocksensor(i+2, j, k)&
+&             +two*shocksensor(i+1, j, k)+shocksensor(i, j, k))+&
+&             oneminomega*(abs2+abs8)+plim)**2)
             x2 = (shocksensor(i+2, j, k)-two*shocksensor(i+1, j, k)+&
 &             shocksensor(i, j, k))/(omega*(shocksensor(i+2, j, k)+two*&
 &             shocksensor(i+1, j, k)+shocksensor(i, j, k))+oneminomega*(&
 &             abs2+abs8)+plim)
             if (x2 .ge. 0.) then
+              dp2d = x2d
               dp2 = x2
             else
+              dp2d = -x2d
               dp2 = -x2
             end if
 ! compute the dissipation coefficients for this face.
             ppor = zero
             if (pori(i, j, k) .eq. normalflux) ppor = one
             if (dp1 .lt. dp2) then
+              y1d = dp2d
               y1 = dp2
             else
+              y1d = dp1d
               y1 = dp1
             end if
             if (dpmax .gt. y1) then
+              min1d = y1d
               min1 = y1
             else
               min1 = dpmax
+              min1d = 0.0_8
             end if
+            dis2d = fis2*ppor*min1d
             dis2 = fis2*ppor*min1 + sigma*fis4*ppor
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
             ddwd = wd(i+1, j, k, irho) - wd(i, j, k, irho)
             ddw = w(i+1, j, k, irho) - w(i, j, k, irho)
-            drd = dis2*ddwd
+            drd = dis2d*ddw + dis2*ddwd
             dr = dis2*ddw
             ddwd = wd(i+1, j, k, irho)*w(i+1, j, k, ivx) + w(i+1, j, k, &
 &             irho)*wd(i+1, j, k, ivx) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivx) - w(i, j, k, irho)*wd(i, j, k, ivx)
             ddw = w(i+1, j, k, irho)*w(i+1, j, k, ivx) - w(i, j, k, irho&
 &             )*w(i, j, k, ivx)
-            drud = dis2*ddwd
+            drud = dis2d*ddw + dis2*ddwd
             dru = dis2*ddw
             ddwd = wd(i+1, j, k, irho)*w(i+1, j, k, ivy) + w(i+1, j, k, &
 &             irho)*wd(i+1, j, k, ivy) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivy) - w(i, j, k, irho)*wd(i, j, k, ivy)
             ddw = w(i+1, j, k, irho)*w(i+1, j, k, ivy) - w(i, j, k, irho&
 &             )*w(i, j, k, ivy)
-            drvd = dis2*ddwd
+            drvd = dis2d*ddw + dis2*ddwd
             drv = dis2*ddw
             ddwd = wd(i+1, j, k, irho)*w(i+1, j, k, ivz) + w(i+1, j, k, &
 &             irho)*wd(i+1, j, k, ivz) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivz) - w(i, j, k, irho)*wd(i, j, k, ivz)
             ddw = w(i+1, j, k, irho)*w(i+1, j, k, ivz) - w(i, j, k, irho&
 &             )*w(i, j, k, ivz)
-            drwd = dis2*ddwd
+            drwd = dis2d*ddw + dis2*ddwd
             drw = dis2*ddw
             ddwd = wd(i+1, j, k, irhoe) - wd(i, j, k, irhoe)
             ddw = w(i+1, j, k, irhoe) - w(i, j, k, irhoe)
-            dred = dis2*ddwd
+            dred = dis2d*ddw + dis2*ddwd
             dre = dis2*ddw
 ! in case a k-equation is present, compute the difference
 ! of rhok and store the average value of k. if not present,
@@ -10478,7 +10626,7 @@ contains
 &               , k, itu1) - w(i, j, k, irho)*wd(i, j, k, itu1)
               ddw = w(i+1, j, k, irho)*w(i+1, j, k, itu1) - w(i, j, k, &
 &               irho)*w(i, j, k, itu1)
-              drkd = dis2*ddwd
+              drkd = dis2d*ddw + dis2*ddwd
               drk = dis2*ddw
               kavgd = half*(wd(i, j, k, itu1)+wd(i+1, j, k, itu1))
               kavg = half*(w(i, j, k, itu1)+w(i+1, j, k, itu1))
@@ -10508,19 +10656,34 @@ contains
 &             j, k, irho)**2)
             a2avg = half*(gamma(i+1, j, k)*p(i+1, j, k)/w(i+1, j, k, &
 &             irho)+gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
+            sxd = sid(i, j, k, 1)
             sx = si(i, j, k, 1)
+            syd = sid(i, j, k, 2)
             sy = si(i, j, k, 2)
+            szd = sid(i, j, k, 3)
             sz = si(i, j, k, 3)
+            arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
             arg1 = sx**2 + sy**2 + sz**2
+            if (arg1 .eq. 0.0_8) then
+              aread = 0.0_8
+            else
+              aread = arg1d/(2.0*sqrt(arg1))
+            end if
             area = sqrt(arg1)
             if (1.e-25_realtype .lt. area) then
+              max1d = aread
               max1 = area
             else
               max1 = 1.e-25_realtype
+              max1d = 0.0_8
             end if
+            tmpd = -(one*max1d/max1**2)
             tmp = one/max1
+            sxd = sxd*tmp + sx*tmpd
             sx = sx*tmp
+            syd = syd*tmp + sy*tmpd
             sy = sy*tmp
+            szd = szd*tmp + sz*tmpd
             sz = sz*tmp
             alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -10532,7 +10695,8 @@ contains
               aavgd = a2avgd/(2.0*sqrt(a2avg))
             end if
             aavg = sqrt(a2avg)
-            unavgd = sx*uavgd + sy*vavgd + sz*wavgd
+            unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*&
+&             sz + wavg*szd
             unavg = uavg*sx + vavg*sy + wavg*sz
             ovaavgd = -(one*aavgd/aavg**2)
             ovaavg = one/aavg
@@ -10540,26 +10704,29 @@ contains
             ova2avg = one/a2avg
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-            if (addgridvelocities) sface = sfacei(i, j, k)*tmp
+            if (addgridvelocities) then
+              sfaced = sfaceid(i, j, k)*tmp + sfacei(i, j, k)*tmpd
+              sface = sfacei(i, j, k)*tmp
+            end if
             if (unavg - sface + aavg .ge. 0.) then
-              lam1d = unavgd + aavgd
+              lam1d = unavgd - sfaced + aavgd
               lam1 = unavg - sface + aavg
             else
-              lam1d = -(unavgd+aavgd)
+              lam1d = -(unavgd-sfaced+aavgd)
               lam1 = -(unavg-sface+aavg)
             end if
             if (unavg - sface - aavg .ge. 0.) then
-              lam2d = unavgd - aavgd
+              lam2d = unavgd - sfaced - aavgd
               lam2 = unavg - sface - aavg
             else
-              lam2d = -(unavgd-aavgd)
+              lam2d = -(unavgd-sfaced-aavgd)
               lam2 = -(unavg-sface-aavg)
             end if
             if (unavg - sface .ge. 0.) then
-              lam3d = unavgd
+              lam3d = unavgd - sfaced
               lam3 = unavg - sface
             else
-              lam3d = -unavgd
+              lam3d = -(unavgd-sfaced)
               lam3 = -(unavg-sface)
             end if
             rradd = lam3d + aavgd
@@ -10584,11 +10751,11 @@ contains
             end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-            lam1d = area*lam1d
+            lam1d = lam1d*area + lam1*aread
             lam1 = lam1*area
-            lam2d = area*lam2d
+            lam2d = lam2d*area + lam2*aread
             lam2 = lam2*area
-            lam3d = area*lam3d
+            lam3d = lam3d*area + lam3*aread
             lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -10602,7 +10769,8 @@ contains
 &             vavgd*drv-vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53*drkd
             abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - &
 &             gm53*drk
-            abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
+            abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz&
+&             *drwd - unavgd*dr - unavg*drd
             abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
             abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd&
 &             + (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -10619,24 +10787,24 @@ contains
             fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
             fw(i, j, k, irho) = fw(i, j, k, irho) - fs
 ! x-momentum.
-            fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
-&             abv7d
+            fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
+&             abv7 + sx*abv7d
             fs = lam3*dru + uavg*abv6 + sx*abv7
             fwd(i+1, j, k, imx) = fwd(i+1, j, k, imx) + fsd
             fw(i+1, j, k, imx) = fw(i+1, j, k, imx) + fs
             fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
             fw(i, j, k, imx) = fw(i, j, k, imx) - fs
 ! y-momentum.
-            fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
-&             abv7d
+            fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
+&             abv7 + sy*abv7d
             fs = lam3*drv + vavg*abv6 + sy*abv7
             fwd(i+1, j, k, imy) = fwd(i+1, j, k, imy) + fsd
             fw(i+1, j, k, imy) = fw(i+1, j, k, imy) + fs
             fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
             fw(i, j, k, imy) = fw(i, j, k, imy) - fs
 ! z-momentum.
-            fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
-&             abv7d
+            fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
+&             abv7 + sz*abv7d
             fs = lam3*drw + wavg*abv6 + sz*abv7
             fwd(i+1, j, k, imz) = fwd(i+1, j, k, imz) + fsd
             fw(i+1, j, k, imz) = fw(i+1, j, k, imz) + fs
@@ -10651,6 +10819,7 @@ contains
             fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
             fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
 ! set dp1 to dp2 for the next face.
+            dp1d = dp2d
             dp1 = dp2
           end do
         end do
@@ -10670,13 +10839,19 @@ contains
           else
             abs9 = -(shocksensor(i, 1, k)-shocksensor(i, 0, k))
           end if
+          x3d = -((shocksensor(i, 2, k)-two*shocksensor(i, 1, k)+&
+&           shocksensor(i, 0, k))*plimd/(omega*(shocksensor(i, 2, k)+two&
+&           *shocksensor(i, 1, k)+shocksensor(i, 0, k))+oneminomega*(&
+&           abs3+abs9)+plim)**2)
           x3 = (shocksensor(i, 2, k)-two*shocksensor(i, 1, k)+&
 &           shocksensor(i, 0, k))/(omega*(shocksensor(i, 2, k)+two*&
 &           shocksensor(i, 1, k)+shocksensor(i, 0, k))+oneminomega*(abs3&
 &           +abs9)+plim)
           if (x3 .ge. 0.) then
+            dp1d = x3d
             dp1 = x3
           else
+            dp1d = -x3d
             dp1 = -x3
           end if
 ! loop in j-direction.
@@ -10693,59 +10868,70 @@ contains
             else
               abs10 = -(shocksensor(i, j+1, k)-shocksensor(i, j, k))
             end if
+            x4d = -((shocksensor(i, j+2, k)-two*shocksensor(i, j+1, k)+&
+&             shocksensor(i, j, k))*plimd/(omega*(shocksensor(i, j+2, k)&
+&             +two*shocksensor(i, j+1, k)+shocksensor(i, j, k))+&
+&             oneminomega*(abs4+abs10)+plim)**2)
             x4 = (shocksensor(i, j+2, k)-two*shocksensor(i, j+1, k)+&
 &             shocksensor(i, j, k))/(omega*(shocksensor(i, j+2, k)+two*&
 &             shocksensor(i, j+1, k)+shocksensor(i, j, k))+oneminomega*(&
 &             abs4+abs10)+plim)
             if (x4 .ge. 0.) then
+              dp2d = x4d
               dp2 = x4
             else
+              dp2d = -x4d
               dp2 = -x4
             end if
 ! compute the dissipation coefficients for this face.
             ppor = zero
             if (porj(i, j, k) .eq. normalflux) ppor = one
             if (dp1 .lt. dp2) then
+              y2d = dp2d
               y2 = dp2
             else
+              y2d = dp1d
               y2 = dp1
             end if
             if (dpmax .gt. y2) then
+              min2d = y2d
               min2 = y2
             else
               min2 = dpmax
+              min2d = 0.0_8
             end if
+            dis2d = fis2*ppor*min2d
             dis2 = fis2*ppor*min2 + sigma*fis4*ppor
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
             ddwd = wd(i, j+1, k, irho) - wd(i, j, k, irho)
             ddw = w(i, j+1, k, irho) - w(i, j, k, irho)
-            drd = dis2*ddwd
+            drd = dis2d*ddw + dis2*ddwd
             dr = dis2*ddw
             ddwd = wd(i, j+1, k, irho)*w(i, j+1, k, ivx) + w(i, j+1, k, &
 &             irho)*wd(i, j+1, k, ivx) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivx) - w(i, j, k, irho)*wd(i, j, k, ivx)
             ddw = w(i, j+1, k, irho)*w(i, j+1, k, ivx) - w(i, j, k, irho&
 &             )*w(i, j, k, ivx)
-            drud = dis2*ddwd
+            drud = dis2d*ddw + dis2*ddwd
             dru = dis2*ddw
             ddwd = wd(i, j+1, k, irho)*w(i, j+1, k, ivy) + w(i, j+1, k, &
 &             irho)*wd(i, j+1, k, ivy) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivy) - w(i, j, k, irho)*wd(i, j, k, ivy)
             ddw = w(i, j+1, k, irho)*w(i, j+1, k, ivy) - w(i, j, k, irho&
 &             )*w(i, j, k, ivy)
-            drvd = dis2*ddwd
+            drvd = dis2d*ddw + dis2*ddwd
             drv = dis2*ddw
             ddwd = wd(i, j+1, k, irho)*w(i, j+1, k, ivz) + w(i, j+1, k, &
 &             irho)*wd(i, j+1, k, ivz) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivz) - w(i, j, k, irho)*wd(i, j, k, ivz)
             ddw = w(i, j+1, k, irho)*w(i, j+1, k, ivz) - w(i, j, k, irho&
 &             )*w(i, j, k, ivz)
-            drwd = dis2*ddwd
+            drwd = dis2d*ddw + dis2*ddwd
             drw = dis2*ddw
             ddwd = wd(i, j+1, k, irhoe) - wd(i, j, k, irhoe)
             ddw = w(i, j+1, k, irhoe) - w(i, j, k, irhoe)
-            dred = dis2*ddwd
+            dred = dis2d*ddw + dis2*ddwd
             dre = dis2*ddw
 ! in case a k-equation is present, compute the difference
 ! of rhok and store the average value of k. if not present,
@@ -10757,7 +10943,7 @@ contains
 &               , k, itu1) - w(i, j, k, irho)*wd(i, j, k, itu1)
               ddw = w(i, j+1, k, irho)*w(i, j+1, k, itu1) - w(i, j, k, &
 &               irho)*w(i, j, k, itu1)
-              drkd = dis2*ddwd
+              drkd = dis2d*ddw + dis2*ddwd
               drk = dis2*ddw
               kavgd = half*(wd(i, j, k, itu1)+wd(i, j+1, k, itu1))
               kavg = half*(w(i, j, k, itu1)+w(i, j+1, k, itu1))
@@ -10787,19 +10973,34 @@ contains
 &             j, k, irho)**2)
             a2avg = half*(gamma(i, j+1, k)*p(i, j+1, k)/w(i, j+1, k, &
 &             irho)+gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
+            sxd = sjd(i, j, k, 1)
             sx = sj(i, j, k, 1)
+            syd = sjd(i, j, k, 2)
             sy = sj(i, j, k, 2)
+            szd = sjd(i, j, k, 3)
             sz = sj(i, j, k, 3)
+            arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
             arg1 = sx**2 + sy**2 + sz**2
+            if (arg1 .eq. 0.0_8) then
+              aread = 0.0_8
+            else
+              aread = arg1d/(2.0*sqrt(arg1))
+            end if
             area = sqrt(arg1)
             if (1.e-25_realtype .lt. area) then
+              max2d = aread
               max2 = area
             else
               max2 = 1.e-25_realtype
+              max2d = 0.0_8
             end if
+            tmpd = -(one*max2d/max2**2)
             tmp = one/max2
+            sxd = sxd*tmp + sx*tmpd
             sx = sx*tmp
+            syd = syd*tmp + sy*tmpd
             sy = sy*tmp
+            szd = szd*tmp + sz*tmpd
             sz = sz*tmp
             alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -10811,7 +11012,8 @@ contains
               aavgd = a2avgd/(2.0*sqrt(a2avg))
             end if
             aavg = sqrt(a2avg)
-            unavgd = sx*uavgd + sy*vavgd + sz*wavgd
+            unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*&
+&             sz + wavg*szd
             unavg = uavg*sx + vavg*sy + wavg*sz
             ovaavgd = -(one*aavgd/aavg**2)
             ovaavg = one/aavg
@@ -10819,26 +11021,29 @@ contains
             ova2avg = one/a2avg
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-            if (addgridvelocities) sface = sfacej(i, j, k)*tmp
+            if (addgridvelocities) then
+              sfaced = sfacejd(i, j, k)*tmp + sfacej(i, j, k)*tmpd
+              sface = sfacej(i, j, k)*tmp
+            end if
             if (unavg - sface + aavg .ge. 0.) then
-              lam1d = unavgd + aavgd
+              lam1d = unavgd - sfaced + aavgd
               lam1 = unavg - sface + aavg
             else
-              lam1d = -(unavgd+aavgd)
+              lam1d = -(unavgd-sfaced+aavgd)
               lam1 = -(unavg-sface+aavg)
             end if
             if (unavg - sface - aavg .ge. 0.) then
-              lam2d = unavgd - aavgd
+              lam2d = unavgd - sfaced - aavgd
               lam2 = unavg - sface - aavg
             else
-              lam2d = -(unavgd-aavgd)
+              lam2d = -(unavgd-sfaced-aavgd)
               lam2 = -(unavg-sface-aavg)
             end if
             if (unavg - sface .ge. 0.) then
-              lam3d = unavgd
+              lam3d = unavgd - sfaced
               lam3 = unavg - sface
             else
-              lam3d = -unavgd
+              lam3d = -(unavgd-sfaced)
               lam3 = -(unavg-sface)
             end if
             rradd = lam3d + aavgd
@@ -10863,11 +11068,11 @@ contains
             end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-            lam1d = area*lam1d
+            lam1d = lam1d*area + lam1*aread
             lam1 = lam1*area
-            lam2d = area*lam2d
+            lam2d = lam2d*area + lam2*aread
             lam2 = lam2*area
-            lam3d = area*lam3d
+            lam3d = lam3d*area + lam3*aread
             lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -10881,7 +11086,8 @@ contains
 &             vavgd*drv-vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53*drkd
             abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - &
 &             gm53*drk
-            abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
+            abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz&
+&             *drwd - unavgd*dr - unavg*drd
             abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
             abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd&
 &             + (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -10898,24 +11104,24 @@ contains
             fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
             fw(i, j, k, irho) = fw(i, j, k, irho) - fs
 ! x-momentum.
-            fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
-&             abv7d
+            fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
+&             abv7 + sx*abv7d
             fs = lam3*dru + uavg*abv6 + sx*abv7
             fwd(i, j+1, k, imx) = fwd(i, j+1, k, imx) + fsd
             fw(i, j+1, k, imx) = fw(i, j+1, k, imx) + fs
             fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
             fw(i, j, k, imx) = fw(i, j, k, imx) - fs
 ! y-momentum.
-            fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
-&             abv7d
+            fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
+&             abv7 + sy*abv7d
             fs = lam3*drv + vavg*abv6 + sy*abv7
             fwd(i, j+1, k, imy) = fwd(i, j+1, k, imy) + fsd
             fw(i, j+1, k, imy) = fw(i, j+1, k, imy) + fs
             fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
             fw(i, j, k, imy) = fw(i, j, k, imy) - fs
 ! z-momentum.
-            fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
-&             abv7d
+            fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
+&             abv7 + sz*abv7d
             fs = lam3*drw + wavg*abv6 + sz*abv7
             fwd(i, j+1, k, imz) = fwd(i, j+1, k, imz) + fsd
             fw(i, j+1, k, imz) = fw(i, j+1, k, imz) + fs
@@ -10930,6 +11136,7 @@ contains
             fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
             fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
 ! set dp1 to dp2 for the next face.
+            dp1d = dp2d
             dp1 = dp2
           end do
         end do
@@ -10949,13 +11156,19 @@ contains
           else
             abs11 = -(shocksensor(i, j, 1)-shocksensor(i, j, 0))
           end if
+          x5d = -((shocksensor(i, j, 2)-two*shocksensor(i, j, 1)+&
+&           shocksensor(i, j, 0))*plimd/(omega*(shocksensor(i, j, 2)+two&
+&           *shocksensor(i, j, 1)+shocksensor(i, j, 0))+oneminomega*(&
+&           abs5+abs11)+plim)**2)
           x5 = (shocksensor(i, j, 2)-two*shocksensor(i, j, 1)+&
 &           shocksensor(i, j, 0))/(omega*(shocksensor(i, j, 2)+two*&
 &           shocksensor(i, j, 1)+shocksensor(i, j, 0))+oneminomega*(abs5&
 &           +abs11)+plim)
           if (x5 .ge. 0.) then
+            dp1d = x5d
             dp1 = x5
           else
+            dp1d = -x5d
             dp1 = -x5
           end if
 ! loop in k-direction.
@@ -10972,59 +11185,70 @@ contains
             else
               abs12 = -(shocksensor(i, j, k+1)-shocksensor(i, j, k))
             end if
+            x6d = -((shocksensor(i, j, k+2)-two*shocksensor(i, j, k+1)+&
+&             shocksensor(i, j, k))*plimd/(omega*(shocksensor(i, j, k+2)&
+&             +two*shocksensor(i, j, k+1)+shocksensor(i, j, k))+&
+&             oneminomega*(abs6+abs12)+plim)**2)
             x6 = (shocksensor(i, j, k+2)-two*shocksensor(i, j, k+1)+&
 &             shocksensor(i, j, k))/(omega*(shocksensor(i, j, k+2)+two*&
 &             shocksensor(i, j, k+1)+shocksensor(i, j, k))+oneminomega*(&
 &             abs6+abs12)+plim)
             if (x6 .ge. 0.) then
+              dp2d = x6d
               dp2 = x6
             else
+              dp2d = -x6d
               dp2 = -x6
             end if
 ! compute the dissipation coefficients for this face.
             ppor = zero
             if (pork(i, j, k) .eq. normalflux) ppor = one
             if (dp1 .lt. dp2) then
+              y3d = dp2d
               y3 = dp2
             else
+              y3d = dp1d
               y3 = dp1
             end if
             if (dpmax .gt. y3) then
+              min3d = y3d
               min3 = y3
             else
               min3 = dpmax
+              min3d = 0.0_8
             end if
+            dis2d = fis2*ppor*min3d
             dis2 = fis2*ppor*min3 + sigma*fis4*ppor
 ! construct the vector of the first and third differences
 ! multiplied by the appropriate constants.
             ddwd = wd(i, j, k+1, irho) - wd(i, j, k, irho)
             ddw = w(i, j, k+1, irho) - w(i, j, k, irho)
-            drd = dis2*ddwd
+            drd = dis2d*ddw + dis2*ddwd
             dr = dis2*ddw
             ddwd = wd(i, j, k+1, irho)*w(i, j, k+1, ivx) + w(i, j, k+1, &
 &             irho)*wd(i, j, k+1, ivx) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivx) - w(i, j, k, irho)*wd(i, j, k, ivx)
             ddw = w(i, j, k+1, irho)*w(i, j, k+1, ivx) - w(i, j, k, irho&
 &             )*w(i, j, k, ivx)
-            drud = dis2*ddwd
+            drud = dis2d*ddw + dis2*ddwd
             dru = dis2*ddw
             ddwd = wd(i, j, k+1, irho)*w(i, j, k+1, ivy) + w(i, j, k+1, &
 &             irho)*wd(i, j, k+1, ivy) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivy) - w(i, j, k, irho)*wd(i, j, k, ivy)
             ddw = w(i, j, k+1, irho)*w(i, j, k+1, ivy) - w(i, j, k, irho&
 &             )*w(i, j, k, ivy)
-            drvd = dis2*ddwd
+            drvd = dis2d*ddw + dis2*ddwd
             drv = dis2*ddw
             ddwd = wd(i, j, k+1, irho)*w(i, j, k+1, ivz) + w(i, j, k+1, &
 &             irho)*wd(i, j, k+1, ivz) - wd(i, j, k, irho)*w(i, j, k, &
 &             ivz) - w(i, j, k, irho)*wd(i, j, k, ivz)
             ddw = w(i, j, k+1, irho)*w(i, j, k+1, ivz) - w(i, j, k, irho&
 &             )*w(i, j, k, ivz)
-            drwd = dis2*ddwd
+            drwd = dis2d*ddw + dis2*ddwd
             drw = dis2*ddw
             ddwd = wd(i, j, k+1, irhoe) - wd(i, j, k, irhoe)
             ddw = w(i, j, k+1, irhoe) - w(i, j, k, irhoe)
-            dred = dis2*ddwd
+            dred = dis2d*ddw + dis2*ddwd
             dre = dis2*ddw
 ! in case a k-equation is present, compute the difference
 ! of rhok and store the average value of k. if not present,
@@ -11036,7 +11260,7 @@ contains
 &               , k, itu1) - w(i, j, k, irho)*wd(i, j, k, itu1)
               ddw = w(i, j, k+1, irho)*w(i, j, k+1, itu1) - w(i, j, k, &
 &               irho)*w(i, j, k, itu1)
-              drkd = dis2*ddwd
+              drkd = dis2d*ddw + dis2*ddwd
               drk = dis2*ddw
               kavgd = half*(wd(i, j, k+1, itu1)+wd(i, j, k, itu1))
               kavg = half*(w(i, j, k+1, itu1)+w(i, j, k, itu1))
@@ -11066,19 +11290,34 @@ contains
 &             j, k, irho)**2)
             a2avg = half*(gamma(i, j, k+1)*p(i, j, k+1)/w(i, j, k+1, &
 &             irho)+gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
+            sxd = skd(i, j, k, 1)
             sx = sk(i, j, k, 1)
+            syd = skd(i, j, k, 2)
             sy = sk(i, j, k, 2)
+            szd = skd(i, j, k, 3)
             sz = sk(i, j, k, 3)
+            arg1d = 2*sx*sxd + 2*sy*syd + 2*sz*szd
             arg1 = sx**2 + sy**2 + sz**2
+            if (arg1 .eq. 0.0_8) then
+              aread = 0.0_8
+            else
+              aread = arg1d/(2.0*sqrt(arg1))
+            end if
             area = sqrt(arg1)
             if (1.e-25_realtype .lt. area) then
+              max3d = aread
               max3 = area
             else
               max3 = 1.e-25_realtype
+              max3d = 0.0_8
             end if
+            tmpd = -(one*max3d/max3**2)
             tmp = one/max3
+            sxd = sxd*tmp + sx*tmpd
             sx = sx*tmp
+            syd = syd*tmp + sy*tmpd
             sy = sy*tmp
+            szd = szd*tmp + sz*tmpd
             sz = sz*tmp
             alphaavgd = half*(2*uavg*uavgd+2*vavg*vavgd+2*wavg*wavgd)
             alphaavg = half*(uavg**2+vavg**2+wavg**2)
@@ -11090,7 +11329,8 @@ contains
               aavgd = a2avgd/(2.0*sqrt(a2avg))
             end if
             aavg = sqrt(a2avg)
-            unavgd = sx*uavgd + sy*vavgd + sz*wavgd
+            unavgd = uavgd*sx + uavg*sxd + vavgd*sy + vavg*syd + wavgd*&
+&             sz + wavg*szd
             unavg = uavg*sx + vavg*sy + wavg*sz
             ovaavgd = -(one*aavgd/aavg**2)
             ovaavg = one/aavg
@@ -11098,26 +11338,29 @@ contains
             ova2avg = one/a2avg
 ! the mesh velocity if the face is moving. it must be
 ! divided by the area to obtain a true velocity.
-            if (addgridvelocities) sface = sfacek(i, j, k)*tmp
+            if (addgridvelocities) then
+              sfaced = sfacekd(i, j, k)*tmp + sfacek(i, j, k)*tmpd
+              sface = sfacek(i, j, k)*tmp
+            end if
             if (unavg - sface + aavg .ge. 0.) then
-              lam1d = unavgd + aavgd
+              lam1d = unavgd - sfaced + aavgd
               lam1 = unavg - sface + aavg
             else
-              lam1d = -(unavgd+aavgd)
+              lam1d = -(unavgd-sfaced+aavgd)
               lam1 = -(unavg-sface+aavg)
             end if
             if (unavg - sface - aavg .ge. 0.) then
-              lam2d = unavgd - aavgd
+              lam2d = unavgd - sfaced - aavgd
               lam2 = unavg - sface - aavg
             else
-              lam2d = -(unavgd-aavgd)
+              lam2d = -(unavgd-sfaced-aavgd)
               lam2 = -(unavg-sface-aavg)
             end if
             if (unavg - sface .ge. 0.) then
-              lam3d = unavgd
+              lam3d = unavgd - sfaced
               lam3 = unavg - sface
             else
-              lam3d = -unavgd
+              lam3d = -(unavgd-sfaced)
               lam3 = -(unavg-sface)
             end if
             rradd = lam3d + aavgd
@@ -11142,11 +11385,11 @@ contains
             end if
 ! multiply the eigenvalues by the area to obtain
 ! the correct values for the dissipation term.
-            lam1d = area*lam1d
+            lam1d = lam1d*area + lam1*aread
             lam1 = lam1*area
-            lam2d = area*lam2d
+            lam2d = lam2d*area + lam2*aread
             lam2 = lam2*area
-            lam3d = area*lam3d
+            lam3d = lam3d*area + lam3*aread
             lam3 = lam3*area
 ! some abbreviations, which occur quite often in the
 ! dissipation terms.
@@ -11160,7 +11403,8 @@ contains
 &             vavgd*drv-vavg*drvd-wavgd*drw-wavg*drwd+dred) - gm53*drkd
             abv4 = gm1*(alphaavg*dr-uavg*dru-vavg*drv-wavg*drw+dre) - &
 &             gm53*drk
-            abv5d = sx*drud + sy*drvd + sz*drwd - unavgd*dr - unavg*drd
+            abv5d = sxd*dru + sx*drud + syd*drv + sy*drvd + szd*drw + sz&
+&             *drwd - unavgd*dr - unavg*drd
             abv5 = sx*dru + sy*drv + sz*drw - unavg*dr
             abv6d = (abv3d*abv4+abv3*abv4d)*ova2avg + abv3*abv4*ova2avgd&
 &             + (abv2d*abv5+abv2*abv5d)*ovaavg + abv2*abv5*ovaavgd
@@ -11177,24 +11421,24 @@ contains
             fwd(i, j, k, irho) = fwd(i, j, k, irho) - fsd
             fw(i, j, k, irho) = fw(i, j, k, irho) - fs
 ! x-momentum.
-            fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sx*&
-&             abv7d
+            fsd = lam3d*dru + lam3*drud + uavgd*abv6 + uavg*abv6d + sxd*&
+&             abv7 + sx*abv7d
             fs = lam3*dru + uavg*abv6 + sx*abv7
             fwd(i, j, k+1, imx) = fwd(i, j, k+1, imx) + fsd
             fw(i, j, k+1, imx) = fw(i, j, k+1, imx) + fs
             fwd(i, j, k, imx) = fwd(i, j, k, imx) - fsd
             fw(i, j, k, imx) = fw(i, j, k, imx) - fs
 ! y-momentum.
-            fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + sy*&
-&             abv7d
+            fsd = lam3d*drv + lam3*drvd + vavgd*abv6 + vavg*abv6d + syd*&
+&             abv7 + sy*abv7d
             fs = lam3*drv + vavg*abv6 + sy*abv7
             fwd(i, j, k+1, imy) = fwd(i, j, k+1, imy) + fsd
             fw(i, j, k+1, imy) = fw(i, j, k+1, imy) + fs
             fwd(i, j, k, imy) = fwd(i, j, k, imy) - fsd
             fw(i, j, k, imy) = fw(i, j, k, imy) - fs
 ! z-momentum.
-            fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + sz*&
-&             abv7d
+            fsd = lam3d*drw + lam3*drwd + wavgd*abv6 + wavg*abv6d + szd*&
+&             abv7 + sz*abv7d
             fs = lam3*drw + wavg*abv6 + sz*abv7
             fwd(i, j, k+1, imz) = fwd(i, j, k+1, imz) + fsd
             fw(i, j, k+1, imz) = fw(i, j, k+1, imz) + fs
@@ -11209,6 +11453,7 @@ contains
             fwd(i, j, k, irhoe) = fwd(i, j, k, irhoe) - fsd
             fw(i, j, k, irhoe) = fw(i, j, k, irhoe) - fs
 ! set dp1 to dp2 for the next face.
+            dp1d = dp2d
             dp1 = dp2
           end do
         end do
