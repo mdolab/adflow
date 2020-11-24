@@ -1505,9 +1505,9 @@ class ADFLOW(AeroSolver):
                 key = self.curAP.DVs[dvName].key.lower()
                 dvFam = self.curAP.DVs[dvName].family
                 if key=='mach': 
-                    print('here1',dvName)
-                    print('here2',key)
-                    print('here3',dvFam)
+                    print('here1: ',dvName)
+                    print('here2: ',key)
+                    print('here3: ',dvFam)
                     print('stopping now')
 
             # returns = [] # we append all DV-dicts here
