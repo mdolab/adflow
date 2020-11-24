@@ -1487,11 +1487,18 @@ class ADFLOW(AeroSolver):
 
             # Compute everything and update into the dictionary
             #
+            # # fix for the hard coded area below
+            # for keys_,val_ in zip(self.DVGeo.getValues().keys(),self.DVGeo.getValues().values()):
+            #     val_ = 1.0
+            #     residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={key_:val_},funcDeriv=True,residualDeriv=True)
+
             #MHAM> HARD CODED AREA :(
             # this works 'mach'
-            #residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
+            # residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
             #TESTING>
             residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'twist':1.0},funcDeriv=True,residualDeriv=True)
+
+
             #
             # We now have all terms in the total derivative equation:
             # D: total derivative, d: partial
