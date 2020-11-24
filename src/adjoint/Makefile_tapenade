@@ -162,8 +162,8 @@ solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, p) > \
 sa%saSource(w, rlv, vol, si, sj, sk, timeRef, d2wall) > \
            (w, rlv, vol, si, sj, sk, timeREf, scratch) \
 \
-turbutils%turbAdvection(w, vol, si, sj, sk, scratch) > \
-                       (w, vol, si, sj, sk, scratch) \
+turbutils%turbAdvection(w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) > \
+                       (w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) \
 \
 sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
             (w, vol, si, sj, sk, rlv, scratch) \
@@ -178,7 +178,7 @@ fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, s
                           (w, timeRef, vol, si, sj, sk, p, dw) \
 \
 fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw, gammainf) > \
-                             (w, pInfCOrr, rhoInf, p, fw) \
+                             (w, pInfCOrr, rhoInf, p, fw, gammainf) \
 \
 fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > \
                              (w, pInfCorr, si, sj, sk, p, fw) \
@@ -229,14 +229,25 @@ oversetUtilities%fracToWeights(frac) > \
 			      (weights) \
 \
 adjointExtra%slipVelocitiesFineLevel_block(gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, x) > \
-			      (bcdata.uslip) \
-adjointExtra%gridvelocitiesfinelevel_block(gammainf,pinf,timeref,rhoinf,veldirfreestream,machgrid,x,si,sj,sk) > \
-			      (sfacei,sfacej,s,sfacek) \
+			      (bcdata.uslip,veldirfreestream,machgrid,gammainf, pinf, rhoinf, timeref, x) \
+adjointExtra%gridvelocitiesfinelevel_block(gammainf,pinf,timeref,rhoinf,veldirfreestream,machgrid,x,si,sj,sk, sfacei, sfacej, sfacek) > \
+			      (sfacei,sfacej,s,sfacek,si,sj,sk,veldirfreestream,machgrid, gammainf, pinf, rhoinf, timeref, x) \
 adjointExtra%normalvelocities_block(sfacei,sfacej,sfacek,si,sj,sk) > \
-			      (bcdata.rface) \
+			      (bcdata.rface, sfacei, sfacej, sfacek,si,sj,sk) \
 "
 
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
+#
+# mham: correction that should be made but works out right now since
+#       Tapenade does the right thing on its own ->
+# adjointExtra%metric_block 
+#                            += (si, sj, sk)) > \
+#                               () \
+# adjointExtra%gridvelocitiesfinelevel_block 
+#                                            += (s) > \
+#                                               () \
+
+
 
 #================================================================
 # ====================== State-only reverse routines ============

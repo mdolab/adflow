@@ -2319,11 +2319,6 @@ loopbocos:do mm=1,nbocos
     if (blockismoving) then
 ! determine the situation we are having here.
       if (useoldcoor) then
-        timerefd = 0.0_8
-        xd = 0.0_8
-        sid = 0.0_8
-        sjd = 0.0_8
-        skd = 0.0_8
         velxgrid0d = 0.0_8
         velzgrid0d = 0.0_8
         derivrotationmatrixd = 0.0_8
@@ -2634,10 +2629,6 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
           end do fakepointerloop
           call pushinteger4(ii - 1)
         end do loopdirection
-        xd = 0.0_8
-        sid = 0.0_8
-        sjd = 0.0_8
-        skd = 0.0_8
         xx_xd = 0.0_8
         xx_yd = 0.0_8
         xx_zd = 0.0_8
@@ -3016,14 +3007,9 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
         velzgrid0d = velzgridd
         velygrid0d = velygridd
         velxgrid0d = velxgridd
-        timerefd = sum(cgnsdoms(j)%rotrate*rotrated)
+        timerefd = timerefd + sum(cgnsdoms(j)%rotrate*rotrated)
       end if
     else
-      timerefd = 0.0_8
-      xd = 0.0_8
-      sid = 0.0_8
-      sjd = 0.0_8
-      skd = 0.0_8
       velxgrid0d = 0.0_8
       velzgrid0d = 0.0_8
       derivrotationmatrixd = 0.0_8
@@ -3043,32 +3029,27 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
       else if (branch .ne. 1) then
         ainfd = -(veldir(2)*machgrid*velygrid0d) - veldir(1)*machgrid*&
 &         velxgrid0d - veldir(3)*machgrid*velzgrid0d
-        machgridd = -(veldir(2)*ainf*velygrid0d) - veldir(1)*ainf*&
-&         velxgrid0d - veldir(3)*ainf*velzgrid0d
-        veldirfreestreamd = 0.0_8
+        machgridd = machgridd - veldir(2)*ainf*velygrid0d - veldir(1)*&
+&         ainf*velxgrid0d - veldir(3)*ainf*velzgrid0d
         velxgrid0d = 0.0_8
         velzgrid0d = 0.0_8
         velygrid0d = 0.0_8
         goto 100
       end if
-      veldirfreestreamd = 0.0_8
-      machgridd = 0.0_8
       ainfd = 0.0_8
     else if (branch .lt. 5) then
       if (branch .eq. 3) then
         ainfd = -(veldir(2)*machgrid*velygrid0d) - veldir(1)*machgrid*&
 &         velxgrid0d - veldir(3)*machgrid*velzgrid0d
-        machgridd = -(veldir(2)*ainf*velygrid0d) - veldir(1)*ainf*&
-&         velxgrid0d - veldir(3)*ainf*velzgrid0d
-        veldirfreestreamd = 0.0_8
+        machgridd = machgridd - veldir(2)*ainf*velygrid0d - veldir(1)*&
+&         ainf*velxgrid0d - veldir(3)*ainf*velzgrid0d
         velxgrid0d = 0.0_8
         velzgrid0d = 0.0_8
         velygrid0d = 0.0_8
       else
-        veldirfreestreamd = 0.0_8
-        machgridd = -(ainf*veldirfreestream(2)*velygrid0d) - ainf*&
-&         veldirfreestream(1)*velxgrid0d - ainf*veldirfreestream(3)*&
-&         velzgrid0d
+        machgridd = machgridd - ainf*veldirfreestream(2)*velygrid0d - &
+&         ainf*veldirfreestream(1)*velxgrid0d - ainf*veldirfreestream(3)&
+&         *velzgrid0d
         ainfd = -((intervalmach+machgrid)*veldirfreestream(2)*velygrid0d&
 &         ) - (intervalmach+machgrid)*veldirfreestream(1)*velxgrid0d - (&
 &         intervalmach+machgrid)*veldirfreestream(3)*velzgrid0d
@@ -3083,12 +3064,8 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
         velygrid0d = 0.0_8
       end if
     else if (branch .eq. 5) then
-      veldirfreestreamd = 0.0_8
-      machgridd = 0.0_8
       ainfd = 0.0_8
     else
-      veldirfreestreamd = 0.0_8
-      machgridd = 0.0_8
       ainfd = 0.0_8
     end if
  100 call derivativerotmatrixrigid_b(derivrotationmatrix, &
@@ -3112,10 +3089,11 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
     else
       tempd = ainfd/(2.0*sqrt(temp)*rhoinf)
     end if
-    gammainfd = pinf*tempd
-    pinfd = gammainf*tempd
-    rhoinfd = -(temp*tempd)
+    gammainfd = gammainfd + pinf*tempd
+    pinfd = pinfd + gammainf*tempd
+    rhoinfd = rhoinfd - temp*tempd
   end subroutine gridvelocitiesfinelevel_block_b
+! ! mham addition
 
 ! !  differentiation of slipvelocitiesfinelevel_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 ! !   gradient     of useful results: *(*bcdata.uslip)
@@ -3995,15 +3973,7 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
 ! determine the situation we are having here.
-    if (useoldcoor) then
-      veldirfreestreamd = 0.0_8
-      machgridd = 0.0_8
-      gammainfd = 0.0_8
-      pinfd = 0.0_8
-      timerefd = 0.0_8
-      rhoinfd = 0.0_8
-      xd = 0.0_8
-    else
+    if (.not.useoldcoor) then
 ! mham: nothing here, since we set useoldcoor=.false.
 !       everything has been cut out.
 ! the velocities must be determined analytically.
@@ -4251,8 +4221,6 @@ bocoloop2:do mm=1,nviscbocos
         call pushinteger4(j - 1)
         call pushinteger4(ad_from0)
       end do bocoloop2
-      timerefd = 0.0_8
-      xd = 0.0_8
       xface_x_ij_10d = 0.0_8
       xface_x_ij_11d = 0.0_8
       velxgrid0d = 0.0_8
@@ -4600,18 +4568,13 @@ bocoloop2:do mm=1,nviscbocos
       call popcontrol3b(branch)
       if (branch .lt. 3) then
         if (branch .eq. 0) then
-          veldirfreestreamd = 0.0_8
-          machgridd = 0.0_8
           ainfd = 0.0_8
         else if (branch .eq. 1) then
-          veldirfreestreamd = 0.0_8
-          machgridd = 0.0_8
           ainfd = 0.0_8
         else
-          veldirfreestreamd = 0.0_8
-          machgridd = -(ainf*veldirfreestream(2)*velygrid0d) - ainf*&
-&           veldirfreestream(1)*velxgrid0d - ainf*veldirfreestream(3)*&
-&           velzgrid0d
+          machgridd = machgridd - ainf*veldirfreestream(2)*velygrid0d - &
+&           ainf*veldirfreestream(1)*velxgrid0d - ainf*veldirfreestream(&
+&           3)*velzgrid0d
           ainfd = -((intervalmach+machgrid)*veldirfreestream(2)*&
 &           velygrid0d) - (intervalmach+machgrid)*veldirfreestream(1)*&
 &           velxgrid0d - (intervalmach+machgrid)*veldirfreestream(3)*&
@@ -4630,18 +4593,16 @@ bocoloop2:do mm=1,nviscbocos
         if (branch .eq. 3) then
           ainfd = -(veldir(2)*machgrid*velygrid0d) - veldir(1)*machgrid*&
 &           velxgrid0d - veldir(3)*machgrid*velzgrid0d
-          machgridd = -(veldir(2)*ainf*velygrid0d) - veldir(1)*ainf*&
-&           velxgrid0d - veldir(3)*ainf*velzgrid0d
-          veldirfreestreamd = 0.0_8
+          machgridd = machgridd - veldir(2)*ainf*velygrid0d - veldir(1)*&
+&           ainf*velxgrid0d - veldir(3)*ainf*velzgrid0d
           velxgrid0d = 0.0_8
           velzgrid0d = 0.0_8
           velygrid0d = 0.0_8
         else
           ainfd = -(veldir(2)*machgrid*velygrid0d) - veldir(1)*machgrid*&
 &           velxgrid0d - veldir(3)*machgrid*velzgrid0d
-          machgridd = -(veldir(2)*ainf*velygrid0d) - veldir(1)*ainf*&
-&           velxgrid0d - veldir(3)*ainf*velzgrid0d
-          veldirfreestreamd = 0.0_8
+          machgridd = machgridd - veldir(2)*ainf*velygrid0d - veldir(1)*&
+&           ainf*velxgrid0d - veldir(3)*ainf*velzgrid0d
           velxgrid0d = 0.0_8
           velzgrid0d = 0.0_8
           velygrid0d = 0.0_8
@@ -4657,8 +4618,6 @@ bocoloop2:do mm=1,nviscbocos
 &           2, 2)*velygrid0d
           velxgrid0d = rotationmatrix(1, 1)*velxgrid0d
         end if
-        veldirfreestreamd = 0.0_8
-        machgridd = 0.0_8
         ainfd = 0.0_8
       end if
       call derivativerotmatrixrigid_b(derivrotationmatrix, &
@@ -4682,11 +4641,12 @@ bocoloop2:do mm=1,nviscbocos
       else
         tempd = ainfd/(2.0*sqrt(temp)*rhoinf)
       end if
-      gammainfd = pinf*tempd
-      pinfd = gammainf*tempd
-      rhoinfd = -(temp*tempd)
+      gammainfd = gammainfd + pinf*tempd
+      pinfd = pinfd + gammainf*tempd
+      rhoinfd = rhoinfd - temp*tempd
     end if
   end subroutine slipvelocitiesfinelevel_block_b
+! mham addition
 
 
 
@@ -4881,12 +4841,6 @@ fakedoubleloop:do ii_=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm&
           call pushcontrol1b(0)
         end if
       end do bocoloop
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-      sid = 0.0_8
-      sjd = 0.0_8
-      skd = 0.0_8
       sface_ijd = 0.0_8
       ss_xd = 0.0_8
       ss_yd = 0.0_8
@@ -5030,14 +4984,9 @@ fakedoubleloop:do ii_=0,(bcdata(mm)%jcend-bcdata(mm)%jcbeg+1)*(bcdata(mm&
         call popcontrol1b(branch)
         if (branch .ne. 0) bcdatad(mm)%rface = 0.0_8
       end do
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-      sid = 0.0_8
-      sjd = 0.0_8
-      skd = 0.0_8
     end if
   end subroutine normalvelocities_block_b
+! mham addition
 
 
 

@@ -837,10 +837,11 @@ nadvloopspectral:do ii=1,nadv
     end do
   end subroutine prodwmag2
 !  differentiation of turbadvection in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!   gradient     of useful results: *sfacei *sfacej *sfacek *w
+!                *scratch *vol *si *sj *sk
 !   with respect to varying inputs: *sfacei *sfacej *sfacek *w
 !                *scratch *vol *si *sj *sk
-!   rw status of diff variables: *sfacei:out *sfacej:out *sfacek:out
+!   rw status of diff variables: *sfacei:incr *sfacej:incr *sfacek:incr
 !                *w:incr *scratch:in-out *vol:incr *si:incr *sj:incr
 !                *sk:incr
 !   plus diff mem management of: sfacei:in sfacej:in sfacek:in
@@ -923,10 +924,8 @@ nadvloopspectral:do ii=1,nadv
     call pushinteger4(j)
     call pushinteger4(k)
     call pushreal8(uu)
-    sfaceid = 0.0_8
     qsd = 0.0_8
     qs = zero
-    sfaceid = 0.0_8
     qsd = 0.0_8
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
@@ -1181,10 +1180,8 @@ nadvloopspectral:do ii=1,nadv
     call popinteger4(k)
     call popinteger4(j)
     call popinteger4(i)
-    sfacejd = 0.0_8
     qsd = 0.0_8
     qs = zero
-    sfacejd = 0.0_8
     qsd = 0.0_8
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
@@ -1439,12 +1436,10 @@ nadvloopspectral:do ii=1,nadv
     call popinteger4(k)
     call popinteger4(j)
     call popinteger4(i)
-    sfacekd = 0.0_8
     qsd = 0.0_8
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
     qs = zero
-    sfacekd = 0.0_8
     qsd = 0.0_8
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2

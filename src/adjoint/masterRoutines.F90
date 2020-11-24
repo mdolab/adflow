@@ -4,7 +4,7 @@ contains
        bcDataNames, bcDataValues, bcDataFamLists)
 
     use constants
-    use communication, only : adflow_comm_world
+    use communication, only : adflow_comm_world,myid
     use BCRoutines, only : applyallBC_block
     use bcdata, only : setBCData, setBCDataFineGrid
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
@@ -55,6 +55,11 @@ contains
     integer(kind=intType) :: ierr, nn, sps, fSize, iRegion
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal
+
+    if (myID == 0) then
+       print*,'R0-mham: OBS! calling master()'
+    end if
+
 
     if (useSpatial) then
        call adjustInflowAngle()
@@ -737,10 +742,19 @@ contains
           select case (spaceDiscr)
           case (dissScalar)
              call inviscidDissFluxScalar_b
+             if (myID == 0) then
+                print*,'R0-mham: zerOBZ inviscidDissFluxScalar_b()'
+             end if
           case (dissMatrix)
              call inviscidDissFluxMatrix_b
+             if (myID == 0) then
+                print*,'R0-mham: zerOBZ inviscidDissFluxMatrix_b()'
+             end if
           case (upwind)
              call inviscidUpwindFlux_b(.True.)
+             if (myID == 0) then
+                print*,'R0-mham: zerOBZ inviscidUpwindFlux_b()'
+             end if
           end select
 
           call inviscidCentralFlux_b
@@ -1027,6 +1041,7 @@ contains
 
     use constants
     use iteration, only : currentLevel
+    use communication, only : adflow_comm_world, myid
     use flowVarRefState, only : nw, viscous
     use blockPointers, only : nDom, il, jl, kl, wd, dwd, iblank
     use inputPhysics, only : equationMode, turbModel, equations
@@ -1065,6 +1080,11 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level, iRegion
     real(kind=realType) :: dummyReal
+
+    if (myID == 0) then
+       print*,'R0-mham: OBS! calling master_state_b()'
+    end if
+
 
     ! Set the residual seeds.
     ii = 0
@@ -1211,6 +1231,7 @@ contains
     use BCRoutines, only : applyAllBC_Block
     use inputAdjoint,  only : viscPC
     use blockPointers, only : nDom, wd, xd, dw, il, jl, kl
+    use communication, only : adflow_comm_world, myid
     use flowVarRefState, only : viscous
     use inputPhysics, only : equations, turbModel
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr
@@ -1235,6 +1256,12 @@ contains
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
     call computeEddyViscosity(.True.)
+
+
+    if (myID == 0) then
+       print*,'R0-mham: OBS! calling block_res_state()'
+    end if
+
 
     ! Make sure to call the turb BC's first incase we need to
     ! correct for K
@@ -1270,6 +1297,7 @@ contains
     ! computation used to assemble the jacobian.
     use constants
     use BCExtra_d, only : applyAllBC_Block_d
+    use communication, only : adflow_comm_world, myid
     use inputAdjoint,  only : viscPC
     use blockPointers, only : nDom, wd, xd, dw, dwd
     use flowVarRefState, only : viscous
@@ -1297,6 +1325,11 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType) :: dummyReal, dummyReald
+
+    if (myID == 0) then
+       print*,'R0-mham: OBS! calling block_res_state_d()'
+    end if
+
 
     call computePressureSimple_d(.True.)
     call computeLamViscosity_d(.True.)

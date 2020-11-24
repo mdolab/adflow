@@ -1682,10 +1682,7 @@ loopbocos:do mm=1,nbocos
     if (blockismoving) then
 ! determine the situation we are having here.
       if (useoldcoor) then
-        sfaceid = 0.0_8
-        sfacejd = 0.0_8
         sd = 0.0_8
-        sfacekd = 0.0_8
       else
 ! nothing here... we call the rotational functions with the
 ! flag send to useoldcoor=.false.
@@ -1798,9 +1795,6 @@ loopbocos:do mm=1,nbocos
             end do
           end do
         end do
-        sfaceid = 0.0_8
-        sfacejd = 0.0_8
-        sfacekd = 0.0_8
         xx_xd = 0.0_8
         xx_yd = 0.0_8
         xx_zd = 0.0_8
@@ -2110,10 +2104,7 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
         end do loopdirection
       end if
     else
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
       sd = 0.0_8
-      sfacekd = 0.0_8
     end if
   end subroutine gridvelocitiesfinelevel_block_d
 
@@ -2137,6 +2128,7 @@ fakepointerloop:do ii=0,(iie+1)*kke*jje-1
 !
     use constants
     use inputtimespectral
+! this gives nbkglobal
     use blockpointers
     use cgnsgrid
     use flowvarrefstate
@@ -2653,13 +2645,26 @@ bocoloop2:do mm=1,nviscbocos
             end select
 ! store the rotation center and the rotation rate
 ! for this subface.
-! mham: notice we had to rename these two placeholders, (i,j)->
-! (i_,j_) since i and j are now inside the i,j-double loop
-            j_ = nbkglobal
-            i_ = cgnssubface(mm)
-            rotcenter = cgnsdoms(j_)%bocoinfo(i_)%rotcenter
-            rotrated = cgnsdoms(j_)%bocoinfo(i_)%rotrate*timerefd
-            rotrate = timeref*cgnsdoms(j_)%bocoinfo(i_)%rotrate
+! mham: had to redo this a second time. if we do as stated below
+! then tapenade will make a mistake! it will simply drop the
+! initialization line of j_; "j_ = nbkglobal" and then we will
+! get a runtime error on flux when we run the code since
+! j_ has not been initialized properly. therefore, we will skip
+! the j_ and the i_ altogether and insert nbkglobal and
+! cgnssubface(mm) directly in the rotcenter and rotrate line...
+! ! mham: notice we had to rename these two placeholders, (i,j)->
+! ! (i_,j_) since i and j are now inside the i,j-double loop
+! j_ = nbkglobal
+! i_ = cgnssubface(mm)
+            rotcenter = cgnsdoms(nbkglobal)%bocoinfo(cgnssubface(mm))%&
+&             rotcenter
+            rotrated = cgnsdoms(nbkglobal)%bocoinfo(cgnssubface(mm))%&
+&             rotrate*timerefd
+            rotrate = timeref*cgnsdoms(nbkglobal)%bocoinfo(cgnssubface(&
+&             mm))%rotrate
+! mham: deprecated lines
+! rotcenter = cgnsdoms(j_)%bocoinfo(i_)%rotcenter
+! rotrate   = timeref*cgnsdoms(j_)%bocoinfo(i_)%rotrate
 ! usewindaxis should go back here!
             velxgridd = velxgrid0d
             velxgrid = velxgrid0
@@ -2764,6 +2769,7 @@ bocoloop2:do mm=1,nviscbocos
       end do bocoloop2
     end if
   end subroutine slipvelocitiesfinelevel_block_d
+! mham addition
 
 !  differentiation of normalvelocities_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.rface)

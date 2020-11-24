@@ -3649,10 +3649,11 @@ contains
     end if
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: rhoinf pinfcorr *p *w *fw
+!   gradient     of useful results: gammainf rhoinf pinfcorr *p
+!                *w *fw
 !   with respect to varying inputs: gammainf rhoinf pinfcorr *p
 !                *w *fw *radi *radj *radk
-!   rw status of diff variables: gammainf:out rhoinf:incr pinfcorr:incr
+!   rw status of diff variables: gammainf:incr rhoinf:incr pinfcorr:incr
 !                *p:incr *w:incr *fw:in-out *radi:out *radj:out
 !                *radk:out
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
@@ -3794,7 +3795,6 @@ contains
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
     if (abs0 .lt. thresholdreal) then
-      gammainfd = 0.0_8
       radid = 0.0_8
       radjd = 0.0_8
       radkd = 0.0_8
@@ -4426,17 +4426,11 @@ contains
         if (.not.(rhoinf .le. 0.0_8 .and. (gammainf .eq. 0.0_8 .or. &
 &           gammainf .ne. int(gammainf)))) rhoinfd = rhoinfd + gammainf*&
 &           rhoinf**(gammainf-1)*tempd0
-        if (rhoinf .le. 0.0_8) then
-          gammainfd = 0.0
-        else
-          gammainfd = temp*log(rhoinf)*tempd0
-        end if
+        if (.not.rhoinf .le. 0.0_8) gammainfd = gammainfd + temp*log(&
+&           rhoinf)*tempd0
       else if (branch .eq. 1) then
         pd = pd + ssd
         pinfcorrd = pinfcorrd + 0.001_realtype*sslimd
-        gammainfd = 0.0_8
-      else
-        gammainfd = 0.0_8
       end if
     end if
   end subroutine invisciddissfluxscalar_b
