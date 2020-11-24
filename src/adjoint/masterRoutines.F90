@@ -753,6 +753,9 @@ contains
                 call saViscous_b
                 !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
                 call turbAdvection_b(1_intType, 1_intType, itu1-1, qq)
+                ! mham: turbAdvection_b zeros the faceid. This should be ok since
+                ! it presumably is the last call in master using faceid and
+                ! therefore should be the first call in master_b to use faceid
                 call saSource_b
              end select
 
@@ -871,10 +874,14 @@ contains
           end if
           ! required for ts
           call normalvelocities_block_b(sps)
+          ! mham: normalvelocities_block_b zeros the faceid.
+          !       this is probably a bad thing
           if (myID == 0) then
              print*,'R0-mham: entering grid_b'
           end if
           call gridvelocitiesfinelevel_block_b(useoldcoor, t, sps)
+          ! mham: gridvelocitiesfinelevel_block_b zeros the faceid.
+          !       this is probably a bad thing
           if (myID == 0) then
              print*,'R0-mham: last barrier reached'
           end if
