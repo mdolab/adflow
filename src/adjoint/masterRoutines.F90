@@ -228,7 +228,7 @@ contains
 
     use constants
     use diffsizes, only :  ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
-    use communication, only : adflow_comm_world
+    use communication, only : adflow_comm_world,myID
     use iteration, only : currentLevel
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
@@ -402,11 +402,30 @@ contains
              end do
           end if
           ! mham insertion |->
+
+          ! call mpi_barrier(ADflow_comm_world, ierr)
+          if (myID == 0) then
+             print*,'R0-mham: entering grid'
+          end if
           call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
+          ! call mpi_barrier(ADflow_comm_world, ierr)
+          if (myID == 0) then
+             print*,'R0-mham: entering normal'
+          end if
           ! required for ts
           call normalvelocities_block_d(sps)
+          ! call mpi_barrier(ADflow_comm_world, ierr)
+          if (myID == 0) then
+             print*,'R0-mham: entering slip'
+          end if
           ! required for ts
           call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
+
+          ! call mpi_barrier(ADflow_comm_world, ierr)
+          if (myID == 0) then
+             print*,'R0-mham: last barrier reached'
+          end if
+
 
           if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_d(nn, 1, sps)
