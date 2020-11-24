@@ -81,11 +81,11 @@ name = 'nozzle'
 
 # Aerodynamic problem description
 ap = AeroProblem(name=name, alpha=alpha, mach=mach, altitude=altitude,
-                 areaRef=areaRef, chordRef=chordRef,
+                 areaRef=areaRef, chordRef=chordRef, R=287.87,
                  evalFuncs=['mdot_up', 'mdot_down', 'mdot_plane',
                             'mavgptot_up', 'mavgptot_down', 'mavgptot_plane',
                             'mavgttot_up', 'mavgttot_down', 'mavgttot_plane',
-                            'mavgps_up', 'mavgps_down', 'mavgps_plane',     
+                            'mavgps_up', 'mavgps_down', 'mavgps_plane',
                             ])
 
 
@@ -99,7 +99,7 @@ ap.setBCVar('TemperatureStagnation',  500.0, 'upstream')
 ap.addDV('TemperatureStagnation', family='upstream')
 
 
-def setupADFlow(solver): 
+def setupADFlow(solver):
 
     solver.addIntegrationSurface('../inputFiles/integration_plane_viscous.fmt', 'viscous_plane')
 
@@ -126,8 +126,8 @@ def setupADFlow(solver):
 
 
     solver.setOption('ncycles',1000)
- 
-if __name__ == "__main__": 
+
+if __name__ == "__main__":
 
     CFDSolver = ADFLOW(options=options, debug=True)
 
