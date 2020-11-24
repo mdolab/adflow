@@ -178,6 +178,12 @@ contains
     call etot(rhoInf, uInf, vInf, zInf, pInfCorr, ktmp, &
          wInf(irhoE), kPresent)
 
+! mham 
+    PRINT*,'' 
+    PRINT*,'ADFLOW: Velocity normalisation constant, uRef:' 
+    PRINT*,'#',uRef 
+    PRINT*,''
+
   end subroutine referenceState
 
 

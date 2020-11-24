@@ -178,20 +178,58 @@ contains
                 SoS = sqrt(gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho))
 
                 ! Coompute velocities without rho from state vector
-                velXrho = w(i,j,k,ivx)
+ 
+                ! Coompute velocities without rho from state vector 
+                ! mham: 
+                !      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.F90 
+                !      these are per definition nw=[rho,u,v,w,rhoeE] 
+                !      so the velocity is simply just taken out below... 
+                !      we do not have to divide with rho since it is already 
+                !      without rho... 
+                velXrho = w(i,j,k,ivx) ! ivx: l. 60 in constants.F90
                 velYrho = w(i,j,k,ivy)
                 velZrho = w(i,j,k,ivz)
 
                 q = (velXrho**2 + velYrho**2 + velZrho**2)
-                resM=sqrt(q)/SoS
+ 
+                resM=sqrt(q)/SoS 
+                ! resM above is used as M_a (thesis) and M (paper 2015) 
+                ! and is the Free Stream Mach number 
+ 
+                ! mham: l. 30-32 above: 
+                ! l. 30: real(kind=realType), parameter :: K1 = 1.05_realType 
+                ! Random given number for K2: 
+                ! l. 31: real(kind=realType), parameter :: K2 = 0.6_realType 
+                ! Mach number preconditioner activation for K3: 
+                ! l. 32: real(kind=realType), parameter :: M0 = 0.2_realType 
+                ! 
+                !    Compute K3 
+                ! mham: eq. 2.7 in Garg 2015. K1, M0 and resM are scalars 
+                ! 
+                ! unfortunately, Garg has switched the K1 and K3 here in the 
+                ! code. In both paper and thesis it is K3 that is used to det- 
+                ! ermine K1 below 
 
                 !
                 !    Compute K3
-                K3 = K1 * ( 1 + ((1-K1*M0**2)*resM**2)/(K1*M0**4) )
+                 
+                K3 = K1 * ( 1 + ((1-K1*M0**2)*resM**2)/(K1*M0**4) ) 
+                !    Compute BetaMr2 
+                ! mham; 
+                ! betaMr2 -> eq. 7 in Garg 2015 
+                ! (use eq. 2.6 in thesis thesis since paper has an error) 
+                ! where a==SoS 
+                ! 
+                ! again, K1 and K3 are switched compared with paper/thesis
                 !    Compute BetaMr2
                 betaMr2 = min( max( K3*(velXrho**2 + velYrho**2  &
                      + velZrho**2), ((K2)*(wInf(ivx)**2 &
                      + wInf(ivy)**2 + wInf(ivz)**2))) , SoS**2 )
+
+! mham 
+                ! mham: above, the wInf is the free stream velocity 
+                ! 
+                ! Should this first line's first element have SoS^4 or SoS^2
 
                 A11=  (betaMr2)*(1/SoS**4)
                 A12 = zero
@@ -216,6 +254,9 @@ contains
                 A43 = zero
                 A44 = one*w(i,j,k,irho)
                 A45 = zero + one *(-velZrho)/SoS**2
+!
+                ! mham: seems he fixed the above line an irregular way
+
 
                 A51=  one*((1/(gamma(i,j,k)-1))+(resM**2)/2)
                 A52 = one * w(i,j,k,irho)*velXrho
