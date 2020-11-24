@@ -12,12 +12,13 @@ module fluxes_d
 contains
 !  differentiation of inviscidcentralflux in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw
-!   with respect to varying inputs: timeref *p *dw *w *vol *si
-!                *sj *sk
-!   rw status of diff variables: timeref:in *p:in *dw:in-out *w:in
-!                *vol:in *si:in *sj:in *sk:in
-!   plus diff mem management of: p:in dw:in w:in vol:in si:in sj:in
-!                sk:in
+!   with respect to varying inputs: timeref *p *sfacei *sfacej
+!                *sfacek *dw *w *vol *si *sj *sk
+!   rw status of diff variables: timeref:in *p:in *sfacei:in *sfacej:in
+!                *sfacek:in *dw:in-out *w:in *vol:in *si:in *sj:in
+!                *sk:in
+!   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
+!                dw:in w:in vol:in si:in sj:in sk:in
   subroutine inviscidcentralflux_d()
 !
 !       inviscidcentralflux computes the euler fluxes using a central
@@ -28,9 +29,9 @@ contains
     use constants
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke, &
 &   spectralsol, w, wd, si, sid, sj, sjd, sk, skd, dw, dwd, pori, porj, &
-&   pork, indfamilyi, indfamilyj, indfamilyk, p, pd, sfacei, sfacej, &
-&   sfacek, nbkglobal, addgridvelocities, blockismoving, vol, vold, &
-&   factfamilyi, factfamilyj, factfamilyk
+&   pork, indfamilyi, indfamilyj, indfamilyk, p, pd, sfacei, sfaceid, &
+&   sfacej, sfacejd, sfacek, sfacekd, nbkglobal, addgridvelocities, &
+&   blockismoving, vol, vold, factfamilyi, factfamilyj, factfamilyk
     use cgnsgrid, only : cgnsdoms, massflowfamilyinv
     use flowvarrefstate, only : timeref, timerefd
     use inputphysics, only : equationmode
@@ -42,13 +43,14 @@ contains
     real(kind=realtype) :: qsp, qsm, rqsp, rqsm, porvel, porflux
     real(kind=realtype) :: qspd, qsmd, rqspd, rqsmd
     real(kind=realtype) :: pa, fs, sface, vnp, vnm
-    real(kind=realtype) :: pad, fsd, vnpd, vnmd
+    real(kind=realtype) :: pad, fsd, sfaced, vnpd, vnmd
     real(kind=realtype) :: wwx, wwy, wwz, rvol
     real(kind=realtype) :: wwxd, wwyd, wwzd, rvold
     intrinsic mod
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
     sface = zero
+    sfaced = 0.0_8
 !
 !       advective fluxes in the i-direction.
 !
@@ -57,7 +59,10 @@ contains
         do i=1,il
 ! set the dot product of the grid velocity and the
 ! normal in i-direction for a moving face.
-          if (addgridvelocities) sface = sfacei(i, j, k)
+          if (addgridvelocities) then
+            sfaced = sfaceid(i, j, k)
+            sface = sfacei(i, j, k)
+          end if
 ! compute the normal velocities of the left and right state.
           vnpd = wd(i+1, j, k, ivx)*si(i, j, k, 1) + w(i+1, j, k, ivx)*&
 &           sid(i, j, k, 1) + wd(i+1, j, k, ivy)*si(i, j, k, 2) + w(i+1&
@@ -85,18 +90,18 @@ contains
           if (pori(i, j, k) .eq. noflux) porflux = zero
           if (pori(i, j, k) .eq. boundflux) then
             porvel = zero
+            vnpd = sfaced
             vnp = sface
+            vnmd = sfaced
             vnm = sface
-            vnmd = 0.0_8
-            vnpd = 0.0_8
           end if
 ! incorporate porflux in porvel.
           porvel = porvel*porflux
 ! compute the normal velocities relative to the grid for
 ! the face as well as the mass fluxes.
-          qspd = porvel*vnpd
+          qspd = porvel*(vnpd-sfaced)
           qsp = (vnp-sface)*porvel
-          qsmd = porvel*vnmd
+          qsmd = porvel*(vnmd-sfaced)
           qsm = (vnm-sface)*porvel
           rqspd = qspd*w(i+1, j, k, irho) + qsp*wd(i+1, j, k, irho)
           rqsp = qsp*w(i+1, j, k, irho)
@@ -160,12 +165,16 @@ contains
 !       advective fluxes in the j-direction.
 !
     sface = zero
+    sfaced = 0.0_8
     do k=2,kl
       do j=1,jl
         do i=2,il
 ! set the dot product of the grid velocity and the
 ! normal in j-direction for a moving face.
-          if (addgridvelocities) sface = sfacej(i, j, k)
+          if (addgridvelocities) then
+            sfaced = sfacejd(i, j, k)
+            sface = sfacej(i, j, k)
+          end if
 ! compute the normal velocities of the left and right state.
           vnpd = wd(i, j+1, k, ivx)*sj(i, j, k, 1) + w(i, j+1, k, ivx)*&
 &           sjd(i, j, k, 1) + wd(i, j+1, k, ivy)*sj(i, j, k, 2) + w(i, j&
@@ -193,18 +202,18 @@ contains
           if (porj(i, j, k) .eq. noflux) porflux = zero
           if (porj(i, j, k) .eq. boundflux) then
             porvel = zero
+            vnpd = sfaced
             vnp = sface
+            vnmd = sfaced
             vnm = sface
-            vnmd = 0.0_8
-            vnpd = 0.0_8
           end if
 ! incorporate porflux in porvel.
           porvel = porvel*porflux
 ! compute the normal velocities for the face as well as the
 ! mass fluxes.
-          qspd = porvel*vnpd
+          qspd = porvel*(vnpd-sfaced)
           qsp = (vnp-sface)*porvel
-          qsmd = porvel*vnmd
+          qsmd = porvel*(vnmd-sfaced)
           qsm = (vnm-sface)*porvel
           rqspd = qspd*w(i, j+1, k, irho) + qsp*wd(i, j+1, k, irho)
           rqsp = qsp*w(i, j+1, k, irho)
@@ -267,12 +276,16 @@ contains
 !
 !       advective fluxes in the k-direction.
     sface = zero
+    sfaced = 0.0_8
     do k=1,kl
       do j=2,jl
         do i=2,il
 ! set the dot product of the grid velocity and the
 ! normal in k-direction for a moving face.
-          if (addgridvelocities) sface = sfacek(i, j, k)
+          if (addgridvelocities) then
+            sfaced = sfacekd(i, j, k)
+            sface = sfacek(i, j, k)
+          end if
 ! compute the normal velocities of the left and right state.
           vnpd = wd(i, j, k+1, ivx)*sk(i, j, k, 1) + w(i, j, k+1, ivx)*&
 &           skd(i, j, k, 1) + wd(i, j, k+1, ivy)*sk(i, j, k, 2) + w(i, j&
@@ -300,18 +313,18 @@ contains
           if (pork(i, j, k) .eq. noflux) porflux = zero
           if (pork(i, j, k) .eq. boundflux) then
             porvel = zero
+            vnpd = sfaced
             vnp = sface
+            vnmd = sfaced
             vnm = sface
-            vnmd = 0.0_8
-            vnpd = 0.0_8
           end if
 ! incorporate porflux in porvel.
           porvel = porvel*porflux
 ! compute the normal velocities for the face as well as the
 ! mass fluxes.
-          qspd = porvel*vnpd
+          qspd = porvel*(vnpd-sfaced)
           qsp = (vnp-sface)*porvel
-          qsmd = porvel*vnmd
+          qsmd = porvel*(vnmd-sfaced)
           qsm = (vnm-sface)*porvel
           rqspd = qspd*w(i, j, k+1, irho) + qsp*wd(i, j, k+1, irho)
           rqsp = qsp*w(i, j, k+1, irho)
@@ -695,8 +708,8 @@ contains
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
 &   jb, kb, w, wd, p, pd, pori, porj, pork, fw, fwd, gamma, si, sid, sj,&
 &   sjd, sk, skd, indfamilyi, indfamilyj, indfamilyk, spectralsol, &
-&   addgridvelocities, sfacei, sfacej, sfacek, factfamilyi, factfamilyj,&
-&   factfamilyk
+&   addgridvelocities, sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd&
+&   , factfamilyi, factfamilyj, factfamilyk
     use flowvarrefstate, only : pinfcorr, pinfcorrd
     use inputdiscretization, only : vis2, vis4
     use inputphysics, only : equations
@@ -2467,8 +2480,8 @@ contains
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
 &   jb, kb, w, wd, p, pd, pori, porj, pork, fw, fwd, radi, radid, radj, &
 &   radjd, radk, radkd, gamma
-    use flowvarrefstate, only : gammainf, pinfcorr, pinfcorrd, rhoinf,&
-&   rhoinfd
+    use flowvarrefstate, only : gammainf, gammainfd, pinfcorr, &
+&   pinfcorrd, rhoinf, rhoinfd
     use inputdiscretization, only : vis2, vis4
     use inputphysics, only : equations
     use iteration, only : rfil
@@ -4308,8 +4321,9 @@ contains
     use blockpointers, only : il, jl, kl, ie, je, ke, ib, jb, kb, w, &
 &   wd, p, pd, pori, porj, pork, fw, fwd, gamma, si, sid, sj, sjd, sk, &
 &   skd, indfamilyi, indfamilyj, indfamilyk, spectralsol, &
-&   addgridvelocities, sfacei, sfacej, sfacek, rotmatrixi, rotmatrixj, &
-&   rotmatrixk, factfamilyi, factfamilyj, factfamilyk
+&   addgridvelocities, sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd&
+&   , rotmatrixi, rotmatrixj, rotmatrixk, factfamilyi, factfamilyj, &
+&   factfamilyk
     use flowvarrefstate, only : kpresent, nw, nwf, rgas, rgasd, tref, &
 &   trefd
     use inputdiscretization, only : limiter, lumpeddiss, precond, &

@@ -1486,7 +1486,13 @@ class ADFLOW(AeroSolver):
             psi = -self.getAdjoint(f)
 
             # Compute everything and update into the dictionary
-            residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
+            #
+            #MHAM>
+            # this works 'mach'
+            #residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
+            #TESTING>
+            residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'twist':1.0},funcDeriv=True,residualDeriv=True)
+            #
             # We now have all terms in the total derivative equation:
             # D: total derivative, d: partial
             # [DJ/Dx] = [dJ/dx] - psi^T [dR/dx]
@@ -3634,7 +3640,19 @@ class ADFLOW(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None and self.DVGeo is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name).reshape(xsdot.shape)
+                if self.comm.rank == 0:
+                    print('')
+                    print('RANK_0 now prints the input for xsdot: ')
+                    print('xDvDot',xDvDot)
+                    print('self.curAP.ptSetName',self.curAP.ptSetName)
+                    print('self.comm',self.comm)
+                    print('self.curAP.name',self.curAP.name)
+                    print('RANK_0 done printing')
+                    print('')
+                    # mham: seems like a deprecated call. There is e.g. no 'config=' optional
+                    # keyword argument if you look in the DVGeometry.py source code.
+                    #xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name).reshape(xsdot.shape)
+                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName,comm=self.comm).reshape(xsdot.shape)
             if self.mesh is not None:
                 xsdot = self.mapVector(xsdot, self.meshFamilyGroup,
                                        self.designFamilyGroup, includeZipper=False)
