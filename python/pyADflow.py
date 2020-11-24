@@ -1508,27 +1508,30 @@ class ADFLOW(AeroSolver):
             # Finally, we remember to store the total derivative in the
             # dictionary:
             if self.comm.rank == 0:
-                print('Total derivative',TotalDeriv_)
-                print('self.curAP.ptSetName',self.curAP.ptSetName)
-                print('self.curAP.name',self.curAP.name)
-                print('key',key)
-                print('f',f)
+                print('')
+                print('Total derivative: ',TotalDeriv_)
+                print('self.curAP.ptSetName: ',self.curAP.ptSetName)
+                print('self.curAP.name: ',self.curAP.name)
+                print('key: ',key)
+                print('f: ',f)
+                print('self.curAP.DVs: ',self.curAP.DVs)
 
             # now we prepare the output: # look at '_processAeroDerivatives()'
             for dvName in self.curAP.DVs:
-                key = self.curAP.DVs[dvName].key.lower()
+                key2 = self.curAP.DVs[dvName].key.lower()
                 dvFam = self.curAP.DVs[dvName].family
-                if key=='mach': 
-                    print('here1: ',dvName)
-                    print('here2: ',key)
-                    print('here3: ',dvFam)
-                    print('stopping now')
-
+                if key2=='mach': 
+                    if self.comm.rank == 0:
+                        print('dvName: ',dvName)
+                        print('key2: ',key2)
+                        print('dvFan: ',dvFam)
+                        print('stopping now')
+                    funcsSens[key].update(self._process2_outer(dvName,TotalDeriv_))
             # returns = [] # we append all DV-dicts here
             # xdvaerobar = {} # prepare dict
             # dJ_dxdvaero.update(self._processAeroDerivatives())
             # returns.append(dJ_dxdvaero)
-            funcsSens[key].update({'mach_MACHTest_0':TotalDeriv_})
+            #funcsSens['MACHTest_0_mx'].update({'mach_MACHTest_0':TotalDeriv_})
 
             totalSensEndTime[f] = time.time()
 
@@ -3210,6 +3213,27 @@ class ADFLOW(AeroSolver):
         else:
             self.curAP.adflowData.adjoints[objective] = psi
             self.adjointFailed = False
+
+    def _process2_outer(self, dvName, TotalDeriv_):            
+        """ This outer call simulatus the Bwd() call
+        From here we call the _processAerDerivatives() which is
+        called _prcess2_inner() in our case..."""
+        # Assemble the possible returns the user has requested:
+        returns = []
+        xdvaerobar = {}
+        xdvaerobar.update(self._process2_inner(dvName,TotalDeriv_))
+        returns.append(xdvaerobar)
+
+        # Single return (most frequent) is 'clean', otherwise a tuple.
+        return tuple(returns) if len(returns) > 1 else returns[0]
+
+
+    def _process2_inner(self, dvName, TotalDeriv_):
+        """Prepares output for Fwd() master_d call"""
+
+        funcsSens = {}
+        funcsSens[dvName] = (TotalDeriv_)
+        return funcsSens
 
     def _processAeroDerivatives(self, dIda, dIdBC):
         """This internal furncion is used to convert the raw array ouput from
