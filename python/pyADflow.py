@@ -1489,9 +1489,9 @@ class ADFLOW(AeroSolver):
             #
             #MHAM>
             # this works 'mach'
-            #residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
+            residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
             #TESTING>
-            residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'twist':1.0},funcDeriv=True,residualDeriv=True)
+            #residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'twist':1.0},funcDeriv=True,residualDeriv=True)
             #
             # We now have all terms in the total derivative equation:
             # D: total derivative, d: partial
