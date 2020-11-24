@@ -407,17 +407,20 @@ contains
           ! call mpi_barrier(ADflow_comm_world, ierr)
           if (myID == 0) then
              print*,'R0-mham: entering grid'
+             print*,'nn: ',nn
           end if
           call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
           ! call mpi_barrier(ADflow_comm_world, ierr)
           if (myID == 0) then
              print*,'R0-mham: entering normal'
+             print*,'nn: ',nn
           end if
           ! required for ts
           call normalvelocities_block_d(sps)
           ! call mpi_barrier(ADflow_comm_world, ierr)
           if (myID == 0) then
              print*,'R0-mham: entering slip'
+             print*,'nn: ',nn
           end if
           ! required for ts
           call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
@@ -425,6 +428,7 @@ contains
           ! call mpi_barrier(ADflow_comm_world, ierr)
           if (myID == 0) then
              print*,'R0-mham: last barrier reached'
+             print*,'nn: ',nn
           end if
 
 

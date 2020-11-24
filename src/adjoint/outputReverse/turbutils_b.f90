@@ -838,11 +838,13 @@ nadvloopspectral:do ii=1,nadv
   end subroutine prodwmag2
 !  differentiation of turbadvection in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *w *scratch *vol *si *sj *sk
-!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
-!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
-!                *si:incr *sj:incr *sk:incr
-!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
-!                sk:in
+!   with respect to varying inputs: *sfacei *sfacej *sfacek *w
+!                *scratch *vol *si *sj *sk
+!   rw status of diff variables: *sfacei:out *sfacej:out *sfacek:out
+!                *w:incr *scratch:in-out *vol:incr *si:incr *sj:incr
+!                *sk:incr
+!   plus diff mem management of: sfacei:in sfacej:in sfacek:in
+!                w:in scratch:in vol:in si:in sj:in sk:in
   subroutine turbadvection_b(madv, nadv, offset, qq)
 !
 !       turbadvection discretizes the advection part of the turbulent
@@ -865,9 +867,9 @@ nadvloopspectral:do ii=1,nadv
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, vol, vold, &
-&   sfacei, sfacej, sfacek, w, wd, si, sid, sj, sjd, sk, skd, &
-&   addgridvelocities, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2, scratch&
-&   , scratchd
+&   sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, w, wd, si, sid, &
+&   sj, sjd, sk, skd, addgridvelocities, bmti1, bmti2, bmtj1, bmtj2, &
+&   bmtk1, bmtk2, scratch, scratchd
     use turbmod, only : secondord
     implicit none
 !
@@ -921,8 +923,10 @@ nadvloopspectral:do ii=1,nadv
     call pushinteger4(j)
     call pushinteger4(k)
     call pushreal8(uu)
+    sfaceid = 0.0_8
     qsd = 0.0_8
     qs = zero
+    sfaceid = 0.0_8
     qsd = 0.0_8
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
@@ -1166,6 +1170,8 @@ nadvloopspectral:do ii=1,nadv
       sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + voli*xad
       call popcontrol1b(branch)
       if (branch .eq. 0) then
+        sfaceid(i, j, k) = sfaceid(i, j, k) + voli*qsd
+        sfaceid(i-1, j, k) = sfaceid(i-1, j, k) + voli*qsd
         volid = volid + (sfacei(i, j, k)+sfacei(i-1, j, k))*qsd
         qsd = 0.0_8
       end if
@@ -1175,8 +1181,10 @@ nadvloopspectral:do ii=1,nadv
     call popinteger4(k)
     call popinteger4(j)
     call popinteger4(i)
+    sfacejd = 0.0_8
     qsd = 0.0_8
     qs = zero
+    sfacejd = 0.0_8
     qsd = 0.0_8
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
@@ -1420,6 +1428,8 @@ nadvloopspectral:do ii=1,nadv
       sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + voli*xad
       call popcontrol1b(branch)
       if (branch .eq. 0) then
+        sfacejd(i, j, k) = sfacejd(i, j, k) + voli*qsd
+        sfacejd(i, j-1, k) = sfacejd(i, j-1, k) + voli*qsd
         volid = volid + (sfacej(i, j, k)+sfacej(i, j-1, k))*qsd
         qsd = 0.0_8
       end if
@@ -1429,10 +1439,12 @@ nadvloopspectral:do ii=1,nadv
     call popinteger4(k)
     call popinteger4(j)
     call popinteger4(i)
+    sfacekd = 0.0_8
     qsd = 0.0_8
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
     qs = zero
+    sfacekd = 0.0_8
     qsd = 0.0_8
     do iii=0,nx*ny*nz-1
       i = mod(iii, nx) + 2
@@ -1677,6 +1689,8 @@ nadvloopspectral:do ii=1,nadv
       skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + voli*xad
       call popcontrol1b(branch)
       if (branch .eq. 0) then
+        sfacekd(i, j, k) = sfacekd(i, j, k) + voli*qsd
+        sfacekd(i, j, k-1) = sfacekd(i, j, k-1) + voli*qsd
         volid = volid + (sfacek(i, j, k)+sfacek(i, j, k-1))*qsd
         qsd = 0.0_8
       end if
