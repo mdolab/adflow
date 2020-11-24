@@ -174,7 +174,7 @@ sa%saResScale(scratch, dw) > \
 residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%F) > \
                            (w, pref, uref, plocal, dw, actuatorRegions%F) \
 \
-fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw) > \
+fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) > \
                           (w, timeRef, vol, si, sj, sk, p, dw) \
 \
 fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw) > \
