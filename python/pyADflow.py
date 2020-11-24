@@ -5373,6 +5373,40 @@ class ADFLOW(AeroSolver):
 
         return pts, conn
 
+    # mham
+    def mhamDOT_slipvelocitiesfinelevel_block_d(self,useoldcoor,t,sps):
+        """ helper function to make dot product test"""
+        self.adflow.adjointextra_d.slipvelocitiesfinelevel_block_d(useoldcoor,t,sps)
+    # notes on how to make dot product tests:
+    # (the example below will be the subroutine 
+    # slipvelocitiesfineleve_block_d() which can be found in the file
+    # src/adjoint/outputForward/adfjointextra_d.f90.
+    # 1) first we must insert a new entry in the adflow.pyf file. To this
+    #    end we cd to the directory for slipvelocitiesfineleve_block_d()
+    #       $ cd /src/adjoint/outputForward/
+    #    and then we use f2py to generate the python interface
+    #       $ f2py -h TEMPORARY_FILE.pyf adjointextra_d.f90
+    #    now we go into TEMPORARY_FILE.pyf and find the lines relevant
+    #    for slipvelocities... In this case we need the following lines:
+    # ------------------------------------------------------------------
+    #       ! mham
+    #       module adjointextra_d
+    #         subroutine slipvelocitiesfinelevel_block_d(useoldcoor,t,sps) ! in adjointextra_d.f90:adjointextra_d
+    #           use blockpointers
+    #           use inputmotion
+    #         
+    #         A  L O T  O F   L I N E S  .....
+    #         
+    #           logical intent(in) :: useoldcoor
+    #           real(kind=realtype) dimension(*),intent(in) :: t
+    #           integer(kind=inttype) intent(in) :: sps
+    #         end subroutine slipvelocitiesfinelevel_block_d
+    #       end module adjointextra_d
+    # ------------------------------------------------------------------
+    #    now we insert these in the /src/f2py/adflow.pyf file.
+    #    Using the above defined function here in pyADflow.py we can now
+    #    thx to the changes we made in the f2py/pyADflow.pyf finally setup
+    #    and call the dot test from the python layer.
 
 class adflowFlowCase(object):
     """
