@@ -253,7 +253,7 @@ contains
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
     use flowutils_d, only : computePressureSimple_d, computeLamViscosity_d, &
          computeSpeedOfSoundSquared_d, allNodalGradients_d, adjustInflowAngle_d
-    use solverutils_d, only : timeStep_Block_d
+    use solverutils_d, only : timeStep_Block_d,slipvelocitiesfinelevel_block_d,gridvelocitiesfinelevel_block_d,normalvelocities_block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
     use surfaceIntegrations, only : getSolution_d
@@ -287,6 +287,9 @@ contains
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal, dummyReald
+    ! mham
+    logical :: useOldCoor ! for solverutils_d() functions
+    useOldCoor = .FALSE.
 
     fSize = size(forcesDot, 2)
     allocate(forces(3, fSize, nTimeIntervalsSpectral))
@@ -388,6 +391,23 @@ contains
           call volume_block_d()
           call metric_block_d()
           call boundaryNormals_d()
+
+          ! mham adjoint fix
+          ! see ./src/adjoint/outputForward/block_res_d.F90 from old commits
+          t = timeunsteadyrestart
+          if (equationmode .eq. timespectral) then
+             do mm=1,nsections
+                t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/real(&
+                     &         ntimeintervalsspectral, realtype)
+             end do
+          end if
+          ! mham insertion |->
+          call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
+          ! required for ts
+          call normalvelocities_block_d(sps)
+          ! required for ts
+          call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
+
           if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_d(nn, 1, sps)
           end if

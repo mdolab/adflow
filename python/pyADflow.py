@@ -1487,7 +1487,7 @@ class ADFLOW(AeroSolver):
 
             # Compute everything and update into the dictionary
             #
-            #MHAM>
+            #MHAM> HARD CODED AREA :(
             # this works 'mach'
             residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
             #TESTING>
