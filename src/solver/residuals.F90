@@ -28,7 +28,18 @@ contains
     integer(kind=intType) :: i, j, k, l
     integer(kind=intType) :: iale, jale, kale, lale, male ! For loops of ALE
     real(kind=realType), parameter :: K1 = 1.05_realType
-    real(kind=realType), parameter :: K2 = 0.6_realType ! Random given number
+    ! K2
+    ! for wsp=8m/s we have:
+    !K2 :0.600000000000000000000 0.900000000000000000000 1.800000000000000000000
+    !t2_:4.6944763574770638E-004 7.0417145362155966E-004 1.4083429072431193E-003
+    !FROM THE ABOVE ONE CAN LEARN THAT: t2_ = 0.000782412726246 * K2
+
+
+    !real(kind=realType), parameter :: K2 = 0.6_realType ! Random given number
+    !real(kind=realType), parameter :: K2 = 0.9_realType ! Random given number
+    !real(kind=realType), parameter :: K2 = 1.8_realType ! Random given number
+    real(kind=realType), parameter :: K2 = 639.048910156_realType ! t2_=0.5 for wsp=8
+
     real(kind=realType), parameter :: M0 = 0.2_realType ! Mach number preconditioner activation
     real(kind=realType), parameter :: alpha = 0_realType
     real(kind=realType), parameter :: delta = 0_realType
@@ -50,7 +61,14 @@ contains
     real(kind=realType) :: dwo(nwf)
     logical :: fineGrid
 
-
+    ! mham: work on the preconditioner
+    real(kind=realType) :: t1_mean,t1_max,t1_min ! term1 metrics
+    ! we have to get various metrics for term one since it varies for every
+    ! cell
+    real(kind=realType) :: t2_,t3_ ! term2 and term3 in the comparison
+    integer(kind=intType) :: cnt_
+    ! 
+    !
     ! Set the value of rFil, which controls the fraction of the old
     ! dissipation residual to be used. This is only for the runge-kutta
     ! schemes; for other smoothers rFil is simply set to 1.0.
@@ -170,6 +188,12 @@ contains
     ! Add the dissipative and possibly viscous fluxes to the
     ! Euler fluxes. Loop over the owned cells and add fw to dw.
     ! Also multiply by iblank so that no updates occur in holes
+    ! 
+    ! mham: preconditioner work
+    t1_mean = 0.d0
+    t1_max = -1.e20
+    t1_min = 1.e20
+    cnt_ = 0
     if ( lowspeedpreconditioner ) then
        do k=2,kl
           do j=2,jl
@@ -180,7 +204,7 @@ contains
                 ! Coompute velocities without rho from state vector
  
                 ! Coompute velocities without rho from state vector 
-                ! mham: 
+                ! mham: (w is pointer.. see l. 512. block.F90)
                 !      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.F90 
                 !      these are per definition nw=[rho,u,v,w,rhoeE] 
                 !      so the velocity is simply just taken out below... 
@@ -222,11 +246,23 @@ contains
                 ! 
                 ! again, K1 and K3 are switched compared with paper/thesis
                 !    Compute BetaMr2
+                cnt_=cnt_+1
+                t1_mean = t1_mean + K3*(velXrho**2 + velYrho**2  &
+                     + velZrho**2)
+                t1_max = MAX(t1_max,K3*(velXrho**2 + velYrho**2  &
+                     + velZrho**2))
+                t1_min = MIN(t1_min,K3*(velXrho**2 + velYrho**2  &
+                     + velZrho**2))
+                t2_ = ((K2)*(wInf(ivx)**2 &
+                     + wInf(ivy)**2 + wInf(ivz)**2))
+                t3_ = SoS**2 
+                !
                 betaMr2 = min( max( K3*(velXrho**2 + velYrho**2  &
                      + velZrho**2), ((K2)*(wInf(ivx)**2 &
                      + wInf(ivy)**2 + wInf(ivz)**2))) , SoS**2 )
 
-! mham 
+
+                ! mham 
                 ! mham: above, the wInf is the free stream velocity 
                 ! 
                 ! Should this first line's first element have SoS^4 or SoS^2
@@ -332,8 +368,15 @@ contains
 
              enddo
           enddo
-       enddo
-    else
+       enddo ! end of lowspeedpreconditioners three cells loops
+       ! PRINT*,'#t1_min',t1_min
+       ! PRINT*,'#t1_mean',t1_mean/REAL(cnt_)
+       ! PRINT*,'#t1_max',t1_max
+       ! PRINT*,'#t2_',t2_
+       ! PRINT*,'#t3_',t3_
+       ! print*,kl,jl,il
+       ! print*,''
+    else ! else.. i.e. if we do not have preconditioner turned on...
        do l=1,nwf
           do k=2,kl
              do j=2,jl

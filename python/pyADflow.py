@@ -546,6 +546,8 @@ class ADFLOW(AeroSolver):
                     j, groupTag, direction, positions[i])
                 self.adflow.tecplotio.addparaslice(sliceName, tmp[i], dirVec, famList)
             else:
+                # e.g. Slice_0008 allWalls: Aboslute y=66.875
+                # so j=0008, groupTag=allWalls, direction=y, positions[i]=66.875
                 sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (
                     j, groupTag, direction, positions[i])
                 self.adflow.tecplotio.addabsslice(sliceName, tmp[i], dirVec, famList)
