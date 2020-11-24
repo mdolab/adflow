@@ -606,10 +606,10 @@ end subroutine applyAllBC
     ! correction for k must be applied.
 
     rhok = zero
-
+    
     ! Loop over the generic subface to set the state in the
     ! halo cells.
-
+    
     !$AD II-LOOP
     do ii=0,isize*jsize-1
        i = mod(ii, isize) + iStart
@@ -1240,35 +1240,37 @@ end subroutine applyAllBC
 
     ! Determine the state in the halo cell. Again loop over
     ! the cell range for this subface.
+    
+    ! !$AD II-LOOP
+    ! do ii=0,isize*jsize-1
+    !    j = mod(ii, isize) + iStart ! mham: iStart:(iStart+isize-1)
+    !    k = ii/isize + jStart ! mham: jStart:(jStart+jsize-1)
+    do k=jStart,(jstart+jsize-1)
+       do j=iStart,(istart+isize-1)
+          ! Compute the pressure density and velocity in the
+          ! halo cell. Note that rface is the grid velocity
+          ! component in the direction of norm, i.e. outward
+          ! pointing.
 
-    !$AD II-LOOP
-    do ii=0,isize*jsize-1
-       j = mod(ii, isize) + iStart
-       k = ii/isize + jStart
+          pp1(j,k) = mydim(pp2(j,k), grad(j,k))
 
-       ! Compute the pressure density and velocity in the
-       ! halo cell. Note that rface is the grid velocity
-       ! component in the direction of norm, i.e. outward
-       ! pointing.
+          vn = two*(BCData(nn)%rface(j,k) - &
+               ww2(j,k,ivx)*BCData(nn)%norm(j,k,1) - &
+               ww2(j,k,ivy)*BCData(nn)%norm(j,k,2) - &
+               ww2(j,k,ivz)*BCData(nn)%norm(j,k,3))
 
-       pp1(j,k) = mydim(pp2(j,k), grad(j,k))
+          ww1(j,k,irho) = ww2(j,k,irho)
+          ww1(j,k,ivx)  = ww2(j,k,ivx) + vn*BCData(nn)%norm(j,k,1)
+          ww1(j,k,ivy)  = ww2(j,k,ivy) + vn*BCData(nn)%norm(j,k,2)
+          ww1(j,k,ivz)  = ww2(j,k,ivz) + vn*BCData(nn)%norm(j,k,3)
 
-       vn = two*(BCData(nn)%rface(j,k) - &
-            ww2(j,k,ivx)*BCData(nn)%norm(j,k,1) - &
-            ww2(j,k,ivy)*BCData(nn)%norm(j,k,2) - &
-            ww2(j,k,ivz)*BCData(nn)%norm(j,k,3))
+          ! The laminar and eddy viscosity, if present.
 
-       ww1(j,k,irho) = ww2(j,k,irho)
-       ww1(j,k,ivx)  = ww2(j,k,ivx) + vn*BCData(nn)%norm(j,k,1)
-       ww1(j,k,ivy)  = ww2(j,k,ivy) + vn*BCData(nn)%norm(j,k,2)
-       ww1(j,k,ivz)  = ww2(j,k,ivz) + vn*BCData(nn)%norm(j,k,3)
-
-       ! The laminar and eddy viscosity, if present.
-
-       if( viscous )    rlv1(j,k) = rlv2(j,k)
-       if( eddyModel ) rev1(j,k) = rev2(j,k)
-
-    enddo
+          if( viscous )    rlv1(j,k) = rlv2(j,k)
+          if( eddyModel ) rev1(j,k) = rev2(j,k)
+       end do
+    end do
+    ! enddo
 
     ! Compute the energy for these halo's.
 
