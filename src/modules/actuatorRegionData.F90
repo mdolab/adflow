@@ -22,10 +22,6 @@ module actuatorRegionData
      real(kind=realType) :: volume
 
      integer(kind=intType), dimension(:), allocatable :: blkPtr
-     
-     ! Set the defaults for solution relaxation 
-     real(kind=realType) :: relaxStart = -one
-     real(kind=realType) :: relaxEnd = -one
   end type actuatorRegionType
 
   integer(kind=intType), parameter :: nActuatorRegionsMax=10

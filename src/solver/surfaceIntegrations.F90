@@ -1222,6 +1222,7 @@ contains
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVal, globalVal
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral) :: localVald, globalVald
     real(kind=realType), dimension(nLocalValues, nTimeIntervalsSpectral, size(famLists, 1)) :: globalValues
+    real(Kind=realType), dimension(nCostFunction) :: funcValuesdSave
     integer(kind=intType) :: nn, sps, ierr, iGroup, nFam
     integer(kind=intType), dimension(:), pointer :: famList
 
@@ -1237,8 +1238,19 @@ contains
        localVal = zero
        localVald = zero
 
+       ! Save the input seeds
+       funcValuesdSave = funcValuesd(:, iGroup)
+
        ! Retrive the forward pass values from getSolution
        globalVal = globalValues(:, :, iGroup)
+
+       if (myid == 0) then
+          call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))
+          localVald = globalVald
+       end if
+
+       ! Reset the funcValues here and do the second pass.
+       funcValuesd(:, iGroup) = funcValuesdSave
 
        if (myid == 0) then
           call getCostFunctions_b(globalVal, globalVald, funcValues(:, iGroup), funcValuesd(:, iGroup))

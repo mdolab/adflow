@@ -909,7 +909,7 @@ contains
          nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset, timeLimit
     use iteration, only : cycling, approxTotalIts, converged, CFLMonitor, &
          groundLevel, iterTot, iterType, currentLevel, rhoRes0, totalR, t0Solver,&
-         rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor, linResMonitor, ordersConverged
+         rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor, linResMonitor
     use killSignals, only : globalSignal, localSignal, noSignal, routineFailed, signalWrite, &
          signalWriteQuit
     use monitor, only : writeGrid, writeSurface, writeVolume
@@ -932,7 +932,7 @@ contains
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
     logical :: absConv, relConv, firstNK, firstANK
-    real(kind=realType) :: nk_switchtol_save, curTime, ordersConvergedOld
+    real(kind=realType) :: nk_switchtol_save, curTime
 
     ! Allocate the memory for cycling.
     if (allocated(cycling)) then
@@ -1036,10 +1036,6 @@ contains
 
     ! Save the NKSwitch tol since it may be modified in the loop
     NK_SwitchTol_save = NK_switchtol
-
-    ! Set the converged order factor now:
-    ordersConverged = log10(totalR0/totalRStart)
-    ordersConvergedOld = ordersConverged
 
     nonlinearIteration: do while (approxTotalIts < nMGCycles)
 
@@ -1153,10 +1149,6 @@ contains
        call convergenceInfo
 
        totalRFinal = totalR
-
-       ! Update how far we are converged:
-       ordersConverged = max(log10(totalR0/totalR), ordersConvergedOld)
-       ordersConvergedOld = ordersConverged
 
        ! Check for divergence or nan here
        if(routineFailed) then

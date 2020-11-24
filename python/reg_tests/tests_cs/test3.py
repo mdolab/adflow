@@ -21,7 +21,7 @@ sys.path.append(os.path.abspath('../../'))
 if 'complex' in sys.argv:
     from python.pyADflow_C import ADFLOW_C as ADFLOW
     from pywarp import MBMesh_C as MBMesh
-else:
+else: 
     from python.pyADflow import ADFLOW
     from pywarp import  MBMesh
 # ###################################################################
@@ -53,7 +53,7 @@ aeroOptions.update(
 
 
 # Setup aeroproblem, cfdsolver
-ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.50, R=287.87,
+ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.50, 
                  reynolds=50000.0, reynoldsLength=3.25, T=293.15,
                  areaRef=45.5, chordRef=3.25, evalFuncs=['cd','cmz','lift'])
 ap.addDV('alpha')

@@ -21,7 +21,7 @@ sys.path.append(os.path.abspath('../../'))
 if 'complex' in sys.argv:
     from python.pyADflow_C import ADFLOW_C as ADFLOW
     from pywarp import MBMesh_C as MBMesh
-else:
+else: 
     from python.pyADflow import ADFLOW
     from pywarp import  MBMesh
 # ###################################################################
@@ -56,7 +56,7 @@ aeroOptions.update(
 )
 h = 1e-40
 # Setup aeroproblem, cfdsolver
-ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, R=287.87,
+ap = AeroProblem(name='mdo_tutorial', alpha=1.8, mach=0.80, 
                  altitude=10000.0, areaRef=45.5, chordRef=3.25, evalFuncs=['cl','cmz','drag'])
 
 ap.addDV('alpha')
@@ -68,7 +68,7 @@ else:
     DVGeo = DVGeometry('../inputFiles/mdo_tutorial_ffd.fmt', complex=False)
 
 nTwist = 2
-DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist),
+DVGeo.addRefAxis('wing', pyspline.Curve(x=numpy.linspace(5.0/4.0, 1.5/4.0+7.5, nTwist), 
                                         y=numpy.zeros(nTwist),
                                         z=numpy.linspace(0,14, nTwist), k=2))
 def twist(val, geo):
@@ -132,7 +132,7 @@ else:
         xRef = {'twist':[0.0, 0.0], 'span':[0.0], 'shape':numpy.zeros(72, dtype='D'), 'mach_mdo_tutorial':0.8}
         if ii == 0:
             xRef['twist'][0] += h*1j
-        elif ii == 1:
+        elif ii == 1:      
             xRef['span'][0] += h*1j
         elif ii == 2:
             xRef['shape'][13] += h*1j

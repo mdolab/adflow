@@ -400,8 +400,6 @@ contains
     use actuatorRegionData
     use blockPointers, only : volRef, dw, w
     use flowVarRefState, only : Pref, uRef
-    use communication
-    use iteration, only : ordersConverged
     implicit none
 
     ! Input
@@ -411,25 +409,12 @@ contains
 
     ! Working
     integer(kind=intType) :: i, j, k, ii, iStart, iEnd
-    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3), reDim, factor, oStart, oEnd
+    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3), reDim
 
     reDim = pRef*uRef
 
-    ! Compute the relaxation factor based on the ordersConverged
-
-    ! How far we are into the ramp:
-    if (ordersConverged < actuatorRegions(iRegion)%relaxStart) then
-       factor = zero
-    else if (ordersConverged > actuatorRegions(iRegion)%relaxEnd) then
-       factor = one
-    else ! In between
-       oStart = actuatorRegions(iRegion)%relaxStart 
-       oEnd   = actuatorRegions(iRegion)%relaxEnd
-       factor = (ordersConverged - oStart)/(oEnd - oStart)
-    end if
-
     ! Compute the constant force factor
-    fact = factor*actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume / pRef
+    fact = actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume / pRef
 
     ! Loop over the ranges for this block
     iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1

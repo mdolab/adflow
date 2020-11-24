@@ -569,7 +569,7 @@ class ADFLOW(AeroSolver):
            User supplied name to use for this family. It should not
            already be a name that is defined by the surfaces of the
            CGNS file.
-
+        
         isInflow : bool
            Flag to treat momentum forces as if it is an inflow or outflow
            face. Default is True
@@ -598,8 +598,7 @@ class ADFLOW(AeroSolver):
             pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(self, fileName, axis1, axis2, familyName,
-                          thrust=0.0, torque=0.0, relaxStart=None,
-                          relaxEnd=None):
+                          thrust=0.0, torque=0.0):
         """Add an actuator disk zone defined by the (closed) supplied
         in the plot3d file "fileName". Axis1 and Axis2 defines the
         physical extent of the region overwhich to apply the ramp
@@ -658,23 +657,10 @@ class ADFLOW(AeroSolver):
         famID = maxInd + 1
         self.families[familyName.lower()] = [famID]
 
-        if relaxStart is None and relaxEnd is None:
-            # No relaxation at all
-            relaxStart = -1.0
-            relaxEnd = -1.0
-
-        if relaxStart is None and relaxEnd is not None:
-            # Start at 0 orders if start is not given
-            relaxStart = 0.0
-            
-        if relaxEnd is None and relaxStart is not None:
-            raise Error("relaxEnd must be given is relaxStart is specified")
-
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, 
-            relaxStart, relaxEnd)
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque)
 
 
     def addUserFunction(self, funcName, functions, callBack):
@@ -1355,6 +1341,197 @@ class ADFLOW(AeroSolver):
             print('| %-30s: %10.3f sec'%('Complete Sensitivity Time',finalEvalSensTime - startEvalSensTime))
             print('+--------------------------------------------------+')
 
+    def evalFunctionsSensFwd(self, aeroProblem, funcsSens, evalFuncs=None):
+        """
+        Augmented function call for sensitivities added by C. 
+        Mader & M. H. Aa. Madsen
+
+        [Purpose]
+        The purpose of the present function is exactly the same as
+        its original twin-function, evalFunctionSens(), namely to
+        compute the sensitivites. The difference between the two 
+        functions is that we in the present function use tangent AD
+        code (i.e. forward code) instead of the usual reverse (adjoint)
+        AD code.
+
+        [Why bother?] - Yes, a lengthy text, but the only way you'll
+        understand when and why to use this function is to read it.
+
+        A bit of background here: MDOLab has had three overall 
+        functioning adjoint solver architectures:
+        1) Stencil-based architecture based on the work by 
+        C. Mader's Master thesis (approx 2006-2008)
+        2) An non-stencil, more general AD-joint architecture using
+        the (then called) SUmb solver. We note here, that this architecture
+        used the several functions needed for rotational setups purely in
+        forward mode, e.g:
+        - gridVelocitiesFineLevel_d()
+        - slipVelocitiesFineLevel_d()
+        and
+        - normalVelocitiesAllLevels_d()
+        Thus, it does not seem like the rotational feature was available for 
+        reverse code ('_b' functions).
+        3) The third and present (as of 2018, April) adjoint solver
+        architecture uses purely the reverse AD code (i.e. _b functions).
+        This is certainly the preferred setup BUT there is no rotational
+        feature in the present adjoint solver. One can verify, that the present
+        architecture indeed does use the reverse code by checking that the
+        evalFunctionsSens() function has a call to computeJacobianVectorProductBwd().
+
+        Now, the purpose of the present function will become evident.
+        The present functions uses the forward version:
+        computeJacobianVectorProductFwd() to construct the gradient. This
+        is useful since computeJacobianVectorProductFwd() calls the function
+        master_d() which is the hand-written recipe that calls all the 
+        differentiated code.
+
+        This means one can check master_d() against master_b() and verify
+        that they produce consistent gradients. 
+
+        [Same __doc__ as for computeJacobianVectorProductBwd():]
+        Evaluate the sensitivity of the desired functions given in
+        iterable object,'evalFuncs' and add them to the dictionary
+        'funcSens'. The keys in the funcs dictionary will be have an
+        _<ap.name> appended to them.
+
+        Parameters
+        ----------
+        funcSens : dict
+            Dictionary into which the function derivatives are saved.
+
+        evalFuncs : iterable object containing strings
+            The functions the user wants the derivatives of
+
+        evalFuncs : iterable object containing strings
+            The additaion functions the user wants returned that are
+            not already defined in the aeroProblem
+
+        Examples
+        --------
+        >>> funcSens = {}
+        >>> CFDsolver.evalFunctionsSens(ap1, funcSens, ['cl', 'cd'])
+        """
+
+        # This is the one and only gateway to the getting derivatives
+        # out of adflow. If you want a derivative, it should come from
+        # here.
+
+        startEvalSensTime = time.time()
+
+        self.setAeroProblem(aeroProblem)
+
+        aeroProblemTime = time.time()
+
+        if evalFuncs is None:
+            evalFuncs = sorted(list(self.curAP.evalFuncs))
+
+        # Make sure we have a list that has only lower-cased entries
+        tmp = []
+        for f in evalFuncs:
+            tmp.append(f.lower())
+        evalFuncs = tmp
+
+        adjointStartTime = {}
+        adjointEndTime = {}
+        totalSensEndTime = {}
+
+        # Do the functions one at a time:
+        for f in evalFuncs:
+            if f in self.adflowCostFunctions:
+                pass
+            elif f in self.adflowUserCostFunctions:
+                pass
+            else:
+                raise Error('Supplied %s function is not known to ADflow.'%f)
+
+            adjointStartTime[f] = time.time()
+
+            if self.comm.rank == 0:
+                print('Solving adjoint: %s'%f)
+
+            key = self.curAP.name + '_%s'% f
+            ptSetName = self.curAP.ptSetName
+
+            # Set dict structure for this derivative
+            funcsSens[key] = OrderedDict()
+
+            # Solve adjoint equation
+            self.solveAdjoint(aeroProblem, f)
+
+            adjointEndTime[f] = time.time()
+            # Now, due to the use of the super combined
+            # computeJacobianVectorProductBwd() routine, we can complete
+            # the total derivative computation in a single call. We
+            # simply seed resBar with *NEGATIVE* of the adjoint we
+            # just computed along with 1.0 for the objective and then
+            # everything completely falls out. This saves doing 4
+            # individual calls to: getdRdXvTPsi, getdIdx, getdIda,
+            # getdIdaTPsi.
+
+            # These are the reverse mode seeds
+            psi = -self.getAdjoint(f)
+
+            # Compute everything and update into the dictionary
+            residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
+            # We now have all terms in the total derivative equation:
+            # D: total derivative, d: partial
+            # [DJ/Dx] = [dJ/dx] - psi^T [dR/dx]
+            # since
+            # [dJ/dx]: funcsDeriv[myKey]
+            # psi: given above by self.getAdjoint(f)
+            # [dR/dx]: residualDeriv
+            # However, before we construct the total derivative we
+            # must remember to call MPI_SUM on psi and residualDeriv:
+            psi_dot_rDeriv_ = numpy.dot(psi,residualDeriv_)
+            AllReduced_psi_dot_rDeriv = self.comm.allreduce(psi_dot_rDeriv_,op=MPI.SUM)
+            # we do *NOT* MPI_SUM funcDeriv since that has already
+            # been done in the hand-differentiated code from
+            # /hg/adflow/src/solver/surfaceIntegrations.F90
+            # in the subroutine called getSolution_d() on l. 1182 
+            #
+            # Now, we can finally compute the total sensitivity:
+            TotalDeriv_ = funcDeriv_['mx'] + AllReduced_psi_dot_rDeriv
+            # Finally, we remember to store the total derivative in the
+            # dictionary:
+            if self.comm.rank == 0:
+                print('Total derivative',TotalDeriv_)
+                print('self.curAP.ptSetName',self.curAP.ptSetName)
+                print('self.curAP.name',self.curAP.name)
+                print('key',key)
+                print('f',f)
+
+            # now we prepare the output: # look at '_processAeroDerivatives()'
+            for dvName in self.curAP.DVs:
+                key = self.curAP.DVs[dvName].key.lower()
+                dvFam = self.curAP.DVs[dvName].family
+                if key=='mach': 
+                    print('here1',dvName)
+                    print('here2',key)
+                    print('here3',dvFam)
+                    print('stopping now')
+
+            # returns = [] # we append all DV-dicts here
+            # xdvaerobar = {} # prepare dict
+            # dJ_dxdvaero.update(self._processAeroDerivatives())
+            # returns.append(dJ_dxdvaero)
+            funcsSens[key].update({'mach_MACHTest_0':TotalDeriv_})
+
+            totalSensEndTime[f] = time.time()
+
+        finalEvalSensTime = time.time()
+
+        if self.getOption('printTiming') and self.comm.rank == 0:
+            print('+--------------------------------------------------+')
+            print('|')
+            print('| Adjoint Times:')
+            print('|')
+            for f in evalFuncs:
+                print('| %-30s: %10.3f sec'%('Adjoint Solve Time - %s'%(f),adjointEndTime[f]-adjointStartTime[f]))
+                print('| %-30s: %10.3f sec'%('Total Sensitivity Time - %s'%(f),totalSensEndTime[f] - adjointEndTime[f]))
+            print('|')
+            print('| %-30s: %10.3f sec'%('Complete Sensitivity Time',finalEvalSensTime - startEvalSensTime))
+            print('+--------------------------------------------------+')
+
     def solveCL(self, aeroProblem, CLStar, alpha0=None,
                 delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
                 maxIter = 20, nReset=25):
@@ -1397,8 +1574,6 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem)
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
-        else:
-            alpha0 = aeroProblem.alpha
 
         # We can stop here if we have failures in the mesh
         if self.adflow.killsignals.fatalfail:
@@ -4982,7 +5157,7 @@ class ADFLOW(AeroSolver):
     def _createZipperMesh(self):
         """Internal routine for generating the zipper mesh. This operation is
         postposted as long as possible and now it cannot wait any longer."""
-
+        
         # Verify if we already have previous failures, such as negative volumes
         self.adflow.killsignals.routinefailed = self.comm.allreduce(bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
 

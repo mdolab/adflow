@@ -37,17 +37,11 @@ contains
        return
     end if
 
-    if (clusterAreas(bSurf%cluster) < clusterAreas(aSurf%cluster)) then
+    if (clusterAreas(bSurf%cluster) <= clusterAreas(aSurf%cluster)) then
        ! B is smaller so we don't need to do anything
        return
-    else if (clusterAreas(bSurf%cluster) == clusterAreas(aSurf%cluster)) then 
-       ! If the areas are *exactly* equal (which can happen when we have
-       ! replicated grids) cut by the cluster index.
-       
-       if (bSurf%cluster < aSurf%cluster) then 
-          return 
-       end if
     end if
+
     nInterpol = 0
     ! Allocate the (pointer) memory that may be resized as necessary for
     ! the singlePoint search routine.

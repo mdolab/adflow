@@ -43,12 +43,12 @@ options.update(
 )
 
 # Setup aeroproblem, cfdsolver, mesh and geometry.
-ap = AeroProblem(name='mdo_tutorial', alpha=1.8, beta=0.0, mach=0.50,
-                 P=137.0, T=293.15, R=287.87,
+ap = AeroProblem(name='mdo_tutorial', alpha=1.8, beta=0.0, mach=0.50, 
+                 P=137.0, T=293.15,
                  areaRef=45.5, chordRef=3.25, xRef=0.0, yRef=0.0, zRef=0.0,
                  evalFuncs=defaultFuncList)
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
 
     solve = True
     if 'solve' not in sys.argv:
