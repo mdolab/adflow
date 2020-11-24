@@ -177,19 +177,19 @@ residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%F) > \
 fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) > \
                           (w, timeRef, vol, si, sj, sk, p, dw) \
 \
-fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw) > \
+fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw, gammainf) > \
                              (w, pInfCOrr, rhoInf, p, fw) \
 \
-fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw) > \
+fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > \
                              (w, pInfCorr, si, sj, sk, p, fw) \
 \
-fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw) > \
+fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw, gammainf, rhoinf, pinfcorr) > \
                                    (w, p, fw) \
 \
-fluxes%inviscidDissFluxMatrixApprox(w, p, fw) > \
+fluxes%inviscidDissFluxMatrixApprox(w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk) > \
                                    (w, p, fw) \
 \
-fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw) > \
+fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > \
                          (w, si, sj, sk, p, fw) \
 \
 flowUtils%computeSpeedOfSoundSquared(w, p) > \
@@ -201,7 +201,7 @@ flowUtils%allNodalGradients(w, vol, si, sj, sk, aa) > \
 fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
                   (w, x, si, sj, sk, fw, viscsubface%tau) \
 \
-fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw) > \
+fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw, si, sj, sk) > \
                         (w, x, fw) \
 \
 adjointExtra%sumDwandFw(fw, dw) > (dw) \
@@ -228,6 +228,12 @@ oversetUtilities%newtonUpdate(xCen, blk, frac) > \
 oversetUtilities%fracToWeights(frac) > \
 			      (weights) \
 \
+adjointExtra%slipVelocitiesFineLevel_block(gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, x) > \
+			      (bcdata.uslip) \
+adjointExtra%gridvelocitiesfinelevel_block(gammainf,pinf,timeref,rhoinf,veldirfreestream,machgrid,x,si,sj,sk) > \
+			      (sfacei,sfacej,s,sfacek) \
+adjointExtra%normalvelocities_block(sfacei,sfacej,sfacek,si,sj,sk) > \
+			      (bcdata.rface) \
 "
 
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
