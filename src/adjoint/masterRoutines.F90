@@ -289,7 +289,7 @@ contains
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal, dummyReald
     ! mham
-    logical :: useOldCoor ! for solverutils_d() functions
+    logical :: useOldCoor ! for adjointextra_d() functions
     useOldCoor = .FALSE.
 
     fSize = size(forcesDot, 2)
@@ -849,19 +849,19 @@ contains
              end do
           end if
           ! fake forward sweep
-          ! if (myID == 0) then
-          !    print*,'R0-mham: entering grid'
-          ! end if
-          ! call gridvelocitiesfinelevel_block(useoldcoor, t, sps)
-          ! if (myID == 0) then
-          !    print*,'R0-mham: entering normal'
-          ! endif
-          ! call normalvelocities_block(sps)
-          ! if (myID == 0) then
-          !    print*,'R0-mham: entering slip'
-          ! end if
-          ! call slipvelocitiesfinelevel_block(useoldcoor, t, sps)
-          ! ! required for ts
+          if (myID == 0) then
+             print*,'R0-mham: entering grid'
+          end if
+          call gridvelocitiesfinelevel_block(useoldcoor, t, sps)
+          if (myID == 0) then
+             print*,'R0-mham: entering normal'
+          endif
+          call normalvelocities_block(sps)
+          if (myID == 0) then
+             print*,'R0-mham: entering slip'
+          end if
+          call slipvelocitiesfinelevel_block(useoldcoor, t, sps)
+          ! required for ts
           if (myID == 0) then
              print*,'R0-mham: entering slip_b'
           end if

@@ -1497,6 +1497,13 @@ class ADFLOW(AeroSolver):
             # residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'mach':1.0},funcDeriv=True,residualDeriv=True)
             #TESTING>
             residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'twist':1.0},funcDeriv=True,residualDeriv=True)
+            if self.comm.rank == 0:
+                print('')
+                for keys_,val_ in zip(self.DVGeo.getValues().keys(),self.DVGeo.getValues().values()):
+                    print('Now printing the ')
+                    print('keys_', keys_)
+                    print('val_', val_)
+            #residualDeriv_,funcDeriv_ = self.computeJacobianVectorProductFwd(xDvDot={'twist':numpy.array([1.0,0.,0.,0.,0.])},funcDeriv=True,residualDeriv=True)
 
 
             #
@@ -1527,7 +1534,7 @@ class ADFLOW(AeroSolver):
                 print('self.curAP.name: ',self.curAP.name)
                 print('key: ',key)
                 print('f: ',f)
-                print('self.curAP.DVs: ',self.curAP.DVs)
+                print('self.curAP.DVs: ',self.curAP.DVs) # empty for twist!
 
             # now we prepare the output: # look at '_processAeroDerivatives()'
             for dvName in self.curAP.DVs:
@@ -1540,6 +1547,15 @@ class ADFLOW(AeroSolver):
                         print('dvFan: ',dvFam)
                         print('stopping now')
                     funcsSens[key].update(self._process2_outer(dvName,TotalDeriv_))
+            if self.comm.rank == 0:
+                print('')
+                print('pyADflow: trying to set twist deriv now')
+                print('           using process_2')
+            for keys_,val_ in zip(self.DVGeo.getValues().keys(),self.DVGeo.getValues().values()):
+                funcsSens[key].update(self._process2_outer(keys_,TotalDeriv_))
+            if self.comm.rank == 0:
+                print('TRYINE smt')
+
             # returns = [] # we append all DV-dicts here
             # xdvaerobar = {} # prepare dict
             # dJ_dxdvaero.update(self._processAeroDerivatives())

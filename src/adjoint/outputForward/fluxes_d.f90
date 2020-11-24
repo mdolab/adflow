@@ -8396,11 +8396,12 @@ contains
   end subroutine viscousflux
 !  differentiation of viscousfluxapprox in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: *rev *aa *w *rlv *x *fw
+!   with respect to varying inputs: *rev *aa *w *rlv *x *si *sj
+!                *sk *fw
 !   rw status of diff variables: *rev:in *aa:in *w:in *rlv:in *x:in
-!                *fw:in-out
+!                *si:in *sj:in *sk:in *fw:in-out
 !   plus diff mem management of: rev:in aa:in w:in rlv:in x:in
-!                fw:in
+!                si:in sj:in sk:in fw:in
   subroutine viscousfluxapprox_d()
     use constants
     use blockpointers
@@ -8554,24 +8555,31 @@ contains
           wbard = half*(wd(i, j, k, ivz)+wd(i+1, j, k, ivz))
           wbar = half*(w(i, j, k, ivz)+w(i+1, j, k, ivz))
 ! compute the viscous fluxes for this i-face.
-          fmxd = si(i, j, k, 1)*tauxxd + si(i, j, k, 2)*tauxyd + si(i, j&
-&           , k, 3)*tauxzd
+          fmxd = tauxxd*si(i, j, k, 1) + tauxx*sid(i, j, k, 1) + tauxyd*&
+&           si(i, j, k, 2) + tauxy*sid(i, j, k, 2) + tauxzd*si(i, j, k, &
+&           3) + tauxz*sid(i, j, k, 3)
           fmx = tauxx*si(i, j, k, 1) + tauxy*si(i, j, k, 2) + tauxz*si(i&
 &           , j, k, 3)
-          fmyd = si(i, j, k, 1)*tauxyd + si(i, j, k, 2)*tauyyd + si(i, j&
-&           , k, 3)*tauyzd
+          fmyd = tauxyd*si(i, j, k, 1) + tauxy*sid(i, j, k, 1) + tauyyd*&
+&           si(i, j, k, 2) + tauyy*sid(i, j, k, 2) + tauyzd*si(i, j, k, &
+&           3) + tauyz*sid(i, j, k, 3)
           fmy = tauxy*si(i, j, k, 1) + tauyy*si(i, j, k, 2) + tauyz*si(i&
 &           , j, k, 3)
-          fmzd = si(i, j, k, 1)*tauxzd + si(i, j, k, 2)*tauyzd + si(i, j&
-&           , k, 3)*tauzzd
+          fmzd = tauxzd*si(i, j, k, 1) + tauxz*sid(i, j, k, 1) + tauyzd*&
+&           si(i, j, k, 2) + tauyz*sid(i, j, k, 2) + tauzzd*si(i, j, k, &
+&           3) + tauzz*sid(i, j, k, 3)
           fmz = tauxz*si(i, j, k, 1) + tauyz*si(i, j, k, 2) + tauzz*si(i&
 &           , j, k, 3)
-          frhoed = si(i, j, k, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+&
-&           vbar*tauxyd+wbard*tauxz+wbar*tauxzd) + si(i, j, k, 2)*(ubard&
-&           *tauxy+ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*&
-&           tauyzd) + si(i, j, k, 3)*(ubard*tauxz+ubar*tauxzd+vbard*&
-&           tauyz+vbar*tauyzd+wbard*tauzz+wbar*tauzzd) - si(i, j, k, 1)*&
-&           q_xd - si(i, j, k, 2)*q_yd - si(i, j, k, 3)*q_zd
+          frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
+&           wbard*tauxz+wbar*tauxzd)*si(i, j, k, 1) + (ubar*tauxx+vbar*&
+&           tauxy+wbar*tauxz)*sid(i, j, k, 1) + (ubard*tauxy+ubar*tauxyd&
+&           +vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*si(i, j, k&
+&           , 2) + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*sid(i, j, k, 2) + &
+&           (ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz&
+&           +wbar*tauzzd)*si(i, j, k, 3) + (ubar*tauxz+vbar*tauyz+wbar*&
+&           tauzz)*sid(i, j, k, 3) - q_xd*si(i, j, k, 1) - q_x*sid(i, j&
+&           , k, 1) - q_yd*si(i, j, k, 2) - q_y*sid(i, j, k, 2) - q_zd*&
+&           si(i, j, k, 3) - q_z*sid(i, j, k, 3)
           frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*si(i, j, k, 1) + (&
 &           ubar*tauxy+vbar*tauyy+wbar*tauyz)*si(i, j, k, 2) + (ubar*&
 &           tauxz+vbar*tauyz+wbar*tauzz)*si(i, j, k, 3) - q_x*si(i, j, k&
@@ -8711,24 +8719,31 @@ contains
           wbard = half*(wd(i, j, k, ivz)+wd(i, j+1, k, ivz))
           wbar = half*(w(i, j, k, ivz)+w(i, j+1, k, ivz))
 ! compute the viscous fluxes for this j-face.
-          fmxd = sj(i, j, k, 1)*tauxxd + sj(i, j, k, 2)*tauxyd + sj(i, j&
-&           , k, 3)*tauxzd
+          fmxd = tauxxd*sj(i, j, k, 1) + tauxx*sjd(i, j, k, 1) + tauxyd*&
+&           sj(i, j, k, 2) + tauxy*sjd(i, j, k, 2) + tauxzd*sj(i, j, k, &
+&           3) + tauxz*sjd(i, j, k, 3)
           fmx = tauxx*sj(i, j, k, 1) + tauxy*sj(i, j, k, 2) + tauxz*sj(i&
 &           , j, k, 3)
-          fmyd = sj(i, j, k, 1)*tauxyd + sj(i, j, k, 2)*tauyyd + sj(i, j&
-&           , k, 3)*tauyzd
+          fmyd = tauxyd*sj(i, j, k, 1) + tauxy*sjd(i, j, k, 1) + tauyyd*&
+&           sj(i, j, k, 2) + tauyy*sjd(i, j, k, 2) + tauyzd*sj(i, j, k, &
+&           3) + tauyz*sjd(i, j, k, 3)
           fmy = tauxy*sj(i, j, k, 1) + tauyy*sj(i, j, k, 2) + tauyz*sj(i&
 &           , j, k, 3)
-          fmzd = sj(i, j, k, 1)*tauxzd + sj(i, j, k, 2)*tauyzd + sj(i, j&
-&           , k, 3)*tauzzd
+          fmzd = tauxzd*sj(i, j, k, 1) + tauxz*sjd(i, j, k, 1) + tauyzd*&
+&           sj(i, j, k, 2) + tauyz*sjd(i, j, k, 2) + tauzzd*sj(i, j, k, &
+&           3) + tauzz*sjd(i, j, k, 3)
           fmz = tauxz*sj(i, j, k, 1) + tauyz*sj(i, j, k, 2) + tauzz*sj(i&
 &           , j, k, 3)
-          frhoed = sj(i, j, k, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+&
-&           vbar*tauxyd+wbard*tauxz+wbar*tauxzd) + sj(i, j, k, 2)*(ubard&
-&           *tauxy+ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*&
-&           tauyzd) + sj(i, j, k, 3)*(ubard*tauxz+ubar*tauxzd+vbard*&
-&           tauyz+vbar*tauyzd+wbard*tauzz+wbar*tauzzd) - sj(i, j, k, 1)*&
-&           q_xd - sj(i, j, k, 2)*q_yd - sj(i, j, k, 3)*q_zd
+          frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
+&           wbard*tauxz+wbar*tauxzd)*sj(i, j, k, 1) + (ubar*tauxx+vbar*&
+&           tauxy+wbar*tauxz)*sjd(i, j, k, 1) + (ubard*tauxy+ubar*tauxyd&
+&           +vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*sj(i, j, k&
+&           , 2) + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*sjd(i, j, k, 2) + &
+&           (ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz&
+&           +wbar*tauzzd)*sj(i, j, k, 3) + (ubar*tauxz+vbar*tauyz+wbar*&
+&           tauzz)*sjd(i, j, k, 3) - q_xd*sj(i, j, k, 1) - q_x*sjd(i, j&
+&           , k, 1) - q_yd*sj(i, j, k, 2) - q_y*sjd(i, j, k, 2) - q_zd*&
+&           sj(i, j, k, 3) - q_z*sjd(i, j, k, 3)
           frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sj(i, j, k, 1) + (&
 &           ubar*tauxy+vbar*tauyy+wbar*tauyz)*sj(i, j, k, 2) + (ubar*&
 &           tauxz+vbar*tauyz+wbar*tauzz)*sj(i, j, k, 3) - q_x*sj(i, j, k&
@@ -8868,24 +8883,31 @@ contains
           wbard = half*(wd(i, j, k, ivz)+wd(i, j, k+1, ivz))
           wbar = half*(w(i, j, k, ivz)+w(i, j, k+1, ivz))
 ! compute the viscous fluxes for this j-face.
-          fmxd = sk(i, j, k, 1)*tauxxd + sk(i, j, k, 2)*tauxyd + sk(i, j&
-&           , k, 3)*tauxzd
+          fmxd = tauxxd*sk(i, j, k, 1) + tauxx*skd(i, j, k, 1) + tauxyd*&
+&           sk(i, j, k, 2) + tauxy*skd(i, j, k, 2) + tauxzd*sk(i, j, k, &
+&           3) + tauxz*skd(i, j, k, 3)
           fmx = tauxx*sk(i, j, k, 1) + tauxy*sk(i, j, k, 2) + tauxz*sk(i&
 &           , j, k, 3)
-          fmyd = sk(i, j, k, 1)*tauxyd + sk(i, j, k, 2)*tauyyd + sk(i, j&
-&           , k, 3)*tauyzd
+          fmyd = tauxyd*sk(i, j, k, 1) + tauxy*skd(i, j, k, 1) + tauyyd*&
+&           sk(i, j, k, 2) + tauyy*skd(i, j, k, 2) + tauyzd*sk(i, j, k, &
+&           3) + tauyz*skd(i, j, k, 3)
           fmy = tauxy*sk(i, j, k, 1) + tauyy*sk(i, j, k, 2) + tauyz*sk(i&
 &           , j, k, 3)
-          fmzd = sk(i, j, k, 1)*tauxzd + sk(i, j, k, 2)*tauyzd + sk(i, j&
-&           , k, 3)*tauzzd
+          fmzd = tauxzd*sk(i, j, k, 1) + tauxz*skd(i, j, k, 1) + tauyzd*&
+&           sk(i, j, k, 2) + tauyz*skd(i, j, k, 2) + tauzzd*sk(i, j, k, &
+&           3) + tauzz*skd(i, j, k, 3)
           fmz = tauxz*sk(i, j, k, 1) + tauyz*sk(i, j, k, 2) + tauzz*sk(i&
 &           , j, k, 3)
-          frhoed = sk(i, j, k, 1)*(ubard*tauxx+ubar*tauxxd+vbard*tauxy+&
-&           vbar*tauxyd+wbard*tauxz+wbar*tauxzd) + sk(i, j, k, 2)*(ubard&
-&           *tauxy+ubar*tauxyd+vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*&
-&           tauyzd) + sk(i, j, k, 3)*(ubard*tauxz+ubar*tauxzd+vbard*&
-&           tauyz+vbar*tauyzd+wbard*tauzz+wbar*tauzzd) - sk(i, j, k, 1)*&
-&           q_xd - sk(i, j, k, 2)*q_yd - sk(i, j, k, 3)*q_zd
+          frhoed = (ubard*tauxx+ubar*tauxxd+vbard*tauxy+vbar*tauxyd+&
+&           wbard*tauxz+wbar*tauxzd)*sk(i, j, k, 1) + (ubar*tauxx+vbar*&
+&           tauxy+wbar*tauxz)*skd(i, j, k, 1) + (ubard*tauxy+ubar*tauxyd&
+&           +vbard*tauyy+vbar*tauyyd+wbard*tauyz+wbar*tauyzd)*sk(i, j, k&
+&           , 2) + (ubar*tauxy+vbar*tauyy+wbar*tauyz)*skd(i, j, k, 2) + &
+&           (ubard*tauxz+ubar*tauxzd+vbard*tauyz+vbar*tauyzd+wbard*tauzz&
+&           +wbar*tauzzd)*sk(i, j, k, 3) + (ubar*tauxz+vbar*tauyz+wbar*&
+&           tauzz)*skd(i, j, k, 3) - q_xd*sk(i, j, k, 1) - q_x*skd(i, j&
+&           , k, 1) - q_yd*sk(i, j, k, 2) - q_y*skd(i, j, k, 2) - q_zd*&
+&           sk(i, j, k, 3) - q_z*skd(i, j, k, 3)
           frhoe = (ubar*tauxx+vbar*tauxy+wbar*tauxz)*sk(i, j, k, 1) + (&
 &           ubar*tauxy+vbar*tauyy+wbar*tauyz)*sk(i, j, k, 2) + (ubar*&
 &           tauxz+vbar*tauyz+wbar*tauzz)*sk(i, j, k, 3) - q_x*sk(i, j, k&

@@ -768,66 +768,73 @@ contains
     real(kind=realtype) :: rhok
     real(kind=realtype) :: rhokd
     integer(kind=inttype) :: walltreatment
-    intrinsic mod
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
     rhokd = 0.0_8
 ! loop over the generic subface to set the state in the
 ! halo cells.
-    do ii=0,isize*jsize-1
-      i = mod(ii, isize) + istart
-      j = ii/isize + jstart
+! !$ad ii-loop
+! do ii=0,isize*jsize-1
+!    i = mod(ii, isize) + istart ! mham: istart:(istart+isize-1))
+!    j = ii/isize + jstart ! mham: jstart:(jstart+jsize-1))
+    do j=jstart,jstart+jsize-1
+      do i=istart,istart+isize-1
 ! set the value of rhok if a correcton must be applied.
 ! it probably does not matter too much, because k is very
 ! small near the wall.
-      if (correctfork) then
-        rhokd = ww2d(i, j, irho)*ww2(i, j, itu1) + ww2(i, j, irho)*ww2d(&
-&         i, j, itu1)
-        rhok = ww2(i, j, irho)*ww2(i, j, itu1)
-      end if
+        if (correctfork) then
+          rhokd = ww2d(i, j, irho)*ww2(i, j, itu1) + ww2(i, j, irho)*&
+&           ww2d(i, j, itu1)
+          rhok = ww2(i, j, irho)*ww2(i, j, itu1)
+        end if
 ! determine the variables in the halo. as the spacing
 ! is very small a constant pressure boundary condition
 ! (except for the k correction) is okay. take the slip
 ! velocity into account.
-      ww1d(i, j, irho) = ww2d(i, j, irho)
-      ww1(i, j, irho) = ww2(i, j, irho)
-      ww1d(i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - ww2d(i, j, ivx)
-      ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
-      ww1d(i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - ww2d(i, j, ivy)
-      ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
-      ww1d(i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - ww2d(i, j, ivz)
-      ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
+        ww1d(i, j, irho) = ww2d(i, j, irho)
+        ww1(i, j, irho) = ww2(i, j, irho)
+        ww1d(i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - ww2d(i, j, &
+&         ivx)
+        ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
+        ww1d(i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - ww2d(i, j, &
+&         ivy)
+        ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
+        ww1d(i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - ww2d(i, j, &
+&         ivz)
+        ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
 ! set the viscosities. there is no need to test for a
 ! viscous problem of course. the eddy viscosity is
 ! set to the negative value, as it should be zero on
 ! the wall.
-      rlv1d(i, j) = rlv2d(i, j)
-      rlv1(i, j) = rlv2(i, j)
-      if (eddymodel) then
-        rev1d(i, j) = -rev2d(i, j)
-        rev1(i, j) = -rev2(i, j)
-      end if
+        rlv1d(i, j) = rlv2d(i, j)
+        rlv1(i, j) = rlv2(i, j)
+        if (eddymodel) then
+          rev1d(i, j) = -rev2d(i, j)
+          rev1(i, j) = -rev2(i, j)
+        end if
 ! make sure that on the coarser grids the constant pressure
 ! boundary condition is used.
-      walltreatment = viscwallbctreatment
-      if (currentlevel .gt. groundlevel) walltreatment = &
-&         constantpressure
-      select case  (walltreatment) 
-      case (constantpressure) 
+        walltreatment = viscwallbctreatment
+        if (currentlevel .gt. groundlevel) walltreatment = &
+&           constantpressure
+        select case  (walltreatment) 
+        case (constantpressure) 
 ! constant pressure. set the gradient to zero.
-        pp1d(i, j) = pp2d(i, j) - four*third*rhokd
-        pp1(i, j) = pp2(i, j) - four*third*rhok
-      case default
-        pp1d(i, j) = 2*pp2d(i, j)
-        pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
+          pp1d(i, j) = pp2d(i, j) - four*third*rhokd
+          pp1(i, j) = pp2(i, j) - four*third*rhok
+        case default
+          pp1d(i, j) = 2*pp2d(i, j)
+          pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
 ! adjust value if pressure is negative
-        if (pp1(i, j) .le. zero) then
-          pp1d(i, j) = pp2d(i, j)
-          pp1(i, j) = pp2(i, j)
-        end if
-      end select
+          if (pp1(i, j) .le. zero) then
+            pp1d(i, j) = pp2d(i, j)
+            pp1(i, j) = pp2(i, j)
+          end if
+        end select
+      end do
     end do
+! end do
 ! compute the energy for these halo's.
     call computeetot_d(ww1, ww1d, pp1, pp1d, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -850,48 +857,52 @@ contains
     integer(kind=inttype) :: i, j, ii
     real(kind=realtype) :: rhok
     integer(kind=inttype) :: walltreatment
-    intrinsic mod
 ! initialize rhok to zero. this will be overwritten if a
 ! correction for k must be applied.
     rhok = zero
 ! loop over the generic subface to set the state in the
 ! halo cells.
-    do ii=0,isize*jsize-1
-      i = mod(ii, isize) + istart
-      j = ii/isize + jstart
+! !$ad ii-loop
+! do ii=0,isize*jsize-1
+!    i = mod(ii, isize) + istart ! mham: istart:(istart+isize-1))
+!    j = ii/isize + jstart ! mham: jstart:(jstart+jsize-1))
+    do j=jstart,jstart+jsize-1
+      do i=istart,istart+isize-1
 ! set the value of rhok if a correcton must be applied.
 ! it probably does not matter too much, because k is very
 ! small near the wall.
-      if (correctfork) rhok = ww2(i, j, irho)*ww2(i, j, itu1)
+        if (correctfork) rhok = ww2(i, j, irho)*ww2(i, j, itu1)
 ! determine the variables in the halo. as the spacing
 ! is very small a constant pressure boundary condition
 ! (except for the k correction) is okay. take the slip
 ! velocity into account.
-      ww1(i, j, irho) = ww2(i, j, irho)
-      ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
-      ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
-      ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
+        ww1(i, j, irho) = ww2(i, j, irho)
+        ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
+        ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
+        ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
 ! set the viscosities. there is no need to test for a
 ! viscous problem of course. the eddy viscosity is
 ! set to the negative value, as it should be zero on
 ! the wall.
-      rlv1(i, j) = rlv2(i, j)
-      if (eddymodel) rev1(i, j) = -rev2(i, j)
+        rlv1(i, j) = rlv2(i, j)
+        if (eddymodel) rev1(i, j) = -rev2(i, j)
 ! make sure that on the coarser grids the constant pressure
 ! boundary condition is used.
-      walltreatment = viscwallbctreatment
-      if (currentlevel .gt. groundlevel) walltreatment = &
-&         constantpressure
-      select case  (walltreatment) 
-      case (constantpressure) 
+        walltreatment = viscwallbctreatment
+        if (currentlevel .gt. groundlevel) walltreatment = &
+&           constantpressure
+        select case  (walltreatment) 
+        case (constantpressure) 
 ! constant pressure. set the gradient to zero.
-        pp1(i, j) = pp2(i, j) - four*third*rhok
-      case default
-        pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
+          pp1(i, j) = pp2(i, j) - four*third*rhok
+        case default
+          pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
 ! adjust value if pressure is negative
-        if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
-      end select
+          if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
+        end select
+      end do
     end do
+! end do
 ! compute the energy for these halo's.
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -2172,44 +2183,45 @@ contains
     end select
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
-    do ii=0,isize*jsize-1
-      j = mod(ii, isize) + istart
-      k = ii/isize + jstart
+    do k=jstart,jstart+jsize-1
+      do j=istart,istart+isize-1
 ! compute the pressure density and velocity in the
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1d(j, k) = mydim_d(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j, k&
-&       ), pp1(j, k))
-      vnd = two*(bcdatad(nn)%rface(j, k)-ww2d(j, k, ivx)*bcdata(nn)%norm&
-&       (j, k, 1)-ww2(j, k, ivx)*bcdatad(nn)%norm(j, k, 1)-ww2d(j, k, &
-&       ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivy)*bcdatad(nn)%norm(j&
-&       , k, 2)-ww2d(j, k, ivz)*bcdata(nn)%norm(j, k, 3)-ww2(j, k, ivz)*&
-&       bcdatad(nn)%norm(j, k, 3))
-      vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
-&       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
-&       bcdata(nn)%norm(j, k, 3))
-      ww1d(j, k, irho) = ww2d(j, k, irho)
-      ww1(j, k, irho) = ww2(j, k, irho)
-      ww1d(j, k, ivx) = ww2d(j, k, ivx) + vnd*bcdata(nn)%norm(j, k, 1) +&
-&       vn*bcdatad(nn)%norm(j, k, 1)
-      ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
-      ww1d(j, k, ivy) = ww2d(j, k, ivy) + vnd*bcdata(nn)%norm(j, k, 2) +&
-&       vn*bcdatad(nn)%norm(j, k, 2)
-      ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
-      ww1d(j, k, ivz) = ww2d(j, k, ivz) + vnd*bcdata(nn)%norm(j, k, 3) +&
-&       vn*bcdatad(nn)%norm(j, k, 3)
-      ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
+        pp1d(j, k) = mydim_d(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j&
+&         , k), pp1(j, k))
+        vnd = two*(bcdatad(nn)%rface(j, k)-ww2d(j, k, ivx)*bcdata(nn)%&
+&         norm(j, k, 1)-ww2(j, k, ivx)*bcdatad(nn)%norm(j, k, 1)-ww2d(j&
+&         , k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivy)*bcdatad(nn)%&
+&         norm(j, k, 2)-ww2d(j, k, ivz)*bcdata(nn)%norm(j, k, 3)-ww2(j, &
+&         k, ivz)*bcdatad(nn)%norm(j, k, 3))
+        vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(&
+&         j, k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz&
+&         )*bcdata(nn)%norm(j, k, 3))
+        ww1d(j, k, irho) = ww2d(j, k, irho)
+        ww1(j, k, irho) = ww2(j, k, irho)
+        ww1d(j, k, ivx) = ww2d(j, k, ivx) + vnd*bcdata(nn)%norm(j, k, 1)&
+&         + vn*bcdatad(nn)%norm(j, k, 1)
+        ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
+        ww1d(j, k, ivy) = ww2d(j, k, ivy) + vnd*bcdata(nn)%norm(j, k, 2)&
+&         + vn*bcdatad(nn)%norm(j, k, 2)
+        ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
+        ww1d(j, k, ivz) = ww2d(j, k, ivz) + vnd*bcdata(nn)%norm(j, k, 3)&
+&         + vn*bcdatad(nn)%norm(j, k, 3)
+        ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
 ! the laminar and eddy viscosity, if present.
-      if (viscous) then
-        rlv1d(j, k) = rlv2d(j, k)
-        rlv1(j, k) = rlv2(j, k)
-      end if
-      if (eddymodel) then
-        rev1d(j, k) = rev2d(j, k)
-        rev1(j, k) = rev2(j, k)
-      end if
+        if (viscous) then
+          rlv1d(j, k) = rlv2d(j, k)
+          rlv1(j, k) = rlv2(j, k)
+        end if
+        if (eddymodel) then
+          rev1d(j, k) = rev2d(j, k)
+          rev1(j, k) = rev2(j, k)
+        end if
+      end do
     end do
+! enddo
 ! compute the energy for these halo's.
     call computeetot_d(ww1, ww1d, pp1, pp1d, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -2386,25 +2398,26 @@ contains
     end select
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
-    do ii=0,isize*jsize-1
-      j = mod(ii, isize) + istart
-      k = ii/isize + jstart
+    do k=jstart,jstart+jsize-1
+      do j=istart,istart+isize-1
 ! compute the pressure density and velocity in the
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1(j, k) = mydim(pp2(j, k), grad(j, k))
-      vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
-&       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
-&       bcdata(nn)%norm(j, k, 3))
-      ww1(j, k, irho) = ww2(j, k, irho)
-      ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
-      ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
-      ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
+        pp1(j, k) = mydim(pp2(j, k), grad(j, k))
+        vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(&
+&         j, k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz&
+&         )*bcdata(nn)%norm(j, k, 3))
+        ww1(j, k, irho) = ww2(j, k, irho)
+        ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
+        ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
+        ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
 ! the laminar and eddy viscosity, if present.
-      if (viscous) rlv1(j, k) = rlv2(j, k)
-      if (eddymodel) rev1(j, k) = rev2(j, k)
+        if (viscous) rlv1(j, k) = rlv2(j, k)
+        if (eddymodel) rev1(j, k) = rev2(j, k)
+      end do
     end do
+! enddo
 ! compute the energy for these halo's.
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -2414,13 +2427,13 @@ contains
 !  differentiation of bcfarfield in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
-!   with respect to varying inputs: gammainf winf pinfcorr *rev0
-!                *rev1 *rev2 *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0
-!                *ww1 *ww2 *(*bcdata.norm)
-!   rw status of diff variables: gammainf:in winf:in pinfcorr:in
-!                *rev0:in-out *rev1:in-out *rev2:in *pp0:in-out
-!                *pp1:in-out *pp2:in *rlv0:in-out *rlv1:in-out
-!                *rlv2:in *ww0:in-out *ww1:in-out *ww2:in *(*bcdata.norm):in
+!   with respect to varying inputs: winf pinfcorr *rev0 *rev1 *rev2
+!                *pp0 *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                *(*bcdata.norm)
+!   rw status of diff variables: winf:in pinfcorr:in *rev0:in-out
+!                *rev1:in-out *rev2:in *pp0:in-out *pp1:in-out
+!                *pp2:in *rlv0:in-out *rlv1:in-out *rlv2:in *ww0:in-out
+!                *ww1:in-out *ww2:in *(*bcdata.norm):in
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.norm:in
@@ -2442,7 +2455,7 @@ contains
     integer(kind=inttype) :: nn, i, j, k, l, ii
     real(kind=realtype) :: nnx, nny, nnz
     real(kind=realtype) :: gm1, ovgm1, ac1, ac2
-    real(kind=realtype) :: gm1d, ovgm1d, ac1d, ac2d
+    real(kind=realtype) :: ac1d, ac2d
     real(kind=realtype) :: r0, u0, v0, w0, qn0, vn0, c0, s0
     real(kind=realtype) :: r0d, u0d, v0d, w0d, qn0d, c0d, s0d
     real(kind=realtype) :: re, ue, ve, we, qne, ce
@@ -2458,9 +2471,7 @@ contains
     real(kind=realtype) :: pwx1
     real(kind=realtype) :: pwx1d
 ! some constants needed to compute the riemann invariants.
-    gm1d = gammainfd
     gm1 = gammainf - one
-    ovgm1d = -(one*gm1d/gm1**2)
     ovgm1 = one/gm1
 ! compute the three velocity components, the speed of sound and
 ! the entropy of the free stream.
@@ -2472,8 +2483,7 @@ contains
     v0 = winf(ivy)
     w0d = winfd(ivz)
     w0 = winf(ivz)
-    arg1d = (gammainfd*pinfcorr+gammainf*pinfcorrd)*r0 + gammainf*&
-&     pinfcorr*r0d
+    arg1d = gammainf*(pinfcorrd*r0+pinfcorr*r0d)
     arg1 = gammainf*pinfcorr*r0
     if (arg1 .eq. 0.0_8) then
       c0d = 0.0_8
@@ -2481,17 +2491,11 @@ contains
       c0d = arg1d/(2.0*sqrt(arg1))
     end if
     c0 = sqrt(arg1)
-    if (winf(irho) .gt. 0.0_8) then
-      pwr1d = winf(irho)**gammainf*(log(winf(irho))*gammainfd+gammainf*&
-&       winfd(irho)/winf(irho))
-    else if (winf(irho) .eq. 0.0_8) then
-      if (gammainf .eq. 1.0) then
-        pwr1d = winfd(irho)
-      else
-        pwr1d = 0.0_8
-      end if
-    else if (gammainf .eq. int(gammainf)) then
+    if (winf(irho) .gt. 0.0_8 .or. (winf(irho) .lt. 0.0_8 .and. gammainf&
+&       .eq. int(gammainf))) then
       pwr1d = gammainf*winf(irho)**(gammainf-1)*winfd(irho)
+    else if (winf(irho) .eq. 0.0_8 .and. gammainf .eq. 1.0) then
+      pwr1d = winfd(irho)
     else
       pwr1d = 0.0_8
     end if
@@ -2542,25 +2546,25 @@ contains
 ! (otherwise).
       if (vn0 .gt. -c0) then
 ! outflow or subsonic inflow.
-        ac1d = qned + two*(ovgm1d*ce+ovgm1*ced)
+        ac1d = qned + two*ovgm1*ced
         ac1 = qne + two*ovgm1*ce
       else
 ! supersonic inflow.
-        ac1d = qn0d + two*(ovgm1d*c0+ovgm1*c0d)
+        ac1d = qn0d + two*ovgm1*c0d
         ac1 = qn0 + two*ovgm1*c0
       end if
       if (vn0 .gt. c0) then
 ! supersonic outflow.
-        ac2d = qned - two*(ovgm1d*ce+ovgm1*ced)
+        ac2d = qned - two*ovgm1*ced
         ac2 = qne - two*ovgm1*ce
       else
 ! inflow or subsonic outflow.
-        ac2d = qn0d - two*(ovgm1d*c0+ovgm1*c0d)
+        ac2d = qn0d - two*ovgm1*c0d
         ac2 = qn0 - two*ovgm1*c0
       end if
       qnfd = half*(ac1d+ac2d)
       qnf = half*(ac1+ac2)
-      cfd = fourth*((ac1d-ac2d)*gm1+(ac1-ac2)*gm1d)
+      cfd = fourth*gm1*(ac1d-ac2d)
       cf = fourth*(ac1-ac2)*gm1
       if (vn0 .gt. zero) then
 ! outflow.
@@ -2607,17 +2611,11 @@ contains
       qq = uf*uf + vf*vf + wf*wf
       pwx1d = sfd*cc + sf*ccd
       pwx1 = sf*cc
-      if (pwx1 .gt. 0.0_8) then
-        ww1d(i, j, irho) = pwx1**ovgm1*(log(pwx1)*ovgm1d+ovgm1*pwx1d/&
-&         pwx1)
-      else if (pwx1 .eq. 0.0_8) then
-        if (ovgm1 .eq. 1.0) then
-          ww1d(i, j, irho) = pwx1d
-        else
-          ww1d(i, j, irho) = 0.0_8
-        end if
-      else if (ovgm1 .eq. int(ovgm1)) then
+      if (pwx1 .gt. 0.0_8 .or. (pwx1 .lt. 0.0_8 .and. ovgm1 .eq. int(&
+&         ovgm1))) then
         ww1d(i, j, irho) = ovgm1*pwx1**(ovgm1-1)*pwx1d
+      else if (pwx1 .eq. 0.0_8 .and. ovgm1 .eq. 1.0) then
+        ww1d(i, j, irho) = pwx1d
       else
         ww1d(i, j, irho) = 0.0_8
       end if
