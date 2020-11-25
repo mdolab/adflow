@@ -12,7 +12,7 @@ ADflow requires the following dependencies:
 - PETSc
 - MPI
 
-See the MDO Lab installation guide `here <http://mdolab.engin.umich.edu/docs/installInstructions/install3rdPartyPackages.html>`_ for the supported versions and installation instructions.
+See the MDO Lab installation guide `here <https://mdolab-mach-aero.readthedocs-hosted.com/en/latest/installInstructions/install3rdPartyPackages.html>`_ for the supported versions and installation instructions.
 
 Building
 --------
@@ -46,6 +46,26 @@ To configure manually, open ``config/config.mk`` and modify options as necessary
 
 It is most likely that you need to modify the ``CGNS_INCLUDE_FLAGS`` and the ``CGNS_LINKER_FLAGS`` variables.
 After changes to the configuration file, run ``make clean`` before attempting a new build.
+
+.. NOTE::
+
+    Compiling ADflow on HPC clusters requires additional care, as some systems do not have a homogeneous CPU architecture across all nodes.
+    For example, the architecture of the login nodes may differ from the architecture of compute nodes available on the same cluster. 
+
+    Compiling the code on/for a specific login node type may result in unexpected crashes if the compute nodes have an incompatible (newer) architecture.
+    You can append the ``-march=<HPC-ARCH>`` flag to the ``config.mk`` file to specify the architecture of the compute node and avoid such issues. 
+    To optimize the compiled code for a specific architecture, one can add the ``-mtune=<HPC-ARCH>`` flag. However, this is rarely needed. 
+    An example of the updated flags in the config file is:: 
+
+        FF90_FLAGS = <normal-flags> -march=<HPC-ARCH> -mtune=<HPC-ARCH>
+
+    Note that the ``<HPC-ARCH>`` should be replaced with the name of the correct compute node architecture. This name is compiler-specific and also depends on the compiler version.
+
+    For example, if the login nodes use newer Cascade Lake CPUs while the compute nodes are based on older Sandy Bridge CPUs it may be necessary to set ``-march=sandybridge`` in your ``config.mk`` file::
+
+        FF90_FLAGS = <normal-flags> -march=sandybridge
+
+    We recommend to contact your local HPC team to get more information about hardware specific issues. 
 
 Lastly, to build and install the Python interface, type::
 
