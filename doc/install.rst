@@ -74,37 +74,22 @@ Lastly, to build and install the Python interface, type::
 
 Verification
 ------------
-ADflow contains a set of simple tests that can be run automatically
-to ensure ADflow reproduces the expected reference results. You should have
-a diff-viewer installed. xxdiff is used by default which can be installed
-using::
+ADflow contains a set of simple tests that can be run automatically to ensure ADflow reproduces the expected reference results.
+First, install `idwarp <https://github.com/mdolab/idwarp/>`__ following the instructions there.
+Next, install the testing dependencies by going to the root ADflow directory and typing::
 
-    $ sudo apt-get install xxdiff
+    $ pip install .[testing]
 
-After that, you will need to install other MACH packages in order to run the
-full regression suite successfully.
-Specifically, install
-`baseclasses <https://github.com/mdolab/baseclasses/>`__,
-`pyspline <https://github.com/mdolab/pyspline/>`__,
-`pygeo <https://github.com/mdolab/pygeo/>`__, and
-`idwarp <https://github.com/mdolab/idwarp/>`__.
 With all of these packages installed, you can fully verify your ADflow installation.
+First, run the script::
 
-First, run the script  ``inputFiles/get-input-files.sh`` to download and extract the necessary files.
-Then navigate to the regression tests directory in ``reg_tests/``.
+    $ inputFiles/get-input-files.sh
 
-Command line arguments for run_reg_tests.py can be found by running::
+to download and extract the necessary files.
+Then in the root directory run::
 
-    $ python run_reg_tests.py --help
+    $ testflo .
 
-To run all regression tests, now simply run::
-
-    $ python run_reg_tests.py
-
-If the tests are successful an 'adflow: Success!' message will be printed.
-Otherwise, if using the ``--diff`` option, a diff window will appear highlighting
-the differences between the reference case and the most recently
-completed verification run.
 
 Complex Build
 -------------
@@ -126,3 +111,8 @@ Now, to build complex ADflow do::
 
 Note that the correct, complex PETSC_ARCH MUST be set before the code is
 compiled and also must be set when running in complex mode.
+
+To run the complex tests, first set the ``$PETSC_ARCH`` to the complex architecture.
+Then run::
+
+    $ testflo . -m "cmplx_test*"
