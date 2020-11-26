@@ -1,5 +1,4 @@
 import numpy
-from numpy.testing import assert_allclose
 from baseclasses.BaseRegTest import getTol
 
 # =============================================================================
@@ -8,7 +7,7 @@ from baseclasses.BaseRegTest import getTol
 
 
 def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
     handler.root_print("Eval Functions Sens:")
@@ -16,7 +15,7 @@ def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwarg
 
 
 def assert_problem_size_equal(handler, CFDSolver, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     # Now a few simple checks
     handler.root_print("Total number of state DOF")
     handler.par_add_sum("Total number of state DOF", CFDSolver.getStateSize())
@@ -29,7 +28,7 @@ def assert_problem_size_equal(handler, CFDSolver, **kwargs):
 
 
 def assert_functions_allclose(handler, CFDSolver, ap, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
     handler.root_print("Eval Functions:")
@@ -37,7 +36,7 @@ def assert_functions_allclose(handler, CFDSolver, ap, **kwargs):
 
 
 def assert_residuals_allclose(handler, CFDSolver, ap, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     # Check the residual
     res = CFDSolver.getResidual(ap)
     totalR0 = CFDSolver.getFreeStreamResidual(ap)
@@ -47,7 +46,7 @@ def assert_residuals_allclose(handler, CFDSolver, ap, **kwargs):
 
 
 # def assert_residuals_lessthan(handler, CFDSolver, ap, **kwargs):
-#     rtol, atol = getTol(**kwargs)
+#     rtol, atol, _ = getTol(**kwargs)
 #     # Check the residual
 #     res = CFDSolver.getResidual(ap)
 #     totalR0 = CFDSolver.getFreeStreamResidual(ap)
@@ -59,7 +58,7 @@ def assert_residuals_allclose(handler, CFDSolver, ap, **kwargs):
 
 
 def assert_forces_allclose(handler, CFDSolver, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     CFDSolver.setOption("forcesAsTractions", False)
 
     forces = CFDSolver.getForces()
@@ -72,7 +71,7 @@ def assert_forces_allclose(handler, CFDSolver, **kwargs):
 
 
 def assert_tractions_allclose(handler, CFDSolver, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     # Reset the option
     CFDSolver.setOption("forcesAsTractions", True)
 
@@ -90,7 +89,7 @@ def assert_tractions_allclose(handler, CFDSolver, **kwargs):
 
 
 def assert_states_allclose(handler, CFDSolver, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     # Get and check the states
     handler.root_print("Norm of state vector")
     states = CFDSolver.getStates()
@@ -98,7 +97,7 @@ def assert_states_allclose(handler, CFDSolver, **kwargs):
 
 
 def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     # Now for the most fun part. Checking the derivatives. These are
     # generally the most important things to check. However, since the
     # checking requires random seeds, it is quite tricky to ensure that we
@@ -182,7 +181,7 @@ def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
 
 
 def assert_bwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     handler.root_print("# ---------------------------------------------------#")
     handler.root_print("#             Reverse mode testing                   #")
     handler.root_print("# ---------------------------------------------------#")
@@ -243,7 +242,7 @@ def assert_bwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
 
 
 def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
-    rtol, atol = getTol(**kwargs)
+    rtol, atol, _ = getTol(**kwargs)
     handler.root_print("# ---------------------------------------------------#")
     handler.root_print("#                 Dot product Tests                  #")
     handler.root_print("# ---------------------------------------------------#")
@@ -262,8 +261,8 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal1 = numpy.sum(dwDot * dwBar)
     dotLocal2 = numpy.sum(wDot * wBar)
 
-    handler.par_add_sum("Dot product test for w -> R", dotLocal2, rtol=rtol, atol=atol)
-    assert_allclose(dotLocal1, dotLocal2, rtol=rtol, atol=atol, err_msg="Dot product test for w -> R")
+    handler.par_add_sum("Dot product test for w -> R", dotLocal1, rtol=rtol, atol=atol)
+    handler.par_add_sum("Dot product test for w -> R", dotLocal2, rtol=rtol, atol=atol, check=True)
 
     handler.root_print("Dot product test for Xv -> R")
     dwDot = CFDSolver.computeJacobianVectorProductFwd(xVDot=xVDot, residualDeriv=True)
@@ -276,7 +275,7 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     # little less accurate. This is ok. It has to do with the very
     # small offwall spacing on laminar/RANS meshes.
     handler.par_add_sum("Dot product test for Xv -> R", dotLocal1, rtol=rtol * 10, atol=atol * 10)
-    assert_allclose(dotLocal1, dotLocal2, rtol=rtol * 10, atol=atol * 10, err_msg="Dot product test for Xv -> R")
+    handler.par_add_sum("Dot product test for Xv -> R", dotLocal2, rtol=rtol * 10, atol=atol * 10, check=True)
 
     handler.root_print("Dot product test for w -> F")
     wBar = CFDSolver.computeJacobianVectorProductBwd(fBar=fBar, wDeriv=True)
@@ -286,7 +285,7 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal2 = numpy.sum(wDot * wBar)
 
     handler.par_add_sum("Dot product test for w -> F", dotLocal1, rtol=rtol, atol=atol)
-    assert_allclose(dotLocal1, dotLocal2, rtol=rtol, atol=atol, err_msg="Dot product test for w -> F")
+    handler.par_add_sum("Dot product test for w -> F", dotLocal2, rtol=rtol, atol=atol, check=True)
 
     handler.root_print("Dot product test for xV -> F")
 
@@ -297,7 +296,7 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal2 = numpy.sum(xVDot * xVBar)
 
     handler.par_add_sum("Dot product test for xV -> F", dotLocal1, rtol=rtol, atol=atol)
-    assert_allclose(dotLocal1, dotLocal2, rtol=rtol, atol=atol, err_msg="Dot product test for xV -> F")
+    handler.par_add_sum("Dot product test for xV -> F", dotLocal2, rtol=rtol, atol=atol, check=True)
 
     handler.root_print("Dot product test for (w, xV) -> (dw, F)")
 
@@ -308,4 +307,4 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal2 = numpy.sum(wDot * wBar) + numpy.sum(xVDot * xVBar)
 
     handler.par_add_sum("Dot product test for (w, xV) -> (dw, F)", dotLocal1, rtol=rtol, atol=atol)
-    assert_allclose(dotLocal1, dotLocal2, rtol=rtol, atol=atol, err_msg="Dot product test for (w, xV) -> (dw, F)")
+    handler.par_add_sum("Dot product test for (w, xV) -> (dw, F)", dotLocal2, rtol=rtol, atol=atol, check=True)
