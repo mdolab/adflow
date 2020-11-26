@@ -1,54 +1,9 @@
 {
-    "Dot product test for (w, xV) -> (dw, F)": {
-        "__ndarray__": [
-            534579.60574127,
-            534579.60574127
-        ],
-        "dtype": "float64",
-        "shape": [
-            2
-        ]
-    },
-    "Dot product test for Xv -> R": {
-        "__ndarray__": [
-            -1473.0443151567,
-            -1473.0443151568
-        ],
-        "dtype": "float64",
-        "shape": [
-            2
-        ]
-    },
-    "Dot product test for w -> F": {
-        "__ndarray__": [
-            10958.026492417,
-            10958.026492417
-        ],
-        "dtype": "float64",
-        "shape": [
-            2
-        ]
-    },
-    "Dot product test for w -> R": {
-        "__ndarray__": [
-            27843.631018194,
-            27843.631018194
-        ],
-        "dtype": "float64",
-        "shape": [
-            2
-        ]
-    },
-    "Dot product test for xV -> F": {
-        "__ndarray__": [
-            497250.99254582,
-            497250.99254582
-        ],
-        "dtype": "float64",
-        "shape": [
-            2
-        ]
-    },
+    "Dot product test for (w, xV) -> (dw, F)": 534579.60574127,
+    "Dot product test for Xv -> R": -1473.0443151567,
+    "Dot product test for w -> F": 10958.026492417,
+    "Dot product test for w -> R": 27843.631018194,
+    "Dot product test for xV -> F": 497250.99254582,
     "Eval Functions:": {
         "mdo_tutorial_cd": 0.02926094149503,
         "mdo_tutorial_cfx": 0.013337718017482,

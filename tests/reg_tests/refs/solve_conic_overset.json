@@ -13,6 +13,5 @@
         "conic_conv_nozzle_mdot_down": -1.0410862008518,
         "conic_conv_nozzle_mdot_up": 1.0496982236621
     },
-    "Norm of residual": 3.4082600839804e-07,
     "Norm of state vector": 1024.5586519507
 }
