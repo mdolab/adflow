@@ -1,7 +1,5 @@
 import unittest
 import os
-
-import reg_test_utils as utils
 from baseclasses import BaseRegTest
 
 # this is based on
@@ -11,30 +9,28 @@ from baseclasses import BaseRegTest
 # or yet another is to define a new classed like a parameterized class
 # https://eli.thegreenplace.net/2011/08/02/python-unit-testing-parametrized-test-cases
 baseDir = os.path.dirname(os.path.abspath(__file__))
-
 refDir = os.path.join(baseDir, "refs")
 
 
-class test_objects:
-    class RegTest(unittest.TestCase):
-        def setUp(self):
-            ref_file = os.path.join(refDir, self.ref_file)
-            self.handler = BaseRegTest(ref_file, train=False)
+class RegTest(unittest.TestCase):
+    def setUp(self):
+        ref_file = os.path.join(refDir, self.ref_file)
+        self.handler = BaseRegTest(ref_file, train=False)
 
-        def train(self):
-            if not hasattr(self, "handler"):
-                # return immediately when the train method is being called on the based class and NOT the
-                # classes created using parametrized
-                # this will happen when testing, but will hopefully be fixed down the line
-                return
+    def train(self):
+        if not hasattr(self, "handler"):
+            # return immediately when the train method is being called on the based class and NOT the
+            # classes created using parametrized
+            # this will happen when testing, but will hopefully be fixed down the line
+            return
 
-            self.handler.setTrainingMode()
+        self.handler.setTrainingMode()
 
-            # get all of the testing methods
-            # all of the tests written in this framework must start with "test_"
-            tests = [x for x in dir(self) if x.startswith("test_")]
-            for test in tests:
-                test_func = getattr(self, test)
-                test_func()
+        # get all of the testing methods
+        # all of the tests written in this framework must start with "test_"
+        tests = [x for x in dir(self) if x.startswith("test_")]
+        for test in tests:
+            test_func = getattr(self, test)
+            test_func()
 
-            self.handler.writeRef()
+        self.handler.writeRef()

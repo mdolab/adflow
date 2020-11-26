@@ -13,7 +13,7 @@ import reg_test_utils as utils
 from reg_default_options import adflowDefOpts, defaultAeroDVs
 
 from reg_aeroproblems import ap_tutorial_wing, ap_CRM, ap_tutorial_wing_laminar
-from reg_test_classes import test_objects
+import reg_test_classes
 
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -204,7 +204,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         },
     ]
 )
-class TestFunctionals(test_objects.RegTest):
+class TestFunctionals(reg_test_classes.RegTest):
     """
     Tests that given a flow state the residuals, function, forces/tractions,
     and jacobian vector products are accurate.
