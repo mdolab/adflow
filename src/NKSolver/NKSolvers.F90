@@ -320,6 +320,13 @@ contains
 
     deallocate(tmp)
 
+    ! propogate the old values throught the code. 
+    ! This is not needed for euler and shouldn't be needed for 
+    ! viscous equations either, but becuase of an issue else where it is. 
+    ! see https://github.com/mdolab/adflow/pull/46 for the discussion.  
+    call computeResidualNK(useUpdateIntermed = .True.)
+    
+
   end subroutine getFreeStreamResidual
 
   subroutine getCurrentResidual(rhoRes,totalRRes)
