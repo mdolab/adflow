@@ -15,7 +15,8 @@ refDir = os.path.join(baseDir, "refs")
 class RegTest(unittest.TestCase):
     def setUp(self):
         ref_file = os.path.join(refDir, self.ref_file)
-        self.handler = BaseRegTest(ref_file, train=False)
+        train = "train" in self.id().split(".")[-1]
+        self.handler = BaseRegTest(ref_file, train=train)
 
     def train(self):
         if not hasattr(self, "handler"):
@@ -23,8 +24,6 @@ class RegTest(unittest.TestCase):
             # classes created using parametrized
             # this will happen when testing, but will hopefully be fixed down the line
             return
-
-        self.handler.setTrainingMode()
 
         # get all of the testing methods
         # all of the tests written in this framework must start with "test_"

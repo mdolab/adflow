@@ -91,7 +91,7 @@ class TestSolve(reg_test_classes.RegTest):
 
     N_PROCS = 2
 
-    def setUp(self, train=False):
+    def setUp(self):
         if not hasattr(self, "name"):
             # return immediately when the setup method is being called on the based class and NOT the
             # classes created using parametrized
