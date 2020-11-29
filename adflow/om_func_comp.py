@@ -220,7 +220,7 @@ class OM_FUNC_COMP(ExplicitComponent):
                 # we have to check for 0 here, so we don't include any unnecessary variables in funcsBar
                 # becasue it causes ADflow to do extra work internally even if you give it extra variables, even if the seed is 0
                 if func_name in d_outputs and d_outputs[func_name] != 0.:
-                    funcsBar[func_name] = d_outputs[func_name][0] / self.comm.size
+                    funcsBar[func_name] = d_outputs[func_name][0] 
 
             # because of the 0 checking, the funcsBar is now only correct on the root proc,
             # so we need to broadcast it to everyone. its not actually imporant that the seeds are the same everywhere,
