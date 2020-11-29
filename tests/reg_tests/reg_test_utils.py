@@ -7,7 +7,7 @@ from baseclasses.BaseRegTest import getTol
 
 
 def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     funcsSens = {}
     CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
     handler.root_print("Eval Functions Sens:")
@@ -15,7 +15,7 @@ def assert_adjoint_sens_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwarg
 
 
 def assert_problem_size_equal(handler, CFDSolver, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     # Now a few simple checks
     handler.root_print("Total number of state DOF")
     handler.par_add_sum("Total number of state DOF", CFDSolver.getStateSize())
@@ -28,7 +28,7 @@ def assert_problem_size_equal(handler, CFDSolver, **kwargs):
 
 
 def assert_functions_allclose(handler, CFDSolver, ap, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     funcs = {}
     CFDSolver.evalFunctions(ap, funcs)
     handler.root_print("Eval Functions:")
@@ -36,7 +36,7 @@ def assert_functions_allclose(handler, CFDSolver, ap, **kwargs):
 
 
 def assert_residuals_allclose(handler, CFDSolver, ap, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     # Check the residual
     res = CFDSolver.getResidual(ap)
     totalR0 = CFDSolver.getFreeStreamResidual(ap)
@@ -46,7 +46,7 @@ def assert_residuals_allclose(handler, CFDSolver, ap, **kwargs):
 
 
 # def assert_residuals_lessthan(handler, CFDSolver, ap, **kwargs):
-#     rtol, atol, _ = getTol(**kwargs)
+#     rtol, atol = getTol(**kwargs)
 #     # Check the residual
 #     res = CFDSolver.getResidual(ap)
 #     totalR0 = CFDSolver.getFreeStreamResidual(ap)
@@ -58,7 +58,7 @@ def assert_residuals_allclose(handler, CFDSolver, ap, **kwargs):
 
 
 def assert_forces_allclose(handler, CFDSolver, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     CFDSolver.setOption("forcesAsTractions", False)
 
     forces = CFDSolver.getForces()
@@ -71,7 +71,7 @@ def assert_forces_allclose(handler, CFDSolver, **kwargs):
 
 
 def assert_tractions_allclose(handler, CFDSolver, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     # Reset the option
     CFDSolver.setOption("forcesAsTractions", True)
 
@@ -89,7 +89,7 @@ def assert_tractions_allclose(handler, CFDSolver, **kwargs):
 
 
 def assert_states_allclose(handler, CFDSolver, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     # Get and check the states
     handler.root_print("Norm of state vector")
     states = CFDSolver.getStates()
@@ -97,7 +97,7 @@ def assert_states_allclose(handler, CFDSolver, **kwargs):
 
 
 def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     # Now for the most fun part. Checking the derivatives. These are
     # generally the most important things to check. However, since the
     # checking requires random seeds, it is quite tricky to ensure that we
@@ -181,7 +181,7 @@ def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
 
 
 def assert_bwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     handler.root_print("# ---------------------------------------------------#")
     handler.root_print("#             Reverse mode testing                   #")
     handler.root_print("# ---------------------------------------------------#")
@@ -242,7 +242,7 @@ def assert_bwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
 
 
 def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
-    rtol, atol, _ = getTol(**kwargs)
+    rtol, atol = getTol(**kwargs)
     handler.root_print("# ---------------------------------------------------#")
     handler.root_print("#                 Dot product Tests                  #")
     handler.root_print("# ---------------------------------------------------#")
