@@ -13,7 +13,7 @@ import reg_test_utils as utils
 from reg_default_options import adflowDefOpts, defaultAeroDVs
 
 from reg_aeroproblems import ap_tutorial_wing, ap_CRM, ap_tutorial_wing_laminar
-from reg_test_classes import test_objects
+import reg_test_classes
 
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -204,7 +204,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         },
     ]
 )
-class TestFunctionals(test_objects.RegTest):
+class TestFunctionals(reg_test_classes.RegTest):
     """
     Tests that given a flow state the residuals, function, forces/tractions,
     and jacobian vector products are accurate.
@@ -214,7 +214,7 @@ class TestFunctionals(test_objects.RegTest):
     N_PROCS = 2
 
     def setUp(self):
-        if self.name is None:
+        if not hasattr(self, "name"):
             # return immediately when the setup method is being called on the based class and NOT the
             # classes created using parametrized
             # this will happen when testing, but will hopefully be fixed down the line

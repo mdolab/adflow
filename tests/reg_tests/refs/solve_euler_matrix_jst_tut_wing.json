@@ -1,0 +1,26 @@
+{
+    "Eval Functions:": {
+        "mdo_tutorial_cd": 0.021513798699733,
+        "mdo_tutorial_cfx": 0.0038638825431866,
+        "mdo_tutorial_cfy": 0.56196740439892,
+        "mdo_tutorial_cfz": 0.0094795460846119,
+        "mdo_tutorial_cl": 0.56156873992475,
+        "mdo_tutorial_cmx": -1.0761380624128,
+        "mdo_tutorial_cmy": -0.029135793975732,
+        "mdo_tutorial_cmz": 0.87548398695279,
+        "mdo_tutorial_drag": 8770.7454539073,
+        "mdo_tutorial_fx": 1575.2276352063,
+        "mdo_tutorial_fy": 229102.87142535,
+        "mdo_tutorial_fz": 3864.6213477746,
+        "mdo_tutorial_lift": 228940.34389252,
+        "mdo_tutorial_mx": -1425839.8871745,
+        "mdo_tutorial_my": -38603.761586085,
+        "mdo_tutorial_mz": 1159981.263353,
+        "mdo_tutorial_sepsensor": 3.3830703997163e-07,
+        "mdo_tutorial_sepsensoravgx": 1.4499574915825e-06,
+        "mdo_tutorial_sepsensoravgy": 4.9500116949178e-09,
+        "mdo_tutorial_sepsensoravgz": 1.9322985486381e-06
+    },
+    "Norm of residual": 9.0315509850597e-15,
+    "Norm of state vector": 355.5610359146
+}

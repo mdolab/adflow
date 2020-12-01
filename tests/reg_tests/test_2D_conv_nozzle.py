@@ -7,17 +7,14 @@ import copy
 from adflow import ADFLOW
 
 import reg_test_utils as utils
-
 from reg_default_options import adflowDefOpts
-
 from reg_aeroproblems import ap_2D_conv_nozzle
-from reg_test_classes import test_objects
-
+import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
-class TestSolve(test_objects.RegTest):
+class TestSolve(reg_test_classes.RegTest):
     """
     Tests that ADflow can converge the wing from the mdo tutorial using the euler
     equation to the required accuracy as meassure by the norm of the residuals,

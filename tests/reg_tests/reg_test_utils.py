@@ -261,8 +261,8 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal1 = numpy.sum(dwDot * dwBar)
     dotLocal2 = numpy.sum(wDot * wBar)
 
-    handler.par_add_sum("Dot product test for w -> R", dotLocal2, rtol=rtol, atol=atol)
     handler.par_add_sum("Dot product test for w -> R", dotLocal1, rtol=rtol, atol=atol)
+    handler.par_add_sum("Dot product test for w -> R", dotLocal2, rtol=rtol, atol=atol, compare=True)
 
     handler.root_print("Dot product test for Xv -> R")
     dwDot = CFDSolver.computeJacobianVectorProductFwd(xVDot=xVDot, residualDeriv=True)
@@ -275,7 +275,7 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     # little less accurate. This is ok. It has to do with the very
     # small offwall spacing on laminar/RANS meshes.
     handler.par_add_sum("Dot product test for Xv -> R", dotLocal1, rtol=rtol * 10, atol=atol * 10)
-    handler.par_add_sum("Dot product test for Xv -> R", dotLocal2, rtol=rtol * 10, atol=atol * 10)
+    handler.par_add_sum("Dot product test for Xv -> R", dotLocal2, rtol=rtol * 10, atol=atol * 10, compare=True)
 
     handler.root_print("Dot product test for w -> F")
     wBar = CFDSolver.computeJacobianVectorProductBwd(fBar=fBar, wDeriv=True)
@@ -285,7 +285,7 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal2 = numpy.sum(wDot * wBar)
 
     handler.par_add_sum("Dot product test for w -> F", dotLocal1, rtol=rtol, atol=atol)
-    handler.par_add_sum("Dot product test for w -> F", dotLocal2, rtol=rtol, atol=atol)
+    handler.par_add_sum("Dot product test for w -> F", dotLocal2, rtol=rtol, atol=atol, compare=True)
 
     handler.root_print("Dot product test for xV -> F")
 
@@ -296,7 +296,7 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal2 = numpy.sum(xVDot * xVBar)
 
     handler.par_add_sum("Dot product test for xV -> F", dotLocal1, rtol=rtol, atol=atol)
-    handler.par_add_sum("Dot product test for xV -> F", dotLocal2, rtol=rtol, atol=atol)
+    handler.par_add_sum("Dot product test for xV -> F", dotLocal2, rtol=rtol, atol=atol, compare=True)
 
     handler.root_print("Dot product test for (w, xV) -> (dw, F)")
 
@@ -307,4 +307,4 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
     dotLocal2 = numpy.sum(wDot * wBar) + numpy.sum(xVDot * xVBar)
 
     handler.par_add_sum("Dot product test for (w, xV) -> (dw, F)", dotLocal1, rtol=rtol, atol=atol)
-    handler.par_add_sum("Dot product test for (w, xV) -> (dw, F)", dotLocal2, rtol=rtol, atol=atol)
+    handler.par_add_sum("Dot product test for (w, xV) -> (dw, F)", dotLocal2, rtol=rtol, atol=atol, compare=True)
