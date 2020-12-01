@@ -11,7 +11,7 @@ from adflow import ADFLOW
 import reg_test_utils as utils
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_tutorial_wing
-from reg_test_classes import test_objects
+import reg_test_classes
 
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -49,7 +49,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
                 "l2convergence": 1e-14,
                 "useblockettes": False,
             },
-            "ref_file": "euler_matrix_jst_tut_wing.json",
+            "ref_file": "solve_euler_matrix_jst_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
         },
         # Tutorial wing RANS
@@ -80,7 +80,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         },
     ]
 )
-class TestSolve(test_objects.RegTest):
+class TestSolve(reg_test_classes.RegTest):
     """
     Tests that ADflow can converge the given test problems to the given tolerance.
 
@@ -91,10 +91,8 @@ class TestSolve(test_objects.RegTest):
 
     N_PROCS = 2
 
-    name = None
-
-    def setUp(self, train=False):
-        if self.name is None:
+    def setUp(self):
+        if not hasattr(self, "name"):
             # return immediately when the setup method is being called on the based class and NOT the
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line

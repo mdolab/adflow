@@ -26,7 +26,7 @@ import reg_test_utils as utils
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
 from reg_aeroproblems import ap_tutorial_wing, ap_tutorial_wing_laminar
-from reg_test_classes import test_objects
+import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
@@ -167,7 +167,7 @@ test_params = [
 
 
 @parameterized_class(test_params)
-class TestAdjoint(test_objects.RegTest):
+class TestAdjoint(reg_test_classes.RegTest):
     """
     Tests that sensitives calculated from solving an adjoint are correct.
     and jacobian vector products are accurate.
@@ -242,7 +242,7 @@ class TestCmplxStep(unittest.TestCase):
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
             return
-        test_objects.RegTest.setUp(self)
+        reg_test_classes.RegTest.setUp(self)
 
         options = copy.copy(adflowDefOpts)
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])

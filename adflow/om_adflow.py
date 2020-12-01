@@ -2,7 +2,6 @@ import types
 from pygeo import DVGeometry, DVConstraints
 from baseclasses import AeroProblem
 
-from idwarp import USMesh
 from adflow import ADFLOW
 
 from openmdao.api import Group, PETScKrylov, LinearRunOnce, LinearUserDefined, IndepVarComp
