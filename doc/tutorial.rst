@@ -208,7 +208,8 @@ ADflow has two defined kill signals that can stop or kill ADflow gracefully with
   * ``-USR1`` - instructs ADflow to write a solution file after the current iteration
   * ``-USR2`` - instructs ADflow to write a solution file and the computation will be stopped.
 
-The definition of an iteration is different for steady and unsteady. For steady it means after the current iteration, for unsteady after the current time step.
+The definition of an iteration is different for steady and unsteady.
+For steady it means after the current iteration, for unsteady after the current time step.
 
 The signals are enabled by default but can be switched off or disabled at compile time using the compiler flag ``-DUSE_NO_SIGNALS``.
 
@@ -216,7 +217,10 @@ To use the signals from the command line run::
 
   kill -USR1 <PID>
 
-where ``<PID>`` is the process id of the mpi process. These signals are often used when debugging. For instance, the ``-USR1`` signal can be useful to write out a semi-converged solution for further investigation, and the ``-USR2`` can be used to stop a stalled solution without loss of data. Other use-cases are also possible.
+where ``<PID>`` is the process id of the mpi process.
+These signals are often used when debugging. For instance, the ``-USR1`` signal can be useful to write out a semi-converged solution for further investigation, and the ``-USR2`` can be used to stop a stalled solution without loss of data.
+Other use-cases are also possible.
+To obtain the ``<PID>``, one can for example use ``top`` or ``ps -ef``.
 
 
 
