@@ -3982,17 +3982,6 @@ class ADFLOW(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None and self.DVGeo is not None:
-                if self.comm.rank == 0:
-                    print('')
-                    print('RANK_0 now prints the input for xsdot: ')
-                    print('xDvDot',xDvDot)
-                    print('self.curAP.ptSetName',self.curAP.ptSetName)
-                    print('self.comm',self.comm)
-                    print('self.curAP.name',self.curAP.name)
-                    print('RANK_0 done printing')
-                    print('')
-                    # mham: seems like a deprecated call. There is e.g. no 'config=' optional
-                    # keyword argument if you look in the DVGeometry.py source code.
                 xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name).reshape(xsdot.shape)
             if self.mesh is not None:
                 xsdot = self.mapVector(xsdot, self.meshFamilyGroup,
