@@ -265,8 +265,6 @@ contains
        print "(a)", "#"
     endif
   end subroutine writeCGNSSurfaceSol
-
-
   subroutine surfSolFileNamesWrite
     !
     !       surfSolFileNamesWrite determines the names and number of

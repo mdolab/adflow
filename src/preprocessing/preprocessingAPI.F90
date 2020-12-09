@@ -4100,7 +4100,6 @@ contains
     groundlevel = 1
 
     do nn=1,nblocks
-       !deriveddatatype%smt_that_the_derived_datatype_owns
        cgnsDoms(nn)%rotRate = rotRate
        cgnsDoms(nn)%rotCenter = rotCenter
 
