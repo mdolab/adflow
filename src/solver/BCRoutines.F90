@@ -606,10 +606,10 @@ end subroutine applyAllBC
     ! correction for k must be applied.
 
     rhok = zero
-    
+
     ! Loop over the generic subface to set the state in the
     ! halo cells.
-    
+
     !$AD II-LOOP
     do ii=0,isize*jsize-1
        i = mod(ii, isize) + iStart
