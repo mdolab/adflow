@@ -237,17 +237,6 @@ adjointExtra%normalvelocities_block(sfacei,sfacej,sfacek,si,sj,sk) > \
 "
 
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
-#
-# mham: correction that should be made but works out right now since
-#       Tapenade does the right thing on its own ->
-# adjointExtra%metric_block 
-#                            += (si, sj, sk)) > \
-#                               () \
-# adjointExtra%gridvelocitiesfinelevel_block 
-#                                            += (s) > \
-#                                               () \
-
-
 
 #================================================================
 # ====================== State-only reverse routines ============
