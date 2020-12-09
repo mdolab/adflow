@@ -4,7 +4,7 @@ contains
        bcDataNames, bcDataValues, bcDataFamLists)
 
     use constants
-    use communication, only : adflow_comm_world,myid
+    use communication, only : adflow_comm_world
     use BCRoutines, only : applyallBC_block
     use bcdata, only : setBCData, setBCDataFineGrid
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
@@ -55,11 +55,6 @@ contains
     integer(kind=intType) :: ierr, nn, sps, fSize, iRegion
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal
-
-    if (myID == 0) then
-       print*,'R0-mham: OBS! calling master()'
-    end if
-
 
     if (useSpatial) then
        call adjustInflowAngle()
@@ -233,7 +228,7 @@ contains
 
     use constants
     use diffsizes, only :  ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
-    use communication, only : adflow_comm_world,myID
+    use communication, only : adflow_comm_world
     use iteration, only : currentLevel
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
@@ -258,7 +253,7 @@ contains
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
     use flowutils_d, only : computePressureSimple_d, computeLamViscosity_d, &
          computeSpeedOfSoundSquared_d, allNodalGradients_d, adjustInflowAngle_d
-    use solverutils_d, only : timeStep_Block_d!,slipvelocitiesfinelevel_block_d,gridvelocitiesfinelevel_block_d,normalvelocities_block_d
+    use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
     use surfaceIntegrations, only : getSolution_d
@@ -407,33 +402,13 @@ contains
           end if
           ! mham insertion |->
 
-          ! call mpi_barrier(ADflow_comm_world, ierr)
-          if (myID == 0) then
-             print*,'R0-mham: entering grid'
-             print*,'nn: ',nn
-          end if
           call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
-          ! call mpi_barrier(ADflow_comm_world, ierr)
-          if (myID == 0) then
-             print*,'R0-mham: entering normal'
-             print*,'nn: ',nn
-          end if
           ! required for ts
           call normalvelocities_block_d(sps)
-          ! call mpi_barrier(ADflow_comm_world, ierr)
-          if (myID == 0) then
-             print*,'R0-mham: entering slip'
-             print*,'nn: ',nn
-          end if
           ! required for ts
           call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
 
-          ! call mpi_barrier(ADflow_comm_world, ierr)
-          if (myID == 0) then
-             print*,'R0-mham: last barrier reached'
-             print*,'nn: ',nn
-          end if
-
+          ! ->| mham insertion ends here
 
           if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_d(nn, 1, sps)
@@ -740,19 +715,10 @@ contains
           select case (spaceDiscr)
           case (dissScalar)
              call inviscidDissFluxScalar_b
-             if (myID == 0) then
-                print*,'R0-mham: zerOBZ inviscidDissFluxScalar_b()'
-             end if
           case (dissMatrix)
              call inviscidDissFluxMatrix_b
-             if (myID == 0) then
-                print*,'R0-mham: zerOBZ inviscidDissFluxMatrix_b()'
-             end if
           case (upwind)
              call inviscidUpwindFlux_b(.True.)
-             if (myID == 0) then
-                print*,'R0-mham: zerOBZ inviscidUpwindFlux_b()'
-             end if
           end select
 
           call inviscidCentralFlux_b
@@ -848,14 +814,6 @@ contains
 
           ! Here we insert the functions related to
           ! rotational (mesh movement) setup
-          !if (myID == 0) then
-             !
-             !
-          if (myID == 0) then
-             print*,'R0-mham: entering t(:)-loop'
-          end if
-          ! mham: just give t(:) a zero initialization... we do not use it
-          ! t(:) = 0.d0
           t = timeunsteadyrestart
           if (equationmode .eq. timespectral) then
              do mm=1,nsections
@@ -864,42 +822,19 @@ contains
              end do
           end if
           ! fake forward sweep
-          if (myID == 0) then
-             print*,'R0-mham: entering grid'
-          end if
           call gridvelocitiesfinelevel_block(useoldcoor, t, sps)
-          if (myID == 0) then
-             print*,'R0-mham: entering normal'
-          endif
+
           call normalvelocities_block(sps)
-          if (myID == 0) then
-             print*,'R0-mham: entering slip'
-          end if
+
           call slipvelocitiesfinelevel_block(useoldcoor, t, sps)
           ! required for ts
-          if (myID == 0) then
-             print*,'R0-mham: entering slip_b'
-          end if
+
           call slipvelocitiesfinelevel_block_b(useoldcoor, t, sps)
-          if (myID == 0) then
-             print*,'R0-mham: entering normal_b'
-          end if
+
           ! required for ts
           call normalvelocities_block_b(sps)
-          ! mham: normalvelocities_block_b zeros the faceid.
-          !       this is probably a bad thing
-          if (myID == 0) then
-             print*,'R0-mham: entering grid_b'
-          end if
+
           call gridvelocitiesfinelevel_block_b(useoldcoor, t, sps)
-          ! mham: gridvelocitiesfinelevel_block_b zeros the faceid.
-          !       this is probably a bad thing
-          if (myID == 0) then
-             print*,'R0-mham: last barrier reached'
-          end if
-          !
-          !
-          !end if
 
           call boundaryNormals_b
           call metric_block_b
@@ -1039,7 +974,6 @@ contains
 
     use constants
     use iteration, only : currentLevel
-    use communication, only : adflow_comm_world, myid
     use flowVarRefState, only : nw, viscous
     use blockPointers, only : nDom, il, jl, kl, wd, dwd, iblank
     use inputPhysics, only : equationMode, turbModel, equations
@@ -1078,11 +1012,6 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj,  level, iRegion
     real(kind=realType) :: dummyReal
-
-    if (myID == 0) then
-       print*,'R0-mham: OBS! calling master_state_b()'
-    end if
-
 
     ! Set the residual seeds.
     ii = 0
@@ -1229,7 +1158,6 @@ contains
     use BCRoutines, only : applyAllBC_Block
     use inputAdjoint,  only : viscPC
     use blockPointers, only : nDom, wd, xd, dw, il, jl, kl
-    use communication, only : adflow_comm_world, myid
     use flowVarRefState, only : viscous
     use inputPhysics, only : equations, turbModel
     use inputDiscretization, only : lowSpeedPreconditioner, lumpedDiss, spaceDiscr
@@ -1268,11 +1196,6 @@ contains
     call computeEddyViscosity(.True.)
 
 
-    if (myID == 0) then
-       print*,'R0-mham: OBS! calling block_res_state()'
-    end if
-
-
     ! Make sure to call the turb BC's first incase we need to
     ! correct for K
     if (equations == RANSequations) then
@@ -1305,7 +1228,6 @@ contains
     ! computation used to assemble the jacobian.
     use constants
     use BCExtra_d, only : applyAllBC_Block_d
-    use communication, only : adflow_comm_world, myid
     use inputAdjoint,  only : viscPC
     use blockPointers, only : nDom, wd, xd, dw, dwd
     use flowVarRefState, only : viscous
@@ -1333,11 +1255,6 @@ contains
     ! Working Variables
     integer(kind=intType) :: ierr, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType) :: dummyReal, dummyReald
-
-    if (myID == 0) then
-       print*,'R0-mham: OBS! calling block_res_state_d()'
-    end if
-
 
     call computePressureSimple_d(.True.)
     call computeLamViscosity_d(.True.)
