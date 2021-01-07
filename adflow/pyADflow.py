@@ -102,7 +102,7 @@ class ADFLOW(AeroSolver):
         informs = {}
 
         # Load all the option/objective/DV information:
-        defOpts = self._getDefaultOptions()
+        defaultOptions = self._getDefaultOptions()
         self.optionMap, self.moduleMap = self._getOptionMap()
         self.pythonOptions, deprecatedOptions, self.specialOptions = \
                            self._getSpecialOptionLists()
@@ -116,7 +116,7 @@ class ADFLOW(AeroSolver):
         for key in self.basicCostFunctions:
             self.adflowCostFunctions[key] = [None, key]
 
-        # Separate list of the suplied supplied functions
+        # Separate list of the supplied supplied functions
         self.adflowUserCostFunctions = OrderedDict()
 
         # This is the real solver so dtype is 'd'
@@ -126,13 +126,12 @@ class ADFLOW(AeroSolver):
         if comm is None:
             comm = MPI.COMM_WORLD
 
-        self.comm = comm
-        self.adflow.communication.adflow_comm_world = self.comm.py2f()
+        self.adflow.communication.adflow_comm_world = comm.py2f()
         self.adflow.communication.adflow_comm_self = MPI.COMM_SELF.py2f()
-        self.adflow.communication.sendrequests = numpy.zeros(self.comm.size)
-        self.adflow.communication.recvrequests = numpy.zeros(self.comm.size)
-        self.myid = self.adflow.communication.myid = self.comm.rank
-        self.adflow.communication.nproc = self.comm.size
+        self.adflow.communication.sendrequests = numpy.zeros(comm.size)
+        self.adflow.communication.recvrequests = numpy.zeros(comm.size)
+        self.myid = self.adflow.communication.myid = comm.rank
+        self.adflow.communication.nproc = comm.size
 
         if options is None:
             raise Error("The 'options' keyword argument must be passed "
@@ -145,8 +144,16 @@ class ADFLOW(AeroSolver):
         defSetupTime = time.time()
 
         # Initialize the inherited AeroSolver
-        super().__init__(name, category, defOpts, informs,
-                         options, immutableOptions, deprecatedOptions)
+        super().__init__(
+            name,
+            category,
+            defaultOptions=defaultOptions,
+            options=options,
+            immutableOptions=immutableOptions,
+            deprecatedOptions=deprecatedOptions,
+            comm=comm,
+            informs=informs,
+        )
 
         baseClassTime = time.time()
         # Update turbresscale depending on the turbulence model specified
@@ -163,7 +170,7 @@ class ADFLOW(AeroSolver):
         # terminate calls are handled
         self.adflow.killsignals.frompython = True
 
-        # Dictionary of design varibales and their index
+        # Dictionary of design variables and their index
         self.aeroDVs = []
 
         # Default counters

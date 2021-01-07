@@ -1,4 +1,4 @@
-__version__ = '2.2.2'
+__version__ = '2.2.4'
 
 from mpi4py import MPI
 
