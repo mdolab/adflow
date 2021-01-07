@@ -19,7 +19,7 @@ multi-block and overset 3D CFD solver.
    install
    tutorial
    options
-   pyADflow
+   API
    solvers
    performance
    devguide

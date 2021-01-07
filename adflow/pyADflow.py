@@ -29,6 +29,7 @@ import sys
 from mpi4py import MPI
 from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
+from baseclasses.utils import Error
 from . import MExt
 from pprint import pprint as pp
 import hashlib
@@ -40,25 +41,6 @@ except ImportError:
     except ImportError:
         print('Could not find any OrderedDict class. For 2.6 and earlier, \
 use:\n pip install ordereddict')
-
-class Error(Exception):
-    """
-    Format the error message in a box to make it clear this
-    was a expliclty raised exception.
-    """
-    def __init__(self, message):
-        msg = '\n+'+'-'*78+'+'+'\n' + '| pyADFLOW Error: '
-        i = 17
-        for word in message.split():
-            if len(word) + i + 1 > 78: # Finish line and start new one
-                msg += ' '*(78-i)+'|\n| ' + word + ' '
-                i = 1 + len(word)+1
-            else:
-                msg += word + ' '
-                i += len(word)+1
-        msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
-        print(msg)
-        Exception.__init__(self)
 
 class ADFLOWWarning(object):
     """
@@ -120,11 +102,11 @@ class ADFLOW(AeroSolver):
         informs = {}
 
         # Load all the option/objective/DV information:
-        defOpts = self._getDefOptions()
+        defOpts = self._getDefaultOptions()
         self.optionMap, self.moduleMap = self._getOptionMap()
-        self.ignoreOptions, self.deprecatedOptions, self.specialOptions = \
+        self.pythonOptions, deprecatedOptions, self.specialOptions = \
                            self._getSpecialOptionLists()
-        self.imOptions = self._getImmutableOptions()
+        immutableOptions = self._getImmutableOptions()
 
         self.possibleAeroDVs, self.possibleBCDvs, self.basicCostFunctions = (
             self._getObjectivesAndDVs())
@@ -152,7 +134,6 @@ class ADFLOW(AeroSolver):
         self.myid = self.adflow.communication.myid = self.comm.rank
         self.adflow.communication.nproc = self.comm.size
 
-        # Initialize the inherited aerosolver.
         if options is None:
             raise Error("The 'options' keyword argument must be passed "
                         "adflow. The options dictionary must contain (at least) "
@@ -163,14 +144,15 @@ class ADFLOW(AeroSolver):
 
         defSetupTime = time.time()
 
-        AeroSolver.__init__(self, name, category, defOpts, informs,
-                            options=options)
+        # Initialize the inherited AeroSolver
+        super().__init__(name, category, defOpts, informs,
+                         options, immutableOptions, deprecatedOptions)
 
         baseClassTime = time.time()
         # Update turbresscale depending on the turbulence model specified
         self._updateTurbResScale()
 
-        # Initialize petec in case the user has not already
+        # Initialize PETSc in case the user has not already
         self.adflow.adjointutils.initializepetsc()
 
         # Set the stand-alone adflow flag to false...this changes how
@@ -612,7 +594,7 @@ class ADFLOW(AeroSolver):
         # Check that the family name is not already defined:
         if familyName.lower() in self.families:
             raise Error("Cannot add integration surface with family name '%s'"
-                        "becuase the name it already exists."%familyName)
+                        "because the name it already exists."%familyName)
 
         # Need to add an additional family so first figure out what
         # the max family index is:
@@ -3143,10 +3125,10 @@ class ADFLOW(AeroSolver):
             cgnsBlockID = numpy.zeros(ncell, dtype='intc')
 
         if includeCGNS:
-            # Conver to 0-based ordering becuase we are in python
+            # Convert to 0-based ordering becuase we are in python
             return conn-1, faceSizes, cgnsBlockID-1
         else:
-            # Conver to 0-based ordering becuase we are in python
+            # Convert to 0-based ordering becuase we are in python
             return conn-1, faceSizes
 
     def _expandGroupNames(self, groupNames):
@@ -3213,7 +3195,7 @@ class ADFLOW(AeroSolver):
         return self.adflow.nksolver.applyadjointpc(inVec, outVec)
 
     def _addAeroDV(self, dv):
-        """Add a single desgin variable that ADflow knows about.
+        """Add a single design variable that ADflow knows about.
 
         Parameters
         ----------
@@ -4339,36 +4321,11 @@ class ADFLOW(AeroSolver):
         Set Solver Option Value
         """
         name = name.lower()
-        # Make sure we are not trying to change an immutable option if
-        # we are not allowed to.
-        if self.solverCreated and name in self.imOptions:
-            raise Error("Option '%-35s' cannot be modified after the solver "
-                        "is created."%name)
 
-        # Check to see if we have a deprecated option. Print a useful
-        # warning that this is deprecated.
-        if name in self.deprecatedOptions:
-            if self.comm.rank == 0:
-                ADFLOWWarning("Option '%-29s\' is a deprecated ADflow Option |"% name)
-            return
+        super().setOption(name, value)
 
-        # Try the option in the option dictionary to make sure we are setting a valid option
-        if name not in self.defaultOptions:
-            if self.comm.rank == 0:
-                ADFLOWWarning("Option '%-30s' is not a valid ADflow Option |"%name)
-            return
-
-        # Now we know the option exists, lets check if the type is ok:
-        if isinstance(value, self.defaultOptions[name][0]):
-            self.options[name] = [type(value),value]
-        else:
-            raise Error("Datatype for Option %-35s was not valid \n "
-                        "Expected data type is %-47s \n "
-                        "Received data type is %-47s"% (
-                            name, self.defaultOptions[name][0], type(value)))
-
-        # If the option is in the ignoredOption list, we just return.
-        if name in self.ignoreOptions:
+        # If the option is only used in Python, we just return
+        if name in self.pythonOptions:
             return
 
         # Do special Options individually
@@ -4517,30 +4474,17 @@ class ADFLOW(AeroSolver):
         # Set in the correct module
         setattr(module, variable, value)
 
-    def getOption(self, name):
-        # Redefine the getOption def from the base class so we can
-        # make sure the name is lowercase
-
-        if name.lower() in self.defaultOptions:
-            return self.options[name.lower()][1]
-        else:
-            raise Error('%s is not a valid option name.'% name)
-
-    def _getDefOptions(self):
-        """
-        There are many options for ADflow. These technically belong in
-        the __init__ function but it gets far too long so we split
-        them out.
-        """
+    @staticmethod
+    def _getDefaultOptions():
         defOpts = {
             # Input file parameters
             'gridfile':[str, 'default.cgns'],
-            'restartfile':[object, None],
+            'restartfile':[(str, list, type(None)), None],
 
-            # Surface definition parameters:
-            'meshsurfacefamily':[object, None],
-            'designsurfacefamily':[object, None],
-            'closedsurfacefamilies':[object, None],
+            # Surface definition parameters
+            'meshsurfacefamily':[(str, type(None)), None],
+            'designsurfacefamily':[(str, type(None)), None],
+            'closedsurfacefamilies':[(list, type(None)), None],
 
             # Output Parameters
             'storerindlayer':[bool, True],
@@ -4551,40 +4495,41 @@ class ADFLOW(AeroSolver):
             'writetecplotsurfacesolution':[bool,False],
             'nsavevolume':[int,1],
             'nsavesurface':[int,1],
-            'solutionprecision':[str,'single'],
-            'gridprecision':[str,'double'],
-            'solutionprecisionsurface':[str,'single'],
-            'gridprecisionsurface':[str,'single'],
+            'solutionprecision':[str, ['single', 'double']],
+            'gridprecision':[str, ['double', 'single']],
+            'solutionprecisionsurface':[str, ['single', 'double']],
+            'gridprecisionsurface':[str, ['single', 'double']],
             'isosurface':[dict, {}],
             'isovariables':[list, []],
             'viscoussurfacevelocities':[bool, True],
 
             # Physics Parameters
-            'discretization':[str, 'central plus scalar dissipation'],
-            'coarsediscretization':[str, 'central plus scalar dissipation'],
-            'limiter':[str, 'vanalbeda'],
-            'smoother':[str, 'runge kutta'],
-            'equationtype': [str, 'euler'],
-            'equationmode': [str, 'steady'],
-            'flowtype':[str, 'external'],
-            'turbulencemodel':[str, 'sa'],
-            'turbulenceorder':[str, 'first order'],
-            'turbresscale':[object, None],
-            'turbulenceproduction':[str, 'strain'],
+            'discretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
+            'coarsediscretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
+            'limiter':[str, ['vanalbeda', 'minmod', 'nolimiter']],
+            'smoother':[str, ['runge kutta', 'dadi']],
+            'equationtype': [str, ['euler', 'laminar ns', 'rans']],
+            'equationmode': [str, ['steady', 'unsteady', 'time spectral']],
+            'flowtype':[str, ['external', 'internal']],
+            'turbulencemodel':[str, ['sa', 'sae', 'k omega wilcox', 'k omega modified', 'ktau', 'menter sst', 'v2f']],
+            'turbulenceorder':[str, ['first order', 'second order']],
+            'turbresscale':[(float, list, type(None)), None],
+            'turbulenceproduction':[str, ['strain', 'vorticity', 'katolaunder']],
             'useqcr':[bool, False],
             'userotationsa':[bool, False],
             'useft2sa':[bool, True],
-            'eddyvisinfratio':[float, .009],
+            'eddyvisinfratio':[float, 0.009],
             'usewallfunctions':[bool, False],
             'useapproxwalldistance':[bool, True],
-            'eulerwalltreatment':[str, 'linear pressure extrapolation'],
-            'viscwalltreatment':[str, 'constant pressure extrapolation'],
+            'eulerwalltreatment':[str, ['linear pressure extrapolation', 'constant pressure extrapolation', \
+                'quadratic pressure extrapolation', 'normal momentum']],
+            'viscwalltreatment':[str, ['constant pressure extrapolation', 'linear pressure extrapolation']],
             'dissipationscalingexponent':[float, 0.67],
             'vis4':[float, 0.0156],
             'vis2':[float, 0.25],
             'vis2coarse':[float, 0.5],
-            'restrictionrelaxation':[float, .80],
-            'liftindex':[int, 2],
+            'restrictionrelaxation':[float, 0.80],
+            'liftindex':[int, [2, 3]],
             'lowspeedpreconditioner':[bool, False],
             'walldistcutoff':[float, 1e20],
             'infchangecorrection':[bool, False],
@@ -4600,22 +4545,22 @@ class ADFLOW(AeroSolver):
             'cflcoarse':[float, 1.0],
             'mgcycle':[str, '3w'],
             'mgstartlevel':[int, -1],
-            'resaveraging':[str,'alternateresaveraging'],
+            'resaveraging':[str, ['alternateresaveraging', 'noresaveraging', 'alwaysresaveraging']],
             'smoothparameter':[float, 1.5],
             'cfllimit':[float, 1.5],
             'useblockettes':[bool, True],
             'uselinresmonitor':[bool, False],
 
-            # Overset Parameters:
+            # Overset Parameters
             'nearwalldist':[float, 0.1],
             'backgroundvolscale':[float, 1.0],
             'oversetprojtol':[float, 1e-12],
             'overlapfactor':[float, 0.9],
             'oversetloadbalance':[bool, True],
             'debugzipper':[bool, False],
-            'zippersurfacefamily':[object, None],
+            'zippersurfacefamily':[(str, type(None)), None],
             'cutcallback':[object, None],
-            'oversetupdatemode':[str, 'frozen'],
+            'oversetupdatemode':[str, ['frozen', 'fast', 'full']],
             'nrefine':[int,10],
             'usezippermesh':[bool, True],
             'useoversetwallscaling':[bool, False],
@@ -4623,11 +4568,11 @@ class ADFLOW(AeroSolver):
             'oversetpriority':[dict, {}],
 
             # Unsteady Parameters
-            'timeintegrationscheme':[str, 'bdf'],
-            'timeaccuracy':[int, 2],
+            'timeintegrationscheme':[str, ['bdf', 'explicitrk', 'implicitrk']],
+            'timeaccuracy':[int, [2, 1, 3]],
             'ntimestepscoarse':[int, 48],
             'ntimestepsfine':[int, 400],
-            'deltat':[float, .010],
+            'deltat':[float, 0.010],
             'useale':[bool, True],
             'usegridmotion':[bool, False],
             'coupledsolution':[bool, False],
@@ -4665,8 +4610,7 @@ class ADFLOW(AeroSolver):
             'applypcsubspacesize':[int, 10],
             'nkinnerpreconits':[int, 1],
             'nkouterpreconits':[int, 1],
-            'nkcfl0':[float, 100.0],
-            'nkls':[str, 'cubic'],
+            'nkls':[str, ['cubic', 'none', 'non monotone']],
             'nkfixedstep':[float, 0.25],
             'rkreset':[bool, False],
             'nrkreset':[int, 5],
@@ -4718,8 +4662,6 @@ class ADFLOW(AeroSolver):
             'partitionlikenproc':[int, -1],
 
             # Misc Parameters
-            'autosolveretry':[bool, False],
-            'autoadjointretry':[bool, False],
             'numbersolutions':[bool, True],
             'printiterations':[bool, True],
             'printtiming':[bool, True],
@@ -4729,7 +4671,7 @@ class ADFLOW(AeroSolver):
             'surfacevariables':[list, ['cp','vx', 'vy','vz', 'mach']],
             'volumevariables':[list, ['resrho']],
 
-            # Multidisciplinary Coupling Parameters:
+            # Multidisciplinary Coupling Parameters
             'forcesastractions':[bool, True],
 
             # Adjoint Parameters
@@ -4747,8 +4689,8 @@ class ADFLOW(AeroSolver):
             'adjointsubspacesize' : [int, 100],
             'adjointmonitorstep': [int, 10],
             'dissipationlumpingparameter':[float, 6.0],
-            'preconditionerside': [str, 'right'],
-            'matrixordering': [str, 'rcm'],
+            'preconditionerside': [str, ['right', 'left']],
+            'matrixordering': [str, ['rcm', 'natural', 'nested dissection', 'one way dissection', 'quotient minimum degree']],
             'globalpreconditioner': [str, 'additive schwartz'],
             'localpreconditioner' : [str, 'ilu'],
             'ilufill': [int, 2],
@@ -4982,7 +4924,6 @@ class ADFLOW(AeroSolver):
             'applypcsubspacesize':['nk', 'applypcsubspacesize'],
             'nkinnerpreconits':['nk', 'nk_innerpreconits'],
             'nkouterpreconits':['nk', 'nk_outerpreconits'],
-            'nkcfl0':['nk', 'nk_cfl0'],
             'nkls':{'none':self.adflow.constants.nolinesearch,
                     'cubic':self.adflow.constants.cubiclinesearch,
                     'non monotone':self.adflow.constants.nonmonotonelinesearch,
@@ -5103,17 +5044,14 @@ class ADFLOW(AeroSolver):
         """
         Lists of special options
         """
-        # These "ignore_options" are NOT actually', ignored, rather,
-        # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
-        # used strictly in Python
+        # pythonOptions do not get set in the Fortran code.
+        # They are used strictly in Python.
 
-        ignoreOptions = set(('numbersolutions',
+        pythonOptions = set(('numbersolutions',
                              'writesurfacesolution',
                              'writevolumesolution',
                              'writetecplotsurfacesolution',
                              'coupledsolution',
-                             'autosolveretry',
-                             'autoadjointretry',
                              'partitiononly',
                              'liftindex',
                              'meshsurfacefamily',
@@ -5126,10 +5064,14 @@ class ADFLOW(AeroSolver):
                              'skipafterfailedadjoint',
                          ))
 
-        # Deprecated options. These should not be used, but old
-        # scripts can continue to run
+        # Deprecated options that may be in old scripts and should not be used.
+
         deprecatedOptions = {'finitedifferencepc':'Use the ADPC option.',
                              'writesolution':'Use writeSurfaceSolution and writeVolumeSolution options instead.',
+                             'autosolveretry':'This feature is not implemented.',
+                             'autoadjointretry':'This feature is not implemented.',
+                             'nkcfl0':'The NK solver does not use a CFL value anymore. \
+                                       The CFL is set to infinity and the true Newton method is used.',
                              }
 
         specialOptions = set(('surfacevariables',
@@ -5143,7 +5085,7 @@ class ADFLOW(AeroSolver):
                               'oversetpriority',
                           ))
 
-        return ignoreOptions, deprecatedOptions, specialOptions
+        return pythonOptions, deprecatedOptions, specialOptions
 
     def _getObjectivesAndDVs(self):
         iDV = OrderedDict()

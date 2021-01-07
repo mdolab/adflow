@@ -109,7 +109,6 @@ adflowDefOpts = {
     'nkinnerpreconits':1,
     'nkouterpreconits':1,
     'nkls':'cubic',
-    'nkcfl0':1000000000000.0,
 
     # Approximate Newton-Krylov Parameters
     'useanksolver':False,
@@ -128,8 +127,6 @@ adflowDefOpts = {
     'partitiononly':False,
 
     # Misc Paramters
-    'autosolveretry':False,
-    'autoadjointretry':False,
     'numbersolutions':True,
     'printiterations':True,
     'printtiming':True,

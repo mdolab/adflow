@@ -58,7 +58,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "options": {
                 "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
                 "mgcycle": "sg",
-                "equationtype": "RANS",
+                "equationtype": "rans",
                 "smoother": "dadi",
                 "cfl": 1.5,
                 "cflcoarse": 1.25,

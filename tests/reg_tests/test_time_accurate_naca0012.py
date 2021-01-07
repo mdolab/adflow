@@ -53,7 +53,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "vis2": 0.5,
                 "restrictionrelaxation": 0.5,
                 "smoother": "dadi",
-                "equationtype": "RANS",
+                "equationtype": "rans",
                 "equationmode": "unsteady",
                 "timeIntegrationscheme": "bdf",
                 "ntimestepsfine": nfineSteps,
