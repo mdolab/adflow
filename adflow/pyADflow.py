@@ -134,7 +134,7 @@ class ADFLOW(AeroSolver):
         for key in self.basicCostFunctions:
             self.adflowCostFunctions[key] = [None, key]
 
-        # Separate list of the suplied supplied functions
+        # Separate list of the supplied supplied functions
         self.adflowUserCostFunctions = OrderedDict()
 
         # This is the real solver so dtype is 'd'
@@ -144,13 +144,12 @@ class ADFLOW(AeroSolver):
         if comm is None:
             comm = MPI.COMM_WORLD
 
-        self.comm = comm
-        self.adflow.communication.adflow_comm_world = self.comm.py2f()
+        self.adflow.communication.adflow_comm_world = comm.py2f()
         self.adflow.communication.adflow_comm_self = MPI.COMM_SELF.py2f()
-        self.adflow.communication.sendrequests = numpy.zeros(self.comm.size)
-        self.adflow.communication.recvrequests = numpy.zeros(self.comm.size)
-        self.myid = self.adflow.communication.myid = self.comm.rank
-        self.adflow.communication.nproc = self.comm.size
+        self.adflow.communication.sendrequests = numpy.zeros(comm.size)
+        self.adflow.communication.recvrequests = numpy.zeros(comm.size)
+        self.myid = self.adflow.communication.myid = comm.rank
+        self.adflow.communication.nproc = comm.size
 
         # Initialize the inherited aerosolver.
         if options is None:
@@ -164,7 +163,7 @@ class ADFLOW(AeroSolver):
         defSetupTime = time.time()
 
         AeroSolver.__init__(self, name, category, defOpts, informs,
-                            options=options)
+                            options=options, comm=comm)
 
         baseClassTime = time.time()
         # Update turbresscale depending on the turbulence model specified
@@ -181,7 +180,7 @@ class ADFLOW(AeroSolver):
         # terminate calls are handled
         self.adflow.killsignals.frompython = True
 
-        # Dictionary of design varibales and their index
+        # Dictionary of design variables and their index
         self.aeroDVs = []
 
         # Default counters
