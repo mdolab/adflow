@@ -162,8 +162,8 @@ class ADFLOW(AeroSolver):
 
         defSetupTime = time.time()
 
-        AeroSolver.__init__(self, name, category, defOpts, informs,
-                            options=options, comm=comm)
+        AeroSolver.__init__(self, name, category, defaultOptions=defOpts,
+                            options=options, comm=comm, informs=informs)
 
         baseClassTime = time.time()
         # Update turbresscale depending on the turbulence model specified
