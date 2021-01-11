@@ -414,7 +414,7 @@ bocos:do nn=1,nbocos
 ! and an isothermal wall for the turbulent equations.
 ! set the implicit treatment of the wall boundary conditions.
         call bcturbwall(nn)
-      case (symm, symmpolar, eulerwall) 
+      case (symm, antisymm, symmpolar, eulerwall) 
 !=============================================================
 !=============================================================
 ! symmetry, polar symmetry or inviscid wall. treatment of
