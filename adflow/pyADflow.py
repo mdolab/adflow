@@ -939,7 +939,7 @@ class ADFLOW(AeroSolver):
         self.curAP.adflowData.callCounter += 1
 
         # --------------------------------------------------------------
-        # Setup interation arrays ---- don't touch this unless you
+        # Setup iteration arrays ---- don't touch this unless you
         # REALLY REALLY know what you're doing!
 
         # iterTot is non-zero which means we already did a solution,
@@ -1887,8 +1887,8 @@ class ADFLOW(AeroSolver):
         # Name of function to use
         funcName = '%s_%s'%(ap.name, sepName)
 
-        if not self.getOption('rkreset') and self.getOption('usenksolve'):
-            ADFLOWWarning("nRKReset option is not set. It is usually necessary "
+        if not self.getOption('rkreset') and self.getOption('usenksolver'):
+            ADFLOWWarning("RKReset option is not set. It is usually necessary "
                         "for solveSep() when NK solver is used.")
 
         # Solve first problem

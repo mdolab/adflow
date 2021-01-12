@@ -317,7 +317,7 @@ infchangecorrection:
     As a result, the solver logic can do weird stuff because it is often based on the L2 norm of the residual.
     If this option is set to True, we do a simple linear adjustment of every velocity vector in the solution with the same change in alpha.
     As a result, the residuals jump up and the solver logic works as designed.
-    This supersedes the ``nrkreset`` approach.
+    This supersedes the ``rkreset`` approach.
 
 cavitationnumber:
   desc: >
@@ -717,11 +717,12 @@ nkfixedstep:
 
 rkreset:
   desc: >
-    Option to reset the Runge-Kutta solver at each iteration.
+    Option to run ``nrkreset`` Runge-Kutta startup iterations when using the NK solver and restarting from a previously converged solution.
+    This allows the residual to increase and prevents the NK solver from stalling.
 
 nrkreset:
   desc: >
-    Option to reset the NK solver every this number of iterations.
+    The number of Runge-Kutta startup iterations to run when ``rkreset`` is True.
 
 agmglevels:
   desc: >
