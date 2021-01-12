@@ -332,7 +332,7 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(1,i,j) = -rev(2,i,j)
-             rev(1,i,j) = 0.7143*rev(2,i,j)
+             rev(1,i,j) = 0.5*rev(2,i,j)
           enddo
        enddo
 
@@ -340,7 +340,7 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(ie,i,j) = -rev(il,i,j)
-             rev(ie,i,j) = 0.7143*rev(il,i,j)
+             rev(ie,i,j) = 0.5*rev(il,i,j)
           enddo
        enddo
 
@@ -348,7 +348,7 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,1,j) = -rev(i,2,j)
-             rev(i,1,j) = 0.7143*rev(i,2,j)
+             rev(i,1,j) = 0.5*rev(i,2,j)
           enddo
        enddo
 
@@ -356,7 +356,7 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,je,j) = -rev(i,jl,j)
-             rev(i,je,j) = 0.7143*rev(i,jl,j)
+             rev(i,je,j) = 0.5*rev(i,jl,j)
           enddo
        enddo
 
@@ -364,7 +364,7 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,j,1) = -rev(i,j,2)
-             rev(i,j,1) = 0.7143*rev(i,j,2)
+             rev(i,j,1) = 0.5*rev(i,j,2)
           enddo
        enddo
 
@@ -372,7 +372,7 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,j,ke) = -rev(i,j,kl)
-             rev(i,j,ke) = 0.7143*rev(i,j,kl)
+             rev(i,j,ke) = 0.5*rev(i,j,kl)
           enddo
        enddo
     end select
@@ -852,28 +852,28 @@ contains
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmti1(i,j,itu1,itu1) = one
-                bmti1(i,j,itu1,itu1) = -0.7143
+                bmti1(i,j,itu1,itu1) = -0.5
              enddo
           enddo
        case (iMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmti2(i,j,itu1,itu1) = one
-                bmti2(i,j,itu1,itu1) = -0.7143
+                bmti2(i,j,itu1,itu1) = -0.5
              enddo
           enddo
        case (jMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtj1(i,j,itu1,itu1) = one
-                bmtj1(i,j,itu1,itu1) = -0.7143
+                bmtj1(i,j,itu1,itu1) = -0.5
              enddo
           enddo
        case (jMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtj2(i,j,itu1,itu1) = one
-                bmtj2(i,j,itu1,itu1) = -0.7143
+                bmtj2(i,j,itu1,itu1) = -0.5
              enddo
           enddo
 
@@ -881,7 +881,7 @@ contains
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtk1(i,j,itu1,itu1) = one
-                bmtk1(i,j,itu1,itu1) = -0.7143
+                bmtk1(i,j,itu1,itu1) = -0.5
              enddo
           enddo
 
@@ -889,7 +889,7 @@ contains
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtk2(i,j,itu1,itu1) = one
-                bmtk2(i,j,itu1,itu1) = -0.7143
+                bmtk2(i,j,itu1,itu1) = -0.5
              enddo
           enddo
        end select
