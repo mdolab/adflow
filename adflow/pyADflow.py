@@ -4698,7 +4698,7 @@ class ADFLOW(AeroSolver):
             'dissipationlumpingparameter':[float, 6.0],
             'preconditionerside': [str, ['right', 'left']],
             'matrixordering': [str, ['rcm', 'natural', 'nested dissection', 'one way dissection', 'quotient minimum degree']],
-            'globalpreconditioner': [str, 'additive schwartz'],
+            'globalpreconditioner': [str, ['additive schwartz', 'multigrid']],
             'localpreconditioner' : [str, 'ilu'],
             'ilufill': [int, 2],
             'asmoverlap' : [int, 1],
