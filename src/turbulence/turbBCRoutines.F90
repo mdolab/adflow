@@ -312,6 +312,7 @@ contains
     !
     use constants
     use blockPointers
+    use inputPhysics, only : kssa
     implicit none
     !
     !      Subroutine arguments.
@@ -325,14 +326,15 @@ contains
 
     ! Determine the face id on which the subface is located and
     ! loop over the faces of the subface and set the eddy viscosity
-    ! in the halo cells.
+    ! in the halo cells. 
 
     select case (BCFaceid(nn))
     case (iMin)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(1,i,j) = -rev(2,i,j)
-             rev(1,i,j) = 0.93*rev(2,i,j)
+            !  print "(f12.3)", saFact(kssa, d2Wall(2,i,j))
+             rev(1,i,j) = saFact(kssa, d2Wall(2,i,j))*rev(2,i,j)
           enddo
        enddo
 
@@ -340,7 +342,8 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(ie,i,j) = -rev(il,i,j)
-             rev(ie,i,j) = 0.93*rev(il,i,j)
+            ! print "(f12.3)", saFact(kssa, d2Wall(il,i,j))
+             rev(ie,i,j) = saFact(kssa, d2Wall(il,i,j))*rev(il,i,j)
           enddo
        enddo
 
@@ -348,7 +351,8 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,1,j) = -rev(i,2,j)
-             rev(i,1,j) = 0.93*rev(i,2,j)
+            ! print "(f12.3)", saFact(kssa, d2Wall(i,1,j))
+             rev(i,1,j) = saFact(kssa, d2Wall(i,2,j))*rev(i,2,j)
           enddo
        enddo
 
@@ -356,7 +360,8 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,je,j) = -rev(i,jl,j)
-             rev(i,je,j) = 0.93*rev(i,jl,j)
+            ! print "(f12.3)", saFact(kssa, d2Wall(i,je,j))
+             rev(i,je,j) = saFact(kssa, d2Wall(i,jl,j))*rev(i,jl,j)
           enddo
        enddo
 
@@ -364,7 +369,8 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,j,1) = -rev(i,j,2)
-             rev(i,j,1) = 0.93*rev(i,j,2)
+            ! print "(f12.3)", saFact(kssa, d2Wall(i,j,2))
+             rev(i,j,1) = saFact(kssa, d2Wall(i,j,2))*rev(i,j,2)
           enddo
        enddo
 
@@ -372,7 +378,8 @@ contains
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
              ! rev(i,j,ke) = -rev(i,j,kl)
-             rev(i,j,ke) = 0.93*rev(i,j,kl)
+            ! print "(f12.3)", saFact(kssa, d2Wall(i,j,kl))
+             rev(i,j,ke) = saFact(kssa, d2Wall(i,j,kl))*rev(i,j,kl)
           enddo
        enddo
     end select
@@ -852,28 +859,28 @@ contains
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmti1(i,j,itu1,itu1) = one
-                bmti1(i,j,itu1,itu1) = -0.93
+                bmti1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(2,i,j))
              enddo
           enddo
        case (iMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmti2(i,j,itu1,itu1) = one
-                bmti2(i,j,itu1,itu1) = -0.93
+                bmti2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(il,i,j))
              enddo
           enddo
        case (jMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtj1(i,j,itu1,itu1) = one
-                bmtj1(i,j,itu1,itu1) = -0.93
+                bmtj1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,2,j))
              enddo
           enddo
        case (jMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtj2(i,j,itu1,itu1) = one
-                bmtj2(i,j,itu1,itu1) = -0.93
+                bmtj2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,jl,j))
              enddo
           enddo
 
@@ -881,7 +888,7 @@ contains
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtk1(i,j,itu1,itu1) = one
-                bmtk1(i,j,itu1,itu1) = -0.93
+                bmtk1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,2))
              enddo
           enddo
 
@@ -889,7 +896,7 @@ contains
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
                 ! bmtk2(i,j,itu1,itu1) = one
-                bmtk2(i,j,itu1,itu1) = -0.93
+                bmtk2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,kl))
              enddo
           enddo
        end select
@@ -1403,5 +1410,22 @@ contains
        end select
     enddo bocos
   end subroutine turbBCNSWall
+
+  function  saFact(ks, d)
+
+   use constants
+   implicit none
+
+   ! dummy arguments
+   real(kind=realType) :: saFact
+
+   ! local variablse
+   real(kind=realType) :: ks
+   real(kind=realType) :: d
+   
+
+   saFact = (ks - d/0.03) / (ks + d/0.03)
+
+  end function  saFact
 
 end module turbBCRoutines
