@@ -24,6 +24,7 @@ v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 import os
 import time
 import copy
+import types
 import numpy
 import sys
 from mpi4py import MPI
@@ -4566,7 +4567,7 @@ class ADFLOW(AeroSolver):
             'oversetloadbalance':[bool, True],
             'debugzipper':[bool, False],
             'zippersurfacefamily':[(str, type(None)), None],
-            'cutcallback':[object, None],
+            'cutcallback':[(types.FunctionType, type(None)), None],
             'oversetupdatemode':[str, ['frozen', 'fast', 'full']],
             'nrefine':[int,10],
             'usezippermesh':[bool, True],
