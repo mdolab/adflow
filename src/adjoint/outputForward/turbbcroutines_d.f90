@@ -416,6 +416,7 @@ bocos:do nn=1,nbocos
 !
     use constants
     use blockpointers
+    use inputphysics, only : kssa
     implicit none
 !
 !      subroutine arguments.
@@ -425,50 +426,69 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j
+    real(kind=realtype) :: result1
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
-! in the halo cells.
+! in the halo cells. 
     select case  (bcfaceid(nn)) 
     case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(1, i, j) = -revd(2, i, j)
-          rev(1, i, j) = -rev(2, i, j)
+! rev(1,i,j) = -rev(2,i,j)
+!  print "(f12.3)", safact(kssa, d2wall(2,i,j))
+          result1 = safact(kssa, d2wall(2, i, j))
+          revd(1, i, j) = result1*revd(2, i, j)
+          rev(1, i, j) = result1*rev(2, i, j)
         end do
       end do
     case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(ie, i, j) = -revd(il, i, j)
-          rev(ie, i, j) = -rev(il, i, j)
+! rev(ie,i,j) = -rev(il,i,j)
+! print "(f12.3)", safact(kssa, d2wall(il,i,j))
+          result1 = safact(kssa, d2wall(il, i, j))
+          revd(ie, i, j) = result1*revd(il, i, j)
+          rev(ie, i, j) = result1*rev(il, i, j)
         end do
       end do
     case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, 1, j) = -revd(i, 2, j)
-          rev(i, 1, j) = -rev(i, 2, j)
+! rev(i,1,j) = -rev(i,2,j)
+! print "(f12.3)", safact(kssa, d2wall(i,1,j))
+          result1 = safact(kssa, d2wall(i, 2, j))
+          revd(i, 1, j) = result1*revd(i, 2, j)
+          rev(i, 1, j) = result1*rev(i, 2, j)
         end do
       end do
     case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, je, j) = -revd(i, jl, j)
-          rev(i, je, j) = -rev(i, jl, j)
+! rev(i,je,j) = -rev(i,jl,j)
+! print "(f12.3)", safact(kssa, d2wall(i,je,j))
+          result1 = safact(kssa, d2wall(i, jl, j))
+          revd(i, je, j) = result1*revd(i, jl, j)
+          rev(i, je, j) = result1*rev(i, jl, j)
         end do
       end do
     case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, j, 1) = -revd(i, j, 2)
-          rev(i, j, 1) = -rev(i, j, 2)
+! rev(i,j,1) = -rev(i,j,2)
+! print "(f12.3)", safact(kssa, d2wall(i,j,2))
+          result1 = safact(kssa, d2wall(i, j, 2))
+          revd(i, j, 1) = result1*revd(i, j, 2)
+          rev(i, j, 1) = result1*rev(i, j, 2)
         end do
       end do
     case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          revd(i, j, ke) = -revd(i, j, kl)
-          rev(i, j, ke) = -rev(i, j, kl)
+! rev(i,j,ke) = -rev(i,j,kl)
+! print "(f12.3)", safact(kssa, d2wall(i,j,kl))
+          result1 = safact(kssa, d2wall(i, j, kl))
+          revd(i, j, ke) = result1*revd(i, j, kl)
+          rev(i, j, ke) = result1*rev(i, j, kl)
         end do
       end do
     end select
@@ -482,6 +502,7 @@ bocos:do nn=1,nbocos
 !
     use constants
     use blockpointers
+    use inputphysics, only : kssa
     implicit none
 !
 !      subroutine arguments.
@@ -491,44 +512,63 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: i, j
+    real(kind=realtype) :: result1
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
-! in the halo cells.
+! in the halo cells. 
     select case  (bcfaceid(nn)) 
     case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(1, i, j) = -rev(2, i, j)
+! rev(1,i,j) = -rev(2,i,j)
+!  print "(f12.3)", safact(kssa, d2wall(2,i,j))
+          result1 = safact(kssa, d2wall(2, i, j))
+          rev(1, i, j) = result1*rev(2, i, j)
         end do
       end do
     case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(ie, i, j) = -rev(il, i, j)
+! rev(ie,i,j) = -rev(il,i,j)
+! print "(f12.3)", safact(kssa, d2wall(il,i,j))
+          result1 = safact(kssa, d2wall(il, i, j))
+          rev(ie, i, j) = result1*rev(il, i, j)
         end do
       end do
     case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, 1, j) = -rev(i, 2, j)
+! rev(i,1,j) = -rev(i,2,j)
+! print "(f12.3)", safact(kssa, d2wall(i,1,j))
+          result1 = safact(kssa, d2wall(i, 2, j))
+          rev(i, 1, j) = result1*rev(i, 2, j)
         end do
       end do
     case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, je, j) = -rev(i, jl, j)
+! rev(i,je,j) = -rev(i,jl,j)
+! print "(f12.3)", safact(kssa, d2wall(i,je,j))
+          result1 = safact(kssa, d2wall(i, jl, j))
+          rev(i, je, j) = result1*rev(i, jl, j)
         end do
       end do
     case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, j, 1) = -rev(i, j, 2)
+! rev(i,j,1) = -rev(i,j,2)
+! print "(f12.3)", safact(kssa, d2wall(i,j,2))
+          result1 = safact(kssa, d2wall(i, j, 2))
+          rev(i, j, 1) = result1*rev(i, j, 2)
         end do
       end do
     case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          rev(i, j, ke) = -rev(i, j, kl)
+! rev(i,j,ke) = -rev(i,j,kl)
+! print "(f12.3)", safact(kssa, d2wall(i,j,kl))
+          result1 = safact(kssa, d2wall(i, j, kl))
+          rev(i, j, ke) = result1*rev(i, j, kl)
         end do
       end do
     end select
@@ -1180,6 +1220,7 @@ bocos:do nn=1,nbocos
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
     intrinsic min
     intrinsic max
+    real(kind=realtype) :: result1
     integer(kind=inttype) :: y12
     integer(kind=inttype) :: y11
     integer(kind=inttype) :: y10
@@ -1204,37 +1245,49 @@ bocos:do nn=1,nbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti1(i, j, itu1, itu1) = one
+! bmti1(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(2, i, j))
+            bmti1(i, j, itu1, itu1) = -result1
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti2(i, j, itu1, itu1) = one
+! bmti2(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(il, i, j))
+            bmti2(i, j, itu1, itu1) = -result1
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj1(i, j, itu1, itu1) = one
+! bmtj1(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, 2, j))
+            bmtj1(i, j, itu1, itu1) = -result1
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj2(i, j, itu1, itu1) = one
+! bmtj2(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, jl, j))
+            bmtj2(i, j, itu1, itu1) = -result1
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk1(i, j, itu1, itu1) = one
+! bmtk1(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, j, 2))
+            bmtk1(i, j, itu1, itu1) = -result1
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk2(i, j, itu1, itu1) = one
+! bmtk2(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, j, kl))
+            bmtk2(i, j, itu1, itu1) = -result1
           end do
         end do
       end select
@@ -1879,6 +1932,7 @@ bocos:do nn=1,nviscbocos
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
     intrinsic min
     intrinsic max
+    real(kind=realtype) :: result1
     integer(kind=inttype) :: y12
     integer(kind=inttype) :: y11
     integer(kind=inttype) :: y10
@@ -1903,37 +1957,49 @@ bocos:do nn=1,nviscbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti1(i, j, itu1, itu1) = one
+! bmti1(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(2, i, j))
+            bmti1(i, j, itu1, itu1) = -result1
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmti2(i, j, itu1, itu1) = one
+! bmti2(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(il, i, j))
+            bmti2(i, j, itu1, itu1) = -result1
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj1(i, j, itu1, itu1) = one
+! bmtj1(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, 2, j))
+            bmtj1(i, j, itu1, itu1) = -result1
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtj2(i, j, itu1, itu1) = one
+! bmtj2(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, jl, j))
+            bmtj2(i, j, itu1, itu1) = -result1
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk1(i, j, itu1, itu1) = one
+! bmtk1(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, j, 2))
+            bmtk1(i, j, itu1, itu1) = -result1
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            bmtk2(i, j, itu1, itu1) = one
+! bmtk2(i,j,itu1,itu1) = one
+            result1 = safact(kssa, d2wall(i, j, kl))
+            bmtk2(i, j, itu1, itu1) = -result1
           end do
         end do
       end select
@@ -2193,4 +2259,14 @@ bocos:do nn=1,nviscbocos
       end select
     end select
   end subroutine bcturbwall
+  function safact(ks, d)
+    use constants
+    implicit none
+! dummy arguments
+    real(kind=realtype) :: safact
+! local variablse
+    real(kind=realtype) :: ks
+    real(kind=realtype) :: d
+    safact = (ks-d/0.03)/(ks+d/0.03)
+  end function safact
 end module turbbcroutines_d

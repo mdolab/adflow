@@ -42,6 +42,8 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: dnew, cr1
+    real(kind=realtype) :: dnewd
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
@@ -69,10 +71,10 @@ contains
     intrinsic min
     intrinsic max
     integer :: branch
+    real(kind=realtype) :: temp3
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
-    real(kind=realtype) :: tempd10
     real(kind=realtype) :: min1
     real(kind=realtype) :: min1d
     real(kind=realtype) :: tempd9
@@ -93,6 +95,9 @@ contains
     cv13 = rsacv1**3
     kar2inv = one/rsak**2
     cw36 = rsacw3**6
+! constants for sa rough
+! ks=0.0001 
+    cr1 = 0.5
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -194,13 +199,17 @@ contains
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
+! sa rough 
+        dnew = d2wall(i, j, k) + 0.03*kssa
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/d2wall(i, j, k)**2
-        chi = w(i, j, k, itu1)/nu
+! dist2inv = one/(d2wall(i,j,k)**2)
+        dist2inv = one/dnew**2
+        chi = w(i, j, k, itu1)/nu + cr1*kssa/dnew
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)
-        fv2 = one - chi/(one+chi*fv1)
+! fv2      = one - chi/(one + chi*fv1)
+        fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.
@@ -262,18 +271,18 @@ contains
         end if
         term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
 &         )
-        tempd9 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
-        temp2 = w(i, j, k, itu1)
-        term1d = tempd9
-        term2d = temp2*tempd9
-        wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp2)*&
-&         scratchd(i, j, k, idvt) + term2*tempd9
+        tempd8 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
+        temp3 = w(i, j, k, itu1)
+        term1d = tempd8
+        term2d = temp3*tempd8
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp3)*&
+&         scratchd(i, j, k, idvt) + term2*tempd8
         scratchd(i, j, k, idvt) = 0.0_8
-        tempd10 = dist2inv*kar2inv*rsacb1*term2d
+        tempd9 = dist2inv*kar2inv*rsacb1*term2d
         dist2invd = (kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa)*&
 &         term2d
-        ft2d = (1.0_8-fv2)*tempd10
-        fv2d = (one-ft2)*tempd10
+        ft2d = (1.0_8-fv2)*tempd9
+        fv2d = (one-ft2)*tempd9
         fwsad = -(dist2inv*rsacw1*term2d)
         call popcontrol1b(branch)
         if (branch .ne. 0) then
@@ -281,21 +290,21 @@ contains
           ssd = ssd + rsacb1*(one-ft2)*term1d
         end if
         termfwd = gg*fwsad
-        temp1 = (one+cw36)/(cw36+gg6)
-        if (temp1 .le. 0.0_8 .and. (sixth .eq. 0.0_8 .or. sixth .ne. int&
+        temp2 = (one+cw36)/(cw36+gg6)
+        if (temp2 .le. 0.0_8 .and. (sixth .eq. 0.0_8 .or. sixth .ne. int&
 &           (sixth))) then
           gg6d = 0.0
         else
-          gg6d = -(sixth*temp1**(sixth-1)*temp1*termfwd/(cw36+gg6))
+          gg6d = -(sixth*temp2**(sixth-1)*temp2*termfwd/(cw36+gg6))
         end if
         ggd = 6*gg**5*gg6d + termfw*fwsad
         rrd = (rsacw2*6*rr**5-rsacw2+1.0_8)*ggd
         call popcontrol1b(branch)
         if (branch .eq. 0) rrd = 0.0_8
-        tempd8 = w(i, j, k, itu1)*kar2inv*rrd/sst
+        tempd7 = w(i, j, k, itu1)*kar2inv*rrd/sst
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + kar2inv*dist2inv*rrd/sst
-        dist2invd = dist2invd + tempd8
-        sstd = -(dist2inv*tempd8/sst)
+        dist2invd = dist2invd + tempd7
+        sstd = -(dist2inv*tempd7/sst)
         call popcontrol1b(branch)
         if (branch .eq. 0) sstd = 0.0_8
         call popcontrol1b(branch)
@@ -310,32 +319,34 @@ contains
           if (.not.two*strainmag2 .eq. 0.0_8) strainmag2d = strainmag2d &
 &             + two*y1d/(2.0*sqrt(two*strainmag2))
         end if
-        tempd7 = kar2inv*w(i, j, k, itu1)*sstd
+        tempd6 = kar2inv*w(i, j, k, itu1)*sstd
         ssd = ssd + sstd
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + kar2inv*fv2*dist2inv*&
 &         sstd
-        fv2d = fv2d + dist2inv*tempd7
-        dist2invd = dist2invd + fv2*tempd7
+        fv2d = fv2d + dist2inv*tempd6
+        dist2invd = dist2invd + fv2*tempd6
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           chi2d = -(exp(-(rsact4*chi2))*rsact3*rsact4*ft2d)
         else
           chi2d = 0.0_8
         end if
-        tempd4 = -(fv2d/(one+chi*fv1))
-        tempd5 = -(chi*tempd4/(one+chi*fv1))
-        fv1d = chi*tempd5
-        tempd6 = fv1d/(cv13+chi3)
-        chi3d = (1.0_8-chi3/(cv13+chi3))*tempd6
+        temp1 = w(i, j, k, itu1)
+        temp0 = nu + temp1*fv1
+        tempd4 = w(i, j, k, itu1)*fv2d/temp0**2
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + fv1*tempd4 - fv2d/temp0
+        fv1d = temp1*tempd4
+        tempd5 = fv1d/(cv13+chi3)
+        chi3d = (1.0_8-chi3/(cv13+chi3))*tempd5
         chi2d = chi2d + chi*chi3d
-        chid = chi2*chi3d + 2*chi*chi2d + fv1*tempd5 + tempd4
+        chid = 2*chi*chi2d + chi2*chi3d
+        nud = tempd4 - w(i, j, k, itu1)*chid/nu**2
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
-        nud = -(w(i, j, k, itu1)*chid/nu**2)
-        temp0 = d2wall(i, j, k)
-        d2walld(i, j, k) = d2walld(i, j, k) - one*2*dist2invd/temp0**3
+        dnewd = -(one*2*dist2invd/dnew**3) - cr1*kssa*chid/dnew**2
         temp = w(i, j, k, irho)
         rlvd(i, j, k) = rlvd(i, j, k) + nud/temp
         wd(i, j, k, irho) = wd(i, j, k, irho) - rlv(i, j, k)*nud/temp**2
+        d2walld(i, j, k) = d2walld(i, j, k) + dnewd
         call popcontrol2b(branch)
         if (branch .eq. 0) then
           if (strainprod .eq. 0.0_8) then
@@ -537,6 +548,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: dnew, cr1
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
@@ -559,6 +571,9 @@ contains
     kar2inv = one/rsak**2
     cw36 = rsacw3**6
     cb3inv = one/rsacb3
+! constants for sa rough
+! ks=0.0001 
+    cr1 = 0.5
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -651,13 +666,17 @@ contains
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
+! sa rough 
+        dnew = d2wall(i, j, k) + 0.03*kssa
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/d2wall(i, j, k)**2
-        chi = w(i, j, k, itu1)/nu
+! dist2inv = one/(d2wall(i,j,k)**2)
+        dist2inv = one/dnew**2
+        chi = w(i, j, k, itu1)/nu + cr1*kssa/dnew
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)
-        fv2 = one - chi/(one+chi*fv1)
+! fv2      = one - chi/(one + chi*fv1)
+        fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.
