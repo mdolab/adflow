@@ -5216,9 +5216,9 @@ class ADFLOW(AeroSolver):
 
         if self.getOption("turbresscale") is None:
             turbModel = self.getOption("turbulencemodel")
-            if turbModel == "sa":
+            if turbModel == "SA":
                 self.setOption("turbresscale", 10000.0)
-            elif turbModel == "menter sst":
+            elif turbModel == "Menter SST":
                 self.setOption("turbresscale", [1e3, 1e-6])
             else:
                 raise Error("Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"%(turbModel))
