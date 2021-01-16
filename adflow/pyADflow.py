@@ -4692,7 +4692,7 @@ class ADFLOW(AeroSolver):
             'viscPC':[bool,False],
             'useDiagTSPC':[bool, True],
             'restartAdjoint':[bool, True],
-            'adjointSolver': [str, 'gmres'],
+            'adjointSolver': [str, ['gmres', 'tfqmr', 'richardson', 'bcgs', 'ibcgs']],
             'adjointMaxIter': [int, 500],
             'adjointSubspaceSize' : [int, 100],
             'adjointMonitorStep': [int, 10],
