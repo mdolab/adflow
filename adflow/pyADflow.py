@@ -4700,7 +4700,7 @@ class ADFLOW(AeroSolver):
             'preconditionerSide': [str, ['right', 'left']],
             'matrixOrdering': [str, ['RCM', 'natural', 'nested dissection', 'one way dissection', 'quotient minimum degree']],
             'globalPreconditioner': [str, ['additive Schwarz', 'multigrid']],
-            'localPreconditioner' : [str, 'ILU'],
+            'localPreconditioner' : [str, ['ILU']],
             'ILUFill': [int, 2],
             'ASMOverlap' : [int, 1],
             'innerPreconIts':[int, 1],
