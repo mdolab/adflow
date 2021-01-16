@@ -138,24 +138,24 @@ coarseDiscretization:
 limiter:
   desc: >
     Type of flux limiter to use for the ``upwind`` scheme.
-  vanalbeda: van Albada
+  vanAlbada: van Albada
   minmod: Minmod
-  nolimiter: No limiter
+  noLimiter: No limiter
 
 smoother:
   desc: >
     Type of smoother to use with the multigrid solver.
-  runge kutta: Five-stage fourth-order low-memory explicit Runge–Kutta time stepping scheme.
-  dadi: > 
+  Runge Kutta: Five-stage fourth-order low-memory explicit Runge–Kutta time stepping scheme.
+  DADI: >
     Diagonalized diagonally dominant alternating direction implicit (D3ADI) scheme.
     This is typically faster than the Runge-Kutta scheme but may be less robust.
 
 equationType:
   desc: >
     The type of equations to solve. 
-  euler: Euler
-  laminar ns: laminar Navier-Stokes
-  rans: Reynolds-averaged Navier-Stokes
+  Euler: Euler
+  laminar NS: laminar Navier-Stokes
+  RANS: Reynolds-averaged Navier-Stokes
 
 equationMode:
   desc: >
@@ -173,15 +173,15 @@ flowType:
 turbulenceModel:
   desc: >
     The turbulence model to use for RANS simulations.
-  sa: >
+  SA: >
     Spalart-Allmaras.
     This is the recommended option for external aerodynamic flow applications because it is the only turbulence model that has been differentiated.
     This is also the only turbulence model that is tested.
-  sae: Spalart-Allmaras with Edwards Modification
-  k omega wilcox: Wilcox k-omega
+  SAE: Spalart-Allmaras with Edwards Modification
+  k omega Wilcox: Wilcox k-omega
   k omega modified: Wilcox modified k-omega
-  ktau: k-tau
-  menter sst: Menter SST k-omega
+  k tau: k-tau
+  Menter SST: Menter SST k-omega
   v2f: v2-f
 
 turbulenceOrder:
@@ -198,12 +198,12 @@ turbResScale:
     Depending on the turbulence model, values can be a float scalar to a 4 element list of floats.
     Refer to the list below for the defaults and the type of input expected:
     
-      * ``sa`` - Spalart Allmaras - Type: float scalar - Default: 10e4
-      * ``sae`` - Sparart Allmaras-Edward model - NOT IMPLEMENTED
-      * ``k omega wilcox`` - NOT IMPLEMENTED
+      * ``SA`` - Spalart Allmaras - Type: float scalar - Default: 10e4
+      * ``SAE`` - Sparart Allmaras-Edward model - NOT IMPLEMENTED
+      * ``k omega Wilcox`` - NOT IMPLEMENTED
       * ``k omega modified`` - NOT IMPLEMENTED
-      * ``ktau`` - NOT IMPLEMENTED
-      * ``menter sst`` - Type: float list of 2 elements - Default: [1e3, 1e-6]
+      * ``k tau`` - NOT IMPLEMENTED
+      * ``Menter SST`` - Type: float list of 2 elements - Default: [1e3, 1e-6]
       * ``v2f`` - NOT IMPLEMENTED
 
 turbulenceProduction:
@@ -212,7 +212,7 @@ turbulenceProduction:
     Only valid for turbulence models that involve k.
   strain: Use the strain formulation
   vorticity: Use the vorticity formulation
-  katolaunder: Use the Kato-Launder formulation
+  KatoLaunder: Use the Kato-Launder formulation
 
 useQCR:
   desc: >
@@ -388,9 +388,9 @@ MGStartLevel:
 resAveraging:
   desc: >
     How frequently to perform residual averaging (also known as residual smoothing) for the RK solver.
-  noresaveraging: Never
-  alwaysresaveraging: On every RK stage
-  alternateresaveraging: >
+  never: Never
+  always: On every RK stage
+  alternate: >
     On every second RK stage.
     This saves computation but with minimal impact on the convergence properties.
 
@@ -519,9 +519,11 @@ oversetPriority:
 timeIntegrationScheme:
   desc: >
     The type of time integration scheme to use for unsteady analysis.
-  bdf: Backward differentiation formula (BDF). Second order BDF is currently the only option known to work.
-  explicitrk: Explicit Runge-Kutta
-  implicitrk: Implicit Runge-Kutta
+  BDF: >
+    Backward differentiation formula (BDF).
+    Second order BDF is currently the only option known to work.
+  explicitRK: Explicit Runge-Kutta
+  implicitRK: Implicit Runge-Kutta
 
 timeAccuracy:
   desc: >
@@ -1075,11 +1077,11 @@ adjointSolver:
   desc: >
     Type of linear solver for the adjoint.
     See PETSc documentation for details.
-  gmres: GMRES. Typically gives the best performance.
-  tfqmr: Transpose free QMR
-  richardson: Preconditioned Richardson iterative method
-  bcgs: BiCGStab
-  ibcgs: Improved BiCGStab
+  GMRES: GMRES. Typically gives the best performance.
+  TFQMR: Transpose free QMR
+  Richardson: Preconditioned Richardson iterative method
+  BCGS: BiCGStab
+  IBCGS: Improved BiCGStab
 
 adjointMaxIter:
   desc: >
@@ -1106,7 +1108,7 @@ matrixOrdering:
   desc: >
     The matrix ordering algorithm used for the adjoint preconditioner.
     See PETSc documentation for details.
-  rcm: reverse Cuthill-McKee
+  RCM: reverse Cuthill-McKee
   natural: natural
   nested dissection: nested dissection
   one way dissection: one way dissection
@@ -1114,12 +1116,12 @@ matrixOrdering:
 
 globalPreconditioner:
   desc: The type of (global) preconditioner to use for the adjoint system.
-  additive schwartz: Restricted additive Schwarz method (ASM)
+  additive Schwarz: Restricted additive Schwarz method (ASM)
   multigrid: Agglomerated multigrid (AGMG)
 
 localPreconditioner:
   desc: The type of preconditioner to use for the local preconditioning iteration in the adjoint solution.
-  ilu: >
+  ILU: >
     Incomplete LU (ILU) factorization.
     Currently the only supported option.
 

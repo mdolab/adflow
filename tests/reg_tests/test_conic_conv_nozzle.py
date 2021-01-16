@@ -36,8 +36,8 @@ class TestSolveIntegrationPlane(reg_test_classes.RegTest):
         "gridfile": os.path.join(baseDir, "../../inputFiles/conic_conv_nozzle_mb.cgns"),
         "outputdirectory": os.path.join(baseDir, "../output_files"),
         # Physics Parameters
-        "equationType": "euler",
-        "smoother": "dadi",
+        "equationType": "Euler",
+        "smoother": "DADI",
         "nsubiter": 3,
         "CFL": 4.0,
         "CFLCoarse": 1.25,
@@ -150,8 +150,8 @@ class TestSolveOverset(reg_test_classes.RegTest):
         "gridfile": os.path.join(baseDir, "../../inputFiles/conic_conv_nozzle.cgns"),
         "outputdirectory": os.path.join(baseDir, "../output_files"),
         # Physics Parameters
-        "equationType": "euler",
-        "smoother": "dadi",
+        "equationType": "Euler",
+        "smoother": "DADI",
         "nsubiter": 3,
         "CFL": 4.0,
         "CFLCoarse": 1.25,
