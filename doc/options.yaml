@@ -138,14 +138,14 @@ coarseDiscretization:
 limiter:
   desc: >
     Type of flux limiter to use for the ``upwind`` scheme.
-  vanAlbada: van Albada
+  van Albada: van Albada
   minmod: Minmod
-  noLimiter: No limiter
+  no limiter: No limiter
 
 smoother:
   desc: >
     Type of smoother to use with the multigrid solver.
-  Runge Kutta: Five-stage fourth-order low-memory explicit Runge–Kutta time stepping scheme.
+  Runge-Kutta: Five-stage fourth-order low-memory explicit Runge–Kutta time stepping scheme.
   DADI: >
     Diagonalized diagonally dominant alternating direction implicit (D3ADI) scheme.
     This is typically faster than the Runge-Kutta scheme but may be less robust.
@@ -177,10 +177,10 @@ turbulenceModel:
     Spalart-Allmaras.
     This is the recommended option for external aerodynamic flow applications because it is the only turbulence model that has been differentiated.
     This is also the only turbulence model that is tested.
-  SAE: Spalart-Allmaras with Edwards Modification
-  k omega Wilcox: Wilcox k-omega
-  k omega modified: Wilcox modified k-omega
-  k tau: k-tau
+  SA-Edwards: Spalart-Allmaras with Edwards Modification
+  k-omega Wilcox: Wilcox k-omega
+  k-omega modified: Wilcox modified k-omega
+  k-tau: k-tau
   Menter SST: Menter SST k-omega
   v2f: v2-f
 
@@ -198,11 +198,11 @@ turbResScale:
     Depending on the turbulence model, values can be a float scalar to a 4 element list of floats.
     Refer to the list below for the defaults and the type of input expected:
     
-      * ``SA`` - Spalart Allmaras - Type: float scalar - Default: 10e4
-      * ``SAE`` - Sparart Allmaras-Edward model - NOT IMPLEMENTED
-      * ``k omega Wilcox`` - NOT IMPLEMENTED
-      * ``k omega modified`` - NOT IMPLEMENTED
-      * ``k tau`` - NOT IMPLEMENTED
+      * ``SA`` - Type: float scalar - Default: 10e4
+      * ``SA-Edwards`` - NOT IMPLEMENTED
+      * ``k-omega Wilcox`` - NOT IMPLEMENTED
+      * ``k-omega modified`` - NOT IMPLEMENTED
+      * ``k-tau`` - NOT IMPLEMENTED
       * ``Menter SST`` - Type: float list of 2 elements - Default: [1e3, 1e-6]
       * ``v2f`` - NOT IMPLEMENTED
 
@@ -212,7 +212,7 @@ turbulenceProduction:
     Only valid for turbulence models that involve k.
   strain: Use the strain formulation
   vorticity: Use the vorticity formulation
-  KatoLaunder: Use the Kato-Launder formulation
+  Kato-Launder: Use the Kato-Launder formulation
 
 useQCR:
   desc: >
@@ -522,8 +522,8 @@ timeIntegrationScheme:
   BDF: >
     Backward differentiation formula (BDF).
     Second order BDF is currently the only option known to work.
-  explicitRK: Explicit Runge-Kutta
-  implicitRK: Implicit Runge-Kutta
+  explicit RK: Explicit Runge-Kutta
+  implicit RK: Implicit Runge-Kutta
 
 timeAccuracy:
   desc: >

@@ -30,8 +30,8 @@ adflowDefOpts = {
     # Physics Paramters
     'discretization':'central plus scalar dissipation',
     'coarsediscretization':'central plus scalar dissipation',
-    'limiter':'vanAlbada',
-    'smoother':'Runge Kutta',
+    'limiter':'van Albada',
+    'smoother':'Runge-Kutta',
     'equationtype':'Euler',
     'equationmode':'steady',
     'flowtype':'external',
