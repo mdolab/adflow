@@ -657,7 +657,7 @@ NKUseEW:
 
 NKADPC:
   desc: >
-    Flag determines if the AD version of the preconditioner is used.
+    Flag determines if the AD version of the NK preconditioner is used.
     If False, we use finite-difference.
     Using AD improves preconditioner accuracy and linear solver performance at the cost of more expensive preconditioner computations.
 
@@ -885,7 +885,7 @@ ANKPCUpdateTol:
 
 ANKADPC:
   desc: >
-    Whether or not to use the AD-based preconditioner.
+    Whether or not to use the AD-based preconditioner for the ANK solver.
     The finite-difference preconditioner is usually good enough and is cheaper to compute.
 
 ANKNSubiterTurb:
@@ -1053,19 +1053,19 @@ adjointDivTol:
 
 approxPC:
   desc: >
-    Whether or not to use the approximate Jacobian.
+    Whether or not to use the approximate Jacobian for the adjoint preconditioner.
 
 ADPC:
   desc: >
-    Whether or not to use AD for the preconditioning matrix.
+    Whether or not to use AD for the adjoint preconditioner.
 
 viscPC:
   desc: >
-    Whether or not to keep cross derivative terms.
+    Whether or not to keep cross derivative terms in the adjoint preconditioner.
 
 useDiagTSPC:
   desc: >
-    Whether or not the off-time instance terms are included in the time spectral preconditioner.
+    Whether or not the off-time instance terms are included in the time spectral adjoint preconditioner.
 
 restartAdjoint:
   desc: >
