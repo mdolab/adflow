@@ -434,13 +434,13 @@ contains
     end do
   end subroutine bcsymm2ndhalo
 !  differentiation of bcantisymm1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
-!   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
-!   rw status of diff variables: *rev1:in-out *rev2:incr *pp1:in-out
-!                *pp2:incr *rlv1:in-out *rlv2:incr *ww1:in-out
-!                *ww2:incr *(*bcdata.norm):incr
+!   gradient     of useful results: pinf winf *rev1 *rev2 *pp1
+!                *pp2 *rlv1 *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   with respect to varying inputs: pinf winf *rev1 *rev2 *pp1
+!                *pp2 *rlv1 *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   rw status of diff variables: pinf:incr winf:incr *rev1:in-out
+!                *rev2:incr *pp1:in-out *pp2:incr *rlv1:in-out
+!                *rlv2:incr *ww1:in-out *ww2:incr *(*bcdata.norm):incr
 !   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
 !                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
   subroutine bcantisymm1sthalo_b(nn)
@@ -504,10 +504,16 @@ contains
         rlv2d(i, j) = rlv2d(i, j) - rlv1d(i, j)
         rlv1d(i, j) = 0.0_8
       end if
+      pinfd = pinfd + 2*pp1d(i, j)
       pp2d(i, j) = pp2d(i, j) - pp1d(i, j)
       pp1d(i, j) = 0.0_8
+      winfd(irhoe) = winfd(irhoe) + ww1d(i, j, irhoe)
       dww2d(irhoe) = dww2d(irhoe) - ww1d(i, j, irhoe)
       ww1d(i, j, irhoe) = 0.0_8
+      winfd(ivz) = winfd(ivz) + ww1d(i, j, ivz)
+      winfd(ivy) = winfd(ivy) + ww1d(i, j, ivy)
+      winfd(ivx) = winfd(ivx) + ww1d(i, j, ivx)
+      winfd(irho) = winfd(irho) + ww1d(i, j, irho)
       dww2d(irho) = dww2d(irho) - ww1d(i, j, irho)
       ww1d(i, j, irho) = 0.0_8
       vnd = bcdata(nn)%norm(i, j, 3)*ww1d(i, j, ivz)
@@ -536,14 +542,19 @@ contains
       bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + dww2(ivz)*&
 &       tempd
       ww2d(i, j, irhoe) = ww2d(i, j, irhoe) + dww2d(irhoe)
+      winfd(irhoe) = winfd(irhoe) - dww2d(irhoe)
       dww2d(irhoe) = 0.0_8
       ww2d(i, j, ivz) = ww2d(i, j, ivz) + dww2d(ivz)
+      winfd(ivz) = winfd(ivz) - dww2d(ivz)
       dww2d(ivz) = 0.0_8
       ww2d(i, j, ivy) = ww2d(i, j, ivy) + dww2d(ivy)
+      winfd(ivy) = winfd(ivy) - dww2d(ivy)
       dww2d(ivy) = 0.0_8
       ww2d(i, j, ivx) = ww2d(i, j, ivx) + dww2d(ivx)
+      winfd(ivx) = winfd(ivx) - dww2d(ivx)
       dww2d(ivx) = 0.0_8
       ww2d(i, j, irho) = ww2d(i, j, irho) + dww2d(irho)
+      winfd(irho) = winfd(irho) - dww2d(irho)
       dww2d(irho) = 0.0_8
     end do
   end subroutine bcantisymm1sthalo_b
@@ -604,13 +615,13 @@ contains
     end do
   end subroutine bcantisymm1sthalo
 !  differentiation of bcantisymm2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
-!   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
-!   rw status of diff variables: *rev0:in-out *rev3:incr *pp0:in-out
-!                *pp3:incr *rlv0:in-out *rlv3:incr *ww0:in-out
-!                *ww3:incr *(*bcdata.norm):incr
+!   gradient     of useful results: pinf winf *rev0 *rev3 *pp0
+!                *pp3 *rlv0 *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!   with respect to varying inputs: pinf winf *rev0 *rev3 *pp0
+!                *pp3 *rlv0 *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!   rw status of diff variables: pinf:incr winf:incr *rev0:in-out
+!                *rev3:incr *pp0:in-out *pp3:incr *rlv0:in-out
+!                *rlv3:incr *ww0:in-out *ww3:incr *(*bcdata.norm):incr
 !   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
 !                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
   subroutine bcantisymm2ndhalo_b(nn)
@@ -664,10 +675,16 @@ contains
         rlv3d(i, j) = rlv3d(i, j) - rlv0d(i, j)
         rlv0d(i, j) = 0.0_8
       end if
+      pinfd = pinfd + 2*pp0d(i, j)
       pp3d(i, j) = pp3d(i, j) - pp0d(i, j)
       pp0d(i, j) = 0.0_8
+      winfd(irhoe) = winfd(irhoe) + ww0d(i, j, irhoe)
       dww3d(irhoe) = dww3d(irhoe) - ww0d(i, j, irhoe)
       ww0d(i, j, irhoe) = 0.0_8
+      winfd(ivz) = winfd(ivz) + ww0d(i, j, ivz)
+      winfd(ivy) = winfd(ivy) + ww0d(i, j, ivy)
+      winfd(ivx) = winfd(ivx) + ww0d(i, j, ivx)
+      winfd(irho) = winfd(irho) + ww0d(i, j, irho)
       dww3d(irho) = dww3d(irho) - ww0d(i, j, irho)
       ww0d(i, j, irho) = 0.0_8
       vnd = bcdata(nn)%norm(i, j, 3)*ww0d(i, j, ivz)
@@ -696,14 +713,19 @@ contains
       bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + dww3(ivz)*&
 &       tempd
       ww3d(i, j, irhoe) = ww3d(i, j, irhoe) + dww3d(irhoe)
+      winfd(irhoe) = winfd(irhoe) - dww3d(irhoe)
       dww3d(irhoe) = 0.0_8
       ww3d(i, j, ivz) = ww3d(i, j, ivz) + dww3d(ivz)
+      winfd(ivz) = winfd(ivz) - dww3d(ivz)
       dww3d(ivz) = 0.0_8
       ww3d(i, j, ivy) = ww3d(i, j, ivy) + dww3d(ivy)
+      winfd(ivy) = winfd(ivy) - dww3d(ivy)
       dww3d(ivy) = 0.0_8
       ww3d(i, j, ivx) = ww3d(i, j, ivx) + dww3d(ivx)
+      winfd(ivx) = winfd(ivx) - dww3d(ivx)
       dww3d(ivx) = 0.0_8
       ww3d(i, j, irho) = ww3d(i, j, irho) + dww3d(irho)
+      winfd(irho) = winfd(irho) - dww3d(irho)
       dww3d(irho) = 0.0_8
     end do
   end subroutine bcantisymm2ndhalo_b

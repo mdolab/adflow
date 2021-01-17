@@ -401,11 +401,11 @@ contains
   end subroutine bcsymm2ndhalo
 !  differentiation of bcantisymm1sthalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev1 *pp1 *rlv1 *ww1
-!   with respect to varying inputs: *rev1 *rev2 *pp1 *pp2 *rlv1
-!                *rlv2 *ww1 *ww2 *(*bcdata.norm)
-!   rw status of diff variables: *rev1:in-out *rev2:in *pp1:in-out
-!                *pp2:in *rlv1:in-out *rlv2:in *ww1:in-out *ww2:in
-!                *(*bcdata.norm):in
+!   with respect to varying inputs: pinf winf *rev1 *rev2 *pp1
+!                *pp2 *rlv1 *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   rw status of diff variables: pinf:in winf:in *rev1:in-out *rev2:in
+!                *pp1:in-out *pp2:in *rlv1:in-out *rlv2:in *ww1:in-out
+!                *ww2:in *(*bcdata.norm):in
 !   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
 !                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
   subroutine bcantisymm1sthalo_d(nn)
@@ -445,15 +445,15 @@ contains
 ! determine twice the normal velocity component,
 ! which must be substracted from the donor velocity
 ! to obtain the halo velocity.
-      dww2d(irho) = ww2d(i, j, irho)
+      dww2d(irho) = ww2d(i, j, irho) - winfd(irho)
       dww2(irho) = ww2(i, j, irho) - winf(irho)
-      dww2d(ivx) = ww2d(i, j, ivx)
+      dww2d(ivx) = ww2d(i, j, ivx) - winfd(ivx)
       dww2(ivx) = ww2(i, j, ivx) - winf(ivx)
-      dww2d(ivy) = ww2d(i, j, ivy)
+      dww2d(ivy) = ww2d(i, j, ivy) - winfd(ivy)
       dww2(ivy) = ww2(i, j, ivy) - winf(ivy)
-      dww2d(ivz) = ww2d(i, j, ivz)
+      dww2d(ivz) = ww2d(i, j, ivz) - winfd(ivz)
       dww2(ivz) = ww2(i, j, ivz) - winf(ivz)
-      dww2d(irhoe) = ww2d(i, j, irhoe)
+      dww2d(irhoe) = ww2d(i, j, irhoe) - winfd(irhoe)
       dww2(irhoe) = ww2(i, j, irhoe) - winf(irhoe)
       vnd = two*(dww2d(ivx)*bcdata(nn)%norm(i, j, 1)+dww2(ivx)*bcdatad(&
 &       nn)%norm(i, j, 1)+dww2d(ivy)*bcdata(nn)%norm(i, j, 2)+dww2(ivy)*&
@@ -471,17 +471,20 @@ contains
       ww1d(i, j, ivz) = vnd*bcdata(nn)%norm(i, j, 3) - dww2d(ivz) + vn*&
 &       bcdatad(nn)%norm(i, j, 3)
       ww1(i, j, ivz) = -dww2(ivz) + vn*bcdata(nn)%norm(i, j, 3)
-      ww1d(i, j, irho) = -dww2d(irho)
+      ww1d(i, j, irho) = winfd(irho) - dww2d(irho)
       ww1(i, j, irho) = -dww2(irho) + winf(irho)
+      ww1d(i, j, ivx) = winfd(ivx) + ww1d(i, j, ivx)
       ww1(i, j, ivx) = winf(ivx) + ww1(i, j, ivx)
+      ww1d(i, j, ivy) = winfd(ivy) + ww1d(i, j, ivy)
       ww1(i, j, ivy) = winf(ivy) + ww1(i, j, ivy)
+      ww1d(i, j, ivz) = winfd(ivz) + ww1d(i, j, ivz)
       ww1(i, j, ivz) = winf(ivz) + ww1(i, j, ivz)
-      ww1d(i, j, irhoe) = -dww2d(irhoe)
+      ww1d(i, j, irhoe) = winfd(irhoe) - dww2d(irhoe)
       ww1(i, j, irhoe) = -dww2(irhoe) + winf(irhoe)
 ! set the pressure and gamma and possibly the
 ! laminar and eddy viscosity in the halo.
       gamma1(i, j) = gamma2(i, j)
-      pp1d(i, j) = -pp2d(i, j)
+      pp1d(i, j) = 2*pinfd - pp2d(i, j)
       pp1(i, j) = pinf - (pp2(i, j)-pinf)
       if (viscous) then
         rlv1d(i, j) = -rlv2d(i, j)
@@ -551,11 +554,11 @@ contains
   end subroutine bcantisymm1sthalo
 !  differentiation of bcantisymm2ndhalo in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev0 *pp0 *rlv0 *ww0
-!   with respect to varying inputs: *rev0 *rev3 *pp0 *pp3 *rlv0
-!                *rlv3 *ww0 *ww3 *(*bcdata.norm)
-!   rw status of diff variables: *rev0:in-out *rev3:in *pp0:in-out
-!                *pp3:in *rlv0:in-out *rlv3:in *ww0:in-out *ww3:in
-!                *(*bcdata.norm):in
+!   with respect to varying inputs: pinf winf *rev0 *rev3 *pp0
+!                *pp3 *rlv0 *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!   rw status of diff variables: pinf:in winf:in *rev0:in-out *rev3:in
+!                *pp0:in-out *pp3:in *rlv0:in-out *rlv3:in *ww0:in-out
+!                *ww3:in *(*bcdata.norm):in
 !   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
 !                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
   subroutine bcantisymm2ndhalo_d(nn)
@@ -585,15 +588,15 @@ contains
     do ii=0,isize*jsize-1
       i = mod(ii, isize) + istart
       j = ii/isize + jstart
-      dww3d(irho) = ww3d(i, j, irho)
+      dww3d(irho) = ww3d(i, j, irho) - winfd(irho)
       dww3(irho) = ww3(i, j, irho) - winf(irho)
-      dww3d(ivx) = ww3d(i, j, ivx)
+      dww3d(ivx) = ww3d(i, j, ivx) - winfd(ivx)
       dww3(ivx) = ww3(i, j, ivx) - winf(ivx)
-      dww3d(ivy) = ww3d(i, j, ivy)
+      dww3d(ivy) = ww3d(i, j, ivy) - winfd(ivy)
       dww3(ivy) = ww3(i, j, ivy) - winf(ivy)
-      dww3d(ivz) = ww3d(i, j, ivz)
+      dww3d(ivz) = ww3d(i, j, ivz) - winfd(ivz)
       dww3(ivz) = ww3(i, j, ivz) - winf(ivz)
-      dww3d(irhoe) = ww3d(i, j, irhoe)
+      dww3d(irhoe) = ww3d(i, j, irhoe) - winfd(irhoe)
       dww3(irhoe) = ww3(i, j, irhoe) - winf(irhoe)
       vnd = two*(dww3d(ivx)*bcdata(nn)%norm(i, j, 1)+dww3(ivx)*bcdatad(&
 &       nn)%norm(i, j, 1)+dww3d(ivy)*bcdata(nn)%norm(i, j, 2)+dww3(ivy)*&
@@ -611,17 +614,20 @@ contains
       ww0d(i, j, ivz) = vnd*bcdata(nn)%norm(i, j, 3) - dww3d(ivz) + vn*&
 &       bcdatad(nn)%norm(i, j, 3)
       ww0(i, j, ivz) = -dww3(ivz) + vn*bcdata(nn)%norm(i, j, 3)
-      ww0d(i, j, irho) = -dww3d(irho)
+      ww0d(i, j, irho) = winfd(irho) - dww3d(irho)
       ww0(i, j, irho) = -dww3(irho) + winf(irho)
+      ww0d(i, j, ivx) = winfd(ivx) + ww0d(i, j, ivx)
       ww0(i, j, ivx) = winf(ivx) + ww0(i, j, ivx)
+      ww0d(i, j, ivy) = winfd(ivy) + ww0d(i, j, ivy)
       ww0(i, j, ivy) = winf(ivy) + ww0(i, j, ivy)
+      ww0d(i, j, ivz) = winfd(ivz) + ww0d(i, j, ivz)
       ww0(i, j, ivz) = winf(ivz) + ww0(i, j, ivz)
-      ww0d(i, j, irhoe) = -dww3d(irhoe)
+      ww0d(i, j, irhoe) = winfd(irhoe) - dww3d(irhoe)
       ww0(i, j, irhoe) = -dww3(irhoe) + winf(irhoe)
 ! set the pressure and gamma and possibly the
 ! laminar and eddy viscosity in the halo.
       gamma0(i, j) = gamma3(i, j)
-      pp0d(i, j) = -pp3d(i, j)
+      pp0d(i, j) = 2*pinfd - pp3d(i, j)
       pp0(i, j) = pinf - (pp3(i, j)-pinf)
       if (viscous) then
         rlv0d(i, j) = -rlv3d(i, j)
