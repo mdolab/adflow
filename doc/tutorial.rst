@@ -46,7 +46,7 @@ each statement line by line::
   'outputDirectory':outputDirectory,
 
   # Physics Parameters
-  'equationType':'rans',
+  'equationType':'RANS',
 
   # Common Parameters
   'CFL':1.5,
@@ -114,7 +114,7 @@ a few flow conditions and reference values to be put into ``AeroProblem`` later.
   'outputDirectory':outputDirectory,
 
   # Physics Parameters
-  'equationType':'rans',
+  'equationType':'RANS',
 
   # Common Parameters
   'CFL':1.5,
