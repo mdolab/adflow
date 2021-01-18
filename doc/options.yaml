@@ -711,7 +711,7 @@ NKLS:
     The type of line search used with the NK solver.
   cubic: Cubic interpolation
   none: No line search
-  non monotone: Nonmonotone line search
+  non-monotone: Non-monotone line search
   
 NKFixedStep:
   desc: >
