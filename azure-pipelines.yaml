@@ -21,4 +21,4 @@ extends:
     STEPS_TEST_REAL: testflo -v .
     STEPS_MAKE_COMPLEX: make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION
     STEPS_INSTALL_COMPLEX: pip install .
-    STEPS_TEST_COMPLEX: testflo . -m "cmplx_test*"
+    STEPS_TEST_COMPLEX: export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo -v . -m "cmplx_test*"
