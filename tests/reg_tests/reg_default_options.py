@@ -30,12 +30,12 @@ adflowDefOpts = {
     # Physics Paramters
     'discretization':'central plus scalar dissipation',
     'coarsediscretization':'central plus scalar dissipation',
-    'limiter':'vanalbeda',
-    'smoother':'runge kutta',
-    'equationtype':'euler',
+    'limiter':'van Albada',
+    'smoother':'Runge-Kutta',
+    'equationtype':'Euler',
     'equationmode':'steady',
     'flowtype':'external',
-    'turbulencemodel':'sa',
+    'turbulencemodel':'SA',
     'turbulenceorder':'first order',
     'turbresscale':10000.0,
     'usewallfunctions':False,
@@ -58,12 +58,12 @@ adflowDefOpts = {
     'cflcoarse':1.0,
     'mgcycle':'3w',
     'mgstartlevel':-1,
-    'resaveraging':'alternateresaveraging',
+    'resaveraging':'alternate',
     'smoothparameter':1.5,
     'cfllimit':1.5,
 
     # Unsteady Paramters
-    'timeintegrationscheme':'bdf',
+    'timeintegrationscheme':'BDF',
     'timeaccuracy':2,
     'ntimestepscoarse':48,
     'ntimestepsfine':400,
@@ -109,7 +109,6 @@ adflowDefOpts = {
     'nkinnerpreconits':1,
     'nkouterpreconits':1,
     'nkls':'cubic',
-    'nkcfl0':1000000000000.0,
 
     # Approximate Newton-Krylov Parameters
     'useanksolver':False,
@@ -128,8 +127,6 @@ adflowDefOpts = {
     'partitiononly':False,
 
     # Misc Paramters
-    'autosolveretry':False,
-    'autoadjointretry':False,
     'numbersolutions':True,
     'printiterations':True,
     'printtiming':True,
@@ -152,15 +149,15 @@ adflowDefOpts = {
     'viscpc':False,
     'usediagtspc':True,
     'restartadjoint':True,
-    'adjointsolver':'gmres',
+    'adjointsolver':'GMRES',
     'adjointmaxiter':500,
     'adjointsubspacesize':100,
     'adjointmonitorstep':10,
     'dissipationlumpingparameter':6.0,
     'preconditionerside':'right',
-    'matrixordering':'rcm',
-    'globalpreconditioner':  'additive schwartz',
-    'localpreconditioner':'ilu',
+    'matrixordering':'RCM',
+    'globalpreconditioner':  'additive Schwarz',
+    'localpreconditioner':'ILU',
     'ilufill':2,
     'asmoverlap':1,
     'innerpreconits':1,
@@ -184,7 +181,7 @@ adflowDefOpts = {
 pyWarpDefOpts = {}
 
 IDWarpDefOpts = {
-    'fileType':'cgns',
+    'fileType':'CGNS',
     'specifiedSurfaces':None,
     'symmetrySurfaces':None,
     'symmetryPlanes':None,
