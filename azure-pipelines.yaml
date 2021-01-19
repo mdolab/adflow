@@ -1,0 +1,25 @@
+resources:
+  repositories:
+  - repository: azure_template
+    type: github
+    name: mdolab/.github
+    endpoint: mdolab
+
+pool:
+    vmImage: 'ubuntu-latest'
+
+extends:
+  template: azure/azure_template.yaml@azure_template
+  parameters:
+    REPO_NAME: adflow
+    COMPLEX: true
+    GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
+    INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk
+    INPUT_FILES: true
+    STYLE_CHECK: true
+    STEPS_MAKE_REAL: make
+    STEPS_INSTALL_REAL: pip install .
+    STEPS_TEST_REAL: testflo -v .
+    STEPS_MAKE_COMPLEX:  ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debugging=yes --with-scalar-type=complex --PETSC_ARCH=complex-debug && export PETSC_ARCH=complex-debug && make -f Makefile_CS
+    STEPS_INSTALL_COMPLEX: pip install .
+    STEPS_TEST_COMPLEX: testflo . -m "cmplx_test*"
