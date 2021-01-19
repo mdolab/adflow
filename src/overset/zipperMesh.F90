@@ -584,7 +584,7 @@ contains
        call writeOversetMaster(master, 101)
        close(101)
     end if
-    
+
     call createOrderedStrings(master, strings, nStrings)
 
 
@@ -1231,14 +1231,13 @@ contains
   subroutine writeWalls(famList)
 
 
-    use communication
     !use oversetData
     use constants
     use blockPointers
     use utils, only : setPointers, setBCPointers
     use BCPointers, only : xx
     use sorting, only : famInList
-    use communication, only : myid, adflow_comm_world
+    use communication, only : myid, adflow_comm_world, nProc
     use utils, only : EChk
     implicit none
     integer(kind=intType), intent(in), dimension(:) :: famList
@@ -1419,7 +1418,7 @@ contains
 
         write(zoneName, "(a,I5.5)") "Zone_", nBkGlobal
 110     format('ZONE T=',a, " I=", i5, " J=", i5)
-        write(101, 110), trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
+        write(101, 110) trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
         write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
 13      format (E20.12)
 

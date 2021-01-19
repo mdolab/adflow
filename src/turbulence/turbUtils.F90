@@ -847,6 +847,8 @@ contains
     use blockPointers, only : nx, ny, nz, il, jl, kl, vol, sfaceI, sfaceJ, sfaceK, &
          w, si, sj, sk, addGridVelocities, bmti1, bmti2, bmtj1, bmtj2, &
          bmtk1, bmtk2, scratch
+    use inputDiscretization, only : orderTurb
+    use iteration, only : groundLevel
     use turbMod, only : secondOrd
     implicit none
     !
@@ -865,6 +867,12 @@ contains
     real(kind=realType) :: uu, dwt, dwtm1, dwtp1, dwti, dwtj, dwtk
 
     real(kind=realType), dimension(mAdv) :: impl
+
+    ! Determine whether or not a second order discretization for the
+    ! advective terms must be used.
+    secondOrd = .false.
+    if(groundLevel == 1_intType .and. &
+         orderTurb == secondOrder) secondOrd = .true.
 
     ! Initialize the grid velocity to zero. This value will be used
     ! if the block is not moving.

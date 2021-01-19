@@ -1,4 +1,4 @@
-       module cgnsGrid
+module cgnsGrid
 !
 !       This module contains the derived data type for storing the
 !       information of the original cgns grid file. Information stored
@@ -546,4 +546,4 @@
        real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyInv
        real(kind=realType), allocatable, dimension(:,:) :: massFlowFamilyDiss
 
-       end module cgnsGrid
+end module cgnsGrid

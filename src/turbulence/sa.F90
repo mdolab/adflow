@@ -16,7 +16,7 @@ contains
   subroutine sa_block(resOnly)
     !
     !       sa solves the transport equation for the Spalart-Allmaras
-    !       turbulence model in a segregated manner using a diagonal
+    !       turbulence model in a decoupled manner using a diagonal
     !       dominant ADI-scheme. Note that the scratch and boundary
     !       matrix values are not strictly, but tapande would like to
     !       see them becuase it must save them.
@@ -715,7 +715,7 @@ contains
   subroutine saSolve
     !
     !  saSolve solves the turbulent transport equation for the
-    !  original Spalart-Allmaras model in a segregated manner using
+    !  original Spalart-Allmaras model in a decoupled manner using
     !  a diagonal dominant ADI-scheme.
     use blockPointers
     use inputIteration

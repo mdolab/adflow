@@ -15213,7 +15213,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
   svwgt[0] = lgraph->vwgt;
   snvwgt[0] = lgraph->nvwgt;
   sadjwgtsum[0] = lgraph->adjwgtsum;
-  sadjncy[0] = lgraph->adjncy; 	
+  sadjncy[0] = lgraph->adjncy;
   sadjwgt[0] = lgraph->adjwgt;
   slabel[0] = lgraph->label;
 
@@ -15222,7 +15222,7 @@ void SplitGraphPart(CtrlType *ctrl, GraphType *graph, GraphType *lgraph, GraphTy
   svwgt[1] = rgraph->vwgt;
   snvwgt[1] = rgraph->nvwgt;
   sadjwgtsum[1] = rgraph->adjwgtsum;
-  sadjncy[1] = rgraph->adjncy; 	
+  sadjncy[1] = rgraph->adjncy;
   sadjwgt[1] = rgraph->adjwgt;
   slabel[1] = rgraph->label;
 
@@ -16417,7 +16417,7 @@ void FM_2WayNodeRefine(CtrlType *ctrl, GraphType *graph, float ubfactor, int npa
   idxtype *mptr, *mind, *moved, *swaps, *perm;
   PQueueType parts[2];
   NRInfoType *rinfo;
-  int higain, oldgain, mincut, initcut, mincutorder;	
+  int higain, oldgain, mincut, initcut, mincutorder;
   int pass, to, other, limit;
   int badmaxpwgt, mindiff, newdiff;
   int u[2], g[2];
@@ -16652,7 +16652,7 @@ void FM_2WayNodeRefine2(CtrlType *ctrl, GraphType *graph, float ubfactor, int np
   idxtype *mptr, *mind, *moved, *swaps, *perm;
   PQueueType parts[2];
   NRInfoType *rinfo;
-  int higain, oldgain, mincut, initcut, mincutorder;	
+  int higain, oldgain, mincut, initcut, mincutorder;
   int pass, to, other, limit;
   int badmaxpwgt, mindiff, newdiff;
   int u[2], g[2];
@@ -16889,7 +16889,7 @@ void FM_2WayNodeRefineEqWgt(CtrlType *ctrl, GraphType *graph, int npasses)
   idxtype *mptr, *mind, *moved, *swaps, *perm;
   PQueueType parts[2];
   NRInfoType *rinfo;
-  int higain, oldgain, mincut, initcut, mincutorder;	
+  int higain, oldgain, mincut, initcut, mincutorder;
   int pass, to, other, limit;
   int mindiff, newdiff;
   int u[2], g[2];
@@ -17113,7 +17113,7 @@ void FM_2WayNodeRefine_OneSided(CtrlType *ctrl, GraphType *graph, float ubfactor
   idxtype *mptr, *mind, *swaps, *perm;
   PQueueType parts;
   NRInfoType *rinfo;
-  int higain, oldgain, mincut, initcut, mincutorder;	
+  int higain, oldgain, mincut, initcut, mincutorder;
   int pass, to, other, limit;
   int badmaxpwgt, mindiff, newdiff;
 
@@ -17314,7 +17314,7 @@ void FM_2WayNodeBalance(CtrlType *ctrl, GraphType *graph, float ubfactor)
   idxtype *perm, *moved;
   PQueueType parts;
   NRInfoType *rinfo;
-  int higain, oldgain;	
+  int higain, oldgain;
   int to, other;
 
   nvtxs = graph->nvtxs;
@@ -19315,7 +19315,7 @@ void errexit(char *f_str,...)
 
   sprintf(out2, "Error! %s", out1);
 
-  fprintf(stdout, out2);
+  fprintf(stdout, "%s", out2);
   fflush(stdout);
 
   abort();

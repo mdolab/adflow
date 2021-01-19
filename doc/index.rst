@@ -18,11 +18,11 @@ multi-block and overset 3D CFD solver.
    introduction
    install
    tutorial
-   meshing
    options
-   pyADflow
+   API
    solvers
    performance
    devguide
-   
+   citation
+
 See Fortran code documentation `here <_static/doxydoc/html/index.html>`_

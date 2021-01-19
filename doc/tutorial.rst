@@ -3,16 +3,22 @@
 Tutorial
 ========
 
+Meshing
+-------
+
+Before running ADflow we need a CGNS mesh. For a complete tutorial on using MACH, including meshing, please refer to the `MACH aero tutorial <https://github.com/mdolab/MACH_Aero_Tutorials>`_.
+
+
 Basic Run Script
 ----------------
 
 The following shows how to get started with ADflow by running the mdo_tutorial
-wing problem. First, we show the complete program listing and then go through 
+wing problem. First, we show the complete program listing and then go through
 each statement line by line::
 
   # This is a template that should be used for setting up
   # RANS analysis scripts
-  
+
   # ======================================================================
   #         Import modules
   # ======================================================================
@@ -20,7 +26,7 @@ each statement line by line::
   from mpi4py import MPI
   from baseclasses import *
   from adflow import ADFLOW
-  
+
   # ======================================================================
   #         Input Information -- Modify accordingly!
   # ======================================================================
@@ -33,25 +39,25 @@ each statement line by line::
   MGCycle = '3w'
   altitude = 10000
   name = 'fc'
-  
+
   aeroOptions = {
   # Common Parameters
   'gridFile':gridFile,
   'outputDirectory':outputDirectory,
-  
+
   # Physics Parameters
   'equationType':'RANS',
-    
+
   # Common Parameters
   'CFL':1.5,
   'CFLCoarse':1.25,
-  'MGCycle':MGCycle, 
+  'MGCycle':MGCycle,
   'MGStartLevel':-1,
   'nCyclesCoarse':250,
   'nCycles':1000,
   'monitorvariables':['resrho','cl','cd'],
   'useNKSolver':False,
-    
+
   # Convergence Parameters
   'L2Convergence':1e-6,
   'L2ConvergenceCoarse':1e-2,
@@ -73,7 +79,7 @@ each statement line by line::
   # Print the evaluatd functions
   if MPI.COMM_WORLD.rank == 0:
       print funcs
-  
+
 
 Start by importing the ``adflow``, ``baseclasses``, and ``mpi4py``.::
 
@@ -101,32 +107,32 @@ a few flow conditions and reference values to be put into ``AeroProblem`` later.
   MGCycle = '3w'
   altitude = 10000
   name = 'fc'
-  
+
   aeroOptions = {
   # Common Parameters
   'gridFile':gridFile,
   'outputDirectory':outputDirectory,
-  
+
   # Physics Parameters
   'equationType':'RANS',
-    
+
   # Common Parameters
   'CFL':1.5,
   'CFLCoarse':1.25,
-  'MGCycle':MGCycle, 
+  'MGCycle':MGCycle,
   'MGStartLevel':-1,
   'nCyclesCoarse':250,
   'nCycles':1000,
   'monitorvariables':['resrho','cl','cd'],
   'useNKSolver':False,
-    
+
   # Convergence Parameters
   'L2Convergence':1e-6,
   'L2ConvergenceCoarse':1e-2,
   }
 
-Now, this is the actually solution part. We start by defining the ``AeroProblem``, 
-which is import from ``baseclasses``. We specify flow condtions and reference values
+Now, this is the actually solution part. We start by defining the ``AeroProblem``,
+which is import from ``baseclasses``. We specify flow conditions and reference values
 into the ``aeroProblem``. We also tell the solver which solution values that
 we are interested in. In this case, we use the keyword ``evalFuncs``. ::
 
@@ -135,14 +141,14 @@ we are interested in. In this case, we use the keyword ``evalFuncs``. ::
   areaRef=areaRef, chordRef=chordRef,
   evalFuncs=['cl','cd'])
 
-Then, we create the ADflow instant. We also provide ADflow all the options that we 
+Then, we create the ADflow instant. We also provide ADflow all the options that we
 just specified above. ::
 
   # Create solver
   CFDSolver = ADFLOW(options=aeroOptions)
-  
+
 Now, we solve the CFD problem. ``CFDSolver(ap)`` is the command that actually
-solve the CFD. You can see print out from ADflow of each iteration here. This 
+solve the CFD. You can see print out from ADflow of each iteration here. This
 example will take just a couple minutes. ``CFDSolver.evalFunctions()`` return
 the function of interests we specified in ``AeroProblem``.::
 
@@ -150,11 +156,11 @@ the function of interests we specified in ``AeroProblem``.::
   funcs = {}
   CFDSolver(ap)
   CFDSolver.evalFunctions(ap, funcs)
-  
-Finally, we print out the value of `cd` and `cl`. We only print on the 
+
+Finally, we print out the value of `cd` and `cl`. We only print on the
 root processor. ::
- 
-  # Print the evaluatd functions
+
+  # Print the evaluated functions
   if MPI.COMM_WORLD.rank == 0:
   print funcs
 
@@ -167,7 +173,7 @@ Here some notes on how to set up various functionality in ADflow is listed.
 
 Rigid rotation for time-accurate solution
 *****************************************
-This is a small tutorial how to set the apppropriate flags to do a rigid rotation. The following ADflow options flags need to be set::
+This is a small tutorial how to set the appropriate flags to do a rigid rotation. The following ADflow options flags need to be set::
 
   useGridMotion = True
   alphaFollowing = False
@@ -177,16 +183,46 @@ pmode - rotation about x axis
 rmode - rotation about y axis
 qmode - rotation about z axis
 
-Usually there is only one mode set at a time. When doing a rigid rotation beaware that the sign on deltaAlpha needs to be set appropriately depending on what axis the wing is rotating about!
+Usually there is only one mode set at a time. When doing a rigid rotation beware that the sign on deltaAlpha needs to be set appropriately depending on what axis the wing is rotating about!
 
 There are two common cases. The span of the wing is in, y direction (rotation about y-axis) or z direction (rotation about y-axis):
 
-NEED TO REFINE 
-THIS DEPENDS ON THE COORDINATES
+.. NEED TO REFINE
+.. THIS DEPENDS ON THE COORDINATES
+
 1. Span is in y direction / rotation is about the y-axis. (rmode needs to be set to true)
-  * positive rotation (+deltaAlpha) will pitch the wing upwards 
+
+  * positive rotation (+deltaAlpha) will pitch the wing upwards
   * negative rotation (-deltaAlpha) will pitch the wing downwards
 
 2. Span is in z direction / rotation is about the z-axis (qmode needs to be set to true)
-  * negative rotation (-deltaAlpha) will pitch the wing upwards 
+
+  * negative rotation (-deltaAlpha) will pitch the wing upwards
   * positive rotation (+deltaAlpha) will pitch the wing downwards
+
+
+Kill Signals
+------------
+ADflow has two defined kill signals that can stop or kill ADflow gracefully without the loss of data. The two signals defined are
+
+  * ``-USR1`` - instructs ADflow to write a solution file after the current iteration
+  * ``-USR2`` - instructs ADflow to write a solution file and the computation will be stopped.
+
+The definition of an iteration is different for steady and unsteady.
+For steady it means after the current iteration, for unsteady after the current time step.
+
+The signals are enabled by default but can be switched off or disabled at compile time using the compiler flag ``-DUSE_NO_SIGNALS``.
+
+To use the signals from the command line run::
+
+  kill -USR1 <PID>
+
+where ``<PID>`` is the process id of the mpi process.
+These signals are often used when debugging. For instance, the ``-USR1`` signal can be useful to write out a semi-converged solution for further investigation, and the ``-USR2`` can be used to stop a stalled solution without loss of data.
+Other use-cases are also possible.
+To obtain the ``<PID>``, one can for example use ``top`` or ``ps -ef``.
+
+
+
+
+
