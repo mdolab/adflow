@@ -16,7 +16,6 @@ extends:
     GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
     INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk
     INPUT_FILES: true
-    STYLE_CHECK: true
     STEPS_MAKE_REAL: make
     STEPS_INSTALL_REAL: pip install .
     STEPS_TEST_REAL: testflo -v .
