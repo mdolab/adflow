@@ -346,9 +346,9 @@ nCyclesCoarse:
 
 nSubiterTurb:
   desc: >
-    The number of additional iterations of the turbulent DADI solver to run.
+    The number of iterations of the turbulent DADI solver to run.
     Only meaningful for RANS simulations.
-    Certain RANS simulations may benefit from a slight increase of this parameter to 2 or 3 which will lower the overall solution time.
+    Increasing this parameter to 5-7 may lower the overall solution time for some cases.
 
 nSubiter:
   desc: >
@@ -892,9 +892,8 @@ ANKADPC:
 
 ANKNSubiterTurb:
   desc: >
-    Number of turbulent subiterations between each ANK iteration.
-    Should be set to around 5-7 when turbDADI is used.
-    If ANK turbKSP is used (``"ANKturbdadi": False``), this should be kept at 1 for most cases because that solver is more effective and expensive.
+    The number of turbulent subiterations between each ANK iteration if ANK turbKSP is used (``"ANKUseTurbDADI": False``).
+    This should be kept at 1 for most cases because the turbKSP solver is more effective and expensive.
 
 ANKTurbKSPDebug:
   desc: >

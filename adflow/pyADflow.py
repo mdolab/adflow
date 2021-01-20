@@ -4509,8 +4509,8 @@ class ADFLOW(AeroSolver):
             'discretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
             'coarseDiscretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
             'limiter':[str, ['van Albada', 'minmod', 'no limiter']],
-            'smoother':[str, ['Runge-Kutta', 'DADI']],
-            'equationType': [str, ['Euler', 'laminar NS', 'RANS']],
+            'smoother':[str, ['DADI', 'Runge-Kutta']],
+            'equationType': [str, ['RANS', 'Euler', 'laminar NS']],
             'equationMode': [str, ['steady', 'unsteady', 'time spectral']],
             'flowType':[str, ['external', 'internal']],
             'turbulenceModel':[str, ['SA', 'SA-Edwards', 'k-omega Wilcox', 'k-omega modified', 'k-tau', 'Menter SST', 'v2f']],
@@ -4534,14 +4534,14 @@ class ADFLOW(AeroSolver):
             'liftIndex':[int, [2, 3]],
             'lowSpeedPreconditioner':[bool, False],
             'wallDistCutoff':[float, 1e20],
-            'infChangeCorrection':[bool, False],
+            'infChangeCorrection':[bool, True],
             'cavitationNumber':[float, 1.4],
 
             # Common Parameters
-            'nCycles':[int, 500],
+            'nCycles':[int, 2000],
             'timeLimit':[float, -1.0],
             'nCyclesCoarse':[int, 500],
-            'nSubiterTurb':[int, 1],
+            'nSubiterTurb':[int, 3],
             'nSubiter':[int, 1],
             'CFL':[float, 1.7],
             'CFLCoarse':[float, 1.0],
@@ -4593,14 +4593,14 @@ class ADFLOW(AeroSolver):
             'TSStability': [bool, False],
 
             # Convergence Parameters
-            'L2Convergence':[float, 1e-6],
+            'L2Convergence':[float, 1e-8],
             'L2ConvergenceRel':[float, 1e-16],
             'L2ConvergenceCoarse':[float, 1e-2],
             'maxL2DeviationFactor':[float, 1.0],
 
             # Newton-Krylov Parameters
             'useNKSolver':[bool, False],
-            'NKSwitchTol':[float, 2.5e-4],
+            'NKSwitchTol':[float, 1e-5],
             'NKSubspaceSize':[int, 60],
             'NKLinearSolveTol':[float, 0.3],
             'NKUseEW':[bool, True],
@@ -4622,13 +4622,13 @@ class ADFLOW(AeroSolver):
             'AGMGNSmooth':[int, 3],
 
             # Approximate Newton-Krylov Parameters
-            'useANKSolver':[bool, False],
+            'useANKSolver':[bool, True],
             'ANKUseTurbDADI':[bool, True],
             'ANKSwitchTol':[float, 1.0],
             'ANKSubspaceSize':[int, -1],
             'ANKMaxIter':[int, 40],
             'ANKLinearSolveTol':[float, 0.05],
-            'ANKLinResMax':[float, 0.9],
+            'ANKLinResMax':[float, 0.1],
             'ANKASMOverlap':[int, 1],
             'ANKPCILUFill':[int, 2],
             'ANKJacobianLag':[int, 10],
