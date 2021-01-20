@@ -16,9 +16,9 @@ extends:
     GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
     INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk
     INPUT_FILES: true
-    STEPS_MAKE_REAL: ./.github/build.sh
+    STEPS_MAKE_REAL: make
     STEPS_INSTALL_REAL: pip install .
     STEPS_TEST_REAL: testflo -v .
-    STEPS_MAKE_COMPLEX: ./.github/build_complex.sh
+    STEPS_MAKE_COMPLEX: make -f Makefile_CS PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION
     STEPS_INSTALL_COMPLEX: pip install .
     STEPS_TEST_COMPLEX: export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo -v . -m "cmplx_test*"
