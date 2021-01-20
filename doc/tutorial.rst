@@ -132,7 +132,7 @@ a few flow conditions and reference values to be put into ``AeroProblem`` later.
   }
 
 Now, this is the actually solution part. We start by defining the ``AeroProblem``,
-which is import from ``baseclasses``. We specify flow condtions and reference values
+which is import from ``baseclasses``. We specify flow conditions and reference values
 into the ``aeroProblem``. We also tell the solver which solution values that
 we are interested in. In this case, we use the keyword ``evalFuncs``. ::
 
@@ -160,7 +160,7 @@ the function of interests we specified in ``AeroProblem``.::
 Finally, we print out the value of `cd` and `cl`. We only print on the
 root processor. ::
 
-  # Print the evaluatd functions
+  # Print the evaluated functions
   if MPI.COMM_WORLD.rank == 0:
   print funcs
 
@@ -173,7 +173,7 @@ Here some notes on how to set up various functionality in ADflow is listed.
 
 Rigid rotation for time-accurate solution
 *****************************************
-This is a small tutorial how to set the apppropriate flags to do a rigid rotation. The following ADflow options flags need to be set::
+This is a small tutorial how to set the appropriate flags to do a rigid rotation. The following ADflow options flags need to be set::
 
   useGridMotion = True
   alphaFollowing = False
@@ -183,12 +183,13 @@ pmode - rotation about x axis
 rmode - rotation about y axis
 qmode - rotation about z axis
 
-Usually there is only one mode set at a time. When doing a rigid rotation beaware that the sign on deltaAlpha needs to be set appropriately depending on what axis the wing is rotating about!
+Usually there is only one mode set at a time. When doing a rigid rotation beware that the sign on deltaAlpha needs to be set appropriately depending on what axis the wing is rotating about!
 
 There are two common cases. The span of the wing is in, y direction (rotation about y-axis) or z direction (rotation about y-axis):
 
 .. NEED TO REFINE
 .. THIS DEPENDS ON THE COORDINATES
+
 1. Span is in y direction / rotation is about the y-axis. (rmode needs to be set to true)
 
   * positive rotation (+deltaAlpha) will pitch the wing upwards
@@ -198,5 +199,30 @@ There are two common cases. The span of the wing is in, y direction (rotation ab
 
   * negative rotation (-deltaAlpha) will pitch the wing upwards
   * positive rotation (+deltaAlpha) will pitch the wing downwards
+
+
+Kill Signals
+------------
+ADflow has two defined kill signals that can stop or kill ADflow gracefully without the loss of data. The two signals defined are
+
+  * ``-USR1`` - instructs ADflow to write a solution file after the current iteration
+  * ``-USR2`` - instructs ADflow to write a solution file and the computation will be stopped.
+
+The definition of an iteration is different for steady and unsteady.
+For steady it means after the current iteration, for unsteady after the current time step.
+
+The signals are enabled by default but can be switched off or disabled at compile time using the compiler flag ``-DUSE_NO_SIGNALS``.
+
+To use the signals from the command line run::
+
+  kill -USR1 <PID>
+
+where ``<PID>`` is the process id of the mpi process.
+These signals are often used when debugging. For instance, the ``-USR1`` signal can be useful to write out a semi-converged solution for further investigation, and the ``-USR2`` can be used to stop a stalled solution without loss of data.
+Other use-cases are also possible.
+To obtain the ``<PID>``, one can for example use ``top`` or ``ps -ef``.
+
+
+
 
 

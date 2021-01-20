@@ -320,6 +320,13 @@ contains
 
     deallocate(tmp)
 
+    ! propogate the old values throught the code. 
+    ! This is not needed for euler and shouldn't be needed for 
+    ! viscous equations either, but becuase of an issue else where it is. 
+    ! see https://github.com/mdolab/adflow/pull/46 for the discussion.  
+    call computeResidualNK(useUpdateIntermed = .True.)
+    
+
   end subroutine getFreeStreamResidual
 
   subroutine getCurrentResidual(rhoRes,totalRRes)
@@ -553,6 +560,7 @@ contains
        iterType = "     *NK"
        call FormJacobianNK()
     else
+
        call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
        call EChk(ierr, __FILE__, __LINE__)
        call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
