@@ -12,6 +12,7 @@ extends:
   template: azure/azure_template.yaml@azure_template
   parameters:
     REPO_NAME: adflow
+    IGNORE_STYLE: true
     COMPLEX: true
     GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
     INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk
