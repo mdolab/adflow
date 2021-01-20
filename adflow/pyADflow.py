@@ -4541,7 +4541,7 @@ class ADFLOW(AeroSolver):
             'nCycles':[int, 2000],
             'timeLimit':[float, -1.0],
             'nCyclesCoarse':[int, 500],
-            'nSubiterTurb':[int, 1],
+            'nSubiterTurb':[int, 3],
             'nSubiter':[int, 1],
             'CFL':[float, 1.7],
             'CFLCoarse':[float, 1.0],
