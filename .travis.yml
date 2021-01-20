@@ -15,7 +15,7 @@ script:
   - |
     if [ $TEST_TYPE == "docker" ]; then
       # download the regression input files
-      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/inputFiles && ./get-input-files.sh"
+      docker exec -it app /bin/bash -c ". \$HOME/.bashrc_mdolab && cd $DOCKER_WORKING_DIR/input_files && ./get-input-files.sh"
       # Some of the complex tests take >10 min, so adding travis_wait to stop travis from timing out after 10min
       # the sleep infinity is a workaround since docker exec forks another process which won't work directly with travis_wait
       if [ $DOCKER_TEST_TYPE == "real" ]; then
