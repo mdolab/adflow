@@ -1375,7 +1375,7 @@ contains
     !      --> master_PC_KSP --> KSP type set to Richardson with 'globalPreConIts'
     !          |
     !           --> globalPC --> PC type set to 'globalPCType'
-    !               |            Usually Additive Schwartz and overlap is set
+    !               |            Usually Additive Schwarz and overlap is set
     !               |            with 'ASMOverlap'. Use 0 to get BlockJacobi
     !               |
     !               --> subKSP --> KSP type set to Richardon with 'LocalPreConIts'
@@ -1484,7 +1484,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
     end if
 
-    ! Set the type of 'globalPC'. This will almost always be additive schwartz
+    ! Set the type of 'globalPC'. This will almost always be additive Schwarz
     call PCSetType(globalPC, 'asm', ierr)!globalPCType, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
