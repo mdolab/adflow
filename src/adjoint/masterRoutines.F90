@@ -20,6 +20,10 @@ contains
     use section, only: sections, nSections
     use monitor, only : timeUnsteadyRestart
     use sa, only : saSource, saViscous, saResScale, qq
+    use SST, only : SSTSolve, f1SST
+    use kw, only : kwSolve
+    use kt, only : ktSolve
+    use vf, only : vfSolve, keSolve
     use haloExchange, only : exchangeCoor, whalo2
     use wallDistance, only : updateWallDistancesQuickly
     use solverUtils, only : timeStep_block
@@ -29,7 +33,7 @@ contains
          inviscidUpwindFlux, inviscidDissFluxScalar, inviscidDissFluxMatrix, &
          viscousFlux, viscousFluxApprox, inviscidCentralFlux
     use utils, only : setPointers, EChk
-    use turbUtils, only : turbAdvection, computeEddyViscosity
+    use turbUtils, only : turbAdvection, computeEddyViscosity, vfScale
     use residuals, only : initRes_block, sourceTerms_block
     use surfaceIntegrations, only : getSolution
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
@@ -140,6 +144,11 @@ contains
        end do
     end if
 
+    ! Updating working variables for MenterSST model
+    if (equations == RANSequations .and. turbModel == menterSST) then
+       call f1SST
+    end if
+
     ! Main loop for the residual
     do sps=1, nTimeIntervalsSpectral
        do nn=1, nDom
@@ -155,6 +164,8 @@ contains
              ! Initialize only the Turblent Variables
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
 
+             !we do not need bcTurbTreatment... we just did it before
+             
              select case (turbModel)
 
              case (spalartAllmaras)
@@ -165,6 +176,26 @@ contains
                 call saViscous
                 call saResScale
                 deallocate(qq)
+
+             case (komegaWilcox, komegaModified)
+                call kwSolve(.True.)
+       
+             case (menterSST)
+                call SSTSolve(.True.)
+       
+             case (ktau)
+                call ktSolve(.True.)
+       
+             case (v2f)
+                !see vf_block for comments
+                call vfScale
+                call keSolve(.True.)
+                call vfSolve(.True.)
+
+             case DEFAULT
+                print *,'ERROR: requested turbulence model not implemented'
+                call EChk(1, __FILE__, __LINE__)
+
              end select
           endif
 
