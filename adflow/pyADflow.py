@@ -24,41 +24,18 @@ v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 import os
 import time
 import copy
+import types
 import numpy
 import sys
 from mpi4py import MPI
 from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
+from baseclasses.utils import Error
 from . import MExt
 from pprint import pprint as pp
 import hashlib
-try:
-    from collections import OrderedDict
-except ImportError:
-    try:
-        from ordereddict import OrderedDict
-    except ImportError:
-        print('Could not find any OrderedDict class. For 2.6 and earlier, \
-use:\n pip install ordereddict')
+from collections import OrderedDict
 
-class Error(Exception):
-    """
-    Format the error message in a box to make it clear this
-    was a expliclty raised exception.
-    """
-    def __init__(self, message):
-        msg = '\n+'+'-'*78+'+'+'\n' + '| pyADFLOW Error: '
-        i = 17
-        for word in message.split():
-            if len(word) + i + 1 > 78: # Finish line and start new one
-                msg += ' '*(78-i)+'|\n| ' + word + ' '
-                i = 1 + len(word)+1
-            else:
-                msg += word + ' '
-                i += len(word)+1
-        msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
-        print(msg)
-        Exception.__init__(self)
 
 class ADFLOWWarning(object):
     """
@@ -120,11 +97,11 @@ class ADFLOW(AeroSolver):
         informs = {}
 
         # Load all the option/objective/DV information:
-        defOpts = self._getDefOptions()
+        defaultOptions = self._getDefaultOptions()
         self.optionMap, self.moduleMap = self._getOptionMap()
-        self.ignoreOptions, self.deprecatedOptions, self.specialOptions = \
+        self.pythonOptions, deprecatedOptions, self.specialOptions = \
                            self._getSpecialOptionLists()
-        self.imOptions = self._getImmutableOptions()
+        immutableOptions = self._getImmutableOptions()
 
         self.possibleAeroDVs, self.possibleBCDvs, self.basicCostFunctions = (
             self._getObjectivesAndDVs())
@@ -151,7 +128,6 @@ class ADFLOW(AeroSolver):
         self.myid = self.adflow.communication.myid = comm.rank
         self.adflow.communication.nproc = comm.size
 
-        # Initialize the inherited aerosolver.
         if options is None:
             raise Error("The 'options' keyword argument must be passed "
                         "adflow. The options dictionary must contain (at least) "
@@ -162,14 +138,23 @@ class ADFLOW(AeroSolver):
 
         defSetupTime = time.time()
 
-        AeroSolver.__init__(self, name, category, defaultOptions=defOpts,
-                            options=options, comm=comm, informs=informs)
+        # Initialize the inherited AeroSolver
+        super().__init__(
+            name,
+            category,
+            defaultOptions=defaultOptions,
+            options=options,
+            immutableOptions=immutableOptions,
+            deprecatedOptions=deprecatedOptions,
+            comm=comm,
+            informs=informs,
+        )
 
         baseClassTime = time.time()
         # Update turbresscale depending on the turbulence model specified
         self._updateTurbResScale()
 
-        # Initialize petec in case the user has not already
+        # Initialize PETSc in case the user has not already
         self.adflow.adjointutils.initializepetsc()
 
         # Set the stand-alone adflow flag to false...this changes how
@@ -613,7 +598,7 @@ class ADFLOW(AeroSolver):
         # Check that the family name is not already defined:
         if familyName.lower() in self.families:
             raise Error("Cannot add integration surface with family name '%s'"
-                        "becuase the name it already exists."%familyName)
+                        "because the name it already exists."%familyName)
 
         # Need to add an additional family so first figure out what
         # the max family index is:
@@ -951,7 +936,7 @@ class ADFLOW(AeroSolver):
         self.curAP.adflowData.callCounter += 1
 
         # --------------------------------------------------------------
-        # Setup interation arrays ---- don't touch this unless you
+        # Setup iteration arrays ---- don't touch this unless you
         # REALLY REALLY know what you're doing!
 
         # iterTot is non-zero which means we already did a solution,
@@ -2120,8 +2105,8 @@ class ADFLOW(AeroSolver):
         # Name of function to use
         funcName = '%s_%s'%(ap.name, sepName)
 
-        if not self.getOption('rkreset') and self.getOption('usenksolve'):
-            ADFLOWWarning("nRKReset option is not set. It is usually necessary "
+        if not self.getOption('rkreset') and self.getOption('usenksolver'):
+            ADFLOWWarning("RKReset option is not set. It is usually necessary "
                         "for solveSep() when NK solver is used.")
 
         # Solve first problem
@@ -3365,10 +3350,10 @@ class ADFLOW(AeroSolver):
             cgnsBlockID = numpy.zeros(ncell, dtype='intc')
 
         if includeCGNS:
-            # Conver to 0-based ordering becuase we are in python
+            # Convert to 0-based ordering becuase we are in python
             return conn-1, faceSizes, cgnsBlockID-1
         else:
-            # Conver to 0-based ordering becuase we are in python
+            # Convert to 0-based ordering becuase we are in python
             return conn-1, faceSizes
 
     def _expandGroupNames(self, groupNames):
@@ -3435,7 +3420,7 @@ class ADFLOW(AeroSolver):
         return self.adflow.nksolver.applyadjointpc(inVec, outVec)
 
     def _addAeroDV(self, dv):
-        """Add a single desgin variable that ADflow knows about.
+        """Add a single design variable that ADflow knows about.
 
         Parameters
         ----------
@@ -4582,36 +4567,11 @@ class ADFLOW(AeroSolver):
         Set Solver Option Value
         """
         name = name.lower()
-        # Make sure we are not trying to change an immutable option if
-        # we are not allowed to.
-        if self.solverCreated and name in self.imOptions:
-            raise Error("Option '%-35s' cannot be modified after the solver "
-                        "is created."%name)
 
-        # Check to see if we have a deprecated option. Print a useful
-        # warning that this is deprecated.
-        if name in self.deprecatedOptions:
-            if self.comm.rank == 0:
-                ADFLOWWarning("Option '%-29s\' is a deprecated ADflow Option |"% name)
-            return
+        super().setOption(name, value)
 
-        # Try the option in the option dictionary to make sure we are setting a valid option
-        if name not in self.defaultOptions:
-            if self.comm.rank == 0:
-                ADFLOWWarning("Option '%-30s' is not a valid ADflow Option |"%name)
-            return
-
-        # Now we know the option exists, lets check if the type is ok:
-        if isinstance(value, self.defaultOptions[name][0]):
-            self.options[name] = [type(value),value]
-        else:
-            raise Error("Datatype for Option %-35s was not valid \n "
-                        "Expected data type is %-47s \n "
-                        "Received data type is %-47s"% (
-                            name, self.defaultOptions[name][0], type(value)))
-
-        # If the option is in the ignoredOption list, we just return.
-        if name in self.ignoreOptions:
+        # If the option is only used in Python, we just return
+        if name in self.pythonOptions:
             return
 
         # Do special Options individually
@@ -4760,259 +4720,244 @@ class ADFLOW(AeroSolver):
         # Set in the correct module
         setattr(module, variable, value)
 
-    def getOption(self, name):
-        # Redefine the getOption def from the base class so we can
-        # make sure the name is lowercase
-
-        if name.lower() in self.defaultOptions:
-            return self.options[name.lower()][1]
-        else:
-            raise Error('%s is not a valid option name.'% name)
-
-    def _getDefOptions(self):
-        """
-        There are many options for ADflow. These technically belong in
-        the __init__ function but it gets far too long so we split
-        them out.
-        """
+    @staticmethod
+    def _getDefaultOptions():
         defOpts = {
             # Input file parameters
-            'gridfile':[str, 'default.cgns'],
-            'restartfile':[object, None],
+            'gridFile':[str, 'default.cgns'],
+            'restartFile':[(str, list, type(None)), None],
 
-            # Surface definition parameters:
-            'meshsurfacefamily':[object, None],
-            'designsurfacefamily':[object, None],
-            'closedsurfacefamilies':[object, None],
+            # Surface definition parameters
+            'meshSurfaceFamily':[(str, type(None)), None],
+            'designSurfaceFamily':[(str, type(None)), None],
+            'closedSurfaceFamilies':[(list, type(None)), None],
 
             # Output Parameters
-            'storerindlayer':[bool, True],
-            'outputdirectory':[str, './'],
-            'outputsurfacefamily':[str, 'allSurfaces'],
-            'writesurfacesolution':[bool,True],
-            'writevolumesolution':[bool,True],
-            'writetecplotsurfacesolution':[bool,False],
-            'nsavevolume':[int,1],
-            'nsavesurface':[int,1],
-            'solutionprecision':[str,'single'],
-            'gridprecision':[str,'double'],
-            'solutionprecisionsurface':[str,'single'],
-            'gridprecisionsurface':[str,'single'],
+            'storeRindLayer':[bool, True],
+            'outputDirectory':[str, './'],
+            'outputSurfaceFamily':[str, 'allSurfaces'],
+            'writeSurfaceSolution':[bool,True],
+            'writeVolumeSolution':[bool,True],
+            'writeTecplotSurfaceSolution':[bool,False],
+            'nSaveVolume':[int,1],
+            'nSaveSurface':[int,1],
+            'solutionPrecision':[str, ['single', 'double']],
+            'gridPrecision':[str, ['double', 'single']],
+            'solutionPrecisionSurface':[str, ['single', 'double']],
+            'gridPrecisionSurface':[str, ['single', 'double']],
             'isosurface':[dict, {}],
-            'isovariables':[list, []],
-            'viscoussurfacevelocities':[bool, True],
+            'isoVariables':[list, []],
+            'viscousSurfaceVelocities':[bool, True],
 
             # Physics Parameters
-            'discretization':[str, 'central plus scalar dissipation'],
-            'coarsediscretization':[str, 'central plus scalar dissipation'],
-            'limiter':[str, 'vanalbeda'],
-            'smoother':[str, 'runge kutta'],
-            'equationtype': [str, 'euler'],
-            'equationmode': [str, 'steady'],
-            'flowtype':[str, 'external'],
-            'turbulencemodel':[str, 'sa'],
-            'turbulenceorder':[str, 'first order'],
-            'turbresscale':[object, None],
-            'turbulenceproduction':[str, 'strain'],
-            'useqcr':[bool, False],
-            'userotationsa':[bool, False],
-            'useft2sa':[bool, True],
-            'eddyvisinfratio':[float, .009],
-            'usewallfunctions':[bool, False],
-            'useapproxwalldistance':[bool, True],
-            'eulerwalltreatment':[str, 'linear pressure extrapolation'],
-            'viscwalltreatment':[str, 'constant pressure extrapolation'],
-            'dissipationscalingexponent':[float, 0.67],
+            'discretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
+            'coarseDiscretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
+            'limiter':[str, ['van Albada', 'minmod', 'no limiter']],
+            'smoother':[str, ['DADI', 'Runge-Kutta']],
+            'equationType': [str, ['RANS', 'Euler', 'laminar NS']],
+            'equationMode': [str, ['steady', 'unsteady', 'time spectral']],
+            'flowType':[str, ['external', 'internal']],
+            'turbulenceModel':[str, ['SA', 'SA-Edwards', 'k-omega Wilcox', 'k-omega modified', 'k-tau', 'Menter SST', 'v2f']],
+            'turbulenceOrder':[str, ['first order', 'second order']],
+            'turbResScale':[(float, list, type(None)), None],
+            'turbulenceProduction':[str, ['strain', 'vorticity', 'Kato-Launder']],
+            'useQCR':[bool, False],
+            'useRotationSA':[bool, False],
+            'useft2SA':[bool, True],
+            'eddyVisInfRatio':[float, 0.009],
+            'useWallFunctions':[bool, False],
+            'useApproxWallDistance':[bool, True],
+            'eulerWallTreatment':[str, ['linear pressure extrapolation', 'constant pressure extrapolation', \
+                'quadratic pressure extrapolation', 'normal momentum']],
+            'viscWallTreatment':[str, ['constant pressure extrapolation', 'linear pressure extrapolation']],
+            'dissipationScalingExponent':[float, 0.67],
             'vis4':[float, 0.0156],
             'vis2':[float, 0.25],
-            'vis2coarse':[float, 0.5],
-            'restrictionrelaxation':[float, .80],
-            'liftindex':[int, 2],
-            'lowspeedpreconditioner':[bool, False],
-            'walldistcutoff':[float, 1e20],
-            'infchangecorrection':[bool, False],
-            'cavitationnumber':[float, 1.4],
+            'vis2Coarse':[float, 0.5],
+            'restrictionRelaxation':[float, 0.80],
+            'liftIndex':[int, [2, 3]],
+            'lowSpeedPreconditioner':[bool, False],
+            'wallDistCutoff':[float, 1e20],
+            'infChangeCorrection':[bool, True],
+            'cavitationNumber':[float, 1.4],
 
             # Common Parameters
-            'ncycles':[int, 500],
-            'timelimit':[float, -1.0],
-            'ncyclescoarse':[int, 500],
-            'nsubiterturb':[int, 1],
-            'nsubiter':[int, 1],
-            'cfl':[float, 1.7],
-            'cflcoarse':[float, 1.0],
-            'mgcycle':[str, '3w'],
-            'mgstartlevel':[int, -1],
-            'resaveraging':[str,'alternateresaveraging'],
-            'smoothparameter':[float, 1.5],
-            'cfllimit':[float, 1.5],
-            'useblockettes':[bool, True],
-            'uselinresmonitor':[bool, False],
+            'nCycles':[int, 2000],
+            'timeLimit':[float, -1.0],
+            'nCyclesCoarse':[int, 500],
+            'nSubiterTurb':[int, 3],
+            'nSubiter':[int, 1],
+            'CFL':[float, 1.7],
+            'CFLCoarse':[float, 1.0],
+            'MGCycle':[str, '3w'],
+            'MGStartLevel':[int, -1],
+            'resAveraging':[str, ['alternate', 'never', 'always']],
+            'smoothParameter':[float, 1.5],
+            'CFLLimit':[float, 1.5],
+            'useBlockettes':[bool, True],
+            'useLinResMonitor':[bool, False],
 
-            # Overset Parameters:
-            'nearwalldist':[float, 0.1],
-            'backgroundvolscale':[float, 1.0],
-            'oversetprojtol':[float, 1e-12],
-            'overlapfactor':[float, 0.9],
-            'oversetloadbalance':[bool, True],
-            'debugzipper':[bool, False],
-            'zippersurfacefamily':[object, None],
-            'cutcallback':[object, None],
-            'oversetupdatemode':[str, 'frozen'],
-            'nrefine':[int,10],
-            'usezippermesh':[bool, True],
-            'useoversetwallscaling':[bool, False],
-            'selfzipcutoff':[float, 120.0],
-            'oversetpriority':[dict, {}],
+            # Overset Parameters
+            'nearWallDist':[float, 0.1],
+            'backgroundVolScale':[float, 1.0],
+            'oversetProjTol':[float, 1e-12],
+            'overlapFactor':[float, 0.9],
+            'oversetLoadBalance':[bool, True],
+            'debugZipper':[bool, False],
+            'zipperSurfaceFamily':[(str, type(None)), None],
+            'cutCallback':[(types.FunctionType, type(None)), None],
+            'oversetUpdateMode':[str, ['frozen', 'fast', 'full']],
+            'nRefine':[int,10],
+            'useZipperMesh':[bool, True],
+            'useOversetWallScaling':[bool, False],
+            'selfZipCutoff':[float, 120.0],
+            'oversetPriority':[dict, {}],
 
             # Unsteady Parameters
-            'timeintegrationscheme':[str, 'bdf'],
-            'timeaccuracy':[int, 2],
-            'ntimestepscoarse':[int, 48],
-            'ntimestepsfine':[int, 400],
-            'deltat':[float, .010],
-            'useale':[bool, True],
-            'usegridmotion':[bool, False],
-            'coupledsolution':[bool, False],
+            'timeIntegrationScheme':[str, ['BDF', 'explicit RK', 'implicit RK']],
+            'timeAccuracy':[int, [2, 1, 3]],
+            'nTimeStepsCoarse':[int, 48],
+            'nTimeStepsFine':[int, 400],
+            'deltaT':[float, 0.010],
+            'useALE':[bool, True],
+            'useGridMotion':[bool, False],
+            'coupledSolution':[bool, False],
 
             # Time Spectral Parameters
-            'timeintervals': [int, 1],
-            'alphamode':[bool, False],
-            'betamode':[bool, False],
-            'machmode':[bool, False],
-            'pmode':[bool, False],
-            'qmode':[bool, False],
-            'rmode':[bool, False],
-            'altitudemode':[bool, False],
-            'windaxis':[bool, False],
-            'alphafollowing':[bool,True],
-            'tsstability': [bool, False],
+            'timeIntervals': [int, 1],
+            'alphaMode':[bool, False],
+            'betaMode':[bool, False],
+            'machMode':[bool, False],
+            'pMode':[bool, False],
+            'qMode':[bool, False],
+            'rMode':[bool, False],
+            'altitudeMode':[bool, False],
+            'windAxis':[bool, False],
+            'alphaFollowing':[bool,True],
+            'TSStability': [bool, False],
 
             # Convergence Parameters
-            'l2convergence':[float, 1e-6],
-            'l2convergencerel':[float, 1e-16],
-            'l2convergencecoarse':[float, 1e-2],
-            'maxl2deviationfactor':[float, 1.0],
+            'L2Convergence':[float, 1e-8],
+            'L2ConvergenceRel':[float, 1e-16],
+            'L2ConvergenceCoarse':[float, 1e-2],
+            'maxL2DeviationFactor':[float, 1.0],
 
             # Newton-Krylov Parameters
-            'usenksolver':[bool, False],
-            'nkswitchtol':[float, 2.5e-4],
-            'nksubspacesize':[int, 60],
-            'nklinearsolvetol':[float, 0.3],
-            'nkuseew':[bool, True],
-            'nkadpc':[bool, False],
-            'nkviscpc':[bool, False],
-            'nkasmoverlap':[int, 1],
-            'nkpcilufill':[int, 2],
-            'nkjacobianlag':[int, 20],
-            'applypcsubspacesize':[int, 10],
-            'nkinnerpreconits':[int, 1],
-            'nkouterpreconits':[int, 1],
-            'nkcfl0':[float, 100.0],
-            'nkls':[str, 'cubic'],
-            'nkfixedstep':[float, 0.25],
-            'rkreset':[bool, False],
-            'nrkreset':[int, 5],
+            'useNKSolver':[bool, False],
+            'NKSwitchTol':[float, 1e-5],
+            'NKSubspaceSize':[int, 60],
+            'NKLinearSolveTol':[float, 0.3],
+            'NKUseEW':[bool, True],
+            'NKADPC':[bool, False],
+            'NKViscPC':[bool, False],
+            'NKASMOverlap':[int, 1],
+            'NKPCILUFill':[int, 2],
+            'NKJacobianLag':[int, 20],
+            'applyPCSubspaceSize':[int, 10],
+            'NKInnerPreconIts':[int, 1],
+            'NKOuterPreconIts':[int, 1],
+            'NKLS':[str, ['cubic', 'none', 'non-monotone']],
+            'NKFixedStep':[float, 0.25],
+            'RKReset':[bool, False],
+            'nRKReset':[int, 5],
 
             # MG PC
-            'agmglevels':[int, 1],
-            'agmgnsmooth':[int, 3],
+            'AGMGLevels':[int, 1],
+            'AGMGNSmooth':[int, 3],
 
             # Approximate Newton-Krylov Parameters
-            'useanksolver':[bool, False],
-            'ankuseturbdadi':[bool, True],
-            'ankswitchtol':[float, 1.0],
-            'anksubspacesize':[int, -1],
-            'ankmaxiter':[int, 40],
-            'anklinearsolvetol':[float, 0.05],
-            'anklinresmax':[float, 0.9],
-            'ankasmoverlap':[int, 1],
-            'ankpcilufill':[int, 2],
-            'ankjacobianlag':[int, 10],
-            'ankinnerpreconits':[int, 1],
-            'ankouterpreconits':[int, 1],
-            'ankcfl0':[float, 5.0],
-            'ankcflmin':[float,1.0],
-            'ankcfllimit':[float, 1e5],
-            'ankcflfactor':[float, 10.0],
-            'ankcflexponent':[float, 0.5],
-            'ankcflcutback':[float,0.5],
-            'ankstepfactor':[float, 1.0],
-            'ankstepmin':[float, 0.01],
-            'ankconstcflstep':[float, 0.4],
-            'ankphysicallstol':[float, 0.2],
-            'ankphysicallstolturb':[float, 0.99],
-            'ankunsteadylstol':[float, 1.0],
-            'anksecondordswitchtol':[float, 1e-16],
-            'ankcoupledswitchtol':[float, 1e-16],
-            'ankturbcflscale' : [float, 1.0],
-            'ankusefullvisc' : [bool, True],
-            'ankpcupdatetol':[float,0.5],
-            'ankadpc':[bool, False],
-            'anknsubiterturb':[int,1],
-            'ankturbkspdebug':[bool,False],
-            'ankusematrixfree':[bool,True],
+            'useANKSolver':[bool, True],
+            'ANKUseTurbDADI':[bool, True],
+            'ANKSwitchTol':[float, 1.0],
+            'ANKSubspaceSize':[int, -1],
+            'ANKMaxIter':[int, 40],
+            'ANKLinearSolveTol':[float, 0.05],
+            'ANKLinResMax':[float, 0.1],
+            'ANKASMOverlap':[int, 1],
+            'ANKPCILUFill':[int, 2],
+            'ANKJacobianLag':[int, 10],
+            'ANKInnerPreconIts':[int, 1],
+            'ANKOuterPreconIts':[int, 1],
+            'ANKCFL0':[float, 5.0],
+            'ANKCFLMin':[float,1.0],
+            'ANKCFLLimit':[float, 1e5],
+            'ANKCFLFactor':[float, 10.0],
+            'ANKCFLExponent':[float, 0.5],
+            'ANKCFLCutback':[float,0.5],
+            'ANKStepFactor':[float, 1.0],
+            'ANKStepMin':[float, 0.01],
+            'ANKConstCFLStep':[float, 0.4],
+            'ANKPhysicalLSTol':[float, 0.2],
+            'ANKPhysicalLSTolTurb':[float, 0.99],
+            'ANKUnsteadyLSTol':[float, 1.0],
+            'ANKSecondOrdSwitchTol':[float, 1e-16],
+            'ANKCoupledSwitchTol':[float, 1e-16],
+            'ANKTurbCFLScale' : [float, 1.0],
+            'ANKUseFullVisc' : [bool, True],
+            'ANKPCUpdateTol':[float,0.5],
+            'ANKADPC':[bool, False],
+            'ANKNSubiterTurb':[int,1],
+            'ANKTurbKSPDebug':[bool,False],
+            'ANKUseMatrixFree':[bool,True],
 
             # Load Balance/partitioning parameters
-            'blocksplitting':[bool, True],
-            'loadimbalance':[float, 0.1],
-            'loadbalanceiter':[int, 10],
-            'partitiononly':[bool, False],
-            'partitionlikenproc':[int, -1],
+            'blockSplitting':[bool, True],
+            'loadImbalance':[float, 0.1],
+            'loadBalanceIter':[int, 10],
+            'partitionOnly':[bool, False],
+            'partitionLikeNProc':[int, -1],
 
             # Misc Parameters
-            'autosolveretry':[bool, False],
-            'autoadjointretry':[bool, False],
-            'numbersolutions':[bool, True],
-            'printiterations':[bool, True],
-            'printtiming':[bool, True],
-            'setmonitor':[bool, True],
-            'printwarnings':[bool, True],
-            'monitorvariables':[list, ['cpu','resrho', 'resturb', 'cl', 'cd']],
-            'surfacevariables':[list, ['cp','vx', 'vy','vz', 'mach']],
-            'volumevariables':[list, ['resrho']],
+            'numberSolutions':[bool, True],
+            'printIterations':[bool, True],
+            'printTiming':[bool, True],
+            'setMonitor':[bool, True],
+            'printWarnings':[bool, True],
+            'monitorVariables':[list, ['cpu','resrho', 'resturb', 'cl', 'cd']],
+            'surfaceVariables':[list, ['cp','vx', 'vy','vz', 'mach']],
+            'volumeVariables':[list, ['resrho']],
 
-            # Multidisciplinary Coupling Parameters:
-            'forcesastractions':[bool, True],
+            # Multidisciplinary Coupling Parameters
+            'forcesAsTractions':[bool, True],
 
             # Adjoint Parameters
-            'adjointl2convergence':[float, 1e-6],
-            'adjointl2convergencerel':[float, 1e-16],
-            'adjointl2convergenceabs':[float, 1e-16],
-            'adjointdivtol':[float, 1e5],
-            'approxpc': [bool, True],
-            'adpc': [bool, False],
-            'viscpc':[bool,False],
-            'usediagtspc':[bool, True],
-            'restartadjoint':[bool, True],
-            'adjointsolver': [str, 'gmres'],
-            'adjointmaxiter': [int, 500],
-            'adjointsubspacesize' : [int, 100],
-            'adjointmonitorstep': [int, 10],
-            'dissipationlumpingparameter':[float, 6.0],
-            'preconditionerside': [str, 'right'],
-            'matrixordering': [str, 'rcm'],
-            'globalpreconditioner': [str, 'additive schwartz'],
-            'localpreconditioner' : [str, 'ilu'],
-            'ilufill': [int, 2],
-            'asmoverlap' : [int, 1],
-            'innerpreconits':[int, 1],
-            'outerpreconits':[int, 3],
-            'applyadjointpcsubspacesize':[int, 20],
-            'frozenturbulence':[bool, False],
-            'usematrixfreedrdw':[bool, True],
-            'skipafterfailedadjoint':[bool,True],
+            'adjointL2Convergence':[float, 1e-6],
+            'adjointL2ConvergenceRel':[float, 1e-16],
+            'adjointL2ConvergenceAbs':[float, 1e-16],
+            'adjointDivTol':[float, 1e5],
+            'approxPC': [bool, True],
+            'ADPC': [bool, False],
+            'viscPC':[bool,False],
+            'useDiagTSPC':[bool, True],
+            'restartAdjoint':[bool, True],
+            'adjointSolver': [str, ['GMRES', 'TFQMR', 'Richardson', 'BCGS', 'IBCGS']],
+            'adjointMaxIter': [int, 500],
+            'adjointSubspaceSize' : [int, 100],
+            'adjointMonitorStep': [int, 10],
+            'dissipationLumpingParameter':[float, 6.0],
+            'preconditionerSide': [str, ['right', 'left']],
+            'matrixOrdering': [str, ['RCM', 'natural', 'nested dissection', 'one way dissection', 'quotient minimum degree']],
+            'globalPreconditioner': [str, ['additive Schwarz', 'multigrid']],
+            'localPreconditioner' : [str, ['ILU']],
+            'ILUFill': [int, 2],
+            'ASMOverlap' : [int, 1],
+            'innerPreconIts':[int, 1],
+            'outerPreconIts':[int, 3],
+            'applyAdjointPCSubspaceSize':[int, 20],
+            'frozenTurbulence':[bool, False],
+            'useMatrixFreedrdw':[bool, True],
+            'skipAfterFailedAdjoint':[bool,True],
 
             # ADjoint debugger
-            'firstrun':[bool, True],
-            'verifystate':[bool, True],
-            'verifyspatial':[bool, True],
-            'verifyextra':[bool, True],
+            'firstRun':[bool, True],
+            'verifyState':[bool, True],
+            'verifySpatial':[bool, True],
+            'verifyExtra':[bool, True],
 
             # Function parmeters
-            'sepsensoroffset':[float, 0.0],
-            'sepsensorsharpness':[float, 10.0],
-            'computecavitation':[bool,False],
+            'sepSensorOffset':[float, 0.0],
+            'sepSensorSharpness':[float, 10.0],
+            'computeCavitation':[bool,False],
             }
 
         return defOpts
@@ -5083,11 +5028,11 @@ class ADFLOW(AeroSolver):
                                     'central plus cusp dissipation': self.adflow.constants.disscusp,
                                     'upwind': self.adflow.constants.upwind,
                                     'location':['discr', 'spacediscrcoarse']},
-            'limiter':{'vanalbeda':self.adflow.constants.vanalbeda,
+            'limiter':{'van albada':self.adflow.constants.vanalbeda,
                        'minmod':self.adflow.constants.minmod,
-                       'nolimiter':self.adflow.constants.nolimiter,
+                       'no limiter':self.adflow.constants.nolimiter,
                        'location':['discr', 'limiter']},
-            'smoother':{'runge kutta':self.adflow.constants.rungekutta,
+            'smoother':{'runge-kutta':self.adflow.constants.rungekutta,
                         'lu sgs':self.adflow.constants.nllusgs,
                         'lu sgs line':self.adflow.constants.nllusgsline,
                         'dadi':self.adflow.constants.dadi,
@@ -5105,10 +5050,10 @@ class ADFLOW(AeroSolver):
                         'external':self.adflow.constants.externalflow,
                         'location':['physics', 'flowtype']},
             'turbulencemodel':{'sa':self.adflow.constants.spalartallmaras,
-                               'sae':self.adflow.constants.spalartallmarasedwards,
-                               'k omega wilcox':self.adflow.constants.komegawilcox,
-                               'k omega modified':self.adflow.constants.komegamodified,
-                               'ktau':self.adflow.constants.ktau,
+                               'sa-edwards':self.adflow.constants.spalartallmarasedwards,
+                               'k-omega wilcox':self.adflow.constants.komegawilcox,
+                               'k-omega modified':self.adflow.constants.komegamodified,
+                               'k-tau':self.adflow.constants.ktau,
                                'menter sst':self.adflow.constants.mentersst,
                                'v2f':self.adflow.constants.v2f,
                                'location':['physics', 'turbmodel']},
@@ -5118,7 +5063,7 @@ class ADFLOW(AeroSolver):
             'turbresscale':['iter', 'turbresscale'],
             'turbulenceproduction':{'strain':self.adflow.constants.strain,
                                     'vorticity':self.adflow.constants.vorticity,
-                                    'katolaunder':self.adflow.constants.katolaunder,
+                                    'kato-launder':self.adflow.constants.katolaunder,
                                     'location':['physics', 'turbprod']},
             'useqcr':['physics', 'useqcr'],
             'userotationsa':['physics', 'userotationsa'],
@@ -5154,9 +5099,9 @@ class ADFLOW(AeroSolver):
             'cflcoarse':['iter', 'cflcoarse'],
             'mgcycle':['iter', 'mgdescription'],
             'mgstartlevel':['iter', 'mgstartlevel'],
-            'resaveraging':{'noresaveraging':self.adflow.constants.noresaveraging,
-                            'alwaysresaveraging':self.adflow.constants.alwaysresaveraging,
-                            'alternateresaveraging':self.adflow.constants.alternateresaveraging,
+            'resaveraging':{'never':self.adflow.constants.noresaveraging,
+                            'always':self.adflow.constants.alwaysresaveraging,
+                            'alternate':self.adflow.constants.alternateresaveraging,
                             'location':['iter', 'resaveraging']},
             'smoothparameter':['iter', 'smoop'],
             'cfllimit':['iter', 'cfllimit'],
@@ -5180,8 +5125,8 @@ class ADFLOW(AeroSolver):
 
             # Unsteady Params
             'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
-                                     'explicitrk':self.adflow.constants.explicitrk,
-                                     'implicitrk':self.adflow.constants.implicitrk,
+                                     'explicit rk':self.adflow.constants.explicitrk,
+                                     'implicit rk':self.adflow.constants.implicitrk,
                                      'location':['unsteady', 'timeintegrationscheme']},
             'timeaccuracy':['unsteady', 'timeaccuracy'],
             'ntimestepscoarse':['unsteady', 'ntimestepscoarse'],
@@ -5225,10 +5170,9 @@ class ADFLOW(AeroSolver):
             'applypcsubspacesize':['nk', 'applypcsubspacesize'],
             'nkinnerpreconits':['nk', 'nk_innerpreconits'],
             'nkouterpreconits':['nk', 'nk_outerpreconits'],
-            'nkcfl0':['nk', 'nk_cfl0'],
             'nkls':{'none':self.adflow.constants.nolinesearch,
                     'cubic':self.adflow.constants.cubiclinesearch,
-                    'non monotone':self.adflow.constants.nonmonotonelinesearch,
+                    'non-monotone':self.adflow.constants.nonmonotonelinesearch,
                     'location':['nk', 'nk_ls']},
             'nkfixedstep':['nk', 'nk_fixedstep'],
             'rkreset':['iter', 'rkreset'],
@@ -5317,7 +5261,7 @@ class ADFLOW(AeroSolver):
                               'quotient minimum degree':'qmd',
                               'location':['adjoint', 'matrixordering']},
 
-            'globalpreconditioner':{'additive schwartz':'asm',
+            'globalpreconditioner':{'additive schwarz':'asm',
                                     'multigrid':'mg',
                                     'location':['adjoint', 'precondtype']},
             'localpreconditioner':{'ilu':'ilu',
@@ -5346,17 +5290,14 @@ class ADFLOW(AeroSolver):
         """
         Lists of special options
         """
-        # These "ignore_options" are NOT actually', ignored, rather,
-        # they DO NOT GET SET IN THE FORTRAN CODE. Rather, they are
-        # used strictly in Python
+        # pythonOptions do not get set in the Fortran code.
+        # They are used strictly in Python.
 
-        ignoreOptions = set(('numbersolutions',
+        pythonOptions = set(('numbersolutions',
                              'writesurfacesolution',
                              'writevolumesolution',
                              'writetecplotsurfacesolution',
                              'coupledsolution',
-                             'autosolveretry',
-                             'autoadjointretry',
                              'partitiononly',
                              'liftindex',
                              'meshsurfacefamily',
@@ -5369,10 +5310,14 @@ class ADFLOW(AeroSolver):
                              'skipafterfailedadjoint',
                          ))
 
-        # Deprecated options. These should not be used, but old
-        # scripts can continue to run
+        # Deprecated options that may be in old scripts and should not be used.
+
         deprecatedOptions = {'finitedifferencepc':'Use the ADPC option.',
                              'writesolution':'Use writeSurfaceSolution and writeVolumeSolution options instead.',
+                             'autosolveretry':'This feature is not implemented.',
+                             'autoadjointretry':'This feature is not implemented.',
+                             'nkcfl0':'The NK solver does not use a CFL value anymore. \
+                                       The CFL is set to infinity and the true Newton method is used.',
                              }
 
         specialOptions = set(('surfacevariables',
@@ -5386,7 +5331,7 @@ class ADFLOW(AeroSolver):
                               'oversetpriority',
                           ))
 
-        return ignoreOptions, deprecatedOptions, specialOptions
+        return pythonOptions, deprecatedOptions, specialOptions
 
     def _getObjectivesAndDVs(self):
         iDV = OrderedDict()
@@ -5509,9 +5454,9 @@ class ADFLOW(AeroSolver):
 
         if self.getOption("turbresscale") is None:
             turbModel = self.getOption("turbulencemodel")
-            if turbModel == "sa":
+            if turbModel == "SA":
                 self.setOption("turbresscale", 10000.0)
-            elif turbModel == "menter sst":
+            elif turbModel == "Menter SST":
                 self.setOption("turbresscale", [1e3, 1e-6])
             else:
                 raise Error("Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"%(turbModel))
