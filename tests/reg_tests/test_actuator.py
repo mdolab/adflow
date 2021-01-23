@@ -87,6 +87,7 @@ class ActuatorBasicTests(unittest.TestCase):
             # we will set these individually in the tests below
             thrust=0.0,
             torque=0.0,
+            heat=0.0,
         )
 
         # add thrust as an AP DV

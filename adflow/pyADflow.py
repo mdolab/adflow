@@ -616,12 +616,35 @@ class ADFLOW(AeroSolver):
             pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(self, fileName, axis1, axis2, familyName,
-                          thrust=0.0, torque=0.0, relaxStart=None,
-                          relaxEnd=None):
-        """Add an actuator disk zone defined by the (closed) supplied
+                          thrust=0.0, torque=0.0, heat=0.0,
+                          relaxStart=None, relaxEnd=None):
+        """
+        Add an actuator disk zone defined by the (closed) supplied
         in the plot3d file "fileName". Axis1 and Axis2 defines the
         physical extent of the region overwhich to apply the ramp
         factor.
+
+        Optionally, the source terms in the actuator zone can be
+        gradually ramped up as the solution converges. This continuation
+        approach can be more robust but the users should be careful with
+        the side effects of partially converged solutions. This behavior
+        can be controlled by relaxStart and relaxEnd parameters. By
+        default, the full magnitude of the source terms are added.
+        relaxStart controls when the continuation starts ramping up.
+        The value represents the relative convergence in a log10 basis.
+        So relaxStart = 2 means the source terms will be inactive until
+        the residual is decreased by a factor of 100 compared to free
+        stream conditions. The source terms are ramped to the full
+        magnitude at relaxEnd. E.g., a relaxEnd value of 4 would
+        result in the full source terms after a relative reduction of
+        1e4 in the total residuals. If relaxStart is not provided, but
+        relaxEnd is provided, then the relaxStart is assumed to be 0.
+        If both are not provided, we do not do ramping and just activate
+        the full source terms from the beginning. When this continuation
+        is used, we internally ramp up the magnitude of the source terms
+        monotonically to prevent oscillations; i.e., decrease in the total
+        residuals increase the source term magnitudes, but an increase
+        in the residuals do not reduce the source terms back down.
 
         Parameters
         ----------
@@ -640,13 +663,24 @@ class ADFLOW(AeroSolver):
            The name to be associated with the functions defined on this
            region.
 
-        thrust : scalar
+        thrust : scalar, float
            The total amount of axial force to apply to this region, in the direction
            of axis1 -> axis2
 
-        torque : scalar
+        torque : scalar, float
            The total amount of torque to apply to the region, about the
            specified axis.
+
+        heat : scalar, float
+            The total amount of head added in the actuator zone with source terms
+
+        relaxStart : scalar, float
+            The start of the relaxation in terms of
+            orders of magnitude of relative convergence
+
+        relaxEnd : scalar, float
+            The end of the relaxation in terms of
+            orders of magnitude of relative convergence
 
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
@@ -691,7 +725,7 @@ class ADFLOW(AeroSolver):
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque,
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, heat,
             relaxStart, relaxEnd)
 
     def writeActuatorRegions(self, fileName, outputDir=None):

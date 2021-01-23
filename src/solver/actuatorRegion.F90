@@ -7,7 +7,7 @@ module actuatorRegion
 
 contains
   subroutine addActuatorRegion(pts, conn, axis1, axis2, famName, famID, &
-       thrust, torque, relaxStart, relaxEnd, nPts, nConn)
+       thrust, torque, heat, relaxStart, relaxEnd, nPts, nConn)
     ! Add a user-supplied integration surface.
 
     use communication, only : myID, adflow_comm_world
@@ -27,7 +27,7 @@ contains
     integer(kind=intType), intent(in) :: nPts, nConn, famID
     real(kind=realType), intent(in), dimension(3) :: axis1, axis2
     character(len=*) :: famName
-    real(kind=realType) :: thrust, torque, relaxStart, relaxEnd
+    real(kind=realType) :: thrust, torque, heat, relaxStart, relaxEnd
 
     ! Working variables
     integer(kind=intType) :: i, j, k, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
@@ -58,6 +58,7 @@ contains
     region%famName = famName
     region%famID = famID
     region%T = torque
+    region%Q = heat
     region%relaxStart = relaxStart
     region%relaxEnd = relaxEnd
     ! We use the axis to define the direction of F. Since we are

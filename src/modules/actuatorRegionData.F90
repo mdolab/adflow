@@ -17,13 +17,17 @@ module actuatorRegionData
      ! T is the total torque to be applied on this regoin
      real(kind=realType) :: T
      real(kind=realType), dimension(3) :: axisVec
+
+     ! Q is the total heat flux to be added on this regoin
+     real(kind=realType) :: Q
+
      ! Volume is the total integrated volume of all cells (on all
      ! procs) included in this region
      real(kind=realType) :: volume
 
      integer(kind=intType), dimension(:), allocatable :: blkPtr
-     
-     ! Set the defaults for solution relaxation 
+
+     ! Set the defaults for solution relaxation
      real(kind=realType) :: relaxStart = -one
      real(kind=realType) :: relaxEnd = -one
   end type actuatorRegionType
