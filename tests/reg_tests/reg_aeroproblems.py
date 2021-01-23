@@ -49,7 +49,7 @@ ap_2D_conv_nozzle = AeroProblem(name='2D_conv_nozzle', alpha=00.0,  mach=0.25, T
                             'thrust',
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
-                            
+
 ap_conic_conv_nozzle = AeroProblem(name='conic_conv_nozzle', alpha=90.0, mach=0.5, altitude=0.0,
                  areaRef=1.0, chordRef=1.0, R=287.87,
                  evalFuncs=['mdot_up', 'mdot_down',
@@ -59,3 +59,22 @@ ap_conic_conv_nozzle = AeroProblem(name='conic_conv_nozzle', alpha=90.0, mach=0.
                             'mavgps_up', 'mavgps_down',
                             'aavgps_up', 'aavgps_down',
                             ])
+
+ap_actuator_pipe = AeroProblem(
+    name='actuator_pipe',
+    alpha=00,
+    mach=0.6,
+    altitude=0.0,
+    areaRef=1.0,
+    chordRef=1.0,
+    evalFuncs=[
+        'mdot_in', 'mdot_out',
+        'aavgptot_in', 'aavgptot_out',
+        'mavgttot_in', 'mavgttot_out',
+        'aavgps_in', 'aavgps_out',
+        'area_in', 'area_out',
+        'mavgvx_in', 'mavgvx_out',
+        'forcexpressure_in', 'forcexpressure_out',
+        'forcexmomentum_in', 'forcexmomentum_out',
+    ]
+)

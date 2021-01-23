@@ -1,38 +1,56 @@
-from __future__ import print_function
+# built-ins
 import unittest
 import numpy as np
-from baseclasses import AeroProblem
-import sys
 import os
-baseDir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(baseDir,'../../'))
-from adflow.pyADflow import ADFLOW
-from pprint import pprint as pp
 import copy
 
+# MACH classes
+from adflow import ADFLOW
+
+# import the testing utilities that live a few directories up
+import reg_test_utils as utils
+from reg_default_options import adflowDefOpts
+from reg_aeroproblems import ap_actuator_pipe
+import reg_test_classes
+
+baseDir = os.path.dirname(os.path.abspath(__file__))
 
 class ActuatorBasicTests(unittest.TestCase):
+    """
+    Tests for the actuator zone.
+    """
+
+    N_PROCS = 2
 
     def setUp(self):
-        gridFile = os.path.join(baseDir, '../../inputFiles/actuator_test_pipe.cgns')
-        self.options = {'gridfile': gridFile,
-                        "outputdirectory": os.path.join(baseDir, "../output_files"),
+
+        self.options = {'gridfile': os.path.join(baseDir, '../../inputFiles/actuator_test_pipe.cgns'),
+                        # "outputdirectory": os.path.join(baseDir, "../output_files"),
+                        "writevolumesolution": False,
+                        "writesurfacesolution": False,
+                        "writetecplotsurfacesolution": False,
                         'mgcycle':'sg',
                         'ncycles':1000,
                         'useanksolver':True,
                         'usenksolver':True,
+                        'ankswitchtol':1.0,
+                        'anksubspacesize': -1,
+                        'anklinearsolvetol': 0.05,
+                        'ankjacobianlag': 10,
+                        'ankinnerpreconits':1,
                         'volumevariables': ['temp', 'mach', 'resrho' ],
                         'surfacevariables':['temp', 'vx', 'vy', 'vz', 'p', 'ptloss', 'mach', 'rho'],
                         'equationType':'Euler',
                         'l2convergence': 1e-13}
 
-        CFDSolver = ADFLOW(options=self.options)
+        options = copy.copy(adflowDefOpts)
+        options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
+        options.update(self.options)
+
+        CFDSolver = ADFLOW(options=options)
 
         CFDSolver.addFunction('mdot', 'inlet', name="mdot_in")
         CFDSolver.addFunction('mdot', 'outlet', name="mdot_out")
-
-        CFDSolver.addFunction('mavgptot', 'outlet', name="mavgptot_out")
-        CFDSolver.addFunction('mavgptot', 'inlet', name="mavgptot_in")
 
         CFDSolver.addFunction('aavgptot', 'outlet', name="aavgptot_out")
         CFDSolver.addFunction('aavgptot', 'inlet', name="aavgptot_in")
@@ -40,72 +58,82 @@ class ActuatorBasicTests(unittest.TestCase):
         CFDSolver.addFunction('mavgttot', 'outlet', name="mavgttot_out")
         CFDSolver.addFunction('mavgttot', 'inlet', name="mavgttot_in")
 
-        CFDSolver.addFunction('mavgps', 'outlet', name="mavgps_out")
-        CFDSolver.addFunction('mavgps', 'inlet', name="mavgps_in")
-
         CFDSolver.addFunction('aavgps', 'outlet', name="aavgps_out")
         CFDSolver.addFunction('aavgps', 'inlet', name="aavgps_in")
 
         CFDSolver.addFunction('area', 'inlet', name="area_in")
         CFDSolver.addFunction('area', 'outlet', name="area_out")
 
-        CFDSolver.addFunction('mavgvx', 'inlet', name="vx_in")
-        CFDSolver.addFunction('mavgvx', 'outlet', name="vx_out")
+        CFDSolver.addFunction('mavgvx', 'inlet', name="mavgvx_in")
+        CFDSolver.addFunction('mavgvx', 'outlet', name="mavgvx_out")
 
-        CFDSolver.addFunction('mavgps', 'inlet', name="ps_in")
-        CFDSolver.addFunction('mavgps', 'outlet', name="ps_out")
+        CFDSolver.addFunction('forcexpressure', 'inlet', name="forcexpressure_in")
+        CFDSolver.addFunction('forcexpressure', 'outlet', name="forcexpressure_out")
+
+        CFDSolver.addFunction('forcexmomentum', 'inlet', name="forcexmomentum_in")
+        CFDSolver.addFunction('forcexmomentum', 'outlet', name="forcexmomentum_out")
 
         self.CFDSolver = CFDSolver
 
-        self.ap = AeroProblem(name='actuator_in_pipe', alpha=00, mach=0.6, altitude=0,
-                        areaRef=1.0, chordRef=1.0,
-                    evalFuncs=['mdot_in', 'mdot_out',
-                               'mavgptot_in', 'mavgptot_out',
-                               'mavgttot_in', 'mavgttot_out',
-                               'mavgps_in', 'mavgps_out',
-                               'area_in', 'area_out',
-                               'aavgps_in', 'aavgps_out',
-                               'aavgptot_in', 'aavgptot_out',
-                               'ps_in', 'ps_out',
-                               'vx_in', 'vx_out'] )
+        # this is imported from reg_aeroproblems utility script
+        self.ap = ap_actuator_pipe
 
-
-        self.force = 600
         actuatorFile = os.path.join(baseDir, '../../inputFiles/actuator_test_disk.xyz')
-        self.CFDSolver.addActuatorRegion(actuatorFile, np.array([0,0,0]),np.array([1,0,0]), 'actuator', thrust=self.force )
+        self.CFDSolver.addActuatorRegion(
+            actuatorFile,
+            np.array([0, 0, 0]),
+            np.array([1, 0, 0]),
+            'actuator_region',
+            # we will set these individually in the tests below
+            thrust=0.0,
+            torque=0.0,
+        )
 
-    def test_mom_flux(self):
+        # add thrust as an AP DV
+        self.ap.setBCVar("Thrust", 0.0, "actuator_region")
+        self.ap.addDV("Thrust", family="actuator_region", units="N", name="thrust")
+
+    def test_actuator_momentum_flux(self):
         "Tests if the correct amount of momentum is added to the flow by the actuator"
+
+        # set the az force
+        az_force = 600.
+        self.ap.setDesignVars({"thrust": az_force})
 
         self.CFDSolver(self.ap)
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
-        force_cfd =  -funcs[self.ap.name + '_mdot_out']*funcs[self.ap.name + '_vx_out'] + funcs[self.ap.name + '_ps_out']*funcs[self.ap.name +'_area_out'] \
-                 - ( funcs[self.ap.name + '_mdot_in']*funcs[self.ap.name + '_vx_in'] + funcs[self.ap.name + '_ps_in']*funcs[self.ap.name +'_area_in'])
+        mdot_i = funcs[self.ap.name + '_mdot_in']
+        # negate mdot out because of the normal
+        mdot_o = -funcs[self.ap.name + '_mdot_out']
+
+        vx_i = funcs[self.ap.name + '_mavgvx_in']
+        vx_o = funcs[self.ap.name + '_mavgvx_out']
+
+        area_i = funcs[self.ap.name +'_area_in']
+        area_o = funcs[self.ap.name +'_area_out']
+
+        aavgps_i = funcs[self.ap.name + '_aavgps_in']
+        aavgps_o = funcs[self.ap.name + '_aavgps_out']
+
+        # also get the pressure and momentum forces directly from CFD
+        fp_i = funcs[self.ap.name + '_forcexpressure_in']
+        fp_o = funcs[self.ap.name + '_forcexpressure_out']
+
+        fm_i = funcs[self.ap.name + '_forcexmomentum_in']
+        fm_o = funcs[self.ap.name + '_forcexmomentum_out']
+
+        # this is the analytical force based on primitive values (like mdot, ps etc)
+        my_force = mdot_o * vx_o + aavgps_o * area_o - (mdot_i * vx_i + aavgps_i * area_i)
+
+        # this is the force computed by the momentum integration directly from CFD
+        # just sum these up, the forces contain the correct normals from CFD
+        cfd_force = fp_o + fm_o + fp_i + fm_i
 
         # The low accuracy is because the intgrated quantities don't have a lot of precision
-        np.testing.assert_allclose(force_cfd, self.force, rtol=1e-3)
-
-    def test_set_thrust(self):
-        "Tests if thrust is set accurately"
-
-        force = 100
-
-        ap = copy.deepcopy(self.ap)
-        ap.setActuatorVar('Thrust',  force, 'actuator')
-        ap.addDV('Thrust', familyGroup='actuator', name='actuator_thrust')
-        self.CFDSolver(ap)
-        funcs = {}
-        self.CFDSolver.evalFunctions(ap, funcs)
-
-
-        force_cfd =  -funcs[self.ap.name + '_mdot_out']*funcs[self.ap.name + '_vx_out'] + funcs[self.ap.name + '_ps_out']*funcs[self.ap.name +'_area_out'] \
-                 - ( funcs[self.ap.name + '_mdot_in']*funcs[self.ap.name + '_vx_in'] + funcs[self.ap.name + '_ps_in']*funcs[self.ap.name +'_area_in'])
-
-        # The low accuracy is because the intgrated quantities don't have a lot of precision
-        np.testing.assert_allclose(force_cfd, force, rtol=1e-3)
-
+        np.testing.assert_allclose(my_force, az_force, rtol=1e-3)
+        np.testing.assert_allclose(cfd_force, az_force, rtol=1e-3)
 
 class ActuatorDerivTests(unittest.TestCase):
 
