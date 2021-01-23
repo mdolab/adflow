@@ -694,6 +694,35 @@ class ADFLOW(AeroSolver):
             pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque,
             relaxStart, relaxEnd)
 
+    def writeActuatorRegions(self, fileName, outputDir=None):
+        """
+        Debug method that writes the cells included in actuator regions
+        to a tecplot file. This routine should be called on all of the
+        procs in self.comm. The output can then be used to verify that
+        the actuator zones are defined correctly.
+
+        Parameters
+        ----------
+        fileName : str
+            Name of the output file
+
+        outputDir : str
+            output directory. If not provided, defaults to the output
+            directory defined with the aero_options
+        """
+
+        if outputDir is None:
+            outputDir = self.getOption('outputDirectory')
+
+        # Join to get the actual filename root
+        fileName = os.path.join(outputDir, fileName)
+
+        # Ensure extension is .plt even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        fileName += '.plt'
+
+        # just call the underlying fortran routine
+        self.adflow.actuatorregion.writeactuatorregions(fileName)
 
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a
