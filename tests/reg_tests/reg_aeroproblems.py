@@ -76,5 +76,6 @@ ap_actuator_pipe = AeroProblem(
         'mavgvx_in', 'mavgvx_out',
         'forcexpressure_in', 'forcexpressure_out',
         'forcexmomentum_in', 'forcexmomentum_out',
+        'flowpower_az',
     ]
 )

@@ -93,6 +93,9 @@ class ActuatorBasicTests(unittest.TestCase):
         self.ap.setBCVar("Thrust", 0.0, "actuator_region")
         self.ap.addDV("Thrust", family="actuator_region", units="N", name="thrust")
 
+        # also add flowpower as an AZ function
+        CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
+
     def test_actuator_momentum_flux(self):
         "Tests if the correct amount of momentum is added to the flow by the actuator"
 
@@ -104,8 +107,8 @@ class ActuatorBasicTests(unittest.TestCase):
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
+        # negate mdot out because of the normal, mdot in is already positive
         mdot_i = funcs[self.ap.name + '_mdot_in']
-        # negate mdot out because of the normal
         mdot_o = -funcs[self.ap.name + '_mdot_out']
 
         vx_i = funcs[self.ap.name + '_mavgvx_in']
@@ -117,12 +120,19 @@ class ActuatorBasicTests(unittest.TestCase):
         aavgps_i = funcs[self.ap.name + '_aavgps_in']
         aavgps_o = funcs[self.ap.name + '_aavgps_out']
 
+        ttot_i = funcs[self.ap.name + '_mavgttot_in']
+        ttot_o = funcs[self.ap.name + '_mavgttot_out']
+
         # also get the pressure and momentum forces directly from CFD
         fp_i = funcs[self.ap.name + '_forcexpressure_in']
         fp_o = funcs[self.ap.name + '_forcexpressure_out']
 
         fm_i = funcs[self.ap.name + '_forcexmomentum_in']
         fm_o = funcs[self.ap.name + '_forcexmomentum_out']
+
+        #####################
+        # TEST MOMENTUM ADDED
+        #####################
 
         # this is the analytical force based on primitive values (like mdot, ps etc)
         my_force = mdot_o * vx_o + aavgps_o * area_o - (mdot_i * vx_i + aavgps_i * area_i)
@@ -134,6 +144,20 @@ class ActuatorBasicTests(unittest.TestCase):
         # The low accuracy is because the intgrated quantities don't have a lot of precision
         np.testing.assert_allclose(my_force, az_force, rtol=1e-3)
         np.testing.assert_allclose(cfd_force, az_force, rtol=1e-3)
+
+        ##################
+        # TEST POWER ADDED
+        ##################
+
+        # this is the integration done in the AZ
+        az_power = funcs[self.ap.name + '_flowpower_az']
+
+        # this is the energy balance of the control volume.
+        # Cp of air is taken as 1004.5 J/kg
+        my_power = 1004.5 * (mdot_o * ttot_o - mdot_i * ttot_i)
+
+        # the tolerance is slightly worse but not terrible
+        np.testing.assert_allclose(my_power, az_power, rtol=1.5e-3)
 
 class ActuatorDerivTests(unittest.TestCase):
 
