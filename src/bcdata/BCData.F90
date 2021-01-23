@@ -1582,7 +1582,11 @@ contains
                 actuatorRegionsd(iRegion)%F = actuatorRegions(iRegion)%axisVec* &
                      bcDataInd(iVar)
              else if (trim(varName) == "Torque") then
+                actuatorRegions(iRegion)%T = bcDataIn(iVar)
                 actuatorRegionsd(iRegion)%T = bcDataInd(iVar)
+             else if (trim(varName) == "Heat") then
+                actuatorRegions(iRegion)%Q = bcDataIn(iVar)
+                actuatorRegionsd(iRegion)%Q = bcDataInd(iVar)
              end if
           end if famInclude2
        end do varLoop2
@@ -1682,6 +1686,8 @@ contains
                      sum(actuatorRegions(iRegion)%axisVec*actuatorRegionsd(iRegion)%F)
              else if (trim(varName) == "Torque") then
                 bcDataInd(ivar) = actuatorRegionsd(iRegion)%T
+             else if (trim(varName) == "Heat") then
+               bcDataInd(ivar) = actuatorRegionsd(iRegion)%Q
              end if
           end if famInclude2
        end do varLoop2

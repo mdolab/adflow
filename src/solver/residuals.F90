@@ -351,8 +351,6 @@ contains
     Q_fact = factor * actuatorRegions(iRegion)%Q / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
     mynormsies = (pRef * uRef * LRef * LRef)
 
-   !  print *, "qfact from az residuals", actuatorRegions(iRegion)%Q, Q_fact, actuatorRegions(iRegion)%volume, mynormsies
-
     ! Loop over the ranges for this block
     iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
     iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
