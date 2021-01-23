@@ -25,6 +25,7 @@ src/build/importTest.py
 
 # also ignore the input files to regtests after we extract from archine
 inputFiles/*.cgns
+inputFiles/*.xyz
 inputFiles/split_file
 inputFiles/tecplot.phy
 
