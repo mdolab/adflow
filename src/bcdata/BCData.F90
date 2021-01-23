@@ -1479,10 +1479,12 @@ contains
              varName = char2str(bcDataNamesIn(iVar,:), maxCGNSNameLen)
 
              if (trim(varName) == "Thrust") then
-                actuatorRegions(iRegion)%F = actuatorRegions(iRegion)%axisVec* & 
+                actuatorRegions(iRegion)%F = actuatorRegions(iRegion)%axisVec* &
                      bcDataIn(iVar)
              else if (trim(varName) == "Torque") then
                 actuatorRegions(iRegion)%T = bcDataIn(iVar)
+             else if (trim(varName) == "Heat") then
+                actuatorRegions(iRegion)%Q = bcDataIn(iVar)
              end if
           end if famInclude2
        end do varLoop2
@@ -1575,9 +1577,9 @@ contains
              varName = char2str(bcDataNamesIn(iVar,:), maxCGNSNameLen)
 
              if (trim(varName) == "Thrust") then
-                actuatorRegions(iRegion)%F = actuatorRegions(iRegion)%axisVec* & 
+                actuatorRegions(iRegion)%F = actuatorRegions(iRegion)%axisVec* &
                      bcDataIn(iVar)
-                actuatorRegionsd(iRegion)%F = actuatorRegions(iRegion)%axisVec* & 
+                actuatorRegionsd(iRegion)%F = actuatorRegions(iRegion)%axisVec* &
                      bcDataInd(iVar)
              else if (trim(varName) == "Torque") then
                 actuatorRegionsd(iRegion)%T = bcDataInd(iVar)
@@ -1676,7 +1678,7 @@ contains
              varName = char2str(bcDataNamesIn(iVar,:), maxCGNSNameLen)
 
              if (trim(varName) == "Thrust") then
-                bcDataInd(ivar) = & 
+                bcDataInd(ivar) = &
                      sum(actuatorRegions(iRegion)%axisVec*actuatorRegionsd(iRegion)%F)
              else if (trim(varName) == "Torque") then
                 bcDataInd(ivar) = actuatorRegionsd(iRegion)%T
