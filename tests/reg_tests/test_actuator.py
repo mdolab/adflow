@@ -5,6 +5,9 @@ import os
 import copy
 from pprint import pprint as pp
 
+# need to import mpi4py for dot product tests
+from mpi4py import MPI
+
 # MACH classes
 from adflow import ADFLOW
 
@@ -16,14 +19,17 @@ import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
-class ActuatorBasicTests(unittest.TestCase):
+class ActuatorBasicTests(reg_test_classes.RegTest):
     """
     Tests for the actuator zone.
     """
 
     N_PROCS = 2
+    ref_file = "actuator_tests.json"
 
     def setUp(self):
+
+        super().setUp()
 
         self.options = {'gridfile': os.path.join(baseDir, '../../inputFiles/actuator_test_pipe.cgns'),
                         # "outputdirectory": os.path.join(baseDir, "../output_files"),
@@ -108,7 +114,8 @@ class ActuatorBasicTests(unittest.TestCase):
 
         # set the az force
         az_force = 600.
-        self.ap.setDesignVars({"thrust": az_force})
+        # need to set all dvs because training may re-use leftover dvs from a previous test
+        self.ap.setDesignVars({"thrust": az_force, "heat": 0.0})
 
         self.CFDSolver(self.ap)
         funcs = {}
@@ -171,7 +178,8 @@ class ActuatorBasicTests(unittest.TestCase):
 
         # set the az heat
         az_heat = 1e5
-        self.ap.setDesignVars({"heat": az_heat})
+        # need to set all dvs because training may re-use leftover dvs from a previous test
+        self.ap.setDesignVars({"thrust": 0.0, "heat": az_heat})
 
         self.CFDSolver(self.ap)
         funcs = {}
@@ -289,8 +297,16 @@ class ActuatorBasicTests(unittest.TestCase):
         # the tolerance is slightly worse but not terrible
         np.testing.assert_allclose(my_power, az_power, rtol=1.5e-3)
 
+        #################
+        # TEST STATE NORM
+        #################
+        utils.assert_states_allclose(self.handler, self.CFDSolver)
+
     def test_actuator_adjoint(self):
         "Tests if the adjoint sensitivities are correct for the AZ DVs"
+
+        # TODO modify this test so that we solve only adjoints for functions of interest
+        # rather than the full set
 
         # set the az force
         az_force = 0.
@@ -379,6 +395,61 @@ class ActuatorBasicTests(unittest.TestCase):
         # the tolerance is slightly worse but not terrible
         np.testing.assert_allclose(my_powerd, 1, rtol=1.5e-3)
 
+    def test_actuator_partials(self):
+
+        az_force = 600.
+        az_heat = 1e5
+        # need to set all dvs because training may re-use leftover dvs from a previous test
+        self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
+
+        self.CFDSolver(self.ap)
+
+        #############
+        # TEST FWD AD
+        #############
+
+        # save these for the dot product tests
+        resDot = {}
+
+        for DV in self.ap.DVs.values():
+            # regular aero DVs do not need the family name, but the BC names do require the fam names
+            xDvDot = {DV.key + '_actuator_region': 1}
+
+            resDot[DV.key] = self.CFDSolver.computeJacobianVectorProductFwd(
+                xDvDot=xDvDot,
+                # actuator changes only affect residuals
+                residualDeriv=True,
+            )
+
+            self.handler.root_print("||dR/d%s||" % DV.key)
+            self.handler.par_add_norm("||dR/d%s||" % DV.key, resDot[DV.key], rtol=1e-12, atol=1e-12)
+
+        #############
+        # TEST BWD AD
+        #############
+
+        # we are only interested in checking the xDvBar result here
+        dwBar = self.CFDSolver.getStatePerturbation(123)
+        xDvBar = self.CFDSolver.computeJacobianVectorProductBwd(resBar=dwBar, xDvDerivAero=True)
+
+        for DV in self.ap.DVs.values():
+            self.handler.root_print("||dR/d%s^T||" % DV.key)
+            self.handler.root_add_val("||dR/d%s^T||" % DV.key, xDvBar[DV.key.lower()], rtol=1e-12, atol=1e-12)
+
+        ###############
+        # TEST DOT PROD
+        ###############
+
+        for DV in self.ap.DVs.values():
+            # this product is already the same on all procs because adflow handles comm for xDvBar
+            first = np.dot(xDvBar[DV.key.lower()], 1.0)
+            # we need to reduce the resDot dot dwBar ourselves
+            secondLocal = np.dot(resDot[DV.key], dwBar)
+            second = self.CFDSolver.comm.allreduce(secondLocal, op=MPI.SUM)
+
+            # compare the final products
+            np.testing.assert_array_almost_equal(first, second, decimal=14)
+
 class ActuatorDerivTests(unittest.TestCase):
 
     def setUp(self):
@@ -445,28 +516,6 @@ class ActuatorDerivTests(unittest.TestCase):
         actuatorFile = os.path.join(baseDir, '../../inputFiles/actuator_test_disk.xyz')
         self.CFDSolver.addActuatorRegion(actuatorFile, np.array([0,0,0]),np.array([1,0,0]), 'actuator', thrust=600 )
 
-
-    def test_fwd(self):
-        self.CFDSolver(self.ap)
-        "note the torque dv does not effect anything so the deriv is and should be zero"
-        for DV in self.ap.DVs:
-            xDvDot = {DV:1}
-
-            resDot_FD, funcsDot_FD, fDot_FD, hfDot_FD = self.CFDSolver.computeJacobianVectorProductFwd(
-            xDvDot=xDvDot, residualDeriv=True, funcDeriv=True, fDeriv=True, hfDeriv=True, mode='FD', h=1e-3)
-
-            resDot, funcsDot, fDot, hfDot = self.CFDSolver.computeJacobianVectorProductFwd(
-            xDvDot=xDvDot, residualDeriv=True, funcDeriv=True, fDeriv=True, hfDeriv=True, mode='AD')
-
-
-            np.testing.assert_allclose(resDot_FD,resDot, atol=1e-10)
-            for func in funcsDot:
-                np.testing.assert_allclose(funcsDot_FD[func],funcsDot[func], atol=1e-7)
-
-            np.testing.assert_allclose(fDot_FD,fDot, atol=1e-7)
-            np.testing.assert_allclose(hfDot_FD,hfDot, atol=1e-10)
-
-
     # def test_fwd_CS(self):
     #     # arch=self.arch['complex']
     #     import petsc4py
@@ -528,25 +577,6 @@ class ActuatorDerivTests(unittest.TestCase):
     #     # print(funcsDot)
     #     # print(fDot)
     #     # print(hfDot)
-
-
-    def test_bwd(self):
-        """ tests the bwd AD for actuator regions """
-        self.CFDSolver(self.ap)
-
-        for DV in self.ap.DVs:
-            xDvDot = {DV:1}
-
-            resDot, _, _, _ = self.CFDSolver.computeJacobianVectorProductFwd(
-            xDvDot=xDvDot, residualDeriv=True, funcDeriv=True, fDeriv=True, hfDeriv=True)
-
-            dwBar = self.CFDSolver.getStatePerturbation(123)
-            _, _, xDvBar = self.CFDSolver.computeJacobianVectorProductBwd(
-                resBar=dwBar, wDeriv=True, xVDeriv=True, xDvDerivAero=True)
-
-            np.testing.assert_array_almost_equal(np.dot(xDvBar[DV],xDvDot[DV]),\
-                                                    np.dot(resDot, dwBar), decimal=14)
-
 
 if __name__ == '__main__':
     unittest.main()
