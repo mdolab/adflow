@@ -28,9 +28,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
     ref_file = "actuator_tests.json"
 
     # TODO tests:
-    # compute force myself and save value in json file with more precision
-    # same for heat flux
-    # use restart files and consistent restarts
     # CS test; test flowpower and user functions compare with adjoint
 
     def setUp(self):
@@ -38,7 +35,8 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         super().setUp()
 
         self.options = {'gridfile': os.path.join(baseDir, '../../inputFiles/actuator_test_pipe.cgns'),
-                        # "outputdirectory": os.path.join(baseDir, "../output_files"),
+                        # the restart file was ran with thrust = 600 N and heat = 1e5 W
+                        'restartfile': os.path.join(baseDir, '../../inputFiles/actuator_test_pipe.cgns'),
                         "writevolumesolution": False,
                         "writesurfacesolution": False,
                         "writetecplotsurfacesolution": False,
@@ -123,6 +121,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # need to set all dvs because training may re-use leftover dvs from a previous test
         self.ap.setDesignVars({"thrust": az_force, "heat": 0.0})
 
+        # we have to rerun because restart file was ran with a different heat value
         self.CFDSolver(self.ap)
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -187,6 +186,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # need to set all dvs because training may re-use leftover dvs from a previous test
         self.ap.setDesignVars({"thrust": 0.0, "heat": az_heat})
 
+        # we have to rerun because restart file was ran with a different thrust value
         self.CFDSolver(self.ap)
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -245,9 +245,12 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # set the az force
         az_force = 600.
         az_heat = 1e5
-        self.ap.setDesignVars({"thrust": az_force, "heat":az_heat})
+        self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
-        self.CFDSolver(self.ap)
+        # We dont need to rerun, restart file has the correct state. just run a residual
+        # self.CFDSolver(self.ap)
+        self.CFDSolver.getResidual(self.ap)
+
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
@@ -441,7 +444,10 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         az_heat = 1e5
         self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
-        self.CFDSolver(self.ap)
+        # We dont need to rerun, restart file has the correct state. just run a residual
+        # self.CFDSolver(self.ap)
+        self.CFDSolver.getResidual(self.ap)
+
         funcs = {}
         funcsSens = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -465,7 +471,9 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # need to set all dvs because training may re-use leftover dvs from a previous test
         self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
-        self.CFDSolver(self.ap)
+        # We dont need to rerun, restart file has the correct state. just run a residual
+        # self.CFDSolver(self.ap)
+        self.CFDSolver.getResidual(self.ap)
 
         #############
         # TEST FWD AD
