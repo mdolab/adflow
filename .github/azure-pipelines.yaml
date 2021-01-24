@@ -19,6 +19,7 @@ extends:
     COMPLEX: true
     GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
     INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk
-    INPUT_FILES: true
-    STEPS_TEST_REAL: testflo -v . -n 1
-    STEPS_TEST_COMPLEX: export PETSC_ARCH=complex-opt-\$COMPILERS-\$PETSCVERSION && testflo -v . -m "cmplx_test*" -n 1
+    BUILD_REAL: .github/build_real.sh
+    TEST_REAL: .github/test_real.sh
+    BUILD_COMPLEX: .github/build_complex.sh
+    TEST_COMPLEX: .github/test_complex.sh
