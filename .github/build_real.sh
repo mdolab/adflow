@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cp $(CONFIG_FILE) config/config.mk
+cp $CONFIG_FILE config/config.mk
 make
 pip install .
