@@ -1344,9 +1344,6 @@ class ADFLOW(AeroSolver):
             Dictionary into which the function derivatives are saved.
 
         evalFuncs : iterable object containing strings
-            The functions the user wants the derivatives of
-
-        evalFuncs : iterable object containing strings
             The additaion functions the user wants returned that are
             not already defined in the aeroProblem
 

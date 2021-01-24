@@ -27,6 +27,12 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
     N_PROCS = 2
     ref_file = "actuator_tests.json"
 
+    # TODO tests:
+    # compute force myself and save value in json file with more precision
+    # same for heat flux
+    # use restart files and consistent restarts
+    # CS test; test flowpower and user functions compare with adjoint
+
     def setUp(self):
 
         super().setUp()
@@ -302,11 +308,78 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         #################
         utils.assert_states_allclose(self.handler, self.CFDSolver)
 
+        ################
+        # TEST ALL FUNCS
+        ################
+        self.handler.root_print("all functionals")
+        self.handler.root_add_dict("all functionals", funcs, rtol=1e-12, atol=1e-12)
+
     def test_actuator_adjoint(self):
         "Tests if the adjoint sensitivities are correct for the AZ DVs"
 
-        # TODO modify this test so that we solve only adjoints for functions of interest
-        # rather than the full set
+        # define user functions
+        my_force_functions = [
+            'mdot_in',
+            'mdot_out',
+            'mavgvx_in',
+            'mavgvx_out',
+            'area_in',
+            'area_out',
+            'aavgps_in',
+            'aavgps_out',
+        ]
+        cfd_force_functions = [
+            'forcexpressure_in',
+            'forcexpressure_out',
+            'forcexmomentum_in',
+            'forcexmomentum_out',
+        ]
+        my_power_functions = [
+            'mdot_in',
+            'mdot_out',
+            'mavgttot_in',
+            'mavgttot_out',
+        ]
+
+        def f_my_force(funcs):
+            mdot_i = funcs['mdot_in']
+            mdot_o = -funcs['mdot_out']
+
+            vx_i = funcs['mavgvx_in']
+            vx_o = funcs['mavgvx_out']
+
+            area_i = funcs['area_in']
+            area_o = funcs['area_out']
+
+            aavgps_i = funcs['aavgps_in']
+            aavgps_o = funcs['aavgps_out']
+
+            funcs['my_force'] = mdot_o * vx_o + aavgps_o * area_o - (mdot_i * vx_i + aavgps_i * area_i)
+            return funcs
+
+        def f_cfd_force(funcs):
+            fp_i = funcs['forcexpressure_in']
+            fp_o = funcs['forcexpressure_out']
+
+            fm_i = funcs['forcexmomentum_in']
+            fm_o = funcs['forcexmomentum_out']
+
+            funcs['cfd_force'] = fp_o + fm_o + fp_i + fm_i
+            return funcs
+
+        def f_my_power(funcs):
+            mdot_i = funcs['mdot_in']
+            mdot_o = -funcs['mdot_out']
+
+            ttot_i = funcs['mavgttot_in']
+            ttot_o = funcs['mavgttot_out']
+
+            funcs['my_power'] = 1004.5 * (mdot_o * ttot_o - mdot_i * ttot_i)
+            return funcs
+
+        self.CFDSolver.addUserFunction('my_force', my_force_functions, f_my_force)
+        self.CFDSolver.addUserFunction('cfd_force', cfd_force_functions, f_cfd_force)
+        self.CFDSolver.addUserFunction('my_power', my_power_functions, f_my_power)
 
         # set the az force
         az_force = 0.
@@ -316,84 +389,74 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.CFDSolver(self.ap)
         funcs = {}
         funcsSens = {}
-        self.CFDSolver.evalFunctions(self.ap, funcs)
-        self.CFDSolver.evalFunctionsSens(self.ap, funcsSens)
-        # pp(funcsSens)
-
-        # negate mdot out because of the normal, mdot in is already positive
-        mdot_i = funcs[self.ap.name + '_mdot_in']
-        mdot_o = -funcs[self.ap.name + '_mdot_out']
-        mdot_id = funcsSens[self.ap.name + '_mdot_in']['thrust']
-        mdot_od = -funcsSens[self.ap.name + '_mdot_out']['thrust']
-
-        vx_i = funcs[self.ap.name + '_mavgvx_in']
-        vx_o = funcs[self.ap.name + '_mavgvx_out']
-        vx_id = funcsSens[self.ap.name + '_mavgvx_in']['thrust']
-        vx_od = funcsSens[self.ap.name + '_mavgvx_out']['thrust']
-
-        area_i = funcs[self.ap.name +'_area_in']
-        area_o = funcs[self.ap.name +'_area_out']
-        area_id = funcsSens[self.ap.name +'_area_in']['thrust']
-        area_od = funcsSens[self.ap.name +'_area_out']['thrust']
-
-        aavgps_i = funcs[self.ap.name + '_aavgps_in']
-        aavgps_o = funcs[self.ap.name + '_aavgps_out']
-        aavgps_id = funcsSens[self.ap.name + '_aavgps_in']['thrust']
-        aavgps_od = funcsSens[self.ap.name + '_aavgps_out']['thrust']
-
-        ttot_i = funcs[self.ap.name + '_mavgttot_in']
-        ttot_o = funcs[self.ap.name + '_mavgttot_out']
-        ttot_id = funcsSens[self.ap.name + '_mavgttot_in']['thrust']
-        ttot_od = funcsSens[self.ap.name + '_mavgttot_out']['thrust']
-
-        # also get the pressure and momentum forces directly from CFD
-        fp_i = funcs[self.ap.name + '_forcexpressure_in']
-        fp_o = funcs[self.ap.name + '_forcexpressure_out']
-        fp_id = funcsSens[self.ap.name + '_forcexpressure_in']['thrust']
-        fp_od = funcsSens[self.ap.name + '_forcexpressure_out']['thrust']
-
-        fm_i = funcs[self.ap.name + '_forcexmomentum_in']
-        fm_o = funcs[self.ap.name + '_forcexmomentum_out']
-        fm_id = funcsSens[self.ap.name + '_forcexmomentum_in']['thrust']
-        fm_od = funcsSens[self.ap.name + '_forcexmomentum_out']['thrust']
+        # self.CFDSolver.evalFunctions(self.ap, funcs)
+        self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=['my_force', 'cfd_force', 'my_power'])
+        self.CFDSolver.evalFunctionsSens(
+            self.ap,
+            funcsSens,
+            evalFuncs=['my_force', 'cfd_force', 'my_power']
+        )
 
         #####################
         # TEST MOMENTUM ADDED
         #####################
 
-        # this is the analytical force based on primitive values (like mdot, ps etc)
-        my_forced = mdot_od * vx_o + mdot_o * vx_od + aavgps_od * area_o \
-            - (mdot_id * vx_i + mdot_i * vx_id + aavgps_id * area_i)
-
-        # this is the force computed by the momentum integration directly from CFD
-        # just sum these up, the forces contain the correct normals from CFD
-        cfd_forced = fp_od + fm_od + fp_id + fm_id
-
-        # print('myforced', my_forced)
-        # print('cfdforced', cfd_forced)
-
+        # we test these w.r.t. thrust and heat analytically
         # The low accuracy is because the intgrated quantities don't have a lot of precision
-        np.testing.assert_allclose(my_forced, 1, rtol=1e-3)
-        np.testing.assert_allclose(cfd_forced, 1, rtol=1e-3)
+
+        np.testing.assert_allclose(funcsSens['actuator_pipe_my_force']['thrust'], 1, rtol=1e-3)
+        np.testing.assert_allclose(funcsSens['actuator_pipe_cfd_force']['thrust'], 1, rtol=1e-3)
+
+        # heat addition should not affect these
+        np.testing.assert_allclose(funcsSens['actuator_pipe_my_force']['heat'] + 100, 100, rtol=1e-3)
+        np.testing.assert_allclose(funcsSens['actuator_pipe_cfd_force']['heat'] + 100, 100, rtol=1e-3)
+
+        # also test the actual values from the ref file
+        self.handler.root_print("my_force sens")
+        self.handler.root_add_dict("my_force sens", funcsSens['actuator_pipe_my_force'], rtol=1e-12, atol=1e-12)
+
+        self.handler.root_print("cfd_force sens")
+        self.handler.root_add_dict("cfd_force sens", funcsSens['actuator_pipe_cfd_force'], rtol=1e-12, atol=1e-12)
 
         ##################
         # TEST POWER ADDED
         ##################
 
-        # get the derivatives wrt heat
-        mdot_id = funcsSens[self.ap.name + '_mdot_in']['heat']
-        mdot_od = -funcsSens[self.ap.name + '_mdot_out']['heat']
+        # analytically test heat addition
+        # this should be equal to one because we are not adding any thrust in this test.
+        # if we also added thrust, addition of heat would affect flow power integration
+        # due to the changes in the flowfield and as a result the derivative would not be one.
+        # flowpower is more complicated here so we just check with json reference
+        np.testing.assert_allclose(funcsSens['actuator_pipe_my_power']['heat'], 1, rtol=1e-3)
 
-        ttot_id = funcsSens[self.ap.name + '_mavgttot_in']['heat']
-        ttot_od = funcsSens[self.ap.name + '_mavgttot_out']['heat']
+        # test values with the ref file
+        self.handler.root_print("my_power sens")
+        self.handler.root_add_dict("my_power sens", funcsSens['actuator_pipe_my_power'], rtol=1e-12, atol=1e-12)
 
-        # this is the energy balance of the control volume.
-        # Cp of air is taken as 1004.5 J/kg
-        my_powerd = 1004.5 * (mdot_od * ttot_o + mdot_o * ttot_od - mdot_id * ttot_i - mdot_i * ttot_id)
-        # print('mypowerd', my_powerd)
+    def test_actuator_flowpower_adjoint(self):
+        "we test this adjoint separately because we need to have a finite thrust for this to actually test"
 
-        # the tolerance is slightly worse but not terrible
-        np.testing.assert_allclose(my_powerd, 1, rtol=1.5e-3)
+        # set the az force
+        az_force = 600.
+        az_heat = 1e5
+        self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
+
+        self.CFDSolver(self.ap)
+        funcs = {}
+        funcsSens = {}
+        self.CFDSolver.evalFunctions(self.ap, funcs)
+        self.CFDSolver.evalFunctionsSens(
+            self.ap,
+            funcsSens,
+            evalFuncs=['flowpower_az']
+        )
+
+        #############################
+        # TEST FLOW POWER INTEGRATION
+        #############################
+
+        self.handler.root_print("flowpower sens")
+        self.handler.root_add_dict("flowpower sens", funcsSens['actuator_pipe_flowpower_az'], rtol=1e-12, atol=1e-12)
 
     def test_actuator_partials(self):
 

@@ -1,7 +1,42 @@
 {
     "Norm of state vector": 69.63137072148237,
+    "all functionals": {
+        "actuator_pipe_aavgps_in": 74660.46464333017,
+        "actuator_pipe_aavgps_out": 84991.66069460503,
+        "actuator_pipe_aavgptot_in": 106413.46703453093,
+        "actuator_pipe_aavgptot_out": 113722.57597002167,
+        "actuator_pipe_area_in": 0.09588693418045077,
+        "actuator_pipe_area_out": 0.09588693418045324,
+        "actuator_pipe_flowpower_az": 150255.9757416806,
+        "actuator_pipe_forcexmomentum_in": -5339.777259138606,
+        "actuator_pipe_forcexmomentum_out": 4949.5153755112815,
+        "actuator_pipe_forcexpressure_in": 2556.7805466973014,
+        "actuator_pipe_forcexpressure_out": -1566.153830923376,
+        "actuator_pipe_mavgttot_in": 319.0082576966147,
+        "actuator_pipe_mavgttot_out": 330.59629741919844,
+        "actuator_pipe_mavgvx_in": 248.44680519403792,
+        "actuator_pipe_mavgvx_out": 230.29142294880432,
+        "actuator_pipe_mdot_in": 21.49263805170776,
+        "actuator_pipe_mdot_out": -21.492399986653986
+    },
+    "cfd_force sens": {
+        "heat": 4.061210619932867e-07,
+        "thrust": 1.00043384500243
+    },
+    "flowpower sens": {
+        "heat": -0.0364966408122231,
+        "thrust": 317.0581191508687
+    },
+    "my_force sens": {
+        "heat": 4.0612106197641964e-07,
+        "thrust": 1.000433845002482
+    },
+    "my_power sens": {
+        "heat": 0.9995665250507955,
+        "thrust": 197.0594442172399
+    },
     "||dR/dHeat^T||": -6.0708279192603954e-05,
     "||dR/dHeat||": 1.8898428014574268e-05,
-    "||dR/dThrust^T||": -0.036328849500576785,
+    "||dR/dThrust^T||": -0.03632884950057678,
     "||dR/dThrust||": 0.007206108180321472
 }
