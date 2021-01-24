@@ -533,7 +533,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         self.options = {
             "gridfile": os.path.join(baseDir, "../../inputFiles/actuator_test_pipe.cgns"),
             # the restart file was ran with thrust = 600 N and heat = 1e5 W
-            "restartfile": os.path.join(baseDir, "../../inputFiles/actuator_test_pipe.cgns"),
+            # "restartfile": os.path.join(baseDir, "../../inputFiles/actuator_test_pipe.cgns"),
             "writevolumesolution": False,
             "writesurfacesolution": False,
             "writetecplotsurfacesolution": False,
@@ -541,11 +541,12 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             "ncycles": 1000,
             "useanksolver": True,
             "usenksolver": True,
-            "ankswitchtol": 1.0,
+            "ankswitchtol": 10.0,
             "anksubspacesize": -1,
             "anklinearsolvetol": 0.05,
             "ankjacobianlag": 10,
             "ankinnerpreconits": 1,
+            "monitorvariables": ['cpu','resrho', 'resrhoe'],
             "volumevariables": ["temp", "mach", "resrho"],
             "surfacevariables": ["temp", "vx", "vy", "vz", "p", "ptloss", "mach", "rho"],
             "equationType": "Euler",
@@ -681,50 +682,84 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         # set the az force
         az_force = 0.0
         az_heat = 1e5
-        self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
+        aDV = {"thrust": az_force, "heat": az_heat}
+        self.ap.setDesignVars(aDV)
 
         self.CFDSolver(self.ap)
         funcs = {}
-        funcsSens = {}
-        # self.CFDSolver.evalFunctions(self.ap, funcs)
+        funcsSensCS = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power"])
-        self.CFDSolver.evalFunctionsSens(self.ap, funcsSens, evalFuncs=["my_force", "cfd_force", "my_power"])
 
-        #####################
-        # TEST MOMENTUM ADDED
-        #####################
+        funcs_plus = {}
+        for dv in ['thrust', 'heat']:
 
-        # we test these w.r.t. thrust and heat analytically
-        # The low accuracy is because the intgrated quantities don't have a lot of precision
+            # save the old dv
+            dvsave = aDV[dv]
 
-        np.testing.assert_allclose(funcsSens["actuator_pipe_my_force"]["thrust"], 1, rtol=1e-3)
-        np.testing.assert_allclose(funcsSens["actuator_pipe_cfd_force"]["thrust"], 1, rtol=1e-3)
+            # perturb
+            aDV[dv] += self.h * 1j
+            self.ap.setDesignVars(aDV)
 
-        # heat addition should not affect these
-        np.testing.assert_allclose(funcsSens["actuator_pipe_my_force"]["heat"] + 100, 100, rtol=1e-3)
-        np.testing.assert_allclose(funcsSens["actuator_pipe_cfd_force"]["heat"] + 100, 100, rtol=1e-3)
+            # call solver again
+            # TODO Learn to do this w/o the reset flow
+            self.CFDSolver.resetFlow(self.ap)
+            self.CFDSolver(self.ap)
+            # call again just to nail down the complex residual
+            # TODO fix this. we should also check for CS residual convergence.
+            self.CFDSolver(self.ap)
 
-        # also test the actual values from the ref file
-        self.handler.root_print("my_force sens")
-        self.handler.root_add_dict("my_force sens", funcsSens["actuator_pipe_my_force"], rtol=1e-12, atol=1e-12)
+            # save the new funcs in a dict
+            funcs_plus[dv] = {}
 
-        self.handler.root_print("cfd_force sens")
-        self.handler.root_add_dict("cfd_force sens", funcsSens["actuator_pipe_cfd_force"], rtol=1e-12, atol=1e-12)
+            # eval functions
+            self.CFDSolver.evalFunctions(self.ap, funcs_plus[dv], evalFuncs=["my_force", "cfd_force", "my_power"])
+
+            # compute the sens
+            funcsSensCS[dv] = {}
+            for f in ["my_force", "cfd_force", "my_power"]:
+                fname = "actuator_pipe_" + f
+                funcsSensCS[dv][f] = np.imag(funcs_plus[dv][fname]) / self.h
+
+            # reset the DV
+            aDV[dv] = dvsave
 
         ##################
-        # TEST POWER ADDED
+        # TEST DERIVATIVES
         ##################
 
-        # analytically test heat addition
-        # this should be equal to one because we are not adding any thrust in this test.
-        # if we also added thrust, addition of heat would affect flow power integration
-        # due to the changes in the flowfield and as a result the derivative would not be one.
-        # flowpower is more complicated here so we just check with json reference
-        np.testing.assert_allclose(funcsSens["actuator_pipe_my_power"]["heat"], 1, rtol=1e-3)
+        # here we compare the CS derivatives to the adjoint values computed by the real test
+        # we treat the CS value as the truth, so if this test passes,
+        # we assume the adjoint sensitivities are also true
 
-        # test values with the ref file
-        self.handler.root_print("my_power sens")
-        self.handler.root_add_dict("my_power sens", funcsSens["actuator_pipe_my_power"], rtol=1e-12, atol=1e-12)
+        # my force
+
+        # thrust
+        ref_val = self.handler.db["my_force sens"]['thrust']
+        np.testing.assert_allclose(funcsSensCS['thrust']['my_force'], ref_val, atol=1e-10, rtol=1e-10)
+
+        # heat
+        ref_val = self.handler.db["my_force sens"]['heat']
+        np.testing.assert_allclose(funcsSensCS['heat']['my_force'], ref_val, atol=1e-10, rtol=1e-10)
+
+        # cfd force
+
+        # thrust
+        ref_val = self.handler.db["cfd_force sens"]['thrust']
+        np.testing.assert_allclose(funcsSensCS['thrust']['cfd_force'], ref_val, atol=1e-10, rtol=1e-10)
+
+        # heat
+        ref_val = self.handler.db["cfd_force sens"]['heat']
+        np.testing.assert_allclose(funcsSensCS['heat']['cfd_force'], ref_val, atol=1e-10, rtol=1e-10)
+
+        # my power
+
+        # thrust
+        ref_val = self.handler.db["my_power sens"]['thrust']
+        np.testing.assert_allclose(funcsSensCS['thrust']['my_power'], ref_val, atol=1e-10, rtol=1e-10)
+
+        # heat
+        ref_val = self.handler.db["my_power sens"]['heat']
+        np.testing.assert_allclose(funcsSensCS['heat']['my_power'], ref_val, atol=1e-10, rtol=1e-10)
 
     def cmplx_test_actuator_flowpower_adjoint(self):
         "we test this adjoint separately because we need to have a finite thrust for this to actually test"
@@ -732,24 +767,62 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         # set the az force
         az_force = 600.0
         az_heat = 1e5
-        self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
+        aDV = {"thrust": az_force, "heat": az_heat}
+        self.ap.setDesignVars(aDV)
 
         # We dont need to rerun, restart file has the correct state. just run a residual
-        # self.CFDSolver(self.ap)
-        self.CFDSolver.getResidual(self.ap)
+        self.CFDSolver(self.ap)
+        # self.CFDSolver.getResidual(self.ap)
 
         funcs = {}
-        funcsSens = {}
-        self.CFDSolver.evalFunctions(self.ap, funcs)
-        self.CFDSolver.evalFunctionsSens(self.ap, funcsSens, evalFuncs=["flowpower_az"])
+        funcsSensCS = {}
+        self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["flowpower_az"])
 
-        #############################
-        # TEST FLOW POWER INTEGRATION
-        #############################
+        funcs_plus = {}
+        for dv in ['thrust', 'heat']:
 
-        self.handler.root_print("flowpower sens")
-        self.handler.root_add_dict("flowpower sens", funcsSens["actuator_pipe_flowpower_az"], rtol=1e-12, atol=1e-12)
+            # save the old dv
+            dvsave = aDV[dv]
 
+            # perturb
+            aDV[dv] += self.h * 1j
+            self.ap.setDesignVars(aDV)
+
+            # call solver again
+            # TODO Learn to do this w/o the reset flow
+            self.CFDSolver.resetFlow(self.ap)
+            self.CFDSolver(self.ap)
+            # call again just to nail down the complex residual
+            # TODO fix this. we should also check for CS residual convergence.
+            self.CFDSolver(self.ap)
+
+            # save the new funcs in a dict
+            funcs_plus[dv] = {}
+
+            # eval functions
+            self.CFDSolver.evalFunctions(self.ap, funcs_plus[dv], evalFuncs=["flowpower_az"])
+
+            # compute the sens
+            funcsSensCS[dv] = np.imag(funcs_plus[dv]['actuator_pipe_flowpower_az']) / self.h
+
+            # reset the DV
+            aDV[dv] = dvsave
+
+        ##################
+        # TEST DERIVATIVES
+        ##################
+
+        # here we compare the CS derivatives to the adjoint values computed by the real test
+        # we treat the CS value as the truth, so if this test passes,
+        # we assume the adjoint sensitivities are also true
+
+        # thrust
+        ref_val = self.handler.db["flowpower sens"]['thrust']
+        np.testing.assert_allclose(funcsSensCS['thrust'], ref_val, atol=1e-10, rtol=1e-10)
+
+        # heat
+        ref_val = self.handler.db["flowpower sens"]['heat']
+        np.testing.assert_allclose(funcsSensCS['heat'], ref_val, atol=1e-10, rtol=1e-10)
 
 if __name__ == "__main__":
     unittest.main()
