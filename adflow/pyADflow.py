@@ -192,7 +192,7 @@ class ADFLOW(AeroSolver):
         self.adflow.utils.writeintromessage()
 
         # Remind the user of all the adflow options:
-        self.printCurrentOptions()
+        self.printOptions()
 
         # Do the remainder of the operations that would have been done
         # had we read in a param file
