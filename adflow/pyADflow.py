@@ -3651,7 +3651,7 @@ class ADFLOW(AeroSolver):
         Returns
         -------
         dwdot, funcsdot, fDot : array, dict, array
-            One or more of the these are return depending on the \\*Deriv flags
+            One or more of the these are return depending on the ``*Deriv`` flags
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
@@ -3833,7 +3833,7 @@ class ADFLOW(AeroSolver):
         Returns
         -------
         wbar, xvbar, xsbar, xdvbar, xdvaerobar : array, array, array, dict, dict
-            One or more of these are returned depending on the \\*Deriv flags provided.
+            One or more of these are returned depending on the ``*Deriv`` flags provided.
 
         """
         # Error Checking
