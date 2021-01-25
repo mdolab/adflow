@@ -1423,8 +1423,11 @@ contains
    real(kind=realType) :: ks
    real(kind=realType) :: d
    
-
-   saFact = (ks - d/0.03) / (ks + d/0.03)
+   if (ks .eq. zero) then
+      saFact = -one
+   else
+      saFact = (ks - d/0.03) / (ks + d/0.03)
+   end if
 
   end function  saFact
 

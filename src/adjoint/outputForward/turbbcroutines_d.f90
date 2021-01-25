@@ -2267,6 +2267,10 @@ bocos:do nn=1,nviscbocos
 ! local variablse
     real(kind=realtype) :: ks
     real(kind=realtype) :: d
-    safact = (ks-d/0.03)/(ks+d/0.03)
+    if (ks .eq. zero) then
+      safact = -one
+    else
+      safact = (ks-d/0.03)/(ks+d/0.03)
+    end if
   end function safact
 end module turbbcroutines_d
