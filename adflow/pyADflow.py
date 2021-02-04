@@ -915,10 +915,6 @@ class ADFLOW(AeroSolver):
         # Set filenames for possible forced write during solution
         self._setForcedFileNames()
 
-        # Remind the users of the modified options:
-        if self.getOption('printIterations'):
-            self.printModifiedOptions()
-
         # Possibly release adjoint memory if not already done
         # so. Don't remove this. If switching problems, this is done
         # in setAeroProblem, but for when not switching it must be
@@ -2546,10 +2542,12 @@ class ADFLOW(AeroSolver):
         # Tell the user if we are switching aeroProblems
         if self.curAP != aeroProblem:
             newAP = True
-            if self.comm.rank == 0:
-                print('+'+'-'*70+'+')
-                print('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
-                print('+'+'-'*70+'+')
+            self.pp('+'+'-'*70+'+')
+            self.pp('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
+            self.pp('+'+'-'*70+'+')
+            # Remind the user of the modified options when switching ap
+            if self.getOption('printIterations'):
+                self.printModifiedOptions()
 
         # See if the aeroProblem has adflowData already, if not, create.
         try:
