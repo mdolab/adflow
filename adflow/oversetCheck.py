@@ -19,28 +19,10 @@ import copy
 import numpy
 from mpi4py import MPI
 from baseclasses import AeroSolver, AeroProblem
+from baseclasses.utils import Error
 from . import MExt
 from pprint import pprint as pp
 from .pyADflow import ADFLOW
-
-class Error(Exception):
-    """
-    Format the error message in a box to make it clear this
-    was a expliclty raised exception.
-    """
-    def __init__(self, message):
-        msg = '\n+'+'-'*78+'+'+'\n' + '| oversetCheck Error: '
-        i = 21
-        for word in message.split():
-            if len(word) + i + 1 > 78: # Finish line and start new one
-                msg += ' '*(78-i)+'|\n| ' + word + ' '
-                i = 1 + len(word)+1
-            else:
-                msg += word + ' '
-                i += len(word)+1
-        msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
-        print(msg)
-        Exception.__init__(self)
 
 # =============================================================================
 # ADFLOW Class
