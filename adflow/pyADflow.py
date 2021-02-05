@@ -32,7 +32,6 @@ from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from baseclasses.utils import Error
 from . import MExt
-from pprint import pprint as pp
 import hashlib
 from collections import OrderedDict
 
