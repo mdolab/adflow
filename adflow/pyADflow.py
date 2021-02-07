@@ -32,7 +32,6 @@ from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from baseclasses.utils import Error
 from . import MExt
-from pprint import pprint as pp
 import hashlib
 from collections import OrderedDict
 
@@ -67,7 +66,7 @@ class ADFLOW(AeroSolver):
         The communicator on which to create ADflow. If not given, defaults
         to MPI.COMM_WORLD.
     options : dictionary
-        The list of options to use with ADflow. This keyword arguement
+        The list of options to use with ADflow. This keyword argument
         is NOT OPTIONAL. It must always be provided. It must contain, at least
         the 'gridFile' entry for the filename of the grid to load
     debug : bool
@@ -75,7 +74,7 @@ class ADFLOW(AeroSolver):
         debugger. The MExt module deletes the copied .so file when not
         required which causes issues debugging.
     dtype : str
-        String type for float: 'd' or 'D'. Not needed to be uset by user.
+        String type for float: 'd' or 'D'. Not needed to be used by user.
         """
     def __init__(self, comm=None, options=None, debug=False, dtype='d'):
 
@@ -192,7 +191,7 @@ class ADFLOW(AeroSolver):
         self.adflow.utils.writeintromessage()
 
         # Remind the user of all the adflow options:
-        self.printCurrentOptions()
+        self.printOptions()
 
         # Do the remainder of the operations that would have been done
         # had we read in a param file
@@ -517,7 +516,7 @@ class ADFLOW(AeroSolver):
         sliceType : str {'relative', 'absolute'}
             Relative slices are 'sliced' at the beginning and then parametricly
             move as the geometry deforms. As a result, the slice through the
-            geometry may not remain planar. An abolute slice is re-sliced for
+            geometry may not remain planar. An absolute slice is re-sliced for
             every out put so is always exactly planar and always at the initial
             position the user indicated.
         groupName : str
@@ -620,7 +619,7 @@ class ADFLOW(AeroSolver):
                           relaxStart=None, relaxEnd=None):
         """
         Add an actuator disk zone defined by the (closed) supplied
-        in the plot3d file "fileName". Axis1 and Axis2 defines the
+        in the plot3d file "fileName". axis1 and axis2 defines the
         physical extent of the region overwhich to apply the ramp
         factor.
 
@@ -698,7 +697,7 @@ class ADFLOW(AeroSolver):
         # else.
         if familyName.lower() in self.families:
             raise Error("Cannot add ActuatorDiskRegion with family name '%s'"
-                        "becuase the name it already exists."%familyName)
+                        "because the name it already exists."%familyName)
 
         # Need to add an additional family so first figure out what
         # the max family index is:
@@ -955,7 +954,7 @@ class ADFLOW(AeroSolver):
             not supported.
         writeSolution : bool
             Flag to override any solution writing parameters. This
-            is used in a multidisciplinary enviornment when the outer
+            is used in a multidisciplinary environment when the outer
             solver can suppress all I/O during intermediate solves.
             """
 
@@ -977,10 +976,6 @@ class ADFLOW(AeroSolver):
 
         # Set filenames for possible forced write during solution
         self._setForcedFileNames()
-
-        # Remind the users of the modified options:
-        if self.getOption('printIterations'):
-            self.printModifiedOptions()
 
         # Possibly release adjoint memory if not already done
         # so. Don't remove this. If switching problems, this is done
@@ -1199,7 +1194,7 @@ class ADFLOW(AeroSolver):
         """
         Evaluate the desired functions given in iterable object,
         'evalFuncs' and add them to the dictionary 'funcs'. The keys
-        in the funcs dictionary will be have an _<ap.name> appended to
+        in the funcs dictionary will be have an ``<ap.name>_`` prepended to
         them.
 
         Parameters
@@ -1214,7 +1209,7 @@ class ADFLOW(AeroSolver):
           If not None, use these functions to evaluate.
 
         ignoreMissing : bool
-            Flag to supress checking for a valid function. Please use
+            Flag to suppress checking for a valid function. Please use
             this option with caution.
 
         Examples
@@ -1223,8 +1218,8 @@ class ADFLOW(AeroSolver):
         >>> CFDsolver(ap)
         >>> CFDsolver.evalFunctions(ap1, funcs, ['cl', 'cd'])
         >>> funcs
-        >>> # Result will look like (if aeroProblem, ap1, has name of 'c1'):
-        >>> # {'cl_c1':0.501, 'cd_c1':0.02750}
+        >>> # Result will look like (if aeroProblem, ap1, has name of 'wing'):
+        >>> # {'wing_cl':0.501, 'wing_cd':0.02750}
         """
 
         startEvalTime = time.time()
@@ -1334,9 +1329,9 @@ class ADFLOW(AeroSolver):
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
         """
         Evaluate the sensitivity of the desired functions given in
-        iterable object,'evalFuncs' and add them to the dictionary
-        'funcSens'. The keys in the funcs dictioary will be have an
-        _<ap.name> appended to them.
+        iterable object, 'evalFuncs' and add them to the dictionary
+        'funcSens'. The keys in the 'funcsSens' dictionary will be have an
+        ``<ap.name>_`` prepended to them.
 
         Parameters
         ----------
@@ -1344,7 +1339,7 @@ class ADFLOW(AeroSolver):
             Dictionary into which the function derivatives are saved.
 
         evalFuncs : iterable object containing strings
-            The additaion functions the user wants returned that are
+            The additional functions the user wants returned that are
             not already defined in the aeroProblem
 
         Examples
@@ -1520,7 +1515,7 @@ class ADFLOW(AeroSolver):
         CLStar : float
             The desired target CL
         alpha0 : angle (deg)
-            Initial guess for secant seach (deg). If None, use the
+            Initial guess for secant search (deg). If None, use the
             value in the aeroProblem
         delta : angle (deg)
             Initial step direction for secant search
@@ -1655,7 +1650,7 @@ class ADFLOW(AeroSolver):
         trim0 : float or None
             Starting trim value. If None, use what is in the DVGeo object
         da : float
-            Initial alpha step for jacobian
+            Initial alpha step for Jacobian
         deta : float
             Initial  stet in the 'eta' or trim dv function
         tol : float
@@ -1663,9 +1658,9 @@ class ADFLOW(AeroSolver):
         nIter : int
             Maximum number of iterations.
         Jac0 : 2x2 numpy array
-            Initial guess for the trim-cl jacobian. Usually obtained
+            Initial guess for the trim-cl Jacobian. Usually obtained
             from a previous analysis and saves two function
-            evaluations to produce the intial jacobian.
+            evaluations to produce the initial Jacobian.
         liftFunc : str
             Solution variable to use for lift. Usually 'cl' or a
             custom function created from cl.
@@ -1771,9 +1766,9 @@ class ADFLOW(AeroSolver):
         nIter : int
             Maximum number of iterations.
         Jac0 : nxn numpy array
-            Initial guess for the func-dv jacobian. Usually obtained
+            Initial guess for the func-dv Jacobian. Usually obtained
             from a previous analysis and saves n function
-            evaluations to produce the intial jacobian.
+            evaluations to produce the initial Jacobian.
         """
 
         self.setAeroProblem(aeroProblem)
@@ -1899,7 +1894,7 @@ class ADFLOW(AeroSolver):
     def solveSep(self, aeroProblem, sepStar, nIter=10, alpha0=None,
                  delta=0.1, tol=1e-3, expansionRatio=1.2, sepName=None):
         """This is a safe-guarded secant search method to determine
-        the alpha that yields a specified value of the sep
+        the alpha that yields a specified value of the separation
         sensor. Since this function is highly nonlinear we use a
         linear search to get the bounding range first.
 
@@ -2049,7 +2044,7 @@ class ADFLOW(AeroSolver):
         """This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
         calling program can call this file and ADflow write all the
-        files that the user has defined. It is recommneded that this
+        files that the user has defined. It is recommended that this
         function is used along with the associated logical flags in
         the options to determine the desired writing procedure
 
@@ -2152,7 +2147,7 @@ class ADFLOW(AeroSolver):
     def writeVolumeSolutionFile(self, fileName, writeGrid=True):
         """Write the current state of the volume flow solution to a CGNS
         file. This is a lower level routine; Normally one should call
-        writeSolution().
+        ``writeSolution()``.
 
         Parameters
         ----------
@@ -2162,7 +2157,7 @@ class ADFLOW(AeroSolver):
             Flag specifying whether the grid should be included or if
             links should be used. Always writing the grid is
             recommended even in cases when it is not strictly necessary.
-            Note that if writeGrid == False the volume files do not contain
+            Note that if ``writeGrid = False`` the volume files do not contain
             any grid coordinates rendering the file useless if a separate
             grid file was written out and is linked to it.
         """
@@ -2340,7 +2335,7 @@ class ADFLOW(AeroSolver):
         # end if (root proc )
 
     def writeSurfaceSensitivity(self, fileName, func, groupName=None):
-        """Write a tecplot file of the surface sensitivty. It is up to the use
+        """Write a tecplot file of the surface sensitivity. It is up to the use
         to make sure the adjoint already computed before calling this
         function.
 
@@ -2606,10 +2601,12 @@ class ADFLOW(AeroSolver):
         # Tell the user if we are switching aeroProblems
         if self.curAP != aeroProblem:
             newAP = True
-            if self.comm.rank == 0:
-                print('+'+'-'*70+'+')
-                print('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
-                print('+'+'-'*70+'+')
+            self.pp('+'+'-'*70+'+')
+            self.pp('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
+            self.pp('+'+'-'*70+'+')
+            # Remind the user of the modified options when switching ap
+            if self.getOption('printIterations'):
+                self.printModifiedOptions()
 
         # See if the aeroProblem has adflowData already, if not, create.
         try:
@@ -3711,7 +3708,7 @@ class ADFLOW(AeroSolver):
         Returns
         -------
         dwdot, funcsdot, fDot : array, dict, array
-            One or more of the these are return depending on the \*Deriv flags
+            One or more of the these are return depending on the ``*Deriv`` flags
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
@@ -3860,11 +3857,11 @@ class ADFLOW(AeroSolver):
         """This the main python gateway for producing reverse mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A mesh object must
-        be present for the xSDeriv=True flag and a mesh and DVGeo
-        object must be present for xDvDeriv=True flag. Note that more
+        be present for the ``xSDeriv=True`` flag and a mesh and DVGeo
+        object must be present for ``xDvDeriv=True`` flag. Note that more
         than one of the specified return flags may be spcified. If
         more than one return is specified, the order of return is :
-        (wDeriv, xVDeriv, XsDeriv, xDvDeriv, dXdvDerivAero).
+        ``(wDeriv, xVDeriv, XsDeriv, xDvDeriv, dXdvDerivAero)``.
 
         Parameters
         ----------
@@ -3893,7 +3890,7 @@ class ADFLOW(AeroSolver):
         Returns
         -------
         wbar, xvbar, xsbar, xdvbar, xdvaerobar : array, array, array, dict, dict
-            One or more of these are returned depending on the \*Deriv flags provided.
+            One or more of these are returned depending on the ``*Deriv`` flags provided.
 
         """
         # Error Checking
@@ -4382,9 +4379,8 @@ class ADFLOW(AeroSolver):
         """
         Set Solver Option Value
         """
-        name = name.lower()
-
         super().setOption(name, value)
+        name = name.lower()
 
         # If the option is only used in Python, we just return
         if name in self.pythonOptions:
