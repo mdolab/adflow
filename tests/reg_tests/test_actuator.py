@@ -29,9 +29,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
     N_PROCS = 2
     ref_file = "actuator_tests.json"
 
-    # TODO tests:
-    # CS test; test flowpower and user functions compare with adjoint
-
     def setUp(self):
 
         super().setUp()
@@ -790,6 +787,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
 
             # call solver again
             # TODO Learn to do this w/o the reset flow
+            # we currently reset the flow so that we can converge the real and complex parts together
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver(self.ap)
             # call again just to nail down the complex residual
