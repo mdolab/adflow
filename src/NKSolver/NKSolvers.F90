@@ -320,12 +320,12 @@ contains
 
     deallocate(tmp)
 
-    ! propogate the old values throught the code. 
-    ! This is not needed for euler and shouldn't be needed for 
-    ! viscous equations either, but becuase of an issue else where it is. 
-    ! see https://github.com/mdolab/adflow/pull/46 for the discussion.  
+    ! propogate the old values throught the code.
+    ! This is not needed for euler and shouldn't be needed for
+    ! viscous equations either, but becuase of an issue else where it is.
+    ! see https://github.com/mdolab/adflow/pull/46 for the discussion.
     call computeResidualNK(useUpdateIntermed = .True.)
-    
+
 
   end subroutine getFreeStreamResidual
 
@@ -946,6 +946,7 @@ contains
     nfevals = 0
     step = nk_fixedStep
     tmp = -step
+    ! TODO modify this to work with both real and complex.
     call VecWAXPY(w, tmp, y, x, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
@@ -1019,6 +1020,7 @@ contains
     backtrack: do iter=1, 10
 
        ! Compute new x value:
+       ! TODO modify this to work with both real and complex.
        call VecWAXPY(w, -alpha, y, x, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -1658,9 +1660,11 @@ module ANKSolver
   real(kind=realType) :: ANK_CFLMin0, ANK_CFLMin, ANK_CFLMinBase, ANK_CFLExponent
   real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
-  real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
+  ! TODO modify this to work with both real and complex.
+  real(kind=alwaysRealType) :: ANK_physLSTol, ANK_unstdyLSTol
   real(kind=realType) :: ANK_pcUpdateTol
-  real(kind=realType) :: lambda
+  ! TODO modify this to work with both real and complex.
+  real(kind=alwaysRealType) :: lambda
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
@@ -2567,7 +2571,8 @@ contains
     use blockette, only : blocketteRes
     implicit none
 
-    real(kind=realType), intent(in) :: omega
+    ! TODO modify this to work with both real and complex.
+    real(kind=alwaysRealType), intent(in) :: omega
 
     real(kind=realType) :: dtinv, rho, uu, vv, ww
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii, iiRho
@@ -3036,7 +3041,8 @@ contains
     implicit none
 
     ! input variable
-    real(kind=realType) , intent(inout) :: lambdaP
+    ! TODO modify this to work with both real and complex.
+    real(kind=alwaysRealType) , intent(inout) :: lambdaP
 
     ! local variables
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
@@ -3067,6 +3073,10 @@ contains
     call VecGetArrayF90(deltaW,dvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
+    ! TODO modify this to work with both real and complex.
+    ! TODO is this variable getting the correct value set from python?
+    ANK_physLSTol = 0.2
+
     if(.not. ANK_coupled) then
        ii = 1
        do nn=1, nDom
@@ -3079,15 +3089,17 @@ contains
                       ! variable is greater than 10% of the variable itself.
 
                       ! check density
-                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                      lambdaL = min(lambdaL, ratio)
+                      ratio = abs(real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      ! TODO modify this to work with both real and complex.
+                      lambdaL = min(lambdaL, real(ratio))
 
                       ! increment by 4 because we want to skip momentum variables
                       ii = ii + 4
 
                       ! check energy
-                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                      lambdaL = min(lambdaL, ratio)
+                      ratio = abs(real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      ! TODO modify this to work with both real and complex.
+                      lambdaL = min(lambdaL, real(ratio))
                       ii = ii + 1
                    end do
                 end do
@@ -3166,10 +3178,14 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (isnan(lambdaL)) lambdaL = zero
+    if (isnan(lambdaL)) then
+      lambdaL = zero
+    end if
 
     ! Finally, communicate the step size across processes and return
-    call mpi_allreduce(lambdaL, lambdaP, 1_intType, adflow_real, &
+    ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
+    ! TODO does not work!
+    call mpi_allreduce(lambdaL, lambdaP, 1_intType, alwaysRealType, &
          mpi_min, ADflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -3425,6 +3441,7 @@ contains
         !lambdaTurb = max(ANK_stepMin, lambdaTurb)
 
         ! Take the uodate after the physicality check.
+        ! TODO modify this to work with both real and complex.
         call VecAXPY(wVecTurb, -lambdaTurb, deltaWTurb, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -3455,6 +3472,7 @@ contains
             LSFailed = .True.
 
             ! Restore the starting (old) w value by adding lamda*deltaW
+            ! TODO modify this to work with both real and complex.
             call VecAXPY(wVecTurb, lambdaTurb, deltaWTurb, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -3465,6 +3483,7 @@ contains
             backtrack: do iter=1, 12
 
                 ! Apply the new step
+                ! TODO modify this to work with both real and complex.
                 call VecAXPY(wVecTurb, -lambdaTurb, deltaWTurb, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
@@ -3481,6 +3500,7 @@ contains
                 if (unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
                     ! Restore back to the original wVec
+                  ! TODO modify this to work with both real and complex.
                     call VecAXPY(wVecTurb, lambdaTurb, deltaWTurb, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
@@ -3504,6 +3524,7 @@ contains
                 else
                     ! cfl is as low as it goes, try taking the step
                     ! anyway. We can't do  anything else
+                  ! TODO modify this to work with both real and complex.
                     call VecAXPY(wVecTurb, -lambdaTurb, deltaWTurb, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
                 end if
@@ -3833,7 +3854,8 @@ contains
         lambda = zero
 
     ! Take the uodate after the physicality check.
-    call VecAXPY(wVec, -lambda, deltaW, ierr)
+    ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
+    call VecAXPY(wVec, cmplx(-lambda, 0.0), deltaW, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Set the updated state variables
@@ -3844,6 +3866,9 @@ contains
     ! dw. Make sure to call setRVec/setRVecANK after this
     ! routine because rVec contains the unsteady residuals,
     ! and we need the steady residuals for the next iteration.
+    ! TODO hard-set unsteady LS tol to 1.0 for now. The value set from python was propageted wrong
+    ! TODO make sure it works in the end
+    ANK_unstdyLSTol = 1.0
     call computeUnsteadyResANK(lambda)
 
     ! Count the number of of residual evaluations outside the KSP solve
@@ -3863,7 +3888,8 @@ contains
        LSFailed = .True.
 
        ! Restore the starting (old) w value by adding lamda*deltaW
-       call VecAXPY(wVec, lambda, deltaW, ierr)
+       ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
+       call VecAXPY(wVec, cmplx(lambda, 0.0), deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Set the initial new lambda. This is working off the
@@ -3873,7 +3899,8 @@ contains
        backtrack: do iter=1, 12
 
           ! Apply the new step
-          call VecAXPY(wVec, -lambda, deltaW, ierr)
+          ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
+          call VecAXPY(wVec, cmplx(-lambda, 0.0), deltaW, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
           ! Set and recompute
@@ -3889,7 +3916,8 @@ contains
           if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
              ! Restore back to the original wVec
-             call VecAXPY(wVec, lambda, deltaW, ierr)
+             ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
+             call VecAXPY(wVec, cmplx(lambda, 0.0), deltaW, ierr)
              call EChk(ierr, __FILE__, __LINE__)
 
              ! Haven't backed off enough yet....keep going
@@ -3912,7 +3940,8 @@ contains
           else
              ! cfl is as low as it goes, try taking the step
              ! anyway. We can't do  anything else
-             call VecAXPY(wVec, -lambda, deltaW, ierr)
+             ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
+             call VecAXPY(wVec, cmplx(-lambda, 0.0), deltaW, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
 
