@@ -33,11 +33,11 @@ class TestNK(unittest.TestCase):
 
             "MGCycle": "sg",
             "MGStartLevel": -1,
-            "useANKSolver": True,
+            "useANKSolver": False,
             "useNKSolver": True,
 
             'L2Convergence':1e-14,
-            'nCycles':4000,
+            'nCycles':500,
             'adjointl2convergence': 1e-14,
             'useblockettes':False
         }
@@ -58,6 +58,8 @@ class TestNK(unittest.TestCase):
             yRef=0.0,
             zRef=0.0,
         )
+
+        self.ap.alpha = 1e-200j
 
         self.CFDSolver = ADFLOW_C(options=self.aero_options)
         # self.CFDSolver.getResidual(self.ap)
