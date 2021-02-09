@@ -28,6 +28,7 @@ complexify:
 		echo Checking $$file $$realFile $$cmplxFile; \
 		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
 			python complexify.py $$realFile; \
+			echo Copying $$file $$realFile $$cmplxFile; \
 			mv newFile $$cmplxFile; \
 		fi;\
 	done
@@ -35,22 +36,31 @@ complexify:
 	@for file in $(f77Files); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
-		echo Copying $$file $$realFile $$cmplxFile; \
-		cp $$realFile $$cmplxFile; \
+		echo Checking $$file $$realFile $$cmplxFile; \
+		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
+			echo Copying $$file $$realFile $$cmplxFile; \
+			cp $$realFile $$cmplxFile; \
+		fi;\
 	done
 
 	@for file in $(cFiles); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
-		echo Copying $$file $$realFile $$cmplxFile; \
-		cp $$realFile $$cmplxFile; \
+		echo Checking $$file $$realFile $$cmplxFile; \
+		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
+			echo Copying $$file $$realFile $$cmplxFile; \
+			cp $$realFile $$cmplxFile; \
+		fi;\
 	done
 
 	@for file in $(includeFiles); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
-		echo Copying $$file $$realFile $$cmplxFile; \
-		cp $$realFile $$cmplxFile; \
+		echo Checking $$file $$realFile $$cmplxFile; \
+		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
+			echo Copying $$file $$realFile $$cmplxFile; \
+			cp $$realFile $$cmplxFile; \
+		fi;\
 	done
 
 
