@@ -1425,6 +1425,8 @@ contains
    
    if (ks .eq. zero) then
       saFact = -one
+   else if (d .eq. zero) then
+      saFact = one
    else
       saFact = (ks - d/0.03) / (ks + d/0.03)
    end if

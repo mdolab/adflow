@@ -1200,6 +1200,8 @@ bocos:do nn=1,nviscbocos
     real(kind=realtype) :: d
     if (ks .eq. zero) then
       safact = -one
+    else if (d .eq. zero) then
+      safact = one
     else
       safact = (ks-d/0.03)/(ks+d/0.03)
     end if

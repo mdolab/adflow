@@ -318,7 +318,7 @@ contains
                 ! treatment.
 
                 dfv1 = three*chi2*cv13/((chi3+cv13)**2)
-                dfv2 = (chi2*dfv1 - one)/(nu*((one + chi*fv1)**2))
+                dfv2 = (w(i,j,k,itu1)*dfv1 - nu) / (nu + w(i,j,k,itu1)*fv1)**2
                 dft2 = -two*rsaCt4*chi*ft2/nu
 
                 drr = (one - rr*(fv2 + w(i,j,k,itu1)*dfv2)) &
