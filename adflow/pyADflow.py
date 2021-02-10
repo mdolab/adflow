@@ -4320,7 +4320,7 @@ class ADFLOW(AeroSolver):
         Set Solver Option Value
         """
         super().setOption(name, value)
-        name = name.lower()
+        # name = name.lower()
 
         # If the option is only used in Python, we just return
         if name in self.pythonOptions:
