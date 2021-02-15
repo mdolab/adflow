@@ -456,7 +456,7 @@ contains
   end function max_cccc
 
 ! MIN, intrinsic
-! the logical statements here are chossen to match fwd AD code from tapenade
+! the logical statements here are chosen to match fwd AD code from tapenade
 ! this way they are consistent even when the real parts are equal
   complex*16 function min_cc(val1, val2)
     complex*16, intent(in) :: val1, val2
