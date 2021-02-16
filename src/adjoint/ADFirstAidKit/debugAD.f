@@ -81,7 +81,7 @@ C DEBUG PRIMITIVES FOR THE TANGENT MODE (DIVIDED-DIFFERENCES METHOD)
       dbad_epszero = ezero
       dbad_errormax = errmax
       write (*,'("Starting TGT test, epsilon=",e7.1,
-     +     ", zero=",e7.1,", errmax=",f6.1,"%")'),
+     +     ", zero=",e7.1,", errmax=",f6.1,"%")')
      +     epsilon,ezero,(100.0*errmax)
       write (*,
      +'("===========================================================")')
@@ -585,7 +585,7 @@ C DEBUG PRIMITIVES FOR THE ADJOINT MODE, FORWARD SWEEP (DOT-PRODUCT METHOD)
       dbad_incr = incr
       dbad_nberrors = 0
       write (*,'("Starting ADJ test, zero=",e7.1,
-     +     ", errmax=",f4.1,"%, random_incr=",e8.2)'),
+     +     ", errmax=",f4.1,"%, random_incr=",e8.2)')
      +     ezero,(100.0*errmax),incr
       write (*,
      +'("===========================================================")')

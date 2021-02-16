@@ -728,6 +728,11 @@ contains
 
     real(kind=realType) :: tNew, tOld
     ! mham: removing pointers for Tapenade
+    ! this line was commented because the version of tapenade used could not handle 
+    ! pointers used like this. 
+    ! As a workaround, we use sFace_jk variable, which is a regular fortran variable. 
+    ! The math is then reformulated to use this variable, 
+    ! and the version of tapenade used works well with this. 
     ! real(kind=realType), dimension(:,:), pointer :: sFace
     ! sFace points to e.g. sFace => sFaceI(i,:,:). sFace has the
     ! shape: sFaceI(0:ie,je,ke) (see l. 617 in initializeFlow.F90)
@@ -1166,7 +1171,9 @@ contains
     endif testMoving
 
   end subroutine gridVelocitiesFineLevel_block
-  ! mham addition
+  ! mham addition:
+  ! this routine was added using the previous adjoint implementation in SUMB.
+  ! most of the comments and variables are to go around the tapenade issues with pointers.
   subroutine slipVelocitiesFineLevel_block(useOldCoor, t, sps)
     !
     !       slipVelocitiesFineLevel computes the slip velocities for
@@ -1551,6 +1558,7 @@ contains
   end subroutine slipVelocitiesFineLevel_block
 
     ! mham addition
+    ! The newly added variables are needed to avoid tapenade issues with pointers.
   subroutine normalVelocities_block(sps)
     !
     !       normalVelocitiesAllLevels computes the normal grid

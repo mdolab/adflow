@@ -3427,7 +3427,7 @@ end subroutine cross_prod
     ! Flow variables. Note that wOld, gamma and the laminar viscosity
     ! point to the entries on the finest mesh. The reason is that
     ! they are computed from the other variables. For the eddy
-    ! viscosity this is not the case because in a segregated solver
+    ! viscosity this is not the case because in a decoupled solver
     ! its values are obtained from the fine grid level.
 
     w     => flowDoms(nn,mm,ll)%w
@@ -3615,7 +3615,7 @@ end subroutine cross_prod
     ! Flow variables. Note that wOld, gamma and the laminar viscosity
     ! point to the entries on the finest mesh. The reason is that
     ! they are computed from the other variables. For the eddy
-    ! viscosity this is not the case because in a segregated solver
+    ! viscosity this is not the case because in a decoupled solver
     ! its values are obtained from the fine grid level.
 
     wd     => flowDomsd(nn,1,sps)%w
@@ -4328,7 +4328,6 @@ end subroutine cross_prod
           ! Added dwALE, fwALE
           deallocate( &
                flowDoms(nn,1,sps)%dw,    flowDoms(nn,1,sps)%fw,    &
-               flowDoms(nn,1,sps)%dwALE, flowDoms(nn,1,sps)%fwALE, &
                flowDoms(nn,1,sps)%dtl,   flowDoms(nn,1,sps)%radI,  &
                flowDoms(nn,1,sps)%radJ,  flowDoms(nn,1,sps)%radK,  &
                flowDoms(nn,1,sps)%shockSensor, &
@@ -4337,6 +4336,17 @@ end subroutine cross_prod
                call terminate("releaseMemoryPart1", &
                "Deallocation error for dw, fw, dwALE, fwALE, dtl and &
                &spectral radii.")
+
+          ! Extra variables for ALE
+          if (equationMode == unSteady .and. useALE) then
+             deallocate( &
+                  flowDoms(nn,1,sps)%dwALE, &
+                  flowDoms(nn,1,sps)%fwALE, &
+                  stat=ierr)
+             if(ierr /= 0)                              &
+                  call terminate("releaseMemoryPart1", &
+                  "Deallocation error for dwALE, fwALE.")
+           end if
 
           ! Nullify the pointers, such that no attempt is made to
           ! release the memory again.
@@ -4416,9 +4426,9 @@ end subroutine cross_prod
     end if
 
     deallocate(cgnsDomsd)
-    deallocate(famIDsDomainInterfaces, &
-         bcIDsDomainInterfaces,  &
-         famIDsSliding)
+    ! deallocate(famIDsDomainInterfaces, &
+    !      bcIDsDomainInterfaces,  &
+    !      famIDsSliding)
     deallocate(sections)
 
     do j=1, size(BCFamExchange, 2)
@@ -4790,6 +4800,9 @@ end subroutine cross_prod
     !       given block.
     !
     use constants
+    use inputUnsteady
+    use inputPhysics
+    use iteration
     use block, only : viscSubfaceType, BCDataType, flowDoms
     implicit none
     !
@@ -5469,55 +5482,57 @@ end subroutine cross_prod
          deallocate(flowDoms(nn,level,sps)%globalNode, stat=ierr)
     if(ierr /= 0) deallocationFailure = .true.
 
+    if (equationMode == unSteady .and. useALE) then
 
-    ! Added by HDN
-    if( associated(flowDoms(nn,level,sps)%xALE) ) &
-         deallocate(flowDoms(nn,level,sps)%xALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      ! Added by HDN
+      if( associated(flowDoms(nn,level,sps)%xALE) ) &
+           deallocate(flowDoms(nn,level,sps)%xALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sIALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sIALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sIALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sIALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sJALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sJALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sJALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sJALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sKALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sKALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sKALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sKALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sVeloIALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sVeloIALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sVeloIALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sVeloIALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sVeloJALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sVeloJALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sVeloJALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sVeloJALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sVeloKALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sVeloKALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sVeloKALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sVeloKALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sFaceIALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sFaceIALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sFaceIALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sFaceIALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sFaceJALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sFaceJALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sFaceJALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sFaceJALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%sFaceKALE) ) &
-         deallocate(flowDoms(nn,level,sps)%sFaceKALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      if( associated(flowDoms(nn,level,sps)%sFaceKALE) ) &
+           deallocate(flowDoms(nn,level,sps)%sFaceKALE, stat=ierr)
+      if(ierr /= 0) deallocationFailure = .true.
 
-    if( associated(flowDoms(nn,level,sps)%dwALE) ) &
-         deallocate(flowDoms(nn,level,sps)%dwALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
-
-    if( associated(flowDoms(nn,level,sps)%fwALE) ) &
-         deallocate(flowDoms(nn,level,sps)%fwALE, stat=ierr)
-    if(ierr /= 0) deallocationFailure = .true.
+      ! if( associated(flowDoms(nn,level,sps)%dwALE) ) &
+      !      deallocate(flowDoms(nn,level,sps)%dwALE, stat=ierr)
+      ! if(ierr /= 0) deallocationFailure = .true.
+      !
+      ! if( associated(flowDoms(nn,level,sps)%fwALE) ) &
+      !      deallocate(flowDoms(nn,level,sps)%fwALE, stat=ierr)
+      ! if(ierr /= 0) deallocationFailure = .true.
+    end if
 
     ! Check for errors in the deallocation.
 
@@ -5675,7 +5690,7 @@ end subroutine cross_prod
   end subroutine returnFail
 
 
-  subroutine EChk(ierr, file, line)
+  subroutine EChk(errorcode, file, line)
 
     ! Check if ierr that resulted from a petsc or MPI call is in fact an
     ! error.
@@ -5683,26 +5698,27 @@ end subroutine cross_prod
     use communication, only : adflow_comm_world, myid
     implicit none
 
-    integer(kind=intType),intent(in) :: ierr
+    integer(kind=intType),intent(in) :: errorcode
     character*(*),intent(in) :: file
     integer(kind=intType),intent(in) :: line
+    integer::ierr
 
-    if (ierr == 0) then
+    if (errorcode == 0) then
        return ! No error, return immediately
     else
 #ifndef USE_TAPENADE
 #ifndef USE_COMPLEX
        print *,'---------------------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
+       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
        write(*,901) "Error at line: ",line," in file: ",file
        print *,'---------------------------------------------------------------------------'
 #else
        print *,'-----------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",ierr,". Detected on Proc ",myid
+       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
        write(*,901) "Error at line: ",line," in file: ",file
        print *,'-----------------------------------------------------------------'
 #endif
-       call MPI_Abort(adflow_comm_world,ierr)
+       call MPI_Abort(adflow_comm_world,errorcode,ierr)
        stop ! Just in case
 #else
        stop
@@ -6208,7 +6224,6 @@ end subroutine cross_prod
 
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
-    use adjointVars, only : nCellsGlobal
     use blockPointers, only : nDom, il, jl, kl, x
 
     implicit none
@@ -6245,5 +6260,60 @@ end subroutine cross_prod
        end do
     end do
   end subroutine getCellCenters
+
+  subroutine getCellCGNSBlockIDs(level, n, cellID)
+
+    use constants
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use blockPointers, only : nDom, il, jl, kl, nbkGlobal
+
+    implicit none
+
+    ! Input/Output
+    integer(kind=intType), intent(in) :: level, n
+    real(kind=realType), dimension(n), intent(out) :: cellID
+
+    ! Working
+    integer(kind=intType) :: i, j, k, ii, nn, sps
+
+    ii = 0
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn, level, sps)
+
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   ii = ii + 1
+
+                   cellID(ii) = nbkGlobal
+
+                end do
+             end do
+          end do
+       end do
+    end do
+  end subroutine getCellCGNSBlockIDs
+
+
+  subroutine getNCGNSZones(nZones)
+    use cgnsGrid
+    implicit none
+    integer(kind=inttype), intent(out) :: nZones
+
+    nZones = cgnsNDom
+
+  end subroutine getNCGNSZones
+
+  subroutine getCGNSZoneName(i, zone)
+    use cgnsGrid
+      implicit none
+      character(len=maxCGNSNameLen), intent(out) :: zone
+      integer(kind=intType), intent(in) :: i
+
+      zone = cgnsDoms(i)%zoneName
+
+    end subroutine getCGNSZoneName
+
 #endif
 end module utils

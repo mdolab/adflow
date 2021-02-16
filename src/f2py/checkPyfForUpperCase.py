@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from __future__ import print_function
 
 """
 Text in the adflow.pyf cannot contain ANY upper case characters.

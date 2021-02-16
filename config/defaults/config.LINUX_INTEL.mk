@@ -26,15 +26,11 @@ CC_REAL_PRECISION_FLAG      =
 # so it is included in ${PETSC_LIB}. Otherwise you will have to
 # specify the HDF5 library.
 
-# ----------- CGNS 3.2.x ------------------
-CGNS_VERSION_FLAG=
-CGNS_INCLUDE_FLAGS=-I$(HOME)/packages/cgnslib_3.2.1/src
-CGNS_LINKER_FLAGS=-L$(HOME)/packages/cgnslib_3.2.1/src -lcgns
-
-# # ----------- CGNS 3.3.x ------------------
-# CGNS_VERSION_FLAG=-DUSECGNSMODULE
-# CGNS_INCLUDE_FLAGS=-I$(HOME)/packages/CGNS/src
-# CGNS_LINKER_FLAGS=-L$(HOME)/packages/CGNS/src/lib -lcgns
+# ----------- CGNS ------------------
+# CGNS_VERSION_FLAG=               # for CGNS 3.2.x
+CGNS_VERSION_FLAG=-DUSECGNSMODULE  # for CGNS 3.3.x
+CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
+CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
 # ------- Define Compiler Flags ----------------------------------------
 FF90_FLAGS   = -DHAS_ISNAN -fPIC -r8 -O2 -g
@@ -59,5 +55,5 @@ CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) $(CC_REAL_PRECISION_FLAG)
 
 # Define potentially different python, python-config and f2py executables:
 PYTHON = python
-PYTHON-CONFIG = python-config
+PYTHON-CONFIG = python3-config # use python-config for python 2
 F2PY = f2py

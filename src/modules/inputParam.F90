@@ -51,6 +51,8 @@ module inputDiscretization
   ! radiiNeededCoarse:      Idem for the coarse grid.
   ! lumpedDiss :            logical factor for determining whether or not
   !                         lumped dissipation is used for preconditioner
+  ! approxSA:               Determines if the approximate source terms form
+  !                         the SA model is used.
   ! sigma      :            Scaling parameter for dissipation lumping in
   !                         approximateprecondtioner
   ! useApproxWallDistance : logical to determine if the user wants to
@@ -76,6 +78,7 @@ module inputDiscretization
   real(kind=realType) :: vis2, vis4, vis2Coarse, adis
   real(kind=realType) :: kappaCoef
   logical :: lumpedDiss
+  logical :: approxSA
   real(kind=realType) :: sigma
   logical :: useBlockettes
 
@@ -198,7 +201,7 @@ module inputIteration
   !                   switching to multigrid. Could be useful for
   !                   supersonic problems with strong shocks.
   ! nSubIterTurb:     Number of turbulent subiterations when using
-  !                   a segregated approach for the turbulence.
+  !                   a decoupled approach for the turbulence.
   ! nUpdateBleeds:    Number of iterations after which the bleed
   !                   boundary conditions must be updated.
   ! smoother:         Smoother to be used.
@@ -206,8 +209,8 @@ module inputIteration
   ! nSubiterations:   Maximum number of subiterations used in
   !                   DADI.
   ! turbTreatment:    Treatment of the turbulent transport equations;
-  !                   either segregated or coupled.
-  ! turbSmoother:     Smoother to use in case a segregated solver
+  !                   either decoupled or coupled.
+  ! turbSmoother:     Smoother to use in case a decoupled solver
   !                   is to be used.
   ! turbRelax:        What kind of turbulent relaxation to use.
   !                   Either turbRelaxExplicit or
@@ -575,6 +578,7 @@ module inputPhysics
   real(kind=realType), dimension(3) :: pointRef
   real(kind=realType), dimension(3,2) :: momentAxis
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
+  real(kind=realType) :: cavitationnumber
 
 #ifndef USE_TAPENADE
   real(kind=realType) :: alphad, betad
@@ -783,10 +787,10 @@ module inputADjoint
   !                 It has a high impact on the required memory!
   ! adjMonStep    : Convergence monitor step
 
-  real(kind=realType)    :: adjRelTol
-  real(kind=realType)    :: adjAbsTol
-  real(kind=realType)    :: adjRelTolRel
-  real(kind=realType)    :: adjDivTol
+  real(kind=alwaysRealType)    :: adjRelTol
+  real(kind=alwaysRealType)    :: adjAbsTol
+  real(kind=alwaysRealType)    :: adjRelTolRel
+  real(kind=alwaysRealType)    :: adjDivTol
   integer(kind=intType)  :: adjMaxIter
   integer(kind=intType)  :: adjRestart
   integer(kind=intType)  :: adjMonStep

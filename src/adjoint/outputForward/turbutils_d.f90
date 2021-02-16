@@ -877,6 +877,8 @@ nadvloopspectral:do ii=1,nadv
 &   sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, w, wd, si, sid, &
 &   sj, sjd, sk, skd, addgridvelocities, bmti1, bmti2, bmtj1, bmtj2, &
 &   bmtk1, bmtk2, scratch, scratchd
+    use inputdiscretization, only : orderturb
+    use iteration, only : groundlevel
     use turbmod, only : secondord
     implicit none
 !
@@ -920,6 +922,11 @@ nadvloopspectral:do ii=1,nadv
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
+! determine whether or not a second order discretization for the
+! advective terms must be used.
+    secondord = .false.
+    if (groundlevel .eq. 1_inttype .and. orderturb .eq. secondorder) &
+&     secondord = .true.
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
     qs = zero
@@ -1533,6 +1540,8 @@ nadvloopspectral:do ii=1,nadv
     use blockpointers, only : nx, ny, nz, il, jl, kl, vol, sfacei, &
 &   sfacej, sfacek, w, si, sj, sk, addgridvelocities, bmti1, bmti2, &
 &   bmtj1, bmtj2, bmtk1, bmtk2, scratch
+    use inputdiscretization, only : orderturb
+    use iteration, only : groundlevel
     use turbmod, only : secondord
     implicit none
 !
@@ -1573,6 +1582,11 @@ nadvloopspectral:do ii=1,nadv
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
+! determine whether or not a second order discretization for the
+! advective terms must be used.
+    secondord = .false.
+    if (groundlevel .eq. 1_inttype .and. orderturb .eq. secondorder) &
+&     secondord = .true.
 ! initialize the grid velocity to zero. this value will be used
 ! if the block is not moving.
     qs = zero

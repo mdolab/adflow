@@ -1,0 +1,17 @@
+{
+    "Eval Functions:": {
+        "conic_conv_nozzle_aavgps_down": 81891.735908643,
+        "conic_conv_nozzle_aavgps_up": 99734.944765405,
+        "conic_conv_nozzle_aavgptot_down": 99905.483229039,
+        "conic_conv_nozzle_aavgptot_up": 100133.6568304,
+        "conic_conv_nozzle_mavgps_down": 81842.770719055,
+        "conic_conv_nozzle_mavgps_up": 99561.373678371,
+        "conic_conv_nozzle_mavgptot_down": 99901.592561803,
+        "conic_conv_nozzle_mavgptot_up": 100100.6835598,
+        "conic_conv_nozzle_mavgttot_down": 499.19739755655,
+        "conic_conv_nozzle_mavgttot_up": 499.99785347508,
+        "conic_conv_nozzle_mdot_down": -1.0410862008518,
+        "conic_conv_nozzle_mdot_up": 1.0496982236621
+    },
+    "Norm of state vector": 1024.5586519507
+}

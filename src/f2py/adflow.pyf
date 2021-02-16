@@ -29,6 +29,7 @@ python module libadflow
          subroutine unsteadyheader
          end subroutine unsteadyheader
 
+
          subroutine pointreduce(pts,n,tol,uniquepts,link,nunique) ! in :test:utils.F90:utils
            real(kind=realtype) dimension(3,n),intent(in) :: pts
            integer(kind=inttype), optional,intent(in),check(shape(pts,1)==n),depend(pts) :: n=shape(pts,1)
@@ -43,6 +44,26 @@ python module libadflow
            integer(kind=inttype) intent(in) :: n
            real(kind=realtype) dimension(3,n),intent(out),depend(n) :: xcen
          end subroutine getcellcenters
+
+         subroutine getcellcgnsblockids(level,n,cellid) ! in :test:utils.F90:utils
+           integer(kind=inttype) intent(in) :: level
+           integer(kind=inttype) intent(in) :: n
+           real(kind=realtype) dimension(n),intent(out),depend(n) :: cellid
+         end subroutine getcellcgnsblockids
+
+         subroutine getncgnszones(nzones) ! in :test:utils.F90
+           integer(kind=inttype) intent(out) :: nzones
+         end subroutine getncgnszones
+         subroutine getcgnszonename(i,zone) ! in :test:utils.F90
+           integer(kind=inttype) intent(in) :: i
+           character(32) intent(out) :: zone
+         end subroutine getcgnszonename
+
+         subroutine releasememorypart1
+         end subroutine releasememorypart1
+
+         subroutine releasememorypart2
+         end subroutine releasememorypart2
 
        end module utils
 
@@ -93,6 +114,19 @@ python module libadflow
          end subroutine setbcdata
 
        end module bcdata
+
+
+       module agmg
+         integer(kind=inttype) :: agmglevels
+         integer(kind=inttype) :: agmgnsmooth
+
+         subroutine setupagmg
+         end subroutine setupagmg
+
+         subroutine destroyagmg
+         end subroutine destroyagmg
+
+       end module agmg
 
        module flowutils
 
@@ -214,6 +248,7 @@ python module libadflow
        module anksolver
          use constants
          integer(kind=inttype) :: ank_innerpreconits
+         integer(kind=inttype) :: ank_outerpreconits
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
          logical :: ank_useturbdadi
@@ -221,6 +256,7 @@ python module libadflow
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
+         real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl0
@@ -233,12 +269,17 @@ python module libadflow
          real(kind=realtype) :: ank_stepmin
          real(kind=realtype) :: ank_constcflstep
          real(kind=realtype) :: ank_physlstol
+         real(kind=realtype) :: ank_physlstolturb
          real(kind=realtype) :: ank_unstdylstol
          real(kind=realtype) :: ank_secondordswitchtol
          real(kind=realtype) :: ank_coupledswitchtol
          real(kind=realtype) :: ank_turbcflscale
          logical :: ank_usefullvisc
          real(kind=realtype) :: ank_pcupdatetol
+         logical :: ank_adpc
+         integer(kind=inttype) :: ank_nsubiterturb
+         logical :: ank_turbdebug
+         logical :: ank_usematrixfree
          subroutine destroyanksolver
          end subroutine destroyanksolver
 
@@ -318,16 +359,34 @@ python module libadflow
            logical intent(in) :: includezipper
          end subroutine getsurfacepoints
 
-         subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2,includezipper) ! in :test:surfaceUtils.F90:surfaceutils
-           real(kind=realtype) dimension(3,n1),intent(in) :: vec1
+         ! subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2,includezipper) ! in :test:surfaceUtils.F90:surfaceutils
+         !   real(kind=realtype) dimension(3,n1),intent(in) :: vec1
+         !   integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
+         !   integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
+         !   integer(kind=inttype), optional,check(len(famlist1)>=nf1),depend(famlist1) :: nf1=len(famlist1)
+         !   real(kind=realtype) dimension(3,n2),intent(inout) :: vec2
+         !   integer(kind=inttype), optional,check(shape(vec2,1)==n2),depend(vec2) :: n2=shape(vec2,1)
+         !   integer(kind=inttype) dimension(nf2),intent(in) :: famlist2
+         !   integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
+         !   logical intent(in) :: includezipper
+         ! end subroutine mapvector
+
+         subroutine mapvector(vec1,n1,famlist1,nf1,vec2,n2,famlist2,nf2,includezipper,ndim) ! in ../utils/surfaceUtils.F90:surfaceutils
+           use blockpointers, only: ndom,flowdoms
+           use sorting, only: faminlist
+           use surfacefamilies, only: bcfamgroups
+           use constants
+           use oversetdata, only: oversetpresent,zippermeshes,zippermesh
+           real(kind=realtype) dimension(ndim,n1),intent(in) :: vec1
            integer(kind=inttype), optional,check(shape(vec1,1)==n1),depend(vec1) :: n1=shape(vec1,1)
            integer(kind=inttype) dimension(nf1),intent(in) :: famlist1
            integer(kind=inttype), optional,check(len(famlist1)>=nf1),depend(famlist1) :: nf1=len(famlist1)
-           real(kind=realtype) dimension(3,n2),intent(inout) :: vec2
+           real(kind=realtype) dimension(ndim,n2),intent(inout),depend(ndim) :: vec2
            integer(kind=inttype), optional,check(shape(vec2,1)==n2),depend(vec2) :: n2=shape(vec2,1)
            integer(kind=inttype) dimension(nf2),intent(in) :: famlist2
            integer(kind=inttype), optional,check(len(famlist2)>=nf2),depend(famlist2) :: nf2=len(famlist2)
            logical intent(in) :: includezipper
+           integer(kind=inttype), optional,check(shape(vec1,0)==ndim),depend(vec1) :: ndim=shape(vec1,0)
          end subroutine mapvector
 
          subroutine getwalllist(walllist,nwalllist,nfamtotal) ! in :test:surfaceUtils.F90:surfaceutils
@@ -551,6 +610,13 @@ python module libadflow
            character*(*) intent(in) :: filename
          end subroutine saveadjointpc
 
+         subroutine saveadjointrhs(rhs,filename,nstate) ! in :test:solveADjointTransposePETSc.F90
+           real(kind=realtype) dimension(nstate) :: rhs
+           character*(*) intent(in) :: filename
+           integer(kind=inttype), optional,check(len(rhs)>=nstate),depend(rhs) :: nstate=len(rhs)
+         end subroutine solveadjoint
+
+
          subroutine savecellcenters(filename)
            character*(*) intent(in) :: filename
          end subroutine savecellcenters
@@ -661,6 +727,18 @@ python module libadflow
          integer(kind=inttype) intent(in) :: sps
        end subroutine gettnswall
 
+       subroutine setcptargets(cptarget,npts,sps_in) ! in :test:setCpTarget.f90
+         real(kind=realtype) dimension(npts),intent(in) :: cptarget
+         integer(kind=inttype) optional,intent(in),check(len(cptarget)>=npts),depend(cptarget) :: npts=len(cptarget)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine setcptargets
+
+       subroutine getcptargets(cptarget,npts,sps) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: cptarget
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine getcptargets
+
        subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
          real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
          real(kind=realtype) dimension(3,npts),intent(in) :: pts
@@ -728,7 +806,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: dadi=2_inttype
          integer(kind=inttype) parameter,optional :: nllusgs=3_inttype
          integer(kind=inttype) parameter,optional :: nllusgsline=4_inttype
-         integer(kind=inttype) parameter,optional :: segregated=1_inttype
+         integer(kind=inttype) parameter,optional :: decoupled=1_inttype
          integer(kind=inttype) parameter,optional :: coupled=2_inttype
          integer(kind=inttype) parameter,optional :: gmres=1_inttype
          integer(kind=inttype) parameter,optional :: adi=2_inttype
@@ -840,6 +918,9 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncmavgvx=83
          integer(kind=inttype) parameter,optional :: costfuncmavgvy=84
          integer(kind=inttype) parameter,optional :: costfuncmavgvz=85
+         integer(kind=inttype) parameter,optional :: costfunccperror2=86
+         integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
+         integer(kind=inttype) parameter,optional :: costfuncaavgps=88
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
@@ -1050,6 +1131,7 @@ python module libadflow
          real(kind=realtype) :: alpha
          real(kind=realtype) :: beta
          integer(kind=inttype) :: liftindex
+         real(kind=realtype) :: cavitationnumber
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90

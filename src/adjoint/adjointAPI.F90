@@ -341,6 +341,7 @@ contains
 
   subroutine solveDirectForRHS(inVec, outVec, nDOF, relativeTolerance)
 
+
     use ADJointPETSc
     use inputADjoint
     use adjointVars
@@ -428,10 +429,9 @@ contains
     use ADjointPETSc, only: drdwt
     use communication, only : adflow_comm_world
     use utils, only : EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -457,10 +457,9 @@ contains
     use ADjointPETSc, only: drdwpret
     use communication, only : adflow_comm_world
     use utils, only : EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-    PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -480,6 +479,42 @@ contains
 
   end subroutine saveAdjointPC
 
+  subroutine saveAdjointRHS(RHS, fileName, nstate)
+
+    use constants
+    use ADjointPETSc, only: psi_like1
+    use communication, only : adflow_comm_world
+    use utils, only : EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
+    implicit none
+
+    ! Input params
+    character*(*), intent(in) :: fileName
+    real(kind=realType), dimension(nState) :: RHS
+    integer(kind=intType) :: nstate
+
+    ! Working parameters
+    PetscViewer binViewer
+    integer(kind=intType) :: ierr
+
+    ! Dump RHS into psi_like1
+    call VecPlaceArray(psi_like1, RHS, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    call PetscViewerBinaryOpen(adflow_comm_world, fileName, FILE_MODE_WRITE, binViewer, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call VecView(psi_like1, binViewer, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call PetscViewerDestroy(binViewer,ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call VecResetArray(psi_like1, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+  end subroutine saveAdjointRHS
 
 
   subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
@@ -636,7 +671,9 @@ contains
     !      using preconditioned GMRES provided by PETSc. The values in psi
     !      are significant as they are used as the inital guess.
     !
-    use constants
+
+    use constants, only : realType, intType, alwaysRealType, one, adflow_real, &
+         mpi_max, mpi_sum, mpi_double_precision, mpi_integer, mpi_double_complex
     use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
          adjResInit, adjResStart, adjResFinal
 
@@ -649,9 +686,9 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use adjointUtils, only : allocDerivativeValues, zeroADSeeds
     use utils, only : EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     ! Input Parameters
     real(kind=realType), dimension(nState) :: RHS, psi
@@ -662,12 +699,13 @@ contains
     real(kind=alwaysRealType)   :: norm
     real(kind=alwaysRealType), dimension(2) :: time
     real(kind=alwaysRealType)               :: timeAdjLocal, timeAdj
-    real(kind=realType) :: l2abs, l2rel
+    real(kind=alwaysRealType) :: l2abs, l2rel
     integer(kind=intType) :: ierr, nn, sps
     integer(kind=intType) :: adjConvIts
     KSPConvergedReason adjointConvergedReason
     Vec adjointRes, RHSVec
 
+#ifndef USE_COMPLEX
     ! Send some feedback to screen.
 
     if(myid ==0 .and. printTiming)  &
@@ -771,8 +809,8 @@ contains
        ! Determine the maximum time using MPI reduce
        ! with operation mpi_max.
 
-       call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, &
-            mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
+       ! call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, &
+       !      mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
 
        call MatMult(dRdWT, psi_like1, adjointRes, ierr)
        call EChk(ierr,__FILE__,__LINE__)
@@ -837,6 +875,8 @@ contains
 30  format(1x,a,1x,e10.4,4x,a,1x,i4)
 40  format(1x,a,1x,i5,1x,a)
 
+#endif
+
   end subroutine solveAdjoint
 
   subroutine setupPETScKsp
@@ -845,27 +885,35 @@ contains
     use inputADjoint
     use utils, only : ECHk, terminate
     use adjointUtils, only : mykspmonitor
-    use adjointUtils, only : setupStateResidualMatrix, setupStandardKSP
-
+    use adjointUtils, only : setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
+    use communication
+    use agmg, only : setupShellPC, destroyShellPC, applyShellPC
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
 
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-
     !     Local variables.
-    logical :: useAD, usePC, useTranspose, useObjective
+    logical :: useAD, usePC, useTranspose, useObjective, useCoarseMats
     integer(kind=intType) :: ierr
-
+    real(kind=realType) :: timeA
+    PC shellPC
     if (ApproxPC)then
        !setup the approximate PC Matrix
        useAD = ADPC
        useTranspose = .True.
        usePC = .True.
        useObjective = .False.
+       useCoarseMats = .False.
+       if (preCondType == 'mg') then
+          useCoarseMats = .True.
+       end if
+
        call setupStateResidualMatrix(drdwpret, useAD, usePC, useTranspose, &
-            useObjective, frozenTurbulence, 1_intType)
+            useObjective, frozenTurbulence, 1_intType, useCoarseMats=useCoarseMats)
+
        call KSPSetOperators(adjointKSP, dRdwT, dRdWPreT, ierr)
        call EChk(ierr, __FILE__, __LINE__)
+
     else
        ! Use the exact jacobian.  Here the matrix that defines the
        ! linear system also serves as the preconditioning matrix. This
@@ -879,17 +927,20 @@ contains
 
     if (PreCondType == 'asm') then
        ! Run the super-dee-duper function to setup the ksp object:
+
        call setupStandardKSP(adjointKSP, ADjointSolverType, adjRestart, adjointpcside, &
             PreCondType, overlap, outerPreConIts, localPCType, &
             matrixOrdering, FillLevel, innerPreConIts)
     else if (PreCondType == 'mg') then
-       print *,'Only ASM precondtype is usable'
-       stop
+
+       call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, &
+            adjointPCSide, overlap, outerPreconIts, matrixOrdering,  fillLevel)
     end if
 
     ! Setup monitor if necessary:
     if (setMonitor) then
-       call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_OBJECT, &
+       ! PETSC_NULL_CONTEXT doesn't exit...
+       call KSPMonitorSet(adjointKSP, MyKSPMonitor, PETSC_NULL_FUNCTION, &
             PETSC_NULL_FUNCTION, ierr)
        call EChk(ierr, __FILE__, __LINE__)
     endif
@@ -904,10 +955,9 @@ contains
     use adjointVars, only: nCellsLocal
     use communication
     use utils, only : setPointers, EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     ! Input params
     character*(*), intent(in) :: fileName
@@ -943,7 +993,7 @@ contains
                            +  x(i-1,j-1,k,  n) + x(i,j-1,k,  n)  &
                            +  x(i-1,j,  k,  n) + x(i,j,  k,  n))/8
                    end do
-                   call VecSetValues(cellCenters, 1, iRow, cellCenter, INSERT_VALUES, ierr)
+                   call VecSetValues(cellCenters, 1, [iRow], [cellCenter], INSERT_VALUES, ierr)
                    call EChk(ierr, __FILE__, __LINE__)
                 end do
              end do
@@ -984,10 +1034,10 @@ contains
     use ADjointVars
     use inputTimeSpectral
     use utils, only : EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
+
 
     ! PETSc Arguments
     Mat   A
@@ -1035,10 +1085,9 @@ contains
 #ifndef USE_COMPLEX
     use masterRoutines, only : master_d
 #endif
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! PETSc Arguments
     Mat   A
@@ -1104,7 +1153,7 @@ contains
     use ADjointPETSc, only: dRdwT, dRdwPreT, &
          adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
     use ADjointVars
-    use communication, only : adflow_comm_world
+    use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : nwf, nw, viscous
     use inputADjoint, only : approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
@@ -1112,10 +1161,10 @@ contains
          visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
     use utils, only : EChk, setPointers
     use adjointUtils, only : myMatCreate, destroyPETScVars, statePreAllocation
+    use agmg, only : setupAGMG
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     !     Local variables.
     integer(kind=intType)  :: nDimW, nDimX
@@ -1140,6 +1189,7 @@ contains
 
     nDimW = nState * nCellsLocal(1_intType)*nTimeIntervalsSpectral
     nDimX = 3 * nNodesLocal(1_intType)*nTimeIntervalsSpectral
+
 
     if (.not. useMatrixFreedRdw) then
        ! Setup matrix-based dRdwT
@@ -1209,6 +1259,9 @@ contains
 
        deallocate(nnzDiagonal, nnzOffDiag)
     end if
+
+
+    call setupAGMG(drdwpret, nDimW/nState, nState)
 
     ! Create the KSP Object
     call KSPCreate(ADFLOW_COMM_WORLD, adjointKSP, ierr)

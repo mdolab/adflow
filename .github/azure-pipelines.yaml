@@ -1,0 +1,21 @@
+trigger:
+- master
+
+pr:
+- master
+
+resources:
+  repositories:
+  - repository: azure_template
+    type: github
+    name: mdolab/.github
+    endpoint: mdolab
+
+extends:
+  template: azure/azure_template.yaml@azure_template
+  parameters:
+    REPO_NAME: adflow
+    IGNORE_STYLE: true
+    COMPLEX: true
+    GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
+    INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk

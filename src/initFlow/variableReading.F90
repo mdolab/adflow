@@ -1958,7 +1958,6 @@ contains
     !       It is assumed that the pointers in blockPointers already
     !       point to the correct block.
     !
-    use blockPointers
     use constants
     use cgnsNames
     use blockPointers, only : w, nbklocal

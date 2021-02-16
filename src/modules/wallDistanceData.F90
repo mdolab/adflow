@@ -3,16 +3,12 @@ module wallDistanceData
   ! This module stores some additional data required for the fast wall
   ! distance computations.
 
-
-  use constants, only : realType
-  implicit none
-
+  use constants
 #ifndef USE_TAPENADE
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
+#include <petsc/finclude/petsc.h>
+  use petsc
+  implicit none
 #endif
-  save
-
 
   ! xVolume: flatten 1-D vector of all volume nodes for all
   ! spectral instances. The dimension is the number of levels

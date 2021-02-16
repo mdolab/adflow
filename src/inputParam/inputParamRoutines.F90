@@ -2761,7 +2761,6 @@ contains
     use inputADjoint
     use inputTSStabDeriv
     !  ------------------------------------------------
-    use inputPhysics, only : velDirFreeStream, liftDirection, dragDirection
     use communication, only : myid, adflow_comm_world
     use iteration, only : coefTime, coefTimeALE, coefMeshALE, &
          oldSolWritten, nALEMeshes, nALESteps, nOldLevels
@@ -3817,10 +3816,12 @@ contains
 #ifdef USE_SINGLE_PRECISION
     precisionGrid = precisionSingle   ! Default IO precision depends
     precisionSol  = precisionSingle   ! on the default floating
-#else                                    ! point type used. Note that
+                                      ! point type used. Note that
+#else
     precisionGrid = precisionDouble   ! for quadrupole precision the
     precisionSol  = precisionDouble   ! IO takes place in double
-#endif                                   ! precision.
+                                      ! precision.
+#endif
 
     ! Surface solution defaults to single precision
     precisionSurfGrid = precisionSingle
@@ -3845,7 +3846,7 @@ contains
     resAveraging =  noResAveraging
     smoop        = 1.5_realType
 
-    turbTreatment     = segregated     ! Segregated solver for the
+    turbTreatment     = decoupled      ! Decoupled solver for the
     ! turbulent equations
     turbSmoother      = adi            ! solved using an adi scheme.
     freezeTurbSource = .true.          ! Freeze the coarse grid source
@@ -4036,6 +4037,7 @@ contains
     routineFailed = .False.
     fatalFail     = .False.
     lumpedDiss    = .False.
+    approxSA      = .False.
     useApproxWallDistance = .False.
     cflLimit = 3.0
     adjointPETScVarsAllocated = .False.

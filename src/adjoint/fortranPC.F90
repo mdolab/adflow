@@ -98,7 +98,7 @@ module fortranPC
     integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
     integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
     integer(kind=intType) :: nTransfer, nState, tmp, icount
-    integer(kind=intType) :: n_stencil, i_stencil, ind1
+    integer(kind=intType) :: n_stencil, i_stencil, ind1, orderturbsave
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=realType) :: delta_x, one_over_dx
     real(kind=realType) :: delta_x_turb, one_over_dx_turb
@@ -109,7 +109,7 @@ module fortranPC
     real(kind=realType), dimension(:,:), allocatable :: blk
 #endif
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
-    logical :: resetToRANS, secondOrdSave,  splitMat
+    logical :: resetToRANS,  splitMat
     real :: val
 
     ! Setup number of state variable based on turbulence assumption
@@ -148,8 +148,9 @@ module fortranPC
 
     ! Very important to use only Second-Order dissipation for PC
     lumpedDiss=.True.
-    secondOrdSave = secondOrd
-    secondOrd = .False.
+    ! also use first order advection terms for turbulence
+    orderturbsave = orderturb
+    orderturb = firstOrder
 
     ! Need to trick the residual evalution to use coupled (mean flow and
     ! turbulent) together.
@@ -431,7 +432,7 @@ module fortranPC
 
     ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
     lumpedDiss = .False.
-    secondOrd = secondOrdSave
+    orderturb = orderturbsave
 
     ! Reset the correct equation parameters if we were useing the frozen
     ! Turbulent
@@ -473,63 +474,64 @@ module fortranPC
   end subroutine setupPCMatrix
   subroutine testpc()
 
-    use communication
-    use adjointPETSc
-    use adjointVars
-    use flowvarrefstate
-    use inputtimespectral
-    use blockPointers
-    use utils, only : Echk
-    use adjointUtils, only : setupStateResidualMatrix
-    implicit none
+    ! use constants
+    ! !use communication
+    ! !use adjointPETSc
+    ! use adjointVars
+    ! use flowvarrefstate
+    ! use inputtimespectral
+    ! use blockPointers
+    ! use utils, only : Echk
+    ! use adjointUtils, only : setupStateResidualMatrix
+    ! implicit none
 
-    real(kind=alwaysRealType) , dimension(:), allocatable :: v1, v2
-    real(kind=realType) :: timeA, timeB, timeC, val
-    integer(kind=intType) :: nDimw, ierr, i, nn, sps, j, k, ii, jj, kk, info
-    logical :: useAD
+    ! real(kind=alwaysRealType) , dimension(:), allocatable :: v1, v2
+    ! real(kind=realType) :: timeA, timeB, timeC, val
+    ! integer(kind=intType) :: nDimw, ierr, i, nn, sps, j, k, ii, jj, kk, info
+    ! logical :: useAD
 
-    useAD = .True.
-    call setupPCMatrix(useAD, .False., .False., 1)
+    ! useAD = .True.
+    ! call setupPCMatrix(useAD, .False., .False., 1)
 
-    ! Now create all the factors
-    call createPETscVars
-    call setupStateResidualMatrix(drdwpret, usead, .True. , .False., &
-         .False., .False., 1)
+    ! ! Now create all the factors
+    ! call createPETscVars
+    ! call setupStateResidualMatrix(drdwpret, usead, .True. , .False., &
+    !      .False., .False., 1)
 
-    nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
-    allocate(v1(nDimw), v2(nDimW))
+    ! nDimW = nw * nCellsLocal(1_intType)*nTimeIntervalsSpectral
+    ! allocate(v1(nDimw), v2(nDimW))
 
-    ! Set random into V1
-    call random_number(v1)
+    ! ! Set random into V1
+    ! call random_number(v1)
 
-    ! Dump psi into psi_like1 and RHS into psi_like2
-    call VecPlaceArray(psi_like1, v1, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+    ! ! Dump psi into psi_like1 and RHS into psi_like2
+    ! call VecPlaceArray(psi_like1, v1, ierr)
+    ! call EChk(ierr,__FILE__,__LINE__)
 
-    call VecPlaceArray(psi_like2, v2, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+    ! call VecPlaceArray(psi_like2, v2, ierr)
+    ! call EChk(ierr,__FILE__,__LINE__)
 
-    call mpi_barrier(adflow_comm_world, ierr)
-    timeA = mpi_wtime()
-    call matMult(drdwpret, psi_like1, psi_like2, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    timeB =mpi_wtime()
+    ! call mpi_barrier(adflow_comm_world, ierr)
+    ! timeA = mpi_wtime()
+    ! call matMult(drdwpret, psi_like1, psi_like2, ierr)
+    ! call EChk(ierr,__FILE__,__LINE__)
+    ! timeB =mpi_wtime()
 
-    print *,'Petsc Time:', myid, timeB-timeA
-    call vecNorm(psi_like2, NORM_2, val, ierr)
-    print *,'PETsc Norm:', val
+    ! print *,'Petsc Time:', myid, timeB-timeA
+    ! call vecNorm(psi_like2, NORM_2, val, ierr)
+    ! print *,'PETsc Norm:', val
 
 
-    call mpi_barrier(adflow_comm_world, ierr)
-    timeA = mpi_wtime()
-    call PCMatMult(drdwpret, psi_like1, psi_like2, ierr)
-    timeB = mpi_wtime()
+    ! call mpi_barrier(adflow_comm_world, ierr)
+    ! timeA = mpi_wtime()
+    ! call PCMatMult(drdwpret, psi_like1, psi_like2, ierr)
+    ! timeB = mpi_wtime()
 
-    print *,'My Time:', myid, timeB-timeA
-    call vecNorm(psi_like2, NORM_2, val, ierr)
-    print *,'My Norm:', val
-    call VecResetArray(psi_like1, ierr)
-    call VecResetArray(psi_like2, ierr)
+    ! print *,'My Time:', myid, timeB-timeA
+    ! call vecNorm(psi_like2, NORM_2, val, ierr)
+    ! print *,'My Norm:', val
+    ! call VecResetArray(psi_like1, ierr)
+    ! call VecResetArray(psi_like2, ierr)
   end subroutine testpc
 
   subroutine factorPCMatrix()
@@ -543,105 +545,105 @@ module fortranPC
     use utils, only : Echk, setPointers
     implicit none
 
-    integer(kind=intType) :: ierr, i, nn, sps, j, k, ii, jj, kk, info, timeA, timeB
+    ! integer(kind=intType) :: ierr, i, nn, sps, j, k, ii, jj, kk, info, timeA, timeB
 
-    timeA = mpi_wtime()
-    do nn=1,nDom
-       do sps=1,nTimeIntervalsSpectral
-          call setPointers(nn, 1, sps)
+    ! timeA = mpi_wtime()
+    ! do nn=1,nDom
+    !    do sps=1,nTimeIntervalsSpectral
+    !       call setPointers(nn, 1, sps)
 
-          ! ========= I-Lines ============
-          do k=2, kl
-             do j=2, jl
+    !       ! ========= I-Lines ============
+    !       do k=2, kl
+    !          do j=2, jl
 
-                ! Copy data from PCMat
-                ii = 0
-                jj = 0
-                kk = 0
-                do i=2, il
-                   i_D_fact(:, nw*ii+1:nw*(ii+1), j, k) = PCMat(:,      1:1*nw, i, j, k)
-                   ii = ii + 1
+    !             ! Copy data from PCMat
+    !             ii = 0
+    !             jj = 0
+    !             kk = 0
+    !             do i=2, il
+    !                i_D_fact(:, nw*ii+1:nw*(ii+1), j, k) = PCMat(:,      1:1*nw, i, j, k)
+    !                ii = ii + 1
 
-                   if (i > 2) then
-                      i_L_fact(:, nw*jj+1:nw*(jj+1), j, k) = PCMat(:, 1*nw+1:2*nw, i, j, k)
-                      jj = jj + 1
-                   end if
+    !                if (i > 2) then
+    !                   i_L_fact(:, nw*jj+1:nw*(jj+1), j, k) = PCMat(:, 1*nw+1:2*nw, i, j, k)
+    !                   jj = jj + 1
+    !                end if
 
-                   if (i < il) then
-                      i_U_fact(:, nw*kk+1:nw*(kk+1), j, k) = PCMat(:, 2*nw+1:3*nw, i, j, k)
-                      kk = kk + 1
-                   end if
+    !                if (i < il) then
+    !                   i_U_fact(:, nw*kk+1:nw*(kk+1), j, k) = PCMat(:, 2*nw+1:3*nw, i, j, k)
+    !                   kk = kk + 1
+    !                end if
 
-                end do
+    !             end do
 
-                ! ! Perform factorization
-                ! call dgeblttrf(nx, nw, i_D_fact(:, :, j, k), i_L_fact(:, :, j, k), &
-                !      i_U_fact(:, :, j, k), i_U2_fact(:, :, j, k), i_ipiv(:, :, j, k), info)
+    !             ! ! Perform factorization
+    !             ! call dgeblttrf(nx, nw, i_D_fact(:, :, j, k), i_L_fact(:, :, j, k), &
+    !             !      i_U_fact(:, :, j, k), i_U2_fact(:, :, j, k), i_ipiv(:, :, j, k), info)
 
-             end do
-          end do
+    !          end do
+    !       end do
 
-          ! ========= J-Lines ============
-          do k=2, kl
-             do i=2, il
+    !       ! ========= J-Lines ============
+    !       do k=2, kl
+    !          do i=2, il
 
-                ! Copy data from PCMat
-                ii = 0
-                jj = 0
-                kk = 0
-                do j=2, jl
-                   j_D_fact(:, nw*ii+1:nw*(ii+1), i, k) = PCMat(:,      1:1*nw, i, j, k)
-                   ii = ii + 1
+    !             ! Copy data from PCMat
+    !             ii = 0
+    !             jj = 0
+    !             kk = 0
+    !             do j=2, jl
+    !                j_D_fact(:, nw*ii+1:nw*(ii+1), i, k) = PCMat(:,      1:1*nw, i, j, k)
+    !                ii = ii + 1
 
-                   if (j > 2) then
-                      j_L_fact(:, nw*jj+1:nw*(jj+1), i, k) = PCMat(:, 3*nw+1:4*nw, i, j, k)
-                      jj = jj + 1
-                   end if
+    !                if (j > 2) then
+    !                   j_L_fact(:, nw*jj+1:nw*(jj+1), i, k) = PCMat(:, 3*nw+1:4*nw, i, j, k)
+    !                   jj = jj + 1
+    !                end if
 
-                   if (j < jl) then
-                      j_U_fact(:, nw*kk+1:nw*(kk+1), i, k) = PCMat(:, 4*nw+1:5*nw, i, j, k)
-                      kk =kk + 1
-                   end if
-                end do
+    !                if (j < jl) then
+    !                   j_U_fact(:, nw*kk+1:nw*(kk+1), i, k) = PCMat(:, 4*nw+1:5*nw, i, j, k)
+    !                   kk =kk + 1
+    !                end if
+    !             end do
 
-                ! ! Perform factorization
-                ! call dgeblttrf(ny, nw, j_D_fact(:, :, i, k), j_L_fact(:, :, i, k), &
-                !      j_U_fact(:, :, i, k), j_U2_fact(:, :, i, k), j_ipiv(:, :, i, k), info)
+    !             ! ! Perform factorization
+    !             ! call dgeblttrf(ny, nw, j_D_fact(:, :, i, k), j_L_fact(:, :, i, k), &
+    !             !      j_U_fact(:, :, i, k), j_U2_fact(:, :, i, k), j_ipiv(:, :, i, k), info)
 
-             end do
-          end do
+    !          end do
+    !       end do
 
-          ! ========= k-Lines ============
-          do j=2, jl
-             do i=2, il
+    !       ! ========= k-Lines ============
+    !       do j=2, jl
+    !          do i=2, il
 
-                ! Copy data from PCMat
-                ii = 0
-                jj = 0
-                kk = 0
-                do k=2, kl
-                   k_D_fact(:, nw*ii+1:nw*(ii+1), i, j) = PCMat(:,      1:1*nw, i, j, k)
-                   ii = ii + 1
+    !             ! Copy data from PCMat
+    !             ii = 0
+    !             jj = 0
+    !             kk = 0
+    !             do k=2, kl
+    !                k_D_fact(:, nw*ii+1:nw*(ii+1), i, j) = PCMat(:,      1:1*nw, i, j, k)
+    !                ii = ii + 1
 
-                   if (k > 2) then
-                      k_L_fact(:, nw*jj+1:nw*(jj+1), i, j) = PCMat(:, 5*nw+1:6*nw, i, j, k)
-                      jj = jj + 1
-                   end if
+    !                if (k > 2) then
+    !                   k_L_fact(:, nw*jj+1:nw*(jj+1), i, j) = PCMat(:, 5*nw+1:6*nw, i, j, k)
+    !                   jj = jj + 1
+    !                end if
 
-                   if (k < kl) then
-                      k_U_fact(:, nw*kk+1:nw*(kk+1), i, j) = PCMat(:, 6*nw+1:7*nw, i, j, k)
-                      kk =kk + 1
-                   end if
-                end do
+    !                if (k < kl) then
+    !                   k_U_fact(:, nw*kk+1:nw*(kk+1), i, j) = PCMat(:, 6*nw+1:7*nw, i, j, k)
+    !                   kk =kk + 1
+    !                end if
+    !             end do
 
-                ! ! Perform factorization
-                ! call dgeblttrf(nz, nw, k_D_fact(:, :, i, j), k_L_fact(:, :, i,j), &
-                !      k_U_fact(:, :, i, j), k_U2_fact(:, :, i, j), k_ipiv(:, :, i, j), info)
+    !             ! ! Perform factorization
+    !             ! call dgeblttrf(nz, nw, k_D_fact(:, :, i, j), k_L_fact(:, :, i,j), &
+    !             !      k_U_fact(:, :, i, j), k_U2_fact(:, :, i, j), k_ipiv(:, :, i, j), info)
 
-             end do
-          end do
-       end do
-    end do
+    !          end do
+    !       end do
+    !    end do
+    ! end do
 
   end subroutine factorPCMatrix
 
@@ -659,10 +661,9 @@ module fortranPC
     use ADjointVars
     use inputTimeSpectral
     use utils, only : EChk, setPointers
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! PETSc Arguments
     Mat   A
@@ -730,10 +731,9 @@ module fortranPC
     use inputTimeSpectral
     use flowvarrefstate
     use communication
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! PETSc Arguments
     PC   pc
@@ -765,192 +765,191 @@ module fortranPC
     use inputTimeSpectral
     use flowVarRefState
     use utils, only : EChk, setPointers
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! PETSc Arguments
     Vec   vecX
-    integer(kind=intType) ::ierr, i, j, k, l, nn, mm, sps, nVar, size, index
-    integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2, ii, jj, procID
-    real(kind=realType), pointer :: xPtr(:)
-    type(commType) :: commPattern
-    type(internalCommType) :: internal
-    integer, dimension(mpi_status_size) :: mpiStatus
+    ! integer(kind=intType) ::ierr, i, j, k, l, nn, mm, sps, nVar, size, index
+    ! integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2, ii, jj, procID
+    ! real(kind=realType), pointer :: xPtr(:)
+    ! type(commType) :: commPattern
+    ! type(internalCommType) :: internal
+    ! integer, dimension(mpi_status_size) :: mpiStatus
 
-    call VecGetArrayReadF90(vecX, xPtr, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+    ! call VecGetArrayReadF90(vecX, xPtr, ierr)
+    ! call EChk(ierr,__FILE__,__LINE__)
 
-    ! First set all the owned cells...this is basically just a straight
-    ! copy in order
-    ii = 0
-    do nn=1, nDom
-       do sps=1, nTimeIntervalsSpectral
-          call setPointers(nn, 1, sps)
-          do k=2, kl
-             do j=2, jl
-                do i=2, il
-                   do l=1, nw
-                      ii = ii + 1
-                      flowDoms(nn, 1, sps)%PCVec1(l, i, j, k) = xPtr(ii)
-                   end do
-                end do
-             end do
-          end do
-       end do
-    end do
+    ! ! First set all the owned cells...this is basically just a straight
+    ! ! copy in order
+    ! ii = 0
+    ! do nn=1, nDom
+    !    do sps=1, nTimeIntervalsSpectral
+    !       call setPointers(nn, 1, sps)
+    !       do k=2, kl
+    !          do j=2, jl
+    !             do i=2, il
+    !                do l=1, nw
+    !                   ii = ii + 1
+    !                   flowDoms(nn, 1, sps)%PCVec1(l, i, j, k) = xPtr(ii)
+    !                end do
+    !             end do
+    !          end do
+    !       end do
+    !    end do
+    ! end do
 
-    ! Done with the vecX.
-    call VecRestorearrayReadF90(vecX, xPtr, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
+    ! ! Done with the vecX.
+    ! call VecRestorearrayReadF90(vecX, xPtr, ierr)
+    ! call EChk(ierr,__FILE__,__LINE__)
 
-    ! Now we do a custom halo exchange. We can use the same pattern as
-    ! whlo, but the ordering of the unknowns is different so we do our
-    ! own.
+    ! ! Now we do a custom halo exchange. We can use the same pattern as
+    ! ! whlo, but the ordering of the unknowns is different so we do our
+    ! ! own.
 
-    nVar = nw
-    internal = internalCell_1st(1)
-    commPattern = commPatternCell_1st(1)
+    ! nVar = nw
+    ! internal = internalCell_1st(1)
+    ! commPattern = commPatternCell_1st(1)
 
-    spectralModes: do mm=1,nTimeIntervalsSpectral
+    ! spectralModes: do mm=1,nTimeIntervalsSpectral
 
-       ! Send the variables. The data is first copied into
-       ! the send buffer after which the buffer is sent asap.
+    !    ! Send the variables. The data is first copied into
+    !    ! the send buffer after which the buffer is sent asap.
 
-       ii = 1
-       sends: do i=1,commPattern%nProcSend
+    !    ii = 1
+    !    sends: do i=1,commPattern%nProcSend
 
-          ! Store the processor id and the size of the message
-          ! a bit easier.
+    !       ! Store the processor id and the size of the message
+    !       ! a bit easier.
 
-          procID = commPattern%sendProc(i)
-          size    = nVar*commPattern%nsend(i)
+    !       procID = commPattern%sendProc(i)
+    !       size    = nVar*commPattern%nsend(i)
 
-          ! Copy the data in the correct part of the send buffer.
+    !       ! Copy the data in the correct part of the send buffer.
 
-          jj = ii
-          do j=1,commPattern%nsend(i)
+    !       jj = ii
+    !       do j=1,commPattern%nsend(i)
 
-             ! Store the block id and the indices of the donor
-             ! a bit easier.
+    !          ! Store the block id and the indices of the donor
+    !          ! a bit easier.
 
-             d1 = commPattern%sendList(i)%block(j)
-             i1 = commPattern%sendList(i)%indices(j,1)
-             j1 = commPattern%sendList(i)%indices(j,2)
-             k1 = commPattern%sendList(i)%indices(j,3)
+    !          d1 = commPattern%sendList(i)%block(j)
+    !          i1 = commPattern%sendList(i)%indices(j,1)
+    !          j1 = commPattern%sendList(i)%indices(j,2)
+    !          k1 = commPattern%sendList(i)%indices(j,3)
 
-             ! Copy the given range of the working variables for
-             ! this cell in the buffer. Update the counter jj.
+    !          ! Copy the given range of the working variables for
+    !          ! this cell in the buffer. Update the counter jj.
 
-             do k=1, nw
-                sendBuffer(jj) = flowDoms(d1,1,mm)%PCVec1(k, i1, j1, k1)
-                jj = jj + 1
-             enddo
+    !          do k=1, nw
+    !             sendBuffer(jj) = flowDoms(d1,1,mm)%PCVec1(k, i1, j1, k1)
+    !             jj = jj + 1
+    !          enddo
 
-          enddo
+    !       enddo
 
-          ! Send the data.
+    !       ! Send the data.
 
-          call mpi_isend(sendBuffer(ii), size, adflow_real, procID,  &
-               procID, ADflow_comm_world, sendRequests(i), &
-               ierr)
+    !       call mpi_isend(sendBuffer(ii), size, adflow_real, procID,  &
+    !            procID, ADflow_comm_world, sendRequests(i), &
+    !            ierr)
 
-          ! Set ii to jj for the next processor.
+    !       ! Set ii to jj for the next processor.
 
-          ii = jj
+    !       ii = jj
 
-       enddo sends
+    !    enddo sends
 
-       ! Post the nonblocking receives.
+    !    ! Post the nonblocking receives.
 
-       ii = 1
-       receives: do i=1,commPattern%nProcRecv
+    !    ii = 1
+    !    receives: do i=1,commPattern%nProcRecv
 
-          ! Store the processor id and the size of the message
-          ! a bit easier.
+    !       ! Store the processor id and the size of the message
+    !       ! a bit easier.
 
-          procID = commPattern%recvProc(i)
-          size    = nVar*commPattern%nrecv(i)
+    !       procID = commPattern%recvProc(i)
+    !       size    = nVar*commPattern%nrecv(i)
 
-          ! Post the receive.
+    !       ! Post the receive.
 
-          call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
-               myID, ADflow_comm_world, recvRequests(i), ierr)
+    !       call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+    !            myID, ADflow_comm_world, recvRequests(i), ierr)
 
-          ! And update ii.
+    !       ! And update ii.
 
-          ii = ii + size
+    !       ii = ii + size
 
-       enddo receives
+    !    enddo receives
 
-       ! Copy the local data.
+    !    ! Copy the local data.
 
-       localCopy: do i=1,internal%ncopy
+    !    localCopy: do i=1,internal%ncopy
 
-          ! Store the block and the indices of the donor a bit easier.
+    !       ! Store the block and the indices of the donor a bit easier.
 
-          d1 = internal%donorBlock(i)
-          i1 = internal%donorIndices(i,1)
-          j1 = internal%donorIndices(i,2)
-          k1 = internal%donorIndices(i,3)
+    !       d1 = internal%donorBlock(i)
+    !       i1 = internal%donorIndices(i,1)
+    !       j1 = internal%donorIndices(i,2)
+    !       k1 = internal%donorIndices(i,3)
 
-          ! Idem for the halo's.
+    !       ! Idem for the halo's.
 
-          d2 = internal%haloBlock(i)
-          i2 = internal%haloIndices(i,1)
-          j2 = internal%haloIndices(i,2)
-          k2 = internal%haloIndices(i,3)
+    !       d2 = internal%haloBlock(i)
+    !       i2 = internal%haloIndices(i,1)
+    !       j2 = internal%haloIndices(i,2)
+    !       k2 = internal%haloIndices(i,3)
 
-          ! Copy the given range of working variables.
+    !       ! Copy the given range of working variables.
 
-          do k=1, nw
-             flowDoms(d2,1,mm)%PCVec1(k, i2, j2, k2) = &
-                  flowDoms(d1,1,mm)%PCVec1(k, i1, j1, k1)
-          enddo
+    !       do k=1, nw
+    !          flowDoms(d2,1,mm)%PCVec1(k, i2, j2, k2) = &
+    !               flowDoms(d1,1,mm)%PCVec1(k, i1, j1, k1)
+    !       enddo
 
-       enddo localCopy
+    !    enddo localCopy
 
-       ! Complete the nonblocking receives in an arbitrary sequence and
-       ! copy the variables from the buffer into the halo's.
+    !    ! Complete the nonblocking receives in an arbitrary sequence and
+    !    ! copy the variables from the buffer into the halo's.
 
-       size = commPattern%nProcRecv
-       completeRecvs: do i=1,commPattern%nProcRecv
+    !    size = commPattern%nProcRecv
+    !    completeRecvs: do i=1,commPattern%nProcRecv
 
-          ! Complete any of the requests.
+    !       ! Complete any of the requests.
 
-          call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
+    !       call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
 
-          ! Copy the data just arrived in the halo's.
+    !       ! Copy the data just arrived in the halo's.
 
-          ii = index
-          jj = nVar*commPattern%nrecvCum(ii-1)
-          do j=1,commPattern%nrecv(ii)
+    !       ii = index
+    !       jj = nVar*commPattern%nrecvCum(ii-1)
+    !       do j=1,commPattern%nrecv(ii)
 
-             ! Store the block and the indices of the halo a bit easier.
+    !          ! Store the block and the indices of the halo a bit easier.
 
-             d2 = commPattern%recvList(ii)%block(j)
-             i2 = commPattern%recvList(ii)%indices(j,1)
-             j2 = commPattern%recvList(ii)%indices(j,2)
-             k2 = commPattern%recvList(ii)%indices(j,3)
+    !          d2 = commPattern%recvList(ii)%block(j)
+    !          i2 = commPattern%recvList(ii)%indices(j,1)
+    !          j2 = commPattern%recvList(ii)%indices(j,2)
+    !          k2 = commPattern%recvList(ii)%indices(j,3)
 
-             do k=1, nw
-                jj = jj + 1
-                flowDoms(d2,1,mm)%PCVec1(k, i2, j2, k2) = recvBuffer(jj)
-             enddo
+    !          do k=1, nw
+    !             jj = jj + 1
+    !             flowDoms(d2,1,mm)%PCVec1(k, i2, j2, k2) = recvBuffer(jj)
+    !          enddo
 
-          enddo
+    !       enddo
 
-       enddo completeRecvs
+    !    enddo completeRecvs
 
-       ! Complete the nonblocking sends.
+    !    ! Complete the nonblocking sends.
 
-       size = commPattern%nProcSend
-       do i=1,commPattern%nProcSend
-          call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
-       enddo
+    !    size = commPattern%nProcSend
+    !    do i=1,commPattern%nProcSend
+    !       call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
+    !    enddo
 
-    enddo spectralModes
+    ! enddo spectralModes
 
   end subroutine setPCVec
 

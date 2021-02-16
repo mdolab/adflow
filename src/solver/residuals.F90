@@ -29,6 +29,8 @@ contains
     integer(kind=intType) :: iale, jale, kale, lale, male ! For loops of ALE
     real(kind=realType), parameter :: K1 = 1.05_realType
     ! K2
+    ! MM: the changes below were a trial to make the original lowspeed preconditioner work
+    ! It did not work out
     ! for wsp=8m/s we have:
     !K2 :0.600000000000000000000 0.900000000000000000000 1.800000000000000000000
     !t2_:4.6944763574770638E-004 7.0417145362155966E-004 1.4083429072431193E-003
@@ -38,6 +40,7 @@ contains
     !real(kind=realType), parameter :: K2 = 0.6_realType ! Random given number
     !real(kind=realType), parameter :: K2 = 0.9_realType ! Random given number
     !real(kind=realType), parameter :: K2 = 1.8_realType ! Random given number
+    ! The line below is only used for the low-speed preconditioner part of this routine
     real(kind=realType), parameter :: K2 = 639.048910156_realType ! t2_=0.5 for wsp=8
 
     real(kind=realType), parameter :: M0 = 0.2_realType ! Mach number preconditioner activation

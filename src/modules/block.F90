@@ -69,6 +69,7 @@ module block
      real(kind=realType), dimension(:,:,:), pointer :: F, Fv, Fp
      real(kind=realType), dimension(:,:,:), pointer :: T, Tv, Tp
      real(kind=realType), dimension(:,:), pointer :: area
+     real(kind=realType), dimension(:,:), pointer :: CpTarget
      integer(kind=realType), dimension(:,:), pointer :: surfIndex
 
      ! Generic pointers for performing a globalized reduction.
@@ -222,7 +223,7 @@ module block
      integer(kind=intType) :: il, jl, kl
      integer(kind=intType) :: ie, je, ke
      integer(kind=intType) :: ib, jb, kb
-     
+
      logical :: rightHanded
      !
      !         Block boundary conditions.
@@ -476,7 +477,7 @@ module block
 
      !
      !         Flow variables.
-     ! x(0:ie,0:je,0:ke,3)
+     !
      ! w(0:ib,0:jb,0:kb,1:nw)       - The set of independent variables
      !                                w(i,j,k,1:nwf) flow field
      !                                variables, which are rho, u,

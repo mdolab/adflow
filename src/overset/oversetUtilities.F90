@@ -69,9 +69,9 @@ contains
     if (myid == 0) then
        ! Now dump out who owns what:
        do i=1, overlap%nrow
-          write(*, "(a,I4, a)", advance='no'), 'Row:', i, "   "
+          write(*, "(a,I4, a)", advance='no') 'Row:', i, "   "
           do jj=overlap%rowPtr(i), overlap%rowPtr(i+1)-1
-             write(*, "(a,I2, a, e10.5)", advance='no'), "(", overlap%colInd(jj), ")", overlap%data(jj)
+             write(*, "(a,I2, a, e10.5)", advance='no') "(", overlap%colInd(jj), ")", overlap%data(jj)
           end do
           write(*, *) " "
        end do
@@ -79,9 +79,9 @@ contains
        print *, '--------------------------------------'
        ! Now dump out who owns what:
        do i=1, overlap%nRow
-          write(*, "(a,I4, a)", advance='no'), 'Row:', i, "   "
+          write(*, "(a,I4, a)", advance='no') 'Row:', i, "   "
           do jj=overlap%rowPtr(i), overlap%rowPtr(i+1)-1
-             write(*, "(a,I2, a, I8)", advance='no'), "(", overlap%colInd(jj), ")", int(overlap%assignedProc(jj))
+             write(*, "(a,I2, a, I8)", advance='no') "(", overlap%colInd(jj), ")", int(overlap%assignedProc(jj))
           end do
           write(*, *) " "
        end do
@@ -1596,6 +1596,10 @@ contains
                    end do stencilLoop
                    if (badCell .and. printBadCells) then
                       print *,'Error in connectivity at :',nbkglobal, i+iBegOr, j+jBegOr, k+kBegOr
+                      ! we can modify iBlankLast because this is the last checkOverset call.
+                      ! we set iBlankLast to -5 to mark orphan cells, this value will then
+                      ! be moved to iBlank after we are done with other loops.
+                      flowDoms(nn, level, sps)%iBlankLast(i,j,k) = -5
                    end if
                 end if
              end do
@@ -1690,6 +1694,22 @@ contains
        print *, 'Total number of orphans:', totalOrphans
     end if
 
+    ! if this is the last checkOverset call with printBadCells = .True., then
+    ! we can move the orphan information to iBlank because we have done all
+    ! the checking required.
+    if (printBadCells .and. (totalOrphans .gt. 0)) then
+      ! loop over the cells and write the orphan information to iBlank
+      do nn=1, nDom
+         call setPointers(nn, level, sps)
+         do k=2, kl
+            do j=2, jl
+               do i=2, il
+                  if (flowDoms(nn, level, sps)%iblankLast(i,j,k) == -5) iBlank(i,j,k) = -5
+               end do
+            end do
+         end do
+      end do
+    end if
 
   end subroutine checkOverset
 
@@ -2195,8 +2215,10 @@ contains
           do j=2, jl
              do i=2, il
 
+                if (iblank(i,j,k) == -4) then
+                   nExplicitBlanked = nExplicitBlanked + 1
 
-                if (isReceiver(status(i, j, k))) then
+                else if (isReceiver(status(i, j, k))) then
                    iblank(i, j, k) = -1
                    nFringe = nFringe + 1
 
@@ -2213,22 +2235,17 @@ contains
                    nBlank = nBlank + 1
 
                 else
-                   if (iblank(i,j,k) == -4) then
-                      ! do nothing. It is an explict hole.
-                      nExplicitBlanked = nExplicitBlanked + 1
+                   ! We need to explictly make sure forced receivers
+                   ! *NEVER EVER EVER EVER* get set as compute cells.
+                   if (forcedRecv(i,j,k) .ne. 0) then
+                      ! This is REALLY Bad. This cell must be a forced
+                      ! receiver but never found a donor.
+                      iblank(i,j,k) = 0
+                      nBlank = nBlank + 1
                    else
-                      ! We need to explictly make sure forced receivers
-                      ! *NEVER EVER EVER EVER* get set as compute cells.
-                      if (forcedRecv(i,j,k) .ne. 0) then
-                         ! This is REALLY Bad. This cell must be a forced
-                         ! receiver but never found a donor.
-                         iblank(i,j,k) = 0
-                         nBlank = nBlank + 1
-                      else
-                         ! Compute cell
-                         nCompute = nCompute + 1
-                         iblank(i,j,k) = 1
-                      end if
+                      ! Compute cell
+                      nCompute = nCompute + 1
+                      iblank(i,j,k) = 1
                    end if
                 end if
              end do
@@ -2297,7 +2314,7 @@ contains
                      x(i-1, j  , k  , :) + &
                      x(i  , j  , k  , :))
 
-                write(19, "(E18.10, E18.10, E18.10, I3)"), xp(1), xp(2), xp(3), iblank(i, j, k)
+                write(19, "(E18.10, E18.10, E18.10, I3)") xp(1), xp(2), xp(3), iblank(i, j, k)
              end do
           end do
        end do
@@ -2389,12 +2406,9 @@ contains
     use communication, only : adflow_comm_world, myid
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk, terminate
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! Input/Output
     integer(kind=intType), intent(in) :: n

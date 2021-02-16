@@ -46,9 +46,9 @@ contains
 &   cforcemd, cmomentd
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgrhod, mavgpsd, &
-&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd
+&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -84,7 +84,9 @@ contains
     real(kind=realtype) :: tmpd8
     real(kind=realtype) :: tmpd7
     real(kind=realtype) :: tmpd6
+    real(kind=realtype) :: tempd1
     real(kind=realtype) :: tmpd5
+    real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd4
     real(kind=realtype) :: tmpd3
     real(kind=realtype) :: tmpd2
@@ -192,6 +194,8 @@ contains
 &       globalvals(iarea, sps)
       funcvalues(costfuncflowpower) = funcvalues(costfuncflowpower) + &
 &       ovrnts*globalvals(ipower, sps)
+      funcvalues(costfunccperror2) = funcvalues(costfunccperror2) + &
+&       ovrnts*globalvals(icperror2, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -216,6 +220,15 @@ contains
         mavgvx = zero
         mavgvy = zero
         mavgvz = zero
+      end if
+! area averaged objectives
+      garea = globalvals(iarea, sps)
+      if (garea .ne. zero) then
+! area averaged pressure
+        funcvalues(costfuncaavgptot) = funcvalues(costfuncaavgptot) + &
+&         ovrnts*globalvals(iareaptot, sps)/garea
+        funcvalues(costfuncaavgps) = funcvalues(costfuncaavgps) + ovrnts&
+&         *globalvals(iareaps, sps)/garea
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -583,6 +596,13 @@ contains
         else
           call pushcontrol1b(1)
         end if
+! area averaged objectives
+        garea = globalvals(iarea, sps)
+        if (garea .ne. zero) then
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
         mavgvzd = ovrnts*funcvaluesd(costfuncmavgvz)
         mavgvyd = ovrnts*funcvaluesd(costfuncmavgvy)
         mavgvxd = ovrnts*funcvaluesd(costfuncmavgvx)
@@ -593,6 +613,19 @@ contains
         mavgttotd = ovrnts*funcvaluesd(costfuncmavgttot)
         mavgptotd = ovrnts*funcvaluesd(costfuncmavgptot)
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          tempd1 = ovrnts*funcvaluesd(costfuncaavgptot)/garea
+          tempd0 = ovrnts*funcvaluesd(costfuncaavgps)/garea
+          globalvalsd(iareaps, sps) = globalvalsd(iareaps, sps) + tempd0
+          garead = -(globalvals(iareaptot, sps)*tempd1/garea) - &
+&           globalvals(iareaps, sps)*tempd0/garea
+          globalvalsd(iareaptot, sps) = globalvalsd(iareaptot, sps) + &
+&           tempd1
+        else
+          garead = 0.0_8
+        end if
+        globalvalsd(iarea, sps) = globalvalsd(iarea, sps) + garead
         call popcontrol1b(branch)
         if (branch .eq. 0) then
           globalvalsd(imassvz, sps) = globalvalsd(imassvz, sps) + &
@@ -624,6 +657,8 @@ contains
         end if
         globalvalsd(imassflow, sps) = globalvalsd(imassflow, sps) + &
 &         mflowd
+        globalvalsd(icperror2, sps) = globalvalsd(icperror2, sps) + &
+&         ovrnts*funcvaluesd(costfunccperror2)
         globalvalsd(ipower, sps) = globalvalsd(ipower, sps) + ovrnts*&
 &         funcvaluesd(costfuncflowpower)
         globalvalsd(iarea, sps) = globalvalsd(iarea, sps) + ovrnts*&
@@ -751,7 +786,7 @@ contains
 &   cmoment
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -858,6 +893,8 @@ contains
 &       globalvals(iarea, sps)
       funcvalues(costfuncflowpower) = funcvalues(costfuncflowpower) + &
 &       ovrnts*globalvals(ipower, sps)
+      funcvalues(costfunccperror2) = funcvalues(costfunccperror2) + &
+&       ovrnts*globalvals(icperror2, sps)
 ! mass flow like objective
       mflow = globalvals(imassflow, sps)
       if (mflow .ne. zero) then
@@ -882,6 +919,15 @@ contains
         mavgvx = zero
         mavgvy = zero
         mavgvz = zero
+      end if
+! area averaged objectives
+      garea = globalvals(iarea, sps)
+      if (garea .ne. zero) then
+! area averaged pressure
+        funcvalues(costfuncaavgptot) = funcvalues(costfuncaavgptot) + &
+&         ovrnts*globalvals(iareaptot, sps)/garea
+        funcvalues(costfuncaavgps) = funcvalues(costfuncaavgps) + ovrnts&
+&         *globalvals(iareaps, sps)/garea
       end if
       funcvalues(costfuncmdot) = funcvalues(costfuncmdot) + ovrnts*mflow
       funcvalues(costfuncmavgptot) = funcvalues(costfuncmavgptot) + &
@@ -1008,7 +1054,8 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
-&   veldirfreestream, veldirfreestreamd, equations, momentaxis
+&   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
+&   cavitationnumber
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1024,7 +1071,7 @@ contains
 &   cavitation
     real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
+    real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: xcd, ycd, zcd, rd(3)
@@ -1042,6 +1089,8 @@ contains
 &   mpaxis
     real(kind=realtype) :: mxd, myd, mzd, cellaread, m0xd, m0yd, m0zd, &
 &   mvaxisd, mpaxisd
+    real(kind=realtype) :: cperror, cperror2
+    real(kind=realtype) :: cperrord, cperror2d
     intrinsic mod
     intrinsic max
     intrinsic sqrt
@@ -1059,9 +1108,9 @@ contains
     real(kind=realtype) :: tempd10
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd8
+    real(kind=realtype) :: tempd8(3)
     real(kind=realtype) :: tempd7
-    real(kind=realtype) :: tempd6(3)
+    real(kind=realtype) :: tempd6
     real(kind=realtype) :: tempd5
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tempd3
@@ -1069,12 +1118,15 @@ contains
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd0(3)
+    real(kind=realtype) :: tempd24
+    real(kind=realtype) :: tempd23
     real(kind=realtype) :: tempd22
     real(kind=realtype) :: tempd21
     real(kind=realtype) :: tempd20
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd19
     real(kind=realtype) :: tempd18
+    real(kind=realtype) :: temp6
     real(kind=realtype) :: tempd17
     real(kind=realtype) :: temp5
     real(kind=realtype) :: tempd16
@@ -1133,6 +1185,10 @@ contains
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
       pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
+      tmp = two/(gammainf*pinf*machcoef*machcoef)
+      cp = (half*(pp2(i, j)+pp1(i, j))-pinf)*tmp
+      cperror = cp - bcdata(mm)%cptarget(i, j)
+      cperror2 = cperror2 + cperror*cperror
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
 &       1)) - refpoint(1)
       yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
@@ -1214,8 +1270,7 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sigma = 1.4
-        sensor1 = -cp - sigma
+        sensor1 = -cp - cavitationnumber
         sensor1 = one/(one+exp(-(2*10*sensor1)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
@@ -1239,6 +1294,7 @@ contains
     else
       call pushcontrol1b(1)
     end if
+    cperror2d = localvaluesd(icperror2)
     mpaxisd = localvaluesd(iaxismoment)
     mvaxisd = localvaluesd(iaxismoment)
     sepsensoravgd = 0.0_8
@@ -1322,10 +1378,10 @@ contains
         mxd = blk*mvd(1)
         myd = blk*mvd(2)
         mzd = blk*mvd(3)
-        tempd13 = blk*mvaxisd
-        m0xd = n(1)*tempd13
-        m0yd = n(2)*tempd13
-        m0zd = n(3)*tempd13
+        tempd15 = blk*mvaxisd
+        m0xd = n(1)*tempd15
+        m0yd = n(2)*tempd15
+        m0zd = n(3)*tempd15
         fzd = blk*fvd(3) - xc*myd - r(1)*m0yd + yc*mxd + r(2)*m0xd + &
 &         bcdatad(mm)%fv(i, j, 3)
         bcdatad(mm)%fv(i, j, 3) = 0.0_8
@@ -1341,67 +1397,67 @@ contains
         rd(1) = rd(1) - fz*m0yd
         rd(2) = rd(2) + fz*m0xd
         rd(3) = rd(3) - fy*m0xd
-        tempd14 = fourth*rd(3)
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd14
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd14
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd14
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd14
+        tempd16 = fourth*rd(3)
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd16
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd16
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd16
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd16
         rd(3) = 0.0_8
-        tempd15 = fourth*rd(2)
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd15
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd15
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd15
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd15
+        tempd17 = fourth*rd(2)
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd17
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd17
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd17
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd17
         rd(2) = 0.0_8
-        tempd16 = fourth*rd(1)
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd16
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd16
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd16
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd16
+        tempd18 = fourth*rd(1)
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd18
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd18
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd18
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd18
         rd(1) = 0.0_8
         xcd = fy*mzd - fz*myd
         ycd = fz*mxd - fx*mzd
         zcd = fx*myd - fy*mxd
-        tempd17 = fourth*zcd
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd17
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd17
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd17
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd17
+        tempd19 = fourth*zcd
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd19
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd19
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd19
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd19
         refpointd(3) = refpointd(3) - zcd
-        tempd18 = fourth*ycd
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd18
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd18
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd18
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd18
+        tempd20 = fourth*ycd
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd20
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd20
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd20
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd20
         refpointd(2) = refpointd(2) - ycd
-        tempd19 = fourth*xcd
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd19
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd19
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd19
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd19
+        tempd21 = fourth*xcd
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd21
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd21
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd21
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd21
         refpointd(1) = refpointd(1) - xcd
-        tempd20 = -(fact*pref*fzd)
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd20
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd20
-        tauzzd = ssi(i, j, 3)*tempd20
-        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd20
+        tempd22 = -(fact*pref*fzd)
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd22
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd22
+        tauzzd = ssi(i, j, 3)*tempd22
+        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd22
         prefd = prefd - fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+&
 &         tauzz*ssi(i, j, 3))*fzd
-        tempd22 = -(fact*pref*fyd)
-        tauyzd = ssi(i, j, 3)*tempd22 + ssi(i, j, 2)*tempd20
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd22
-        tauyyd = ssi(i, j, 2)*tempd22
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd22
-        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd22
+        tempd24 = -(fact*pref*fyd)
+        tauyzd = ssi(i, j, 3)*tempd24 + ssi(i, j, 2)*tempd22
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd24
+        tauyyd = ssi(i, j, 2)*tempd24
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd24
+        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd24
         prefd = prefd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+&
 &         tauyz*ssi(i, j, 3))*fyd
-        tempd21 = -(fact*pref*fxd)
-        tauxzd = ssi(i, j, 3)*tempd21 + ssi(i, j, 1)*tempd20
-        tauxyd = ssi(i, j, 2)*tempd21 + ssi(i, j, 1)*tempd22
-        tauxxd = ssi(i, j, 1)*tempd21
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd21
-        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd21
-        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd21
+        tempd23 = -(fact*pref*fxd)
+        tauxzd = ssi(i, j, 3)*tempd23 + ssi(i, j, 1)*tempd22
+        tauxyd = ssi(i, j, 2)*tempd23 + ssi(i, j, 1)*tempd24
+        tauxxd = ssi(i, j, 1)*tempd23
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd23
+        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd23
+        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd23
         prefd = prefd - fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+&
 &         tauxz*ssi(i, j, 3))*fxd
         viscsubfaced(mm)%tau(i, j, 6) = viscsubfaced(mm)%tau(i, j, 6) + &
@@ -1447,6 +1503,9 @@ contains
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
       pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
+      tmp = two/(gammainf*pinf*machcoef*machcoef)
+      cp = (half*(pp2(i, j)+pp1(i, j))-pinf)*tmp
+      cperror = cp - bcdata(mm)%cptarget(i, j)
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
 &       1)) - refpoint(1)
       yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
@@ -1514,23 +1573,23 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sigma = 1.4
-        sensor1 = -cp - sigma
+        sensor1 = -cp - cavitationnumber
         call pushreal8(sensor1)
         sensor1 = one/(one+exp(-(2*10*sensor1)))
         sensor1d = cavitationd
         cellaread = blk*sensor1*sensor1d
         sensor1d = blk*cellarea*sensor1d
         call popreal8(sensor1)
-        temp5 = -(10*2*sensor1)
-        temp4 = one + exp(temp5)
-        sensor1d = exp(temp5)*one*10*2*sensor1d/temp4**2
+        temp6 = -(10*2*sensor1)
+        temp5 = one + exp(temp6)
+        sensor1d = exp(temp6)*one*10*2*sensor1d/temp5**2
         cpd = -sensor1d
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
         pinfd = pinfd - tmp*cpd
-        temp3 = gammainf*machcoef**2
-        machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp3**2
+        temp4 = gammainf*machcoef**2
+        machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp4**2
+        tmp = two/(gammainf*pinf*machcoef*machcoef)
         pp2d(i, j) = pp2d(i, j) + plocald
       else
         cellaread = 0.0_8
@@ -1538,40 +1597,40 @@ contains
       mxd = blk*mpd(1)
       myd = blk*mpd(2)
       mzd = blk*mpd(3)
-      tempd9 = blk*mpaxisd
-      m0xd = n(1)*tempd9
-      m0yd = n(2)*tempd9
-      m0zd = n(3)*tempd9
+      tempd11 = blk*mpaxisd
+      m0xd = n(1)*tempd11
+      m0yd = n(2)*tempd11
+      m0zd = n(3)*tempd11
       sensord = yc*sepsensoravgd(2) + sepsensord + xc*sepsensoravgd(1) +&
 &       zc*sepsensoravgd(3)
       zcd = sensor*sepsensoravgd(3)
       ycd = sensor*sepsensoravgd(2)
       xcd = sensor*sepsensoravgd(1)
       call popreal8(zc)
-      tempd3 = fourth*zcd
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd3
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd3
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd3
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd3
+      tempd5 = fourth*zcd
+      xxd(i, j, 3) = xxd(i, j, 3) + tempd5
+      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd5
+      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd5
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd5
       call popreal8(yc)
-      tempd4 = fourth*ycd
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd4
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd4
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd4
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd4
+      tempd6 = fourth*ycd
+      xxd(i, j, 2) = xxd(i, j, 2) + tempd6
+      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd6
+      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd6
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd6
       call popreal8(xc)
-      tempd5 = fourth*xcd
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd5
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd5
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd5
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd5
+      tempd7 = fourth*xcd
+      xxd(i, j, 1) = xxd(i, j, 1) + tempd7
+      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd7
+      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
       call popreal8(sensor)
       cellaread = cellaread + blk*sensor*sensord
       sensord = blk*cellarea*sensord
       call popreal8(sensor)
-      temp2 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
-      temp1 = one + exp(temp2)
-      sensord = exp(temp2)*one*sepsensorsharpness*2*sensord/temp1**2
+      temp3 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
+      temp2 = one + exp(temp3)
+      sensord = exp(temp3)*one*sepsensorsharpness*2*sensord/temp2**2
       vd(1) = vd(1) - veldirfreestream(1)*sensord
       veldirfreestreamd(1) = veldirfreestreamd(1) - v(1)*sensord
       vd(2) = vd(2) - veldirfreestream(2)*sensord
@@ -1580,18 +1639,18 @@ contains
       veldirfreestreamd(3) = veldirfreestreamd(3) - v(3)*sensord
       call popreal8array(v, 3)
       tmpd0 = vd
-      temp = v(1)**2 + v(2)**2 + v(3)**2
-      temp0 = sqrt(temp)
-      tempd6 = tmpd0/(temp0+1e-16)
-      vd = tempd6
-      if (temp .eq. 0.0_8) then
-        tempd7 = 0.0
+      temp0 = v(1)**2 + v(2)**2 + v(3)**2
+      temp1 = sqrt(temp0)
+      tempd8 = tmpd0/(temp1+1e-16)
+      vd = tempd8
+      if (temp0 .eq. 0.0_8) then
+        tempd9 = 0.0
       else
-        tempd7 = sum(-(v*tempd6/(temp0+1e-16)))/(2.0*temp0)
+        tempd9 = sum(-(v*tempd8/(temp1+1e-16)))/(2.0*temp1)
       end if
-      vd(1) = vd(1) + 2*v(1)*tempd7
-      vd(2) = vd(2) + 2*v(2)*tempd7
-      vd(3) = vd(3) + 2*v(3)*tempd7
+      vd(1) = vd(1) + 2*v(1)*tempd9
+      vd(2) = vd(2) + 2*v(2)*tempd9
+      vd(3) = vd(3) + 2*v(3)*tempd9
       ww2d(i, j, ivz) = ww2d(i, j, ivz) + vd(3)
       vd(3) = 0.0_8
       ww2d(i, j, ivy) = ww2d(i, j, ivy) + vd(2)
@@ -1602,14 +1661,14 @@ contains
       bcdatad(mm)%area(i, j) = 0.0_8
       if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. 0.0_8&
 &     ) then
-        tempd8 = 0.0
+        tempd10 = 0.0
       else
-        tempd8 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+ssi&
-&         (i, j, 3)**2))
+        tempd10 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+&
+&         ssi(i, j, 3)**2))
       end if
-      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd8
-      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd8
-      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd8
+      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd10
+      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd10
+      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd10
       fzd = blk*fpd(3) - xc*myd - r(1)*m0yd + yc*mxd + r(2)*m0xd + &
 &       bcdatad(mm)%fp(i, j, 3)
       bcdatad(mm)%fp(i, j, 3) = 0.0_8
@@ -1625,23 +1684,23 @@ contains
       rd(1) = rd(1) - fz*m0yd
       rd(2) = rd(2) + fz*m0xd
       rd(3) = rd(3) - fy*m0xd
-      tempd10 = fourth*rd(3)
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd10
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd10
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd10
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd10
+      tempd12 = fourth*rd(3)
+      xxd(i, j, 3) = xxd(i, j, 3) + tempd12
+      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd12
+      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd12
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd12
       rd(3) = 0.0_8
-      tempd11 = fourth*rd(2)
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd11
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd11
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd11
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd11
+      tempd13 = fourth*rd(2)
+      xxd(i, j, 2) = xxd(i, j, 2) + tempd13
+      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd13
+      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd13
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd13
       rd(2) = 0.0_8
-      tempd12 = fourth*rd(1)
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd12
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd12
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd12
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd12
+      tempd14 = fourth*rd(1)
+      xxd(i, j, 1) = xxd(i, j, 1) + tempd14
+      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd14
+      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd14
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd14
       rd(1) = 0.0_8
       xcd = fy*mzd - fz*myd
       ycd = fz*mxd - fx*mzd
@@ -1668,10 +1727,20 @@ contains
       xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd1
       xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd1
       refpointd(1) = refpointd(1) - xcd
-      tempd2 = fact*pref*pm1d
+      cperrord = 2*cperror*cperror2d
+      cpd = cperrord
+      tempd2 = tmp*cpd
       pp2d(i, j) = pp2d(i, j) + half*tempd2
       pp1d(i, j) = pp1d(i, j) + half*tempd2
-      pinfd = pinfd - tempd2
+      tmpd = (half*(pp2(i, j)+pp1(i, j))-pinf)*cpd
+      temp = gammainf*pinf*machcoef**2
+      tempd3 = -(two*tmpd/temp**2)
+      pinfd = pinfd + machcoef**2*gammainf*tempd3 - tempd2
+      machcoefd = machcoefd + gammainf*pinf*2*machcoef*tempd3
+      tempd4 = fact*pref*pm1d
+      pp2d(i, j) = pp2d(i, j) + half*tempd4
+      pp1d(i, j) = pp1d(i, j) + half*tempd4
+      pinfd = pinfd - tempd4
       prefd = prefd + fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pm1d
     end do
     pointrefd(3) = pointrefd(3) + lref*refpointd(3)
@@ -1697,7 +1766,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis
+&   equations, momentaxis, cavitationnumber
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1709,7 +1778,7 @@ contains
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
 &   cavitation
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: pm1, fx, fy, fz, fn, sigma
+    real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
@@ -1719,6 +1788,7 @@ contains
     real(kind=realtype), dimension(3, 2) :: axispoints
     real(kind=realtype) :: mx, my, mz, cellarea, m0x, m0y, m0z, mvaxis, &
 &   mpaxis
+    real(kind=realtype) :: cperror, cperror2
     intrinsic mod
     intrinsic max
     intrinsic sqrt
@@ -1753,6 +1823,7 @@ contains
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
+    cperror2 = zero
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -1783,6 +1854,10 @@ contains
 ! fact to account for the possibility of an inward or
 ! outward pointing normal.
       pm1 = fact*(half*(pp2(i, j)+pp1(i, j))-pinf)*pref
+      tmp = two/(gammainf*pinf*machcoef*machcoef)
+      cp = (half*(pp2(i, j)+pp1(i, j))-pinf)*tmp
+      cperror = cp - bcdata(mm)%cptarget(i, j)
+      cperror2 = cperror2 + cperror*cperror
       xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
 &       1)) - refpoint(1)
       yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
@@ -1864,8 +1939,7 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sigma = 1.4
-        sensor1 = -cp - sigma
+        sensor1 = -cp - cavitationnumber
         sensor1 = one/(one+exp(-(2*10*sensor1)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
@@ -1990,6 +2064,7 @@ contains
 &     sepsensoravg
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
 &     mvaxis
+    localvalues(icperror2) = localvalues(icperror2) + cperror2
   end subroutine wallintegrationface
 !  differentiation of flowintegrationface in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: pointref timeref tref rgas
@@ -2030,6 +2105,8 @@ contains
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
 &   mass_psd, mass_mnd, mass_ad, mass_rhod, mass_vxd, mass_vyd, mass_vzd&
 &   , mass_nxd, mass_nyd, mass_nzd
+    real(kind=realtype) :: area_ptot, area_ps
+    real(kind=realtype) :: area_ptotd, area_psd
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
     integer(kind=inttype) :: i, j, ii, blk
@@ -2069,6 +2146,7 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
+    real(kind=realtype) :: tempd16
     real(kind=realtype) :: tempd15
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
@@ -2105,6 +2183,8 @@ contains
     mass_vzd = localvaluesd(imassvz)
     mass_vyd = localvaluesd(imassvy)
     mass_vxd = localvaluesd(imassvx)
+    area_psd = localvaluesd(iareaps)
+    area_ptotd = localvaluesd(iareaptot)
     mmomd = 0.0_8
     mmomd = localvaluesd(iflowmm:iflowmm+2)
     mpd = 0.0_8
@@ -2185,9 +2265,10 @@ contains
       fx = massflowratelocal*ssi(i, j, 1)*vxm
       fy = massflowratelocal*ssi(i, j, 2)*vym
       fz = massflowratelocal*ssi(i, j, 3)*vzm
-      tempd6 = ssi(i, j, 1)*mass_nxd
-      tempd7 = ssi(i, j, 2)*mass_nyd
-      tempd5 = ssi(i, j, 3)*mass_nzd
+      tempd5 = blk*area_ptotd
+      tempd7 = ssi(i, j, 1)*mass_nxd
+      tempd8 = ssi(i, j, 2)*mass_nyd
+      tempd6 = ssi(i, j, 3)*mass_nzd
       mzd = mmomd(3)
       myd = mmomd(2)
       mxd = mmomd(1)
@@ -2229,32 +2310,32 @@ contains
       ssid(i, j, 2) = ssid(i, j, 2) + pm*fyd
       ssid(i, j, 1) = ssid(i, j, 1) + pm*fxd
       call popreal8(pm)
-      massflowratelocald = overcellarea*tempd5 + overcellarea*tempd6 + (&
+      massflowratelocald = overcellarea*tempd6 + overcellarea*tempd7 + (&
 &       uref*vym-sfacecoordref(2))*mass_vyd + mnm*mass_mnd + uref*am*&
 &       mass_ad + tref*ttot*mass_ttotd + massflowrated + pref*ptot*&
 &       mass_ptotd + rhoref*rhom*mass_rhod + pm*mass_psd + (uref*vxm-&
 &       sfacecoordref(1))*mass_vxd + (uref*vzm-sfacecoordref(3))*&
-&       mass_vzd + overcellarea*tempd7 + tempd3
-      tempd8 = -(fact*blk*pmd)
-      prefd = prefd - pinf*tempd8
-      pmd = massflowratelocal*mass_psd + tempd8
-      tempd9 = fourth*zcd
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd9
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd9
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd9
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd9
+&       mass_vzd + overcellarea*tempd8 + tempd3
+      tempd9 = -(fact*blk*pmd)
+      prefd = prefd - pinf*tempd9
+      pmd = blk*cellarea*area_psd + massflowratelocal*mass_psd + tempd9
+      tempd10 = fourth*zcd
+      xxd(i, j, 3) = xxd(i, j, 3) + tempd10
+      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd10
+      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd10
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd10
       refpointd(3) = refpointd(3) - zcd
-      tempd10 = fourth*ycd
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd10
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd10
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd10
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd10
+      tempd11 = fourth*ycd
+      xxd(i, j, 2) = xxd(i, j, 2) + tempd11
+      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd11
+      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd11
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd11
       refpointd(2) = refpointd(2) - ycd
-      tempd11 = fourth*xcd
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd11
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd11
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd11
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd11
+      tempd12 = fourth*xcd
+      xxd(i, j, 1) = xxd(i, j, 1) + tempd12
+      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd12
+      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd12
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd12
       refpointd(1) = refpointd(1) - xcd
       ssid(i, j, 3) = ssid(i, j, 3) + overcellarea*massflowratelocal*&
 &       mass_nzd
@@ -2268,9 +2349,9 @@ contains
       sfacecoordrefd(2) = sfacecoordrefd(2) - massflowratelocal*mass_vyd
       vxmd = vxmd + massflowratelocal*uref*mass_vxd
       sfacecoordrefd(1) = sfacecoordrefd(1) - massflowratelocal*mass_vxd
-      overcellaread = massflowratelocal*tempd7 + sf*ssi(i, j, 3)*&
-&       sfacecoordrefd(3) + massflowratelocal*tempd6 + massflowratelocal&
-&       *tempd5
+      overcellaread = massflowratelocal*tempd8 + sf*ssi(i, j, 3)*&
+&       sfacecoordrefd(3) + massflowratelocal*tempd7 + massflowratelocal&
+&       *tempd6
       ssid(i, j, 3) = ssid(i, j, 3) + sf*overcellarea*sfacecoordrefd(3)
       sfacecoordrefd(3) = 0.0_8
       ssid(i, j, 2) = ssid(i, j, 2) + sf*overcellarea*sfacecoordrefd(2)
@@ -2278,51 +2359,54 @@ contains
       sfacecoordrefd(2) = 0.0_8
       ssid(i, j, 1) = ssid(i, j, 1) + sf*overcellarea*sfacecoordrefd(1)
       overcellaread = overcellaread + sf*ssi(i, j, 1)*sfacecoordrefd(1)
-      cellaread = aread - overcellaread/cellarea**2 + timeref*tempd4
+      cellaread = blk*pm*area_psd - overcellaread/cellarea**2 + blk*&
+&       aread + ptot*pref*tempd5 + timeref*tempd4
       sfacecoordrefd(1) = 0.0_8
+      ptotd = ptotd + pref*massflowratelocal*mass_ptotd + cellarea*pref*&
+&       tempd5
       mnmd = massflowratelocal*mass_mnd
       amd = uref*massflowratelocal*mass_ad - vmag*mnmd/am**2
       rhorefd = rhorefd + rhom*massflowratelocal*mass_rhod
       ttotd = ttotd + tref*massflowratelocal*mass_ttotd
       trefd = trefd + ttot*massflowratelocal*mass_ttotd
-      ptotd = ptotd + pref*massflowratelocal*mass_ptotd
       call popreal8(pm)
-      prefd = prefd + pm*pmd + ptot*massflowratelocal*mass_ptotd
+      prefd = prefd + ptot*massflowratelocal*mass_ptotd + pm*pmd + &
+&       cellarea*ptot*tempd5
       pmd = pref*pmd
-      tempd12 = blk*fact*massflowratelocald
-      rhomd = mredim*vnm*tempd12 + rhoref*massflowratelocal*mass_rhod
-      vnmd = mredim*rhom*tempd12
-      mredimd = mredimd + rhom*vnm*tempd12
+      tempd13 = blk*fact*massflowratelocald
+      rhomd = mredim*vnm*tempd13 + rhoref*massflowratelocal*mass_rhod
+      vnmd = mredim*rhom*tempd13
+      mredimd = mredimd + rhom*vnm*tempd13
       call computettot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
 &                  pm, pmd, ttot, ttotd)
       call computeptot_b(rhom, rhomd, vxm, vxmd, vym, vymd, vzm, vzmd, &
 &                  pm, pmd, ptot, ptotd)
       if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. 0.0_8&
 &     ) then
-        tempd13 = 0.0
-      else
-        tempd13 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+&
-&         ssi(i, j, 3)**2))
-      end if
-      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd13
-      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd13
-      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd13
-      vmagd = mnmd/am
-      if (gammam*(pm/rhom) .eq. 0.0_8) then
         tempd14 = 0.0
       else
-        tempd14 = gammam*amd/(2.0*sqrt(gammam*(pm/rhom))*rhom)
+        tempd14 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+&
+&         ssi(i, j, 3)**2))
       end if
-      pmd = pmd + tempd14
-      rhomd = rhomd - pm*tempd14/rhom
-      if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
+      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd14
+      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd14
+      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd14
+      vmagd = mnmd/am
+      if (gammam*(pm/rhom) .eq. 0.0_8) then
         tempd15 = 0.0
       else
-        tempd15 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+        tempd15 = gammam*amd/(2.0*sqrt(gammam*(pm/rhom))*rhom)
       end if
-      vxmd = vxmd + ssi(i, j, 1)*vnmd + 2*vxm*tempd15
-      vymd = vymd + ssi(i, j, 2)*vnmd + 2*vym*tempd15
-      vzmd = vzmd + ssi(i, j, 3)*vnmd + 2*vzm*tempd15
+      pmd = pmd + tempd15
+      rhomd = rhomd - pm*tempd15/rhom
+      if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
+        tempd16 = 0.0
+      else
+        tempd16 = vmagd/(2.0*sqrt(vxm**2+vym**2+vzm**2))
+      end if
+      vxmd = vxmd + ssi(i, j, 1)*vnmd + 2*vxm*tempd16
+      vymd = vymd + ssi(i, j, 2)*vnmd + 2*vym*tempd16
+      vzmd = vzmd + ssi(i, j, 3)*vnmd + 2*vzm*tempd16
       ssid(i, j, 1) = ssid(i, j, 1) + vxm*vnmd
       ssid(i, j, 2) = ssid(i, j, 2) + vym*vnmd
       ssid(i, j, 3) = ssid(i, j, 3) + vzm*vnmd
@@ -2371,6 +2455,7 @@ contains
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
 &   mass_ny, mass_nz
+    real(kind=realtype) :: area_ptot, area_ps
     real(kind=realtype) :: mredim
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
@@ -2432,6 +2517,8 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    area_ptot = zero
+    area_ps = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -2459,7 +2546,7 @@ contains
       mnm = vmag/am
       cellarea = sqrt(ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**&
 &       2)
-      area = area + cellarea
+      area = area + cellarea*blk
       overcellarea = 1/cellarea
       call computeptot(rhom, vxm, vym, vzm, pm, ptot)
       call computettot(rhom, vxm, vym, vzm, pm, ttot)
@@ -2473,6 +2560,8 @@ contains
       mass_a = mass_a + am*massflowratelocal*uref
       mass_ps = mass_ps + pm*massflowratelocal
       mass_mn = mass_mn + mnm*massflowratelocal
+      area_ptot = area_ptot + ptot*pref*cellarea*blk
+      area_ps = area_ps + pm*cellarea*blk
       sfacecoordref(1) = sf*ssi(i, j, 1)*overcellarea
       sfacecoordref(2) = sf*ssi(i, j, 2)*overcellarea
       sfacecoordref(3) = sf*ssi(i, j, 3)*overcellarea
@@ -2539,6 +2628,8 @@ contains
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
+    localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
+    localvalues(iareaps) = localvalues(iareaps) + area_ps
     localvalues(imassvx) = localvalues(imassvx) + mass_vx
     localvalues(imassvy) = localvalues(imassvy) + mass_vy
     localvalues(imassvz) = localvalues(imassvz) + mass_vz

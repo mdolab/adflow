@@ -5,7 +5,7 @@ module adjointUtils
 contains
 
   subroutine setupStateResidualMatrix(matrix, useAD, usePC, useTranspose, &
-       useObjective, frozenTurb, level, matrixTurb)
+       useObjective, frozenTurb, level, useTurbOnly, useCoarseMats)
 
     !      Compute the state derivative matrix using a forward mode calc
     !      There are three different flags that determine how this
@@ -39,46 +39,71 @@ contains
     use utils, only : EChk, setPointers, getDirAngle, setPointers_d
     use haloExchange, only : whalo2
     use masterRoutines, only : block_res_state, master
+    use agmg, only : agmgLevels, A, coarseIndices, coarseOversetIndices
 #ifndef USE_COMPLEX
     use masterRoutines, only : block_res_state_d
 #endif
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     ! PETSc Matrix Variable
     Mat :: matrix
-    Mat, optional :: matrixTurb
 
     ! Input Variables
     logical, intent(in) :: useAD, usePC, useTranspose, useObjective, frozenTurb
+    logical, intent(in), optional :: useTurbOnly, useCoarseMats
     integer(kind=intType), intent(in) :: level
 
     ! Local variables.
     integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
     integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
-    integer(kind=intType) :: nTransfer, nState, tmp, icount, cols(8), nCol
-    integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd
+    integer(kind=intType) :: nTransfer, nState, lStart, lEnd, tmp, icount, cols(8), nCol
+    integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=alwaysRealType) :: delta_x, one_over_dx
     real(kind=realType) :: weights(8)
     real(kind=realType), dimension(:,:), allocatable :: blk
-
+    integer(kind=intType), dimension(2:10) :: coarseRows
+    integer(kind=intType), dimension(8, 2:10) :: coarseCols
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, mm, colInd
-    logical :: resetToRANS, secondOrdSave,  splitMat
+    logical :: resetToRANS, turbOnly, flowRes, turbRes, buildCoarseMats
 
-    if (present(matrixTurb)) then
-       splitMat = .True.
-    else
-       splitMat = .False.
+    ! Determine if we are assembling a turb only PC
+    turbOnly = .False.
+    if (present(useTurbOnly)) then
+       turbOnly = useTurbOnly
     end if
 
-    ! Setup number of state variable based on turbulence assumption
-    if ( frozenTurb ) then
-       nState = nwf
+    buildCoarseMats = .False.
+    if (present(useCoarseMats)) then
+       buildCoarseMats = useCoarseMats
+    end if
+
+    if (turbOnly) then
+       ! we are making a PC for turbulence only KSP
+       flowRes = .False.
+       turbRes = .True.
+       lStart = nt1
+       lEnd = nt2
+       nState = nt2 - nt1 + 1
     else
-       nState = nw
-    endif
+       ! We are making a "matrix" for either NK or adjoint
+       ! Setup number of state variable based on turbulence assumption
+       if ( frozenTurb ) then
+          flowRes = .True.
+          turbRes = .False.
+          lStart = 1
+          lEnd =nwf
+          nState = nwf
+       else
+          flowRes = .True.
+          turbRes = .True.
+          lStart = 1
+          lEnd =nw
+          nState = nw
+       endif
+    end if
 
     ! Generic block to use while setting values
     allocate(blk(nState, nState))
@@ -124,6 +149,14 @@ contains
                       iRow = flowDoms(nn, level, sps)%globalCell(i, j, k)
                       cols(1) = irow
                       nCol = 1
+
+                      if (buildCoarseMats) then
+                         do lvl=1, agmgLevels-1
+                            coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
+                            coarseCols(1, lvl+1) = coarseRows(lvl+1)
+                         end do
+                      end if
+
                       call setBlock(blk)
                    end if
                 end do
@@ -131,11 +164,6 @@ contains
           end do
        end do
     end do
-
-    if (splitMat) then
-       call MatZeroEntries(matrixTurb, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-    end if
 
     ! Set a pointer to the correct set of stencil depending on if we are
     ! using the first order stencil or the full jacobian
@@ -151,8 +179,9 @@ contains
 
        ! Very important to use only Second-Order dissipation for PC
        lumpedDiss=.True.
-       secondOrdSave = secondOrd
-       secondOrd = .False.
+       ! also use first order advection terms for turbulence
+       orderturbsave = orderturb
+       orderturb = firstOrder
     else
        if (viscous) then
           stencil => visc_drdw_stencil
@@ -237,6 +266,7 @@ contains
 
     ! Master Domain Loop
     domainLoopAD: do nn=1, nDom
+
        ! Set pointers to the first timeInstance...just to getSizes
        call setPointers(nn, level, 1)
        ! Set unknown sizes in diffSizes for AD routine
@@ -286,7 +316,7 @@ contains
              end do
 
              ! Master State Loop
-             stateLoop: do l=1, nState
+             stateLoop: do l=lStart, lEnd
 
                 ! Reset All States and possibe AD seeds
                 do sps2 = 1, nTimeIntervalsSpectral
@@ -342,7 +372,7 @@ contains
                    stop
 #endif
                 else
-                   call block_res_state(nn, sps)
+                   call block_res_state(nn, sps, useFlowRes=flowRes, useTurbRes=turbRes)
                 end if
 
                 ! Set the computed residual in dw_deriv. If using FD,
@@ -351,7 +381,7 @@ contains
 
                 ! Compute/Copy all derivatives
                 do sps2 = 1, nTimeIntervalsSpectral
-                   do ll=1, nState
+                   do ll=lStart, lEnd
                       do k=2, kl
                          do j=2, jl
                             do i=2, il
@@ -403,10 +433,24 @@ contains
                          if (flowDoms(nn, level, sps)%iblank(i, j, k) == 1) then
                             cols(1) = flowDoms(nn, level, sps)%globalCell(i, j, k)
                             nCol = 1
+
+                            if (buildCoarseMats) then
+                               do lvl=1, agmgLevels-1
+                                  coarseCols(1, lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
+                               end do
+                            end if
+
                          else
                             do m=1,8
                                cols(m) = flowDoms(nn, level, sps)%gInd(m, i, j, k)
+
+                               if (buildCoarseMats) then
+                                  do lvl=1, agmgLevels-1
+                                     coarseCols(m, lvl+1) = coarseOversetIndices(nn, lvl)%arr(m, i, j, k)
+                                  end do
+                               end if
                             end do
+
                             fInd = fringePtr(1,i,j,k)
                             call fracToWeights(flowDoms(nn, level, sps)%fringes(fInd)%donorFrac, &
                                  weights)
@@ -436,6 +480,12 @@ contains
                                   irow = flowDoms(nn, level, sps)%globalCell(&
                                        i+ii, j+jj, k+kk)
 
+                                  if (buildCoarseMats) then
+                                     do lvl=1, agmgLevels-1
+                                        coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i+ii, j+jj, k+kk)
+                                     end do
+                                  end if
+
                                   rowBlank: if (flowDoms(nn, level, sps)%iBlank(i+ii, j+jj, k+kk) == 1) then
 
                                      centerCell: if ( ii == 0 .and. jj == 0  .and. kk == 0) then
@@ -444,7 +494,7 @@ contains
                                            ! to use TS diagonal form, only set
                                            ! values for on-time insintance
                                            blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                                1:nstate, 1:nstate)
+                                                lStart:lEnd, lStart:lEnd)
                                            call setBlock(blk)
                                         else
                                            ! Otherwise loop over spectral
@@ -453,14 +503,14 @@ contains
                                               irow = flowDoms(nn, level, sps2)%&
                                                    globalCell(i+ii, j+jj, k+kk)
                                               blk = flowDoms(nn, 1, sps2)%dw_deriv(i+ii, j+jj, k+kk, &
-                                                   1:nstate, 1:nstate)
+                                                   lStart:lEnd, lStart:lEnd)
                                               call setBlock(blk)
                                            end do
                                         end if useDiagPC
                                      else
                                         ! ALl other cells just set.
                                         blk = flowDoms(nn, 1, sps)%dw_deriv(i+ii, j+jj, k+kk, &
-                                             1:nstate, 1:nstate)
+                                             lStart:lEnd, lStart:lEnd)
                                         call setBlock(blk)
                                      end if centerCell
                                   end if rowBlank
@@ -479,10 +529,13 @@ contains
     call MatAssemblyBegin(matrix, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (splitMat) then
-       call MatAssemblyBegin(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
+    if (buildCoarseMats) then
+       do lvl=2, agmgLevels
+          call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       end do
     end if
+
     ! Maybe we can do something useful while the communication happens?
     ! Deallocate the temporary memory used in this routine.
 
@@ -507,7 +560,8 @@ contains
     ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
     if (usePC) then
        lumpedDiss = .False.
-       secondOrd = secondOrdSave
+       ! also recover the turbulence advection order
+       orderturb = orderturbsave
     end if
 
     ! Reset the correct equation parameters if we were useing the frozen
@@ -522,16 +576,15 @@ contains
     call MatAssemblyEnd  (matrix, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    if (buildCoarseMats) then
+       do lvl=2, agmgLevels
+          call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       end do
+    end if
+
     call MatSetOption(matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
     call EChk(ierr, __FILE__, __LINE__)
-
-    if (splitMat) then
-       call MatAssemblyEnd(matrixTurb, MAT_FINAL_ASSEMBLY, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-
-       call MatSetOption(matrixTurb, MAT_NEW_NONZERO_LOCATIONS, PETSC_FALSE, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-    end if
 
     ! ================= Important ===================
 
@@ -546,6 +599,7 @@ contains
       ! Sets a block at irow, icol, if useTranspose is False
       ! Sets a block at icol, irow with transpose of blk if useTranspose is True
 
+      use utils, only : myisnan
       implicit none
       real(kind=realType), dimension(nState, nState) :: blk
 
@@ -567,7 +621,7 @@ contains
       end do
 
       ! Check if the blk has nan
-      if (isnan(sum(blk))) then
+      if (myisnan(sum(blk))) then
          print *,'Bad Block:',blk
          print *,'irow:',irow
          print *,'icol',cols(1:ncol)
@@ -609,6 +663,37 @@ contains
                end do
             end if
          end if
+
+         ! Extension for setting coarse grids:
+         if (buildCoarseMats) then
+            if (nCol == 1) then
+               do lvl=2, agmgLevels
+                  if (useTranspose) then
+                     ! Loop over the coarser levels
+                     call MatSetValuesBlocked(A(lvl), 1, coarseCols(1, lvl), 1, coarseRows(lvl), &
+                          blk, ADD_VALUES, ierr)
+                  else
+                     call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseCols(1, lvl), &
+                          blk, ADD_VALUES, ierr)
+                  end if
+               end do
+            else
+               do m=1, nCol
+                  do lvl=2, agmgLevels
+                     if (coarseCols(m, lvl) >= 0) then
+                        if (useTranspose) then
+                           ! Loop over the coarser levels
+                           call MatSetValuesBlocked(A(lvl), 1, coarseCols(m, lvl), 1, coarseRows(lvl), &
+                                blk*weights(m), ADD_VALUES, ierr)
+                        else
+                           call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseCols(m, lvl), &
+                                blk*weights(m), ADD_VALUES, ierr)
+                        end if
+                     end if
+                  end do
+               end do
+            end if
+         end if
       end if
     end subroutine setBlock
   end subroutine setupStateResidualMatrix
@@ -624,7 +709,7 @@ contains
     use inputDiscretization, only : useApproxWallDistance
     use inputPhysics, only : wallDistanceNeeded
     use communication, only : adflow_comm_world
-    use wallDistanceData, only : xSurfVec, xSurfVecd, PETSC_DETERMINE
+    use wallDistanceData, only : xSurfVec, xSurfVecd!, PETSC_DETERMINE
     use BCPointers_b
     use adjointVars, only : derivVarsAllocated
     use utils, only : EChk, setPointers, getDirAngle
@@ -1192,26 +1277,25 @@ contains
     use constants
     use communication, only : adflow_comm_world
     use utils, only : EChk, setPointers
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     Mat matrix
     integer(kind=intType), intent(in) :: blockSize, m, n
     integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
     character*(*) :: file
     integer(kind=intType) :: ierr, line
-    if (blockSize > 1) then
+    ! if (blockSize > 1) then
        call MatCreateBAIJ(ADFLOW_COMM_WORLD, blockSize, &
             m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
             0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
-    else
-       call MatCreateAIJ(ADFLOW_COMM_WORLD,&
-            m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
-            0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+    ! else
+       ! call MatCreateAIJ(ADFLOW_COMM_WORLD,&
+            ! m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+            ! 0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
        call EChk(ierr, file, line)
-    end if
+    ! end if
 
     ! Warning: The array values is logically two-dimensional,
     ! containing the values that are to be inserted. By default the
@@ -1286,7 +1370,7 @@ contains
     !      --> master_PC_KSP --> KSP type set to Richardson with 'globalPreConIts'
     !          |
     !           --> globalPC --> PC type set to 'globalPCType'
-    !               |            Usually Additive Schwartz and overlap is set
+    !               |            Usually Additive Schwarz and overlap is set
     !               |            with 'ASMOverlap'. Use 0 to get BlockJacobi
     !               |
     !               --> subKSP --> KSP type set to Richardon with 'LocalPreConIts'
@@ -1299,16 +1383,15 @@ contains
     ! and if localPreConIts=1 then subKSP is set to preOnly.
     use constants
     use utils, only : ECHk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
     ! Input Params
     KSP kspObject
-    character(len=maxStringLen), intent(in) :: kspObjectType, preConSide
-    character(len=maxStringLen), intent(in) :: globalPCType, localPCType
-    character(len=maxStringLen), intent(in) :: localMatrixOrdering
+    character(len=*), intent(in) :: kspObjectType, preConSide
+    character(len=*), intent(in) :: globalPCType, localPCType
+    character(len=*), intent(in) :: localMatrixOrdering
     integer(kind=intType), intent(in) :: ASMOverlap, localFillLevel, gmresRestart
     integer(kind=intType), intent(in) :: globalPreConIts, localPreConIts
 
@@ -1316,6 +1399,7 @@ contains
     PC  master_PC, globalPC, subpc
     KSP master_PC_KSP, subksp
     integer(kind=intType) :: nlocal, first, ierr
+
 
     ! First, KSPSetFromOptions MUST be called
     call KSPSetFromOptions(kspObject, ierr)
@@ -1366,7 +1450,12 @@ contains
 
        ! master_PC_KSP type will always be of type richardson. If the
        ! number  of iterations is set to 1, this ksp object is transparent.
+
        call KSPSetType(master_PC_KSP, 'richardson', ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       call KSPMonitorSet(master_PC_KSP, MyKSPMonitor, PETSC_NULL_FUNCTION, &
+            PETSC_NULL_FUNCTION, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Important to set the norm-type to None for efficiency.
@@ -1390,7 +1479,7 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
     end if
 
-    ! Set the type of 'globalPC'. This will almost always be additive schwartz
+    ! Set the type of 'globalPC'. This will almost always be additive Schwarz
     call PCSetType(globalPC, 'asm', ierr)!globalPCType, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
@@ -1446,8 +1535,67 @@ contains
     call PCFactorSetLevels(subpc, localFillLevel , ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-
   end subroutine setupStandardKSP
+
+  subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, &
+       preConSide, ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel)
+
+    ! and if localPreConIts=1 then subKSP is set to preOnly.
+    use constants
+    use utils, only : ECHk
+    use agmg, only : agmgOuterIts, agmgASMOverlap, agmgFillLevel, agmgMatrixOrdering, &
+         setupShellPC, destroyShellPC, applyShellPC
+#include <petsc/finclude/petsc.h>
+    use petsc
+    implicit none
+
+    ! Input Params
+    KSP kspObject
+    character(len=*), intent(in) :: kspObjectType, preConSide
+    character(len=*), intent(in) :: localMatrixOrdering
+    integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart
+    integer(kind=intType), intent(in) :: outerPreconIts
+
+    ! Working Variables
+    PC  shellPC
+    integer(kind=intType) :: ierr
+
+    call KSPSetType(kspObject, kspObjectType, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Set the preconditioner side from option:
+    if (trim(preConSide) == 'right') then
+       call KSPSetPCSide(kspObject, PC_RIGHT, ierr)
+    else
+       call KSPSetPCSide(kspObject, PC_LEFT, ierr)
+    end if
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call KSPGetPC(kspObject, shellPC, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call PCSetType(shellPC, PCSHELL, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call PCShellSetSetup(shellPC, setupShellPC, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call PCShellSetDestroy(shellPC, destroyShellPC, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    call PCShellSetApply(shellPC, applyShellPC, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! Just save the remaining pieces ofinformation in the agmg module.
+    agmgOuterIts = outerPreConIts
+    agmgASMOverlap = asmOverlap
+    agmgFillLevel = fillLevel
+    agmgMatrixOrdering = localMatrixOrdering
+  end subroutine setupStandardMultigrid
+
   subroutine destroyPETScVars
 
     use constants
@@ -1524,12 +1672,9 @@ subroutine statePreAllocation(onProc, offProc, wSize, stencil, N_stencil, &
   use inputTimeSpectral , only : nTimeIntervalsSpectral
   use utils, only : setPointers, EChk
   use sorting, only : unique
-
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
 
   ! Subroutine Arguments
   integer(kind=intType), intent(in)  :: wSize

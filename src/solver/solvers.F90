@@ -1014,6 +1014,9 @@ contains
     ! call, "Iter" and "Iter Total" will both display 0.
     approxTotalIts = 0
 
+    ! we need to re-set the orders converged to 16 as it might have been modified in the previous iteration
+    ordersConverged = 16.0_realType
+
     ! Evaluate the initial residual
     call computeResidualNK
 
@@ -1318,10 +1321,6 @@ contains
           fact = fact/(lengthRef*Lref)
           cmp = fact*localValues(iMp:iMp+2)
           cmv = fact*localValues(iMv:iMv+2)
-!
-          ! cmp = localValues(iMp:iMp+2) ! MHAM:NOW THE cmx is actually MX 
-          ! cmv = localValues(iMv:iMv+2)
-
           yplusmax = localValues(iYplus)
           ! Determine the maximum values of the monitoring variables
           ! of this block.

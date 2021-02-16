@@ -272,12 +272,9 @@ contains
     use sorting, only : famInList
     use oversetData, only : zipperMeshes, zipperMesh, oversetPresent
     use surfaceFamilies, only : BCFamGroups, familyExchange, BCFamExchange
-
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! Input Parameters
     real(kind=realType), intent(in), dimension(nRand) :: xRand

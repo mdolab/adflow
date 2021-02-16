@@ -23,7 +23,7 @@ contains
          moment, cForce, cForceP, cForceV, cForceM, cMoment
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
-                            mAvgVx, mAvgVy, mAvgVz
+                            mAvgVx, mAvgVy, mAvgVz, gArea
 
     real(kind=realType) ::  vdotn, mag, u, v, w
     integer(kind=intType) :: sps
@@ -36,7 +36,7 @@ contains
 
     ! Sum pressure and viscous contributions
     force = globalvals(iFp:iFp+2, :) + globalvals(iFv:iFv+2, :) + globalvals(iFlowFm:iFlowFm+2, :)
-    forceP = globalvals(iFp:iFp+2, :) 
+    forceP = globalvals(iFp:iFp+2, :)
     forceV = globalvals(iFv:iFv+2, :)
     forceM = globalvals(iFlowFm:iFlowFm+2, :)
 
@@ -112,6 +112,8 @@ contains
        funcValues(costFuncArea)    = funcValues(costFuncArea) + ovrNTS*globalVals(iArea, sps)
        funcValues(costFuncFlowPower) = funcValues(costFuncFlowPower) + ovrNTS*globalVals(iPower, sps)
 
+       funcValues(costFuncCpError2) = funcValues(costFuncCpError2) + ovrNTS*globalVals(iCpError2,sps)
+
        ! Mass flow like objective
        mFlow = globalVals(iMassFlow, sps)
        if (mFlow /= zero) then
@@ -141,6 +143,14 @@ contains
           mAvgVy   = zero
           mAvgVz   = zero
 
+       end if
+
+       ! area averaged objectives
+       gArea = globalVals(iArea, sps)
+       if (gArea /= zero) then
+          ! area averaged pressure
+          funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + ovrNTS*globalVals(iAreaPTot, sps) / gArea
+          funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + ovrNTS*globalVals(iAreaPs, sps) / gArea
        end if
 
        funcValues(costFuncMdot)      = funcValues(costFuncMdot) + ovrNTS*mFlow
@@ -301,7 +311,7 @@ contains
     use blockPointers
     use flowVarRefState
     use inputCostFunctions
-    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis, cavitationnumber
     use BCPointers
     implicit none
 
@@ -314,7 +324,7 @@ contains
     real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation
     integer(kind=intType) :: i, j, ii, blk
 
-    real(kind=realType) :: pm1, fx, fy, fz, fn, sigma
+    real(kind=realType) :: pm1, fx, fy, fz, fn
     real(kind=realType) :: xc, yc, zc, qf(3), r(3), n(3), L
     real(kind=realType) :: fact, rho, mul, yplus, dwall
     real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
@@ -324,6 +334,7 @@ contains
     real(kind=realType), dimension(3) :: refPoint
     real(kind=realType), dimension(3,2) :: axisPoints
     real(kind=realType) :: mx, my, mz, cellArea, m0x, m0y, m0z, Mvaxis, Mpaxis
+    real(kind=realType) :: CpError, CpError2
 
     select case (BCFaceID(mm))
     case (iMin, jMin, kMin)
@@ -357,6 +368,7 @@ contains
     Cavitation = zero
     sepSensorAvg = zero
     Mpaxis = zero; Mvaxis = zero;
+    CpError2 = zero;
 
     !
     !         Integrate the inviscid contribution over the solid walls,
@@ -392,6 +404,11 @@ contains
        ! outward pointing normal.
 
        pm1 = fact*(half*(pp2(i,j) + pp1(i,j)) - pInf)*pRef
+
+       tmp = two/(gammaInf*pInf*MachCoef*MachCoef)
+       cp = (half*(pp2(i,j) + pp1(i,j)) - pInf)*tmp
+       CpError = (cp - BCData(mm)%CpTarget(i,j))
+       CPError2 = CpError2 + CpError*CpError
 
        xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
             +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
@@ -487,8 +504,7 @@ contains
           plocal = pp2(i,j)
           tmp = two/(gammaInf*MachCoef*MachCoef)
           Cp = tmp*(plocal-pinf)
-          Sigma = 1.4
-          Sensor1 = -Cp - Sigma
+          Sensor1 = -Cp - cavitationnumber
           Sensor1 = one/(one+exp(-2*10*Sensor1))
           Sensor1 = Sensor1 * cellArea * blk
           Cavitation = Cavitation + Sensor1
@@ -644,6 +660,7 @@ contains
     localValues(iCavitation) = localValues(iCavitation) + cavitation
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
     localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis
+    localValues(iCpError2) = localValues(iCpError2) + CpError2
 
 #ifndef USE_TAPENADE
     localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
@@ -669,6 +686,7 @@ contains
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
                             mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
+    real(kind=realType) ::  area_Ptot, area_Ps
     real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, mx, my, mz
@@ -737,6 +755,9 @@ contains
     mass_ny = zero
     mass_nz = zero
 
+    area_Ptot = zero
+    area_Ps   = zero
+
     !$AD II-LOOP
     do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
       i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
@@ -764,7 +785,7 @@ contains
       MNm = vmag/am
 
       cellArea = sqrt(ssi(i,j,1)**2 + ssi(i,j,2)**2 + ssi(i,j,3)**2)
-      area = area + cellArea
+      area = area + cellArea*blk
       overCellArea = 1/cellArea
 
       call computePtot(rhom, vxm, vym, vzm, pm, Ptot)
@@ -786,6 +807,9 @@ contains
 
       mass_Ps = mass_Ps + pm*massFlowRateLocal
       mass_MN = mass_MN + MNm*massFlowRateLocal
+
+      area_pTot = area_pTot + Ptot * Pref * cellArea * blk
+      area_Ps = area_Ps + pm * cellArea * blk
 
       sFaceCoordRef(1) = sF * ssi(i,j,1)*overCellArea
       sFaceCoordRef(2) = sF * ssi(i,j,2)*overCellArea
@@ -866,6 +890,9 @@ contains
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+
+    localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
+    localValues(iAreaPs) = localValues(iAreaPs) + area_Ps
 
     localValues(iMassVx)   = localValues(iMassVx)   + mass_Vx
     localValues(iMassVy)   = localValues(iMassVy)   + mass_Vy
@@ -1251,20 +1278,21 @@ contains
        call EChk(ierr, __FILE__, __LINE__)
 
        do sps=1, nTimeIntervalsSpectral
+
+          ! Integrate any actuator regions we have:
+          call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
+          ! Integrate any user-supplied planes as have as well.
+          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
+          ! Integrate any zippers we have
+          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
+
           ! Integrate the normal block surfaces.
           do nn=1, nDom
              call setPointers_b(nn, 1, sps)
              call integrateSurfaces_b(localval(:, sps), localVald(:, sps), famList)
           end do
-
-          ! Integrate any zippers we have
-          call integrateZippers_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-          ! Integrate any user-supplied planes as have as well.
-          call integrateUserSurfaces_b(localVal(:, sps), localVald(:, sps), famList, sps)
-
-          ! Integrate any actuator regions we have:
-           call integrateActuatorRegions_b(localVal(:, sps), localVald(:, sps), famList, sps)
 
        end do
     end do groupLoop

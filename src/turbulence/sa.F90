@@ -16,7 +16,7 @@ contains
   subroutine sa_block(resOnly)
     !
     !       sa solves the transport equation for the Spalart-Allmaras
-    !       turbulence model in a segregated manner using a diagonal
+    !       turbulence model in a decoupled manner using a diagonal
     !       dominant ADI-scheme. Note that the scratch and boundary
     !       matrix values are not strictly, but tapande would like to
     !       see them becuase it must save them.
@@ -98,6 +98,7 @@ contains
     use paramTurb
     use section
     use inputPhysics
+    use inputDiscretization, only : approxSA
     use flowVarRefState
     implicit none
 
@@ -291,7 +292,11 @@ contains
                 ! Compute the source term; some terms are saved for the
                 ! linearization. The source term is stored in dvt.
 
-                term1 = rsaCb1*(one-ft2)*ss
+                if (approxSA) then
+                  term1 = zero
+                else
+                  term1 = rsaCb1*(one-ft2)*ss
+                end if
                 term2 = dist2Inv*(kar2Inv*rsaCb1*((one-ft2)*fv2 + ft2) &
                      -           rsaCw1*fwSa)
 
@@ -710,7 +715,7 @@ contains
   subroutine saSolve
     !
     !  saSolve solves the turbulent transport equation for the
-    !  original Spalart-Allmaras model in a segregated manner using
+    !  original Spalart-Allmaras model in a decoupled manner using
     !  a diagonal dominant ADI-scheme.
     use blockPointers
     use inputIteration

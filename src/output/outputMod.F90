@@ -1393,16 +1393,7 @@ contains
     use utils, only : setPointers
     use flowUtils, only : computePtot
     use inputCostFunctions
-    ! mham:
-    ! funny thing is, it seems the types:
-    ! cgnsFamilyType,cgnsBlockInfoType,cgnsFamilyType all have rotrat BUT that
-    ! the type cgnsDoms does not have rotrat !?! check cgnsGrid.F90..
-    ! well, we get it from cgnsDoms regardless...
     use cgnsGrid, only : cgnsDoms,cgnsNDom ! see l. 4105 in preprocessingAPI.F90
-    ! from where it is clear that the derived data type cgnsDoms owns the item
-    ! called rotRate... The cgnsNDom is the number of cgns domains...
-    !
-    use inputphysics, only: lengthref ! see inputParam.F90
     implicit none
     !
     !      Subroutine arguments.
@@ -1416,7 +1407,7 @@ contains
     !
     !      Local variables.
     !
-    integer(kind=intType) :: i, j, k, sigma
+    integer(kind=intType) :: i, j, k
     integer(kind=intType) :: ii, jj, mm, iiMax, jjMax, offVis
 
     integer(kind=intType), dimension(2,2) :: rangeFace
@@ -1832,39 +1823,12 @@ contains
        !================================================================
 
     case (cgnsCp)
-       ! mham:
-       ! [two] l 68, constants.F90
-       ! [gammaInf] l. 88 initializeFlow.F90
-       ! nonDimensional constant?
-       !   real(kind=realType), parameter :: two   = 2.0_realType
-       ! [MachCoef] l. 520 inputParam.F90
-       ! Mach number used to compute coefficients;
-       ! only relevant for translating geometries.
-       !
        ! Factor multiplying p-pInf
-       fact = two/(gammaInf*pInf*MachCoef*MachCoef) ! = uInf2*rhoInf 
-       ! Above line makes mores sense in light of l.116 in initializeFlow.F90.
-       ! clearly fact = uInf2*rhoInf 
-       !
-       ! mham:
-       ! from Sandy; the two/(gammaInf*pInf*MachCoef*MachCoef) should be equiva-
-       ! lent to 0.5*rho*v^2... But I need the rotational speed to get the
-       ! apparent velocity of the blade.
-       !
-       ! mham: check if fact == factDIM / rhoRef / uRef / uRef
-       ! factDim = two / (rhoInfDim*((uInf*uRef)**2))
-       ! below the check is clearly ok. I simply take the dimensions out
-       ! of my factDIM and get the ADflow fact...So far so good. Now add (r*w)^2
-       !PRINT*,'OK'
-       !PRINT*,'fact',fact
-       !PRINT*,'factDIM w.o. dims',(factDIM * rhoRef * uRef * uRef) ! U squared
-       !
-       ! (r*w)**2
+       fact = two/(gammaInf*pInf*MachCoef*MachCoef)
 
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
              nn = nn + 1
-             !buffer(nn) = fact*(half*(pp1(i,j) + pp2(i,j)) - pInf)
              ! mham Cp normalisation:
              rrate_=cgnsdoms(1)%rotrate
              r_(1) =   (half*(xx1(i,j,1) + xx2(i,j,1)))
@@ -1877,6 +1841,7 @@ contains
              rot_speed = SQRT(wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2 )
              buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
                   / (half*(rhoInfDim)*((uInf*uRef)**2 + (rot_speed)**2 ))
+             ! mham: Comments on the computations above - no code 
              ! Note, that we take rrate_(1) since we rotate 
              !
              ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
@@ -1895,6 +1860,7 @@ contains
              ! rhoDim  = rhoInfDim ! l. 81, initializeFlow.F90
              ! V_infDim   = uInf*uRef ! also from initializeFlow.F90, l. 83
           enddo
+          ! mham: Comments on the computations above - no code 
           ! mham: pp1 and pp2 are just pressure-pointers, e.g.
           ! pp1    => p(1,1:,1:);
           ! Thus, they point to p and should be rescaled back to SI
@@ -1909,7 +1875,7 @@ contains
           !       it is not initialized, because multiple contributions may be
           !       stored in buffer.
        enddo
-       ! mham:
+       ! mham: Comments on the computations above - no code 
        ! [pRef] l. 19 flowVarRefState.F90
        ! Reference pressure (in Pa) used to nondimensionalize
        ! the flow equations. See e.g. two lines below.
@@ -2223,8 +2189,7 @@ contains
              ! Get local pressure
              plocal = half*(pp1(i,j) + pp2(i,j))
 
-             sigma = 1.4
-             sensor1 = (-(fact)*(plocal-pInf))- sigma
+             sensor1 = (-(fact)*(plocal-pInf))- cavitationnumber
              sensor1 = one/(one + exp(-2*10*sensor1))
              buffer(nn) = sensor1
              !print*, sensor

@@ -62,8 +62,6 @@ module tecplotIO
 
   ! Tecplot Variable names of the data in the lift distribution data file:
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistName
-  !integer(kind=intType), parameter :: nLiftDistVar=18
-  !MHAM we add three new outputs to the lift-slices
   integer(kind=intType), parameter :: nLiftDistVar=21
 
 contains
@@ -302,8 +300,7 @@ contains
 
     ! Only write if we actually have lift distributions
     testwriteSlices: if(nParaSlices + nAbsSlices > 0) then
-       ! print*,nAbsSlices,nParaSlices
-       ! stop 'mham stops'
+
        if(myID == 0 .and. printIterations) then
           print "(a)", "#"
           print "(a)", "# Writing slices file(s) ..."
@@ -342,10 +339,9 @@ contains
 
              ! Write the rest of the variables
              do i=1,nSolVar
-                !trim(solNames(i)) could be:
-                !   VelocityX,VelocityY,VelocityZ,CoefPressure,Mach...
                 write(file,"(a,a,a)",advance="no") """",trim(solNames(i)),""" "
              end do
+
              write(file,"(1x)")
              deallocate(solNames)
           end if
@@ -362,9 +358,6 @@ contains
           call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
           call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
-          ! mham: nsolvvar    = 5  for this run...
-          ! mham: nParaSlices = 0  for this run...
-          ! mham: nAbsSlices  = 10 for this run...
           ! Integration is performed in parallel
           do i=1, nParaSlices
              call integrateSlice(paraSlices(i, sps), globalSlice, &
@@ -380,7 +373,6 @@ contains
              ! before we do, save the family list
              allocate(famList(size(absSlices(i, sps)%famList)))
              famList = absSlices(i, sps)%famList
-            
              call destroySlice(absSlices(i, sps))
 
              ! Make new one in the same location
@@ -600,18 +592,14 @@ contains
        end if
 
        allocate(values(d%nSegments, nLiftDistVar))
-       !MHAM
-       ! this 'values'-container seems to be very large. It must be holding
-       ! nSegments: Number of nodes to use for distribution (l. 31 above)
-       ! integer(kind=intType), parameter :: nLiftDistVar=21 (l. 64 above)
        values = zero
 
-       do i=1,d%nSegments !mham: do for each point in the distribution
-          if (i==1) then !mham: first point
+       do i=1,d%nSegments
+          if (i==1) then
              d%slicePts(d%dir_ind, i) = xMin(d%dir_ind) + tol
-          else if (i == d%nSegments) then !mham: last point
+          else if (i == d%nSegments) then
              d%slicePts(d%dir_ind, i) = xMin(d%dir_ind) + (i-1)*d%delta - tol
-          else !mham: not first nor last point...
+          else
              d%slicePts(d%dir_ind, i) = xMin(d%dir_ind) + (i-1)*d%delta
           end if
        end do
@@ -739,12 +727,9 @@ contains
     use extraOutput, only : surfWriteBlank
     use oversetData, only : zipperMesh, zipperMeshes
     use surfaceUtils
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! Input Params
     character*(*), intent(in) :: fileName
@@ -1305,13 +1290,9 @@ contains
     use utils, only : setPointers, EChk
     use sorting, only : famInList
     use oversetData, only : zipperMesh
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-
     ! Input Param
     type(familyExchange) :: exch
     logical :: includeTractions
@@ -1796,13 +1777,7 @@ contains
        slc%conn(1, i) = link(2*i-1)
        slc%conn(2, i) = link(2*i)
     end do
-    !mham
-    ! examples:
-    ! elemFam   = MANY!!! integers, e.g. 2 2 2 2 2 2 2 2 2 2
-    ! pt        = [0.0000000000000000,4.4583000000000004,0.0000000000000000]
-    ! dir       = [0.0000000000000000,1.0000000000000000,0.0000000000000000]
-    ! sliceName = Slice_0001 allWalls:
-    ! famList   = Absolute y=  4.458  
+
     deallocate(tmpNodes, tmpWeight, tmpInd, dummy, link, fc)
   end subroutine createSlice
 

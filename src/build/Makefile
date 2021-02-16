@@ -1,4 +1,4 @@
-# Include the user supplied makefil
+# Include the user supplied makefile
 include ../../config/config.mk
 
 # Group all the fortran, C and compiler flags together.
@@ -86,7 +86,7 @@ python: lib ../f2py/adflow.pyf
 	 @echo "#------------------------------------------------------#"
 
 # Generate Numpy inlude directory
-	$(eval NUMPY_INCLUDES = $(shell $(PYTHON) -c 'from __future__ import print_function; import numpy; print(numpy.get_include())'))
+	$(eval NUMPY_INCLUDES = $(shell $(PYTHON) -c 'import numpy; print(numpy.get_include())'))
 	@echo "#------------------------------------------------------#"
 	@echo Numpy Include Directory: $(NUMPY_INCLUDES)
 	@echo "#------------------------------------------------------#"
@@ -119,6 +119,5 @@ python: lib ../f2py/adflow.pyf
 
 # Final Link:
 	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so
-	cp -fr ../f2py/importTest.py .
 	$(PYTHON) importTest.py
-	mv libadflow.so ../../python
+	mv libadflow.so ../../adflow

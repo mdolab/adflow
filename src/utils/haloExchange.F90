@@ -518,7 +518,7 @@ contains
        rotMatrix = periodicData(nn)%rotMatrix
 
        ! Loop over the number of halo cells for this transformation.
-       !DIR$ NOVECTOR 
+       !DIR$ NOVECTOR
        do ii=1,periodicData(nn)%nhalos
 
           ! Store the block and the indices a bit easier.
@@ -3108,12 +3108,10 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers, setBCPointers, EChk
-    implicit none
 
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
+#include <petsc/finclude/petsc.h>
+    use petsc
+    implicit none
 
     ! Input variables
     logical, intent(in) :: isInflow
@@ -3229,13 +3227,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_d, setBCPointers_d, EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-
     ! Input variables
     logical, intent(in) :: isInflow
     real(kind=realType), dimension(:, :) :: vars, varsd
@@ -3352,12 +3346,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_b, setBCPointers_d, EChk
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! Input variables
     logical, intent(in) :: isInflow
@@ -3496,13 +3487,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers, setBCPointers, EChk, isWallType
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
-
     ! Input variables
     real(kind=realType), dimension(:, :) :: vars
     integer(kind=intType) :: sps
@@ -3590,12 +3577,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_d, setBCPointers_d, EChk, isWallType
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! Input variables
     real(kind=realType), dimension(:, :):: vars, varsd
@@ -3687,12 +3671,9 @@ contains
     use oversetData, only : zipperMeshes, zipperMesh
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : setPointers_b, setBCPointers_d, EChk, isWallType
+#include <petsc/finclude/petsc.h>
+    use petsc
     implicit none
-
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petscsys.h"
-#include "petsc/finclude/petscvec.h"
-#include "petsc/finclude/petscvec.h90"
 
     ! Input variables
     real(kind=realType), dimension(:, :) :: vars, varsd

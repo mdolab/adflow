@@ -1,10 +1,11 @@
 module surfaceFamilies
 
-  use constants, only : intType, realType, maxCGNSNameLen, nFamExchange
+  use constants
+#ifndef USE_TAPENADE
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
 
-#ifndef USE_TAPENADE
-#include "petsc/finclude/petsc.h"
 
   type familyExchange
      ! Vectors for global traction calc

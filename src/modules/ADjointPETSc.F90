@@ -4,9 +4,9 @@ module ADjointPETSc
   !      solution of the discrete adjoint equations.
   !
   use constants
+#include <petsc/finclude/petsc.h>
+  use petsc
   implicit none
-#define PETSC_AVOID_MPIF_H
-#include "petsc/finclude/petsc.h"
 
   Mat     dRdWT, dRdWPreT
 
@@ -20,9 +20,9 @@ module ADjointPETSc
 
 
   ! Initial, start and final adjoint residuals
-  real(kind=realType) :: adjResInit
-  real(kind=realType) :: adjResStart
-  real(kind=realType) :: adjResFinal
+  real(kind=alwaysRealType) :: adjResInit
+  real(kind=alwaysRealType) :: adjResStart
+  real(kind=alwaysRealType) :: adjResFinal
   logical :: adjointPETScVarsAllocated
 
 end module ADjointPETSc

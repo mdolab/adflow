@@ -36,7 +36,7 @@ void initPETScWrap(void)
   int argc;
 
   argc=0;
-    ierr = PetscInitialize(&argc, (char *)0, (char *)0, (char *)0);
+    ierr = PetscInitialize(&argc, (char ***)0, (char *)0, (char *)0);
 
 }
 

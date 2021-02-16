@@ -4,6 +4,10 @@ module constants
   ! that is allowed to be imported without an 'only' qualifier.
 
   use precision
+#ifndef USE_TAPENADE
+#include <petsc/finclude/petsc.h>
+  use petsc
+#endif
   implicit none
   save
 
@@ -197,7 +201,7 @@ module constants
        nlLusgsLine = 4
 
   integer(kind=intType), parameter :: &
-       segregated = 1,   &
+       decoupled  = 1,   &
        coupled    = 2
   integer(kind=intType), parameter :: &
        gmres = 1,        &
@@ -336,7 +340,7 @@ module constants
   integer(kind=intType), parameter :: iTotal=16
 
   ! Cost functions.
-  integer(kind=intType), parameter :: nCostFunction = 85
+  integer(kind=intType), parameter :: nCostFunction = 88
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -389,21 +393,21 @@ module constants
        costFuncMavga         = 49, &
        costFuncArea          = 50, &
        costFuncAxisMoment    = 51, &
-       costFuncFlowPower     = 52, & 
-       costFuncForceXPressure = 53, & 
-       costFuncForceYPressure = 54, & 
-       costFuncForceZPressure = 55, & 
-       costFuncForceXViscous = 56, & 
-       costFuncForceYViscous = 57, & 
-       costFuncForceZViscous = 58, & 
-       costFuncForceXMomentum = 59, & 
-       costFuncForceYMomentum = 60, & 
-       costFuncForceZMomentum = 61, & 
-       costFuncDragPressure= 62, & 
-       costFuncDragViscous = 63, & 
-       costFuncDragMomentum = 64, & 
-       costFuncLiftPressure= 65, & 
-       costFuncLiftViscous = 66, & 
+       costFuncFlowPower     = 52, &
+       costFuncForceXPressure = 53, &
+       costFuncForceYPressure = 54, &
+       costFuncForceZPressure = 55, &
+       costFuncForceXViscous = 56, &
+       costFuncForceYViscous = 57, &
+       costFuncForceZViscous = 58, &
+       costFuncForceXMomentum = 59, &
+       costFuncForceYMomentum = 60, &
+       costFuncForceZMomentum = 61, &
+       costFuncDragPressure= 62, &
+       costFuncDragViscous = 63, &
+       costFuncDragMomentum = 64, &
+       costFuncLiftPressure= 65, &
+       costFuncLiftViscous = 66, &
        costFuncLiftMomentum = 67, &
        costFuncForceXCoefPressure = 68,&
        costFuncForceXCoefViscous = 69,&
@@ -419,12 +423,15 @@ module constants
        costFuncLiftCoefMomentum = 79, &
        costFuncDragCoefPressure = 80,&
        costFuncDragCoefViscous = 81, &
-       costFuncDragCoefMomentum = 82, & 
-       costfuncmavgvx = 83, & 
-       costfuncmavgvy = 84, & 
-       costfuncmavgvz = 85
+       costFuncDragCoefMomentum = 82, &
+       costfuncmavgvx = 83, &
+       costfuncmavgvy = 84, &
+       costfuncmavgvz = 85, &
+       costfunccperror2 = 86, &
+       costfuncaavgptot = 87, &
+       costfuncaavgps   = 88
 
-  integer(kind=intType), parameter :: nLocalValues=46
+  integer(kind=intType), parameter :: nLocalValues=49
   integer(kind=intType), parameter :: &
        iFp =  1, &
        iFv =  4, &
@@ -455,7 +462,10 @@ module constants
        iMassny     = 43, &
        iMassnz     = 44, &
        iAxisMoment = 45, &
-       iPower      = 46
+       iPower      = 46, &
+       iCpError2   = 47, &
+       iAreaPTot   = 48, &
+       iAreaPs     = 49
 
   ! Constants for zipper comm
 
