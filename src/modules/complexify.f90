@@ -390,45 +390,47 @@ contains
     tanh_c=cmplx(tanh(real(a)),aimag(a)/cosh(real(a))**2)
     return
   end function tanh_c
-
 ! MAX, intrinsic
+! the logical statements here are chosen to match fwd AD code from tapenade
+! this way they are consistent even when the real parts are equal
   complex*16 function max_cc(val1, val2)
     complex*16, intent(in) :: val1, val2
-    if (real(val1) > real(val2)) then
-      max_cc = val1
-    else
+    if (real(val1) < real(val2)) then
       max_cc = val2
+    else
+      max_cc = val1
     endif
     return
   end function max_cc
   complex*16 function max_cr(val1, val2)
     complex*16, intent(in) :: val1
     real*8, intent(in) :: val2
-    if (real(val1) > val2) then
-      max_cr = val1
-    else
+    if (real(val1) < val2) then
       max_cr = cmplx(val2, 0.)
+    else
+      max_cr = val1
     endif
     return
   end function max_cr
   complex*16 function max_rc(val1, val2)
     real*8, intent(in) :: val1
     complex*16, intent(in) :: val2
-    if (val1 > real(val2)) then
-      max_rc = cmplx(val1, 0.)
-    else
+    if (val1 < real(val2)) then
       max_rc = val2
+    else
+      max_rc = cmplx(val1, 0.)
     endif
     return
   end function max_rc
   complex*16 function max_ccc(val1, val2, val3)
     complex*16, intent(in) :: val1, val2, val3
-    if (real(val1) > real(val2)) then
-      max_ccc = val1
-    else
+    if (real(val1) < real(val2)) then
       max_ccc = val2
+    else
+      max_ccc = val1
     endif
-    if (real(val3) > real(max_ccc)) then
+
+    if (real(max_ccc) < real(val3)) then
       max_ccc = val3
     endif
     return
@@ -437,60 +439,63 @@ contains
     complex*16, intent(in) :: val1, val2, val3, val4
     complex*16 max_cccc
     complex*16 max_cccc2
-    if (real(val1) > real(val2)) then
-      max_cccc = val1
-    else
+    if (real(val1) < real(val2)) then
       max_cccc = val2
-    endif
-    if (real(val3) > real(val4)) then
-      max_cccc2 = val3
     else
-      max_cccc2 = val4
+      max_cccc = val1
     endif
-    if (real(max_cccc2) > real(max_cccc)) then
+    if (real(val3) < real(val4)) then
+      max_cccc2 = val4
+    else
+      max_cccc2 = val3
+    endif
+    if ( real(max_cccc) < real(max_cccc2)) then
       max_cccc = max_cccc2
     endif
     return
   end function max_cccc
 
 ! MIN, intrinsic
+! the logical statements here are chosen to match fwd AD code from tapenade
+! this way they are consistent even when the real parts are equal
   complex*16 function min_cc(val1, val2)
     complex*16, intent(in) :: val1, val2
-    if (real(val1) < real(val2)) then
-      min_cc = val1
-    else
+    if (real(val1) > real(val2)) then
       min_cc = val2
+    else
+      min_cc = val1
     endif
     return
   end function min_cc
   complex*16 function min_cr(val1, val2)
     complex*16, intent(in) :: val1
     real*8, intent(in) :: val2
-    if (real(val1) < val2) then
-      min_cr = val1
-    else
+    if (real(val1) > val2) then
       min_cr = cmplx(val2, 0.)
+    else
+      min_cr = val1
     endif
     return
   end function min_cr
   complex*16 function min_rc(val1, val2)
     real*8, intent(in) :: val1
     complex*16, intent(in) :: val2
-    if (val1 < real(val2)) then
-      min_rc = cmplx(val1, 0.)
-    else
+    if (val1 > real(val2)) then
       min_rc = val2
+    else
+      min_rc = cmplx(val1, 0.)
     endif
     return
   end function min_rc
   complex*16 function min_ccc(val1, val2, val3)
     complex*16, intent(in) :: val1, val2, val3
-    if (real(val1) < real(val2)) then
-      min_ccc = val1
-    else
+    if (real(val1) > real(val2)) then
       min_ccc = val2
+    else
+      min_ccc = val1
     endif
-    if (real(val3) < real(min_ccc)) then
+
+    if (real(min_ccc) > real(val3)) then
       min_ccc = val3
     endif
     return
@@ -499,17 +504,18 @@ contains
     complex*16, intent(in) :: val1, val2, val3, val4
     complex*16 min_cccc
     complex*16 min_cccc2
-    if (real(val1) < real(val2)) then
-      min_cccc = val1
-    else
+    if (real(val1) > real(val2)) then
       min_cccc = val2
-    endif
-    if (real(val3) < real(val4)) then
-      min_cccc2 = val3
     else
-      min_cccc2 = val4
+      min_cccc = val1
     endif
-    if (real(min_cccc2) < real(min_cccc)) then
+
+    if (real(val3) > real(val4)) then
+      min_cccc2 = val4
+    else
+      min_cccc2 = val3
+    endif
+    if (real(min_cccc) > real(min_cccc2)) then
       min_cccc = min_cccc2
     endif
     return
