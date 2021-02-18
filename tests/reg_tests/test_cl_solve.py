@@ -29,7 +29,7 @@ class TestSolve(reg_test_classes.RegTest):
 
     def setUp(self):
         super().setUp()
-        gridFile = os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns")
+        gridFile = os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns")
         options = copy.copy(adflowDefOpts)
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
         options.update(

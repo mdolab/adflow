@@ -70,8 +70,8 @@ test_params = [
     {
         "name": "euler_scalar_JST_tut_wing_1core",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
             "l2convergence": 1e-14,
             "monitorvariables": ["cpu", "resrho", "totalr"],
             "adjointl2convergence": 1e-14,
@@ -92,8 +92,8 @@ test_params = [
     {
         "name": "euler_scalar_JST_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
             "l2convergence": 1e-14,
             "monitorvariables": ["cpu", "resrho", "totalr"],
             "adjointl2convergence": 1e-14,
@@ -113,8 +113,8 @@ test_params = [
     {
         "name": "laminar_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_viscous_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_viscous_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
             "l2convergence": 1e-15,
             "l2convergencecoarse": 1e-2,
             "monitorvariables": ["cpu", "resrho", "totalr"],
@@ -137,8 +137,8 @@ test_params = [
     {
         "name": "rans_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
             "mgcycle": "2w",
             "equationtype": "RANS",
             "smoother": "DADI",
@@ -254,7 +254,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
         options.update(self.options)
 
-        self.ffdFile = os.path.join(baseDir, "../../inputFiles/mdo_tutorial_ffd.fmt")
+        self.ffdFile = os.path.join(baseDir, "../../input_files/mdo_tutorial_ffd.fmt")
 
         mesh_options = copy.copy(IDWarpDefOpts)
         mesh_options.update({"gridFile": options["gridfile"]})
@@ -316,7 +316,7 @@ class TestCmplxStep(unittest.TestCase):
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
         options.update(self.options)
 
-        self.ffdFile = os.path.join(baseDir, "../../inputFiles/mdo_tutorial_ffd.fmt")
+        self.ffdFile = os.path.join(baseDir, "../../input_files/mdo_tutorial_ffd.fmt")
 
         mesh_options = copy.copy(IDWarpDefOpts)
         mesh_options.update({"gridFile": options["gridfile"]})
