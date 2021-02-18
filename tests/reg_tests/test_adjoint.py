@@ -170,8 +170,8 @@ rot_test = [    # # Rotating frame test
     {
         "name": "Rotating_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_rotframe.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_rotframe.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_rotframe.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_rotframe.cgns"),
             "ncycles": 20000,
             "equationType": "RANS",
             "smoother": "DADI",
