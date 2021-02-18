@@ -25,8 +25,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_scalar_jst_tut_wing_1core",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
                 "l2convergence": 1e-14,
                 "mgcycle": "2w",
                 "ncyclescoarse": 250,
@@ -41,8 +41,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_scalar_jst_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
                 "l2convergence": 1e-14,
                 "mgcycle": "2w",
                 "ncyclescoarse": 250,
@@ -56,8 +56,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_matrix_jst_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_matrix.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_matrix.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_matrix.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_matrix.cgns"),
                 "mgcycle": "2w",
                 "ncyclescoarse": 250,
                 "usenksolver": True,
@@ -75,8 +75,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_upwind_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_upwind.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_upwind.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_upwind.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_upwind.cgns"),
                 "mgcycle": "2w",
                 "ncyclescoarse": 250,
                 "usenksolver": True,
@@ -93,8 +93,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_scalar_jst_rand_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_random_euler_scalar_jst.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_random_euler_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_random_euler_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_random_euler_scalar_jst.cgns"),
                 "l2convergence": 1e-14,
                 "mgcycle": "2w",
                 "ncyclescoarse": 250,
@@ -108,8 +108,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "laminar_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_viscous_scalar_jst.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_viscous_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
                 "l2convergence": 1e-14,
                 "l2convergencecoarse": 1e-4,
                 "ncycles": 1000,
@@ -129,8 +129,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "rans_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
                 "mgcycle": "sg",
                 "equationtype": "RANS",
                 "smoother": "DADI",
@@ -156,8 +156,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "rans_rand_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_random_rans_scalar_jst.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_random_rans_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_random_rans_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_random_rans_scalar_jst.cgns"),
                 "mgcycle": "sg",
                 "equationtype": "RANS",
                 "smoother": "DADI",
@@ -183,8 +183,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_scalar_jst_CRM_WBT",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/CRM_wbt_scalar_jst.cgns"),
-                "restartfile": os.path.join(baseDir, "../../inputFiles/CRM_wbt_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/CRM_wbt_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/CRM_wbt_scalar_jst.cgns"),
                 "mgcycle": "sg",
                 "cfl": 1.5,
                 "cflcoarse": 1.25,
