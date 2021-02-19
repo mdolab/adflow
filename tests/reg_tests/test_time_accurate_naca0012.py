@@ -34,7 +34,7 @@ class TestSolve(reg_test_classes.RegTest):
     def setUp(self):
         super().setUp()
 
-        gridFile = os.path.join(baseDir, "../../inputFiles/naca0012_rans-L2.cgns")
+        gridFile = os.path.join(baseDir, "../../input_files/naca0012_rans-L2.cgns")
 
         f = 10.0  # [Hz] Forcing frequency of the flow
         period = 1.0 / f  # [sec]

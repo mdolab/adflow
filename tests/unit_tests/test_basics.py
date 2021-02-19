@@ -10,6 +10,6 @@ class BasicTests(unittest.TestCase):
     N_PROCS = 1
 
     def test_import(self):
-        gridFile = 'inputFiles/mdo_tutorial_euler.cgns'
+        gridFile = 'input_files/mdo_tutorial_euler.cgns'
         options = {'gridfile': os.path.join(baseDir, '../../', gridFile)}
         CFDSolver = ADFLOW(options=options, debug=False)
