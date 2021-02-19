@@ -23,7 +23,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_scalar_JST_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
                 "l2convergence": 1e-14,
                 "mgcycle": "2w",
                 "ncyclescoarse": 250,
@@ -38,7 +38,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "euler_matrix_JST_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_matrix.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_matrix.cgns"),
                 "mgcycle": "2w",
                 "ncyclescoarse": 250,
                 "usenksolver": True,
@@ -56,7 +56,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
         {
             "name": "rans_tut_wing",
             "options": {
-                "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
                 "mgcycle": "sg",
                 "equationtype": "RANS",
                 "smoother": "DADI",
