@@ -589,6 +589,7 @@ contains
     use inputPhysics
     use iteration
     use blockPointers
+    use turbBCRoutines, only : applyAllTurbBCThisBlock
     implicit none
 
     ! Input Parameter
@@ -644,7 +645,39 @@ contains
        call kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 
     case (menterSST)
-       call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
+       !SST eddy viscosity can't be computed in the halo region, since it uses the d2wall variable.
+       call SSTEddyViscosity(2, il, 2, jl, 2, kl)
+
+       !Instead, we can extend the eddy viscosity using the BCs.
+       if (includeHalos) then
+         
+            call applyAllTurbBCThisBlock(.false.) !no need to include second halo
+
+            ! ! or using only the required portion on eddy viscosity:
+            !======================================================================
+            ! ! (the following snippet could be factored out of applyAllTurbBCThisBlock )
+            ! bocos: do nn=1,nBocos
+
+            !    if(BCType(nn) == NSWallAdiabatic .or. &
+            !          BCType(nn) == NSWallIsothermal) then
+
+            !       ! Viscous wall boundary condition. Eddy viscosity is
+            !       ! zero at the wall.
+
+            !       call bcEddyWall(nn)
+
+            !    else
+
+            !       ! Any boundary condition but viscous wall. A homogeneous
+            !       ! Neumann condition is applied to the eddy viscosity.
+
+            !       call bcEddyNoWall(nn)
+
+            !    endif
+            ! enddo bocos
+            !======================================================================
+       endif
 
     case (ktau)
        call ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
