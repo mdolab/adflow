@@ -24,18 +24,16 @@ src/build/libadflowmodule.c
 src/build/importTest.py
 
 # also ignore the input files to regtests after we extract from archine
-inputFiles/*.cgns
-inputFiles/*.xyz
-inputFiles/split_file
-inputFiles/tecplot.phy
+input_files/*.cgns
+input_files/*.xyz
+input_files/split_file
+input_files/tecplot.phy
 
 adflow.egg-info/*
 
-python/inputFiles/*
-
 tests/*.cgns
 tests/*out
-tests/*.zipper
+*.zipper
 
 # for the .cgnsTimestep... files
 tests/output_files/*.cgns*

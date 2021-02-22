@@ -34,9 +34,9 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         super().setUp()
 
         self.options = {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/actuator_test_pipe.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/actuator_test_pipe.cgns"),
             # the restart file was ran with thrust = 600 N and heat = 1e5 W
-            "restartfile": os.path.join(baseDir, "../../inputFiles/actuator_test_pipe.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/actuator_test_pipe.cgns"),
             "writevolumesolution": False,
             "writesurfacesolution": False,
             "writetecplotsurfacesolution": False,
@@ -91,7 +91,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # this is imported from reg_aeroproblems utility script
         self.ap = ap_actuator_pipe
 
-        actuatorFile = os.path.join(baseDir, "../../inputFiles/actuator_test_disk.xyz")
+        actuatorFile = os.path.join(baseDir, "../../input_files/actuator_test_disk.xyz")
         self.CFDSolver.addActuatorRegion(
             actuatorFile,
             np.array([0, 0, 0]),
@@ -528,9 +528,9 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         super().setUp()
 
         self.options = {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/actuator_test_pipe.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/actuator_test_pipe.cgns"),
             # the restart file was ran with thrust = 600 N and heat = 1e5 W
-            # "restartfile": os.path.join(baseDir, "../../inputFiles/actuator_test_pipe.cgns"),
+            # "restartfile": os.path.join(baseDir, "../../input_files/actuator_test_pipe.cgns"),
             "writevolumesolution": False,
             "writesurfacesolution": False,
             "writetecplotsurfacesolution": False,
@@ -587,7 +587,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         # this is imported from reg_aeroproblems utility script
         self.ap = ap_actuator_pipe
 
-        actuatorFile = os.path.join(baseDir, "../../inputFiles/actuator_test_disk.xyz")
+        actuatorFile = os.path.join(baseDir, "../../input_files/actuator_test_disk.xyz")
         self.CFDSolver.addActuatorRegion(
             actuatorFile,
             np.array([0, 0, 0]),
