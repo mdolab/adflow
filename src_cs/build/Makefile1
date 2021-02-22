@@ -1,4 +1,4 @@
-# Becuase make is stupid.
+# Because make is stupid.
 include ../../config/config.mk
 include ../../src/build/fileList
 include ../../src/build/directoryList
@@ -14,8 +14,6 @@ includeFiles:=	metis-4.0/defs.h\
 		f2py/checkPyfForUpperCase.py\
 		f2py/get_f2py.py\
 		f2py/pyf_preprocessor.py\
-		modules/complexify.f90\
-
 
 # Filter out the precision.F90 file. That is set manually.
 fortranFiles:=$(filter-out modules/precision.F90,$(fortranFiles))
