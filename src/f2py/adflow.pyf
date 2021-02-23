@@ -268,10 +268,8 @@ python module libadflow
          real(kind=realtype) :: ank_stepfactor
          real(kind=realtype) :: ank_stepmin
          real(kind=realtype) :: ank_constcflstep
-         ! TODO modify this to work with both real and complex.
-         real(kind=alwaysrealtype) :: ank_physlstol
-         ! TODO modify this to work with both real and complex.
-         real(kind=alwaysrealtype) :: ank_physlstolturb
+         real(kind=realtype) :: ank_physlstol
+         real(kind=realtype) :: ank_physlstolturb
          real(kind=realtype) :: ank_unstdylstol
          real(kind=realtype) :: ank_secondordswitchtol
          real(kind=realtype) :: ank_coupledswitchtol

@@ -1660,11 +1660,9 @@ module ANKSolver
   real(kind=realType) :: ANK_CFLMin0, ANK_CFLMin, ANK_CFLMinBase, ANK_CFLExponent
   real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
-  ! TODO modify this to work with both real and complex.
-  real(kind=alwaysRealType) :: ANK_physLSTol, ANK_unstdyLSTol
+  real(kind=realtype) :: ANK_physLSTol, ANK_unstdyLSTol
   real(kind=realType) :: ANK_pcUpdateTol
-  ! TODO modify this to work with both real and complex.
-  real(kind=alwaysRealType) :: lambda
+  real(kind=realtype) :: lambda
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
@@ -1676,8 +1674,8 @@ module ANKSolver
   logical :: ANK_coupled=.False.
   logical :: ANK_turbSetup=.False.
   integer(kind=intType) :: ANK_iterTurb, nStateTurb
-  real(kind=realType) :: lambdaTurb
-  real(kind=alwaysRealType) :: linResOldTurb, ANK_physLSTolTurb
+  real(kind=realType) :: lambdaTurb, ANK_physLSTolTurb
+  real(kind=alwaysRealType) :: linResOldTurb
 
 contains
 
@@ -2571,8 +2569,7 @@ contains
     use blockette, only : blocketteRes
     implicit none
 
-    ! TODO modify this to work with both real and complex.
-    real(kind=alwaysRealType), intent(in) :: omega
+    real(kind=realType), intent(in) :: omega
 
     real(kind=realType) :: dtinv, rho, uu, vv, ww
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii, iiRho
@@ -2591,6 +2588,9 @@ contains
     ! deltaW contains the full update to the state
     call VecGetArrayReadF90(deltaW,dvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
+
+
+    ! TODO check if this routine is fine... dlt and volume can both have complex values in them
 
     if (.not. ANK_coupled) then
        ! Only flow variables
@@ -2758,6 +2758,8 @@ contains
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii, iiRho
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: dvec_pointer(:)
+
+    ! TODO check if this routine is fine... dlt and volume can both have complex values in them
 
     ! Calculate the steady residuals
     call blocketteRes(useFlowRes=.False.)
@@ -3037,27 +3039,26 @@ contains
     use flowVarRefState, only : nw, nwf, nt1, nt2
     use inputtimespectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk, myisnan
-    use communication, only : ADflow_comm_world
+    use communication, only : ADflow_comm_world, myid
     implicit none
 
     ! input variable
-    ! TODO modify this to work with both real and complex.
-    real(kind=alwaysRealType) , intent(inout) :: lambdaP
+    real(kind=realType) , intent(inout) :: lambdaP
 
     ! local variables
     integer(kind=intType) :: ierr, nn, sps, i, j, k, l, ii
     real(kind=realType), pointer :: wvec_pointer(:)
     real(kind=realType), pointer :: dvec_pointer(:)
     real(kind=alwaysRealType) :: lambdaL ! L is for local
-    real(kind=realType) :: ratio
-
+    real(kind=alwaysRealType) :: tmp ! to receive the global step
+    real(kind=alwaysRealType) :: ratio
 
     ! Determine the maximum step size that would yield
-    ! a maximum change of 10% in density, total energy,
-    ! and turbulence variable after a KSP solve.
+    ! a maximum relative change of ANK_physLSTol in density, and total energy.
+    ! We also check for turbulence, but only limit the step
+    ! for updates that decrease the value of the turbulence working variable.
 
-    ! Initialize the local step size as ANK_stepFactor
-    ! because the initial step is likely to be equal to this.
+    ! Initialize the local step size as lambdaP which is an i/o variable
     lambdaL = real(lambdaP)
 
     ! First we need to read both the update and the state
@@ -3073,10 +3074,7 @@ contains
     call VecGetArrayF90(deltaW,dvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    ! TODO modify this to work with both real and complex.
-    ! TODO is this variable getting the correct value set from python?
-    ANK_physLSTol = 0.2
-
+    ! in decoupled, we just have the flow variables
     if(.not. ANK_coupled) then
        ii = 1
        do nn=1, nDom
@@ -3085,27 +3083,43 @@ contains
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      ! multiply the ratios by 10 to check if the change in a
-                      ! variable is greater than 10% of the variable itself.
+                      ! multiply the ratios by ANK_physLSTol to check if the change in a
+                      ! variable is greater than ANK_physLSTol of the variable itself.
 
                       ! check density
-                      ratio = abs(real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))*ANK_physLSTol
-                      ! TODO modify this to work with both real and complex.
-                      lambdaL = min(lambdaL, real(ratio))
+#ifndef USE_COMPLEX
+                      ! to have the real mode sliiiightly more efficient, just do stuff with real numbers
+                      ratio = abs(wvec_pointer(ii)/dvec_pointer(ii)+eps)*ANK_physLSTol
+                      lambdaL = min(lambdaL, ratio)
+#else
+                      ! We dont care what happens to the complex part of the update because
+                      ! that is a linear system. So again check the real update for the physical
+                      ! line search. Towards the end of the simulation, real part gets smaller and
+                      ! and smaller updates, so this routine will always give a step of 1 which is what
+                      ! we want for the complex parts.
+                      ratio = abs(real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTol)
+                      lambdaL = min(lambdaL, ratio)
+#endif
 
                       ! increment by 4 because we want to skip momentum variables
                       ii = ii + 4
 
                       ! check energy
-                      ratio = abs(real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))*ANK_physLSTol
-                      ! TODO modify this to work with both real and complex.
-                      lambdaL = min(lambdaL, real(ratio))
+#ifndef USE_COMPLEX
+                      ! see the comment above for the difference between real and complex versions
+                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+                      lambdaL = min(lambdaL, ratio)
+#else
+                      ratio = abs(real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))* real(ANK_physLSTol)
+                      lambdaL = min(lambdaL, ratio)
+#endif
                       ii = ii + 1
                    end do
                 end do
              end do
           end do
        end do
+    ! in coupled, we also have the turbulence variables
     else
        ii = 1
        do nn=1, nDom
@@ -3114,6 +3128,9 @@ contains
              do k=2, kl
                 do j=2, jl
                    do i=2, il
+
+                      ! TODO fix the lines below with the same approach used above for complex
+
                       ! multiply the ratios by 10 to check if the change in a
                       ! variable is greater than 10% of the variable itself.
 
@@ -3178,16 +3195,23 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (isnan(lambdaL)) then
+    if (isnan(real(lambdaL))) then
       lambdaL = zero
     end if
 
     ! Finally, communicate the step size across processes and return
-    ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
-    ! TODO does not work!
-    call mpi_allreduce(lambdaL, lambdaP, 1_intType, alwaysRealType, &
+    ! mpi allreduce is not defined for complex numbers so we will
+    ! use the tmp variable to receive
+    call mpi_allreduce(lambdaL, tmp, 1_intType, MPI_DOUBLE, &
          mpi_min, ADflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
+
+#ifndef USE_COMPLEX
+    lambdaP = tmp
+#else
+    ! finally, as a safety check, purge the complex part of lambda
+    lambdaP = cmplx(tmp, 0.0_realType)
+#endif
 
   end subroutine physicalityCheckANK
 
@@ -3211,6 +3235,7 @@ contains
     real(kind=alwaysRealType) :: lambdaL ! L is for local
     real(kind=realType) :: ratio
 
+    ! TODO fix this routine similar to the regular check above
 
     ! Determine the maximum step size that would yield
     ! a maximum change of 10% in density, total energy,
@@ -3357,7 +3382,12 @@ contains
         ANK_iterTurb = ANK_iterTurb + 1
 
         ! Start with trying to take the full step set by the user.
+#ifndef USE_COMPLEX
         lambdaTurb = ANK_StepFactor
+#else
+        ! make sure we zero out the complex part of the step size
+        lambdaTurb = cmplx(real(ANK_StepFactor), 0.0_realType)
+#endif
 
         ! Dummy matrix assembly for the matrix-free matrix
         call MatAssemblyBegin(dRdwTurb, MAT_FINAL_ASSEMBLY, ierr)
@@ -3750,7 +3780,12 @@ contains
     end if
 
     ! Start with trying to take the full step set by the user.
+#ifndef USE_COMPLEX
     lambda = ANK_StepFactor
+#else
+    ! make sure we zero out the complex part of the step size
+    lambda = cmplx(real(ANK_StepFactor), 0.0_realType)
+#endif
 
     ! Dummy matrix assembly for the matrix-free matrix
     call MatAssemblyBegin(dRdw, MAT_FINAL_ASSEMBLY, ierr)
@@ -3854,8 +3889,7 @@ contains
         lambda = zero
 
     ! Take the uodate after the physicality check.
-    ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
-    call VecAXPY(wVec, cmplx(-lambda, 0.0), deltaW, ierr)
+    call VecAXPY(wVec, -lambda, deltaW, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Set the updated state variables
@@ -3866,9 +3900,6 @@ contains
     ! dw. Make sure to call setRVec/setRVecANK after this
     ! routine because rVec contains the unsteady residuals,
     ! and we need the steady residuals for the next iteration.
-    ! TODO hard-set unsteady LS tol to 1.0 for now. The value set from python was propageted wrong
-    ! TODO make sure it works in the end
-    ANK_unstdyLSTol = 1.0
     call computeUnsteadyResANK(lambda)
 
     ! Count the number of of residual evaluations outside the KSP solve
@@ -3888,8 +3919,7 @@ contains
        LSFailed = .True.
 
        ! Restore the starting (old) w value by adding lamda*deltaW
-       ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
-       call VecAXPY(wVec, cmplx(lambda, 0.0), deltaW, ierr)
+       call VecAXPY(wVec, lambda, deltaW, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Set the initial new lambda. This is working off the
@@ -3899,8 +3929,7 @@ contains
        backtrack: do iter=1, 12
 
           ! Apply the new step
-          ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
-          call VecAXPY(wVec, cmplx(-lambda, 0.0), deltaW, ierr)
+          call VecAXPY(wVec, -lambda, deltaW, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
           ! Set and recompute
@@ -3916,8 +3945,7 @@ contains
           if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
              ! Restore back to the original wVec
-             ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
-             call VecAXPY(wVec, cmplx(lambda, 0.0), deltaW, ierr)
+             call VecAXPY(wVec,lambda, deltaW, ierr)
              call EChk(ierr, __FILE__, __LINE__)
 
              ! Haven't backed off enough yet....keep going
@@ -3940,8 +3968,7 @@ contains
           else
              ! cfl is as low as it goes, try taking the step
              ! anyway. We can't do  anything else
-             ! TODO modify this to work with both real and complex. this is hard-coded for complex now.
-             call VecAXPY(wVec, cmplx(-lambda, 0.0), deltaW, ierr)
+             call VecAXPY(wVec, -lambda, deltaW, ierr)
              call EChk(ierr, __FILE__, __LINE__)
           end if
 
