@@ -3,8 +3,7 @@ include ../../config/config.mk
 
 # Group all the fortran, C and compiler flags together.
 FF90_ALL_FLAGS   = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. -DUSE_COMPLEX \
-		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS) \
-		   $(CGNS_VERSION_FLAG)
+		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
 
 CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDES) \
 		   $(CC_PRECISION_FLAGS)
