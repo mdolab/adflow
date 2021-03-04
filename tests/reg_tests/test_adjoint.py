@@ -79,6 +79,7 @@ test_params = [
             "ncycles": 1000,
             "ncyclescoarse": 250,
             "usenksolver": True,
+            "useanksolver": False,
             "useblockettes": False,
             "frozenturbulence": False,
             "blockSplitting": False,
