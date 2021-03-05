@@ -69,6 +69,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "mgstartlevel": 1,
                 "monitorvariables": ["cpu", "resrho", "cl", "cd", "cmz"],
                 "usenksolver": False,
+                "useanksolver": False,
                 "l2convergence": 1e-6,
                 "l2convergencecoarse": 1e-4,
                 "qmode": True,
