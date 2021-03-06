@@ -152,7 +152,7 @@ smoother:
 
 equationType:
   desc: >
-    The type of equations to solve. 
+    The type of equations to solve.
   Euler: Euler
   laminar NS: laminar Navier-Stokes
   RANS: Reynolds-averaged Navier-Stokes
@@ -197,7 +197,7 @@ turbResScale:
     The defaults are usually sufficient.
     Depending on the turbulence model, values can be a float scalar to a 4 element list of floats.
     Refer to the list below for the defaults and the type of input expected:
-    
+
       * ``SA`` - Type: float scalar - Default: 10e4
       * ``SA-Edwards`` - NOT IMPLEMENTED
       * ``k-omega Wilcox`` - NOT IMPLEMENTED
@@ -408,9 +408,9 @@ useBlockettes:
   desc: >
     Helps speed up residual calculations by working with a smaller subset of data, reducing the number of cache misses.
     These subsets of data are fractions of the initial block size and thus are called blockettes.
-    The amount of speedup is problem dependent but ranges from 2-3 times. 
+    The amount of speedup is problem dependent but ranges from 2-3 times.
     This option has not been exhaustively tested and has been found to cause errors in the past.
-    Verify that it does not change your results. 
+    Verify that it does not change your results.
 
 useLinResMonitor:
   desc: >
@@ -441,7 +441,7 @@ overlapFactor:
 oversetLoadBalance:
   desc: >
     Toggle whether to use load balancing for the implicit hole cutting connectivity algorithm.
-    Results with and without load balancing are shown in "An Efficient Parallel Overset Method for Aerodynamic Shape Optimization" (Kenway2017a). 
+    Results with and without load balancing are shown in "An Efficient Parallel Overset Method for Aerodynamic Shape Optimization" (Kenway2017a).
 
 debugZipper:
   desc: >
@@ -459,17 +459,17 @@ cutCallback:
     To do this, ADflow internally sets the flagged cells as a flood seed cell.
     The ``cutCallback`` function is called from pyADflow and the user filled array ``flags`` is used to determine which cells are flagged.
     The function signature looks like this:
-    
+
       .. code-block:: python
-    
+
         def cutCallback(xCen, CGNSZoneNameIDs, cellIDs, flags):
            flags[xCen[:, 1] < 0] = 1
-       
+
     The user would then provide this in the option dictionary as: ``"cutCallback": cutCallback``.
     The ``xCen`` array returns the center coordinates of the cells.
     ``CGNSZoneNameIDs`` and ``cellIDs`` can also be used to figure out the blanking pattern.
     ``flags`` is the NumPy array we fill and return back to pyADflow.
-    
+
     In this example, we have a symmetry plane on the x-z surface, and we want to only use the +y half of the 3D coordinate system.
     Therefore, we are flagging every cell where the y-component of the center coordinate (index 0:x, 1:y, 2:z) has a negative value.
     The flags array is initialized to zero internally by pyADflow, and a value of 1 for a cell tags it for flooding.
@@ -492,10 +492,17 @@ nRefine:
   desc: >
     The maximum number of refinement loop iterations used in the implicit hole cutting method.
 
+nFloodIter:
+  desc: >
+    Number of iterations for the flooding algorithm at each overset hole cutting iteartion.
+    Only useful for debugging meshes that flood completely on the first iteration of the overset.
+    The default is set to -1, which will be inactive and run the flooding algorithm until the flooded cells stop changing.
+    Setting a positive integer value will stop the flooding algorithm at the prescribed number of iterations.
+
 useZipperMesh:
   desc: >
     Determine whether a zipper mesh will be used.
-    Zipper meshes are required to accurately compute integrated quantities (such as lift and drag) when the surface meshes of interest overlap. 
+    Zipper meshes are required to accurately compute integrated quantities (such as lift and drag) when the surface meshes of interest overlap.
 
 useOversetWallScaling:
   desc: >
@@ -712,7 +719,7 @@ NKLS:
   cubic: Cubic interpolation
   none: No line search
   non-monotone: Non-monotone line search
-  
+
 NKFixedStep:
   desc: >
     The step size for the NK solver with no line search (``"NKLS": "none"``).
@@ -960,7 +967,7 @@ monitorVariables:
   desc: >
     List of the variables whose convergence should be monitored.
     The possible monitoring variables are:
-    
+
       * ``resrho`` (density residual)
       * ``resmom`` (momentum residuals)
       * ``resrhoe`` (total energy residual)
@@ -986,7 +993,7 @@ surfaceVariables:
   desc: >
     The variables which are written to the CGNS surface solution file.
     The available keywords are:
-    
+
       * ``rho`` (density)
       * ``p`` (pressure)
       * ``temp`` (temperature)
@@ -1009,7 +1016,7 @@ volumeVariables:
   desc: >
     The variables which are, in addition to the variables needed for the restart, written to the CGNS volume solution file.
     The available keywords are:
-    
+
       * ``mx`` (momentum in x-direction)
       * ``my`` (momentum in y-direction)
       * ``mz`` (momentum in z-direction)
@@ -1038,7 +1045,7 @@ forcesAsTractions:
 
 adjointL2Convergence:
   desc: >
-    Adjoint solution tolerance relative to the initial residual.    
+    Adjoint solution tolerance relative to the initial residual.
 
 adjointL2ConvergenceRel:
   desc: >
