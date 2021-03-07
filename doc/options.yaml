@@ -494,7 +494,7 @@ nRefine:
 
 nFloodIter:
   desc: >
-    Number of iterations for the flooding algorithm at each overset hole cutting iteartion.
+    Number of iterations for the flooding algorithm at each overset hole cutting iteration.
     Only useful for debugging meshes that flood completely on the first iteration of the overset.
     The default is set to -1, which will be inactive and run the flooding algorithm until the flooded cells stop changing.
     Setting a positive integer value will stop the flooding algorithm at the prescribed number of iterations.
