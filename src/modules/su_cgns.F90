@@ -1,7 +1,7 @@
        module su_cgns
 !
 !       Module that contains the definition of the cgns parameters.
-!       Depending on the compiler flags either the file cgnslib_f.h is
+!       Depending on the compiler flags either the cgns module is
 !       included or the functionality is faked by just defining the
 !       parameters.
 !
@@ -42,15 +42,9 @@
        integer, parameter :: Radian = 3
 #else
 
-#ifdef USECGNSMODULE
        use cgns
        implicit none
-#else
-       implicit none
-       include "cgnslib_f.h"
-       integer(kind=4), private :: dummyInt
-       integer, parameter :: cgsize_t=kind(dummyInt)
-#endif
+
 #endif
 
 
