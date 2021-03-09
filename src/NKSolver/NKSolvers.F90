@@ -589,7 +589,17 @@ contains
     ! convergnce check can't do anything either. By multiplying by
     ! 0.5, we make sure that the linear solver actually has to do
     ! *something* and not just kick out immediately.
+
+#ifndef USE_COMPLEX
+    ! in the real mode, we dont want to "oversolve the linear system" as detailed above
+    ! so we set the atol slightly lower than the target L2 convergence
     atol = totalR0*L2Conv*0.01_realType
+#else
+    ! in complex mode, we want to tightly solve the linear system every tine
+    ! because even though the real residuals converge, complex ones might (and do) lag
+    atol = totalR0*L2Conv*1e-6_realType
+#endif
+
     maxIt = NK_subspace
 
     call KSPSetTolerances(NK_KSP, real(rtol), &
@@ -946,7 +956,7 @@ contains
     nfevals = 0
     step = nk_fixedStep
     tmp = -step
-    ! TODO modify this to work with both real and complex.
+
     call VecWAXPY(w, tmp, y, x, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
@@ -1020,7 +1030,6 @@ contains
     backtrack: do iter=1, 10
 
        ! Compute new x value:
-       ! TODO modify this to work with both real and complex.
        call VecWAXPY(w, -alpha, y, x, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
@@ -2590,7 +2599,8 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
 
-    ! TODO check if this routine is fine... dlt and volume can both have complex values in them
+    ! TODO AY: check if this routine is fine with complex mode...
+    ! dlt and volume can both have complex values in them
 
     if (.not. ANK_coupled) then
        ! Only flow variables
@@ -2759,7 +2769,8 @@ contains
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: dvec_pointer(:)
 
-    ! TODO check if this routine is fine... dlt and volume can both have complex values in them
+    ! TODO AY: check if this routine is fine in complex mode...
+    ! dlt and volume can both have complex values in them
 
     ! Calculate the steady residuals
     call blocketteRes(useFlowRes=.False.)
@@ -3418,7 +3429,15 @@ contains
         rtolLast = rtol
 
         ! Set all tolerances for linear solve:
+#ifndef USE_COMPLEX
+        ! in the real mode, we dont want to "oversolve the linear system" as detailed above
+        ! so we set the atol slightly lower than the target L2 convergence
         atol = totalR0*L2Conv*0.01_realType
+#else
+        ! in complex mode, we want to tightly solve the linear system every tine
+        ! because even though the real residuals converge, complex ones might (and do) lag
+        atol = totalR0*L2Conv*1e-6_realType
+#endif
 
         ! Set the iteration limit to maxIt, determined by which fluxes are used.
         ! This is because ANK step require 0.1 convergence for stability during initial stages.
@@ -3831,7 +3850,15 @@ contains
     rtolLast = rtol
 
     ! Set all tolerances for linear solve:
+#ifndef USE_COMPLEX
+    ! in the real mode, we dont want to "oversolve the linear system" as detailed above
+    ! so we set the atol slightly lower than the target L2 convergence
     atol = totalR0*L2Conv*0.01_realType
+#else
+    ! in complex mode, we want to tightly solve the linear system every tine
+    ! because even though the real residuals converge, complex ones might (and do) lag
+    atol = totalR0*L2Conv*1e-6_realType
+#endif
 
     ! Set the iteration limit to maxIt, determined by which fluxes are used.
     ! This is because ANK step require 0.1 convergence for stability during initial stages.
