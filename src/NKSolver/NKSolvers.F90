@@ -595,7 +595,7 @@ contains
     ! so we set the atol slightly lower than the target L2 convergence
     atol = totalR0*L2Conv*0.01_realType
 #else
-    ! in complex mode, we want to tightly solve the linear system every tine
+    ! in complex mode, we want to tightly solve the linear system every time
     ! because even though the real residuals converge, complex ones might (and do) lag
     atol = totalR0*L2Conv*1e-6_realType
 #endif
@@ -3462,7 +3462,7 @@ contains
         ! so we set the atol slightly lower than the target L2 convergence
         atol = totalR0*L2Conv*0.01_realType
 #else
-        ! in complex mode, we want to tightly solve the linear system every tine
+        ! in complex mode, we want to tightly solve the linear system every time
         ! because even though the real residuals converge, complex ones might (and do) lag
         atol = totalR0*L2Conv*1e-6_realType
 #endif
@@ -3878,7 +3878,7 @@ contains
     ! so we set the atol slightly lower than the target L2 convergence
     atol = totalR0*L2Conv*0.01_realType
 #else
-    ! in complex mode, we want to tightly solve the linear system every tine
+    ! in complex mode, we want to tightly solve the linear system every time
     ! because even though the real residuals converge, complex ones might (and do) lag
     atol = totalR0*L2Conv*1e-6_realType
 #endif

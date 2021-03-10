@@ -21,7 +21,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 # tests for different solver combinations using a simple cartesian block.
 # we are interested in these tests converging without seg-faulting
 # and switching between the solvers correctly. We test
-# Euler + laminar NS + RANS, with smoother, ANK, SANK, CSANK ,NK transition order
+# Euler + laminar NS + RANS, with smoother, ANK, SANK, CSANK, NK transition order
 # with turbDADI and turbKSP. So 3 eqn types and 2 turbulence solvers, we have 6 tests
 # for both real and complex cases. These do not cover every possible combination, but
 # represent the most common use cases. Testing turbulence solver options with euler
