@@ -1669,9 +1669,9 @@ module ANKSolver
   real(kind=realType) :: ANK_CFLMin0, ANK_CFLMin, ANK_CFLMinBase, ANK_CFLExponent
   real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
-  real(kind=realtype) :: ANK_physLSTol, ANK_unstdyLSTol
+  real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
   real(kind=realType) :: ANK_pcUpdateTol
-  real(kind=realtype) :: lambda
+  real(kind=realType) :: lambda
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
