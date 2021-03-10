@@ -2600,7 +2600,7 @@ contains
 
 
     ! TODO AY: check if this routine is fine with complex mode...
-    ! dlt and volume can both have complex values in them
+    ! dtl and volume can both have complex values in them
 
     if (.not. ANK_coupled) then
        ! Only flow variables
@@ -2770,7 +2770,7 @@ contains
     real(kind=realType),pointer :: dvec_pointer(:)
 
     ! TODO AY: check if this routine is fine in complex mode...
-    ! dlt and volume can both have complex values in them
+    ! dtl and volume can both have complex values in them
 
     ! Calculate the steady residuals
     call blocketteRes(useFlowRes=.False.)
@@ -3100,8 +3100,7 @@ contains
                       ! check density
 #ifndef USE_COMPLEX
                       ! to have the real mode sliiiightly more efficient, just do stuff with real numbers
-                      ratio = abs(wvec_pointer(ii)/dvec_pointer(ii)+eps)*ANK_physLSTol
-                      lambdaL = min(lambdaL, ratio)
+                      ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
 #else
                       ! We dont care what happens to the complex part of the update because
                       ! that is a linear system. So again check the real update for the physical
@@ -3109,8 +3108,8 @@ contains
                       ! and smaller updates, so this routine will always give a step of 1 which is what
                       ! we want for the complex parts.
                       ratio = abs(real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTol)
-                      lambdaL = min(lambdaL, ratio)
 #endif
+                      lambdaL = min(lambdaL, ratio)
 
                       ! increment by 4 because we want to skip momentum variables
                       ii = ii + 4
@@ -3119,11 +3118,10 @@ contains
 #ifndef USE_COMPLEX
                       ! see the comment above for the difference between real and complex versions
                       ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
-                      lambdaL = min(lambdaL, ratio)
 #else
                       ratio = abs(real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))* real(ANK_physLSTol)
-                      lambdaL = min(lambdaL, ratio)
 #endif
+                      lambdaL = min(lambdaL, ratio)
                       ii = ii + 1
                    end do
                 end do
@@ -3140,28 +3138,44 @@ contains
                 do j=2, jl
                    do i=2, il
 
-                      ! TODO fix the lines below with the same approach used above for complex
-
-                      ! multiply the ratios by 10 to check if the change in a
-                      ! variable is greater than 10% of the variable itself.
+                      ! multiply the ratios by ANK_physLSTol to check if the change in a
+                      ! variable is greater than ANK_physLSTol of the variable itself.
 
                       ! check density
+#ifndef USE_COMPLEX
+                      ! to have the real mode sliiiightly more efficient, just do stuff with real numbers
                       ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+#else
+                      ! We dont care what happens to the complex part of the update because
+                      ! that is a linear system. So again check the real update for the physical
+                      ! line search. Towards the end of the simulation, real part gets smaller and
+                      ! and smaller updates, so this routine will always give a step of 1 which is what
+                      ! we want for the complex parts.
+                      ratio = abs(real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTol)
+#endif
                       lambdaL = min(lambdaL, ratio)
 
                       ! increment by 4 because we want to skip momentum variables
                       ii = ii + 4
 
                       ! check energy
+#ifndef USE_COMPLEX
+                      ! see the comment above for the difference between real and complex versions
                       ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
+#else
+                      ratio = abs(real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))* real(ANK_physLSTol)
+#endif
                       lambdaL = min(lambdaL, ratio)
                       ii = ii + 1
 
-                        ! needs to be modified
                       ! if coupled ank is used, nstate = nw and this loop is executed
                       ! if no turbulence variables, this loop will be automatically skipped
                       ! check turbulence variable
+#ifndef USE_COMPLEX
                       ratio = (wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTolTurb
+#else
+                      ratio = ( real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))*real(ANK_physLSTolTurb)
+#endif
                       ! if the ratio is less than min step, the update is either
                       ! in the positive direction, therefore we do not clip it,
                       ! or the update is very limiting, so we just clip the
@@ -3211,8 +3225,8 @@ contains
     end if
 
     ! Finally, communicate the step size across processes and return
-    ! mpi allreduce is not defined for complex numbers so we will
-    ! use the tmp variable to receive
+    ! mpi allreduce is not defined for complex numbers with the min operation
+    ! so we will use the tmp variable to receive
     call mpi_allreduce(lambdaL, tmp, 1_intType, MPI_DOUBLE, &
          mpi_min, ADflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -3244,9 +3258,8 @@ contains
     real(kind=realType), pointer :: wvec_pointer(:)
     real(kind=realType), pointer :: dvec_pointer(:)
     real(kind=alwaysRealType) :: lambdaL ! L is for local
-    real(kind=realType) :: ratio
-
-    ! TODO fix this routine similar to the regular check above
+    real(kind=alwaysRealType) :: tmp ! to receive the global step
+    real(kind=alwaysRealType) :: ratio
 
     ! Determine the maximum step size that would yield
     ! a maximum change of 10% in density, total energy,
@@ -3283,7 +3296,11 @@ contains
                         ! if coupled ank is used, nstate = nw and this loop is executed
                         ! if no turbulence variables, this loop will be automatically skipped
                         ! check turbulence variable
+#ifndef USE_COMPLEX
                         ratio = (wvec_pointer(ii)/(dvec_pointer(ii)+eps))* ANK_physLSTolTurb
+#else
+                        ratio = (real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))* real(ANK_physLSTolTurb)
+#endif
                         ! if the ratio is less than min step, the update is either
                         ! in the positive direction, therefore we do not clip it,
                         ! or the update is very limiting, so we just clip the
@@ -3327,12 +3344,23 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (isnan(lambdaL)) lambdaL = zero
+    if (isnan(real(lambdaL))) then
+      lambdaL = zero
+    end if
 
     ! Finally, communicate the step size across processes and return
-    call mpi_allreduce(lambdaL, lambdaP, 1_intType, adflow_real, &
+    ! mpi allreduce is not defined for complex numbers with the min operation
+    ! so we will use the tmp variable to receive
+    call mpi_allreduce(lambdaL, tmp, 1_intType, MPI_DOUBLE, &
          mpi_min, ADflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
+
+#ifndef USE_COMPLEX
+    lambdaP = tmp
+#else
+    ! finally, as a safety check, purge the complex part of lambda
+    lambdaP = cmplx(tmp, 0.0_realType)
+#endif
 
   end subroutine physicalityCheckANKTurb
 
@@ -3490,7 +3518,6 @@ contains
         !lambdaTurb = max(ANK_stepMin, lambdaTurb)
 
         ! Take the uodate after the physicality check.
-        ! TODO modify this to work with both real and complex.
         call VecAXPY(wVecTurb, -lambdaTurb, deltaWTurb, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -3521,7 +3548,6 @@ contains
             LSFailed = .True.
 
             ! Restore the starting (old) w value by adding lamda*deltaW
-            ! TODO modify this to work with both real and complex.
             call VecAXPY(wVecTurb, lambdaTurb, deltaWTurb, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -3532,7 +3558,6 @@ contains
             backtrack: do iter=1, 12
 
                 ! Apply the new step
-                ! TODO modify this to work with both real and complex.
                 call VecAXPY(wVecTurb, -lambdaTurb, deltaWTurb, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 
@@ -3549,7 +3574,6 @@ contains
                 if (unsteadyNorm > totalRTurb*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
                     ! Restore back to the original wVec
-                  ! TODO modify this to work with both real and complex.
                     call VecAXPY(wVecTurb, lambdaTurb, deltaWTurb, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
@@ -3573,7 +3597,6 @@ contains
                 else
                     ! cfl is as low as it goes, try taking the step
                     ! anyway. We can't do  anything else
-                  ! TODO modify this to work with both real and complex.
                     call VecAXPY(wVecTurb, -lambdaTurb, deltaWTurb, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
                 end if
