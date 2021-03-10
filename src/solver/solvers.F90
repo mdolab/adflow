@@ -1029,6 +1029,10 @@ contains
 
     ! No iteration type for first residual evaluation
     iterType = "    None"
+    ! also no CFL, step size, or linear residual for this iteration
+    CFLMonitor = -1
+    stepMonitor = -1
+    linResMonitor = -1
 
     ! Determine and write the initial convergence info.
     call convergenceInfo
@@ -1572,11 +1576,18 @@ contains
                    write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
 #endif
                 end if
+
+                if (stepMonitor < zero) then
+                  ! Print dashes in the first None iteration
+                  write(*,"(a,1x)", advance="no") " ---- "
+                else
 #ifndef USE_COMPLEX
-                write(*,"(f5.2,2x)",advance="no") stepMonitor
+                  write(*,"(f5.2,2x)",advance="no") stepMonitor
 #else
-                write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
+                  write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
 #endif
+                end if
+
                 if (linResMonitor < zero) then
                    ! For RK/DADI just print dashes
                    write(*,"(a,1x)", advance="no") " ----"
