@@ -20,38 +20,94 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 
 # tests for different solver combinations using a simple cartesian block.
 # we are interested in these tests converging without seg-faulting
-# and switching between the solvers correctly. We test pretty much every combination
-# of Euler + laminar NS + RANS, with RK/DADI/ANK/SANK/CANK/CSANK/NK
-# with turbDADI and turbKSP for rans tests with decoupled ank
+# and switching between the solvers correctly. We test
+# Euler + laminar NS + RANS, with smoother, ANK, SANK, CSANK ,NK transition order
+# with turbDADI and turbKSP. So 3 eqn types and 2 turbulence solvers, we have 6 tests
+# for both real and complex cases. These do not cover every possible combination, but
+# represent the most common use cases. Testing turbulence solver options with euler
+# and laminar NS makes sure the solver does not segfault etc.
 
 solver_combo_params = [
+    # Euler Tests
     {
-        "name": "rk_nk",
+        "name": "euler_smoother_ank_sank_csank_nk_turbdadi",
         "options": {
-            # equation
-            # "equationtype": "Euler",
+            "equationtype": "Euler",
             # euler fails to get to machine zero in parallel...
-            # "L2Convergence": 1e-8,
-            # "equationtype": "laminar NS",
-            "equationtype": "RANS",
-
-            # smoother type
-            # "smoother": "DADI",
-            "smoother": "Runge-Kutta",
-
-            # solver flags
-            # 'useanksolver': False,
+            "L2Convergence": 1e-8,
             "ankuseturbdadi": True,
-            "usenksolver": True,
-
-            # switch tolerances
-            "ankswitchtol": 1e-1,
-            "anksecondordswitchtol": 1e-2,
-            "ankcoupledswitchtol": 1e-4,
-            "nkswitchtol": 1e-6,
         },
     },
+
+    {
+        "name": "euler_smoother_ank_sank_csank_nk_turbksp",
+        "options": {
+            "equationtype": "Euler",
+            # euler fails to get to machine zero in parallel...
+            "L2Convergence": 1e-8,
+            "ankuseturbdadi": False,
+        },
+    },
+
+    # laminar NS Tests
+    {
+        "name": "laminar_ns_smoother_ank_sank_csank_nk_turbdadi",
+        "options": {
+            "equationtype": "laminar NS",
+            "ankuseturbdadi": True,
+        },
+    },
+
+    {
+        "name": "laminar_ns_smoother_ank_sank_csank_nk_turbksp",
+        "options": {
+            "equationtype": "laminar NS",
+            "ankuseturbdadi": False,
+        },
+    },
+
+    # RANS tests
+    {
+        "name": "rans_smoother_ank_sank_csank_nk_turbdadi",
+        "options": {
+            "equationtype": "RANS",
+            "ankuseturbdadi": True,
+        },
+    },
+
+    {
+        "name": "rans_smoother_ank_sank_csank_nk_turbksp",
+        "options": {
+            "equationtype": "RANS",
+            "ankuseturbdadi": False,
+        },
+    },
+
 ]
+
+# common options dict for both real and complex
+gridFile = os.path.join(baseDir, '../../input_files/cube.cgns')
+commonTestOptions = {
+    'gridfile': gridFile,
+    "writevolumesolution": False,
+    'writesurfacesolution': False,
+    'monitorvariables': ['cpu', 'resrho', 'resturb', 'cd'],
+    "mgcycle": "SG",
+    "mgstartlevel": -1,
+    'l2convergence': 1e-12,
+    'ncycles': 500,
+    'useblockettes': False,
+
+    # solver flags
+    'useanksolver': True,
+    "usenksolver": True,
+
+    # switch tolerances
+    "ankswitchtol": 0.5,
+    "anksecondordswitchtol": 1e-1,
+    "ankcoupledswitchtol": 1e-3,
+    "nkswitchtol": 1e-5,
+}
 
 @parameterized_class(solver_combo_params)
 class TestSolverCombos(reg_test_classes.RegTest):
@@ -74,18 +130,6 @@ class TestSolverCombos(reg_test_classes.RegTest):
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
 
         # these are the modified options common to these tests
-        gridFile = os.path.join(baseDir, '../../input_files/cube.cgns')
-        commonTestOptions = {
-            'gridfile': gridFile,
-            "writevolumesolution": False,
-            'writesurfacesolution': False,
-            'monitorvariables': ['cpu', 'resrho', 'resturb', 'cd'],
-            "mgcycle": "SG",
-            "mgstartlevel": -1,
-            'l2convergence': 1e-12,
-            'ncycles': 500,
-            'useblockettes': False
-        }
         options.update(commonTestOptions)
 
         # finally, bring in the specific options for each parameterized test
@@ -140,18 +184,6 @@ class TestCmplxSolverCombos(reg_test_classes.RegTest):
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
 
         # these are the modified options common to these tests
-        gridFile = os.path.join(baseDir, '../../input_files/cube.cgns')
-        commonTestOptions = {
-            'gridfile': gridFile,
-            "writevolumesolution": False,
-            'writesurfacesolution': False,
-            'monitorvariables': ['cpu', 'resrho', 'resturb', 'cd'],
-            "mgcycle": "SG",
-            "mgstartlevel": -1,
-            'l2convergence': 1e-12,
-            'ncycles': 500,
-            'useblockettes': False
-        }
         options.update(commonTestOptions)
 
         # finally, bring in the specific options for each parameterized test
@@ -175,8 +207,11 @@ class TestCmplxSolverCombos(reg_test_classes.RegTest):
         # get residual norms
         r0, _, rfinal = self.CFDSolver.getResNorms()
 
+        # get the target
+        l2conv = self.CFDSolver.getOption("L2Convergence")
+
         # we should get 12 orders of magnitude relative convergence
-        numpy.testing.assert_array_less(rfinal / r0, 1e-12)
+        numpy.testing.assert_array_less(rfinal / r0, l2conv)
 
 if __name__ == "__main__":
     unittest.main()

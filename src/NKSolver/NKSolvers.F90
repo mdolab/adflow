@@ -3972,7 +3972,7 @@ contains
           if (unsteadyNorm > unsteadyNorm_old*ANK_unstdyLSTol .or. isnan(unsteadyNorm)) then
 
              ! Restore back to the original wVec
-             call VecAXPY(wVec,lambda, deltaW, ierr)
+             call VecAXPY(wVec, lambda, deltaW, ierr)
              call EChk(ierr, __FILE__, __LINE__)
 
              ! Haven't backed off enough yet....keep going
