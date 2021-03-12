@@ -858,6 +858,7 @@ module inputOverset
   real(kind=realType) :: selfZipCutoff
   ! nRefine: number of connectivity loops to run
   integer(kind=intType)::nRefine
+  integer(kind=intType)::nFloodIter
   logical :: useZipperMesh
   logical :: useOversetWallScaling
 end module inputOverset

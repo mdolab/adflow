@@ -1188,6 +1188,7 @@ python module libadflow
          real(kind=realtype) :: overlapfactor
          integer(kind=inttype) :: oversetupdatemode
          integer(kind=inttype)::nrefine
+         integer(kind=inttype)::nflooditer
          logical :: debugzipper
          logical :: usezippermesh
          logical :: useoversetwallscaling
