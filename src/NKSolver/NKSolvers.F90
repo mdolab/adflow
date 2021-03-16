@@ -3050,7 +3050,7 @@ contains
     use flowVarRefState, only : nw, nwf, nt1, nt2
     use inputtimespectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, EChk, myisnan
-    use communication, only : ADflow_comm_world, myid
+    use communication, only : ADflow_comm_world
     implicit none
 
     ! input variable
@@ -3061,7 +3061,7 @@ contains
     real(kind=realType), pointer :: wvec_pointer(:)
     real(kind=realType), pointer :: dvec_pointer(:)
     real(kind=alwaysRealType) :: lambdaL ! L is for local
-    real(kind=alwaysRealType) :: tmp ! to receive the global step
+    real(kind=alwaysRealType) :: lambdaP_recv ! to receive the global step
     real(kind=alwaysRealType) :: ratio
 
     ! Determine the maximum step size that would yield
@@ -3099,7 +3099,7 @@ contains
 
                       ! check density
 #ifndef USE_COMPLEX
-                      ! to have the real mode sliiiightly more efficient, just do stuff with real numbers
+                      ! to have the real mode slightly more efficient, we do not check if variables are real
                       ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
 #else
                       ! We dont care what happens to the complex part of the update because
@@ -3143,7 +3143,7 @@ contains
 
                       ! check density
 #ifndef USE_COMPLEX
-                      ! to have the real mode sliiiightly more efficient, just do stuff with real numbers
+                      ! to have the real mode slightly more efficient, we do not check if variables are real
                       ratio = abs(wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTol
 #else
                       ! We dont care what happens to the complex part of the update because
@@ -3220,22 +3220,22 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (isnan(real(lambdaL))) then
+    if (isnan(lambdaL)) then
       lambdaL = zero
     end if
 
     ! Finally, communicate the step size across processes and return
     ! mpi allreduce is not defined for complex numbers with the min operation
-    ! so we will use the tmp variable to receive
-    call mpi_allreduce(lambdaL, tmp, 1_intType, MPI_DOUBLE, &
+    ! so we will use the lambdaP_recv variable to receive
+    call mpi_allreduce(lambdaL, lambdaP_recv, 1_intType, MPI_DOUBLE, &
          mpi_min, ADflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
 #ifndef USE_COMPLEX
-    lambdaP = tmp
+    lambdaP = lambdaP_recv
 #else
     ! finally, as a safety check, purge the complex part of lambda
-    lambdaP = cmplx(tmp, 0.0_realType)
+    lambdaP = cmplx(lambdaP_recv, 0.0_realType)
 #endif
 
   end subroutine physicalityCheckANK
@@ -3258,7 +3258,7 @@ contains
     real(kind=realType), pointer :: wvec_pointer(:)
     real(kind=realType), pointer :: dvec_pointer(:)
     real(kind=alwaysRealType) :: lambdaL ! L is for local
-    real(kind=alwaysRealType) :: tmp ! to receive the global step
+    real(kind=alwaysRealType) :: lambdaP_recv ! to receive the global step
     real(kind=alwaysRealType) :: ratio
 
     ! Determine the maximum step size that would yield
@@ -3344,22 +3344,22 @@ contains
     call EChk(ierr,__FILE__,__LINE__)
 
     ! Make sure that we did not get any NaN's in the process
-    if (isnan(real(lambdaL))) then
+    if (isnan(lambdaL)) then
       lambdaL = zero
     end if
 
     ! Finally, communicate the step size across processes and return
     ! mpi allreduce is not defined for complex numbers with the min operation
-    ! so we will use the tmp variable to receive
-    call mpi_allreduce(lambdaL, tmp, 1_intType, MPI_DOUBLE, &
+    ! so we will use the lambdaP_recv variable to receive
+    call mpi_allreduce(lambdaL, lambdaP_recv, 1_intType, MPI_DOUBLE, &
          mpi_min, ADflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
 #ifndef USE_COMPLEX
-    lambdaP = tmp
+    lambdaP = lambdaP_recv
 #else
     ! finally, as a safety check, purge the complex part of lambda
-    lambdaP = cmplx(tmp, 0.0_realType)
+    lambdaP = cmplx(lambdaP_recv, 0.0_realType)
 #endif
 
   end subroutine physicalityCheckANKTurb
@@ -3458,8 +3458,9 @@ contains
 
         ! Set all tolerances for linear solve:
 #ifndef USE_COMPLEX
-        ! in the real mode, we dont want to "oversolve the linear system" as detailed above
-        ! so we set the atol slightly lower than the target L2 convergence
+        ! in the real mode, we dont want to "oversolve the linear system"
+        ! as detailed in the NKStep subroutine so we set the atol slightly lower
+        ! than the target L2 convergence
         atol = totalR0*L2Conv*0.01_realType
 #else
         ! in complex mode, we want to tightly solve the linear system every time
