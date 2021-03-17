@@ -580,9 +580,9 @@ contains
 
     ! Set all tolerances for linear solver.
 
-    ! The 0.01 multiplier for atol requires some explaination:
+    ! The 0.01 multiplier for atol requires some explanation:
     ! The linear residual is roughly the same magnitude
-    ! as the non-linear one at the start of the linear solution,
+    ! as the nonlinear one at the start of the linear solution,
     ! assuming the initial guess does not have a large effect
     ! on the linear residual. KSPSolve exits when either the
     ! rtol or atol is satisfied, which means that the atol
@@ -594,13 +594,13 @@ contains
     ! no point in solving the linear system to 8 orders of
     ! magnitude convergence in the linear residual. Instead,
     ! we can stop early using atol. However, in very rare situations,
-    ! it can happen that the non-linear residual is *just* above
+    ! it can happen that the nonlinear residual is *just* above
     ! the convergence criteria, while the linear residual is
-    ! *just* below. What happens is that the linear sover hits
-    ! the atol limit, kicks up, and doesn't do anything and then
-    ! the non-linear convergnce check can't do anything either.
+    ! *just* below. What happens is that the linear solver hits
+    ! the atol limit immediately, doesn't do anything, and then
+    ! the nonlinear convergence check can't do anything either.
     ! By multiplying by 0.01, we make sure that the linear solver
-    ! actually has to do *something* and not just kick out immediately.
+    ! actually has to do *something* and not just exit immediately.
 
 #ifndef USE_COMPLEX
     ! in the real mode, we set the atol slightly lower than the target L2 convergence
