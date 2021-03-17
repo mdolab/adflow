@@ -580,23 +580,37 @@ contains
 
     ! Set all tolerances for linear solver.
 
-    ! The 0.01 requires some explaination: The linear residual is
-    ! roughly the same magnitude as the non-linear one. However, it
-    ! very rare situations, it can happen that the non-linear residual
-    ! is *just* above the convergence criteria, while the linear
-    ! residual is *just* below. What happens is that the linear sover
-    ! kicks up and doesnt' do anything and then the non-linear
-    ! convergnce check can't do anything either. By multiplying by
-    ! 0.5, we make sure that the linear solver actually has to do
-    ! *something* and not just kick out immediately.
+    ! The 0.01 multiplier for atol requires some explaination:
+    ! The linear residual is roughly the same magnitude
+    ! as the non-linear one at the start of the linear solution,
+    ! assuming the initial guess does not have a large effect
+    ! on the linear residual. KSPSolve exits when either the
+    ! rtol or atol is satisfied, which means that the atol
+    ! only comes into play near the end of the nonlinear solution.
+    ! We use atol because in the final Newton step when we are
+    ! close to the L2 target, we won't need to solve the linear
+    ! system tightly. For example, if we are one order of magnitude
+    ! away from the nonlinear solver target, then there is
+    ! no point in solving the linear system to 8 orders of
+    ! magnitude convergence in the linear residual. Instead,
+    ! we can stop early using atol. However, in very rare situations,
+    ! it can happen that the non-linear residual is *just* above
+    ! the convergence criteria, while the linear residual is
+    ! *just* below. What happens is that the linear sover hits
+    ! the atol limit, kicks up, and doesn't do anything and then
+    ! the non-linear convergnce check can't do anything either.
+    ! By multiplying by 0.01, we make sure that the linear solver
+    ! actually has to do *something* and not just kick out immediately.
 
 #ifndef USE_COMPLEX
-    ! in the real mode, we dont want to "oversolve the linear system" as detailed above
-    ! so we set the atol slightly lower than the target L2 convergence
+    ! in the real mode, we set the atol slightly lower than the target L2 convergence
+    ! as explained in the comment block above
     atol = totalR0*L2Conv*0.01_realType
 #else
     ! in complex mode, we want to tightly solve the linear system every time
     ! because even though the real residuals converge, complex ones might (and do) lag
+    ! this approach makes sure that even with a converged real system, the linear solver
+    ! still converges the linear system tightly and this helps with the complex system convergence
     atol = totalR0*L2Conv*1e-6_realType
 #endif
 
@@ -3458,13 +3472,12 @@ contains
 
         ! Set all tolerances for linear solve:
 #ifndef USE_COMPLEX
-        ! in the real mode, we dont want to "oversolve the linear system"
-        ! as detailed in the NKStep subroutine so we set the atol slightly lower
-        ! than the target L2 convergence
+        ! in the real mode, we set the atol slightly lower than the target L2 convergence
+        ! the reasoning for this is detailed in the NKStep subroutine
         atol = totalR0*L2Conv*0.01_realType
 #else
         ! in complex mode, we want to tightly solve the linear system every time
-        ! because even though the real residuals converge, complex ones might (and do) lag
+        ! again, see the NKStep subroutine for the explanation
         atol = totalR0*L2Conv*1e-6_realType
 #endif
 
@@ -3875,12 +3888,12 @@ contains
 
     ! Set all tolerances for linear solve:
 #ifndef USE_COMPLEX
-    ! in the real mode, we dont want to "oversolve the linear system" as detailed above
-    ! so we set the atol slightly lower than the target L2 convergence
+    ! in the real mode, we set the atol slightly lower than the target L2 convergence
+    ! the reasoning for this is detailed in the NKStep subroutine
     atol = totalR0*L2Conv*0.01_realType
 #else
     ! in complex mode, we want to tightly solve the linear system every time
-    ! because even though the real residuals converge, complex ones might (and do) lag
+    ! again, see the NKStep subroutine for the explanation
     atol = totalR0*L2Conv*1e-6_realType
 #endif
 
