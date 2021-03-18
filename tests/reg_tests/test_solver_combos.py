@@ -35,7 +35,6 @@ solver_combo_params = [
             "ankuseturbdadi": True,
         },
     },
-
     {
         "name": "euler_smoother_ank_sank_csank_nk_turbksp",
         "options": {
@@ -43,7 +42,6 @@ solver_combo_params = [
             "ankuseturbdadi": False,
         },
     },
-
     # laminar NS Tests
     {
         "name": "laminar_ns_smoother_ank_sank_csank_nk_turbdadi",
@@ -52,7 +50,6 @@ solver_combo_params = [
             "ankuseturbdadi": True,
         },
     },
-
     {
         "name": "laminar_ns_smoother_ank_sank_csank_nk_turbksp",
         "options": {
@@ -60,7 +57,6 @@ solver_combo_params = [
             "ankuseturbdadi": False,
         },
     },
-
     # RANS tests
     {
         "name": "rans_smoother_ank_sank_csank_nk_turbdadi",
@@ -69,7 +65,6 @@ solver_combo_params = [
             "ankuseturbdadi": True,
         },
     },
-
     {
         "name": "rans_smoother_ank_sank_csank_nk_turbksp",
         "options": {
@@ -77,25 +72,22 @@ solver_combo_params = [
             "ankuseturbdadi": False,
         },
     },
-
 ]
 
 # common options dict for both real and complex
-gridFile = os.path.join(baseDir, '../../input_files/cube_4x4x4.cgns')
+gridFile = os.path.join(baseDir, "../../input_files/cube_4x4x4.cgns")
 commonTestOptions = {
-    'gridfile': gridFile,
+    "gridfile": gridFile,
     "writevolumesolution": False,
-    'writesurfacesolution': False,
-    'monitorvariables': ['cpu', 'resrho', 'resturb', 'cd'],
+    "writesurfacesolution": False,
+    "monitorvariables": ["cpu", "resrho", "resturb", "cd"],
     "mgcycle": "sg",
-    'l2convergence': 1e-12,
-    'ncycles': 200,
-    'useblockettes': False,
-
+    "l2convergence": 1e-12,
+    "ncycles": 200,
+    "useblockettes": False,
     # solver flags
-    'useanksolver': True,
+    "useanksolver": True,
     "usenksolver": True,
-
     # switch tolerances
     "ankswitchtol": 0.5,
     "anksecondordswitchtol": 1e-1,
@@ -103,10 +95,11 @@ commonTestOptions = {
     "nkswitchtol": 1e-5,
 }
 
+
 @parameterized_class(solver_combo_params)
 class TestSolverCombos(reg_test_classes.RegTest):
     N_PROCS = 2
-    ref_file = 'test_solver_combos.json'
+    ref_file = "test_solver_combos.json"
 
     def setUp(self):
         if not hasattr(self, "name"):
@@ -153,6 +146,7 @@ class TestSolverCombos(reg_test_classes.RegTest):
         # we should get 12 orders of magnitude relative convergence
         numpy.testing.assert_array_less(rfinal / r0, l2conv)
 
+
 # we do the same tests as the previous one but with complex mode here
 @parameterized_class(solver_combo_params)
 class TestCmplxSolverCombos(reg_test_classes.RegTest):
@@ -160,7 +154,7 @@ class TestCmplxSolverCombos(reg_test_classes.RegTest):
     # TODO add a convergence test with a complex perturbed DV also
 
     N_PROCS = 2
-    ref_file = 'test_solver_combos.json'
+    ref_file = "test_solver_combos.json"
 
     def setUp(self):
         if not hasattr(self, "name"):
