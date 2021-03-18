@@ -10,7 +10,6 @@ from adflow import ADFLOW
 from adflow import ADFLOW_C
 
 # import the testing utilities that live a few directories up
-import reg_test_utils as utils
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_simple_cart_cube
 import reg_test_classes
@@ -18,7 +17,7 @@ import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
-# tests for different solver combinations using a simple cartesian block.
+# tests for different solver combinations using a simple cartesian block of size 4x4x4.
 # we are interested in these tests converging without seg-faulting
 # and switching between the solvers correctly. We test
 # Euler + laminar NS + RANS, with smoother, ANK, SANK, CSANK, NK transition order
@@ -33,8 +32,6 @@ solver_combo_params = [
         "name": "euler_smoother_ank_sank_csank_nk_turbdadi",
         "options": {
             "equationtype": "Euler",
-            # euler fails to get to machine zero in parallel...
-            "L2Convergence": 1e-8,
             "ankuseturbdadi": True,
         },
     },
@@ -43,8 +40,6 @@ solver_combo_params = [
         "name": "euler_smoother_ank_sank_csank_nk_turbksp",
         "options": {
             "equationtype": "Euler",
-            # euler fails to get to machine zero in parallel...
-            "L2Convergence": 1e-8,
             "ankuseturbdadi": False,
         },
     },
@@ -86,7 +81,7 @@ solver_combo_params = [
 ]
 
 # common options dict for both real and complex
-gridFile = os.path.join(baseDir, '../../input_files/cube.cgns')
+gridFile = os.path.join(baseDir, '../../input_files/cube_4x4x4.cgns')
 commonTestOptions = {
     'gridfile': gridFile,
     "writevolumesolution": False,
@@ -94,7 +89,7 @@ commonTestOptions = {
     'monitorvariables': ['cpu', 'resrho', 'resturb', 'cd'],
     "mgcycle": "sg",
     'l2convergence': 1e-12,
-    'ncycles': 500,
+    'ncycles': 200,
     'useblockettes': False,
 
     # solver flags
@@ -211,6 +206,7 @@ class TestCmplxSolverCombos(reg_test_classes.RegTest):
 
         # we should get 12 orders of magnitude relative convergence
         numpy.testing.assert_array_less(rfinal / r0, l2conv)
+
 
 if __name__ == "__main__":
     unittest.main()
