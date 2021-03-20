@@ -539,9 +539,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             "useanksolver": True,
             "usenksolver": True,
             "ankswitchtol": 10.0,
-            "anksubspacesize": -1,
-            "anklinearsolvetol": 0.05,
-            "ankjacobianlag": 10,
+            "anksecondordswitchtol": 1e-2,
             "ankinnerpreconits": 1,
             "monitorvariables": ['cpu','resrho', 'resrhoe'],
             "volumevariables": ["temp", "mach", "resrho"],
@@ -698,11 +696,8 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             self.ap.setDesignVars(aDV)
 
             # call solver again
-            # TODO Learn to do this w/o the reset flow
+            # we can also not re-set the flow and call the solver a few times until complex parts converge
             self.CFDSolver.resetFlow(self.ap)
-            self.CFDSolver(self.ap)
-            # call again just to nail down the complex residual
-            # TODO fix this. we should also check for CS residual convergence.
             self.CFDSolver(self.ap)
 
             # save the new funcs in a dict
@@ -769,7 +764,6 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
 
         # We dont need to rerun, restart file has the correct state. just run a residual
         self.CFDSolver(self.ap)
-        # self.CFDSolver.getResidual(self.ap)
 
         funcs = {}
         funcsSensCS = {}
@@ -786,12 +780,8 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             self.ap.setDesignVars(aDV)
 
             # call solver again
-            # TODO Learn to do this w/o the reset flow
-            # we currently reset the flow so that we can converge the real and complex parts together
+            # we can also not re-set the flow and call the solver a few times until complex parts converge
             self.CFDSolver.resetFlow(self.ap)
-            self.CFDSolver(self.ap)
-            # call again just to nail down the complex residual
-            # TODO fix this. we should also check for CS residual convergence.
             self.CFDSolver(self.ap)
 
             # save the new funcs in a dict
