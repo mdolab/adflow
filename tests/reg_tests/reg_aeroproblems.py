@@ -79,3 +79,18 @@ ap_actuator_pipe = AeroProblem(
         'flowpower_az',
     ]
 )
+
+ap_simple_cart_cube = AeroProblem(
+            name="cube",
+            V=32,  # m/s
+            T=273 + 60,  # kelvin
+            P=93e3,  # pa
+            areaRef=1.0,  # m^2
+            chordRef=1.0,  # m^2
+            evalFuncs=["cd"],
+            alpha=5.0,
+            beta=5.0,
+            xRef=0.0,
+            yRef=0.0,
+            zRef=0.0,
+        )
