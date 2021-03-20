@@ -541,7 +541,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             "ankswitchtol": 10.0,
             "anksecondordswitchtol": 1e-2,
             "ankinnerpreconits": 1,
-            "monitorvariables": ['cpu','resrho', 'resrhoe'],
+            "monitorvariables": ["cpu", "resrho", "resrhoe"],
             "volumevariables": ["temp", "mach", "resrho"],
             "surfacevariables": ["temp", "vx", "vy", "vz", "p", "ptloss", "mach", "rho"],
             "equationType": "Euler",
@@ -686,7 +686,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power"])
 
         funcs_plus = {}
-        for dv in ['thrust', 'heat']:
+        for dv in ["thrust", "heat"]:
 
             # save the old dv
             dvsave = aDV[dv]
@@ -726,32 +726,32 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         # my force
 
         # thrust
-        ref_val = self.handler.db["my_force sens"]['thrust']
-        np.testing.assert_allclose(funcsSensCS['thrust']['my_force'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["my_force sens"]["thrust"]
+        np.testing.assert_allclose(funcsSensCS["thrust"]["my_force"], ref_val, atol=1e-10, rtol=1e-10)
 
         # heat
-        ref_val = self.handler.db["my_force sens"]['heat']
-        np.testing.assert_allclose(funcsSensCS['heat']['my_force'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["my_force sens"]["heat"]
+        np.testing.assert_allclose(funcsSensCS["heat"]["my_force"], ref_val, atol=1e-10, rtol=1e-10)
 
         # cfd force
 
         # thrust
-        ref_val = self.handler.db["cfd_force sens"]['thrust']
-        np.testing.assert_allclose(funcsSensCS['thrust']['cfd_force'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["cfd_force sens"]["thrust"]
+        np.testing.assert_allclose(funcsSensCS["thrust"]["cfd_force"], ref_val, atol=1e-10, rtol=1e-10)
 
         # heat
-        ref_val = self.handler.db["cfd_force sens"]['heat']
-        np.testing.assert_allclose(funcsSensCS['heat']['cfd_force'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["cfd_force sens"]["heat"]
+        np.testing.assert_allclose(funcsSensCS["heat"]["cfd_force"], ref_val, atol=1e-10, rtol=1e-10)
 
         # my power
 
         # thrust
-        ref_val = self.handler.db["my_power sens"]['thrust']
-        np.testing.assert_allclose(funcsSensCS['thrust']['my_power'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["my_power sens"]["thrust"]
+        np.testing.assert_allclose(funcsSensCS["thrust"]["my_power"], ref_val, atol=1e-10, rtol=1e-10)
 
         # heat
-        ref_val = self.handler.db["my_power sens"]['heat']
-        np.testing.assert_allclose(funcsSensCS['heat']['my_power'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["my_power sens"]["heat"]
+        np.testing.assert_allclose(funcsSensCS["heat"]["my_power"], ref_val, atol=1e-10, rtol=1e-10)
 
     def cmplx_test_actuator_flowpower_adjoint(self):
         "we test this adjoint separately because we need to have a finite thrust for this to actually test"
@@ -770,7 +770,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["flowpower_az"])
 
         funcs_plus = {}
-        for dv in ['thrust', 'heat']:
+        for dv in ["thrust", "heat"]:
 
             # save the old dv
             dvsave = aDV[dv]
@@ -791,7 +791,7 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             self.CFDSolver.evalFunctions(self.ap, funcs_plus[dv], evalFuncs=["flowpower_az"])
 
             # compute the sens
-            funcsSensCS[dv] = np.imag(funcs_plus[dv]['actuator_pipe_flowpower_az']) / self.h
+            funcsSensCS[dv] = np.imag(funcs_plus[dv]["actuator_pipe_flowpower_az"]) / self.h
 
             # reset the DV
             aDV[dv] = dvsave
@@ -805,12 +805,13 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         # we assume the adjoint sensitivities are also true
 
         # thrust
-        ref_val = self.handler.db["flowpower sens"]['thrust']
-        np.testing.assert_allclose(funcsSensCS['thrust'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["flowpower sens"]["thrust"]
+        np.testing.assert_allclose(funcsSensCS["thrust"], ref_val, atol=1e-10, rtol=1e-10)
 
         # heat
-        ref_val = self.handler.db["flowpower sens"]['heat']
-        np.testing.assert_allclose(funcsSensCS['heat'], ref_val, atol=1e-10, rtol=1e-10)
+        ref_val = self.handler.db["flowpower sens"]["heat"]
+        np.testing.assert_allclose(funcsSensCS["heat"], ref_val, atol=1e-10, rtol=1e-10)
+
 
 if __name__ == "__main__":
     unittest.main()
