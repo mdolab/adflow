@@ -53,7 +53,7 @@ ap_2D_conv_nozzle = AeroProblem(name='2D_conv_nozzle', alpha=00.0,  mach=0.25, T
                             'thrust',
                             'thrust_pressure', 'thrust_viscous', 'thrust_momentum'
                             ], )
-                            
+
 ap_conic_conv_nozzle = AeroProblem(name='conic_conv_nozzle', alpha=90.0, mach=0.5, altitude=0.0,
                  areaRef=1.0, chordRef=1.0, R=287.87,
                  evalFuncs=['mdot_up', 'mdot_down',
@@ -63,3 +63,18 @@ ap_conic_conv_nozzle = AeroProblem(name='conic_conv_nozzle', alpha=90.0, mach=0.
                             'mavgps_up', 'mavgps_down',
                             'aavgps_up', 'aavgps_down',
                             ])
+
+ap_simple_cart_cube = AeroProblem(
+            name="cube",
+            V=32,  # m/s
+            T=273 + 60,  # kelvin
+            P=93e3,  # pa
+            areaRef=1.0,  # m^2
+            chordRef=1.0,  # m^2
+            evalFuncs=["cd"],
+            alpha=5.0,
+            beta=5.0,
+            xRef=0.0,
+            yRef=0.0,
+            zRef=0.0,
+        )
