@@ -70,6 +70,9 @@ contains
 
     do nn=1,cgnsNDom
        call writeCoorCGNSZone(nn, cgnsZone(nn))
+
+       !Prevent any interaction between the mpi send/recv for each zone
+       call mpi_barrier(ADflow_comm_world, ierr) 
     enddo
 
     ! Check if the solution must be written in a different file.
@@ -1273,9 +1276,13 @@ contains
              do mm=(nBlocks+1),nSubBlocks
 
                 ! Receive the range of subblock mm and copy it into coor.
+                ! CAUTION: this assumes that we receive bufSize values - on rank 0, bufSize is the max size
+                !          among all the SubBlocks over every mpi rank. However, all the ranks > 0 define
+                !          bufSize as the max of the SubBlocks that they possess.  
+                !       -> this only works if the size of all SubBlocks is the same everywhere
 
                 call mpi_recv(buffer, bufSize, adflow_real, proc(mm), &
-                     proc(mm)+1, ADflow_comm_world, mpiStatus, ierr)
+                     proc(mm)+nProc, ADflow_comm_world, mpiStatus, ierr)
 
                 select case (precisionGrid)
                 case (precisionSingle)
@@ -1426,7 +1433,7 @@ contains
                 call storeCoorInBuffer(buffer, zone, ind, nn, &
                      blocksCGNSblock(mm+offset), tmp)
 
-                call mpi_send(buffer, tmp, adflow_real, 0, myID+1, &
+                call mpi_send(buffer, tmp, adflow_real, 0, myID+nProc, &
                      ADflow_comm_world, ierr)
              enddo
 

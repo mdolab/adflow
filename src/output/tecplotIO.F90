@@ -838,6 +838,8 @@ contains
              end do
              nCells = sum(cellSizes)
              allocate(elemFam(nCells))
+          else
+             allocate(elemFam(1)) !dummy allocation to prevent runtime error on the gatherv
           end if
 
           call mpi_gatherv(localElemFam, &
@@ -978,6 +980,10 @@ contains
              nCells = sum(cellSizes)
              allocate(conn(4, nCells))
              allocate(elemFam(nCells))
+          else
+             !dummy allocations to prevent runtime error on the gathers:
+             allocate(conn(4, 1))
+             allocate(elemFam(1))
           end if
 
           ! We offset the conn array by nodeDisps(iProc) which
@@ -1890,7 +1896,8 @@ contains
     if (myid == 0) then
        gSlc%nNodes = sum(sliceNodeSizes)
        allocate(gSlc%vars(iSize, gSlc%nNodes))
-
+    else
+       allocate(gSlc%vars(iSize, 1)) !dummy allocation to prevent runtime error on the following gatherv
     end if
 
     call mpi_gatherv(localVals, iSize*lSlc%nNodes, adflow_real, gSlc%vars, sliceNodeSizes*iSize, &
@@ -1914,6 +1921,8 @@ contains
              cellDisps(iProc) = cellDisps(iProc-1) + sliceCellSizes(iProc)*2
           end do
           allocate(gSlc%conn(2, sum(sliceCellSizes)))
+       else
+          allocate(gSlc%conn(2, 1)) !dummy allocation to prevent runtime error on the following gatherv
        end if
 
        ! We offset the conn array by nodeDisps(iProc) which

@@ -150,6 +150,9 @@ contains
           if( cgnsDoms(nn)%bocoInfo(ll)%actualFace )                 &
                call writeSurfsolCGNSZone(nn, mm, ll, nSolVar, solNames, &
                nZonesWritten, .false., famListStr)
+
+          !Prevent any interaction between the mpi send/recv for each BoCo
+          call mpi_barrier(ADflow_comm_world, ierr)
        enddo
 
        ! Loop over the number of internal block boundaries of the
@@ -162,6 +165,9 @@ contains
           if( cgnsDoms(nn)%conn1to1(ll)%periodic )                   &
                call writeSurfsolCGNSZone(nn, mm, ll, nSolVar, solNames, &
                nZonesWritten, .true., famListStr)
+
+          !Prevent any interaction between the mpi send/recv for each 
+          call mpi_barrier(ADflow_comm_world, ierr)
        enddo
     enddo zoneLoop
 

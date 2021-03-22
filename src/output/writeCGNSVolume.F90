@@ -72,6 +72,9 @@ contains
 
     do nn=1,cgnsNDom
        call writeSolCGNSZone(nn, nVolSolvar, nVolDiscrVar, solNames)
+
+       !Prevent any interaction between the mpi send/recv for each domain
+       call mpi_barrier(ADflow_comm_world, ierr)
     enddo
 
     ! Close the cgns file(s). Only processor 0 does this.
