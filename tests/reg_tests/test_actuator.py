@@ -110,7 +110,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # also add flowpower as an AZ function
         CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
 
-    def test_actuator_momentum_flux(self):
+    def test_actuator_thrust(self):
         "Tests if the correct amount of momentum is added to the flow by the actuator"
 
         # set the az force
@@ -175,7 +175,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # the tolerance is slightly worse but not terrible
         np.testing.assert_allclose(my_power, az_power, rtol=1.5e-3)
 
-    def test_actuator_heat_flux(self):
+    def test_actuator_heat(self):
         "Tests if the correct amount of heat is added to the flow by the actuator"
 
         # set the az heat
@@ -223,8 +223,8 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         cfd_force = fp_o + fm_o + fp_i + fm_i
 
         # the true value is 0, so we add 100 on both sides to have a reasonable comparison
-        np.testing.assert_allclose(100 + my_force, 100.0, rtol=1e-3)
-        np.testing.assert_allclose(100 + cfd_force, 100.0, rtol=1e-3)
+        np.testing.assert_allclose(my_force, 0., rtol=1e-3, atol=1e-3)
+        np.testing.assert_allclose(cfd_force, 0., rtol=1e-3, atol=1e-3)
 
         ##################
         # TEST POWER ADDED
@@ -236,7 +236,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # the tolerance is slightly worse but not terrible
         np.testing.assert_allclose(cfd_heat, az_heat, rtol=1.5e-3)
 
-    def test_actuator_both_fluxes(self):
+    def test_actuator_thrust_and_heat(self):
         "Tests if the correct amount of momentum and heat is added to the flow by the actuator"
 
         # set the az force
