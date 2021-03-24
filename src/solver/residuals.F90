@@ -345,10 +345,10 @@ contains
     end if
 
     ! Compute the constant force factor
-    F_fact = factor*actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume / pRef
+    F_fact = factor*actuatorRegions(iRegion)%force / actuatorRegions(iRegion)%volume / pRef
 
     ! Heat factor. This is heat added per unit volume per unit time
-    Q_fact = factor * actuatorRegions(iRegion)%Q / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
+    Q_fact = factor * actuatorRegions(iRegion)%heat / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
 
     ! Loop over the ranges for this block
     iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1

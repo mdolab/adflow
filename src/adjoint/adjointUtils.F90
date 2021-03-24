@@ -1051,9 +1051,9 @@ contains
 
     ! And the reverse seeds in the actuator zones
     do i=1, nActuatorRegions
-       actuatorRegionsd(i)%F = zero
-       actuatorRegionsd(i)%T = zero
-       actuatorRegionsd(i)%Q = zero
+       actuatorRegionsd(i)%force = zero
+       actuatorRegionsd(i)%torque = zero
+       actuatorRegionsd(i)%heat = zero
     end do
 
   end subroutine zeroADSeeds

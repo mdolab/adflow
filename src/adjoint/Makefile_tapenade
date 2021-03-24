@@ -171,8 +171,8 @@ sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
 sa%saResScale(scratch, dw) > \
              (dw) \
 \
-residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%F, actuatorRegions%Q) > \
-                           (w, pref, uref, plocal, dw, actuatorRegions%F, actuatorRegions%Q) \
+residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) > \
+                           (w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) \
 \
 fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw) > \
                           (w, timeRef, vol, si, sj, sk, p, dw) \

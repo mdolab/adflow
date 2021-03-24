@@ -57,8 +57,8 @@ contains
     region => actuatorRegions(nActuatorRegions)
     region%famName = famName
     region%famID = famID
-    region%T = torque
-    region%Q = heat
+    region%torque = torque
+    region%heat = heat
     region%relaxStart = relaxStart
     region%relaxEnd = relaxEnd
     ! We use the axis to define the direction of F. Since we are
@@ -74,7 +74,7 @@ contains
 
     axisVec = axisVec / axisVecNorm
 
-    region%F = axisVec*thrust
+    region%force = axisVec*thrust
     region%axisVec = axisVec
 
     allocate(region%blkPtr(0:nDom))

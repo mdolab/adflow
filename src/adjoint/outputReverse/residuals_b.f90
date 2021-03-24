@@ -309,12 +309,12 @@ contains
     end if
   end subroutine residual_block
 !  differentiation of sourceterms_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: uref pref *dw *w actuatorregions.f
-!                actuatorregions.q plocal
-!   with respect to varying inputs: uref pref *dw *w actuatorregions.f
-!                actuatorregions.q plocal
+!   gradient     of useful results: uref pref *dw *w actuatorregions.force
+!                actuatorregions.heat plocal
+!   with respect to varying inputs: uref pref *dw *w actuatorregions.force
+!                actuatorregions.heat plocal
 !   rw status of diff variables: uref:incr pref:incr *dw:in-out
-!                *w:incr actuatorregions.f:incr actuatorregions.q:incr
+!                *w:incr actuatorregions.force:incr actuatorregions.heat:incr
 !                plocal:in-out
 !   plus diff mem management of: dw:in w:in
   subroutine sourceterms_block_b(nn, res, iregion, plocal, plocald)
@@ -335,7 +335,7 @@ contains
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend, mynormsies
+&   , redim, factor, ostart, oend
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, f_factd(3), q_factd&
 &   , qtmpd, redimd
     real(kind=realtype) :: temp0
@@ -359,8 +359,8 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
-&     volume/pref
+    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+&     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
@@ -411,13 +411,15 @@ contains
     temp0 = actuatorregions(iregion)%volume*lref**2
     temp = temp0*pref*uref
     tempd = factor*q_factd/temp
-    tempd0 = -(actuatorregions(iregion)%q*temp0*tempd/temp)
-    actuatorregionsd(iregion)%q = actuatorregionsd(iregion)%q + tempd
+    tempd0 = -(actuatorregions(iregion)%heat*temp0*tempd/temp)
+    actuatorregionsd(iregion)%heat = actuatorregionsd(iregion)%heat + &
+&     tempd
     prefd = prefd + actuatorregions(iregion)%volume*sum(-(&
-&     actuatorregions(iregion)%f*tempd1/(actuatorregions(iregion)%volume&
-&     *pref))) + uref*tempd0
+&     actuatorregions(iregion)%force*tempd1/(actuatorregions(iregion)%&
+&     volume*pref))) + uref*tempd0
     urefd = urefd + pref*tempd0
-    actuatorregionsd(iregion)%f = actuatorregionsd(iregion)%f + tempd1
+    actuatorregionsd(iregion)%force = actuatorregionsd(iregion)%force + &
+&     tempd1
     prefd = prefd + uref*redimd
     urefd = urefd + pref*redimd
   end subroutine sourceterms_block_b
@@ -438,7 +440,7 @@ contains
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend, mynormsies
+&   , redim, factor, ostart, oend
     redim = pref*uref
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
@@ -454,12 +456,11 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
-&     volume/pref
+    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+&     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
-    q_fact = factor*actuatorregions(iregion)%q/actuatorregions(iregion)%&
-&     volume/(pref*uref*lref*lref)
-    mynormsies = pref*uref*lref*lref
+    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
+&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)

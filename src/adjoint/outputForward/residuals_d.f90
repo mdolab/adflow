@@ -314,10 +314,11 @@ contains
   end subroutine residual_block
 !  differentiation of sourceterms_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw plocal
-!   with respect to varying inputs: uref pref *dw *w actuatorregions.f
-!                actuatorregions.q plocal
+!   with respect to varying inputs: uref pref *dw *w actuatorregions.force
+!                actuatorregions.heat plocal
 !   rw status of diff variables: uref:in pref:in *dw:in-out *w:in
-!                actuatorregions.f:in actuatorregions.q:in plocal:in-out
+!                actuatorregions.force:in actuatorregions.heat:in
+!                plocal:in-out
 !   plus diff mem management of: dw:in w:in
   subroutine sourceterms_block_d(nn, res, iregion, plocal, plocald)
 ! apply the source terms for the given block. assume that the
@@ -337,7 +338,7 @@ contains
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend, mynormsies
+&   , redim, factor, ostart, oend
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, f_factd(3), q_factd&
 &   , qtmpd, redimd
     redimd = prefd*uref + pref*urefd
@@ -356,19 +357,18 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! compute the constant force factor
-    f_factd = (factor*actuatorregionsd(iregion)%f*pref/actuatorregions(&
-&     iregion)%volume-factor*actuatorregions(iregion)%f*prefd/&
-&     actuatorregions(iregion)%volume)/pref**2
-    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
-&     volume/pref
+    f_factd = (factor*actuatorregionsd(iregion)%force*pref/&
+&     actuatorregions(iregion)%volume-factor*actuatorregions(iregion)%&
+&     force*prefd/actuatorregions(iregion)%volume)/pref**2
+    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+&     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
-    q_factd = (factor*actuatorregionsd(iregion)%q*pref*uref*lref**2/&
-&     actuatorregions(iregion)%volume-factor*actuatorregions(iregion)%q*&
-&     lref**2*(prefd*uref+pref*urefd)/actuatorregions(iregion)%volume)/(&
-&     pref*uref*lref*lref)**2
-    q_fact = factor*actuatorregions(iregion)%q/actuatorregions(iregion)%&
-&     volume/(pref*uref*lref*lref)
-    mynormsies = pref*uref*lref*lref
+    q_factd = (factor*actuatorregionsd(iregion)%heat*pref*uref*lref**2/&
+&     actuatorregions(iregion)%volume-factor*actuatorregions(iregion)%&
+&     heat*lref**2*(prefd*uref+pref*urefd)/actuatorregions(iregion)%&
+&     volume)/(pref*uref*lref*lref)**2
+    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
+&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
@@ -425,7 +425,7 @@ contains
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend, mynormsies
+&   , redim, factor, ostart, oend
     redim = pref*uref
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
@@ -441,12 +441,11 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
-&     volume/pref
+    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+&     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
-    q_fact = factor*actuatorregions(iregion)%q/actuatorregions(iregion)%&
-&     volume/(pref*uref*lref*lref)
-    mynormsies = pref*uref*lref*lref
+    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
+&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)

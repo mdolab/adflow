@@ -330,7 +330,7 @@ contains
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend, mynormsies
+&   , redim, factor, ostart, oend
     real(kind=realtype) :: vxd, vyd, vzd
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
@@ -346,8 +346,8 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
-&     volume/pref
+    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+&     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
@@ -391,7 +391,7 @@ contains
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
     real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend, mynormsies
+&   , redim, factor, ostart, oend
     redim = pref*uref
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
@@ -407,12 +407,11 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(iregion)%&
-&     volume/pref
+    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+&     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
-    q_fact = factor*actuatorregions(iregion)%q/actuatorregions(iregion)%&
-&     volume/(pref*uref*lref*lref)
-    mynormsies = pref*uref*lref*lref
+    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
+&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
