@@ -620,7 +620,7 @@ class ADFLOW(AeroSolver):
         """
         Add an actuator disk zone defined by the supplied closed
         surface in the plot3d file "fileName". this surface defines the
-        physical extent of the region overwhich to apply the source terms.
+        physical extent of the region over which to apply the source terms.
         Internally, we find all of the CFD volume cells that are inside
         this closed surface and apply the source terms over these cells.
         This surface is only used with the original mesh coordinates to
