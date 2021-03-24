@@ -661,36 +661,36 @@ class ADFLOW(AeroSolver):
         Parameters
         ----------
 
-        fileName: str
+        fileName : str
            Surface Plot 3D file (multiblock ascii) defining the closed
            region over which the integration is to be applied.
 
-        axis1: numpy array, length 3
+        axis1 : numpy array, length 3
            The physical location of the start of the axis
 
-        axis2: numpy array, length 4
+        axis2 : numpy array, length 4
            The physical location of the end of the axis
 
-        familyName: str
+        familyName : str
            The name to be associated with the functions defined on this
            region.
 
-        thrust: scalar, float
+        thrust : scalar, float
            The total amount of axial force to apply to this region, in the direction
            of axis1 -> axis2
 
-        torque: scalar, float
+        torque : scalar, float
            The total amount of torque to apply to the region, about the
            specified axis.
 
-        heat: scalar, float
+        heat : scalar, float
             The total amount of head added in the actuator zone with source terms
 
-        relaxStart: scalar, float
+        relaxStart : scalar, float
             The start of the relaxation in terms of
             orders of magnitude of relative convergence
 
-        relaxEnd: scalar, float
+        relaxEnd : scalar, float
             The end of the relaxation in terms of
             orders of magnitude of relative convergence
 
@@ -749,10 +749,10 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        fileName: str
+        fileName : str
             Name of the output file
 
-        outputDir: str
+        outputDir : str
             output directory. If not provided, defaults to the output
             directory defined with the aero_options
         """
