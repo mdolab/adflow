@@ -327,7 +327,7 @@ contains
 
     ! Working
     integer(kind=intType) :: i, j, k, ii, iStart, iEnd
-    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, F_fact(3), Q_fact, Qtmp, reDim, factor, oStart, oEnd, mynormsies
+    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, F_fact(3), Q_fact, Qtmp, reDim, factor, oStart, oEnd
 
     reDim = pRef*uRef
 
@@ -349,7 +349,6 @@ contains
 
     ! Heat factor. This is heat added per unit volume per unit time
     Q_fact = factor * actuatorRegions(iRegion)%Q / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
-    mynormsies = (pRef * uRef * LRef * LRef)
 
     ! Loop over the ranges for this block
     iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1

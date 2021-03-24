@@ -157,7 +157,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # just sum these up, the forces contain the correct normals from CFD
         cfd_force = fp_o + fm_o + fp_i + fm_i
 
-        # The low accuracy is because the intgrated quantities don't have a lot of precision
+        # The low accuracy is because the integrated quantities don't have a lot of precision
         np.testing.assert_allclose(my_force, az_force, rtol=1e-3)
         np.testing.assert_allclose(cfd_force, az_force, rtol=1e-3)
 
@@ -285,7 +285,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # just sum these up, the forces contain the correct normals from CFD
         cfd_force = fp_o + fm_o + fp_i + fm_i
 
-        # The low accuracy is because the intgrated quantities don't have a lot of precision
+        # The low accuracy is because the integrated quantities don't have a lot of precision
         np.testing.assert_allclose(my_force, az_force, rtol=1e-3)
         np.testing.assert_allclose(cfd_force, az_force, rtol=1e-3)
 
@@ -398,7 +398,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         #####################
 
         # we test these w.r.t. thrust and heat analytically
-        # The low accuracy is because the intgrated quantities don't have a lot of precision
+        # The low accuracy is because the integrated quantities don't have a lot of precision
 
         np.testing.assert_allclose(funcsSens["actuator_pipe_my_force"]["thrust"], 1, rtol=1e-3)
         np.testing.assert_allclose(funcsSens["actuator_pipe_cfd_force"]["thrust"], 1, rtol=1e-3)

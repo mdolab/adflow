@@ -618,10 +618,23 @@ class ADFLOW(AeroSolver):
                           thrust=0.0, torque=0.0, heat=0.0,
                           relaxStart=None, relaxEnd=None):
         """
-        Add an actuator disk zone defined by the (closed) supplied
-        in the plot3d file "fileName". axis1 and axis2 defines the
-        physical extent of the region overwhich to apply the ramp
-        factor.
+        Add an actuator disk zone defined by the supplied closed
+        surface in the plot3d file "fileName". this surface defines the
+        physical extent of the region overwhich to apply the source terms.
+        Internally, we find all of the CFD volume cells that are inside
+        this closed surface and apply the source terms over these cells.
+        This surface is only used with the original mesh coordinates to
+        mark the internal CFD cells, and we keep using these cells even
+        if the geometric design and the mesh coordinates change. For
+        example, the marked cells can lie outside of the original
+        closed surface after a large design change, but we will still
+        use the cells that were inside the surface with the baseline design.
+
+        axis1 and axis2 define the vector that we use to determine the
+        direction of the thrust addition. Internally, we compute a
+        vector by $axisVec = axis2-axis1$ and then we normalize this
+        vector. When adding the thrust terms, the direction of the thrust
+        is obtained by multiplying the thrust magnitude by this vector.
 
         Optionally, the source terms in the actuator zone can be
         gradually ramped up as the solution converges. This continuation
@@ -648,36 +661,36 @@ class ADFLOW(AeroSolver):
         Parameters
         ----------
 
-        fileName : str
+        fileName: str
            Surface Plot 3D file (multiblock ascii) defining the closed
            region over which the integration is to be applied.
 
-        axis1 : numpy array, length 3
+        axis1: numpy array, length 3
            The physical location of the start of the axis
 
-        axis2 : numpy array, length 4
+        axis2: numpy array, length 4
            The physical location of the end of the axis
 
-        familyName : str
+        familyName: str
            The name to be associated with the functions defined on this
            region.
 
-        thrust : scalar, float
+        thrust: scalar, float
            The total amount of axial force to apply to this region, in the direction
            of axis1 -> axis2
 
-        torque : scalar, float
+        torque: scalar, float
            The total amount of torque to apply to the region, about the
            specified axis.
 
-        heat : scalar, float
+        heat: scalar, float
             The total amount of head added in the actuator zone with source terms
 
-        relaxStart : scalar, float
+        relaxStart: scalar, float
             The start of the relaxation in terms of
             orders of magnitude of relative convergence
 
-        relaxEnd : scalar, float
+        relaxEnd: scalar, float
             The end of the relaxation in terms of
             orders of magnitude of relative convergence
 
@@ -736,10 +749,10 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        fileName : str
+        fileName: str
             Name of the output file
 
-        outputDir : str
+        outputDir: str
             output directory. If not provided, defaults to the output
             directory defined with the aero_options
         """
