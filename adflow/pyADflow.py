@@ -2499,7 +2499,7 @@ class ADFLOW(AeroSolver):
         # time this AP is used.
         try:
             aeroProblem.adflowData.oldWinf = None
-        except Exception:
+        except AttributeError:
             pass
 
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)

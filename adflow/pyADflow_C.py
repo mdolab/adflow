@@ -84,7 +84,7 @@ class ADFLOW_C(ADFLOW):
         temp.pop("location")
         try:
             temp.pop("len")
-        except Exception:
+        except KeyError:
             pass
 
         # If temp has anything left in it, we MUST be able to match to
