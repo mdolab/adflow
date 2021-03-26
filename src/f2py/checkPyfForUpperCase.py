@@ -8,16 +8,17 @@ case characters. Text in comments and preprocessor tags are ignored
 
 import sys
 
-def error(i,line):
+
+def error(i, line):
     print("ERROR : No code related characters in adflow.pyf cannot contain upper case characters")
-    print("ERROR : Uppercase found in adflow.pyf line {0:d}. String found is: {1:s} ".format(i,line))
+    print("ERROR : Uppercase found in adflow.pyf line {0:d}. String found is: {1:s} ".format(i, line))
     sys.exit(1)
 
 
 # Define charachter set
 ignoreChars = set("!#")
 
-f = open("../f2py/adflow.pyf","r")
+f = open("../f2py/adflow.pyf", "r")
 for i, line in enumerate(f):
     line = line.rstrip()
     if not line:
@@ -32,7 +33,7 @@ for i, line in enumerate(f):
         # Comments are special since they might be trailing actual code, need to check further
         if "!" in line:
             tmp = line.split("!")[0]  # Get the text left of comment
-            tmp = tmp.replace(" ","") # Clean all white spaces since they will show as not lower case later
+            tmp = tmp.replace(" ", "")  # Clean all white spaces since they will show as not lower case later
 
             if not tmp:
                 # Check if the rest is an empty string after the manipulation
@@ -40,12 +41,12 @@ for i, line in enumerate(f):
 
             if not tmp.islower():
                 # Check if the rest contains upper case characters
-                error(i,line)
+                error(i, line)
         # No upper case characters was found
         continue
 
     else:
-         error(i,line)
+        error(i, line)
 
 # No errors in file exit with no errors
 sys.exit(0)

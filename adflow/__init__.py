@@ -1,4 +1,4 @@
-__version__ = '2.5.0'
+__version__ = "2.5.0"
 
 from mpi4py import MPI
 
@@ -14,11 +14,7 @@ except ImportError as err:
     openmdao = None
 
     if MPI.COMM_WORLD.rank == 0:
-        print('Warning: OpenMDAO dependency is not installed. OM_ADFLOW wrapper will not be active')
+        print("Warning: OpenMDAO dependency is not installed. OM_ADFLOW wrapper will not be active")
 
 if openmdao is not None:
     from .om_adflow import OM_ADFLOW
-
-
-
-

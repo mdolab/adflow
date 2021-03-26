@@ -44,17 +44,18 @@ class OversetCheck(ADFLOW):
         Set this flag to true when debugging with a symbolic
         debugger. The MExt module deletes the copied .so file when not
         required which causes issues debugging.
-        """
+    """
+
     def __init__(self, comm=None, options=None, debug=False):
 
         # Load the compiled module using MExt, allowing multiple
         # imports
         curDir = os.path.dirname(os.path.realpath(__file__))
-        self.adflow = MExt.MExt('libadflow', [curDir], debug=debug)._module
+        self.adflow = MExt.MExt("libadflow", [curDir], debug=debug)._module
 
         # Information for base class:
-        name = 'ADFLOW'
-        category = 'Three Dimensional CFD'
+        name = "ADFLOW"
+        category = "Three Dimensional CFD"
         informs = {}
 
         # If 'options' is not None, go through and make sure all keys
@@ -63,21 +64,21 @@ class OversetCheck(ADFLOW):
             for key in options.keys():
                 options[key.lower()] = options.pop(key)
         else:
-            raise Error("The 'options' keyword argument must be passed "
-                        "adflow. The options dictionary must contain (at least) "
-                        "the gridFile entry for the grid")
+            raise Error(
+                "The 'options' keyword argument must be passed "
+                "adflow. The options dictionary must contain (at least) "
+                "the gridFile entry for the grid"
+            )
 
         # Load all the option/objective/DV information:
         defOpts = self._getDefOptions()
         self.optionMap = self._getOptionMap()
-        self.ignoreOptions, self.deprecatedOptions, self.specialOptions = \
-                           self._getSpecialOptionLists()
+        self.ignoreOptions, self.deprecatedOptions, self.specialOptions = self._getSpecialOptionLists()
 
-        self.possibleAeroDVs, self.basicCostFunctions = (
-            self._getObjectivesAndDVs())
+        self.possibleAeroDVs, self.basicCostFunctions = self._getObjectivesAndDVs()
 
         # This is the real solver so dtype is 'd'
-        self.dtype = 'd'
+        self.dtype = "d"
 
         # Next set the MPI Communicators and associated info
         if comm is None:
@@ -92,8 +93,7 @@ class OversetCheck(ADFLOW):
         self.adflow.communication.nproc = self.comm.size
 
         # Initialize the inherited aerosolver
-        AeroSolver.__init__(self, name, category, defOpts, informs,
-                            options=options)
+        AeroSolver.__init__(self, name, category, defOpts, informs, options=options)
 
         # Initialize petec in case the user has not already
         self.adflow.initializepetsc()
@@ -109,17 +109,26 @@ class OversetCheck(ADFLOW):
         # Set default values
         self.adflow.setdefaultvalues()
         self.adflow.inputio.autoparameterupdate = False
-        
+
         # Make sure all the params are ok
         for option in self.options:
-            if option != 'defaults':
+            if option != "defaults":
                 self.setOption(option.lower(), self.options[option][1])
 
-        dummyAP = AeroProblem(name='dummy', mach=0.5, altitude=10000.0,
-                              areaRef=1.0, chordRef=1.0, alpha=0.0, degreePol=0,
-                              coefPol=[0, 0], degreeFourier=1,
-                              omegaFourier=6.28, sinCoefFourier=[0, 0],
-                              cosCoefFourier=[0, 0])
+        dummyAP = AeroProblem(
+            name="dummy",
+            mach=0.5,
+            altitude=10000.0,
+            areaRef=1.0,
+            chordRef=1.0,
+            alpha=0.0,
+            degreePol=0,
+            coefPol=[0, 0],
+            degreeFourier=1,
+            omegaFourier=6.28,
+            sinCoefFourier=[0, 0],
+            cosCoefFourier=[0, 0],
+        )
 
         self.curAP = dummyAP
         self._setAeroProblemData(firstCall=True)
