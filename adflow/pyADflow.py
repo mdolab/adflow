@@ -2088,11 +2088,11 @@ class ADFLOW(AeroSolver):
         Parameters
         ----------
 
-        outputDir: str
+        outputDir : str
             Use the supplied output directory
-        baseName: str
+        baseName : str
             Use this supplied string for the base filename. Typically only used from an external solver.
-        number: int
+        number : int
             Use the user supplied number to index solution. Again, only typically used from an external solver.
         """
         if outputDir is None:
