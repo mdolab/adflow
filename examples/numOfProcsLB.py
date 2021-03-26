@@ -1,21 +1,21 @@
 #!/usr/bin/python
 
 """
-The script will determine the number of processors that will result in the 
-best loadbalancing between procs given a mesh and multigrid cycles. 
+The script will determine the number of processors that will result in the
+best loadbalancing between procs given a mesh and multigrid cycles.
 
 User can specify either specific number of procs that he wants to check
 or a range of processors that he wants to check.
 
 Note!
-To get valid output the input needs to be valid as well. For example it 
+To get valid output the input needs to be valid as well. For example it
 does not make sense to check large number of procs and large number of
 multigrid cycles for a small mesh as ADflow will crash on that.
 
 Example usage:
 
 #1 Get load balcance information for only two processor numbers
-$ python numOfProcsLB.py fine_L1.cgns  32 64 --mgCycle 4w 
+$ python numOfProcsLB.py fine_L1.cgns  32 64 --mgCycle 4w
 
 #2 Get load balcance information for only two processor numbers
 python numOfProcsLB.py fine_L0.cgns  256 512 --sequence --mgCycle 4w

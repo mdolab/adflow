@@ -13,14 +13,14 @@ Developers:
 
 History
 -------
-	v. 1.0	- Original pyHF Framework Implementation (SM 2010)
+    v. 1.0	- Original pyHF Framework Implementation (SM 2010)
 """
 
 __version__ = "$Revision: $"
 
 """
 To Do:
-	- 
+    -
 """
 # =============================================================================
 # Standard Python modules
