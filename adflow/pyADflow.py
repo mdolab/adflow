@@ -615,12 +615,48 @@ class ADFLOW(AeroSolver):
             pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(self, fileName, axis1, axis2, familyName,
-                          thrust=0.0, torque=0.0, relaxStart=None,
-                          relaxEnd=None):
-        """Add an actuator disk zone defined by the (closed) supplied
-        in the plot3d file 'fileName'. 'axis1' and 'axis2' defines the
-        physical extent of the region over which to apply the ramp
-        factor.
+                          thrust=0.0, torque=0.0, heat=0.0,
+                          relaxStart=None, relaxEnd=None):
+        """
+        Add an actuator disk zone defined by the supplied closed
+        surface in the plot3d file "fileName". this surface defines the
+        physical extent of the region over which to apply the source terms.
+        Internally, we find all of the CFD volume cells that are inside
+        this closed surface and apply the source terms over these cells.
+        This surface is only used with the original mesh coordinates to
+        mark the internal CFD cells, and we keep using these cells even
+        if the geometric design and the mesh coordinates change. For
+        example, the marked cells can lie outside of the original
+        closed surface after a large design change, but we will still
+        use the cells that were inside the surface with the baseline design.
+
+        axis1 and axis2 define the vector that we use to determine the
+        direction of the thrust addition. Internally, we compute a
+        vector by $axisVec = axis2-axis1$ and then we normalize this
+        vector. When adding the thrust terms, the direction of the thrust
+        is obtained by multiplying the thrust magnitude by this vector.
+
+        Optionally, the source terms in the actuator zone can be
+        gradually ramped up as the solution converges. This continuation
+        approach can be more robust but the users should be careful with
+        the side effects of partially converged solutions. This behavior
+        can be controlled by relaxStart and relaxEnd parameters. By
+        default, the full magnitude of the source terms are added.
+        relaxStart controls when the continuation starts ramping up.
+        The value represents the relative convergence in a log10 basis.
+        So relaxStart = 2 means the source terms will be inactive until
+        the residual is decreased by a factor of 100 compared to free
+        stream conditions. The source terms are ramped to the full
+        magnitude at relaxEnd. E.g., a relaxEnd value of 4 would
+        result in the full source terms after a relative reduction of
+        1e4 in the total residuals. If relaxStart is not provided, but
+        relaxEnd is provided, then the relaxStart is assumed to be 0.
+        If both are not provided, we do not do ramping and just activate
+        the full source terms from the beginning. When this continuation
+        is used, we internally ramp up the magnitude of the source terms
+        monotonically to prevent oscillations; i.e., decrease in the total
+        residuals increase the source term magnitudes, but an increase
+        in the residuals do not reduce the source terms back down.
 
         Parameters
         ----------
@@ -639,13 +675,24 @@ class ADFLOW(AeroSolver):
            The name to be associated with the functions defined on this
            region.
 
-        thrust : scalar
+        thrust : scalar, float
            The total amount of axial force to apply to this region, in the direction
            of axis1 -> axis2
 
-        torque : scalar
+        torque : scalar, float
            The total amount of torque to apply to the region, about the
            specified axis.
+
+        heat : scalar, float
+            The total amount of head added in the actuator zone with source terms
+
+        relaxStart : scalar, float
+            The start of the relaxation in terms of
+            orders of magnitude of relative convergence
+
+        relaxEnd : scalar, float
+            The end of the relaxation in terms of
+            orders of magnitude of relative convergence
 
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
@@ -690,9 +737,38 @@ class ADFLOW(AeroSolver):
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque,
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, heat,
             relaxStart, relaxEnd)
 
+    def writeActuatorRegions(self, fileName, outputDir=None):
+        """
+        Debug method that writes the cells included in actuator regions
+        to a tecplot file. This routine should be called on all of the
+        procs in self.comm. The output can then be used to verify that
+        the actuator zones are defined correctly.
+
+        Parameters
+        ----------
+        fileName : str
+            Name of the output file
+
+        outputDir : str
+            output directory. If not provided, defaults to the output
+            directory defined with the aero_options
+        """
+
+        if outputDir is None:
+            outputDir = self.getOption('outputDirectory')
+
+        # Join to get the actual filename root
+        fileName = os.path.join(outputDir, fileName)
+
+        # Ensure extension is .plt even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        fileName += '.plt'
+
+        # just call the underlying fortran routine
+        self.adflow.actuatorregion.writeactuatorregions(fileName)
 
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a
@@ -1276,10 +1352,7 @@ class ADFLOW(AeroSolver):
             Dictionary into which the function derivatives are saved.
 
         evalFuncs : iterable object containing strings
-            The functions the user wants the derivatives of
-
-        evalFuncs : iterable object containing strings
-            The addition functions the user wants returned that are
+            The additional functions the user wants returned that are
             not already defined in the aeroProblem
 
         Examples
@@ -5111,7 +5184,7 @@ class ADFLOW(AeroSolver):
             iDV[key] = iDV[key] - 1
 
             # Extra DVs for the Boundary condition variables
-        BCDV = ['pressure', 'pressurestagnation', 'temperaturestagnation', 'thrust']
+        BCDV = ['pressure', 'pressurestagnation', 'temperaturestagnation', 'thrust', 'heat']
 
         # This is ADflow's internal mapping for cost functions
         adflowCostFunctions = {
