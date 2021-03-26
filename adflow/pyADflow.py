@@ -624,7 +624,7 @@ class ADFLOW(AeroSolver):
     ):
         """
         Add an actuator disk zone defined by the supplied closed
-        surface in the plot3d file "fileName". this surface defines the
+        surface in the plot3d file "fileName". This surface defines the
         physical extent of the region over which to apply the source terms.
         Internally, we find all of the CFD volume cells that are inside
         this closed surface and apply the source terms over these cells.
@@ -1460,8 +1460,8 @@ class ADFLOW(AeroSolver):
         evalFuncs : iterable object containing strings
             The functions the user wants the uncertainty of
 
-        UQDict: dictionary containing the mean and std dev. of the
-            input parameters that are providing the uncertain input
+        UQDict : dict
+            Dictionary containing the mean and std dev. of the input parameters that are providing the uncertain input.
         """
 
         # Set the current aeroProblem
@@ -2085,14 +2085,15 @@ class ADFLOW(AeroSolver):
         function is used along with the associated logical flags in
         the options to determine the desired writing procedure
 
-        Optional arguments
+        Parameters
+        ----------
 
-        outputDir: Use the supplied output directory
-
-        baseName: Use this supplied string for the base filename. Typically
-                  only used from an external solver.
-        number: Use the user supplied number to index solution. Again, only
-                typically used from an external solver.
+        outputDir: str
+            Use the supplied output directory
+        baseName: str
+            Use this supplied string for the base filename. Typically only used from an external solver.
+        number: int
+            Use the user supplied number to index solution. Again, only typically used from an external solver.
         """
         if outputDir is None:
             outputDir = self.getOption("outputDirectory")
