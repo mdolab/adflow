@@ -3,7 +3,6 @@ import unittest
 import numpy as np
 import os
 import copy
-from pprint import pprint as pp
 
 # need to import mpi4py for dot product tests
 from mpi4py import MPI

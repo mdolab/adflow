@@ -21,11 +21,7 @@ v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 # Imports
 # =============================================================================
 import os
-import time
 import copy
-import numpy
-from mpi4py import MPI
-from baseclasses import AeroSolver, AeroProblem
 from . import MExt
 from .pyADflow import ADFLOW
 
@@ -88,7 +84,7 @@ class ADFLOW_C(ADFLOW):
         temp.pop("location")
         try:
             temp.pop("len")
-        except:
+        except Exception:
             pass
 
         # If temp has anything left in it, we MUST be able to match to

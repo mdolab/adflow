@@ -1,6 +1,9 @@
-import numpy as np
-import pprint
-from pygeo import DVGeometry, DVConstraints
+from pygeo import DVGeometry
+from baseclasses import AeroProblem
+
+from openmdao.api import ImplicitComponent
+from openmdao.core.analysis_error import AnalysisError
+from .om_utils import get_dvs_and_cons
 
 DVGEO_CLASSES = (DVGeometry,)
 try:
@@ -9,15 +12,6 @@ try:
     DVGEO_CLASSES = (DVGeometry, DVGeometryVSP)
 except ImportError:
     pass
-
-from baseclasses import AeroProblem
-
-from adflow import ADFLOW
-
-from openmdao.api import ImplicitComponent
-from openmdao.core.analysis_error import AnalysisError
-
-from .om_utils import get_dvs_and_cons
 
 
 class OM_STATES_COMP(ImplicitComponent):
@@ -199,8 +193,6 @@ class OM_STATES_COMP(ImplicitComponent):
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
 
         solver = self.options["solver"]
-        ap = self.options["ap"]
-        geo = self.options["dvgeo"]
 
         # self._set_ap(inputs)
         # self._set_geo(inputs)
@@ -234,7 +226,6 @@ class OM_STATES_COMP(ImplicitComponent):
 
     def solve_linear(self, d_outputs, d_residuals, mode):
         solver = self.options["solver"]
-        ap = self.options["ap"]
         if self.options["use_OM_KSP"]:
             if mode == "fwd":
                 d_outputs["states"] = solver.globalNKPreCon(d_residuals["states"], d_outputs["states"])

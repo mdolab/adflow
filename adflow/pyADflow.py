@@ -28,7 +28,6 @@ import types
 import numpy
 import sys
 from mpi4py import MPI
-from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from baseclasses.utils import Error
 from . import MExt
@@ -87,7 +86,7 @@ class ADFLOW(AeroSolver):
         # imports
         try:
             self.adflow
-        except:
+        except AttributeError:
             curDir = os.path.dirname(os.path.realpath(__file__))
             self.adflow = MExt.MExt("libadflow", [curDir], debug=debug)._module
 
@@ -993,8 +992,6 @@ class ADFLOW(AeroSolver):
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
 
-        aeroProblemSetTime = time.time()
-
         # Set filenames for possible forced write during solution
         self._setForcedFileNames()
 
@@ -1004,8 +1001,6 @@ class ADFLOW(AeroSolver):
         # done here regardless.
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
-
-        memoryReleaseTime = time.time()
 
         # Clear out any saved adjoint RHS since they are now out of
         # data. Also increment the counter for this case.
@@ -1379,8 +1374,6 @@ class ADFLOW(AeroSolver):
         # of what happened in the previous iterations.
         self.curAP.adjointFailed = False
 
-        aeroProblemTime = time.time()
-
         if evalFuncs is None:
             evalFuncs = sorted(list(self.curAP.evalFuncs))
 
@@ -1409,7 +1402,6 @@ class ADFLOW(AeroSolver):
                 print("Solving adjoint: %s" % f)
 
             key = self.curAP.name + "_%s" % f
-            ptSetName = self.curAP.ptSetName
 
             # Set dict structure for this derivative
             funcsSens[key] = OrderedDict()
@@ -2211,7 +2203,6 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.writevolume = True
         self.adflow.monitor.writesurface = False
 
-        n = self.adflow.constants.maxstringlen
         # Set fileName in adflow
         self.adflow.inputio.solfile = self._expandString(fileName)
         # self.adflow.inputio.solfile[0:len(fileName)] = fileName
@@ -2297,8 +2288,8 @@ class ADFLOW(AeroSolver):
         fileName += ".dat"
 
         # Actual write command. Family list doesn't matter
-        sliceName = ""
         liftName = ""
+        surfName = ""
         self.adflow.tecplotio.writetecplot(fileName, True, liftName, True, surfName, False, self.allFamilies)
 
     def writeForceFile(self, fileName, TS=0, groupName=None, cfdForcePts=None):
@@ -2507,7 +2498,7 @@ class ADFLOW(AeroSolver):
         # time this AP is used.
         try:
             aeroProblem.adflowData.oldWinf = None
-        except:
+        except Exception:
             pass
 
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
@@ -2695,7 +2686,7 @@ class ADFLOW(AeroSolver):
         # Now check if we have an DVGeo object to deal with:
         if self.DVGeo is not None:
             # DVGeo appeared and we have not embedded points!
-            if not ptSetName in self.DVGeo.points:
+            if ptSetName not in self.DVGeo.points:
                 coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
                 self.DVGeo.addPointSet(coords0, ptSetName)
 
@@ -2764,7 +2755,7 @@ class ADFLOW(AeroSolver):
 
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
-        After an aeroProblem has been associated with self.cuAP, set
+        After an aeroProblem has been associated with self.curAP, set
         all the updated information in ADflow."""
 
         # Set any additional adflow options that may be defined in the
@@ -2773,7 +2764,7 @@ class ADFLOW(AeroSolver):
         AP = aeroProblem
         try:
             AP.savedOptions
-        except:
+        except AttributeError:
             AP.savedOptions = {"adflow": {}}
 
         if "adflow" in AP.solverOptions:
@@ -2817,8 +2808,6 @@ class ADFLOW(AeroSolver):
             T = numpy.real(AP.T)
             P = numpy.real(AP.P)
             rho = numpy.real(AP.rho)
-            V = numpy.real(AP.V)
-            mu = numpy.real(AP.mu)
 
             SSuthDim = numpy.real(AP.SSuthDim)
             muSuthDim = numpy.real(AP.muSuthDim)
@@ -2830,8 +2819,6 @@ class ADFLOW(AeroSolver):
             T = AP.T
             P = AP.P
             rho = AP.rho
-            V = AP.V
-            mu = AP.mu
 
             SSuthDim = AP.SSuthDim
             muSuthDim = AP.muSuthDim
@@ -3488,7 +3475,6 @@ class ADFLOW(AeroSolver):
 
                 for tmp in self.curAP.bcVarData:
                     varName, family = tmp
-                    value = self.curAP.bcVarData[tmp]
                     if varName.lower() == key and family.lower() == dvFam.lower():
                         funcsSens[dvName] = dIdBC[i]
                     i += 1
@@ -3574,7 +3560,6 @@ class ADFLOW(AeroSolver):
         """
         adjointMatrixName = baseFileName + "_drdw.bin"
         pcMatrixName = baseFileName + "_drdwPre.bin"
-        cellCenterName = baseFileName + "_cellCen.bin"
         self.adflow.adjointapi.saveadjointmatrix(adjointMatrixName)
         self.adflow.adjointapi.saveadjointpc(pcMatrixName)
 

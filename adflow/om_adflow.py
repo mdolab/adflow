@@ -1,15 +1,12 @@
 import types
-from pygeo import DVGeometry, DVConstraints
+
 from baseclasses import AeroProblem
 
-from adflow import ADFLOW
-
-from openmdao.api import Group, PETScKrylov, LinearRunOnce, LinearUserDefined, IndepVarComp
+from openmdao.api import Group, PETScKrylov, LinearUserDefined, IndepVarComp
 
 from .om_states_comp import OM_STATES_COMP
 from .om_func_comp import OM_FUNC_COMP
 from .om_geocon_comp import OM_GEOCON_COMP
-
 from .om_utils import get_dvs_and_cons
 
 
@@ -54,7 +51,6 @@ class OM_ADFLOW(Group):
             indeps = self.add_subsystem("indeps", IndepVarComp(), promotes=["*"])
             for (args, kwargs) in des_vars:
                 name = args[0]
-                size = args[1]
                 value = kwargs["value"]
                 if "units" in kwargs:
                     indeps.add_output(name, value, units=kwargs["units"])

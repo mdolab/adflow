@@ -1,8 +1,7 @@
-import numpy as np
-
 from six import iteritems, itervalues
 
 from openmdao.api import ExplicitComponent
+from .om_utils import get_dvs_and_cons
 
 from pygeo import DVGeometry, DVConstraints
 
@@ -13,9 +12,6 @@ try:
     DVGEO_CLASSES = (DVGeometry, DVGeometryVSP)
 except ImportError:
     pass
-
-
-from .om_utils import get_dvs_and_cons
 
 
 class OM_GEOCON_COMP(ExplicitComponent):
@@ -63,7 +59,7 @@ class OM_GEOCON_COMP(ExplicitComponent):
             tmp[name] = inputs[name]
 
         try:
-            self.options["dvgeo"].setDesignVars(tmp, update_jacobian)
+            self.options["dvgeo"].setDesignVars(tmp, updateJacobian)
         except TypeError:  # this is needed because dvGeo and dvGeoVSP have different APIs
             self.options["dvgeo"].setDesignVars(tmp)
 

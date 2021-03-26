@@ -1,4 +1,8 @@
 #!/usr/local/bin/python
+
+import copy
+import numpy
+
 """
 pyPerformanceClass - A class of routine to handle the computation of various dynamic handling qualities parameters.
 
@@ -22,17 +26,6 @@ __version__ = "$Revision: $"
 To Do:
     -
 """
-# =============================================================================
-# Standard Python modules
-# =============================================================================
-import os, sys, copy
-import pdb
-import time
-import numpy
-
-# =============================================================================
-# Extension modules
-# =============================================================================
 
 
 class PERFORMANCE(object):
@@ -48,10 +41,10 @@ class PERFORMANCE(object):
 
         """
 
-        name = "Performance"
-        category = "Performance and Handling Qualities"
-        def_opts = {}
-        informs = {}
+        # name = "Performance"
+        # category = "Performance and Handling Qualities"
+        # def_opts = {}
+        # informs = {}
 
         return
 

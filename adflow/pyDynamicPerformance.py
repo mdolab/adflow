@@ -1,4 +1,7 @@
 #!/usr/local/bin/python
+
+import numpy
+
 """
 pyDynamicPerformance - A set of routine to handle the computation of various dynamic handling qualities parameters.
 
@@ -22,19 +25,6 @@ __version__ = "$Revision: $"
 To Do:
     -
 """
-# =============================================================================
-# Standard Python modules
-# =============================================================================
-import os, sys
-import pdb
-import time
-import numpy
-
-# from cmath import pi,cos,sin
-
-# =============================================================================
-# Extension modules
-# =============================================================================
 
 
 def calculateThumbnailMethodConstraint(Wn, DampingRatio):
@@ -105,7 +95,7 @@ def calculateNAlpha(Clalpha, rho, Area, U, mass, g):
     calculate the g normalized lift derivative
     """
 
-    nalpha = rho * U ** 2 * A * Clalpha / (2 * mass * g)
+    nalpha = rho * U ** 2 * Area * Clalpha / (2 * mass * g)
 
     return nalpha
 

@@ -6,11 +6,12 @@
 # we temporily reassign stdout such that when we import it, the output
 # goes to stdout. Then we reassign stdout and simply puck off the
 # include  directory.
-import os, sys
+import os
+import sys
+import numpy.f2py
 
 tmp = sys.stdout
 sys.stdout = sys.stderr
-import numpy.f2py
 
 sys.stdout = tmp
 print(os.path.dirname(os.path.abspath(numpy.f2py.__file__)))

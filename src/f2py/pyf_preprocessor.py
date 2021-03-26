@@ -1,3 +1,5 @@
+import sys
+
 header_str = """ pyf_processor.py is used to automatically process a
 particular form of pyf file that allows the specification of both the
 real and complex wrapping functions in one place. This is eliminates
@@ -11,7 +13,6 @@ The resulting "clean" pyf file is written to pyf_file.autogen. This
 .autogen file is what should be passed to f2py to generate the actual
 wrapper.
 """
-import sys
 
 if len(sys.argv) != 3:
     print(header_str)
@@ -28,7 +29,7 @@ else:
 try:
     f = open(sys.argv[2], "r")
     orig_lines = f.readlines()
-except:
+except OSError:
     print("Error opening/reading pyf file!")
     sys.exit(1)
 # end try

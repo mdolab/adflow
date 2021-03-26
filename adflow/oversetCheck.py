@@ -14,14 +14,11 @@ Developers:
 # Imports
 # =============================================================================
 import os
-import time
-import copy
 import numpy
 from mpi4py import MPI
 from baseclasses import AeroSolver, AeroProblem
 from baseclasses.utils import Error
 from . import MExt
-from pprint import pprint as pp
 from .pyADflow import ADFLOW
 
 # =============================================================================

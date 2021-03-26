@@ -1,14 +1,11 @@
 import numpy as np
 
 from openmdao.api import ExplicitComponent
-
+from .om_utils import get_dvs_and_cons
 
 from baseclasses import AeroProblem
-from adflow import ADFLOW
-
 from pygeo import DVGeometry
 
-from collections import OrderedDict
 
 DVGEO_CLASSES = (DVGeometry,)
 try:
@@ -17,8 +14,6 @@ try:
     DVGEO_CLASSES = (DVGeometry, DVGeometryVSP)
 except ImportError:
     pass
-
-from .om_utils import get_dvs_and_cons
 
 FUNCS_UNITS = {
     "mdot": "kg/s",
@@ -83,9 +78,6 @@ class OM_FUNC_COMP(ExplicitComponent):
         for (args, kwargs) in self.ap_vars:
             name = args[0]
             size = args[1]
-            value = 1.0
-            if "value" in kwargs:
-                value = kwargs["value"]
 
             self.add_input(name, shape=size, units=kwargs["units"])
 

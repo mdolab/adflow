@@ -6,9 +6,9 @@ import re
 # Definitions
 def run(files=None, verbose=True, overwrite=None, output=None, macros={}, build=""):
 
-    l = create_file_objs(files, macros)
-    mod2fil = file_objs_to_mod_dict(file_objs=l)
-    depends = get_depends(fob=l, m2f=mod2fil)
+    fileList = create_file_objs(files, macros)
+    mod2fil = file_objs_to_mod_dict(file_objs=fileList)
+    depends = get_depends(fob=fileList, m2f=mod2fil)
 
     if verbose:
         for i in depends.keys():
@@ -20,7 +20,7 @@ def run(files=None, verbose=True, overwrite=None, output=None, macros={}, build=
     if output is None:
         output = "makefile.dep"
 
-    tmp = write_depend(outfile=output, dep=depends, overwrite=overwrite, build=build)
+    write_depend(outfile=output, dep=depends, overwrite=overwrite, build=build)
 
     return depends
 
@@ -31,7 +31,7 @@ def write_depend(outfile="makefile.dep", dep=[], overwrite=False, build=""):
     if os.path.exists(outfile):
         if not (overwrite):
             print("\033[031mWarning file exists.\033[039m")
-            opt = raw_input("Overwrite? Y... for yes.")
+            opt = input("Overwrite? Y... for yes.")
         else:
             opt = "y"
         if opt.lower().startswith("y"):
@@ -64,7 +64,7 @@ def get_source(ext=[".f90", ".F90"]):
 
 
 def create_file_objs(files=None, macros={}):
-    l = []
+    fileList = []
 
     if files is None:
         files = get_source()
@@ -76,9 +76,9 @@ def create_file_objs(files=None, macros={}):
         source_file.uses = get_uses(i, macros)
         source_file.contains = get_contains(i)
 
-        l.append(source_file)
+        fileList.append(source_file)
 
-    return l
+    return fileList
 
 
 def get_uses(infile=None, macros={}):
@@ -141,7 +141,7 @@ def get_depends(fob=[], m2f=[]):
             try:
                 if m2f[j.lower()] != i.file_name:
                     tmp.append(m2f[j.lower()])
-            except:
+            except Exception:
                 if j in ["petsc", "mpi", "iso_fortran_env", "cgns"]:
                     # these dependence will be resolved through the included libraries
                     # there is no need to scare the user with the error message

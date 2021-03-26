@@ -1,6 +1,4 @@
-from __future__ import print_function
 import unittest
-
 import os
 from adflow import ADFLOW
 
@@ -14,4 +12,4 @@ class BasicTests(unittest.TestCase):
     def test_import(self):
         gridFile = "input_files/mdo_tutorial_euler.cgns"
         options = {"gridfile": os.path.join(baseDir, "../../", gridFile)}
-        CFDSolver = ADFLOW(options=options, debug=False)
+        ADFLOW(options=options, debug=False)

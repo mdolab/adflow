@@ -6,8 +6,8 @@ G. Kenway
 """
 
 # Import modules
-import os, sys
-import string
+import os
+import sys
 import re
 
 # Specify file extension
