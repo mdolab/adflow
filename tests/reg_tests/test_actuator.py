@@ -3,7 +3,6 @@ import unittest
 import numpy as np
 import os
 import copy
-from pprint import pprint as pp
 
 # need to import mpi4py for dot product tests
 from mpi4py import MPI
@@ -224,8 +223,8 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         # the true value is 0. However, we get an error around 0.07964251
         # because of accumulated integration/convergence/precision errors.
-        np.testing.assert_allclose(my_force, 0., atol=0.08)
-        np.testing.assert_allclose(cfd_force, 0., atol=0.08)
+        np.testing.assert_allclose(my_force, 0.0, atol=0.08)
+        np.testing.assert_allclose(cfd_force, 0.0, atol=0.08)
 
         ##################
         # TEST POWER ADDED

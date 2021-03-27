@@ -1,4 +1,10 @@
-import tempfile, imp, os, shutil, sys
+import tempfile
+import imp
+import os
+import shutil
+import sys
+
+
 def _tmp_pkg(dir):
     """
     Create a temporary package.
@@ -9,14 +15,15 @@ def _tmp_pkg(dir):
         path = tempfile.mkdtemp(dir=dir)
         name = os.path.basename(path)
         try:
-            modinfo = imp.find_module(name)
+            imp.find_module(name)
             # if name is found, delete and try again
             os.rmdir(path)
-        except:
+        except ImportError:
             break
-    init = open(os.path.join(path, '__init__.py'), 'w')
+    init = open(os.path.join(path, "__init__.py"), "w")
     init.close()
     return name, path
+
 
 class MExt(object):
     """
@@ -38,7 +45,7 @@ class MExt(object):
         # import the module
         # __import__ returns the package, not the sub-module
         self._pkg = __import__(self._pkgname, globals(), locals(), [self.name])
-        # remove the bogus directory from sys.path 
+        # remove the bogus directory from sys.path
         sys.path.remove(tmpdir)
         # return the module object
         self._module = getattr(self._pkg, self.name)
@@ -53,9 +60,9 @@ class MExt(object):
             # on win32, the DLL must be unloaded forcefully in order to delete it.
             # on Darwin (other unix???) this doesn't appear to be necessary
             # try to unload the dll
-            if os.name == 'nt':
-                hModule = win32api.GetModuleHandle(self._module.__file__)
-                win32api.FreeLibrary(hModule)
+            # if os.name == "nt":
+            #     hModule = win32api.GetModuleHandle(self._module.__file__)
+            #     win32api.FreeLibrary(hModule)
             # now try to delete the files and directory
             shutil.rmtree(self._pkgdir)
             # make sure the original module is loaded -
@@ -65,5 +72,5 @@ class MExt(object):
             # and the exception is caught here
             try:
                 __import__(self.name)
-            except:
+            except ImportError:
                 pass

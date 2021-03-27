@@ -6,35 +6,47 @@ G. Kenway
 """
 
 # Import modules
-import os, sys
-import string
+import os
+import sys
 import re
+
 # Specify file extension
-EXT = '_b.f90'
+EXT = "_b.f90"
 
 DIR_ORI = sys.argv[1]
 DIR_MOD = sys.argv[2]
 
 # Specifiy the list of LINE ID's to find, what to replace and with what
-patt_modules = re.compile(r'(\s*use\s*\w*)(_b)\s*')
-patt_module = re.compile(r'\s*module\s\w*')
-patt_module_start = re.compile('(\s*module\s)(\w*)(_b)\s*')
-patt_module_end   = re.compile('(\s*end module\s)(\w*)(_b)\s*')
-patt_subroutine = re.compile(r'\s*subroutine\s\w*')
-patt_comment = re.compile(r'\s*!.*')
+patt_modules = re.compile(r"(\s*use\s*\w*)(_b)\s*")
+patt_module = re.compile(r"\s*module\s\w*")
+patt_module_start = re.compile("(\s*module\s)(\w*)(_b)\s*")
+patt_module_end = re.compile("(\s*end module\s)(\w*)(_b)\s*")
+patt_subroutine = re.compile(r"\s*subroutine\s\w*")
+patt_comment = re.compile(r"\s*!.*")
 
 print("Directory of input source files  :", DIR_ORI)
 print("Directory of output source files :", DIR_MOD)
 
-useful_modules = ['bcroutines_b','turbbcroutines_b',
-                  'utils_b', 'flowutils_b', 'walldistance_b', 'bcpointers_b',
-                  'initializeflow_b', 'turbutils_b', 'sa_b', 'fluxes_b',
-                  'solverutils_b', 'residuals_b', 'surfaceintegrations_b']
+useful_modules = [
+    "bcroutines_b",
+    "turbbcroutines_b",
+    "utils_b",
+    "flowutils_b",
+    "walldistance_b",
+    "bcpointers_b",
+    "initializeflow_b",
+    "turbutils_b",
+    "sa_b",
+    "fluxes_b",
+    "solverutils_b",
+    "residuals_b",
+    "surfaceintegrations_b",
+]
 
 for f in os.listdir(DIR_ORI):
     if f.endswith(EXT):
         # open original file in read mode
-        file_object_ori = open(os.path.join(DIR_ORI,f),'r')
+        file_object_ori = open(os.path.join(DIR_ORI, f), "r")
         print("\nParsing input file", file_object_ori.name)
 
         # read to whole file to string and reposition the pointer
@@ -59,10 +71,10 @@ for f in os.listdir(DIR_ORI):
             file_object_ori.close()
             continue
         elif isModule and hasSubroutine:
-            f = f.replace('_b', '_b')
+            f = f.replace("_b", "_b")
 
         # open modified file in write mode
-        file_object_mod = open(os.path.join(DIR_MOD,f), 'w')
+        file_object_mod = open(os.path.join(DIR_MOD, f), "w")
 
         # Go back to the beginning
         file_object_ori.seek(0)
@@ -71,8 +83,8 @@ for f in os.listdir(DIR_ORI):
             line = line.lower()
 
             # Replace _cb on calls
-            if '_cb' in line:
-                line = line.replace('_cb', '')
+            if "_cb" in line:
+                line = line.replace("_cb", "")
 
             # Replace _b modules with normal -- except for the useful
             # ones.
@@ -83,9 +95,9 @@ for f in os.listdir(DIR_ORI):
                     if m in line:
                         found = True
                 if found:
-                    line = line.replace('_b', '_b', 1)
+                    line = line.replace("_b", "_b", 1)
                 else:
-                    line = line.replace('_b', '')
+                    line = line.replace("_b", "")
 
             # # See if we need to modify the line with changing the
             # # module names
