@@ -3,4 +3,4 @@
 Options
 =======
 
-.. optionstable:: adflow.pyADflow.ADFLOW
+.. optionslist:: adflow.pyADflow.ADFLOW
