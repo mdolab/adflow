@@ -34,9 +34,21 @@ ap_tutorial_wing_laminar = AeroProblem(
     evalFuncs=defaultFuncList,
 )
 
-ap_tutorial_wing_rotating = AeroProblem(name='mdo_tutorial', alpha=90.0, V=10, rho=1.225, T=284.15,
-                areaRef=45.5, chordRef=3.25, beta=0.0, R=287.87,
-                xRef=0.0, yRef=0.0, zRef=0.0, evalFuncs=defaultFuncList)
+ap_tutorial_wing_rotating = AeroProblem(
+    name="mdo_tutorial",
+    alpha=90.0,
+    V=10,
+    rho=1.225,
+    T=284.15,
+    areaRef=45.5,
+    chordRef=3.25,
+    beta=0.0,
+    R=287.87,
+    xRef=0.0,
+    yRef=0.0,
+    zRef=0.0,
+    evalFuncs=defaultFuncList,
+)
 
 
 ap_CRM = AeroProblem(
