@@ -28,7 +28,6 @@ import types
 import numpy
 import sys
 from mpi4py import MPI
-from petsc4py import PETSc
 from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from baseclasses.utils import Error
 from . import MExt
@@ -40,18 +39,20 @@ class ADFLOWWarning(object):
     """
     Format a warning message
     """
+
     def __init__(self, message):
-        msg = '\n+'+'-'*78+'+'+'\n' + '| pyADFLOW Warning: '
+        msg = "\n+" + "-" * 78 + "+" + "\n" + "| pyADFLOW Warning: "
         i = 19
         for word in message.split():
-            if len(word) + i + 1 > 78: # Finish line and start new one
-                msg += ' '*(78-i)+'|\n| ' + word + ' '
-                i = 1 + len(word)+1
+            if len(word) + i + 1 > 78:  # Finish line and start new one
+                msg += " " * (78 - i) + "|\n| " + word + " "
+                i = 1 + len(word) + 1
             else:
-                msg += word + ' '
-                i += len(word)+1
-        msg += ' '*(78-i) + '|\n' + '+'+'-'*78+'+'+'\n'
+                msg += word + " "
+                i += len(word) + 1
+        msg += " " * (78 - i) + "|\n" + "+" + "-" * 78 + "+" + "\n"
         print(msg)
+
 
 # =============================================================================
 # ADFLOW Class
@@ -75,8 +76,9 @@ class ADFLOW(AeroSolver):
         required which causes issues debugging.
     dtype : str
         String type for float: 'd' or 'D'. Not needed to be used by user.
-        """
-    def __init__(self, comm=None, options=None, debug=False, dtype='d'):
+    """
+
+    def __init__(self, comm=None, options=None, debug=False, dtype="d"):
 
         startInitTime = time.time()
 
@@ -84,26 +86,24 @@ class ADFLOW(AeroSolver):
         # imports
         try:
             self.adflow
-        except:
+        except AttributeError:
             curDir = os.path.dirname(os.path.realpath(__file__))
-            self.adflow = MExt.MExt('libadflow', [curDir], debug=debug)._module
+            self.adflow = MExt.MExt("libadflow", [curDir], debug=debug)._module
 
         libLoadTime = time.time()
 
         # Information for base class:
-        name = 'ADFLOW'
-        category = 'Three Dimensional CFD'
+        name = "ADFLOW"
+        category = "Three Dimensional CFD"
         informs = {}
 
         # Load all the option/objective/DV information:
         defaultOptions = self._getDefaultOptions()
         self.optionMap, self.moduleMap = self._getOptionMap()
-        self.pythonOptions, deprecatedOptions, self.specialOptions = \
-                           self._getSpecialOptionLists()
+        self.pythonOptions, deprecatedOptions, self.specialOptions = self._getSpecialOptionLists()
         immutableOptions = self._getImmutableOptions()
 
-        self.possibleAeroDVs, self.possibleBCDvs, self.basicCostFunctions = (
-            self._getObjectivesAndDVs())
+        self.possibleAeroDVs, self.possibleBCDvs, self.basicCostFunctions = self._getObjectivesAndDVs()
 
         # Now add the group for each of the "basic" cost functions:
         self.adflowCostFunctions = OrderedDict()
@@ -128,9 +128,11 @@ class ADFLOW(AeroSolver):
         self.adflow.communication.nproc = comm.size
 
         if options is None:
-            raise Error("The 'options' keyword argument must be passed "
-                        "adflow. The options dictionary must contain (at least) "
-                        "the gridFile entry for the grid.")
+            raise Error(
+                "The 'options' keyword argument must be passed "
+                "adflow. The options dictionary must contain (at least) "
+                "the gridFile entry for the grid."
+            )
 
         # Set all internal adflow default options before we set anything from python
         self.adflow.inputparamroutines.setdefaultvalues()
@@ -201,11 +203,20 @@ class ADFLOW(AeroSolver):
         # and a few other things set. Just create a dummy aeroproblem,
         # use it, and then it will be deleted.
 
-        dummyAP = AeroProblem(name='dummy', mach=0.5, altitude=10000.0,
-                              areaRef=1.0, chordRef=1.0, alpha=0.0, degreePol=0,
-                              coefPol=[0, 0], degreeFourier=1,
-                              omegaFourier=6.28, sinCoefFourier=[0, 0],
-                              cosCoefFourier=[0, 0])
+        dummyAP = AeroProblem(
+            name="dummy",
+            mach=0.5,
+            altitude=10000.0,
+            areaRef=1.0,
+            chordRef=1.0,
+            alpha=0.0,
+            degreePol=0,
+            coefPol=[0, 0],
+            degreeFourier=1,
+            omegaFourier=6.28,
+            sinCoefFourier=[0, 0],
+            cosCoefFourier=[0, 0],
+        )
 
         self._setAeroProblemData(dummyAP, firstCall=True)
         # Now set it back to None so the user is none the wiser
@@ -213,7 +224,7 @@ class ADFLOW(AeroSolver):
 
         # Finally complete loading
         self.adflow.inputparamroutines.dummyreadparamfile()
-        if self.getOption('partitionOnly'):
+        if self.getOption("partitionOnly"):
             self.adflow.partitioning.partitionandreadgrid(True)
             return
 
@@ -229,8 +240,8 @@ class ADFLOW(AeroSolver):
 
         # Do explict hole cutting.
         ncells = self.adflow.adjointvars.ncellslocal[0]
-        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
-        n  = ncells*ntime
+        ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
+        n = ncells * ntime
 
         # Normally we would be able to just use the following...but
         # sometimes f2py is grumpy and we get
@@ -239,15 +250,15 @@ class ADFLOW(AeroSolver):
         nFam = self.adflow.surfacefamilies.getnfam()
         famList = []
         for i in range(nFam):
-            famList.append(getPy3SafeString(self.adflow.surfacefamilies.getfam(i+1).strip()))
+            famList.append(getPy3SafeString(self.adflow.surfacefamilies.getfam(i + 1).strip()))
 
         # Add the initial families that already exist in the CGNS
         # file.
         for i in range(len(famList)):
-            self.families[famList[i]] = [i+1]
+            self.families[famList[i]] = [i + 1]
 
         # Add the special "all surfaces" family.
-        self.allFamilies = 'allSurfaces'
+        self.allFamilies = "allSurfaces"
         self.addFamilyGroup(self.allFamilies, famList)
 
         # We also need to know about which surfaces are walls. Pull
@@ -257,19 +268,19 @@ class ADFLOW(AeroSolver):
         wallList = wallList[0:nWalls]
         wallListFam = []
         for i in range(len(wallList)):
-            wallListFam.append(famList[wallList[i]-1])
-        self.allWallsGroup = 'allWalls'
+            wallListFam.append(famList[wallList[i] - 1])
+        self.allWallsGroup = "allWalls"
         self.addFamilyGroup(self.allWallsGroup, wallListFam)
 
         # Set the design families if given, otherwise default to all
         # walls
-        self.designFamilyGroup = self.getOption('designSurfaceFamily')
+        self.designFamilyGroup = self.getOption("designSurfaceFamily")
         if self.designFamilyGroup is None:
             self.designFamilyGroup = self.allWallsGroup
 
         # Set the mesh families if given, otherwise default to all
         # walls
-        self.meshFamilyGroup = self.getOption('meshSurfaceFamily')
+        self.meshFamilyGroup = self.getOption("meshSurfaceFamily")
         if self.meshFamilyGroup is None:
             self.meshFamilyGroup = self.allWallsGroup
 
@@ -280,32 +291,32 @@ class ADFLOW(AeroSolver):
         self.CGNSZoneNameIDs = {}
         for i in range(self.nZones):
             # index needs to go in as fortran numbering, so add 1
-            name = getPy3SafeString(self.adflow.utils.getcgnszonename(i+1).strip())
-            self.CGNSZoneNameIDs[name] = i+1
+            name = getPy3SafeString(self.adflow.utils.getcgnszonename(i + 1).strip())
+            self.CGNSZoneNameIDs[name] = i + 1
             # do we need to do this on root and broadcast?
 
         # Call the user supplied callback if necessary
-        cutCallBack = self.getOption('cutCallBack')
+        cutCallBack = self.getOption("cutCallBack")
         flag = numpy.zeros(n)
         if cutCallBack is not None:
             xCen = self.adflow.utils.getcellcenters(1, n).T
-            cellIDs = self.adflow.utils.getcellcgnsblockids(1,n)
-            cutCallBack(xCen,self.CGNSZoneNameIDs,cellIDs, flag)
+            cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
+            cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
         cutCallBackTime = time.time()
 
         # Need to reset the oversetPriority option since the CGNSGrid
         # structure wasn't available before;
-        self.setOption('oversetPriority', self.getOption('oversetPriority'))
+        self.setOption("oversetPriority", self.getOption("oversetPriority"))
 
         # Set the closed surface families if given. Otherwise
         # default to all walls.
-        famList = self.getOption('closedSurfaceFamilies')
+        famList = self.getOption("closedSurfaceFamilies")
         if famList is None:
             self.closedFamilyGroup = self.allWallsGroup
         else:
-            self.addFamilyGroup('closedSurface', famList)
-            self.closedFamilyGroup = 'closedSurface'
+            self.addFamilyGroup("closedSurface", famList)
+            self.closedFamilyGroup = "closedSurface"
 
         famList = self._getFamilyList(self.closedFamilyGroup)
         self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
@@ -318,28 +329,28 @@ class ADFLOW(AeroSolver):
 
         initFlowTime = time.time()
 
-        self.coords0 = self.getSurfaceCoordinates(self.allFamilies,includeZipper=False)
+        self.coords0 = self.getSurfaceCoordinates(self.allFamilies, includeZipper=False)
 
         finalInitTime = time.time()
 
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('+--------------------------------------------------+')
-            print('|')
-            print('| Initialization Times:')
-            print('|')
-            print('| %-30s: %10.3f sec'%('Library Load Time',libLoadTime - startInitTime))
-            print('| %-30s: %10.3f sec'%('Set Defaults Time',defSetupTime - libLoadTime))
-            print('| %-30s: %10.3f sec'%('Base class init Time',baseClassTime - defSetupTime))
-            print('| %-30s: %10.3f sec'%('Introductory Time',introTime - baseClassTime))
-            print('| %-30s: %10.3f sec'%('Partitioning Time',partitioningTime - introTime))
-            print('| %-30s: %10.3f sec'%('Preprocessing Time',preprocessingTime - partitioningTime))
-            print('| %-30s: %10.3f sec'%('Family Setup Time',familySetupTime - preprocessingTime))
-            print('| %-30s: %10.3f sec'%('Cut callback Time',cutCallBackTime - familySetupTime))
-            print('| %-30s: %10.3f sec'%('Overset Preprocessing Time',oversetPreTime - cutCallBackTime))
-            print('| %-30s: %10.3f sec'%('Initialize Flow Time',initFlowTime - oversetPreTime))
-            print('|')
-            print('| %-30s: %10.3f sec'%('Total Init Time',finalInitTime - startInitTime))
-            print('+--------------------------------------------------+')
+        if self.getOption("printTiming") and self.comm.rank == 0:
+            print("+--------------------------------------------------+")
+            print("|")
+            print("| Initialization Times:")
+            print("|")
+            print("| %-30s: %10.3f sec" % ("Library Load Time", libLoadTime - startInitTime))
+            print("| %-30s: %10.3f sec" % ("Set Defaults Time", defSetupTime - libLoadTime))
+            print("| %-30s: %10.3f sec" % ("Base class init Time", baseClassTime - defSetupTime))
+            print("| %-30s: %10.3f sec" % ("Introductory Time", introTime - baseClassTime))
+            print("| %-30s: %10.3f sec" % ("Partitioning Time", partitioningTime - introTime))
+            print("| %-30s: %10.3f sec" % ("Preprocessing Time", preprocessingTime - partitioningTime))
+            print("| %-30s: %10.3f sec" % ("Family Setup Time", familySetupTime - preprocessingTime))
+            print("| %-30s: %10.3f sec" % ("Cut callback Time", cutCallBackTime - familySetupTime))
+            print("| %-30s: %10.3f sec" % ("Overset Preprocessing Time", oversetPreTime - cutCallBackTime))
+            print("| %-30s: %10.3f sec" % ("Initialize Flow Time", initFlowTime - oversetPreTime))
+            print("|")
+            print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
+            print("+--------------------------------------------------+")
 
     def __del__(self):
         """
@@ -376,20 +387,20 @@ class ADFLOW(AeroSolver):
 
         # Set the surface the user has supplied:
 
-        conn, faceSizes, cgnsBlockIDs = self.getSurfaceConnectivity(self.meshFamilyGroup,
-                                                                    includeZipper=False,
-                                                                    includeCGNS=True)
+        conn, faceSizes, cgnsBlockIDs = self.getSurfaceConnectivity(
+            self.meshFamilyGroup, includeZipper=False, includeCGNS=True
+        )
 
         pts = self.getSurfaceCoordinates(self.meshFamilyGroup, includeZipper=False)
 
         self.mesh.setSurfaceDefinition(pts, conn, faceSizes, cgnsBlockIDs)
 
     def getSolverMeshIndices(self):
-        '''
+        """
         Get the list of indices to pass to the mesh object for the
         volume mesh mapping
-        '''
-        ndof_1_instance = self.adflow.adjointvars.nnodeslocal[0]*3
+        """
+        ndof_1_instance = self.adflow.adjointvars.nnodeslocal[0] * 3
         meshInd = self.adflow.warping.getcgnsmeshindices(ndof_1_instance)
 
         return meshInd
@@ -422,7 +433,7 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem)
 
         # All processors read the file
-        f = open(dispFile,'r')
+        f = open(dispFile, "r")
         n = int(f.readline())
         X = []
         D = []
@@ -438,7 +449,7 @@ class ADFLOW(AeroSolver):
         try:
             from scipy.spatial import KDTree
         except ImportError:
-            raise Error('scipy must be available to use setDisplacements')
+            raise Error("scipy must be available to use setDisplacements")
         tree = KDTree(numpy.array(X))
         d, index = tree.query(localX)
         for j in range(len(localX)):
@@ -447,8 +458,7 @@ class ADFLOW(AeroSolver):
         # Fianlly we have the local displacements for this processor we save
         self.curAP.adflowData.disp = localD
 
-    def addLiftDistribution(self, nSegments, direction,
-                            groupName=None):
+    def addLiftDistribution(self, nSegments, direction, groupName=None):
         """Add a lift distribution to the surface output.
 
         Parameters
@@ -472,32 +482,29 @@ class ADFLOW(AeroSolver):
         if groupName is None:
             groupName = self.allWallsGroup
 
-        groupTag = '%s: '% groupName
+        groupTag = "%s: " % groupName
         famList = self._getFamilyList(groupName)
-        direction=direction.lower()
-        if direction not in ['x','y','z']:
-            if direction not in ['x','y','z']:
+        direction = direction.lower()
+        if direction not in ["x", "y", "z"]:
+            if direction not in ["x", "y", "z"]:
                 raise Error("direction must be one of 'x', 'y', or 'z'")
 
-        if direction == 'x':
+        if direction == "x":
             dirVec = [1.0, 0.0, 0.0]
             dirInd = 1
-        elif direction == 'y':
+        elif direction == "y":
             dirVec = [0.0, 1.0, 0.0]
             dirInd = 2
         else:
             dirVec = [0.0, 0.0, 1.0]
             dirInd = 3
 
-        distName = 'LiftDist_%2.2d %s: %s normal'% (
-            self.nLiftDist + 1, groupTag, direction)
+        distName = "LiftDist_%2.2d %s: %s normal" % (self.nLiftDist + 1, groupTag, direction)
         self.nLiftDist += 1
 
-        self.adflow.tecplotio.addliftdistribution(
-            nSegments, dirVec, dirInd, distName, famList)
+        self.adflow.tecplotio.addliftdistribution(nSegments, dirVec, dirInd, distName, famList)
 
-    def addSlices(self, direction, positions, sliceType='relative',
-                  groupName=None):
+    def addSlices(self, direction, positions, sliceType="relative", groupName=None):
         """
         Add parametric slice positions. Slices are taken of the wing
         at time addParaSlices() is called and the parametric positions
@@ -522,7 +529,7 @@ class ADFLOW(AeroSolver):
         groupName : str
              The family to use for the slices. Default is None corresponding to all
              wall groups.
-            """
+        """
 
         # Create the zipper mesh if not done so
         self._createZipperMesh()
@@ -530,27 +537,27 @@ class ADFLOW(AeroSolver):
         # Determine the families we want to use
         if groupName is None:
             groupName = self.allWallsGroup
-        groupTag = '%s: '% groupName
+        groupTag = "%s: " % groupName
 
         famList = self._getFamilyList(groupName)
         direction = direction.lower()
-        if direction not in ['x', 'y', 'z']:
+        if direction not in ["x", "y", "z"]:
             raise Error("'direction' must be one of 'x', 'y', or 'z'")
 
         sliceType = sliceType.lower()
-        if sliceType not in ['relative', 'absolute']:
+        if sliceType not in ["relative", "absolute"]:
             raise Error("'sliceType' must be 'relative' or 'absolute'.")
 
         positions = numpy.atleast_1d(positions)
         N = len(positions)
-        tmp = numpy.zeros((N, 3),self.dtype)
-        if direction == 'x':
+        tmp = numpy.zeros((N, 3), self.dtype)
+        if direction == "x":
             tmp[:, 0] = positions
             dirVec = [1.0, 0.0, 0.0]
-        elif direction == 'y':
+        elif direction == "y":
             tmp[:, 1] = positions
             dirVec = [0.0, 1.0, 0.0]
-        elif direction == 'z':
+        elif direction == "z":
             tmp[:, 2] = positions
             dirVec = [0.0, 0.0, 1.0]
 
@@ -558,16 +565,13 @@ class ADFLOW(AeroSolver):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from pythhon
             j = self.nSlice + i + 1
-            if sliceType == 'relative':
-                sliceName = 'Slice_%4.4d %s Para Init %s=%7.3f'% (
-                    j, groupTag, direction, positions[i])
+            if sliceType == "relative":
+                sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])
                 self.adflow.tecplotio.addparaslice(sliceName, tmp[i], dirVec, famList)
             else:
                 # e.g. Slice_0008 allWalls: Aboslute y=66.875
                 # so j=0008, groupTag=allWalls, direction=y, positions[i]=66.875
-                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f'% (
-                    j, groupTag, direction, positions[i])
-                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], dirVec, famList)
+                sliceName = 'Slice_%4.4d %s Absolute %s=%7.3f' % (j, groupTag, direction, positions[i])
 
         self.nSlice += N
 
@@ -592,12 +596,13 @@ class ADFLOW(AeroSolver):
            face. Default is True
         """
 
-
         self.hasIntegrationSurfaces = True
         # Check that the family name is not already defined:
         if familyName.lower() in self.families:
-            raise Error("Cannot add integration surface with family name '%s'"
-                        "because the name it already exists."%familyName)
+            raise Error(
+                "Cannot add integration surface with family name '%s'"
+                "because the name it already exists." % familyName
+            )
 
         # Need to add an additional family so first figure out what
         # the max family index is:
@@ -613,16 +618,51 @@ class ADFLOW(AeroSolver):
         # small that we do not have to worry about parallelization.
 
         pts, conn = self._readPlot3DSurfFile(fileName)
-        self.adflow.usersurfaceintegrations.addintegrationsurface(
-            pts.T, conn.T, familyName, famID, isInflow)
+        self.adflow.usersurfaceintegrations.addintegrationsurface(pts.T, conn.T, familyName, famID, isInflow)
 
-    def addActuatorRegion(self, fileName, axis1, axis2, familyName,
-                          thrust=0.0, torque=0.0, relaxStart=None,
-                          relaxEnd=None):
-        """Add an actuator disk zone defined by the (closed) supplied
-        in the plot3d file 'fileName'. 'axis1' and 'axis2' defines the
-        physical extent of the region over which to apply the ramp
-        factor.
+    def addActuatorRegion(
+        self, fileName, axis1, axis2, familyName, thrust=0.0, torque=0.0, heat=0.0, relaxStart=None, relaxEnd=None
+    ):
+        """
+        Add an actuator disk zone defined by the supplied closed
+        surface in the plot3d file "fileName". This surface defines the
+        physical extent of the region over which to apply the source terms.
+        Internally, we find all of the CFD volume cells that are inside
+        this closed surface and apply the source terms over these cells.
+        This surface is only used with the original mesh coordinates to
+        mark the internal CFD cells, and we keep using these cells even
+        if the geometric design and the mesh coordinates change. For
+        example, the marked cells can lie outside of the original
+        closed surface after a large design change, but we will still
+        use the cells that were inside the surface with the baseline design.
+
+        axis1 and axis2 define the vector that we use to determine the
+        direction of the thrust addition. Internally, we compute a
+        vector by $axisVec = axis2-axis1$ and then we normalize this
+        vector. When adding the thrust terms, the direction of the thrust
+        is obtained by multiplying the thrust magnitude by this vector.
+
+        Optionally, the source terms in the actuator zone can be
+        gradually ramped up as the solution converges. This continuation
+        approach can be more robust but the users should be careful with
+        the side effects of partially converged solutions. This behavior
+        can be controlled by relaxStart and relaxEnd parameters. By
+        default, the full magnitude of the source terms are added.
+        relaxStart controls when the continuation starts ramping up.
+        The value represents the relative convergence in a log10 basis.
+        So relaxStart = 2 means the source terms will be inactive until
+        the residual is decreased by a factor of 100 compared to free
+        stream conditions. The source terms are ramped to the full
+        magnitude at relaxEnd. E.g., a relaxEnd value of 4 would
+        result in the full source terms after a relative reduction of
+        1e4 in the total residuals. If relaxStart is not provided, but
+        relaxEnd is provided, then the relaxStart is assumed to be 0.
+        If both are not provided, we do not do ramping and just activate
+        the full source terms from the beginning. When this continuation
+        is used, we internally ramp up the magnitude of the source terms
+        monotonically to prevent oscillations; i.e., decrease in the total
+        residuals increase the source term magnitudes, but an increase
+        in the residuals do not reduce the source terms back down.
 
         Parameters
         ----------
@@ -641,17 +681,28 @@ class ADFLOW(AeroSolver):
            The name to be associated with the functions defined on this
            region.
 
-        thrust : scalar
+        thrust : scalar, float
            The total amount of axial force to apply to this region, in the direction
            of axis1 -> axis2
 
-        torque : scalar
+        torque : scalar, float
            The total amount of torque to apply to the region, about the
            specified axis.
 
+        heat : scalar, float
+            The total amount of head added in the actuator zone with source terms
+
+        relaxStart : scalar, float
+            The start of the relaxation in terms of
+            orders of magnitude of relative convergence
+
+        relaxEnd : scalar, float
+            The end of the relaxation in terms of
+            orders of magnitude of relative convergence
+
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
-        if self.getOption('equationMode').lower() == 'time spectral':
+        if self.getOption("equationMode").lower() == "time spectral":
             raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
 
         # Load in the user supplied surface file.
@@ -664,8 +715,9 @@ class ADFLOW(AeroSolver):
         # Check if the family name given is already used for something
         # else.
         if familyName.lower() in self.families:
-            raise Error("Cannot add ActuatorDiskRegion with family name '%s'"
-                        "because the name it already exists."%familyName)
+            raise Error(
+                "Cannot add ActuatorDiskRegion with family name '%s'" "because the name it already exists." % familyName
+            )
 
         # Need to add an additional family so first figure out what
         # the max family index is:
@@ -692,9 +744,38 @@ class ADFLOW(AeroSolver):
         #  Now continue to fortran were we setup the actual
         #  region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque,
-            relaxStart, relaxEnd)
+            pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, heat, relaxStart, relaxEnd
+        )
 
+    def writeActuatorRegions(self, fileName, outputDir=None):
+        """
+        Debug method that writes the cells included in actuator regions
+        to a tecplot file. This routine should be called on all of the
+        procs in self.comm. The output can then be used to verify that
+        the actuator zones are defined correctly.
+
+        Parameters
+        ----------
+        fileName : str
+            Name of the output file
+
+        outputDir : str
+            output directory. If not provided, defaults to the output
+            directory defined with the aero_options
+        """
+
+        if outputDir is None:
+            outputDir = self.getOption("outputDirectory")
+
+        # Join to get the actual filename root
+        fileName = os.path.join(outputDir, fileName)
+
+        # Ensure extension is .plt even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        fileName += ".plt"
+
+        # just call the underlying fortran routine
+        self.adflow.actuatorregion.writeactuatorregions(fileName)
 
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a
@@ -726,19 +807,16 @@ class ADFLOW(AeroSolver):
 
         # First check if the function name supplied is already used:
         if funcName in self.adflowCostFunctions:
-            raise Error("The supplied funcName %s, is already used"% funcName)
+            raise Error("The supplied funcName %s, is already used" % funcName)
 
         # Now check that we've supplied at least 2 or more functions
         if len(functions) == 1:
-            raise Error("addUserFunction requries at least 2 existing functions"
-                        " to be provided")
+            raise Error("addUserFunction requries at least 2 existing functions" " to be provided")
         # Check that each of the functions are valid:
         for func in functions:
             if func not in self.adflowCostFunctions:
-                raise Error('Supplied  function %s to addUserFunction '
-                            'not know to ADflow'%func)
-        self.adflowUserCostFunctions[funcName] = (
-            adflowUserFunc(funcName, functions, callBack))
+                raise Error("Supplied  function %s to addUserFunction " "not know to ADflow" % func)
+        self.adflowUserCostFunctions[funcName] = adflowUserFunc(funcName, functions, callBack)
 
         return funcName
 
@@ -779,14 +857,13 @@ class ADFLOW(AeroSolver):
     def addFunctions(self, funcNames, groupNames, names=None):
 
         """Add a series of new functions to ADflow. This is a vector version of
-        the addFunction() routine. See that routine for more documentation. """
+        the addFunction() routine. See that routine for more documentation."""
 
         if names is None:
-            names = [None]*len(funcNames)
+            names = [None] * len(funcNames)
 
         if len(funcNames) != len(groupNames) or len(funcNames) != len(names):
-            raise Error("funcNames, groupNames, and names all have to be "
-                        "lists of the same length")
+            raise Error("funcNames, groupNames, and names all have to be " "lists of the same length")
 
         newFuncNames = []
         for i in range(len(funcNames)):
@@ -796,16 +873,18 @@ class ADFLOW(AeroSolver):
 
             # First make sure the supplied function is already known to adflow
             if funcName.lower() not in self.basicCostFunctions:
-                raise Error('Supplied function name %s is not known to ADflow'%funcName.lower())
+                raise Error("Supplied function name %s is not known to ADflow" % funcName.lower())
 
             # Check if the goupName has been added to the mesh.
             if groupName is not None:
                 if groupName not in self.families:
-                    raise Error("'%s' is not a family in the CGNS file or has not been added"
-                                " as a combination of families"%(groupName))
+                    raise Error(
+                        "'%s' is not a family in the CGNS file or has not been added"
+                        " as a combination of families" % (groupName)
+                    )
 
             if name is None:
-                adflowFuncName = '%s_%s'%(funcName, groupName)
+                adflowFuncName = "%s_%s" % (funcName, groupName)
             else:
                 adflowFuncName = name
 
@@ -829,28 +908,31 @@ class ADFLOW(AeroSolver):
         """
         if isinstance(rotRate, AeroProblem):
             aeroProblem = rotRate
-            a  = numpy.sqrt(self.adflow.flowvarrefstate.gammainf*\
-                                self.adflow.flowvarrefstate.pinfdim/ \
-                                self.adflow.flowvarrefstate.rhoinfdim)
-            V = (self.adflow.inputphysics.machgrid+self.adflow.inputphysics.mach)*a
+            a = numpy.sqrt(
+                self.adflow.flowvarrefstate.gammainf
+                * self.adflow.flowvarrefstate.pinfdim
+                / self.adflow.flowvarrefstate.rhoinfdim
+            )
+            V = (self.adflow.inputphysics.machgrid + self.adflow.inputphysics.mach) * a
 
-            p = aeroProblem.phat*V/aeroProblem.spanRef
-            q = aeroProblem.qhat*V/aeroProblem.chordRef
-            r = aeroProblem.rhat*V/aeroProblem.spanRef
+            p = aeroProblem.phat * V / aeroProblem.spanRef
+            q = aeroProblem.qhat * V / aeroProblem.chordRef
+            r = aeroProblem.rhat * V / aeroProblem.spanRef
             if aeroProblem.liftIndex == 2:
-                rotations = [p,r,q]
+                rotations = [p, r, q]
             elif aeroProblem.liftIndex == 3:
-                rotations = [p,q,r]
+                rotations = [p, q, r]
             else:
-                raise Error("Invalid lift direction. Must be 2 or 3 for "
-                            "steady rotations and specifying an aeroProblem")
+                raise Error(
+                    "Invalid lift direction. Must be 2 or 3 for " "steady rotations and specifying an aeroProblem"
+                )
 
         else:
             rotations = rotRate
 
         if cgnsBlocks is None:
             # By Default set all the blocks:
-            cgnsBlocks = numpy.arange(1, self.adflow.cgnsgrid.cgnsndom+1)
+            cgnsBlocks = numpy.arange(1, self.adflow.cgnsgrid.cgnsndom + 1)
 
         self.adflow.preprocessingapi.updaterotationrate(rotCenter, rotations, cgnsBlocks)
         self._updateVelInfo = True
@@ -895,23 +977,21 @@ class ADFLOW(AeroSolver):
             Flag to override any solution writing parameters. This
             is used in a multidisciplinary environment when the outer
             solver can suppress all I/O during intermediate solves.
-            """
+        """
 
         startCallTime = time.time()
 
         # Make sure the user isn't trying to solve a slave
         # aeroproblem. Cannot do that
-        if hasattr(aeroProblem, 'isSlave'):
+        if hasattr(aeroProblem, "isSlave"):
             if aeroProblem.isSlave:
-                raise Error('Cannot solve an aeroProblem created as a slave')
+                raise Error("Cannot solve an aeroProblem created as a slave")
 
         # Get option about adjoint memory
-        releaseAdjointMemory = kwargs.pop('relaseAdjointMemory', True)
+        releaseAdjointMemory = kwargs.pop("relaseAdjointMemory", True)
 
         # Set the aeroProblem
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
-
-        aeroProblemSetTime = time.time()
 
         # Set filenames for possible forced write during solution
         self._setForcedFileNames()
@@ -922,8 +1002,6 @@ class ADFLOW(AeroSolver):
         # done here regardless.
         if releaseAdjointMemory:
             self.releaseAdjointMemory()
-
-        memoryReleaseTime = time.time()
 
         # Clear out any saved adjoint RHS since they are now out of
         # data. Also increment the counter for this case.
@@ -940,70 +1018,68 @@ class ADFLOW(AeroSolver):
             self.adflow.inputiteration.mgstartlevel = 1
 
         self.adflow.iteration.itertot = 0
-        desiredSize = self.adflow.inputiteration.nsgstartup + \
-                      self.adflow.inputiteration.ncycles
+        desiredSize = self.adflow.inputiteration.nsgstartup + self.adflow.inputiteration.ncycles
         self.adflow.utils.allocconvarrays(desiredSize)
         # --------------------------------------------------------------
 
-        if self.getOption('equationMode').lower() == 'unsteady':
-            self.adflow.utils.alloctimearrays(self.getOption('nTimeStepsFine'))
+        if self.getOption("equationMode").lower() == "unsteady":
+            self.adflow.utils.alloctimearrays(self.getOption("nTimeStepsFine"))
             self._setUnsteadyFileParameters()
 
         # Mesh warp may have already failed:
         if not self.adflow.killsignals.fatalfail:
 
-            if (self.getOption('equationMode').lower() == 'steady' or
-                self.getOption('equationMode').lower() == 'time spectral'):
+            if (
+                self.getOption("equationMode").lower() == "steady"
+                or self.getOption("equationMode").lower() == "time spectral"
+            ):
                 self.updateGeometryInfo()
 
                 # Check to see if the above update routines failed.
-                self.adflow.killsignals.fatalfail = \
-                    self.comm.allreduce(
-                    bool(self.adflow.killsignals.fatalfail), op=MPI.LOR)
+                self.adflow.killsignals.fatalfail = self.comm.allreduce(
+                    bool(self.adflow.killsignals.fatalfail), op=MPI.LOR
+                )
 
         if self.adflow.killsignals.fatalfail:
-            print("Fatal failure during mesh warp! Bad mesh is "
-                  "written in output directory as failed_mesh.cgns")
-            fileName = os.path.join(self.getOption('outputDirectory'),
-                                    'failed_mesh.cgns')
+            print("Fatal failure during mesh warp! Bad mesh is " "written in output directory as failed_mesh.cgns")
+            fileName = os.path.join(self.getOption("outputDirectory"), "failed_mesh.cgns")
             self.writeMeshFile(fileName)
             self.curAP.fatalFail = True
             self.curAP.solveFailed = True
             return
 
         # We now now the mesh warping was ok so reset the flags:
-        self.adflow.killsignals.routinefailed =  False
+        self.adflow.killsignals.routinefailed = False
         self.adflow.killsignals.fatalfail = False
         sys.stdout.flush()
-        t1 = time.time() #Signal check time
+        t1 = time.time()  # Signal check time
 
         # Solve the equations in appropriate mode
-        mode = self.getOption('equationMode').lower()
-        if mode in ['steady', 'time spectral']:
+        mode = self.getOption("equationMode").lower()
+        if mode in ["steady", "time spectral"]:
             # In steady mode, the wall temperature has to be set after the solver
             # switches to current AP, otherwise the data will be overwritten.
-            wallTemperature = kwargs.pop('wallTemperature', None)
-            groupName       = kwargs.pop('groupName', None)
+            wallTemperature = kwargs.pop("wallTemperature", None)
+            groupName = kwargs.pop("groupName", None)
             if wallTemperature is not None:
                 self.setWallTemperature(wallTemperature, groupName=groupName)
 
             self.adflow.solvers.solver()
-        elif mode == 'unsteady':
+        elif mode == "unsteady":
             # Initialization specific for unsteady simulation
             self.adflow.solvers.solverunsteadyinit()
 
             # If ADflow is to be coupled with other solvers, we are done
-            if self.getOption('coupledsolution'):
+            if self.getOption("coupledsolution"):
                 return
             # Otherwise, the problem is solved within this function
             else:
                 # Get the callback functions
-                surfaceMeshCallback = kwargs.pop('surfaceMeshCallback', None)
-                volumeMeshCallback  = kwargs.pop('volumeMeshCallback', None)
+                surfaceMeshCallback = kwargs.pop("surfaceMeshCallback", None)
+                volumeMeshCallback = kwargs.pop("volumeMeshCallback", None)
 
                 # Call solver wrapper for unsteady simulations
-                self._solverunsteady(surfaceMeshCallback = surfaceMeshCallback,
-                                     volumeMeshCallback  = volumeMeshCallback)
+                self._solverunsteady(surfaceMeshCallback=surfaceMeshCallback, volumeMeshCallback=volumeMeshCallback)
         else:
             raise Error("Mode {0} not supported".format(mode))
 
@@ -1029,28 +1105,28 @@ class ADFLOW(AeroSolver):
         # Post-Processing
         # --------------------------------------------------------------
         # Solution is written if writeSolution argument true or does not exist
-        if kwargs.pop('writeSolution', True):
+        if kwargs.pop("writeSolution", True):
             self.writeSolution()
 
         writeSolutionTime = time.time()
 
-        if self.getOption('TSStability'):
-            self.computeStabilityParameters() # should this be in evalFuncs?
+        if self.getOption("TSStability"):
+            self.computeStabilityParameters()  # should this be in evalFuncs?
 
         stabilityParameterTime = time.time()
 
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('+-------------------------------------------------+')
-            print('|')
-            print('| Solution Timings:')
-            print('|')
-            print('| %-30s: %10.3f sec'%('Set AeroProblem Time',t1 - startCallTime))
-            print('| %-30s: %10.3f sec'%('Solution Time',solTime))
-            print('| %-30s: %10.3f sec'%('Write Solution Time',writeSolutionTime - t2))
-            print('| %-30s: %10.3f sec'%('Stability Parameter Time',stabilityParameterTime - writeSolutionTime))
-            print('|')
-            print('| %-30s: %10.3f sec'%('Total Call Time',stabilityParameterTime - startCallTime))
-            print('+--------------------------------------------------+')
+        if self.getOption("printTiming") and self.comm.rank == 0:
+            print("+-------------------------------------------------+")
+            print("|")
+            print("| Solution Timings:")
+            print("|")
+            print("| %-30s: %10.3f sec" % ("Set AeroProblem Time", t1 - startCallTime))
+            print("| %-30s: %10.3f sec" % ("Solution Time", solTime))
+            print("| %-30s: %10.3f sec" % ("Write Solution Time", writeSolutionTime - t2))
+            print("| %-30s: %10.3f sec" % ("Stability Parameter Time", stabilityParameterTime - writeSolutionTime))
+            print("|")
+            print("| %-30s: %10.3f sec" % ("Total Call Time", stabilityParameterTime - startCallTime))
+            print("+--------------------------------------------------+")
 
     def _solverunsteady(self, surfaceMeshCallback=None, volumeMeshCallback=None):
         """
@@ -1080,8 +1156,8 @@ class ADFLOW(AeroSolver):
             refGrid = None
 
         # Time advancing
-        nTimeStepsFine = self.getOption('ntimestepsfine')
-        for tdx in range(1, nTimeStepsFine+1):
+        nTimeStepsFine = self.getOption("ntimestepsfine")
+        for tdx in range(1, nTimeStepsFine + 1):
             # Increment counter
             curTime, curTimeStep = self.advanceTimeStepCounter()
 
@@ -1110,8 +1186,7 @@ class ADFLOW(AeroSolver):
         Advance one unit of timestep and physical time.
         """
         self.adflow.monitor.timestepunsteady = self.adflow.monitor.timestepunsteady + 1
-        self.adflow.monitor.timeunsteady     = self.adflow.monitor.timeunsteady     + \
-            self.adflow.inputunsteady.deltat
+        self.adflow.monitor.timeunsteady = self.adflow.monitor.timeunsteady + self.adflow.inputunsteady.deltat
 
         if self.myid == 0:
             self.adflow.utils.unsteadyheader()
@@ -1125,11 +1200,10 @@ class ADFLOW(AeroSolver):
         t1 = time.time()
         self.adflow.solvers.solverunsteadystep()
         t2 = time.time()
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('Timestep solution time: {0:10.3f} sec'.format(t2-t1))
+        if self.getOption("printTiming") and self.comm.rank == 0:
+            print("Timestep solution time: {0:10.3f} sec".format(t2 - t1))
 
-    def evalFunctions(self, aeroProblem, funcs, evalFuncs=None,
-                      ignoreMissing=False):
+    def evalFunctions(self, aeroProblem, funcs, evalFuncs=None, ignoreMissing=False):
         """
         Evaluate the desired functions given in iterable object,
         'evalFuncs' and add them to the dictionary 'funcs'. The keys
@@ -1205,7 +1279,7 @@ class ADFLOW(AeroSolver):
                     callBackFuncs[sf] = 0.0
             else:
                 if not ignoreMissing:
-                    raise Error('Supplied function %s is not known to ADflow.'%f)
+                    raise Error("Supplied function %s is not known to ADflow." % f)
 
         # Now we loop over the unique groups calling the required
         # getSolution, there may be just one. No need for error
@@ -1217,7 +1291,7 @@ class ADFLOW(AeroSolver):
             # g contains the "basic function" (index 0) and the actual
             # function name (index 1)
             for g in groupMap[group]:
-                key = self.curAP.name + '_%s'% g[1]
+                key = self.curAP.name + "_%s" % g[1]
                 self.curAP.funcNames[g[1]] = key
                 if g[1].lower() in evalFuncs:
                     funcs[key] = res[g[0]]
@@ -1233,21 +1307,20 @@ class ADFLOW(AeroSolver):
                 self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
                 key = self.adflowUserCostFunctions[f].funcName
                 value = callBackFuncs[key]
-                funcs[self.curAP.name + '_%s'%key] = value
+                funcs[self.curAP.name + "_%s" % key] = value
 
         userFuncTime = time.time()
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('+---------------------------------------------------+')
-            print('|')
-            print('| Function Timings:')
-            print('|')
-            print('| %-30s: %10.3f sec'%('Function AeroProblem Time',aeroProblemTime - startEvalTime))
-            print('| %-30s: %10.3f sec'%('Function Evaluation Time',getSolutionTime - aeroProblemTime))
-            print('| %-30s: %10.3f sec'%('User Function Evaluation Time',userFuncTime - getSolutionTime))
-            print('|')
-            print('| %-30s: %10.3f sec'%('Total Function Evaluation Time',userFuncTime - startEvalTime))
-            print('+--------------------------------------------------+')
-
+        if self.getOption("printTiming") and self.comm.rank == 0:
+            print("+---------------------------------------------------+")
+            print("|")
+            print("| Function Timings:")
+            print("|")
+            print("| %-30s: %10.3f sec" % ("Function AeroProblem Time", aeroProblemTime - startEvalTime))
+            print("| %-30s: %10.3f sec" % ("Function Evaluation Time", getSolutionTime - aeroProblemTime))
+            print("| %-30s: %10.3f sec" % ("User Function Evaluation Time", userFuncTime - getSolutionTime))
+            print("|")
+            print("| %-30s: %10.3f sec" % ("Total Function Evaluation Time", userFuncTime - startEvalTime))
+            print("+--------------------------------------------------+")
 
     def _getFuncsBar(self, f):
         # Internal routine to return the funcsBar dictionary for the
@@ -1256,13 +1329,13 @@ class ADFLOW(AeroSolver):
         # user-supplied function and sets all required seeds.
 
         if f.lower() in self.adflowCostFunctions:
-            funcsBar = {f.lower():1.0}
+            funcsBar = {f.lower(): 1.0}
         elif f in self.adflowUserCostFunctions:
             # Need to get the funcs-bar derivative from the
             # user-supplied function
             funcsBar = self.adflowUserCostFunctions[f].evalFunctionsSens()
         else:
-            funcsBar = {f.lower():0.0}
+            funcsBar = {f.lower(): 0.0}
         return funcsBar
 
     def evalFunctionsSens(self, aeroProblem, funcsSens, evalFuncs=None):
@@ -1278,10 +1351,7 @@ class ADFLOW(AeroSolver):
             Dictionary into which the function derivatives are saved.
 
         evalFuncs : iterable object containing strings
-            The functions the user wants the derivatives of
-
-        evalFuncs : iterable object containing strings
-            The addition functions the user wants returned that are
+            The additional functions the user wants returned that are
             not already defined in the aeroProblem
 
         Examples
@@ -1305,8 +1375,6 @@ class ADFLOW(AeroSolver):
         # of what happened in the previous iterations.
         self.curAP.adjointFailed = False
 
-        aeroProblemTime = time.time()
-
         if evalFuncs is None:
             evalFuncs = sorted(list(self.curAP.evalFuncs))
 
@@ -1327,15 +1395,14 @@ class ADFLOW(AeroSolver):
             elif f in self.adflowUserCostFunctions:
                 pass
             else:
-                raise Error('Supplied %s function is not known to ADflow.'%f)
+                raise Error("Supplied %s function is not known to ADflow." % f)
 
             adjointStartTime[f] = time.time()
 
             if self.comm.rank == 0:
-                print('Solving adjoint: %s'%f)
+                print("Solving adjoint: %s" % f)
 
-            key = self.curAP.name + '_%s'% f
-            ptSetName = self.curAP.ptSetName
+            key = self.curAP.name + "_%s" % f
 
             # Set dict structure for this derivative
             funcsSens[key] = OrderedDict()
@@ -1357,23 +1424,24 @@ class ADFLOW(AeroSolver):
             psi = -self.getAdjoint(f)
 
             # Compute everything and update into the dictionary
-            funcsSens[key].update(self.computeJacobianVectorProductBwd(
-                resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True))
+            funcsSens[key].update(
+                self.computeJacobianVectorProductBwd(resBar=psi, funcsBar=self._getFuncsBar(f), xDvDeriv=True)
+            )
 
             totalSensEndTime[f] = time.time()
 
         finalEvalSensTime = time.time()
 
-        if self.getOption('printTiming') and self.comm.rank == 0:
-            print('+--------------------------------------------------+')
-            print('|')
-            print('| Adjoint Times:')
-            print('|')
+        if self.getOption("printTiming") and self.comm.rank == 0:
+            print("+--------------------------------------------------+")
+            print("|")
+            print("| Adjoint Times:")
+            print("|")
             for f in evalFuncs:
-                print('| %-30s: %10.3f sec'%('Adjoint Solve Time - %s'%(f),adjointEndTime[f]-adjointStartTime[f]))
-                print('| %-30s: %10.3f sec'%('Total Sensitivity Time - %s'%(f),totalSensEndTime[f] - adjointEndTime[f]))
+                print('| %-30s: %10.3f sec' % ('Adjoint Solve Time - %s' % (f), adjointEndTime[f] - adjointStartTime[f]))
+                print('| %-30s: %10.3f sec' % ('Total Sensitivity Time - %s' % (f), totalSensEndTime[f] - adjointEndTime[f]))
             print('|')
-            print('| %-30s: %10.3f sec'%('Complete Sensitivity Time',finalEvalSensTime - startEvalSensTime))
+            print('| %-30s: %10.3f sec' % ('Complete Sensitivity Time', finalEvalSensTime - startEvalSensTime))
             print('+--------------------------------------------------+')
 
     def evalFunctionsSensFwd(self, aeroProblem, funcsSens, evalFuncs=None):
@@ -1612,8 +1680,8 @@ class ADFLOW(AeroSolver):
         evalFuncs : iterable object containing strings
             The functions the user wants the uncertainty of
 
-        UQDict: dictionary containing the mean and std dev. of the
-            input parameters that are providing the uncertain input
+        UQDict : dict
+            Dictionary containing the mean and std dev. of the input parameters that are providing the uncertain input.
         """
 
         # Set the current aeroProblem
@@ -1629,43 +1697,52 @@ class ADFLOW(AeroSolver):
             tmp.append(f.lower())
         evalFuncs = tmp
 
-        #get the function values
+        # get the function values
         funcs = {}
-        self.evalFunctions(aeroProblem,funcs,evalFuncs)
+        self.evalFunctions(aeroProblem, funcs, evalFuncs)
 
         # Start by getting the total derivatives of the outputs of interest
         # with respect to the variables providing the uncertainty.
 
         derivs = {}
-        self.evalFunctionsSens(aeroProblem,derivs,evalFuncs)
+        self.evalFunctionsSens(aeroProblem, derivs, evalFuncs)
 
         UQOut = {}
         for outKey in evalFuncs:
-            dictKey = aeroProblem.name+'_'+outKey
+            dictKey = aeroProblem.name + "_" + outKey
             UQOut[dictKey] = {}
 
             # compute sigma**2
             sigma2 = 0
             for key in UQDict.keys():
-                varKey = key+'_'+aeroProblem.name
-                for i in range(UQDict[key]['size']):
+                varKey = key + "_" + aeroProblem.name
+                for i in range(UQDict[key]["size"]):
                     if isinstance(derivs[dictKey][varKey], (list, tuple, numpy.ndarray)):
                         dodsigma = derivs[dictKey][varKey][i]
-                        sigma = UQDict[key]['sigma'][i]
+                        sigma = UQDict[key]["sigma"][i]
                     else:
                         dodsigma = derivs[dictKey][varKey]
-                        sigma = UQDict[key]['sigma']
+                        sigma = UQDict[key]["sigma"]
 
-                    sigma2+= (dodsigma*sigma)**2
+                    sigma2 += (dodsigma * sigma) ** 2
 
-            UQOut[dictKey]['mu'] = funcs[dictKey]
-            UQOut[dictKey]['sigma'] = numpy.sqrt(sigma2)
+            UQOut[dictKey]["mu"] = funcs[dictKey]
+            UQOut[dictKey]["sigma"] = numpy.sqrt(sigma2)
 
         return UQOut
 
-    def solveCL(self, aeroProblem, CLStar, alpha0=None,
-                delta=0.5, tol=1e-3, autoReset=True, CLalphaGuess=None,
-                maxIter = 20, nReset=25):
+    def solveCL(
+        self,
+        aeroProblem,
+        CLStar,
+        alpha0=None,
+        delta=0.5,
+        tol=1e-3,
+        autoReset=True,
+        CLalphaGuess=None,
+        maxIter=20,
+        nReset=25,
+    ):
 
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
@@ -1710,7 +1787,7 @@ class ADFLOW(AeroSolver):
 
         # We can stop here if we have failures in the mesh
         if self.adflow.killsignals.fatalfail:
-            print('Cannot run CLSolve due to mesh failures.')
+            print("Cannot run CLSolve due to mesh failures.")
             return
 
         # Set the startign value
@@ -1718,12 +1795,12 @@ class ADFLOW(AeroSolver):
 
         # Print alpha
         if self.comm.rank == 0:
-            print('Current alpha is: ', aeroProblem.alpha)
+            print("Current alpha is: ", aeroProblem.alpha)
 
         self.__call__(aeroProblem, writeSolution=False)
         self.curAP.adflowData.callCounter -= 1
         sol = self.getSolution()
-        fnm2 = sol['cl'] - CLStar
+        fnm2 = sol["cl"] - CLStar
 
         if CLalphaGuess is None:
             # Use the delta option to define the next Aoa
@@ -1733,7 +1810,7 @@ class ADFLOW(AeroSolver):
                 anm1 = alpha0 - abs(delta)
         else:
             # Use CLalphaGuess option to define the next Aoa
-            anm1 = alpha0 - fnm2/CLalphaGuess
+            anm1 = alpha0 - fnm2 / CLalphaGuess
 
         # Check for convergence if the starting point is already ok.
         if abs(fnm2) < tol:
@@ -1746,10 +1823,10 @@ class ADFLOW(AeroSolver):
         # allow these residuals to change the rest of the solution.
         # A few RK iterations allow the total residual to "go uphill",
         # so that we can converge to a new solution.
-        minIterSave = self.getOption('nRKReset')
-        rkresetSave = self.getOption('rkreset')
-        self.setOption('nRKReset', nReset)
-        self.setOption('rkreset', True)
+        minIterSave = self.getOption("nRKReset")
+        rkresetSave = self.getOption("rkreset")
+        self.setOption("nRKReset", nReset)
+        self.setOption("rkreset", True)
 
         # Secant method iterations
         for iIter in range(maxIter):
@@ -1763,20 +1840,20 @@ class ADFLOW(AeroSolver):
 
             # Print alpha
             if self.comm.rank == 0:
-                print('Current alpha is: ', aeroProblem.alpha)
+                print("Current alpha is: ", aeroProblem.alpha)
 
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
             self.curAP.adflowData.callCounter -= 1
             sol = self.getSolution()
-            fnm1 = sol['cl'] - CLStar
+            fnm1 = sol["cl"] - CLStar
 
             # Check for convergence
             if abs(fnm1) < tol:
                 break
 
             # Secant Update
-            anew = anm1 - fnm1*(anm1-anm2)/(fnm1-fnm2)
+            anew = anm1 - fnm1 * (anm1 - anm2) / (fnm1 - fnm2)
 
             # Shift n-1 values to n-2 values
             fnm2 = fnm1
@@ -1786,12 +1863,26 @@ class ADFLOW(AeroSolver):
             anm1 = anew
 
         # Restore the min iter option given initially by user
-        self.setOption('nRKReset', minIterSave)
-        self.setOption('rkreset', rkresetSave)
+        self.setOption("nRKReset", minIterSave)
+        self.setOption("rkreset", rkresetSave)
 
-    def solveTrimCL(self, aeroProblem, trimFunc, trimDV, dvIndex,
-                    CLStar, trimStar=0.0, alpha0=None, trim0=None, da=1e-3,
-                    deta=1e-2, tol=1e-4, nIter=10, Jac0=None, liftFunc='cl'):
+    def solveTrimCL(
+        self,
+        aeroProblem,
+        trimFunc,
+        trimDV,
+        dvIndex,
+        CLStar,
+        trimStar=0.0,
+        alpha0=None,
+        trim0=None,
+        da=1e-3,
+        deta=1e-2,
+        tol=1e-4,
+        nIter=10,
+        Jac0=None,
+        liftFunc="cl",
+    ):
         """Solve the trim-Cl problem using a Broyden method.
 
         Parameters
@@ -1846,8 +1937,9 @@ class ADFLOW(AeroSolver):
             self.curAP.adflowData.callCounter -= 1
             funcs = {}
             self.evalFunctions(self.curAP, funcs, evalFuncs=[liftFunc, trimFunc])
-            F = numpy.array([funcs['%s_%s'%(self.curAP.name, liftFunc)]-CLstar,
-                             funcs['%s_%s'%(self.curAP.name, trimFunc)]])
+            F = numpy.array(
+                [funcs["%s_%s" % (self.curAP.name, liftFunc)] - CLstar, funcs["%s_%s" % (self.curAP.name, trimFunc)]]
+            )
             return F
 
         # Generate initial point
@@ -1859,24 +1951,24 @@ class ADFLOW(AeroSolver):
         if Jac0 is not None:
             J = Jac0.copy()
         else:
-            J = numpy.zeros((2,2))
+            J = numpy.zeros((2, 2))
 
             # Perturb alpha
             Xn[0] += da
             Fpda = Func(Xn, CLStar)
-            J[:, 0] = (Fpda - Fn)/da
+            J[:, 0] = (Fpda - Fn) / da
             Xn[0] -= da
 
             # Perturb eta:
             Xn[1] += deta
             Fpdeta = Func(Xn, CLStar)
-            J[:, 1] = (Fpdeta - Fn)/deta
+            J[:, 1] = (Fpdeta - Fn) / deta
             Xn[1] -= deta
 
         # Main iteration loop
         for jj in range(nIter):
             if self.comm.rank == 0:
-                print('Fn:', Fn)
+                print("Fn:", Fn)
 
             # We now have a point and a jacobian...Newton's Method!
             Xnp1 = Xn - numpy.linalg.solve(J, Fn)
@@ -1891,7 +1983,7 @@ class ADFLOW(AeroSolver):
             # Update the jacobian using Broyden's method
             dx = Xnp1 - Xn
             dF = Fnp1 - Fn
-            J = J + numpy.outer((dF - numpy.dot(J, dx))/(numpy.linalg.norm(dx)**2), dx)
+            J = J + numpy.outer((dF - numpy.dot(J, dx)) / (numpy.linalg.norm(dx) ** 2), dx)
 
             if self.comm.rank == 0:
                 print("New J:", J)
@@ -1903,7 +1995,7 @@ class ADFLOW(AeroSolver):
             # Check for convergence
             if numpy.linalg.norm(Fn) < tol:
                 if self.comm.rank == 0:
-                    print('Converged!', jj, Fn, Xn)
+                    print("Converged!", jj, Fn, Xn)
                 break
         return Xn
 
@@ -1946,32 +2038,32 @@ class ADFLOW(AeroSolver):
         initVals = []
         initStep = []
         for key in funcKeys:
-            if 'dv' in funcDict[key]:
-                dvKey = funcDict[key]['dv']
+            if "dv" in funcDict[key]:
+                dvKey = funcDict[key]["dv"]
                 if dvKey in apDVList:
-                    dvKey+='_%s'%aeroProblem.name
+                    dvKey += "_%s" % aeroProblem.name
                 dvKeys.append(dvKey)
             else:
-                raise Error('dv key not defined for function %s.'%key)
+                raise Error("dv key not defined for function %s." % key)
                 # Todo put in a check to see if the DVs selected are present?
 
-            if 'dvIdx' in funcDict[key]:
-                dvIndices.append(funcDict[key]['dvIdx'])
+            if "dvIdx" in funcDict[key]:
+                dvIndices.append(funcDict[key]["dvIdx"])
             else:
                 dvIndices.append(None)
 
-            if 'target' in funcDict[key]:
-                targetVals.append(funcDict[key]['target'])
+            if "target" in funcDict[key]:
+                targetVals.append(funcDict[key]["target"])
             else:
                 targetVals.append(0.0)
 
-            if 'initVal' in funcDict[key]:
-                initVals.append(funcDict[key]['initVal'])
+            if "initVal" in funcDict[key]:
+                initVals.append(funcDict[key]["initVal"])
             else:
                 initVals.append(0.0)
 
-            if 'initStep' in funcDict[key]:
-                initStep.append(funcDict[key]['initStep'])
+            if "initStep" in funcDict[key]:
+                initStep.append(funcDict[key]["initStep"])
             else:
                 initStep.append(1e-1)
 
@@ -1998,7 +2090,7 @@ class ADFLOW(AeroSolver):
             self.evalFunctions(self.curAP, funcs, evalFuncs=funcKeys)
             F = numpy.zeros([nVars])
             for i in range(nVars):
-                F[i] = funcs['%s_%s'%(self.curAP.name,funcKeys[i])]-targetVals[i]
+                F[i] = funcs["%s_%s" % (self.curAP.name, funcKeys[i])] - targetVals[i]
 
             return F
 
@@ -2011,37 +2103,37 @@ class ADFLOW(AeroSolver):
         if Jac0 is not None:
             J = Jac0.copy()
         else:
-            J = numpy.zeros((nVars,nVars))
+            J = numpy.zeros((nVars, nVars))
 
             # Perturb each var in succession
             for i in range(nVars):
-                Xn[i]+=initStep[i]
+                Xn[i] += initStep[i]
                 Fpdelta = Func(Xn, targetVals)
-                J[:, i] = (Fpdelta - Fn)/initStep[i]
+                J[:, i] = (Fpdelta - Fn) / initStep[i]
                 Xn[i] -= initStep[i]
 
         # Main iteration loop
         for jj in range(nIter):
             if self.comm.rank == 0:
-                print ('Fn:', Fn)
+                print("Fn:", Fn)
 
             # We now have a point and a jacobian...Newton's Method!
             Xnp1 = Xn - numpy.linalg.solve(J, Fn)
             if self.comm.rank == 0:
-                print ("Xnp1:", Xnp1)
+                print("Xnp1:", Xnp1)
 
             # Solve the new Xnp1
             Fnp1 = Func(Xnp1, targetVals)
             if self.comm.rank == 0:
-                print ("Fnp1:", Fnp1)
+                print("Fnp1:", Fnp1)
 
             # Update the jacobian using Broyden's method
             dx = Xnp1 - Xn
             dF = Fnp1 - Fn
-            J = J + numpy.outer((dF - numpy.dot(J, dx))/(numpy.linalg.norm(dx)**2), dx)
+            J = J + numpy.outer((dF - numpy.dot(J, dx)) / (numpy.linalg.norm(dx) ** 2), dx)
 
             if self.comm.rank == 0:
-                print ("New J:", J)
+                print("New J:", J)
 
             # Shuffle the Fn and Xn backwards
             Fn = Fnp1.copy()
@@ -2050,12 +2142,13 @@ class ADFLOW(AeroSolver):
             # Check for convergence
             if numpy.linalg.norm(Fn) < tol:
                 if self.comm.rank == 0:
-                    print ('Converged!', 'Iterations: ', jj, 'Function Error:', Fn, 'Variables: ', Xn)
+                    print("Converged!", "Iterations: ", jj, "Function Error:", Fn, "Variables: ", Xn)
                 break
         return Xn
 
-    def solveSep(self, aeroProblem, sepStar, nIter=10, alpha0=None,
-                 delta=0.1, tol=1e-3, expansionRatio=1.2, sepName=None):
+    def solveSep(
+        self, aeroProblem, sepStar, nIter=10, alpha0=None, delta=0.1, tol=1e-3, expansionRatio=1.2, sepName=None
+    ):
         """This is a safe-guarded secant search method to determine
         the alpha that yields a specified value of the separation
         sensor. Since this function is highly nonlinear we use a
@@ -2092,17 +2185,18 @@ class ADFLOW(AeroSolver):
         # that vlaue.
 
         if sepName is None:
-            sepName = 'sepsensor'
+            sepName = "sepsensor"
 
         if alpha0 is None:
             alpha0 = ap.alpha
 
         # Name of function to use
-        funcName = '%s_%s'%(ap.name, sepName)
+        funcName = "%s_%s" % (ap.name, sepName)
 
-        if not self.getOption('rkreset') and self.getOption('usenksolver'):
-            ADFLOWWarning("RKReset option is not set. It is usually necessary "
-                        "for solveSep() when NK solver is used.")
+        if not self.getOption("rkreset") and self.getOption("usenksolver"):
+            ADFLOWWarning(
+                "RKReset option is not set. It is usually necessary " "for solveSep() when NK solver is used."
+            )
 
         # Solve first problem
         ap.alpha = alpha0
@@ -2113,16 +2207,16 @@ class ADFLOW(AeroSolver):
         da = delta
 
         if self.comm.rank == 0:
-            print('+----------------------------------------------+')
-            print('| Presolve ')
-            print('| Alpha      = %s'%ap.alpha)
-            print('| Sep value  = %s'%funcs[funcName])
-            print('| F          = %s'%f)
-            print('| Sep*       = %s'%sepStar)
-            print('+----------------------------------------------+')
+            print("+----------------------------------------------+")
+            print("| Presolve ")
+            print("| Alpha      = %s" % ap.alpha)
+            print("| Sep value  = %s" % funcs[funcName])
+            print("| F          = %s" % f)
+            print("| Sep*       = %s" % sepStar)
+            print("+----------------------------------------------+")
 
         if self.comm.rank == 0:
-            print('Searching for Correct Interval')
+            print("Searching for Correct Interval")
 
         # Now try to find the interval
         for i in range(nIter):
@@ -2138,13 +2232,13 @@ class ADFLOW(AeroSolver):
             fnew = funcs[funcName] - sepStar
 
             if self.comm.rank == 0:
-                print('+----------------------------------------------+')
-                print('| Finished It= %d'%i)
-                print('| Alpha      = %s'%ap.alpha)
-                print('| Sep value  = %s'%funcs[funcName])
-                print('| F          = %s'%fnew)
-                print('| Sep*       = %s'%sepStar)
-                print('+----------------------------------------------+')
+                print("+----------------------------------------------+")
+                print("| Finished It= %d" % i)
+                print("| Alpha      = %s" % ap.alpha)
+                print("| Sep value  = %s" % funcs[funcName])
+                print("| F          = %s" % fnew)
+                print("| Sep*       = %s" % sepStar)
+                print("+----------------------------------------------+")
 
             if numpy.sign(f) != numpy.sign(fnew):
                 # We crossed the zero:
@@ -2164,7 +2258,7 @@ class ADFLOW(AeroSolver):
         highAlpha = max(anm1, anm2)
 
         if self.comm.rank == 0:
-            print('Switching to Secant Search')
+            print("Switching to Secant Search")
 
         for iIter in range(nIter):
             if iIter != 0:
@@ -2174,23 +2268,23 @@ class ADFLOW(AeroSolver):
                 fnm1 = funcs[funcName] - sepStar
 
             if self.comm.rank == 0:
-                print('+----------------------------------------------+')
-                print('| Finished It= %d'%i)
-                print('| Alpha      = %s'%ap.alpha)
-                print('| Sep value  = %s'%funcs[funcName])
-                print('| F          = %s'%fnm1)
-                print('| Sep*       = %s'%sepStar)
-                print('+----------------------------------------------+')
+                print("+----------------------------------------------+")
+                print("| Finished It= %d" % i)
+                print("| Alpha      = %s" % ap.alpha)
+                print("| Sep value  = %s" % funcs[funcName])
+                print("| F          = %s" % fnm1)
+                print("| Sep*       = %s" % sepStar)
+                print("+----------------------------------------------+")
 
             # Secant update
-            anew = anm1 - fnm1*(anm1 - anm2)/(fnm1-fnm2)
+            anew = anm1 - fnm1 * (anm1 - anm2) / (fnm1 - fnm2)
 
             # Make sure the anew update doesn't go outside (lowAlpha,
             # highAlpha). Just use bisection in this case.
             if anew < lowAlpha:
-                anew = 0.5*(anm1 + lowAlpha)
+                anew = 0.5 * (anm1 + lowAlpha)
             if anew > highAlpha:
-                anew = 0.5*(anm1 + highAlpha)
+                anew = 0.5 * (anm1 + highAlpha)
 
             # Shift the n-1 values to n-2
             fnm2 = fnm1
@@ -2211,17 +2305,18 @@ class ADFLOW(AeroSolver):
         function is used along with the associated logical flags in
         the options to determine the desired writing procedure
 
-        Optional arguments
+        Parameters
+        ----------
 
-        outputDir: Use the supplied output directory
-
-        baseName: Use this supplied string for the base filename. Typically
-                  only used from an external solver.
-        number: Use the user supplied number to index solution. Again, only
-                typically used from an external solver.
-                """
+        outputDir : str
+            Use the supplied output directory
+        baseName : str
+            Use this supplied string for the base filename. Typically only used from an external solver.
+        number : int
+            Use the user supplied number to index solution. Again, only typically used from an external solver.
+        """
         if outputDir is None:
-            outputDir = self.getOption('outputDirectory')
+            outputDir = self.getOption("outputDirectory")
 
         if baseName is None:
             baseName = self.curAP.name
@@ -2230,12 +2325,12 @@ class ADFLOW(AeroSolver):
         # calls, add the call number
         if number is not None:
             # We need number based on the provided number:
-            baseName = baseName + '_%3.3d'% number
+            baseName = baseName + "_%3.3d" % number
         else:
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
-            if self.getOption('numberSolutions'):
-                baseName = baseName + '_%3.3d'% self.curAP.adflowData.callCounter
+            if self.getOption("numberSolutions"):
+                baseName = baseName + "_%3.3d" % self.curAP.adflowData.callCounter
 
         # Join to get the actual filename root
         base = os.path.join(outputDir, baseName)
@@ -2243,41 +2338,37 @@ class ADFLOW(AeroSolver):
         # Get the timestep if this is time dependent solution, else we default
         # to the same values as the nsave values (which is 1) for steady
         # and time-spectral solution to be written,
-        if self.getOption('equationMode').lower() == 'unsteady':
+        if self.getOption("equationMode").lower() == "unsteady":
             ts = self.adflow.monitor.timestepunsteady
         else:
             ts = 1
 
         # Now call each of the 4 routines with the appropriate file name:
-        if self.getOption('writevolumesolution') and \
-          numpy.mod(ts, self.getOption('nsavevolume')) == 0 :
-            self.writeVolumeSolutionFile(base + '_vol.cgns')
+        if self.getOption("writevolumesolution") and numpy.mod(ts, self.getOption("nsavevolume")) == 0:
+            self.writeVolumeSolutionFile(base + "_vol.cgns")
 
-        if self.getOption('writesurfacesolution') and \
-          numpy.mod(ts, self.getOption('nsavesurface')) == 0 :
-            self.writeSurfaceSolutionFile(base + '_surf.cgns')
+        if self.getOption("writesurfacesolution") and numpy.mod(ts, self.getOption("nsavesurface")) == 0:
+            self.writeSurfaceSolutionFile(base + "_surf.cgns")
 
         # ADD NSAVE TEST AROUND THESE AS WELL BUT
         # THIS IS SMALL COMPARED TO OTHER. REFACTOR
-        if self.getOption('equationMode').lower() == 'unsteady':
-            liftName = base + '_lift_Timestep%4.4d.dat'% ts
-            sliceName = base + '_slices_Timestep%4.4d.dat'% ts
-            surfName = base + '_surf_Timestep%4.4d.plt' %ts
+        if self.getOption("equationMode").lower() == "unsteady":
+            liftName = base + "_lift_Timestep%4.4d.dat" % ts
+            sliceName = base + "_slices_Timestep%4.4d.dat" % ts
+            surfName = base + "_surf_Timestep%4.4d.plt" % ts
         else:
-            liftName = base + '_lift.dat'
-            sliceName = base + '_slices.dat'
-            surfName = base + '_surf.plt'
-
+            liftName = base + "_lift.dat"
+            sliceName = base + "_slices.dat"
+            surfName = base + "_surf.plt"
 
         # Get the family list to write for the surface.
-        famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
+        famList = self._getFamilyList(self.getOption("outputSurfaceFamily"))
 
         # Flag to write the tecplot surface solution or not
-        writeSurf = self.getOption('writeTecplotSurfaceSolution')
+        writeSurf = self.getOption("writeTecplotSurfaceSolution")
 
         # # Call fully compbined fortran routine.
-        self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True,
-                                           surfName, writeSurf, famList)
+        self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True, surfName, writeSurf, famList)
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -2292,7 +2383,7 @@ class ADFLOW(AeroSolver):
 
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
-        fileName += '.cgns'
+        fileName += ".cgns"
 
         # Set Flags for writing
         self.adflow.monitor.writegrid = True
@@ -2326,19 +2417,18 @@ class ADFLOW(AeroSolver):
         """
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
-        fileName += '.cgns'
+        fileName += ".cgns"
 
         # Set Flags for writing
         self.adflow.monitor.writegrid = writeGrid
         self.adflow.monitor.writevolume = True
         self.adflow.monitor.writesurface = False
 
-        n = self.adflow.constants.maxstringlen
         # Set fileName in adflow
         self.adflow.inputio.solfile = self._expandString(fileName)
-        #self.adflow.inputio.solfile[0:len(fileName)] = fileName
+        # self.adflow.inputio.solfile[0:len(fileName)] = fileName
         self.adflow.inputio.newgridfile = self._expandString(fileName)
-        #self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
+        # self.adflow.inputio.newgridfile[0:len(fileName)] = fileName
 
         # Actual fortran write call. family list doesn't matter
         famList = self._getFamilyList(self.allFamilies)
@@ -2355,18 +2445,18 @@ class ADFLOW(AeroSolver):
         """
         # Ensure extension is .cgns even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
-        fileName += '.cgns'
+        fileName += ".cgns"
 
         # Set Flags for writing
-        self.adflow.monitor.writegrid=False
-        self.adflow.monitor.writevolume=False
-        self.adflow.monitor.writesurface=True
+        self.adflow.monitor.writegrid = False
+        self.adflow.monitor.writevolume = False
+        self.adflow.monitor.writesurface = True
 
         # Set fileName in adflow
         self.adflow.inputio.surfacesolfile = self._expandString(fileName)
 
         # Actual fortran write call. Fam list matters.
-        famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
+        famList = self._getFamilyList(self.getOption("outputSurfaceFamily"))
         self.adflow.writesol(famList)
 
     def writeSurfaceSolutionFileTecplot(self, fileName):
@@ -2379,14 +2469,13 @@ class ADFLOW(AeroSolver):
         """
         # Ensure fileName is .dat even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
-        fileName += '.plt'
+        fileName += ".plt"
 
         # Actual write command
         sliceName = ""
         liftName = ""
-        famList = self._getFamilyList(self.getOption('outputSurfaceFamily'))
-        self.adflow.tecplotio.writetecplot(sliceName, False, liftName, False,
-                                           fileName, True, famList)
+        famList = self._getFamilyList(self.getOption("outputSurfaceFamily"))
+        self.adflow.tecplotio.writetecplot(sliceName, False, liftName, False, fileName, True, famList)
 
     def writeLiftDistributionFile(self, fileName):
         """Evaluate and write the lift distibution to a tecplot file.
@@ -2398,13 +2487,12 @@ class ADFLOW(AeroSolver):
         """
         # Ensure fileName is .dat even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
-        fileName += '.dat'
+        fileName += ".dat"
 
         # Actual write command. Family list doesn't matter.
         sliceName = ""
         surfName = ""
-        self.adflow.tecplotio.writetecplot(sliceName, False, fileName, True,
-                                           surfName, False, self.allFamilies)
+        self.adflow.tecplotio.writetecplot(sliceName, False, fileName, True, surfName, False, self.allFamilies)
 
     def writeSlicesFile(self, fileName):
         """Evaluate and write the defined slice information to a
@@ -2418,16 +2506,14 @@ class ADFLOW(AeroSolver):
 
         # Ensure filename is .dat even if the user didn't specify
         fileName, ext = os.path.splitext(fileName)
-        fileName += '.dat'
+        fileName += ".dat"
 
         # Actual write command. Family list doesn't matter
-        sliceName = ""
         liftName = ""
-        self.adflow.tecplotio.writetecplot(fileName, True, liftName, True,
-                                         surfName, False, self.allFamilies)
+        surfName = ""
+        self.adflow.tecplotio.writetecplot(fileName, True, liftName, True, surfName, False, self.allFamilies)
 
-    def writeForceFile(self, fileName, TS=0, groupName=None,
-                       cfdForcePts=None):
+    def writeForceFile(self, fileName, TS=0, groupName=None, cfdForcePts=None):
         """This function collects all the forces and locations and
         writes them to a file with each line having: X Y Z Fx Fy Fz.
         This can then be used to set a set of structural loads in TACS
@@ -2462,22 +2548,26 @@ class ADFLOW(AeroSolver):
                 nCell += len(conn[iProc])
 
             # Open output file
-            f = open(fileName, 'w')
+            f = open(fileName, "w")
 
             # Write header with number of nodes and number of cells
-            f.write("%d %d\n"% (nPt, nCell))
+            f.write("%d %d\n" % (nPt, nCell))
 
             # Now write out all the Nodes and Forces (or tractions)
             for iProc in range(len(pts)):
                 for i in range(len(pts[iProc])):
-                    f.write('%15.8g %15.8g %15.8g '% (
-                            numpy.real(pts[iProc][i, 0]),
-                            numpy.real(pts[iProc][i, 1]),
-                            numpy.real(pts[iProc][i, 2])))
-                    f.write('%15.8g %15.8g %15.8g\n'% (
+                    f.write(
+                        "%15.8g %15.8g %15.8g "
+                        % (numpy.real(pts[iProc][i, 0]), numpy.real(pts[iProc][i, 1]), numpy.real(pts[iProc][i, 2]))
+                    )
+                    f.write(
+                        "%15.8g %15.8g %15.8g\n"
+                        % (
                             numpy.real(forces[iProc][i, 0]),
                             numpy.real(forces[iProc][i, 1]),
-                            numpy.real(forces[iProc][i, 2])))
+                            numpy.real(forces[iProc][i, 2]),
+                        )
+                    )
 
             # Now write out the connectivity information. We have to
             # be a little careful, since the connectivitiy is given
@@ -2487,11 +2577,15 @@ class ADFLOW(AeroSolver):
             nodeOffset = 0
             for iProc in range(len(conn)):
                 for i in range(len(conn[iProc])):
-                    f.write('%d %d %d %d\n'%(
-                        conn[iProc][i,0]+nodeOffset,
-                        conn[iProc][i,1]+nodeOffset,
-                        conn[iProc][i,2]+nodeOffset,
-                        conn[iProc][i,3]+nodeOffset))
+                    f.write(
+                        "%d %d %d %d\n"
+                        % (
+                            conn[iProc][i, 0] + nodeOffset,
+                            conn[iProc][i, 1] + nodeOffset,
+                            conn[iProc][i, 2] + nodeOffset,
+                            conn[iProc][i, 3] + nodeOffset,
+                        )
+                    )
 
                 nodeOffset += len(pts[iProc])
             f.close()
@@ -2522,25 +2616,26 @@ class ADFLOW(AeroSolver):
             psi = -self.getAdjoint(func)
 
             # Compute everything and update into the dictionary
-            dXs = self.computeJacobianVectorProductBwd(
-                resBar=psi, funcsBar=self._getFuncsBar(func), xSDeriv=True)
+            dXs = self.computeJacobianVectorProductBwd(resBar=psi, funcsBar=self._getFuncsBar(func), xSDeriv=True)
             dXs = self.mapVector(dXs, groupName, groupName, includeZipper=True)
         else:
-            raise Error("The adjoint for '%s' is not computed for the current "
-                        "aeroProblem. cannot write surface sensitivity."%(func))
+            raise Error(
+                "The adjoint for '%s' is not computed for the current "
+                "aeroProblem. cannot write surface sensitivity." % (func)
+            )
 
         # Be careful with conn...need to increment by the offset from
         # the points.
         pts = self.getSurfacePoints(groupName, includeZipper=True)
 
         ptSizes = self.comm.allgather(len(pts))
-        offsets = numpy.zeros(len(ptSizes), 'intc')
+        offsets = numpy.zeros(len(ptSizes), "intc")
         offsets[1:] = numpy.cumsum(ptSizes)[:-1]
 
         # Now we need to gather the data to the root proc
         pts = self.comm.gather(pts)
         dXs = self.comm.gather(dXs)
-        conn, faceSize =  self.getSurfaceConnectivity(groupName, includeZipper=True)
+        conn, faceSize = self.getSurfaceConnectivity(groupName, includeZipper=True)
         conn = self.comm.gather(conn + offsets[self.comm.rank])
 
         # Write out Data only on root proc:
@@ -2559,8 +2654,8 @@ class ADFLOW(AeroSolver):
             newPts = numpy.zeros((nUnique, 3))
             newConn = numpy.zeros_like(conn)
             for i in range(len(pts)):
-                newPts[link[i]-1] = pts[i]
-                newdXs[link[i]-1] += dXs[i]
+                newPts[link[i] - 1] = pts[i]
+                newdXs[link[i] - 1] += dXs[i]
 
             # Update conn. Since link is 1 based, we get 1 based order
             # which is what we need for tecplot
@@ -2573,23 +2668,23 @@ class ADFLOW(AeroSolver):
             conn = newConn
 
             # Open output file
-            f = open(fileName, 'w')
+            f = open(fileName, "w")
 
             # Write the variable headers
-            f.write('Variables = CoordinateX CoordinateY CoordinateZ dX dY dZ\n')
-            f.write('ZONE Nodes=%d Elements=%d Zonetype=FEQuadrilateral \
-            Datapacking=Point\n'%(len(pts), len(conn)))
+            f.write("Variables = CoordinateX CoordinateY CoordinateZ dX dY dZ\n")
+            f.write(
+                "ZONE Nodes=%d Elements=%d Zonetype=FEQuadrilateral \
+            Datapacking=Point\n"
+                % (len(pts), len(conn))
+            )
 
             # Now write out all the Nodes and Forces (or tractions)
             for i in range(len(pts)):
-                f.write('%15.8g %15.8g %15.8g '% (
-                    pts[i, 0], pts[i, 1], pts[i, 2]))
-                f.write('%15.8g %15.8g %15.8g\n'% (
-                    dXs[i, 0], dXs[i, 1], dXs[i, 2]))
+                f.write("%15.8g %15.8g %15.8g " % (pts[i, 0], pts[i, 1], pts[i, 2]))
+                f.write("%15.8g %15.8g %15.8g\n" % (dXs[i, 0], dXs[i, 1], dXs[i, 2]))
 
             for i in range(len(conn)):
-                f.write('%d %d %d %d\n'%(
-                    conn[i,0], conn[i,1], conn[i,2], conn[i,3]))
+                f.write("%d %d %d %d\n" % (conn[i, 0], conn[i, 1], conn[i, 2], conn[i, 3]))
 
             f.close()
         # end if (root proc )
@@ -2617,21 +2712,21 @@ class ADFLOW(AeroSolver):
         aeroProblem : pyAero_problem object
             The aeroproblem with the flow information we would like
             to reset the flow to.
-            """
+        """
 
         # The aeroProblem we're resetting to has an oldWinf in it, we
         # must invalidate it since it would try to use that the next
         # time this AP is used.
         try:
             aeroProblem.adflowData.oldWinf = None
-        except:
+        except AttributeError:
             pass
 
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         self._resetFlow()
 
     def _resetFlow(self):
-        strLvl = self.getOption('MGStartLevel')
+        strLvl = self.getOption("MGStartLevel")
         nLevels = self.adflow.inputiteration.nmglevels
         if strLvl < 0 or strLvl > nLevels:
             strLvl = nLevels
@@ -2642,7 +2737,7 @@ class ADFLOW(AeroSolver):
         self.adflow.monitor.nitercur = 0
         self.adflow.iteration.itertot = 0
         self.adflow.initializeflow.setuniformflow()
-        self.adflow.killsignals.routinefailed =  False
+        self.adflow.killsignals.routinefailed = False
         self.adflow.killsignals.fatalfail = False
         self.adflow.nksolver.freestreamresset = False
 
@@ -2661,8 +2756,10 @@ class ADFLOW(AeroSolver):
 
         # Check that the user surface integrations are finalized
         if self.hasIntegrationSurfaces and (not self.userSurfaceIntegrationsFinalized):
-            raise Error('Integration surfaces have been added to the solver, but finalizeUserIntegrationSurfaces()'+
-                        ' has not been called. It must be called before evaluating the funcs')
+            raise Error(
+                "Integration surfaces have been added to the solver, but finalizeUserIntegrationSurfaces()"
+                + " has not been called. It must be called before evaluating the funcs"
+            )
 
         # Extract the familiy list we want to use for evaluation. We
         # explictly have just the one group in the call.
@@ -2670,13 +2767,12 @@ class ADFLOW(AeroSolver):
 
         # Run the underlying fortran routine
         costSize = self.adflow.constants.ncostfunction
-        funcVals = self.adflow.surfaceintegrations.getsolutionwrap(
-            famLists, costSize)
+        funcVals = self.adflow.surfaceintegrations.getsolutionwrap(famLists, costSize)
 
         # Build up the dictionary
         sol = {}
         for key in self.basicCostFunctions:
-            sol[key] = funcVals[self.basicCostFunctions[key]-1, 0]
+            sol[key] = funcVals[self.basicCostFunctions[key] - 1, 0]
 
         return sol
 
@@ -2685,20 +2781,27 @@ class ADFLOW(AeroSolver):
         ncells = self.adflow.adjointvars.ncellslocal[0]
         nCellTotal = self.comm.allreduce(ncells)
         if self.myid != 0:
-            nCellTotal = 1 # Should be zero, but f2py doesn't like
-                           # that
+            nCellTotal = 1  # Should be zero, but f2py doesn't like
+            # that
 
-        blkList = self.adflow.oversetutilities.getoversetiblank(nCellTotal*5)
+        blkList = self.adflow.oversetutilities.getoversetiblank(nCellTotal * 5)
         hexStr = None
         if self.myid == 0:
             hexStr = hashlib.md5(str(list(blkList[0::5]))).hexdigest()
             if fileName is not None:
-                f = open(fileName, 'w')
+                f = open(fileName, "w")
                 for i in range(nCellTotal):
-                    f.write('%d %d %d %d %d\n'%(blkList[5*i], blkList[5*i+1], blkList[5*i+2],
-                                                blkList[5*i+3], blkList[5*i+4]))
+                    f.write(
+                        "%d %d %d %d %d\n"
+                        % (
+                            blkList[5 * i],
+                            blkList[5 * i + 1],
+                            blkList[5 * i + 2],
+                            blkList[5 * i + 3],
+                            blkList[5 * i + 4],
+                        )
+                    )
                 f.close()
-
 
         return self.comm.bcast(hexStr)
 
@@ -2713,13 +2816,12 @@ class ADFLOW(AeroSolver):
         # This is an alias for getSurfacePoints
         return self.getSurfacePoints(groupName, includeZipper)
 
-    def getPointSetName(self,apName):
+    def getPointSetName(self, apName):
         """
         Take the apName and return the mangled point set name.
 
         """
-        return 'adflow_%s_coords'% apName
-
+        return "adflow_%s_coords" % apName
 
     def setSurfaceCoordinates(self, coordinates, groupName=None):
         """
@@ -2743,32 +2845,30 @@ class ADFLOW(AeroSolver):
 
         self._updateGeomInfo = True
         if self.mesh is None:
-            raise Error("Cannot set new surface coordinate locations without a mesh"
-                        "warping object present.")
+            raise Error("Cannot set new surface coordinate locations without a mesh" "warping object present.")
 
         # First get the surface coordinates of the meshFamily in case
         # the groupName is a subset, those values will remain unchanged.
-        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup,
-                                                    includeZipper=False)
-        meshSurfCoords = self.mapVector(coordinates, groupName,
-                                        self.meshFamilyGroup, meshSurfCoords,
-                                        includeZipper=False)
+        meshSurfCoords = self.getSurfaceCoordinates(self.meshFamilyGroup, includeZipper=False)
+        meshSurfCoords = self.mapVector(
+            coordinates, groupName, self.meshFamilyGroup, meshSurfCoords, includeZipper=False
+        )
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
     def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
         """Set the supplied aeroProblem to be used in ADflow"""
 
-        ptSetName = 'adflow_%s_coords'% aeroProblem.name
+        ptSetName = "adflow_%s_coords" % aeroProblem.name
 
         newAP = False
         # Tell the user if we are switching aeroProblems
         if self.curAP != aeroProblem:
             newAP = True
-            self.pp('+'+'-'*70+'+')
-            self.pp('|  Switching to Aero Problem: %-41s|'% aeroProblem.name)
-            self.pp('+'+'-'*70+'+')
+            self.pp("+" + "-" * 70 + "+")
+            self.pp("|  Switching to Aero Problem: %-41s|" % aeroProblem.name)
+            self.pp("+" + "-" * 70 + "+")
             # Remind the user of the modified options when switching ap
-            if self.getOption('printIterations'):
+            if self.getOption("printIterations"):
                 self.printModifiedOptions()
 
         # See if the aeroProblem has adflowData already, if not, create.
@@ -2789,14 +2889,14 @@ class ADFLOW(AeroSolver):
             # (self.curAP) modified. We have to be slightly careful
             # since a setOption() may have been called in between:
 
-            for key in self.curAP.savedOptions['adflow']:
+            for key in self.curAP.savedOptions["adflow"]:
                 # Saved Val: This is the main option value when the
                 # aeroProblem set it's own option
                 # setVal: This is the value the aeroProblem set itself
                 # curVal: This is the actual value currently set
 
-                savedVal = self.curAP.savedOptions['adflow'][key]
-                setVal = self.curAP.solverOptions['adflow'][key]
+                savedVal = self.curAP.savedOptions["adflow"][key]
+                setVal = self.curAP.solverOptions["adflow"][key]
                 curVal = self.getOption(key)
 
                 if curVal == setVal:
@@ -2807,9 +2907,8 @@ class ADFLOW(AeroSolver):
         # Now check if we have an DVGeo object to deal with:
         if self.DVGeo is not None:
             # DVGeo appeared and we have not embedded points!
-            if not ptSetName in self.DVGeo.points:
-                coords0 = self.mapVector(self.coords0, self.allFamilies,
-                                         self.designFamilyGroup, includeZipper=False)
+            if ptSetName not in self.DVGeo.points:
+                coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
                 self.DVGeo.addPointSet(coords0, ptSetName)
 
             # Check if our point-set is up to date:
@@ -2843,7 +2942,7 @@ class ADFLOW(AeroSolver):
         # restart file or the free-stream values by calling
         # resetFlow()
         if aeroProblem.adflowData.stateInfo is None:
-            if self.getOption('restartFile') is not None:
+            if self.getOption("restartFile") is not None:
                 self.adflow.inputiteration.mgstartlevel = 1
                 self.adflow.initializeflow.initflowrestart()
                 # Save this state information
@@ -2861,7 +2960,7 @@ class ADFLOW(AeroSolver):
 
         # Potentially correct the states based on the change in the alpha
         oldWinf = aeroProblem.adflowData.oldWinf
-        if self.getOption('infChangeCorrection') and oldWinf is not None:
+        if self.getOption("infChangeCorrection") and oldWinf is not None:
             self.adflow.initializeflow.infchangecorrection(oldWinf)
 
         # We are now ready to associate self.curAP with the supplied AP
@@ -2877,7 +2976,7 @@ class ADFLOW(AeroSolver):
 
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
-        After an aeroProblem has been associated with self.cuAP, set
+        After an aeroProblem has been associated with self.curAP, set
         all the updated information in ADflow."""
 
         # Set any additional adflow options that may be defined in the
@@ -2886,17 +2985,16 @@ class ADFLOW(AeroSolver):
         AP = aeroProblem
         try:
             AP.savedOptions
-        except:
-            AP.savedOptions = {'adflow':{}}
+        except AttributeError:
+            AP.savedOptions = {"adflow": {}}
 
-
-        if 'adflow' in AP.solverOptions:
-            for key in AP.solverOptions['adflow']:
+        if "adflow" in AP.solverOptions:
+            for key in AP.solverOptions["adflow"]:
                 curVal = self.getOption(key)
-                overwriteVal =  AP.solverOptions['adflow'][key]
+                overwriteVal = AP.solverOptions["adflow"][key]
                 if overwriteVal != curVal:
                     self.setOption(key, overwriteVal)
-                    AP.savedOptions['adflow'][key] = curVal
+                    AP.savedOptions["adflow"][key] = curVal
 
         alpha = AP.alpha
         beta = AP.beta
@@ -2905,29 +3003,32 @@ class ADFLOW(AeroSolver):
         machRef = AP.machRef
         machGrid = AP.machGrid
 
-        xRef = AP.xRef; yRef = AP.yRef; zRef = AP.zRef
-        xRot = AP.xRot; yRot = AP.yRot; zRot = AP.zRot
+        xRef = AP.xRef
+        yRef = AP.yRef
+        zRef = AP.zRef
+        xRot = AP.xRot
+        yRot = AP.yRot
+        zRot = AP.zRot
         momentAxis = AP.momentAxis
         areaRef = AP.areaRef
         chordRef = AP.chordRef
-        liftIndex = self.getOption('liftIndex')
+        liftIndex = self.getOption("liftIndex")
 
-        if (AP.T is None or AP.P is None or AP.rho is None or
-            AP.V is None or AP.mu is None):
-            raise Error("Insufficient information is given in the "
-                        "aeroProblem to determine physical state. "
-                        "See AeroProblem documentation for how to "
-                        "specify complete aerodynamic states.")
+        if AP.T is None or AP.P is None or AP.rho is None or AP.V is None or AP.mu is None:
+            raise Error(
+                "Insufficient information is given in the "
+                "aeroProblem to determine physical state. "
+                "See AeroProblem documentation for how to "
+                "specify complete aerodynamic states."
+            )
 
-        if self.dtype == 'd':
+        if self.dtype == "d":
             mach = numpy.real(mach)
 
-        if self.dtype == 'd':
+        if self.dtype == "d":
             T = numpy.real(AP.T)
             P = numpy.real(AP.P)
             rho = numpy.real(AP.rho)
-            V = numpy.real(AP.V)
-            mu = numpy.real(AP.mu)
 
             SSuthDim = numpy.real(AP.SSuthDim)
             muSuthDim = numpy.real(AP.muSuthDim)
@@ -2939,8 +3040,6 @@ class ADFLOW(AeroSolver):
             T = AP.T
             P = AP.P
             rho = AP.rho
-            V = AP.V
-            mu = AP.mu
 
             SSuthDim = AP.SSuthDim
             muSuthDim = AP.muSuthDim
@@ -2951,14 +3050,11 @@ class ADFLOW(AeroSolver):
 
         # Do some checking here for things that MUST be specified:
         if AP.mach is None:
-            raise Error("'mach' number must be specified in the aeroProblem"
-                        " for ADflow.")
+            raise Error("'mach' number must be specified in the aeroProblem" " for ADflow.")
         if areaRef is None:
-            raise Error("'areaRef' must be specified in aeroProblem"
-                        " for ADflow.")
+            raise Error("'areaRef' must be specified in aeroProblem" " for ADflow.")
         if chordRef is None:
-            raise Error("'chordRef' must be specified in aeroProblem"
-                        " for ADflow.")
+            raise Error("'chordRef' must be specified in aeroProblem" " for ADflow.")
 
         # Now set defaults
         if alpha is None:
@@ -2978,14 +3074,20 @@ class ADFLOW(AeroSolver):
         if zRot is None:
             zRot = 0.0
 
-        if momentAxis is None: #Set the default to the x-axis through the origin
-            axisX1 = 0.0; axisX2 = 1.0;
-            axisY1 = 0.0; axisY2 = 0.0;
-            axisZ1 = 0.0; axisZ2 = 0.0;
+        if momentAxis is None:  # Set the default to the x-axis through the origin
+            axisX1 = 0.0
+            axisX2 = 1.0
+            axisY1 = 0.0
+            axisY2 = 0.0
+            axisZ1 = 0.0
+            axisZ2 = 0.0
         else:
-            axisX1 = momentAxis[0][0]; axisX2 = momentAxis[1][0]
-            axisY1 = momentAxis[0][1]; axisY2 = momentAxis[1][1]
-            axisZ1 = momentAxis[0][2]; axisZ2 = momentAxis[1][2]
+            axisX1 = momentAxis[0][0]
+            axisX2 = momentAxis[1][0]
+            axisY1 = momentAxis[0][1]
+            axisY2 = momentAxis[1][1]
+            axisZ1 = momentAxis[0][2]
+            axisZ2 = momentAxis[1][2]
 
         # Set mach defaults if user did not specified any machRef or machGrid values
 
@@ -2996,25 +3098,25 @@ class ADFLOW(AeroSolver):
             machRef = mach
 
         if machGrid is None:
-            if self.getOption('equationMode').lower()=='time spectral':
+            if self.getOption("equationMode").lower() == "time spectral":
                 machGrid = mach
             else:
                 # Steady, unsteady
                 machGrid = 0.0
 
         # 1. Angle of attack:
-        dToR = numpy.pi/180.0
-        self.adflow.inputphysics.alpha = alpha*dToR
-        self.adflow.inputphysics.beta = beta*dToR
+        dToR = numpy.pi / 180.0
+        self.adflow.inputphysics.alpha = alpha * dToR
+        self.adflow.inputphysics.beta = beta * dToR
         self.adflow.inputphysics.liftindex = liftIndex
         self.adflow.flowutils.adjustinflowangle()
 
-        if self.getOption('printIterations') and self.comm.rank == 0:
-            print('-> Alpha... %f '% numpy.real(alpha))
+        if self.getOption("printIterations") and self.comm.rank == 0:
+            print("-> Alpha... %f " % numpy.real(alpha))
 
         # 2. Reference Points:
         self.adflow.inputphysics.pointref = [xRef, yRef, zRef]
-        self.adflow.inputphysics.momentaxis = [[axisX1,axisX2],[axisY1,axisY2],[axisZ1,axisZ2]]
+        self.adflow.inputphysics.momentaxis = [[axisX1, axisX2], [axisY1, axisY2], [axisZ1, axisZ2]]
         self.adflow.inputmotion.rotpoint = [xRot, yRot, zRot]
         self.adflow.inputphysics.pointrefec = [0.0, 0.0, 0.0]
 
@@ -3026,7 +3128,7 @@ class ADFLOW(AeroSolver):
         # Mach number for time spectral needs to be set to set to zero
         # If time-spectral (TS) then mach = 0, machcoef = mach, machgrid = mach
         # If Steady-State (SS), time-accurate (TA) then mach = mach, machcoef = mach, machgrid = 0
-        if self.getOption('equationMode').lower()=='time spectral':
+        if self.getOption("equationMode").lower() == "time spectral":
             self.adflow.inputphysics.mach = 0.0
         else:
             self.adflow.inputphysics.mach = mach
@@ -3050,66 +3152,65 @@ class ADFLOW(AeroSolver):
         # Update gamma only if it has changed from what currently is set
         if abs(self.adflow.inputphysics.gammaconstant - gammaConstant) > 1.0e-12:
             self.adflow.inputphysics.gammaconstant = gammaConstant
-            self.adflow.flowutils.updategamma() # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
+            self.adflow.flowutils.updategamma()  # NOTE! It is absolutely necessary to call this function, otherwise gamma is not properly updated.
 
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
         # them there properly!!
-        if  self.getOption('alphaMode'):
+        if self.getOption("alphaMode"):
             self.adflow.inputmotion.degreepolalpha = int(AP.degreePol)
             self.adflow.inputmotion.coefpolalpha = AP.coefPol
-            self.adflow.inputmotion.omegafouralpha   = AP.omegaFourier
-            self.adflow.inputmotion.degreefouralpha  = AP.degreeFourier
+            self.adflow.inputmotion.omegafouralpha = AP.omegaFourier
+            self.adflow.inputmotion.degreefouralpha = AP.degreeFourier
             self.adflow.inputmotion.coscoeffouralpha = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffouralpha = AP.sinCoefFourier
-        elif  self.getOption('betaMode'):
+        elif self.getOption("betaMode"):
             self.adflow.inputmotion.degreepolmach = int(AP.degreePol)
             self.adflow.inputmotion.coefpolmach = AP.coefPol
-            self.adflow.inputmotion.omegafourbeta   = AP.omegaFourier
-            self.adflow.inputmotion.degreefourbeta  = AP.degreeFourier
+            self.adflow.inputmotion.omegafourbeta = AP.omegaFourier
+            self.adflow.inputmotion.degreefourbeta = AP.degreeFourier
             self.adflow.inputmotion.coscoeffourbeta = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffourbeta = AP.sinCoefFourier
-        elif self.getOption('machMode'):
+        elif self.getOption("machMode"):
             self.adflow.inputmotion.degreepolmach = int(AP.degreePol)
             self.adflow.inputmotion.coefpolmach = AP.coefPol
-            self.adflow.inputmotion.omegafourmach   = AP.omegaFourier
-            self.adflow.inputmotion.degreefourmach  = AP.degreeFourier
+            self.adflow.inputmotion.omegafourmach = AP.omegaFourier
+            self.adflow.inputmotion.degreefourmach = AP.degreeFourier
             self.adflow.inputmotion.coscoeffourmach = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffourmach = AP.sinCoefFourier
-        elif  self.getOption('pMode'):
+        elif self.getOption("pMode"):
             ### add in lift axis dependence
             self.adflow.inputmotion.degreepolxrot = int(AP.degreePol)
             self.adflow.inputmotion.coefpolxrot = AP.coefPol
             self.adflow.inputmotion.omegafourxrot = AP.omegaFourier
-            self.adflow.inputmotion.degreefourxrot  = AP.degreeFourier
+            self.adflow.inputmotion.degreefourxrot = AP.degreeFourier
             self.adflow.inputmotion.coscoeffourxrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffourxrot = AP.sinCoefFourier
-        elif self.getOption('qMode'):
+        elif self.getOption("qMode"):
             self.adflow.inputmotion.degreepolzrot = int(AP.degreePol)
             self.adflow.inputmotion.coefpolzrot = AP.coefPol
             self.adflow.inputmotion.omegafourzrot = AP.omegaFourier
-            self.adflow.inputmotion.degreefourzrot  = AP.degreeFourier
+            self.adflow.inputmotion.degreefourzrot = AP.degreeFourier
             self.adflow.inputmotion.coscoeffourzrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffourzrot = AP.sinCoefFourier
-        elif self.getOption('rMode'):
+        elif self.getOption("rMode"):
             self.adflow.inputmotion.degreepolyrot = int(AP.degreePol)
             self.adflow.inputmotion.coefpolyrot = AP.coefPol
             self.adflow.inputmotion.omegafouryrot = AP.omegaFourier
-            self.adflow.inputmotion.degreefouryrot  = AP.degreeFourier
+            self.adflow.inputmotion.degreefouryrot = AP.degreeFourier
             self.adflow.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
 
         # Set any possible BC Data coming out of the aeroProblem
-        nameArray, dataArray, groupArray, groupNames, empty = (
-            self._getBCDataFromAeroProblem(AP))
+        nameArray, dataArray, groupArray, groupNames, empty = self._getBCDataFromAeroProblem(AP)
         if not empty:
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
 
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
-            if self.getOption('equationMode').lower() == 'time spectral':
-            	self.adflow.preprocessingapi.updateperiodicinfoalllevels()
-            	self.adflow.preprocessingapi.updatemetricsalllevels()
+            if self.getOption("equationMode").lower() == "time spectral":
+                self.adflow.preprocessingapi.updateperiodicinfoalllevels()
+                self.adflow.preprocessingapi.updatemetricsalllevels()
             self.adflow.preprocessingapi.updategridvelocitiesalllevels()
 
     def _getBCDataFromAeroProblem(self, AP):
@@ -3130,11 +3231,10 @@ class ADFLOW(AeroSolver):
             return nameArray, dataArray, groupArray, groupNames, False
         else:
             # dummy data that doesn't matter
-            return (self._createFortranStringArray(['Pressure']), [0.0],
-                    [[1,1]], groupNames, True)
+            return (self._createFortranStringArray(["Pressure"]), [0.0], [[1, 1]], groupNames, True)
 
     def getForces(self, groupName=None, TS=0):
-        """ Return the forces on this processor on the families defined by groupName.
+        """Return the forces on this processor on the families defined by groupName.
 
         Parameters
         ----------
@@ -3158,7 +3258,7 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         forces = numpy.zeros((npts, 3), self.dtype)
-        self.adflow.getforces(forces.T, TS+1)
+        self.adflow.getforces(forces.T, TS + 1)
         if groupName is None:
             groupName = self.allWallsGroup
 
@@ -3192,7 +3292,7 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
 
         fluxes = numpy.zeros(npts, self.dtype)
-        self.adflow.getheatflux(fluxes, TS+1)
+        self.adflow.getheatflux(fluxes, TS + 1)
         if groupName is None:
             groupName = self.allWallsGroup
 
@@ -3231,11 +3331,11 @@ class ADFLOW(AeroSolver):
         # existing values and just overwrite the ones we've changed
         # using mapVector.
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
-        fullTemp = self.adflow.gettnswall(npts, TS+1)
+        fullTemp = self.adflow.gettnswall(npts, TS + 1)
 
         # Now map new values in and set.
         fullTemp = self.mapVector(temperature, groupName, self.allWallsGroup, fullTemp)
-        self.adflow.settnswall(fullTemp, TS+1)
+        self.adflow.settnswall(fullTemp, TS + 1)
 
     def setTargetCp(self, CpTargets, groupName=None, TS=0):
         """Set the CpTarget distribution for am inverse design problem.
@@ -3265,13 +3365,12 @@ class ADFLOW(AeroSolver):
         # existing values and just overwrite the ones we've changed
         # using mapVector.
         npts, ncell = self._getSurfaceSize(self.allWallsGroup)
-        fullCpTarget = numpy.atleast_2d(self.adflow.getcptargets(npts, TS+1))
+        fullCpTarget = numpy.atleast_2d(self.adflow.getcptargets(npts, TS + 1))
 
         # Now map new values in and set.
         fullCpTarget = self.mapVector(numpy.atleast_2d(CpTargets).T, groupName, self.allWallsGroup, fullCpTarget.T)
         fullCpTarget = fullCpTarget.T
-        self.adflow.setcptargets(numpy.ravel(fullCpTarget), TS+1)
-
+        self.adflow.setcptargets(numpy.ravel(fullCpTarget), TS + 1)
 
     def getSurfacePoints(self, groupName=None, includeZipper=True, TS=0):
 
@@ -3300,10 +3399,10 @@ class ADFLOW(AeroSolver):
         pts = numpy.zeros((npts, 3), self.dtype)
         famList = self._getFamilyList(groupName)
         if npts == 0:
-            dummy =  numpy.zeros((1, 3), self.dtype)
-            self.adflow.surfaceutils.getsurfacepoints(dummy.T, TS+1, famList, includeZipper)
+            dummy = numpy.zeros((1, 3), self.dtype)
+            self.adflow.surfaceutils.getsurfacepoints(dummy.T, TS + 1, famList, includeZipper)
         else:
-            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS+1, famList, includeZipper)
+            self.adflow.surfaceutils.getsurfacepoints(pts.T, TS + 1, famList, includeZipper)
 
         return pts
 
@@ -3336,22 +3435,24 @@ class ADFLOW(AeroSolver):
         # Set the list of surfaces this family requires
         famList = self._getFamilyList(groupName)
         npts, ncell = self._getSurfaceSize(groupName, includeZipper)
-        conn =  numpy.zeros((ncell, 4), dtype='intc')
-        cgnsBlockID =  numpy.zeros(max(1,ncell), dtype='intc') # f2py will crash if we give a vector of length zero
-        self.adflow.surfaceutils.getsurfaceconnectivity(numpy.ravel(conn), numpy.ravel(cgnsBlockID), famList, includeZipper)
+        conn = numpy.zeros((ncell, 4), dtype="intc")
+        cgnsBlockID = numpy.zeros(max(1, ncell), dtype="intc")  # f2py will crash if we give a vector of length zero
+        self.adflow.surfaceutils.getsurfaceconnectivity(
+            numpy.ravel(conn), numpy.ravel(cgnsBlockID), famList, includeZipper
+        )
 
-        faceSizes = 4*numpy.ones(len(conn), 'intc')
+        faceSizes = 4 * numpy.ones(len(conn), "intc")
 
         # Fix cgnsBlockID size if its length should be zero
         if ncell == 0:
-            cgnsBlockID = numpy.zeros(ncell, dtype='intc')
+            cgnsBlockID = numpy.zeros(ncell, dtype="intc")
 
         if includeCGNS:
             # Convert to 0-based ordering becuase we are in python
-            return conn-1, faceSizes, cgnsBlockID-1
+            return conn - 1, faceSizes, cgnsBlockID - 1
         else:
             # Convert to 0-based ordering becuase we are in python
-            return conn-1, faceSizes
+            return conn - 1, faceSizes
 
     def _expandGroupNames(self, groupNames):
         """Take a list of family (group) names and return a 2D array of the
@@ -3374,10 +3475,9 @@ class ADFLOW(AeroSolver):
         for i in range(len(groupNames)):
             famList = self._getFamilyList(groupNames[i])
             groupArray[i, 0] = len(famList)
-            groupArray[i, 1:1+len(famList)] = famList
+            groupArray[i, 1 : 1 + len(famList)] = famList
 
         return groupArray
-
 
     def globalNKPreCon(self, inVec, outVec):
 
@@ -3423,12 +3523,13 @@ class ADFLOW(AeroSolver):
         ----------
         dv : str
             dv name. Must be in the self.possibleAeroDVs list
-            """
+        """
         dv = dv.lower()
         if dv not in self.possibleAeroDVs:
-            raise Error("%s was not one of the possible AeroDVs. "
-                        "The complete list of DVs for ADflow is %s. "%(
-                            dv, repr(set(self.possibleAeroDVs.keys()))))
+            raise Error(
+                "%s was not one of the possible AeroDVs. "
+                "The complete list of DVs for ADflow is %s. " % (dv, repr(set(self.possibleAeroDVs.keys())))
+            )
 
         if dv not in self.aeroDVs:
             # A new DV add it:
@@ -3463,14 +3564,13 @@ class ADFLOW(AeroSolver):
             self.adflow.adjointutils.destroypetscvars()
             self.adjointSetup = False
 
-    def solveAdjoint(self, aeroProblem, objective, forcePoints=None,
-                      structAdjoint=None, groupName=None):
+    def solveAdjoint(self, aeroProblem, objective, forcePoints=None, structAdjoint=None, groupName=None):
 
         # Remind the user they are using frozen turbulence.
-        if self.getOption('frozenTurbulence') and self.myid== 0:
-           self.getOption('equationType').lower() == 'rans' and \
-            ADFLOWWarning("Turbulence is frozen!!! DERIVATIVES WILL BE WRONG!!! "
-                          "USE AT OWN RISK!!!")
+        if self.getOption("frozenTurbulence") and self.myid == 0:
+            self.getOption("equationType").lower() == "rans" and ADFLOWWarning(
+                "Turbulence is frozen!!! DERIVATIVES WILL BE WRONG!!! " "USE AT OWN RISK!!!"
+            )
 
         # May be switching aeroProblems here
         self.setAeroProblem(aeroProblem)
@@ -3480,8 +3580,7 @@ class ADFLOW(AeroSolver):
 
         # Check to see if the RHS Partials have been computed
         if objective not in self.curAP.adflowData.adjointRHS:
-            RHS = self.computeJacobianVectorProductBwd(
-                funcsBar=self._getFuncsBar(objective), wDeriv=True)
+            RHS = self.computeJacobianVectorProductBwd(funcsBar=self._getFuncsBar(objective), wDeriv=True)
             self.curAP.adflowData.adjointRHS[objective] = RHS.copy()
         else:
             RHS = self.curAP.adflowData.adjointRHS[objective].copy()
@@ -3491,23 +3590,21 @@ class ADFLOW(AeroSolver):
         if structAdjoint is not None and groupName is not None:
             phi = self.mapVector(structAdjoint, groupName, self.allWallsGroup)
 
-            agument = self.computeJacobianVectorProductBwd(
-                fBar=phi, wDeriv=True)
+            agument = self.computeJacobianVectorProductBwd(fBar=phi, wDeriv=True)
             RHS -= agument
 
         # Check if objective is python 'allocated':
         if objective not in self.curAP.adflowData.adjoints:
-            self.curAP.adflowData.adjoints[objective] = (
-                numpy.zeros(self.getAdjointStateSize(), float))
+            self.curAP.adflowData.adjoints[objective] = numpy.zeros(self.getAdjointStateSize(), float)
 
         # Initialize the fail flag in this AP if it doesn't exist
-        if not hasattr(self.curAP, 'adjointFailed'):
+        if not hasattr(self.curAP, "adjointFailed"):
             self.curAP.adjointFailed = False
 
         # Check for any previous adjoint failure. If any adjoint has failed
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
-        if not (self.curAP.adjointFailed and self.getOption('skipafterfailedadjoint')):
+        if not (self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint")):
             # Extract the psi:
             psi = self.curAP.adflowData.adjoints[objective]
 
@@ -3519,13 +3616,17 @@ class ADFLOW(AeroSolver):
             if self.adflow.killsignals.adjointfailed:
                 self.curAP.adjointFailed = True
                 # Reset stored adjoint if we want to skip
-                if self.getOption('skipafterfailedadjoint'):
+                if self.getOption("skipafterfailedadjoint"):
                     if self.comm.rank == 0:
-                        ADFLOWWarning('Current adjoint failed to converge, so the remaining adjoints will be skipped. Use the checkAdjointFailure method to get the correct fail flag for sensitivity evaluations. Finally, if you want to solve the remaining adjoints regardless of the current failure, set skipAfterFailedAdjoint to False.')
+                        ADFLOWWarning(
+                            "Current adjoint failed to converge, so the remaining adjoints will be skipped. Use the checkAdjointFailure method to get the correct fail flag for sensitivity evaluations. Finally, if you want to solve the remaining adjoints regardless of the current failure, set skipAfterFailedAdjoint to False."
+                        )
                     self.curAP.adflowData.adjoints[objective][:] = 0.0
                 else:
                     if self.comm.rank == 0:
-                        ADFLOWWarning('Current adjoint failed to converge. The partially converged solution will be used to compute the total derivatives. It is up to the user to check for adjoint failures and pass the correct failure flag to the optimizer using the checkAdjointFailure method.')
+                        ADFLOWWarning(
+                            "Current adjoint failed to converge. The partially converged solution will be used to compute the total derivatives. It is up to the user to check for adjoint failures and pass the correct failure flag to the optimizer using the checkAdjointFailure method."
+                        )
                     self.curAP.adflowData.adjoints[objective] = psi
             else:
                 self.curAP.adflowData.adjoints[objective] = psi
@@ -3560,92 +3661,94 @@ class ADFLOW(AeroSolver):
         funcsSens = {}
 
         for dvName in self.curAP.DVs:
-           key = self.curAP.DVs[dvName].key.lower()
-           dvFam = self.curAP.DVs[dvName].family
+            key = self.curAP.DVs[dvName].key.lower()
+            dvFam = self.curAP.DVs[dvName].family
 
-           tmp = {}
-           if key == 'altitude':
-               # This design variable is special. It combines changes
-               # in temperature, pressure and density into a single
-               # variable. Since we have derivatives for T, P and
-               # rho, we simply chain rule it back to the the
-               # altitude variable.
-               self.curAP.evalFunctionsSens(tmp, ['P', 'T', 'rho'])
+            tmp = {}
+            if key == "altitude":
+                # This design variable is special. It combines changes
+                # in temperature, pressure and density into a single
+                # variable. Since we have derivatives for T, P and
+                # rho, we simply chain rule it back to the the
+                # altitude variable.
+                self.curAP.evalFunctionsSens(tmp, ["P", "T", "rho"])
 
-               # Extract the derivatives wrt the independent
-               # parameters in ADflow
-               dIdP = dIda[self.possibleAeroDVs['p']]
-               dIdT = dIda[self.possibleAeroDVs['t']]
-               dIdrho = dIda[self.possibleAeroDVs['rho']]
+                # Extract the derivatives wrt the independent
+                # parameters in ADflow
+                dIdP = dIda[self.possibleAeroDVs["p"]]
+                dIdT = dIda[self.possibleAeroDVs["t"]]
+                dIdrho = dIda[self.possibleAeroDVs["rho"]]
 
-               # Chain-rule to get the final derivative:
-               funcsSens[dvName] = (
-                   tmp[self.curAP['P']][dvName]*dIdP +
-                   tmp[self.curAP['T']][dvName]*dIdT +
-                   tmp[self.curAP['rho']][dvName]*dIdrho)
-           elif key == 'mach':
-               self.curAP.evalFunctionsSens(tmp, ['P', 'rho'])
-               # Simular story for Mach: It is technically possible
-               # to use a mach number for a fixed RE simulation. For
-               # the RE to stay fixed and change the mach number, the
-               # 'P' and 'rho' must also change. We have to chain run
-               # this dependence back through to the final mach
-               # derivative. When Mach number is used with altitude
-               # or P and T, this calc is unnecessary, but won't do
-               # any harm.
-               dIdP = dIda[self.possibleAeroDVs['p']]
-               dIdrho = dIda[self.possibleAeroDVs['rho']]
+                # Chain-rule to get the final derivative:
+                funcsSens[dvName] = (
+                    tmp[self.curAP["P"]][dvName] * dIdP
+                    + tmp[self.curAP["T"]][dvName] * dIdT
+                    + tmp[self.curAP["rho"]][dvName] * dIdrho
+                )
+            elif key == "mach":
+                self.curAP.evalFunctionsSens(tmp, ["P", "rho"])
+                # Simular story for Mach: It is technically possible
+                # to use a mach number for a fixed RE simulation. For
+                # the RE to stay fixed and change the mach number, the
+                # 'P' and 'rho' must also change. We have to chain run
+                # this dependence back through to the final mach
+                # derivative. When Mach number is used with altitude
+                # or P and T, this calc is unnecessary, but won't do
+                # any harm.
+                dIdP = dIda[self.possibleAeroDVs["p"]]
+                dIdrho = dIda[self.possibleAeroDVs["rho"]]
 
-               # Chain-rule to get the final derivative:
-               funcsSens[dvName] = (
-                   tmp[self.curAP['P']][dvName]*dIdP +
-                   tmp[self.curAP['rho']][dvName]*dIdrho +
-                   dIda[self.possibleAeroDVs['mach']])
+                # Chain-rule to get the final derivative:
+                funcsSens[dvName] = (
+                    tmp[self.curAP["P"]][dvName] * dIdP
+                    + tmp[self.curAP["rho"]][dvName] * dIdrho
+                    + dIda[self.possibleAeroDVs["mach"]]
+                )
 
-           elif key in self.possibleAeroDVs:
-               funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
-               if key == 'alpha':
-                   funcsSens[dvName] *= numpy.pi/180.0
+            elif key in self.possibleAeroDVs:
+                funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
+                if key == "alpha":
+                    funcsSens[dvName] *= numpy.pi / 180.0
 
-           elif key in self.possibleBCDvs:
-               # We need to determine what the index is in dIdBC. For
-               # now just do an efficient linear search:
-               i = 0
+            elif key in self.possibleBCDvs:
+                # We need to determine what the index is in dIdBC. For
+                # now just do an efficient linear search:
+                i = 0
 
-               for tmp in self.curAP.bcVarData:
-                   varName, family = tmp
-                   value = self.curAP.bcVarData[tmp]
-                   if varName.lower() == key and family.lower() == dvFam.lower():
-                       funcsSens[dvName] = dIdBC[i]
-                   i += 1
+                for tmp in self.curAP.bcVarData:
+                    varName, family = tmp
+                    if varName.lower() == key and family.lower() == dvFam.lower():
+                        funcsSens[dvName] = dIdBC[i]
+                    i += 1
 
         return funcsSens
 
     def _setAeroDVs(self):
 
-        """ Do everything that is required to deal with aerodynamic
+        """Do everything that is required to deal with aerodynamic
         design variables in ADflow"""
 
         DVsRequired = list(self.curAP.DVs.keys())
         for dv in DVsRequired:
             key = self.curAP.DVs[dv].key.lower()
-            if key in ['altitude']:
+            if key in ["altitude"]:
                 # All these variables need to be compined
-                self._addAeroDV('P')
-                self._addAeroDV('T')
-                self._addAeroDV('rho')
-            elif key in ['mach']:
-                self._addAeroDV('mach')
-                self._addAeroDV('P')
-                self._addAeroDV('rho')
+                self._addAeroDV("P")
+                self._addAeroDV("T")
+                self._addAeroDV("rho")
+            elif key in ["mach"]:
+                self._addAeroDV("mach")
+                self._addAeroDV("P")
+                self._addAeroDV("rho")
 
             elif key in self.possibleAeroDVs:
                 self._addAeroDV(key)
             elif key in self.possibleBCDvs:
                 pass
             else:
-                raise Error("The design variable '%s' as specified in the"
-                            " aeroProblem cannot be used with ADflow."% key)
+                raise Error(
+                    "The design variable '%s' as specified in the" " aeroProblem cannot be used with ADflow." % key
+                )
 
     def solveAdjointForRHS(self, inVec, relTol=None):
         """
@@ -3662,7 +3765,7 @@ class ADFLOW(AeroSolver):
             Solution vector of size w
         """
         if relTol is None:
-            relTol = self.getOption('adjointl2convergence')
+            relTol = self.getOption("adjointl2convergence")
         outVec = self.adflow.adjointapi.solveadjointforrhs(inVec, relTol)
 
         return outVec
@@ -3682,13 +3785,13 @@ class ADFLOW(AeroSolver):
             Solution vector of size w
         """
         if relTol is None:
-            relTol = self.getOption('adjointl2convergence')
+            relTol = self.getOption("adjointl2convergence")
         outVec = self.adflow.adjointapi.solvedirectforrhs(inVec, relTol)
 
         return outVec
 
     def saveAdjointMatrix(self, baseFileName):
-        """ Save the adjoint matrix to a binary petsc file for
+        """Save the adjoint matrix to a binary petsc file for
         possible future external testing
 
         Parameters
@@ -3697,25 +3800,21 @@ class ADFLOW(AeroSolver):
             Filename to use. The Adjoint matrix, PC matrix(if it exists)
             and RHS  will be written
         """
-        adjointMatrixName = baseFileName + '_drdw.bin'
-        pcMatrixName = baseFileName + '_drdwPre.bin'
-        cellCenterName = baseFileName + '_cellCen.bin'
+        adjointMatrixName = baseFileName + "_drdw.bin"
+        pcMatrixName = baseFileName + "_drdwPre.bin"
         self.adflow.adjointapi.saveadjointmatrix(adjointMatrixName)
         self.adflow.adjointapi.saveadjointpc(pcMatrixName)
 
     def saveAdjointRHS(self, baseFileName, objective):
         # Check to see if the RHS Partials have been computed
         if objective not in self.curAP.adflowData.adjointRHS:
-            RHS = self.computeJacobianVectorProductBwd(
-                funcsBar=self._getFuncsBar(objective), wDeriv=True)
+            RHS = self.computeJacobianVectorProductBwd(funcsBar=self._getFuncsBar(objective), wDeriv=True)
             self.curAP.adflowData.adjointRHS[objective] = RHS.copy()
         else:
             RHS = self.curAP.adflowData.adjointRHS[objective].copy()
 
-        rhsName = baseFileName + '_rhs_%s.bin'%objective
+        rhsName = baseFileName + "_rhs_%s.bin" % objective
         self.adflow.adjointapi.saveadjointrhs(RHS, rhsName)
-
-
 
     def computeStabilityParameters(self):
         """
@@ -3732,7 +3831,7 @@ class ADFLOW(AeroSolver):
         # The mesh is modified
         if self._updateGeomInfo and self.mesh is not None:
             # If it is unsteady, and mesh is modified, then it has to be ALE
-            if self.getOption('equationMode').lower() == 'unsteady':
+            if self.getOption("equationMode").lower() == "unsteady":
                 self.adflow.preprocessingapi.shiftcoorandvolumes()
                 self.adflow.aleutils.shiftlevelale()
             # Warp the mesh if surface coordinates are modified
@@ -3742,11 +3841,11 @@ class ADFLOW(AeroSolver):
                 newGrid = self.mesh.getSolverGrid()
                 self.adflow.killsignals.routinefailed = False
                 self.adflow.killsignals.fatalFail = False
-                self.updateTime = time.time()-timeA
+                self.updateTime = time.time() - timeA
                 if newGrid is not None:
                     self.adflow.warping.setgrid(newGrid)
             # Update geometric data, depending on the type of simulation
-            if self.getOption('equationMode').lower() == 'unsteady':
+            if self.getOption("equationMode").lower() == "unsteady":
                 self.adflow.solvers.updateunsteadygeometry()
             else:
                 self.adflow.preprocessingapi.updatecoordinatesalllevels()
@@ -3755,22 +3854,22 @@ class ADFLOW(AeroSolver):
                 self.adflow.preprocessingapi.updategridvelocitiesalllevels()
                 # Perform overset update
                 ncells = self.adflow.adjointvars.ncellslocal[0]
-                ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
-                n  = ncells*ntime
+                ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
+                n = ncells * ntime
                 flag = numpy.zeros(n)
 
                 # Only need to call the cutCallBack and regenerate the zipper mesh
                 # if we're doing a full update.
-                if self.getOption('oversetUpdateMode') == 'full':
-                    cutCallBack = self.getOption('cutCallBack')
+                if self.getOption("oversetUpdateMode") == "full":
+                    cutCallBack = self.getOption("cutCallBack")
                     if cutCallBack is not None:
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cutCallBack(xCen, flag)
 
                     # Verify previous mesh failures
-                    self.adflow.killsignals.routinefailed = \
-                        self.comm.allreduce(
-                        bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+                    self.adflow.killsignals.routinefailed = self.comm.allreduce(
+                        bool(self.adflow.killsignals.routinefailed), op=MPI.LOR
+                    )
                     self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
 
                     # We will need to update the zipper mesh later on.
@@ -3778,29 +3877,29 @@ class ADFLOW(AeroSolver):
                     # code might halt during zipper mesh regeneration
                     if not self.adflow.killsignals.fatalfail:
                         self.zipperCreated = False
-                    else: # We got mesh failure!
-                        self.zipperCreated = True # Set flag to true to skip zipper mesh call
+                    else:  # We got mesh failure!
+                        self.zipperCreated = True  # Set flag to true to skip zipper mesh call
                         if self.myid == 0:
-                            print('ATTENTION: Zipper mesh will not be regenerated due to previous failures.')
+                            print("ATTENTION: Zipper mesh will not be regenerated due to previous failures.")
 
                 famList = self._getFamilyList(self.closedFamilyGroup)
                 self.adflow.oversetapi.updateoverset(flag, famList)
 
             # Update flags
             self._updateGeomInfo = False
-            self.adflow.killsignals.routinefailed = \
-                self.comm.allreduce(
-                bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+            self.adflow.killsignals.routinefailed = self.comm.allreduce(
+                bool(self.adflow.killsignals.routinefailed), op=MPI.LOR
+            )
             self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
 
     def getAdjointResNorms(self):
-        '''
+        """
         Return the following adjoint residual norms:
         initRes Norm: Norm the adjoint RHS
         startRes Norm: Norm at the start of adjoint call (with possible non-zero restart)
         finalCFD Norm: Norm at the end of adjoint solve
-        '''
-        initRes  = self.adflow.adjointpetsc.adjresinit
+        """
+        initRes = self.adflow.adjointpetsc.adjresinit
         startRes = self.adflow.adjointpetsc.adjresstart
         finalRes = self.adflow.adjointpetsc.adjresfinal
         fail = self.adflow.killsignals.adjointfailed
@@ -3810,12 +3909,14 @@ class ADFLOW(AeroSolver):
     def getResNorms(self):
         """Return the initial, starting and final Res Norms. Typically
         used by an external solver."""
-        return (numpy.real(self.adflow.iteration.totalr0),
-                numpy.real(self.adflow.iteration.totalrstart),
-                numpy.real(self.adflow.iteration.totalrfinal))
+        return (
+            numpy.real(self.adflow.iteration.totalr0),
+            numpy.real(self.adflow.iteration.totalrstart),
+            numpy.real(self.adflow.iteration.totalrfinal),
+        )
 
     def setResNorms(self, initNorm=None, startNorm=None, finalNorm=None):
-        """ Set one of these norms if not None. Typlically used by an
+        """Set one of these norms if not None. Typlically used by an
         external solver"""
         if initNorm is not None:
             self.adflow.iteration.totalr0 = initNorm
@@ -3827,10 +3928,15 @@ class ADFLOW(AeroSolver):
     def _prescribedTSMotion(self):
         """Determine if we have prescribed motion timespectral analysis"""
 
-        if (self.getOption('alphamode') or self.getOption('betamode') or
-            self.getOption('machmode') or self.getOption('pmode') or
-            self.getOption('qmode') or self.getOption('rmode') or
-            self.getOption('altitudemode')):
+        if (
+            self.getOption("alphamode")
+            or self.getOption("betamode")
+            or self.getOption("machmode")
+            or self.getOption("pmode")
+            or self.getOption("qmode")
+            or self.getOption("rmode")
+            or self.getOption("altitudemode")
+        ):
             return True
         else:
             return False
@@ -3846,8 +3952,10 @@ class ADFLOW(AeroSolver):
         objective: string
             The objective to be tested.
         """
-        if objective.lower() in self.adflowCostFunctions.keys() or \
-           objective.lower() in self.adflowUserCostFunctions.keys():
+        if (
+            objective.lower() in self.adflowCostFunctions.keys()
+            or objective.lower() in self.adflowUserCostFunctions.keys()
+        ):
             return True
         else:
             return False
@@ -3858,9 +3966,17 @@ class ADFLOW(AeroSolver):
     #   product that is possible from the solver.
     #   =========================================================================
 
-    def computeJacobianVectorProductFwd(self, xDvDot=None, xSDot=None, xVDot=None, wDot=None,
-                                        residualDeriv=False, funcDeriv=False, fDeriv=False,
-                                        groupName=None):
+    def computeJacobianVectorProductFwd(
+        self,
+        xDvDot=None,
+        xSDot=None,
+        xVDot=None,
+        wDot=None,
+        residualDeriv=False,
+        funcDeriv=False,
+        fDeriv=False,
+        groupName=None,
+    ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
@@ -3896,11 +4012,10 @@ class ADFLOW(AeroSolver):
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
-            raise Error('computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot '
-                        'all be None')
+            raise Error("computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot " "all be None")
 
         self._setAeroDVs()
-        nTime  = self.adflow.inputtimespectral.ntimeintervalsspectral
+        nTime = self.adflow.inputtimespectral.ntimeintervalsspectral
 
         # Default flags
         useState = False
@@ -3909,9 +4024,7 @@ class ADFLOW(AeroSolver):
         # Process the Xs perturbation
         if xSDot is None:
             xsdot = numpy.zeros_like(self.coords0)
-            xsdot = self.mapVector(xsdot, self.allFamilies,
-                                   self.designFamilyGroup,
-                                   includeZipper=False)
+            xsdot = self.mapVector(xsdot, self.allFamilies, self.designFamilyGroup, includeZipper=False)
         else:
             xsdot = xSDot
             useSpatial = True
@@ -3933,40 +4046,42 @@ class ADFLOW(AeroSolver):
         # Process the extra variable perturbation....this comes from
         # xDvDot
         extradot = numpy.zeros(self.adflow.adjointvars.ndesignextra)
-        bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = (
-            self._getBCDataFromAeroProblem(self.curAP))
+        bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = self._getBCDataFromAeroProblem(self.curAP)
         bcDataValuesdot = numpy.zeros_like(bcDataValues)
 
         if xDvDot is not None:
             useSpatial = True
             for xKey in xDvDot:
                 # We need to split out the family from the key.
-                key = xKey.split('_')
+                key = xKey.split("_")
                 if len(key) == 1:
                     key = key[0].lower()
                     if key in self.possibleAeroDVs:
                         val = xDvDot[xKey]
-                        if key.lower() == 'alpha':
-                            val *= numpy.pi/180
+                        if key.lower() == "alpha":
+                            val *= numpy.pi / 180
                         extradot[self.possibleAeroDVs[key.lower()]] = val
 
                 else:
-                    fam = '_'.join(key[1:])
+                    fam = "_".join(key[1:])
                     key = key[0].lower()
                     if key in self.possibleBCDvs and not bcVarsEmpty:
                         # Figure out what index this should be:
                         for i in range(len(bcDataNames)):
-                            if key.lower() == ''.join(bcDataNames[i]).strip().lower() and \
-                               fam.lower() == bcDataFams[i].lower():
+                            if (
+                                key.lower() == "".join(bcDataNames[i]).strip().lower()
+                                and fam.lower() == bcDataFams[i].lower()
+                            ):
                                 bcDataValuesdot[i] = xDvDot[xKey]
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None and self.DVGeo is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name).reshape(xsdot.shape)
+                xsdot += self.DVGeo.totalSensitivityProd(
+                    xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name
+                ).reshape(xsdot.shape)
             if self.mesh is not None:
-                xsdot = self.mapVector(xsdot, self.meshFamilyGroup,
-                                       self.designFamilyGroup, includeZipper=False)
+                xsdot = self.mapVector(xsdot, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
                 xvdot += self.mesh.warpDerivFwd(xsdot)
             useSpatial = True
 
@@ -3994,11 +4109,24 @@ class ADFLOW(AeroSolver):
 
         # Extract any possibly BC daa
         dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot, extradot, wdot, bcDataValuesdot, useSpatial, useState, famLists, bcDataNames,
-            bcDataValues, bcDataFamLists, bcVarsEmpty, costSize, max(1, fSize), nTime)
+            xvdot,
+            extradot,
+            wdot,
+            bcDataValuesdot,
+            useSpatial,
+            useState,
+            famLists,
+            bcDataNames,
+            bcDataValues,
+            bcDataFamLists,
+            bcVarsEmpty,
+            costSize,
+            max(1, fSize),
+            nTime,
+        )
 
         # Explictly put fdot to nothing if size is zero
-        if fSize==0:
+        if fSize == 0:
             fdot = numpy.zeros((0, 3))
 
         # Process the derivative of the functions
@@ -4022,7 +4150,7 @@ class ADFLOW(AeroSolver):
                     mapping = self.basicCostFunctions[basicFunc]
                     # Get the group index:
                     ind = groupNames.index(groupName)
-                    funcsDot[f] += sens[sf]*tmp[mapping -1, ind]
+                    funcsDot[f] += sens[sf] * tmp[mapping - 1, ind]
 
         # Assemble the returns
         returns = []
@@ -4035,9 +4163,17 @@ class ADFLOW(AeroSolver):
 
         return tuple(returns) if len(returns) > 1 else returns[0]
 
-    def computeJacobianVectorProductBwd(self, resBar=None, funcsBar=None, fBar=None,
-                                    wDeriv=None, xVDeriv=None, xSDeriv=None,
-                                    xDvDeriv=None, xDvDerivAero=None):
+    def computeJacobianVectorProductBwd(
+        self,
+        resBar=None,
+        funcsBar=None,
+        fBar=None,
+        wDeriv=None,
+        xVDeriv=None,
+        xSDeriv=None,
+        xDvDeriv=None,
+        xDvDerivAero=None,
+    ):
         """This the main python gateway for producing reverse mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A mesh object must
@@ -4079,22 +4215,24 @@ class ADFLOW(AeroSolver):
         """
         # Error Checking
         if resBar is None and funcsBar is None and fBar is None:
-            raise Error("computeJacobianVectorProductBwd: One of resBar, funcsBar and fBar"
-                        " must be given. resBar=%s, funcsBar=%s, fBar=%s"% (
-                            resBar, funcsBar, fBar))
-        if (wDeriv is None and xVDeriv is None and xDvDeriv is None and
-            xSDeriv is None and xDvDerivAero is None):
-            raise Error("computeJacobianVectorProductBwd: One of wDeriv, xVDeriv, "
-                        "xDvDeriv and xDvDerivAero must be given as True. "
-                        "wDeriv=%s, xVDeriv=%s, xDvDeriv=%s, xSDeriv=%s xDvDerivAero=%s."%(
-                            wDeriv, xVDeriv, xDvDeriv, xSDeriv, xDvDerivAero))
+            raise Error(
+                "computeJacobianVectorProductBwd: One of resBar, funcsBar and fBar"
+                " must be given. resBar=%s, funcsBar=%s, fBar=%s" % (resBar, funcsBar, fBar)
+            )
+        if wDeriv is None and xVDeriv is None and xDvDeriv is None and xSDeriv is None and xDvDerivAero is None:
+            raise Error(
+                "computeJacobianVectorProductBwd: One of wDeriv, xVDeriv, "
+                "xDvDeriv and xDvDerivAero must be given as True. "
+                "wDeriv=%s, xVDeriv=%s, xDvDeriv=%s, xSDeriv=%s xDvDerivAero=%s."
+                % (wDeriv, xVDeriv, xDvDeriv, xSDeriv, xDvDerivAero)
+            )
         self._setAeroDVs()
 
         # ---------------------
         #  Check for resBar
         # ---------------------
         if resBar is None:
-            if self.getOption('frozenTurbulence'):
+            if self.getOption("frozenTurbulence"):
                 resBar = numpy.zeros(self.getAdjointStateSize())
             else:
                 resBar = numpy.zeros(self.getStateSize())
@@ -4102,7 +4240,7 @@ class ADFLOW(AeroSolver):
         # -------------------------
         #  Check for fBar (forces)
         # ------------------------
-        nTime  = self.adflow.inputtimespectral.ntimeintervalsspectral
+        nTime = self.adflow.inputtimespectral.ntimeintervalsspectral
         nPts, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
 
         if fBar is None:
@@ -4110,7 +4248,7 @@ class ADFLOW(AeroSolver):
         else:
             # Expand out to the sps direction in case there were only
             # 2 dimensions.
-            fBar= fBar.reshape((nTime, nPts, 3))
+            fBar = fBar.reshape((nTime, nPts, 3))
 
         # ---------------------
         #  Check for funcsBar
@@ -4136,7 +4274,7 @@ class ADFLOW(AeroSolver):
                     tmp.append(numpy.zeros(self.adflow.constants.ncostfunction))
                     ind = -1
                 mapping = self.basicCostFunctions[basicFunc]
-                tmp[ind][mapping-1] += funcsBar[f]
+                tmp[ind][mapping - 1] += funcsBar[f]
 
         if len(tmp) == 0:
             # No adflow-functions given. Just set zeros. Same as
@@ -4157,14 +4295,24 @@ class ADFLOW(AeroSolver):
             useSpatial = True
 
         # Extract any possibly BC daa
-        bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = (
-            self._getBCDataFromAeroProblem(self.curAP))
+        bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = self._getBCDataFromAeroProblem(self.curAP)
 
         # Do actual Fortran call.
         xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
-            resBar, funcsBar, fBar.T, useSpatial, useState, self.getSpatialSize(),
-            self.adflow.adjointvars.ndesignextra, self.getAdjointStateSize(), famLists,
-            bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty)
+            resBar,
+            funcsBar,
+            fBar.T,
+            useSpatial,
+            useState,
+            self.getSpatialSize(),
+            self.adflow.adjointvars.ndesignextra,
+            self.getAdjointStateSize(),
+            famLists,
+            bcDataNames,
+            bcDataValues,
+            bcDataFamLists,
+            bcVarsEmpty,
+        )
 
         # Assemble the possible returns the user has requested:
         returns = []
@@ -4179,8 +4327,7 @@ class ADFLOW(AeroSolver):
 
                 self.mesh.warpDeriv(xvbar)
                 xsbar = self.mesh.getdXs()
-                xsbar = self.mapVector(xsbar, self.meshFamilyGroup,
-                                       self.designFamilyGroup, includeZipper=False)
+                xsbar = self.mapVector(xsbar, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
 
                 if xSDeriv:
                     returns.append(xsbar)
@@ -4189,32 +4336,32 @@ class ADFLOW(AeroSolver):
                 # can't do it. xDVDeriv may be specified even when no
                 # mesh is present.
                 if xSDeriv:
-                    raise Error("Could not complete requested xSDeriv "
-                                "derivatives since no mesh is present")
+                    raise Error("Could not complete requested xSDeriv " "derivatives since no mesh is present")
 
             # Process all the way back to the DVs:
             if xDvDeriv:
                 xdvbar = {}
-                if self.mesh is not None: # Include geometric
-                                          # derivatives if mesh is
-                                          # present
+                if self.mesh is not None:  # Include geometric
+                    # derivatives if mesh is
+                    # present
                     if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
-                        xdvbar.update(self.DVGeo.totalSensitivity(
-                            xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name))
+                        xdvbar.update(
+                            self.DVGeo.totalSensitivity(xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name)
+                        )
                     else:
                         if self.comm.rank == 0:
-                            ADFLOWWarning("No DVGeo object is present or it has no "
-                                        "design variables specified. No geometric "
-                                        "derivatives computed.")
+                            ADFLOWWarning(
+                                "No DVGeo object is present or it has no "
+                                "design variables specified. No geometric "
+                                "derivatives computed."
+                            )
                 else:
                     if self.comm.rank == 0:
-                        ADFLOWWarning("No mesh object is present. No geometric "
-                                    "derivatives computed.")
+                        ADFLOWWarning("No mesh object is present. No geometric " "derivatives computed.")
 
                 # Include aero derivatives here:
                 xdvbar.update(self._processAeroDerivatives(extrabar, bcdatavaluesbar))
                 returns.append(xdvbar)
-
 
         # Include the aerodynamic variables if requested to do so and
         # we haven't already done so with xDvDeriv:
@@ -4284,8 +4431,10 @@ class ADFLOW(AeroSolver):
         """
 
         if groupName1 not in self.families or groupName2 not in self.families:
-            raise Error("'%s' or '%s' is not a family in the CGNS file or has not been added"
-                        " as a combination of families"%(groupName1, groupName2))
+            raise Error(
+                "'%s' or '%s' is not a family in the CGNS file or has not been added"
+                " as a combination of families" % (groupName1, groupName2)
+            )
 
         # Why can't we do the short-cut listed below? Well, it may
         # happen that we have the same family group but one has the
@@ -4316,9 +4465,9 @@ class ADFLOW(AeroSolver):
 
         nstate = self.adflow.flowvarrefstate.nw
         ncells = self.adflow.adjointvars.ncellslocal[0]
-        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
+        ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
 
-        return nstate*ncells*ntime
+        return nstate * ncells * ntime
 
     def getAdjointStateSize(self):
         """Return the number of ADJOINT degrees of freedom (states)
@@ -4326,15 +4475,15 @@ class ADFLOW(AeroSolver):
         getStateSize() is that if frozenTurbulence is used for RANS,
         the nonlinear system has 5+neq turb states per cell, while the
         adjoint still has 5."""
-        if self.getOption('frozenTurbulence'):
+        if self.getOption("frozenTurbulence"):
             nstate = self.adflow.flowvarrefstate.nwf
         else:
             nstate = self.adflow.flowvarrefstate.nw
 
         ncells = self.adflow.adjointvars.ncellslocal[0]
-        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
+        ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
 
-        return nstate*ncells*ntime
+        return nstate * ncells * ntime
 
     def getSpatialSize(self):
         """Return the number of degrees of spatial degrees of freedom
@@ -4342,9 +4491,9 @@ class ADFLOW(AeroSolver):
         spectral instances)*3"""
 
         nnodes = self.adflow.adjointvars.nnodeslocal[0]
-        ntime  = self.adflow.inputtimespectral.ntimeintervalsspectral
+        ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
 
-        return 3*nnodes*ntime
+        return 3 * nnodes * ntime
 
     def getStates(self):
         """Return the states on this processor. Used in aerostructural
@@ -4400,8 +4549,7 @@ class ADFLOW(AeroSolver):
 
         randVec = self.comm.bcast(randVec)
 
-        return self.adflow.warping.getstateperturbation(
-            randVec, self.getStateSize())
+        return self.adflow.warping.getstateperturbation(randVec, self.getStateSize())
 
     def getSpatialPerturbation(self, seed=314):
         """This is is a debugging routine only. It is used only in regression
@@ -4429,33 +4577,33 @@ class ADFLOW(AeroSolver):
 
         # Also need the point offset.s.
         ptSizes = self.comm.allgather(len(pts))
-        offsets = numpy.zeros(len(ptSizes), 'intc')
+        offsets = numpy.zeros(len(ptSizes), "intc")
         offsets[1:] = numpy.cumsum(ptSizes)[:-1]
 
         # Now Re-assemble the global CGNS vector.
-        nDOFCGNS = numpy.max(cgnsIndices) +1
+        nDOFCGNS = numpy.max(cgnsIndices) + 1
         CGNSVec = numpy.zeros(nDOFCGNS)
         CGNSVec[cgnsIndices] = allPts
-        CGNSVec = CGNSVec.reshape((len(CGNSVec)//3, 3))
+        CGNSVec = CGNSVec.reshape((len(CGNSVec) // 3, 3))
 
         # Run the pointReduce on the CGNS nodes
         uniquePts, linkTmp, nUnique = self.adflow.utils.pointreduce(CGNSVec.T, 1e-12)
 
         # Expand link out to the 3x the size and convert to 1 based ordering
         linkTmp -= 1
-        link = numpy.zeros(len(linkTmp)*3, 'intc')
-        link[0::3] = 3*linkTmp
-        link[1::3] = 3*linkTmp+1
-        link[2::3] = 3*linkTmp+2
+        link = numpy.zeros(len(linkTmp) * 3, "intc")
+        link[0::3] = 3 * linkTmp
+        link[1::3] = 3 * linkTmp + 1
+        link[2::3] = 3 * linkTmp + 2
 
         # Set the seed and everyone produces the random vector for
         # nUnique pts.
         numpy.random.seed(seed)
-        randVec = numpy.random.random(nUnique*3)
+        randVec = numpy.random.random(nUnique * 3)
 
         # Finally just extract out our own part:
         iStart = offsets[self.comm.rank]
-        iEnd   = iStart + self.getSpatialSize()
+        iEnd = iStart + self.getSpatialSize()
         indices = numpy.arange(iStart, iEnd)
         spatialPerturb = randVec[link[cgnsIndices[indices]]]
 
@@ -4479,15 +4627,15 @@ class ADFLOW(AeroSolver):
         # Gather all nodes to the root proc:
         pts = self.adflow.warping.getgrid(self.getSpatialSize())
         allPts = numpy.hstack(self.comm.allgather(pts))
-        dXv    = numpy.hstack(self.comm.allgather(dXv))
+        dXv = numpy.hstack(self.comm.allgather(dXv))
         norm = None
         if self.myid == 0:
-            allPts = allPts.reshape((len(allPts)//3, 3))
-            dXv = dXv.reshape((len(dXv)//3,3))
+            allPts = allPts.reshape((len(allPts) // 3, 3))
+            dXv = dXv.reshape((len(dXv) // 3, 3))
             # Run the pointReduce on all nodes
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(allPts.T, 1e-12)
-            uniquePtsBar = numpy.zeros((nUnique,3))
-            link = link -1 # Convert to zero-based for python:
+            uniquePtsBar = numpy.zeros((nUnique, 3))
+            link = link - 1  # Convert to zero-based for python:
 
             for i in range(len(link)):
                 uniquePtsBar[link[i]] += dXv[i]
@@ -4523,7 +4671,7 @@ class ADFLOW(AeroSolver):
             self.curAP.adflowData.adjoints[objective] = adjoint.copy()
 
     def getAdjoint(self, objective):
-        """ Return the adjoint values for objective if they
+        """Return the adjoint values for objective if they
         exist. Otherwise just return zeros"""
 
         if objective in self.curAP.adflowData.adjoints:
@@ -4552,11 +4700,12 @@ class ADFLOW(AeroSolver):
         if groupName is None:
             groupName = self.allFamilies
         if groupName not in self.families:
-            raise Error("'%s' is not a family in the CGNS file or has not been added"
-                        " as a combination of families"%groupName)
+            raise Error(
+                "'%s' is not a family in the CGNS file or has not been added"
+                " as a combination of families" % groupName
+            )
 
-        [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(
-            self.families[groupName], includeZipper)
+        [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(self.families[groupName], includeZipper)
         return nPts, nCells
 
     def setOption(self, name, value):
@@ -4572,22 +4721,19 @@ class ADFLOW(AeroSolver):
 
         # Do special Options individually
         if name in self.specialOptions:
-            if name in ['monitorvariables',
-                        'surfacevariables',
-                        'volumevariables',
-                        'isovariables']:
-                varStr = ''
+            if name in ["monitorvariables", "surfacevariables", "volumevariables", "isovariables"]:
+                varStr = ""
                 for i in range(len(value)):
-                    varStr = varStr + value[i] + '_'
+                    varStr = varStr + value[i] + "_"
                 # end if
-                varStr = varStr[0:-1] # Get rid of last '_'
-                if name == 'monitorvariables':
+                varStr = varStr[0:-1]  # Get rid of last '_'
+                if name == "monitorvariables":
                     self.adflow.inputparamroutines.monitorvariables(varStr)
-                if name == 'surfacevariables':
+                if name == "surfacevariables":
                     self.adflow.inputparamroutines.surfacevariables(varStr)
-                if name == 'volumevariables':
+                if name == "volumevariables":
                     self.adflow.inputparamroutines.volumevariables(varStr)
-                if name == 'isovariables':
+                if name == "isovariables":
                     self.adflow.inputparamroutines.isovariables(varStr)
 
             elif name == "restartfile":
@@ -4605,9 +4751,11 @@ class ADFLOW(AeroSolver):
                             self.adflow.initializeflow.setrestartfiles(value, 1)
                         else:
                             # Empty string. Raise error
-                            raise Error("Option 'restartfile' string cannot be empty. "
-                                        "If not performing a restart, 'restartFile' "
-                                        "option must be set to None")
+                            raise Error(
+                                "Option 'restartfile' string cannot be empty. "
+                                "If not performing a restart, 'restartFile' "
+                                "option must be set to None"
+                            )
                     elif type(value) is list:
                         # Check input
                         nFiles = len(value)
@@ -4618,23 +4766,29 @@ class ADFLOW(AeroSolver):
                                 # Populate the array
                                 for i, val in enumerate(value):
                                     # The +1 is to match fortran indexing
-                                    self.adflow.initializeflow.setrestartfiles(val,i+1)
+                                    self.adflow.initializeflow.setrestartfiles(val, i + 1)
                             else:
-                                raise Error("Datatype for Option %-35s was not "
-                                            "valid. Expected list of <type 'str'>. "
-                                            "Received data type is "
-                                            "%-47s"% (name, type(value[0])))
+                                raise Error(
+                                    "Datatype for Option %-35s was not "
+                                    "valid. Expected list of <type 'str'>. "
+                                    "Received data type is "
+                                    "%-47s" % (name, type(value[0]))
+                                )
                         else:
-                            raise Error("Option %-35s of %-35s contains %-35s "
-                                        "elements. Must contain at least 1 "
-                                        "restart file of type <type "
-                                        "'str'>"% (name, type(value), len(value)))
+                            raise Error(
+                                "Option %-35s of %-35s contains %-35s "
+                                "elements. Must contain at least 1 "
+                                "restart file of type <type "
+                                "'str'>" % (name, type(value), len(value))
+                            )
                     else:
-                        raise Error("Datatype for Option %-35s not valid. "
-                                    "Expected data type is <type 'str'> or <type "
-                                    "'list'>. Received data type is %-47s"% (name, type(value)))
+                        raise Error(
+                            "Datatype for Option %-35s not valid. "
+                            "Expected data type is <type 'str'> or <type "
+                            "'list'>. Received data type is %-47s" % (name, type(value))
+                        )
 
-            elif name == 'isosurface':
+            elif name == "isosurface":
                 # We have a bit of work to do...extract out the
                 # names, and there can be more than 1 value per variables
                 var = []
@@ -4651,7 +4805,7 @@ class ADFLOW(AeroSolver):
 
                 self.adflow.inputparamroutines.initializeisosurfacevariables(val)
                 for i in range(len(val)):
-                    self.adflow.inputparamroutines.setisosurfacevariable(var[i], i+1)
+                    self.adflow.inputparamroutines.setisosurfacevariable(var[i], i + 1)
 
             elif name == "turbresscale":
                 # If value is None no value has been specified by the
@@ -4664,34 +4818,42 @@ class ADFLOW(AeroSolver):
                     if type(value) is float:
                         tmp_turbresscalar[0] = value
                     elif type(value) is list:
-                        if  1 <= len(value) and len(value) <= 4:
+                        if 1 <= len(value) and len(value) <= 4:
                             if type(value[0]) is float:
-                                tmp_turbresscalar[0:len(value)] = value[:]
+                                tmp_turbresscalar[0 : len(value)] = value[:]
                             else:
-                                raise Error("Datatype for Option %-35s was not "
-                                            "valid. Expected list of "
-                                            "<type 'float'>. Received data type "
-                                            "is %-47s"% (name, type(value[0])))
+                                raise Error(
+                                    "Datatype for Option %-35s was not "
+                                    "valid. Expected list of "
+                                    "<type 'float'>. Received data type "
+                                    "is %-47s" % (name, type(value[0]))
+                                )
                         else:
-                            raise Error("Option %-35s of %-35s contains %-35s "
-                                        "elements. Min and max number of "
-                                        "elements are 1 and 4 "
-                                        "respectively"% (name, type(value), len(value)))
+                            raise Error(
+                                "Option %-35s of %-35s contains %-35s "
+                                "elements. Min and max number of "
+                                "elements are 1 and 4 "
+                                "respectively" % (name, type(value), len(value))
+                            )
                     else:
-                        raise Error("Datatype for Option %-35s not valid. Expected "
-                                    "data type is <type 'float'> or <type "
-                                    "'list'>. Received data type is %-47s"% (name, type(value)))
+                        raise Error(
+                            "Datatype for Option %-35s not valid. Expected "
+                            "data type is <type 'float'> or <type "
+                            "'list'>. Received data type is %-47s" % (name, type(value))
+                        )
 
                     module = self.moduleMap[self.optionMap[name][0]]
                     variable = self.optionMap[name][1]
                     setattr(module, variable, tmp_turbresscalar)
-            elif name == 'oversetpriority':
+            elif name == "oversetpriority":
                 # Loop over each of the block names and call the fortran setter:
                 for blkName in value:
                     setValue = self.adflow.oversetapi.setblockpriority(blkName, value[blkName])
                     if not setValue and self.myid == 0:
-                        ADFLOWWarning("The block name %s was not found in the CGNS file "
-                                      "and could not set it\'s priority"%blkName)
+                        ADFLOWWarning(
+                            "The block name %s was not found in the CGNS file "
+                            "and could not set it's priority" % blkName
+                        )
 
             # Special option has been set so return from function
             return
@@ -4701,8 +4863,8 @@ class ADFLOW(AeroSolver):
         # has to be set in the solver
 
         if isinstance(self.optionMap[name], dict):
-            module = self.moduleMap[self.optionMap[name]['location'][0]]
-            variable = self.optionMap[name]['location'][1]
+            module = self.moduleMap[self.optionMap[name]["location"][0]]
+            variable = self.optionMap[name]["location"][1]
             value = self.optionMap[name][value.lower()]
         else:
             module = self.moduleMap[self.optionMap[name][0]]
@@ -4711,7 +4873,7 @@ class ADFLOW(AeroSolver):
         # If the value is a string, pads additional spaces
         if isinstance(value, str):
             spacesToAdd = self.adflow.constants.maxstringlen - len(value)
-            value = ''.join([value,' '*spacesToAdd])
+            value = "".join([value, " " * spacesToAdd])
 
         # Set in the correct module
         setattr(module, variable, value)
@@ -4720,242 +4882,241 @@ class ADFLOW(AeroSolver):
     def _getDefaultOptions():
         defOpts = {
             # Input file parameters
-            'gridFile':[str, 'default.cgns'],
-            'restartFile':[(str, list, type(None)), None],
-
+            "gridFile": [str, "default.cgns"],
+            "restartFile": [(str, list, type(None)), None],
             # Surface definition parameters
-            'meshSurfaceFamily':[(str, type(None)), None],
-            'designSurfaceFamily':[(str, type(None)), None],
-            'closedSurfaceFamilies':[(list, type(None)), None],
-
+            "meshSurfaceFamily": [(str, type(None)), None],
+            "designSurfaceFamily": [(str, type(None)), None],
+            "closedSurfaceFamilies": [(list, type(None)), None],
             # Output Parameters
-            'storeRindLayer':[bool, True],
-            'outputDirectory':[str, './'],
-            'outputSurfaceFamily':[str, 'allSurfaces'],
-            'writeSurfaceSolution':[bool,True],
-            'writeVolumeSolution':[bool,True],
-            'writeTecplotSurfaceSolution':[bool,False],
-            'nSaveVolume':[int,1],
-            'nSaveSurface':[int,1],
-            'solutionPrecision':[str, ['single', 'double']],
-            'gridPrecision':[str, ['double', 'single']],
-            'solutionPrecisionSurface':[str, ['single', 'double']],
-            'gridPrecisionSurface':[str, ['single', 'double']],
-            'isosurface':[dict, {}],
-            'isoVariables':[list, []],
-            'viscousSurfaceVelocities':[bool, True],
-
+            "storeRindLayer": [bool, True],
+            "outputDirectory": [str, "./"],
+            "outputSurfaceFamily": [str, "allSurfaces"],
+            "writeSurfaceSolution": [bool, True],
+            "writeVolumeSolution": [bool, True],
+            "writeTecplotSurfaceSolution": [bool, False],
+            "nSaveVolume": [int, 1],
+            "nSaveSurface": [int, 1],
+            "solutionPrecision": [str, ["single", "double"]],
+            "gridPrecision": [str, ["double", "single"]],
+            "solutionPrecisionSurface": [str, ["single", "double"]],
+            "gridPrecisionSurface": [str, ["single", "double"]],
+            "isosurface": [dict, {}],
+            "isoVariables": [list, []],
+            "viscousSurfaceVelocities": [bool, True],
             # Physics Parameters
-            'discretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
-            'coarseDiscretization':[str, ['central plus scalar dissipation', 'central plus matrix dissipation', 'upwind']],
-            'limiter':[str, ['van Albada', 'minmod', 'no limiter']],
-            'smoother':[str, ['DADI', 'Runge-Kutta']],
-            'equationType': [str, ['RANS', 'Euler', 'laminar NS']],
-            'equationMode': [str, ['steady', 'unsteady', 'time spectral']],
-            'flowType':[str, ['external', 'internal']],
-            'turbulenceModel':[str, ['SA', 'SA-Edwards', 'k-omega Wilcox', 'k-omega modified', 'k-tau', 'Menter SST', 'v2f']],
-            'turbulenceOrder':[str, ['first order', 'second order']],
-            'turbResScale':[(float, list, type(None)), None],
-            'turbulenceProduction':[str, ['strain', 'vorticity', 'Kato-Launder']],
-            'useQCR':[bool, False],
-            'useRotationSA':[bool, False],
-            'useft2SA':[bool, True],
-            'eddyVisInfRatio':[float, 0.009],
-            'useWallFunctions':[bool, False],
-            'useApproxWallDistance':[bool, True],
-            'eulerWallTreatment':[str, ['linear pressure extrapolation', 'constant pressure extrapolation', \
-                'quadratic pressure extrapolation', 'normal momentum']],
-            'viscWallTreatment':[str, ['constant pressure extrapolation', 'linear pressure extrapolation']],
-            'dissipationScalingExponent':[float, 0.67],
-            'vis4':[float, 0.0156],
-            'vis2':[float, 0.25],
-            'vis2Coarse':[float, 0.5],
-            'restrictionRelaxation':[float, 0.80],
-            'liftIndex':[int, [2, 3]],
-            'lowSpeedPreconditioner':[bool, False],
-            'wallDistCutoff':[float, 1e20],
-            'infChangeCorrection':[bool, True],
-            'cavitationNumber':[float, 1.4],
-
+            "discretization": [str, ["central plus scalar dissipation", "central plus matrix dissipation", "upwind"]],
+            "coarseDiscretization": [
+                str,
+                ["central plus scalar dissipation", "central plus matrix dissipation", "upwind"],
+            ],
+            "limiter": [str, ["van Albada", "minmod", "no limiter"]],
+            "smoother": [str, ["DADI", "Runge-Kutta"]],
+            "equationType": [str, ["RANS", "Euler", "laminar NS"]],
+            "equationMode": [str, ["steady", "unsteady", "time spectral"]],
+            "flowType": [str, ["external", "internal"]],
+            "turbulenceModel": [
+                str,
+                ["SA", "SA-Edwards", "k-omega Wilcox", "k-omega modified", "k-tau", "Menter SST", "v2f"],
+            ],
+            "turbulenceOrder": [str, ["first order", "second order"]],
+            "turbResScale": [(float, list, type(None)), None],
+            "turbulenceProduction": [str, ["strain", "vorticity", "Kato-Launder"]],
+            "useQCR": [bool, False],
+            "useRotationSA": [bool, False],
+            "useft2SA": [bool, True],
+            "eddyVisInfRatio": [float, 0.009],
+            "useWallFunctions": [bool, False],
+            "useApproxWallDistance": [bool, True],
+            "eulerWallTreatment": [
+                str,
+                [
+                    "linear pressure extrapolation",
+                    "constant pressure extrapolation",
+                    "quadratic pressure extrapolation",
+                    "normal momentum",
+                ],
+            ],
+            "viscWallTreatment": [str, ["constant pressure extrapolation", "linear pressure extrapolation"]],
+            "dissipationScalingExponent": [float, 0.67],
+            "vis4": [float, 0.0156],
+            "vis2": [float, 0.25],
+            "vis2Coarse": [float, 0.5],
+            "restrictionRelaxation": [float, 0.80],
+            "liftIndex": [int, [2, 3]],
+            "lowSpeedPreconditioner": [bool, False],
+            "wallDistCutoff": [float, 1e20],
+            "infChangeCorrection": [bool, True],
+            "cavitationNumber": [float, 1.4],
             # Common Parameters
-            'nCycles':[int, 2000],
-            'timeLimit':[float, -1.0],
-            'nCyclesCoarse':[int, 500],
-            'nSubiterTurb':[int, 3],
-            'nSubiter':[int, 1],
-            'CFL':[float, 1.7],
-            'CFLCoarse':[float, 1.0],
-            'MGCycle':[str, '3w'],
-            'MGStartLevel':[int, -1],
-            'resAveraging':[str, ['alternate', 'never', 'always']],
-            'smoothParameter':[float, 1.5],
-            'CFLLimit':[float, 1.5],
-            'useBlockettes':[bool, True],
-            'useLinResMonitor':[bool, False],
-
+            "nCycles": [int, 2000],
+            "timeLimit": [float, -1.0],
+            "nCyclesCoarse": [int, 500],
+            "nSubiterTurb": [int, 3],
+            "nSubiter": [int, 1],
+            "CFL": [float, 1.7],
+            "CFLCoarse": [float, 1.0],
+            "MGCycle": [str, "3w"],
+            "MGStartLevel": [int, -1],
+            "resAveraging": [str, ["alternate", "never", "always"]],
+            "smoothParameter": [float, 1.5],
+            "CFLLimit": [float, 1.5],
+            "useBlockettes": [bool, True],
+            "useLinResMonitor": [bool, False],
             # Overset Parameters
-            'nearWallDist':[float, 0.1],
-            'backgroundVolScale':[float, 1.0],
-            'oversetProjTol':[float, 1e-12],
-            'overlapFactor':[float, 0.9],
-            'oversetLoadBalance':[bool, True],
-            'debugZipper':[bool, False],
-            'zipperSurfaceFamily':[(str, type(None)), None],
-            'cutCallback':[(types.FunctionType, type(None)), None],
-            'oversetUpdateMode':[str, ['frozen', 'fast', 'full']],
-            'nRefine':[int,10],
-            'nFloodIter':[int,-1],
-            'useZipperMesh':[bool, True],
-            'useOversetWallScaling':[bool, False],
-            'selfZipCutoff':[float, 120.0],
-            'oversetPriority':[dict, {}],
-
+            "nearWallDist": [float, 0.1],
+            "backgroundVolScale": [float, 1.0],
+            "oversetProjTol": [float, 1e-12],
+            "overlapFactor": [float, 0.9],
+            "oversetLoadBalance": [bool, True],
+            "debugZipper": [bool, False],
+            "zipperSurfaceFamily": [(str, type(None)), None],
+            "cutCallback": [(types.FunctionType, type(None)), None],
+            "oversetUpdateMode": [str, ["frozen", "fast", "full"]],
+            "nRefine": [int, 10],
+            "nFloodIter": [int, -1],
+            "useZipperMesh": [bool, True],
+            "useOversetWallScaling": [bool, False],
+            "selfZipCutoff": [float, 120.0],
+            "oversetPriority": [dict, {}],
             # Unsteady Parameters
-            'timeIntegrationScheme':[str, ['BDF', 'explicit RK', 'implicit RK']],
-            'timeAccuracy':[int, [2, 1, 3]],
-            'nTimeStepsCoarse':[int, 48],
-            'nTimeStepsFine':[int, 400],
-            'deltaT':[float, 0.010],
-            'useALE':[bool, True],
-            'useGridMotion':[bool, False],
-            'coupledSolution':[bool, False],
-
+            "timeIntegrationScheme": [str, ["BDF", "explicit RK", "implicit RK"]],
+            "timeAccuracy": [int, [2, 1, 3]],
+            "nTimeStepsCoarse": [int, 48],
+            "nTimeStepsFine": [int, 400],
+            "deltaT": [float, 0.010],
+            "useALE": [bool, True],
+            "useGridMotion": [bool, False],
+            "coupledSolution": [bool, False],
             # Time Spectral Parameters
-            'timeIntervals': [int, 1],
-            'alphaMode':[bool, False],
-            'betaMode':[bool, False],
-            'machMode':[bool, False],
-            'pMode':[bool, False],
-            'qMode':[bool, False],
-            'rMode':[bool, False],
-            'altitudeMode':[bool, False],
-            'windAxis':[bool, False],
-            'alphaFollowing':[bool,True],
-            'TSStability': [bool, False],
-
+            "timeIntervals": [int, 1],
+            "alphaMode": [bool, False],
+            "betaMode": [bool, False],
+            "machMode": [bool, False],
+            "pMode": [bool, False],
+            "qMode": [bool, False],
+            "rMode": [bool, False],
+            "altitudeMode": [bool, False],
+            "windAxis": [bool, False],
+            "alphaFollowing": [bool, True],
+            "TSStability": [bool, False],
             # Convergence Parameters
-            'L2Convergence':[float, 1e-8],
-            'L2ConvergenceRel':[float, 1e-16],
-            'L2ConvergenceCoarse':[float, 1e-2],
-            'maxL2DeviationFactor':[float, 1.0],
-
+            "L2Convergence": [float, 1e-8],
+            "L2ConvergenceRel": [float, 1e-16],
+            "L2ConvergenceCoarse": [float, 1e-2],
+            "maxL2DeviationFactor": [float, 1.0],
             # Newton-Krylov Parameters
-            'useNKSolver':[bool, False],
-            'NKSwitchTol':[float, 1e-5],
-            'NKSubspaceSize':[int, 60],
-            'NKLinearSolveTol':[float, 0.3],
-            'NKUseEW':[bool, True],
-            'NKADPC':[bool, False],
-            'NKViscPC':[bool, False],
-            'NKASMOverlap':[int, 1],
-            'NKPCILUFill':[int, 2],
-            'NKJacobianLag':[int, 20],
-            'applyPCSubspaceSize':[int, 10],
-            'NKInnerPreconIts':[int, 1],
-            'NKOuterPreconIts':[int, 1],
-            'NKLS':[str, ['cubic', 'none', 'non-monotone']],
-            'NKFixedStep':[float, 0.25],
-            'RKReset':[bool, False],
-            'nRKReset':[int, 5],
-
+            "useNKSolver": [bool, False],
+            "NKSwitchTol": [float, 1e-5],
+            "NKSubspaceSize": [int, 60],
+            "NKLinearSolveTol": [float, 0.3],
+            "NKUseEW": [bool, True],
+            "NKADPC": [bool, False],
+            "NKViscPC": [bool, False],
+            "NKASMOverlap": [int, 1],
+            "NKPCILUFill": [int, 2],
+            "NKJacobianLag": [int, 20],
+            "applyPCSubspaceSize": [int, 10],
+            "NKInnerPreconIts": [int, 1],
+            "NKOuterPreconIts": [int, 1],
+            "NKLS": [str, ["cubic", "none", "non-monotone"]],
+            "NKFixedStep": [float, 0.25],
+            "RKReset": [bool, False],
+            "nRKReset": [int, 5],
             # MG PC
-            'AGMGLevels':[int, 1],
-            'AGMGNSmooth':[int, 3],
-
+            "AGMGLevels": [int, 1],
+            "AGMGNSmooth": [int, 3],
             # Approximate Newton-Krylov Parameters
-            'useANKSolver':[bool, True],
-            'ANKUseTurbDADI':[bool, True],
-            'ANKSwitchTol':[float, 1.0],
-            'ANKSubspaceSize':[int, -1],
-            'ANKMaxIter':[int, 40],
-            'ANKLinearSolveTol':[float, 0.05],
-            'ANKLinResMax':[float, 0.1],
-            'ANKASMOverlap':[int, 1],
-            'ANKPCILUFill':[int, 2],
-            'ANKJacobianLag':[int, 10],
-            'ANKInnerPreconIts':[int, 1],
-            'ANKOuterPreconIts':[int, 1],
-            'ANKCFL0':[float, 5.0],
-            'ANKCFLMin':[float,1.0],
-            'ANKCFLLimit':[float, 1e5],
-            'ANKCFLFactor':[float, 10.0],
-            'ANKCFLExponent':[float, 0.5],
-            'ANKCFLCutback':[float,0.5],
-            'ANKStepFactor':[float, 1.0],
-            'ANKStepMin':[float, 0.01],
-            'ANKConstCFLStep':[float, 0.4],
-            'ANKPhysicalLSTol':[float, 0.2],
-            'ANKPhysicalLSTolTurb':[float, 0.99],
-            'ANKUnsteadyLSTol':[float, 1.0],
-            'ANKSecondOrdSwitchTol':[float, 1e-16],
-            'ANKCoupledSwitchTol':[float, 1e-16],
-            'ANKTurbCFLScale' : [float, 1.0],
-            'ANKUseFullVisc' : [bool, True],
-            'ANKPCUpdateTol':[float,0.5],
-            'ANKADPC':[bool, False],
-            'ANKNSubiterTurb':[int,1],
-            'ANKTurbKSPDebug':[bool,False],
-            'ANKUseMatrixFree':[bool,True],
-
+            "useANKSolver": [bool, True],
+            "ANKUseTurbDADI": [bool, True],
+            "ANKSwitchTol": [float, 1.0],
+            "ANKSubspaceSize": [int, -1],
+            "ANKMaxIter": [int, 40],
+            "ANKLinearSolveTol": [float, 0.05],
+            "ANKLinResMax": [float, 0.1],
+            "ANKASMOverlap": [int, 1],
+            "ANKPCILUFill": [int, 2],
+            "ANKJacobianLag": [int, 10],
+            "ANKInnerPreconIts": [int, 1],
+            "ANKOuterPreconIts": [int, 1],
+            "ANKCFL0": [float, 5.0],
+            "ANKCFLMin": [float, 1.0],
+            "ANKCFLLimit": [float, 1e5],
+            "ANKCFLFactor": [float, 10.0],
+            "ANKCFLExponent": [float, 0.5],
+            "ANKCFLCutback": [float, 0.5],
+            "ANKStepFactor": [float, 1.0],
+            "ANKStepMin": [float, 0.01],
+            "ANKConstCFLStep": [float, 0.4],
+            "ANKPhysicalLSTol": [float, 0.2],
+            "ANKPhysicalLSTolTurb": [float, 0.99],
+            "ANKUnsteadyLSTol": [float, 1.0],
+            "ANKSecondOrdSwitchTol": [float, 1e-16],
+            "ANKCoupledSwitchTol": [float, 1e-16],
+            "ANKTurbCFLScale": [float, 1.0],
+            "ANKUseFullVisc": [bool, True],
+            "ANKPCUpdateTol": [float, 0.5],
+            "ANKADPC": [bool, False],
+            "ANKNSubiterTurb": [int, 1],
+            "ANKTurbKSPDebug": [bool, False],
+            "ANKUseMatrixFree": [bool, True],
             # Load Balance/partitioning parameters
-            'blockSplitting':[bool, True],
-            'loadImbalance':[float, 0.1],
-            'loadBalanceIter':[int, 10],
-            'partitionOnly':[bool, False],
-            'partitionLikeNProc':[int, -1],
-
+            "blockSplitting": [bool, True],
+            "loadImbalance": [float, 0.1],
+            "loadBalanceIter": [int, 10],
+            "partitionOnly": [bool, False],
+            "partitionLikeNProc": [int, -1],
             # Misc Parameters
-            'numberSolutions':[bool, True],
-            'printIterations':[bool, True],
-            'printTiming':[bool, True],
-            'setMonitor':[bool, True],
-            'printWarnings':[bool, True],
-            'monitorVariables':[list, ['cpu','resrho', 'resturb', 'cl', 'cd']],
-            'surfaceVariables':[list, ['cp','vx', 'vy','vz', 'mach']],
-            'volumeVariables':[list, ['resrho']],
-
+            "numberSolutions": [bool, True],
+            "printIterations": [bool, True],
+            "printTiming": [bool, True],
+            "setMonitor": [bool, True],
+            "printWarnings": [bool, True],
+            "monitorVariables": [list, ["cpu", "resrho", "resturb", "cl", "cd"]],
+            "surfaceVariables": [list, ["cp", "vx", "vy", "vz", "mach"]],
+            "volumeVariables": [list, ["resrho"]],
             # Multidisciplinary Coupling Parameters
-            'forcesAsTractions':[bool, True],
-
+            "forcesAsTractions": [bool, True],
             # Adjoint Parameters
-            'adjointL2Convergence':[float, 1e-6],
-            'adjointL2ConvergenceRel':[float, 1e-16],
-            'adjointL2ConvergenceAbs':[float, 1e-16],
-            'adjointDivTol':[float, 1e5],
-            'approxPC': [bool, True],
-            'ADPC': [bool, False],
-            'viscPC':[bool,False],
-            'useDiagTSPC':[bool, True],
-            'restartAdjoint':[bool, True],
-            'adjointSolver': [str, ['GMRES', 'TFQMR', 'Richardson', 'BCGS', 'IBCGS']],
-            'adjointMaxIter': [int, 500],
-            'adjointSubspaceSize' : [int, 100],
-            'adjointMonitorStep': [int, 10],
-            'dissipationLumpingParameter':[float, 6.0],
-            'preconditionerSide': [str, ['right', 'left']],
-            'matrixOrdering': [str, ['RCM', 'natural', 'nested dissection', 'one way dissection', 'quotient minimum degree']],
-            'globalPreconditioner': [str, ['additive Schwarz', 'multigrid']],
-            'localPreconditioner' : [str, ['ILU']],
-            'ILUFill': [int, 2],
-            'ASMOverlap' : [int, 1],
-            'innerPreconIts':[int, 1],
-            'outerPreconIts':[int, 3],
-            'applyAdjointPCSubspaceSize':[int, 20],
-            'frozenTurbulence':[bool, False],
-            'useMatrixFreedrdw':[bool, True],
-            'skipAfterFailedAdjoint':[bool,True],
-
+            "adjointL2Convergence": [float, 1e-6],
+            "adjointL2ConvergenceRel": [float, 1e-16],
+            "adjointL2ConvergenceAbs": [float, 1e-16],
+            "adjointDivTol": [float, 1e5],
+            "approxPC": [bool, True],
+            "ADPC": [bool, False],
+            "viscPC": [bool, False],
+            "useDiagTSPC": [bool, True],
+            "restartAdjoint": [bool, True],
+            "adjointSolver": [str, ["GMRES", "TFQMR", "Richardson", "BCGS", "IBCGS"]],
+            "adjointMaxIter": [int, 500],
+            "adjointSubspaceSize": [int, 100],
+            "adjointMonitorStep": [int, 10],
+            "dissipationLumpingParameter": [float, 6.0],
+            "preconditionerSide": [str, ["right", "left"]],
+            "matrixOrdering": [
+                str,
+                ["RCM", "natural", "nested dissection", "one way dissection", "quotient minimum degree"],
+            ],
+            "globalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
+            "localPreconditioner": [str, ["ILU"]],
+            "ILUFill": [int, 2],
+            "ASMOverlap": [int, 1],
+            "innerPreconIts": [int, 1],
+            "outerPreconIts": [int, 3],
+            "applyAdjointPCSubspaceSize": [int, 20],
+            "frozenTurbulence": [bool, False],
+            "useMatrixFreedrdw": [bool, True],
+            "skipAfterFailedAdjoint": [bool, True],
             # ADjoint debugger
-            'firstRun':[bool, True],
-            'verifyState':[bool, True],
-            'verifySpatial':[bool, True],
-            'verifyExtra':[bool, True],
-
+            "firstRun": [bool, True],
+            "verifyState": [bool, True],
+            "verifySpatial": [bool, True],
+            "verifyExtra": [bool, True],
             # Function parmeters
-            'sepSensorOffset':[float, 0.0],
-            'sepSensorSharpness':[float, 10.0],
-            'computeCavitation':[bool,False],
-            }
+            "sepSensorOffset": [float, 0.0],
+            "sepSensorSharpness": [float, 10.0],
+            "computeCavitation": [bool, False],
+        }
 
         return defOpts
 
@@ -4964,322 +5125,362 @@ class ADFLOW(AeroSolver):
         object is created. ADflow will raise an error if a user tries to
         change these. The strings for these options are placed in a set"""
 
-        return ('gridfile', 'equationtype', 'equationmode', 'flowtype',
-                'useapproxwalldistance', 'liftindex', 'mgcycle',
-                'mgstartlevel', 'timeintegrationscheme', 'timeaccuracy',
-                'useale', 'timeintervals', 'blocksplitting',
-                'loadimbalance', 'loadbalanceiter', 'partitiononly',
-                'meshsurfacefamily', 'designsurfacefamily', 'closedsurfacefamilies',
-                'zippersurfacefamily', 'cutcallback')
+        return (
+            "gridfile",
+            "equationtype",
+            "equationmode",
+            "flowtype",
+            "useapproxwalldistance",
+            "liftindex",
+            "mgcycle",
+            "mgstartlevel",
+            "timeintegrationscheme",
+            "timeaccuracy",
+            "useale",
+            "timeintervals",
+            "blocksplitting",
+            "loadimbalance",
+            "loadbalanceiter",
+            "partitiononly",
+            "meshsurfacefamily",
+            "designsurfacefamily",
+            "closedsurfacefamilies",
+            "zippersurfacefamily",
+            "cutcallback",
+        )
 
     def _getOptionMap(self):
         """ The ADflow option map and module mapping"""
 
-        moduleMap = {'io': self.adflow.inputio,
-                     'discr':self.adflow.inputdiscretization,
-                     'iter':self.adflow.inputiteration,
-                     'physics':self.adflow.inputphysics,
-                     'stab': self.adflow.inputtsstabderiv,
-                     'nk': self.adflow.nksolver,
-                     'ank': self.adflow.anksolver,
-                     'agmg':self.adflow.agmg,
-                     'adjoint': self.adflow.inputadjoint,
-                     'cost': self.adflow.inputcostfunctions,
-                     'unsteady':self.adflow.inputunsteady,
-                     'motion':self.adflow.inputmotion,
-                     'parallel':self.adflow.inputparallel,
-                     'ts':self.adflow.inputtimespectral,
-                     'overset':self.adflow.inputoverset,
-                 }
+        moduleMap = {
+            "io": self.adflow.inputio,
+            "discr": self.adflow.inputdiscretization,
+            "iter": self.adflow.inputiteration,
+            "physics": self.adflow.inputphysics,
+            "stab": self.adflow.inputtsstabderiv,
+            "nk": self.adflow.nksolver,
+            "ank": self.adflow.anksolver,
+            "agmg": self.adflow.agmg,
+            "adjoint": self.adflow.inputadjoint,
+            "cost": self.adflow.inputcostfunctions,
+            "unsteady": self.adflow.inputunsteady,
+            "motion": self.adflow.inputmotion,
+            "parallel": self.adflow.inputparallel,
+            "ts": self.adflow.inputtimespectral,
+            "overset": self.adflow.inputoverset,
+        }
 
         # In the option map, we first list the "module" defined in
         # module map, and "variable" the variable to set in that module.
 
         optionMap = {
             # Common Parameters
-            'gridfile':['io', 'gridfile'],
-            'storerindlayer':['io', 'storerindlayer'],
-            'nsavevolume':['io', 'nsavevolume'],
-            'nsavesurface':['iter', 'nsavesurface'],
-            'viscoussurfacevelocities':['io', 'viscoussurfacevelocities'],
-            'solutionprecision':{'single':self.adflow.constants.precisionsingle,
-                                 'double':self.adflow.constants.precisiondouble,
-                                 'location':['io', 'precisionsol']},
-            'gridprecision':{'single':self.adflow.constants.precisionsingle,
-                             'double':self.adflow.constants.precisiondouble,
-                             'location':['io', 'precisiongrid']},
-            'solutionprecisionsurface':{'single':self.adflow.constants.precisionsingle,
-                                        'double':self.adflow.constants.precisiondouble,
-                                        'location':['io', 'precisionsurfsol']},
-            'gridprecisionsurface':{'single':self.adflow.constants.precisionsingle,
-                                    'double':self.adflow.constants.precisiondouble,
-                                    'location':['io', 'precisionsurfgrid']},
+            "gridfile": ["io", "gridfile"],
+            "storerindlayer": ["io", "storerindlayer"],
+            "nsavevolume": ["io", "nsavevolume"],
+            "nsavesurface": ["iter", "nsavesurface"],
+            "viscoussurfacevelocities": ["io", "viscoussurfacevelocities"],
+            "solutionprecision": {
+                "single": self.adflow.constants.precisionsingle,
+                "double": self.adflow.constants.precisiondouble,
+                "location": ["io", "precisionsol"],
+            },
+            "gridprecision": {
+                "single": self.adflow.constants.precisionsingle,
+                "double": self.adflow.constants.precisiondouble,
+                "location": ["io", "precisiongrid"],
+            },
+            "solutionprecisionsurface": {
+                "single": self.adflow.constants.precisionsingle,
+                "double": self.adflow.constants.precisiondouble,
+                "location": ["io", "precisionsurfsol"],
+            },
+            "gridprecisionsurface": {
+                "single": self.adflow.constants.precisionsingle,
+                "double": self.adflow.constants.precisiondouble,
+                "location": ["io", "precisionsurfgrid"],
+            },
             # Physics Parameters
-            'discretization':{'central plus scalar dissipation': self.adflow.constants.dissscalar,
-                              'central plus matrix dissipation': self.adflow.constants.dissmatrix,
-                              'central plus cusp dissipation':self.adflow.constants.disscusp,
-                              'upwind':self.adflow.constants.upwind,
-                              'location':['discr', 'spacediscr']},
-            'coarsediscretization':{'central plus scalar dissipation': self.adflow.constants.dissscalar,
-                                    'central plus matrix dissipation': self.adflow.constants.dissmatrix,
-                                    'central plus cusp dissipation': self.adflow.constants.disscusp,
-                                    'upwind': self.adflow.constants.upwind,
-                                    'location':['discr', 'spacediscrcoarse']},
-            'limiter':{'van albada':self.adflow.constants.vanalbeda,
-                       'minmod':self.adflow.constants.minmod,
-                       'no limiter':self.adflow.constants.nolimiter,
-                       'location':['discr', 'limiter']},
-            'smoother':{'runge-kutta':self.adflow.constants.rungekutta,
-                        'lu sgs':self.adflow.constants.nllusgs,
-                        'lu sgs line':self.adflow.constants.nllusgsline,
-                        'dadi':self.adflow.constants.dadi,
-                        'location':['iter', 'smoother']},
-
-            'equationtype':{'euler':self.adflow.constants.eulerequations,
-                            'laminar ns':self.adflow.constants.nsequations,
-                            'rans':self.adflow.constants.ransequations,
-                            'location':['physics', 'equations']},
-            'equationmode':{'steady':self.adflow.constants.steady,
-                            'unsteady':self.adflow.constants.unsteady,
-                            'time spectral':self.adflow.constants.timespectral,
-                            'location':['physics', 'equationmode']},
-            'flowtype':{'internal':self.adflow.constants.internalflow,
-                        'external':self.adflow.constants.externalflow,
-                        'location':['physics', 'flowtype']},
-            'turbulencemodel':{'sa':self.adflow.constants.spalartallmaras,
-                               'sa-edwards':self.adflow.constants.spalartallmarasedwards,
-                               'k-omega wilcox':self.adflow.constants.komegawilcox,
-                               'k-omega modified':self.adflow.constants.komegamodified,
-                               'k-tau':self.adflow.constants.ktau,
-                               'menter sst':self.adflow.constants.mentersst,
-                               'v2f':self.adflow.constants.v2f,
-                               'location':['physics', 'turbmodel']},
-            'turbulenceorder':{'first order':1,
-                               'second order':2,
-                               'location':['discr', 'orderturb']},
-            'turbresscale':['iter', 'turbresscale'],
-            'turbulenceproduction':{'strain':self.adflow.constants.strain,
-                                    'vorticity':self.adflow.constants.vorticity,
-                                    'kato-launder':self.adflow.constants.katolaunder,
-                                    'location':['physics', 'turbprod']},
-            'useqcr':['physics', 'useqcr'],
-            'userotationsa':['physics', 'userotationsa'],
-            'useft2sa':['physics', 'useft2sa'],
-            'eddyvisinfratio':['physics', 'eddyvisinfratio'],
-            'usewallfunctions':['physics', 'wallfunctions'],
-            'walldistcutoff':['physics', 'walldistcutoff'],
-            'useapproxwalldistance':['discr', 'useapproxwalldistance'],
-            'eulerwalltreatment':{'linear pressure extrapolation':self.adflow.constants.linextrapolpressure,
-                                  'constant pressure extrapolation':self.adflow.constants.constantpressure,
-                                  'quadratic pressure extrapolation':self.adflow.constants.quadextrapolpressure,
-                                  'normal momentum':self.adflow.constants.normalmomentum,
-                                  'location':['discr', 'eulerwallbctreatment']},
-            'viscwalltreatment':{'linear pressure extrapolation':self.adflow.constants.linextrapolpressure,
-                                 'constant pressure extrapolation':self.adflow.constants.constantpressure,
-                                 'location':['discr', 'viscwallbctreatment']},
-            'dissipationscalingexponent':['discr', 'adis'],
-            'vis4':['discr', 'vis4'],
-            'vis2':['discr', 'vis2'],
-            'vis2coarse':['discr', 'vis2coarse'],
-            'restrictionrelaxation':['iter', 'fcoll'],
-            'forcesastractions':['physics', 'forcesastractions'],
-            'lowspeedpreconditioner':['discr', 'lowspeedpreconditioner'],
-            'cavitationnumber':['physics','cavitationnumber'],
-
+            "discretization": {
+                "central plus scalar dissipation": self.adflow.constants.dissscalar,
+                "central plus matrix dissipation": self.adflow.constants.dissmatrix,
+                "central plus cusp dissipation": self.adflow.constants.disscusp,
+                "upwind": self.adflow.constants.upwind,
+                "location": ["discr", "spacediscr"],
+            },
+            "coarsediscretization": {
+                "central plus scalar dissipation": self.adflow.constants.dissscalar,
+                "central plus matrix dissipation": self.adflow.constants.dissmatrix,
+                "central plus cusp dissipation": self.adflow.constants.disscusp,
+                "upwind": self.adflow.constants.upwind,
+                "location": ["discr", "spacediscrcoarse"],
+            },
+            "limiter": {
+                "van albada": self.adflow.constants.vanalbeda,
+                "minmod": self.adflow.constants.minmod,
+                "no limiter": self.adflow.constants.nolimiter,
+                "location": ["discr", "limiter"],
+            },
+            "smoother": {
+                "runge-kutta": self.adflow.constants.rungekutta,
+                "lu sgs": self.adflow.constants.nllusgs,
+                "lu sgs line": self.adflow.constants.nllusgsline,
+                "dadi": self.adflow.constants.dadi,
+                "location": ["iter", "smoother"],
+            },
+            "equationtype": {
+                "euler": self.adflow.constants.eulerequations,
+                "laminar ns": self.adflow.constants.nsequations,
+                "rans": self.adflow.constants.ransequations,
+                "location": ["physics", "equations"],
+            },
+            "equationmode": {
+                "steady": self.adflow.constants.steady,
+                "unsteady": self.adflow.constants.unsteady,
+                "time spectral": self.adflow.constants.timespectral,
+                "location": ["physics", "equationmode"],
+            },
+            "flowtype": {
+                "internal": self.adflow.constants.internalflow,
+                "external": self.adflow.constants.externalflow,
+                "location": ["physics", "flowtype"],
+            },
+            "turbulencemodel": {
+                "sa": self.adflow.constants.spalartallmaras,
+                "sa-edwards": self.adflow.constants.spalartallmarasedwards,
+                "k-omega wilcox": self.adflow.constants.komegawilcox,
+                "k-omega modified": self.adflow.constants.komegamodified,
+                "k-tau": self.adflow.constants.ktau,
+                "menter sst": self.adflow.constants.mentersst,
+                "v2f": self.adflow.constants.v2f,
+                "location": ["physics", "turbmodel"],
+            },
+            "turbulenceorder": {"first order": 1, "second order": 2, "location": ["discr", "orderturb"]},
+            "turbresscale": ["iter", "turbresscale"],
+            "turbulenceproduction": {
+                "strain": self.adflow.constants.strain,
+                "vorticity": self.adflow.constants.vorticity,
+                "kato-launder": self.adflow.constants.katolaunder,
+                "location": ["physics", "turbprod"],
+            },
+            "useqcr": ["physics", "useqcr"],
+            "userotationsa": ["physics", "userotationsa"],
+            "useft2sa": ["physics", "useft2sa"],
+            "eddyvisinfratio": ["physics", "eddyvisinfratio"],
+            "usewallfunctions": ["physics", "wallfunctions"],
+            "walldistcutoff": ["physics", "walldistcutoff"],
+            "useapproxwalldistance": ["discr", "useapproxwalldistance"],
+            "eulerwalltreatment": {
+                "linear pressure extrapolation": self.adflow.constants.linextrapolpressure,
+                "constant pressure extrapolation": self.adflow.constants.constantpressure,
+                "quadratic pressure extrapolation": self.adflow.constants.quadextrapolpressure,
+                "normal momentum": self.adflow.constants.normalmomentum,
+                "location": ["discr", "eulerwallbctreatment"],
+            },
+            "viscwalltreatment": {
+                "linear pressure extrapolation": self.adflow.constants.linextrapolpressure,
+                "constant pressure extrapolation": self.adflow.constants.constantpressure,
+                "location": ["discr", "viscwallbctreatment"],
+            },
+            "dissipationscalingexponent": ["discr", "adis"],
+            "vis4": ["discr", "vis4"],
+            "vis2": ["discr", "vis2"],
+            "vis2coarse": ["discr", "vis2coarse"],
+            "restrictionrelaxation": ["iter", "fcoll"],
+            "forcesastractions": ["physics", "forcesastractions"],
+            "lowspeedpreconditioner": ["discr", "lowspeedpreconditioner"],
+            "cavitationnumber": ["physics", "cavitationnumber"],
             # Common Parameters
-            'ncycles':['iter', 'ncycles'],
-            'timelimit':['iter', 'timelimit'],
-            'ncyclescoarse':['iter', 'ncyclescoarse'],
-            'nsubiterturb':['iter', 'nsubiterturb'],
-            'nsubiter':['iter', 'nsubiterations'],
-            'cfl':['iter', 'cfl'],
-            'cflcoarse':['iter', 'cflcoarse'],
-            'mgcycle':['iter', 'mgdescription'],
-            'mgstartlevel':['iter', 'mgstartlevel'],
-            'resaveraging':{'never':self.adflow.constants.noresaveraging,
-                            'always':self.adflow.constants.alwaysresaveraging,
-                            'alternate':self.adflow.constants.alternateresaveraging,
-                            'location':['iter', 'resaveraging']},
-            'smoothparameter':['iter', 'smoop'],
-            'cfllimit':['iter', 'cfllimit'],
-            'useblockettes':['discr', 'useblockettes'],
-            'uselinresmonitor':['iter','uselinresmonitor'],
+            "ncycles": ["iter", "ncycles"],
+            "timelimit": ["iter", "timelimit"],
+            "ncyclescoarse": ["iter", "ncyclescoarse"],
+            "nsubiterturb": ["iter", "nsubiterturb"],
+            "nsubiter": ["iter", "nsubiterations"],
+            "cfl": ["iter", "cfl"],
+            "cflcoarse": ["iter", "cflcoarse"],
+            "mgcycle": ["iter", "mgdescription"],
+            "mgstartlevel": ["iter", "mgstartlevel"],
+            "resaveraging": {
+                "never": self.adflow.constants.noresaveraging,
+                "always": self.adflow.constants.alwaysresaveraging,
+                "alternate": self.adflow.constants.alternateresaveraging,
+                "location": ["iter", "resaveraging"],
+            },
+            "smoothparameter": ["iter", "smoop"],
+            "cfllimit": ["iter", "cfllimit"],
+            "useblockettes": ["discr", "useblockettes"],
+            "uselinresmonitor": ["iter", "uselinresmonitor"],
             # Overset Parameters
-            'nearwalldist':['overset','nearwalldist'],
-            'backgroundvolscale':['overset','backgroundvolscale'],
-            'oversetprojtol':['overset','oversetprojtol'],
-            'overlapfactor':['overset','overlapfactor'],
-            'oversetloadbalance':['overset','useoversetloadbalance'],
-            'debugzipper':['overset','debugzipper'],
-            'oversetupdatemode':{'frozen':self.adflow.constants.updatefrozen,
-                                 'fast':self.adflow.constants.updatefast,
-                                 'full':self.adflow.constants.updatefull,
-                                 'location':['overset', 'oversetupdatemode']},
-            'nrefine':['overset','nrefine'],
-            'nflooditer':['overset','nflooditer'],
-            'usezippermesh':['overset', 'usezippermesh'],
-            'useoversetwallscaling':['overset', 'useoversetwallscaling'],
-            'selfzipcutoff':['overset', 'selfzipcutoff'],
-
+            "nearwalldist": ["overset", "nearwalldist"],
+            "backgroundvolscale": ["overset", "backgroundvolscale"],
+            "oversetprojtol": ["overset", "oversetprojtol"],
+            "overlapfactor": ["overset", "overlapfactor"],
+            "oversetloadbalance": ["overset", "useoversetloadbalance"],
+            "debugzipper": ["overset", "debugzipper"],
+            "oversetupdatemode": {
+                "frozen": self.adflow.constants.updatefrozen,
+                "fast": self.adflow.constants.updatefast,
+                "full": self.adflow.constants.updatefull,
+                "location": ["overset", "oversetupdatemode"],
+            },
+            "nrefine": ["overset", "nrefine"],
+            "nflooditer": ["overset", "nflooditer"],
+            "usezippermesh": ["overset", "usezippermesh"],
+            "useoversetwallscaling": ["overset", "useoversetwallscaling"],
+            "selfzipcutoff": ["overset", "selfzipcutoff"],
             # Unsteady Params
-            'timeintegrationscheme':{'bdf':self.adflow.constants.bdf,
-                                     'explicit rk':self.adflow.constants.explicitrk,
-                                     'implicit rk':self.adflow.constants.implicitrk,
-                                     'location':['unsteady', 'timeintegrationscheme']},
-            'timeaccuracy':['unsteady', 'timeaccuracy'],
-            'ntimestepscoarse':['unsteady', 'ntimestepscoarse'],
-            'ntimestepsfine':['unsteady', 'ntimestepsfine'],
-            'deltat':['unsteady', 'deltat'],
-            'useale':['unsteady', 'useale'],
-
+            "timeintegrationscheme": {
+                "bdf": self.adflow.constants.bdf,
+                "explicit rk": self.adflow.constants.explicitrk,
+                "implicit rk": self.adflow.constants.implicitrk,
+                "location": ["unsteady", "timeintegrationscheme"],
+            },
+            "timeaccuracy": ["unsteady", "timeaccuracy"],
+            "ntimestepscoarse": ["unsteady", "ntimestepscoarse"],
+            "ntimestepsfine": ["unsteady", "ntimestepsfine"],
+            "deltat": ["unsteady", "deltat"],
+            "useale": ["unsteady", "useale"],
             # Grid motion Params
-            'usegridmotion':['motion', 'gridmotionspecified'],
-
+            "usegridmotion": ["motion", "gridmotionspecified"],
             # Time Spectral Parameters
-            'timeintervals':['ts', 'ntimeintervalsspectral'],
-            'alphamode':['stab', 'tsalphamode'],
-            'betamode':['stab', 'tsbetamode'],
-            'machmode':['stab', 'tsmachmode'],
-            'pmode':['stab', 'tspmode'],
-            'qmode':['stab', 'tsqmode'],
-            'rmode':['stab', 'tsrmode'],
-            'altitudemode':['stab', 'tsaltitudemode'],
-            'windaxis':['stab', 'usewindaxis'],
-            'alphafollowing':['stab', 'tsalphafollowing'],
-            'tsstability':['stab', 'tsstability'],
-
+            "timeintervals": ["ts", "ntimeintervalsspectral"],
+            "alphamode": ["stab", "tsalphamode"],
+            "betamode": ["stab", "tsbetamode"],
+            "machmode": ["stab", "tsmachmode"],
+            "pmode": ["stab", "tspmode"],
+            "qmode": ["stab", "tsqmode"],
+            "rmode": ["stab", "tsrmode"],
+            "altitudemode": ["stab", "tsaltitudemode"],
+            "windaxis": ["stab", "usewindaxis"],
+            "alphafollowing": ["stab", "tsalphafollowing"],
+            "tsstability": ["stab", "tsstability"],
             # Convergence Parameters
-            'l2convergence':['iter', 'l2conv'],
-            'l2convergencerel':['iter', 'l2convrel'],
-            'l2convergencecoarse':['iter', 'l2convcoarse'],
-            'maxl2deviationfactor':['iter', 'maxl2deviationfactor'],
-
+            "l2convergence": ["iter", "l2conv"],
+            "l2convergencerel": ["iter", "l2convrel"],
+            "l2convergencecoarse": ["iter", "l2convcoarse"],
+            "maxl2deviationfactor": ["iter", "maxl2deviationfactor"],
             # Newton-Krylov Parameters
-            'usenksolver':['nk', 'usenksolver'],
-            'nkuseew':['nk', 'nk_useew'],
-            'nkswitchtol':['nk', 'nk_switchtol'],
-            'nksubspacesize':['nk', 'nk_subspace'],
-            'nklinearsolvetol':['nk', 'nk_rtolinit'],
-            'nkasmoverlap':['nk', 'nk_asmoverlap'],
-            'nkpcilufill':['nk', 'nk_ilufill'],
-            'nkjacobianlag':['nk', 'nk_jacobianlag'],
-            'nkadpc':['nk', 'nk_adpc'],
-            'nkviscpc':['nk', 'nk_viscpc'],
-            'applypcsubspacesize':['nk', 'applypcsubspacesize'],
-            'nkinnerpreconits':['nk', 'nk_innerpreconits'],
-            'nkouterpreconits':['nk', 'nk_outerpreconits'],
-            'nkls':{'none':self.adflow.constants.nolinesearch,
-                    'cubic':self.adflow.constants.cubiclinesearch,
-                    'non-monotone':self.adflow.constants.nonmonotonelinesearch,
-                    'location':['nk', 'nk_ls']},
-            'nkfixedstep':['nk', 'nk_fixedstep'],
-            'rkreset':['iter', 'rkreset'],
-            'nrkreset':['iter', 'miniternum'],
-
+            "usenksolver": ["nk", "usenksolver"],
+            "nkuseew": ["nk", "nk_useew"],
+            "nkswitchtol": ["nk", "nk_switchtol"],
+            "nksubspacesize": ["nk", "nk_subspace"],
+            "nklinearsolvetol": ["nk", "nk_rtolinit"],
+            "nkasmoverlap": ["nk", "nk_asmoverlap"],
+            "nkpcilufill": ["nk", "nk_ilufill"],
+            "nkjacobianlag": ["nk", "nk_jacobianlag"],
+            "nkadpc": ["nk", "nk_adpc"],
+            "nkviscpc": ["nk", "nk_viscpc"],
+            "applypcsubspacesize": ["nk", "applypcsubspacesize"],
+            "nkinnerpreconits": ["nk", "nk_innerpreconits"],
+            "nkouterpreconits": ["nk", "nk_outerpreconits"],
+            "nkls": {
+                "none": self.adflow.constants.nolinesearch,
+                "cubic": self.adflow.constants.cubiclinesearch,
+                "non-monotone": self.adflow.constants.nonmonotonelinesearch,
+                "location": ["nk", "nk_ls"],
+            },
+            "nkfixedstep": ["nk", "nk_fixedstep"],
+            "rkreset": ["iter", "rkreset"],
+            "nrkreset": ["iter", "miniternum"],
             # MG PC
-            'agmglevels':['agmg', 'agmglevels'],
-            'agmgnsmooth':['agmg', 'agmgnsmooth'],
-
+            "agmglevels": ["agmg", "agmglevels"],
+            "agmgnsmooth": ["agmg", "agmgnsmooth"],
             # Approximate Newton-Krylov Parameters
-            'useanksolver':['ank', 'useanksolver'],
-            'ankuseturbdadi':['ank', 'ank_useturbdadi'],
-            'ankswitchtol':['ank', 'ank_switchtol'],
-            'anksubspacesize':['ank', 'ank_subspace'],
-            'ankmaxiter':['ank', 'ank_maxiter'],
-            'anklinearsolvetol':['ank', 'ank_rtol'],
-            'anklinresmax':['ank','ank_linresmax'],
-            'ankasmoverlap':['ank', 'ank_asmoverlap'],
-            'ankpcilufill':['ank', 'ank_ilufill'],
-            'ankjacobianlag':['ank', 'ank_jacobianlag'],
-            'ankinnerpreconits':['ank', 'ank_innerpreconits'],
-            'ankouterpreconits':['ank', 'ank_outerpreconits'],
-            'ankcfl0':['ank', 'ank_cfl0'],
-            'ankcflmin':['ank', 'ank_cflmin0'],
-            'ankcfllimit':['ank','ank_cfllimit'],
-            'ankcflfactor':['ank', 'ank_cflfactor'],
-            'ankcflexponent':['ank','ank_cflexponent'],
-            'ankcflcutback':['ank', 'ank_cflcutback'],
-            'ankstepfactor':['ank','ank_stepfactor'],
-            'ankstepmin':['ank','ank_stepmin'],
-            'ankconstcflstep':['ank','ank_constcflstep'],
-            'ankphysicallstol':['ank', 'ank_physlstol'],
-            'ankphysicallstolturb':['ank','ank_physlstolturb'],
-            'ankunsteadylstol':['ank', 'ank_unstdylstol'],
-            'anksecondordswitchtol':['ank','ank_secondordswitchtol'],
-            'ankcoupledswitchtol':['ank','ank_coupledswitchtol'],
-            'ankturbcflscale':['ank', 'ank_turbcflscale'],
-            'ankusefullvisc':['ank', 'ank_usefullvisc'],
-            'ankpcupdatetol':['ank', 'ank_pcupdatetol'],
-            'ankadpc':['ank','ank_adpc'],
-            'anknsubiterturb':['ank','ank_nsubiterturb'],
-            'ankturbkspdebug':['ank','ank_turbdebug'],
-            'ankusematrixfree':['ank','ank_usematrixfree'],
+            "useanksolver": ["ank", "useanksolver"],
+            "ankuseturbdadi": ["ank", "ank_useturbdadi"],
+            "ankswitchtol": ["ank", "ank_switchtol"],
+            "anksubspacesize": ["ank", "ank_subspace"],
+            "ankmaxiter": ["ank", "ank_maxiter"],
+            "anklinearsolvetol": ["ank", "ank_rtol"],
+            "anklinresmax": ["ank", "ank_linresmax"],
+            "ankasmoverlap": ["ank", "ank_asmoverlap"],
+            "ankpcilufill": ["ank", "ank_ilufill"],
+            "ankjacobianlag": ["ank", "ank_jacobianlag"],
+            "ankinnerpreconits": ["ank", "ank_innerpreconits"],
+            "ankouterpreconits": ["ank", "ank_outerpreconits"],
+            "ankcfl0": ["ank", "ank_cfl0"],
+            "ankcflmin": ["ank", "ank_cflmin0"],
+            "ankcfllimit": ["ank", "ank_cfllimit"],
+            "ankcflfactor": ["ank", "ank_cflfactor"],
+            "ankcflexponent": ["ank", "ank_cflexponent"],
+            "ankcflcutback": ["ank", "ank_cflcutback"],
+            "ankstepfactor": ["ank", "ank_stepfactor"],
+            "ankstepmin": ["ank", "ank_stepmin"],
+            "ankconstcflstep": ["ank", "ank_constcflstep"],
+            "ankphysicallstol": ["ank", "ank_physlstol"],
+            "ankphysicallstolturb": ["ank", "ank_physlstolturb"],
+            "ankunsteadylstol": ["ank", "ank_unstdylstol"],
+            "anksecondordswitchtol": ["ank", "ank_secondordswitchtol"],
+            "ankcoupledswitchtol": ["ank", "ank_coupledswitchtol"],
+            "ankturbcflscale": ["ank", "ank_turbcflscale"],
+            "ankusefullvisc": ["ank", "ank_usefullvisc"],
+            "ankpcupdatetol": ["ank", "ank_pcupdatetol"],
+            "ankadpc": ["ank", "ank_adpc"],
+            "anknsubiterturb": ["ank", "ank_nsubiterturb"],
+            "ankturbkspdebug": ["ank", "ank_turbdebug"],
+            "ankusematrixfree": ["ank", "ank_usematrixfree"],
             # Load Balance Parameters
-            'blocksplitting':['parallel', 'splitblocks'],
-            'loadimbalance':['parallel', 'loadimbalance'],
-            'loadbalanceiter':['parallel', 'loadbalanceiter'],
-            'partitionlikenproc':['parallel', 'partitionlikenproc'],
-
+            "blocksplitting": ["parallel", "splitblocks"],
+            "loadimbalance": ["parallel", "loadimbalance"],
+            "loadbalanceiter": ["parallel", "loadbalanceiter"],
+            "partitionlikenproc": ["parallel", "partitionlikenproc"],
             # Misc Parameters
-            'printiterations':['iter', 'printiterations'],
-            'printwarnings':['iter', 'printwarnings'],
-            'printtiming':['adjoint', 'printtiming'],
-            'setmonitor':['adjoint', 'setmonitor'],
-
-
+            "printiterations": ["iter", "printiterations"],
+            "printwarnings": ["iter", "printwarnings"],
+            "printtiming": ["adjoint", "printtiming"],
+            "setmonitor": ["adjoint", "setmonitor"],
             # Adjoint Params
-            'adjointl2convergence':['adjoint', 'adjreltol'],
-            'adjointl2convergencerel':['adjoint', 'adjreltolrel'],
-            'adjointl2convergenceabs':['adjoint', 'adjabstol'],
-            'adjointdivtol':['adjoint', 'adjdivtol'],
-            'approxpc':['adjoint', 'approxpc'],
-            'adpc':['adjoint', 'adpc'],
-            'viscpc':['adjoint', 'viscpc'],
-            'frozenturbulence':['adjoint', 'frozenturbulence'],
-            'usediagtspc':['adjoint', 'usediagtspc'],
-            'restartadjoint':['adjoint', 'restartadjoint'],
-            'adjointsolver':{'gmres':'gmres',
-                             'tfqmr':'tfqmr',
-                             'richardson':'richardson',
-                             'bcgs':'bcgs',
-                             'ibcgs':'ibcgs',
-                             'location':['adjoint', 'adjointsolvertype']},
-
-            'adjointmaxiter':['adjoint', 'adjmaxiter'],
-            'adjointsubspacesize':['adjoint', 'adjrestart'],
-            'adjointmonitorstep':['adjoint', 'adjmonstep'],
-            'dissipationlumpingparameter':['discr', 'sigma'],
-            'preconditionerside':{'left':'left',
-                                  'right':'right',
-                                  'location':['adjoint', 'adjointpcside']},
-            'matrixordering':{'natural':'natural',
-                              'rcm':'rcm',
-                              'nested dissection':'nd',
-                              'one way dissection':'1wd',
-                              'quotient minimum degree':'qmd',
-                              'location':['adjoint', 'matrixordering']},
-
-            'globalpreconditioner':{'additive schwarz':'asm',
-                                    'multigrid':'mg',
-                                    'location':['adjoint', 'precondtype']},
-            'localpreconditioner':{'ilu':'ilu',
-                                   'location':['adjoint', 'localpctype']},
-
-            'ilufill':['adjoint', 'filllevel'],
-            'applyadjointpcsubspacesize':['adjoint', 'applyadjointpcsubspacesize'],
-            'asmoverlap':['adjoint', 'overlap'],
-            'innerpreconits':['adjoint', 'innerpreconits'],
-            'outerpreconits':['adjoint', 'outerpreconits'],
-            'firstrun':['adjoint', 'firstrun'],
-            'verifystate':['adjoint', 'verifystate'],
-            'verifyspatial':['adjoint', 'verifyspatial'],
-            'verifyextra':['adjoint', 'verifyextra'],
-            'usematrixfreedrdw':['adjoint', 'usematrixfreedrdw'],
-
+            "adjointl2convergence": ["adjoint", "adjreltol"],
+            "adjointl2convergencerel": ["adjoint", "adjreltolrel"],
+            "adjointl2convergenceabs": ["adjoint", "adjabstol"],
+            "adjointdivtol": ["adjoint", "adjdivtol"],
+            "approxpc": ["adjoint", "approxpc"],
+            "adpc": ["adjoint", "adpc"],
+            "viscpc": ["adjoint", "viscpc"],
+            "frozenturbulence": ["adjoint", "frozenturbulence"],
+            "usediagtspc": ["adjoint", "usediagtspc"],
+            "restartadjoint": ["adjoint", "restartadjoint"],
+            "adjointsolver": {
+                "gmres": "gmres",
+                "tfqmr": "tfqmr",
+                "richardson": "richardson",
+                "bcgs": "bcgs",
+                "ibcgs": "ibcgs",
+                "location": ["adjoint", "adjointsolvertype"],
+            },
+            "adjointmaxiter": ["adjoint", "adjmaxiter"],
+            "adjointsubspacesize": ["adjoint", "adjrestart"],
+            "adjointmonitorstep": ["adjoint", "adjmonstep"],
+            "dissipationlumpingparameter": ["discr", "sigma"],
+            "preconditionerside": {"left": "left", "right": "right", "location": ["adjoint", "adjointpcside"]},
+            "matrixordering": {
+                "natural": "natural",
+                "rcm": "rcm",
+                "nested dissection": "nd",
+                "one way dissection": "1wd",
+                "quotient minimum degree": "qmd",
+                "location": ["adjoint", "matrixordering"],
+            },
+            "globalpreconditioner": {
+                "additive schwarz": "asm",
+                "multigrid": "mg",
+                "location": ["adjoint", "precondtype"],
+            },
+            "localpreconditioner": {"ilu": "ilu", "location": ["adjoint", "localpctype"]},
+            "ilufill": ["adjoint", "filllevel"],
+            "applyadjointpcsubspacesize": ["adjoint", "applyadjointpcsubspacesize"],
+            "asmoverlap": ["adjoint", "overlap"],
+            "innerpreconits": ["adjoint", "innerpreconits"],
+            "outerpreconits": ["adjoint", "outerpreconits"],
+            "firstrun": ["adjoint", "firstrun"],
+            "verifystate": ["adjoint", "verifystate"],
+            "verifyspatial": ["adjoint", "verifyspatial"],
+            "verifyextra": ["adjoint", "verifyextra"],
+            "usematrixfreedrdw": ["adjoint", "usematrixfreedrdw"],
             # Parameters for functions
-            'sepsensoroffset':['cost', 'sepsensoroffset'],
-            'sepsensorsharpness':['cost', 'sepsensorsharpness'],
-            'computecavitation':['cost', 'computecavitation'],
+            "sepsensoroffset": ["cost", "sepsensoroffset"],
+            "sepsensorsharpness": ["cost", "sepsensorsharpness"],
+            "computecavitation": ["cost", "computecavitation"],
         }
 
         return optionMap, moduleMap
@@ -5291,157 +5492,164 @@ class ADFLOW(AeroSolver):
         # pythonOptions do not get set in the Fortran code.
         # They are used strictly in Python.
 
-        pythonOptions = set(('numbersolutions',
-                             'writesurfacesolution',
-                             'writevolumesolution',
-                             'writetecplotsurfacesolution',
-                             'coupledsolution',
-                             'partitiononly',
-                             'liftindex',
-                             'meshsurfacefamily',
-                             'designsurfacefamily',
-                             'closedsurfacefamilies',
-                             'zippersurfacefamily',
-                             'outputsurfacefamily',
-                             'cutcallback',
-                             'infchangecorrection',
-                             'skipafterfailedadjoint',
-                         ))
+        pythonOptions = set(
+            (
+                "numbersolutions",
+                "writesurfacesolution",
+                "writevolumesolution",
+                "writetecplotsurfacesolution",
+                "coupledsolution",
+                "partitiononly",
+                "liftindex",
+                "meshsurfacefamily",
+                "designsurfacefamily",
+                "closedsurfacefamilies",
+                "zippersurfacefamily",
+                "outputsurfacefamily",
+                "cutcallback",
+                "infchangecorrection",
+                "skipafterfailedadjoint",
+            )
+        )
 
         # Deprecated options that may be in old scripts and should not be used.
 
-        deprecatedOptions = {'finitedifferencepc':'Use the ADPC option.',
-                             'writesolution':'Use writeSurfaceSolution and writeVolumeSolution options instead.',
-                             'autosolveretry':'This feature is not implemented.',
-                             'autoadjointretry':'This feature is not implemented.',
-                             'nkcfl0':'The NK solver does not use a CFL value anymore. \
-                                       The CFL is set to infinity and the true Newton method is used.',
-                             }
+        deprecatedOptions = {
+            "finitedifferencepc": "Use the ADPC option.",
+            "writesolution": "Use writeSurfaceSolution and writeVolumeSolution options instead.",
+            "autosolveretry": "This feature is not implemented.",
+            "autoadjointretry": "This feature is not implemented.",
+            "nkcfl0": "The NK solver does not use a CFL value anymore. \
+                                       The CFL is set to infinity and the true Newton method is used.",
+        }
 
-        specialOptions = set(('surfacevariables',
-                              'volumevariables',
-                              'monitorvariables',
-                              'outputdirectory',
-                              'isovariables',
-                              'isosurface',
-                              'turbresscale',
-                              'restartfile',
-                              'oversetpriority',
-                          ))
+        specialOptions = set(
+            (
+                "surfacevariables",
+                "volumevariables",
+                "monitorvariables",
+                "outputdirectory",
+                "isovariables",
+                "isosurface",
+                "turbresscale",
+                "restartfile",
+                "oversetpriority",
+            )
+        )
 
         return pythonOptions, deprecatedOptions, specialOptions
 
     def _getObjectivesAndDVs(self):
         iDV = OrderedDict()
-        iDV['alpha'] = self.adflow.adjointvars.ialpha
-        iDV['beta'] = self.adflow.adjointvars.ibeta
-        iDV['mach'] = self.adflow.adjointvars.imach
-        iDV['machgrid'] = self.adflow.adjointvars.imachgrid
-        iDV['p'] = self.adflow.adjointvars.ipressure
-        iDV['rho'] = self.adflow.adjointvars.idensity
-        iDV['t'] = self.adflow.adjointvars.itemperature
-        iDV['rotx'] = self.adflow.adjointvars.irotx
-        iDV['roty'] = self.adflow.adjointvars.iroty
-        iDV['rotz'] = self.adflow.adjointvars.irotz
-        iDV['rotcenx'] = self.adflow.adjointvars.irotcenx
-        iDV['rotceny'] = self.adflow.adjointvars.irotceny
-        iDV['rotcenz'] = self.adflow.adjointvars.irotcenz
-        iDV['xref'] = self.adflow.adjointvars.ipointrefx
-        iDV['yref'] = self.adflow.adjointvars.ipointrefy
-        iDV['zref'] = self.adflow.adjointvars.ipointrefz
+        iDV["alpha"] = self.adflow.adjointvars.ialpha
+        iDV["beta"] = self.adflow.adjointvars.ibeta
+        iDV["mach"] = self.adflow.adjointvars.imach
+        iDV["machgrid"] = self.adflow.adjointvars.imachgrid
+        iDV["p"] = self.adflow.adjointvars.ipressure
+        iDV["rho"] = self.adflow.adjointvars.idensity
+        iDV["t"] = self.adflow.adjointvars.itemperature
+        iDV["rotx"] = self.adflow.adjointvars.irotx
+        iDV["roty"] = self.adflow.adjointvars.iroty
+        iDV["rotz"] = self.adflow.adjointvars.irotz
+        iDV["rotcenx"] = self.adflow.adjointvars.irotcenx
+        iDV["rotceny"] = self.adflow.adjointvars.irotceny
+        iDV["rotcenz"] = self.adflow.adjointvars.irotcenz
+        iDV["xref"] = self.adflow.adjointvars.ipointrefx
+        iDV["yref"] = self.adflow.adjointvars.ipointrefy
+        iDV["zref"] = self.adflow.adjointvars.ipointrefz
 
         # Convert to python indexing
         for key in iDV:
             iDV[key] = iDV[key] - 1
 
             # Extra DVs for the Boundary condition variables
-        BCDV = ['pressure', 'pressurestagnation', 'temperaturestagnation', 'thrust']
+        BCDV = ["pressure", "pressurestagnation", "temperaturestagnation", "thrust", "heat"]
 
         # This is ADflow's internal mapping for cost functions
         adflowCostFunctions = {
-            'lift':self.adflow.constants.costfunclift,
-            'drag':self.adflow.constants.costfuncdrag,
-            'cl'  :self.adflow.constants.costfuncliftcoef,
-            'cd'  :self.adflow.constants.costfuncdragcoef,
-            'clp' :self.adflow.constants.costfuncliftcoefpressure,
-            'clv' :self.adflow.constants.costfuncliftcoefviscous,
-            'clm' :self.adflow.constants.costfuncliftcoefmomentum,
-            'cdp' :self.adflow.constants.costfuncdragcoefpressure,
-            'cdv' :self.adflow.constants.costfuncdragcoefviscous,
-            'cdm' :self.adflow.constants.costfuncdragcoefmomentum,
-            'fx'  :self.adflow.constants.costfuncforcex,
-            'fy'  :self.adflow.constants.costfuncforcey,
-            'fz'  :self.adflow.constants.costfuncforcez,
-            'cfx' :self.adflow.constants.costfuncforcexcoef,
-            'cfxp' :self.adflow.constants.costfuncforcexcoefpressure,
-            'cfxv' :self.adflow.constants.costfuncforcexcoefviscous,
-            'cfxm' :self.adflow.constants.costfuncforcexcoefmomentum,
-            'cfy' :self.adflow.constants.costfuncforceycoef,
-            'cfyp' :self.adflow.constants.costfuncforceycoefpressure,
-            'cfyv' :self.adflow.constants.costfuncforceycoefviscous,
-            'cfym' :self.adflow.constants.costfuncforceycoefmomentum,
-            'cfz' :self.adflow.constants.costfuncforcezcoef,
-            'cfzp' :self.adflow.constants.costfuncforcezcoefpressure,
-            'cfzv' :self.adflow.constants.costfuncforcezcoefviscous,
-            'cfzm' :self.adflow.constants.costfuncforcezcoefmomentum,
-            'mx'  :self.adflow.constants.costfuncmomx,
-            'my'  :self.adflow.constants.costfuncmomy,
-            'mz'  :self.adflow.constants.costfuncmomz,
-            'cmx':self.adflow.constants.costfuncmomxcoef,
-            'cmy':self.adflow.constants.costfuncmomycoef,
-            'cmz':self.adflow.constants.costfuncmomzcoef,
-            'cm0':self.adflow.constants.costfunccm0,
-            'cmzalpha':self.adflow.constants.costfunccmzalpha,
-            'cmzalphadot':self.adflow.constants.costfunccmzalphadot,
-            'cl0':self.adflow.constants.costfunccl0,
-            'clalpha':self.adflow.constants.costfuncclalpha,
-            'clalphadot':self.adflow.constants.costfuncclalphadot,
-            'cfy0':self.adflow.constants.costfunccfy0,
-            'cfyalpha':self.adflow.constants.costfunccfyalpha,
-            'cfyalphddot':self.adflow.constants.costfunccfyalphadot,
-            'cd0':self.adflow.constants.costfunccd0,
-            'cdalpha':self.adflow.constants.costfunccdalpha,
-            'cdalphadot':self.adflow.constants.costfunccdalphadot,
-            'cmzq':self.adflow.constants.costfunccmzq,
-            'cmzqdot':self.adflow.constants.costfunccmzqdot,
-            'clq':self.adflow.constants.costfuncclq,
-            'clqdot':self.adflow.constants.costfuncclqdot,
-            'cbend':self.adflow.constants.costfuncbendingcoef,
-            'sepsensor':self.adflow.constants.costfuncsepsensor,
-            'sepsensoravgx':self.adflow.constants.costfuncsepsensoravgx,
-            'sepsensoravgy':self.adflow.constants.costfuncsepsensoravgy,
-            'sepsensoravgz':self.adflow.constants.costfuncsepsensoravgz,
-            'cavitation':self.adflow.constants.costfunccavitation,
-            'mdot':self.adflow.constants.costfuncmdot,
-            'mavgptot':self.adflow.constants.costfuncmavgptot,
-            'aavgptot':self.adflow.constants.costfuncaavgptot,
-            'aavgps':self.adflow.constants.costfuncaavgps,
-            'mavgttot':self.adflow.constants.costfuncmavgttot,
-            'mavgps':self.adflow.constants.costfuncmavgps,
-            'mavgmn':self.adflow.constants.costfuncmavgmn,
-            'area':self.adflow.constants.costfuncarea,
-            'axismoment':self.adflow.constants.costfuncaxismoment,
-            'flowpower':self.adflow.constants.costfuncflowpower,
-            'forcexpressure':self.adflow.constants.costfuncforcexpressure,
-            'forceypressure':self.adflow.constants.costfuncforceypressure,
-            'forcezpressure':self.adflow.constants.costfuncforcezpressure,
-            'forcexviscous':self.adflow.constants.costfuncforcexviscous,
-            'forceyviscous':self.adflow.constants.costfuncforceyviscous,
-            'forcezviscous':self.adflow.constants.costfuncforcezviscous,
-            'forcexmomentum':self.adflow.constants.costfuncforcexmomentum,
-            'forceymomentum':self.adflow.constants.costfuncforceymomentum,
-            'forcezmomentum':self.adflow.constants.costfuncforcezmomentum,
-            'dragpressure':self.adflow.constants.costfuncdragpressure,
-            'dragviscous':self.adflow.constants.costfuncdragviscous,
-            'dragmomentum':self.adflow.constants.costfuncdragmomentum,
-            'liftpressure':self.adflow.constants.costfuncliftpressure,
-            'liftviscous':self.adflow.constants.costfuncliftviscous,
-            'liftmomentum':self.adflow.constants.costfuncliftmomentum,
-            'mavgvx': self.adflow.constants.costfuncmavgvx,
-            'mavgvy': self.adflow.constants.costfuncmavgvy,
-            'mavgvz': self.adflow.constants.costfuncmavgvz,
-            'cperror2':self.adflow.constants.costfunccperror2,
-            }
+            "lift": self.adflow.constants.costfunclift,
+            "drag": self.adflow.constants.costfuncdrag,
+            "cl": self.adflow.constants.costfuncliftcoef,
+            "cd": self.adflow.constants.costfuncdragcoef,
+            "clp": self.adflow.constants.costfuncliftcoefpressure,
+            "clv": self.adflow.constants.costfuncliftcoefviscous,
+            "clm": self.adflow.constants.costfuncliftcoefmomentum,
+            "cdp": self.adflow.constants.costfuncdragcoefpressure,
+            "cdv": self.adflow.constants.costfuncdragcoefviscous,
+            "cdm": self.adflow.constants.costfuncdragcoefmomentum,
+            "fx": self.adflow.constants.costfuncforcex,
+            "fy": self.adflow.constants.costfuncforcey,
+            "fz": self.adflow.constants.costfuncforcez,
+            "cfx": self.adflow.constants.costfuncforcexcoef,
+            "cfxp": self.adflow.constants.costfuncforcexcoefpressure,
+            "cfxv": self.adflow.constants.costfuncforcexcoefviscous,
+            "cfxm": self.adflow.constants.costfuncforcexcoefmomentum,
+            "cfy": self.adflow.constants.costfuncforceycoef,
+            "cfyp": self.adflow.constants.costfuncforceycoefpressure,
+            "cfyv": self.adflow.constants.costfuncforceycoefviscous,
+            "cfym": self.adflow.constants.costfuncforceycoefmomentum,
+            "cfz": self.adflow.constants.costfuncforcezcoef,
+            "cfzp": self.adflow.constants.costfuncforcezcoefpressure,
+            "cfzv": self.adflow.constants.costfuncforcezcoefviscous,
+            "cfzm": self.adflow.constants.costfuncforcezcoefmomentum,
+            "mx": self.adflow.constants.costfuncmomx,
+            "my": self.adflow.constants.costfuncmomy,
+            "mz": self.adflow.constants.costfuncmomz,
+            "cmx": self.adflow.constants.costfuncmomxcoef,
+            "cmy": self.adflow.constants.costfuncmomycoef,
+            "cmz": self.adflow.constants.costfuncmomzcoef,
+            "cm0": self.adflow.constants.costfunccm0,
+            "cmzalpha": self.adflow.constants.costfunccmzalpha,
+            "cmzalphadot": self.adflow.constants.costfunccmzalphadot,
+            "cl0": self.adflow.constants.costfunccl0,
+            "clalpha": self.adflow.constants.costfuncclalpha,
+            "clalphadot": self.adflow.constants.costfuncclalphadot,
+            "cfy0": self.adflow.constants.costfunccfy0,
+            "cfyalpha": self.adflow.constants.costfunccfyalpha,
+            "cfyalphddot": self.adflow.constants.costfunccfyalphadot,
+            "cd0": self.adflow.constants.costfunccd0,
+            "cdalpha": self.adflow.constants.costfunccdalpha,
+            "cdalphadot": self.adflow.constants.costfunccdalphadot,
+            "cmzq": self.adflow.constants.costfunccmzq,
+            "cmzqdot": self.adflow.constants.costfunccmzqdot,
+            "clq": self.adflow.constants.costfuncclq,
+            "clqdot": self.adflow.constants.costfuncclqdot,
+            "cbend": self.adflow.constants.costfuncbendingcoef,
+            "sepsensor": self.adflow.constants.costfuncsepsensor,
+            "sepsensoravgx": self.adflow.constants.costfuncsepsensoravgx,
+            "sepsensoravgy": self.adflow.constants.costfuncsepsensoravgy,
+            "sepsensoravgz": self.adflow.constants.costfuncsepsensoravgz,
+            "cavitation": self.adflow.constants.costfunccavitation,
+            "mdot": self.adflow.constants.costfuncmdot,
+            "mavgptot": self.adflow.constants.costfuncmavgptot,
+            "aavgptot": self.adflow.constants.costfuncaavgptot,
+            "aavgps": self.adflow.constants.costfuncaavgps,
+            "mavgttot": self.adflow.constants.costfuncmavgttot,
+            "mavgps": self.adflow.constants.costfuncmavgps,
+            "mavgmn": self.adflow.constants.costfuncmavgmn,
+            "area": self.adflow.constants.costfuncarea,
+            "axismoment": self.adflow.constants.costfuncaxismoment,
+            "flowpower": self.adflow.constants.costfuncflowpower,
+            "forcexpressure": self.adflow.constants.costfuncforcexpressure,
+            "forceypressure": self.adflow.constants.costfuncforceypressure,
+            "forcezpressure": self.adflow.constants.costfuncforcezpressure,
+            "forcexviscous": self.adflow.constants.costfuncforcexviscous,
+            "forceyviscous": self.adflow.constants.costfuncforceyviscous,
+            "forcezviscous": self.adflow.constants.costfuncforcezviscous,
+            "forcexmomentum": self.adflow.constants.costfuncforcexmomentum,
+            "forceymomentum": self.adflow.constants.costfuncforceymomentum,
+            "forcezmomentum": self.adflow.constants.costfuncforcezmomentum,
+            "dragpressure": self.adflow.constants.costfuncdragpressure,
+            "dragviscous": self.adflow.constants.costfuncdragviscous,
+            "dragmomentum": self.adflow.constants.costfuncdragmomentum,
+            "liftpressure": self.adflow.constants.costfuncliftpressure,
+            "liftviscous": self.adflow.constants.costfuncliftviscous,
+            "liftmomentum": self.adflow.constants.costfuncliftmomentum,
+            "mavgvx": self.adflow.constants.costfuncmavgvx,
+            "mavgvy": self.adflow.constants.costfuncmavgvy,
+            "mavgvz": self.adflow.constants.costfuncmavgvz,
+            "cperror2": self.adflow.constants.costfunccperror2,
+        }
 
         return iDV, BCDV, adflowCostFunctions
 
@@ -5457,7 +5665,10 @@ class ADFLOW(AeroSolver):
             elif turbModel == "Menter SST":
                 self.setOption("turbresscale", [1e3, 1e-6])
             else:
-                raise Error("Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"%(turbModel))
+                raise Error(
+                    "Turbulence model %-35s does not have default values specified for turbresscale. Specify turbresscale manually or update the python interface"
+                    % (turbModel)
+                )
 
     def _setUnsteadyFileParameters(self):
         """
@@ -5468,19 +5679,19 @@ class ADFLOW(AeroSolver):
         """
         # THIS DOES NOT CURRENTLY WORK DUE TO INTERNAL LOGIC. REFACTOR FORTRAN
         # Set parameters for outputing data
-        #if self.getOption('writevolumesolution'):
+        # if self.getOption('writevolumesolution'):
         #    self.adflow.monitor.writevolume = True
         #    self.adflow.monitor.writegrid = True
-        #else:
+        # else:
         #    self.adflow.monitor.writevolume = False
         #    self.adflow.monitor.writegrid = False
 
-        #if self.getOption('writesurfacesolution'):
+        # if self.getOption('writesurfacesolution'):
         #    self.adflow.monitor.writesurface = True
-        #else:
+        # else:
         #    self.adflow.monitor.writesurface = False
 
-        outputDir = self.getOption('outputDirectory')
+        outputDir = self.getOption("outputDirectory")
         baseName = self.curAP.name
 
         # Join to get the actual filename root
@@ -5503,14 +5714,14 @@ class ADFLOW(AeroSolver):
         # Set the filenames that will be used if the user forces a
         # write during a solution.
 
-        outputDir = self.getOption('outputDirectory')
+        outputDir = self.getOption("outputDirectory")
         baseName = self.curAP.name
         base = os.path.join(outputDir, baseName)
 
-        volFileName = base + '_forced_vol.cgns'
-        surfFileName = base + '_forced_surf.cgns'
-        liftFileName = base + '_forced_lift.dat'
-        sliceFileName = base + '_forced_slices.dat'
+        volFileName = base + "_forced_vol.cgns"
+        surfFileName = base + "_forced_surf.cgns"
+        liftFileName = base + "_forced_lift.dat"
+        sliceFileName = base + "_forced_slices.dat"
 
         self.adflow.inputio.forcedvolumefile = self._expandString(volFileName)
         self.adflow.inputio.forcedsurfacefile = self._expandString(surfFileName)
@@ -5522,27 +5733,33 @@ class ADFLOW(AeroSolver):
         postposted as long as possible and now it cannot wait any longer."""
 
         # Verify if we already have previous failures, such as negative volumes
-        self.adflow.killsignals.routinefailed = self.comm.allreduce(bool(self.adflow.killsignals.routinefailed), op=MPI.LOR)
+        self.adflow.killsignals.routinefailed = self.comm.allreduce(
+            bool(self.adflow.killsignals.routinefailed), op=MPI.LOR
+        )
 
         # Avoid zipper if we have failures or if it already exists
         if self.zipperCreated or self.adflow.killsignals.routinefailed:
             return
 
-        zipFam = self.getOption('zipperSurfaceFamily')
+        zipFam = self.getOption("zipperSurfaceFamily")
 
         if zipFam is None:
             # The user didn't tell us anything. So we will use all
             # walls. Remind the user what those are.
             zipperFamList = self.families[self.allWallsGroup]
             if self.myid == 0:
-                ADFLOWWarning("'zipperSurfaceFamily' option was not given. Using all "
-                              "wall boundary conditions for the zipper mesh.")
+                ADFLOWWarning(
+                    "'zipperSurfaceFamily' option was not given. Using all "
+                    "wall boundary conditions for the zipper mesh."
+                )
         else:
 
             if zipFam not in self.families:
-                raise Error("Trying to create the zipper mesh, but '%s' is not a "
-                            "family in the CGNS file or has not been added"
-                            " as a combination of families"%zipFam)
+                raise Error(
+                    "Trying to create the zipper mesh, but '%s' is not a "
+                    "family in the CGNS file or has not been added"
+                    " as a combination of families" % zipFam
+                )
             zipperFamList = self.families[zipFam]
 
         self.adflow.zippermesh.createzippermesh(zipperFamList)
@@ -5559,17 +5776,17 @@ class ADFLOW(AeroSolver):
     def _expandString(self, s):
         """Expand a supplied string 's' to be of the constants.maxstring
         length so we can set them in fortran"""
-        return s + ' '*(256-len(s))
+        return s + " " * (256 - len(s))
 
     def _createFortranStringArray(self, strList):
         """Setting arrays of strings in Fortran can be kinda nasty. This
         takesa list of strings and returns the array"""
 
-        arr = numpy.zeros((len(strList),self.adflow.constants.maxcgnsnamelen), dtype="str")
+        arr = numpy.zeros((len(strList), self.adflow.constants.maxcgnsnamelen), dtype="str")
         arr[:] = " "
-        for i,s in enumerate(strList):
+        for i, s in enumerate(strList):
             for j in range(len(s)):
-                arr[i,j] = s[j]
+                arr[i, j] = s[j]
 
         return arr
 
@@ -5593,42 +5810,41 @@ class ADFLOW(AeroSolver):
         conn = None
 
         if self.comm.rank == 0:
-            f = open(fileName, 'r')
-            nSurf = numpy.fromfile(f, 'int', count=1, sep=' ')[0]
-            sizes = numpy.fromfile(f, 'int', count=3*nSurf, sep=' ').reshape((nSurf, 3))
-            nPts = 0; nElem = 0
+            f = open(fileName, "r")
+            nSurf = numpy.fromfile(f, "int", count=1, sep=" ")[0]
+            sizes = numpy.fromfile(f, "int", count=3 * nSurf, sep=" ").reshape((nSurf, 3))
+            nPts = 0
+            nElem = 0
             for i in range(nSurf):
-                curSize = sizes[i, 0]*sizes[i, 1]
+                curSize = sizes[i, 0] * sizes[i, 1]
                 nPts += curSize
-                nElem += (sizes[i, 0]-1)*(sizes[i, 1]-1)
+                nElem += (sizes[i, 0] - 1) * (sizes[i, 1] - 1)
 
             # Generate the uncompacted point and connectivity list:
             pts = numpy.zeros((nPts, 3), dtype=self.dtype)
-            conn = numpy.zeros((nElem, 4),dtype=int)
+            conn = numpy.zeros((nElem, 4), dtype=int)
 
             nodeCount = 0
             elemCount = 0
             for iSurf in range(nSurf):
-                curSize = sizes[iSurf, 0]*sizes[iSurf, 1]
+                curSize = sizes[iSurf, 0] * sizes[iSurf, 1]
                 for idim in range(3):
-                    pts[nodeCount:nodeCount+curSize, idim] = (
-                        numpy.fromfile(f, 'float', curSize, sep=' '))
+                    pts[nodeCount : nodeCount + curSize, idim] = numpy.fromfile(f, "float", curSize, sep=" ")
                 # Add in the connectivity.
                 iSize = sizes[iSurf, 0]
-                for j in range(sizes[iSurf, 1]-1):
-                    for i in range(sizes[iSurf, 0]-1):
-                        conn[elemCount, 0] = nodeCount + j*iSize + i
-                        conn[elemCount, 1] = nodeCount + j*iSize + i+1
-                        conn[elemCount, 2] = nodeCount + (j+1)*iSize + i+1
-                        conn[elemCount, 3] = nodeCount + (j+1)*iSize + i
+                for j in range(sizes[iSurf, 1] - 1):
+                    for i in range(sizes[iSurf, 0] - 1):
+                        conn[elemCount, 0] = nodeCount + j * iSize + i
+                        conn[elemCount, 1] = nodeCount + j * iSize + i + 1
+                        conn[elemCount, 2] = nodeCount + (j + 1) * iSize + i + 1
+                        conn[elemCount, 3] = nodeCount + (j + 1) * iSize + i
                         elemCount += 1
                 nodeCount += curSize
 
             # Next reduce to eliminate the duplicates and form a
             # FE-like structure. This isn't strictly necessary but
             # cheap anyway
-            uniquePts, link, nUnique = self.adflow.utils.pointreduce(
-                pts.T, 1e-12)
+            uniquePts, link, nUnique = self.adflow.utils.pointreduce(pts.T, 1e-12)
             pts = uniquePts[:, 0:nUnique].T
 
             # Update the conn
@@ -5642,10 +5858,10 @@ class ADFLOW(AeroSolver):
             # since we actually will be doing the integration on a
             # triangles
             if convertToTris:
-                newConn = numpy.zeros((len(conn)*2, 3))
+                newConn = numpy.zeros((len(conn) * 2, 3))
                 for i in range(len(conn)):
-                    newConn[2*i  , :] = [conn[i, 0], conn[i, 1], conn[i, 2]]
-                    newConn[2*i+1, :] = [conn[i, 0], conn[i, 2], conn[i, 3]]
+                    newConn[2 * i, :] = [conn[i, 0], conn[i, 1], conn[i, 2]]
+                    newConn[2 * i + 1, :] = [conn[i, 0], conn[i, 2], conn[i, 3]]
 
                 conn = newConn
 
@@ -5695,6 +5911,7 @@ class adflowFlowCase(object):
     Class containing the data that ADflow requires to be saved to an
     aeroProblem to permit the analysis of multiple flow cases
     """
+
     def __init__(self):
         self.stateInfo = None
         self.adjoints = {}
@@ -5704,8 +5921,10 @@ class adflowFlowCase(object):
         self.disp = None
         self.oldWinf = None
 
+
 class adflowUserFunc(object):
     """Class containing the user-supplied function information"""
+
     def __init__(self, funcName, functions, callBack):
         self.funcName = funcName.lower()
         self.functions = functions
@@ -5718,8 +5937,9 @@ class adflowUserFunc(object):
         self.callBack(funcs)
         # Make sure the funcName was actually added:
         if self.funcName not in funcs:
-            raise Error("The func '%s' (must be lower-case) was "
-                        "not supplied from user-supplied function."%self.funcName)
+            raise Error(
+                "The func '%s' (must be lower-case) was " "not supplied from user-supplied function." % self.funcName
+            )
 
     def evalFunctionsSens(self):
         # We need to get the derivative of 'self.funcName' as a
@@ -5731,6 +5951,6 @@ class adflowUserFunc(object):
             funcs = refFuncs.copy()
             funcs[f] += 1e-40j
             self.callBack(funcs)
-            deriv[f] = numpy.imag(funcs[self.funcName])/1e-40
+            deriv[f] = numpy.imag(funcs[self.funcName]) / 1e-40
 
         return deriv

@@ -11,19 +11,25 @@ module actuatorRegionData
      ! The total number of cells included this proc has
      integer(kind=intType) :: nCellIDs
 
-     ! F is the total Force to be applied on this region
-     real(kind=realType) :: F(3)
+     ! the force vector to be applied on this region
+     ! this is equal to torque * axisVec
+     real(kind=realType) :: force(3)
 
-     ! T is the total torque to be applied on this regoin
-     real(kind=realType) :: T
+     ! magnitude of the total torque to be applied on this region
+     real(kind=realType) :: torque
+     ! vector that determines the direction of the applied torque
      real(kind=realType), dimension(3) :: axisVec
+
+     ! total heat flux to be added on this regoin
+     real(kind=realType) :: heat
+
      ! Volume is the total integrated volume of all cells (on all
      ! procs) included in this region
      real(kind=realType) :: volume
 
      integer(kind=intType), dimension(:), allocatable :: blkPtr
-     
-     ! Set the defaults for solution relaxation 
+
+     ! Set the defaults for solution relaxation
      real(kind=realType) :: relaxStart = -one
      real(kind=realType) :: relaxEnd = -one
   end type actuatorRegionType

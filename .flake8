@@ -1,0 +1,5 @@
+[flake8]
+exclude =
+    src_cs/build/complexify.py
+    adflow/pyWeightAndBalance.py
+    adflow/pyWingCG.py
