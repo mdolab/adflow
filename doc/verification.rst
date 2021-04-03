@@ -2,7 +2,7 @@
 
 Verification and Validation
 ===========================
-This guide is inteded to be used to document major ``ADflow`` cases for validation and verification purposes.
+This guide is intended to be used to document major ``ADflow`` cases for validation and verification purposes.
 
 
 Overset and Multiblock Meshes
@@ -12,7 +12,7 @@ Both overset and multiblock structured meshes were used in the comparison. The c
 
 Hydrofoils
 ----------
-The following paper :cite:`Garg2017a` couples hydrodynamic and structural analysis of hydrofoils and compares the resutls with experimental data.
+The following paper :cite:`Garg2017a` couples hydrodynamic and structural analysis of hydrofoils and compares the results with experimental data.
 The CFD analysis uses a low-speed preconditioner to solve hydrodynamic problems that have nearly incompressible flow. A NACA 0009 hydrofoil is analyzed at a Reynolds Number of ``Re = 1e6`` and compared to experimental results.
 Figure 3 of this paper shows the comparison between the predicted force and moment coefficients as well as predicted tip deflection of ``ADflow`` with the experimental results. 
 Figure 4 of this paper shows a drag convergence study and the results approach experimental values.
