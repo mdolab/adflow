@@ -37,6 +37,11 @@ adflow.egg-info/*
 
 tests/*.cgns
 tests/*out
+*.zipper
+
+# for the .cgnsTimestep... files
+tests/output_files/*.cgns*
+
 *.cgns
 *.txt
 *.dat
