@@ -41,5 +41,6 @@ class RegTest(unittest.TestCase):
         for test in tests:
             test_func = getattr(self, test)
             test_func()
+            self.handler.add_metadata(self.CFDSolver.options)
 
         self.handler.writeRef()
