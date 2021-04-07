@@ -137,6 +137,8 @@ class TestSolverCombos(reg_test_classes.RegTest):
         # do the solve
         self.CFDSolver(self.ap)
 
+        self.assert_solution_failure()
+
         # get residual norms
         r0, _, rfinal = self.CFDSolver.getResNorms()
 
@@ -191,6 +193,8 @@ class TestCmplxSolverCombos(reg_test_classes.RegTest):
 
         # do the solve
         self.CFDSolver(self.ap)
+
+        self.assert_solution_failure()
 
         # get residual norms
         r0, _, rfinal = self.CFDSolver.getResNorms()

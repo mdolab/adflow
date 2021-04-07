@@ -119,6 +119,10 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         # we have to rerun because restart file was ran with a different heat value
         self.CFDSolver(self.ap)
+
+        # check if solution failed
+        self.assert_solution_failure()
+
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
@@ -184,6 +188,10 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         # we have to rerun because restart file was ran with a different thrust value
         self.CFDSolver(self.ap)
+
+        # check if solution failed
+        self.assert_solution_failure()
+
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
@@ -387,11 +395,17 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
         self.CFDSolver(self.ap)
+
+        # check if solution failed
+        self.assert_solution_failure()
+
         funcs = {}
         funcsSens = {}
         # self.CFDSolver.evalFunctions(self.ap, funcs)
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power"])
         self.CFDSolver.evalFunctionsSens(self.ap, funcsSens, evalFuncs=["my_force", "cfd_force", "my_power"])
+        # check if adjoint failed
+        self.assert_adjoint_failure()
 
         #####################
         # TEST MOMENTUM ADDED
@@ -678,6 +692,10 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         self.ap.setDesignVars(aDV)
 
         self.CFDSolver(self.ap)
+
+        # check if solution failed
+        self.assert_solution_failure()
+
         funcs = {}
         funcsSensCS = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power"])
@@ -696,6 +714,9 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             # we can also not re-set the flow and call the solver a few times until complex parts converge
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver(self.ap)
+
+            # check if solution failed
+            self.assert_solution_failure()
 
             # save the new funcs in a dict
             funcs_plus[dv] = {}
@@ -762,6 +783,9 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
         # We dont need to rerun, restart file has the correct state. just run a residual
         self.CFDSolver(self.ap)
 
+        # check if solution failed
+        self.assert_solution_failure()
+
         funcs = {}
         funcsSensCS = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["flowpower_az"])
@@ -780,6 +804,9 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
             # we can also not re-set the flow and call the solver a few times until complex parts converge
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver(self.ap)
+
+            # check if solution failed
+            self.assert_solution_failure()
 
             # save the new funcs in a dict
             funcs_plus[dv] = {}

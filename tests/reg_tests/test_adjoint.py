@@ -230,6 +230,7 @@ class TestAdjoint(reg_test_classes.RegTest):
 
     def test_adjoint(self):
         utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
 
 
 @parameterized_class(test_params)
@@ -293,6 +294,7 @@ class TestCmplxStep(unittest.TestCase):
 
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver(self.ap, writeSolution=False)
+            self.assert_solution_failure()
 
             funcs = {}
             self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -331,6 +333,7 @@ class TestCmplxStep(unittest.TestCase):
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver.DVGeo.setDesignVars(xRef)
             self.CFDSolver(self.ap, writeSolution=False)
+            self.assert_solution_failure()
 
             funcs = {}
             self.CFDSolver.evalFunctions(self.ap, funcs)

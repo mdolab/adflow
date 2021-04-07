@@ -18,6 +18,16 @@ class RegTest(unittest.TestCase):
         train = "train" in self.id().split(".")[-1]
         self.handler = BaseRegTest(ref_file, train=train)
 
+    def assert_solution_failure(self):
+        funcs = {}
+        self.CFDSolver.checkSolutionFailure(self.ap, funcs)
+        self.assertFalse(funcs["fail"])
+
+    def assert_adjoint_failure(self):
+        funcsSens = {}
+        self.CFDSolver.checkAdjointFailure(self.ap, funcsSens)
+        self.assertFalse(funcsSens["fail"])
+
     def train(self):
         if not hasattr(self, "handler"):
             # return immediately when the train method is being called on the based class and NOT the
