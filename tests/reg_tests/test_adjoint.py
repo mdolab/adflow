@@ -280,6 +280,16 @@ class TestCmplxStep(unittest.TestCase):
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
 
+    def assert_solution_failure(self):
+        funcs = {}
+        self.CFDSolver.checkSolutionFailure(self.ap, funcs)
+        self.assertFalse(funcs["fail"])
+
+    def assert_adjoint_failure(self):
+        funcsSens = {}
+        self.CFDSolver.checkAdjointFailure(self.ap, funcsSens)
+        self.assertFalse(funcsSens["fail"])
+
     def cmplx_test_aero_dvs(self):
         if not hasattr(self, "name"):
             # return immediately when the setup method is being called on the based class and NOT the
