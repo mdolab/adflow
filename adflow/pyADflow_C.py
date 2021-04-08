@@ -37,8 +37,8 @@ class ADFLOW_C(ADFLOW):
         if "debug" in kwargs:
             debug = True
 
-        curDir = os.path.dirname(os.path.realpath(__file__))
-        self.adflow = MExt.MExt("libadflow_cs", [curDir], debug=debug)._module
+        curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+        self.adflow = MExt.MExt("libadflow_cs", curDir, debug=debug)._module
         ADFLOW.__init__(self, dtype="D", *args, **kwargs)
 
     def _on_setOption(self, name, value):

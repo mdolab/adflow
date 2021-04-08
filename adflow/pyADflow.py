@@ -87,8 +87,8 @@ class ADFLOW(AeroSolver):
         try:
             self.adflow
         except AttributeError:
-            curDir = os.path.dirname(os.path.realpath(__file__))
-            self.adflow = MExt.MExt("libadflow", [curDir], debug=debug)._module
+            curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+            self.adflow = MExt.MExt("libadflow", curDir, debug=debug)._module
 
         libLoadTime = time.time()
 
