@@ -1,5 +1,6 @@
 import unittest
 import os
+import copy
 from baseclasses import BaseRegTest
 
 # this is based on
@@ -41,6 +42,15 @@ class RegTest(unittest.TestCase):
         for test in tests:
             test_func = getattr(self, test)
             test_func()
-            self.handler.add_metadata(self.CFDSolver.options)
+
+            # Remove some path-related options before storing them as metadata
+            opts = copy.deepcopy(self.CFDSolver.getOptions())
+            for key in ["outputDirectory", "gridFile", "restartFile"]:
+                try:
+                    opts.pop(key)
+                except KeyError:
+                    pass
+
+            self.handler.add_metadata(opts)
 
         self.handler.writeRef()
