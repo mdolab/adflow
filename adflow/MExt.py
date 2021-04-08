@@ -1,5 +1,5 @@
 import tempfile
-import importlib
+from importlib.util import find_spec
 from pathlib import Path
 import os
 import shutil
@@ -15,7 +15,7 @@ def _tmp_pkg(tempDir):
     while True:
         path = tempfile.mkdtemp(dir=tempDir)
         name = os.path.basename(path)
-        spec = importlib.util.find_spec(name)
+        spec = find_spec(name)
         # None means the name was not found
         if spec is None:
             break
@@ -36,7 +36,7 @@ class MExt(object):
         self.name = libName
         self.debug = debug
         # first find the "real" module on the "real" syspath
-        spec = importlib.util.find_spec(packageName)
+        spec = find_spec(packageName)
         srcpath = os.path.join(spec.submodule_search_locations[0], f"{libName}.so")
         # now create a temp directory for the bogus package
         self._pkgname, self._pkgdir = _tmp_pkg(tmpdir)
