@@ -51,3 +51,12 @@ class RegTest(unittest.TestCase):
             self.handler.add_metadata(options)
 
         self.handler.writeRef()
+
+class CmplxRegTest(RegTest):
+    # all complex tests should inherit this class instead of RegTest
+
+    def train(self):
+        # we need to overload the train method to avoid deleting the json file contents
+        # training should not run with complex tests, it should only compare values
+        # against the trained values from real tests.
+        pass

@@ -252,6 +252,9 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         self.CFDSolver(self.ap)
 
+        # check if solution failed
+        self.assert_solution_failure()
+
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
@@ -449,6 +452,9 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         self.CFDSolver(self.ap)
 
+        # check if solution failed
+        self.assert_solution_failure()
+
         funcs = {}
         funcsSens = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -469,6 +475,9 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
         self.CFDSolver(self.ap)
+
+        # check if solution failed
+        self.assert_solution_failure()
 
         #############
         # TEST FWD AD
@@ -517,7 +526,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
             np.testing.assert_array_almost_equal(first, second, decimal=14)
 
 
-class ActuatorCmplxTests(reg_test_classes.RegTest):
+class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
     """
     Complex step tests for the actuator zone.
     """
@@ -609,12 +618,6 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
 
         # also add flowpower as an AZ function
         CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
-
-    def train(self):
-        # we need to overload the train method to avoid deleting the json file contents
-        # training should not run with complex tests, it should only compare values
-        # against the trained values from real tests.
-        pass
 
     def cmplx_test_actuator_adjoint(self):
         "Tests if the adjoint sensitivities are correct for the AZ DVs"

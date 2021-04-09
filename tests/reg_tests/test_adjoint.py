@@ -234,7 +234,7 @@ class TestAdjoint(reg_test_classes.RegTest):
 
 
 @parameterized_class(test_params)
-class TestCmplxStep(unittest.TestCase):
+class TestCmplxStep(reg_test_classes.CmplxRegTest):
     """
     Tests that sensitives calculated from solving an adjoint are correct.
     and jacobian vector products are accurate.
@@ -252,7 +252,7 @@ class TestCmplxStep(unittest.TestCase):
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
             return
-        reg_test_classes.RegTest.setUp(self)
+        super().setUp()
 
         options = copy.copy(adflowDefOpts)
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
@@ -279,16 +279,6 @@ class TestCmplxStep(unittest.TestCase):
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
-
-    def assert_solution_failure(self):
-        funcs = {}
-        self.CFDSolver.checkSolutionFailure(self.ap, funcs)
-        self.assertFalse(funcs["fail"])
-
-    def assert_adjoint_failure(self):
-        funcsSens = {}
-        self.CFDSolver.checkAdjointFailure(self.ap, funcsSens)
-        self.assertFalse(funcsSens["fail"])
 
     def cmplx_test_aero_dvs(self):
         if not hasattr(self, "name"):

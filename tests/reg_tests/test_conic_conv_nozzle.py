@@ -231,11 +231,6 @@ class TestSolveOverset(reg_test_classes.RegTest):
         self.CFDSolver.addFunction("aavgps", "downstream", name="aavgps_down")
         self.CFDSolver.addFunction("aavgps", "upstream", name="aavgps_up")
 
-    def assert_solution_failure(self):
-        funcs = {}
-        self.CFDSolver.checkSolutionFailure(self.ap, funcs)
-        self.assertFalse(funcs["fail"])
-
     def test_solve(self):
 
         # do the solve
