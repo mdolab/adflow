@@ -117,7 +117,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # need to set all dvs because training may re-use leftover dvs from a previous test
         self.ap.setDesignVars({"thrust": az_force, "heat": 0.0})
 
-        # we have to rerun because restart file was ran with a different heat value
         self.CFDSolver(self.ap)
 
         # check if solution failed
@@ -186,7 +185,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # need to set all dvs because training may re-use leftover dvs from a previous test
         self.ap.setDesignVars({"thrust": 0.0, "heat": az_heat})
 
-        # we have to rerun because restart file was ran with a different thrust value
         self.CFDSolver(self.ap)
 
         # check if solution failed
@@ -252,9 +250,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         az_heat = 1e5
         self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
-        # We dont need to rerun, restart file has the correct state. just run a residual
-        # self.CFDSolver(self.ap)
-        self.CFDSolver.getResidual(self.ap)
+        self.CFDSolver(self.ap)
 
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -451,9 +447,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         az_heat = 1e5
         self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
-        # We dont need to rerun, restart file has the correct state. just run a residual
-        # self.CFDSolver(self.ap)
-        self.CFDSolver.getResidual(self.ap)
+        self.CFDSolver(self.ap)
 
         funcs = {}
         funcsSens = {}
@@ -474,9 +468,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # need to set all dvs because training may re-use leftover dvs from a previous test
         self.ap.setDesignVars({"thrust": az_force, "heat": az_heat})
 
-        # We dont need to rerun, restart file has the correct state. just run a residual
-        # self.CFDSolver(self.ap)
-        self.CFDSolver.getResidual(self.ap)
+        self.CFDSolver(self.ap)
 
         #############
         # TEST FWD AD
@@ -617,6 +609,12 @@ class ActuatorCmplxTests(reg_test_classes.RegTest):
 
         # also add flowpower as an AZ function
         CFDSolver.addFunction("flowpower", "actuator_region", name="flowpower_az")
+
+    def train(self):
+        # we need to overload the train method to avoid deleting the json file contents
+        # training should not run with complex tests, it should only compare values
+        # against the trained values from real tests.
+        pass
 
     def cmplx_test_actuator_adjoint(self):
         "Tests if the adjoint sensitivities are correct for the AZ DVs"
