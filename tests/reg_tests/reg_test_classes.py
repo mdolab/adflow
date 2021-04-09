@@ -52,6 +52,7 @@ class RegTest(unittest.TestCase):
 
         self.handler.writeRef()
 
+
 class CmplxRegTest(RegTest):
     # all complex tests should inherit this class instead of RegTest
 
