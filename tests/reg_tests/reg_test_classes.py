@@ -43,13 +43,11 @@ class RegTest(unittest.TestCase):
             test_func = getattr(self, test)
             test_func()
 
-            # Remove some path-related options before storing them as metadata
+            # Convert paths to relative before storing the options
             opts = copy.deepcopy(self.CFDSolver.getOptions())
             for key in ["outputDirectory", "gridFile", "restartFile"]:
-                try:
-                    opts.pop(key)
-                except KeyError:
-                    pass
+                if key in opts and opts[key] is not None:
+                    opts[key] = os.path.relpath(opts[key])
 
             self.handler.add_metadata(opts)
 
