@@ -1,6 +1,5 @@
 import unittest
 import os
-import copy
 from baseclasses import BaseRegTest
 
 # this is based on
@@ -44,11 +43,11 @@ class RegTest(unittest.TestCase):
             test_func()
 
             # Convert paths to relative before storing the options
-            opts = copy.deepcopy(self.CFDSolver.getOptions())
+            options = self.CFDSolver.getOptions()
             for key in ["outputDirectory", "gridFile", "restartFile"]:
-                if key in opts and opts[key] is not None:
-                    opts[key] = os.path.relpath(opts[key])
+                if key in options and options[key] is not None:
+                    options[key] = os.path.relpath(options[key])
 
-            self.handler.add_metadata(opts)
+            self.handler.add_metadata(options)
 
         self.handler.writeRef()
