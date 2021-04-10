@@ -1458,5 +1458,4 @@ loopbocos:do mm=1,nbocos
       end do
     end do
   end subroutine sumdwandfw
-
 end module adjointextra_d
