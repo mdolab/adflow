@@ -13,6 +13,9 @@ refDir = os.path.join(baseDir, "refs")
 
 
 class RegTest(unittest.TestCase):
+    # if True, do not run the inherited train() function
+    no_train = False
+
     def setUp(self):
         ref_file = os.path.join(refDir, self.ref_file)
         train = "train" in self.id().split(".")[-1]
@@ -29,7 +32,7 @@ class RegTest(unittest.TestCase):
         self.assertFalse(funcsSens["fail"])
 
     def train(self):
-        if not hasattr(self, "handler"):
+        if not hasattr(self, "handler") or self.no_train:
             # return immediately when the train method is being called on the based class and NOT the
             # classes created using parametrized
             # this will happen when testing, but will hopefully be fixed down the line
@@ -53,11 +56,9 @@ class RegTest(unittest.TestCase):
         self.handler.writeRef()
 
 
+# all complex tests should inherit this class instead of RegTest
 class CmplxRegTest(RegTest):
-    # all complex tests should inherit this class instead of RegTest
 
-    def train(self):
-        # we need to overload the train method to avoid deleting the json file contents
-        # training should not run with complex tests, it should only compare values
-        # against the trained values from real tests.
-        pass
+    # complex tests have no training method, setting this attribute to True skips the train() function
+    # defined in the parent class
+    no_train = True
