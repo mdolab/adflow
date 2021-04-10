@@ -47,9 +47,12 @@ class RegTest(unittest.TestCase):
 
             # Convert paths to relative before storing the options
             options = self.CFDSolver.getOptions()
+            # this is the root adflow directory, we use this so paths are always taken
+            # relative to this instead of cwd
+            startDir = os.path.join(baseDir, "../../")
             for key in ["outputDirectory", "gridFile", "restartFile"]:
                 if key in options and options[key] is not None:
-                    options[key] = os.path.relpath(options[key])
+                    options[key] = os.path.relpath(options[key], start=startDir)
 
             self.handler.add_metadata(options)
 
