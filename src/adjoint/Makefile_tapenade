@@ -228,8 +228,8 @@ oversetUtilities%newtonUpdate(xCen, blk, frac) > \
 oversetUtilities%fracToWeights(frac) > \
 			      (weights) \
 \
-adjointExtra%slipVelocitiesFineLevel_block(gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, x) > \
-			      (bcdata.uslip,veldirfreestream,machgrid,gammainf, pinf, rhoinf, timeref, x) \
+solverutils%slipVelocitiesFineLevel_block(gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > \
+										 (gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) \
 \
 adjointExtra%normalvelocities_block(sfacei,sfacej,sfacek,si,sj,sk) > \
 			      (bcdata.rface, sfacei, sfacej, sfacek,si,sj,sk) \
