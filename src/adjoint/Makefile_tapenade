@@ -231,8 +231,8 @@ oversetUtilities%fracToWeights(frac) > \
 solverutils%slipVelocitiesFineLevel_block(gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > \
 										 (gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) \
 \
-adjointExtra%normalvelocities_block(sfacei,sfacej,sfacek,si,sj,sk) > \
-			      (bcdata.rface, sfacei, sfacej, sfacek,si,sj,sk) \
+solverutils%normalvelocities_block(sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) > \
+			      				  (sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) \
 \
 solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, gammainf, pinf, timeref, rhoinf, machgrid) > \
                                          (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, gammainf, pinf, timeref, rhoinf, machgrid) \

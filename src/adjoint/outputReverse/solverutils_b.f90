@@ -3552,6 +3552,484 @@ bocoloop2:do mm=1,nviscbocos
       end do bocoloop2
     end if
   end subroutine slipvelocitiesfinelevel_block
+!  differentiation of normalvelocities_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *sfacei *sfacej *sfacek *si
+!                *sj *sk *(*bcdata.rface)
+!   with respect to varying inputs: *sfacei *sfacej *sfacek *si
+!                *sj *sk *(*bcdata.rface)
+!   rw status of diff variables: *sfacei:incr *sfacej:incr *sfacek:incr
+!                *si:incr *sj:incr *sk:incr *(*bcdata.rface):in-out
+!   plus diff mem management of: sfacei:in sfacej:in sfacek:in
+!                si:in sj:in sk:in bcdata:in *bcdata.rface:in
+  subroutine normalvelocities_block_b(sps)
+!
+!       normalvelocitiesalllevels computes the normal grid
+!       velocities of some boundary faces of the moving blocks for
+!       spectral mode sps. all grid levels from ground level to the
+!       coarsest level are considered.
+!
+    use constants
+    use blockpointers, only : il, jl, kl, addgridvelocities, nbocos, &
+&   bcdata, bcdatad, sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, &
+&   bcfaceid, si, sid, sj, sjd, sk, skd
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: sps
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm
+    integer(kind=inttype) :: i, j
+    real(kind=realtype) :: weight, mult
+    real(kind=realtype) :: weightd
+    real(kind=realtype), dimension(:, :), pointer :: sface
+    real(kind=realtype), dimension(:, :, :), pointer :: ss
+    intrinsic associated
+    intrinsic sqrt
+    integer :: branch
+    integer :: ad_from
+    integer :: ad_to
+    integer :: ad_from0
+    integer :: ad_to0
+    integer :: ad_from1
+    integer :: ad_to1
+    integer :: ad_from2
+    integer :: ad_to2
+    integer :: ad_from3
+    integer :: ad_to3
+    integer :: ad_from4
+    integer :: ad_to4
+    integer :: ad_from5
+    integer :: ad_to5
+    integer :: ad_from6
+    integer :: ad_to6
+    integer :: ad_from7
+    integer :: ad_to7
+    integer :: ad_from8
+    integer :: ad_to8
+    integer :: ad_from9
+    integer :: ad_to9
+    integer :: ad_from10
+    integer :: ad_to10
+    real(kind=realtype) :: temp3
+    real(kind=realtype) :: temp2
+    real(kind=realtype) :: temp1
+    real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd4
+    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp
+    real(kind=realtype) :: temp7
+    real(kind=realtype) :: temp6
+    real(kind=realtype) :: temp5
+    real(kind=realtype) :: temp4
+! check for a moving block. as it is possible that in a
+! multidisicplinary environment additional grid velocities
+! are set, the test should be done on addgridvelocities
+! and not on blockismoving.
+    if (addgridvelocities) then
+!
+!             determine the normal grid velocities of the boundaries.
+!             as these values are based on the unit normal. a division
+!             by the length of the normal is needed.
+!             furthermore the boundary unit normals are per definition
+!             outward pointing, while on the imin, jmin and kmin
+!             boundaries the face normals are inward pointing. this
+!             is taken into account by the factor mult.
+!
+! loop over the boundary subfaces.
+bocoloop:do mm=1,nbocos
+! check whether rface is allocated.
+        if (associated(bcdata(mm)%rface)) then
+! determine the block face on which the subface is
+! located and set some variables accordingly.
+! the new procedure is less elegant as the previous one.
+! but the new stands up to tapenade.
+          if (bcfaceid(mm) .eq. imin) then
+            call pushreal8(mult)
+            mult = -one
+            ad_from0 = bcdata(mm)%jcbeg
+            do j=ad_from0,bcdata(mm)%jcend
+              ad_from = bcdata(mm)%icbeg
+              do i=ad_from,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                call pushreal8(weight)
+                weight = sqrt(si(1, i, j, 1)**2 + si(1, i, j, 2)**2 + si&
+&                 (1, i, j, 3)**2)
+                if (weight .gt. zero) then
+                  call pushreal8(weight)
+                  weight = mult/weight
+                  call pushcontrol1b(0)
+                else
+                  call pushcontrol1b(1)
+                end if
+              end do
+              call pushinteger4(i - 1)
+              call pushinteger4(ad_from)
+            end do
+            call pushinteger4(j - 1)
+            call pushinteger4(ad_from0)
+            call pushcontrol3b(7)
+          else if (bcfaceid(mm) .eq. imax) then
+            call pushreal8(mult)
+            mult = one
+            ad_from2 = bcdata(mm)%jcbeg
+            do j=ad_from2,bcdata(mm)%jcend
+              ad_from1 = bcdata(mm)%icbeg
+              do i=ad_from1,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                call pushreal8(weight)
+                weight = sqrt(si(il, i, j, 1)**2 + si(il, i, j, 2)**2 + &
+&                 si(il, i, j, 3)**2)
+                if (weight .gt. zero) then
+                  call pushreal8(weight)
+                  weight = mult/weight
+                  call pushcontrol1b(0)
+                else
+                  call pushcontrol1b(1)
+                end if
+              end do
+              call pushinteger4(i - 1)
+              call pushinteger4(ad_from1)
+            end do
+            call pushinteger4(j - 1)
+            call pushinteger4(ad_from2)
+            call pushcontrol3b(6)
+          else if (bcfaceid(mm) .eq. jmin) then
+            call pushreal8(mult)
+            mult = -one
+            ad_from4 = bcdata(mm)%jcbeg
+            do j=ad_from4,bcdata(mm)%jcend
+              ad_from3 = bcdata(mm)%icbeg
+              do i=ad_from3,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                call pushreal8(weight)
+                weight = sqrt(sj(i, 1, j, 1)**2 + sj(i, 1, j, 2)**2 + sj&
+&                 (i, 1, j, 3)**2)
+                if (weight .gt. zero) then
+                  call pushreal8(weight)
+                  weight = mult/weight
+                  call pushcontrol1b(0)
+                else
+                  call pushcontrol1b(1)
+                end if
+              end do
+              call pushinteger4(i - 1)
+              call pushinteger4(ad_from3)
+            end do
+            call pushinteger4(j - 1)
+            call pushinteger4(ad_from4)
+            call pushcontrol3b(5)
+          else if (bcfaceid(mm) .eq. jmax) then
+            call pushreal8(mult)
+            mult = one
+            ad_from6 = bcdata(mm)%jcbeg
+            do j=ad_from6,bcdata(mm)%jcend
+              ad_from5 = bcdata(mm)%icbeg
+              do i=ad_from5,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                call pushreal8(weight)
+                weight = sqrt(sj(i, jl, j, 1)**2 + sj(i, jl, j, 2)**2 + &
+&                 sj(i, jl, j, 3)**2)
+                if (weight .gt. zero) then
+                  call pushreal8(weight)
+                  weight = mult/weight
+                  call pushcontrol1b(0)
+                else
+                  call pushcontrol1b(1)
+                end if
+              end do
+              call pushinteger4(i - 1)
+              call pushinteger4(ad_from5)
+            end do
+            call pushinteger4(j - 1)
+            call pushinteger4(ad_from6)
+            call pushcontrol3b(4)
+          else if (bcfaceid(mm) .eq. kmin) then
+            call pushreal8(mult)
+            mult = -one
+            ad_from8 = bcdata(mm)%jcbeg
+            do j=ad_from8,bcdata(mm)%jcend
+              ad_from7 = bcdata(mm)%icbeg
+              do i=ad_from7,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                call pushreal8(weight)
+                weight = sqrt(sk(i, j, 1, 1)**2 + sk(i, j, 1, 2)**2 + sk&
+&                 (i, j, 1, 3)**2)
+                if (weight .gt. zero) then
+                  call pushreal8(weight)
+                  weight = mult/weight
+                  call pushcontrol1b(0)
+                else
+                  call pushcontrol1b(1)
+                end if
+              end do
+              call pushinteger4(i - 1)
+              call pushinteger4(ad_from7)
+            end do
+            call pushinteger4(j - 1)
+            call pushinteger4(ad_from8)
+            call pushcontrol3b(3)
+          else if (bcfaceid(mm) .eq. kmax) then
+            call pushreal8(mult)
+            mult = one
+            ad_from10 = bcdata(mm)%jcbeg
+            do j=ad_from10,bcdata(mm)%jcend
+              ad_from9 = bcdata(mm)%icbeg
+              do i=ad_from9,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                call pushreal8(weight)
+                weight = sqrt(sk(i, j, kl, 1)**2 + sk(i, j, kl, 2)**2 + &
+&                 sk(i, j, kl, 3)**2)
+                if (weight .gt. zero) then
+                  call pushreal8(weight)
+                  weight = mult/weight
+                  call pushcontrol1b(0)
+                else
+                  call pushcontrol1b(1)
+                end if
+              end do
+              call pushinteger4(i - 1)
+              call pushinteger4(ad_from9)
+            end do
+            call pushinteger4(j - 1)
+            call pushinteger4(ad_from10)
+            call pushcontrol3b(2)
+          else
+            call pushcontrol3b(1)
+          end if
+        else
+          call pushcontrol3b(0)
+        end if
+      end do bocoloop
+      do mm=nbocos,1,-1
+        call popcontrol3b(branch)
+        if (branch .lt. 4) then
+          if (branch .ge. 2) then
+            if (branch .eq. 2) then
+              call popinteger4(ad_from10)
+              call popinteger4(ad_to10)
+              do j=ad_to10,ad_from10,-1
+                call popinteger4(ad_from9)
+                call popinteger4(ad_to9)
+                do i=ad_to9,ad_from9,-1
+                  weightd = sfacek(i, j, kl)*bcdatad(mm)%rface(i, j)
+                  sfacekd(i, j, kl) = sfacekd(i, j, kl) + weight*bcdatad&
+&                   (mm)%rface(i, j)
+                  bcdatad(mm)%rface(i, j) = 0.0_8
+                  call popcontrol1b(branch)
+                  if (branch .eq. 0) then
+                    call popreal8(weight)
+                    weightd = -(mult*weightd/weight**2)
+                  end if
+                  call popreal8(weight)
+                  temp7 = sk(i, j, kl, 3)
+                  temp6 = sk(i, j, kl, 2)
+                  temp5 = sk(i, j, kl, 1)
+                  if (temp5**2 + temp6**2 + temp7**2 .eq. 0.0_8) then
+                    tempd4 = 0.0
+                  else
+                    tempd4 = weightd/(2.0*sqrt(temp5**2+temp6**2+temp7**&
+&                     2))
+                  end if
+                  skd(i, j, kl, 1) = skd(i, j, kl, 1) + 2*temp5*tempd4
+                  skd(i, j, kl, 2) = skd(i, j, kl, 2) + 2*temp6*tempd4
+                  skd(i, j, kl, 3) = skd(i, j, kl, 3) + 2*temp7*tempd4
+                end do
+              end do
+              call popreal8(mult)
+            else
+              call popinteger4(ad_from8)
+              call popinteger4(ad_to8)
+              do j=ad_to8,ad_from8,-1
+                call popinteger4(ad_from7)
+                call popinteger4(ad_to7)
+                do i=ad_to7,ad_from7,-1
+                  weightd = sfacek(i, j, 1)*bcdatad(mm)%rface(i, j)
+                  sfacekd(i, j, 1) = sfacekd(i, j, 1) + weight*bcdatad(&
+&                   mm)%rface(i, j)
+                  bcdatad(mm)%rface(i, j) = 0.0_8
+                  call popcontrol1b(branch)
+                  if (branch .eq. 0) then
+                    call popreal8(weight)
+                    weightd = -(mult*weightd/weight**2)
+                  end if
+                  call popreal8(weight)
+                  if (sk(i, j, 1, 1)**2 + sk(i, j, 1, 2)**2 + sk(i, j, 1&
+&                     , 3)**2 .eq. 0.0_8) then
+                    tempd3 = 0.0
+                  else
+                    tempd3 = weightd/(2.0*sqrt(sk(i, j, 1, 1)**2+sk(i, j&
+&                     , 1, 2)**2+sk(i, j, 1, 3)**2))
+                  end if
+                  skd(i, j, 1, 1) = skd(i, j, 1, 1) + 2*sk(i, j, 1, 1)*&
+&                   tempd3
+                  skd(i, j, 1, 2) = skd(i, j, 1, 2) + 2*sk(i, j, 1, 2)*&
+&                   tempd3
+                  skd(i, j, 1, 3) = skd(i, j, 1, 3) + 2*sk(i, j, 1, 3)*&
+&                   tempd3
+                end do
+              end do
+              call popreal8(mult)
+            end if
+          end if
+        else if (branch .lt. 6) then
+          if (branch .eq. 4) then
+            call popinteger4(ad_from6)
+            call popinteger4(ad_to6)
+            do j=ad_to6,ad_from6,-1
+              call popinteger4(ad_from5)
+              call popinteger4(ad_to5)
+              do i=ad_to5,ad_from5,-1
+                weightd = sfacej(i, jl, j)*bcdatad(mm)%rface(i, j)
+                sfacejd(i, jl, j) = sfacejd(i, jl, j) + weight*bcdatad(&
+&                 mm)%rface(i, j)
+                bcdatad(mm)%rface(i, j) = 0.0_8
+                call popcontrol1b(branch)
+                if (branch .eq. 0) then
+                  call popreal8(weight)
+                  weightd = -(mult*weightd/weight**2)
+                end if
+                call popreal8(weight)
+                temp4 = sj(i, jl, j, 3)
+                temp3 = sj(i, jl, j, 2)
+                temp2 = sj(i, jl, j, 1)
+                if (temp2**2 + temp3**2 + temp4**2 .eq. 0.0_8) then
+                  tempd2 = 0.0
+                else
+                  tempd2 = weightd/(2.0*sqrt(temp2**2+temp3**2+temp4**2)&
+&                   )
+                end if
+                sjd(i, jl, j, 1) = sjd(i, jl, j, 1) + 2*temp2*tempd2
+                sjd(i, jl, j, 2) = sjd(i, jl, j, 2) + 2*temp3*tempd2
+                sjd(i, jl, j, 3) = sjd(i, jl, j, 3) + 2*temp4*tempd2
+              end do
+            end do
+            call popreal8(mult)
+          else
+            call popinteger4(ad_from4)
+            call popinteger4(ad_to4)
+            do j=ad_to4,ad_from4,-1
+              call popinteger4(ad_from3)
+              call popinteger4(ad_to3)
+              do i=ad_to3,ad_from3,-1
+                weightd = sfacej(i, 1, j)*bcdatad(mm)%rface(i, j)
+                sfacejd(i, 1, j) = sfacejd(i, 1, j) + weight*bcdatad(mm)&
+&                 %rface(i, j)
+                bcdatad(mm)%rface(i, j) = 0.0_8
+                call popcontrol1b(branch)
+                if (branch .eq. 0) then
+                  call popreal8(weight)
+                  weightd = -(mult*weightd/weight**2)
+                end if
+                call popreal8(weight)
+                if (sj(i, 1, j, 1)**2 + sj(i, 1, j, 2)**2 + sj(i, 1, j, &
+&                   3)**2 .eq. 0.0_8) then
+                  tempd1 = 0.0
+                else
+                  tempd1 = weightd/(2.0*sqrt(sj(i, 1, j, 1)**2+sj(i, 1, &
+&                   j, 2)**2+sj(i, 1, j, 3)**2))
+                end if
+                sjd(i, 1, j, 1) = sjd(i, 1, j, 1) + 2*sj(i, 1, j, 1)*&
+&                 tempd1
+                sjd(i, 1, j, 2) = sjd(i, 1, j, 2) + 2*sj(i, 1, j, 2)*&
+&                 tempd1
+                sjd(i, 1, j, 3) = sjd(i, 1, j, 3) + 2*sj(i, 1, j, 3)*&
+&                 tempd1
+              end do
+            end do
+            call popreal8(mult)
+          end if
+        else if (branch .eq. 6) then
+          call popinteger4(ad_from2)
+          call popinteger4(ad_to2)
+          do j=ad_to2,ad_from2,-1
+            call popinteger4(ad_from1)
+            call popinteger4(ad_to1)
+            do i=ad_to1,ad_from1,-1
+              weightd = sfacei(il, i, j)*bcdatad(mm)%rface(i, j)
+              sfaceid(il, i, j) = sfaceid(il, i, j) + weight*bcdatad(mm)&
+&               %rface(i, j)
+              bcdatad(mm)%rface(i, j) = 0.0_8
+              call popcontrol1b(branch)
+              if (branch .eq. 0) then
+                call popreal8(weight)
+                weightd = -(mult*weightd/weight**2)
+              end if
+              call popreal8(weight)
+              temp1 = si(il, i, j, 3)
+              temp0 = si(il, i, j, 2)
+              temp = si(il, i, j, 1)
+              if (temp**2 + temp0**2 + temp1**2 .eq. 0.0_8) then
+                tempd0 = 0.0
+              else
+                tempd0 = weightd/(2.0*sqrt(temp**2+temp0**2+temp1**2))
+              end if
+              sid(il, i, j, 1) = sid(il, i, j, 1) + 2*temp*tempd0
+              sid(il, i, j, 2) = sid(il, i, j, 2) + 2*temp0*tempd0
+              sid(il, i, j, 3) = sid(il, i, j, 3) + 2*temp1*tempd0
+            end do
+          end do
+          call popreal8(mult)
+        else
+          call popinteger4(ad_from0)
+          call popinteger4(ad_to0)
+          do j=ad_to0,ad_from0,-1
+            call popinteger4(ad_from)
+            call popinteger4(ad_to)
+            do i=ad_to,ad_from,-1
+              weightd = sfacei(1, i, j)*bcdatad(mm)%rface(i, j)
+              sfaceid(1, i, j) = sfaceid(1, i, j) + weight*bcdatad(mm)%&
+&               rface(i, j)
+              bcdatad(mm)%rface(i, j) = 0.0_8
+              call popcontrol1b(branch)
+              if (branch .eq. 0) then
+                call popreal8(weight)
+                weightd = -(mult*weightd/weight**2)
+              end if
+              call popreal8(weight)
+              if (si(1, i, j, 1)**2 + si(1, i, j, 2)**2 + si(1, i, j, 3)&
+&                 **2 .eq. 0.0_8) then
+                tempd = 0.0
+              else
+                tempd = weightd/(2.0*sqrt(si(1, i, j, 1)**2+si(1, i, j, &
+&                 2)**2+si(1, i, j, 3)**2))
+              end if
+              sid(1, i, j, 1) = sid(1, i, j, 1) + 2*si(1, i, j, 1)*tempd
+              sid(1, i, j, 2) = sid(1, i, j, 2) + 2*si(1, i, j, 2)*tempd
+              sid(1, i, j, 3) = sid(1, i, j, 3) + 2*si(1, i, j, 3)*tempd
+            end do
+          end do
+          call popreal8(mult)
+        end if
+      end do
+    else
+! block is not moving. loop over the boundary faces and set
+! the normal grid velocity to zero if allocated.
+      do mm=1,nbocos
+        if (associated(bcdata(mm)%rface)) then
+          call pushcontrol1b(1)
+        else
+          call pushcontrol1b(0)
+        end if
+      end do
+      do mm=nbocos,1,-1
+        call popcontrol1b(branch)
+        if (branch .ne. 0) bcdatad(mm)%rface = 0.0_8
+      end do
+    end if
+  end subroutine normalvelocities_block_b
   subroutine normalvelocities_block(sps)
 !
 !       normalvelocitiesalllevels computes the normal grid
@@ -3597,45 +4075,93 @@ bocoloop:do mm=1,nbocos
         if (associated(bcdata(mm)%rface)) then
 ! determine the block face on which the subface is
 ! located and set some variables accordingly.
-          select case  (bcfaceid(mm)) 
-          case (imin) 
+! the new procedure is less elegant as the previous one.
+! but the new stands up to tapenade.
+          if (bcfaceid(mm) .eq. imin) then
             mult = -one
-            ss => si(1, :, :, :)
-            sface => sfacei(1, :, :)
-          case (imax) 
-            mult = one
-            ss => si(il, :, :, :)
-            sface => sfacei(il, :, :)
-          case (jmin) 
-            mult = -one
-            ss => sj(:, 1, :, :)
-            sface => sfacej(:, 1, :)
-          case (jmax) 
-            mult = one
-            ss => sj(:, jl, :, :)
-            sface => sfacej(:, jl, :)
-          case (kmin) 
-            mult = -one
-            ss => sk(:, :, 1, :)
-            sface => sfacek(:, :, 1)
-          case (kmax) 
-            mult = one
-            ss => sk(:, :, kl, :)
-            sface => sfacek(:, :, kl)
-          end select
-! loop over the faces of the subface.
-          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
-            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
 ! compute the inverse of the length of the normal
 ! vector and possibly correct for inward pointing.
-              weight = sqrt(ss(i, j, 1)**2 + ss(i, j, 2)**2 + ss(i, j, 3&
-&               )**2)
-              if (weight .gt. zero) weight = mult/weight
+                weight = sqrt(si(1, i, j, 1)**2 + si(1, i, j, 2)**2 + si&
+&                 (1, i, j, 3)**2)
+                if (weight .gt. zero) weight = mult/weight
 ! compute the normal velocity based on the outward
 ! pointing unit normal.
-              bcdata(mm)%rface(i, j) = weight*sface(i, j)
+                bcdata(mm)%rface(i, j) = weight*sfacei(1, i, j)
+              end do
             end do
-          end do
+          else if (bcfaceid(mm) .eq. imax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                weight = sqrt(si(il, i, j, 1)**2 + si(il, i, j, 2)**2 + &
+&                 si(il, i, j, 3)**2)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacei(il, i, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. jmin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                weight = sqrt(sj(i, 1, j, 1)**2 + sj(i, 1, j, 2)**2 + sj&
+&                 (i, 1, j, 3)**2)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacej(i, 1, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. jmax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                weight = sqrt(sj(i, jl, j, 1)**2 + sj(i, jl, j, 2)**2 + &
+&                 sj(i, jl, j, 3)**2)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacej(i, jl, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. kmin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                weight = sqrt(sk(i, j, 1, 1)**2 + sk(i, j, 1, 2)**2 + sk&
+&                 (i, j, 1, 3)**2)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacek(i, j, 1)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. kmax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                weight = sqrt(sk(i, j, kl, 1)**2 + sk(i, j, kl, 2)**2 + &
+&                 sk(i, j, kl, 3)**2)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacek(i, j, kl)
+              end do
+            end do
+          end if
         end if
       end do bocoloop
     else

@@ -1907,48 +1907,136 @@ contains
 
              ! Determine the block face on which the subface is
              ! located and set some variables accordingly.
+             
+             ! The new procedure is less elegant as the previous one.
+             ! But the new stands up to Tapenade.
+             if (BCFaceID(mm) == iMin) then
 
-             select case (BCFaceID(mm))
+               mult = -one
 
-             case (iMin)
-                mult = -one
-                ss => si(1,:,:,:);  sFace => sFaceI(1,:,:)
-             case (iMax)
-                mult = one
-                ss => si(il,:,:,:); sFace => sFaceI(il,:,:)
-             case (jMin)
-                mult = -one
-                ss => sj(:,1,:,:);  sFace => sFaceJ(:,1,:)
-             case (jMax)
-                mult = one
-                ss => sj(:,jl,:,:); sFace => sFaceJ(:,jl,:)
-             case (kMin)
-                mult = -one
-                ss => sk(:,:,1,:);  sFace => sFaceK(:,:,1)
-             case (kMax)
-                mult = one
-                ss => sk(:,:,kl,:); sFace => sFaceK(:,:,kl)
+               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                  do i=BCData(mm)%icBeg, BCData(mm)%icEnd
 
-             end select
+                     ! Compute the inverse of the length of the normal
+                     ! vector and possibly correct for inward pointing.
 
-             ! Loop over the faces of the subface.
+                     weight = sqrt(si(1,i,j,1)**2 + si(1,i,j,2)**2 &
+                        +      si(1,i,j,3)**2)
+                     if(weight > zero) weight = mult/weight
 
-             do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
-                do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+                     ! Compute the normal velocity based on the outward
+                     ! pointing unit normal.
 
-                   ! Compute the inverse of the length of the normal
-                   ! vector and possibly correct for inward pointing.
+                     BCData(mm)%rFace(i,j) = weight*sFaceI(1,i,j)
+                  enddo
+               enddo
 
-                   weight = sqrt(ss(i,j,1)**2 + ss(i,j,2)**2 &
-                        +      ss(i,j,3)**2)
-                   if(weight > zero) weight = mult/weight
+             else if (BCFaceID(mm) == iMax) then 
 
-                   ! Compute the normal velocity based on the outward
-                   ! pointing unit normal.
+               mult = one
 
-                   BCData(mm)%rFace(i,j) = weight*sFace(i,j)
-                enddo
-             enddo
+               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                  do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+
+                     ! Compute the inverse of the length of the normal
+                     ! vector and possibly correct for inward pointing.
+
+                     weight = sqrt(si(il,i,j,1)**2 + si(il,i,j,2)**2 &
+                        +      si(il,i,j,3)**2)
+                     if(weight > zero) weight = mult/weight
+
+                     ! Compute the normal velocity based on the outward
+                     ! pointing unit normal.
+
+                     BCData(mm)%rFace(i,j) = weight*sFaceI(il,i,j)
+                  enddo
+               enddo
+
+             else if (BCFaceID(mm) == jMin) then 
+
+               mult = -one
+
+               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                  do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+
+                     ! Compute the inverse of the length of the normal
+                     ! vector and possibly correct for inward pointing.
+
+                     weight = sqrt(sj(i,1,j,1)**2 + sj(i,1,j,2)**2 &
+                        +      sj(i,1,j,3)**2)
+                     if(weight > zero) weight = mult/weight
+
+                     ! Compute the normal velocity based on the outward
+                     ! pointing unit normal.
+
+                     BCData(mm)%rFace(i,j) = weight*sFaceJ(i,1,j)
+                  enddo
+               enddo
+
+             else if (BCFaceID(mm) == jMax) then 
+
+               mult = one
+
+               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                  do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+
+                     ! Compute the inverse of the length of the normal
+                     ! vector and possibly correct for inward pointing.
+
+                     weight = sqrt(sj(i,jl,j,1)**2 + sj(i,jl,j,2)**2 &
+                        +      sj(i,jl,j,3)**2)
+                     if(weight > zero) weight = mult/weight
+
+                     ! Compute the normal velocity based on the outward
+                     ! pointing unit normal.
+
+                     BCData(mm)%rFace(i,j) = weight*sFaceJ(i,jl,j)
+                  enddo
+               enddo
+
+             else if (BCFaceID(mm) == kMin) then 
+
+               mult = -one
+
+               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                  do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+
+                     ! Compute the inverse of the length of the normal
+                     ! vector and possibly correct for inward pointing.
+
+                     weight = sqrt(sk(i,j,1,1)**2 + sk(i,j,1,2)**2 &
+                        +      sk(i,j,1,3)**2)
+                     if(weight > zero) weight = mult/weight
+
+                     ! Compute the normal velocity based on the outward
+                     ! pointing unit normal.
+
+                     BCData(mm)%rFace(i,j) = weight*sFaceK(i,j,1)
+                  enddo
+               enddo
+
+             else if (BCFaceID(mm) == kMax) then 
+
+               mult = one
+
+               do j=BCData(mm)%jcBeg, BCData(mm)%jcEnd
+                  do i=BCData(mm)%icBeg, BCData(mm)%icEnd
+
+                     ! Compute the inverse of the length of the normal
+                     ! vector and possibly correct for inward pointing.
+
+                     weight = sqrt(sk(i,j,kl,1)**2 + sk(i,j,kl,2)**2 &
+                        +      sk(i,j,kl,3)**2)
+                     if(weight > zero) weight = mult/weight
+
+                     ! Compute the normal velocity based on the outward
+                     ! pointing unit normal.
+
+                     BCData(mm)%rFace(i,j) = weight*sFaceK(i,j,kl)
+                  enddo
+               enddo
+
+             endif
 
           endif testAssoc
        enddo bocoLoop
