@@ -56,6 +56,7 @@ class TestSolve(reg_test_classes.RegTest):
     def test_solve(self):
 
         self.CFDSolver.solveCL(self.ap, 0.475, alpha0=1.20, delta=0.025, tol=1e-4, autoReset=False)
+        self.assert_solution_failure()
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["cl"])
         self.handler.root_add_val("CL-CL*", funcs["mdo_tutorial_cl"] - 0.475, rtol=1e-4, atol=1e-4)
