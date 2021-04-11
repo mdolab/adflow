@@ -230,10 +230,11 @@ class TestAdjoint(reg_test_classes.RegTest):
 
     def test_adjoint(self):
         utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
 
 
 @parameterized_class(test_params)
-class TestCmplxStep(unittest.TestCase):
+class TestCmplxStep(reg_test_classes.CmplxRegTest):
     """
     Tests that sensitives calculated from solving an adjoint are correct.
     and jacobian vector products are accurate.
@@ -251,7 +252,7 @@ class TestCmplxStep(unittest.TestCase):
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
             return
-        reg_test_classes.RegTest.setUp(self)
+        super().setUp()
 
         options = copy.copy(adflowDefOpts)
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
@@ -293,6 +294,7 @@ class TestCmplxStep(unittest.TestCase):
 
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver(self.ap, writeSolution=False)
+            self.assert_solution_failure()
 
             funcs = {}
             self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -331,6 +333,7 @@ class TestCmplxStep(unittest.TestCase):
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver.DVGeo.setDesignVars(xRef)
             self.CFDSolver(self.ap, writeSolution=False)
+            self.assert_solution_failure()
 
             funcs = {}
             self.CFDSolver.evalFunctions(self.ap, funcs)

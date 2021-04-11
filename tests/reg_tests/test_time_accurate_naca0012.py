@@ -91,6 +91,9 @@ class TestSolve(reg_test_classes.RegTest):
         # do the solve
         self.CFDSolver(self.ap)
 
+        # check if the solution failed
+        self.assert_solution_failure()
+
         # check its accuracy
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-8)
 
