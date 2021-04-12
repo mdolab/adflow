@@ -47,8 +47,8 @@ class OversetCheck(ADFLOW):
 
         # Load the compiled module using MExt, allowing multiple
         # imports
-        curDir = os.path.dirname(os.path.realpath(__file__))
-        self.adflow = MExt.MExt("libadflow", [curDir], debug=debug)._module
+        curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
+        self.adflow = MExt.MExt("libadflow", curDir, debug=debug)._module
 
         # Information for base class:
         name = "ADFLOW"

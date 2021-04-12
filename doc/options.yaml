@@ -104,7 +104,7 @@ isosurface:
 
 isoVariables:
   desc: >
-    The state variables to be included on the isosurfaces requested with the ``isosurface`` option.
+    The state variables to be included on the isosurfaces requested with the :py:data:`isosurface` option.
 
 viscousSurfaceVelocities:
   desc: >
@@ -127,7 +127,7 @@ discretization:
 coarseDiscretization:
   desc: >
     Set the discretization method for the coarse grid.
-    Generally should be the same as the ``discretization`` option.
+    Generally should be the same as the :py:data:`discretization` option.
   central plus scalar dissipation: Uses a central finite volume scheme with JST scalar dissipation.
   central plus matrix dissipation: >
     Uses a central finite volume scheme with JST matrix dissipation.
@@ -317,7 +317,7 @@ infChangeCorrection:
     As a result, the solver logic can do weird stuff because it is often based on the L2 norm of the residual.
     If this option is set to True, we do a simple linear adjustment of every velocity vector in the solution with the same change in alpha.
     As a result, the residuals jump up and the solver logic works as designed.
-    This supersedes the ``RKReset`` approach.
+    This supersedes the :py:data:`RKReset` approach.
 
 cavitationNumber:
   desc: >
@@ -402,7 +402,7 @@ smoothParameter:
 CFLLimit:
   desc: >
     The maximum CFL that can be run without residual smoothing.
-    If the actual CFL is lower than this, no smoothing will be applied, regardless of the ``resAveraging`` option.
+    If the actual CFL is lower than this, no smoothing will be applied, regardless of the :py:data:`resAveraging` option.
 
 useBlockettes:
   desc: >
@@ -568,7 +568,7 @@ coupledSolution:
 timeIntervals:
   desc: >
     The number of "spectral instances" to use for a time spectral simulation.
-    This option is only meaningful when ``equationMode`` is ``time spectral``.
+    This option is only meaningful when :py:data:`equationMode` is ``time spectral``.
 
 alphaMode:
   desc: >
@@ -650,7 +650,7 @@ NKSubspaceSize:
 NKLinearSolveTol:
   desc: >
     The initial tolerance to solve the linear system resulting from the Newton approximation.
-    This value is only used for the first iteration if ``NKUseEW`` is True.
+    This value is only used for the first iteration if :py:data:`NKUseEW` is True.
 
 NKUseEW:
   desc: >
@@ -726,12 +726,12 @@ NKFixedStep:
 
 RKReset:
   desc: >
-    Option to run ``nRKReset`` Runge-Kutta startup iterations when using the NK solver and restarting from a previously converged solution.
+    Option to run :py:data:`nRKReset` Runge-Kutta startup iterations when using the NK solver and restarting from a previously converged solution.
     This allows the residual to increase and prevents the NK solver from stalling.
 
 nRKReset:
   desc: >
-    The number of Runge-Kutta startup iterations to run when ``RKReset`` is True.
+    The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
 
 AGMGLevels:
   desc: >
@@ -780,11 +780,11 @@ ANKLinResMax:
 
 ANKASMOverlap:
   desc: >
-    Similar to the ``NKASMOverlap`` option but for the ANK solver.
+    Similar to the :py:data:`NKASMOverlap` option but for the ANK solver.
 
 ANKPCILUFill:
   desc: >
-    Similar to the ``NKPCILUFill`` option but for the ANK solver.
+    Similar to the :py:data:`NKPCILUFill` option but for the ANK solver.
 
 ANKJacobianLag:
   desc: >
@@ -795,11 +795,11 @@ ANKJacobianLag:
 
 ANKInnerPreconIts:
   desc: >
-    Similar to the ``NKInnerPreconIts`` option but for the ANK solver.
+    Similar to the :py:data:`NKInnerPreconIts` option but for the ANK solver.
 
 ANKOuterPreconIts:
   desc: >
-    Similar to the ``NKOuterPreconIts`` option but for the ANK solver.
+    Similar to the :py:data:`NKOuterPreconIts` option but for the ANK solver.
 
 ANKCFL0:
   desc: >

@@ -137,6 +137,8 @@ class TestSolverCombos(reg_test_classes.RegTest):
         # do the solve
         self.CFDSolver(self.ap)
 
+        self.assert_solution_failure()
+
         # get residual norms
         r0, _, rfinal = self.CFDSolver.getResNorms()
 
@@ -149,7 +151,7 @@ class TestSolverCombos(reg_test_classes.RegTest):
 
 # we do the same tests as the previous one but with complex mode here
 @parameterized_class(solver_combo_params)
-class TestCmplxSolverCombos(reg_test_classes.RegTest):
+class TestCmplxSolverCombos(reg_test_classes.CmplxRegTest):
 
     # TODO add a convergence test with a complex perturbed DV also
 
@@ -191,6 +193,8 @@ class TestCmplxSolverCombos(reg_test_classes.RegTest):
 
         # do the solve
         self.CFDSolver(self.ap)
+
+        self.assert_solution_failure()
 
         # get residual norms
         r0, _, rfinal = self.CFDSolver.getResNorms()
