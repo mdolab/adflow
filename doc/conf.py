@@ -27,3 +27,11 @@ extensions.extend(["numpydoc"])
 
 # mock import for autodoc
 autodoc_mock_imports = ["numpy", "mpi4py", "petsc4py", "baseclasses", "adflow.om_adflow"]
+
+# bibtex sources
+bibtex_bibfiles.extend(["citations.bib"])
+
+# intersphinx
+intersphinx_mapping = {
+    "mach-aero": (f"https://mdolab-mach-aero.readthedocs-hosted.com/en/latest", None),
+}

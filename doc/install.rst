@@ -2,8 +2,8 @@
 
 Installation
 ============
-All the core computations in ``ADflow`` are coded in Fortran.
-It is therefore necessary to build this library before using ``ADflow``.
+All the core computations in ADflow are coded in Fortran.
+It is therefore necessary to build this library before using ADflow.
 
 Requirements
 ------------

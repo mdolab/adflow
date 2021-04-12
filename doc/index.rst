@@ -23,6 +23,7 @@ multi-block and overset 3D CFD solver.
    solvers
    performance
    devguide
+   verification
    citation
 
 See Fortran code documentation `here <_static/doxydoc/html/index.html>`_
