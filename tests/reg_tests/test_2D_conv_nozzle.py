@@ -26,7 +26,7 @@ class TestSolve(reg_test_classes.RegTest):
     N_PROCS = 2
     ref_file = "solve_2D_conv_nozzle.json"
     options = {
-        "gridfile": os.path.join(baseDir, "../../inputFiles/euler_conv_nozzle.cgns"),
+        "gridfile": os.path.join(baseDir, "../../input_files/euler_conv_nozzle.cgns"),
         "solutionprecision": "double",
         "gridprecision": "double",
         "liftIndex": 2,
@@ -96,6 +96,9 @@ class TestSolve(reg_test_classes.RegTest):
 
         # do the solve
         self.CFDSolver(self.ap)
+
+        # check if solution failed
+        self.assert_solution_failure()
 
         # check its accuracy
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)

@@ -33,11 +33,11 @@ class TestSolveIntegrationPlane(reg_test_classes.RegTest):
     N_PROCS = 2
 
     options = {
-        "gridfile": os.path.join(baseDir, "../../inputFiles/conic_conv_nozzle_mb.cgns"),
+        "gridfile": os.path.join(baseDir, "../../input_files/conic_conv_nozzle_mb.cgns"),
         "outputdirectory": os.path.join(baseDir, "../output_files"),
         # Physics Parameters
-        "equationType": "euler",
-        "smoother": "dadi",
+        "equationType": "Euler",
+        "smoother": "DADI",
         "nsubiter": 3,
         "CFL": 4.0,
         "CFLCoarse": 1.25,
@@ -45,7 +45,6 @@ class TestSolveIntegrationPlane(reg_test_classes.RegTest):
         "MGStartLevel": -1,
         "nCyclesCoarse": 250,
         "nCycles": 1000,
-        "nkcfl0": 1e10,
         "monitorvariables": ["cpu", "resrho", "cl", "cd"],
         "volumevariables": ["blank"],
         "surfacevariables": ["mach", "cp", "vx", "vy", "vz", "blank"],
@@ -81,7 +80,7 @@ class TestSolveIntegrationPlane(reg_test_classes.RegTest):
 
         # Setup aeroproblem
 
-        planeFile = os.path.join(baseDir, "../../inputFiles/integration_plane_viscous.fmt")
+        planeFile = os.path.join(baseDir, "../../input_files/integration_plane_viscous.fmt")
 
         options = copy.copy(adflowDefOpts)
         options.update(self.options)
@@ -129,6 +128,8 @@ class TestSolveIntegrationPlane(reg_test_classes.RegTest):
 
         # do the solve
         self.CFDSolver(self.ap)
+        # check if the solution has failed
+        self.assert_solution_failure()
 
         # check its accuracy
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
@@ -148,11 +149,11 @@ class TestSolveOverset(reg_test_classes.RegTest):
     N_PROCS = 2
 
     options = {
-        "gridfile": os.path.join(baseDir, "../../inputFiles/conic_conv_nozzle.cgns"),
+        "gridfile": os.path.join(baseDir, "../../input_files/conic_conv_nozzle.cgns"),
         "outputdirectory": os.path.join(baseDir, "../output_files"),
         # Physics Parameters
-        "equationType": "euler",
-        "smoother": "dadi",
+        "equationType": "Euler",
+        "smoother": "DADI",
         "nsubiter": 3,
         "CFL": 4.0,
         "CFLCoarse": 1.25,
@@ -160,7 +161,6 @@ class TestSolveOverset(reg_test_classes.RegTest):
         "MGStartLevel": -1,
         "nCyclesCoarse": 250,
         "nCycles": 1000,
-        "nkcfl0": 1e10,
         "monitorvariables": ["cpu", "resrho", "cl", "cd"],
         "volumevariables": ["blank"],
         "surfacevariables": ["mach", "cp", "vx", "vy", "vz", "blank"],
@@ -235,6 +235,8 @@ class TestSolveOverset(reg_test_classes.RegTest):
 
         # do the solve
         self.CFDSolver(self.ap)
+        # check if the solution has failed
+        self.assert_solution_failure()
 
         # check its accuracy
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)

@@ -1,15 +1,13 @@
 import glob
-import os 
+import os
 from baseclasses.BaseRegTest import convertRegFileToJSONRegFile
 
 
-
-
 # This is the total number of tests we have:
-refDir = '../../python/reg_tests/ref'
+refDir = "../../python/reg_tests/ref"
 
-refFiles = glob.glob(os.path.join(refDir, 'adflow_test*'))
-outputDir = './reg_refs/ref'
+refFiles = glob.glob(os.path.join(refDir, "adflow_test*"))
+outputDir = "./reg_refs/ref"
 
 for refFile in refFiles:
 
@@ -18,7 +16,7 @@ for refFile in refFiles:
     print(basename)
     outputFile = os.path.join(outputDir, basename)
 
-    convertRegFileToJSONRegFile(refFile, outputFile + '.json')
+    convertRegFileToJSONRegFile(refFile, outputFile + ".json")
 
 
 # if args.ref is None:

@@ -34,7 +34,7 @@ class TestSolve(reg_test_classes.RegTest):
     def setUp(self):
         super().setUp()
 
-        gridFile = os.path.join(baseDir, "../../inputFiles/naca0012_rans-L2.cgns")
+        gridFile = os.path.join(baseDir, "../../input_files/naca0012_rans-L2.cgns")
 
         f = 10.0  # [Hz] Forcing frequency of the flow
         period = 1.0 / f  # [sec]
@@ -52,10 +52,10 @@ class TestSolve(reg_test_classes.RegTest):
                 "vis4": 0.025,
                 "vis2": 0.5,
                 "restrictionrelaxation": 0.5,
-                "smoother": "dadi",
+                "smoother": "DADI",
                 "equationtype": "RANS",
                 "equationmode": "unsteady",
-                "timeIntegrationscheme": "bdf",
+                "timeIntegrationscheme": "BDF",
                 "ntimestepsfine": nfineSteps,
                 "deltat": dt,
                 "nsubiterturb": 10,
@@ -69,6 +69,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "mgstartlevel": 1,
                 "monitorvariables": ["cpu", "resrho", "cl", "cd", "cmz"],
                 "usenksolver": False,
+                "useanksolver": False,
                 "l2convergence": 1e-6,
                 "l2convergencecoarse": 1e-4,
                 "qmode": True,
@@ -89,6 +90,9 @@ class TestSolve(reg_test_classes.RegTest):
 
         # do the solve
         self.CFDSolver(self.ap)
+
+        # check if the solution failed
+        self.assert_solution_failure()
 
         # check its accuracy
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-8)

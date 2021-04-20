@@ -1029,6 +1029,10 @@ contains
 
     ! No iteration type for first residual evaluation
     iterType = "    None"
+    ! also no CFL, step size, or linear residual for this iteration
+    CFLMonitor = -1
+    stepMonitor = -1
+    linResMonitor = -1
 
     ! Determine and write the initial convergence info.
     call convergenceInfo
@@ -1572,11 +1576,18 @@ contains
                    write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
 #endif
                 end if
+
+                if (stepMonitor < zero) then
+                  ! Print dashes in the first None iteration
+                  write(*,"(a,1x)", advance="no") " ---- "
+                else
 #ifndef USE_COMPLEX
-                write(*,"(f5.2,2x)",advance="no") stepMonitor
+                  write(*,"(f5.2,2x)",advance="no") stepMonitor
 #else
-                write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
+                  write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
 #endif
+                end if
+
                 if (linResMonitor < zero) then
                    ! For RK/DADI just print dashes
                    write(*,"(a,1x)", advance="no") " ----"
@@ -1613,12 +1624,24 @@ contains
                cgnsL2resK,    cgnsL2resOmega,   &
                cgnsL2resTau,  cgnsL2resEpsilon, &
                cgnsL2resV2,   cgnsL2resF        )
+#ifndef USE_COMPLEX
              monGlob(mm) = sqrt(monGlob(mm)/nCellGlobal(groundLevel))
+#else
+            ! take the square roots separately in complex mode
+            monGlob(mm) = cmplx(sqrt(real(monGlob(mm)/nCellGlobal(groundLevel))), &
+                               sqrt(aimag(monGlob(mm)/nCellGlobal(groundLevel))))
+#endif
+
              if (monNames(mm) == cgnsL2resRho) then
                 rhoRes = monGlob(mm)
              end if
           case ('totalR')
+#ifndef USE_COMPLEX
              monGlob(mm) = sqrt(monGlob(mm))
+#else
+             ! take the square roots separately in complex mode
+             monGlob(mm) = cmplx(sqrt(real(monGlob(mm))), sqrt(aimag(monGlob(mm))))
+#endif
              totalR = monGlob(mm)
           end select
 
@@ -1629,7 +1652,23 @@ contains
 #ifndef USE_COMPLEX
              write(*,"(e24.16,1x)",advance="no") monGlob(mm)
 #else
-             write(*,"(2e24.16,1x)",advance="no") monGlob(mm)
+            select case (monNames(mm))
+
+            case (cgnsL2resRho,  cgnsL2resMomx,    &
+                  cgnsL2resMomy, cgnsL2resMomz,    &
+                  cgnsL2resRhoe, cgnsL2resNu,      &
+                  cgnsL2resK,    cgnsL2resOmega,   &
+                  cgnsL2resTau,  cgnsL2resEpsilon, &
+                  cgnsL2resV2,   cgnsL2resF, 'totalR')
+
+               ! we can do a shorter print for residuals because only the leading few digits
+               ! and the exponents are important anyways
+               write(*,'(e16.8,SP,e17.8E3,"i")',advance="no") monGlob(mm)
+
+            case default
+               ! we need to do the regular full print for functionals because they are useful
+               write(*,'(e24.16,SP,e25.16E3,"i")',advance="no") monGlob(mm)
+            end select
 #endif
           end if
 

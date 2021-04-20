@@ -12,11 +12,11 @@ This process is controlled with the *relative convergence* metric, which is the 
 A 2 orders of magnitude relative convergence in this sense refers to converging the simulations such that the L2 norm of the current residual vector is two orders of magnitude lower the initial norm.
 Technically, all three solver algorithms can be used in a single simulation, however, users will typically use either the multigrid or approximate Newton--Krylov (ANK) for the startup, combined with the Newton--Krylov (NK) for the final stages of convergence.
 
-If all three solvers are used, ADflow uses the multigrid method until the relative convergence reaches ``'ankswitchtol'``.
-Then the ANK method is used to reach ``'nkswitchtol'``, and after this relative convergence is reached, the solver switches to the NK solver.
-Besides setting the *switch tolerances* for the ANK and NK solvers, users need to set the options ``'useanksolver'``, and ``'usenksolver'`` respectively to ``True`` in their runscripts.
+If all three solvers are used, ADflow uses the multigrid method until the relative convergence reaches :py:data:`ANKSwitchTol`.
+Then the ANK method is used to reach :py:data:`NKSwitchTol`, and after this relative convergence is reached, the solver switches to the NK solver.
+Besides setting the *switch tolerances* for the ANK and NK solvers, users need to set the options :py:data:`useANKSolver`, and :py:data:`useNKSolver` respectively to ``True`` in their runscripts.
 
-With RANS simulations, the startup stage can be defined as the initial 4-6 orders of magnitude of convergence, while the terminal stage is the rest of the convergence until ``'L2Convergence'`` is reached.
+With RANS simulations, the startup stage can be defined as the initial 4-6 orders of magnitude of convergence, while the terminal stage is the rest of the convergence until :py:data:`L2Convergence` is reached.
 For a RANS simulation, reaching steady state is equivalent to reducing the residual norm by 6-12 orders of magnitude.
 The final relative convergence users prescribe is case dependent, however tighter tolerances (i.e. ``'L2Convergence': 1e-12``) will yield more accurate solutions and gradients, at the cost of higher computational effort.
 
@@ -27,14 +27,14 @@ Multigrid is the baseline solver algorithm available in ADflow.
 This method uses either the Runge--Kutta (RK), or the Diagonalized Diagonally-Dominant Alternating Direction Implicit (D3ADI) algorithm as the smoother.
 The smoother algorithms only update the flow variables (i.e. density, momentum components, energy), and a Diagonalized Alternating Direction Implicit (DADI) method is used to update the turbulence model with RANS simulations.
 
-Within a full multigrid solution process, the solution is initialized on the coarsest grid level, and the smoothers are used to reach the prescribed ``'L2ConvergenceCoarse'`` relative convergence is reached.
+Within a full multigrid solution process, the solution is initialized on the coarsest grid level, and the smoothers are used to reach the prescribed :py:data:`L2ConvergenceCoarse` relative convergence is reached.
 Once this target is reached, the solver moves to the next finer level, and repeats this process until the finest grid level is reached.
-When the solver reaches to the finest grid level, it performs the prescribed multigrid cycle, that is set with the option ``'MGCycle'``.
+When the solver reaches to the finest grid level, it performs the prescribed multigrid cycle, that is set with the option :py:data:`MGCycle`.
 
 Performance of the multigrid algorithm depends on a few critical options.
 First of all, as the number of coarse grid levels are increased, the solver performance will generally improve.
 However for practical cases, this is typically around 3-5, and coarser levels than these might not be available.
-The number of grid levels is represented by the leading number with the ``'MGCycle'`` option (e.g. ``'3w'`` means performing a *w* multigrid cycle with 3 grid levels).
+The number of grid levels is represented by the leading number with the :py:data:`MGCycle` option (e.g. ``'3w'`` means performing a *w* multigrid cycle with 3 grid levels).
 
 The second critical parameter is the CFL numbers selected.
 CFL number is representative of the time-step size used with the smoother methods.
@@ -43,9 +43,9 @@ However, both of the smoother algorithms are *conditionally stable*, meaning tha
 A more stable solver can be achieved by reducing the CFL number, at the cost of higher computational effort, as the solver will take more iterations to reach the steady state.
 
 The user can prescribe two different CFL numbers within ADflow.
-The option ``'cfl'`` sets the CFL number used for operations on the finest grid level, while ``'cflCoarse'`` is used to set the CFL number used with the coarser grid levels.
-The RK smoother is a fully explicit method, and the default values of ``'cfl': 1.7`` and ``'cflCoarse': 1.0`` should be reasonable.
-When the D3ADI method is used by setting ``'smoother': 'DADI'``, the solver will benefit from a higher ``'cfl'`` value.
+The option :py:data:`CFL` sets the CFL number used for operations on the finest grid level, while :py:data:`CFLCoarse` is used to set the CFL number used with the coarser grid levels.
+The RK smoother is a fully explicit method, and the default values of ``'CFL': 1.7`` and ``'CFLCoarse': 1.0`` should be reasonable.
+When the D3ADI method is used by setting ``'smoother': 'DADI'``, the solver will benefit from a higher :py:data:`CFL` value.
 Even though the D3ADI smoother is an implicit method, the performance does not generally improve with higher CFL numbers, as the underlying factorization breaks down as the CFL number is increased.
 Therefore, for practical cases, the CFL number used with the D3ADI implementation in ADflow is around 3-5.
 
@@ -59,19 +59,19 @@ Approximate Newton--Krylov
 
 The approximate Newton--Krylov (ANK) solver is one of the fully implicit methods within ADflow.
 It was developed based on the need for an efficient startup method for overset meshes, and it can also be used to converge difficult cases with heavy separation.
-To use the ANK solver, users need to set ``'useanksolver': True`` in their scripts.
-The default switch tolerance for the ANK solver (i.e. ``'ankswitchtol'``) is set to ``1.0``, therefore ADflow will start the simulations with the ANK solver if the solver is enabled.
-However, if the coarser levels of the grid is available, and the ``'MGCycle'`` option is not set to ``'sg'`` (which stands for *single grid*), the solver might start with a full multigrid startup, and the ANK solver will only be activated once the finest grid level is reached.
-This behavior can also be controlled with the ``'MGStartLevel'`` option, which controls the grid level that is used to initialize the simulations.
+To use the ANK solver, users need to set ``'useANKSolver': True`` in their scripts.
+The default switch tolerance for the ANK solver (i.e. ``'ANKSwitchTol'``) is set to ``1.0``, therefore ADflow will start the simulations with the ANK solver if the solver is enabled.
+However, if the coarser levels of the grid is available, and the `:py:data:`MGCycle` option is not set to ``'sg'`` (which stands for *single grid*), the solver might start with a full multigrid startup, and the ANK solver will only be activated once the finest grid level is reached.
+This behavior can also be controlled with the :py:data:`MGStartLevel` option, which controls the grid level that is used to initialize the simulations.
 The default value for this option is set to ``-1``, which means that the solver will start with the coarsest grid level available.
 See :ref:`ADflow options <adflow_options>` for a more detailed explanation of these parameters.
 The ANK method can also be used after the multigrid method.
-For example, if the user wants to obtain 2 orders of magnitude convergence with the multigrid, then switch to the ANK solver, the option ``'ankswitchtol'`` can be set to ``1e-2``, and the solver will switch to the ANK solver after this relative convergence value is reached.
+For example, if the user wants to obtain 2 orders of magnitude convergence with the multigrid, then switch to the ANK solver, the option :py:data:`ANKSwitchTol` can be set to ``1e-2``, and the solver will switch to the ANK solver after this relative convergence value is reached.
 
 The ANK solver has a large number of tunable parameters, and a few different modes.
 The default set of tunings works well for a typical aeronautical application with transonic conditions, but there is always room for improvement.
-For a quick solution, simply include ``'useanksolver': True`` option in the runscripts.
-Furthermore, we recommend setting a relatively high turbulence sub-iteration number for RANS simulations, i.e. set ``'nsubiterturb'`` to somewhere between ``3`` and ``7``.
+For a quick solution, simply include ``'useANKSolver': True`` option in the runscripts.
+Furthermore, we recommend setting a relatively high turbulence sub-iteration number for RANS simulations, i.e. set :py:data:`nSubiterTurb` to somewhere between ``3`` and ``7``.
 However, there will be cases where the default set of parameters will not yield good performance, and some tuning might be required.
 To be able to understand why the solver is not working well, or even failing, the users need to understand the underlying algorithm to some level.
 In the following subsections, we describe the main components within the ANK solver algorithm, and lay down the best practices for troubleshooting.
@@ -87,12 +87,12 @@ Relatively small CFL numbers (around 1-10) translate into small time steps, and 
 However, convergence with low CFL numbers stagnate quickly after the first few orders of magnitude relative convergence.
 At high CFL numbers (around 100-1e5), the solver approaches the Newton's method, and yields very favorable nonlinear convergence properties.
 However, if the current state is far away from the solution, high CFL numbers might cause the solver to stagnate.
-Keeping these outcomes in mind, we start the solver algorithm with a relatively small CFL number (``'ankcfl0': 5.0``), and adaptively ramp the CFL number to higher values as the simulation converges to steady state.
+Keeping these outcomes in mind, we start the solver algorithm with a relatively small CFL number (``'ANKCFL0': 5.0``), and adaptively ramp the CFL number to higher values as the simulation converges to steady state.
 This process is called pseudo-transient continuation.
 This continuation process is what enables the ANK solver to be used as a startup strategy, while yielding favorable convergence rates later on in the simulation.
 
 During each nonlinear iteration, we determine the updates to the state variables by *inexactly* solving a large linear system.
-In this context, inexactly solving the linear system refers to reducing the linear residual norm by a factor of ``'anklinearsolvetol'``, and the default value we use is ``0.05``.
+In this context, inexactly solving the linear system refers to reducing the linear residual norm by a factor of :py:data:`ANKLinearSolveTol`, and the default value we use is ``0.05``.
 We avoid exactly solving the linear system because it is often more beneficial to take a large number of cheaper nonlinear iterations, because the startup of RANS simulations often require tens or sometimes hundreds of nonlinear iterations.
 Prescribing a higher linear solution tolerance on the other hand might destabilize the solver, because in this case the solution vector is too far from the actual solution.
 The linear systems we solve with the ANK solver contains two components: the Jacobian and a time-stepping term.
@@ -122,9 +122,9 @@ This is similar to taking full or partial steps within an optimization.
 A full step is equivalent to taking the update vector as it is, and a limited step is equivalent to multiplying each entry of the update vector with a relaxation parameter.
 
 To determine this relaxation parameter, we first check the total physical change that the update yields.
-We limit the step size such that the density and energy of each cell do not change more than ``'ankphysicallstol'`` fraction of the original value.
+We limit the step size such that the density and energy of each cell do not change more than :py:data:`ANKPhysicalLSTol` fraction of the original value.
 The default value is ``0.2``, which translates to limiting the physical change in these variables to 20% of the original value.
-For the turbulence model, we follow a similar approach, however we only check the updates that reduce the value of the turbulence model variable, and limit the change to 99%, by using ``'ankphysicallstolturb': 0.99``.
+For the turbulence model, we follow a similar approach, however we only check the updates that reduce the value of the turbulence model variable, and limit the change to 99%, by using ``'ANKPhysicalLSTolTurb': 0.99``.
 We refer to to this process as the physicality check.
 
 After the physicality check, we go into a backtracking line search, where the goal is to find a step size that yields a reduction in the unsteady residual norm.
@@ -132,7 +132,7 @@ This unsteady residual norm is different from the steady residual norm printed i
 As a result, the steady (or total) residual norm can actually increase, while the unsteady residual norm decreases.
 This backtracking search starts with the step size calculated with the physicality check, and then traces this step back until it finds a step size that gives a reduction in the unsteady residual norm.
 After the backtracking line search, the solver multiplies the update vector with the step size and updates the state vector.
-We repeat this process until the simulation converges, or we reach ``'nkswitchtol'`` relative convergence.
+We repeat this process until the simulation converges, or we reach :py:data:`NKSwitchTol` relative convergence.
 
 Matrix-Free Operations
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -140,10 +140,10 @@ Matrix-Free Operations
 The use of matrix-free operations for the actual linear system gives us the flexibility to be able to modify the Jacobian formulation on the go without any increased memory cost.
 The default matrix-free operations contain some approximations compared to the exact residual routines.
 However, users can switch to an exact Jacobian during runtime to improve nonlinear convergence.
-This is achieved by using the ``'anksecondordswitchtol'`` option.
+This is achieved by using the :py:data:`ANKSecondOrdSwitchTol` option.
 This option prescribes a relative convergence limit, above which the solver uses the default approximate Jacobian.
 However, this relative convergence value is reached, the solver switches to using an exact Jacobian formulation for the matrix-free operations.
-For example, setting ``'anksecondordswitchtol': 1e-2`` would cause the solver to use the approximate formulation for the initial 2 orders of magnitude convergence, and then switch to the exact formulation for the rest of convergence.
+For example, setting ``'ANKSecondOrdSwitchTol': 1e-2`` would cause the solver to use the approximate formulation for the initial 2 orders of magnitude convergence, and then switch to the exact formulation for the rest of convergence.
 Note that this modification only changes how the implicit system is handled, and does not alter the baseline residual formulations.
 Therefore the only effect will be in nonlinear convergence rate, and cost of each nonlinear iteration.
 
@@ -172,25 +172,25 @@ To prevent issues in convergence, we solve the turbulence model separately from 
 In this context, the flow variables refer to the density, momentum components and energy, while the turbulence variable is typically the SA model working variable.
 A decoupled algorithm updates the flow variables with the algorithms described above, and after updating the flow variables in each nonlinear iteration, we perform sub-iterations for the turbulence model before moving onto the next iteration.
 Best way to diagnose if the turbulence model is causing problems with convergence is to print the turbulence residual norm with the output.
-This can be done with including ``'resturb'`` in the list passed with the option ``'monitorvariables'``.
+This can be done with including ``'resturb'`` in the list passed with the option :py:data:`monitorVariables`.
 
 In the decoupled mode, the ANK solver has two turbulence solvers available.
 The first one is the DADI based solver, which we refer to as ``turbDADI``.
 This solver algorithm calculates the update vector for the turbulence model by using the diagonalized alternating direction implicit algorithm.
 We typically use this algorithm with a large number of sub iterations.
-The option ``'nsubiterturb'`` can be used to set the number of sub-iterations for the turbulence model to be performed after each flow update.
+The option :py:data:`nSubiterTurb` can be used to set the number of sub-iterations for the turbulence model to be performed after each flow update.
 We typically recommend a value between 3 and 7, however more difficult cases might require up to 10 sub-iterations for the turbulence model.
 
 The second turbulence solver available is called ``turbKSP``.
 This is practically an isolated ANK algorithm just for the turbulence model.
 We use the exact same options, and algorithms with the ANK solver, however the ``turbKSP`` solver has its own matrices, and linear system.
 After each flow update, we repeat the similar ANK process for the turbulence model, and compute an update vector just for the turbulence model variable.
-To use the ``turbKSP`` solver with ANK, users can set ``'ankuseturbdadi': False``, which implies that the solver will use the ``turbKSP`` solver instead of the default ``turbDADI`` solver.
-To print useful debugging information about the turbulence solver, users can include ``'ankturbkspdebug': True`` in their runscripts.
+To use the ``turbKSP`` solver with ANK, users can set ``'ANKUseTurbDADI': False``, which implies that the solver will use the ``turbKSP`` solver instead of the default ``turbDADI`` solver.
+To print useful debugging information about the turbulence solver, users can include ``'ANKTurbKSPDebug': True`` in their runscripts.
 The solver will then print some diagnostics about the turbulence solver in each iteration, such as linear convergence, step size, number of iterations GMRES algorithm takes etc.
 This output will not look pretty but can be very useful while debugging.
 We recommend using only 1 sub-iteration for this solver, as it is much more expensive, but more powerful at the same time compared to the ``turbDADI`` solver.
-To use larger number of sub-iterations, users can set ``'anknsubiterturb'`` option to any integer larger than 1.
+To use larger number of sub-iterations, users can set :py:data:`ANKNSubiterTurb` option to any integer larger than 1.
 
 For smaller cases (<1M Cells) with multiblock meshes, we recommend using the turbDADI solver.
 However, the performance of the ``turbDADI`` solver will deteriorate with overset meshes, therefore users can get better performance by switching to the ``turbKSP`` solver with more realistic cases (>1M Cells) with overset meshes.
@@ -199,7 +199,7 @@ Instead of the decoupled mode, the ANK solver is also capable of coupling the tu
 We call this coupled ANK, and iterations in this mode is denoted with a ``C`` character before the ``ANK`` identifier.
 The coupled mode can be beneficial because the solver now considers the coupling between the turbulence model and the flow variables, and this mode is expected to yield better convergence during the final stages of startup.
 However, running in decoupled mode for the initial 4-5 orders of magnitude convergence is almost always going to yield better performance.
-To start with the decoupled algorithm, and switch to the coupled algorithm, users can set a target relative convergence value with the ``'ankcoupledswitchtol'`` option.
+To start with the decoupled algorithm, and switch to the coupled algorithm, users can set a target relative convergence value with the :py:data:`ANKCoupledSwitchTol` option.
 Similar to the second order switch, the default for coupled switch tolerance is set to ``1e-16``.
 To enable the coupled solver, users can pick a relative convergence value, e.g. setting ``'ankcoupledswitchtol': 1e-4`` will cause the solver to switch to the coupled formulation after 4 orders of magnitude of relative convergence is reached.
 In this mode, the turbulence model and the flow variables are updated together with the ANK algorithm described above, and no sub-iterations for the turbulence model is performed.
@@ -222,7 +222,7 @@ This scaling has implications with the coupled solvers.
 The coupled solvers will only yield good performance when the printed turbulence model residual norm is about 3-5 orders of magnitude lower than the flow variable residual norms (e.g. density).
 When the difference is between 3-5 orders of mangitude, the scaling works as expected, and we can successfully solve the coupled linear systems.
 However, if the difference is much larger, or smaller than ``1e4``, the scaling will be off, and the solver will encounter difficulties while solving the coupled linear systems.
-In cases where the scaling differs greatly, users can manually set the turbulence scaling constant by setting the ``'turbresscale'`` option in their runscripts.
+In cases where the scaling differs greatly, users can manually set the turbulence scaling constant by setting the :py:data:`turbResScale` option in their runscripts.
 However, we recommend not modifying this variable, and using the decoupled ANK mode further, as the solver will eventually achieve this scaling where the default parameters work as expected.
 
 .. _interpreting_output:
@@ -245,7 +245,7 @@ Here, we describe each relevant output with the ANK solver.
 * ``Lin Res``: The relative convergence achieved with the linear solver. The default linear convergence desired is ``0.05``. However, we limit the number of GMRES iterations for the sake of computational cost, and if the solver runs out of iterations, this number will go above the default value. This means that the linear solution failed, however as long as we solve the linear system to some degree, we can still use the update.
 
 Furthermore, users can print some useful information if they are using the ``turbKSP`` solver with the decoupled ANK solver.
-To enable this output, users can use the option ``'ankturbkspdebug': True``.
+To enable this output, users can use the option ``'ANKTurbKSPDebug': True``.
 When enabled, the solver will print information related to the turbulence solver between nonlinear iteration outputs.
 The turbulence information is printed first, then ADflow prints the default output.
 So the turbulence output, and the following default output belong to the same nonlinear iteration.
@@ -304,15 +304,15 @@ Very Small Step Sizes
 This case usually happens when the coupled ANK solver is used.
 If this is the case, simply reduce the coupled switch tolerance so that the solver can converge tighter before it switches to the coupled algorithm.
 
-If the step size is small even with the default ANK solver (de-coupled mode for turbulence), and the CFL number has reached the upper limit, then a quick fix can be reducing the ``'ankcfllimit'`` option from its default value of ``1e5``.
+If the step size is small even with the default ANK solver (de-coupled mode for turbulence), and the CFL number has reached the upper limit, then a quick fix can be reducing the :py:data:`ANKCFLLimit` option from its default value of ``1e5``.
 Lower CFL limits will yield a slower convergence, however the solver is usually more stable.
 Try not to set the CFL limit below a few hundreds, otherwise convergence may be very slow.
 
-If this solution still does not help, the users can try switching to the second order implicit formulation right before the solver starts taking small steps by modifying ``'anksecondordswitchtol'``.
+If this solution still does not help, the users can try switching to the second order implicit formulation right before the solver starts taking small steps by modifying :py:data:`ANKSecondOrdSwitchTol`.
 This mode will use an exact implicit formulation, and therefore the updates will be more accurate.
 
 If the problem occurs before the maximum CFL number is reached, and switching to the second order implicit formulation does not help, users can try relaxing the algorithms that determine the step size.
-To do this, the users can either increase the ``'ankunsteadylstol'`` from its default value of ``1.0``, e.g. ``1.5``, or set a larger ``'ankphysicallstol'`` from its default value ``0.2`` to a value between 0 and 1.
+To do this, the users can either increase the :py:data:`ANKUnsteadyLSTol` from its default value of ``1.0``, e.g. ``1.5``, or set a larger :py:data:`ANKPhysicalLSTol` from its default value ``0.2`` to a value between 0 and 1.
 The first modification will allow the unsteady residual norm to increase during the line search algorithm.
 This could potentially cause the solver the diverge, however it might also help it go over the *hills* easier.
 The second modification is related to the fraction of the change that is allowed for density and energy to change within a nonlinear update.
@@ -328,7 +328,7 @@ High Linear Residuals
 The solver might not reach the target linear convergence of 0.05, and as stated above, this is usually okay.
 Problems tend to occur when this value goes above 0.5, and above 0.9 relative convergence levels, the solver will practically stall.
 However, we have added an automatic way to avoid this problem.
-If the linear residual goes above ``'anklinresmax'`` value that is set to 0.9 by default, the solver will reduce the CFL until the linear solver convergence goes below this value.
+If the linear residual goes above the :py:data:`ANKLinResMax` value, the solver will reduce the CFL until the linear solver convergence goes below this value.
 
 Large Number of Nonlinear Iterations
 ************************************
@@ -346,7 +346,7 @@ In some cases, the flow variables may be converging well, while the turbulence r
 As previously mentioned, we typically want the turbulence residual norm to be around 4 orders of magnitude lower than the residual norms of the mean flow variables.
 Because there are multiple solver algorithms available to solve the turbulence model, this problem can be caused by different reasons, and the typical solution would be switching between turbulence solver methods, or increasing the number of sub iterations for the turbulence model if not running in coupled mode.
 
-If the ``turbKSP`` solver is being used, the users can set ``'ankturbkspdebug'`` to ``True``, and monitor the information printed for each nonlinear turbulence iteration.
+If the ``turbKSP`` solver is being used, the users can set ``'ANKTurbKSPDebug'`` to ``True``, and monitor the information printed for each nonlinear turbulence iteration.
 All the fixes mentioned in this section will apply to the standalone ``turbKSP`` solver as it uses the same default algorithm with the ANK solver.
 
 Special Cases
@@ -369,7 +369,7 @@ Cases with massive separation should employ a higher turbulence sub-iteration nu
 We have converged three dimensional wing-body configurations at 90 degrees angle of attack, therefore users should be aware that the solver will be able to overcome the difficulties introduced by massive separation, if tuned properly.
 
 Supersonic cases introduce new challenges due to the increased strength of the shock waves present in the solution.
-One critical observation that we have made in the past is that, increasing ``'ankphysicallstol'`` value from its default value of 0.2 to 0.4-0.6 greatly helps with supersonic cases where the solver is taking very small steps.
+One critical observation that we have made in the past is that, increasing :py:data:`ANKPhysicalLSTol` value from its default value of 0.2 to 0.4-0.6 greatly helps with supersonic cases where the solver is taking very small steps.
 This is due to the moving shocks within the solution domain, and larger changes in the physical state allows the shock wave positions to settle with fewer nonlinear iterations.
 
 Cases with very low Mach numbers should ideally be simulated with an incompressible CFD code.
@@ -385,8 +385,8 @@ The Newton--Krylov (NK) solver is the solver we recommend for using the final st
 It yields the best nonlinear convergence if the initial guess is close to the *basin of attraction*.
 With well behaving cases, it is typical to see the NK solver drop the residual norm by 2--3 orders of magnitude in one nonlinear iteration.
 However, if the NK solver is used when the state is away from the solution, the solver will either stall or yield bad performance.
-To use the NK solver, users can include ``'usenksolver': True`` in their runscrips.
-We also recommend prescribing the relative convergence when ADflow will switch to the NK solver by setting ``'nkswitchtol'`` option.
+To use the NK solver, users can include ``'useNKSolver`': True`` in their runscrips.
+We also recommend prescribing the relative convergence when ADflow will switch to the NK solver by setting :py:data:`NKSwitchTol` option.
 This is a case dependent parameter, for RANS simulations, a relative convergence of ``1e-4`` would be a good case scenario.
 For very difficult cases, this switch can be reduced down to ``1e-8`` levels to achieve reasonable performance with the NK solver.
 Typically, a setting around ``1e-5`` and ``1e-6`` will yield good results.
@@ -405,8 +405,8 @@ The method is equivalent to using Euler's method with an infinite time step, and
 We stil use a matrix-based preconditioner based on an approximate Jacobian, however the main driver for the linear solver is the exact matrix-free residual operations.
 As a result, we always solve for the exact Jacobian.
 After solving for the update, we use a cubic line search by default to guaranee a reduction in the total residual norm.
-A number of line search algorithms are available and can be specified with the option ``'nkls'``.
-We recommend the default ``'cubic'`` line search, however setting this option to ``'non monotone'`` can help by relaxing the criteria to achieve a decrease in the residual norm, and users can even select ``'none'`` to default the solver to take the full step at each iteration.
+A number of line search algorithms are available and can be specified with the option :py:data:`NKLS`.
+We recommend the default ``'cubic'`` line search, however setting this option to ``'non-monotone'`` can help by relaxing the criteria to achieve a decrease in the residual norm, and users can even select ``'none'`` to default the solver to take the full step at each iteration.
 
 Selecting the Linear Solver Tolerance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -426,9 +426,9 @@ When linear solver performance is not a limiting factor, the algorithm picks lar
 However, as the nonlinear convergence rates improve, the algorithm picks a lower linear solver tolerance, in turn yielding a more expensive iteration, but a more accurate one at the same time.
 
 The practical outcomes for users is as follows:
-The solver will start with the default ``'nklinearsolvetol': 0.3``.
-This is an option in ADflow, however if users want to prescribe a constant linear solution tolerance for each iteration, besides setting this option, they need to disable the EW algorithm by setting ``'nkuseew': False``.
-If the default ``'nkuseew': True`` is preserved, the solver will only solve the linear system in the first NK iteration to 0.3 relative convergence.
+The solver will start with the default :py:data:`NKLinearSolveTol` of ``0.3``.
+This is an option in ADflow, however if users want to prescribe a constant linear solution tolerance for each iteration, besides setting this option, they need to disable the EW algorithm by setting ``'NKUseEW': False``.
+If the default ``'NKUseEW': True`` is preserved, the solver will only solve the linear system in the first NK iteration to 0.3 relative convergence.
 After this step, the solver will monitor nonlinear convergence, and determine the linear solver tolerance for the next nonlinear iteration.
 Users can monitor the linear convergence by reading the number under ``Lin Res`` that is printed with the default ADflow output.
 The solver picking a lower linear solver tolerance means that the nonlinear convergence was satisfactory, and the performance can be improved with a tighter linear convergence.
@@ -440,11 +440,11 @@ On the other hand, if the nonlinear convergence is not satisfactory, the solver 
 In this case, the solver will pick a linear convergence higher than the previous iteration, for example, the second iteration after the first 0.3 linear convergence will have a higher linear convergence tolerance.
 This means that the state is not close to the solution, and the solver prefers to take more low-cost iterations, rather than taking fewer but more expensive ones.
 This behavior is usually okay, as the solver will eventually start picking lower linear solver tolerances.
-If the solver does not pick a lower linear solution tolerance after a handful of iterations, it is usually better to lower the ``'nkswitchtol'`` and try again.
+If the solver does not pick a lower linear solution tolerance after a handful of iterations, it is usually better to lower the :py:data:`NKSwitchTol` and try again.
 The ANK solver will handle these *transients* better, and switching to the NK solver later on will help avoiding these issues.
 
 There is a hard coded upper limit for the linear solver tolerance, which is set to ``0.8``.
-This means that if the solver is consistently solving the linear system to 0.8 relative convergence, the state is far away from the solution, and the users should try again with a lower ``'nkswitchtol'``.
+This means that if the solver is consistently solving the linear system to 0.8 relative convergence, the state is far away from the solution, and the users should try again with a lower :py:data:`NKSwitchTol`.
 
 .. _linear_solver_performance:
 
@@ -462,32 +462,32 @@ If the ``Lin Res`` outputs go above this value, it means that the linear solver 
 On the other hand, the linear solver can fail as the EW algorithm picks lower linear tolerances.
 This case is usually okay, however users can monitor the health of the linear solver by observing the change under ``Iter Tot`` output.
 This output prints the cumulative number of linear iterations.
-If the change in ``Iter Tot`` between nonlinear iterations are larger than the specified linear iteration limit for the NK solver, i.e. ``'nksubspacesize'``, the solver linear solver is failing to reach the prescribed tolerance.
+If the change in ``Iter Tot`` between nonlinear iterations are larger than the specified linear iteration limit for the NK solver, i.e. :py:data:`NKSubspaceSize`, the solver linear solver is failing to reach the prescribed tolerance.
 
 To obtain a stronger linear solver, there are a number of options.
 Each option either increases memory requirements, CPU usage (more operations), or both.
 Most likely, the adjoint solver will be the bottleneck in terms of memory usage, and users can read the :ref:`adflow_performance` section to get some estimates.
 As a result, users will have bit of room to improve the linear solver used with the NK solver, as the default memory usage will be less than the adjoint solver.
 
-One way to improve the preconditioner is setting a higher value for ``'nkpcilufill'``.
+One way to improve the preconditioner is setting a higher value for :py:data:`NKPCILUFill`.
 This option will increase the fill level of the ILU preconditioner, at the cost of more memory, and more computations per iteration.
-The option ``'nkasmoverlap'`` can be increased to increase the overlap between parallel subdomains, at the cost of more communication and memory costs.
+The option :py:data:`NKASMOverlap` can be increased to increase the overlap between parallel subdomains, at the cost of more communication and memory costs.
 This option can be useful if very large number of processors are used, and the linear solver is failing due to the aggressive domain decomposition.
-The users can increase ``'nkouterpreconits'`` and ``'nkinnerpreconits'`` values to perform more iterations with the global and local preconditioners within the NK solver.
+The users can increase :py:data:`NKOuterPreconIts` and :py:data:`NKInnerPreconIts` values to perform more iterations with the global and local preconditioners within the NK solver.
 These options improve the preconditioner strength at no memory cost, however, each iteration will require more computations.
 All the options mentioned so far should be handled with care, as small changes in the parameter tuning will cause large changes in the resulting linear solver.
 Users should avoid going past a value of 3-4 for all the parameters mentioned in this paragraph so far.
-Finally, the users can increase the subpsace size used for the GMRES solver by modifying ``'nksubspacesize'``.
+Finally, the users can increase the subpsace size used for the GMRES solver by modifying :py:data:`NKSubspaceSize`.
 The default subspace size is set to 60, and increasing this value will require more memory, along with increasingly more computational effort since each iteration of the GMRES solver uses an orthogonalization with respect to the previous vectors.
 
 By default, the preconditioner used with the NK solver is lagged by 20 nonlinear iterations.
-This value can be set with modifying ``'nkjacobianlag'``.
+This value can be set with modifying :py:data:`NKJacobianLag`.
 If the solver is performing well in the first nonlinear iteration, however if linear solver performance degrades after a few iterations, users may benefit from reducing this number.
 However, forming and factorizing these preconditioners are expensive,  therefore some lag is usually recommended.
 
 The basis matrix for the preconditioner is an approximate Jacobian that is fully formed by using finite-differences and an efficient coloring algorithm.
 However, the finite-difference calculations might be inaccurate, resulting in a preconditioner that is unable to improve the linear solver performance even with a very strong tuning.
-In these cases, users can try setting the ``'nkadpc'`` option to ``True``, which will default the solver to using forward mode algorithmic differentiation to calculate the basis matrix for the preconditioner.
+In these cases, users can try setting the :py:data:`NKADPC` option to ``True``, which will default the solver to using forward mode algorithmic differentiation to calculate the basis matrix for the preconditioner.
 This will result in the code obtaining analytical partial derivatives in the approximate Jacobian matrix, however cost of forming each preconditioner will increase considerably.
 
 Troubleshooting
@@ -506,7 +506,7 @@ The linear solver may fail to achieve the prescribed tolerance with the NK solve
 Because the target linear convergence tolerance is varied using the EW algorithm, diagnosing failed linear solutions is usually not straightforward.
 To determine if the linear solver failed in a nonlinear iteration, the users can check the number of linear iterations within that nonlinear iteration.
 This can be calculated by looking at the difference in the total iteration number between the current and previous iterations.
-If this value has reached the upper limit set by ``'nksubspacesize'``, then the linear solver possibly failed to reach the prescribed tolerance.
+If this value has reached the upper limit set by :py:data:`NKSubspaceSize`, then the linear solver possibly failed to reach the prescribed tolerance.
 The default subspace size is 60, and we use the GMRES algorithm in the NK solver without restarts.
 The users should note that due to the line search algorithm after the linear solution, the reported total iteration change might be greater than 60.
 This is due to ADflow counting each line search iteration as a linear iteration, because the costs are similar (i.e. approximately one residual evaluation).
@@ -519,7 +519,7 @@ This prevents any progress, as the changes to the state vector become very small
 The ideal way to avoid this problem is to reduce the NK switch tolerance and try again.
 This problem occurs if the NK solver is initiated before the transients has settled in the domain, or the flow and turbulence residual norms are not scaled properly.
 The ANK solver can handle both of these cases better, and therefore it is the recommended solution.
-However, users can relax line search criteria by setting the ``'nkls'`` option to ``'non monotone'``, or can even completely disable the line search by picking ``'none'``.
+However, users can relax line search criteria by setting the :py:data:`NKLS` option to ``'non-monotone'``, or can even completely disable the line search by picking ``'none'``.
 This is not advised as it will usually cause the solver to either diverge, or get NaNs in the solution vector.
 Even if this method works, it will usually be slower than converging a few orders of magnitude more with the ANK solver and trying the NK solver again.
 
@@ -529,5 +529,5 @@ EW Algorithm Stalling
 In some cases, the EW algorithm might consistently pick very large linear convergence tolerances, and this will prevent the NK solver to achieve its full potential.
 This will happen due to the nonlinear convergence between nonlinear iterations being unsatisfactory.
 This outcome itself can occur due to different reasons, therefore it is easier to go back to the ANK solver and try to switch to the NK solver at a later point.
-If users just want to prescribe a constant linear convergence for each nonlinear NK iteration, they can set ``'nkuseew'`` to ``False``, and use the option ``'nklinearsolvetol'`` to prescribe the new linear convergence target.
+If users just want to prescribe a constant linear convergence for each nonlinear NK iteration, they can set :py:data:`NKUseEW` to ``False``, and use the option :py:data:`NKLinearSolveTol` to prescribe the new linear convergence target.
 However, this approach may introduce unnecessary costs in the solver algorithm, as the lack of nonlinear convergence might be caused by small step sizes, but the solver will repeatedly try to solve linear systems to tight tolerances until the maximum iteration limit is reached.
