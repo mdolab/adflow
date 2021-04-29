@@ -294,8 +294,6 @@ restrictionRelaxation:
 liftIndex:
   desc: >
     Specify the coordinate index that will be considered the lift direction.
-    If not supplied, this parameter will be determined automatically if there are symmetry planes present in the grid.
-    Otherwise, it must be supplied.
   2: y-axis
   3: z-axis
 
