@@ -6,7 +6,9 @@ Tutorial
 Meshing
 -------
 
-Before running ADflow we need a CGNS mesh. For a complete tutorial on using MACH, including meshing, please refer to the `MACH aero tutorial <https://github.com/mdolab/MACH_Aero_Tutorials>`_.
+Before running ADflow we need a CGNS mesh.
+The mesh must be in meters.
+For a complete tutorial on using MACH, including meshing, please refer to the :ref:`MACH-Aero tutorial <mach-aero:mach-aero-tutorial-intro>`.
 
 
 Basic Run Script
