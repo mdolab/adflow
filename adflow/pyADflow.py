@@ -2877,9 +2877,6 @@ class ADFLOW(AeroSolver):
             self.pp("+" + "-" * 70 + "+")
             self.pp("|  Switching to Aero Problem: %-41s|" % aeroProblem.name)
             self.pp("+" + "-" * 70 + "+")
-            # Remind the user of the modified options when switching ap
-            if self.getOption("printIterations"):
-                self.printModifiedOptions()
 
         # See if the aeroProblem has adflowData already, if not, create.
         try:
@@ -2932,6 +2929,10 @@ class ADFLOW(AeroSolver):
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
 
         self._setAeroProblemData(aeroProblem)
+
+        # Remind the user of the modified options when switching AP
+        if newAP and self.getOption("printIterations"):
+            self.printModifiedOptions()
 
         # Reset the fail flags here since the updateGeometry info
         # updates the mesh which may result in a fatalFail.
