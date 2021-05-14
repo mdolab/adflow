@@ -868,7 +868,7 @@ branch = myIntStack(myIntPtr)
 !
 !      local variables.
 !
-    integer(kind=inttype) :: mm, i, j, level
+    integer(kind=inttype) :: mm, i, j, level, ii
     real(kind=realtype) :: oneover4dt
     real(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
     real(kind=realtype) :: velxgrid0, velygrid0, velzgrid0
@@ -910,10 +910,9 @@ branch = myIntStack(myIntPtr)
 bocoloop2:do mm=1,nviscbocos
 ! store the rotation center and the rotation rate
 ! for this subface.
-        j = nbkglobal
-        i = cgnssubface(mm)
-        rotcenter = cgnsdoms(j)%bocoinfo(i)%rotcenter
-        rotrate = timeref*cgnsdoms(j)%bocoinfo(i)%rotrate
+        ii = cgnssubface(mm)
+        rotcenter = cgnsdoms(nbkglobal)%bocoinfo(ii)%rotcenter
+        rotrate = timeref*cgnsdoms(nbkglobal)%bocoinfo(ii)%rotrate
 ! usewindaxis should go back here!
         velxgrid = velxgrid0
         velygrid = velygrid0
@@ -929,18 +928,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 1)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 2)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 3)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -983,18 +982,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 1)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 1)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 2)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 2)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 3)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 3)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -1037,18 +1036,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -1091,18 +1090,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 1)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 2)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 3)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -1145,18 +1144,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -1199,18 +1198,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 1)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 2)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 3)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)

@@ -1117,7 +1117,7 @@ contains
     !
     !      Local variables.
     !
-    integer(kind=intType) :: mm, i, j, level
+    integer(kind=intType) :: mm, i, j, level, ii
 
     real(kind=realType) :: oneOver4dt
     real(kind=realType) :: velxGrid, velyGrid, velzGrid,ainf
@@ -1295,6 +1295,8 @@ contains
           enddo
 
        enddo bocoLoop1
+#else
+       continue
 #endif
     else
 
@@ -1415,11 +1417,10 @@ contains
           ! Store the rotation center and the rotation rate
           ! for this subface.
 
-          j = nbkGlobal
-          i = cgnsSubface(mm)
+          ii = cgnsSubface(mm)
 
-          rotCenter = cgnsDoms(j)%bocoInfo(i)%rotCenter
-          rotRate   = timeRef*cgnsDoms(j)%bocoInfo(i)%rotRate
+          rotCenter = cgnsDoms(nbkGlobal)%bocoInfo(ii)%rotCenter
+          rotRate   = timeRef*cgnsDoms(nbkGlobal)%bocoInfo(ii)%rotRate
 
           ! useWindAxis should go back here!
           velXgrid = velXGrid0
@@ -1441,18 +1442,18 @@ contains
                   ! due to the usage of the pointer xFace and the fact
                   ! that x starts at index 0 this is shifted 1 index.
 
-                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(1, i+1,j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i+1,j,  1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j,  1))
-                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(1, i+1,j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i+1,j,  2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j,  2))
-                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(1, i+1,j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i+1,j,  3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j,  3))
+                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(1, i,  j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j-1,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i-1,j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i-1,j-1,1))
+                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(1, i,  j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j-1,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i-1,j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i-1,j-1,2))
+                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(1, i,  j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i,  j-1,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i-1,j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(1, i-1,j-1,3))
 
                   ! Determine the coordinates relative to the center
                   ! of rotation.
@@ -1504,18 +1505,18 @@ contains
                   ! due to the usage of the pointer xFace and the fact
                   ! that x starts at index 0 this is shifted 1 index.
 
-                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(il, i+1,j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i+1,j,  1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j,  1))
-                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(il, i+1,j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i+1,j,  2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j,  2))
-                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(il, i+1,j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i+1,j,  3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j,  3))
+                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(il, i,  j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j-1,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i-1,j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i-1,j-1,1))
+                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(il, i,  j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j-1,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i-1,j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i-1,j-1,2))
+                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(il, i,  j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i,  j-1,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i-1,j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(il, i-1,j-1,3))
 
                   ! Determine the coordinates relative to the center
                   ! of rotation.
@@ -1567,18 +1568,18 @@ contains
                   ! due to the usage of the pointer xFace and the fact
                   ! that x starts at index 0 this is shifted 1 index.
 
-                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, 1, j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, 1, j,  1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   1, j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   1, j,  1))
-                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, 1, j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, 1, j,  2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   1, j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   1, j,  2))
-                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, 1, j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, 1, j,  3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   1, j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   1, j,  3))
+                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  1,j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  1,j-1,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,1,j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,1,j-1,1))
+                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  1,j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  1,j-1,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,1,j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,1,j-1,2))
+                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  1,j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  1,j-1,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,1,j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,1,j-1,3))
 
                   ! Determine the coordinates relative to the center
                   ! of rotation.
@@ -1630,18 +1631,18 @@ contains
                   ! due to the usage of the pointer xFace and the fact
                   ! that x starts at index 0 this is shifted 1 index.
 
-                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, jl, j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, jl, j,  1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   jl, j+1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   jl, j,  1))
-                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, jl, j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, jl, j,  2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   jl, j+1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   jl, j,  2))
-                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, jl, j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, jl, j,  3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   jl, j+1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   jl, j,  3))
+                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  jl,j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  jl,j-1,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,jl,j,  1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,jl,j-1,1))
+                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  jl,j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  jl,j-1,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,jl,j,  2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,jl,j-1,2))
+                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  jl,j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  jl,j-1,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,jl,j,  3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,jl,j-1,3))
 
                   ! Determine the coordinates relative to the center
                   ! of rotation.
@@ -1693,18 +1694,18 @@ contains
                   ! due to the usage of the pointer xFace and the fact
                   ! that x starts at index 0 this is shifted 1 index.
 
-                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, j+1,1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, j,  1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j+1,1,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j,  1,1))
-                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, j+1,1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, j,  1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j+1,1,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j,  1,2))
-                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, j+1,1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, j,  1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j+1,1,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j,  1,3))
+                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  j,  1,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  j-1,1,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j,  1,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j-1,1,1))
+                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  j,  1,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  j-1,1,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j,  1,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j-1,1,2))
+                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  j,  1,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  j-1,1,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j,  1,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j-1,1,3))
 
                   ! Determine the coordinates relative to the center
                   ! of rotation.
@@ -1756,18 +1757,18 @@ contains
                   ! due to the usage of the pointer xFace and the fact
                   ! that x starts at index 0 this is shifted 1 index.
 
-                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, j+1,kl,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, j,  kl,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j+1,kl,1) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j,  kl,1))
-                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, j+1,kl,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, j,  kl,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j+1,kl,2) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j,  kl,2))
-                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i+1, j+1,kl,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i+1, j,  kl,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j+1,kl,3) &
-                        +         flowDoms(nn, groundLevel, sps)%x(i,   j,  kl,3))
+                  xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  j,  kl,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  j-1,kl,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j,  kl,1) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j-1,kl,1))
+                  xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  j,  kl,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  j-1,kl,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j,  kl,2) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j-1,kl,2))
+                  xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  j,  kl,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i,  j-1,kl,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j,  kl,3) &
+                        +         flowDoms(nn, groundLevel, sps)%x(i-1,j-1,kl,3))
 
                   ! Determine the coordinates relative to the center
                   ! of rotation.

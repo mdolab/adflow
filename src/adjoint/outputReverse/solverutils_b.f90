@@ -1857,7 +1857,7 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: mm, i, j, level
+    integer(kind=inttype) :: mm, i, j, level, ii
     real(kind=realtype) :: oneover4dt
     real(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
     real(kind=realtype) :: velxgridd, velygridd, velzgridd, ainfd
@@ -1946,11 +1946,11 @@ contains
 bocoloop2:do mm=1,nviscbocos
 ! store the rotation center and the rotation rate
 ! for this subface.
-        call pushinteger4(i)
-        i = cgnssubface(mm)
-        rotcenter = cgnsdoms(j)%bocoinfo(i)%rotcenter
+        call pushinteger4(ii)
+        ii = cgnssubface(mm)
+        rotcenter = cgnsdoms(nbkglobal)%bocoinfo(ii)%rotcenter
         call pushreal8array(rotrate, 3)
-        rotrate = timeref*cgnsdoms(j)%bocoinfo(i)%rotrate
+        rotrate = timeref*cgnsdoms(nbkglobal)%bocoinfo(ii)%rotrate
 ! usewindaxis should go back here!
 ! loop over the quadrilateral faces of the viscous
 ! subface.
@@ -1958,27 +1958,25 @@ bocoloop2:do mm=1,nviscbocos
 ! but the new stands up to tapenade.
         if (bcfaceid(mm) .eq. imin) then
           ad_from0 = bcdata(mm)%jcbeg
-          call pushinteger4(j)
           do j=ad_from0,bcdata(mm)%jcend
             ad_from = bcdata(mm)%icbeg
-            call pushinteger4(i)
             do i=ad_from,bcdata(mm)%icend
 ! compute the coordinates of the centroid of the face.
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 1)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 2)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 3)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               call pushreal8(xxc(1))
@@ -2009,27 +2007,25 @@ bocoloop2:do mm=1,nviscbocos
           call pushcontrol3b(6)
         else if (bcfaceid(mm) .eq. imax) then
           ad_from2 = bcdata(mm)%jcbeg
-          call pushinteger4(j)
           do j=ad_from2,bcdata(mm)%jcend
             ad_from1 = bcdata(mm)%icbeg
-            call pushinteger4(i)
             do i=ad_from1,bcdata(mm)%icend
 ! compute the coordinates of the centroid of the face.
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 1)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 1)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 2)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 2)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 3)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 3)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               call pushreal8(xxc(1))
@@ -2060,27 +2056,25 @@ bocoloop2:do mm=1,nviscbocos
           call pushcontrol3b(5)
         else if (bcfaceid(mm) .eq. jmin) then
           ad_from4 = bcdata(mm)%jcbeg
-          call pushinteger4(j)
           do j=ad_from4,bcdata(mm)%jcend
             ad_from3 = bcdata(mm)%icbeg
-            call pushinteger4(i)
             do i=ad_from3,bcdata(mm)%icend
 ! compute the coordinates of the centroid of the face.
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               call pushreal8(xxc(1))
@@ -2111,27 +2105,25 @@ bocoloop2:do mm=1,nviscbocos
           call pushcontrol3b(4)
         else if (bcfaceid(mm) .eq. jmax) then
           ad_from6 = bcdata(mm)%jcbeg
-          call pushinteger4(j)
           do j=ad_from6,bcdata(mm)%jcend
             ad_from5 = bcdata(mm)%icbeg
-            call pushinteger4(i)
             do i=ad_from5,bcdata(mm)%icend
 ! compute the coordinates of the centroid of the face.
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 1)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 2)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 3)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               call pushreal8(xxc(1))
@@ -2162,27 +2154,25 @@ bocoloop2:do mm=1,nviscbocos
           call pushcontrol3b(3)
         else if (bcfaceid(mm) .eq. kmin) then
           ad_from8 = bcdata(mm)%jcbeg
-          call pushinteger4(j)
           do j=ad_from8,bcdata(mm)%jcend
             ad_from7 = bcdata(mm)%icbeg
-            call pushinteger4(i)
             do i=ad_from7,bcdata(mm)%icend
 ! compute the coordinates of the centroid of the face.
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               call pushreal8(xxc(1))
@@ -2213,27 +2203,25 @@ bocoloop2:do mm=1,nviscbocos
           call pushcontrol3b(2)
         else if (bcfaceid(mm) .eq. kmax) then
           ad_from10 = bcdata(mm)%jcbeg
-          call pushinteger4(j)
           do j=ad_from10,bcdata(mm)%jcend
             ad_from9 = bcdata(mm)%icbeg
-            call pushinteger4(i)
             do i=ad_from9,bcdata(mm)%icend
 ! compute the coordinates of the centroid of the face.
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 1)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 2)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 3)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               call pushreal8(xxc(1))
@@ -2376,51 +2364,49 @@ bocoloop2:do mm=1,nviscbocos
                 xcd(1) = xcd(1) + xxcd(1)
                 xxcd(1) = 0.0_8
                 tempd15 = fourth*xcd(3)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, kl, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, kl, 3) + &
-&                 tempd15
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j, kl, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j, kl, 3) + &
-&                 tempd15
-                flowdomsd(nn, groundlevel, sps)%x(i, j+1, kl, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, j+1, kl, 3) + &
-&                 tempd15
                 flowdomsd(nn, groundlevel, sps)%x(i, j, kl, 3) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, j, kl, 3) + &
 &                 tempd15
+                flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 3) + &
+&                 tempd15
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 3) + &
+&                 tempd15
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 3) + &
+&                 tempd15
                 xcd(3) = 0.0_8
                 tempd16 = fourth*xcd(2)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, kl, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, kl, 2) + &
-&                 tempd16
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j, kl, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j, kl, 2) + &
-&                 tempd16
-                flowdomsd(nn, groundlevel, sps)%x(i, j+1, kl, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, j+1, kl, 2) + &
-&                 tempd16
                 flowdomsd(nn, groundlevel, sps)%x(i, j, kl, 2) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, j, kl, 2) + &
 &                 tempd16
+                flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 2) + &
+&                 tempd16
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 2) + &
+&                 tempd16
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 2) + &
+&                 tempd16
                 xcd(2) = 0.0_8
                 tempd17 = fourth*xcd(1)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, kl, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, kl, 1) + &
-&                 tempd17
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j, kl, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j, kl, 1) + &
-&                 tempd17
-                flowdomsd(nn, groundlevel, sps)%x(i, j+1, kl, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, j+1, kl, 1) + &
-&                 tempd17
                 flowdomsd(nn, groundlevel, sps)%x(i, j, kl, 1) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, j, kl, 1) + &
 &                 tempd17
+                flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 1) + &
+&                 tempd17
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 1) + &
+&                 tempd17
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 1) + &
+&                 tempd17
                 xcd(1) = 0.0_8
               end do
-              call popinteger4(i)
             end do
-            call popinteger4(j)
           else
             rotrated = 0.0_8
             velygridd = 0.0_8
@@ -2517,51 +2503,49 @@ bocoloop2:do mm=1,nviscbocos
                 xcd(1) = xcd(1) + xxcd(1)
                 xxcd(1) = 0.0_8
                 tempd12 = fourth*xcd(3)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, 1, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, 1, 3) + &
-&                 tempd12
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j, 1, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j, 1, 3) + &
-&                 tempd12
-                flowdomsd(nn, groundlevel, sps)%x(i, j+1, 1, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, j+1, 1, 3) + &
-&                 tempd12
                 flowdomsd(nn, groundlevel, sps)%x(i, j, 1, 3) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, j, 1, 3) + &
 &                 tempd12
+                flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 3) + &
+&                 tempd12
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 3) + &
+&                 tempd12
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 3) + &
+&                 tempd12
                 xcd(3) = 0.0_8
                 tempd13 = fourth*xcd(2)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, 1, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, 1, 2) + &
-&                 tempd13
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j, 1, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j, 1, 2) + &
-&                 tempd13
-                flowdomsd(nn, groundlevel, sps)%x(i, j+1, 1, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, j+1, 1, 2) + &
-&                 tempd13
                 flowdomsd(nn, groundlevel, sps)%x(i, j, 1, 2) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, j, 1, 2) + &
 &                 tempd13
+                flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 2) + &
+&                 tempd13
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 2) + &
+&                 tempd13
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 2) + &
+&                 tempd13
                 xcd(2) = 0.0_8
                 tempd14 = fourth*xcd(1)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, 1, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j+1, 1, 1) + &
-&                 tempd14
-                flowdomsd(nn, groundlevel, sps)%x(i+1, j, 1, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, j, 1, 1) + &
-&                 tempd14
-                flowdomsd(nn, groundlevel, sps)%x(i, j+1, 1, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, j+1, 1, 1) + &
-&                 tempd14
                 flowdomsd(nn, groundlevel, sps)%x(i, j, 1, 1) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, j, 1, 1) + &
 &                 tempd14
+                flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 1) + &
+&                 tempd14
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 1) + &
+&                 tempd14
+                flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 1) + &
+&                 tempd14
                 xcd(1) = 0.0_8
               end do
-              call popinteger4(i)
             end do
-            call popinteger4(j)
           end if
         else if (branch .lt. 5) then
           if (branch .eq. 3) then
@@ -2660,51 +2644,49 @@ bocoloop2:do mm=1,nviscbocos
                 xcd(1) = xcd(1) + xxcd(1)
                 xxcd(1) = 0.0_8
                 tempd9 = fourth*xcd(3)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j+1, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j+1, 3) + &
-&                 tempd9
-                flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j, 3) + &
-&                 tempd9
-                flowdomsd(nn, groundlevel, sps)%x(i, jl, j+1, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j+1, 3) + &
-&                 tempd9
                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j, 3) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j, 3) + &
 &                 tempd9
+                flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 3) + &
+&                 tempd9
+                flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 3) + &
+&                 tempd9
+                flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 3) + &
+&                 tempd9
                 xcd(3) = 0.0_8
                 tempd10 = fourth*xcd(2)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j+1, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j+1, 2) + &
-&                 tempd10
-                flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j, 2) + &
-&                 tempd10
-                flowdomsd(nn, groundlevel, sps)%x(i, jl, j+1, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j+1, 2) + &
-&                 tempd10
                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j, 2) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j, 2) + &
 &                 tempd10
+                flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 2) + &
+&                 tempd10
+                flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 2) + &
+&                 tempd10
+                flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 2) + &
+&                 tempd10
                 xcd(2) = 0.0_8
                 tempd11 = fourth*xcd(1)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j+1, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j+1, 1) + &
-&                 tempd11
-                flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, jl, j, 1) + &
-&                 tempd11
-                flowdomsd(nn, groundlevel, sps)%x(i, jl, j+1, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j+1, 1) + &
-&                 tempd11
                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j, 1) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j, 1) + &
 &                 tempd11
+                flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 1) + &
+&                 tempd11
+                flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 1) + &
+&                 tempd11
+                flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 1) + &
+&                 tempd11
                 xcd(1) = 0.0_8
               end do
-              call popinteger4(i)
             end do
-            call popinteger4(j)
           else
             rotrated = 0.0_8
             velygridd = 0.0_8
@@ -2801,48 +2783,46 @@ bocoloop2:do mm=1,nviscbocos
                 xcd(1) = xcd(1) + xxcd(1)
                 xxcd(1) = 0.0_8
                 tempd6 = fourth*xcd(3)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j+1, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j+1, 3) + &
-&                 tempd6
-                flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j, 3) + &
-&                 tempd6
-                flowdomsd(nn, groundlevel, sps)%x(i, 1, j+1, 3) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j+1, 3) + &
-&                 tempd6
                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j, 3) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j, 3) + tempd6
+                flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 3) + &
+&                 tempd6
+                flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 3) + &
+&                 tempd6
+                flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 3) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 3) + &
+&                 tempd6
                 xcd(3) = 0.0_8
                 tempd7 = fourth*xcd(2)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j+1, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j+1, 2) + &
-&                 tempd7
-                flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j, 2) + &
-&                 tempd7
-                flowdomsd(nn, groundlevel, sps)%x(i, 1, j+1, 2) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j+1, 2) + &
-&                 tempd7
                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j, 2) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j, 2) + tempd7
+                flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 2) + &
+&                 tempd7
+                flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 2) + &
+&                 tempd7
+                flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 2) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 2) + &
+&                 tempd7
                 xcd(2) = 0.0_8
                 tempd8 = fourth*xcd(1)
-                flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j+1, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j+1, 1) + &
-&                 tempd8
-                flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i+1, 1, j, 1) + &
-&                 tempd8
-                flowdomsd(nn, groundlevel, sps)%x(i, 1, j+1, 1) = &
-&                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j+1, 1) + &
-&                 tempd8
                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j, 1) = &
 &                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j, 1) + tempd8
+                flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 1) + &
+&                 tempd8
+                flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 1) + &
+&                 tempd8
+                flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 1) = &
+&                 flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 1) + &
+&                 tempd8
                 xcd(1) = 0.0_8
               end do
-              call popinteger4(i)
             end do
-            call popinteger4(j)
           end if
         else if (branch .eq. 5) then
           rotrated = 0.0_8
@@ -2934,48 +2914,46 @@ bocoloop2:do mm=1,nviscbocos
               xcd(1) = xcd(1) + xxcd(1)
               xxcd(1) = 0.0_8
               tempd3 = fourth*xcd(3)
-              flowdomsd(nn, groundlevel, sps)%x(il, i+1, j+1, 3) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i+1, j+1, 3) + &
-&               tempd3
-              flowdomsd(nn, groundlevel, sps)%x(il, i+1, j, 3) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i+1, j, 3) + &
-&               tempd3
-              flowdomsd(nn, groundlevel, sps)%x(il, i, j+1, 3) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i, j+1, 3) + &
-&               tempd3
               flowdomsd(nn, groundlevel, sps)%x(il, i, j, 3) = flowdomsd&
 &               (nn, groundlevel, sps)%x(il, i, j, 3) + tempd3
+              flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 3) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 3) + &
+&               tempd3
+              flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 3) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 3) + &
+&               tempd3
+              flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 3) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 3) + &
+&               tempd3
               xcd(3) = 0.0_8
               tempd4 = fourth*xcd(2)
-              flowdomsd(nn, groundlevel, sps)%x(il, i+1, j+1, 2) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i+1, j+1, 2) + &
-&               tempd4
-              flowdomsd(nn, groundlevel, sps)%x(il, i+1, j, 2) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i+1, j, 2) + &
-&               tempd4
-              flowdomsd(nn, groundlevel, sps)%x(il, i, j+1, 2) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i, j+1, 2) + &
-&               tempd4
               flowdomsd(nn, groundlevel, sps)%x(il, i, j, 2) = flowdomsd&
 &               (nn, groundlevel, sps)%x(il, i, j, 2) + tempd4
+              flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 2) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 2) + &
+&               tempd4
+              flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 2) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 2) + &
+&               tempd4
+              flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 2) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 2) + &
+&               tempd4
               xcd(2) = 0.0_8
               tempd5 = fourth*xcd(1)
-              flowdomsd(nn, groundlevel, sps)%x(il, i+1, j+1, 1) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i+1, j+1, 1) + &
-&               tempd5
-              flowdomsd(nn, groundlevel, sps)%x(il, i+1, j, 1) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i+1, j, 1) + &
-&               tempd5
-              flowdomsd(nn, groundlevel, sps)%x(il, i, j+1, 1) = &
-&               flowdomsd(nn, groundlevel, sps)%x(il, i, j+1, 1) + &
-&               tempd5
               flowdomsd(nn, groundlevel, sps)%x(il, i, j, 1) = flowdomsd&
 &               (nn, groundlevel, sps)%x(il, i, j, 1) + tempd5
+              flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 1) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 1) + &
+&               tempd5
+              flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 1) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 1) + &
+&               tempd5
+              flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 1) = &
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 1) + &
+&               tempd5
               xcd(1) = 0.0_8
             end do
-            call popinteger4(i)
           end do
-          call popinteger4(j)
         else
           rotrated = 0.0_8
           velygridd = 0.0_8
@@ -3066,50 +3044,48 @@ bocoloop2:do mm=1,nviscbocos
               xcd(1) = xcd(1) + xxcd(1)
               xxcd(1) = 0.0_8
               tempd0 = fourth*xcd(3)
-              flowdomsd(nn, groundlevel, sps)%x(1, i+1, j+1, 3) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i+1, j+1, 3) + &
-&               tempd0
-              flowdomsd(nn, groundlevel, sps)%x(1, i+1, j, 3) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i+1, j, 3) + tempd0
-              flowdomsd(nn, groundlevel, sps)%x(1, i, j+1, 3) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i, j+1, 3) + tempd0
               flowdomsd(nn, groundlevel, sps)%x(1, i, j, 3) = flowdomsd(&
 &               nn, groundlevel, sps)%x(1, i, j, 3) + tempd0
+              flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 3) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 3) + tempd0
+              flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 3) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 3) + tempd0
+              flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 3) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 3) + &
+&               tempd0
               xcd(3) = 0.0_8
               tempd1 = fourth*xcd(2)
-              flowdomsd(nn, groundlevel, sps)%x(1, i+1, j+1, 2) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i+1, j+1, 2) + &
-&               tempd1
-              flowdomsd(nn, groundlevel, sps)%x(1, i+1, j, 2) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i+1, j, 2) + tempd1
-              flowdomsd(nn, groundlevel, sps)%x(1, i, j+1, 2) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i, j+1, 2) + tempd1
               flowdomsd(nn, groundlevel, sps)%x(1, i, j, 2) = flowdomsd(&
 &               nn, groundlevel, sps)%x(1, i, j, 2) + tempd1
+              flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 2) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 2) + tempd1
+              flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 2) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 2) + tempd1
+              flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 2) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 2) + &
+&               tempd1
               xcd(2) = 0.0_8
               tempd2 = fourth*xcd(1)
-              flowdomsd(nn, groundlevel, sps)%x(1, i+1, j+1, 1) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i+1, j+1, 1) + &
-&               tempd2
-              flowdomsd(nn, groundlevel, sps)%x(1, i+1, j, 1) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i+1, j, 1) + tempd2
-              flowdomsd(nn, groundlevel, sps)%x(1, i, j+1, 1) = &
-&               flowdomsd(nn, groundlevel, sps)%x(1, i, j+1, 1) + tempd2
               flowdomsd(nn, groundlevel, sps)%x(1, i, j, 1) = flowdomsd(&
 &               nn, groundlevel, sps)%x(1, i, j, 1) + tempd2
+              flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 1) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 1) + tempd2
+              flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 1) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 1) + tempd2
+              flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 1) = &
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 1) + &
+&               tempd2
               xcd(1) = 0.0_8
             end do
-            call popinteger4(i)
           end do
-          call popinteger4(j)
         end if
         velzgrid0d = velzgrid0d + velzgridd
         velygrid0d = velygrid0d + velygridd
         velxgrid0d = velxgrid0d + velxgridd
         call popreal8array(rotrate, 3)
-        timerefd = timerefd + sum(cgnsdoms(j)%bocoinfo(i)%rotrate*&
-&         rotrated)
-        call popinteger4(i)
+        timerefd = timerefd + sum(cgnsdoms(nbkglobal)%bocoinfo(ii)%&
+&         rotrate*rotrated)
+        call popinteger4(ii)
       end do
       call derivativerotmatrixrigid_b(derivrotationmatrix, &
 &                               derivrotationmatrixd, rotationpoint, t(1&
@@ -3170,7 +3146,7 @@ bocoloop2:do mm=1,nviscbocos
 !
 !      local variables.
 !
-    integer(kind=inttype) :: mm, i, j, level
+    integer(kind=inttype) :: mm, i, j, level, ii
     real(kind=realtype) :: oneover4dt
     real(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
     real(kind=realtype) :: velxgrid0, velygrid0, velzgrid0
@@ -3212,10 +3188,9 @@ bocoloop2:do mm=1,nviscbocos
 bocoloop2:do mm=1,nviscbocos
 ! store the rotation center and the rotation rate
 ! for this subface.
-        j = nbkglobal
-        i = cgnssubface(mm)
-        rotcenter = cgnsdoms(j)%bocoinfo(i)%rotcenter
-        rotrate = timeref*cgnsdoms(j)%bocoinfo(i)%rotrate
+        ii = cgnssubface(mm)
+        rotcenter = cgnsdoms(nbkglobal)%bocoinfo(ii)%rotcenter
+        rotrate = timeref*cgnsdoms(nbkglobal)%bocoinfo(ii)%rotrate
 ! usewindaxis should go back here!
         velxgrid = velxgrid0
         velygrid = velygrid0
@@ -3231,18 +3206,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 1)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 2)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i+1, j&
-&               +1, 3)+flowdoms(nn, groundlevel, sps)%x(1, i+1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(1, i, j+1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(1, i, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -3285,18 +3260,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 1)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 1)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 2)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 2)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i+1, &
-&               j+1, 3)+flowdoms(nn, groundlevel, sps)%x(il, i+1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(il, i, j+1, 3)+flowdoms&
-&               (nn, groundlevel, sps)%x(il, i, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -3339,18 +3314,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, 1, j&
-&               +1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, 1, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, 1, j+1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, 1, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -3393,18 +3368,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 1)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 2)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, jl, &
-&               j+1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, jl, j, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, jl, j+1, 3)+flowdoms&
-&               (nn, groundlevel, sps)%x(i, jl, j, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -3447,18 +3422,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 1)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 2)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , 1, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, j, 1, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j+1, 1, 3)+flowdoms(&
-&               nn, groundlevel, sps)%x(i, j, 1, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
@@ -3501,18 +3476,18 @@ bocoloop2:do mm=1,nviscbocos
 ! normally this would be an average of i-1 and i, but
 ! due to the usage of the pointer xface and the fact
 ! that x starts at index 0 this is shifted 1 index.
-              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 1)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 1)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 1)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 1))
-              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 2)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 2)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 2)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 2))
-              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i+1, j+1&
-&               , kl, 3)+flowdoms(nn, groundlevel, sps)%x(i+1, j, kl, 3)&
-&               +flowdoms(nn, groundlevel, sps)%x(i, j+1, kl, 3)+&
-&               flowdoms(nn, groundlevel, sps)%x(i, j, kl, 3))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 3))
 ! determine the coordinates relative to the center
 ! of rotation.
               xxc(1) = xc(1) - rotcenter(1)
