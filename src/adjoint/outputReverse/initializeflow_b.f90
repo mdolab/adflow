@@ -54,8 +54,8 @@ contains
 &   rhoinfdim, rhoinfdimd, muinfdim, muinfdimd, pref, prefd, rhoref, &
 &   rhorefd, tref, trefd, muref, murefd, timeref, timerefd, uref, urefd,&
 &   href, hrefd, pinf, pinfd, pinfcorr, pinfcorrd, rhoinf, rhoinfd, uinf&
-&   , uinfd, rgas, rgasd, muinf, muinfd, gammainf, winf, winfd, nw, nwf,&
-&   kpresent, winf, winfd
+&   , uinfd, rgas, rgasd, muinf, muinfd, gammainf, gammainfd, winf, &
+&   winfd, nw, nwf, kpresent, winf, winfd
     use flowutils_b, only : computegamma, etot, etot_b
     use turbutils_b, only : sanuknowneddyratio, sanuknowneddyratio_b
     implicit none

@@ -534,5 +534,2360 @@ contains
       end select
     end if
   end subroutine timestep_block
-
+!  differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *sfacei *sfacej *s *sfacek
+!   with respect to varying inputs: veldirfreestream machgrid gammainf
+!                pinf timeref rhoinf *(flowdoms.x) *sfacei *sfacej
+!                *s *sfacek *si *sj *sk
+!   rw status of diff variables: veldirfreestream:in machgrid:in
+!                gammainf:in pinf:in timeref:in rhoinf:in *(flowdoms.x):in
+!                *sfacei:in-out *sfacej:in-out *s:in-out *sfacek:in-out
+!                *si:in *sj:in *sk:in
+!   plus diff mem management of: flowdoms.x:in sfacei:in sfacej:in
+!                s:in sfacek:in si:in sj:in sk:in
+  subroutine gridvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
+!
+!       gridvelocitiesfinelevel computes the grid velocities for
+!       the cell centers and the normal grid velocities for the faces
+!       of moving blocks for the currently finest grid, i.e.
+!       groundlevel. the velocities are computed at time t for
+!       spectral mode sps. if useoldcoor is .true. the velocities
+!       are determined using the unsteady time integrator in
+!       combination with the old coordinates; otherwise the analytic
+!       form is used.
+!
+    use blockpointers
+    use cgnsgrid
+    use flowvarrefstate
+    use inputmotion
+    use inputunsteady
+    use iteration
+    use inputphysics
+    use inputtsstabderiv
+    use monitor
+    use communication
+    use flowutils_d, only : derivativerotmatrixrigid, &
+&   derivativerotmatrixrigid_d, getdirvector, getdirvector_d
+    use utils_d, only : setcoeftimeintegrator, tsalpha, tsbeta, tsmach, &
+&   terminate, rotmatrixrigidbody, getdirangle
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: sps, nn
+    logical, intent(in) :: useoldcoor
+    real(kind=realtype), dimension(*), intent(in) :: t
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm
+    integer(kind=inttype) :: i, j, k, ii, iie, jje, kke
+    real(kind=realtype) :: oneover4dt, oneover8dt
+    real(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
+    real(kind=realtype) :: velxgridd, velygridd, velzgridd, ainfd
+    real(kind=realtype) :: velxgrid0, velygrid0, velzgrid0
+    real(kind=realtype) :: velxgrid0d, velygrid0d, velzgrid0d
+    real(kind=realtype), dimension(3) :: sc, xc, xxc
+    real(kind=realtype), dimension(3) :: scd, xcd, xxcd
+    real(kind=realtype), dimension(3) :: rotcenter, rotrate
+    real(kind=realtype), dimension(3) :: rotrated
+    real(kind=realtype), dimension(3) :: rotationpoint
+    real(kind=realtype), dimension(3, 3) :: rotationmatrix, &
+&   derivrotationmatrix
+    real(kind=realtype), dimension(3, 3) :: derivrotationmatrixd
+    real(kind=realtype) :: tnew, told
+    real(kind=realtype), dimension(:, :), pointer :: sface
+    real(kind=realtype), dimension(:, :, :), pointer :: xx, ss
+    real(kind=realtype), dimension(:, :, :, :), pointer :: xxold
+    real(kind=realtype) :: intervalmach, alphats, alphaincrement, betats&
+&   , betaincrement
+    real(kind=realtype), dimension(3) :: veldir
+    real(kind=realtype), dimension(3) :: refdirection
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+! compute the mesh velocity from the given mesh mach number.
+! vel{x,y,z}grid0 is the actual velocity you want at the
+! geometry.
+    arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*&
+&     rhoinfd)/rhoinf**2
+    arg1 = gammainf*pinf/rhoinf
+    if (arg1 .eq. 0.0_8) then
+      ainfd = 0.0_8
+    else
+      ainfd = arg1d/(2.0*sqrt(arg1))
+    end if
+    ainf = sqrt(arg1)
+    velxgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(1)) &
+&     - ainf*machgrid*veldirfreestreamd(1)
+    velxgrid0 = ainf*machgrid*(-veldirfreestream(1))
+    velygrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(2)) &
+&     - ainf*machgrid*veldirfreestreamd(2)
+    velygrid0 = ainf*machgrid*(-veldirfreestream(2))
+    velzgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(3)) &
+&     - ainf*machgrid*veldirfreestreamd(3)
+    velzgrid0 = ainf*machgrid*(-veldirfreestream(3))
+! compute the derivative of the rotation matrix and the rotation
+! point; needed for velocity due to the rigid body rotation of
+! the entire grid. it is assumed that the rigid body motion of
+! the grid is only specified if there is only 1 section present.
+    call derivativerotmatrixrigid_d(derivrotationmatrix, &
+&                             derivrotationmatrixd, rotationpoint, t(1))
+!compute the rotation matrix to update the velocities for the time
+!spectral stability derivative case...
+    if (blockismoving) then
+! determine the situation we are having here.
+      if (.not.useoldcoor) then
+!
+!             the velocities must be determined analytically.
+!
+! store the rotation center and determine the
+! nondimensional rotation rate of this block. as the
+! reference length is 1 timeref == 1/uref and at the end
+! the nondimensional velocity is computed.
+        j = nbkglobal
+        rotcenter = cgnsdoms(j)%rotcenter
+        rotrated = cgnsdoms(j)%rotrate*timerefd
+        rotrate = timeref*cgnsdoms(j)%rotrate
+        velxgridd = velxgrid0d
+        velxgrid = velxgrid0
+        velygridd = velygrid0d
+        velygrid = velygrid0
+        velzgridd = velzgrid0d
+        velzgrid = velzgrid0
+        xcd = 0.0_8
+        xxcd = 0.0_8
+        scd = 0.0_8
+!
+!             grid velocities of the cell centers, including the
+!             1st level halo cells.
+!
+! loop over the cells, including the 1st level halo's.
+        do k=1,ke
+          do j=1,je
+            do i=1,ie
+! determine the coordinates of the cell center,
+! which are stored in xc.
+              xcd(1) = eighth*(flowdomsd(nn, groundlevel, sps)%x(i-1, j-&
+&               1, k-1, 1)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1&
+&               , 1)+flowdomsd(nn, groundlevel, sps)%x(i-1, j, k-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, k, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 1))
+              xc(1) = eighth*(flowdoms(nn, groundlevel, sps)%x(i-1, j-1&
+&               , k-1, 1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, k-1, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, k, 1)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j-1, k, 1)+flowdoms(nn, &
+&               groundlevel, sps)%x(i-1, j, k, 1)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j, k, 1))
+              xcd(2) = eighth*(flowdomsd(nn, groundlevel, sps)%x(i-1, j-&
+&               1, k-1, 2)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1&
+&               , 2)+flowdomsd(nn, groundlevel, sps)%x(i-1, j, k-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, k, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 2))
+              xc(2) = eighth*(flowdoms(nn, groundlevel, sps)%x(i-1, j-1&
+&               , k-1, 2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, k-1, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, k, 2)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j-1, k, 2)+flowdoms(nn, &
+&               groundlevel, sps)%x(i-1, j, k, 2)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j, k, 2))
+              xcd(3) = eighth*(flowdomsd(nn, groundlevel, sps)%x(i-1, j-&
+&               1, k-1, 3)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1&
+&               , 3)+flowdomsd(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, k, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 3))
+              xc(3) = eighth*(flowdoms(nn, groundlevel, sps)%x(i-1, j-1&
+&               , k-1, 3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, k-1, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, k, 3)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j-1, k, 3)+flowdoms(nn, &
+&               groundlevel, sps)%x(i-1, j, k, 3)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the cell center,
+! which is omega*r.
+              scd(1) = rotrated(2)*xxc(3) + rotrate(2)*xxcd(3) - &
+&               rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              scd(2) = rotrated(3)*xxc(1) + rotrate(3)*xxcd(1) - &
+&               rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              scd(3) = rotrated(1)*xxc(2) + rotrate(1)*xxcd(2) - &
+&               rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              sd(i, j, k, 1) = scd(1) + velxgridd + derivrotationmatrixd&
+&               (1, 1)*xxc(1) + derivrotationmatrix(1, 1)*xxcd(1) + &
+&               derivrotationmatrixd(1, 2)*xxc(2) + derivrotationmatrix(&
+&               1, 2)*xxcd(2) + derivrotationmatrixd(1, 3)*xxc(3) + &
+&               derivrotationmatrix(1, 3)*xxcd(3)
+              s(i, j, k, 1) = sc(1) + velxgrid + derivrotationmatrix(1, &
+&               1)*xxc(1) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              sd(i, j, k, 2) = scd(2) + velygridd + derivrotationmatrixd&
+&               (2, 1)*xxc(1) + derivrotationmatrix(2, 1)*xxcd(1) + &
+&               derivrotationmatrixd(2, 2)*xxc(2) + derivrotationmatrix(&
+&               2, 2)*xxcd(2) + derivrotationmatrixd(2, 3)*xxc(3) + &
+&               derivrotationmatrix(2, 3)*xxcd(3)
+              s(i, j, k, 2) = sc(2) + velygrid + derivrotationmatrix(2, &
+&               1)*xxc(1) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              sd(i, j, k, 3) = scd(3) + velzgridd + derivrotationmatrixd&
+&               (3, 1)*xxc(1) + derivrotationmatrix(3, 1)*xxcd(1) + &
+&               derivrotationmatrixd(3, 2)*xxc(2) + derivrotationmatrix(&
+&               3, 2)*xxcd(2) + derivrotationmatrixd(3, 3)*xxc(3) + &
+&               derivrotationmatrix(3, 3)*xxcd(3)
+              s(i, j, k, 3) = sc(3) + velzgrid + derivrotationmatrix(3, &
+&               1)*xxc(1) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+            end do
+          end do
+        end do
+!
+!             normal grid velocities of the faces.
+!
+! loop over the three directions.
+! the original code is elegant but the tapenade has a difficult time 
+! to understand it. thus, we unfold it and make it easier for the 
+! tapenade.
+! i-direction
+        do k=1,ke
+          do j=1,je
+            do i=0,ie
+! determine the coordinates of the face center,
+! which are stored in xc.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j-1&
+&               , k-1, 1)+flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 1&
+&               )+flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               -1, 1)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i, j, k, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j-1&
+&               , k-1, 2)+flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 2&
+&               )+flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               -1, 2)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i, j, k, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j-1&
+&               , k-1, 3)+flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 3&
+&               )+flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               -1, 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+              scd(1) = rotrated(2)*xxc(3) + rotrate(2)*xxcd(3) - &
+&               rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              scd(2) = rotrated(3)*xxc(1) + rotrate(3)*xxcd(1) - &
+&               rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              scd(3) = rotrated(1)*xxc(2) + rotrate(1)*xxcd(2) - &
+&               rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              scd(1) = scd(1) + velxgridd + derivrotationmatrixd(1, 1)*&
+&               xxc(1) + derivrotationmatrix(1, 1)*xxcd(1) + &
+&               derivrotationmatrixd(1, 2)*xxc(2) + derivrotationmatrix(&
+&               1, 2)*xxcd(2) + derivrotationmatrixd(1, 3)*xxc(3) + &
+&               derivrotationmatrix(1, 3)*xxcd(3)
+              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
+&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              scd(2) = scd(2) + velygridd + derivrotationmatrixd(2, 1)*&
+&               xxc(1) + derivrotationmatrix(2, 1)*xxcd(1) + &
+&               derivrotationmatrixd(2, 2)*xxc(2) + derivrotationmatrix(&
+&               2, 2)*xxcd(2) + derivrotationmatrixd(2, 3)*xxc(3) + &
+&               derivrotationmatrix(2, 3)*xxcd(3)
+              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
+&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              scd(3) = scd(3) + velzgridd + derivrotationmatrixd(3, 1)*&
+&               xxc(1) + derivrotationmatrix(3, 1)*xxcd(1) + &
+&               derivrotationmatrixd(3, 2)*xxc(2) + derivrotationmatrix(&
+&               3, 2)*xxcd(2) + derivrotationmatrixd(3, 3)*xxc(3) + &
+&               derivrotationmatrix(3, 3)*xxcd(3)
+              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
+&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+! store the dot product of grid velocity sc and
+! the normal ss in sface.
+              sfaceid(i, j, k) = scd(1)*si(i, j, k, 1) + sc(1)*sid(i, j&
+&               , k, 1) + scd(2)*si(i, j, k, 2) + sc(2)*sid(i, j, k, 2) &
+&               + scd(3)*si(i, j, k, 3) + sc(3)*sid(i, j, k, 3)
+              sfacei(i, j, k) = sc(1)*si(i, j, k, 1) + sc(2)*si(i, j, k&
+&               , 2) + sc(3)*si(i, j, k, 3)
+            end do
+          end do
+        end do
+! j-direction
+        do k=1,ke
+          do j=0,je
+            do i=1,ie
+! determine the coordinates of the face center,
+! which are stored in xc.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i-1, j&
+&               , k, 1)+flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i-1, j&
+&               , k, 2)+flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i-1, j&
+&               , k, 3)+flowdomsd(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+              scd(1) = rotrated(2)*xxc(3) + rotrate(2)*xxcd(3) - &
+&               rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              scd(2) = rotrated(3)*xxc(1) + rotrate(3)*xxcd(1) - &
+&               rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              scd(3) = rotrated(1)*xxc(2) + rotrate(1)*xxcd(2) - &
+&               rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              scd(1) = scd(1) + velxgridd + derivrotationmatrixd(1, 1)*&
+&               xxc(1) + derivrotationmatrix(1, 1)*xxcd(1) + &
+&               derivrotationmatrixd(1, 2)*xxc(2) + derivrotationmatrix(&
+&               1, 2)*xxcd(2) + derivrotationmatrixd(1, 3)*xxc(3) + &
+&               derivrotationmatrix(1, 3)*xxcd(3)
+              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
+&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              scd(2) = scd(2) + velygridd + derivrotationmatrixd(2, 1)*&
+&               xxc(1) + derivrotationmatrix(2, 1)*xxcd(1) + &
+&               derivrotationmatrixd(2, 2)*xxc(2) + derivrotationmatrix(&
+&               2, 2)*xxcd(2) + derivrotationmatrixd(2, 3)*xxc(3) + &
+&               derivrotationmatrix(2, 3)*xxcd(3)
+              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
+&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              scd(3) = scd(3) + velzgridd + derivrotationmatrixd(3, 1)*&
+&               xxc(1) + derivrotationmatrix(3, 1)*xxcd(1) + &
+&               derivrotationmatrixd(3, 2)*xxc(2) + derivrotationmatrix(&
+&               3, 2)*xxcd(2) + derivrotationmatrixd(3, 3)*xxc(3) + &
+&               derivrotationmatrix(3, 3)*xxcd(3)
+              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
+&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+! store the dot product of grid velocity sc and
+! the normal ss in sface.
+              sfacejd(i, j, k) = scd(1)*sj(i, j, k, 1) + sc(1)*sjd(i, j&
+&               , k, 1) + scd(2)*sj(i, j, k, 2) + sc(2)*sjd(i, j, k, 2) &
+&               + scd(3)*sj(i, j, k, 3) + sc(3)*sjd(i, j, k, 3)
+              sfacej(i, j, k) = sc(1)*sj(i, j, k, 1) + sc(2)*sj(i, j, k&
+&               , 2) + sc(3)*sj(i, j, k, 3)
+            end do
+          end do
+        end do
+! k-direction
+        do k=0,ke
+          do j=1,je
+            do i=1,ie
+! determine the coordinates of the face center,
+! which are stored in xc.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j-1&
+&               , k, 1)+flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, k, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j-1&
+&               , k, 2)+flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, k, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j-1&
+&               , k, 3)+flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, k, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+              scd(1) = rotrated(2)*xxc(3) + rotrate(2)*xxcd(3) - &
+&               rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              scd(2) = rotrated(3)*xxc(1) + rotrate(3)*xxcd(1) - &
+&               rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              scd(3) = rotrated(1)*xxc(2) + rotrate(1)*xxcd(2) - &
+&               rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              scd(1) = scd(1) + velxgridd + derivrotationmatrixd(1, 1)*&
+&               xxc(1) + derivrotationmatrix(1, 1)*xxcd(1) + &
+&               derivrotationmatrixd(1, 2)*xxc(2) + derivrotationmatrix(&
+&               1, 2)*xxcd(2) + derivrotationmatrixd(1, 3)*xxc(3) + &
+&               derivrotationmatrix(1, 3)*xxcd(3)
+              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
+&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              scd(2) = scd(2) + velygridd + derivrotationmatrixd(2, 1)*&
+&               xxc(1) + derivrotationmatrix(2, 1)*xxcd(1) + &
+&               derivrotationmatrixd(2, 2)*xxc(2) + derivrotationmatrix(&
+&               2, 2)*xxcd(2) + derivrotationmatrixd(2, 3)*xxc(3) + &
+&               derivrotationmatrix(2, 3)*xxcd(3)
+              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
+&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              scd(3) = scd(3) + velzgridd + derivrotationmatrixd(3, 1)*&
+&               xxc(1) + derivrotationmatrix(3, 1)*xxcd(1) + &
+&               derivrotationmatrixd(3, 2)*xxc(2) + derivrotationmatrix(&
+&               3, 2)*xxcd(2) + derivrotationmatrixd(3, 3)*xxc(3) + &
+&               derivrotationmatrix(3, 3)*xxcd(3)
+              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
+&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+! store the dot product of grid velocity sc and
+! the normal ss in sface.
+              sfacekd(i, j, k) = scd(1)*sk(i, j, k, 1) + sc(1)*skd(i, j&
+&               , k, 1) + scd(2)*sk(i, j, k, 2) + sc(2)*skd(i, j, k, 2) &
+&               + scd(3)*sk(i, j, k, 3) + sc(3)*skd(i, j, k, 3)
+              sfacek(i, j, k) = sc(1)*sk(i, j, k, 1) + sc(2)*sk(i, j, k&
+&               , 2) + sc(3)*sk(i, j, k, 3)
+            end do
+          end do
+        end do
+      end if
+    end if
+  end subroutine gridvelocitiesfinelevel_block_d
+  subroutine gridvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
+!
+!       gridvelocitiesfinelevel computes the grid velocities for
+!       the cell centers and the normal grid velocities for the faces
+!       of moving blocks for the currently finest grid, i.e.
+!       groundlevel. the velocities are computed at time t for
+!       spectral mode sps. if useoldcoor is .true. the velocities
+!       are determined using the unsteady time integrator in
+!       combination with the old coordinates; otherwise the analytic
+!       form is used.
+!
+    use blockpointers
+    use cgnsgrid
+    use flowvarrefstate
+    use inputmotion
+    use inputunsteady
+    use iteration
+    use inputphysics
+    use inputtsstabderiv
+    use monitor
+    use communication
+    use flowutils_d, only : derivativerotmatrixrigid, getdirvector
+    use utils_d, only : setcoeftimeintegrator, tsalpha, tsbeta, tsmach, &
+&   terminate, rotmatrixrigidbody, getdirangle
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: sps, nn
+    logical, intent(in) :: useoldcoor
+    real(kind=realtype), dimension(*), intent(in) :: t
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm
+    integer(kind=inttype) :: i, j, k, ii, iie, jje, kke
+    real(kind=realtype) :: oneover4dt, oneover8dt
+    real(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
+    real(kind=realtype) :: velxgrid0, velygrid0, velzgrid0
+    real(kind=realtype), dimension(3) :: sc, xc, xxc
+    real(kind=realtype), dimension(3) :: rotcenter, rotrate
+    real(kind=realtype), dimension(3) :: rotationpoint
+    real(kind=realtype), dimension(3, 3) :: rotationmatrix, &
+&   derivrotationmatrix
+    real(kind=realtype) :: tnew, told
+    real(kind=realtype), dimension(:, :), pointer :: sface
+    real(kind=realtype), dimension(:, :, :), pointer :: xx, ss
+    real(kind=realtype), dimension(:, :, :, :), pointer :: xxold
+    real(kind=realtype) :: intervalmach, alphats, alphaincrement, betats&
+&   , betaincrement
+    real(kind=realtype), dimension(3) :: veldir
+    real(kind=realtype), dimension(3) :: refdirection
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+! compute the mesh velocity from the given mesh mach number.
+! vel{x,y,z}grid0 is the actual velocity you want at the
+! geometry.
+    arg1 = gammainf*pinf/rhoinf
+    ainf = sqrt(arg1)
+    velxgrid0 = ainf*machgrid*(-veldirfreestream(1))
+    velygrid0 = ainf*machgrid*(-veldirfreestream(2))
+    velzgrid0 = ainf*machgrid*(-veldirfreestream(3))
+! compute the derivative of the rotation matrix and the rotation
+! point; needed for velocity due to the rigid body rotation of
+! the entire grid. it is assumed that the rigid body motion of
+! the grid is only specified if there is only 1 section present.
+    call derivativerotmatrixrigid(derivrotationmatrix, rotationpoint, t(&
+&                           1))
+!compute the rotation matrix to update the velocities for the time
+!spectral stability derivative case...
+    if (blockismoving) then
+! determine the situation we are having here.
+      if (.not.useoldcoor) then
+!
+!             the velocities must be determined analytically.
+!
+! store the rotation center and determine the
+! nondimensional rotation rate of this block. as the
+! reference length is 1 timeref == 1/uref and at the end
+! the nondimensional velocity is computed.
+        j = nbkglobal
+        rotcenter = cgnsdoms(j)%rotcenter
+        rotrate = timeref*cgnsdoms(j)%rotrate
+        velxgrid = velxgrid0
+        velygrid = velygrid0
+        velzgrid = velzgrid0
+!
+!             grid velocities of the cell centers, including the
+!             1st level halo cells.
+!
+! loop over the cells, including the 1st level halo's.
+        do k=1,ke
+          do j=1,je
+            do i=1,ie
+! determine the coordinates of the cell center,
+! which are stored in xc.
+              xc(1) = eighth*(flowdoms(nn, groundlevel, sps)%x(i-1, j-1&
+&               , k-1, 1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, k-1, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, k, 1)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j-1, k, 1)+flowdoms(nn, &
+&               groundlevel, sps)%x(i-1, j, k, 1)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j, k, 1))
+              xc(2) = eighth*(flowdoms(nn, groundlevel, sps)%x(i-1, j-1&
+&               , k-1, 2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, k-1, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, k, 2)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j-1, k, 2)+flowdoms(nn, &
+&               groundlevel, sps)%x(i-1, j, k, 2)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j, k, 2))
+              xc(3) = eighth*(flowdoms(nn, groundlevel, sps)%x(i-1, j-1&
+&               , k-1, 3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, k-1, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, k, 3)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j-1, k, 3)+flowdoms(nn, &
+&               groundlevel, sps)%x(i-1, j, k, 3)+flowdoms(nn, &
+&               groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the cell center,
+! which is omega*r.
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              s(i, j, k, 1) = sc(1) + velxgrid + derivrotationmatrix(1, &
+&               1)*xxc(1) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              s(i, j, k, 2) = sc(2) + velygrid + derivrotationmatrix(2, &
+&               1)*xxc(1) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              s(i, j, k, 3) = sc(3) + velzgrid + derivrotationmatrix(3, &
+&               1)*xxc(1) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+            end do
+          end do
+        end do
+!
+!             normal grid velocities of the faces.
+!
+! loop over the three directions.
+! the original code is elegant but the tapenade has a difficult time 
+! to understand it. thus, we unfold it and make it easier for the 
+! tapenade.
+! i-direction
+        do k=1,ke
+          do j=1,je
+            do i=0,ie
+! determine the coordinates of the face center,
+! which are stored in xc.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               -1, 1)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i, j, k, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               -1, 2)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i, j, k, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               -1, 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
+&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
+&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
+&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+! store the dot product of grid velocity sc and
+! the normal ss in sface.
+              sfacei(i, j, k) = sc(1)*si(i, j, k, 1) + sc(2)*si(i, j, k&
+&               , 2) + sc(3)*si(i, j, k, 3)
+            end do
+          end do
+        end do
+! j-direction
+        do k=1,ke
+          do j=0,je
+            do i=1,ie
+! determine the coordinates of the face center,
+! which are stored in xc.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
+&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
+&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
+&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+! store the dot product of grid velocity sc and
+! the normal ss in sface.
+              sfacej(i, j, k) = sc(1)*sj(i, j, k, 1) + sc(2)*sj(i, j, k&
+&               , 2) + sc(3)*sj(i, j, k, 3)
+            end do
+          end do
+        end do
+! k-direction
+        do k=0,ke
+          do j=1,je
+            do i=1,ie
+! determine the coordinates of the face center,
+! which are stored in xc.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
+! determine the coordinates relative to the
+! center of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
+&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
+&               derivrotationmatrix(1, 3)*xxc(3)
+              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
+&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
+&               derivrotationmatrix(2, 3)*xxc(3)
+              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
+&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
+&               derivrotationmatrix(3, 3)*xxc(3)
+! store the dot product of grid velocity sc and
+! the normal ss in sface.
+              sfacek(i, j, k) = sc(1)*sk(i, j, k, 1) + sc(2)*sk(i, j, k&
+&               , 2) + sc(3)*sk(i, j, k, 3)
+            end do
+          end do
+        end do
+      end if
+    end if
+  end subroutine gridvelocitiesfinelevel_block
+!  differentiation of slipvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *(*bcdata.uslip)
+!   with respect to varying inputs: veldirfreestream machgrid gammainf
+!                pinf timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
+!   rw status of diff variables: veldirfreestream:in machgrid:in
+!                gammainf:in pinf:in timeref:in rhoinf:in *(flowdoms.x):in
+!                *(*bcdata.uslip):in-out
+!   plus diff mem management of: flowdoms.x:in bcdata:in *bcdata.uslip:in
+  subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
+!
+!       slipvelocitiesfinelevel computes the slip velocities for
+!       viscous subfaces on all viscous boundaries on groundlevel for
+!       the given spectral solution. if useoldcoor is .true. the
+!       velocities are determined using the unsteady time integrator;
+!       otherwise the analytic form is used.
+!
+    use constants
+    use inputtimespectral
+    use blockpointers
+    use cgnsgrid
+    use flowvarrefstate
+    use inputmotion
+    use inputunsteady
+    use iteration
+    use inputphysics
+    use inputtsstabderiv
+    use monitor
+    use communication
+    use flowutils_d, only : derivativerotmatrixrigid, &
+&   derivativerotmatrixrigid_d, getdirvector, getdirvector_d
+    use utils_d, only : tsalpha, tsbeta, tsmach, terminate, &
+&   rotmatrixrigidbody, setcoeftimeintegrator, getdirangle
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: sps, nn
+    logical, intent(in) :: useoldcoor
+    real(kind=realtype), dimension(*), intent(in) :: t
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm, i, j, level, ii
+    real(kind=realtype) :: oneover4dt
+    real(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
+    real(kind=realtype) :: velxgridd, velygridd, velzgridd, ainfd
+    real(kind=realtype) :: velxgrid0, velygrid0, velzgrid0
+    real(kind=realtype) :: velxgrid0d, velygrid0d, velzgrid0d
+    real(kind=realtype), dimension(3) :: xc, xxc
+    real(kind=realtype), dimension(3) :: xcd, xxcd
+    real(kind=realtype), dimension(3) :: rotcenter, rotrate
+    real(kind=realtype), dimension(3) :: rotrated
+    real(kind=realtype), dimension(3) :: rotationpoint
+    real(kind=realtype), dimension(3, 3) :: rotationmatrix, &
+&   derivrotationmatrix
+    real(kind=realtype), dimension(3, 3) :: derivrotationmatrixd
+    real(kind=realtype) :: tnew, told
+    real(kind=realtype), dimension(:, :, :), pointer :: uslip
+    real(kind=realtype), dimension(:, :, :), pointer :: xface
+    real(kind=realtype), dimension(:, :, :, :), pointer :: xfaceold
+    real(kind=realtype) :: intervalmach, alphats, alphaincrement, betats&
+&   , betaincrement
+    real(kind=realtype), dimension(3) :: veldir
+    real(kind=realtype), dimension(3) :: refdirection
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+! determine the situation we are having here.
+    if (.not.useoldcoor) then
+! the velocities must be determined analytically.
+! compute the mesh velocity from the given mesh mach number.
+!  ainf = sqrt(gammainf*pinf/rhoinf)
+!  velxgrid = ainf*machgrid(1)
+!  velygrid = ainf*machgrid(2)
+!  velzgrid = ainf*machgrid(3)
+      arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*&
+&       rhoinfd)/rhoinf**2
+      arg1 = gammainf*pinf/rhoinf
+      if (arg1 .eq. 0.0_8) then
+        ainfd = 0.0_8
+      else
+        ainfd = arg1d/(2.0*sqrt(arg1))
+      end if
+      ainf = sqrt(arg1)
+      velxgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(1)&
+&       ) - ainf*machgrid*veldirfreestreamd(1)
+      velxgrid0 = ainf*machgrid*(-veldirfreestream(1))
+      velygrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(2)&
+&       ) - ainf*machgrid*veldirfreestreamd(2)
+      velygrid0 = ainf*machgrid*(-veldirfreestream(2))
+      velzgrid0d = -((ainfd*machgrid+ainf*machgridd)*veldirfreestream(3)&
+&       ) - ainf*machgrid*veldirfreestreamd(3)
+      velzgrid0 = ainf*machgrid*(-veldirfreestream(3))
+! compute the derivative of the rotation matrix and the rotation
+! point; needed for velocity due to the rigid body rotation of
+! the entire grid. it is assumed that the rigid body motion of
+! the grid is only specified if there is only 1 section present.
+      call derivativerotmatrixrigid_d(derivrotationmatrix, &
+&                               derivrotationmatrixd, rotationpoint, t(1&
+&                               ))
+      xcd = 0.0_8
+      xxcd = 0.0_8
+!compute the rotation matrix to update the velocities for the time
+!spectral stability derivative case...
+! loop over the number of viscous subfaces.
+bocoloop2:do mm=1,nviscbocos
+! store the rotation center and the rotation rate
+! for this subface.
+        ii = cgnssubface(mm)
+        rotcenter = cgnsdoms(nbkglobal)%bocoinfo(ii)%rotcenter
+        rotrated = cgnsdoms(nbkglobal)%bocoinfo(ii)%rotrate*timerefd
+        rotrate = timeref*cgnsdoms(nbkglobal)%bocoinfo(ii)%rotrate
+! usewindaxis should go back here!
+        velxgridd = velxgrid0d
+        velxgrid = velxgrid0
+        velygridd = velygrid0d
+        velygrid = velygrid0
+        velzgridd = velzgrid0d
+        velzgrid = velzgrid0
+! loop over the quadrilateral faces of the viscous
+! subface.
+! the new procedure is less elegant as the previous one.
+! but the new stands up to tapenade.
+        if (bcfaceid(mm) .eq. imin) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(1, i, j&
+&               , 1)+flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(1, i, j&
+&               , 2)+flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(1, i, j&
+&               , 3)+flowdomsd(nn, groundlevel, sps)%x(1, i, j-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(1, i-1, j-1, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdatad(mm)%uslip(i, j, 1) = rotrated(2)*xxc(3) + rotrate(&
+&               2)*xxcd(3) - rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdatad(mm)%uslip(i, j, 2) = rotrated(3)*xxc(1) + rotrate(&
+&               3)*xxcd(1) - rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = rotrated(1)*xxc(2) + rotrate(&
+&               1)*xxcd(2) - rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdatad(mm)%uslip(i, j, 1) = bcdatad(mm)%uslip(i, j, 1) + &
+&               velxgridd + derivrotationmatrixd(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 1)*xxcd(1) + derivrotationmatrixd&
+&               (1, 2)*xxc(2) + derivrotationmatrix(1, 2)*xxcd(2) + &
+&               derivrotationmatrixd(1, 3)*xxc(3) + derivrotationmatrix(&
+&               1, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 2) = bcdatad(mm)%uslip(i, j, 2) + &
+&               velygridd + derivrotationmatrixd(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 1)*xxcd(1) + derivrotationmatrixd&
+&               (2, 2)*xxc(2) + derivrotationmatrix(2, 2)*xxcd(2) + &
+&               derivrotationmatrixd(2, 3)*xxc(3) + derivrotationmatrix(&
+&               2, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = bcdatad(mm)%uslip(i, j, 3) + &
+&               velzgridd + derivrotationmatrixd(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 1)*xxcd(1) + derivrotationmatrixd&
+&               (3, 2)*xxc(2) + derivrotationmatrix(3, 2)*xxcd(2) + &
+&               derivrotationmatrixd(3, 3)*xxc(3) + derivrotationmatrix(&
+&               3, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. imax) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(il, i, &
+&               j, 1)+flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(il, i, &
+&               j, 2)+flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(il, i, &
+&               j, 3)+flowdomsd(nn, groundlevel, sps)%x(il, i, j-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(il, i-1, j-1, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdatad(mm)%uslip(i, j, 1) = rotrated(2)*xxc(3) + rotrate(&
+&               2)*xxcd(3) - rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdatad(mm)%uslip(i, j, 2) = rotrated(3)*xxc(1) + rotrate(&
+&               3)*xxcd(1) - rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = rotrated(1)*xxc(2) + rotrate(&
+&               1)*xxcd(2) - rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdatad(mm)%uslip(i, j, 1) = bcdatad(mm)%uslip(i, j, 1) + &
+&               velxgridd + derivrotationmatrixd(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 1)*xxcd(1) + derivrotationmatrixd&
+&               (1, 2)*xxc(2) + derivrotationmatrix(1, 2)*xxcd(2) + &
+&               derivrotationmatrixd(1, 3)*xxc(3) + derivrotationmatrix(&
+&               1, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 2) = bcdatad(mm)%uslip(i, j, 2) + &
+&               velygridd + derivrotationmatrixd(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 1)*xxcd(1) + derivrotationmatrixd&
+&               (2, 2)*xxc(2) + derivrotationmatrix(2, 2)*xxcd(2) + &
+&               derivrotationmatrixd(2, 3)*xxc(3) + derivrotationmatrix(&
+&               2, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = bcdatad(mm)%uslip(i, j, 3) + &
+&               velzgridd + derivrotationmatrixd(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 1)*xxcd(1) + derivrotationmatrixd&
+&               (3, 2)*xxc(2) + derivrotationmatrix(3, 2)*xxcd(2) + &
+&               derivrotationmatrixd(3, 3)*xxc(3) + derivrotationmatrix(&
+&               3, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. jmin) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, 1, j&
+&               , 1)+flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, 1, j&
+&               , 2)+flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, 1, j&
+&               , 3)+flowdomsd(nn, groundlevel, sps)%x(i, 1, j-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, 1, j-1, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdatad(mm)%uslip(i, j, 1) = rotrated(2)*xxc(3) + rotrate(&
+&               2)*xxcd(3) - rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdatad(mm)%uslip(i, j, 2) = rotrated(3)*xxc(1) + rotrate(&
+&               3)*xxcd(1) - rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = rotrated(1)*xxc(2) + rotrate(&
+&               1)*xxcd(2) - rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdatad(mm)%uslip(i, j, 1) = bcdatad(mm)%uslip(i, j, 1) + &
+&               velxgridd + derivrotationmatrixd(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 1)*xxcd(1) + derivrotationmatrixd&
+&               (1, 2)*xxc(2) + derivrotationmatrix(1, 2)*xxcd(2) + &
+&               derivrotationmatrixd(1, 3)*xxc(3) + derivrotationmatrix(&
+&               1, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 2) = bcdatad(mm)%uslip(i, j, 2) + &
+&               velygridd + derivrotationmatrixd(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 1)*xxcd(1) + derivrotationmatrixd&
+&               (2, 2)*xxc(2) + derivrotationmatrix(2, 2)*xxcd(2) + &
+&               derivrotationmatrixd(2, 3)*xxc(3) + derivrotationmatrix(&
+&               2, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = bcdatad(mm)%uslip(i, j, 3) + &
+&               velzgridd + derivrotationmatrixd(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 1)*xxcd(1) + derivrotationmatrixd&
+&               (3, 2)*xxc(2) + derivrotationmatrix(3, 2)*xxcd(2) + &
+&               derivrotationmatrixd(3, 3)*xxc(3) + derivrotationmatrix(&
+&               3, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. jmax) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, jl, &
+&               j, 1)+flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, jl, &
+&               j, 2)+flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, jl, &
+&               j, 3)+flowdomsd(nn, groundlevel, sps)%x(i, jl, j-1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, jl, j-1, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdatad(mm)%uslip(i, j, 1) = rotrated(2)*xxc(3) + rotrate(&
+&               2)*xxcd(3) - rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdatad(mm)%uslip(i, j, 2) = rotrated(3)*xxc(1) + rotrate(&
+&               3)*xxcd(1) - rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = rotrated(1)*xxc(2) + rotrate(&
+&               1)*xxcd(2) - rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdatad(mm)%uslip(i, j, 1) = bcdatad(mm)%uslip(i, j, 1) + &
+&               velxgridd + derivrotationmatrixd(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 1)*xxcd(1) + derivrotationmatrixd&
+&               (1, 2)*xxc(2) + derivrotationmatrix(1, 2)*xxcd(2) + &
+&               derivrotationmatrixd(1, 3)*xxc(3) + derivrotationmatrix(&
+&               1, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 2) = bcdatad(mm)%uslip(i, j, 2) + &
+&               velygridd + derivrotationmatrixd(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 1)*xxcd(1) + derivrotationmatrixd&
+&               (2, 2)*xxc(2) + derivrotationmatrix(2, 2)*xxcd(2) + &
+&               derivrotationmatrixd(2, 3)*xxc(3) + derivrotationmatrix(&
+&               2, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = bcdatad(mm)%uslip(i, j, 3) + &
+&               velzgridd + derivrotationmatrixd(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 1)*xxcd(1) + derivrotationmatrixd&
+&               (3, 2)*xxc(2) + derivrotationmatrix(3, 2)*xxcd(2) + &
+&               derivrotationmatrixd(3, 3)*xxc(3) + derivrotationmatrix(&
+&               3, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. kmin) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j, 1&
+&               , 1)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j, 1&
+&               , 2)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j, 1&
+&               , 3)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, 1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, 1, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, 1, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdatad(mm)%uslip(i, j, 1) = rotrated(2)*xxc(3) + rotrate(&
+&               2)*xxcd(3) - rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdatad(mm)%uslip(i, j, 2) = rotrated(3)*xxc(1) + rotrate(&
+&               3)*xxcd(1) - rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = rotrated(1)*xxc(2) + rotrate(&
+&               1)*xxcd(2) - rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdatad(mm)%uslip(i, j, 1) = bcdatad(mm)%uslip(i, j, 1) + &
+&               velxgridd + derivrotationmatrixd(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 1)*xxcd(1) + derivrotationmatrixd&
+&               (1, 2)*xxc(2) + derivrotationmatrix(1, 2)*xxcd(2) + &
+&               derivrotationmatrixd(1, 3)*xxc(3) + derivrotationmatrix(&
+&               1, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 2) = bcdatad(mm)%uslip(i, j, 2) + &
+&               velygridd + derivrotationmatrixd(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 1)*xxcd(1) + derivrotationmatrixd&
+&               (2, 2)*xxc(2) + derivrotationmatrix(2, 2)*xxcd(2) + &
+&               derivrotationmatrixd(2, 3)*xxc(3) + derivrotationmatrix(&
+&               2, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = bcdatad(mm)%uslip(i, j, 3) + &
+&               velzgridd + derivrotationmatrixd(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 1)*xxcd(1) + derivrotationmatrixd&
+&               (3, 2)*xxc(2) + derivrotationmatrix(3, 2)*xxcd(2) + &
+&               derivrotationmatrixd(3, 3)*xxc(3) + derivrotationmatrix(&
+&               3, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. kmax) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xcd(1) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j, &
+&               kl, 1)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 1)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 1))
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 1))
+              xcd(2) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j, &
+&               kl, 2)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 2)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 2))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 2))
+              xcd(3) = fourth*(flowdomsd(nn, groundlevel, sps)%x(i, j, &
+&               kl, 3)+flowdomsd(nn, groundlevel, sps)%x(i, j-1, kl, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j, kl, 3)+&
+&               flowdomsd(nn, groundlevel, sps)%x(i-1, j-1, kl, 3))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotcenter(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdatad(mm)%uslip(i, j, 1) = rotrated(2)*xxc(3) + rotrate(&
+&               2)*xxcd(3) - rotrated(3)*xxc(2) - rotrate(3)*xxcd(2)
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdatad(mm)%uslip(i, j, 2) = rotrated(3)*xxc(1) + rotrate(&
+&               3)*xxcd(1) - rotrated(1)*xxc(3) - rotrate(1)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = rotrated(1)*xxc(2) + rotrate(&
+&               1)*xxcd(2) - rotrated(2)*xxc(1) - rotrate(2)*xxcd(1)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxcd(1) = xcd(1)
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxcd(2) = xcd(2)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxcd(3) = xcd(3)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdatad(mm)%uslip(i, j, 1) = bcdatad(mm)%uslip(i, j, 1) + &
+&               velxgridd + derivrotationmatrixd(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 1)*xxcd(1) + derivrotationmatrixd&
+&               (1, 2)*xxc(2) + derivrotationmatrix(1, 2)*xxcd(2) + &
+&               derivrotationmatrixd(1, 3)*xxc(3) + derivrotationmatrix(&
+&               1, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 2) = bcdatad(mm)%uslip(i, j, 2) + &
+&               velygridd + derivrotationmatrixd(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 1)*xxcd(1) + derivrotationmatrixd&
+&               (2, 2)*xxc(2) + derivrotationmatrix(2, 2)*xxcd(2) + &
+&               derivrotationmatrixd(2, 3)*xxc(3) + derivrotationmatrix(&
+&               2, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdatad(mm)%uslip(i, j, 3) = bcdatad(mm)%uslip(i, j, 3) + &
+&               velzgridd + derivrotationmatrixd(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 1)*xxcd(1) + derivrotationmatrixd&
+&               (3, 2)*xxc(2) + derivrotationmatrix(3, 2)*xxcd(2) + &
+&               derivrotationmatrixd(3, 3)*xxc(3) + derivrotationmatrix(&
+&               3, 3)*xxcd(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        end if
+      end do bocoloop2
+    end if
+  end subroutine slipvelocitiesfinelevel_block_d
+  subroutine slipvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
+!
+!       slipvelocitiesfinelevel computes the slip velocities for
+!       viscous subfaces on all viscous boundaries on groundlevel for
+!       the given spectral solution. if useoldcoor is .true. the
+!       velocities are determined using the unsteady time integrator;
+!       otherwise the analytic form is used.
+!
+    use constants
+    use inputtimespectral
+    use blockpointers
+    use cgnsgrid
+    use flowvarrefstate
+    use inputmotion
+    use inputunsteady
+    use iteration
+    use inputphysics
+    use inputtsstabderiv
+    use monitor
+    use communication
+    use flowutils_d, only : derivativerotmatrixrigid, getdirvector
+    use utils_d, only : tsalpha, tsbeta, tsmach, terminate, &
+&   rotmatrixrigidbody, setcoeftimeintegrator, getdirangle
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: sps, nn
+    logical, intent(in) :: useoldcoor
+    real(kind=realtype), dimension(*), intent(in) :: t
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm, i, j, level, ii
+    real(kind=realtype) :: oneover4dt
+    real(kind=realtype) :: velxgrid, velygrid, velzgrid, ainf
+    real(kind=realtype) :: velxgrid0, velygrid0, velzgrid0
+    real(kind=realtype), dimension(3) :: xc, xxc
+    real(kind=realtype), dimension(3) :: rotcenter, rotrate
+    real(kind=realtype), dimension(3) :: rotationpoint
+    real(kind=realtype), dimension(3, 3) :: rotationmatrix, &
+&   derivrotationmatrix
+    real(kind=realtype) :: tnew, told
+    real(kind=realtype), dimension(:, :, :), pointer :: uslip
+    real(kind=realtype), dimension(:, :, :), pointer :: xface
+    real(kind=realtype), dimension(:, :, :, :), pointer :: xfaceold
+    real(kind=realtype) :: intervalmach, alphats, alphaincrement, betats&
+&   , betaincrement
+    real(kind=realtype), dimension(3) :: veldir
+    real(kind=realtype), dimension(3) :: refdirection
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+! determine the situation we are having here.
+    if (.not.useoldcoor) then
+! the velocities must be determined analytically.
+! compute the mesh velocity from the given mesh mach number.
+!  ainf = sqrt(gammainf*pinf/rhoinf)
+!  velxgrid = ainf*machgrid(1)
+!  velygrid = ainf*machgrid(2)
+!  velzgrid = ainf*machgrid(3)
+      arg1 = gammainf*pinf/rhoinf
+      ainf = sqrt(arg1)
+      velxgrid0 = ainf*machgrid*(-veldirfreestream(1))
+      velygrid0 = ainf*machgrid*(-veldirfreestream(2))
+      velzgrid0 = ainf*machgrid*(-veldirfreestream(3))
+! compute the derivative of the rotation matrix and the rotation
+! point; needed for velocity due to the rigid body rotation of
+! the entire grid. it is assumed that the rigid body motion of
+! the grid is only specified if there is only 1 section present.
+      call derivativerotmatrixrigid(derivrotationmatrix, rotationpoint, &
+&                             t(1))
+!compute the rotation matrix to update the velocities for the time
+!spectral stability derivative case...
+! loop over the number of viscous subfaces.
+bocoloop2:do mm=1,nviscbocos
+! store the rotation center and the rotation rate
+! for this subface.
+        ii = cgnssubface(mm)
+        rotcenter = cgnsdoms(nbkglobal)%bocoinfo(ii)%rotcenter
+        rotrate = timeref*cgnsdoms(nbkglobal)%bocoinfo(ii)%rotrate
+! usewindaxis should go back here!
+        velxgrid = velxgrid0
+        velygrid = velygrid0
+        velzgrid = velzgrid0
+! loop over the quadrilateral faces of the viscous
+! subface.
+! the new procedure is less elegant as the previous one.
+! but the new stands up to tapenade.
+        if (bcfaceid(mm) .eq. imin) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(1, i, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(1, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(1, i-1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(1, i-1, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. imax) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(il, i, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(il, i, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(il, i-1, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(il, i-1, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. jmin) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, 1, j, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, 1, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, 1, j, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, 1, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. jmax) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, jl, j&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, jl, j-1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, jl, j, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, jl, j-1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. kmin) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 1)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 2)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, 1, &
+&               3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, 1, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, 1, 3)+flowdoms(&
+&               nn, groundlevel, sps)%x(i-1, j-1, 1, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        else if (bcfaceid(mm) .eq. kmax) then
+          do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+            do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the coordinates of the centroid of the face.
+! normally this would be an average of i-1 and i, but
+! due to the usage of the pointer xface and the fact
+! that x starts at index 0 this is shifted 1 index.
+              xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 1)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 1)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 1))
+              xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 2)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 2)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 2))
+              xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j, kl&
+&               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j-1, kl, 3)+&
+&               flowdoms(nn, groundlevel, sps)%x(i-1, j, kl, 3)+flowdoms&
+&               (nn, groundlevel, sps)%x(i-1, j-1, kl, 3))
+! determine the coordinates relative to the center
+! of rotation.
+              xxc(1) = xc(1) - rotcenter(1)
+              xxc(2) = xc(2) - rotcenter(2)
+              xxc(3) = xc(3) - rotcenter(3)
+! compute the velocity, which is the cross product
+! of rotrate and xc.
+              bcdata(mm)%uslip(i, j, 1) = rotrate(2)*xxc(3) - rotrate(3)&
+&               *xxc(2)
+              bcdata(mm)%uslip(i, j, 2) = rotrate(3)*xxc(1) - rotrate(1)&
+&               *xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = rotrate(1)*xxc(2) - rotrate(2)&
+&               *xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+              xxc(1) = xc(1) - rotationpoint(1)
+              xxc(2) = xc(2) - rotationpoint(2)
+              xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell center.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+              bcdata(mm)%uslip(i, j, 1) = bcdata(mm)%uslip(i, j, 1) + &
+&               velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&               derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 2) = bcdata(mm)%uslip(i, j, 2) + &
+&               velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&               derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2&
+&               , 3)*xxc(3)
+              bcdata(mm)%uslip(i, j, 3) = bcdata(mm)%uslip(i, j, 3) + &
+&               velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&               derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3&
+&               , 3)*xxc(3)
+            end do
+          end do
+        end if
+      end do bocoloop2
+    end if
+  end subroutine slipvelocitiesfinelevel_block
+!  differentiation of normalvelocities_block in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *(*bcdata.rface)
+!   with respect to varying inputs: *sfacei *sfacej *sfacek *si
+!                *sj *sk *(*bcdata.rface)
+!   rw status of diff variables: *sfacei:in *sfacej:in *sfacek:in
+!                *si:in *sj:in *sk:in *(*bcdata.rface):in-out
+!   plus diff mem management of: sfacei:in sfacej:in sfacek:in
+!                si:in sj:in sk:in bcdata:in *bcdata.rface:in
+  subroutine normalvelocities_block_d(sps)
+!
+!       normalvelocitiesalllevels computes the normal grid
+!       velocities of some boundary faces of the moving blocks for
+!       spectral mode sps. all grid levels from ground level to the
+!       coarsest level are considered.
+!
+    use constants
+    use blockpointers, only : il, jl, kl, addgridvelocities, nbocos, &
+&   bcdata, bcdatad, sfacei, sfaceid, sfacej, sfacejd, sfacek, sfacekd, &
+&   bcfaceid, si, sid, sj, sjd, sk, skd
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: sps
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm
+    integer(kind=inttype) :: i, j
+    real(kind=realtype) :: weight, mult
+    real(kind=realtype) :: weightd
+    real(kind=realtype), dimension(:, :), pointer :: sface
+    real(kind=realtype), dimension(:, :, :), pointer :: ss
+    intrinsic associated
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
+! check for a moving block. as it is possible that in a
+! multidisicplinary environment additional grid velocities
+! are set, the test should be done on addgridvelocities
+! and not on blockismoving.
+    if (addgridvelocities) then
+!
+!             determine the normal grid velocities of the boundaries.
+!             as these values are based on the unit normal. a division
+!             by the length of the normal is needed.
+!             furthermore the boundary unit normals are per definition
+!             outward pointing, while on the imin, jmin and kmin
+!             boundaries the face normals are inward pointing. this
+!             is taken into account by the factor mult.
+!
+! loop over the boundary subfaces.
+bocoloop:do mm=1,nbocos
+! check whether rface is allocated.
+        if (associated(bcdata(mm)%rface)) then
+! determine the block face on which the subface is
+! located and set some variables accordingly.
+! the new procedure is less elegant as the previous one.
+! but the new stands up to tapenade.
+          if (bcfaceid(mm) .eq. imin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1d = 2*si(1, i, j, 1)*sid(1, i, j, 1) + 2*si(1, i, j&
+&                 , 2)*sid(1, i, j, 2) + 2*si(1, i, j, 3)*sid(1, i, j, 3&
+&                 )
+                arg1 = si(1, i, j, 1)**2 + si(1, i, j, 2)**2 + si(1, i, &
+&                 j, 3)**2
+                if (arg1 .eq. 0.0_8) then
+                  weightd = 0.0_8
+                else
+                  weightd = arg1d/(2.0*sqrt(arg1))
+                end if
+                weight = sqrt(arg1)
+                if (weight .gt. zero) then
+                  weightd = -(mult*weightd/weight**2)
+                  weight = mult/weight
+                end if
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdatad(mm)%rface(i, j) = weightd*sfacei(1, i, j) + &
+&                 weight*sfaceid(1, i, j)
+                bcdata(mm)%rface(i, j) = weight*sfacei(1, i, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. imax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1d = 2*si(il, i, j, 1)*sid(il, i, j, 1) + 2*si(il, i&
+&                 , j, 2)*sid(il, i, j, 2) + 2*si(il, i, j, 3)*sid(il, i&
+&                 , j, 3)
+                arg1 = si(il, i, j, 1)**2 + si(il, i, j, 2)**2 + si(il, &
+&                 i, j, 3)**2
+                if (arg1 .eq. 0.0_8) then
+                  weightd = 0.0_8
+                else
+                  weightd = arg1d/(2.0*sqrt(arg1))
+                end if
+                weight = sqrt(arg1)
+                if (weight .gt. zero) then
+                  weightd = -(mult*weightd/weight**2)
+                  weight = mult/weight
+                end if
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdatad(mm)%rface(i, j) = weightd*sfacei(il, i, j) + &
+&                 weight*sfaceid(il, i, j)
+                bcdata(mm)%rface(i, j) = weight*sfacei(il, i, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. jmin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1d = 2*sj(i, 1, j, 1)*sjd(i, 1, j, 1) + 2*sj(i, 1, j&
+&                 , 2)*sjd(i, 1, j, 2) + 2*sj(i, 1, j, 3)*sjd(i, 1, j, 3&
+&                 )
+                arg1 = sj(i, 1, j, 1)**2 + sj(i, 1, j, 2)**2 + sj(i, 1, &
+&                 j, 3)**2
+                if (arg1 .eq. 0.0_8) then
+                  weightd = 0.0_8
+                else
+                  weightd = arg1d/(2.0*sqrt(arg1))
+                end if
+                weight = sqrt(arg1)
+                if (weight .gt. zero) then
+                  weightd = -(mult*weightd/weight**2)
+                  weight = mult/weight
+                end if
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdatad(mm)%rface(i, j) = weightd*sfacej(i, 1, j) + &
+&                 weight*sfacejd(i, 1, j)
+                bcdata(mm)%rface(i, j) = weight*sfacej(i, 1, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. jmax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1d = 2*sj(i, jl, j, 1)*sjd(i, jl, j, 1) + 2*sj(i, jl&
+&                 , j, 2)*sjd(i, jl, j, 2) + 2*sj(i, jl, j, 3)*sjd(i, jl&
+&                 , j, 3)
+                arg1 = sj(i, jl, j, 1)**2 + sj(i, jl, j, 2)**2 + sj(i, &
+&                 jl, j, 3)**2
+                if (arg1 .eq. 0.0_8) then
+                  weightd = 0.0_8
+                else
+                  weightd = arg1d/(2.0*sqrt(arg1))
+                end if
+                weight = sqrt(arg1)
+                if (weight .gt. zero) then
+                  weightd = -(mult*weightd/weight**2)
+                  weight = mult/weight
+                end if
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdatad(mm)%rface(i, j) = weightd*sfacej(i, jl, j) + &
+&                 weight*sfacejd(i, jl, j)
+                bcdata(mm)%rface(i, j) = weight*sfacej(i, jl, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. kmin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1d = 2*sk(i, j, 1, 1)*skd(i, j, 1, 1) + 2*sk(i, j, 1&
+&                 , 2)*skd(i, j, 1, 2) + 2*sk(i, j, 1, 3)*skd(i, j, 1, 3&
+&                 )
+                arg1 = sk(i, j, 1, 1)**2 + sk(i, j, 1, 2)**2 + sk(i, j, &
+&                 1, 3)**2
+                if (arg1 .eq. 0.0_8) then
+                  weightd = 0.0_8
+                else
+                  weightd = arg1d/(2.0*sqrt(arg1))
+                end if
+                weight = sqrt(arg1)
+                if (weight .gt. zero) then
+                  weightd = -(mult*weightd/weight**2)
+                  weight = mult/weight
+                end if
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdatad(mm)%rface(i, j) = weightd*sfacek(i, j, 1) + &
+&                 weight*sfacekd(i, j, 1)
+                bcdata(mm)%rface(i, j) = weight*sfacek(i, j, 1)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. kmax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1d = 2*sk(i, j, kl, 1)*skd(i, j, kl, 1) + 2*sk(i, j, &
+&                 kl, 2)*skd(i, j, kl, 2) + 2*sk(i, j, kl, 3)*skd(i, j, &
+&                 kl, 3)
+                arg1 = sk(i, j, kl, 1)**2 + sk(i, j, kl, 2)**2 + sk(i, j&
+&                 , kl, 3)**2
+                if (arg1 .eq. 0.0_8) then
+                  weightd = 0.0_8
+                else
+                  weightd = arg1d/(2.0*sqrt(arg1))
+                end if
+                weight = sqrt(arg1)
+                if (weight .gt. zero) then
+                  weightd = -(mult*weightd/weight**2)
+                  weight = mult/weight
+                end if
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdatad(mm)%rface(i, j) = weightd*sfacek(i, j, kl) + &
+&                 weight*sfacekd(i, j, kl)
+                bcdata(mm)%rface(i, j) = weight*sfacek(i, j, kl)
+              end do
+            end do
+          end if
+        end if
+      end do bocoloop
+    else
+! block is not moving. loop over the boundary faces and set
+! the normal grid velocity to zero if allocated.
+      do mm=1,nbocos
+        if (associated(bcdata(mm)%rface)) then
+          bcdatad(mm)%rface = 0.0_8
+          bcdata(mm)%rface = zero
+        end if
+      end do
+    end if
+  end subroutine normalvelocities_block_d
+  subroutine normalvelocities_block(sps)
+!
+!       normalvelocitiesalllevels computes the normal grid
+!       velocities of some boundary faces of the moving blocks for
+!       spectral mode sps. all grid levels from ground level to the
+!       coarsest level are considered.
+!
+    use constants
+    use blockpointers, only : il, jl, kl, addgridvelocities, nbocos, &
+&   bcdata, sfacei, sfacej, sfacek, bcfaceid, si, sj, sk
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: sps
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm
+    integer(kind=inttype) :: i, j
+    real(kind=realtype) :: weight, mult
+    real(kind=realtype), dimension(:, :), pointer :: sface
+    real(kind=realtype), dimension(:, :, :), pointer :: ss
+    intrinsic associated
+    intrinsic sqrt
+    real(kind=realtype) :: arg1
+! check for a moving block. as it is possible that in a
+! multidisicplinary environment additional grid velocities
+! are set, the test should be done on addgridvelocities
+! and not on blockismoving.
+    if (addgridvelocities) then
+!
+!             determine the normal grid velocities of the boundaries.
+!             as these values are based on the unit normal. a division
+!             by the length of the normal is needed.
+!             furthermore the boundary unit normals are per definition
+!             outward pointing, while on the imin, jmin and kmin
+!             boundaries the face normals are inward pointing. this
+!             is taken into account by the factor mult.
+!
+! loop over the boundary subfaces.
+bocoloop:do mm=1,nbocos
+! check whether rface is allocated.
+        if (associated(bcdata(mm)%rface)) then
+! determine the block face on which the subface is
+! located and set some variables accordingly.
+! the new procedure is less elegant as the previous one.
+! but the new stands up to tapenade.
+          if (bcfaceid(mm) .eq. imin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1 = si(1, i, j, 1)**2 + si(1, i, j, 2)**2 + si(1, i, &
+&                 j, 3)**2
+                weight = sqrt(arg1)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacei(1, i, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. imax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1 = si(il, i, j, 1)**2 + si(il, i, j, 2)**2 + si(il, &
+&                 i, j, 3)**2
+                weight = sqrt(arg1)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacei(il, i, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. jmin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1 = sj(i, 1, j, 1)**2 + sj(i, 1, j, 2)**2 + sj(i, 1, &
+&                 j, 3)**2
+                weight = sqrt(arg1)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacej(i, 1, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. jmax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1 = sj(i, jl, j, 1)**2 + sj(i, jl, j, 2)**2 + sj(i, &
+&                 jl, j, 3)**2
+                weight = sqrt(arg1)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacej(i, jl, j)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. kmin) then
+            mult = -one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1 = sk(i, j, 1, 1)**2 + sk(i, j, 1, 2)**2 + sk(i, j, &
+&                 1, 3)**2
+                weight = sqrt(arg1)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacek(i, j, 1)
+              end do
+            end do
+          else if (bcfaceid(mm) .eq. kmax) then
+            mult = one
+            do j=bcdata(mm)%jcbeg,bcdata(mm)%jcend
+              do i=bcdata(mm)%icbeg,bcdata(mm)%icend
+! compute the inverse of the length of the normal
+! vector and possibly correct for inward pointing.
+                arg1 = sk(i, j, kl, 1)**2 + sk(i, j, kl, 2)**2 + sk(i, j&
+&                 , kl, 3)**2
+                weight = sqrt(arg1)
+                if (weight .gt. zero) weight = mult/weight
+! compute the normal velocity based on the outward
+! pointing unit normal.
+                bcdata(mm)%rface(i, j) = weight*sfacek(i, j, kl)
+              end do
+            end do
+          end if
+        end if
+      end do bocoloop
+    else
+! block is not moving. loop over the boundary faces and set
+! the normal grid velocity to zero if allocated.
+      do mm=1,nbocos
+        if (associated(bcdata(mm)%rface)) bcdata(mm)%rface = zero
+      end do
+    end if
+  end subroutine normalvelocities_block
 end module solverutils_d

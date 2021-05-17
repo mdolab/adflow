@@ -253,13 +253,13 @@ contains
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
     use flowutils_d, only : computePressureSimple_d, computeLamViscosity_d, &
          computeSpeedOfSoundSquared_d, allNodalGradients_d, adjustInflowAngle_d
-    use solverutils_d, only : timeStep_Block_d
+    use solverutils_d, only : timeStep_Block_d, gridvelocitiesfinelevel_block_d, slipvelocitiesfinelevel_block_d, &
+        normalvelocities_block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
     use surfaceIntegrations, only : getSolution_d
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
-    use adjointextra_d, only : slipvelocitiesfinelevel_block_d,gridvelocitiesfinelevel_block_d,normalvelocities_block_d
     use bcdata, only : setBCData_d, setBCDataFineGrid_d
     use oversetData, only : oversetPresent
     use inputOverset, only : oversetUpdateMode
@@ -402,11 +402,11 @@ contains
           end if
           ! mham insertion |->
 
-          call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps)
+          call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
           ! required for ts
           call normalvelocities_block_d(sps)
           ! required for ts
-          call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps)
+          call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
 
           ! ->| mham insertion ends here
 
@@ -589,10 +589,10 @@ contains
     use flowUtils, only : fixAllNodalGradientsFromAD
     use adjointextra_b, only : resscale_B, sumdwandfw_b
     use adjointExtra_b, only : xhalo_block_b, volume_block_b, metric_block_b, boundarynormals_b
-    use adjointextra_b, only : slipvelocitiesfinelevel_block_b,gridvelocitiesfinelevel_block_b,normalvelocities_block_b
     use flowutils_b, only : computePressureSimple_b, computeLamViscosity_b, &
          computeSpeedOfSoundSquared_b, allNodalGradients_b, adjustInflowAngle_b
-    use solverutils_b, only : timeStep_Block_b
+    use solverutils_b, only : timeStep_Block_b, gridvelocitiesfinelevel_block_b, slipvelocitiesfinelevel_block_b, &
+         normalvelocities_block_b
     use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
     use initializeflow_b, only : referenceState_b
     use wallDistance_b, only : updateWallDistancesQuickly_b
@@ -822,19 +822,19 @@ contains
              end do
           end if
           ! fake forward sweep
-          call gridvelocitiesfinelevel_block(useoldcoor, t, sps)
+          call gridvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
 
           call normalvelocities_block(sps)
 
-          call slipvelocitiesfinelevel_block(useoldcoor, t, sps)
+          call slipvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
           ! required for ts
 
-          call slipvelocitiesfinelevel_block_b(useoldcoor, t, sps)
+          call slipvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
 
           ! required for ts
           call normalvelocities_block_b(sps)
 
-          call gridvelocitiesfinelevel_block_b(useoldcoor, t, sps)
+          call gridvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
 
           call boundaryNormals_b
           call metric_block_b
