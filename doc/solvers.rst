@@ -402,7 +402,7 @@ This involves solving a large linear system at each iteration to calculate the u
 To solve this linear system, we use the GMRES algorithm, which is a Krylov subspace based solver; hence the name Newton--*Krylov*.
 All state variables are handled in a coupled way, and we use the default scaling described in the :ref:`turbulence_coupling` section.
 The method is equivalent to using Euler's method with an infinite time step, and as a result, we do not have a time step in our linear sytems; the implicit component is only composed of the Jacobian.
-We stil use a matrix-based preconditioner based on an approximate Jacobian, however the main driver for the linear solver is the exact matrix-free residual operations.
+We still use a matrix-based preconditioner based on an approximate Jacobian, however the main driver for the linear solver is the exact matrix-free residual operations.
 As a result, we always solve for the exact Jacobian.
 After solving for the update, we use a cubic line search by default to guaranee a reduction in the total residual norm.
 A number of line search algorithms are available and can be specified with the option :py:data:`NKLS`.
