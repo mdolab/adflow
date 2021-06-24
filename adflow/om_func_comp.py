@@ -9,7 +9,7 @@ from pygeo import DVGeometry
 
 DVGEO_CLASSES = (DVGeometry,)
 try:
-    from pygeo import DVGeometryVSP
+    from pygeo.DVGeometryVSP import DVGeometryVSP
 
     DVGEO_CLASSES = (DVGeometry, DVGeometryVSP)
 except ImportError:
