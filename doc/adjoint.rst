@@ -95,5 +95,80 @@ The user can give a custom function that uses the intrinsic ADflow functions. AD
 
 The boundary condition definition and sensitivities are stored under ``AeroProblem`` to facilitate the use of different boundary conditions for multipoint cases.
 
-The reverse master (``master_b``) routine is wrapped by a thin wrapper which is the ``computeMatrixFreeProductBwd`` subroutine defined in ``adjointAPI.F90``. This wrapper allocates memory etc. before the derivatives are calculated. 
+The reverse master (``master_b``) routine is wrapped by a thin wrapper which is the ``computeMatrixFreeProductBwd`` subroutine defined in ``adjointAPI.F90``. This wrapper allocates memory etc. before the derivatives are calculated.
 
+ComputeJacobianVectorProductFwd
+-------------------------------
+
+This function is the 'twin' of ``ComputeJacobianVectorProductBwd`` and can be used to calculate the derivatves using the tangent AD code (i.e. forward code) instead of the usual reverse (adjoint) AD code.
+This is useful since computeJacobianVectorProductFwd() calls the function master_d() which is the hand-written recipe that calls all the differentiated code.
+This means one can check master_d() against master_b() and verify that they produce consistent gradients.
+
+Development tips:
+.................
+
+There is no current method that calculates the sensitivities with the forward method in ``pyADflow.py``, but a previous partial implementation to verify rotating frame derivatives can be found in `the early commits of this PR <https://github.com/mdolab/adflow/pull/121>`_.
+The function should be identical to ``evalFunctionsSens()`` up to the point where the vector-product function is called:
+
+.. code-block:: python
+
+      for keys_, val_ in zip(self.DVGeo.getValues().keys(), self.DVGeo.getValues().values()):
+                  residualDeriv_, funcDeriv_ = self.computeJacobianVectorProductFwd(
+                        xDvDot={keys_: val_}, funcDeriv=True, residualDeriv=True
+                  )
+
+Note that the forward mode indeed requires a loop over all the design variables (only the DVGeo ones are reported in the example above).
+
+Once ``ComputeJacobianVectorProductFwd()`` is called, we have all terms in the total derivative equation - i.e. the functions and residual partials, and the reverse mode seeds from ``self.getAdjoint()``.
+However, before we construct the total derivative we must remember to call ``MPI_SUM`` on psi and residualDeriv with something like:
+
+.. code-block:: python
+            
+            psi_dot_rDeriv_ = numpy.dot(psi, residualDeriv_)
+            AllReduced_psi_dot_rDeriv = self.comm.allreduce(psi_dot_rDeriv_, op=MPI.SUM)
+
+We do *NOT* ``MPI_SUM`` the funcDeriv since that has already been done in the hand-differentiated code from ``surfaceIntegrations.F90``in the subroutine called ``getSolution_d()``.
+Now, we can finally compute the total sensitivity for every function of interest with:
+
+.. code-block:: python
+
+            TotalDeriv_ = funcDeriv_[myKey] + AllReduced_psi_dot_rDeriv
+
+Note that the final derivatives must be processed with ``_processAeroDerivatives()`` into a usable dictionary.
+
+Notes on dot-product tests
+--------------------------
+This example below uses the subroutine ``slipvelocitiesfineleve_block_d()`` which can be found in the file ``src/adjoint/outputForward/adfjointextra_d.f90``.
+First we must insert a new entry in the ``adflow.pyf`` file.
+To this end we cd to the directory for ``slipvelocitiesfineleve_block_d()``:
+
+.. prompt:: bash
+
+      $ cd /src/adjoint/outputForward/
+
+and then we use f2py to generate the python interface:
+
+.. prompt:: bash
+
+      $ f2py -h TEMPORARY_FILE.pyf adjointextra_d.f90
+
+Now we go into ``TEMPORARY_FILE.pyf`` and find the lines relevant for the routine of interest.
+In this case we need the following lines:
+
+.. code-block:: Fortran
+
+      module adjointextra_d
+        subroutine slipvelocitiesfinelevel_block_d(useoldcoor,t,sps) ! in adjointextra_d.f90:adjointextra_d
+          use blockpointers
+          use inputmotion
+    
+      #         A  L O T  O F   L I N E S  .....
+
+          logical intent(in) :: useoldcoor
+          real(kind=realtype) dimension(*),intent(in) :: t
+          integer(kind=inttype) intent(in) :: sps
+        end subroutine slipvelocitiesfinelevel_block_d
+      end module adjointextra_d
+
+Now we insert these in the ``/src/f2py/adflow.pyf file``.
+Using the above defined function here in ``pyADflow.py`` we can now (thx to the changes we made in the ``f2py/pyADflow.pyf``) finally setup and call the dot test from the python layer.
