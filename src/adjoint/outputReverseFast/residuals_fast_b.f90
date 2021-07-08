@@ -37,16 +37,6 @@ contains
 ! for loops of ale
     integer(kind=inttype) :: iale, jale, kale, lale, male
     real(kind=realtype), parameter :: k1=1.05_realtype
-! k2
-! mm: the changes below were a trial to make the original lowspeed preconditioner work
-! it did not work out
-! for wsp=8m/s we have:
-!k2 :0.600000000000000000000 0.900000000000000000000 1.800000000000000000000
-!t2_:4.6944763574770638e-004 7.0417145362155966e-004 1.4083429072431193e-003
-!from the above one can learn that: t2_ = 0.000782412726246 * k2
-!real(kind=realtype), parameter :: k2 = 0.6_realtype ! random given number
-!real(kind=realtype), parameter :: k2 = 0.9_realtype ! random given number
-!real(kind=realtype), parameter :: k2 = 1.8_realtype ! random given number
 ! the line below is only used for the low-speed preconditioner part of this routine
 ! t2_=0.5 for wsp=8
     real(kind=realtype), parameter :: k2=639.048910156_realtype
@@ -75,7 +65,7 @@ contains
     real(kind=realtype) :: b1, b2, b3, b4, b5
     real(kind=realtype) :: dwo(nwf)
     logical :: finegrid
-! mham: work on the preconditioner
+! work on the preconditioner
 ! term1 metrics
     real(kind=realtype) :: t1_mean, t1_max, t1_min
 ! we have to get various metrics for term one since it varies for every
@@ -188,7 +178,7 @@ contains
 ! euler fluxes. loop over the owned cells and add fw to dw.
 ! also multiply by iblank so that no updates occur in holes
 ! 
-! mham: preconditioner work
+! preconditioner work
     t1_mean = 0.d0
     t1_max = -1.e20
     t1_min = 1.e20
@@ -201,7 +191,7 @@ contains
             sos = sqrt(gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
 ! coompute velocities without rho from state vector
 ! coompute velocities without rho from state vector 
-! mham: (w is pointer.. see l. 512. block.f90)
+!      (w is pointer.. see type blocktype setup in block.f90)
 !      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.f90 
 !      these are per definition nw=[rho,u,v,w,rhoee] 
 !      so the velocity is simply just taken out below... 
@@ -215,7 +205,7 @@ contains
             resm = sqrt(q)/sos
 ! resm above is used as m_a (thesis) and m (paper 2015) 
 ! and is the free stream mach number 
-! mham: l. 30-32 above: 
+! see routine setup above: 
 ! l. 30: real(kind=realtype), parameter :: k1 = 1.05_realtype 
 ! random given number for k2: 
 ! l. 31: real(kind=realtype), parameter :: k2 = 0.6_realtype 
@@ -223,7 +213,7 @@ contains
 ! l. 32: real(kind=realtype), parameter :: m0 = 0.2_realtype 
 ! 
 !    compute k3 
-! mham: eq. 2.7 in garg 2015. k1, m0 and resm are scalars 
+! eq. 2.7 in garg 2015. k1, m0 and resm are scalars 
 ! 
 ! unfortunately, garg has switched the k1 and k3 here in the 
 ! code. in both paper and thesis it is k3 that is used to det- 
@@ -232,7 +222,6 @@ contains
 !    compute k3
             k3 = k1*(1+(1-k1*m0**2)*resm**2/(k1*m0**4))
 !    compute betamr2 
-! mham; 
 ! betamr2 -> eq. 7 in garg 2015 
 ! (use eq. 2.6 in thesis thesis since paper has an error) 
 ! where a==sos 
@@ -264,10 +253,9 @@ contains
             else
               betamr2 = x1
             end if
-! mham 
-! mham: above, the winf is the free stream velocity 
+! above, the winf is the free stream velocity 
 ! 
-! should this first line's first element have sos^4 or sos^2
+! should this first line's first element have sos^4 or sos^2  
             a11 = betamr2*(1/sos**4)
             a12 = zero
             a13 = zero
@@ -288,8 +276,7 @@ contains
             a43 = zero
             a44 = one*w(i, j, k, irho)
             a45 = zero + one*(-velzrho)/sos**2
-!
-! mham: seems he fixed the above line an irregular way
+! mham: seems he fixed the above line an irregular way?
             a51 = one*(1/(gamma(i, j, k)-1)+resm**2/2)
             a52 = one*w(i, j, k, irho)*velxrho
             a53 = one*w(i, j, k, irho)*velyrho
@@ -370,13 +357,6 @@ contains
       end do
     else
 ! end of lowspeedpreconditioners three cells loops
-! print*,'#t1_min',t1_min
-! print*,'#t1_mean',t1_mean/real(cnt_)
-! print*,'#t1_max',t1_max
-! print*,'#t2_',t2_
-! print*,'#t3_',t3_
-! print*,kl,jl,il
-! print*,''
 ! else.. i.e. if we do not have preconditioner turned on...
       do l=1,nwf
         do k=2,kl

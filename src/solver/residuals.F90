@@ -28,18 +28,7 @@ contains
     integer(kind=intType) :: i, j, k, l
     integer(kind=intType) :: iale, jale, kale, lale, male ! For loops of ALE
     real(kind=realType), parameter :: K1 = 1.05_realType
-    ! K2
-    ! MM: the changes below were a trial to make the original lowspeed preconditioner work
-    ! It did not work out
-    ! for wsp=8m/s we have:
-    !K2 :0.600000000000000000000 0.900000000000000000000 1.800000000000000000000
-    !t2_:4.6944763574770638E-004 7.0417145362155966E-004 1.4083429072431193E-003
-    !FROM THE ABOVE ONE CAN LEARN THAT: t2_ = 0.000782412726246 * K2
 
-
-    !real(kind=realType), parameter :: K2 = 0.6_realType ! Random given number
-    !real(kind=realType), parameter :: K2 = 0.9_realType ! Random given number
-    !real(kind=realType), parameter :: K2 = 1.8_realType ! Random given number
     ! The line below is only used for the low-speed preconditioner part of this routine
     real(kind=realType), parameter :: K2 = 639.048910156_realType ! t2_=0.5 for wsp=8
 
@@ -64,7 +53,7 @@ contains
     real(kind=realType) :: dwo(nwf)
     logical :: fineGrid
 
-    ! mham: work on the preconditioner
+    ! work on the preconditioner
     real(kind=realType) :: t1_mean,t1_max,t1_min ! term1 metrics
     ! we have to get various metrics for term one since it varies for every
     ! cell
@@ -192,7 +181,7 @@ contains
     ! Euler fluxes. Loop over the owned cells and add fw to dw.
     ! Also multiply by iblank so that no updates occur in holes
     ! 
-    ! mham: preconditioner work
+    ! preconditioner work
     t1_mean = 0.d0
     t1_max = -1.e20
     t1_min = 1.e20
@@ -207,7 +196,7 @@ contains
                 ! Coompute velocities without rho from state vector
  
                 ! Coompute velocities without rho from state vector 
-                ! mham: (w is pointer.. see l. 512. block.F90)
+                !      (w is pointer.. see type blockType setup in block.F90)
                 !      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.F90 
                 !      these are per definition nw=[rho,u,v,w,rhoeE] 
                 !      so the velocity is simply just taken out below... 
@@ -223,7 +212,7 @@ contains
                 ! resM above is used as M_a (thesis) and M (paper 2015) 
                 ! and is the Free Stream Mach number 
  
-                ! mham: l. 30-32 above: 
+                ! see routine setup above: 
                 ! l. 30: real(kind=realType), parameter :: K1 = 1.05_realType 
                 ! Random given number for K2: 
                 ! l. 31: real(kind=realType), parameter :: K2 = 0.6_realType 
@@ -231,7 +220,7 @@ contains
                 ! l. 32: real(kind=realType), parameter :: M0 = 0.2_realType 
                 ! 
                 !    Compute K3 
-                ! mham: eq. 2.7 in Garg 2015. K1, M0 and resM are scalars 
+                ! eq. 2.7 in Garg 2015. K1, M0 and resM are scalars 
                 ! 
                 ! unfortunately, Garg has switched the K1 and K3 here in the 
                 ! code. In both paper and thesis it is K3 that is used to det- 
@@ -242,7 +231,6 @@ contains
                  
                 K3 = K1 * ( 1 + ((1-K1*M0**2)*resM**2)/(K1*M0**4) ) 
                 !    Compute BetaMr2 
-                ! mham; 
                 ! betaMr2 -> eq. 7 in Garg 2015 
                 ! (use eq. 2.6 in thesis thesis since paper has an error) 
                 ! where a==SoS 
@@ -265,10 +253,9 @@ contains
                      + wInf(ivy)**2 + wInf(ivz)**2))) , SoS**2 )
 
 
-                ! mham 
-                ! mham: above, the wInf is the free stream velocity 
+                ! above, the wInf is the free stream velocity 
                 ! 
-                ! Should this first line's first element have SoS^4 or SoS^2
+                ! Should this first line's first element have SoS^4 or SoS^2  
 
                 A11=  (betaMr2)*(1/SoS**4)
                 A12 = zero
@@ -293,8 +280,8 @@ contains
                 A43 = zero
                 A44 = one*w(i,j,k,irho)
                 A45 = zero + one *(-velZrho)/SoS**2
-!
-                ! mham: seems he fixed the above line an irregular way
+
+                ! mham: seems he fixed the above line an irregular way?
 
 
                 A51=  one*((1/(gamma(i,j,k)-1))+(resM**2)/2)
@@ -372,13 +359,7 @@ contains
              enddo
           enddo
        enddo ! end of lowspeedpreconditioners three cells loops
-       ! PRINT*,'#t1_min',t1_min
-       ! PRINT*,'#t1_mean',t1_mean/REAL(cnt_)
-       ! PRINT*,'#t1_max',t1_max
-       ! PRINT*,'#t2_',t2_
-       ! PRINT*,'#t3_',t3_
-       ! print*,kl,jl,il
-       ! print*,''
+
     else ! else.. i.e. if we do not have preconditioner turned on...
        do l=1,nwf
           do k=2,kl

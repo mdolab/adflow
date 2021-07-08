@@ -286,7 +286,7 @@ contains
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal, dummyReald
-    ! mham
+
     logical :: useOldCoor ! for adjointextra_d() functions
     useOldCoor = .FALSE.
 
@@ -391,8 +391,6 @@ contains
           call metric_block_d()
           call boundaryNormals_d()
 
-          ! mham adjoint fix
-          ! see ./src/adjoint/outputForward/block_res_d.F90 from old commits
           t = timeunsteadyrestart
           if (equationmode .eq. timespectral) then
              do mm=1,nsections
@@ -400,7 +398,6 @@ contains
                      &         ntimeintervalsspectral, realtype)
              end do
           end if
-          ! mham insertion |->
 
           call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
           ! required for ts
@@ -408,7 +405,6 @@ contains
           ! required for ts
           call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
 
-          ! ->| mham insertion ends here
 
           if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_d(nn, 1, sps)
@@ -609,7 +605,6 @@ contains
     use BCRoutines, only : applyAllBC_block
     use actuatorRegionData, only : nActuatorRegions
     use monitor, only : timeUnsteadyRestart
-    ! mham additions
     use section, only: sections,nSections ! used in t-declaration
     use solverutils, only : slipvelocitiesfinelevel_block,gridvelocitiesfinelevel_block,normalvelocities_block
 
@@ -636,9 +631,8 @@ contains
     real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
     real(kind=realType) :: dummyReal, dummyReald
     logical ::resetToRans
-    ! mham
     real(kind=realType), dimension(nSections) :: t
-    logical :: useOldCoor ! for solverutils_d() functions
+    logical :: useOldCoor ! for solverutils_b() functions
     useOldCoor = .FALSE.
 
     ! extraLocalBar accumulates the seeds onto the extra variables
@@ -731,7 +725,7 @@ contains
                 call saViscous_b
                 !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
                 call turbAdvection_b(1_intType, 1_intType, itu1-1, qq)
-                ! mham: turbAdvection_b zeros the faceid. This should be ok since
+                ! turbAdvection_b zeros the faceid. This should be ok since
                 ! it presumably is the last call in master using faceid and
                 ! therefore should be the first call in master_b to use faceid
                 call saSource_b

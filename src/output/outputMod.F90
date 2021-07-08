@@ -1393,7 +1393,7 @@ contains
     use utils, only : setPointers
     use flowUtils, only : computePtot
     use inputCostFunctions
-    use cgnsGrid, only : cgnsDoms,cgnsNDom ! see l. 4105 in preprocessingAPI.F90
+    use cgnsGrid, only : cgnsDoms,cgnsNDom ! see subroutine updateRotationRate in preprocessingAPI.F90
     implicit none
     !
     !      Subroutine arguments.
@@ -1432,8 +1432,7 @@ contains
     real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
     real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
-    ! mham:
-    real(kind=realType) :: factDim !correct factor for rotating Cp-normalisation
+    real(kind=realType) :: factDim ! correct factor for rotating Cp-normalisation
     real(kind=realType) :: rot_speed ! norm of wCrossR
     real(kind=realType),Dimension(3) :: r_ ! spanwise position for given point
     real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
@@ -1507,10 +1506,10 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
-       ! mham have to get the mesh coordinates further down in order to compute
+       ! have to get the mesh coordinates further down in order to compute
        ! the correct Cp-normalisation for rotational setups with Wind Turbines.
        ! Careful now; the flow variables, w(0:ib,0:jb,0:kb,1:nw), we point to
-       ! below uses what is defined in l.216-217, block.F90 as
+       ! below uses what is defined in type blockType in block.F90 as
        !   !  ib, jb, kb - Block integer dimensions for double halo
        !   !               cell-centered quantities.
        ! BUT the mesh, x(0:ie,0:je,0:ke,3), is defined with the single halos:
@@ -1521,7 +1520,7 @@ contains
        ! ... i.e., they use single halo's for w(:,:,:,:) which is usually
        ! defined with double halos...
 
-       ! mham: do NOT cut an idx like they do (w starts from 0 usually)...
+       ! do NOT cut an idx like they do (w starts from 0 usually)...
        ! why don't have double halo structure, so we do not cut one off.
        xx1    => x(0,:,:,:);   xx2    => x(1,:,:,:) ! 1 is our 2 since we are
        ! single haloed...
@@ -1552,7 +1551,6 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
-       ! mham
        xx1    => x(ie-1,:,:,:);  xx2   => x(il-1,:,:,:)
        !
        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
@@ -1581,7 +1579,6 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
-       ! mham
        xx1    => x(:,0,:,:);  xx2   => x(:,1,:,:)
        !
        ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
@@ -1610,7 +1607,6 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
-       ! mham
        xx1    => x(:,je-1,:,:);  xx2   => x(:,jl-1,:,:)
        !
        ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
@@ -1639,7 +1635,6 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
-       ! mham
        xx1    => x(:,:,0,:);  xx2   => x(:,:,1,:)
        !
        ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
@@ -1668,7 +1663,6 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
-       ! mham
        xx1    => x(:,:,ke-1,:);  xx2   => x(:,:,kl-1,:)
        !
        ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
@@ -1829,7 +1823,7 @@ contains
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
              nn = nn + 1
-             ! mham Cp normalisation:
+             ! Cp normalisation:
              rrate_=cgnsdoms(1)%rotrate
              r_(1) =   (half*(xx1(i,j,1) + xx2(i,j,1)))
              r_(2) =   (half*(xx1(i,j,2) + xx2(i,j,2)))
@@ -1841,7 +1835,7 @@ contains
              rot_speed = SQRT(wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2 )
              buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
                   / (half*(rhoInfDim)*((uInf*uRef)**2 + (rot_speed)**2 ))
-             ! mham: Comments on the computations above - no code 
+             ! Comments on the computations above - no code 
              ! Note, that we take rrate_(1) since we rotate 
              !
              ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
@@ -1850,7 +1844,7 @@ contains
              ! pp1Dim  = pp1 * pRef
              ! pp2Dim  = pp2 * pRef
              ! pInfDim = pInf * pRef             
-             ! mham: pRef is defined in  module flowVarRefState (see the 'save')
+             ! pRef is defined in  module flowVarRefState (see the 'save')
              !       but pRef is first set in the subr referenceState. However,
              !       since it is defined in module flowVarRefState and we load
              !       that module above it should be available to us.
@@ -1860,11 +1854,11 @@ contains
              ! rhoDim  = rhoInfDim ! l. 81, initializeFlow.F90
              ! V_infDim   = uInf*uRef ! also from initializeFlow.F90, l. 83
           enddo
-          ! mham: Comments on the computations above - no code 
-          ! mham: pp1 and pp2 are just pressure-pointers, e.g.
+          ! Comments on the computations above - no code 
+          ! pp1 and pp2 are just pressure-pointers, e.g.
           ! pp1    => p(1,1:,1:);
           ! Thus, they point to p and should be rescaled back to SI
-          ! mham: as explained in the opening paragraph of this subroutine, we
+          ! as explained in the opening paragraph of this subroutine, we
           ! have to get the average of the p in the first cell and the p in the
           ! ghostcell/halo. This explains: half*(pp1(i,j) + pp2(i,j))
           ! From start of subr:
@@ -1875,7 +1869,7 @@ contains
           !       it is not initialized, because multiple contributions may be
           !       stored in buffer.
        enddo
-       ! mham: Comments on the computations above - no code 
+       ! Comments on the computations above - no code 
        ! [pRef] l. 19 flowVarRefState.F90
        ! Reference pressure (in Pa) used to nondimensionalize
        ! the flow equations. See e.g. two lines below.
@@ -1894,7 +1888,7 @@ contains
        ! blockPointers.F90 l. 94 both have an 'x' pointer. This blockPointers
        ! has holds the pointers for all variables inside a block.
        !
-       ! mham: Necessities                       units
+       ! Necessities                       units
        ! U_i - inflow speed                      [m/s]
        ! w   - rotational rate                   [rad/sec]
        ! L_  - the span at point (i,j,k)         [m]
