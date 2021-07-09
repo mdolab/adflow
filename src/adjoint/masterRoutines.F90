@@ -253,7 +253,8 @@ contains
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
     use flowutils_d, only : computePressureSimple_d, computeLamViscosity_d, &
          computeSpeedOfSoundSquared_d, allNodalGradients_d, adjustInflowAngle_d
-    use solverutils_d, only : timeStep_Block_d
+    use solverutils_d, only : timeStep_Block_d, gridvelocitiesfinelevel_block_d, slipvelocitiesfinelevel_block_d, &
+        normalvelocities_block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
     use surfaceIntegrations, only : getSolution_d
@@ -285,6 +286,9 @@ contains
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj, iRegion
     real(kind=realType), dimension(nSections) :: t
     real(kind=realType) :: dummyReal, dummyReald
+
+    logical :: useOldCoor ! for adjointextra_d() functions
+    useOldCoor = .FALSE.
 
     fSize = size(forcesDot, 2)
     allocate(forces(3, fSize, nTimeIntervalsSpectral))
@@ -386,6 +390,22 @@ contains
           call volume_block_d()
           call metric_block_d()
           call boundaryNormals_d()
+
+          t = timeunsteadyrestart
+          if (equationmode .eq. timespectral) then
+             do mm=1,nsections
+                t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/real(&
+                     &         ntimeintervalsspectral, realtype)
+             end do
+          end if
+
+          call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
+          ! required for ts
+          call normalvelocities_block_d(sps)
+          ! required for ts
+          call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
+
+
           if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_d(nn, 1, sps)
           end if
@@ -567,7 +587,8 @@ contains
     use adjointExtra_b, only : xhalo_block_b, volume_block_b, metric_block_b, boundarynormals_b
     use flowutils_b, only : computePressureSimple_b, computeLamViscosity_b, &
          computeSpeedOfSoundSquared_b, allNodalGradients_b, adjustInflowAngle_b
-    use solverutils_b, only : timeStep_Block_b
+    use solverutils_b, only : timeStep_Block_b, gridvelocitiesfinelevel_block_b, slipvelocitiesfinelevel_block_b, &
+         normalvelocities_block_b
     use turbbcroutines_b, only : applyAllTurbBCthisblock_b,  bcTurbTreatment_b
     use initializeflow_b, only : referenceState_b
     use wallDistance_b, only : updateWallDistancesQuickly_b
@@ -583,6 +604,10 @@ contains
     use oversetCommUtilities, only : updateOversetConnectivity_b
     use BCRoutines, only : applyAllBC_block
     use actuatorRegionData, only : nActuatorRegions
+    use monitor, only : timeUnsteadyRestart
+    use section, only: sections,nSections ! used in t-declaration
+    use solverutils, only : slipvelocitiesfinelevel_block,gridvelocitiesfinelevel_block,normalvelocities_block
+
 #include <petsc/finclude/petsc.h>
     use petsc
     implicit none
@@ -606,6 +631,9 @@ contains
     real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
     real(kind=realType) :: dummyReal, dummyReald
     logical ::resetToRans
+    real(kind=realType), dimension(nSections) :: t
+    logical :: useOldCoor ! for solverutils_b() functions
+    useOldCoor = .FALSE.
 
     ! extraLocalBar accumulates the seeds onto the extra variables
     allocate(extraLocalBar(size(extrabar)))
@@ -697,6 +725,9 @@ contains
                 call saViscous_b
                 !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
                 call turbAdvection_b(1_intType, 1_intType, itu1-1, qq)
+                ! turbAdvection_b zeros the faceid. This should be ok since
+                ! it presumably is the last call in master using faceid and
+                ! therefore should be the first call in master_b to use faceid
                 call saSource_b
              end select
 
@@ -774,6 +805,30 @@ contains
           if (equations == RANSEquations .and. useApproxWallDistance) then
              call updateWallDistancesQuickly_b(nn, 1, sps)
           end if
+
+          ! Here we insert the functions related to
+          ! rotational (mesh movement) setup
+          t = timeunsteadyrestart
+          if (equationmode .eq. timespectral) then
+             do mm=1,nsections
+                t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/real(&
+                     &         ntimeintervalsspectral, realtype)
+             end do
+          end if
+          ! fake forward sweep
+          call gridvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
+
+          call normalvelocities_block(sps)
+
+          call slipvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
+          ! required for ts
+
+          call slipvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
+
+          ! required for ts
+          call normalvelocities_block_b(sps)
+
+          call gridvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
 
           call boundaryNormals_b
           call metric_block_b
@@ -1133,6 +1188,7 @@ contains
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
     call computeEddyViscosity(.True.)
+
 
     ! Make sure to call the turb BC's first incase we need to
     ! correct for K

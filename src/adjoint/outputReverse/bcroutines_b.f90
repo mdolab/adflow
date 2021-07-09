@@ -2700,28 +2700,43 @@ contains
     case default
       call pushcontrol2b(2)
     end select
-    call pushinteger4(j)
+    call pushinteger4(k)
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
-    do ii=0,isize*jsize-1
-      j = mod(ii, isize) + istart
-      k = ii/isize + jstart
+! !$ad ii-loop
+! do ii=0,isize*jsize-1
+!    j = mod(ii, isize) + istart ! mham: istart:(istart+isize-1)
+!    k = ii/isize + jstart ! mham: jstart:(jstart+jsize-1)
+    do k=jstart,jstart+jsize-1
+      call pushinteger4(j)
+      do j=istart,istart+isize-1
 ! compute the pressure density and velocity in the
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1(j, k) = mydim(pp2(j, k), grad(j, k))
-      vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
-&       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
-&       bcdata(nn)%norm(j, k, 3))
-      ww1(j, k, irho) = ww2(j, k, irho)
-      ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
-      ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
-      ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
+        pp1(j, k) = mydim(pp2(j, k), grad(j, k))
+        call pushreal8(vn)
+        vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(&
+&         j, k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz&
+&         )*bcdata(nn)%norm(j, k, 3))
+        ww1(j, k, irho) = ww2(j, k, irho)
+        ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
+        ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
+        ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
 ! the laminar and eddy viscosity, if present.
-      if (viscous) rlv1(j, k) = rlv2(j, k)
-      if (eddymodel) rev1(j, k) = rev2(j, k)
+        if (viscous) then
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
+        if (eddymodel) then
+          call pushcontrol1b(1)
+        else
+          call pushcontrol1b(0)
+        end if
+      end do
     end do
+! enddo
 ! compute the energy for these halo's.
     call pushreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot(ww1, pp1, correctfork)
@@ -2731,66 +2746,56 @@ contains
     call popreal8array(ww1, size(ww1, 1)*size(ww1, 2)*size(ww1, 3))
     call computeetot_b(ww1, ww1d, pp1, pp1d, correctfork)
     gradd = 0.0_8
-    do ii=0,isize*jsize-1
-      j = mod(ii, isize) + istart
-      k = ii/isize + jstart
-! compute the pressure density and velocity in the
-! halo cell. note that rface is the grid velocity
-! component in the direction of norm, i.e. outward
-! pointing.
-      vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
-&       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
-&       bcdata(nn)%norm(j, k, 3))
-! the laminar and eddy viscosity, if present.
-      if (viscous) then
-        call pushcontrol1b(0)
-      else
-        call pushcontrol1b(1)
-      end if
-      if (eddymodel) then
-        rev2d(j, k) = rev2d(j, k) + rev1d(j, k)
-        rev1d(j, k) = 0.0_8
-      end if
-      call popcontrol1b(branch)
-      if (branch .eq. 0) then
-        rlv2d(j, k) = rlv2d(j, k) + rlv1d(j, k)
-        rlv1d(j, k) = 0.0_8
-      end if
-      ww2d(j, k, ivz) = ww2d(j, k, ivz) + ww1d(j, k, ivz)
-      vnd = bcdata(nn)%norm(j, k, 3)*ww1d(j, k, ivz)
-      bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) + vn*ww1d(j&
-&       , k, ivz)
-      ww1d(j, k, ivz) = 0.0_8
-      ww2d(j, k, ivy) = ww2d(j, k, ivy) + ww1d(j, k, ivy)
-      vnd = vnd + bcdata(nn)%norm(j, k, 2)*ww1d(j, k, ivy)
-      bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) + vn*ww1d(j&
-&       , k, ivy)
-      ww1d(j, k, ivy) = 0.0_8
-      ww2d(j, k, ivx) = ww2d(j, k, ivx) + ww1d(j, k, ivx)
-      vnd = vnd + bcdata(nn)%norm(j, k, 1)*ww1d(j, k, ivx)
-      bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) + vn*ww1d(j&
-&       , k, ivx)
-      ww1d(j, k, ivx) = 0.0_8
-      ww2d(j, k, irho) = ww2d(j, k, irho) + ww1d(j, k, irho)
-      ww1d(j, k, irho) = 0.0_8
-      tempd3 = two*vnd
-      ww2d(j, k, ivx) = ww2d(j, k, ivx) - bcdata(nn)%norm(j, k, 1)*&
-&       tempd3
-      bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) - ww2(j, k, &
-&       ivx)*tempd3
-      ww2d(j, k, ivy) = ww2d(j, k, ivy) - bcdata(nn)%norm(j, k, 2)*&
-&       tempd3
-      bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) - ww2(j, k, &
-&       ivy)*tempd3
-      ww2d(j, k, ivz) = ww2d(j, k, ivz) - bcdata(nn)%norm(j, k, 3)*&
-&       tempd3
-      bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) - ww2(j, k, &
-&       ivz)*tempd3
-      call mydim_b(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j, k), pp1d(&
-&            j, k))
-      pp1d(j, k) = 0.0_8
+    do k=jstart+jsize-1,jstart,-1
+      do j=istart+isize-1,istart,-1
+        call popcontrol1b(branch)
+        if (branch .ne. 0) then
+          rev2d(j, k) = rev2d(j, k) + rev1d(j, k)
+          rev1d(j, k) = 0.0_8
+        end if
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          rlv2d(j, k) = rlv2d(j, k) + rlv1d(j, k)
+          rlv1d(j, k) = 0.0_8
+        end if
+        ww2d(j, k, ivz) = ww2d(j, k, ivz) + ww1d(j, k, ivz)
+        vnd = bcdata(nn)%norm(j, k, 3)*ww1d(j, k, ivz)
+        bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) + vn*ww1d(&
+&         j, k, ivz)
+        ww1d(j, k, ivz) = 0.0_8
+        ww2d(j, k, ivy) = ww2d(j, k, ivy) + ww1d(j, k, ivy)
+        vnd = vnd + bcdata(nn)%norm(j, k, 2)*ww1d(j, k, ivy)
+        bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) + vn*ww1d(&
+&         j, k, ivy)
+        ww1d(j, k, ivy) = 0.0_8
+        ww2d(j, k, ivx) = ww2d(j, k, ivx) + ww1d(j, k, ivx)
+        vnd = vnd + bcdata(nn)%norm(j, k, 1)*ww1d(j, k, ivx)
+        bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) + vn*ww1d(&
+&         j, k, ivx)
+        ww1d(j, k, ivx) = 0.0_8
+        ww2d(j, k, irho) = ww2d(j, k, irho) + ww1d(j, k, irho)
+        ww1d(j, k, irho) = 0.0_8
+        call popreal8(vn)
+        tempd = two*vnd
+        ww2d(j, k, ivx) = ww2d(j, k, ivx) - bcdata(nn)%norm(j, k, 1)*&
+&         tempd
+        bcdatad(nn)%norm(j, k, 1) = bcdatad(nn)%norm(j, k, 1) - ww2(j, k&
+&         , ivx)*tempd
+        ww2d(j, k, ivy) = ww2d(j, k, ivy) - bcdata(nn)%norm(j, k, 2)*&
+&         tempd
+        bcdatad(nn)%norm(j, k, 2) = bcdatad(nn)%norm(j, k, 2) - ww2(j, k&
+&         , ivy)*tempd
+        ww2d(j, k, ivz) = ww2d(j, k, ivz) - bcdata(nn)%norm(j, k, 3)*&
+&         tempd
+        bcdatad(nn)%norm(j, k, 3) = bcdatad(nn)%norm(j, k, 3) - ww2(j, k&
+&         , ivz)*tempd
+        call mydim_b(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j, k), &
+&              pp1d(j, k))
+        pp1d(j, k) = 0.0_8
+      end do
+      call popinteger4(j)
     end do
-    call popinteger4(j)
+    call popinteger4(k)
     call popcontrol2b(branch)
     if (branch .eq. 0) then
       do ii=0,isize*jsize-1
@@ -2900,30 +2905,30 @@ contains
 ! in pp1. i'm not entirely sure whether this
 ! formulation is correct for moving meshes. it could
 ! be that an additional term is needed there.
-        tempd = gradd(j, k)/ri
-        tempd0 = ww2(j, k, irho)*tempd
+        tempd0 = gradd(j, k)/ri
+        tempd1 = ww2(j, k, irho)*tempd0
         temp0 = uux*rxj + uuy*ryj + uuz*rzj
-        tempd1 = qj*tempd0
+        tempd2 = qj*tempd1
         temp1 = uux*rxk + uuy*ryk + uuz*rzk
-        tempd2 = qk*tempd0
+        tempd3 = qk*tempd1
         temp = qj*temp0 + qk*temp1
-        qjd = temp0*tempd0
-        rxjd = uux*tempd1
-        ryjd = uuy*tempd1
-        rzjd = uuz*tempd1
-        qkd = temp1*tempd0
-        uuxd = skxa*qkd + sjxa*qjd + rxk*tempd2 + rxj*tempd1
-        uuyd = skya*qkd + sjya*qjd + ryk*tempd2 + ryj*tempd1
-        uuzd = skza*qkd + sjza*qjd + rzk*tempd2 + rzj*tempd1
-        rxkd = uux*tempd2
-        rykd = uuy*tempd2
-        rzkd = uuz*tempd2
-        ww2d(j, k, irho) = ww2d(j, k, irho) + temp*tempd
-        rjd = -(dpj*tempd)
-        dpjd = -(rj*tempd)
-        rkd = -(dpk*tempd)
-        dpkd = -(rk*tempd)
-        rid = -((temp*ww2(j, k, irho)-rj*dpj-rk*dpk)*tempd/ri)
+        qjd = temp0*tempd1
+        rxjd = uux*tempd2
+        ryjd = uuy*tempd2
+        rzjd = uuz*tempd2
+        qkd = temp1*tempd1
+        uuxd = skxa*qkd + sjxa*qjd + rxk*tempd3 + rxj*tempd2
+        uuyd = skya*qkd + sjya*qjd + ryk*tempd3 + ryj*tempd2
+        uuzd = skza*qkd + sjza*qjd + rzk*tempd3 + rzj*tempd2
+        rxkd = uux*tempd3
+        rykd = uuy*tempd3
+        rzkd = uuz*tempd3
+        ww2d(j, k, irho) = ww2d(j, k, irho) + temp*tempd0
+        rjd = -(dpj*tempd0)
+        dpjd = -(rj*tempd0)
+        rkd = -(dpk*tempd0)
+        dpkd = -(rk*tempd0)
+        rid = -((temp*ww2(j, k, irho)-rj*dpj-rk*dpk)*tempd0/ri)
         gradd(j, k) = 0.0_8
         skxad = uux*qkd
         skyad = uuy*qkd
@@ -3182,25 +3187,30 @@ contains
     end select
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
-    do ii=0,isize*jsize-1
-      j = mod(ii, isize) + istart
-      k = ii/isize + jstart
+! !$ad ii-loop
+! do ii=0,isize*jsize-1
+!    j = mod(ii, isize) + istart ! mham: istart:(istart+isize-1)
+!    k = ii/isize + jstart ! mham: jstart:(jstart+jsize-1)
+    do k=jstart,jstart+jsize-1
+      do j=istart,istart+isize-1
 ! compute the pressure density and velocity in the
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1(j, k) = mydim(pp2(j, k), grad(j, k))
-      vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
-&       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
-&       bcdata(nn)%norm(j, k, 3))
-      ww1(j, k, irho) = ww2(j, k, irho)
-      ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
-      ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
-      ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
+        pp1(j, k) = mydim(pp2(j, k), grad(j, k))
+        vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(&
+&         j, k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz&
+&         )*bcdata(nn)%norm(j, k, 3))
+        ww1(j, k, irho) = ww2(j, k, irho)
+        ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
+        ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
+        ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
 ! the laminar and eddy viscosity, if present.
-      if (viscous) rlv1(j, k) = rlv2(j, k)
-      if (eddymodel) rev1(j, k) = rev2(j, k)
+        if (viscous) rlv1(j, k) = rlv2(j, k)
+        if (eddymodel) rev1(j, k) = rev2(j, k)
+      end do
     end do
+! enddo
 ! compute the energy for these halo's.
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -3226,8 +3236,8 @@ contains
 ! it is assumed that the bcpointers are already set *
     use constants
     use blockpointers, only : bcdata, bcdatad
-    use flowvarrefstate, only : eddymodel, viscous, gammainf, winf, &
-&   winfd, pinfcorr, pinfcorrd
+    use flowvarrefstate, only : eddymodel, viscous, gammainf, &
+&   gammainfd, winf, winfd, pinfcorr, pinfcorrd
     use bcpointers_b, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, pp0, pp0d,&
 &   pp1, pp1d, pp2, pp2d, rlv0, rlv0d, rlv1, rlv1d, rlv2, rlv2d, rev0, &
 &   rev0d, rev1, rev1d, rev2, rev2d, gamma2, istart, jstart, isize, &

@@ -27,7 +27,7 @@ contains
 ! pointers are already set.
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, x, xd, flowdoms,&
-&   d2wall, d2walld
+&   flowdomsd, d2wall, d2walld
     implicit none
 ! subroutine arguments
     integer(kind=inttype) :: nn, level, sps

@@ -563,7 +563,7 @@ class ADFLOW(AeroSolver):
 
         for i in range(len(positions)):
             # It is important to ensure each slice get a unique
-            # name...so we will number sequentially from pythhon
+            # name...so we will number sequentially from python
             j = self.nSlice + i + 1
             if sliceType == "relative":
                 sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])

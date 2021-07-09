@@ -25,6 +25,8 @@ module tecplotIO
      real(kind=realType), dimension(3) :: le, te
      real(kind=realType), dimension(3) :: pt, dir
      integer(kind=intType), allocatable, dimension(:) :: famList
+     ! here we declare that 'slice'-types also now have fx,fy and fz:
+     real(kind=realType) :: fx, fy, fz
   end type slice
 
   type liftDist
@@ -59,7 +61,7 @@ module tecplotIO
 
   ! Tecplot Variable names of the data in the lift distribution data file:
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistName
-  integer(kind=intType), parameter :: nLiftDistVar=18
+  integer(kind=intType), parameter :: nLiftDistVar=21
 
 contains
   subroutine addParaSlice(sliceName, pt, direction, famList, n)
@@ -567,13 +569,15 @@ contains
        liftDistNames(16) = "thickness"
        liftDistNames(17) = "twist"
        liftDistNames(18) = "chord"
-
+       liftDistNames(19) = "fx"
+       liftDistNames(20) = "fy"
+       liftDistNames(21) = "fz"
        ! Only write header info for first distribution only
        if (myid == 0) then
           if (iDist == 1) then
              write (fileID,*) "Title= ""ADflow Lift Distribution Data"""
              write (fileID,"(a)", advance="no") "Variables = "
-             do i=1,nLIftDistVar
+             do i=1,nLIftDistVar ! here we just write var-names in the header 
                 write(fileID,"(a,a,a)",advance="no") """",trim(liftDistNames(i)),""" "
              end do
              write(fileID,"(1x)")
@@ -601,7 +605,9 @@ contains
        ! Scaled Eta values
        dmin = minVal(d%slicePts(d%dir_ind, :))
        dmax = maxval(d%slicePts(d%dir_ind, :))
-
+       ! next line we save ETA as the first column. This corresponds to
+       ! when we open a lift file, e.g. fc_000_lift.dat where we find
+       ! ETA as the first entry... (also visible through tec360)
        values(:, 1) = (d%slicePts(d%dir_ind, :) - dmin)/(dmax-dmin)
        ! Coordinate Varaibles
        if (d%dir_ind == 1) then! X slices
@@ -612,6 +618,13 @@ contains
           values(:, 4) = d%slicePts(3, :)
        end if
 
+       !      as mentioned above nSegments are number of nodes in the
+       !      distribution, e.g. maybe you have asked for 150 points out along
+       !      your wing where you want the lift. Ok, we now for each of these
+       !      150 points have to create a slice and integrate our metrics around
+       !      said slice, save the integrated metrics (e.g. lift, drag) for the
+       !      current point. We then move on to the next point, make a new slice
+       !      get the new point's metrics and save them ... we do this 150 times
        do i=1, d%nSegments
           ! Make new one in the same location
           call createSlice(pts, conn, elemFam, localSlice, d%slicePts(:, i), &
@@ -639,6 +652,11 @@ contains
           values(i, 17) = globalSlice%twist
           values(i, 18) = globalSlice%chord
 
+          ! here we now save our new, added values that we have desired to use
+          values(i, 19) = globalSlice%fx
+          values(i, 20) = globalSlice%fy
+          values(i, 21) = globalSlice%fz
+          
           call destroySlice(localSlice)
           call destroySlice(globalSlice)
 
@@ -1823,7 +1841,8 @@ contains
     real(kind=realtype), dimension(:,:), allocatable :: localVals
     integer(kind=intType), dimension(:), allocatable :: sliceNodeSizes, sliceCellSizes
     integer(kind=intType), dimension(:), allocatable :: nodeDisps, cellDisps
-
+    ! Need another tmp to reduce the fx, fy and fz values
+    real(kind=realType) :: tmp_(3)
     ! Copy the info related to slice
     gSlc%sliceName = trim(lSlc%sliceName)
     gSlc%pt = lSlc%pt
@@ -1832,7 +1851,6 @@ contains
     pF = zero
     vF = zero
     iSize = 3 + 6 + nFields
-
     allocate(localVals(iSize,lSlc%nNodes))
 
     ! Compute all the local variables we need.
@@ -1936,9 +1954,19 @@ contains
     lSlc%pD = dragDirection(1)*pF(1) + dragDirection(2)*pF(2) + dragDirection(3)*pF(3)
     lSlc%vL = liftDirection(1)*vF(1) + liftDirection(2)*vF(2) + liftDirection(3)*vF(3)
     lSlc%vD = dragDirection(1)*vF(1) + dragDirection(2)*vF(2) + dragDirection(3)*vF(3)
+    ! we now want to save the x,y,z-forces into the appropriate real-container
+    ! from their type(slice) definition (see the top of this file)
+    lSlc%fx = pF(1) + vF(1)
+    lSlc%fy = pF(2) + vF(2)
+    lSlc%fz = pF(3) + vF(3)
 
     ! Reduce the lift/drag values
     call mpi_reduce((/lSlc%pL, lSlc%pD, lSlc%vL, lSlc%vD/), tmp, 4, adflow_real, MPI_SUM, &
+         0, adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Reduce the fx, fy and fz using THE OTHER tmp, i.e. tmp_
+    call mpi_reduce((/lSlc%fx, lSlc%fy, lSlc%fz/), tmp_, 3, adflow_real, MPI_SUM, &
          0, adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -1947,7 +1975,12 @@ contains
        gSlc%pD = tmp(2)
        gSlc%vL = tmp(3)
        gSlc%vD = tmp(4)
-
+       ! we now also must remember to store the MPIreduced fx, fy and fz in the
+       ! global slice type:
+       gSlc%fx = tmp_(1)
+       gSlc%fy = tmp_(2)
+       gSlc%fz = tmp_(3)
+       
        ! Compute the chord as the max length between any two nodes...this
        ! is n^2, so should be changed in the future
 

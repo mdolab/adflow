@@ -2171,44 +2171,49 @@ contains
     end select
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
-    do ii=0,isize*jsize-1
-      j = mod(ii, isize) + istart
-      k = ii/isize + jstart
+! !$ad ii-loop
+! do ii=0,isize*jsize-1
+!    j = mod(ii, isize) + istart ! mham: istart:(istart+isize-1)
+!    k = ii/isize + jstart ! mham: jstart:(jstart+jsize-1)
+    do k=jstart,jstart+jsize-1
+      do j=istart,istart+isize-1
 ! compute the pressure density and velocity in the
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1d(j, k) = mydim_d(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j, k&
-&       ), pp1(j, k))
-      vnd = two*(-(ww2d(j, k, ivx)*bcdata(nn)%norm(j, k, 1))-ww2(j, k, &
-&       ivx)*bcdatad(nn)%norm(j, k, 1)-ww2d(j, k, ivy)*bcdata(nn)%norm(j&
-&       , k, 2)-ww2(j, k, ivy)*bcdatad(nn)%norm(j, k, 2)-ww2d(j, k, ivz)&
-&       *bcdata(nn)%norm(j, k, 3)-ww2(j, k, ivz)*bcdatad(nn)%norm(j, k, &
-&       3))
-      vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
-&       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
-&       bcdata(nn)%norm(j, k, 3))
-      ww1d(j, k, irho) = ww2d(j, k, irho)
-      ww1(j, k, irho) = ww2(j, k, irho)
-      ww1d(j, k, ivx) = ww2d(j, k, ivx) + vnd*bcdata(nn)%norm(j, k, 1) +&
-&       vn*bcdatad(nn)%norm(j, k, 1)
-      ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
-      ww1d(j, k, ivy) = ww2d(j, k, ivy) + vnd*bcdata(nn)%norm(j, k, 2) +&
-&       vn*bcdatad(nn)%norm(j, k, 2)
-      ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
-      ww1d(j, k, ivz) = ww2d(j, k, ivz) + vnd*bcdata(nn)%norm(j, k, 3) +&
-&       vn*bcdatad(nn)%norm(j, k, 3)
-      ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
+        pp1d(j, k) = mydim_d(pp2(j, k), pp2d(j, k), grad(j, k), gradd(j&
+&         , k), pp1(j, k))
+        vnd = two*(-(ww2d(j, k, ivx)*bcdata(nn)%norm(j, k, 1))-ww2(j, k&
+&         , ivx)*bcdatad(nn)%norm(j, k, 1)-ww2d(j, k, ivy)*bcdata(nn)%&
+&         norm(j, k, 2)-ww2(j, k, ivy)*bcdatad(nn)%norm(j, k, 2)-ww2d(j&
+&         , k, ivz)*bcdata(nn)%norm(j, k, 3)-ww2(j, k, ivz)*bcdatad(nn)%&
+&         norm(j, k, 3))
+        vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(&
+&         j, k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz&
+&         )*bcdata(nn)%norm(j, k, 3))
+        ww1d(j, k, irho) = ww2d(j, k, irho)
+        ww1(j, k, irho) = ww2(j, k, irho)
+        ww1d(j, k, ivx) = ww2d(j, k, ivx) + vnd*bcdata(nn)%norm(j, k, 1)&
+&         + vn*bcdatad(nn)%norm(j, k, 1)
+        ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
+        ww1d(j, k, ivy) = ww2d(j, k, ivy) + vnd*bcdata(nn)%norm(j, k, 2)&
+&         + vn*bcdatad(nn)%norm(j, k, 2)
+        ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
+        ww1d(j, k, ivz) = ww2d(j, k, ivz) + vnd*bcdata(nn)%norm(j, k, 3)&
+&         + vn*bcdatad(nn)%norm(j, k, 3)
+        ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
 ! the laminar and eddy viscosity, if present.
-      if (viscous) then
-        rlv1d(j, k) = rlv2d(j, k)
-        rlv1(j, k) = rlv2(j, k)
-      end if
-      if (eddymodel) then
-        rev1d(j, k) = rev2d(j, k)
-        rev1(j, k) = rev2(j, k)
-      end if
+        if (viscous) then
+          rlv1d(j, k) = rlv2d(j, k)
+          rlv1(j, k) = rlv2(j, k)
+        end if
+        if (eddymodel) then
+          rev1d(j, k) = rev2d(j, k)
+          rev1(j, k) = rev2(j, k)
+        end if
+      end do
     end do
+! enddo
 ! compute the energy for these halo's.
     call computeetot_d(ww1, ww1d, pp1, pp1d, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -2385,25 +2390,30 @@ contains
     end select
 ! determine the state in the halo cell. again loop over
 ! the cell range for this subface.
-    do ii=0,isize*jsize-1
-      j = mod(ii, isize) + istart
-      k = ii/isize + jstart
+! !$ad ii-loop
+! do ii=0,isize*jsize-1
+!    j = mod(ii, isize) + istart ! mham: istart:(istart+isize-1)
+!    k = ii/isize + jstart ! mham: jstart:(jstart+jsize-1)
+    do k=jstart,jstart+jsize-1
+      do j=istart,istart+isize-1
 ! compute the pressure density and velocity in the
 ! halo cell. note that rface is the grid velocity
 ! component in the direction of norm, i.e. outward
 ! pointing.
-      pp1(j, k) = mydim(pp2(j, k), grad(j, k))
-      vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(j&
-&       , k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz)*&
-&       bcdata(nn)%norm(j, k, 3))
-      ww1(j, k, irho) = ww2(j, k, irho)
-      ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
-      ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
-      ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
+        pp1(j, k) = mydim(pp2(j, k), grad(j, k))
+        vn = two*(bcdata(nn)%rface(j, k)-ww2(j, k, ivx)*bcdata(nn)%norm(&
+&         j, k, 1)-ww2(j, k, ivy)*bcdata(nn)%norm(j, k, 2)-ww2(j, k, ivz&
+&         )*bcdata(nn)%norm(j, k, 3))
+        ww1(j, k, irho) = ww2(j, k, irho)
+        ww1(j, k, ivx) = ww2(j, k, ivx) + vn*bcdata(nn)%norm(j, k, 1)
+        ww1(j, k, ivy) = ww2(j, k, ivy) + vn*bcdata(nn)%norm(j, k, 2)
+        ww1(j, k, ivz) = ww2(j, k, ivz) + vn*bcdata(nn)%norm(j, k, 3)
 ! the laminar and eddy viscosity, if present.
-      if (viscous) rlv1(j, k) = rlv2(j, k)
-      if (eddymodel) rev1(j, k) = rev2(j, k)
+        if (viscous) rlv1(j, k) = rlv2(j, k)
+        if (eddymodel) rev1(j, k) = rev2(j, k)
+      end do
     end do
+! enddo
 ! compute the energy for these halo's.
     call computeetot(ww1, pp1, correctfork)
 ! extrapolate the state vectors in case a second halo
@@ -2428,8 +2438,8 @@ contains
 ! it is assumed that the bcpointers are already set *
     use constants
     use blockpointers, only : bcdata, bcdatad
-    use flowvarrefstate, only : eddymodel, viscous, gammainf, winf, &
-&   winfd, pinfcorr, pinfcorrd
+    use flowvarrefstate, only : eddymodel, viscous, gammainf, &
+&   gammainfd, winf, winfd, pinfcorr, pinfcorrd
     use bcpointers_d, only : ww0, ww0d, ww1, ww1d, ww2, ww2d, pp0, pp0d,&
 &   pp1, pp1d, pp2, pp2d, rlv0, rlv0d, rlv1, rlv1d, rlv2, rlv2d, rev0, &
 &   rev0d, rev1, rev1d, rev2, rev2d, gamma2, istart, jstart, isize, &
