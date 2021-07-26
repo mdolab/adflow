@@ -6,7 +6,7 @@
 PMAKE = make -j 4
 
 # ------- Define the MPI Compilers--------------------------------------
-FF90 = mpif90
+FF90 = mpifort
 CC   = mpicc
 
 # ------- Define Precision Flags ---------------------------------------
