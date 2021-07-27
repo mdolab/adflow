@@ -1,17 +1,17 @@
 # ----------------------------------------------------------------------
 # Config file for Intel ifort -- safe version. ifort is TERRIBLE for
-# generating WRONG code with O2+. There is a 50-50 chance O2 code is 
-# simply wrong. O2 and above MUST BE ASSUMED WRONG until it can be 
-# proven otherwise. This is a safe config file at O1 which does not 
-# do vectorization which will generally give correct code. 
+# generating WRONG code with O2+. There is a 50-50 chance O2 code is
+# simply wrong. O2 and above MUST BE ASSUMED WRONG until it can be
+# proven otherwise. This is a safe config file at O1 which does not
+# do vectorization which will generally give correct code.
 # ----------------------------------------------------------------------
 
 # ------- Define a possible parallel make (use PMAKE = make otherwise)--
 PMAKE = make -j 4
 
 # ------- Define the MPI Compilers--------------------------------------
-FF90 = mpif90
-CC   = mpicc
+FF90 = mpiifort
+CC   = mpiicc
 
 # ------- Define Precision Flags ---------------------------------------
 # Options for Integer precision flags: -DUSE_LONG_INT
