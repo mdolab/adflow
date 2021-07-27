@@ -58,9 +58,9 @@ def setDVGeo(ffdFile, cmplx=False):
             C[-1, 2] = C[-1, 2] + val[0]
         geo.restoreCoef(C, "wing")
 
-    DVGeo.addGeoDVGlobal("twist", [0] * nTwist, twist, lower=-10, upper=10, scale=1.0)
-    DVGeo.addGeoDVGlobal("span", [0], span, lower=-10, upper=10, scale=1.0)
-    DVGeo.addGeoDVLocal("shape", lower=-0.5, upper=0.5, axis="y", scale=10.0)
+    DVGeo.addGlobalDV("twist", [0] * nTwist, twist, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGlobalDV("span", [0], span, lower=-10, upper=10, scale=1.0)
+    DVGeo.addLocalDV("shape", lower=-0.5, upper=0.5, axis="y", scale=10.0)
 
     return DVGeo
 

@@ -4910,7 +4910,7 @@ class ADFLOW(AeroSolver):
         )
 
     def _getOptionMap(self):
-        """ The ADflow option map and module mapping"""
+        """The ADflow option map and module mapping"""
 
         moduleMap = {
             "io": self.adflow.inputio,

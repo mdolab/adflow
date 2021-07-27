@@ -6,8 +6,8 @@
 PMAKE = make -j 4
 
 # ------- Define the MPI Compilers--------------------------------------
-FF90 = mpif90
-CC   = mpicc
+FF90 = mpiifort
+CC   = mpiicc
 
 # ------- Define Precision Flags ---------------------------------------
 # Options for Integer precision flags: -DUSE_LONG_INT
