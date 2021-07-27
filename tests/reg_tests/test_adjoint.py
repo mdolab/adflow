@@ -172,10 +172,7 @@ test_params = [
         "aero_prob": ap_tutorial_wing,
         "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag"],
     },
-]
-
-# Adding this separately because we don't have the complex version available yet
-rot_test = [    # # Rotating frame test
+    # # Rotating frame test
     {
         "name": "Rotating_wing",
         "options": {
@@ -222,11 +219,11 @@ rot_test = [    # # Rotating frame test
             "ASMOverlap": 1,
             "outerPreconIts": 3,
             "monitorvariables": ["cpu", "resrho", "resturb", "cmx"],
-            'ankjacobianlag': 10,
-            'anksubspacesize': -1,
-            'blocksplitting': True,
-            'frozenturbulence': False,
-            'volumevariables': ['resrho'],
+            "ankjacobianlag": 10,
+            "anksubspacesize": -1,
+            "blocksplitting": True,
+            "frozenturbulence": False,
+            "volumevariables": ["resrho"],
         },
         "ref_file": "adjoint_rans_rotating.json",
         "aero_prob": ap_tutorial_wing_rotating,
@@ -235,7 +232,8 @@ rot_test = [    # # Rotating frame test
     },
 ]
 
-@parameterized_class(test_params + rot_test)
+
+@parameterized_class(test_params)
 class TestAdjoint(reg_test_classes.RegTest):
     """
     Tests that sensitives calculated from solving an adjoint are correct.
@@ -278,7 +276,7 @@ class TestAdjoint(reg_test_classes.RegTest):
             for dv in defaultAeroDVs:
                 self.ap.addDV(dv)
         else:
-            for dv in ['alpha', 'beta', 'T', 'xRef', 'yRef', 'zRef']:
+            for dv in ["alpha", "beta", "T", "xRef", "yRef", "zRef"]:
                 self.ap.addDV(dv)
 
         self.CFDSolver = ADFLOW(options=options, debug=True)
