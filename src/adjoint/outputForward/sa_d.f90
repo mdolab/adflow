@@ -79,7 +79,6 @@ contains
     cw36 = rsacw3**6
     cb3inv = one/rsacb3
 ! constants for sa rough
-! ks=0.0001 
     cr1 = 0.5
 ! determine the non-dimensional wheel speed of this block.
     omegaxd = sections(sectionid)%rotrate(1)*timerefd
@@ -279,13 +278,12 @@ contains
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
-! sa rough 
+! sa rough
             dnewd = d2walld(i, j, k)
             dnew = d2wall(i, j, k) + 0.03*kssa
             nud = (rlvd(i, j, k)*w(i, j, k, irho)-rlv(i, j, k)*wd(i, j, &
 &             k, irho))/w(i, j, k, irho)**2
             nu = rlv(i, j, k)/w(i, j, k, irho)
-! dist2inv = one/(d2wall(i,j,k)**2)
             dist2invd = -(one*2*dnew*dnewd/(dnew**2)**2)
             dist2inv = one/dnew**2
             chid = (wd(i, j, k, itu1)*nu-w(i, j, k, itu1)*nud)/nu**2 - &
@@ -297,7 +295,6 @@ contains
             chi3 = chi*chi2
             fv1d = (chi3d*(chi3+cv13)-chi3*chi3d)/(chi3+cv13)**2
             fv1 = chi3/(chi3+cv13)
-! fv2      = one - chi/(one + chi*fv1)
             fv2d = -((wd(i, j, k, itu1)*(nu+w(i, j, k, itu1)*fv1)-w(i, j&
 &             , k, itu1)*(nud+wd(i, j, k, itu1)*fv1+w(i, j, k, itu1)*&
 &             fv1d))/(nu+w(i, j, k, itu1)*fv1)**2)
@@ -437,7 +434,6 @@ contains
     cw36 = rsacw3**6
     cb3inv = one/rsacb3
 ! constants for sa rough
-! ks=0.0001 
     cr1 = 0.5
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
@@ -530,16 +526,14 @@ contains
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
-! sa rough 
+! sa rough
             dnew = d2wall(i, j, k) + 0.03*kssa
             nu = rlv(i, j, k)/w(i, j, k, irho)
-! dist2inv = one/(d2wall(i,j,k)**2)
             dist2inv = one/dnew**2
             chi = w(i, j, k, itu1)/nu + cr1*kssa/dnew
             chi2 = chi*chi
             chi3 = chi*chi2
             fv1 = chi3/(chi3+cv13)
-! fv2      = one - chi/(one + chi*fv1)
             fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode

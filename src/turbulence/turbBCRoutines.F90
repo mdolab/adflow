@@ -326,14 +326,12 @@ contains
 
     ! Determine the face id on which the subface is located and
     ! loop over the faces of the subface and set the eddy viscosity
-    ! in the halo cells. 
+    ! in the halo cells.
 
     select case (BCFaceid(nn))
     case (iMin)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             ! rev(1,i,j) = -rev(2,i,j)
-            !  print "(f12.3)", saFact(kssa, d2Wall(2,i,j))
              rev(1,i,j) = saFact(kssa, d2Wall(2,i,j))*rev(2,i,j)
           enddo
        enddo
@@ -341,8 +339,6 @@ contains
     case (iMax)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             ! rev(ie,i,j) = -rev(il,i,j)
-            ! print "(f12.3)", saFact(kssa, d2Wall(il,i,j))
              rev(ie,i,j) = saFact(kssa, d2Wall(il,i,j))*rev(il,i,j)
           enddo
        enddo
@@ -350,8 +346,6 @@ contains
     case (jMin)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             ! rev(i,1,j) = -rev(i,2,j)
-            ! print "(f12.3)", saFact(kssa, d2Wall(i,1,j))
              rev(i,1,j) = saFact(kssa, d2Wall(i,2,j))*rev(i,2,j)
           enddo
        enddo
@@ -359,8 +353,6 @@ contains
     case (jMax)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             ! rev(i,je,j) = -rev(i,jl,j)
-            ! print "(f12.3)", saFact(kssa, d2Wall(i,je,j))
              rev(i,je,j) = saFact(kssa, d2Wall(i,jl,j))*rev(i,jl,j)
           enddo
        enddo
@@ -368,8 +360,6 @@ contains
     case (kMin)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             ! rev(i,j,1) = -rev(i,j,2)
-            ! print "(f12.3)", saFact(kssa, d2Wall(i,j,2))
              rev(i,j,1) = saFact(kssa, d2Wall(i,j,2))*rev(i,j,2)
           enddo
        enddo
@@ -377,8 +367,6 @@ contains
     case (kMax)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             ! rev(i,j,ke) = -rev(i,j,kl)
-            ! print "(f12.3)", saFact(kssa, d2Wall(i,j,kl))
              rev(i,j,ke) = saFact(kssa, d2Wall(i,j,kl))*rev(i,j,kl)
           enddo
        enddo
@@ -858,28 +846,24 @@ contains
        case (iMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                ! bmti1(i,j,itu1,itu1) = one
                 bmti1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(2,i,j))
              enddo
           enddo
        case (iMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                ! bmti2(i,j,itu1,itu1) = one
                 bmti2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(il,i,j))
              enddo
           enddo
        case (jMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                ! bmtj1(i,j,itu1,itu1) = one
                 bmtj1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,2,j))
              enddo
           enddo
        case (jMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                ! bmtj2(i,j,itu1,itu1) = one
                 bmtj2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,jl,j))
              enddo
           enddo
@@ -887,7 +871,6 @@ contains
        case (kMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                ! bmtk1(i,j,itu1,itu1) = one
                 bmtk1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,2))
              enddo
           enddo
@@ -895,7 +878,6 @@ contains
        case (kMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                ! bmtk2(i,j,itu1,itu1) = one
                 bmtk2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,kl))
              enddo
           enddo
@@ -1422,7 +1404,7 @@ contains
    ! local variablse
    real(kind=realType) :: ks
    real(kind=realType) :: d
-   
+
    if (ks .eq. zero) then
       saFact = -one
    else if (d .eq. zero) then
