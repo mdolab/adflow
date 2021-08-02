@@ -5924,7 +5924,32 @@ end subroutine cross_prod
 
        ! Add the number of characters needed for the actual variables.
 
+#ifndef USE_COMPLEX
+       ! for the real version this is easy
        nCharWrite = nCharWrite + nMon*(fieldWidthLarge+1)
+#else
+      ! for complex we need to differentiate between residuals and functionals
+      do i=1, nMon
+         select case (monNames(i))
+
+         case (cgnsL2resRho,  cgnsL2resMomx,    &
+               cgnsL2resMomy, cgnsL2resMomz,    &
+               cgnsL2resRhoe, cgnsL2resNu,      &
+               cgnsL2resK,    cgnsL2resOmega,   &
+               cgnsL2resTau,  cgnsL2resEpsilon, &
+               cgnsL2resV2,   cgnsL2resF, 'totalR')
+
+            ! complex residuals need 9 more characters
+            nCharWrite = nCharWrite + fieldWidthLarge+1 + 9
+
+         case default
+            ! complex functionals need 25 more characters
+            nCharWrite = nCharWrite + fieldWidthLarge+1 + 25
+
+         end select
+      end do
+#endif
+
        if( showCPU ) nCharWrite = nCharWrite + fieldWidth + 1
 
        ! Write the line of - signs. This line starts with a #, such
@@ -5955,6 +5980,10 @@ end subroutine cross_prod
        do i=1, nMon
           ! Determine the variable name and write the
           ! corresponding text.
+
+         ! we do the real and complex versions separately
+#ifndef USE_COMPLEX
+         ! real versions print the full 16 digits so these spacings are "regular" and the same for all
           select case (monNames(i))
 
           case ("totalR")
@@ -6054,6 +6083,110 @@ end subroutine cross_prod
              write(*,"(a)",advance="no") "       AxisMoment       |"
 
           end select
+#else
+         ! complex versions print the full 16 digits for real and complex for "functionals"
+         ! but shorter versions only for residuals
+         select case (monNames(i))
+
+         case ("totalR")
+            write(*,"(a)",advance="no") "            totalRes             |"
+
+         case (cgnsL2resRho)
+            write(*,"(a)",advance="no") "            Res rho              |"
+
+         case (cgnsL2resMomx)
+            write(*,"(a)",advance="no") "            Res rhou             |"
+
+         case (cgnsL2resMomy)
+            write(*,"(a)",advance="no") "            Res rhov             |"
+
+         case (cgnsL2resMomz)
+            write(*,"(a)",advance="no") "            Res rhow             |"
+
+         case (cgnsL2resRhoe)
+            write(*,"(a)",advance="no") "            Res rhoE             |"
+
+         case (cgnsL2resNu)
+            write(*,"(a)",advance="no") "           Res nuturb            |"
+
+         case (cgnsL2resK)
+            write(*,"(a)",advance="no") "           Res kturb             |"
+
+         case (cgnsL2resOmega)
+            write(*,"(a)",advance="no") "           Res wturb             |"
+
+         case (cgnsL2resTau)
+            write(*,"(a)",advance="no") "           Res tauturb           |"
+
+         case (cgnsL2resEpsilon)
+            write(*,"(a)",advance="no") "           Res epsturb           |"
+
+         case (cgnsL2resV2)
+            write(*,"(a)",advance="no") "           Res v2turb            |"
+
+         case (cgnsL2resF)
+            write(*,"(a)",advance="no") "           Res fturb             |"
+
+         case (cgnsCl)
+            write(*,"(a)",advance="no") "                     C_lift                      |"
+
+         case (cgnsClp)
+            write(*,"(a)",advance="no") "                    C_lift_p                     |"
+
+         case (cgnsClv)
+            write(*,"(a)",advance="no") "                    C_lift_v                     |"
+
+         case (cgnsCd)
+            write(*,"(a)",advance="no") "                    C_drag                       |"
+
+         case (cgnsCdp)
+            write(*,"(a)",advance="no") "                    C_drag_p                     |"
+
+         case (cgnsCdv)
+            write(*,"(a)",advance="no") "                    C_drag_v                     |"
+
+         case (cgnsCfx)
+            write(*,"(a)",advance="no") "                      C_Fx                       |"
+
+         case (cgnsCfy)
+            write(*,"(a)",advance="no") "                      C_Fy                       |"
+
+         case (cgnsCfz)
+            write(*,"(a)",advance="no") "                      C_Fz                       |"
+
+         case (cgnsCmx)
+            write(*,"(a)",advance="no") "                      C_Mx                       |"
+
+         case (cgnsCmy)
+            write(*,"(a)",advance="no") "                      C_My                       |"
+
+         case (cgnsCmz)
+            write(*,"(a)",advance="no") "                      C_Mz                       |"
+
+         case (cgnsHdiffMax)
+            write(*,"(a)",advance="no") "                   |H-H_inf|                     |"
+
+         case (cgnsMachMax)
+            write(*,"(a)",advance="no") "                    Mach_max                     |"
+
+         case (cgnsYplusMax)
+            write(*,"(a)",advance="no") "                     Y+_max                      |"
+
+         case (cgnsEddyMax)
+            write(*,"(a)",advance="no") "                    Eddyv_max                    |"
+
+         case (cgnsSepSensor)
+            write(*,"(a)",advance="no") "                    SepSensor                    |"
+
+         case (cgnsCavitation)
+            write(*,"(a)",advance="no") "                   Cavitation                    |"
+
+         case (cgnsAxisMoment)
+            write(*,"(a)",advance="no") "                   AxisMoment                    |"
+
+         end select
+#endif
+
        enddo
 
        print "(1x)"
@@ -6081,6 +6214,8 @@ end subroutine cross_prod
 
           ! Determine the variable name and write the
           ! corresponding text.
+#ifndef USE_COMPLEX
+          ! real mode gets the same width for all variables
           select case (monNames(i))
 
           case (cgnsHdiffMax)
@@ -6090,6 +6225,28 @@ end subroutine cross_prod
              write(*,"(a)",advance="no") "                        |"
 
           end select
+#else
+         ! complex mode gets shorter spacing for residuals
+         select case (monNames(i))
+
+         case (cgnsHdiffMax)
+            write(*,"(a)",advance="no") "                       max                       |"
+
+         case (cgnsL2resRho,  cgnsL2resMomx,    &
+               cgnsL2resMomy, cgnsL2resMomz,    &
+               cgnsL2resRhoe, cgnsL2resNu,      &
+               cgnsL2resK,    cgnsL2resOmega,   &
+               cgnsL2resTau,  cgnsL2resEpsilon, &
+               cgnsL2resV2,   cgnsL2resF, 'totalR')
+            ! residuals get a shorter line
+            write(*,"(a)",advance="no") "                                 |"
+         case default
+            ! regular functionals get the long empty line
+            write(*,"(a)",advance="no") "                                                 |"
+
+         end select
+#endif
+
        end do
        print "(1x)"
     end if
@@ -6128,7 +6285,15 @@ end subroutine cross_prod
     do k=2,kl
        do j=2,jl
           do i=2,il
+#ifndef USE_COMPLEX
              monLoc(mm) = monLoc(mm) + (dw(i,j,k,nn)/vol(i,j,k))**2
+#else
+            ! TODO squaring the complex residual when its order 1e-200 underflows and we need a better approach here
+            ! we need to square and sum the real and complex parts separately
+            monLoc(mm) = monLoc(mm) + &
+                         cmplx((real(dw(i,j,k,nn)/vol(i,j,k)))**2, &
+                         (aimag(dw(i,j,k,nn)/vol(i,j,k)))**2)
+#endif
           enddo
        enddo
     enddo
@@ -6165,11 +6330,26 @@ end subroutine cross_prod
              state_sum = 0.0
              ovv = one/vol(i,j,k)
              do l=1,nwf
+#ifndef USE_COMPLEX
                 state_sum = state_sum + (dw(i,j,k,l)*ovv)**2
+#else
+               ! TODO squaring the complex residual when its order 1e-200 underflows and we need a better approach here
+                ! we need to square and sum the real and complex parts separately
+                state_sum = state_sum + &
+                            cmplx((real(dw(i,j,k,l)*ovv))**2, &
+                            (aimag(dw(i,j,k,l)*ovv))**2)
+#endif
              end do
              do l=nt1,nt2
-                ! l-nt1+1 will index the turbResScale properly
-                state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale(l-nt1+1))**2
+               ! l-nt1+1 will index the turbResScale properly
+#ifndef USE_COMPLEX
+               state_sum = state_sum + (dw(i,j,k,l)*ovv*turbResScale(l-nt1+1))**2
+#else
+               ! we need to square and sum the real and complex parts separately
+               state_sum = state_sum + &
+                           cmplx((real(dw(i,j,k,l)*ovv*turbResScale(l-nt1+1)))**2, &
+                           (aimag(dw(i,j,k,l)*ovv*turbResScale(l-nt1+1)))**2)
+#endif
              end do
              monLoc(mm) = monLoc(mm) + state_sum
           enddo

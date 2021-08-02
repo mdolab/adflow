@@ -1,34 +1,43 @@
-import tempfile, imp, os, shutil, sys
-def _tmp_pkg(dir):
+import tempfile
+from importlib.util import find_spec
+from pathlib import Path
+import os
+import shutil
+import sys
+
+
+def _tmp_pkg(tempDir):
     """
     Create a temporary package.
 
     Returns (name, path)
     """
     while True:
-        path = tempfile.mkdtemp(dir=dir)
+        path = tempfile.mkdtemp(dir=tempDir)
         name = os.path.basename(path)
-        try:
-            modinfo = imp.find_module(name)
-            # if name is found, delete and try again
-            os.rmdir(path)
-        except:
+        spec = find_spec(name)
+        # None means the name was not found
+        if spec is None:
             break
-    init = open(os.path.join(path, '__init__.py'), 'w')
-    init.close()
+        # if name is found, delete and try again
+        os.rmdir(path)
+    # this creates an init file so that python recognizes this as a package
+    Path(os.path.join(path, "__init__.py")).touch()
     return name, path
+
 
 class MExt(object):
     """
     Load a unique copy of a module that can be treated as a "class instance".
     """
 
-    def __init__(self, name, path=None, debug=False):
+    def __init__(self, libName, packageName, debug=False):
         tmpdir = tempfile.gettempdir()
-        self.name = name
+        self.name = libName
         self.debug = debug
         # first find the "real" module on the "real" syspath
-        srcfile, srcpath, srcdesc = imp.find_module(name, path)
+        spec = find_spec(packageName)
+        srcpath = os.path.join(spec.submodule_search_locations[0], f"{libName}.so")
         # now create a temp directory for the bogus package
         self._pkgname, self._pkgdir = _tmp_pkg(tmpdir)
         # copy the original module to the new package
@@ -38,7 +47,7 @@ class MExt(object):
         # import the module
         # __import__ returns the package, not the sub-module
         self._pkg = __import__(self._pkgname, globals(), locals(), [self.name])
-        # remove the bogus directory from sys.path 
+        # remove the bogus directory from sys.path
         sys.path.remove(tmpdir)
         # return the module object
         self._module = getattr(self._pkg, self.name)
@@ -50,12 +59,7 @@ class MExt(object):
         if not self.debug:
             del sys.modules[self._module.__name__]
             del sys.modules[self._pkg.__name__]
-            # on win32, the DLL must be unloaded forcefully in order to delete it.
-            # on Darwin (other unix???) this doesn't appear to be necessary
-            # try to unload the dll
-            if os.name == 'nt':
-                hModule = win32api.GetModuleHandle(self._module.__file__)
-                win32api.FreeLibrary(hModule)
+
             # now try to delete the files and directory
             shutil.rmtree(self._pkgdir)
             # make sure the original module is loaded -
@@ -65,5 +69,5 @@ class MExt(object):
             # and the exception is caught here
             try:
                 __import__(self.name)
-            except:
+            except ImportError:
                 pass

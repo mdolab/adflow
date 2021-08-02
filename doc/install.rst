@@ -2,8 +2,8 @@
 
 Installation
 ============
-All the core computations in ``ADflow`` are coded in Fortran.
-It is therefore necessary to build this library before using ``ADflow``.
+All the core computations in ADflow are coded in Fortran.
+It is therefore necessary to build this library before using ADflow.
 
 Requirements
 ------------
@@ -83,7 +83,7 @@ Next, install the testing dependencies by going to the root ADflow directory and
 With all of these packages installed, you can fully verify your ADflow installation.
 First, run the script::
 
-    $ inputFiles/get-input-files.sh
+    $ input_files/get-input-files.sh
 
 to download and extract the necessary files.
 Then in the root directory run::

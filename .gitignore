@@ -16,36 +16,34 @@ src/adjoint/temp*
 *.mod
 doc/_build/*
 doc/_static/doxydoc/*
+doc/tmp.rst
 *.fmt
 *.bak
 src/build/adflow_project.dep
 src/build/libadflow-f2pywrappers2.f90
 src/build/libadflowmodule.c
-reg_tests/adflow_reg
-reg_tests/adflow_reg.orig
-reg_tests/adflow_test*
 src/build/importTest.py
 
-#reg test aux files:
-reg_tests/*.cgns
-reg_tests/*.dat
-reg_tests/*.txt
-reg_tests/*.zipper
-inputFiles.tar.gz
+# Regression test auxiliary files:
+input_files.tar.gz
 adflow_input_files.tar.gz
 
 # also ignore the input files to regtests after we extract from archine
-inputFiles/*.cgns
-inputFiles/split_file
-inputFiles/tecplot.phy
+input_files/*.cgns
+input_files/*.xyz
+input_files/split_file
+input_files/tecplot.phy
 
 adflow.egg-info/*
 
-python/inputFiles/*
-
 tests/*.cgns
 tests/*out
-*.cgns 
+*.zipper
+
+# for the .cgnsTimestep... files
+tests/output_files/*.cgns*
+
+*.cgns
 *.txt
 *.dat
 *.out

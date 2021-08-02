@@ -155,7 +155,7 @@ contains
              ! if full visc is true, also need full viscous terms, even if
              ! lumpedDiss is true
              call computeSpeedOfSoundSquared
-             if (viscPC) then 
+             if (viscPC) then
                 call allNodalGradients
                 call viscousFlux
              else
@@ -315,7 +315,7 @@ contains
     use constants
     use actuatorRegionData
     use blockPointers, only : volRef, dw, w
-    use flowVarRefState, only : Pref, uRef
+    use flowVarRefState, only : pRef, uRef, LRef
     use communication
     use iteration, only : ordersConverged
     implicit none
@@ -327,7 +327,7 @@ contains
 
     ! Working
     integer(kind=intType) :: i, j, k, ii, iStart, iEnd
-    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, Fact(3), reDim, factor, oStart, oEnd
+    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, F_fact(3), Q_fact, Qtmp, reDim, factor, oStart, oEnd
 
     reDim = pRef*uRef
 
@@ -339,40 +339,46 @@ contains
     else if (ordersConverged > actuatorRegions(iRegion)%relaxEnd) then
        factor = one
     else ! In between
-       oStart = actuatorRegions(iRegion)%relaxStart 
+       oStart = actuatorRegions(iRegion)%relaxStart
        oEnd   = actuatorRegions(iRegion)%relaxEnd
        factor = (ordersConverged - oStart)/(oEnd - oStart)
     end if
 
     ! Compute the constant force factor
-    fact = factor*actuatorRegions(iRegion)%F / actuatorRegions(iRegion)%volume / pRef
+    F_fact = factor*actuatorRegions(iRegion)%force / actuatorRegions(iRegion)%volume / pRef
+
+    ! Heat factor. This is heat added per unit volume per unit time
+    Q_fact = factor * actuatorRegions(iRegion)%heat / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
 
     ! Loop over the ranges for this block
     iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
     iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
-    
+
     !$AD II-LOOP
     do ii=iStart, iEnd
-       
+
        ! Extract the cell ID.
        i = actuatorRegions(iRegion)%cellIDs(1, ii)
        j = actuatorRegions(iRegion)%cellIDs(2, ii)
        k = actuatorRegions(iRegion)%cellIDs(3, ii)
-       
+
        ! This actually gets the force
-       FTmp = volRef(i, j, k) * fact
-       
+       FTmp = volRef(i, j, k) * F_fact
+
        Vx = w(i, j, k, iVx)
        Vy = w(i, j, k, iVy)
        Vz = w(i, j, k, iVz)
-       
+
+       ! this gets the heat addition rate
+       QTmp = volRef(i, j, k) * Q_fact
+
        if (res) then
           ! Momentum residuals
           dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
-          
+
           ! energy residuals
           dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
-               Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
+               Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz - Qtmp
        else
           ! Add in the local power contribution:
           pLocal = pLocal + (Vx*Ftmp(1) + Vy*FTmp(2) + Vz*Ftmp(3))*reDim
