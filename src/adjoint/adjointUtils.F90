@@ -1455,10 +1455,6 @@ contains
        call KSPSetType(master_PC_KSP, 'richardson', ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
-       call KSPMonitorSet(master_PC_KSP, MyKSPMonitor, PETSC_NULL_FUNCTION, &
-            PETSC_NULL_FUNCTION, ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-
        ! Important to set the norm-type to None for efficiency.
        call kspsetnormtype(master_PC_KSP, KSP_NORM_NONE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
