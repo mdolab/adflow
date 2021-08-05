@@ -4,6 +4,7 @@
             "T_mdo_tutorial": 0.0016615291659553139,
             "alpha_mdo_tutorial": -98.11268090960509,
             "beta_mdo_tutorial": -6.933093383517462e-13,
+            "mach_mdo_tutorial": 425656.26434106333,
             "shape": {
                 "__ndarray__": [
                     [
@@ -124,6 +125,7 @@
             "T_mdo_tutorial": 0.0020087050269239626,
             "alpha_mdo_tutorial": 23.346313743438976,
             "beta_mdo_tutorial": 9.550693668125089e-13,
+            "mach_mdo_tutorial": -64031.9554059731,
             "shape": {
                 "__ndarray__": [
                     [
