@@ -276,7 +276,7 @@ class TestAdjoint(reg_test_classes.RegTest):
             for dv in defaultAeroDVs:
                 self.ap.addDV(dv)
         else:
-            for dv in ["alpha", "beta", "T", "xRef", "yRef", "zRef"]:
+            for dv in ["alpha", "beta", "mach", "T", "xRef", "yRef", "zRef"]:
                 self.ap.addDV(dv)
 
         self.CFDSolver = ADFLOW(options=options, debug=True)
