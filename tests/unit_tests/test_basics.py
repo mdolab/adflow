@@ -13,3 +13,6 @@ class BasicTests(unittest.TestCase):
         gridFile = "input_files/mdo_tutorial_euler.cgns"
         options = {"gridfile": os.path.join(baseDir, "../../", gridFile)}
         ADFLOW(options=options, debug=False)
+
+if __name__ == '__main__':
+    unittest.main()
