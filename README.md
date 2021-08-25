@@ -14,7 +14,7 @@ ADflow's features include the following:
 ADflow has been used in aerodynamic, aerostructural, and aeropropulsive design optimization of aircraft configurations.
 Furthermore, we used ADflow to perform design optimization of hydrofoils and wind turbines.
 
-![](./images/adflow_applications.png)
+![](doc/images/adflow_applications.png)
 
 ## Documentation
 Please see the [documentation](https://mdolab-adflow.readthedocs-hosted.com/en/latest/) for installation details and API documentation.
