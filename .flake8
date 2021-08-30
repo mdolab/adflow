@@ -5,6 +5,4 @@ extend-exclude =
     src_cs/build/complexify.py
     adflow/pyWeightAndBalance.py
     adflow/pyWingCG.py
-    adflow/pyDynamicPerformance.py
-    adflow/pyPerformanceClass.py
     adflow/om_*.py
