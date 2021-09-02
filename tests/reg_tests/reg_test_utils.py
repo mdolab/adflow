@@ -1,5 +1,5 @@
 import numpy
-from baseclasses.BaseRegTest import getTol
+from baseclasses.testing import getTol
 
 # =============================================================================
 #                         Assert Statements
