@@ -53,7 +53,7 @@ contains
 
     ! Working Variables
     integer(kind=intType) :: ierr, nn, sps, fSize, iRegion
-    real(kind=realType), dimension(nSections) :: t
+    real(kind=realType), dimension(nSections) :: time
     real(kind=realType) :: dummyReal
 
     if (useSpatial) then
@@ -284,7 +284,7 @@ contains
     ! Working Variables
     real(kind=realType), dimension(:, :, :), allocatable :: forces
     integer(kind=intType) :: ierr, nn, sps, mm,i,j,k, l, fSize, ii, jj, iRegion
-    real(kind=realType), dimension(nSections) :: t
+    real(kind=realType), dimension(nSections) :: time
     real(kind=realType) :: dummyReal, dummyReald
 
     logical :: useOldCoor ! for adjointextra_d() functions
@@ -391,19 +391,19 @@ contains
           call metric_block_d()
           call boundaryNormals_d()
 
-          t = timeunsteadyrestart
+          time = timeunsteadyrestart
           if (equationmode .eq. timespectral) then
              do mm=1,nsections
-                t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/real(&
+                time(mm) = time(mm) + (sps-1)*sections(mm)%timeperiod/real(&
                      &         ntimeintervalsspectral, realtype)
              end do
           end if
 
-          call gridvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
+          call gridvelocitiesfinelevel_block_d(useoldcoor, time, sps, nn)
           ! required for ts
           call normalvelocities_block_d(sps)
           ! required for ts
-          call slipvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
+          call slipvelocitiesfinelevel_block_d(useoldcoor, time, sps, nn)
 
 
           if (equations == RANSEquations .and. useApproxWallDistance) then
@@ -605,7 +605,7 @@ contains
     use BCRoutines, only : applyAllBC_block
     use actuatorRegionData, only : nActuatorRegions
     use monitor, only : timeUnsteadyRestart
-    use section, only: sections,nSections ! used in t-declaration
+    use section, only: sections,nSections ! used in time-declaration
     use solverutils, only : slipvelocitiesfinelevel_block,gridvelocitiesfinelevel_block,normalvelocities_block
 
 #include <petsc/finclude/petsc.h>
@@ -631,7 +631,7 @@ contains
     real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
     real(kind=realType) :: dummyReal, dummyReald
     logical ::resetToRans
-    real(kind=realType), dimension(nSections) :: t
+    real(kind=realType), dimension(nSections) :: time
     logical :: useOldCoor ! for solverutils_b() functions
     useOldCoor = .FALSE.
 
@@ -808,27 +808,27 @@ contains
 
           ! Here we insert the functions related to
           ! rotational (mesh movement) setup
-          t = timeunsteadyrestart
+          time = timeunsteadyrestart
           if (equationmode .eq. timespectral) then
              do mm=1,nsections
-                t(mm) = t(mm) + (sps-1)*sections(mm)%timeperiod/real(&
+                time(mm) = time(mm) + (sps-1)*sections(mm)%timeperiod/real(&
                      &         ntimeintervalsspectral, realtype)
              end do
           end if
           ! fake forward sweep
-          call gridvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
+          call gridvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
 
           call normalvelocities_block(sps)
 
-          call slipvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
+          call slipvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
           ! required for ts
 
-          call slipvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
+          call slipvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
 
           ! required for ts
           call normalvelocities_block_b(sps)
 
-          call gridvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
+          call gridvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
 
           call boundaryNormals_b
           call metric_block_b
