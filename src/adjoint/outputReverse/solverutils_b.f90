@@ -35,7 +35,7 @@ contains
 &   , sj, sjd, sk, skd, sfacei, sfaceid, sfacej, sfacejd, sfacek, &
 &   sfacekd, dtl, gamma, vol, vold, addgridvelocities, sectionid
     use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf&
-&   , gammainfd, pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
+&   , pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
     use inputdiscretization, only : adis, dirscaling, &
 &   radiineededcoarse, radiineededfine, precond
     use inputphysics, only : equationmode
@@ -575,16 +575,16 @@ contains
     end if
   end subroutine timestep_block
 !  differentiation of gridvelocitiesfinelevel_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: veldirfreestream machgrid gammainf
-!                pinf timeref rhoinf *(flowdoms.x) *sfacei *sfacej
-!                *s *sfacek *si *sj *sk
-!   with respect to varying inputs: veldirfreestream machgrid gammainf
-!                pinf timeref rhoinf *(flowdoms.x) *sfacei *sfacej
-!                *s *sfacek *si *sj *sk
+!   gradient     of useful results: veldirfreestream machgrid pinf
+!                timeref rhoinf *(flowdoms.x) *sfacei *sfacej *s
+!                *sfacek *si *sj *sk
+!   with respect to varying inputs: veldirfreestream machgrid pinf
+!                timeref rhoinf *(flowdoms.x) *sfacei *sfacej *s
+!                *sfacek *si *sj *sk
 !   rw status of diff variables: veldirfreestream:incr machgrid:incr
-!                gammainf:incr pinf:incr timeref:incr rhoinf:incr
-!                *(flowdoms.x):incr *sfacei:in-out *sfacej:in-out
-!                *s:in-out *sfacek:in-out *si:incr *sj:incr *sk:incr
+!                pinf:incr timeref:incr rhoinf:incr *(flowdoms.x):incr
+!                *sfacei:in-out *sfacej:in-out *s:in-out *sfacek:in-out
+!                *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: flowdoms.x:in sfacei:in sfacej:in
 !                s:in sfacek:in si:in sj:in sk:in
   subroutine gridvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
@@ -659,7 +659,6 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
-    real(kind=realtype) :: temp
 ! compute the mesh velocity from the given mesh mach number.
 ! vel{x,y,z}grid0 is the actual velocity you want at the
 ! geometry.
@@ -1490,15 +1489,13 @@ contains
 &     velygrid0d
     veldirfreestreamd(1) = veldirfreestreamd(1) - ainf*machgrid*&
 &     velxgrid0d
-    temp = gammainf*pinf/rhoinf
-    if (temp .eq. 0.0_8) then
+    if (gammainf*(pinf/rhoinf) .eq. 0.0_8) then
       tempd = 0.0
     else
-      tempd = ainfd/(2.0*sqrt(temp)*rhoinf)
+      tempd = gammainf*ainfd/(2.0*sqrt(gammainf*(pinf/rhoinf))*rhoinf)
     end if
-    gammainfd = gammainfd + pinf*tempd
-    pinfd = pinfd + gammainf*tempd
-    rhoinfd = rhoinfd - temp*tempd
+    pinfd = pinfd + tempd
+    rhoinfd = rhoinfd - pinf*tempd/rhoinf
   end subroutine gridvelocitiesfinelevel_block_b
   subroutine gridvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
 !
@@ -1815,13 +1812,13 @@ contains
     end if
   end subroutine gridvelocitiesfinelevel_block
 !  differentiation of slipvelocitiesfinelevel_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: veldirfreestream machgrid gammainf
-!                pinf timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
-!   with respect to varying inputs: veldirfreestream machgrid gammainf
-!                pinf timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
+!   gradient     of useful results: veldirfreestream machgrid pinf
+!                timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
+!   with respect to varying inputs: veldirfreestream machgrid pinf
+!                timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
 !   rw status of diff variables: veldirfreestream:incr machgrid:incr
-!                gammainf:incr pinf:incr timeref:incr rhoinf:incr
-!                *(flowdoms.x):incr *(*bcdata.uslip):in-out
+!                pinf:incr timeref:incr rhoinf:incr *(flowdoms.x):incr
+!                *(*bcdata.uslip):in-out
 !   plus diff mem management of: flowdoms.x:in bcdata:in *bcdata.uslip:in
   subroutine slipvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
 !
@@ -1921,7 +1918,6 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
-    real(kind=realtype) :: temp
     real(kind=realtype) :: tempd17
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: tempd15
@@ -3102,15 +3098,13 @@ bocoloop2:do mm=1,nviscbocos
 &       velygrid0d
       veldirfreestreamd(1) = veldirfreestreamd(1) - ainf*machgrid*&
 &       velxgrid0d
-      temp = gammainf*pinf/rhoinf
-      if (temp .eq. 0.0_8) then
+      if (gammainf*(pinf/rhoinf) .eq. 0.0_8) then
         tempd = 0.0
       else
-        tempd = ainfd/(2.0*sqrt(temp)*rhoinf)
+        tempd = gammainf*ainfd/(2.0*sqrt(gammainf*(pinf/rhoinf))*rhoinf)
       end if
-      gammainfd = gammainfd + pinf*tempd
-      pinfd = pinfd + gammainf*tempd
-      rhoinfd = rhoinfd - temp*tempd
+      pinfd = pinfd + tempd
+      rhoinfd = rhoinfd - pinf*tempd/rhoinf
     end if
   end subroutine slipvelocitiesfinelevel_block_b
   subroutine slipvelocitiesfinelevel_block(useoldcoor, t, sps, nn)

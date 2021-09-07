@@ -177,13 +177,13 @@ residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%force, ac
 fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) > \
                           (w, timeRef, vol, si, sj, sk, p, dw) \
 \
-fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw, gammainf) > \
-                             (w, pInfCOrr, rhoInf, p, fw, gammainf) \
+fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw) > \
+                             (w, pInfCOrr, rhoInf, p, fw) \
 \
 fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > \
                              (w, pInfCorr, si, sj, sk, p, fw) \
 \
-fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw, gammainf, rhoinf, pinfcorr) > \
+fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw, rhoinf, pinfcorr) > \
                                    (w, p, fw) \
 \
 fluxes%inviscidDissFluxMatrixApprox(w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk) > \
@@ -228,14 +228,14 @@ oversetUtilities%newtonUpdate(xCen, blk, frac) > \
 oversetUtilities%fracToWeights(frac) > \
 			      (weights) \
 \
-solverutils%slipVelocitiesFineLevel_block(gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > \
-										 (gammainf, pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) \
+solverutils%slipVelocitiesFineLevel_block(pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > \
+										 (pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) \
 \
 solverutils%normalvelocities_block(sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) > \
 			      				  (sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) \
 \
-solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, gammainf, pinf, timeref, rhoinf, machgrid) > \
-                                         (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, gammainf, pinf, timeref, rhoinf, machgrid) \
+solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) > \
+                                         (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) \
 "
 
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \

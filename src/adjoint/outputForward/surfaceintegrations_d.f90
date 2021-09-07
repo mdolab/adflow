@@ -21,8 +21,7 @@ contains
     use constants
     use inputtimespectral, only : ntimeintervalsspectral
     use flowvarrefstate, only : pref, prefd, rhoref, rhorefd, tref, &
-&   trefd, lref, gammainf, gammainfd, pinf, pinfd, uref, urefd, uinf, &
-&   uinfd
+&   trefd, lref, gammainf, pinf, pinfd, uref, urefd, uinf, uinfd
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
 &   lengthref, alpha, alphad, beta, betad, liftindex

@@ -2464,10 +2464,10 @@ contains
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *fw
-!   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                *w *fw *radi *radj *radk
-!   rw status of diff variables: gammainf:in rhoinf:in pinfcorr:in
-!                *p:in *w:in *fw:in-out *radi:in *radj:in *radk:in
+!   with respect to varying inputs: rhoinf pinfcorr *p *w *fw *radi
+!                *radj *radk
+!   rw status of diff variables: rhoinf:in pinfcorr:in *p:in *w:in
+!                *fw:in-out *radi:in *radj:in *radk:in
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_d()
@@ -2481,8 +2481,8 @@ contains
     use blockpointers, only : nx, ny, nz, il, jl, kl, ie, je, ke, ib, &
 &   jb, kb, w, wd, p, pd, pori, porj, pork, fw, fwd, radi, radid, radj, &
 &   radjd, radk, radkd, gamma
-    use flowvarrefstate, only : gammainf, gammainfd, pinfcorr, &
-&   pinfcorrd, rhoinf, rhoinfd
+    use flowvarrefstate, only : gammainf, pinfcorr, pinfcorrd, rhoinf,&
+&   rhoinfd
     use inputdiscretization, only : vis2, vis4
     use inputphysics, only : equations
     use iteration, only : rfil
@@ -2564,17 +2564,11 @@ contains
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
-        if (rhoinf .gt. 0.0_8) then
-          pwr1d = rhoinf**gammainf*(log(rhoinf)*gammainfd+gammainf*&
-&           rhoinfd/rhoinf)
-        else if (rhoinf .eq. 0.0_8) then
-          if (gammainf .eq. 1.0) then
-            pwr1d = rhoinfd
-          else
-            pwr1d = 0.0_8
-          end if
-        else if (gammainf .eq. int(gammainf)) then
+        if (rhoinf .gt. 0.0_8 .or. (rhoinf .lt. 0.0_8 .and. gammainf &
+&           .eq. int(gammainf))) then
           pwr1d = gammainf*rhoinf**(gammainf-1)*rhoinfd
+        else if (rhoinf .eq. 0.0_8 .and. gammainf .eq. 1.0) then
+          pwr1d = rhoinfd
         else
           pwr1d = 0.0_8
         end if
@@ -9228,10 +9222,10 @@ contains
   end subroutine viscousfluxapprox
 !  differentiation of invisciddissfluxscalarapprox in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *w *fw
-!   with respect to varying inputs: gammainf rhoinf pinfcorr *p
-!                *w *fw *radi *radj *radk
-!   rw status of diff variables: gammainf:in rhoinf:in pinfcorr:in
-!                *p:in *w:in-out *fw:in-out *radi:in *radj:in *radk:in
+!   with respect to varying inputs: rhoinf pinfcorr *p *w *fw *radi
+!                *radj *radk
+!   rw status of diff variables: rhoinf:in pinfcorr:in *p:in *w:in-out
+!                *fw:in-out *radi:in *radj:in *radk:in
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalarapprox_d()
@@ -9321,17 +9315,11 @@ contains
 ! also set the value of sslim. to be fully consistent this
 ! must have the dimension of entropy and it is therefore
 ! set to a fraction of the free stream value.
-        if (rhoinf .gt. 0.0_8) then
-          pwr1d = rhoinf**gammainf*(log(rhoinf)*gammainfd+gammainf*&
-&           rhoinfd/rhoinf)
-        else if (rhoinf .eq. 0.0_8) then
-          if (gammainf .eq. 1.0) then
-            pwr1d = rhoinfd
-          else
-            pwr1d = 0.0_8
-          end if
-        else if (gammainf .eq. int(gammainf)) then
+        if (rhoinf .gt. 0.0_8 .or. (rhoinf .lt. 0.0_8 .and. gammainf &
+&           .eq. int(gammainf))) then
           pwr1d = gammainf*rhoinf**(gammainf-1)*rhoinfd
+        else if (rhoinf .eq. 0.0_8 .and. gammainf .eq. 1.0) then
+          pwr1d = rhoinfd
         else
           pwr1d = 0.0_8
         end if
