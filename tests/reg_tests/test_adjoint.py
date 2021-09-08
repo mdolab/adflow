@@ -54,7 +54,7 @@ def setDVGeo(ffdFile, cmplx=False):
     def span(val, geo):
         # Span
         C = geo.extractCoef("wing")
-        for i in range(len(C) - 1):
+        for _i in range(len(C) - 1):
             C[-1, 2] = C[-1, 2] + val[0]
         geo.restoreCoef(C, "wing")
 

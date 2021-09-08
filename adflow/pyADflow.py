@@ -438,7 +438,7 @@ class ADFLOW(AeroSolver):
         n = int(f.readline())
         X = []
         D = []
-        for i in range(n):
+        for _i in range(n):
             aux = f.readline().split()
             X.append([float(aux[0]), float(aux[1]), float(aux[2])])
             D.append([float(aux[3]), float(aux[4]), float(aux[5])])
@@ -1158,7 +1158,7 @@ class ADFLOW(AeroSolver):
 
         # Time advancing
         nTimeStepsFine = self.getOption("ntimestepsfine")
-        for tdx in range(1, nTimeStepsFine + 1):
+        for _tdx in range(1, nTimeStepsFine + 1):
             # Increment counter
             curTime, curTimeStep = self.advanceTimeStepCounter()
 
@@ -1244,7 +1244,7 @@ class ADFLOW(AeroSolver):
         aeroProblemTime = time.time()
 
         if evalFuncs is None:
-            evalFuncs = sorted(list(self.curAP.evalFuncs))
+            evalFuncs = sorted(self.curAP.evalFuncs)
 
         # Make sure we have a list that has only lower-cased entries
         tmp = []
@@ -1377,7 +1377,7 @@ class ADFLOW(AeroSolver):
         self.curAP.adjointFailed = False
 
         if evalFuncs is None:
-            evalFuncs = sorted(list(self.curAP.evalFuncs))
+            evalFuncs = sorted(self.curAP.evalFuncs)
 
         # Make sure we have a list that has only lower-cased entries
         tmp = []
@@ -1471,7 +1471,7 @@ class ADFLOW(AeroSolver):
 
         # Check for functions to propagate to
         if evalFuncs is None:
-            evalFuncs = sorted(list(self.curAP.evalFuncs))
+            evalFuncs = sorted(self.curAP.evalFuncs)
 
         # Make sure we have a list that has only lower-cased entries
         tmp = []
@@ -1611,7 +1611,7 @@ class ADFLOW(AeroSolver):
         self.setOption("rkreset", True)
 
         # Secant method iterations
-        for iIter in range(maxIter):
+        for _iIter in range(maxIter):
             # We may need to reset the flow since changing strictly
             # alpha leads to problems with the NK solver
             if autoReset:
@@ -5254,25 +5254,23 @@ class ADFLOW(AeroSolver):
         # pythonOptions do not get set in the Fortran code.
         # They are used strictly in Python.
 
-        pythonOptions = set(
-            (
-                "numbersolutions",
-                "writesurfacesolution",
-                "writevolumesolution",
-                "writetecplotsurfacesolution",
-                "coupledsolution",
-                "partitiononly",
-                "liftindex",
-                "meshsurfacefamily",
-                "designsurfacefamily",
-                "closedsurfacefamilies",
-                "zippersurfacefamily",
-                "outputsurfacefamily",
-                "cutcallback",
-                "infchangecorrection",
-                "skipafterfailedadjoint",
-            )
-        )
+        pythonOptions = {
+            "numbersolutions",
+            "writesurfacesolution",
+            "writevolumesolution",
+            "writetecplotsurfacesolution",
+            "coupledsolution",
+            "partitiononly",
+            "liftindex",
+            "meshsurfacefamily",
+            "designsurfacefamily",
+            "closedsurfacefamilies",
+            "zippersurfacefamily",
+            "outputsurfacefamily",
+            "cutcallback",
+            "infchangecorrection",
+            "skipafterfailedadjoint",
+        }
 
         # Deprecated options that may be in old scripts and should not be used.
 
@@ -5281,23 +5279,21 @@ class ADFLOW(AeroSolver):
             "writesolution": "Use writeSurfaceSolution and writeVolumeSolution options instead.",
             "autosolveretry": "This feature is not implemented.",
             "autoadjointretry": "This feature is not implemented.",
-            "nkcfl0": "The NK solver does not use a CFL value anymore. \
-                                       The CFL is set to infinity and the true Newton method is used.",
+            "nkcfl0": "The NK solver does not use a CFL value anymore. "
+            + "The CFL is set to infinity and the true Newton method is used.",
         }
 
-        specialOptions = set(
-            (
-                "surfacevariables",
-                "volumevariables",
-                "monitorvariables",
-                "outputdirectory",
-                "isovariables",
-                "isosurface",
-                "turbresscale",
-                "restartfile",
-                "oversetpriority",
-            )
-        )
+        specialOptions = {
+            "surfacevariables",
+            "volumevariables",
+            "monitorvariables",
+            "outputdirectory",
+            "isovariables",
+            "isosurface",
+            "turbresscale",
+            "restartfile",
+            "oversetpriority",
+        }
 
         return pythonOptions, deprecatedOptions, specialOptions
 
