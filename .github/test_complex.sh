@@ -7,4 +7,6 @@ if [[ $AGENT_NAME == "Azure Pipelines"* ]]; then
 else
     N_TEST=2
 fi
+
+cd tests
 testflo -v -m "cmplx_test*" -n $N_TEST --coverage --coverpkg adflow
