@@ -4353,7 +4353,7 @@ contains
     use flowVarRefState, only : pInfCorr
     use inputDiscretization, only: vis2, vis4, sigma
     use inputPhysics, only : equations
-    use iteration, only : rFil
+    use iteration, only : rFil, totalR0, totalR
     use flowVarRefState, only : gammaInf, pInfCorr, rhoInf
     implicit none
 
@@ -4405,7 +4405,9 @@ contains
 
     ! Set a couple of constants for the scheme.
     fis2 = vis2
-    fis4 = vis4
+    fis4 = vis4 + 0.2 / (1 + exp(-2*(log(totalR / totalR0) + 2)))
+    !fis4 = vis4 + 0.2 * (tanh(0.3 * log(totalR / totalR0)) + 1)
+    !print *, fis4
     !
     !       Dissipative fluxes in the i-direction.
     !
