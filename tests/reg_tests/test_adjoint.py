@@ -50,13 +50,19 @@ def setDVGeo(ffdFile, cmplx=False):
     def twist(val, geo):
         for i in range(nTwist):
             geo.rot_z["wing"].coef[i] = val[i]
-
+    
     def span(val, geo):
-        # Span
+
         C = geo.extractCoef("wing")
-        for _i in range(len(C) - 1):
-            C[-1, 2] = C[-1, 2] + val[0]
+        s = geo.extractS("wing")
+
+        for i in range(len(C)):
+            C[i, 2] += s[i] * val[0]
+
         geo.restoreCoef(C, "wing")
+    
+    
+
 
     DVGeo.addGlobalDV("twist", [0] * nTwist, twist, lower=-10, upper=10, scale=1.0)
     DVGeo.addGlobalDV("span", [0], span, lower=-10, upper=10, scale=1.0)
