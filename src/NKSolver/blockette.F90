@@ -4405,9 +4405,8 @@ contains
 
     ! Set a couple of constants for the scheme.
     fis2 = vis2
-    fis4 = vis4 + 0.2 / (1 + exp(-2*(log(totalR / totalR0) + 2)))
-    !fis4 = vis4 + 0.2 * (tanh(0.3 * log(totalR / totalR0)) + 1)
-    !print *, fis4
+    fis4 = vis4 + 0.2 / (1 + exp(-3*(log10(totalR / totalR0) + 0.5)))
+
     !
     !       Dissipative fluxes in the i-direction.
     !
