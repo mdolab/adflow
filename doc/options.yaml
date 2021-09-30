@@ -415,6 +415,27 @@ useLinResMonitor:
     Enables the linear residual monitor for the NK and ANK solvers.
     The output should look like the linear residual output from the adjoint solver.
 
+useDissContinuation:
+  desc: >
+    Use dissipation-based continuation.
+    This adds artificial dissipation at the initial stages of the solution, which helps converge flows with strong transients.
+    The dissipation tapers off as a sigmoid function of the relative convergence.
+
+dissContMagnitude:
+  desc: >
+    The magnitude of the additional dissipation for the dissipation-based continuation.
+    The initial dissipation will typically be close to this value.
+
+dissContMidpoint:
+  desc: >
+    The number of orders of relative convergence at which the additional dissipation is half of :py:data:`dispContMagnitude`.
+    For example, a value of 1.0 means that the midpoint is at one order of magnitude of relative convergence.
+
+dissContSharpness:
+  desc: >
+    The sharpness of the dissipation-based continuation schedule.
+    Larger values will result in a steeper drop from the initial to final dissipation value.
+
 nearWallDist:
   desc: >
     Distance used to determine if a cell will be flagged as "nearWall".

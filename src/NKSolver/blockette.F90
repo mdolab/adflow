@@ -4352,6 +4352,7 @@ contains
     use constants
     use flowVarRefState, only : pInfCorr
     use inputDiscretization, only: vis2, vis4, sigma
+    use inputIteration, only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
     use inputPhysics, only : equations
     use iteration, only : rFil, totalR0, totalR
     use flowVarRefState, only : gammaInf, pInfCorr, rhoInf
@@ -4405,7 +4406,11 @@ contains
 
     ! Set a couple of constants for the scheme.
     fis2 = vis2
-    fis4 = vis4 + 0.2 / (1 + exp(-3*(log10(totalR / totalR0) + 0.5)))
+    if (useDissContinuation) then
+       fis4 = vis4 + dissContMagnitude / (1 + exp(-dissContSharpness*(log10(totalR / totalR0) + dissContMidpoint)))
+    else
+       fis4 = vis4
+    end if
 
     !
     !       Dissipative fluxes in the i-direction.

@@ -4725,6 +4725,10 @@ class ADFLOW(AeroSolver):
             "CFLLimit": [float, 1.5],
             "useBlockettes": [bool, True],
             "useLinResMonitor": [bool, False],
+            "useDissContinuation": [bool, False],
+            "dissContMagnitude": [float, 0.2],
+            "dissContMidpoint": [float, 0.5],
+            "dissContSharpness": [float, 3.0],
             # Overset Parameters
             "nearWallDist": [float, 0.1],
             "backgroundVolScale": [float, 1.0],
@@ -5072,6 +5076,10 @@ class ADFLOW(AeroSolver):
             "cfllimit": ["iter", "cfllimit"],
             "useblockettes": ["discr", "useblockettes"],
             "uselinresmonitor": ["iter", "uselinresmonitor"],
+            "usedisscontinuation": ["iter", "usedisscontinuation"],
+            "disscontmagnitude": ["iter", "disscontmagnitude"],
+            "disscontmidpoint": ["iter", "disscontmidpoint"],
+            "disscontsharpness": ["iter", "disscontsharpness"],
             # Overset Parameters
             "nearwalldist": ["overset", "nearwalldist"],
             "backgroundvolscale": ["overset", "backgroundvolscale"],
