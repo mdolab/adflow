@@ -2,4 +2,4 @@
 set -e
 cp $CONFIG_FILE config/config.mk
 make
-pip install -e .
+pip install .
