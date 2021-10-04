@@ -4687,6 +4687,7 @@ class ADFLOW(AeroSolver):
             "useQCR": [bool, False],
             "useRotationSA": [bool, False],
             "useft2SA": [bool, True],
+            'kssa': [float, 0.0],
             "eddyVisInfRatio": [float, 0.009],
             "useWallFunctions": [bool, False],
             "useApproxWallDistance": [bool, True],
@@ -4710,6 +4711,7 @@ class ADFLOW(AeroSolver):
             "wallDistCutoff": [float, 1e20],
             "infChangeCorrection": [bool, True],
             "cavitationNumber": [float, 1.4],
+          
             # Common Parameters
             "nCycles": [int, 2000],
             "timeLimit": [float, -1.0],
@@ -5028,6 +5030,7 @@ class ADFLOW(AeroSolver):
             "useqcr": ["physics", "useqcr"],
             "userotationsa": ["physics", "userotationsa"],
             "useft2sa": ["physics", "useft2sa"],
+            "kssa":["physics", "kssa"],
             "eddyvisinfratio": ["physics", "eddyvisinfratio"],
             "usewallfunctions": ["physics", "wallfunctions"],
             "walldistcutoff": ["physics", "walldistcutoff"],
@@ -5052,6 +5055,7 @@ class ADFLOW(AeroSolver):
             "forcesastractions": ["physics", "forcesastractions"],
             "lowspeedpreconditioner": ["discr", "lowspeedpreconditioner"],
             "cavitationnumber": ["physics", "cavitationnumber"],
+
             # Common Parameters
             "ncycles": ["iter", "ncycles"],
             "timelimit": ["iter", "timelimit"],

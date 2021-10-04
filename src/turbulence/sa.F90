@@ -107,6 +107,7 @@ contains
 
     ! Local variables.
     integer(kind=intType) :: i, j, k, nn, ii
+    real(kind=realType) :: dnew,cr1
     real(kind=realType) :: fv1, fv2, ft2
     real(kind=realType) :: ss, sst, nu, dist2Inv, chi, chi2, chi3
     real(kind=realType) :: rr, gg, gg6, termFw, fwSa, term1, term2
@@ -123,6 +124,9 @@ contains
     kar2Inv = one/(rsaK**2)
     cw36    = rsaCw3**6
     cb3Inv  = one/rsaCb3
+
+    ! constants for SA rough
+    cr1=0.5
 
     ! Determine the non-dimensional wheel speed of this block.
 
@@ -243,13 +247,16 @@ contains
                 ! and nu) and the functions fv1 and fv2. The latter corrects
                 ! the production term near a viscous wall.
 
+                ! SA rough
+                dnew     = d2Wall(i,j,k) + 0.03*kssa
+
                 nu       = rlv(i,j,k)/w(i,j,k,irho)
-                dist2Inv = one/(d2Wall(i,j,k)**2)
-                chi      = w(i,j,k,itu1)/nu
+                dist2Inv = one/(dnew**2)
+                chi      = w(i,j,k,itu1)/nu + cr1*kssa/dnew
                 chi2     = chi*chi
                 chi3     = chi*chi2
                 fv1      = chi3/(chi3+cv13)
-                fv2      = one - chi/(one + chi*fv1)
+                fv2      = one - w(i,j,k,itu1)/(nu + w(i,j,k,itu1)*fv1)
 
                 ! The function ft2, which is designed to keep a laminar
                 ! solution laminar. When running in fully turbulent mode
@@ -308,7 +315,7 @@ contains
                 ! treatment.
 
                 dfv1 = three*chi2*cv13/((chi3+cv13)**2)
-                dfv2 = (chi2*dfv1 - one)/(nu*((one + chi*fv1)**2))
+                dfv2 = (w(i,j,k,itu1)*dfv1 - nu) / (nu + w(i,j,k,itu1)*fv1)**2
                 dft2 = -two*rsaCt4*chi*ft2/nu
 
                 drr = (one - rr*(fv2 + w(i,j,k,itu1)*dfv2)) &
