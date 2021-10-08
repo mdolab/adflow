@@ -14,5 +14,6 @@ class BasicTests(unittest.TestCase):
         options = {"gridfile": os.path.join(baseDir, "../../", gridFile)}
         ADFLOW(options=options, debug=False)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
