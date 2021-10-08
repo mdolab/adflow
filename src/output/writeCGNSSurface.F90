@@ -1321,7 +1321,7 @@ contains
                     faceID, cellRange(1,1,kk), &
                     solNames(mm),              &
                     viscousSubface, storeRindLayer,&
-                    iBeg, iEnd+1, jBeg, jEnd+1)
+                    iBeg, iEnd, jBeg, jEnd)
             endif
          enddo
 
