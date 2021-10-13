@@ -863,7 +863,7 @@ contains
     if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
          adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
          adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN .or. &
-         adjResFinal / adjResStart / adjMaxL2Dev < L2Rel) then
+         adjResFinal / adjResStart < L2Rel * adjMaxL2Dev) then
        adjointFailed = .False.
     else
        adjointFailed = .True.
