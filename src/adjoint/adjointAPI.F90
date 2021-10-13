@@ -679,7 +679,7 @@ contains
 
     use killsignals, only : adjointFailed
     use inputADjoint, only : adjAbsTol, adjDivTol, adjMaxIter, adjRelTol, &
-         adjRelTolRel, printTiming
+         adjRelTolRel, adjMaxL2Dev, printTiming
     use adjointVars, only: derivVarsAllocated
     use communication, only : myid, adflow_comm_world
     use blockPointers, only : nDom
@@ -862,7 +862,8 @@ contains
 
     if (adjointConvergedReason ==  KSP_CONVERGED_RTOL .or. &
          adjointConvergedReason ==  KSP_CONVERGED_ATOL .or. &
-         adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN) then
+         adjointConvergedReason ==  KSP_CONVERGED_HAPPY_BREAKDOWN .or. &
+         adjResFinal / adjResStart / adjMaxL2Dev < L2Rel) then
        adjointFailed = .False.
     else
        adjointFailed = .True.
