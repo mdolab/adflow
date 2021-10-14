@@ -13,8 +13,8 @@ from __future__ import print_function
 import sys, os, copy
 from mpi4py import MPI
 from baseclasses import AeroProblem
-from mdo_regression_helper import *
-from commonUtils import *
+# from mdo_regression_helper import *
+# from commonUtils import *
 from idwarp import USMesh
 import numpy
 
@@ -22,7 +22,7 @@ import numpy
 # DO NOT USE THIS IMPORT STRATEGY! THIS IS ONLY USED FOR REGRESSION
 # SCRIPTS ONLY. Use 'from adflow import ADFLOW' for regular scripts.
 sys.path.append(os.path.abspath('../../'))
-from python.pyADflow import ADFLOW
+from adflow import ADFLOW
 # ###################################################################
 
 # util class
@@ -59,7 +59,7 @@ class Transfer():
 
         self.cfdPts = []
 
-        for sps in xrange(ntimeintervalsspectral):
+        for sps in range(ntimeintervalsspectral):
 
             cfdPoints_deformed = numpy.zeros((N_pts, 3))
 
@@ -68,7 +68,7 @@ class Transfer():
             cc = numpy.cos(ptch_loc)
             ss = numpy.sin(ptch_loc)
 
-            for j in xrange(N_pts):
+            for j in range(N_pts):
 
                 cfdPoints_deformed[j, 0] = (  cc*(cfdPoints_init[j, 0] - xRot) + ss*cfdPoints_init[j, 1] + xRot)
                 cfdPoints_deformed[j, 1] = (- ss*(cfdPoints_init[j, 0] - xRot) + cc*cfdPoints_init[j, 1])
@@ -80,7 +80,7 @@ class Transfer():
 
         ntimeintervalsspectral = self.ntimeintervalsspectral
 
-        for sps in xrange(ntimeintervalsspectral):
+        for sps in range(ntimeintervalsspectral):
 
             self.aeroSolver.mesh.setSurfaceCoordinates(self.cfdPts[sps])
             self.aeroSolver.mesh.warpMesh()
@@ -92,7 +92,7 @@ class Transfer():
 
 
 # parameters
-gridFile = '../inputFiles/naca64A010_euler-L2.cgns'
+gridFile = 'naca64A010_euler-L2.cgns'
 outputDirectory = 'OUTPUT/'
 
 ntimeintervalsspectral = 3
