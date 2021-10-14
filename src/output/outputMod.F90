@@ -1886,8 +1886,8 @@ contains
        ! working indices are ii and jj.
        do j=rangeFace(2,1), rangeFace(2,2)
 
-         !  if satements are used to copy the value of of the interior
-         ! cell since the value isn't defined in the rind ell 
+         ! if statements are used to copy the value of the interior
+         ! cell since the value isn't defined in the rind cell
 
          if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
             jor = j + jBegOr - 1
@@ -1999,8 +1999,8 @@ contains
        ! working indices are ii and jj.
        do j=rangeFace(2,1), rangeFace(2,2)
 
-         !  if satements are used to copy the value of of the interior
-         ! cell since the value isn't defined in the rind ell 
+         ! if statements are used to copy the value of the interior
+         ! cell since the value isn't defined in the rind cell
 
          if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
             jor = j + jBegOr - 1
