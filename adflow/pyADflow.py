@@ -2880,16 +2880,12 @@ class ADFLOW(AeroSolver):
         if machRef is None:
             machRef = mach
 
-        # turn this part off since dcl/dx is *not* verified under this case
-        # if machGrid is None:
-        #     if self.getOption('equationMode').lower()=='time spectral':
-        #         machGrid = mach
-        #     else:
-        #         # Steady, unsteady
-        #         machGrid = 0.0
-
-        # change default to this case since dcl/dx is verified under this case
-        machGrid = 0.0
+        if machGrid is None:
+            if self.getOption('equationMode').lower()=='time spectral':
+                machGrid = mach
+            else:
+                # Steady, unsteady
+                machGrid = 0.0
 
 
         # 1. Angle of attack:
@@ -2916,15 +2912,10 @@ class ADFLOW(AeroSolver):
         # Mach number for time spectral needs to be set to set to zero
         # If time-spectral (TS) then mach = 0, machcoef = mach, machgrid = mach
         # If Steady-State (SS), time-accurate (TA) then mach = mach, machcoef = mach, machgrid = 0
-
-        # turn this part off since dcl/dx is *not* verified under this case
-        # if self.getOption('equationMode').lower()=='time spectral':
-        #     self.adflow.inputphysics.mach = 0.0
-        # else:
-        #     self.adflow.inputphysics.mach = mach
-
-        # change default to this case since dcl/dx is verified under this case
-        self.adflow.inputphysics.mach = mach
+        if self.getOption('equationMode').lower()=='time spectral':
+            self.adflow.inputphysics.mach = 0.0
+        else:
+            self.adflow.inputphysics.mach = mach
 
         self.adflow.inputphysics.machcoef = machRef
         self.adflow.inputphysics.machgrid = machGrid
