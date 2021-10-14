@@ -3850,7 +3850,13 @@ contains
           enddo
        endif
 
-       call gridVelocitiesFineLevel(.false., t, mm)
+       if (.NOT. useTSInterpolatedGridVelocity) then
+          call gridVelocitiesFineLevel(.false., t, mm)
+       else
+          call gridVelocitiesFineLevel_TS(mm)
+       end if
+
+
        call gridVelocitiesCoarseLevels(mm)
        call normalVelocitiesAllLevels(mm)
 
@@ -3889,7 +3895,10 @@ contains
 
     call timePeriodSpectral
     call timeRotMatricesSpectral
-    call fineGridSpectralCoor
+    ! solve for the new grid only for rigid rotation with analytical deformation case
+    if (.NOT. usetsinterpolatedgridvelocity) then 
+       call fineGridSpectralCoor
+    end if
     call timeSpectralMatrices
 
 

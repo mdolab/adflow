@@ -667,6 +667,7 @@ module inputTimeSpectral
 
   real(kind=realType), dimension(:,:,:), allocatable :: &
        rotMatrixSpectral
+  logical :: useTSInterpolatedGridVelocity
 
 end module inputTimeSpectral
 

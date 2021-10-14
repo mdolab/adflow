@@ -157,6 +157,43 @@ contains
 
   end subroutine setGrid
 
+  subroutine setGridForOneInstance(grid,sps)
+
+    ! The purpose of this routine is to set the grid dof as returned by
+    ! the external warping. This routine will take in the deformed mesh
+    ! and set it to "sps"th time instance
+    use constants
+    use blockPointers, only : nDom, il, jl, kl, x
+    use section, only : sections, nSections
+    use inputPhysics, only : equationMode
+    use utils, only : setPointers
+    use preprocessingAPI, only : xhalo
+    implicit none
+
+    real(kind=realType) ,dimension(:), intent(in) :: grid
+    integer, intent(in) :: sps
+
+    ! Local Variables
+
+    integer(kind=intType) :: nn,i,j,k,counter
+
+    counter = 0
+    do nn=1,nDom
+       call setPointers(nn,1_intType,sps)
+       do k=1,kl
+          do j=1,jl
+             do i=1,il
+                X(i,j,k,:) = grid(3*counter+1:3*counter+3)
+                counter = counter + 1
+             end do
+          end do
+       end do
+    end do
+    call xhalo(1_intType)
+
+  end subroutine setGridForOneInstance
+
+
   subroutine getGrid(grid,ndof)
 
     ! Opposite of setGrid. This is ONLY a debugging function. NOT used

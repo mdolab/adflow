@@ -392,6 +392,272 @@ contains
   end subroutine gridVelocitiesFineLevel
 #endif
 
+
+#ifndef USE_TAPENADE
+  subroutine gridVelocitiesFineLevel_TS(sps)
+    !
+    ! Shell function to call gridVelocitiesFineLevel on all blocks
+    !
+    use blockPointers
+    use constants
+    use inputTimeSpectral
+    use iteration
+    use utils, only : setPointers
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: sps
+    integer(kind=intType) :: nn
+
+    ! Loop over the number of blocks.
+
+    domains: do nn=1,nDom
+
+       ! Set the pointers for this block.
+
+       call setPointers(nn, groundLevel, sps)
+       call gridVelocitiesFineLevel_TS_block(nn, sps)
+
+    end do domains
+
+  end subroutine gridVelocitiesFineLevel_TS
+#endif
+
+  subroutine gridVelocitiesFineLevel_TS_block(nn, sps)
+
+    use precision
+    use constants
+    use blockPointers!, only: nDom, ie, je, ke, x, s, sFaceI, sI, sFaceJ, sJ, sFaceK, sK
+    use inputPhysics, only: machgrid, velDirFreestream
+    use flowVarRefState, only: gammaInf, pInf, rhoInf
+    !use partitioning, only: timePeriodSpectral
+    use inputTimeSpectral, only: dscalar, nTimeIntervalsSpectral
+
+    !      local variables
+    integer(kind=intType), intent(in) :: nn, sps
+    integer :: i, j, k, mm, ii, ie_l, je_l, ke_l                                                   ! index variables
+    real(kind=realType) :: x_vc, y_vc, z_vc                                        ! cell volume center coords
+    real(kind=realType) :: x_fc, y_fc, z_fc                                        ! cell face center coords
+    real(kind=realType) :: aInf                                                              ! sound speed
+    real(kind=realType) :: velxGrid, velyGrid, velzGrid                                      ! infinite speed
+
+     
+
+
+    ! get the grid free stream velocity
+    aInf = sqrt(gammaInf*pInf/rhoInf)
+    velxGrid = (aInf*machgrid)*(-velDirFreestream(1))
+    velyGrid = (aInf*machgrid)*(-velDirFreestream(2))
+    velzGrid = (aInf*machgrid)*(-velDirFreestream(3))
+
+    ! get the temporal info (T ect.)
+    !call timePeriodSpectral
+
+
+!
+!            ************************************************************
+!            *                                                          *
+!            * Grid velocities of the cell centers, including the       *
+!            * 1st level halo cells.                                    *
+!            *                                                          *
+!            ************************************************************
+!
+
+    ! initialize with free stream velocity
+    ie_l = flowDoms(nn, 1, sps)%ie
+    je_l = flowDoms(nn, 1, sps)%je
+    ke_l = flowDoms(nn, 1, sps)%ke  
+
+    do k=1, ke_l
+       do j=1, je_l
+          do i=1, ie_l
+
+             s(i, j, k, 1) = velxGrid
+             s(i, j, k, 2) = velyGrid             
+             s(i, j, k, 3) = velzGrid
+
+          end do
+       end do
+    end do
+
+    ! the velocity contributed from mesh deformation 
+    do mm=1, nTimeIntervalsSpectral
+
+       ie_l = flowDoms(nn, 1, mm)%ie
+       je_l = flowDoms(nn, 1, mm)%je
+       ke_l = flowDoms(nn, 1, mm)%ke
+       
+       do k=1,ke_l
+          do j=1,je_l
+             do i=1,ie_l
+
+                x_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,1) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,1) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k-1,1) + flowDoms(nn, 1, mm)%x(i,j,  k-1,1) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  1) + flowDoms(nn, 1, mm)%x(i,j-1,k,  1) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  1) + flowDoms(nn, 1, mm)%x(i,j,  k,  1))
+
+                y_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,2) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,2) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k-1,2) + flowDoms(nn, 1, mm)%x(i,j,  k-1,2) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  2) + flowDoms(nn, 1, mm)%x(i,j-1,k,  2) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  2) + flowDoms(nn, 1, mm)%x(i,j,  k,  2))
+
+	              z_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,3) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,3) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k-1,3) + flowDoms(nn, 1, mm)%x(i,j,  k-1,3) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  3) + flowDoms(nn, 1, mm)%x(i,j-1,k,  3) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  3) + flowDoms(nn, 1, mm)%x(i,j,  k,  3))
+
+
+                s(i,j,k,1) = s(i,j,k,1) + dscalar(1, sps, mm)*x_vc
+                s(i,j,k,2) = s(i,j,k,2) + dscalar(1, sps, mm)*y_vc
+                s(i,j,k,3) = s(i,j,k,3) + dscalar(1, sps, mm)*z_vc
+
+             end do
+          end do
+       end do
+
+    end do
+     
+!
+!            ************************************************************
+!            *                                                          *
+!            * Normal grid velocities of the faces.                     *
+!            *                                                          *
+!            ************************************************************
+!
+    ! sFaceI=	dot(sI, v)=dot(sI, v_freestream + v_grid)=dot(sI, v_freestream) + dot(sI, v_grid)
+    ! sFaceJ, sFaceK same rule!
+
+    ! dot(sI, v_freestream)
+    ie_l = flowDoms(nn, 1, sps)%ie
+    je_l = flowDoms(nn, 1, sps)%je
+    ke_l = flowDoms(nn, 1, sps)%ke  
+
+
+    ! i
+    do k=1, ke_l
+       do j=1, je_l
+          do i=0, ie_l
+
+             sFaceI(i, j, k) = velxGrid*sI(i, j, k, 1) + velyGrid*sI(i, j, k, 2) &
+                             + velzGrid*sI(i, j, k, 3)
+
+
+          end do
+       end do
+    end do
+
+    ! j
+    do k=1, ke_l
+       do j=0, je_l
+          do i=1, ie_l
+
+             sFaceJ(i, j, k) = velxGrid*sJ(i, j, k, 1) + velyGrid*sJ(i, j, k, 2) &
+                             + velzGrid*sJ(i, j, k, 3)
+
+
+          end do
+       end do
+    end do
+
+    ! k
+    do k=0, ke_l
+       do j=1, je_l
+          do i=1, ie_l
+
+             sFaceK(i, j, k) = velxGrid*sK(i, j, k, 1) + velyGrid*sK(i, j, k, 2) &
+                             + velzGrid*sK(i, j, k, 3)
+
+
+          end do
+       end do
+    end do
+
+
+    !  dot(sI, v_grid)
+    ! Loop over inner cells (also 1st layer halo of 3 surfs sI, sJ and sK are handled here, the left will be handled in the next section)
+
+    do mm=1,nTimeIntervalsSpectral
+
+       ie_l = flowDoms(nn, 1, mm)%ie
+       je_l = flowDoms(nn, 1, mm)%je
+       ke_l = flowDoms(nn, 1, mm)%ke
+
+
+       ! i
+       do k=1, ke_l
+          do j=1, je_l
+             do i=0, ie_l
+   
+                x_fc = fourth*(flowDoms(nn, 1, mm)%x(  i,j-1,k-1, 1) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 1)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 1) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 1))
+                y_fc = fourth*(flowDoms(nn, 1, mm)%x(  i,j-1,k-1, 2) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 2)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 2) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 2))
+                z_fc = fourth*(flowDoms(nn, 1, mm)%x(  i,j-1,k-1, 3) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 3)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 3) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 3))
+
+                sFaceI(i, j, k) = sFaceI(i, j, k) & 
+                                + dscalar(1, sps, mm)*x_fc*sI(i, j, k, 1) &
+                                + dscalar(1, sps, mm)*y_fc*sI(i, j, k, 2) &
+                                + dscalar(1, sps, mm)*z_fc*sI(i, j, k, 3)                
+
+             end do
+          end do
+       end do       
+
+       ! j
+       do k=1, ke_l
+          do j=0, je_l
+             do i=1, ie_l
+   
+                x_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,  j,k-1, 1) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 1)&
+                             + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 1) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 1))
+                y_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,  j,k-1, 2) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 2)&
+                             + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 2) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 2))
+                z_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,  j,k-1, 3) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 3)&
+                             + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 3) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 3))
+
+                sFaceJ(i, j, k) = sFaceJ(i, j, k)                          & 
+                                + dscalar(1, sps, mm)*x_fc*sJ(i, j, k, 1) &
+                                + dscalar(1, sps, mm)*y_fc*sJ(i, j, k, 2) &
+                                + dscalar(1, sps, mm)*z_fc*sJ(i, j, k, 3)              
+
+             end do
+          end do
+       end do
+
+       ! k
+       do k=0, ke_l
+          do j=1, je_l
+             do i=1, ie_l
+   
+                x_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,j-1,  k, 1) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 1)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 1) + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 1))
+                y_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,j-1,  k, 2) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 2)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 2) + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 2))
+                z_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,j-1,  k, 3) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 3)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 3) + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 3))
+
+                sFaceK(i, j, k) = sFaceK(i, j, k)                          & 
+                                + dscalar(1, sps, mm)*x_fc*sK(i, j, k, 1) &
+                                + dscalar(1, sps, mm)*y_fc*sK(i, j, k, 2) &
+                                + dscalar(1, sps, mm)*z_fc*sK(i, j, k, 3)               
+
+             end do
+          end do
+       end do  
+     
+    end do
+
+
+   
+  end subroutine gridVelocitiesFineLevel_TS_block
+
+
+
+
+
+
   subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps)
     !
     !       gridVelocitiesFineLevel computes the grid velocities for
