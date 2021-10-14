@@ -4783,7 +4783,8 @@ class ADFLOW(AeroSolver):
             "alphaFollowing": [bool, True],
             "TSStability": [bool, False],
             'usetsinterpolatedgridvelocity': [bool, False],
-            'useexternaldynamicmesh': [bool, True],
+            'useexternaldynamicmesh': [bool, False],
+
             # Convergence Parameters
             "L2Convergence": [float, 1e-8],
             "L2ConvergenceRel": [float, 1e-16],
