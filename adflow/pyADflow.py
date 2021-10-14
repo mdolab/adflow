@@ -2942,11 +2942,17 @@ class ADFLOW(AeroSolver):
         # and come directly from aeroProblem. Make sure you specify
         # them there properly!!
         if self.getOption('useexternaldynamicmesh'):
+            # The inputs here are mainly used for TS stability problem.
+            # For general aeroelastic problem, we rely on more general settings.
+            # Currently, polynomial motion is not supported for aeroelastic problem.
             AP.degreePol = 0
             AP.coefPol = [0.0]
-            AP.degreeFourier = 1
+            AP.degreeFourier = (self.adflow.inputtimespectral.ntimeintervalsspectral - 1) / 2 # no odd number of instance allowed!
             AP.cosCoefFourier = [0.0]
             AP.sinCoefFourier = [0.0]
+        # if use flexible mesh option, useexternaldynamicmesh, we need one of the following
+        # to be true to get a correct time period.
+        # the number of time instance is set directly.
         if  self.getOption('alphaMode'):
             self.adflow.inputmotion.degreepolalpha = int(AP.degreePol)
             self.adflow.inputmotion.coefpolalpha = AP.coefPol
@@ -2990,6 +2996,9 @@ class ADFLOW(AeroSolver):
             self.adflow.inputmotion.degreefouryrot = AP.degreeFourier
             self.adflow.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
+        elif self.getOption('useexternaldynamicmesh'):
+            # if it is an aeroelastic case
+            self.adflow.inputtimespectral.omegafourier = AP.omegaFourier
 
         # Set any possible BC Data coming out of the aeroProblem
         nameArray, dataArray, groupArray, groupNames, empty = self._getBCDataFromAeroProblem(AP)

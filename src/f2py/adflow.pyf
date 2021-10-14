@@ -1193,6 +1193,7 @@ python module libadflow
          logical :: writeunsteadyvolspectral
          logical :: writeunsteadysurfspectral
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
+         real(kind=realtype) :: omegafourier
        end module inputtimespectral
        module inputoverset
          logical :: useoversetloadbalance

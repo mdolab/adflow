@@ -669,6 +669,8 @@ module inputTimeSpectral
        rotMatrixSpectral
   logical :: useTSInterpolatedGridVelocity
 
+  real(kind=realType) :: omegaFourier
+
 end module inputTimeSpectral
 
 !      ==================================================================
