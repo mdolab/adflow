@@ -1,6 +1,7 @@
 # ADflow
 [![Build Status](https://dev.azure.com/mdolab/Public/_apis/build/status/mdolab.adflow?repoName=mdolab%2Fadflow&branchName=master)](https://dev.azure.com/mdolab/Public/_build/latest?definitionId=4&repoName=mdolab%2Fadflow&branchName=master)
 [![Documentation Status](https://readthedocs.com/projects/mdolab-adflow/badge/?version=latest)](https://mdolab-adflow.readthedocs-hosted.com/?badge=latest)
+[![codecov](https://codecov.io/gh/mdolab/adflow/branch/master/graph/badge.svg?token=DRCCCL12I8)](https://codecov.io/gh/mdolab/adflow)
 
 ADflow is a flow solver developed by the MDO Lab at the University of Michigan.
 It solves the compressible Euler, laminar Navier–Stokes and Reynolds-averaged Navier–Stokes equations using structured multi-block and overset meshes.
@@ -13,7 +14,7 @@ ADflow's features include the following:
 ADflow has been used in aerodynamic, aerostructural, and aeropropulsive design optimization of aircraft configurations.
 Furthermore, we used ADflow to perform design optimization of hydrofoils and wind turbines.
 
-![](./images/adflow_applications.png)
+![](doc/images/adflow_applications.png)
 
 ## Documentation
 Please see the [documentation](https://mdolab-adflow.readthedocs-hosted.com/en/latest/) for installation details and API documentation.
