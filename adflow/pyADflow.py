@@ -396,13 +396,6 @@ class ADFLOW(AeroSolver):
 
         self.mesh.setSurfaceDefinition(pts, conn, faceSizes, cgnsBlockIDs)
 
-    def setSurfaceTransferTS(self, surfaceTransfer):
-
-        # time spectral after-design undeformed surface mesh to
-        # after-design deformed surface mesh transfer
-
-        self.surfaceTransfer = surfaceTransfer
-
     def getSolverMeshIndices(self):
         """
         Get the list of indices to pass to the mesh object for the
