@@ -1078,6 +1078,11 @@ adjointDivTol:
   desc: >
     The relative amount the adjoint residual can increase before the solver concludes that the method is diverging.
 
+adjointMaxL2DeviationFactor:
+  desc: >
+    Similar to :py:data:`maxL2DeviationFactor` but for the adjoint solution.
+    This factor is only applied to :py:data:`adjointL2Convergence`.
+
 approxPC:
   desc: >
     Whether or not to use the approximate Jacobian for the adjoint preconditioner.
