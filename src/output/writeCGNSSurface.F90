@@ -1320,7 +1320,8 @@ contains
                call storeSurfsolInBuffer(ind, buffer, jj, ii,       &
                     faceID, cellRange(1,1,kk), &
                     solNames(mm),              &
-                    viscousSubface, storeRindLayer)
+                    viscousSubface, storeRindLayer,&
+                    iBeg, iEnd, jBeg, jEnd)
             endif
          enddo
 
