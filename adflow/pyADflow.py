@@ -3601,7 +3601,7 @@ class ADFLOW(AeroSolver):
         """
         self.adflow.utils.stabilityderivativedriver()
 
-    def updateGeometryInfo(self, warpMesh=True, HSCflag=False):
+    def updateGeometryInfo(self, warpMesh=True):
         """
         Update the ADflow internal geometry info.
         """
@@ -3620,8 +3620,7 @@ class ADFLOW(AeroSolver):
                 self.adflow.killsignals.routinefailed = False
                 self.adflow.killsignals.fatalFail = False
                 self.updateTime = time.time()-timeA
-                if ((newGrid is not None and not self.getOption('useexternaldynamicmesh')) or 
-                HSCflag):
+                if ((newGrid is not None and not self.getOption('useexternaldynamicmesh'))):
                     # since updateGeometryInfo assumes one slice
                     # when using ts with externally defined mesh, the grid is provided externally;
                     # updateGeometryInfo mainly serves to update the metrics and etc.

@@ -1,8 +1,8 @@
 {
     "Eval Functions:": {
-        "64A010pitchingTS_cd": 0.0025000608682108957,
-        "64A010pitchingTS_cl": 0.003776918322102217,
-        "64A010pitchingTS_cmz": 0.0011186213899542193
+        "64A010pitchingTS_cd": 0.0025000608682108497,
+        "64A010pitchingTS_cl": 0.0037769183221013254,
+        "64A010pitchingTS_cmz": 0.0011186213899540035
     },
     "metadata": {
         "ADPC": false,
@@ -103,7 +103,7 @@
         "forcesAsTractions": true,
         "frozenTurbulence": false,
         "globalPreconditioner": "additive Schwarz",
-        "gridFile": "tests/reg_tests/naca64A010_euler-L2.cgns",
+        "gridFile": "input_files/naca64A010_euler-L2.cgns",
         "gridPrecision": "double",
         "gridPrecisionSurface": "single",
         "infChangeCorrection": true,
