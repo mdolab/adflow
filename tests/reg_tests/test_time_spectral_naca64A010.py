@@ -19,6 +19,7 @@ import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
+
 class TestSolve(reg_test_classes.RegTest):
     """
     Tests for time spectral case for an airfoil.
@@ -30,7 +31,7 @@ class TestSolve(reg_test_classes.RegTest):
     def setUp(self):
 
         # Introduce a transfer class for displacement transfer from struct to aero.
-        class Transfer():
+        class Transfer:
 
             # simplified transfer class
             # converting csd displacement to cfd surface nodes
@@ -42,22 +43,22 @@ class TestSolve(reg_test_classes.RegTest):
                 self.alpha = alpha
                 self.ntimeintervalsspectral = len(alpha)
 
-                self.aeroSolver = aeroSolver # a shallow copy of CFD solver
+                self.aeroSolver = aeroSolver  # a shallow copy of CFD solver
 
                 self.xRot = xRot
 
             def getUndeformedSurfaceNodes(self):
-                
+
                 self.MDGroup = self.aeroSolver.allWallsGroup
 
-                self.cfdPts0 = self.aeroSolver.getSurfaceCoordinates(self.MDGroup,includeZipper=False)
+                self.cfdPts0 = self.aeroSolver.getSurfaceCoordinates(self.MDGroup, includeZipper=False)
 
             def setDisplacements(self):
 
                 xRot = self.xRot
                 ntimeintervalsspectral = self.ntimeintervalsspectral
-                alpha = self.alpha # notice a shallow copy introduced here; dont change the underlying obj!
-                cfdPoints_init = self.cfdPts0 # notice a shallow copy introduced here; dont change the underlying obj!
+                alpha = self.alpha  # notice a shallow copy introduced here; dont change the underlying obj!
+                cfdPoints_init = self.cfdPts0  # notice a shallow copy introduced here; dont change the underlying obj!
 
                 N_pts = cfdPoints_init.shape[0]
 
@@ -74,8 +75,8 @@ class TestSolve(reg_test_classes.RegTest):
 
                     for j in range(N_pts):
 
-                        cfdPoints_deformed[j, 0] = (  cc*(cfdPoints_init[j, 0] - xRot) + ss*cfdPoints_init[j, 1] + xRot)
-                        cfdPoints_deformed[j, 1] = (- ss*(cfdPoints_init[j, 0] - xRot) + cc*cfdPoints_init[j, 1])
+                        cfdPoints_deformed[j, 0] = cc * (cfdPoints_init[j, 0] - xRot) + ss * cfdPoints_init[j, 1] + xRot
+                        cfdPoints_deformed[j, 1] = -ss * (cfdPoints_init[j, 0] - xRot) + cc * cfdPoints_init[j, 1]
                         cfdPoints_deformed[j, 2] = cfdPoints_init[j, 2]
 
                     self.cfdPts.append(cfdPoints_deformed)
@@ -89,7 +90,7 @@ class TestSolve(reg_test_classes.RegTest):
                     self.aeroSolver.mesh.setSurfaceCoordinates(self.cfdPts[sps])
                     self.aeroSolver.mesh.warpMesh()
                     m = self.aeroSolver.mesh.getSolverGrid()
-                    self.aeroSolver.adflow.warping.setgridforoneinstance(m,sps=sps+1)
+                    self.aeroSolver.adflow.warping.setgridforoneinstance(m, sps=sps + 1)
 
                 self.aeroSolver._updateGeomInfo = True
                 self.aeroSolver.updateGeometryInfo()
@@ -107,21 +108,21 @@ class TestSolve(reg_test_classes.RegTest):
                 "outputDirectory": os.path.join(baseDir, "../output_files"),
                 "writeVolumeSolution": False,
                 "writeSurfaceSolution": False,
-                "blocksplitting": True, 
+                "blocksplitting": True,
                 "useblockettes": False,
                 "equationtype": "Euler",
-                "equationmode":"time spectral",
+                "equationmode": "time spectral",
                 "mgcycle": "sg",
-                "l2convergence":1e-15,
-                "ncycles":200000,
-                "monitorvariables":["resrho", "cl"],  
+                "l2convergence": 1e-15,
+                "ncycles": 200000,
+                "monitorvariables": ["resrho", "cl"],
                 "usenksolver": True,
-                "nkswitchtol": 1e-4, 
-                "NKSubSpaceSize":400,
-                "applypcsubspacesize":400,
+                "nkswitchtol": 1e-4,
+                "NKSubSpaceSize": 400,
+                "applypcsubspacesize": 400,
                 "useanksolver": True,
-                "ankswitchtol":1e-2,
-                "anksubspacesize":50,
+                "ankswitchtol": 1e-2,
+                "anksubspacesize": 50,
                 "alphafollowing": False,
                 "timeintervals": ntimeintervalsspectral,
                 "useexternaldynamicmesh": True,
@@ -131,7 +132,7 @@ class TestSolve(reg_test_classes.RegTest):
 
         # Grid option
         meshOptions = {
-            "gridFile":gridFile,
+            "gridFile": gridFile,
         }
 
         # Setup aeroproblem
@@ -139,9 +140,9 @@ class TestSolve(reg_test_classes.RegTest):
 
         # Motion history
         alpha_0 = 1.01
-        deltaAlpha = - alpha_0 * numpy.pi / 180.0
-        alpha = numpy.linspace(0.0, 2.0*numpy.pi, ntimeintervalsspectral + 1)[:-1]
-        alpha = - numpy.sin(alpha)
+        deltaAlpha = -alpha_0 * numpy.pi / 180.0
+        alpha = numpy.linspace(0.0, 2.0 * numpy.pi, ntimeintervalsspectral + 1)[:-1]
+        alpha = -numpy.sin(alpha)
         alpha *= deltaAlpha
 
         # Create the solver
@@ -153,7 +154,7 @@ class TestSolve(reg_test_classes.RegTest):
         self.CFDSolver.setMesh(mesh)
 
         # deformation
-        xRot = 0.25 # Hard copied from the reference file.
+        xRot = 0.25  # Hard copied from the reference file.
         TSTransfer = Transfer(alpha, xRot, self.CFDSolver)
         TSTransfer.getUndeformedSurfaceNodes()
         TSTransfer.setDisplacements()
@@ -169,6 +170,7 @@ class TestSolve(reg_test_classes.RegTest):
 
         # check its accuracy
         utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-8)
-        
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -2881,12 +2881,11 @@ class ADFLOW(AeroSolver):
             machRef = mach
 
         if machGrid is None:
-            if self.getOption('equationMode').lower()=='time spectral':
+            if self.getOption("equationMode").lower() == "time spectral":
                 machGrid = mach
             else:
                 # Steady, unsteady
                 machGrid = 0.0
-
 
         # 1. Angle of attack:
         dToR = numpy.pi / 180.0
@@ -2912,7 +2911,7 @@ class ADFLOW(AeroSolver):
         # Mach number for time spectral needs to be set to set to zero
         # If time-spectral (TS) then mach = 0, machcoef = mach, machgrid = mach
         # If Steady-State (SS), time-accurate (TA) then mach = mach, machcoef = mach, machgrid = 0
-        if self.getOption('equationMode').lower()=='time spectral':
+        if self.getOption("equationMode").lower() == "time spectral":
             self.adflow.inputphysics.mach = 0.0
         else:
             self.adflow.inputphysics.mach = mach
@@ -2941,19 +2940,21 @@ class ADFLOW(AeroSolver):
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
         # them there properly!!
-        if self.getOption('useexternaldynamicmesh'):
+        if self.getOption("useexternaldynamicmesh"):
             # The inputs here are mainly used for TS stability problem.
             # For general aeroelastic problem, we rely on more general settings.
             # Currently, polynomial motion is not supported for aeroelastic problem.
             AP.degreePol = 0
             AP.coefPol = [0.0]
-            AP.degreeFourier = (self.adflow.inputtimespectral.ntimeintervalsspectral - 1) / 2 # no odd number of instance allowed!
+            AP.degreeFourier = (
+                self.adflow.inputtimespectral.ntimeintervalsspectral - 1
+            ) / 2  #  no odd number of instance allowed!
             AP.cosCoefFourier = [0.0]
             AP.sinCoefFourier = [0.0]
         # if use flexible mesh option, useexternaldynamicmesh, we need one of the following
         # to be true to get a correct time period.
         # the number of time instance is set directly.
-        if  self.getOption('alphaMode'):
+        if self.getOption("alphaMode"):
             self.adflow.inputmotion.degreepolalpha = int(AP.degreePol)
             self.adflow.inputmotion.coefpolalpha = AP.coefPol
             self.adflow.inputmotion.omegafouralpha = AP.omegaFourier
@@ -2996,7 +2997,7 @@ class ADFLOW(AeroSolver):
             self.adflow.inputmotion.degreefouryrot = AP.degreeFourier
             self.adflow.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
-        elif self.getOption('useexternaldynamicmesh'):
+        elif self.getOption("useexternaldynamicmesh"):
             # if it is an aeroelastic case
             self.adflow.inputtimespectral.omegafourier = AP.omegaFourier
 
@@ -3619,8 +3620,8 @@ class ADFLOW(AeroSolver):
                 newGrid = self.mesh.getSolverGrid()
                 self.adflow.killsignals.routinefailed = False
                 self.adflow.killsignals.fatalFail = False
-                self.updateTime = time.time()-timeA
-                if ((newGrid is not None and not self.getOption('useexternaldynamicmesh'))):
+                self.updateTime = time.time() - timeA
+                if newGrid is not None and not self.getOption("useexternaldynamicmesh"):
                     # since updateGeometryInfo assumes one slice
                     # when using ts with externally defined mesh, the grid is provided externally;
                     # updateGeometryInfo mainly serves to update the metrics and etc.
@@ -4781,9 +4782,8 @@ class ADFLOW(AeroSolver):
             "windAxis": [bool, False],
             "alphaFollowing": [bool, True],
             "TSStability": [bool, False],
-            'usetsinterpolatedgridvelocity': [bool, False],
-            'useexternaldynamicmesh': [bool, False],
-
+            "usetsinterpolatedgridvelocity": [bool, False],
+            "useexternaldynamicmesh": [bool, False],
             # Convergence Parameters
             "L2Convergence": [float, 1e-8],
             "L2ConvergenceRel": [float, 1e-16],
@@ -5139,8 +5139,8 @@ class ADFLOW(AeroSolver):
             "windaxis": ["stab", "usewindaxis"],
             "alphafollowing": ["stab", "tsalphafollowing"],
             "tsstability": ["stab", "tsstability"],
-            'usetsinterpolatedgridvelocity': ['ts', 'usetsinterpolatedgridvelocity'],
-            'useexternaldynamicmesh': ['ts', 'useexternaldynamicmesh'],
+            "usetsinterpolatedgridvelocity": ["ts", "usetsinterpolatedgridvelocity"],
+            "useexternaldynamicmesh": ["ts", "useexternaldynamicmesh"],
             # Convergence Parameters
             "l2convergence": ["iter", "l2conv"],
             "l2convergencerel": ["iter", "l2convrel"],
