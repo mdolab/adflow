@@ -2946,9 +2946,8 @@ class ADFLOW(AeroSolver):
             # Currently, polynomial motion is not supported for aeroelastic problem.
             AP.degreePol = 0
             AP.coefPol = [0.0]
-            AP.degreeFourier = (
-                self.adflow.inputtimespectral.ntimeintervalsspectral - 1
-            ) / 2  #  no odd number of instance allowed!
+            #  no odd number of instance allowed!
+            AP.degreeFourier = (self.adflow.inputtimespectral.ntimeintervalsspectral - 1) / 2
             AP.cosCoefFourier = [0.0]
             AP.sinCoefFourier = [0.0]
         # if use flexible mesh option, useexternaldynamicmesh, we need one of the following
