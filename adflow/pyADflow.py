@@ -2940,7 +2940,7 @@ class ADFLOW(AeroSolver):
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
         # them there properly!!
-        if self.getOption("useexternaldynamicmesh"):
+        if self.getOption("useExternalDynamicMesh"):
             # The inputs here are mainly used for TS stability problem.
             # For general aeroelastic problem, we rely on more general settings.
             # Currently, polynomial motion is not supported for aeroelastic problem.
@@ -2950,7 +2950,7 @@ class ADFLOW(AeroSolver):
             AP.degreeFourier = (self.adflow.inputtimespectral.ntimeintervalsspectral - 1) / 2
             AP.cosCoefFourier = [0.0]
             AP.sinCoefFourier = [0.0]
-        # if use flexible mesh option, useexternaldynamicmesh, we need one of the following
+        # if use flexible mesh option, useExternalDynamicMesh, we need one of the following
         # to be true to get a correct time period.
         # the number of time instance is set directly.
         if self.getOption("alphaMode"):
@@ -2996,7 +2996,7 @@ class ADFLOW(AeroSolver):
             self.adflow.inputmotion.degreefouryrot = AP.degreeFourier
             self.adflow.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
-        elif self.getOption("useexternaldynamicmesh"):
+        elif self.getOption("useExternalDynamicMesh"):
             # if it is an aeroelastic case
             self.adflow.inputtimespectral.omegafourier = AP.omegaFourier
 
@@ -3620,7 +3620,7 @@ class ADFLOW(AeroSolver):
                 self.adflow.killsignals.routinefailed = False
                 self.adflow.killsignals.fatalFail = False
                 self.updateTime = time.time() - timeA
-                if newGrid is not None and not self.getOption("useexternaldynamicmesh"):
+                if newGrid is not None and not self.getOption("useExternalDynamicMesh"):
                     # since updateGeometryInfo assumes one slice
                     # when using ts with externally defined mesh, the grid is provided externally;
                     # updateGeometryInfo mainly serves to update the metrics and etc.
