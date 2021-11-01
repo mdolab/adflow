@@ -4781,8 +4781,8 @@ class ADFLOW(AeroSolver):
             "windAxis": [bool, False],
             "alphaFollowing": [bool, True],
             "TSStability": [bool, False],
-            "usetsinterpolatedgridvelocity": [bool, False],
-            "useexternaldynamicmesh": [bool, False],
+            "useTSInterpolatedGridvelocity": [bool, False],
+            "useExternalDynamicMesh": [bool, False],
             # Convergence Parameters
             "L2Convergence": [float, 1e-8],
             "L2ConvergenceRel": [float, 1e-16],
@@ -5138,8 +5138,8 @@ class ADFLOW(AeroSolver):
             "windaxis": ["stab", "usewindaxis"],
             "alphafollowing": ["stab", "tsalphafollowing"],
             "tsstability": ["stab", "tsstability"],
-            "usetsinterpolatedgridvelocity": ["ts", "usetsinterpolatedgridvelocity"],
-            "useexternaldynamicmesh": ["ts", "useexternaldynamicmesh"],
+            "usetsinterpolatedgridvelocity": ["ts", "useTSInterpolatedGridvelocity"],
+            "useexternaldynamicmesh": ["ts", "useExternalDynamicMesh"],
             # Convergence Parameters
             "l2convergence": ["iter", "l2conv"],
             "l2convergencerel": ["iter", "l2convrel"],
