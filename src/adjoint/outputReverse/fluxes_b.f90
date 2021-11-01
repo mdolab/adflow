@@ -11,12 +11,12 @@ module fluxes_b
 
 contains
 !  differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *p *dw *w *vol *si
-!                *sj *sk
+!   gradient     of useful results: timeref *p *sfacei *sfacej
+!                *sfacek *dw *w *vol *si *sj *sk
 !   with respect to varying inputs: timeref *p *sfacei *sfacej
 !                *sfacek *dw *w *vol *si *sj *sk
-!   rw status of diff variables: timeref:incr *p:incr *sfacei:out
-!                *sfacej:out *sfacek:out *dw:in-out *w:incr *vol:incr
+!   rw status of diff variables: timeref:incr *p:incr *sfacei:incr
+!                *sfacej:incr *sfacek:incr *dw:in-out *w:incr *vol:incr
 !                *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                dw:in w:in vol:in si:in sj:in sk:in
@@ -122,10 +122,8 @@ contains
     end if
     call popinteger4(j)
     call popinteger4(i)
-    sfacekd = 0.0_8
     sfaced = 0.0_8
     sface = zero
-    sfacekd = 0.0_8
     sfaced = 0.0_8
     do ii=0,nx*ny*kl-1
       i = mod(ii, nx) + 2
@@ -252,10 +250,8 @@ contains
     call popreal8(vnm)
     call popinteger4(j)
     call popinteger4(i)
-    sfacejd = 0.0_8
     sfaced = 0.0_8
     sface = zero
-    sfacejd = 0.0_8
     sfaced = 0.0_8
     do ii=0,nx*jl*nz-1
       i = mod(ii, nx) + 2
@@ -382,12 +378,10 @@ contains
     call popreal8(vnm)
     call popinteger4(j)
     call popinteger4(i)
-    sfaceid = 0.0_8
     sfaced = 0.0_8
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
     sface = zero
-    sfaceid = 0.0_8
     sfaced = 0.0_8
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
@@ -768,12 +762,12 @@ contains
     end if
   end subroutine inviscidcentralflux
 !  differentiation of invisciddissfluxmatrix in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: pinfcorr *p *w *si *sj *sk
-!                *fw
+!   gradient     of useful results: pinfcorr *p *sfacei *sfacej
+!                *sfacek *w *si *sj *sk *fw
 !   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
 !                *sfacek *w *si *sj *sk *fw
-!   rw status of diff variables: pinfcorr:incr *p:incr *sfacei:out
-!                *sfacej:out *sfacek:out *w:incr *si:incr *sj:incr
+!   rw status of diff variables: pinfcorr:incr *p:incr *sfacei:incr
+!                *sfacej:incr *sfacek:incr *w:incr *si:incr *sj:incr
 !                *sk:incr *fw:in-out
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
@@ -1014,11 +1008,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
@@ -1451,7 +1441,6 @@ contains
       call pushreal8(drw)
       call pushreal8(a2avg)
       call pushreal8(ppor)
-      sfacekd = 0.0_8
       dssd = 0.0_8
       sfaced = 0.0_8
       do ii=0,nx*ny*kl-1
@@ -1917,7 +1906,6 @@ contains
       call popinteger4(j)
       call popinteger4(i)
       call popreal8(aavg)
-      sfacejd = 0.0_8
       call popreal8(sface)
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -2382,7 +2370,6 @@ contains
       call popinteger4(j)
       call popinteger4(i)
       call popreal8(aavg)
-      sfaceid = 0.0_8
       call popreal8(sface)
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -3649,11 +3636,12 @@ contains
     end if
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: rhoinf pinfcorr *p *w *fw
+!   gradient     of useful results: rhoinf pinfcorr *p *w *fw *radi
+!                *radj *radk
 !   with respect to varying inputs: rhoinf pinfcorr *p *w *fw *radi
 !                *radj *radk
 !   rw status of diff variables: rhoinf:incr pinfcorr:incr *p:incr
-!                *w:incr *fw:in-out *radi:out *radj:out *radk:out
+!                *w:incr *fw:in-out *radi:incr *radj:incr *radk:incr
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_b()
@@ -3791,11 +3779,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      radid = 0.0_8
-      radjd = 0.0_8
-      radkd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
@@ -3883,7 +3867,6 @@ contains
       call pushreal8(ddw4)
       call pushreal8(ddw5)
       call pushreal8(ppor)
-      radkd = 0.0_8
       dssd = 0.0_8
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
@@ -4034,7 +4017,6 @@ contains
       call popreal8(dis4)
       call popinteger4(j)
       call popinteger4(i)
-      radjd = 0.0_8
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -4184,7 +4166,6 @@ contains
       call popreal8(dis4)
       call popinteger4(j)
       call popinteger4(i)
-      radid = 0.0_8
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -5712,11 +5693,12 @@ contains
     end subroutine riemannflux
   end subroutine inviscidupwindflux
 !  differentiation of inviscidupwindflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *si *sj *sk *fw
+!   gradient     of useful results: *p *sfacei *sfacej *sfacek
+!                *w *si *sj *sk *fw
 !   with respect to varying inputs: *p *sfacei *sfacej *sfacek
 !                *w *si *sj *sk *fw
-!   rw status of diff variables: *p:incr *sfacei:out *sfacej:out
-!                *sfacek:out *w:incr *si:incr *sj:incr *sk:incr
+!   rw status of diff variables: *p:incr *sfacei:incr *sfacej:incr
+!                *sfacek:incr *w:incr *si:incr *sj:incr *sk:incr
 !                *fw:in-out
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
@@ -5785,11 +5767,7 @@ contains
 !
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! check if the formulation for rotational periodic problems
 ! must be used.
       if (associated(rotmatrixi)) then
@@ -6029,7 +6007,6 @@ contains
             end do
           end do
         end do
-        sfacekd = 0.0_8
         fluxd = 0.0_8
         leftd = 0.0_8
         rightd = 0.0_8
@@ -6108,7 +6085,6 @@ contains
             end do
           end do
         end do
-        sfacejd = 0.0_8
         do k=kl,2,-1
           do j=jl,1,-1
             do i=il,2,-1
@@ -6183,7 +6159,6 @@ contains
             end do
           end do
         end do
-        sfaceid = 0.0_8
         do k=kl,2,-1
           do j=jl,2,-1
             do i=il,1,-1
@@ -6500,7 +6475,6 @@ contains
             end do
           end do
         end do
-        sfacekd = 0.0_8
         fluxd = 0.0_8
         leftd = 0.0_8
         rightd = 0.0_8
@@ -6619,7 +6593,6 @@ contains
             end do
           end do
         end do
-        sfacejd = 0.0_8
         do k=kl,2,-1
           do j=jl,1,-1
             do i=il,2,-1
@@ -6731,7 +6704,6 @@ contains
             end do
           end do
         end do
-        sfaceid = 0.0_8
         do k=kl,2,-1
           do j=jl,2,-1
             do i=il,1,-1
@@ -14225,12 +14197,13 @@ contains
     end if
   end subroutine invisciddissfluxscalarapprox
 !  differentiation of invisciddissfluxmatrixapprox in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *fw
+!   gradient     of useful results: pinfcorr *p *sfacei *sfacej
+!                *sfacek *w *si *sj *sk *fw
 !   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
 !                *sfacek *w *si *sj *sk *fw
-!   rw status of diff variables: pinfcorr:out *p:incr *sfacei:out
-!                *sfacej:out *sfacek:out *w:incr *si:out *sj:out
-!                *sk:out *fw:in-out
+!   rw status of diff variables: pinfcorr:incr *p:incr *sfacei:incr
+!                *sfacej:incr *sfacek:incr *w:incr *si:incr *sj:incr
+!                *sk:incr *fw:in-out
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrixapprox_b()
@@ -14366,15 +14339,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      pinfcorrd = 0.0_8
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-      sid = 0.0_8
-      sjd = 0.0_8
-      skd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
@@ -15142,8 +15107,6 @@ contains
           end do
         end do
       end do
-      sfacekd = 0.0_8
-      skd = 0.0_8
       plimd = 0.0_8
       sfaced = 0.0_8
       do j=jl,2,-1
@@ -15477,8 +15440,6 @@ contains
           end if
         end do
       end do
-      sfacejd = 0.0_8
-      sjd = 0.0_8
       do k=kl,2,-1
         do i=il,2,-1
           dp1d = 0.0_8
@@ -15810,8 +15771,6 @@ contains
           end if
         end do
       end do
-      sfaceid = 0.0_8
-      sid = 0.0_8
       do k=kl,2,-1
         do j=jl,2,-1
           dp1d = 0.0_8
@@ -16154,7 +16113,7 @@ contains
           end do
         end do
       end do
-      pinfcorrd = 0.001_realtype*plimd
+      pinfcorrd = pinfcorrd + 0.001_realtype*plimd
     end if
   end subroutine invisciddissfluxmatrixapprox_b
   subroutine invisciddissfluxmatrixapprox()
