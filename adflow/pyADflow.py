@@ -2947,10 +2947,10 @@ class ADFLOW(AeroSolver):
             AP.degreePol = 0
             AP.coefPol = [0.0]
             #  no odd number of instance allowed!
-            AP.degreeFourier = (self.adflow.inputtimespectral.ntimeintervalsspectral - 1) / 2
+            AP.degreeFourier = (self.adflow.inputtimespectral.ntimeintervalsspectral - 1) // 2
             AP.cosCoefFourier = [0.0]
             AP.sinCoefFourier = [0.0]
-        # if use flexible mesh option, useExternalDynamicMesh, we need one of the following
+        # if use time spectral, we need one of the following
         # to be true to get a correct time period.
         # the number of time instance is set directly.
         if self.getOption("alphaMode"):
@@ -3621,7 +3621,7 @@ class ADFLOW(AeroSolver):
                 self.adflow.killsignals.fatalFail = False
                 self.updateTime = time.time() - timeA
                 if newGrid is not None and not self.getOption("useExternalDynamicMesh"):
-                    # since updateGeometryInfo assumes one slice
+                    # since updateGeometryInfo assumes one time slice
                     # when using ts with externally defined mesh, the grid is provided externally;
                     # updateGeometryInfo mainly serves to update the metrics and etc.
                     self.adflow.warping.setgrid(newGrid)
@@ -4781,7 +4781,7 @@ class ADFLOW(AeroSolver):
             "windAxis": [bool, False],
             "alphaFollowing": [bool, True],
             "TSStability": [bool, False],
-            "useTSInterpolatedGridvelocity": [bool, False],
+            "useTSInterpolatedGridVelocity": [bool, False],
             "useExternalDynamicMesh": [bool, False],
             # Convergence Parameters
             "L2Convergence": [float, 1e-8],
@@ -5138,7 +5138,7 @@ class ADFLOW(AeroSolver):
             "windaxis": ["stab", "usewindaxis"],
             "alphafollowing": ["stab", "tsalphafollowing"],
             "tsstability": ["stab", "tsstability"],
-            "usetsinterpolatedgridvelocity": ["ts", "useTSInterpolatedGridvelocity"],
+            "usetsinterpolatedgridvelocity": ["ts", "usetsinterpolatedgridvelocity"],
             "useexternaldynamicmesh": ["ts", "useExternalDynamicMesh"],
             # Convergence Parameters
             "l2convergence": ["iter", "l2conv"],

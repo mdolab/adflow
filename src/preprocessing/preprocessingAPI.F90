@@ -3850,12 +3850,7 @@ contains
           enddo
        endif
 
-       if (.NOT. useTSInterpolatedGridVelocity) then
-          call gridVelocitiesFineLevel(.false., t, mm)
-       else
-          call gridVelocitiesFineLevel_TS(mm)
-       end if
-
+       call gridVelocitiesFineLevel(.false., t, mm)
 
        call gridVelocitiesCoarseLevels(mm)
        call normalVelocitiesAllLevels(mm)
