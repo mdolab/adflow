@@ -5294,6 +5294,7 @@ class ADFLOW(AeroSolver):
             "cutcallback",
             "infchangecorrection",
             "skipafterfailedadjoint",
+            "useexternaldynamicmesh",
         }
 
         # Deprecated options that may be in old scripts and should not be used.
