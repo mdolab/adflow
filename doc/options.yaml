@@ -558,7 +558,7 @@ useExternalDynamicMesh:
   desc: >
     Use externally provided deformed mesh for the time spectral equation. Each time instance gets its own deformed grid. This can be used for both an aerodynamic case or an aeroelastic case.
 
-useTSInterpolatedGridvelocity:
+useTSInterpolatedGridVelocity:
   desc: >
     Use spectral differentiation to compute the grid velocity for the time spectral equation.
 

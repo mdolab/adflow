@@ -5139,7 +5139,6 @@ class ADFLOW(AeroSolver):
             "alphafollowing": ["stab", "tsalphafollowing"],
             "tsstability": ["stab", "tsstability"],
             "usetsinterpolatedgridvelocity": ["ts", "usetsinterpolatedgridvelocity"],
-            "useexternaldynamicmesh": ["ts", "useExternalDynamicMesh"],
             # Convergence Parameters
             "l2convergence": ["iter", "l2conv"],
             "l2convergencerel": ["iter", "l2convrel"],
