@@ -3738,6 +3738,8 @@ class ADFLOW(AeroSolver):
         funcDeriv=False,
         fDeriv=False,
         groupName=None,
+        mode='AD',
+        h=1e-8
     ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
@@ -3760,7 +3762,7 @@ class ADFLOW(AeroSolver):
         funcDeriv : bool
             Flag specifiying if the derviative of the cost functions
             (as defined in the current aeroproblem) should be returned.
-        Fderiv : bool
+        fderiv : bool
             Flag specifiying if the derviative of the surface forces (tractions)
             should be returned
         groupName : str
@@ -3774,7 +3776,7 @@ class ADFLOW(AeroSolver):
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
-            raise Error("computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot " "all be None")
+            raise Error("computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot all be None")
 
         self._setAeroDVs()
         nTime = self.adflow.inputtimespectral.ntimeintervalsspectral
@@ -3869,24 +3871,44 @@ class ADFLOW(AeroSolver):
         else:
             famLists = self._expandGroupNames(groupNames)
 
-        # Extract any possibly BC daa
-        dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot,
-            extradot,
-            wdot,
-            bcDataValuesdot,
-            useSpatial,
-            useState,
-            famLists,
-            bcDataNames,
-            bcDataValues,
-            bcDataFamLists,
-            bcVarsEmpty,
-            costSize,
-            max(1, fSize),
-            nTime,
-        )
-
+        if mode == "AD":
+            dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
+                xvdot,
+                extradot,
+                wdot,
+                bcDataValuesdot,
+                useSpatial,
+                useState,
+                famLists,
+                bcDataNames,
+                bcDataValues,
+                bcDataFamLists,
+                bcVarsEmpty,
+                costSize,
+                max(1, fSize),
+                nTime,
+            )
+        elif mode == "FD":
+            dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdfd(
+                xvdot,
+                extradot,
+                wdot,
+                bcDataValuesdot,
+                useSpatial,
+                useState,
+                famLists,
+                bcDataNames,
+                bcDataValues,
+                bcDataFamLists,
+                bcVarsEmpty,
+                costSize,
+                max(1, fSize),
+                nTime,
+                h
+            )
+        else:
+            raise NotImplementedError(f'mode {mode} for computeJacobianVectorProductFwd not availiable')
+            
         # Explictly put fdot to nothing if size is zero
         if fSize == 0:
             fdot = numpy.zeros((0, 3))

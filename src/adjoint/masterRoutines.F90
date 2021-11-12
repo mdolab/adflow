@@ -1,7 +1,9 @@
 module masterRoutines
 contains
-  subroutine master(useSpatial, famLists, funcValues, forces, &
-       bcDataNames, bcDataValues, bcDataFamLists)
+  subroutine master(useSpatial,&
+                  famLists, funcValues,&
+                  forces, &
+                  bcDataNames, bcDataValues, bcDataFamLists)
 
     use constants
     use communication, only : adflow_comm_world
@@ -38,6 +40,8 @@ contains
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
     use actuatorRegionData, only : nActuatorRegions
+    use wallDistanceData, only : xSurfVec, xSurf, wallScatter
+    
     implicit none
 
     ! Input Arguments:
@@ -94,6 +98,10 @@ contains
           call setPointers(nn, 1, sps)
 
           if (useSpatial) then
+
+             call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+    
              call volume_block
              call metric_block
              call boundaryNormals
@@ -101,7 +109,13 @@ contains
              if (equations == RANSEquations .and. useApproxWallDistance) then
                 call updateWallDistancesQuickly(nn, 1, sps)
              end if
-          end if
+          
+            ! These arrays need to be restored before we can move to the next spectral instance.
+             call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+ 
+          
+            end if
 
           ! Compute the pressures/viscositites
           call computePressureSimple(.False.)
@@ -144,6 +158,7 @@ contains
     do sps=1, nTimeIntervalsSpectral
        do nn=1, nDom
           call setPointers(nn, 1, sps)
+          call timeStep_block(.false.)
           call initRes_block(1, nw, nn, sps)
           do iRegion=1, nActuatorRegions
              call sourceTerms_block(nn, .True., iRegion, dummyReal)
@@ -169,7 +184,6 @@ contains
           endif
 
           ! Compute the mean flow residuals
-          call timeStep_block(.false.)
           call inviscidCentralFlux
           if (lumpedDiss) then
              select case (spaceDiscr)
@@ -414,6 +428,7 @@ contains
     end do
 
     ! Just exchange the derivative values.
+   !  call whalo2(1, 1, nw, .True., .True., .True.)
     call whalo2_d(1, 1, nw, .True., .True., .True.)
 
     ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -540,7 +555,7 @@ contains
     ! compute the reverse mode sensitivity of *all* outputs with
     ! respect to *all* inputs. Anything that needs to be
     ! differentiated for the adjoint method should be included in this
-    ! function. This routine is written by had, assembling the various
+    ! function. This routine is written by hand, assembling the various
     ! individually differentiated tapenade routines.
 
     use constants
