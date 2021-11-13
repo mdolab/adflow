@@ -773,6 +773,7 @@ contains
     use inputDiscretization, only : spaceDiscr
     use flowUtils, only : allNodalGradients_block=>allNodalGradients, &
          computeSpeedOfSoundSquared_block=>computeSpeedOfSoundSquared
+    use blockPointers, only : nDom, il, jl, kl, dw, fw
 
     implicit none
     ! Input

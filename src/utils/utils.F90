@@ -3650,6 +3650,8 @@ end subroutine cross_prod
     fwd => flowDomsd(nn,1,sps)%fw
     scratchd => flowDomsd(nn,1,sps)%scratch
 
+    dtld => flowDomsd(nn,1,sps)%dtl
+
     ! Time-stepping variables and spectral radIi.
     ! They asps point to the fine mesh entry.
 
@@ -4625,6 +4627,7 @@ end subroutine cross_prod
                flowDomsd(nn, level, sps)%aa, &
                flowDomsd(nn, level, sps)%rlv, &
                flowDomsd(nn, level, sps)%rev, &
+               flowDomsd(nn, level, sps)%dtl, &
                flowDomsd(nn, level, sps)%radI, &
                flowDomsd(nn, level, sps)%radJ, &
                flowDomsd(nn, level, sps)%radK, &

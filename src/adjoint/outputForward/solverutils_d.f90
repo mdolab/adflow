@@ -11,13 +11,17 @@ module solverutils_d
 
 contains
 !  differentiation of timestep_block in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *radi *radj *radk
-!   with respect to varying inputs: rhoinf pinfcorr *p *w *si *sj
-!                *sk
-!   rw status of diff variables: rhoinf:in pinfcorr:in *p:in *w:in
-!                *si:in *sj:in *sk:in *radi:out *radj:out *radk:out
-!   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
-!                radj:in radk:in
+!   variations   of useful results: *dtl *radi *radj *radk
+!   with respect to varying inputs: rhoinf pinfcorr *rev *dtl *p
+!                *sfacei *sfacej *sfacek *w *rlv *vol *si *sj *sk
+!                *radi *radj *radk
+!   rw status of diff variables: rhoinf:in pinfcorr:in *rev:in
+!                *dtl:in-out *p:in *sfacei:in *sfacej:in *sfacek:in
+!                *w:in *rlv:in *vol:in *si:in *sj:in *sk:in *radi:in-out
+!                *radj:in-out *radk:in-out
+!   plus diff mem management of: rev:in dtl:in p:in sfacei:in sfacej:in
+!                sfacek:in w:in rlv:in vol:in si:in sj:in sk:in
+!                radi:in radj:in radk:in
   subroutine timestep_block_d(onlyradii)
 !
 !       timestep computes the time step, or more precisely the time
@@ -31,7 +35,7 @@ contains
     use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, &
 &   rlv, rlvd, rev, revd, radi, radid, radj, radjd, radk, radkd, si, sid&
 &   , sj, sjd, sk, skd, sfacei, sfaceid, sfacej, sfacejd, sfacek, &
-&   sfacekd, dtl, gamma, vol, vold, addgridvelocities, sectionid
+&   sfacekd, dtl, dtld, gamma, vol, vold, addgridvelocities, sectionid
     use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf&
 &   , pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
     use inputdiscretization, only : adis, dirscaling, &
@@ -42,8 +46,6 @@ contains
     use inputtimespectral, only : ntimeintervalsspectral
     use utils_d, only : terminate
     implicit none
-! the rest of this file can be skipped if only the spectral
-! radii need to be computed.
 !
 !      subroutine argument.
 !
@@ -57,15 +59,17 @@ contains
 !
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: plim, rlim, clim2
-    real(kind=realtype) :: clim2d
+    real(kind=realtype) :: plimd, clim2d
     real(kind=realtype) :: uux, uuy, uuz, cc2, qsi, qsj, qsk, sx, sy, sz&
 &   , rmu
     real(kind=realtype) :: uuxd, uuyd, uuzd, cc2d, qsid, qsjd, qskd, sxd&
-&   , syd, szd
+&   , syd, szd, rmud
     real(kind=realtype) :: ri, rj, rk, rij, rjk, rki
     real(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
     real(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
+    real(kind=realtype) :: vsid, vsjd, vskd, rfld, dpid, dpjd, dpkd
     real(kind=realtype) :: sface, tmp
+    real(kind=realtype) :: sfaced
     logical :: radiineeded, doscaling
     intrinsic max
     intrinsic abs
@@ -77,11 +81,17 @@ contains
     real(kind=realtype) :: pwx1
     real(kind=realtype) :: pwx1d
     real(kind=realtype) :: abs1d
+    real(kind=realtype) :: abs4d
     real(kind=realtype) :: abs0d
+    real(kind=realtype) :: abs3d
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs2d
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
+    real(kind=realtype) :: abs5d
 ! determine whether or not the spectral radii are needed for the
 ! flux computation.
     radiineeded = radiineededcoarse
@@ -89,14 +99,12 @@ contains
 ! return immediately if only the spectral radii must be computed
 ! and these are not needed for the flux computation.
     if (onlyradii .and. (.not.radiineeded)) then
-      radid = 0.0_8
-      radjd = 0.0_8
-      radkd = 0.0_8
       return
     else
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used. idem for rlim; compute clim2 as well.
+      plimd = 0.001_realtype*pinfcorrd
       plim = 0.001_realtype*pinfcorr
       rlim = 0.001_realtype*rhoinf
       clim2d = (0.000001_realtype*gammainf*pinfcorrd*rhoinf-&
@@ -112,9 +120,7 @@ contains
 !
       select case  (precond) 
       case (noprecond) 
-        radid = 0.0_8
-        radjd = 0.0_8
-        radkd = 0.0_8
+        sfaced = 0.0_8
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
         do k=1,ke
@@ -141,8 +147,10 @@ contains
 ! normal in i-direction for a moving face. to avoid
 ! a number of multiplications by 0.5 simply the sum
 ! is taken.
-              if (addgridvelocities) sface = sfacei(i-1, j, k) + sfacei(&
-&                 i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfaceid(i-1, j, k) + sfaceid(i, j, k)
+                sface = sfacei(i-1, j, k) + sfacei(i, j, k)
+              end if
 ! spectral radius in i-direction.
               sxd = sid(i-1, j, k, 1) + sid(i, j, k, 1)
               sx = si(i-1, j, k, 1) + si(i, j, k, 1)
@@ -151,7 +159,7 @@ contains
               szd = sid(i-1, j, k, 3) + sid(i, j, k, 3)
               sz = si(i-1, j, k, 3) + si(i, j, k, 3)
               qsid = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + &
-&               uuz*szd
+&               uuz*szd - sfaced
               qsi = uux*sx + uuy*sy + uuz*sz - sface
               if (qsi .ge. 0.) then
                 abs0d = qsid
@@ -172,8 +180,10 @@ contains
               rid = half*(abs0d+result1d)
               ri = half*(abs0+result1)
 ! the grid velocity in j-direction.
-              if (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(&
-&                 i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfacejd(i, j-1, k) + sfacejd(i, j, k)
+                sface = sfacej(i, j-1, k) + sfacej(i, j, k)
+              end if
 ! spectral radius in j-direction.
               sxd = sjd(i, j-1, k, 1) + sjd(i, j, k, 1)
               sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
@@ -182,7 +192,7 @@ contains
               szd = sjd(i, j-1, k, 3) + sjd(i, j, k, 3)
               sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
               qsjd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + &
-&               uuz*szd
+&               uuz*szd - sfaced
               qsj = uux*sx + uuy*sy + uuz*sz - sface
               if (qsj .ge. 0.) then
                 abs1d = qsjd
@@ -203,8 +213,10 @@ contains
               rjd = half*(abs1d+result1d)
               rj = half*(abs1+result1)
 ! the grid velocity in k-direction.
-              if (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(&
-&                 i, j, k)
+              if (addgridvelocities) then
+                sfaced = sfacekd(i, j, k-1) + sfacekd(i, j, k)
+                sface = sfacek(i, j, k-1) + sfacek(i, j, k)
+              end if
 ! spectral radius in k-direction.
               sxd = skd(i, j, k-1, 1) + skd(i, j, k, 1)
               sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
@@ -213,7 +225,7 @@ contains
               szd = skd(i, j, k-1, 3) + skd(i, j, k, 3)
               sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
               qskd = uuxd*sx + uux*sxd + uuyd*sy + uuy*syd + uuzd*sz + &
-&               uuz*szd
+&               uuz*szd - sfaced
               qsk = uux*sx + uuy*sy + uuz*sz - sface
               if (qsk .ge. 0.) then
                 abs2d = qskd
@@ -234,7 +246,10 @@ contains
               rkd = half*(abs2d+result1d)
               rk = half*(abs2+result1)
 ! compute the inviscid contribution to the time step.
-              if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
+              if (.not.onlyradii) then
+                dtld(i, j, k) = rid + rjd + rkd
+                dtl(i, j, k) = ri + rj + rk
+              end if
 !
 !           adapt the spectral radii if directional scaling must be
 !           applied.
@@ -320,20 +335,153 @@ contains
       case (turkel) 
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
-        radid = 0.0_8
-        radjd = 0.0_8
-        radkd = 0.0_8
       case (choimerkle) 
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
-        radid = 0.0_8
-        radjd = 0.0_8
-        radkd = 0.0_8
-      case default
-        radid = 0.0_8
-        radjd = 0.0_8
-        radkd = 0.0_8
       end select
+! the rest of this file can be skipped if only the spectral
+! radii need to be computed.
+      if (.not.onlyradii) then
+! the viscous contribution, if needed.
+        if (viscous) then
+! loop over the owned cell centers.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+! compute the effective viscosity coefficient. the
+! factor 0.5 is a combination of two things. in the
+! standard central discretization of a second
+! derivative there is a factor 2 multiplying the
+! central node. however in the code below not the
+! average but the sum of the left and the right face
+! is taken and squared. this leads to a factor 4.
+! combining both effects leads to 0.5. furthermore,
+! it is divided by the volume and density to obtain
+! the correct dimensions and multiplied by the
+! non-dimensional factor factvis.
+                rmud = rlvd(i, j, k)
+                rmu = rlv(i, j, k)
+                if (eddymodel) then
+                  rmud = rmud + revd(i, j, k)
+                  rmu = rmu + rev(i, j, k)
+                end if
+                rmud = (half*rmud*w(i, j, k, irho)*vol(i, j, k)-half*rmu&
+&                 *(wd(i, j, k, irho)*vol(i, j, k)+w(i, j, k, irho)*vold&
+&                 (i, j, k)))/(w(i, j, k, irho)*vol(i, j, k))**2
+                rmu = half*rmu/(w(i, j, k, irho)*vol(i, j, k))
+! add the viscous contribution in i-direction to the
+! (inverse) of the time step.
+                sxd = sid(i, j, k, 1) + sid(i-1, j, k, 1)
+                sx = si(i, j, k, 1) + si(i-1, j, k, 1)
+                syd = sid(i, j, k, 2) + sid(i-1, j, k, 2)
+                sy = si(i, j, k, 2) + si(i-1, j, k, 2)
+                szd = sid(i, j, k, 3) + sid(i-1, j, k, 3)
+                sz = si(i, j, k, 3) + si(i-1, j, k, 3)
+                vsid = rmud*(sx*sx+sy*sy+sz*sz) + rmu*(sxd*sx+sx*sxd+syd&
+&                 *sy+sy*syd+szd*sz+sz*szd)
+                vsi = rmu*(sx*sx+sy*sy+sz*sz)
+                dtld(i, j, k) = dtld(i, j, k) + vsid
+                dtl(i, j, k) = dtl(i, j, k) + vsi
+! add the viscous contribution in j-direction to the
+! (inverse) of the time step.
+                sxd = sjd(i, j, k, 1) + sjd(i, j-1, k, 1)
+                sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
+                syd = sjd(i, j, k, 2) + sjd(i, j-1, k, 2)
+                sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
+                szd = sjd(i, j, k, 3) + sjd(i, j-1, k, 3)
+                sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
+                vsjd = rmud*(sx*sx+sy*sy+sz*sz) + rmu*(sxd*sx+sx*sxd+syd&
+&                 *sy+sy*syd+szd*sz+sz*szd)
+                vsj = rmu*(sx*sx+sy*sy+sz*sz)
+                dtld(i, j, k) = dtld(i, j, k) + vsjd
+                dtl(i, j, k) = dtl(i, j, k) + vsj
+! add the viscous contribution in k-direction to the
+! (inverse) of the time step.
+                sxd = skd(i, j, k, 1) + skd(i, j, k-1, 1)
+                sx = sk(i, j, k, 1) + sk(i, j, k-1, 1)
+                syd = skd(i, j, k, 2) + skd(i, j, k-1, 2)
+                sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
+                szd = skd(i, j, k, 3) + skd(i, j, k-1, 3)
+                sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
+                vskd = rmud*(sx*sx+sy*sy+sz*sz) + rmu*(sxd*sx+sx*sxd+syd&
+&                 *sy+sy*syd+szd*sz+sz*szd)
+                vsk = rmu*(sx*sx+sy*sy+sz*sz)
+                dtld(i, j, k) = dtld(i, j, k) + vskd
+                dtl(i, j, k) = dtl(i, j, k) + vsk
+              end do
+            end do
+          end do
+        end if
+! for the spectral mode an additional term term must be
+! taken into account, which corresponds to the contribution
+! of the highest frequency.
+        if (equationmode .eq. timespectral) then
+          tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
+&           timeperiod
+! loop over the owned cell centers and add the term.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                dtld(i, j, k) = dtld(i, j, k) + tmp*vold(i, j, k)
+                dtl(i, j, k) = dtl(i, j, k) + tmp*vol(i, j, k)
+              end do
+            end do
+          end do
+        end if
+! currently the inverse of dt/vol is stored in dtl. invert
+! this value such that the time step per unit cfl number is
+! stored and correct in cases of high gradients.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              if (p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k) .ge. 0.) &
+&             then
+                abs3d = pd(i+1, j, k) - two*pd(i, j, k) + pd(i-1, j, k)
+                abs3 = p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k)
+              else
+                abs3d = -(pd(i+1, j, k)-two*pd(i, j, k)+pd(i-1, j, k))
+                abs3 = -(p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))
+              end if
+              dpid = (abs3d*(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+&
+&               plim)-abs3*(pd(i+1, j, k)+two*pd(i, j, k)+pd(i-1, j, k)+&
+&               plimd))/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)&
+&               **2
+              dpi = abs3/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)
+              if (p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k) .ge. 0.) &
+&             then
+                abs4d = pd(i, j+1, k) - two*pd(i, j, k) + pd(i, j-1, k)
+                abs4 = p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k)
+              else
+                abs4d = -(pd(i, j+1, k)-two*pd(i, j, k)+pd(i, j-1, k))
+                abs4 = -(p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))
+              end if
+              dpjd = (abs4d*(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+&
+&               plim)-abs4*(pd(i, j+1, k)+two*pd(i, j, k)+pd(i, j-1, k)+&
+&               plimd))/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)&
+&               **2
+              dpj = abs4/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)
+              if (p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1) .ge. 0.) &
+&             then
+                abs5d = pd(i, j, k+1) - two*pd(i, j, k) + pd(i, j, k-1)
+                abs5 = p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1)
+              else
+                abs5d = -(pd(i, j, k+1)-two*pd(i, j, k)+pd(i, j, k-1))
+                abs5 = -(p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))
+              end if
+              dpkd = (abs5d*(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+&
+&               plim)-abs5*(pd(i, j, k+1)+two*pd(i, j, k)+pd(i, j, k-1)+&
+&               plimd))/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)&
+&               **2
+              dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
+              rfld = -(one*b*(dpid+dpjd+dpkd)/(one+b*(dpi+dpj+dpk))**2)
+              rfl = one/(one+b*(dpi+dpj+dpk))
+              dtld(i, j, k) = (rfld*dtl(i, j, k)-rfl*dtld(i, j, k))/dtl(&
+&               i, j, k)**2
+              dtl(i, j, k) = rfl/dtl(i, j, k)
+            end do
+          end do
+        end do
+      end if
     end if
   end subroutine timestep_block_d
   subroutine timestep_block(onlyradii)
@@ -359,8 +507,6 @@ contains
     use inputtimespectral, only : ntimeintervalsspectral
     use utils_d, only : terminate
     implicit none
-! the rest of this file can be skipped if only the spectral
-! radii need to be computed.
 !
 !      subroutine argument.
 !
@@ -386,6 +532,9 @@ contains
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
     real(kind=realtype) :: pwx1
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
@@ -532,6 +681,102 @@ contains
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
+! the rest of this file can be skipped if only the spectral
+! radii need to be computed.
+      if (.not.onlyradii) then
+! the viscous contribution, if needed.
+        if (viscous) then
+! loop over the owned cell centers.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+! compute the effective viscosity coefficient. the
+! factor 0.5 is a combination of two things. in the
+! standard central discretization of a second
+! derivative there is a factor 2 multiplying the
+! central node. however in the code below not the
+! average but the sum of the left and the right face
+! is taken and squared. this leads to a factor 4.
+! combining both effects leads to 0.5. furthermore,
+! it is divided by the volume and density to obtain
+! the correct dimensions and multiplied by the
+! non-dimensional factor factvis.
+                rmu = rlv(i, j, k)
+                if (eddymodel) rmu = rmu + rev(i, j, k)
+                rmu = half*rmu/(w(i, j, k, irho)*vol(i, j, k))
+! add the viscous contribution in i-direction to the
+! (inverse) of the time step.
+                sx = si(i, j, k, 1) + si(i-1, j, k, 1)
+                sy = si(i, j, k, 2) + si(i-1, j, k, 2)
+                sz = si(i, j, k, 3) + si(i-1, j, k, 3)
+                vsi = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsi
+! add the viscous contribution in j-direction to the
+! (inverse) of the time step.
+                sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
+                sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
+                sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
+                vsj = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsj
+! add the viscous contribution in k-direction to the
+! (inverse) of the time step.
+                sx = sk(i, j, k, 1) + sk(i, j, k-1, 1)
+                sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
+                sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
+                vsk = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsk
+              end do
+            end do
+          end do
+        end if
+! for the spectral mode an additional term term must be
+! taken into account, which corresponds to the contribution
+! of the highest frequency.
+        if (equationmode .eq. timespectral) then
+          tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
+&           timeperiod
+! loop over the owned cell centers and add the term.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                dtl(i, j, k) = dtl(i, j, k) + tmp*vol(i, j, k)
+              end do
+            end do
+          end do
+        end if
+! currently the inverse of dt/vol is stored in dtl. invert
+! this value such that the time step per unit cfl number is
+! stored and correct in cases of high gradients.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              if (p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k) .ge. 0.) &
+&             then
+                abs3 = p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k)
+              else
+                abs3 = -(p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))
+              end if
+              dpi = abs3/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)
+              if (p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k) .ge. 0.) &
+&             then
+                abs4 = p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k)
+              else
+                abs4 = -(p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))
+              end if
+              dpj = abs4/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)
+              if (p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1) .ge. 0.) &
+&             then
+                abs5 = p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1)
+              else
+                abs5 = -(p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))
+              end if
+              dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
+              rfl = one/(one+b*(dpi+dpj+dpk))
+              dtl(i, j, k) = rfl/dtl(i, j, k)
+            end do
+          end do
+        end do
+      end if
     end if
   end subroutine timestep_block
 !  differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):

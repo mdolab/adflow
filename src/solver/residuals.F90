@@ -375,133 +375,6 @@ contains
 
   end subroutine residual_block
 
-
-  subroutine sourceTerms_block(nn, res, iRegion, pLocal)
-
-    ! Apply the source terms for the given block. Assume that the
-    ! block pointers are already set.
-    use constants
-    use actuatorRegionData
-    use blockPointers, only : volRef, dw, w
-    use flowVarRefState, only : pRef, uRef, LRef
-    use communication
-    use iteration, only : ordersConverged
-    implicit none
-
-    ! Input
-    integer(kind=intType), intent(in) ::  nn, iRegion
-    logical, intent(in) :: res
-    real(kind=realType), intent(inout) :: pLocal
-
-    ! Working
-    integer(kind=intType) :: i, j, k, ii, iStart, iEnd
-    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, F_fact(3), Q_fact, Qtmp, reDim, factor, oStart, oEnd
-
-    reDim = pRef*uRef
-
-    ! Compute the relaxation factor based on the ordersConverged
-
-    ! How far we are into the ramp:
-    if (ordersConverged < actuatorRegions(iRegion)%relaxStart) then
-       factor = zero
-    else if (ordersConverged > actuatorRegions(iRegion)%relaxEnd) then
-       factor = one
-    else ! In between
-       oStart = actuatorRegions(iRegion)%relaxStart
-       oEnd   = actuatorRegions(iRegion)%relaxEnd
-       factor = (ordersConverged - oStart)/(oEnd - oStart)
-    end if
-
-    ! Compute the constant force factor
-    F_fact = factor*actuatorRegions(iRegion)%force / actuatorRegions(iRegion)%volume / pRef
-
-    ! Heat factor. This is heat added per unit volume per unit time
-    Q_fact = factor * actuatorRegions(iRegion)%heat / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
-
-    ! Loop over the ranges for this block
-    iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
-    iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
-
-    !$AD II-LOOP
-    do ii=iStart, iEnd
-
-       ! Extract the cell ID.
-       i = actuatorRegions(iRegion)%cellIDs(1, ii)
-       j = actuatorRegions(iRegion)%cellIDs(2, ii)
-       k = actuatorRegions(iRegion)%cellIDs(3, ii)
-
-       ! This actually gets the force
-       FTmp = volRef(i, j, k) * F_fact
-
-       Vx = w(i, j, k, iVx)
-       Vy = w(i, j, k, iVy)
-       Vz = w(i, j, k, iVz)
-
-       ! this gets the heat addition rate
-       QTmp = volRef(i, j, k) * Q_fact
-
-       if (res) then
-          ! Momentum residuals
-          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
-
-          ! energy residuals
-          dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
-               Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz - Qtmp
-       else
-          ! Add in the local power contribution:
-          pLocal = pLocal + (Vx*Ftmp(1) + Vy*FTmp(2) + Vz*Ftmp(3))*reDim
-       end if
-    end do
-
-  end subroutine sourceTerms_block
-
-
-  ! ----------------------------------------------------------------------
-  !                                                                      |
-  !                    No Tapenade Routine below this line               |
-  !                                                                      |
-  ! ----------------------------------------------------------------------
-
-#ifndef USE_TAPENADE
-  subroutine initres(varStart, varEnd)
-    !
-    ! Shell function to call initRes_block on all blocks
-    !
-    use blockPointers
-    use constants
-    use inputTimeSpectral
-    use iteration
-    use section
-    use utils, only : setPointers
-    !
-    !      Subroutine argument.
-    !
-    integer(kind=intType), intent(in) :: varStart, varEnd
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: sps, nn
-
-    ! Loop over the number of spectral solutions.
-
-    spectralLoop: do sps=1,nTimeIntervalsSpectral
-
-       ! Loop over the number of blocks.
-
-       domains: do nn=1,nDom
-
-          ! Set the pointers for this block.
-
-          call setPointers(nn, currentLevel, sps)
-
-          call initres_block(varStart, varEnd, nn, sps)
-
-       end do domains
-
-    end do spectralLoop
-
-  end subroutine initRes
-
   subroutine initres_block(varStart, varEnd, nn, sps)
     !
     !       initres initializes the given range of the residual. Either to
@@ -574,6 +447,7 @@ contains
           enddo
        endif steadyLevelTest
 
+#ifndef USE_TAPENADE
        !===========================================================
 
     case (unsteady)
@@ -995,7 +869,7 @@ contains
 
           enddo timeLoopCoarse
        endif spectralLevelTest
-
+#endif
     end select
 
     ! Set the residual in the halo cells to zero. This is just
@@ -1031,6 +905,132 @@ contains
     enddo
 
   end subroutine initres_block
+
+  subroutine sourceTerms_block(nn, res, iRegion, pLocal)
+
+    ! Apply the source terms for the given block. Assume that the
+    ! block pointers are already set.
+    use constants
+    use actuatorRegionData
+    use blockPointers, only : volRef, dw, w
+    use flowVarRefState, only : pRef, uRef, LRef
+    use communication
+    use iteration, only : ordersConverged
+    implicit none
+
+    ! Input
+    integer(kind=intType), intent(in) ::  nn, iRegion
+    logical, intent(in) :: res
+    real(kind=realType), intent(inout) :: pLocal
+
+    ! Working
+    integer(kind=intType) :: i, j, k, ii, iStart, iEnd
+    real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, F_fact(3), Q_fact, Qtmp, reDim, factor, oStart, oEnd
+
+    reDim = pRef*uRef
+
+    ! Compute the relaxation factor based on the ordersConverged
+
+    ! How far we are into the ramp:
+    if (ordersConverged < actuatorRegions(iRegion)%relaxStart) then
+       factor = zero
+    else if (ordersConverged > actuatorRegions(iRegion)%relaxEnd) then
+       factor = one
+    else ! In between
+       oStart = actuatorRegions(iRegion)%relaxStart
+       oEnd   = actuatorRegions(iRegion)%relaxEnd
+       factor = (ordersConverged - oStart)/(oEnd - oStart)
+    end if
+
+    ! Compute the constant force factor
+    F_fact = factor*actuatorRegions(iRegion)%force / actuatorRegions(iRegion)%volume / pRef
+
+    ! Heat factor. This is heat added per unit volume per unit time
+    Q_fact = factor * actuatorRegions(iRegion)%heat / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
+
+    ! Loop over the ranges for this block
+    iStart = actuatorRegions(iRegion)%blkPtr(nn-1) + 1
+    iEnd =  actuatorRegions(iRegion)%blkPtr(nn)
+
+    !$AD II-LOOP
+    do ii=iStart, iEnd
+
+       ! Extract the cell ID.
+       i = actuatorRegions(iRegion)%cellIDs(1, ii)
+       j = actuatorRegions(iRegion)%cellIDs(2, ii)
+       k = actuatorRegions(iRegion)%cellIDs(3, ii)
+
+       ! This actually gets the force
+       FTmp = volRef(i, j, k) * F_fact
+
+       Vx = w(i, j, k, iVx)
+       Vy = w(i, j, k, iVy)
+       Vz = w(i, j, k, iVz)
+
+       ! this gets the heat addition rate
+       QTmp = volRef(i, j, k) * Q_fact
+
+       if (res) then
+          ! Momentum residuals
+          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
+
+          ! energy residuals
+          dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)  - &
+               Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz - Qtmp
+       else
+          ! Add in the local power contribution:
+          pLocal = pLocal + (Vx*Ftmp(1) + Vy*FTmp(2) + Vz*Ftmp(3))*reDim
+       end if
+    end do
+
+  end subroutine sourceTerms_block
+
+
+  ! ----------------------------------------------------------------------
+  !                                                                      |
+  !                    No Tapenade Routine below this line               |
+  !                                                                      |
+  ! ----------------------------------------------------------------------
+
+#ifndef USE_TAPENADE
+  subroutine initres(varStart, varEnd)
+    !
+    ! Shell function to call initRes_block on all blocks
+    !
+    use blockPointers
+    use constants
+    use inputTimeSpectral
+    use iteration
+    use section
+    use utils, only : setPointers
+    !
+    !      Subroutine argument.
+    !
+    integer(kind=intType), intent(in) :: varStart, varEnd
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: sps, nn
+
+    ! Loop over the number of spectral solutions.
+
+    spectralLoop: do sps=1,nTimeIntervalsSpectral
+
+       ! Loop over the number of blocks.
+
+       domains: do nn=1,nDom
+
+          ! Set the pointers for this block.
+
+          call setPointers(nn, currentLevel, sps)
+
+          call initres_block(varStart, varEnd, nn, sps)
+
+       end do domains
+
+    end do spectralLoop
+
+  end subroutine initRes
 
   subroutine sourceTerms
 

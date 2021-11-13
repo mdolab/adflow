@@ -246,7 +246,7 @@ contains
     use fluxes_d, only :inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
          inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
          inviscidUpwindFlux_d, viscousFlux_d, viscousFluxApprox_d, inviscidCentralFlux_d
-    use residuals_d, only : sourceTerms_block_d
+    use residuals_d, only : sourceTerms_block_d, initres_block_d
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_d, exchangeCoor_d, exchangeCoor, whalo2
     use wallDistance_d, only : updateWallDistancesQuickly_d
@@ -460,8 +460,9 @@ contains
           ISIZE1OFDrfviscsubface = nViscBocos
 
           call timeStep_block_d(.false.)
-          dw = zero
-          dwd = zero
+
+          call initRes_block_d(1, nw, nn, sps)
+
           ! Compute any source terms
           do iRegion=1, nActuatorRegions
              call sourceTerms_block_d(nn, .True. , iRegion, dummyReal, dummyReald)

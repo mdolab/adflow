@@ -40,8 +40,6 @@ contains
     use inputtimespectral, only : ntimeintervalsspectral
     use utils_fast_b, only : terminate
     implicit none
-! the rest of this file can be skipped if only the spectral
-! radii need to be computed.
 !
 !      subroutine argument.
 !
@@ -77,6 +75,9 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs2d
     real(kind=realtype) :: abs1
@@ -358,8 +359,6 @@ branch = myIntStack(myIntPtr)
     use inputtimespectral, only : ntimeintervalsspectral
     use utils_fast_b, only : terminate
     implicit none
-! the rest of this file can be skipped if only the spectral
-! radii need to be computed.
 !
 !      subroutine argument.
 !
@@ -383,6 +382,9 @@ branch = myIntStack(myIntPtr)
     intrinsic max
     intrinsic abs
     intrinsic sqrt
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
@@ -519,6 +521,102 @@ branch = myIntStack(myIntPtr)
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
+! the rest of this file can be skipped if only the spectral
+! radii need to be computed.
+      if (.not.onlyradii) then
+! the viscous contribution, if needed.
+        if (viscous) then
+! loop over the owned cell centers.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+! compute the effective viscosity coefficient. the
+! factor 0.5 is a combination of two things. in the
+! standard central discretization of a second
+! derivative there is a factor 2 multiplying the
+! central node. however in the code below not the
+! average but the sum of the left and the right face
+! is taken and squared. this leads to a factor 4.
+! combining both effects leads to 0.5. furthermore,
+! it is divided by the volume and density to obtain
+! the correct dimensions and multiplied by the
+! non-dimensional factor factvis.
+                rmu = rlv(i, j, k)
+                if (eddymodel) rmu = rmu + rev(i, j, k)
+                rmu = half*rmu/(w(i, j, k, irho)*vol(i, j, k))
+! add the viscous contribution in i-direction to the
+! (inverse) of the time step.
+                sx = si(i, j, k, 1) + si(i-1, j, k, 1)
+                sy = si(i, j, k, 2) + si(i-1, j, k, 2)
+                sz = si(i, j, k, 3) + si(i-1, j, k, 3)
+                vsi = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsi
+! add the viscous contribution in j-direction to the
+! (inverse) of the time step.
+                sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
+                sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
+                sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
+                vsj = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsj
+! add the viscous contribution in k-direction to the
+! (inverse) of the time step.
+                sx = sk(i, j, k, 1) + sk(i, j, k-1, 1)
+                sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
+                sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
+                vsk = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsk
+              end do
+            end do
+          end do
+        end if
+! for the spectral mode an additional term term must be
+! taken into account, which corresponds to the contribution
+! of the highest frequency.
+        if (equationmode .eq. timespectral) then
+          tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
+&           timeperiod
+! loop over the owned cell centers and add the term.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                dtl(i, j, k) = dtl(i, j, k) + tmp*vol(i, j, k)
+              end do
+            end do
+          end do
+        end if
+! currently the inverse of dt/vol is stored in dtl. invert
+! this value such that the time step per unit cfl number is
+! stored and correct in cases of high gradients.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              if (p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k) .ge. 0.) &
+&             then
+                abs3 = p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k)
+              else
+                abs3 = -(p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))
+              end if
+              dpi = abs3/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)
+              if (p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k) .ge. 0.) &
+&             then
+                abs4 = p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k)
+              else
+                abs4 = -(p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))
+              end if
+              dpj = abs4/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)
+              if (p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1) .ge. 0.) &
+&             then
+                abs5 = p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1)
+              else
+                abs5 = -(p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))
+              end if
+              dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
+              rfl = one/(one+b*(dpi+dpj+dpk))
+              dtl(i, j, k) = rfl/dtl(i, j, k)
+            end do
+          end do
+        end do
+      end if
     end if
   end subroutine timestep_block
   subroutine gridvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
