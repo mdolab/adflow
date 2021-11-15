@@ -31,7 +31,7 @@ import reg_test_classes
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
-def setDVGeo(ffdFile, cmplx=False):
+def getDVGeo(ffdFile, cmplx=False):
 
     # Setup geometry/mesh
     DVGeo = DVGeometry(ffdFile, isComplex=cmplx)
@@ -220,7 +220,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
-        self.CFDSolver.setDVGeo(setDVGeo(self.ffdFile, cmplx=False))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, cmplx=False))
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
@@ -275,7 +275,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.CFDSolver = ADFLOW_C(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
-        self.CFDSolver.setDVGeo(setDVGeo(self.ffdFile, cmplx=True))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, cmplx=True))
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
