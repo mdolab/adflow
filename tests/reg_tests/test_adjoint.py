@@ -34,7 +34,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 def setDVGeo(ffdFile, cmplx=False):
 
     # Setup geometry/mesh
-    DVGeo = DVGeometry(ffdFile, complex=cmplx)
+    DVGeo = DVGeometry(ffdFile, isComplex=cmplx)
 
     nTwist = 6
     DVGeo.addRefAxis(
