@@ -117,7 +117,6 @@ contains
                         famLists, funcValues, &
                         forces, &
                         bcDataNames, bcDataValues, bcDataFamLists)
-
         end if
       
 
@@ -521,11 +520,10 @@ contains
 
 #else
 
-    subroutine computeMatrixFreeProductFwdCS(xvdot, extradot, wdot, BCArraysDot, actArrayDot, &
+    subroutine computeMatrixFreeProductFwdCS(xvdot, extradot, wdot, bcDataValuesdot, &
                                             useSpatial, useState, famLists,&
-                                            BCArrays,  BCVarNames, patchLoc, nBCVars, &
-                                            actArray,  actVarNames, actFamlists, &
-                                            dwdot, funcsDot, fDot, hfdot, &
+                                            bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty,&
+                                            dwdot, funcsDot, fDot, &
                                             costSize, fSize, nTime, h_mag)
 
         ! This routine is used to debug master_d. It uses the forward seeds to set perturbations
@@ -555,22 +553,16 @@ contains
         complex(kind=realType), dimension(:), intent(in) :: xvdot
         complex(kind=realType), dimension(:), intent(in) :: extradot
         complex(kind=realType), dimension(:), intent(in) :: wdot
-        complex(kind=realType), dimension(:,:), intent(inout) :: BCArraysDot
-        real(kind=realType), dimension(:), intent(in) :: actArrayDot
 
 
         logical, intent(in) :: useSpatial, useState
         integer(kind=intType), dimension(:, :) :: famLists
         integer(kind=intType) :: costSize, fSize, nTime
 
-        complex(kind=realType), dimension(:,:), intent(inout) :: BCArrays
-        character, dimension(:,:), intent(in) :: BCVarNames
-        integer(kind=intType), dimension(:, :), intent(in) :: patchLoc
-        integer(kind=inttype), dimension(:), intent(in) :: nBCVars
-        ! actuator data
-        real(kind=realType), dimension(:), intent(inout) :: actArray
-        character, dimension(:,:), intent(in) :: actVarNames
-        integer(kind=intType), dimension(:, :), intent(in) :: actFamLists
+        character, dimension(:, :), intent(in) :: bcDataNames
+        real(kind=realType), dimension(:), intent(inout) :: bcDataValues, bcDataValuesDot
+        integer(kind=intType), dimension(:, :) :: bcDataFamLists
+        logical, intent(in) :: BCVarsEmpty
 
         ! step parameters
         real(kind=alwaysRealType), intent(in) :: h_mag ! step size for step
@@ -580,7 +572,6 @@ contains
         complex(kind=realType), dimension(size(wdot)), intent(out) :: dwDot
         complex(kind=realType), dimension(costSize, size(famLists,1)), intent(out) :: funcsDot
         complex(kind=realType), dimension(3, fSize, nTime), intent(out) :: fDot
-        complex(kind=realType), dimension(1, fSize, nTime), intent(out) :: hfDot
 
         ! Working Variables
         integer(kind=intType) :: nn,sps, level
@@ -595,16 +586,15 @@ contains
 
             ! Working Variables
         complex(kind=realType), dimension(:, :, :), allocatable :: forces
-        complex(kind=realType), dimension(:, :, :), allocatable :: heatfluxes
         complex(kind=realType) :: h ! step size for Finite Difference
 
+        ! note that h_mag does not have to be complex
+        ! it is just the magnitude of the complex perturbation 
         h = cmplx(0, h_mag)
 
         fSize = size(fDot, 2)
         allocate(forces(3, fSize, nTimeIntervalsSpectral))
 
-        fSize = size(hfDot, 2)
-        allocate(heatfluxes(1, fSize, nTimeIntervalsSpectral))
 
 
 
@@ -676,8 +666,7 @@ contains
             end do spectalLoop1
         end do domainLoop1
 
-        BCArrays = BCArrays + BCArraysDot*h
-        actArray = actArray + actArrayDot*h
+        bcDataValues = bcDataValues + bcDataValuesdot*h
 
 
         if(equations == RANSEquations) then
@@ -685,10 +674,17 @@ contains
         end if
 
         ! ----------------------------- Run Master ---------------------------------
-        call master(useSpatial, &
-                    famLists, funcValues, &
-                    forces, &
-                    bcDataNames, bcDataValues, bcDataFamLists)
+        ! Run the super-dee-duper master rotuine
+        if (bcVarsEmpty) then
+            call master(useSpatial, &
+                        famLists, funcValues, &
+                        forces)
+        else
+            call master(useSpatial, &
+                        famLists, funcValues, &
+                        forces, &
+                        bcDataNames, bcDataValues, bcDataFamLists)
+        end if
                     
                     
         ! Copy out the residual derivative into the provided dwDot and remove the
@@ -724,13 +720,12 @@ contains
             end do
         end do
 
-        BCArrays = BCArrays - BCArraysDot*h
-        actArray = actArray - actArrayDot*h
-
-        call updateXSurf(level)
+        bcDataValues = bcDataValues - bcDataValuesdot*h
+        if(equations == RANSEquations) then
+            call updateXSurf(level)
+        endif
 
         fDot = aimag(forces)/aimag(h)
-        hfDot = aimag(heatfluxes)/aimag(h)
         funcsDot = aimag(funcValues)/aimag(h)
 
 

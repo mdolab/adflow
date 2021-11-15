@@ -3906,8 +3906,29 @@ class ADFLOW(AeroSolver):
                 nTime,
                 h
             )
+        elif mode == "CS":
+            if self.dtype == 'D':
+                dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdcs(
+                    xvdot,
+                    extradot,
+                    wdot,
+                    bcDataValuesdot,
+                    useSpatial,
+                    useState,
+                    famLists,
+                    bcDataNames,
+                    bcDataValues,
+                    bcDataFamLists,
+                    bcVarsEmpty,
+                    costSize,
+                    max(1, fSize),
+                    nTime,
+                    h
+                )
+            else:
+                raise Error("Complexified ADflow must be used to apply the complex step")
         else:
-            raise NotImplementedError(f'mode {mode} for computeJacobianVectorProductFwd not availiable')
+            raise Error(f'mode {mode} for computeJacobianVectorProductFwd not availiable')
             
         # Explictly put fdot to nothing if size is zero
         if fSize == 0:

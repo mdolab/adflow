@@ -674,6 +674,8 @@ python module libadflow
 #endif
        end module adjointapi
        module adjointdebug
+        
+#ifndef USE_COMPLEX
         subroutine computematrixfreeproductfwdfd(xvdot,extradot,wdot,bcdatavaluesdot,usespatial,usestate,famlists,bcdatanames,bcdatavalues,bcdatafamlists,bcvarsempty,dwdot,funcsdot,fdot,costsize,fsize,ntime,h) ! in :test:adjointAPI.F90:adjointdebug
           real(kind=realtype) dimension(:),intent(in) :: xvdot
           real(kind=realtype) dimension(:),intent(in) :: extradot
@@ -693,7 +695,30 @@ python module libadflow
           integer(kind=inttype) :: fsize
           integer(kind=inttype) :: ntime
           real(kind=realtype) :: h
-      end subroutine computematrixfreeproductfwdfd
+        end subroutine computematrixfreeproductfwdfd
+#else
+          subroutine computematrixfreeproductfwdcs(xvdot,extradot,wdot,bcdatavaluesdot,usespatial,usestate,famlists,bcdatanames,bcdatavalues,bcdatafamlists,bcvarsempty,dwdot,funcsdot,fdot,costsize,fsize,ntime,h_mag) ! in :test:adjointAPI.F90:adjointdebug
+            real(kind=realtype) dimension(:),intent(in) :: xvdot
+            real(kind=realtype) dimension(:),intent(in) :: extradot
+            real(kind=realtype) dimension(:),intent(in) :: wdot
+            real(kind=realtype) dimension(:),intent(in) :: bcdatavaluesdot
+            logical intent(in) :: usespatial
+            logical intent(in) :: usestate
+            integer(kind=inttype) dimension(:,:) :: famlists
+            character dimension(:,:),intent(in) :: bcdatanames
+            real(kind=realtype) dimension(:),intent(in) :: bcdatavalues
+            integer(kind=inttype) dimension(:,:) :: bcdatafamlists
+            logical intent(in) :: bcvarsempty
+            real(kind=realtype) dimension(size(wdot)),intent(out),depend(wdot) :: dwdot
+            real(kind=realtype) dimension(costsize, size(famlists,1)),intent(out),depend(famlists,costsize) :: funcsdot
+            real(kind=realtype) dimension(3,fsize,ntime),intent(out),depend(fsize,ntime) :: fdot
+            integer(kind=inttype) :: costsize
+            integer(kind=inttype) :: fsize
+            integer(kind=inttype) :: ntime
+            real(kind=alwaysrealtype) :: h_mag
+
+          end subroutine computematrixfreeproductfwdcs
+#endif
        endmodule adjointdebug
        module adjointutils
 
