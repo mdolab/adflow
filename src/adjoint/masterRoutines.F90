@@ -428,7 +428,6 @@ contains
     end do
 
     ! Just exchange the derivative values.
-   !  call whalo2(1, 1, nw, .True., .True., .True.)
     call whalo2_d(1, 1, nw, .True., .True., .True.)
 
     ! Need to re-apply the BCs. The reason is that BC halos behind

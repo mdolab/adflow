@@ -671,6 +671,13 @@ python module libadflow
                 integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
             end subroutine computematrixfreeproductbwd
+            
+            
+            subroutine computematrixfreeproductbwdfast(dwbar, wbar, statesize)! in :test:adjointapi.f90:adjointapi
+                real(kind=realtype) dimension(:),intent(in) :: dwbar
+                real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+                integer(kind=inttype) intent(in) :: statesize
+            end subroutine computematrixfreeproductbwdfast     
 #endif
        end module adjointapi
        module adjointdebug

@@ -3738,8 +3738,8 @@ class ADFLOW(AeroSolver):
         funcDeriv=False,
         fDeriv=False,
         groupName=None,
-        mode='AD',
-        h=1e-8
+        mode="AD",
+        h=1e-8,
     ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
@@ -3904,10 +3904,10 @@ class ADFLOW(AeroSolver):
                 costSize,
                 max(1, fSize),
                 nTime,
-                h
+                h,
             )
         elif mode == "CS":
-            if self.dtype == 'D':
+            if self.dtype == "D":
                 dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdcs(
                     xvdot,
                     extradot,
@@ -3923,13 +3923,13 @@ class ADFLOW(AeroSolver):
                     costSize,
                     max(1, fSize),
                     nTime,
-                    h
+                    h,
                 )
             else:
                 raise Error("Complexified ADflow must be used to apply the complex step")
         else:
-            raise Error(f'mode {mode} for computeJacobianVectorProductFwd not availiable')
-            
+            raise Error(f"mode {mode} for computeJacobianVectorProductFwd not availiable")
+
         # Explictly put fdot to nothing if size is zero
         if fSize == 0:
             fdot = numpy.zeros((0, 3))
@@ -4177,6 +4177,26 @@ class ADFLOW(AeroSolver):
 
         # Single return (most frequent) is 'clean', otherwise a tuple.
         return tuple(returns) if len(returns) > 1 else returns[0]
+
+    def computeJacobianVectorProductBwdFast(
+        self,
+        resBar=None,
+    ):
+        """used for testing the routines used for jac vec prods for the adjoint solve.
+
+        Parameters
+        ----------
+        resBar : numpy array
+            Seed for the residuals (dwb in adflow)
+
+        Returns
+        -------
+        wbar: array
+            state derivative seeds
+        """
+        wbar = self.adflow.adjointapi.computematrixfreeproductbwdfast(resBar, self.getAdjointStateSize())
+
+        return wbar
 
     def mapVector(self, vec1, groupName1, groupName2, vec2=None, includeZipper=True):
         """This is the main workhorse routine of everything that deals with

@@ -188,6 +188,7 @@ contains
     use flowVarRefState, only : nw, nwf
     use iteration, only : currentLevel, groundLevel
     use masterRoutines, only : master_state_b, master_b
+    use adjointvars, only : derivVarsAllocated
     use blockpointers
     use inputtimespectral
     use adjointutils
@@ -234,6 +235,11 @@ contains
     ! of the fact that only wbar needs to be zeroed since all other
     ! required seeds are zeroed in the individual fast routines. This is
     ! slightly unsafe, but it necessary for speed.
+    
+    ! Allocate the memory for reverse
+    if (.not. derivVarsAllocated) then
+      call allocDerivativeValues(level)
+    end if
      do nn=1,nDom
        do sps=1,nTimeIntervalsSpectral
           call zeroADSeeds(nn,level, sps)
