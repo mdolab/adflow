@@ -15,8 +15,8 @@ module walldistance_d
 contains
 !  differentiation of updatewalldistancesquickly in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *d2wall
-!   with respect to varying inputs: *x *xsurf
-!   rw status of diff variables: *x:in *d2wall:out *xsurf:in
+!   with respect to varying inputs: *x *d2wall *xsurf
+!   rw status of diff variables: *x:in *d2wall:in-out *xsurf:in
 !   plus diff mem management of: x:in d2wall:in xsurf:in
   subroutine updatewalldistancesquickly_d(nn, level, sps)
 ! this is the actual update routine that uses xsurf. it is done on
@@ -38,7 +38,6 @@ contains
     intrinsic sqrt
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
-    d2walld = 0.0_8
     xcd = 0.0_8
     do k=2,kl
       do j=2,jl
