@@ -82,7 +82,7 @@ class TestJacVecFwdFD(reg_test_classes.RegTest):
             wDot=wDot, residualDeriv=True, funcDeriv=True, fDeriv=True, mode="FD", h=1e-8
         )
 
-        np.testing.assert_allclose(resDot_FD, resDot, rtol=5e-4, err_msg="residual")
+        np.testing.assert_allclose(resDot_FD, resDot, rtol=8e-4, err_msg="residual")
 
         for func in funcsDot:
             np.testing.assert_allclose(funcsDot_FD[func], funcsDot[func], rtol=1e-5, err_msg=func)
