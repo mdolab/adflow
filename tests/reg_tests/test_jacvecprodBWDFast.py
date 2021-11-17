@@ -83,7 +83,7 @@ class TestJacVecBWDFast(reg_test_classes.RegTest):
 
         wBarfast = self.CFDSolver.computeJacobianVectorProductBwdFast(resBar=dwBar)
 
-        np.testing.assert_allclose(wBar, wBarfast, atol=1e-16, err_msg=f"w wrt res")
+        np.testing.assert_allclose(wBar, wBarfast, atol=1e-16, err_msg="w wrt res")
 
     def test_repeated_calls(self):
 
@@ -93,7 +93,7 @@ class TestJacVecBWDFast(reg_test_classes.RegTest):
 
         wBarfast2 = self.CFDSolver.computeJacobianVectorProductBwdFast(resBar=dwBar)
 
-        np.testing.assert_allclose(wBarfast1, wBarfast2, atol=1e-16, err_msg=f"w wrt res double call")
+        np.testing.assert_allclose(wBarfast1, wBarfast2, atol=1e-16, err_msg="w wrt res double call")
 
 
 if __name__ == "__main__":
