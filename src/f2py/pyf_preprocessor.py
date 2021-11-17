@@ -76,8 +76,8 @@ for i in range(len(orig_lines)):
                 else:
                     orig_lines[i] = orig_lines[i].replace("real(kind=realtype)", "complex(kind=8)")
 
-            if 'real(kind=alwaysrealtype)' in orig_lines[i]:
-                orig_lines[i] = orig_lines[i].replace('kind=alwaysrealtype','kind=8')
+            if "real(kind=alwaysrealtype)" in orig_lines[i]:
+                orig_lines[i] = orig_lines[i].replace("kind=alwaysrealtype", "kind=8")
 
             # end if
             g.write(orig_lines[i])
