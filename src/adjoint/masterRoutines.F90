@@ -607,7 +607,6 @@ contains
     use actuatorRegionData, only : nActuatorRegions
     use monitor, only : timeUnsteadyRestart
     use section, only: sections,nSections ! used in time-declaration
-    use solverutils, only : slipvelocitiesfinelevel_block,gridvelocitiesfinelevel_block,normalvelocities_block
 
 #include <petsc/finclude/petsc.h>
     use petsc
@@ -815,19 +814,9 @@ contains
                      &         ntimeintervalsspectral, realtype)
              end do
           end if
-          ! fake forward sweep
-          call gridvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
-
-          call normalvelocities_block(sps)
-
-          call slipvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
-          ! required for ts
 
           call slipvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
-
-          ! required for ts
           call normalvelocities_block_b(sps)
-
           call gridvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
 
           call boundaryNormals_b
