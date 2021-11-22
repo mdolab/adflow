@@ -278,7 +278,6 @@ contains
         bcDataValues = bcDataValues - bcDataValuesdot*h
 
         
-        &
         fDot = (fDot + forces)/h
         funcsDot = (funcsDot + funcValues)/h
 
