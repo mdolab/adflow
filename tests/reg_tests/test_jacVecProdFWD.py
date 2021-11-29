@@ -39,9 +39,7 @@ test_params = [
 @parameterized_class(test_params)
 class TestJacVecFwdFD(reg_test_classes.RegTest):
     """
-    Tests that given a flow state the residuals, function, forces/tractions,
-    and jacobian vector products are accurate.
-
+    Tests that given a flow state the FWD jacobian vector products are agree with FD.
     """
 
     N_PROCS = 2

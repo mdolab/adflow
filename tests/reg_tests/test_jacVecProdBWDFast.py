@@ -39,9 +39,7 @@ test_params = [
 @parameterized_class(test_params)
 class TestJacVecBWDFast(reg_test_classes.RegTest):
     """
-    Tests that given a flow state the residuals, function, forces/tractions,
-    and jacobian vector products are accurate.
-
+    Tests that given a flow state the state jacobian vector products are accurate.
     """
 
     N_PROCS = 2
@@ -90,7 +88,6 @@ class TestJacVecBWDFast(reg_test_classes.RegTest):
         dwBar = self.CFDSolver.getStatePerturbation(314)
 
         wBarfast1 = self.CFDSolver.computeJacobianVectorProductBwdFast(resBar=dwBar)
-
         wBarfast2 = self.CFDSolver.computeJacobianVectorProductBwdFast(resBar=dwBar)
 
         np.testing.assert_allclose(wBarfast1, wBarfast2, atol=1e-16, err_msg="w wrt res double call")

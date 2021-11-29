@@ -40,7 +40,7 @@ contains
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
     use actuatorRegionData, only : nActuatorRegions
-    use wallDistanceData, only : xSurfVec, xSurf, wallScatter
+    use wallDistanceData, only : xSurfVec, xSurf
     
     implicit none
 
@@ -158,11 +158,12 @@ contains
     do sps=1, nTimeIntervalsSpectral
        do nn=1, nDom
           call setPointers(nn, 1, sps)
-          call timeStep_block(.false.)
           call initRes_block(1, nw, nn, sps)
           do iRegion=1, nActuatorRegions
              call sourceTerms_block(nn, .True., iRegion, dummyReal)
           end do
+
+          call timeStep_block(.false.)
 
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
@@ -453,14 +454,17 @@ contains
           ISIZE1OFDrfbcdata = nBocos
           ISIZE1OFDrfviscsubface = nViscBocos
 
-          call timeStep_block_d(.false.)
+          ! initalize the residuals for this block 
           dw = zero
           dwd = zero
+          
           ! Compute any source terms
           do iRegion=1, nActuatorRegions
              call sourceTerms_block_d(nn, .True. , iRegion, dummyReal, dummyReald)
           end do
 
+          call timeStep_block_d(.false.)
+          
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -702,7 +706,6 @@ contains
           end select
 
           call inviscidCentralFlux_b
-          call timeStep_block_b(.false.)
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              select case (turbModel)
@@ -717,6 +720,8 @@ contains
              !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
           end if
 
+          call timeStep_block_b(.false.)
+          
           ! Just to be safe, zero the pLocald value...should not matter
           dummyReald = zero
           do iRegion=1, nActuatorRegions

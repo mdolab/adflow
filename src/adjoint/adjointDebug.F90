@@ -311,143 +311,205 @@ contains
         integer(kind=intType) :: iBoco, iData, iDirichlet
         write(*,*) 'ADSeeds for block', nn, ' at level ', level, ' at sps ', sps
         write(*,*) 'd2wall ', minval(flowDomsd(nn, level, sps)%d2wall), &
-                        maxval(flowDomsd(nn, level, sps)%d2wall)
+                        maxval(flowDomsd(nn, level, sps)%d2wall), &
+                        norm2(flowDomsd(nn, level, sps)%d2wall)
         write(*,*) 'x ', minval(flowDomsd(nn, level, sps)%x), &
-                        maxval(flowDomsd(nn, level, sps)%x)
+                        maxval(flowDomsd(nn, level, sps)%x), &
+                        norm2(flowDomsd(nn, level, sps)%x)
         write(*,*) 'si ', minval(flowDomsd(nn, level, sps)%si), &
-                        maxval(flowDomsd(nn, level, sps)%si)
+                        maxval(flowDomsd(nn, level, sps)%si), &
+                        norm2(flowDomsd(nn, level, sps)%si)
         write(*,*) 'sj ', minval(flowDomsd(nn, level, sps)%sj), &
-                        maxval(flowDomsd(nn, level, sps)%sj)
+                        maxval(flowDomsd(nn, level, sps)%sj), &
+                        norm2(flowDomsd(nn, level, sps)%sj)
         write(*,*) 'sk ', minval(flowDomsd(nn, level, sps)%sk), &
-                        maxval(flowDomsd(nn, level, sps)%sk)
+                        maxval(flowDomsd(nn, level, sps)%sk), &
+                        norm2(flowDomsd(nn, level, sps)%sk)
         write(*,*) 'vol ', minval(flowDomsd(nn, level, sps)%vol), &
-                        maxval(flowDomsd(nn, level, sps)%vol)
+                        maxval(flowDomsd(nn, level, sps)%vol), &
+                        norm2(flowDomsd(nn, level, sps)%vol)
 
         write(*,*) 's ', minval(flowDomsd(nn, level, sps)%s), &
-                        maxval(flowDomsd(nn, level, sps)%s)
+                        maxval(flowDomsd(nn, level, sps)%s), &
+                        norm2(flowDomsd(nn, level, sps)%s)
         write(*,*) 'sFaceI ', minval(flowDomsd(nn, level, sps)%sFaceI), &
-                        maxval(flowDomsd(nn, level, sps)%sFaceI)
+                        maxval(flowDomsd(nn, level, sps)%sFaceI), &
+                        norm2(flowDomsd(nn, level, sps)%sFaceI)
         write(*,*) 'sFaceJ ', minval(flowDomsd(nn, level, sps)%sFaceJ), &
-                        maxval(flowDomsd(nn, level, sps)%sFaceJ)
+                        maxval(flowDomsd(nn, level, sps)%sFaceJ), &
+                        norm2(flowDomsd(nn, level, sps)%sFaceJ)
         write(*,*) 'sFaceK ', minval(flowDomsd(nn, level, sps)%sFaceK), &
-                        maxval(flowDomsd(nn, level, sps)%sFaceK)
+                        maxval(flowDomsd(nn, level, sps)%sFaceK), &
+                        norm2(flowDomsd(nn, level, sps)%sFaceK)
 
         write(*,*) 'w ', minval(flowDomsd(nn, level, sps)%w), &
-                        maxval(flowDomsd(nn, level, sps)%w)
+                        maxval(flowDomsd(nn, level, sps)%w), &
+                        norm2(flowDomsd(nn, level, sps)%w)
         write(*,*) 'dw ', minval(flowDomsd(nn, level, sps)%dw), &
-                        maxval(flowDomsd(nn, level, sps)%dw)
+                        maxval(flowDomsd(nn, level, sps)%dw), &
+                        norm2(flowDomsd(nn, level, sps)%dw)
         write(*,*) 'fw ', minval(flowDomsd(nn, level, sps)%fw), &
-                        maxval(flowDomsd(nn, level, sps)%fw)
+                        maxval(flowDomsd(nn, level, sps)%fw), &
+                        norm2(flowDomsd(nn, level, sps)%fw)
         write(*,*) 'scratch ', minval(flowDomsd(nn, level, sps)%scratch), &
-                        maxval(flowDomsd(nn, level, sps)%scratch)
+                        maxval(flowDomsd(nn, level, sps)%scratch), &
+                        norm2(flowDomsd(nn, level, sps)%scratch)
 
         write(*,*) 'p ', minval(flowDomsd(nn, level, sps)%p), &
-                        maxval(flowDomsd(nn, level, sps)%p)
+                        maxval(flowDomsd(nn, level, sps)%p), &
+                        norm2(flowDomsd(nn, level, sps)%p)
         write(*,*) 'gamma ', minval(flowDomsd(nn, level, sps)%gamma), &
-                        maxval(flowDomsd(nn, level, sps)%gamma)
+                        maxval(flowDomsd(nn, level, sps)%gamma), &
+                        norm2(flowDomsd(nn, level, sps)%gamma)
         write(*,*) 'aa ', minval(flowDomsd(nn, level, sps)%aa), &
-                        maxval(flowDomsd(nn, level, sps)%aa)
+                        maxval(flowDomsd(nn, level, sps)%aa), &
+                        norm2(flowDomsd(nn, level, sps)%aa)
 
         write(*,*) 'rlv ', minval(flowDomsd(nn, level, sps)%rlv), &
-                        maxval(flowDomsd(nn, level, sps)%rlv)
+                        maxval(flowDomsd(nn, level, sps)%rlv), &
+                        norm2(flowDomsd(nn, level, sps)%rlv)
         write(*,*) 'rev ', minval(flowDomsd(nn, level, sps)%rev), &
-                        maxval(flowDomsd(nn, level, sps)%rev)
+                        maxval(flowDomsd(nn, level, sps)%rev), &
+                        norm2(flowDomsd(nn, level, sps)%rev)
 
         write(*,*) 'radI ', minval(flowDomsd(nn, level, sps)%radI), &
-                        maxval(flowDomsd(nn, level, sps)%radI)
+                        maxval(flowDomsd(nn, level, sps)%radI), &
+                        norm2(flowDomsd(nn, level, sps)%radI)
         write(*,*) 'radJ ', minval(flowDomsd(nn, level, sps)%radJ), &
-                        maxval(flowDomsd(nn, level, sps)%radJ)
+                        maxval(flowDomsd(nn, level, sps)%radJ), &
+                        norm2(flowDomsd(nn, level, sps)%radJ)
         write(*,*) 'radK ', minval(flowDomsd(nn, level, sps)%radK), &
-                        maxval(flowDomsd(nn, level, sps)%radK)
+                        maxval(flowDomsd(nn, level, sps)%radK), &
+                        norm2(flowDomsd(nn, level, sps)%radK)
 
         write(*,*) 'ux ', minval(flowDomsd(nn, level, sps)%ux), &
-                        maxval(flowDomsd(nn, level, sps)%ux)
+                        maxval(flowDomsd(nn, level, sps)%ux), &
+                        norm2(flowDomsd(nn, level, sps)%ux)
         write(*,*) 'uy ', minval(flowDomsd(nn, level, sps)%uy), &
-                        maxval(flowDomsd(nn, level, sps)%uy)
+                        maxval(flowDomsd(nn, level, sps)%uy), &
+                        norm2(flowDomsd(nn, level, sps)%uy)
         write(*,*) 'uz ', minval(flowDomsd(nn, level, sps)%uz), &
-                        maxval(flowDomsd(nn, level, sps)%uz)
+                        maxval(flowDomsd(nn, level, sps)%uz), &
+                        norm2(flowDomsd(nn, level, sps)%uz)
         write(*,*) 'vx ', minval(flowDomsd(nn, level, sps)%vx), &
-                        maxval(flowDomsd(nn, level, sps)%vx)
+                        maxval(flowDomsd(nn, level, sps)%vx), &
+                        norm2(flowDomsd(nn, level, sps)%vx)
         write(*,*) 'vy ', minval(flowDomsd(nn, level, sps)%vy), &
-                        maxval(flowDomsd(nn, level, sps)%vy)
+                        maxval(flowDomsd(nn, level, sps)%vy), &
+                        norm2(flowDomsd(nn, level, sps)%vy)
         write(*,*) 'vz ', minval(flowDomsd(nn, level, sps)%vz), &
-                        maxval(flowDomsd(nn, level, sps)%vz)
+                        maxval(flowDomsd(nn, level, sps)%vz), &
+                        norm2(flowDomsd(nn, level, sps)%vz)
         write(*,*) 'wx ', minval(flowDomsd(nn, level, sps)%wx), &
-                        maxval(flowDomsd(nn, level, sps)%wx)
+                        maxval(flowDomsd(nn, level, sps)%wx), &
+                        norm2(flowDomsd(nn, level, sps)%wx)
         write(*,*) 'wy ', minval(flowDomsd(nn, level, sps)%wy), &
-                        maxval(flowDomsd(nn, level, sps)%wy)
+                        maxval(flowDomsd(nn, level, sps)%wy), &
+                        norm2(flowDomsd(nn, level, sps)%wy)
         write(*,*) 'wz ', minval(flowDomsd(nn, level, sps)%wz), &
-                        maxval(flowDomsd(nn, level, sps)%wz)
+                        maxval(flowDomsd(nn, level, sps)%wz), &
+                        norm2(flowDomsd(nn, level, sps)%wz)
         write(*,*) 'qx ', minval(flowDomsd(nn, level, sps)%qx), &
-                        maxval(flowDomsd(nn, level, sps)%qx)
+                        maxval(flowDomsd(nn, level, sps)%qx), &
+                        norm2(flowDomsd(nn, level, sps)%qx)
         write(*,*) 'qy ', minval(flowDomsd(nn, level, sps)%qy), &
-                        maxval(flowDomsd(nn, level, sps)%qy)
+                        maxval(flowDomsd(nn, level, sps)%qy), &
+                        norm2(flowDomsd(nn, level, sps)%qy)
         write(*,*) 'qz ', minval(flowDomsd(nn, level, sps)%qz), &
-                        maxval(flowDomsd(nn, level, sps)%qz)
+                        maxval(flowDomsd(nn, level, sps)%qz), &
+                        norm2(flowDomsd(nn, level, sps)%qz)
 
         write(*,*) 'bmti1 ',minval(flowDomsd(nn, level, sps)%bmti1), &
-                                maxval(flowDomsd(nn, level, sps)%bmti1)
+                                maxval(flowDomsd(nn, level, sps)%bmti1), &
+                                norm2(flowDomsd(nn, level, sps)%bmti1)
         write(*,*) 'bmti2 ',minval(flowDomsd(nn, level, sps)%bmti2), &
-                                maxval(flowDomsd(nn, level, sps)%bmti2)
+                                maxval(flowDomsd(nn, level, sps)%bmti2), &
+                                norm2(flowDomsd(nn, level, sps)%bmti2)
         write(*,*) 'bmtj1 ',minval(flowDomsd(nn, level, sps)%bmtj1), &
-                                maxval(flowDomsd(nn, level, sps)%bmtj1)
+                                maxval(flowDomsd(nn, level, sps)%bmtj1), &
+                                norm2(flowDomsd(nn, level, sps)%bmtj1)
         write(*,*) 'bmtj2 ',minval(flowDomsd(nn, level, sps)%bmtj2), &
-                                maxval(flowDomsd(nn, level, sps)%bmtj2)
+                                maxval(flowDomsd(nn, level, sps)%bmtj2), &
+                                norm2(flowDomsd(nn, level, sps)%bmtj2)
         write(*,*) 'bmtk1 ',minval(flowDomsd(nn, level, sps)%bmtk1), &
-                                maxval(flowDomsd(nn, level, sps)%bmtk1)
+                                maxval(flowDomsd(nn, level, sps)%bmtk1), &
+                                norm2(flowDomsd(nn, level, sps)%bmtk1)
         write(*,*) 'bmtk2 ',minval(flowDomsd(nn, level, sps)%bmtk2), &
-                                maxval(flowDomsd(nn, level, sps)%bmtk2)
+                                maxval(flowDomsd(nn, level, sps)%bmtk2), &
+                                norm2(flowDomsd(nn, level, sps)%bmtk2)
         write(*,*) 'bvti1 ',minval(flowDomsd(nn, level, sps)%bvti1), &
-                                maxval(flowDomsd(nn, level, sps)%bvti1)
+                                maxval(flowDomsd(nn, level, sps)%bvti1), &
+                                norm2(flowDomsd(nn, level, sps)%bvti1)
         write(*,*) 'bvti2 ',minval(flowDomsd(nn, level, sps)%bvti2), &
-                                maxval(flowDomsd(nn, level, sps)%bvti2)
+                                maxval(flowDomsd(nn, level, sps)%bvti2), &
+                                norm2(flowDomsd(nn, level, sps)%bvti2)
         write(*,*) 'bvtj1 ',minval(flowDomsd(nn, level, sps)%bvtj1), &
-                                maxval(flowDomsd(nn, level, sps)%bvtj1)
+                                maxval(flowDomsd(nn, level, sps)%bvtj1), &
+                                norm2(flowDomsd(nn, level, sps)%bvtj1)
         write(*,*) 'bvtj2 ',minval(flowDomsd(nn, level, sps)%bvtj2), &
-                                maxval(flowDomsd(nn, level, sps)%bvtj2)
+                                maxval(flowDomsd(nn, level, sps)%bvtj2), &
+                                norm2(flowDomsd(nn, level, sps)%bvtj2)
         write(*,*) 'bvtk1 ',minval(flowDomsd(nn, level, sps)%bvtk1), &
-                                maxval(flowDomsd(nn, level, sps)%bvtk1)
+                                maxval(flowDomsd(nn, level, sps)%bvtk1), &
+                                norm2(flowDomsd(nn, level, sps)%bvtk1)
         write(*,*) 'bvtk2 ',minval(flowDomsd(nn, level, sps)%bvtk2), &
-                                maxval(flowDomsd(nn, level, sps)%bvtk2)
+                                maxval(flowDomsd(nn, level, sps)%bvtk2), &
+                                norm2(flowDomsd(nn, level, sps)%bvtk2)
 
         bocoLoop: do mm=1, flowDoms(nn, level, sps)%nBocos
             write(*,*) 'mm', mm, 'BCData(mm)%norm',minval(flowDomsd(nn, level, sps)%BCData(mm)%norm), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%norm)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%norm), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%norm)
             write(*,*) 'mm', mm, 'bcData(mm)%rface ',minval(flowDomsd(nn, level, sps)%bcData(mm)%rface), &
-                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%rface)
+                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%rface), &
+                                    norm2(flowDomsd(nn, level, sps)%bcData(mm)%rface)
             write(*,*) 'mm', mm, 'bcData(mm)%Fv ',minval(flowDomsd(nn, level, sps)%bcData(mm)%Fv), &
-                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Fv)
+                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Fv), &
+                                    norm2(flowDomsd(nn, level, sps)%bcData(mm)%Fv)
             write(*,*) 'mm', mm, 'bcData(mm)%Fp ',minval(flowDomsd(nn, level, sps)%bcData(mm)%Fp), &
-                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Fp)
+                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Fp), &
+                                    norm2(flowDomsd(nn, level, sps)%bcData(mm)%Fp)
             write(*,*) 'mm', mm, 'bcData(mm)%Tv ',minval(flowDomsd(nn, level, sps)%bcData(mm)%Tv), &
-                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Tv)
+                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Tv), &
+                                    norm2(flowDomsd(nn, level, sps)%bcData(mm)%Tv)
             write(*,*) 'mm', mm, 'bcData(mm)%Tp ',minval(flowDomsd(nn, level, sps)%bcData(mm)%Tp), &
-                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Tp)
+                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%Tp), &
+                                    norm2(flowDomsd(nn, level, sps)%bcData(mm)%Tp)
             write(*,*) 'mm', mm, 'bcData(mm)%area ',minval(flowDomsd(nn, level, sps)%bcData(mm)%area), &
-                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%area)
+                                    maxval(flowDomsd(nn, level, sps)%bcData(mm)%area), &
+                                    norm2(flowDomsd(nn, level, sps)%bcData(mm)%area)
             write(*,*) 'mm', mm, 'BCData(mm)%uSlip ',minval(flowDomsd(nn, level, sps)%BCData(mm)%uSlip), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%uSlip)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%uSlip), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%uSlip)
             write(*,*) 'mm', mm, 'BCData(mm)%TNS_Wall ',minval(flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall)
             write(*,*) 'mm', mm, 'BCData(mm)%ptInlet ',minval(flowDomsd(nn, level, sps)%BCData(mm)%ptInlet), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%ptInlet)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%ptInlet), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%ptInlet)
             write(*,*) 'mm', mm, 'BCData(mm)%htInlet ',minval(flowDomsd(nn, level, sps)%BCData(mm)%htInlet), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%htInlet)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%htInlet), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%htInlet)
             write(*,*) 'mm', mm, 'BCData(mm)%ttInlet ',minval(flowDomsd(nn, level, sps)%BCData(mm)%ttInlet), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%ttInlet)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%ttInlet), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%ttInlet)
             write(*,*) 'mm', mm, 'BCData(mm)%turbInlet ',minval(flowDomsd(nn, level, sps)%BCData(mm)%turbInlet), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%turbInlet)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%turbInlet), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%turbInlet)
             write(*,*) 'mm', mm, 'BCData(mm)%ps ',minval(flowDomsd(nn, level, sps)%BCData(mm)%ps), &
-                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%ps)
+                                    maxval(flowDomsd(nn, level, sps)%BCData(mm)%ps), &
+                                    norm2(flowDomsd(nn, level, sps)%BCData(mm)%ps)
 
         end do bocoLoop
 
 
         viscbocoLoop: do mm=1,flowDoms(nn, level, sps)%nViscBocos
             write(*,*) 'mm', mm, 'viscSubface(mm)%tau ',minval(flowDomsd(nn, level, sps)%viscSubface(mm)%tau), &
-                                    maxval(flowDomsd(nn, level, sps)%viscSubface(mm)%tau)
+                                    maxval(flowDomsd(nn, level, sps)%viscSubface(mm)%tau), &
+                                    norm2(flowDomsd(nn, level, sps)%viscSubface(mm)%tau)
             write(*,*) 'mm', mm, 'viscSubface(mm)%q ',minval(flowDomsd(nn, level, sps)%viscSubface(mm)%q), &
-                                    maxval(flowDomsd(nn, level, sps)%viscSubface(mm)%q)
+                                    maxval(flowDomsd(nn, level, sps)%viscSubface(mm)%q), &
+                                    norm2(flowDomsd(nn, level, sps)%viscSubface(mm)%q)
         end do viscbocoLoop
 
         ! For overset, the weights may be active in the comm structure. We
@@ -457,10 +519,12 @@ contains
             sends: do i=1,commPatternOverset(level, sps)%nProcSend
             write(*,*) 'commPatternOverset(level, sps)%sendList(i)%interpd ',&
                         minval(commPatternOverset(level, sps)%sendList(i)%interpd), &
-                        maxval(commPatternOverset(level, sps)%sendList(i)%interpd)
+                        maxval(commPatternOverset(level, sps)%sendList(i)%interpd), &
+                        norm2(commPatternOverset(level, sps)%sendList(i)%interpd)
             end do sends
             write(*,*) 'internalOverset(level, sps)%donorInterpd ',minval(internalOverset(level, sps)%donorInterpd), &
-                                    maxval(internalOverset(level, sps)%donorInterpd)
+                                    maxval(internalOverset(level, sps)%donorInterpd), &
+                                    norm2(internalOverset(level, sps)%donorInterpd)
         end if
 
         write(*,*) 'alphad ',alphad
