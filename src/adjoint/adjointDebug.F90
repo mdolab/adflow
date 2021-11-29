@@ -120,7 +120,7 @@ contains
         end if
       
 
-        ! Copy basevale (f) into variables for the final vals (f(x+dx) - f)/dx
+        ! Copy base val (f) into variables for the final vals (f(x+dx) - f)/dx
         ! we add the negative sign here instead of doing it later 
                     
         ii =0
