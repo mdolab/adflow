@@ -3739,7 +3739,7 @@ class ADFLOW(AeroSolver):
         fDeriv=False,
         groupName=None,
         mode="AD",
-        h=1e-8,
+        h=None,
     ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
@@ -3768,6 +3768,10 @@ class ADFLOW(AeroSolver):
         groupName : str
             Optional group name to use for evaluating functions. Defaults to all
             surfaces.
+        mode : str ["AD", "FD", or "CS"]
+            Specifies how the jacobian vector products will be computed.
+        h : float
+            Step sized used when the mode is "FD" or "CS
 
         Returns
         -------
@@ -3889,6 +3893,9 @@ class ADFLOW(AeroSolver):
                 nTime,
             )
         elif mode == "FD":
+            if h is None:
+                raise Error("if mode 'FD' is used, a stepsize must be specified using the kwarg 'h'")
+
             dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdfd(
                 xvdot,
                 extradot,
@@ -3907,6 +3914,9 @@ class ADFLOW(AeroSolver):
                 h,
             )
         elif mode == "CS":
+            if h is None:
+                raise Error("if mode 'CS' is used, a stepsize must be specified using the kwarg 'h'")
+
             if self.dtype == "D":
                 dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdcs(
                     xvdot,
@@ -4182,7 +4192,9 @@ class ADFLOW(AeroSolver):
         self,
         resBar=None,
     ):
-        """used for testing the routines used for jac vec prods for the adjoint solve.
+        """
+        This fast routine computes only the derivatives of the residuals with respect to the states.
+        This is the operator used for the matrix-free solution of the adjoint system.
 
         Parameters
         ----------
