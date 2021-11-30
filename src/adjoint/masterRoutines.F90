@@ -1,9 +1,7 @@
 module masterRoutines
 contains
-  subroutine master(useSpatial,&
-                  famLists, funcValues,&
-                  forces, &
-                  bcDataNames, bcDataValues, bcDataFamLists)
+  subroutine master(useSpatial, famLists, funcValues, forces, &
+       bcDataNames, bcDataValues, bcDataFamLists)
 
     use constants
     use communication, only : adflow_comm_world

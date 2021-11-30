@@ -2,10 +2,8 @@ module adjointAPI
 
 contains
 #ifndef USE_COMPLEX
-  subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, bcDataValuesdot,&
-       useSpatial, useState, famLists,&
-       bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty,&
-       dwdot, funcsDot, fDot, &
+  subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, bcDataValuesdot, useSpatial, &
+       useState, famLists, bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty, dwdot, funcsDot, fDot, &
        costSize, fSize, nTime)
 
     ! This is the main matrix-free forward mode computation
