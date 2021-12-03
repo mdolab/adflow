@@ -783,6 +783,19 @@ contains
             end do
         end do
 
+        alpha = alpha - h*extraDot(iAlpha)
+        beta = beta - h*extraDot(iBeta)
+        mach = mach - h*extraDot(iMach)
+        machCoef = machCoef - h*extraDot(iMach)
+        machGrid = machGrid - h*extraDot(iMachGrid)
+        PinfDim = PinfDim - h*extraDot(iPressure)
+        rhoinfDim = rhoinfDim - h*extraDot(iDensity)
+        tinfdim = tinfdim - h*extraDot(iTemperature)
+        pointref(1) = pointref(1) - h*extraDot(iPointRefX)
+        pointref(2) = pointref(2) - h*extraDot(iPointRefY)
+        pointref(3) = pointref(3) - h*extraDot(iPointRefZ)
+        rgasdim = rgasdim - h*zero
+        
         bcDataValues = bcDataValues - bcDataValuesdot*h
         if(equations == RANSEquations) then
             call updateXSurf(level)
