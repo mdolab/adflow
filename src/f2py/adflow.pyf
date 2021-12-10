@@ -1147,6 +1147,7 @@ python module libadflow
          real(kind=realtype) :: adjdivtol
          real(kind=realtype) :: adjreltol
          real(kind=realtype) :: adjreltolrel
+         real(kind=realtype) :: adjmaxl2dev
          integer(kind=inttype) :: overlap
          integer(kind=inttype) :: adjmonstep
          integer(kind=inttype) :: filllevel
