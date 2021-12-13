@@ -4687,7 +4687,7 @@ class ADFLOW(AeroSolver):
             "useQCR": [bool, False],
             "useRotationSA": [bool, False],
             "useft2SA": [bool, True],
-            'kssa': [float, 0.0],
+            'ksSA': [float, 0.0],
             "eddyVisInfRatio": [float, 0.009],
             "useWallFunctions": [bool, False],
             "useApproxWallDistance": [bool, True],
