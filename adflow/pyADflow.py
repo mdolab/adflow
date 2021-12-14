@@ -4879,7 +4879,7 @@ class ADFLOW(AeroSolver):
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
             "cavSensorOffset": [float, 0.0],
-            "cavSensorOffset": [float, 10.0],
+            "cavSensorSharpness": [float, 10.0],
             "cavExponent": [int, 0],
             "computeCavitation": [bool, False],
         }

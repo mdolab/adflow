@@ -2103,7 +2103,7 @@ contains
              plocal = half*(pp1(i,j) + pp2(i,j))
 
              sensor1 = (-(fact)*(plocal-pInf))- cavitationnumber
-             sensor1 = (sensor1**cavExponent)/(one + exp(-2*cavSensorSharpness*(sensor1 - cavSensorOffset))
+             sensor1 = (sensor1**cavExponent)/(one + exp(-2*cavSensorSharpness*(sensor1 - cavSensorOffset)))
              buffer(nn) = sensor1
              !print*, sensor
           enddo
