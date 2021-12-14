@@ -875,6 +875,8 @@ contains
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
+    real(kind=realtype) :: pwr1
+    real(kind=realtype) :: pwr1d
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -1116,9 +1118,20 @@ contains
         cp = tmp*(plocal-pinf)
         sensor1d = -cpd
         sensor1 = -cp - cavitationnumber
-        sensor1d = -((-(one*2*10*sensor1d*exp(-(2*10*sensor1))))/(one+&
-&         exp(-(2*10*sensor1)))**2)
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        if (sensor1 .gt. 0.0_8 .or. (sensor1 .lt. 0.0_8 .and. &
+&           cavexponent .eq. int(cavexponent))) then
+          pwr1d = cavexponent*sensor1**(cavexponent-1)*sensor1d
+        else if (sensor1 .eq. 0.0_8 .and. cavexponent .eq. 1.0) then
+          pwr1d = sensor1d
+        else
+          pwr1d = 0.0_8
+        end if
+        pwr1 = sensor1**cavexponent
+        arg1d = -(2*cavsensorsharpness*sensor1d)
+        arg1 = -(2*cavsensorsharpness*(sensor1-cavsensoroffset))
+        sensor1d = (pwr1d*(one+exp(arg1))-pwr1*arg1d*exp(arg1))/(one+exp&
+&         (arg1))**2
+        sensor1 = pwr1/(one+exp(arg1))
         sensor1d = blk*(sensor1d*cellarea+sensor1*cellaread)
         sensor1 = sensor1*cellarea*blk
         cavitationd = cavitationd + sensor1d
@@ -1357,6 +1370,7 @@ contains
     intrinsic exp
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
+    real(kind=realtype) :: pwr1
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -1507,7 +1521,9 @@ contains
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
         sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        pwr1 = sensor1**cavexponent
+        arg1 = -(2*cavsensorsharpness*(sensor1-cavsensoroffset))
+        sensor1 = pwr1/(one+exp(arg1))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
       end if

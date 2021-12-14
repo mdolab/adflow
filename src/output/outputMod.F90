@@ -1404,8 +1404,8 @@ contains
     real(kind=realType), dimension(*), intent(out) :: buffer
     character(len=*), intent(in) :: solName
     logical, intent(in) :: viscousSubface, useRindLayer
-    
-    ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine 
+
+    ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine
     ! when the indices are in the rind layer.
     integer(kind=intType), optional, intent(in) :: iBeg, iEnd, jBeg, jEnd
     !
@@ -1889,14 +1889,14 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
             jor = j + jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
+            if (jor == jBeg) then
+               jj = j + 1
             else if (jor == jEnd +1 ) then
                jj = j - 1
             else
-               jj = j 
+               jj = j
             endif
          else
             jj = j
@@ -1904,19 +1904,19 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
                ior = i + iBegor - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
+               if (ior == iBeg) then
+                  ii = i + 1
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else
-                  ii = i 
+                  ii = i
                endif
             else
                ii = i
             endif
-            
+
              ! Determine the viscous subface on which this
              ! face is located.
 
@@ -2002,14 +2002,14 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
             jor = j + jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
+            if (jor == jBeg) then
+               jj = j + 1
             else if (jor == jEnd + 1) then
                jj = j - 1
             else
-               jj = j 
+               jj = j
             endif
          else
             jj = j
@@ -2017,14 +2017,14 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
                ior = i + iBegor - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
+               if (ior == iBeg) then
+                  ii = i + 1
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else
-                  ii = i 
+                  ii = i
                endif
             else
                ii = i
@@ -2103,7 +2103,7 @@ contains
              plocal = half*(pp1(i,j) + pp2(i,j))
 
              sensor1 = (-(fact)*(plocal-pInf))- cavitationnumber
-             sensor1 = one/(one + exp(-2*10*sensor1))
+             sensor1 = (sensor1**cavExponent)/(one + exp(-2*cavSensorSharpness*(sensor1 - cavSensorOffset))
              buffer(nn) = sensor1
              !print*, sensor
           enddo
