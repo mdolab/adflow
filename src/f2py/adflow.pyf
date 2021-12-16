@@ -331,6 +331,12 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
            integer(kind=inttype) intent(in) :: sps
          end subroutine getsurfaceperturbation
+
+         subroutine setgridforoneinstance(grid,sps) ! in warping.F90:warping
+           real(kind=realtype) dimension(:),intent(in) :: grid
+           integer intent(in) :: sps
+         end subroutine setgridforoneinstance
+
        end module warping
 
        module surfaceutils
@@ -1176,11 +1182,13 @@ python module libadflow
          real(kind=realtype) allocatable,dimension(:,:,:) :: dscalar
          real(kind=realtype) allocatable,dimension(:,:,:) :: dvector
          real(kind=realtype) :: dtunsteadyrestartspectral
+         logical :: usetsinterpolatedgridvelocity
          logical :: writeunsteadyrestartspectral
          integer(kind=inttype) :: nunsteadysolspectral
          logical :: writeunsteadyvolspectral
          logical :: writeunsteadysurfspectral
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
+         real(kind=realtype) :: omegafourier
        end module inputtimespectral
        module inputoverset
          logical :: useoversetloadbalance
