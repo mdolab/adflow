@@ -255,10 +255,7 @@ contains
 
           print "(a)", "#"
           print "(a)", "#                      Warning"
-          print "(a)", "# Conversion factor from grid units to &
-               &meter not specified and some blocks"
-          print "(a)", "# do not have units. It is assumed that &
-               &the grid is given in meters."
+          print "(a)", "# It is assumed that the grid is given in meters."
           print "(a)", "#"
 
        endif

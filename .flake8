@@ -1,0 +1,8 @@
+[flake8]
+extend-exclude =
+    src/build/fort_depend.py
+    src/adjoint/autoEdit/autoEdit*.py
+    src_cs/build/complexify.py
+    adflow/pyWeightAndBalance.py
+    adflow/pyWingCG.py
+    adflow/om_*.py

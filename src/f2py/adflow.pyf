@@ -464,7 +464,7 @@ python module libadflow
        end module usersurfaceintegrations
 
        module actuatorregion ! in :test:actuatorDiskRegion.F90
-         subroutine addactuatorregion(pts,conn,axis1,axis2,famname,famid,thrust,torque,relaxstart,relaxend,npts,nconn) ! in :test:actuatorDiskRegion.F90:actuatorregion
+         subroutine addactuatorregion(pts,conn,axis1,axis2,famname,famid,thrust,torque,heat,relaxstart,relaxend,npts,nconn) ! in :test:actuatorDiskRegion.F90:actuatorregion
            real(kind=realtype) dimension(3,npts),intent(in) :: pts
            integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
            real(kind=realtype), dimension(3),intent(in) :: axis1
@@ -473,6 +473,7 @@ python module libadflow
            integer(kind=inttype) intent(in) :: famid
            real(kind=realtype) :: thrust
            real(kind=realtype) :: torque
+           real(kind=realtype) :: heat
            real(kind=realtype) :: relaxstart
            real(kind=realtype) :: relaxend
            integer(kind=inttype), optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
@@ -1188,6 +1189,7 @@ python module libadflow
          real(kind=realtype) :: overlapfactor
          integer(kind=inttype) :: oversetupdatemode
          integer(kind=inttype)::nrefine
+         integer(kind=inttype)::nflooditer
          logical :: debugzipper
          logical :: usezippermesh
          logical :: useoversetwallscaling

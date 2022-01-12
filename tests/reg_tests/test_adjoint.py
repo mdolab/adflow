@@ -52,15 +52,15 @@ def setDVGeo(ffdFile, cmplx=False):
             geo.rot_z["wing"].coef[i] = val[i]
 
     def span(val, geo):
-        # Span
         C = geo.extractCoef("wing")
-        for i in range(len(C) - 1):
-            C[-1, 2] = C[-1, 2] + val[0]
+        s = geo.extractS("wing")
+        for i in range(len(C)):
+            C[i, 2] += s[i] * val[0]
         geo.restoreCoef(C, "wing")
 
-    DVGeo.addGeoDVGlobal("twist", [0] * nTwist, twist, lower=-10, upper=10, scale=1.0)
-    DVGeo.addGeoDVGlobal("span", [0], span, lower=-10, upper=10, scale=1.0)
-    DVGeo.addGeoDVLocal("shape", lower=-0.5, upper=0.5, axis="y", scale=10.0)
+    DVGeo.addGlobalDV("twist", [0] * nTwist, twist, lower=-10, upper=10, scale=1.0)
+    DVGeo.addGlobalDV("span", [0], span, lower=-10, upper=10, scale=1.0)
+    DVGeo.addLocalDV("shape", lower=-0.5, upper=0.5, axis="y", scale=10.0)
 
     return DVGeo
 
@@ -70,8 +70,8 @@ test_params = [
     {
         "name": "euler_scalar_JST_tut_wing_1core",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
             "l2convergence": 1e-14,
             "monitorvariables": ["cpu", "resrho", "totalr"],
             "adjointl2convergence": 1e-14,
@@ -79,6 +79,9 @@ test_params = [
             "ncycles": 1000,
             "ncyclescoarse": 250,
             "usenksolver": True,
+            "nkswitchtol": 2.5e-4,
+            "ankswitchtol": 1e-2,
+            "anksecondordswitchtol": 1e-2,
             "useblockettes": False,
             "frozenturbulence": False,
             "blockSplitting": False,
@@ -92,8 +95,8 @@ test_params = [
     {
         "name": "euler_scalar_JST_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_euler_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
             "l2convergence": 1e-14,
             "monitorvariables": ["cpu", "resrho", "totalr"],
             "adjointl2convergence": 1e-14,
@@ -101,6 +104,9 @@ test_params = [
             "ncycles": 1000,
             "ncyclescoarse": 250,
             "usenksolver": True,
+            "nkswitchtol": 2.5e-4,
+            "ankswitchtol": 1e-2,
+            "anksecondordswitchtol": 1e-2,
             "useblockettes": False,
             "frozenturbulence": False,
             "blockSplitting": False,
@@ -113,8 +119,8 @@ test_params = [
     {
         "name": "laminar_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_viscous_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_viscous_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
             "l2convergence": 1e-15,
             "l2convergencecoarse": 1e-2,
             "monitorvariables": ["cpu", "resrho", "totalr"],
@@ -125,6 +131,8 @@ test_params = [
             "mgcycle": "2w",
             "ncyclescoarse": 250,
             "usenksolver": True,
+            "ankswitchtol": 1e-2,
+            "anksecondordswitchtol": 1e-2,
             "nkswitchtol": 1e-2,
             "equationtype": "laminar NS",
             "useblockettes": False,
@@ -137,8 +145,8 @@ test_params = [
     {
         "name": "rans_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../inputFiles/mdo_tutorial_rans_scalar_jst.cgns"),
+            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
+            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
             "mgcycle": "2w",
             "equationtype": "RANS",
             "smoother": "DADI",
@@ -151,9 +159,10 @@ test_params = [
             "ncycles": 1000,
             "monitorvariables": ["cpu", "resrho", "resturb", "totalr"],
             "usenksolver": True,
-            "l2convergence": 1e-16,
-            "l2convergencecoarse": 1e-4,
-            "nkswitchtol": 1e-3,
+            "ankswitchtol": 1e-2,
+            "anksecondordswitchtol": 1e-2,
+            "l2convergence": 1e-15,
+            "nkswitchtol": 1e-5,
             "adjointl2convergence": 1e-16,
             "frozenturbulence": False,
             "blockSplitting": True,
@@ -194,7 +203,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
         options.update(self.options)
 
-        self.ffdFile = os.path.join(baseDir, "../../inputFiles/mdo_tutorial_ffd.fmt")
+        self.ffdFile = os.path.join(baseDir, "../../input_files/mdo_tutorial_ffd.fmt")
 
         mesh_options = copy.copy(IDWarpDefOpts)
         mesh_options.update({"gridFile": options["gridfile"]})
@@ -221,10 +230,11 @@ class TestAdjoint(reg_test_classes.RegTest):
 
     def test_adjoint(self):
         utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
 
 
 @parameterized_class(test_params)
-class TestCmplxStep(unittest.TestCase):
+class TestCmplxStep(reg_test_classes.CmplxRegTest):
     """
     Tests that sensitives calculated from solving an adjoint are correct.
     and jacobian vector products are accurate.
@@ -242,13 +252,13 @@ class TestCmplxStep(unittest.TestCase):
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
             return
-        reg_test_classes.RegTest.setUp(self)
+        super().setUp()
 
         options = copy.copy(adflowDefOpts)
         options["outputdirectory"] = os.path.join(baseDir, options["outputdirectory"])
         options.update(self.options)
 
-        self.ffdFile = os.path.join(baseDir, "../../inputFiles/mdo_tutorial_ffd.fmt")
+        self.ffdFile = os.path.join(baseDir, "../../input_files/mdo_tutorial_ffd.fmt")
 
         mesh_options = copy.copy(IDWarpDefOpts)
         mesh_options.update({"gridFile": options["gridfile"]})
@@ -284,6 +294,7 @@ class TestCmplxStep(unittest.TestCase):
 
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver(self.ap, writeSolution=False)
+            self.assert_solution_failure()
 
             funcs = {}
             self.CFDSolver.evalFunctions(self.ap, funcs)
@@ -322,6 +333,7 @@ class TestCmplxStep(unittest.TestCase):
             self.CFDSolver.resetFlow(self.ap)
             self.CFDSolver.DVGeo.setDesignVars(xRef)
             self.CFDSolver(self.ap, writeSolution=False)
+            self.assert_solution_failure()
 
             funcs = {}
             self.CFDSolver.evalFunctions(self.ap, funcs)

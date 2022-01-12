@@ -6,7 +6,7 @@
 PMAKE = make -j 4
 
 # ------- Define the MPI Compilers--------------------------------------
-FF90 = mpif90
+FF90 = mpifort
 CC   = mpicc
 
 # ------- Define Precision Flags ---------------------------------------
@@ -20,15 +20,9 @@ CC_INTEGER_PRECISION_FLAG   =
 CC_REAL_PRECISION_FLAG      =
 
 # ------- Define CGNS Inlcude and linker flags -------------------------
-# Define the CNGS include directory and linking flags for CGNSlib. We
-# can use 3.2.x OR CGNS 3.3+. You must define which version is being
-# employed as shown below. We are assuming that HDF5 came from PETSc
-# so it is included in ${PETSC_LIB}. Otherwise you will have to
-# specify the HDF5 library.
-
-# ----------- CGNS ------------------
-# CGNS_VERSION_FLAG=               # for CGNS 3.2.x
-CGNS_VERSION_FLAG=-DUSECGNSMODULE  # for CGNS 3.3.x
+# Define the CGNS include directory and linking flags for the CGNS library.
+# We are assuming that HDF5 came from PETSc so it is included in ${PETSC_LIB}.
+# Otherwise you will have to specify the HDF5 library.
 CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
 CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
@@ -49,7 +43,6 @@ include ${PETSC_DIR}/lib/petsc/conf/variables # PETSc 3.6
 PETSC_INCLUDE_FLAGS=${PETSC_CC_INCLUDES} -I$(PETSC_DIR)
 PETSC_LINKER_FLAGS=${PETSC_LIB}
 
-# Combine flags from above -- don't modify here
 # Combine flags from above -- don't modify here
 FF90_PRECISION_FLAGS = $(FF90_INTEGER_PRECISION_FLAG)$(FF90_REAL_PRECISION_FLAG)
 CC_PRECISION_FLAGS   = $(CC_INTEGER_PRECISION_FLAG) $(CC_REAL_PRECISION_FLAG)

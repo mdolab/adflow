@@ -8,6 +8,7 @@ subroutine floodInteriorCells(level, sps)
   use oversetUtilities, only :  isCompute, isWallDonor, isFloodSeed, isHole, setIsFlooded, &
        setIsHole, setIsCompute, setIsFloodSeed, setIsHole, isReceiver, setIsReceiver, &
        setIsDonor
+  use inputOverset, only : nFloodIter
 
   implicit none
 
@@ -224,7 +225,7 @@ subroutine floodInteriorCells(level, sps)
         print *, 'Flood Iteration:', loopIter, 'Blanked ', nChanged, 'Interior Cells.'
      end if
 
-     if (nChanged == 0) then
+     if ((nChanged == 0) .or. (loopIter .eq. nFloodIter)) then
         exit parallelSyncLoop
      end if
 

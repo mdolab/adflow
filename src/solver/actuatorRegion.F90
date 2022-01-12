@@ -7,7 +7,7 @@ module actuatorRegion
 
 contains
   subroutine addActuatorRegion(pts, conn, axis1, axis2, famName, famID, &
-       thrust, torque, relaxStart, relaxEnd, nPts, nConn)
+       thrust, torque, heat, relaxStart, relaxEnd, nPts, nConn)
     ! Add a user-supplied integration surface.
 
     use communication, only : myID, adflow_comm_world
@@ -27,7 +27,7 @@ contains
     integer(kind=intType), intent(in) :: nPts, nConn, famID
     real(kind=realType), intent(in), dimension(3) :: axis1, axis2
     character(len=*) :: famName
-    real(kind=realType) :: thrust, torque, relaxStart, relaxEnd
+    real(kind=realType) :: thrust, torque, heat, relaxStart, relaxEnd
 
     ! Working variables
     integer(kind=intType) :: i, j, k, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
@@ -57,7 +57,8 @@ contains
     region => actuatorRegions(nActuatorRegions)
     region%famName = famName
     region%famID = famID
-    region%T = torque
+    region%torque = torque
+    region%heat = heat
     region%relaxStart = relaxStart
     region%relaxEnd = relaxEnd
     ! We use the axis to define the direction of F. Since we are
@@ -66,14 +67,14 @@ contains
     ! axis.
     axisVec = axis2-axis1
     axisVecNorm = sqrt((axisVec(1)**2 + axisvec(2)**2 + axisVec(3)**2))
-    if (axisVecNorm < 1e-12) then 
+    if (axisVecNorm < 1e-12) then
        print *,"Error: Axis cannot be determined by the supplied points. They are too close"
        stop
     end if
 
     axisVec = axisVec / axisVecNorm
 
-    region%F = axisVec*thrust
+    region%force = axisVec*thrust
     region%axisVec = axisVec
 
     allocate(region%blkPtr(0:nDom))
@@ -481,7 +482,7 @@ contains
     use constants
     use blockPointers, only : vol, dw, w, nDom
     use flowVarRefState, only : Pref, uRef
-    use utils, only : setPointers
+    use utils, only : setPointers_d
     use sorting, only : famInList
     use actuatorRegionData
     use residuals_d, only : sourceTerms_block_d
@@ -502,7 +503,7 @@ contains
     PLocald = zero
 
     domainLoop: do nn=1, nDom
-       call setPointers(nn, 1, sps)
+       call setPointers_d(nn, 1, sps)
 
        ! Loop over each region
        regionLoop: do iRegion=1, nActuatorRegions
@@ -533,7 +534,7 @@ contains
     use constants
     use blockPointers, only : vol, dw, w, nDom
     use flowVarRefState, only : Pref, uRef
-    use utils, only : setPointers
+    use utils, only : setPointers_b
     use sorting, only : famInList
     use actuatorRegionData
     use residuals_b, only : sourceTerms_block_b
@@ -557,7 +558,7 @@ contains
     PLocald = localValuesd(iPower)
 
     domainLoop: do nn=1, nDom
-       call setPointers(nn, 1, sps)
+       call setPointers_b(nn, 1, sps)
 
        ! Loop over each region
        regionLoop: do iRegion=1, nActuatorRegions

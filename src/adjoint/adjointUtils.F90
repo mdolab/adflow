@@ -1056,8 +1056,9 @@ contains
 
     ! And the reverse seeds in the actuator zones
     do i=1, nActuatorRegions
-       actuatorRegionsd(i)%F = zero
-       actuatorRegionsd(i)%T = zero
+       actuatorRegionsd(i)%force = zero
+       actuatorRegionsd(i)%torque = zero
+       actuatorRegionsd(i)%heat = zero
     end do
 
   end subroutine zeroADSeeds
@@ -1457,10 +1458,6 @@ contains
        ! number  of iterations is set to 1, this ksp object is transparent.
 
        call KSPSetType(master_PC_KSP, 'richardson', ierr)
-       call EChk(ierr, __FILE__, __LINE__)
-
-       call KSPMonitorSet(master_PC_KSP, MyKSPMonitor, PETSC_NULL_FUNCTION, &
-            PETSC_NULL_FUNCTION, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
        ! Important to set the norm-type to None for efficiency.

@@ -104,7 +104,7 @@ isosurface:
 
 isoVariables:
   desc: >
-    The state variables to be included on the isosurfaces requested with the ``isosurface`` option.
+    The state variables to be included on the isosurfaces requested with the :py:data:`isosurface` option.
 
 viscousSurfaceVelocities:
   desc: >
@@ -127,7 +127,7 @@ discretization:
 coarseDiscretization:
   desc: >
     Set the discretization method for the coarse grid.
-    Generally should be the same as the ``discretization`` option.
+    Generally should be the same as the :py:data:`discretization` option.
   central plus scalar dissipation: Uses a central finite volume scheme with JST scalar dissipation.
   central plus matrix dissipation: >
     Uses a central finite volume scheme with JST matrix dissipation.
@@ -152,7 +152,7 @@ smoother:
 
 equationType:
   desc: >
-    The type of equations to solve. 
+    The type of equations to solve.
   Euler: Euler
   laminar NS: laminar Navier-Stokes
   RANS: Reynolds-averaged Navier-Stokes
@@ -197,7 +197,7 @@ turbResScale:
     The defaults are usually sufficient.
     Depending on the turbulence model, values can be a float scalar to a 4 element list of floats.
     Refer to the list below for the defaults and the type of input expected:
-    
+
       * ``SA`` - Type: float scalar - Default: 10e4
       * ``SA-Edwards`` - NOT IMPLEMENTED
       * ``k-omega Wilcox`` - NOT IMPLEMENTED
@@ -294,8 +294,6 @@ restrictionRelaxation:
 liftIndex:
   desc: >
     Specify the coordinate index that will be considered the lift direction.
-    If not supplied, this parameter will be determined automatically if there are symmetry planes present in the grid.
-    Otherwise, it must be supplied.
   2: y-axis
   3: z-axis
 
@@ -317,7 +315,7 @@ infChangeCorrection:
     As a result, the solver logic can do weird stuff because it is often based on the L2 norm of the residual.
     If this option is set to True, we do a simple linear adjustment of every velocity vector in the solution with the same change in alpha.
     As a result, the residuals jump up and the solver logic works as designed.
-    This supersedes the ``RKReset`` approach.
+    This supersedes the :py:data:`RKReset` approach.
 
 cavitationNumber:
   desc: >
@@ -402,15 +400,15 @@ smoothParameter:
 CFLLimit:
   desc: >
     The maximum CFL that can be run without residual smoothing.
-    If the actual CFL is lower than this, no smoothing will be applied, regardless of the ``resAveraging`` option.
+    If the actual CFL is lower than this, no smoothing will be applied, regardless of the :py:data:`resAveraging` option.
 
 useBlockettes:
   desc: >
     Helps speed up residual calculations by working with a smaller subset of data, reducing the number of cache misses.
     These subsets of data are fractions of the initial block size and thus are called blockettes.
-    The amount of speedup is problem dependent but ranges from 2-3 times. 
+    The amount of speedup is problem dependent but ranges from 2-3 times.
     This option has not been exhaustively tested and has been found to cause errors in the past.
-    Verify that it does not change your results. 
+    Verify that it does not change your results.
 
 useLinResMonitor:
   desc: >
@@ -441,7 +439,7 @@ overlapFactor:
 oversetLoadBalance:
   desc: >
     Toggle whether to use load balancing for the implicit hole cutting connectivity algorithm.
-    Results with and without load balancing are shown in "An Efficient Parallel Overset Method for Aerodynamic Shape Optimization" (Kenway2017a). 
+    Results with and without load balancing are shown in "An Efficient Parallel Overset Method for Aerodynamic Shape Optimization" (Kenway2017a).
 
 debugZipper:
   desc: >
@@ -459,17 +457,17 @@ cutCallback:
     To do this, ADflow internally sets the flagged cells as a flood seed cell.
     The ``cutCallback`` function is called from pyADflow and the user filled array ``flags`` is used to determine which cells are flagged.
     The function signature looks like this:
-    
+
       .. code-block:: python
-    
+
         def cutCallback(xCen, CGNSZoneNameIDs, cellIDs, flags):
            flags[xCen[:, 1] < 0] = 1
-       
+
     The user would then provide this in the option dictionary as: ``"cutCallback": cutCallback``.
     The ``xCen`` array returns the center coordinates of the cells.
     ``CGNSZoneNameIDs`` and ``cellIDs`` can also be used to figure out the blanking pattern.
     ``flags`` is the NumPy array we fill and return back to pyADflow.
-    
+
     In this example, we have a symmetry plane on the x-z surface, and we want to only use the +y half of the 3D coordinate system.
     Therefore, we are flagging every cell where the y-component of the center coordinate (index 0:x, 1:y, 2:z) has a negative value.
     The flags array is initialized to zero internally by pyADflow, and a value of 1 for a cell tags it for flooding.
@@ -492,10 +490,17 @@ nRefine:
   desc: >
     The maximum number of refinement loop iterations used in the implicit hole cutting method.
 
+nFloodIter:
+  desc: >
+    Number of iterations for the flooding algorithm at each overset hole cutting iteration.
+    Only useful for debugging meshes that flood completely on the first iteration of the overset.
+    The default is set to -1, which will be inactive and run the flooding algorithm until the flooded cells stop changing.
+    Setting a positive integer value will stop the flooding algorithm at the prescribed number of iterations.
+
 useZipperMesh:
   desc: >
     Determine whether a zipper mesh will be used.
-    Zipper meshes are required to accurately compute integrated quantities (such as lift and drag) when the surface meshes of interest overlap. 
+    Zipper meshes are required to accurately compute integrated quantities (such as lift and drag) when the surface meshes of interest overlap.
 
 useOversetWallScaling:
   desc: >
@@ -561,7 +566,7 @@ coupledSolution:
 timeIntervals:
   desc: >
     The number of "spectral instances" to use for a time spectral simulation.
-    This option is only meaningful when ``equationMode`` is ``time spectral``.
+    This option is only meaningful when :py:data:`equationMode` is ``time spectral``.
 
 alphaMode:
   desc: >
@@ -643,7 +648,7 @@ NKSubspaceSize:
 NKLinearSolveTol:
   desc: >
     The initial tolerance to solve the linear system resulting from the Newton approximation.
-    This value is only used for the first iteration if ``NKUseEW`` is True.
+    This value is only used for the first iteration if :py:data:`NKUseEW` is True.
 
 NKUseEW:
   desc: >
@@ -712,19 +717,19 @@ NKLS:
   cubic: Cubic interpolation
   none: No line search
   non-monotone: Non-monotone line search
-  
+
 NKFixedStep:
   desc: >
     The step size for the NK solver with no line search (``"NKLS": "none"``).
 
 RKReset:
   desc: >
-    Option to run ``nRKReset`` Runge-Kutta startup iterations when using the NK solver and restarting from a previously converged solution.
+    Option to run :py:data:`nRKReset` Runge-Kutta startup iterations when using the NK solver and restarting from a previously converged solution.
     This allows the residual to increase and prevents the NK solver from stalling.
 
 nRKReset:
   desc: >
-    The number of Runge-Kutta startup iterations to run when ``RKReset`` is True.
+    The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
 
 AGMGLevels:
   desc: >
@@ -773,11 +778,11 @@ ANKLinResMax:
 
 ANKASMOverlap:
   desc: >
-    Similar to the ``NKASMOverlap`` option but for the ANK solver.
+    Similar to the :py:data:`NKASMOverlap` option but for the ANK solver.
 
 ANKPCILUFill:
   desc: >
-    Similar to the ``NKPCILUFill`` option but for the ANK solver.
+    Similar to the :py:data:`NKPCILUFill` option but for the ANK solver.
 
 ANKJacobianLag:
   desc: >
@@ -788,11 +793,11 @@ ANKJacobianLag:
 
 ANKInnerPreconIts:
   desc: >
-    Similar to the ``NKInnerPreconIts`` option but for the ANK solver.
+    Similar to the :py:data:`NKInnerPreconIts` option but for the ANK solver.
 
 ANKOuterPreconIts:
   desc: >
-    Similar to the ``NKOuterPreconIts`` option but for the ANK solver.
+    Similar to the :py:data:`NKOuterPreconIts` option but for the ANK solver.
 
 ANKCFL0:
   desc: >
@@ -960,7 +965,7 @@ monitorVariables:
   desc: >
     List of the variables whose convergence should be monitored.
     The possible monitoring variables are:
-    
+
       * ``resrho`` (density residual)
       * ``resmom`` (momentum residuals)
       * ``resrhoe`` (total energy residual)
@@ -986,7 +991,7 @@ surfaceVariables:
   desc: >
     The variables which are written to the CGNS surface solution file.
     The available keywords are:
-    
+
       * ``rho`` (density)
       * ``p`` (pressure)
       * ``temp`` (temperature)
@@ -1009,7 +1014,7 @@ volumeVariables:
   desc: >
     The variables which are, in addition to the variables needed for the restart, written to the CGNS volume solution file.
     The available keywords are:
-    
+
       * ``mx`` (momentum in x-direction)
       * ``my`` (momentum in y-direction)
       * ``mz`` (momentum in z-direction)
@@ -1038,7 +1043,7 @@ forcesAsTractions:
 
 adjointL2Convergence:
   desc: >
-    Adjoint solution tolerance relative to the initial residual.    
+    Adjoint solution tolerance relative to the initial residual.
 
 adjointL2ConvergenceRel:
   desc: >

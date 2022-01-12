@@ -1,6 +1,4 @@
-
 class DummyOptProb(object):
-
     def __init__(self):
         self.variables = []
         self.constraints = []
@@ -30,14 +28,14 @@ def get_dvs_and_cons(ap=None, geo=None, con=None):
         ap_vars = DummyOptProb()
         ap.addVariablesPyOpt(ap_vars)
         vars.extend(ap_vars.variables)
-        # for long_name, dv in ap.DVs.items(): 
-        #     dv_data = {'scalar': True, 
-        #                'value': dv.value, 
-        #                'lower': dv.lower, 
-        #                'upper': dv.upper, 
-        #                'scale': dv.scale, 
-        #                'offset': dv.offset, 
-        #                'units': dv.units} 
+        # for long_name, dv in ap.DVs.items():
+        #     dv_data = {'scalar': True,
+        #                'value': dv.value,
+        #                'lower': dv.lower,
+        #                'upper': dv.upper,
+        #                'scale': dv.scale,
+        #                'offset': dv.offset,
+        #                'units': dv.units}
         #     vars.append(((dv.key, 1, 'c'), dv_data))
 
     if geo is not None:

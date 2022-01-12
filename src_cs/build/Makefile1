@@ -1,4 +1,4 @@
-# Becuase make is stupid.
+# Because make is stupid.
 include ../../config/config.mk
 include ../../src/build/fileList
 include ../../src/build/directoryList
@@ -14,8 +14,6 @@ includeFiles:=	metis-4.0/defs.h\
 		f2py/checkPyfForUpperCase.py\
 		f2py/get_f2py.py\
 		f2py/pyf_preprocessor.py\
-		modules/complexify.f90\
-
 
 # Filter out the precision.F90 file. That is set manually.
 fortranFiles:=$(filter-out modules/precision.F90,$(fortranFiles))
@@ -28,6 +26,7 @@ complexify:
 		echo Checking $$file $$realFile $$cmplxFile; \
 		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
 			python complexify.py $$realFile; \
+			echo Complexifying $$file $$realFile $$cmplxFile; \
 			mv newFile $$cmplxFile; \
 		fi;\
 	done
@@ -35,22 +34,31 @@ complexify:
 	@for file in $(f77Files); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
-		echo Copying $$file $$realFile $$cmplxFile; \
-		cp $$realFile $$cmplxFile; \
+		echo Checking $$file $$realFile $$cmplxFile; \
+		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
+			echo Copying $$file $$realFile $$cmplxFile; \
+			cp $$realFile $$cmplxFile; \
+		fi;\
 	done
 
 	@for file in $(cFiles); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
-		echo Copying $$file $$realFile $$cmplxFile; \
-		cp $$realFile $$cmplxFile; \
+		echo Checking $$file $$realFile $$cmplxFile; \
+		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
+			echo Copying $$file $$realFile $$cmplxFile; \
+			cp $$realFile $$cmplxFile; \
+		fi;\
 	done
 
 	@for file in $(includeFiles); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
-		echo Copying $$file $$realFile $$cmplxFile; \
-		cp $$realFile $$cmplxFile; \
+		echo Checking $$file $$realFile $$cmplxFile; \
+		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
+			echo Copying $$file $$realFile $$cmplxFile; \
+			cp $$realFile $$cmplxFile; \
+		fi;\
 	done
 
 
