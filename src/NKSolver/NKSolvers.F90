@@ -3007,7 +3007,7 @@ contains
                    ovv = one/volRef(i,j,k)
                    do l=nt1, nt2
                       ii = ii + 1
-                      rvec_pointer(ii) = dw(i, j, k, l)*ovv*turbResScale(1)
+                      rvec_pointer(ii) = dw(i, j, k, l)*ovv*turbResScale(l-nt1+1)
                    end do
                 end do
              end do
