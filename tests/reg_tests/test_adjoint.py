@@ -31,10 +31,10 @@ import reg_test_classes
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
-def setDVGeo(ffdFile, cmplx=False):
+def getDVGeo(ffdFile, isComplex=False):
 
     # Setup geometry/mesh
-    DVGeo = DVGeometry(ffdFile, complex=cmplx)
+    DVGeo = DVGeometry(ffdFile, isComplex=isComplex)
 
     nTwist = 6
     DVGeo.addRefAxis(
@@ -282,7 +282,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
-        self.CFDSolver.setDVGeo(setDVGeo(self.ffdFile, cmplx=False))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False))
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
             rotRate_x = 1.5384615384615385
@@ -341,7 +341,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.CFDSolver = ADFLOW_C(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
-        self.CFDSolver.setDVGeo(setDVGeo(self.ffdFile, cmplx=True))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True))
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
