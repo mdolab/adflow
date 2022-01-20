@@ -554,6 +554,14 @@ useALE:
   desc: >
     Use the arbitrary Lagrangian-Eulerian (ALE) formulation for unsteady mesh deformations.
 
+useExternalDynamicMesh:
+  desc: >
+    Use externally provided deformed mesh for the time spectral equation. Each time instance gets its own deformed grid. This can be used for both an aerodynamic case or an aeroelastic case.
+
+useTSInterpolatedGridVelocity:
+  desc: >
+    Use spectral differentiation to compute the grid velocity for the time spectral equation.
+
 useGridMotion:
   desc: >
     Whether or not a rigid body motion of the grid has been specified.
@@ -1056,6 +1064,11 @@ adjointL2ConvergenceAbs:
 adjointDivTol:
   desc: >
     The relative amount the adjoint residual can increase before the solver concludes that the method is diverging.
+
+adjointMaxL2DeviationFactor:
+  desc: >
+    Similar to :py:data:`maxL2DeviationFactor` but for the adjoint solution.
+    This factor is only applied to :py:data:`adjointL2Convergence`.
 
 approxPC:
   desc: >

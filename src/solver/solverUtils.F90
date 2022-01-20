@@ -384,12 +384,225 @@ contains
        ! Set the pointers for this block.
 
        call setPointers(nn, groundLevel, sps)
-       call gridVelocitiesFineLevel_block(useOldCoor, t, sps, nn)
+       if (.NOT. useTSInterpolatedGridVelocity) then
+         call gridVelocitiesFineLevel_block(useOldCoor, t, sps, nn)
+       else
+         call gridVelocitiesFineLevel_TS_block(nn, sps)
+       end if
 
     end do domains
 
   end subroutine gridVelocitiesFineLevel
 #endif
+
+  subroutine gridVelocitiesFineLevel_TS_block(nn, sps)
+
+    use precision
+    use constants
+    use blockPointers
+    use inputPhysics, only: machgrid, velDirFreestream
+    use flowVarRefState, only: gammaInf, pInf, rhoInf
+    use inputTimeSpectral, only: dscalar, nTimeIntervalsSpectral
+
+    integer(kind=intType), intent(in) :: nn, sps
+    integer :: i, j, k, mm, ii, ie_l, je_l, ke_l
+    real(kind=realType) :: x_vc, y_vc, z_vc
+    real(kind=realType) :: x_fc, y_fc, z_fc
+    real(kind=realType) :: aInf
+    real(kind=realType) :: velxFreestream, velyFreestream, velzFreestream
+     
+    ! get the grid free stream velocity
+    aInf = sqrt(gammaInf*pInf/rhoInf)
+    velxFreestream = (aInf*machgrid)*(-velDirFreestream(1))
+    velyFreestream = (aInf*machgrid)*(-velDirFreestream(2))
+    velzFreestream = (aInf*machgrid)*(-velDirFreestream(3))
+
+    ! Grid velocities of the cell centers, including the
+    ! 1st level halo cells.
+
+    ! Initialize with free stream velocity
+    ie_l = flowDoms(nn, 1, sps)%ie
+    je_l = flowDoms(nn, 1, sps)%je
+    ke_l = flowDoms(nn, 1, sps)%ke  
+
+    do k=1, ke_l
+       do j=1, je_l
+          do i=1, ie_l
+
+             s(i, j, k, 1) = velxFreestream
+             s(i, j, k, 2) = velyFreestream             
+             s(i, j, k, 3) = velzFreestream
+
+          end do
+       end do
+    end do
+
+    ! The velocity contributed from mesh deformation 
+    do mm=1, nTimeIntervalsSpectral
+
+       ie_l = flowDoms(nn, 1, mm)%ie
+       je_l = flowDoms(nn, 1, mm)%je
+       ke_l = flowDoms(nn, 1, mm)%ke
+       
+       do k=1,ke_l
+          do j=1,je_l
+             do i=1,ie_l
+
+                x_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,1) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,1) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k-1,1) + flowDoms(nn, 1, mm)%x(i,j,  k-1,1) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  1) + flowDoms(nn, 1, mm)%x(i,j-1,k,  1) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  1) + flowDoms(nn, 1, mm)%x(i,j,  k,  1))
+
+                y_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,2) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,2) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k-1,2) + flowDoms(nn, 1, mm)%x(i,j,  k-1,2) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  2) + flowDoms(nn, 1, mm)%x(i,j-1,k,  2) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  2) + flowDoms(nn, 1, mm)%x(i,j,  k,  2))
+
+	              z_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,3) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,3) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k-1,3) + flowDoms(nn, 1, mm)%x(i,j,  k-1,3) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  3) + flowDoms(nn, 1, mm)%x(i,j-1,k,  3) &
+                     +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  3) + flowDoms(nn, 1, mm)%x(i,j,  k,  3))
+
+
+                s(i,j,k,1) = s(i,j,k,1) + dscalar(1, sps, mm)*x_vc
+                s(i,j,k,2) = s(i,j,k,2) + dscalar(1, sps, mm)*y_vc
+                s(i,j,k,3) = s(i,j,k,3) + dscalar(1, sps, mm)*z_vc
+
+             end do
+          end do
+       end do
+
+    end do
+     
+    ! Normal grid velocities of the faces.
+
+    ! sFaceI=	dot(sI, v)
+    ! =dot(sI, v_freestream + v_meshmotion)
+    ! =dot(sI, v_freestream) + dot(sI, v_meshmotion)
+
+    ! sFaceJ, sFaceK follow the same rule.
+
+    ! dot(sI, v_freestream)
+    ie_l = flowDoms(nn, 1, sps)%ie
+    je_l = flowDoms(nn, 1, sps)%je
+    ke_l = flowDoms(nn, 1, sps)%ke  
+
+
+    ! i
+    do k=1, ke_l
+       do j=1, je_l
+          do i=0, ie_l
+
+             sFaceI(i, j, k) = velxFreestream*sI(i, j, k, 1) + velyFreestream*sI(i, j, k, 2) &
+                             + velzFreestream*sI(i, j, k, 3)
+
+
+          end do
+       end do
+    end do
+
+    ! j
+    do k=1, ke_l
+       do j=0, je_l
+          do i=1, ie_l
+
+             sFaceJ(i, j, k) = velxFreestream*sJ(i, j, k, 1) + velyFreestream*sJ(i, j, k, 2) &
+                             + velzFreestream*sJ(i, j, k, 3)
+
+
+          end do
+       end do
+    end do
+
+    ! k
+    do k=0, ke_l
+       do j=1, je_l
+          do i=1, ie_l
+
+             sFaceK(i, j, k) = velxFreestream*sK(i, j, k, 1) + velyFreestream*sK(i, j, k, 2) &
+                             + velzFreestream*sK(i, j, k, 3)
+
+
+          end do
+       end do
+    end do
+
+
+    !  dot(sI, v_meshmotion)
+
+    do mm=1,nTimeIntervalsSpectral
+
+       ie_l = flowDoms(nn, 1, mm)%ie
+       je_l = flowDoms(nn, 1, mm)%je
+       ke_l = flowDoms(nn, 1, mm)%ke
+
+
+       ! i
+       do k=1, ke_l
+          do j=1, je_l
+             do i=0, ie_l
+   
+                x_fc = fourth*(flowDoms(nn, 1, mm)%x(  i,j-1,k-1, 1) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 1)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 1) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 1))
+                y_fc = fourth*(flowDoms(nn, 1, mm)%x(  i,j-1,k-1, 2) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 2)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 2) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 2))
+                z_fc = fourth*(flowDoms(nn, 1, mm)%x(  i,j-1,k-1, 3) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 3)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 3) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 3))
+
+                sFaceI(i, j, k) = sFaceI(i, j, k) & 
+                                + dscalar(1, sps, mm)*x_fc*sI(i, j, k, 1) &
+                                + dscalar(1, sps, mm)*y_fc*sI(i, j, k, 2) &
+                                + dscalar(1, sps, mm)*z_fc*sI(i, j, k, 3)                
+
+             end do
+          end do
+       end do       
+
+       ! j
+       do k=1, ke_l
+          do j=0, je_l
+             do i=1, ie_l
+   
+                x_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,  j,k-1, 1) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 1)&
+                             + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 1) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 1))
+                y_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,  j,k-1, 2) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 2)&
+                             + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 2) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 2))
+                z_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,  j,k-1, 3) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 3)&
+                             + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 3) + flowDoms(nn, 1, mm)%x(  i,  j,k-1, 3))
+
+                sFaceJ(i, j, k) = sFaceJ(i, j, k)                          & 
+                                + dscalar(1, sps, mm)*x_fc*sJ(i, j, k, 1) &
+                                + dscalar(1, sps, mm)*y_fc*sJ(i, j, k, 2) &
+                                + dscalar(1, sps, mm)*z_fc*sJ(i, j, k, 3)              
+
+             end do
+          end do
+       end do
+
+       ! k
+       do k=0, ke_l
+          do j=1, je_l
+             do i=1, ie_l
+   
+                x_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,j-1,  k, 1) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 1)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 1) + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 1))
+                y_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,j-1,  k, 2) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 2)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 2) + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 2))
+                z_fc = fourth*(flowDoms(nn, 1, mm)%x(i-1,j-1,  k, 3) + flowDoms(nn, 1, mm)%x(  i,  j,  k, 3)&
+                             + flowDoms(nn, 1, mm)%x(  i,j-1,  k, 3) + flowDoms(nn, 1, mm)%x(i-1,  j,  k, 3))
+
+                sFaceK(i, j, k) = sFaceK(i, j, k)                          & 
+                                + dscalar(1, sps, mm)*x_fc*sK(i, j, k, 1) &
+                                + dscalar(1, sps, mm)*y_fc*sK(i, j, k, 2) &
+                                + dscalar(1, sps, mm)*z_fc*sK(i, j, k, 3)               
+
+             end do
+          end do
+       end do  
+     
+    end do
+
+  end subroutine gridVelocitiesFineLevel_TS_block
 
   subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps, nn)
     !
