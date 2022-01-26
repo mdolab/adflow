@@ -3967,7 +3967,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputAdjoint, only : frozenTurbulence
     use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
-         psi_like1, psi_like2, x_like, psi_like3
+         psi_like1, psi_like2, x_like, psi_like3, adjointPETScPreProcVarsAllocated
     use utils, only : setPointers, EChk
 #include <petsc/finclude/petsc.h>
     use petsc
@@ -4018,7 +4018,9 @@ contains
     call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,x_like,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
-
+    
+    adjointPETScPreProcVarsAllocated = .True.
+    
     ! Need to initialize the stencils as well, only once:
     call initialize_stencils
 
