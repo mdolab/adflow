@@ -2151,7 +2151,7 @@ contains
 
   function checkOversetPresent()
 
-    ! This routine determines if there are any oveset boundaries
+    ! This routine determines if there are any overset boundaries
     ! present in the mesh.
 
     use constants
