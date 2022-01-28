@@ -1590,7 +1590,7 @@ contains
           case (iBCGroupFarfield)
              write(*,"(a)",advance="no") '| Farfield Types       : '
           case (iBCGroupOverset)
-             write(*,"(a)",advance="no") '| Oveset Types         : '
+             write(*,"(a)",advance="no") '| Overset Types        : '
           case (iBCGroupOther)
              write(*,"(a)",advance="no") '| Other Types          : '
           end select
