@@ -3758,6 +3758,8 @@ class ADFLOW(AeroSolver):
         funcDeriv=False,
         fDeriv=False,
         groupName=None,
+        mode="AD",
+        h=None,
     ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
@@ -3780,12 +3782,16 @@ class ADFLOW(AeroSolver):
         funcDeriv : bool
             Flag specifiying if the derviative of the cost functions
             (as defined in the current aeroproblem) should be returned.
-        Fderiv : bool
+        fderiv : bool
             Flag specifiying if the derviative of the surface forces (tractions)
             should be returned
         groupName : str
             Optional group name to use for evaluating functions. Defaults to all
             surfaces.
+        mode : str ["AD", "FD", or "CS"]
+            Specifies how the jacobian vector products will be computed.
+        h : float
+            Step sized used when the mode is "FD" or "CS
 
         Returns
         -------
@@ -3794,7 +3800,7 @@ class ADFLOW(AeroSolver):
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
-            raise Error("computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot " "all be None")
+            raise Error("computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot all be None")
 
         self._setAeroDVs()
         nTime = self.adflow.inputtimespectral.ntimeintervalsspectral
@@ -3889,23 +3895,70 @@ class ADFLOW(AeroSolver):
         else:
             famLists = self._expandGroupNames(groupNames)
 
-        # Extract any possibly BC daa
-        dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot,
-            extradot,
-            wdot,
-            bcDataValuesdot,
-            useSpatial,
-            useState,
-            famLists,
-            bcDataNames,
-            bcDataValues,
-            bcDataFamLists,
-            bcVarsEmpty,
-            costSize,
-            max(1, fSize),
-            nTime,
-        )
+        if mode == "AD":
+            dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
+                xvdot,
+                extradot,
+                wdot,
+                bcDataValuesdot,
+                useSpatial,
+                useState,
+                famLists,
+                bcDataNames,
+                bcDataValues,
+                bcDataFamLists,
+                bcVarsEmpty,
+                costSize,
+                max(1, fSize),
+                nTime,
+            )
+        elif mode == "FD":
+            if h is None:
+                raise Error("if mode 'FD' is used, a stepsize must be specified using the kwarg 'h'")
+
+            dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdfd(
+                xvdot,
+                extradot,
+                wdot,
+                bcDataValuesdot,
+                useSpatial,
+                useState,
+                famLists,
+                bcDataNames,
+                bcDataValues,
+                bcDataFamLists,
+                bcVarsEmpty,
+                costSize,
+                max(1, fSize),
+                nTime,
+                h,
+            )
+        elif mode == "CS":
+            if h is None:
+                raise Error("if mode 'CS' is used, a stepsize must be specified using the kwarg 'h'")
+
+            if self.dtype == "D":
+                dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdcs(
+                    xvdot,
+                    extradot,
+                    wdot,
+                    bcDataValuesdot,
+                    useSpatial,
+                    useState,
+                    famLists,
+                    bcDataNames,
+                    bcDataValues,
+                    bcDataFamLists,
+                    bcVarsEmpty,
+                    costSize,
+                    max(1, fSize),
+                    nTime,
+                    h,
+                )
+            else:
+                raise Error("Complexified ADflow must be used to apply the complex step")
+        else:
+            raise Error(f"mode {mode} for computeJacobianVectorProductFwd not availiable")
 
         # Explictly put fdot to nothing if size is zero
         if fSize == 0:
@@ -4154,6 +4207,28 @@ class ADFLOW(AeroSolver):
 
         # Single return (most frequent) is 'clean', otherwise a tuple.
         return tuple(returns) if len(returns) > 1 else returns[0]
+
+    def computeJacobianVectorProductBwdFast(
+        self,
+        resBar=None,
+    ):
+        """
+        This fast routine computes only the derivatives of the residuals with respect to the states.
+        This is the operator used for the matrix-free solution of the adjoint system.
+
+        Parameters
+        ----------
+        resBar : numpy array
+            Seed for the residuals (dwb in adflow)
+
+        Returns
+        -------
+        wbar: array
+            state derivative seeds
+        """
+        wbar = self.adflow.adjointapi.computematrixfreeproductbwdfast(resBar, self.getAdjointStateSize())
+
+        return wbar
 
     def mapVector(self, vec1, groupName1, groupName2, vec2=None, includeZipper=True):
         """This is the main workhorse routine of everything that deals with
