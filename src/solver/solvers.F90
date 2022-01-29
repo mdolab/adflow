@@ -1663,11 +1663,11 @@ contains
 
                ! we can do a shorter print for residuals because only the leading few digits
                ! and the exponents are important anyways
-               write(*,'(e16.8,SP,e17.8E3,"i")',advance="no") monGlob(mm)
+               write(*,'(es16.8,SP,es17.8E3,"i")',advance="no") monGlob(mm)
 
             case default
                ! we need to do the regular full print for functionals because they are useful
-               write(*,'(e24.16,SP,e25.16E3,"i")',advance="no") monGlob(mm)
+               write(*,'(es24.16,SP,es25.16E3,"i")',advance="no") monGlob(mm)
             end select
 #endif
           end if

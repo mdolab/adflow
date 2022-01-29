@@ -1019,7 +1019,7 @@ contains
 100                   format("# Symmetry boundary face",1X,A,1X,"of zone", &
                            1x,a,1x, "is not planar.")
 110                   format("# Maximum deviation from the mean normal: ", &
-                           e12.5, " degrees")
+                           es12.5, " degrees")
 
                    endif
 
