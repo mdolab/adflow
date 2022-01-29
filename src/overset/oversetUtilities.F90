@@ -2314,7 +2314,7 @@ contains
                      x(i-1, j  , k  , :) + &
                      x(i  , j  , k  , :))
 
-                write(19, "(E18.10, E18.10, E18.10, I3)") xp(1), xp(2), xp(3), iblank(i, j, k)
+                write(19, "(es18.10, E18.10, E18.10, I3)") xp(1), xp(2), xp(3), iblank(i, j, k)
              end do
           end do
        end do

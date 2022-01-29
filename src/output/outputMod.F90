@@ -2723,7 +2723,7 @@ contains
 
        write(integerString,"(i7)") timeStepUnsteady + &
             nTimeStepsRestart
-       write(realString,"(e12.5)") timeUnsteady + &
+       write(realString,"(es12.5)") timeUnsteady + &
             timeUnsteadyRestart
 
        integerString = adjustl(integerString)

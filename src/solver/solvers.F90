@@ -1552,7 +1552,7 @@ contains
 
                 write(*,"(i6,1x)",advance="no") timeStepUnsteady + &
                      nTimeStepsRestart
-                write(*,"(e12.5,1x)",advance="no") timeUnsteady + &
+                write(*,"(es12.5,1x)",advance="no") timeUnsteady + &
                      timeUnsteadyRestart
 
              else if(equationMode == timeSpectral) then
@@ -1571,9 +1571,9 @@ contains
                    write(*,"(a,1x)", advance="no") "    ----  "
                 else
 #ifndef USE_COMPLEX
-                   write(*,"(e10.2,1x)",advance="no") CFLMonitor
+                   write(*,"(es10.2,1x)",advance="no") CFLMonitor
 #else
-                   write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
+                   write(*,"(es10.2,1x)",advance="no") real(CFLMonitor)
 #endif
                 end if
 
@@ -1602,9 +1602,9 @@ contains
 
                 if( showCPU ) then
 #ifndef USE_COMPLEX
-                   write(*,"(e12.5,1x)",advance="no") mpi_wtime() - t0Solver
+                   write(*,"(es12.5,1x)",advance="no") mpi_wtime() - t0Solver
 #else
-                   write(*,"(e12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
+                   write(*,"(es12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
 #endif
                 end if
              end if
@@ -1650,7 +1650,7 @@ contains
           if (myid == 0 .and. printIterations) then
              ! Write the convergence info to stdout.
 #ifndef USE_COMPLEX
-             write(*,"(e24.16,1x)",advance="no") monGlob(mm)
+             write(*,"(es24.16,1x)",advance="no") monGlob(mm)
 #else
             select case (monNames(mm))
 
