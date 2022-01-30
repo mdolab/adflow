@@ -16,7 +16,8 @@ contains
     use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf, &
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
-&   machcoef, lengthref, alpha, beta, liftindex
+&   machcoef, lengthref, alpha, beta, liftindex, cavitationnumber, &
+&   cavitationrho
     use inputtsstabderiv, only : tsstability
     use utils_fast_b, only : computetsderivatives
     use flowutils_fast_b, only : getdirvector
@@ -38,6 +39,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
+    intrinsic log
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -259,6 +261,9 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! final part of the ks computation
+    funcvalues(costfunccavitation) = 2*cavitationnumber + log(funcvalues&
+&     (costfunccavitation))/cavitationrho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -284,7 +289,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cavitationnumber
+&   equations, momentaxis, cavitationnumber, cavitationrho
     use bcpointers_fast_b
     implicit none
 ! input/output variables
@@ -457,9 +462,11 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
-        sensor1 = sensor1*cellarea*blk
+! sensor1 = -cp - cavitationnumber
+! sensor1 = one/(one+exp(-2*10*sensor1))
+! sensor1 = sensor1 * cellarea * blk
+! ks formulation with a fixed cpmin at 2 sigmas
+        sensor1 = exp(cavitationrho*(-cp-2*cavitationnumber))
         cavitation = cavitation + sensor1
       end if
     end do

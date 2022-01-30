@@ -25,7 +25,8 @@ contains
 &   trefd, lref, gammainf, pinf, pinfd, uref, urefd, uinf, uinfd
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
-&   lengthref, alpha, alphad, beta, betad, liftindex
+&   lengthref, alpha, alphad, beta, betad, liftindex, cavitationnumber, &
+&   cavitationrho
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector, getdirvector_b
@@ -55,6 +56,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
+    intrinsic log
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmp0
     real(kind=realtype) :: tmp1
@@ -332,10 +334,19 @@ contains
 &     funcvalues(costfuncforcezcoefviscous)*dragdirection(3)
     call pushreal8(funcvalues(costfuncdragcoefviscous))
     funcvalues(costfuncdragcoefviscous) = tmp13
+    tmp14 = funcvalues(costfuncforcexcoefmomentum)*dragdirection(1) + &
+&     funcvalues(costfuncforceycoefmomentum)*dragdirection(2) + &
+&     funcvalues(costfuncforcezcoefmomentum)*dragdirection(3)
+    call pushreal8(funcvalues(costfuncdragcoefmomentum))
+    funcvalues(costfuncdragcoefmomentum) = tmp14
+! final part of the ks computation
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       stop
     else
+      funcvaluesd(costfunccavitation) = funcvaluesd(costfunccavitation)/&
+&       (cavitationrho*funcvalues(costfunccavitation))
+      call popreal8(funcvalues(costfuncdragcoefmomentum))
       tmpd = funcvaluesd(costfuncdragcoefmomentum)
       funcvaluesd(costfuncdragcoefmomentum) = 0.0_8
       funcvaluesd(costfuncforcexcoefmomentum) = funcvaluesd(&
@@ -771,7 +782,8 @@ contains
     use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf, &
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
-&   machcoef, lengthref, alpha, beta, liftindex
+&   machcoef, lengthref, alpha, beta, liftindex, cavitationnumber, &
+&   cavitationrho
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector
@@ -793,6 +805,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
+    intrinsic log
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -1014,6 +1027,9 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! final part of the ks computation
+    funcvalues(costfunccavitation) = 2*cavitationnumber + log(funcvalues&
+&     (costfunccavitation))/cavitationrho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -1055,7 +1071,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cavitationnumber
+&   cavitationnumber, cavitationrho
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1126,9 +1142,7 @@ contains
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd19
     real(kind=realtype) :: tempd18
-    real(kind=realtype) :: temp6
     real(kind=realtype) :: tempd17
-    real(kind=realtype) :: temp5
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: temp4
     real(kind=realtype) :: tempd15
@@ -1270,9 +1284,11 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
-        sensor1 = sensor1*cellarea*blk
+! sensor1 = -cp - cavitationnumber
+! sensor1 = one/(one+exp(-2*10*sensor1))
+! sensor1 = sensor1 * cellarea * blk
+! ks formulation with a fixed cpmin at 2 sigmas
+        sensor1 = exp(cavitationrho*(-cp-2*cavitationnumber))
         cavitation = cavitation + sensor1
       end if
     end do
@@ -1573,17 +1589,13 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sensor1 = -cp - cavitationnumber
-        call pushreal8(sensor1)
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
+! sensor1 = -cp - cavitationnumber
+! sensor1 = one/(one+exp(-2*10*sensor1))
+! sensor1 = sensor1 * cellarea * blk
+! ks formulation with a fixed cpmin at 2 sigmas
         sensor1d = cavitationd
-        cellaread = blk*sensor1*sensor1d
-        sensor1d = blk*cellarea*sensor1d
-        call popreal8(sensor1)
-        temp6 = -(10*2*sensor1)
-        temp5 = one + exp(temp6)
-        sensor1d = exp(temp6)*one*10*2*sensor1d/temp5**2
-        cpd = -sensor1d
+        cpd = -(cavitationrho*exp(cavitationrho*((-2)*cavitationnumber-&
+&         cp))*sensor1d)
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
         pinfd = pinfd - tmp*cpd
@@ -1591,8 +1603,6 @@ contains
         machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp4**2
         tmp = two/(gammainf*pinf*machcoef*machcoef)
         pp2d(i, j) = pp2d(i, j) + plocald
-      else
-        cellaread = 0.0_8
       end if
       mxd = blk*mpd(1)
       myd = blk*mpd(2)
@@ -1625,7 +1635,7 @@ contains
       xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
       xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
       call popreal8(sensor)
-      cellaread = cellaread + blk*sensor*sensord
+      cellaread = blk*sensor*sensord
       sensord = blk*cellarea*sensord
       call popreal8(sensor)
       temp3 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
@@ -1766,7 +1776,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cavitationnumber
+&   equations, momentaxis, cavitationnumber, cavitationrho
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1939,9 +1949,11 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
-        sensor1 = sensor1*cellarea*blk
+! sensor1 = -cp - cavitationnumber
+! sensor1 = one/(one+exp(-2*10*sensor1))
+! sensor1 = sensor1 * cellarea * blk
+! ks formulation with a fixed cpmin at 2 sigmas
+        sensor1 = exp(cavitationrho*(-cp-2*cavitationnumber))
         cavitation = cavitation + sensor1
       end if
     end do

@@ -24,7 +24,8 @@ contains
 &   trefd, lref, gammainf, pinf, pinfd, uref, urefd, uinf, uinfd
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
-&   lengthref, alpha, alphad, beta, betad, liftindex
+&   lengthref, alpha, alphad, beta, betad, liftindex, cavitationnumber, &
+&   cavitationrho
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector, getdirvector_d
@@ -54,6 +55,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
+    intrinsic log
     real(kind=realtype) :: arg1
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
@@ -533,6 +535,11 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! final part of the ks computation
+    funcvaluesd(costfunccavitation) = funcvaluesd(costfunccavitation)/&
+&     funcvalues(costfunccavitation)/cavitationrho
+    funcvalues(costfunccavitation) = 2*cavitationnumber + log(funcvalues&
+&     (costfunccavitation))/cavitationrho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -547,7 +554,8 @@ contains
     use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf, &
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
-&   machcoef, lengthref, alpha, beta, liftindex
+&   machcoef, lengthref, alpha, beta, liftindex, cavitationnumber, &
+&   cavitationrho
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector
@@ -569,6 +577,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic sqrt
+    intrinsic log
     real(kind=realtype) :: arg1
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
@@ -792,6 +801,9 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! final part of the ks computation
+    funcvalues(costfunccavitation) = 2*cavitationnumber + log(funcvalues&
+&     (costfunccavitation))/cavitationrho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -831,7 +843,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cavitationnumber
+&   cavitationnumber, cavitationrho
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1114,13 +1126,13 @@ contains
         tmp = two/(gammainf*machcoef*machcoef)
         cpd = tmpd*(plocal-pinf) + tmp*(plocald-pinfd)
         cp = tmp*(plocal-pinf)
-        sensor1d = -cpd
-        sensor1 = -cp - cavitationnumber
-        sensor1d = -((-(one*2*10*sensor1d*exp(-(2*10*sensor1))))/(one+&
-&         exp(-(2*10*sensor1)))**2)
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
-        sensor1d = blk*(sensor1d*cellarea+sensor1*cellaread)
-        sensor1 = sensor1*cellarea*blk
+! sensor1 = -cp - cavitationnumber
+! sensor1 = one/(one+exp(-2*10*sensor1))
+! sensor1 = sensor1 * cellarea * blk
+! ks formulation with a fixed cpmin at 2 sigmas
+        sensor1d = -(cavitationrho*cpd*exp(cavitationrho*(-cp-2*&
+&         cavitationnumber)))
+        sensor1 = exp(cavitationrho*(-cp-2*cavitationnumber))
         cavitationd = cavitationd + sensor1d
         cavitation = cavitation + sensor1
       end if
@@ -1328,7 +1340,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cavitationnumber
+&   equations, momentaxis, cavitationnumber, cavitationrho
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1506,9 +1518,11 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-        sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
-        sensor1 = sensor1*cellarea*blk
+! sensor1 = -cp - cavitationnumber
+! sensor1 = one/(one+exp(-2*10*sensor1))
+! sensor1 = sensor1 * cellarea * blk
+! ks formulation with a fixed cpmin at 2 sigmas
+        sensor1 = exp(cavitationrho*(-cp-2*cavitationnumber))
         cavitation = cavitation + sensor1
       end if
     end do
