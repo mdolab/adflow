@@ -4729,6 +4729,7 @@ class ADFLOW(AeroSolver):
             "wallDistCutoff": [float, 1e20],
             "infChangeCorrection": [bool, True],
             "cavitationNumber": [float, 1.4],
+            "cavitationRho": [float, 100.0],
             # Common Parameters
             "nCycles": [int, 2000],
             "timeLimit": [float, -1.0],
@@ -5074,6 +5075,7 @@ class ADFLOW(AeroSolver):
             "forcesastractions": ["physics", "forcesastractions"],
             "lowspeedpreconditioner": ["discr", "lowspeedpreconditioner"],
             "cavitationnumber": ["physics", "cavitationnumber"],
+            "cavitationrho": ["physics", "cavitationrho"],
             # Common Parameters
             "ncycles": ["iter", "ncycles"],
             "timelimit": ["iter", "timelimit"],

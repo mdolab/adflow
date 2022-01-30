@@ -7,7 +7,9 @@ contains
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf, pInf, uRef, uInf
-    use inputPhysics, only : liftDirection, dragDirection, surfaceRef, machCoef, lengthRef, alpha, beta, liftIndex
+    use inputPhysics, only : liftDirection, dragDirection, surfaceRef, &
+    machCoef, lengthRef, alpha, beta, liftIndex, cavitationnumber, &
+    cavitationrho
     use inputTSStabDeriv, only : TSstability
     use utils, only : computeTSDerivatives
     use flowUtils, only : getDirVector
@@ -256,6 +258,9 @@ contains
          funcValues(costFuncForceYCoefMomentum)*dragDirection(2) + &
          funcValues(costFuncForceZCoefMomentum)*dragDirection(3)
 
+    ! final part of the KS computation
+    funcValues(costFuncCavitation) = 2 * cavitationnumber &
+         + log(funcValues(costFuncCavitation)) / cavitationrho
 
     ! -------------------- Time Spectral Objectives ------------------
 
@@ -311,7 +316,7 @@ contains
     use blockPointers
     use flowVarRefState
     use inputCostFunctions
-    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis, cavitationnumber
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis, cavitationnumber, cavitationrho
     use BCPointers
     implicit none
 
@@ -504,9 +509,11 @@ contains
           plocal = pp2(i,j)
           tmp = two/(gammaInf*MachCoef*MachCoef)
           Cp = tmp*(plocal-pinf)
-          Sensor1 = -Cp - cavitationnumber
-          Sensor1 = one/(one+exp(-2*10*Sensor1))
-          Sensor1 = Sensor1 * cellArea * blk
+          ! Sensor1 = -Cp - cavitationnumber
+          ! Sensor1 = one/(one+exp(-2*10*Sensor1))
+          ! Sensor1 = Sensor1 * cellArea * blk
+          ! KS formulation with a fixed CPmin at 2 sigmas
+          Sensor1 = exp(cavitationrho * (-Cp - 2 * cavitationnumber))
           Cavitation = Cavitation + Sensor1
        end if
     enddo
