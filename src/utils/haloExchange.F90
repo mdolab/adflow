@@ -1429,7 +1429,7 @@ contains
        commVarGamma, commLamVis, commEddyVis, &
        commPattern, internal)
     !
-    !       wOverset_b performs the *TRANSPOSE* operation of wOveset
+    !       wOverset_b performs the *TRANSPOSE* operation of wOverset
     !       It is used for adjoint/reverse mode residual evaluations.
     !      * See wOverset  for more information.
     !

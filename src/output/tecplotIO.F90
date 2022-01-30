@@ -563,7 +563,7 @@ contains
        liftDistNames(12) = "CDp"
        liftDistNames(13) = "CLv"
        liftDistNames(14) = "CDv"
-       liftDistNames(15) = "Ellptical"
+       liftDistNames(15) = "Elliptical"
        liftDistNames(16) = "thickness"
        liftDistNames(17) = "twist"
        liftDistNames(18) = "chord"

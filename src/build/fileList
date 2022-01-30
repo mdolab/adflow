@@ -9,6 +9,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/fortranPC.F90\
 		adjoint/masterRoutines.F90\
 		adjoint/adjointExtra.F90\
+		adjoint/adjointDebug.F90\
 		\
 		bcdata/BCData.F90\
 		\
