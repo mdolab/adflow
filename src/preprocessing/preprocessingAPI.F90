@@ -3512,8 +3512,8 @@ contains
                                     trim(intString3), &
                                     xc(1), xc(2), xc(3), -vol(i,j,k)
 102                            format("# Indices (",a,",",a,",",a,"), &
-                                    &coordinates (",e10.3,",",e10.3,",", &
-                                    e10.3,"), Volume: ",e10.3)
+                                    &coordinates (",es10.3,",",es10.3,",", &
+                                    es10.3,"), Volume: ",es10.3)
 
                             endif
                          enddo

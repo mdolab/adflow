@@ -1420,7 +1420,7 @@ contains
 110     format('ZONE T=',a, " I=", i5, " J=", i5)
         write(101, 110) trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
         write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
-13      format (E20.12)
+13      format (ES20.12)
 
         ! The 3 is for the three coordinate directions
         nNode = (iEnd - iBeg + 1)*(jEnd - jBeg + 1)

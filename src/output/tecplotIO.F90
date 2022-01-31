@@ -582,7 +582,7 @@ contains
           write (fileID,"(a,a,a)") "Zone T= """,trim(d%distName),""""
           write (fileID,*) "I= ",d%nSegments
           write (fileID,*) "DATAPACKING=BLOCK"
-15        format (E14.6)
+15        format (ES14.6)
        end if
 
        allocate(values(d%nSegments, nLiftDistVar))
@@ -2093,7 +2093,7 @@ contains
     if (slc%nNodes > 0) then
        write (fileID,*) "Nodes = ", slc%nNodes, " Elements= ",  size(slc%conn, 2), " ZONETYPE=FELINESEG"
        write (fileID,*) "DATAPACKING=POINT"
-13     format (E14.6)
+13     format (ES14.6)
 
        do i=1,slc%nNodes
           ! Write the coordinates
