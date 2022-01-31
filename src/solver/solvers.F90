@@ -995,12 +995,12 @@ contains
 102    format("# Grid",1X,I1,": Performing",1X,A,1X, &
             "iterations, unless converged earlier.",&
             " Minimum required iteration before NK switch: ",&
-            I6,". Switch to NK at totalR of:",1X,e10.2)
+            I6,". Switch to NK at totalR of:",1X,es10.2)
 #else
 102    format("# Grid",1X,I1,": Performing",1X,A,1X, &
             "iterations, unless converged earlier.",&
             " Minimum required iteration before NK switch: ",&
-            I6,". Switch to NK at totalR of:",1X,2e10.2)
+            I6,". Switch to NK at totalR of:",1X,2es10.2)
 #endif
 
        if (printIterations)  then
