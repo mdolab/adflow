@@ -285,6 +285,7 @@ contains
 
 
     subroutine printADSeeds(nn, level, sps)
+!DIR$ NOOPTIMIZE
         ! this routine is used for debugging master_d, and master_b.
         ! it prints all the AD seeds used
         ! it is useful to save the output and compare it with a diff tool
