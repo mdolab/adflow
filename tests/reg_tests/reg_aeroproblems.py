@@ -103,6 +103,21 @@ ap_naca0012_time_acc = AeroProblem(
     sinCoefFourier=[deltaAlpha],
 )
 
+ap_naca64A010_time_spectral = AeroProblem(
+    name="64A010pitchingTS",
+    alpha=0.0,
+    mach=0.796,
+    reynolds=12.56e6,
+    reynoldsLength=1.0,
+    T=305.0,
+    R=287.085,
+    areaRef=1.0,
+    chordRef=1.0,
+    xRef=0.248,
+    xRot=0.248,
+    omegaFourier=112.59,
+    evalFuncs=["cl", "cd", "cmz"],
+)
 
 ap_2D_conv_nozzle = AeroProblem(
     name="2D_conv_nozzle",

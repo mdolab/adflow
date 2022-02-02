@@ -33,7 +33,7 @@ contains
 &   , sj, sjd, sk, skd, sfacei, sfaceid, sfacej, sfacejd, sfacek, &
 &   sfacekd, dtl, gamma, vol, vold, addgridvelocities, sectionid
     use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf&
-&   , gammainfd, pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
+&   , pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
     use inputdiscretization, only : adis, dirscaling, &
 &   radiineededcoarse, radiineededfine, precond
     use inputphysics, only : equationmode
@@ -536,11 +536,11 @@ contains
   end subroutine timestep_block
 !  differentiation of gridvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *sfacei *sfacej *s *sfacek
-!   with respect to varying inputs: veldirfreestream machgrid gammainf
-!                pinf timeref rhoinf *(flowdoms.x) *sfacei *sfacej
-!                *s *sfacek *si *sj *sk
+!   with respect to varying inputs: veldirfreestream machgrid pinf
+!                timeref rhoinf *(flowdoms.x) *sfacei *sfacej *s
+!                *sfacek *si *sj *sk
 !   rw status of diff variables: veldirfreestream:in machgrid:in
-!                gammainf:in pinf:in timeref:in rhoinf:in *(flowdoms.x):in
+!                pinf:in timeref:in rhoinf:in *(flowdoms.x):in
 !                *sfacei:in-out *sfacej:in-out *s:in-out *sfacek:in-out
 !                *si:in *sj:in *sk:in
 !   plus diff mem management of: flowdoms.x:in sfacei:in sfacej:in
@@ -609,8 +609,7 @@ contains
 ! compute the mesh velocity from the given mesh mach number.
 ! vel{x,y,z}grid0 is the actual velocity you want at the
 ! geometry.
-    arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*&
-&     rhoinfd)/rhoinf**2
+    arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
     arg1 = gammainf*pinf/rhoinf
     if (arg1 .eq. 0.0_8) then
       ainfd = 0.0_8
@@ -1383,10 +1382,10 @@ contains
   end subroutine gridvelocitiesfinelevel_block
 !  differentiation of slipvelocitiesfinelevel_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.uslip)
-!   with respect to varying inputs: veldirfreestream machgrid gammainf
-!                pinf timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
+!   with respect to varying inputs: veldirfreestream machgrid pinf
+!                timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
 !   rw status of diff variables: veldirfreestream:in machgrid:in
-!                gammainf:in pinf:in timeref:in rhoinf:in *(flowdoms.x):in
+!                pinf:in timeref:in rhoinf:in *(flowdoms.x):in
 !                *(*bcdata.uslip):in-out
 !   plus diff mem management of: flowdoms.x:in bcdata:in *bcdata.uslip:in
   subroutine slipvelocitiesfinelevel_block_d(useoldcoor, t, sps, nn)
@@ -1456,8 +1455,7 @@ contains
 !  velxgrid = ainf*machgrid(1)
 !  velygrid = ainf*machgrid(2)
 !  velzgrid = ainf*machgrid(3)
-      arg1d = ((gammainfd*pinf+gammainf*pinfd)*rhoinf-gammainf*pinf*&
-&       rhoinfd)/rhoinf**2
+      arg1d = (gammainf*pinfd*rhoinf-gammainf*pinf*rhoinfd)/rhoinf**2
       arg1 = gammainf*pinf/rhoinf
       if (arg1 .eq. 0.0_8) then
         ainfd = 0.0_8

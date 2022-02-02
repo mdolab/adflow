@@ -331,6 +331,12 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
            integer(kind=inttype) intent(in) :: sps
          end subroutine getsurfaceperturbation
+
+         subroutine setgridforoneinstance(grid,sps) ! in warping.F90:warping
+           real(kind=realtype) dimension(:),intent(in) :: grid
+           integer intent(in) :: sps
+         end subroutine setgridforoneinstance
+
        end module warping
 
        module surfaceutils
@@ -671,8 +677,62 @@ python module libadflow
                 integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
             end subroutine computematrixfreeproductbwd
+            
+            
+            subroutine computematrixfreeproductbwdfast(dwbar, wbar, statesize)! in :test:adjointapi.f90:adjointapi
+                real(kind=realtype) dimension(:),intent(in) :: dwbar
+                real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
+                integer(kind=inttype) intent(in) :: statesize
+            end subroutine computematrixfreeproductbwdfast     
 #endif
        end module adjointapi
+       module adjointdebug
+        
+#ifndef USE_COMPLEX
+        subroutine computematrixfreeproductfwdfd(xvdot,extradot,wdot,bcdatavaluesdot,usespatial,usestate,famlists,bcdatanames,bcdatavalues,bcdatafamlists,bcvarsempty,dwdot,funcsdot,fdot,costsize,fsize,ntime,h) ! in :test:adjointAPI.F90:adjointdebug
+          real(kind=realtype) dimension(:),intent(in) :: xvdot
+          real(kind=realtype) dimension(:),intent(in) :: extradot
+          real(kind=realtype) dimension(:),intent(in) :: wdot
+          real(kind=realtype) dimension(:),intent(in) :: bcdatavaluesdot
+          logical intent(in) :: usespatial
+          logical intent(in) :: usestate
+          integer(kind=inttype) dimension(:,:) :: famlists
+          character dimension(:,:),intent(in) :: bcdatanames
+          real(kind=realtype) dimension(:),intent(in) :: bcdatavalues
+          integer(kind=inttype) dimension(:,:) :: bcdatafamlists
+          logical intent(in) :: bcvarsempty
+          real(kind=realtype) dimension(size(wdot)),intent(out),depend(wdot) :: dwdot
+          real(kind=realtype) dimension(costsize, size(famlists,1)),intent(out),depend(famlists,costsize) :: funcsdot
+          real(kind=realtype) dimension(3,fsize,ntime),intent(out),depend(fsize,ntime) :: fdot
+          integer(kind=inttype) :: costsize
+          integer(kind=inttype) :: fsize
+          integer(kind=inttype) :: ntime
+          real(kind=realtype) :: h
+        end subroutine computematrixfreeproductfwdfd
+#else
+          subroutine computematrixfreeproductfwdcs(xvdot,extradot,wdot,bcdatavaluesdot,usespatial,usestate,famlists,bcdatanames,bcdatavalues,bcdatafamlists,bcvarsempty,dwdot,funcsdot,fdot,costsize,fsize,ntime,h_mag) ! in :test:adjointAPI.F90:adjointdebug
+            real(kind=realtype) dimension(:),intent(in) :: xvdot
+            real(kind=realtype) dimension(:),intent(in) :: extradot
+            real(kind=realtype) dimension(:),intent(in) :: wdot
+            real(kind=realtype) dimension(:),intent(in) :: bcdatavaluesdot
+            logical intent(in) :: usespatial
+            logical intent(in) :: usestate
+            integer(kind=inttype) dimension(:,:) :: famlists
+            character dimension(:,:),intent(in) :: bcdatanames
+            real(kind=realtype) dimension(:),intent(in) :: bcdatavalues
+            integer(kind=inttype) dimension(:,:) :: bcdatafamlists
+            logical intent(in) :: bcvarsempty
+            real(kind=realtype) dimension(size(wdot)),intent(out),depend(wdot) :: dwdot
+            real(kind=realtype) dimension(costsize, size(famlists,1)),intent(out),depend(famlists,costsize) :: funcsdot
+            real(kind=realtype) dimension(3,fsize,ntime),intent(out),depend(fsize,ntime) :: fdot
+            integer(kind=inttype) :: costsize
+            integer(kind=inttype) :: fsize
+            integer(kind=inttype) :: ntime
+            real(kind=alwaysrealtype) :: h_mag
+
+          end subroutine computematrixfreeproductfwdcs
+#endif
+       endmodule adjointdebug
        module adjointutils
 
          subroutine initializepetsc
@@ -1146,6 +1206,7 @@ python module libadflow
          real(kind=realtype) :: adjdivtol
          real(kind=realtype) :: adjreltol
          real(kind=realtype) :: adjreltolrel
+         real(kind=realtype) :: adjmaxl2dev
          integer(kind=inttype) :: overlap
          integer(kind=inttype) :: adjmonstep
          integer(kind=inttype) :: filllevel
@@ -1175,11 +1236,13 @@ python module libadflow
          real(kind=realtype) allocatable,dimension(:,:,:) :: dscalar
          real(kind=realtype) allocatable,dimension(:,:,:) :: dvector
          real(kind=realtype) :: dtunsteadyrestartspectral
+         logical :: usetsinterpolatedgridvelocity
          logical :: writeunsteadyrestartspectral
          integer(kind=inttype) :: nunsteadysolspectral
          logical :: writeunsteadyvolspectral
          logical :: writeunsteadysurfspectral
          real(kind=realtype) allocatable,dimension(:,:,:) :: rotmatrixspectral
+         real(kind=realtype) :: omegafourier
        end module inputtimespectral
        module inputoverset
          logical :: useoversetloadbalance

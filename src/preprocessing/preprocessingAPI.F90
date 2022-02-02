@@ -1590,7 +1590,7 @@ contains
           case (iBCGroupFarfield)
              write(*,"(a)",advance="no") '| Farfield Types       : '
           case (iBCGroupOverset)
-             write(*,"(a)",advance="no") '| Oveset Types         : '
+             write(*,"(a)",advance="no") '| Overset Types        : '
           case (iBCGroupOther)
              write(*,"(a)",advance="no") '| Other Types          : '
           end select
@@ -3851,6 +3851,7 @@ contains
        endif
 
        call gridVelocitiesFineLevel(.false., t, mm)
+
        call gridVelocitiesCoarseLevels(mm)
        call normalVelocitiesAllLevels(mm)
 
@@ -3889,7 +3890,10 @@ contains
 
     call timePeriodSpectral
     call timeRotMatricesSpectral
-    call fineGridSpectralCoor
+    ! solve for the new grid only for rigid rotation with analytical deformation case
+    if (.NOT. usetsinterpolatedgridvelocity) then 
+       call fineGridSpectralCoor
+    end if
     call timeSpectralMatrices
 
 

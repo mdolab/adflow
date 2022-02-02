@@ -667,6 +667,9 @@ module inputTimeSpectral
 
   real(kind=realType), dimension(:,:,:), allocatable :: &
        rotMatrixSpectral
+  logical :: useTSInterpolatedGridVelocity
+
+  real(kind=realType) :: omegaFourier
 
 end module inputTimeSpectral
 
@@ -791,6 +794,7 @@ module inputADjoint
   real(kind=alwaysRealType)    :: adjAbsTol
   real(kind=alwaysRealType)    :: adjRelTolRel
   real(kind=alwaysRealType)    :: adjDivTol
+  real(kind=realType) :: adjMaxL2Dev
   integer(kind=intType)  :: adjMaxIter
   integer(kind=intType)  :: adjRestart
   integer(kind=intType)  :: adjMonStep

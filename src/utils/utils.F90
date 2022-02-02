@@ -4425,11 +4425,15 @@ end subroutine cross_prod
        deallocate(cgnsFamilies)
     end if
 
-    deallocate(cgnsDomsd)
+    if (allocated(cgnsDomsd)) then
+       deallocate(cgnsDomsd)
+    end if
     ! deallocate(famIDsDomainInterfaces, &
     !      bcIDsDomainInterfaces,  &
     !      famIDsSliding)
-    deallocate(sections)
+    if (allocated(sections)) then
+       deallocate(sections)
+    end if
 
     do j=1, size(BCFamExchange, 2)
        do i=1, size(BCFamExchange, 1)

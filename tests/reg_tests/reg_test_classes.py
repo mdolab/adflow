@@ -1,6 +1,6 @@
 import unittest
 import os
-from baseclasses import BaseRegTest
+from baseclasses.testing import BaseRegTest
 
 # this is based on
 # https://stackoverflow.com/questions/1323455/python-unit-test-with-base-and-sub-class

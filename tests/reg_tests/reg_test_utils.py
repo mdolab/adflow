@@ -1,5 +1,5 @@
 import numpy
-from baseclasses.BaseRegTest import getTol
+from baseclasses.testing import getTol
 
 # =============================================================================
 #                         Assert Statements
@@ -96,8 +96,71 @@ def assert_states_allclose(handler, CFDSolver, **kwargs):
     handler.par_add_norm("Norm of state vector", states, rtol=rtol, atol=atol)
 
 
-def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
+def assert_fwd_mode_wdot_allclose(handler, CFDSolver, ap, seed, **kwargs):
     rtol, atol = getTol(**kwargs)
+
+    handler.root_print("-> Derivatives with respect to states. wDot, ")
+    wDot = CFDSolver.getStatePerturbation(seed)
+
+    resDot, funcsDot, fDot = CFDSolver.computeJacobianVectorProductFwd(
+        wDot=wDot, residualDeriv=True, funcDeriv=True, fDeriv=True
+    )
+
+    handler.root_print("||dR/dw * wDot||")
+    handler.par_add_norm("||dR/dw * wDot||", resDot, rtol=rtol, atol=atol)
+
+    handler.root_print("dFuncs/dw * wDot")
+    handler.root_add_dict("dFuncs/dw * wDot", funcsDot, rtol=rtol, atol=atol)
+
+    handler.root_print("||dF/dw * wDot||")
+    handler.par_add_norm("||dF/dw * wDot||", fDot, rtol=rtol, atol=atol)
+
+
+def assert_fwd_mode_xVDot_allclose(handler, CFDSolver, ap, seed, **kwargs):
+    rtol, atol = getTol(**kwargs)
+
+    handler.root_print("-> Derivatives with respect to nodes")
+    xVDot = CFDSolver.getSpatialPerturbation(seed)
+
+    resDot, funcsDot, fDot = CFDSolver.computeJacobianVectorProductFwd(
+        xVDot=xVDot, residualDeriv=True, funcDeriv=True, fDeriv=True
+    )
+
+    handler.root_print("||dR/dXv * xVDot||")
+    handler.par_add_norm("||dR/dXv * xVDot||", resDot, rtol=rtol, atol=atol)
+
+    # These can be finiky sometimes so a bigger tolerance.
+    handler.root_print("dFuncs/dXv * xVDot")
+    handler.root_add_dict("dFuncs/dXv * xVDot", funcsDot, rtol=rtol * 10, atol=atol * 10)
+
+    handler.root_print("||dF/dXv * xVDot||")
+    handler.par_add_norm("||dF/dXv * xVDot||", fDot, rtol=rtol, atol=atol)
+
+
+def assert_fwd_mode_xDvDot_allclose(handler, CFDSolver, ap, seed=1.0, **kwargs):
+    rtol, atol = getTol(**kwargs)
+    handler.root_print("-> Derivatives with respect to extra variables")
+
+    for aeroDV in ap.DVs.values():
+        key = aeroDV.key
+        handler.root_print("  -> %s" % key)
+        xDvDot = {key: seed}
+
+        resDot, funcsDot, fDot = CFDSolver.computeJacobianVectorProductFwd(
+            xDvDot=xDvDot, residualDeriv=True, funcDeriv=True, fDeriv=True
+        )
+
+        handler.root_print("||dR/d%s||" % key)
+        handler.par_add_norm("||dR/d%s||" % key, resDot, rtol=rtol, atol=atol)
+
+        handler.root_print("dFuncs/d%s" % key)
+        handler.root_add_dict("dFuncs/d%s" % key, funcsDot, rtol=rtol, atol=atol)
+
+        handler.root_print("||dF/d%s||" % key)
+        handler.par_add_norm("||dF/d%s||" % key, fDot, rtol=rtol, atol=atol)
+
+
+def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
     # Now for the most fun part. Checking the derivatives. These are
     # generally the most important things to check. However, since the
     # checking requires random seeds, it is quite tricky to ensure that we
@@ -126,58 +189,9 @@ def assert_fwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):
     handler.root_print("#             Forward mode testing                   #")
     handler.root_print("# ---------------------------------------------------#")
 
-    handler.root_print("-> Derivatives with respect to states. wDot, ")
-    wDot = CFDSolver.getStatePerturbation(314)
-
-    resDot, funcsDot, fDot = CFDSolver.computeJacobianVectorProductFwd(
-        wDot=wDot, residualDeriv=True, funcDeriv=True, fDeriv=True
-    )
-
-    handler.root_print("||dR/dw * wDot||")
-    handler.par_add_norm("||dR/dw * wDot||", resDot, rtol=rtol, atol=atol)
-
-    handler.root_print("dFuncs/dw * wDot")
-    handler.root_add_dict("dFuncs/dw * wDot", funcsDot, rtol=rtol, atol=atol)
-
-    handler.root_print("||dF/dw * wDot||")
-    handler.par_add_norm("||dF/dw * wDot||", fDot, rtol=rtol, atol=atol)
-
-    handler.root_print("-> Derivatives with respect to nodes")
-    xVDot = CFDSolver.getSpatialPerturbation(314)
-
-    resDot, funcsDot, fDot = CFDSolver.computeJacobianVectorProductFwd(
-        xVDot=xVDot, residualDeriv=True, funcDeriv=True, fDeriv=True
-    )
-
-    handler.root_print("||dR/dXv * xVDot||")
-    handler.par_add_norm("||dR/dXv * xVDot||", resDot, rtol=rtol, atol=atol)
-
-    # These can be finiky sometimes so a bigger tolerance.
-    handler.root_print("dFuncs/dXv * xVDot")
-    handler.root_add_dict("dFuncs/dXv * xVDot", funcsDot, rtol=rtol * 10, atol=atol * 10)
-
-    handler.root_print("||dF/dXv * xVDot||")
-    handler.par_add_norm("||dF/dXv * xVDot||", fDot, rtol=rtol, atol=atol)
-
-    handler.root_print("-> Derivatives with respect to extra variables")
-
-    for aeroDV in ap.DVs.values():
-        key = aeroDV.key
-        handler.root_print("  -> %s" % key)
-        xDvDot = {key: 1.0}
-
-        resDot, funcsDot, fDot = CFDSolver.computeJacobianVectorProductFwd(
-            xDvDot=xDvDot, residualDeriv=True, funcDeriv=True, fDeriv=True
-        )
-
-        handler.root_print("||dR/d%s||" % key)
-        handler.par_add_norm("||dR/d%s||" % key, resDot, rtol=rtol, atol=atol)
-
-        handler.root_print("dFuncs/d%s" % key)
-        handler.root_add_dict("dFuncs/d%s" % key, funcsDot, rtol=rtol, atol=atol)
-
-        handler.root_print("||dF/d%s||" % key)
-        handler.par_add_norm("||dF/d%s||" % key, fDot, rtol=rtol, atol=atol)
+    assert_fwd_mode_wdot_allclose(handler, CFDSolver, ap, seed=seed, **kwargs)
+    assert_fwd_mode_xVDot_allclose(handler, CFDSolver, ap, seed=seed, **kwargs)
+    assert_fwd_mode_xDvDot_allclose(handler, CFDSolver, ap, seed=1.0, **kwargs)
 
 
 def assert_bwd_mode_allclose(handler, CFDSolver, ap, seed=314, **kwargs):

@@ -21,7 +21,7 @@ contains
 !
     use constants
     use inputphysics, only : cpmodel
-    use flowvarrefstate, only : rgas, rgasd, gammainf, gammainfd
+    use flowvarrefstate, only : rgas, rgasd, gammainf
     use utils_b, only : terminate
     implicit none
 !
@@ -147,8 +147,7 @@ contains
 !
     use constants
     use cpcurvefits
-    use flowvarrefstate, only : tref, trefd, rgas, rgasd, gammainf, &
-&   gammainfd
+    use flowvarrefstate, only : tref, trefd, rgas, rgasd, gammainf
     use inputphysics, only : cpmodel
     implicit none
     real(kind=realtype), intent(in) :: rho, p, u, v, w
