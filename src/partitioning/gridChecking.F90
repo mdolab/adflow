@@ -986,15 +986,15 @@ contains
 104    format("# List of nonmatching one to one subfaces.")
 105    format("# Spectral grid ",a, ", zone ",a, ", periodic &
             &subface ", a, " does not match donor ", a,". &
-            &Maximum deviation: ", e12.5)
+            &Maximum deviation: ", es12.5)
 106    format("# Spectral grid ",a, ", zone ",a, ", subface ", &
             a, " does not match donor ", a,". &
-            &Maximum deviation: ", e12.5)
+            &Maximum deviation: ", es12.5)
 107    format("# Zone ",a, ", periodic subface ", a, " does not &
-            &match donor ", a,". Maximum deviation: ", e12.5)
+            &match donor ", a,". Maximum deviation: ", es12.5)
 
 108    format("# Zone ",a, ", subface ", a, " does not match &
-            &donor ", a,". Maximum deviation: ", e12.5)
+            &donor ", a,". Maximum deviation: ", es12.5)
 
     endif
 
