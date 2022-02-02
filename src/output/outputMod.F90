@@ -1443,8 +1443,10 @@ contains
     real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
     real(kind=realType),Dimension(3) :: wCrossR ! rotationrate cross radius    
     real(kind=realType), dimension(:,:,:), pointer :: xx1, xx2 ! for the coords
+    ! The original i,j beging of the local block in the entire cgns block.
+    real(kind=realType) :: subface_jBegOr, subface_jEndOr, subface_iBegOr, subface_iEndOr
+    
     ! Set the pointers to this block.
-
     call setPointers(blockID, 1_intType, sps)
 
     ! Set the offset for the viscous data, such that the range is
@@ -1546,7 +1548,12 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
-
+       subface_iBegOr = jBegOr
+       subface_iEndOr = jEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
+       
        !===============================================================
 
     case (iMax)
@@ -1574,7 +1581,13 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
-
+       
+       subface_iBegOr = jBegOr
+       subface_iEndOr = jEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
+       
        !===============================================================
 
     case (jMin)
@@ -1602,6 +1615,13 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
+
+              
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
 
        !===============================================================
 
@@ -1631,6 +1651,12 @@ contains
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,jl,:)
 
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
+
        !===============================================================
 
     case (kMin)
@@ -1659,6 +1685,12 @@ contains
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,:,2)
 
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = jBegOr
+       subface_jEndOr = jEndOr
+
        !===============================================================
 
     case (kMax)
@@ -1686,6 +1718,12 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,:,kl)
+
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = jBegOr
+       subface_jEndOr = jEndOr
 
     end select
     !
@@ -2002,7 +2040,7 @@ contains
          ! cell since the value isn't defined in the rind cell
 
          if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
-            jor = j + jBegOr - 1
+            jor = j + subface_jBegOr - 1
             if (jor == jBeg) then 
                jj = j + 1 
             else if (jor == jEnd +1 ) then
@@ -2017,7 +2055,7 @@ contains
 
           do i=rangeFace(1,1), rangeFace(1,2)
              if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
-               ior = i + iBegor - 1
+               ior = i + subface_iBegOr - 1
                if (ior == iBeg) then 
                   ii = i + 1 
                else if (ior == iEnd + 1) then

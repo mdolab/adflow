@@ -82,6 +82,10 @@ class ADFLOW(AeroSolver):
 
         startInitTime = time.time()
 
+        # Define the memory allocation flags ASAP (needed for __del__)
+        # Matrix Setup Flag
+        self.adjointSetup = False
+
         # Load the compiled module using MExt, allowing multiple
         # imports
         try:
@@ -186,9 +190,6 @@ class ADFLOW(AeroSolver):
         self.zipperCreated = False
         self.userSurfaceIntegrationsFinalized = False
         self.hasIntegrationSurfaces = False
-
-        # Matrix Setup Flag
-        self.adjointSetup = False
 
         # Write the intro message
         self.adflow.utils.writeintromessage()
