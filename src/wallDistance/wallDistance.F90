@@ -325,7 +325,7 @@ contains
     !          print "(a)", "#"
     !        endif
 102 format("# End wall distances level",1X,A)
-103 format("# Wall clock time:",E12.5," sec.")
+103 format("# Wall clock time:",ES12.5," sec.")
 
   end subroutine computeWallDistance
 

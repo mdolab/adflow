@@ -1019,7 +1019,7 @@ contains
 100                   format("# Symmetry boundary face",1X,A,1X,"of zone", &
                            1x,a,1x, "is not planar.")
 110                   format("# Maximum deviation from the mean normal: ", &
-                           e12.5, " degrees")
+                           es12.5, " degrees")
 
                    endif
 
@@ -3512,8 +3512,8 @@ contains
                                     trim(intString3), &
                                     xc(1), xc(2), xc(3), -vol(i,j,k)
 102                            format("# Indices (",a,",",a,",",a,"), &
-                                    &coordinates (",e10.3,",",e10.3,",", &
-                                    e10.3,"), Volume: ",e10.3)
+                                    &coordinates (",es10.3,",",es10.3,",", &
+                                    es10.3,"), Volume: ",es10.3)
 
                             endif
                          enddo

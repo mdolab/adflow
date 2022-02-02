@@ -394,7 +394,7 @@ contains
           write (101,*) "Nodes = ", nUnique, " Elements= ", totalCount, " ZONETYPE=FEBRICK"
           write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
 
-13        format (E20.12)
+13        format (ES20.12)
 
           ! Write all the coordinates...this is horrendously slow...
           do iDim=1, 3

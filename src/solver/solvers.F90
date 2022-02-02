@@ -995,12 +995,12 @@ contains
 102    format("# Grid",1X,I1,": Performing",1X,A,1X, &
             "iterations, unless converged earlier.",&
             " Minimum required iteration before NK switch: ",&
-            I6,". Switch to NK at totalR of:",1X,e10.2)
+            I6,". Switch to NK at totalR of:",1X,es10.2)
 #else
 102    format("# Grid",1X,I1,": Performing",1X,A,1X, &
             "iterations, unless converged earlier.",&
             " Minimum required iteration before NK switch: ",&
-            I6,". Switch to NK at totalR of:",1X,2e10.2)
+            I6,". Switch to NK at totalR of:",1X,2es10.2)
 #endif
 
        if (printIterations)  then
@@ -1552,7 +1552,7 @@ contains
 
                 write(*,"(i6,1x)",advance="no") timeStepUnsteady + &
                      nTimeStepsRestart
-                write(*,"(e12.5,1x)",advance="no") timeUnsteady + &
+                write(*,"(es12.5,1x)",advance="no") timeUnsteady + &
                      timeUnsteadyRestart
 
              else if(equationMode == timeSpectral) then
@@ -1571,9 +1571,9 @@ contains
                    write(*,"(a,1x)", advance="no") "    ----  "
                 else
 #ifndef USE_COMPLEX
-                   write(*,"(e10.2,1x)",advance="no") CFLMonitor
+                   write(*,"(es10.2,1x)",advance="no") CFLMonitor
 #else
-                   write(*,"(e10.2,1x)",advance="no") real(CFLMonitor)
+                   write(*,"(es10.2,1x)",advance="no") real(CFLMonitor)
 #endif
                 end if
 
@@ -1602,9 +1602,9 @@ contains
 
                 if( showCPU ) then
 #ifndef USE_COMPLEX
-                   write(*,"(e12.5,1x)",advance="no") mpi_wtime() - t0Solver
+                   write(*,"(es12.5,1x)",advance="no") mpi_wtime() - t0Solver
 #else
-                   write(*,"(e12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
+                   write(*,"(es12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
 #endif
                 end if
              end if
@@ -1650,7 +1650,7 @@ contains
           if (myid == 0 .and. printIterations) then
              ! Write the convergence info to stdout.
 #ifndef USE_COMPLEX
-             write(*,"(e24.16,1x)",advance="no") monGlob(mm)
+             write(*,"(es24.16,1x)",advance="no") monGlob(mm)
 #else
             select case (monNames(mm))
 
@@ -1663,11 +1663,11 @@ contains
 
                ! we can do a shorter print for residuals because only the leading few digits
                ! and the exponents are important anyways
-               write(*,'(e16.8,SP,e17.8E3,"i")',advance="no") monGlob(mm)
+               write(*,'(es16.8,SP,es17.8E3,"i")',advance="no") monGlob(mm)
 
             case default
                ! we need to do the regular full print for functionals because they are useful
-               write(*,'(e24.16,SP,e25.16E3,"i")',advance="no") monGlob(mm)
+               write(*,'(es24.16,SP,es25.16E3,"i")',advance="no") monGlob(mm)
             end select
 #endif
           end if
