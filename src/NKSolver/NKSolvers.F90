@@ -3730,7 +3730,8 @@ contains
        call setwVecANK(wVec,1,nstate)
 
        ! Evaluate the residual before we start
-       call blocketteRes(useUpdateIntermed=.True.)
+       call blocketteRes(useUpdateIntermed=.True., useTurbRes=ANK_coupled)
+       
        if (ANK_coupled) then
           call setRvec(rVec)
        else

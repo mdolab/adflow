@@ -222,13 +222,21 @@ contains
 
           ! Make sure to call the turb BC's first incase we need to
           ! correct for K
-          if( equations == RANSEquations .and. turbRes) then
-             call BCTurbTreatment
-             call applyAllTurbBCthisblock(.True.)
-          end if
           call applyAllBC_block(.True.)
        end do
     end do
+
+    if( equations == RANSEquations .and. turbRes) then
+      do sps=1,nTimeIntervalsSpectral
+         do nn=1,nDom
+            call setPointers(nn, currentLevel, sps)
+                     
+               call BCTurbTreatment
+               call applyAllTurbBCthisblock(.True.) !this INCLUDES second halo??
+            
+         end do
+      end do
+    end if
 
     ! Compute the ranges of the residuals we are dealing with:
     if (flowRes .and. turbRes) then

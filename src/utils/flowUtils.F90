@@ -876,6 +876,7 @@ if (correctForK) then
     use blockPointers
     use flowVarRefState
     use inputPhysics
+    use utils, only : getCorrectForK
     implicit none
 
     ! Input parameter
@@ -883,10 +884,11 @@ if (correctForK) then
 
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii
-    real(kind=realType) :: gm1, v2
+    real(kind=realType) :: gm1, v2, factK
     integer(kind=intType) :: iBeg, iEnd, iSize, jBeg, jEnd, jSize, kBeg, kEnd, kSize
     ! Compute the pressures
     gm1 = gammaConstant - one
+    factK = five*third - gammaConstant
 
     if (includeHalos) then
        iBeg = 0
@@ -921,6 +923,14 @@ if (correctForK) then
 #endif
                 v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
                 p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
+
+                !missing correctForK !!
+                ! Possible faster implementation: do a second loop after, with the if outside of the loop
+                if( getCorrectForK() ) then
+                   p(i, j ,k) = p(i, j, k) + factK*w(i, j, k, irho) &
+                      * w(i, j, k, itu1)
+                end if    
+
                 p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
 
 #ifdef TAPENADE_REVERSE
