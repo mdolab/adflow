@@ -11,12 +11,12 @@ module fluxes_b
 
 contains
 !  differentiation of inviscidcentralflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: timeref *p *dw *w *vol *si
-!                *sj *sk
+!   gradient     of useful results: timeref *p *sfacei *sfacej
+!                *sfacek *dw *w *vol *si *sj *sk
 !   with respect to varying inputs: timeref *p *sfacei *sfacej
 !                *sfacek *dw *w *vol *si *sj *sk
-!   rw status of diff variables: timeref:incr *p:incr *sfacei:out
-!                *sfacej:out *sfacek:out *dw:in-out *w:incr *vol:incr
+!   rw status of diff variables: timeref:incr *p:incr *sfacei:incr
+!                *sfacej:incr *sfacek:incr *dw:in-out *w:incr *vol:incr
 !                *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                dw:in w:in vol:in si:in sj:in sk:in
@@ -122,10 +122,8 @@ contains
     end if
     call popinteger4(j)
     call popinteger4(i)
-    sfacekd = 0.0_8
     sfaced = 0.0_8
     sface = zero
-    sfacekd = 0.0_8
     sfaced = 0.0_8
     do ii=0,nx*ny*kl-1
       i = mod(ii, nx) + 2
@@ -252,10 +250,8 @@ contains
     call popreal8(vnm)
     call popinteger4(j)
     call popinteger4(i)
-    sfacejd = 0.0_8
     sfaced = 0.0_8
     sface = zero
-    sfacejd = 0.0_8
     sfaced = 0.0_8
     do ii=0,nx*jl*nz-1
       i = mod(ii, nx) + 2
@@ -382,12 +378,10 @@ contains
     call popreal8(vnm)
     call popinteger4(j)
     call popinteger4(i)
-    sfaceid = 0.0_8
     sfaced = 0.0_8
 ! initialize sface to zero. this value will be used if the
 ! block is not moving.
     sface = zero
-    sfaceid = 0.0_8
     sfaced = 0.0_8
     do ii=0,il*ny*nz-1
       i = mod(ii, il) + 1
@@ -768,12 +762,12 @@ contains
     end if
   end subroutine inviscidcentralflux
 !  differentiation of invisciddissfluxmatrix in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: pinfcorr *p *w *si *sj *sk
-!                *fw
+!   gradient     of useful results: pinfcorr *p *sfacei *sfacej
+!                *sfacek *w *si *sj *sk *fw
 !   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
 !                *sfacek *w *si *sj *sk *fw
-!   rw status of diff variables: pinfcorr:incr *p:incr *sfacei:out
-!                *sfacej:out *sfacek:out *w:incr *si:incr *sj:incr
+!   rw status of diff variables: pinfcorr:incr *p:incr *sfacei:incr
+!                *sfacej:incr *sfacek:incr *w:incr *si:incr *sj:incr
 !                *sk:incr *fw:in-out
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
@@ -1014,11 +1008,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
@@ -1451,7 +1441,6 @@ contains
       call pushreal8(drw)
       call pushreal8(a2avg)
       call pushreal8(ppor)
-      sfacekd = 0.0_8
       dssd = 0.0_8
       sfaced = 0.0_8
       do ii=0,nx*ny*kl-1
@@ -1917,7 +1906,6 @@ contains
       call popinteger4(j)
       call popinteger4(i)
       call popreal8(aavg)
-      sfacejd = 0.0_8
       call popreal8(sface)
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
@@ -2382,7 +2370,6 @@ contains
       call popinteger4(j)
       call popinteger4(i)
       call popreal8(aavg)
-      sfaceid = 0.0_8
       call popreal8(sface)
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -3649,11 +3636,12 @@ contains
     end if
   end subroutine invisciddissfluxmatrix
 !  differentiation of invisciddissfluxscalar in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: rhoinf pinfcorr *p *w *fw
+!   gradient     of useful results: rhoinf pinfcorr *p *w *fw *radi
+!                *radj *radk
 !   with respect to varying inputs: rhoinf pinfcorr *p *w *fw *radi
 !                *radj *radk
 !   rw status of diff variables: rhoinf:incr pinfcorr:incr *p:incr
-!                *w:incr *fw:in-out *radi:out *radj:out *radk:out
+!                *w:incr *fw:in-out *radi:incr *radj:incr *radk:incr
 !   plus diff mem management of: p:in w:in fw:in radi:in radj:in
 !                radk:in
   subroutine invisciddissfluxscalar_b()
@@ -3791,11 +3779,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      radid = 0.0_8
-      radjd = 0.0_8
-      radkd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! determine the variables used to compute the switch.
 ! for the inviscid case this is the pressure; for the viscous
 ! case it is the entropy.
@@ -3883,7 +3867,6 @@ contains
       call pushreal8(ddw4)
       call pushreal8(ddw5)
       call pushreal8(ppor)
-      radkd = 0.0_8
       dssd = 0.0_8
       do ii=0,nx*ny*kl-1
         i = mod(ii, nx) + 2
@@ -4034,7 +4017,6 @@ contains
       call popreal8(dis4)
       call popinteger4(j)
       call popinteger4(i)
-      radjd = 0.0_8
       do ii=0,nx*jl*nz-1
         i = mod(ii, nx) + 2
         j = mod(ii/nx, jl) + 1
@@ -4184,7 +4166,6 @@ contains
       call popreal8(dis4)
       call popinteger4(j)
       call popinteger4(i)
-      radid = 0.0_8
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
         j = mod(ii/il, ny) + 2
@@ -5712,11 +5693,12 @@ contains
     end subroutine riemannflux
   end subroutine inviscidupwindflux
 !  differentiation of inviscidupwindflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *si *sj *sk *fw
+!   gradient     of useful results: *p *sfacei *sfacej *sfacek
+!                *w *si *sj *sk *fw
 !   with respect to varying inputs: *p *sfacei *sfacej *sfacek
 !                *w *si *sj *sk *fw
-!   rw status of diff variables: *p:incr *sfacei:out *sfacej:out
-!                *sfacek:out *w:incr *si:incr *sj:incr *sk:incr
+!   rw status of diff variables: *p:incr *sfacei:incr *sfacej:incr
+!                *sfacek:incr *w:incr *si:incr *sj:incr *sk:incr
 !                *fw:in-out
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
@@ -5785,11 +5767,7 @@ contains
 !
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! check if the formulation for rotational periodic problems
 ! must be used.
       if (associated(rotmatrixi)) then
@@ -6029,7 +6007,6 @@ contains
             end do
           end do
         end do
-        sfacekd = 0.0_8
         fluxd = 0.0_8
         leftd = 0.0_8
         rightd = 0.0_8
@@ -6108,7 +6085,6 @@ contains
             end do
           end do
         end do
-        sfacejd = 0.0_8
         do k=kl,2,-1
           do j=jl,1,-1
             do i=il,2,-1
@@ -6183,7 +6159,6 @@ contains
             end do
           end do
         end do
-        sfaceid = 0.0_8
         do k=kl,2,-1
           do j=jl,2,-1
             do i=il,1,-1
@@ -6500,7 +6475,6 @@ contains
             end do
           end do
         end do
-        sfacekd = 0.0_8
         fluxd = 0.0_8
         leftd = 0.0_8
         rightd = 0.0_8
@@ -6619,7 +6593,6 @@ contains
             end do
           end do
         end do
-        sfacejd = 0.0_8
         do k=kl,2,-1
           do j=jl,1,-1
             do i=il,2,-1
@@ -6731,7 +6704,6 @@ contains
             end do
           end do
         end do
-        sfaceid = 0.0_8
         do k=kl,2,-1
           do j=jl,2,-1
             do i=il,1,-1
@@ -8599,18 +8571,21 @@ contains
     end subroutine riemannflux
   end subroutine inviscidupwindflux_b
 !  differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *x *si *sj *sk *fw *(*viscsubface.tau)
+!   gradient     of useful results: *rev *aa *wx *wy *wz *w *rlv
+!                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
+!                *vz *fw *(*viscsubface.tau) *(*viscsubface.q)
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
 !                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
-!                *vz *fw *(*viscsubface.tau)
-!   rw status of diff variables: *rev:out *aa:out *wx:out *wy:out
-!                *wz:out *w:incr *rlv:out *x:incr *qx:out *qy:out
-!                *qz:out *ux:out *uy:out *uz:out *si:incr *sj:incr
-!                *sk:incr *vx:out *vy:out *vz:out *fw:in-out *(*viscsubface.tau):in-out
+!                *vz *fw *(*viscsubface.tau) *(*viscsubface.q)
+!   rw status of diff variables: *rev:incr *aa:incr *wx:incr *wy:incr
+!                *wz:incr *w:incr *rlv:incr *x:incr *qx:incr *qy:incr
+!                *qz:incr *ux:incr *uy:incr *uz:incr *si:incr *sj:incr
+!                *sk:incr *vx:incr *vy:incr *vz:incr *fw:in-out
+!                *(*viscsubface.tau):in-out *(*viscsubface.q):in-out
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
-!                viscsubface:in *viscsubface.tau:in
+!                viscsubface:in *viscsubface.tau:in *viscsubface.q:in
   subroutine viscousflux_b()
 !
 !       viscousflux computes the viscous fluxes using a central
@@ -8771,23 +8746,7 @@ contains
     else
       abs0 = -rfilv
     end if
-    if (abs0 .lt. thresholdreal) then
-      revd = 0.0_8
-      aad = 0.0_8
-      wxd = 0.0_8
-      wyd = 0.0_8
-      wzd = 0.0_8
-      rlvd = 0.0_8
-      qxd = 0.0_8
-      qyd = 0.0_8
-      qzd = 0.0_8
-      uxd = 0.0_8
-      uyd = 0.0_8
-      uzd = 0.0_8
-      vxd = 0.0_8
-      vyd = 0.0_8
-      vzd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! determine whether or not the wall stress tensor and wall heat
 ! flux must be stored for viscous walls.
       storewalltensor = .false.
@@ -8879,38 +8838,8 @@ contains
       call pushreal8(fact)
       call pushreal8(por)
       call pushreal8(tauxys)
-      revd = 0.0_8
-      aad = 0.0_8
-      wxd = 0.0_8
-      wyd = 0.0_8
-      wzd = 0.0_8
-      rlvd = 0.0_8
-      qxd = 0.0_8
-      qyd = 0.0_8
-      qzd = 0.0_8
-      uxd = 0.0_8
-      uyd = 0.0_8
-      uzd = 0.0_8
-      vxd = 0.0_8
-      vyd = 0.0_8
-      vzd = 0.0_8
       mued = 0.0_8
       mue = zero
-      revd = 0.0_8
-      aad = 0.0_8
-      wxd = 0.0_8
-      wyd = 0.0_8
-      wzd = 0.0_8
-      rlvd = 0.0_8
-      qxd = 0.0_8
-      qyd = 0.0_8
-      qzd = 0.0_8
-      uxd = 0.0_8
-      uyd = 0.0_8
-      uzd = 0.0_8
-      vxd = 0.0_8
-      vyd = 0.0_8
-      vzd = 0.0_8
       mued = 0.0_8
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1
@@ -9121,6 +9050,12 @@ contains
 ! and the i == il case.
         if (i .eq. il .and. storewalltensor .and. viscimaxpointer(j, k) &
 &           .gt. 0) then
+          q_zd = viscsubfaced(viscimaxpointer(j, k))%q(j, k, 3)
+          viscsubfaced(viscimaxpointer(j, k))%q(j, k, 3) = 0.0_8
+          q_yd = viscsubfaced(viscimaxpointer(j, k))%q(j, k, 2)
+          viscsubfaced(viscimaxpointer(j, k))%q(j, k, 2) = 0.0_8
+          q_xd = viscsubfaced(viscimaxpointer(j, k))%q(j, k, 1)
+          viscsubfaced(viscimaxpointer(j, k))%q(j, k, 1) = 0.0_8
           tauyzd = viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 6)
           viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 6) = 0.0_8
           tauxzd = viscsubfaced(viscimaxpointer(j, k))%tau(j, k, 5)
@@ -9138,11 +9073,20 @@ contains
           tauxxd = 0.0_8
           tauxyd = 0.0_8
           tauxzd = 0.0_8
+          q_xd = 0.0_8
+          q_yd = 0.0_8
+          q_zd = 0.0_8
           tauyyd = 0.0_8
           tauyzd = 0.0_8
         end if
         call popcontrol1b(branch)
         if (branch .eq. 0) then
+          q_zd = q_zd + viscsubfaced(visciminpointer(j, k))%q(j, k, 3)
+          viscsubfaced(visciminpointer(j, k))%q(j, k, 3) = 0.0_8
+          q_yd = q_yd + viscsubfaced(visciminpointer(j, k))%q(j, k, 2)
+          viscsubfaced(visciminpointer(j, k))%q(j, k, 2) = 0.0_8
+          q_xd = q_xd + viscsubfaced(visciminpointer(j, k))%q(j, k, 1)
+          viscsubfaced(visciminpointer(j, k))%q(j, k, 1) = 0.0_8
           tauyzd = tauyzd + viscsubfaced(visciminpointer(j, k))%tau(j, k&
 &           , 6)
           viscsubfaced(visciminpointer(j, k))%tau(j, k, 6) = 0.0_8
@@ -9187,9 +9131,9 @@ contains
         tauzzd = tauzzd + si(i, j, k, 3)*fmzd + wbar*tempd82
         sid(i, j, k, 3) = sid(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz+&
 &         wbar*tauzz)*frhoed
-        q_xd = -(si(i, j, k, 1)*frhoed)
-        q_yd = -(si(i, j, k, 2)*frhoed)
-        q_zd = -(si(i, j, k, 3)*frhoed)
+        q_xd = q_xd - si(i, j, k, 1)*frhoed
+        q_yd = q_yd - si(i, j, k, 2)*frhoed
+        q_zd = q_zd - si(i, j, k, 3)*frhoed
         sid(i, j, k, 1) = sid(i, j, k, 1) + tauxz*fmzd
         sid(i, j, k, 2) = sid(i, j, k, 2) + tauyz*fmzd
         sid(i, j, k, 3) = sid(i, j, k, 3) + tauzz*fmzd
@@ -9726,6 +9670,12 @@ contains
 ! and the j == jl case.
         if (j .eq. jl .and. storewalltensor .and. viscjmaxpointer(i, k) &
 &           .gt. 0) then
+          q_zd = viscsubfaced(viscjmaxpointer(i, k))%q(i, k, 3)
+          viscsubfaced(viscjmaxpointer(i, k))%q(i, k, 3) = 0.0_8
+          q_yd = viscsubfaced(viscjmaxpointer(i, k))%q(i, k, 2)
+          viscsubfaced(viscjmaxpointer(i, k))%q(i, k, 2) = 0.0_8
+          q_xd = viscsubfaced(viscjmaxpointer(i, k))%q(i, k, 1)
+          viscsubfaced(viscjmaxpointer(i, k))%q(i, k, 1) = 0.0_8
           tauyzd = viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 6)
           viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 6) = 0.0_8
           tauxzd = viscsubfaced(viscjmaxpointer(i, k))%tau(i, k, 5)
@@ -9743,11 +9693,20 @@ contains
           tauxxd = 0.0_8
           tauxyd = 0.0_8
           tauxzd = 0.0_8
+          q_xd = 0.0_8
+          q_yd = 0.0_8
+          q_zd = 0.0_8
           tauyyd = 0.0_8
           tauyzd = 0.0_8
         end if
         call popcontrol1b(branch)
         if (branch .eq. 0) then
+          q_zd = q_zd + viscsubfaced(viscjminpointer(i, k))%q(i, k, 3)
+          viscsubfaced(viscjminpointer(i, k))%q(i, k, 3) = 0.0_8
+          q_yd = q_yd + viscsubfaced(viscjminpointer(i, k))%q(i, k, 2)
+          viscsubfaced(viscjminpointer(i, k))%q(i, k, 2) = 0.0_8
+          q_xd = q_xd + viscsubfaced(viscjminpointer(i, k))%q(i, k, 1)
+          viscsubfaced(viscjminpointer(i, k))%q(i, k, 1) = 0.0_8
           tauyzd = tauyzd + viscsubfaced(viscjminpointer(i, k))%tau(i, k&
 &           , 6)
           viscsubfaced(viscjminpointer(i, k))%tau(i, k, 6) = 0.0_8
@@ -9792,9 +9751,9 @@ contains
         tauzzd = tauzzd + sj(i, j, k, 3)*fmzd + wbar*tempd54
         sjd(i, j, k, 3) = sjd(i, j, k, 3) + (ubar*tauxz-q_z+vbar*tauyz+&
 &         wbar*tauzz)*frhoed
-        q_xd = -(sj(i, j, k, 1)*frhoed)
-        q_yd = -(sj(i, j, k, 2)*frhoed)
-        q_zd = -(sj(i, j, k, 3)*frhoed)
+        q_xd = q_xd - sj(i, j, k, 1)*frhoed
+        q_yd = q_yd - sj(i, j, k, 2)*frhoed
+        q_zd = q_zd - sj(i, j, k, 3)*frhoed
         sjd(i, j, k, 1) = sjd(i, j, k, 1) + tauxz*fmzd
         sjd(i, j, k, 2) = sjd(i, j, k, 2) + tauyz*fmzd
         sjd(i, j, k, 3) = sjd(i, j, k, 3) + tauzz*fmzd
@@ -10333,6 +10292,12 @@ contains
 ! and the k == kl case.
         if (k .eq. kl .and. storewalltensor .and. visckmaxpointer(i, j) &
 &           .gt. 0) then
+          q_zd = viscsubfaced(visckmaxpointer(i, j))%q(i, j, 3)
+          viscsubfaced(visckmaxpointer(i, j))%q(i, j, 3) = 0.0_8
+          q_yd = viscsubfaced(visckmaxpointer(i, j))%q(i, j, 2)
+          viscsubfaced(visckmaxpointer(i, j))%q(i, j, 2) = 0.0_8
+          q_xd = viscsubfaced(visckmaxpointer(i, j))%q(i, j, 1)
+          viscsubfaced(visckmaxpointer(i, j))%q(i, j, 1) = 0.0_8
           tauyzd = viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 6)
           viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 6) = 0.0_8
           tauxzd = viscsubfaced(visckmaxpointer(i, j))%tau(i, j, 5)
@@ -10350,11 +10315,20 @@ contains
           tauxxd = 0.0_8
           tauxyd = 0.0_8
           tauxzd = 0.0_8
+          q_xd = 0.0_8
+          q_yd = 0.0_8
+          q_zd = 0.0_8
           tauyyd = 0.0_8
           tauyzd = 0.0_8
         end if
         call popcontrol1b(branch)
         if (branch .eq. 0) then
+          q_zd = q_zd + viscsubfaced(visckminpointer(i, j))%q(i, j, 3)
+          viscsubfaced(visckminpointer(i, j))%q(i, j, 3) = 0.0_8
+          q_yd = q_yd + viscsubfaced(visckminpointer(i, j))%q(i, j, 2)
+          viscsubfaced(visckminpointer(i, j))%q(i, j, 2) = 0.0_8
+          q_xd = q_xd + viscsubfaced(visckminpointer(i, j))%q(i, j, 1)
+          viscsubfaced(visckminpointer(i, j))%q(i, j, 1) = 0.0_8
           tauyzd = tauyzd + viscsubfaced(visckminpointer(i, j))%tau(i, j&
 &           , 6)
           viscsubfaced(visckminpointer(i, j))%tau(i, j, 6) = 0.0_8
@@ -10378,11 +10352,11 @@ contains
         fmzd = fwd(i, j, k+1, imz) - fwd(i, j, k, imz)
         fmyd = fwd(i, j, k+1, imy) - fwd(i, j, k, imy)
         fmxd = fwd(i, j, k+1, imx) - fwd(i, j, k, imx)
-        q_xd = -(sk(i, j, k, 1)*frhoed)
+        q_xd = q_xd - sk(i, j, k, 1)*frhoed
         skd(i, j, k, 1) = skd(i, j, k, 1) - q_x*frhoed
-        q_yd = -(sk(i, j, k, 2)*frhoed)
+        q_yd = q_yd - sk(i, j, k, 2)*frhoed
         skd(i, j, k, 2) = skd(i, j, k, 2) - q_y*frhoed
-        q_zd = -(sk(i, j, k, 3)*frhoed)
+        q_zd = q_zd - sk(i, j, k, 3)*frhoed
         skd(i, j, k, 3) = skd(i, j, k, 3) - q_z*frhoed
         tempd24 = sk(i, j, k, 3)*frhoed
         tauzzd = tauzzd + sk(i, j, k, 3)*fmzd + wbar*tempd24
@@ -14225,12 +14199,13 @@ contains
     end if
   end subroutine invisciddissfluxscalarapprox
 !  differentiation of invisciddissfluxmatrixapprox in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *p *w *fw
+!   gradient     of useful results: pinfcorr *p *sfacei *sfacej
+!                *sfacek *w *si *sj *sk *fw
 !   with respect to varying inputs: pinfcorr *p *sfacei *sfacej
 !                *sfacek *w *si *sj *sk *fw
-!   rw status of diff variables: pinfcorr:out *p:incr *sfacei:out
-!                *sfacej:out *sfacek:out *w:incr *si:out *sj:out
-!                *sk:out *fw:in-out
+!   rw status of diff variables: pinfcorr:incr *p:incr *sfacei:incr
+!                *sfacej:incr *sfacek:incr *w:incr *si:incr *sj:incr
+!                *sk:incr *fw:in-out
 !   plus diff mem management of: p:in sfacei:in sfacej:in sfacek:in
 !                w:in si:in sj:in sk:in fw:in
   subroutine invisciddissfluxmatrixapprox_b()
@@ -14366,15 +14341,7 @@ contains
     end if
 ! check if rfil == 0. if so, the dissipative flux needs not to
 ! be computed.
-    if (abs0 .lt. thresholdreal) then
-      pinfcorrd = 0.0_8
-      sfaceid = 0.0_8
-      sfacejd = 0.0_8
-      sfacekd = 0.0_8
-      sid = 0.0_8
-      sjd = 0.0_8
-      skd = 0.0_8
-    else
+    if (abs0 .ge. thresholdreal) then
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used.
@@ -15142,8 +15109,6 @@ contains
           end do
         end do
       end do
-      sfacekd = 0.0_8
-      skd = 0.0_8
       plimd = 0.0_8
       sfaced = 0.0_8
       do j=jl,2,-1
@@ -15477,8 +15442,6 @@ contains
           end if
         end do
       end do
-      sfacejd = 0.0_8
-      sjd = 0.0_8
       do k=kl,2,-1
         do i=il,2,-1
           dp1d = 0.0_8
@@ -15810,8 +15773,6 @@ contains
           end if
         end do
       end do
-      sfaceid = 0.0_8
-      sid = 0.0_8
       do k=kl,2,-1
         do j=jl,2,-1
           dp1d = 0.0_8
@@ -16154,7 +16115,7 @@ contains
           end do
         end do
       end do
-      pinfcorrd = 0.001_realtype*plimd
+      pinfcorrd = pinfcorrd + 0.001_realtype*plimd
     end if
   end subroutine invisciddissfluxmatrixapprox_b
   subroutine invisciddissfluxmatrixapprox()

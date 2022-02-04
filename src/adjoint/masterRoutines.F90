@@ -259,7 +259,7 @@ contains
     use fluxes_d, only :inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
          inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
          inviscidUpwindFlux_d, viscousFlux_d, viscousFluxApprox_d, inviscidCentralFlux_d
-    use residuals_d, only : sourceTerms_block_d
+    use residuals_d, only : sourceTerms_block_d, initres_block_d
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_d, exchangeCoor_d, exchangeCoor, whalo2
     use wallDistance_d, only : updateWallDistancesQuickly_d
@@ -472,9 +472,13 @@ contains
           ISIZE1OFDrfbcdata = nBocos
           ISIZE1OFDrfviscsubface = nViscBocos
 
+          call timeStep_block_d(.false.)
+
+          call initRes_block_d(1, nw, nn, sps)
+
           ! initalize the residuals for this block 
-          dw = zero
-          dwd = zero
+          ! dw = zero
+          ! dwd = zero
           
           ! Compute any source terms
           do iRegion=1, nActuatorRegions
@@ -610,7 +614,7 @@ contains
     use wallDistance_b, only : updateWallDistancesQuickly_b
     use sa_b, only : saSource_b, saViscous_b, saResScale_b, qq
     use turbutils_b, only : turbAdvection_b, computeEddyViscosity_b
-    use residuals_b, only : sourceTerms_block_b
+    use residuals_b, only : sourceTerms_block_b, initRes_block_b
     use fluxes_b, only :inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
          inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
     use BCExtra_b, only : applyAllBC_Block_b
@@ -622,7 +626,6 @@ contains
     use actuatorRegionData, only : nActuatorRegions
     use monitor, only : timeUnsteadyRestart
     use section, only: sections,nSections ! used in time-declaration
-    use solverutils, only : slipvelocitiesfinelevel_block,gridvelocitiesfinelevel_block,normalvelocities_block
 
 #include <petsc/finclude/petsc.h>
     use petsc
@@ -757,8 +760,7 @@ contains
              call sourceTerms_block_b(nn, .True. , iRegion, dummyReal, dummyReald)
           end do
 
-          ! Initres_b should be called here. For steady just zero:
-          dwd = zero
+          call initRes_block_b(1, nw, nn, sps)
        end do domainLoop1
     end do spsLoop1
 
@@ -832,19 +834,9 @@ contains
                      &         ntimeintervalsspectral, realtype)
              end do
           end if
-          ! fake forward sweep
-          call gridvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
-
-          call normalvelocities_block(sps)
-
-          call slipvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
-          ! required for ts
 
           call slipvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
-
-          ! required for ts
           call normalvelocities_block_b(sps)
-
           call gridvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
 
           call boundaryNormals_b
@@ -1007,7 +999,7 @@ contains
          inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
     use solverutils_fast_b, only : timeStep_block_fast_b
     use flowutils_fast_b, only : allnodalgradients_fast_b
-    use residuals_fast_b, only : sourceTerms_block_fast_b
+    use residuals_fast_b, only : sourceTerms_block_fast_b, initRes_block_fast_b
     use oversetData, only : oversetPresent
     use bcroutines, only : applyallbc_block
     use actuatorRegionData, only : nActuatorRegions
@@ -1096,8 +1088,7 @@ contains
              call sourceTerms_block_fast_b(nn, .True. , iRegion, dummyReal)
           end do
 
-          ! Initres_b should be called here. For steady just zero:
-          dwd = zero
+          call initRes_block_fast_b(1, nw, nn, sps)
        end do domainLoop1
     end do spsLoop1
 

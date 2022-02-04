@@ -247,7 +247,6 @@ contains
 
     ! The rest of this file can be skipped if only the spectral
     ! radii need to be computed.
-#ifndef USE_TAPENADE
     testRadiiOnly: if(.not. onlyRadii) then
 
        ! The viscous contribution, if needed.
@@ -354,7 +353,7 @@ contains
        enddo
 
     endif testRadiiOnly
-#endif
+
   end subroutine timeStep_block
 
 #ifndef USE_TAPENADE
@@ -1693,7 +1692,7 @@ contains
                   ! This is a combination of rotation speed of this
                   ! block and the entire rigid body rotation.
 
-                  BCData(mm)% uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
+                  BCData(mm)%uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
                         + derivRotationMatrix(1,1)*xxc(1) &
                         + derivRotationMatrix(1,2)*xxc(2) &
                         + derivRotationMatrix(1,3)*xxc(3)
@@ -1756,7 +1755,7 @@ contains
                   ! This is a combination of rotation speed of this
                   ! block and the entire rigid body rotation.
 
-                  BCData(mm)% uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
+                  BCData(mm)%uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
                         + derivRotationMatrix(1,1)*xxc(1) &
                         + derivRotationMatrix(1,2)*xxc(2) &
                         + derivRotationMatrix(1,3)*xxc(3)
@@ -1819,7 +1818,7 @@ contains
                   ! This is a combination of rotation speed of this
                   ! block and the entire rigid body rotation.
 
-                  BCData(mm)% uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
+                  BCData(mm)%uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
                         + derivRotationMatrix(1,1)*xxc(1) &
                         + derivRotationMatrix(1,2)*xxc(2) &
                         + derivRotationMatrix(1,3)*xxc(3)
@@ -1882,7 +1881,7 @@ contains
                   ! This is a combination of rotation speed of this
                   ! block and the entire rigid body rotation.
 
-                  BCData(mm)% uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
+                  BCData(mm)%uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
                         + derivRotationMatrix(1,1)*xxc(1) &
                         + derivRotationMatrix(1,2)*xxc(2) &
                         + derivRotationMatrix(1,3)*xxc(3)
@@ -1945,7 +1944,7 @@ contains
                   ! This is a combination of rotation speed of this
                   ! block and the entire rigid body rotation.
 
-                  BCData(mm)% uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
+                  BCData(mm)%uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
                         + derivRotationMatrix(1,1)*xxc(1) &
                         + derivRotationMatrix(1,2)*xxc(2) &
                         + derivRotationMatrix(1,3)*xxc(3)
@@ -2008,7 +2007,7 @@ contains
                   ! This is a combination of rotation speed of this
                   ! block and the entire rigid body rotation.
 
-                  BCData(mm)% uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
+                  BCData(mm)%uSlip(i,j,1) = BCData(mm)%uSlip(i,j,1) + velxGrid    &
                         + derivRotationMatrix(1,1)*xxc(1) &
                         + derivRotationMatrix(1,2)*xxc(2) &
                         + derivRotationMatrix(1,3)*xxc(3)

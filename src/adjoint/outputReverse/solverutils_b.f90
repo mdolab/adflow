@@ -11,15 +11,19 @@ module solverutils_b
 
 contains
 !  differentiation of timestep_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: rhoinf pinfcorr *p *w *si *sj
-!                *sk *radi *radj *radk
-!   with respect to varying inputs: rhoinf pinfcorr *p *w *si *sj
-!                *sk *radi *radj *radk
-!   rw status of diff variables: rhoinf:incr pinfcorr:incr *p:incr
-!                *w:incr *si:incr *sj:incr *sk:incr *radi:in-out
-!                *radj:in-out *radk:in-out
-!   plus diff mem management of: p:in w:in si:in sj:in sk:in radi:in
-!                radj:in radk:in
+!   gradient     of useful results: rhoinf pinfcorr *rev *dtl *p
+!                *sfacei *sfacej *sfacek *w *rlv *vol *si *sj *sk
+!                *radi *radj *radk
+!   with respect to varying inputs: rhoinf pinfcorr *rev *dtl *p
+!                *sfacei *sfacej *sfacek *w *rlv *vol *si *sj *sk
+!                *radi *radj *radk
+!   rw status of diff variables: rhoinf:incr pinfcorr:incr *rev:incr
+!                *dtl:in-out *p:incr *sfacei:incr *sfacej:incr
+!                *sfacek:incr *w:incr *rlv:incr *vol:incr *si:incr
+!                *sj:incr *sk:incr *radi:in-out *radj:in-out *radk:in-out
+!   plus diff mem management of: rev:in dtl:in p:in sfacei:in sfacej:in
+!                sfacek:in w:in rlv:in vol:in si:in sj:in sk:in
+!                radi:in radj:in radk:in
   subroutine timestep_block_b(onlyradii)
 !
 !       timestep computes the time step, or more precisely the time
@@ -33,7 +37,7 @@ contains
     use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, pd, &
 &   rlv, rlvd, rev, revd, radi, radid, radj, radjd, radk, radkd, si, sid&
 &   , sj, sjd, sk, skd, sfacei, sfaceid, sfacej, sfacejd, sfacek, &
-&   sfacekd, dtl, gamma, vol, vold, addgridvelocities, sectionid
+&   sfacekd, dtl, dtld, gamma, vol, vold, addgridvelocities, sectionid
     use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf&
 &   , pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
     use inputdiscretization, only : adis, dirscaling, &
@@ -44,8 +48,6 @@ contains
     use inputtimespectral, only : ntimeintervalsspectral
     use utils_b, only : terminate
     implicit none
-! the rest of this file can be skipped if only the spectral
-! radii need to be computed.
 !
 !      subroutine argument.
 !
@@ -59,26 +61,36 @@ contains
 !
     integer(kind=inttype) :: i, j, k, ii
     real(kind=realtype) :: plim, rlim, clim2
-    real(kind=realtype) :: clim2d
+    real(kind=realtype) :: plimd, clim2d
     real(kind=realtype) :: uux, uuy, uuz, cc2, qsi, qsj, qsk, sx, sy, sz&
 &   , rmu
     real(kind=realtype) :: uuxd, uuyd, uuzd, cc2d, qsid, qsjd, qskd, sxd&
-&   , syd, szd
+&   , syd, szd, rmud
     real(kind=realtype) :: ri, rj, rk, rij, rjk, rki
     real(kind=realtype) :: rid, rjd, rkd, rijd, rjkd, rkid
     real(kind=realtype) :: vsi, vsj, vsk, rfl, dpi, dpj, dpk
+    real(kind=realtype) :: vsid, vsjd, vskd, rfld, dpid, dpjd, dpkd
     real(kind=realtype) :: sface, tmp
+    real(kind=realtype) :: sfaced
     logical :: radiineeded, doscaling
     intrinsic mod
     intrinsic max
     intrinsic abs
     intrinsic sqrt
     integer :: branch
+    real(kind=realtype) :: temp3
+    real(kind=realtype) :: tempd14
     real(kind=realtype) :: temp2
+    real(kind=realtype) :: tempd13
     real(kind=realtype) :: temp1
+    real(kind=realtype) :: tempd12
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd11
+    real(kind=realtype) :: tempd10
     real(kind=realtype) :: abs1d
+    real(kind=realtype) :: abs4d
     real(kind=realtype) :: abs0d
+    real(kind=realtype) :: abs3d
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
@@ -90,11 +102,25 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs2d
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
+    real(kind=realtype) :: abs5d
     real(kind=realtype) :: temp
+    real(kind=realtype) :: temp8
+    real(kind=realtype) :: tempd19
+    real(kind=realtype) :: temp7
+    real(kind=realtype) :: tempd18
+    real(kind=realtype) :: temp6
+    real(kind=realtype) :: tempd17
+    real(kind=realtype) :: temp5
+    real(kind=realtype) :: tempd16
+    real(kind=realtype) :: temp4
+    real(kind=realtype) :: tempd15
 ! determine whether or not the spectral radii are needed for the
 ! flux computation.
     radiineeded = radiineededcoarse
@@ -105,6 +131,7 @@ contains
 ! set the value of plim. to be fully consistent this must have
 ! the dimension of a pressure. therefore a fraction of pinfcorr
 ! is used. idem for rlim; compute clim2 as well.
+      plim = 0.001_realtype*pinfcorr
       clim2 = 0.000001_realtype*gammainf*pinfcorr/rhoinf
       doscaling = dirscaling .and. currentlevel .le. groundlevel
 ! initialize sface to zero. this value will be used if the
@@ -116,7 +143,9 @@ contains
 !
       select case  (precond) 
       case (noprecond) 
-        clim2d = 0.0_8
+        call pushreal8(sface)
+! no preconditioner. simply the standard spectral radius.
+! loop over the cells, including the first level halo.
         do ii=0,ie*je*ke-1
           i = mod(ii, ie) + 1
           j = mod(ii/ie, je) + 1
@@ -128,9 +157,7 @@ contains
           cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
           if (cc2 .lt. clim2) then
             cc2 = clim2
-            call pushcontrol1b(0)
           else
-            call pushcontrol1b(1)
             cc2 = cc2
           end if
 ! set the dot product of the grid velocity and the
@@ -146,10 +173,8 @@ contains
           qsi = uux*sx + uuy*sy + uuz*sz - sface
           if (qsi .ge. 0.) then
             abs0 = qsi
-            call pushcontrol1b(0)
           else
             abs0 = -qsi
-            call pushcontrol1b(1)
           end if
           ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! the grid velocity in j-direction.
@@ -162,10 +187,8 @@ contains
           qsj = uux*sx + uuy*sy + uuz*sz - sface
           if (qsj .ge. 0.) then
             abs1 = qsj
-            call pushcontrol1b(0)
           else
             abs1 = -qsj
-            call pushcontrol1b(1)
           end if
           rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! the grid velocity in k-direction.
@@ -178,13 +201,12 @@ contains
           qsk = uux*sx + uuy*sy + uuz*sz - sface
           if (qsk .ge. 0.) then
             abs2 = qsk
-            call pushcontrol1b(0)
           else
             abs2 = -qsk
-            call pushcontrol1b(1)
           end if
           rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
 ! compute the inviscid contribution to the time step.
+          if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
 !
 !           adapt the spectral radii if directional scaling must be
 !           applied.
@@ -192,23 +214,17 @@ contains
           if (doscaling) then
             if (ri .lt. eps) then
               ri = eps
-              call pushcontrol1b(0)
             else
-              call pushcontrol1b(1)
               ri = ri
             end if
             if (rj .lt. eps) then
               rj = eps
-              call pushcontrol1b(0)
             else
-              call pushcontrol1b(1)
               rj = rj
             end if
             if (rk .lt. eps) then
               rk = eps
-              call pushcontrol1b(0)
             else
-              call pushcontrol1b(1)
               rk = rk
             end if
 ! compute the scaling in the three coordinate
@@ -220,171 +236,649 @@ contains
 ! note that the multiplication is done with radi, radj
 ! and radk, such that the influence of the clipping
 ! is negligible.
-            rkd = (one+one/rki+rjk)*radkd(i, j, k)
-            rkid = -(rk*one*radkd(i, j, k)/rki**2)
-            rjkd = rk*radkd(i, j, k)
-            radkd(i, j, k) = 0.0_8
-            rjd = (one+one/rjk+rij)*radjd(i, j, k)
-            rjkd = rjkd - rj*one*radjd(i, j, k)/rjk**2
-            rijd = rj*radjd(i, j, k)
-            radjd(i, j, k) = 0.0_8
-            rijd = rijd - ri*one*radid(i, j, k)/rij**2
-            rkid = rkid + ri*radid(i, j, k)
-            if (rk/ri .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. &
-&               int(adis))) then
-              tempd7 = 0.0
-            else
-              tempd7 = adis*(rk/ri)**(adis-1)*rkid/ri
-            end if
-            if (rj/rk .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. &
-&               int(adis))) then
-              tempd9 = 0.0
-            else
-              tempd9 = adis*(rj/rk)**(adis-1)*rjkd/rk
-            end if
-            rkd = rkd + tempd7 - rj*tempd9/rk
-            if (ri/rj .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne. &
-&               int(adis))) then
-              tempd8 = 0.0
-            else
-              tempd8 = adis*(ri/rj)**(adis-1)*rijd/rj
-            end if
-            rid = tempd8 - rk*tempd7/ri + (one+one/rij+rki)*radid(i, j, &
-&             k)
-            radid(i, j, k) = 0.0_8
-            rjd = rjd + tempd9 - ri*tempd8/rj
-            call popcontrol1b(branch)
-            if (branch .eq. 0) rkd = 0.0_8
-            call popcontrol1b(branch)
-            if (branch .eq. 0) rjd = 0.0_8
-            call popcontrol1b(branch)
-            if (branch .eq. 0) rid = 0.0_8
+            radi(i, j, k) = ri*(one+one/rij+rki)
+            radj(i, j, k) = rj*(one+one/rjk+rij)
+            radk(i, j, k) = rk*(one+one/rki+rjk)
           else
-            rkd = radkd(i, j, k)
-            radkd(i, j, k) = 0.0_8
-            rjd = radjd(i, j, k)
-            radjd(i, j, k) = 0.0_8
-            rid = radid(i, j, k)
-            radid(i, j, k) = 0.0_8
+            radi(i, j, k) = ri
+            radj(i, j, k) = rj
+            radk(i, j, k) = rk
           end if
-          temp2 = sx**2 + sy**2 + sz**2
-          if (cc2*temp2 .eq. 0.0_8) then
-            tempd5 = 0.0
-          else
-            tempd5 = half*rkd/(2.0*sqrt(cc2*temp2))
-          end if
-          tempd6 = cc2*tempd5
-          abs2d = half*rkd
-          cc2d = temp2*tempd5
-          sxd = 2*sx*tempd6
-          syd = 2*sy*tempd6
-          szd = 2*sz*tempd6
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            qskd = abs2d
-          else
-            qskd = -abs2d
-          end if
-          uuxd = sx*qskd
-          sxd = sxd + uux*qskd
-          uuyd = sy*qskd
-          syd = syd + uuy*qskd
-          uuzd = sz*qskd
-          szd = szd + uuz*qskd
-          skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + szd
-          skd(i, j, k, 3) = skd(i, j, k, 3) + szd
-          skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + syd
-          skd(i, j, k, 2) = skd(i, j, k, 2) + syd
-          skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + sxd
-          skd(i, j, k, 1) = skd(i, j, k, 1) + sxd
-          sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
-          sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
-          sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
-          temp1 = sx**2 + sy**2 + sz**2
-          if (cc2*temp1 .eq. 0.0_8) then
-            tempd3 = 0.0
-          else
-            tempd3 = half*rjd/(2.0*sqrt(cc2*temp1))
-          end if
-          tempd4 = cc2*tempd3
-          abs1d = half*rjd
-          cc2d = cc2d + temp1*tempd3
-          sxd = 2*sx*tempd4
-          syd = 2*sy*tempd4
-          szd = 2*sz*tempd4
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            qsjd = abs1d
-          else
-            qsjd = -abs1d
-          end if
-          uuxd = uuxd + sx*qsjd
-          sxd = sxd + uux*qsjd
-          uuyd = uuyd + sy*qsjd
-          syd = syd + uuy*qsjd
-          uuzd = uuzd + sz*qsjd
-          szd = szd + uuz*qsjd
-          sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + szd
-          sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
-          sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + syd
-          sjd(i, j, k, 2) = sjd(i, j, k, 2) + syd
-          sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + sxd
-          sjd(i, j, k, 1) = sjd(i, j, k, 1) + sxd
-          sx = si(i-1, j, k, 1) + si(i, j, k, 1)
-          sy = si(i-1, j, k, 2) + si(i, j, k, 2)
-          sz = si(i-1, j, k, 3) + si(i, j, k, 3)
-          temp0 = sx**2 + sy**2 + sz**2
-          if (cc2*temp0 .eq. 0.0_8) then
-            tempd1 = 0.0
-          else
-            tempd1 = half*rid/(2.0*sqrt(cc2*temp0))
-          end if
-          tempd2 = cc2*tempd1
-          abs0d = half*rid
-          cc2d = cc2d + temp0*tempd1
-          sxd = 2*sx*tempd2
-          syd = 2*sy*tempd2
-          szd = 2*sz*tempd2
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            qsid = abs0d
-          else
-            qsid = -abs0d
-          end if
-          uuxd = uuxd + sx*qsid
-          sxd = sxd + uux*qsid
-          uuyd = uuyd + sy*qsid
-          syd = syd + uuy*qsid
-          uuzd = uuzd + sz*qsid
-          szd = szd + uuz*qsid
-          sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + szd
-          sid(i, j, k, 3) = sid(i, j, k, 3) + szd
-          sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + syd
-          sid(i, j, k, 2) = sid(i, j, k, 2) + syd
-          sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + sxd
-          sid(i, j, k, 1) = sid(i, j, k, 1) + sxd
-          call popcontrol1b(branch)
-          if (branch .eq. 0) then
-            clim2d = clim2d + cc2d
-            cc2d = 0.0_8
-          end if
-          temp = w(i, j, k, irho)
-          tempd0 = gamma(i, j, k)*cc2d/temp
-          pd(i, j, k) = pd(i, j, k) + tempd0
-          wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd0/temp
-          wd(i, j, k, ivz) = wd(i, j, k, ivz) + uuzd
-          wd(i, j, k, ivy) = wd(i, j, k, ivy) + uuyd
-          wd(i, j, k, ivx) = wd(i, j, k, ivx) + uuxd
         end do
+        call pushcontrol2b(1)
       case (turkel) 
-        clim2d = 0.0_8
+        call pushcontrol2b(2)
       case (choimerkle) 
-        clim2d = 0.0_8
+        call pushcontrol2b(3)
       case default
-        clim2d = 0.0_8
+        call pushcontrol2b(0)
       end select
+! the rest of this file can be skipped if only the spectral
+! radii need to be computed.
+      if (.not.onlyradii) then
+! the viscous contribution, if needed.
+        if (viscous) then
+          call pushinteger4(k)
+! loop over the owned cell centers.
+          do k=2,kl
+            call pushinteger4(j)
+            do j=2,jl
+              call pushinteger4(i)
+              do i=2,il
+! compute the effective viscosity coefficient. the
+! factor 0.5 is a combination of two things. in the
+! standard central discretization of a second
+! derivative there is a factor 2 multiplying the
+! central node. however in the code below not the
+! average but the sum of the left and the right face
+! is taken and squared. this leads to a factor 4.
+! combining both effects leads to 0.5. furthermore,
+! it is divided by the volume and density to obtain
+! the correct dimensions and multiplied by the
+! non-dimensional factor factvis.
+                call pushreal8(rmu)
+                rmu = rlv(i, j, k)
+                if (eddymodel) then
+                  rmu = rmu + rev(i, j, k)
+                  call pushcontrol1b(0)
+                else
+                  call pushcontrol1b(1)
+                end if
+                call pushreal8(rmu)
+                rmu = half*rmu/(w(i, j, k, irho)*vol(i, j, k))
+! add the viscous contribution in i-direction to the
+! (inverse) of the time step.
+                call pushreal8(sx)
+                sx = si(i, j, k, 1) + si(i-1, j, k, 1)
+                call pushreal8(sy)
+                sy = si(i, j, k, 2) + si(i-1, j, k, 2)
+                call pushreal8(sz)
+                sz = si(i, j, k, 3) + si(i-1, j, k, 3)
+                vsi = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsi
+! add the viscous contribution in j-direction to the
+! (inverse) of the time step.
+                sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
+                sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
+                sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
+                vsj = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsj
+! add the viscous contribution in k-direction to the
+! (inverse) of the time step.
+                sx = sk(i, j, k, 1) + sk(i, j, k-1, 1)
+                sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
+                sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
+                vsk = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsk
+              end do
+            end do
+          end do
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
+! for the spectral mode an additional term term must be
+! taken into account, which corresponds to the contribution
+! of the highest frequency.
+        if (equationmode .eq. timespectral) then
+          tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
+&           timeperiod
+          call pushinteger4(k)
+! loop over the owned cell centers and add the term.
+          do k=2,kl
+            call pushinteger4(j)
+            do j=2,jl
+              call pushinteger4(i)
+              do i=2,il
+                dtl(i, j, k) = dtl(i, j, k) + tmp*vol(i, j, k)
+              end do
+            end do
+          end do
+          call pushcontrol1b(1)
+        else
+          call pushcontrol1b(0)
+        end if
+        call pushinteger4(k)
+! currently the inverse of dt/vol is stored in dtl. invert
+! this value such that the time step per unit cfl number is
+! stored and correct in cases of high gradients.
+        do k=2,kl
+          call pushinteger4(j)
+          do j=2,jl
+            call pushinteger4(i)
+            do i=2,il
+              if (p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k) .ge. 0.) &
+&             then
+                call pushreal8(abs3)
+                abs3 = p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k)
+                call pushcontrol1b(0)
+              else
+                call pushreal8(abs3)
+                abs3 = -(p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))
+                call pushcontrol1b(1)
+              end if
+              call pushreal8(dpi)
+              dpi = abs3/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)
+              if (p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k) .ge. 0.) &
+&             then
+                call pushreal8(abs4)
+                abs4 = p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k)
+                call pushcontrol1b(0)
+              else
+                call pushreal8(abs4)
+                abs4 = -(p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))
+                call pushcontrol1b(1)
+              end if
+              call pushreal8(dpj)
+              dpj = abs4/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)
+              if (p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1) .ge. 0.) &
+&             then
+                call pushreal8(abs5)
+                abs5 = p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1)
+                call pushcontrol1b(0)
+              else
+                call pushreal8(abs5)
+                abs5 = -(p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))
+                call pushcontrol1b(1)
+              end if
+              call pushreal8(dpk)
+              dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
+              rfl = one/(one+b*(dpi+dpj+dpk))
+              call pushreal8(dtl(i, j, k))
+              dtl(i, j, k) = rfl/dtl(i, j, k)
+            end do
+          end do
+        end do
+        plimd = 0.0_8
+        do k=kl,2,-1
+          do j=jl,2,-1
+            do i=il,2,-1
+              rfl = one/(one+b*(dpi+dpj+dpk))
+              call popreal8(dtl(i, j, k))
+              tempd7 = dtld(i, j, k)/dtl(i, j, k)
+              rfld = tempd7
+              dtld(i, j, k) = -(rfl*tempd7/dtl(i, j, k))
+              temp4 = one + b*(dpi+dpj+dpk)
+              tempd8 = -(one*b*rfld/temp4**2)
+              dpid = tempd8
+              dpjd = tempd8
+              dpkd = tempd8
+              call popreal8(dpk)
+              temp3 = p(i, j, k+1) + two*p(i, j, k) + p(i, j, k-1) + &
+&               plim
+              tempd9 = -(abs5*dpkd/temp3**2)
+              abs5d = dpkd/temp3
+              pd(i, j, k+1) = pd(i, j, k+1) + tempd9
+              pd(i, j, k) = pd(i, j, k) + two*tempd9
+              pd(i, j, k-1) = pd(i, j, k-1) + tempd9
+              plimd = plimd + tempd9
+              call popcontrol1b(branch)
+              if (branch .eq. 0) then
+                call popreal8(abs5)
+                pd(i, j, k+1) = pd(i, j, k+1) + abs5d
+                pd(i, j, k) = pd(i, j, k) - two*abs5d
+                pd(i, j, k-1) = pd(i, j, k-1) + abs5d
+              else
+                call popreal8(abs5)
+                pd(i, j, k) = pd(i, j, k) + two*abs5d
+                pd(i, j, k+1) = pd(i, j, k+1) - abs5d
+                pd(i, j, k-1) = pd(i, j, k-1) - abs5d
+              end if
+              call popreal8(dpj)
+              temp2 = p(i, j+1, k) + two*p(i, j, k) + p(i, j-1, k) + &
+&               plim
+              tempd6 = -(abs4*dpjd/temp2**2)
+              abs4d = dpjd/temp2
+              pd(i, j+1, k) = pd(i, j+1, k) + tempd6
+              pd(i, j, k) = pd(i, j, k) + two*tempd6
+              pd(i, j-1, k) = pd(i, j-1, k) + tempd6
+              plimd = plimd + tempd6
+              call popcontrol1b(branch)
+              if (branch .eq. 0) then
+                call popreal8(abs4)
+                pd(i, j+1, k) = pd(i, j+1, k) + abs4d
+                pd(i, j, k) = pd(i, j, k) - two*abs4d
+                pd(i, j-1, k) = pd(i, j-1, k) + abs4d
+              else
+                call popreal8(abs4)
+                pd(i, j, k) = pd(i, j, k) + two*abs4d
+                pd(i, j+1, k) = pd(i, j+1, k) - abs4d
+                pd(i, j-1, k) = pd(i, j-1, k) - abs4d
+              end if
+              call popreal8(dpi)
+              temp1 = p(i+1, j, k) + two*p(i, j, k) + p(i-1, j, k) + &
+&               plim
+              tempd5 = -(abs3*dpid/temp1**2)
+              abs3d = dpid/temp1
+              pd(i+1, j, k) = pd(i+1, j, k) + tempd5
+              pd(i, j, k) = pd(i, j, k) + two*tempd5
+              pd(i-1, j, k) = pd(i-1, j, k) + tempd5
+              plimd = plimd + tempd5
+              call popcontrol1b(branch)
+              if (branch .eq. 0) then
+                call popreal8(abs3)
+                pd(i+1, j, k) = pd(i+1, j, k) + abs3d
+                pd(i, j, k) = pd(i, j, k) - two*abs3d
+                pd(i-1, j, k) = pd(i-1, j, k) + abs3d
+              else
+                call popreal8(abs3)
+                pd(i, j, k) = pd(i, j, k) + two*abs3d
+                pd(i+1, j, k) = pd(i+1, j, k) - abs3d
+                pd(i-1, j, k) = pd(i-1, j, k) - abs3d
+              end if
+            end do
+            call popinteger4(i)
+          end do
+          call popinteger4(j)
+        end do
+        call popinteger4(k)
+        call popcontrol1b(branch)
+        if (branch .ne. 0) then
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                vold(i, j, k) = vold(i, j, k) + tmp*dtld(i, j, k)
+              end do
+              call popinteger4(i)
+            end do
+            call popinteger4(j)
+          end do
+          call popinteger4(k)
+        end if
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                vskd = dtld(i, j, k)
+                tempd0 = rmu*vskd
+                rmud = (sx**2+sy**2+sz**2)*vskd
+                sxd = 2*sx*tempd0
+                syd = 2*sy*tempd0
+                szd = 2*sz*tempd0
+                skd(i, j, k, 3) = skd(i, j, k, 3) + szd
+                skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + szd
+                skd(i, j, k, 2) = skd(i, j, k, 2) + syd
+                skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + syd
+                skd(i, j, k, 1) = skd(i, j, k, 1) + sxd
+                skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + sxd
+                sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
+                sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
+                sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
+                vsjd = dtld(i, j, k)
+                tempd1 = rmu*vsjd
+                rmud = rmud + (sx**2+sy**2+sz**2)*vsjd
+                sxd = 2*sx*tempd1
+                syd = 2*sy*tempd1
+                szd = 2*sz*tempd1
+                sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
+                sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + szd
+                sjd(i, j, k, 2) = sjd(i, j, k, 2) + syd
+                sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + syd
+                sjd(i, j, k, 1) = sjd(i, j, k, 1) + sxd
+                sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + sxd
+                sy = si(i, j, k, 2) + si(i-1, j, k, 2)
+                sz = si(i, j, k, 3) + si(i-1, j, k, 3)
+                sx = si(i, j, k, 1) + si(i-1, j, k, 1)
+                vsid = dtld(i, j, k)
+                tempd2 = rmu*vsid
+                rmud = rmud + (sx**2+sy**2+sz**2)*vsid
+                sxd = 2*sx*tempd2
+                syd = 2*sy*tempd2
+                szd = 2*sz*tempd2
+                call popreal8(sz)
+                sid(i, j, k, 3) = sid(i, j, k, 3) + szd
+                sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + szd
+                call popreal8(sy)
+                sid(i, j, k, 2) = sid(i, j, k, 2) + syd
+                sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + syd
+                call popreal8(sx)
+                sid(i, j, k, 1) = sid(i, j, k, 1) + sxd
+                sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + sxd
+                call popreal8(rmu)
+                temp0 = w(i, j, k, irho)
+                temp = temp0*vol(i, j, k)
+                tempd3 = half*rmud/temp
+                tempd4 = -(rmu*tempd3/temp)
+                wd(i, j, k, irho) = wd(i, j, k, irho) + vol(i, j, k)*&
+&                 tempd4
+                vold(i, j, k) = vold(i, j, k) + temp0*tempd4
+                rmud = tempd3
+                call popcontrol1b(branch)
+                if (branch .eq. 0) revd(i, j, k) = revd(i, j, k) + rmud
+                call popreal8(rmu)
+                rlvd(i, j, k) = rlvd(i, j, k) + rmud
+              end do
+              call popinteger4(i)
+            end do
+            call popinteger4(j)
+          end do
+          call popinteger4(k)
+        end if
+      else
+        plimd = 0.0_8
+      end if
+      call popcontrol2b(branch)
+      if (branch .lt. 2) then
+        if (branch .eq. 0) then
+          clim2d = 0.0_8
+        else
+          clim2d = 0.0_8
+          sfaced = 0.0_8
+          call popreal8(sface)
+          do ii=0,ie*je*ke-1
+            i = mod(ii, ie) + 1
+            j = mod(ii/ie, je) + 1
+            k = ii/(ie*je) + 1
+! compute the velocities and speed of sound squared.
+            uux = w(i, j, k, ivx)
+            uuy = w(i, j, k, ivy)
+            uuz = w(i, j, k, ivz)
+            cc2 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
+            if (cc2 .lt. clim2) then
+              cc2 = clim2
+              call pushcontrol1b(0)
+            else
+              call pushcontrol1b(1)
+              cc2 = cc2
+            end if
+! set the dot product of the grid velocity and the
+! normal in i-direction for a moving face. to avoid
+! a number of multiplications by 0.5 simply the sum
+! is taken.
+            if (addgridvelocities) then
+              sface = sfacei(i-1, j, k) + sfacei(i, j, k)
+              call pushcontrol1b(1)
+            else
+              call pushcontrol1b(0)
+            end if
+! spectral radius in i-direction.
+            sx = si(i-1, j, k, 1) + si(i, j, k, 1)
+            sy = si(i-1, j, k, 2) + si(i, j, k, 2)
+            sz = si(i-1, j, k, 3) + si(i, j, k, 3)
+            qsi = uux*sx + uuy*sy + uuz*sz - sface
+            if (qsi .ge. 0.) then
+              abs0 = qsi
+              call pushcontrol1b(0)
+            else
+              abs0 = -qsi
+              call pushcontrol1b(1)
+            end if
+            ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+! the grid velocity in j-direction.
+            if (addgridvelocities) then
+              sface = sfacej(i, j-1, k) + sfacej(i, j, k)
+              call pushcontrol1b(1)
+            else
+              call pushcontrol1b(0)
+            end if
+! spectral radius in j-direction.
+            sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
+            sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
+            sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
+            qsj = uux*sx + uuy*sy + uuz*sz - sface
+            if (qsj .ge. 0.) then
+              abs1 = qsj
+              call pushcontrol1b(0)
+            else
+              abs1 = -qsj
+              call pushcontrol1b(1)
+            end if
+            rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+! the grid velocity in k-direction.
+            if (addgridvelocities) then
+              sface = sfacek(i, j, k-1) + sfacek(i, j, k)
+              call pushcontrol1b(1)
+            else
+              call pushcontrol1b(0)
+            end if
+! spectral radius in k-direction.
+            sx = sk(i, j, k-1, 1) + sk(i, j, k, 1)
+            sy = sk(i, j, k-1, 2) + sk(i, j, k, 2)
+            sz = sk(i, j, k-1, 3) + sk(i, j, k, 3)
+            qsk = uux*sx + uuy*sy + uuz*sz - sface
+            if (qsk .ge. 0.) then
+              abs2 = qsk
+              call pushcontrol1b(0)
+            else
+              abs2 = -qsk
+              call pushcontrol1b(1)
+            end if
+            rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+! compute the inviscid contribution to the time step.
+            if (.not.onlyradii) then
+              call pushcontrol1b(0)
+            else
+              call pushcontrol1b(1)
+            end if
+!
+!           adapt the spectral radii if directional scaling must be
+!           applied.
+!
+            if (doscaling) then
+              if (ri .lt. eps) then
+                ri = eps
+                call pushcontrol1b(0)
+              else
+                call pushcontrol1b(1)
+                ri = ri
+              end if
+              if (rj .lt. eps) then
+                rj = eps
+                call pushcontrol1b(0)
+              else
+                call pushcontrol1b(1)
+                rj = rj
+              end if
+              if (rk .lt. eps) then
+                rk = eps
+                call pushcontrol1b(0)
+              else
+                call pushcontrol1b(1)
+                rk = rk
+              end if
+! compute the scaling in the three coordinate
+! directions.
+              rij = (ri/rj)**adis
+              rjk = (rj/rk)**adis
+              rki = (rk/ri)**adis
+! create the scaled versions of the aspect ratios.
+! note that the multiplication is done with radi, radj
+! and radk, such that the influence of the clipping
+! is negligible.
+              rkd = (one+one/rki+rjk)*radkd(i, j, k)
+              rkid = -(rk*one*radkd(i, j, k)/rki**2)
+              rjkd = rk*radkd(i, j, k)
+              radkd(i, j, k) = 0.0_8
+              rjd = (one+one/rjk+rij)*radjd(i, j, k)
+              rjkd = rjkd - rj*one*radjd(i, j, k)/rjk**2
+              rijd = rj*radjd(i, j, k)
+              radjd(i, j, k) = 0.0_8
+              rijd = rijd - ri*one*radid(i, j, k)/rij**2
+              rkid = rkid + ri*radid(i, j, k)
+              if (rk/ri .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne.&
+&                 int(adis))) then
+                tempd17 = 0.0
+              else
+                tempd17 = adis*(rk/ri)**(adis-1)*rkid/ri
+              end if
+              if (rj/rk .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne.&
+&                 int(adis))) then
+                tempd19 = 0.0
+              else
+                tempd19 = adis*(rj/rk)**(adis-1)*rjkd/rk
+              end if
+              rkd = rkd + tempd17 - rj*tempd19/rk
+              if (ri/rj .le. 0.0_8 .and. (adis .eq. 0.0_8 .or. adis .ne.&
+&                 int(adis))) then
+                tempd18 = 0.0
+              else
+                tempd18 = adis*(ri/rj)**(adis-1)*rijd/rj
+              end if
+              rid = tempd18 - rk*tempd17/ri + (one+one/rij+rki)*radid(i&
+&               , j, k)
+              radid(i, j, k) = 0.0_8
+              rjd = rjd + tempd19 - ri*tempd18/rj
+              call popcontrol1b(branch)
+              if (branch .eq. 0) rkd = 0.0_8
+              call popcontrol1b(branch)
+              if (branch .eq. 0) rjd = 0.0_8
+              call popcontrol1b(branch)
+              if (branch .eq. 0) rid = 0.0_8
+            else
+              rkd = radkd(i, j, k)
+              radkd(i, j, k) = 0.0_8
+              rjd = radjd(i, j, k)
+              radjd(i, j, k) = 0.0_8
+              rid = radid(i, j, k)
+              radid(i, j, k) = 0.0_8
+            end if
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              rid = rid + dtld(i, j, k)
+              rjd = rjd + dtld(i, j, k)
+              rkd = rkd + dtld(i, j, k)
+              dtld(i, j, k) = 0.0_8
+            end if
+            temp8 = sx**2 + sy**2 + sz**2
+            if (cc2*temp8 .eq. 0.0_8) then
+              tempd15 = 0.0
+            else
+              tempd15 = half*rkd/(2.0*sqrt(cc2*temp8))
+            end if
+            tempd16 = cc2*tempd15
+            abs2d = half*rkd
+            cc2d = temp8*tempd15
+            sxd = 2*sx*tempd16
+            syd = 2*sy*tempd16
+            szd = 2*sz*tempd16
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              qskd = abs2d
+            else
+              qskd = -abs2d
+            end if
+            uuxd = sx*qskd
+            sxd = sxd + uux*qskd
+            uuyd = sy*qskd
+            syd = syd + uuy*qskd
+            uuzd = sz*qskd
+            szd = szd + uuz*qskd
+            sfaced = sfaced - qskd
+            skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + szd
+            skd(i, j, k, 3) = skd(i, j, k, 3) + szd
+            skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + syd
+            skd(i, j, k, 2) = skd(i, j, k, 2) + syd
+            skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + sxd
+            skd(i, j, k, 1) = skd(i, j, k, 1) + sxd
+            call popcontrol1b(branch)
+            if (branch .ne. 0) then
+              sfacekd(i, j, k-1) = sfacekd(i, j, k-1) + sfaced
+              sfacekd(i, j, k) = sfacekd(i, j, k) + sfaced
+              sfaced = 0.0_8
+            end if
+            sx = sj(i, j-1, k, 1) + sj(i, j, k, 1)
+            sy = sj(i, j-1, k, 2) + sj(i, j, k, 2)
+            sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
+            temp7 = sx**2 + sy**2 + sz**2
+            if (cc2*temp7 .eq. 0.0_8) then
+              tempd13 = 0.0
+            else
+              tempd13 = half*rjd/(2.0*sqrt(cc2*temp7))
+            end if
+            tempd14 = cc2*tempd13
+            abs1d = half*rjd
+            cc2d = cc2d + temp7*tempd13
+            sxd = 2*sx*tempd14
+            syd = 2*sy*tempd14
+            szd = 2*sz*tempd14
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              qsjd = abs1d
+            else
+              qsjd = -abs1d
+            end if
+            uuxd = uuxd + sx*qsjd
+            sxd = sxd + uux*qsjd
+            uuyd = uuyd + sy*qsjd
+            syd = syd + uuy*qsjd
+            uuzd = uuzd + sz*qsjd
+            szd = szd + uuz*qsjd
+            sfaced = sfaced - qsjd
+            sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + szd
+            sjd(i, j, k, 3) = sjd(i, j, k, 3) + szd
+            sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + syd
+            sjd(i, j, k, 2) = sjd(i, j, k, 2) + syd
+            sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + sxd
+            sjd(i, j, k, 1) = sjd(i, j, k, 1) + sxd
+            call popcontrol1b(branch)
+            if (branch .ne. 0) then
+              sfacejd(i, j-1, k) = sfacejd(i, j-1, k) + sfaced
+              sfacejd(i, j, k) = sfacejd(i, j, k) + sfaced
+              sfaced = 0.0_8
+            end if
+            sx = si(i-1, j, k, 1) + si(i, j, k, 1)
+            sy = si(i-1, j, k, 2) + si(i, j, k, 2)
+            sz = si(i-1, j, k, 3) + si(i, j, k, 3)
+            temp6 = sx**2 + sy**2 + sz**2
+            if (cc2*temp6 .eq. 0.0_8) then
+              tempd11 = 0.0
+            else
+              tempd11 = half*rid/(2.0*sqrt(cc2*temp6))
+            end if
+            tempd12 = cc2*tempd11
+            abs0d = half*rid
+            cc2d = cc2d + temp6*tempd11
+            sxd = 2*sx*tempd12
+            syd = 2*sy*tempd12
+            szd = 2*sz*tempd12
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              qsid = abs0d
+            else
+              qsid = -abs0d
+            end if
+            uuxd = uuxd + sx*qsid
+            sxd = sxd + uux*qsid
+            uuyd = uuyd + sy*qsid
+            syd = syd + uuy*qsid
+            uuzd = uuzd + sz*qsid
+            szd = szd + uuz*qsid
+            sfaced = sfaced - qsid
+            sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + szd
+            sid(i, j, k, 3) = sid(i, j, k, 3) + szd
+            sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + syd
+            sid(i, j, k, 2) = sid(i, j, k, 2) + syd
+            sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + sxd
+            sid(i, j, k, 1) = sid(i, j, k, 1) + sxd
+            call popcontrol1b(branch)
+            if (branch .ne. 0) then
+              sfaceid(i-1, j, k) = sfaceid(i-1, j, k) + sfaced
+              sfaceid(i, j, k) = sfaceid(i, j, k) + sfaced
+              sfaced = 0.0_8
+            end if
+            call popcontrol1b(branch)
+            if (branch .eq. 0) then
+              clim2d = clim2d + cc2d
+              cc2d = 0.0_8
+            end if
+            temp5 = w(i, j, k, irho)
+            tempd10 = gamma(i, j, k)*cc2d/temp5
+            pd(i, j, k) = pd(i, j, k) + tempd10
+            wd(i, j, k, irho) = wd(i, j, k, irho) - p(i, j, k)*tempd10/&
+&             temp5
+            wd(i, j, k, ivz) = wd(i, j, k, ivz) + uuzd
+            wd(i, j, k, ivy) = wd(i, j, k, ivy) + uuyd
+            wd(i, j, k, ivx) = wd(i, j, k, ivx) + uuxd
+          end do
+        end if
+      else if (branch .eq. 2) then
+        clim2d = 0.0_8
+      else
+        clim2d = 0.0_8
+      end if
       tempd = gammainf*0.000001_realtype*clim2d/rhoinf
-      pinfcorrd = pinfcorrd + tempd
+      pinfcorrd = pinfcorrd + 0.001_realtype*plimd + tempd
       rhoinfd = rhoinfd - pinfcorr*tempd/rhoinf
     end if
   end subroutine timestep_block_b
@@ -411,8 +905,6 @@ contains
     use inputtimespectral, only : ntimeintervalsspectral
     use utils_b, only : terminate
     implicit none
-! the rest of this file can be skipped if only the spectral
-! radii need to be computed.
 !
 !      subroutine argument.
 !
@@ -436,6 +928,9 @@ contains
     intrinsic max
     intrinsic abs
     intrinsic sqrt
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
     real(kind=realtype) :: abs2
     real(kind=realtype) :: abs1
     real(kind=realtype) :: abs0
@@ -572,6 +1067,102 @@ contains
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
+! the rest of this file can be skipped if only the spectral
+! radii need to be computed.
+      if (.not.onlyradii) then
+! the viscous contribution, if needed.
+        if (viscous) then
+! loop over the owned cell centers.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+! compute the effective viscosity coefficient. the
+! factor 0.5 is a combination of two things. in the
+! standard central discretization of a second
+! derivative there is a factor 2 multiplying the
+! central node. however in the code below not the
+! average but the sum of the left and the right face
+! is taken and squared. this leads to a factor 4.
+! combining both effects leads to 0.5. furthermore,
+! it is divided by the volume and density to obtain
+! the correct dimensions and multiplied by the
+! non-dimensional factor factvis.
+                rmu = rlv(i, j, k)
+                if (eddymodel) rmu = rmu + rev(i, j, k)
+                rmu = half*rmu/(w(i, j, k, irho)*vol(i, j, k))
+! add the viscous contribution in i-direction to the
+! (inverse) of the time step.
+                sx = si(i, j, k, 1) + si(i-1, j, k, 1)
+                sy = si(i, j, k, 2) + si(i-1, j, k, 2)
+                sz = si(i, j, k, 3) + si(i-1, j, k, 3)
+                vsi = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsi
+! add the viscous contribution in j-direction to the
+! (inverse) of the time step.
+                sx = sj(i, j, k, 1) + sj(i, j-1, k, 1)
+                sy = sj(i, j, k, 2) + sj(i, j-1, k, 2)
+                sz = sj(i, j, k, 3) + sj(i, j-1, k, 3)
+                vsj = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsj
+! add the viscous contribution in k-direction to the
+! (inverse) of the time step.
+                sx = sk(i, j, k, 1) + sk(i, j, k-1, 1)
+                sy = sk(i, j, k, 2) + sk(i, j, k-1, 2)
+                sz = sk(i, j, k, 3) + sk(i, j, k-1, 3)
+                vsk = rmu*(sx*sx+sy*sy+sz*sz)
+                dtl(i, j, k) = dtl(i, j, k) + vsk
+              end do
+            end do
+          end do
+        end if
+! for the spectral mode an additional term term must be
+! taken into account, which corresponds to the contribution
+! of the highest frequency.
+        if (equationmode .eq. timespectral) then
+          tmp = ntimeintervalsspectral*pi*timeref/sections(sectionid)%&
+&           timeperiod
+! loop over the owned cell centers and add the term.
+          do k=2,kl
+            do j=2,jl
+              do i=2,il
+                dtl(i, j, k) = dtl(i, j, k) + tmp*vol(i, j, k)
+              end do
+            end do
+          end do
+        end if
+! currently the inverse of dt/vol is stored in dtl. invert
+! this value such that the time step per unit cfl number is
+! stored and correct in cases of high gradients.
+        do k=2,kl
+          do j=2,jl
+            do i=2,il
+              if (p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k) .ge. 0.) &
+&             then
+                abs3 = p(i+1, j, k) - two*p(i, j, k) + p(i-1, j, k)
+              else
+                abs3 = -(p(i+1, j, k)-two*p(i, j, k)+p(i-1, j, k))
+              end if
+              dpi = abs3/(p(i+1, j, k)+two*p(i, j, k)+p(i-1, j, k)+plim)
+              if (p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k) .ge. 0.) &
+&             then
+                abs4 = p(i, j+1, k) - two*p(i, j, k) + p(i, j-1, k)
+              else
+                abs4 = -(p(i, j+1, k)-two*p(i, j, k)+p(i, j-1, k))
+              end if
+              dpj = abs4/(p(i, j+1, k)+two*p(i, j, k)+p(i, j-1, k)+plim)
+              if (p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1) .ge. 0.) &
+&             then
+                abs5 = p(i, j, k+1) - two*p(i, j, k) + p(i, j, k-1)
+              else
+                abs5 = -(p(i, j, k+1)-two*p(i, j, k)+p(i, j, k-1))
+              end if
+              dpk = abs5/(p(i, j, k+1)+two*p(i, j, k)+p(i, j, k-1)+plim)
+              rfl = one/(one+b*(dpi+dpj+dpk))
+              dtl(i, j, k) = rfl/dtl(i, j, k)
+            end do
+          end do
+        end do
+      end if
     end if
   end subroutine timestep_block
 !  differentiation of gridvelocitiesfinelevel_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):

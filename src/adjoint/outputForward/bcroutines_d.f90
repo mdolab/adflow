@@ -742,13 +742,14 @@ contains
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: *rev0 *rev1 *rev2 *pp0 *pp1
-!                *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2
+!                *pp2 *pp3 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.uslip)
 !   rw status of diff variables: *rev0:in-out *rev1:in-out *rev2:in
-!                *pp0:in-out *pp1:in-out *pp2:in *rlv0:in-out *rlv1:in-out
-!                *rlv2:in *ww0:in-out *ww1:in-out *ww2:in
+!                *pp0:in-out *pp1:in-out *pp2:in *pp3:in *rlv0:in-out
+!                *rlv1:in-out *rlv2:in *ww0:in-out *ww1:in-out
+!                *ww2:in *(*bcdata.uslip):in
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
-!                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in
+!                pp1:in pp2:in pp3:in rlv0:in rlv1:in rlv2:in ww0:in
+!                ww1:in ww2:in bcdata:in *bcdata.uslip:in
   subroutine bcnswalladiabatic_d(nn, secondhalo, correctfork)
 ! bcnswalladiabatic applies the viscous adiabatic wall boundary
 ! condition the pointers already defined.
@@ -792,11 +793,11 @@ contains
 ! velocity into account.
       ww1d(i, j, irho) = ww2d(i, j, irho)
       ww1(i, j, irho) = ww2(i, j, irho)
-      ww1d(i, j, ivx) = -ww2d(i, j, ivx)
+      ww1d(i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - ww2d(i, j, ivx)
       ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
-      ww1d(i, j, ivy) = -ww2d(i, j, ivy)
+      ww1d(i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - ww2d(i, j, ivy)
       ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
-      ww1d(i, j, ivz) = -ww2d(i, j, ivz)
+      ww1d(i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - ww2d(i, j, ivz)
       ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
 ! set the viscosities. there is no need to test for a
 ! viscous problem of course. the eddy viscosity is
@@ -819,7 +820,7 @@ contains
         pp1d(i, j) = pp2d(i, j) - four*third*rhokd
         pp1(i, j) = pp2(i, j) - four*third*rhok
       case default
-        pp1d(i, j) = 2*pp2d(i, j)
+        pp1d(i, j) = 2*pp2d(i, j) - pp3d(i, j)
         pp1(i, j) = 2*pp2(i, j) - pp3(i, j)
 ! adjust value if pressure is negative
         if (pp1(i, j) .le. zero) then
@@ -902,14 +903,15 @@ contains
 !   variations   of useful results: *rev0 *rev1 *pp0 *pp1 *rlv0
 !                *rlv1 *ww0 *ww1
 !   with respect to varying inputs: rgas *rev0 *rev1 *rev2 *pp0
-!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.tns_wall)
+!                *pp1 *pp2 *rlv0 *rlv1 *rlv2 *ww0 *ww1 *ww2 *(*bcdata.uslip)
+!                *(*bcdata.tns_wall)
 !   rw status of diff variables: rgas:in *rev0:in-out *rev1:in-out
 !                *rev2:in *pp0:in-out *pp1:in-out *pp2:in *rlv0:in-out
 !                *rlv1:in-out *rlv2:in *ww0:in-out *ww1:in-out
-!                *ww2:in *(*bcdata.tns_wall):in
+!                *ww2:in *(*bcdata.uslip):in *(*bcdata.tns_wall):in
 !   plus diff mem management of: rev0:in rev1:in rev2:in pp0:in
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
-!                ww2:in bcdata:in *bcdata.tns_wall:in
+!                ww2:in bcdata:in *bcdata.uslip:in *bcdata.tns_wall:in
   subroutine bcnswallisothermal_d(nn, secondhalo, correctfork)
 ! bcnswalladiabatic applies the viscous isothermal wall boundary
 ! condition to a block. it is assumed that the bcpointers are
@@ -1001,11 +1003,11 @@ contains
       ww1d(i, j, irho) = (pp1d(i, j)*rgas*t1-pp1(i, j)*(rgasd*t1+rgas*&
 &       t1d))/(rgas*t1)**2
       ww1(i, j, irho) = pp1(i, j)/(rgas*t1)
-      ww1d(i, j, ivx) = -ww2d(i, j, ivx)
+      ww1d(i, j, ivx) = two*bcdatad(nn)%uslip(i, j, 1) - ww2d(i, j, ivx)
       ww1(i, j, ivx) = -ww2(i, j, ivx) + two*bcdata(nn)%uslip(i, j, 1)
-      ww1d(i, j, ivy) = -ww2d(i, j, ivy)
+      ww1d(i, j, ivy) = two*bcdatad(nn)%uslip(i, j, 2) - ww2d(i, j, ivy)
       ww1(i, j, ivy) = -ww2(i, j, ivy) + two*bcdata(nn)%uslip(i, j, 2)
-      ww1d(i, j, ivz) = -ww2d(i, j, ivz)
+      ww1d(i, j, ivz) = two*bcdatad(nn)%uslip(i, j, 3) - ww2d(i, j, ivz)
       ww1(i, j, ivz) = -ww2(i, j, ivz) + two*bcdata(nn)%uslip(i, j, 3)
 ! set the viscosities. there is no need to test for a
 ! viscous problem of course. the eddy viscosity is

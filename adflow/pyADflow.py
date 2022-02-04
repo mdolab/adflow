@@ -3865,9 +3865,9 @@ class ADFLOW(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None and self.DVGeo is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(
-                    xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name
-                ).reshape(xsdot.shape)
+                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, config=self.curAP.name).reshape(
+                    xsdot.shape
+                )
             if self.mesh is not None:
                 xsdot = self.mapVector(xsdot, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
                 xvdot += self.mesh.warpDerivFwd(xsdot)
