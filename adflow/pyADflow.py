@@ -3762,7 +3762,8 @@ class ADFLOW(AeroSolver):
                     cutCallBack = self.getOption("cutCallBack")
                     if cutCallBack is not None:
                         xCen = self.adflow.utils.getcellcenters(1, n).T
-                        cutCallBack(xCen, flag)
+                        cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
+                        cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
                     # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = self.comm.allreduce(
