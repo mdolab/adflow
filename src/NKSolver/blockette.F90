@@ -88,7 +88,6 @@ contains
     use iteration, only : rFil, currentLevel
     use haloExchange, only : exchangeCoor, whalo2
     use wallDistance, only : updateWallDistancesQuickly
-    use wallDistanceData, only : xSurf, xSurfVec
     use utils, only : setPointers, EChk
     use turbUtils, only : computeEddyViscosity
     use residuals, only : sourceTerms_block
@@ -211,10 +210,6 @@ contains
        do nn=1,nDom
           call setPointers(nn, currentLevel, sps)
 
-          ! Now extract the vector of the surface data we need
-          call VecGetArrayF90(xSurfVec(currentLevel, sps), xSurf, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
-
           if (spatial) then
              call volume_block
              call metric_block
@@ -254,8 +249,6 @@ contains
           end if
           call applyAllBC_block(.True.)
 
-          call VecRestoreArrayF90(xSurfVec(currentLevel, sps), xSurf, ierr)
-          call EChk(ierr,__FILE__,__LINE__)
        end do
     end do
 
