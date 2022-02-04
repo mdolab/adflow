@@ -2084,11 +2084,14 @@ contains
                       ! Energy update is unchanged
                       blk(iRhoE, iRhoE) = dtinv
 
-                      ! For the turbulence variable, additionally scale the cfl.
-                      ! turbresscale is required because the turbulent residuals
-                      ! are scaled with it. Furthermore, the turbulence variable
-                      ! can get a different CFL number. Scale it by turbCFLScale
-                      blk(nt1, nt1) = dtinv*turbResScale(1)/ANK_turbCFLScale
+                      ! Turbulence variables
+                      do l=nt1, nt2
+                        ! For the turbulence variable, additionally scale the cfl.
+                        ! turbresscale is required because the turbulent residuals
+                        ! are scaled with it. Furthermore, the turbulence variable
+                        ! can get a different CFL number. Scale it by turbCFLScale
+                        blk(l, l) = dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
+                      end do
 
                       ! get the global cell index
                       irow = globalCell(i, j, k)
@@ -3393,7 +3396,6 @@ contains
     use utils, only : EChk, setPointers, myisnan
     use solverUtils, only : computeUTau
     use NKSolver, only : getEwTol
-    use BCRoutines, only : applyAllBC, applyAllBC_block
     use haloExchange, only : whalo2
     use oversetData, only : oversetPresent
     use flowVarRefState, only : nw, nwf, nt1,nt2 , kPresent, pInfCorr
@@ -3677,12 +3679,10 @@ contains
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, getEwTol
     use initializeFlow, only : setUniformFlow
-    use BCRoutines, only : applyAllBC, applyAllBC_block
     use haloExchange, only : whalo2
     use oversetData, only : oversetPresent
     use flowVarRefState, only : nw, nwf, nt1,nt2 , kPresent, pInfCorr
     use flowUtils, only : computeLamViscosity
-    use turbUtils, only : computeEddyViscosity
     use communication
     use blockette, only : blocketteRes
     implicit none
