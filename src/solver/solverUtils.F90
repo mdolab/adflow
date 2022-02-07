@@ -394,7 +394,7 @@ contains
 
   end subroutine gridVelocitiesFineLevel
 #endif
-
+#ifndef USE_TAPENADE
   subroutine gridVelocitiesFineLevel_TS_block(nn, sps)
 
     use precision
@@ -603,7 +603,7 @@ contains
     end do
 
   end subroutine gridVelocitiesFineLevel_TS_block
-
+#endif
   subroutine gridVelocitiesFineLevel_block(useOldCoor, t, sps, nn)
     !
     !       gridVelocitiesFineLevel computes the grid velocities for
