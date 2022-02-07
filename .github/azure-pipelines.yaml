@@ -19,3 +19,4 @@ extends:
     GCC_CONFIG: config/defaults/config.LINUX_GFORTRAN.mk
     INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk
     COVERAGE: true
+    TAPENADE: true
