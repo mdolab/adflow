@@ -408,7 +408,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         xRef = {"twist": [0.0] * 6, "span": [0.0], "shape": numpy.zeros(72, dtype="D")}
 
         if self.name == "Rotating_wing":
-            rtol = 3e-6
+            rtol = 4e-6
         else:
             rtol = 1e-8
         atol = 5e-10
