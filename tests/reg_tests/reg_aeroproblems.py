@@ -36,8 +36,8 @@ ap_tutorial_wing_laminar = AeroProblem(
 
 ap_tutorial_wing_rotating = AeroProblem(
     name="mdo_tutorial",
-    alpha=90.0,
-    mach=0.029550439744850453,
+    alpha=0.0,
+    mach=0.1,
     rho=1.225,
     T=284.15,
     areaRef=45.5,

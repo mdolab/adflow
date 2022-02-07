@@ -193,7 +193,7 @@ test_params = [
             "MGStartLevel": -1,
             "nCyclesCoarse": 250,
             "usenksolver": True,
-            "nkswitchtol": 1e-9,
+            "nkswitchtol": 1e-15,
             "nkinnerpreconits": 2,
             "nkjacobianlag": 3,
             "nkouterpreconits": 3,
@@ -203,17 +203,22 @@ test_params = [
             "ankswitchtol": 1.0,
             "anklinearsolvetol": 0.05,
             "ankcflexponent": 0.5,
-            "ankmaxiter": 60,
+            "ankmaxiter": 80,
             "ankpcilufill": 2,
+            "ankasmoverlap": 2,
+            "ankinnerpreconits": 2,
+            "ankouterpreconits": 2,
             "nsubiterturb": 10,
             "ankstepmin": 0.01,
             "anksecondordswitchtol": 1e-2,
+            "ankcoupledswitchtol": 1e-8,
+            "ankcfllimit": 1e10,
             "anklinresmax": 0.1,
             "L2Convergence": 1e-14,
             "L2ConvergenceCoarse": 1e-6,
-            "adjointL2Convergence": 1e-9,
+            "adjointL2Convergence": 1e-14,
             "ADPC": True,
-            "adjointMaxIter": 500000,
+            "adjointMaxIter": 1000,
             "adjointSubspaceSize": 500,
             "ILUFill": 2,
             "ASMOverlap": 1,
@@ -285,7 +290,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False))
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
-            rotRate_x = 1.5384615384615385
+            rotRate_x = 0.5
             self.CFDSolver.setRotationRate([0, 0, 0], [0, -rotRate_x, 0])
 
         # propagates the values from the restart file throughout the code
@@ -342,6 +347,10 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
         self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True))
+        if self.name == "Rotating_wing":
+            # Add rotation component to the frame
+            rotRate_x = 0.5
+            self.CFDSolver.setRotationRate([0, 0, 0], [0, -rotRate_x, 0])
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
@@ -352,6 +361,12 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
             return
+
+        if self.name == "Rotating_wing":
+            rtol = 2e-6
+        else:
+            rtol = 1e-8
+        atol = 5e-10
 
         for dv in ["alpha", "mach"]:  # defaultAeroDVs:
 
@@ -378,7 +393,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             print(self.name, funcsSens)
             print("====================================")
 
-        self.handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=1e-8, atol=5e-10)
+        self.handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=rtol, atol=atol)
 
     def cmplx_test_geom_dvs(self):
         if not hasattr(self, "name"):
@@ -391,6 +406,12 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         funcsSens = defaultdict(lambda: {})
 
         xRef = {"twist": [0.0] * 6, "span": [0.0], "shape": numpy.zeros(72, dtype="D")}
+
+        if self.name == "Rotating_wing":
+            rtol = 3e-6
+        else:
+            rtol = 1e-8
+        atol = 5e-10
 
         for dv in ["span", "twist", "shape"]:
 
@@ -416,7 +437,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
                 ref_val = self.handler.db["Eval Functions Sens:"][key][dv_key]
                 ref_val = ref_val.flatten()[0]
 
-                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=5e-9, rtol=5e-9, err_msg=err_msg)
+                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=atol, rtol=rtol, err_msg=err_msg)
 
         if MPI.COMM_WORLD.rank == 0:
             print("====================================")
