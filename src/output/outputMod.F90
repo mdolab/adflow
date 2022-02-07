@@ -2356,7 +2356,7 @@ contains
 
     end select
 
-100 format(1X, A,", k2 = ", e12.5, ", k4 = ", e12.5,".")
+100 format(1X, A,", k2 = ", es12.5, ", k4 = ", es12.5,".")
 110 format(1X, A)
 111 format(1X, "Second order upwind scheme using linear reconstruction, &
          &i.e. no limiter, kappa =", 1X, f7.3,".")
@@ -2378,7 +2378,7 @@ contains
     endif
 
 200 format(1X, A, 1X, "Directional scaling of dissipation with exponent", &
-         1X,e12.5, ".")
+         1X,es12.5, ".")
 210 format(1X, A, 1X, "No directional scaling of dissipation.")
 
     ! For the Euler equations, write the inviscid wall boundary
@@ -2873,7 +2873,7 @@ contains
 
        write(integerString,"(i7)") timeStepUnsteady + &
             nTimeStepsRestart
-       write(realString,"(e12.5)") timeUnsteady + &
+       write(realString,"(es12.5)") timeUnsteady + &
             timeUnsteadyRestart
 
        integerString = adjustl(integerString)

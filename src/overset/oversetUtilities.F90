@@ -71,7 +71,7 @@ contains
        do i=1, overlap%nrow
           write(*, "(a,I4, a)", advance='no') 'Row:', i, "   "
           do jj=overlap%rowPtr(i), overlap%rowPtr(i+1)-1
-             write(*, "(a,I2, a, e10.5)", advance='no') "(", overlap%colInd(jj), ")", overlap%data(jj)
+             write(*, "(a,I2, a, es10.5)", advance='no') "(", overlap%colInd(jj), ")", overlap%data(jj)
           end do
           write(*, *) " "
        end do
@@ -2314,7 +2314,7 @@ contains
                      x(i-1, j  , k  , :) + &
                      x(i  , j  , k  , :))
 
-                write(19, "(E18.10, E18.10, E18.10, I3)") xp(1), xp(2), xp(3), iblank(i, j, k)
+                write(19, "(ES18.10, ES18.10, ES18.10, I3)") xp(1), xp(2), xp(3), iblank(i, j, k)
              end do
           end do
        end do

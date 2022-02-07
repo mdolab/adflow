@@ -879,7 +879,7 @@ contains
 
 10  format(a)
 20  format(a,1x,f8.2)
-30  format(1x,a,1x,e10.4,4x,a,1x,i4)
+30  format(1x,a,1x,es10.4,4x,a,1x,i4)
 40  format(1x,a,1x,i5,1x,a)
 
 #endif
