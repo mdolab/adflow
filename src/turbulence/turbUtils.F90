@@ -647,7 +647,8 @@ contains
     case (menterSST)
 
        !SST eddy viscosity can't be computed in the halo region, since it uses the d2wall variable.
-       call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+       ! -> previously, evaluating computeEddyViscosity with includeHalos=true caused NaNs!
+       call SSTEddyViscosity(2, il, 2, jl, 2, kl)
 
        !Instead, we can extend the eddy viscosity using the BCs.
        if (includeHalos) then
