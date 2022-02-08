@@ -3723,7 +3723,7 @@ contains
     use iteration, only : nOldSolAvail, timeSpectralGridsNotWritten
     use monitor, only : monMassSliding, nTimeStepsRestart, timeUnsteadyRestart
     use killSignals, only : fatalFail, routineFailed
-    use ADjointPETSc, only : adjointPETScVarsAllocated
+    use ADjointPETSc, only : adjointPETScVarsAllocated, adjointPETScPreProcVarsAllocated
     use inputCostFunctions
     implicit none
 
@@ -4041,6 +4041,7 @@ contains
     useApproxWallDistance = .False.
     cflLimit = 3.0
     adjointPETScVarsAllocated = .False.
+    adjointPETScPreProcVarsAllocated = .False.
     usematrixfreedrdw = .False.
     sepSensorOffset = zero
     sepSensorSharpness = 10_realType

@@ -849,6 +849,7 @@ contains
          omegaFourYRot, omegaFourZRot, degreeFourMach, degreeFourAlpha, &
          degreeFourBeta
     use inputPhysics, only : equationMOde, flowType
+    use inputTimeSpectral, only : omegaFourier
     use section, only : sections, nSections
     use utils, only : terminate
     implicit none
@@ -969,6 +970,20 @@ contains
           endif
        endif
 
+       ! aeroelastic case
+       if(omegaFourier > 0) then 
+         tt = two*pi/omegaFourier
+
+          ! Check if a time period was already determined. If so, try
+          ! to determine a common time. Otherwise just copy the data.
+
+          if( timeDetermined ) then
+             timePeriod = commonTimeSpectral(timePeriod, tt)
+          else
+             timePeriod     = tt
+             timeDetermined = .true.
+          endif
+       end if
 
 !!$         ! Altitude.
 !!$

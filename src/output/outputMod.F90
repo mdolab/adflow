@@ -1436,8 +1436,10 @@ contains
     real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
     real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
+    ! The original i,j beging of the local block in the entire cgns block.
+    real(kind=realType) :: subface_jBegOr, subface_jEndOr, subface_iBegOr, subface_iEndOr
+    
     ! Set the pointers to this block.
-
     call setPointers(blockID, 1_intType, sps)
 
     ! Set the offset for the viscous data, such that the range is
@@ -1521,7 +1523,12 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
-
+       subface_iBegOr = jBegOr
+       subface_iEndOr = jEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
+       
        !===============================================================
 
     case (iMax)
@@ -1547,7 +1554,13 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
-
+       
+       subface_iBegOr = jBegOr
+       subface_iEndOr = jEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
+       
        !===============================================================
 
     case (jMin)
@@ -1573,6 +1586,13 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
+
+              
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
 
        !===============================================================
 
@@ -1600,6 +1620,12 @@ contains
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,jl,:)
 
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = kBegOr
+       subface_jEndOr = kEndOr
+
        !===============================================================
 
     case (kMin)
@@ -1626,6 +1652,12 @@ contains
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,:,2)
 
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = jBegOr
+       subface_jEndOr = jEndOr
+
        !===============================================================
 
     case (kMax)
@@ -1651,6 +1683,12 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,:,kl)
+
+       subface_iBegOr = iBegOr
+       subface_iEndOr = iEndOr
+       
+       subface_jBegOr = jBegOr
+       subface_jEndOr = jEndOr
 
     end select
     !
@@ -1889,10 +1927,10 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
-            jor = j + jBegOr - 1
-            if (jor == jBeg) then
-               jj = j + 1
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+            jor = j + subface_jBegOr - 1
+            if (jor == jBeg) then 
+               jj = j + 1 
             else if (jor == jEnd +1 ) then
                jj = j - 1
             else
@@ -1904,10 +1942,10 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
-               ior = i + iBegor - 1
-               if (ior == iBeg) then
-                  ii = i + 1
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+               ior = i + subface_iBegOr - 1
+               if (ior == iBeg) then 
+                  ii = i + 1 
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else
@@ -2206,7 +2244,7 @@ contains
 
     end select
 
-100 format(1X, A,", k2 = ", e12.5, ", k4 = ", e12.5,".")
+100 format(1X, A,", k2 = ", es12.5, ", k4 = ", es12.5,".")
 110 format(1X, A)
 111 format(1X, "Second order upwind scheme using linear reconstruction, &
          &i.e. no limiter, kappa =", 1X, f7.3,".")
@@ -2228,7 +2266,7 @@ contains
     endif
 
 200 format(1X, A, 1X, "Directional scaling of dissipation with exponent", &
-         1X,e12.5, ".")
+         1X,es12.5, ".")
 210 format(1X, A, 1X, "No directional scaling of dissipation.")
 
     ! For the Euler equations, write the inviscid wall boundary
@@ -2723,7 +2761,7 @@ contains
 
        write(integerString,"(i7)") timeStepUnsteady + &
             nTimeStepsRestart
-       write(realString,"(e12.5)") timeUnsteady + &
+       write(realString,"(es12.5)") timeUnsteady + &
             timeUnsteadyRestart
 
        integerString = adjustl(integerString)

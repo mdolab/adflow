@@ -2820,7 +2820,7 @@ module stringOps
 
     write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
     write(fileID, *) "DATAPACKING=BLOCK"
-13  format (E20.12)
+13  format (ES20.12)
 
     ! Nodes
     do j=1,3
@@ -2928,7 +2928,7 @@ module stringOps
 
     write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
     write(fileID, *) "DATAPACKING=BLOCK"
-13  format (E20.12)
+13  format (ES20.12)
 
     ! Nodes
     do j=1,3
@@ -2965,7 +2965,7 @@ module stringOps
 
     write (101,*) "Nodes = ", string%nNodes, " Elements= ", (endTri-startTri+1), " ZONETYPE=FETRIANGLE"
     write (101,*) "DATAPACKING=POINT"
-13  format (E20.12)
+13  format (ES20.12)
 
     ! Write all the coordinates
     do i=1, string%nNodes
