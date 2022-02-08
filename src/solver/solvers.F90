@@ -1250,7 +1250,7 @@ contains
     use inputUnsteady, only : timeIntegrationScheme
     use monitor, only : monLoc, monGlob, nMon, nMonMax, nMonSum, monNames, timeDataArray, &
          showCPU, monRef, convArray, timeUnsteadyRestart, timeArray, timeStepUnsteady, &
-         timeUnsteady, nTimeStepsRestart
+         timeUnsteady, nTimeStepsRestart, solverDataArray, solverTypeArray
     use iteration, only : groundLevel, currentLevel, iterTot, iterType, approxTotalIts, &
          CFLMonitor, stepMonitor, t0solver, converged, linResMonitor
     use killSignals, only : routineFailed, fromPython
@@ -1565,13 +1565,21 @@ contains
                 write(*,"(i6,1x)",advance="no") iterTot
                 write(*,"(i6,1x)",advance="no") approxTotalIts
                 write(*,"(a,1x)", advance="no") iterType
-
+                
+                if( storeConvInnerIter ) then
+                  solverDataArray(iterTot, sps, 1) = approxTotalIts
+                  solverTypeArray(iterTot, sps) = iterType
+               endif
+                
                 if (CFLMonitor < zero) then
                    ! Print dashes if no cfl term is used, i.e. NK solver
                    write(*,"(a,1x)", advance="no") "    ----  "
                 else
 #ifndef USE_COMPLEX
                    write(*,"(es10.2,1x)",advance="no") CFLMonitor
+                   if( storeConvInnerIter ) then
+                     solverDataArray(iterTot, sps, 2) = CFLMonitor
+                   endif
 #else
                    write(*,"(es10.2,1x)",advance="no") real(CFLMonitor)
 #endif
@@ -1584,6 +1592,9 @@ contains
 #ifndef USE_COMPLEX
                   write(*,"(f5.2,2x)",advance="no") stepMonitor
 #else
+                  if( storeConvInnerIter ) then
+                     solverDataArray(iterTot, sps, 3) = stepMonitor
+                  endif
                   write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
 #endif
                 end if
@@ -1596,6 +1607,9 @@ contains
 #ifndef USE_COMPLEX
                    write(*,"(f5.3,1x)",advance="no") linResMonitor
 #else
+                   if( storeConvInnerIter ) then
+                     solverDataArray(iterTot, sps, 4) = linResMonitor
+                  endif
                    write(*,"(f5.3,1x)",advance="no") real(linResMonitor)
 #endif
                 end if
@@ -1606,6 +1620,9 @@ contains
 #else
                    write(*,"(es12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
 #endif
+                   if( storeConvInnerIter ) then
+                      solverDataArray(iterTot, sps, 5) = mpi_wtime() - t0Solver
+                   endif
                 end if
              end if
           end if

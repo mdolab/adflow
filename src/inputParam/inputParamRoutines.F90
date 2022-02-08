@@ -2858,8 +2858,6 @@ contains
     if(equationMode == unsteady) then
        if(timeIntegrationScheme == explicitRK) &
             storeConvInnerIter = .false.
-    else
-       storeConvInnerIter = .true.
     endif
     !
     !       Iteration parameters. Check if the key parameters have specified
@@ -3809,9 +3807,7 @@ contains
 
     cpFile = ""                  ! Serves as a check later on.
 
-    storeConvInnerIter = .false. ! Do not store the convergence of
-    ! the inner iterations in unsteady
-    ! mode.
+    storeConvInnerIter = .false. ! Do not store the convergence of iterations 
 
 #ifdef USE_SINGLE_PRECISION
     precisionGrid = precisionSingle   ! Default IO precision depends
