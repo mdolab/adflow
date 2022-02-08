@@ -1228,12 +1228,12 @@ class ADFLOW(AeroSolver):
         # trim the array
         solverDataArray = self._trimHistoryData(solverDataArray)
         converge_Array = self._trimHistoryData(converge_Array)
-        monNames = self._converge_ertFortranStringArrayToList(monNames)
+        monNames = self._convertFortranStringArrayToList(monNames)
 
         # converge_ert the fortran sting array to a list of strings
         type_list = []
         for idx_sps in range(self.adflow.inputtimespectral.ntimeintervalsspectral):
-            type_list.append(self._converge_ertFortranStringArrayToList(type_array[:, idx_sps, :]))
+            type_list.append(self._convertFortranStringArrayToList(type_array[:, idx_sps, :]))
 
         # there is only one time spectral instance, so that dimension can be removed
         if self.adflow.inputtimespectral.ntimeintervalsspectral == 1:
