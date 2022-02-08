@@ -1591,10 +1591,10 @@ contains
                 else
 #ifndef USE_COMPLEX
                   write(*,"(f5.2,2x)",advance="no") stepMonitor
-#else
                   if( storeConvInnerIter ) then
                      solverDataArray(iterTot, sps, 3) = stepMonitor
                   endif
+#else
                   write(*,"(f5.2,2x)",advance="no") real(stepMonitor)
 #endif
                 end if
@@ -1606,10 +1606,10 @@ contains
 
 #ifndef USE_COMPLEX
                    write(*,"(f5.3,1x)",advance="no") linResMonitor
-#else
                    if( storeConvInnerIter ) then
                      solverDataArray(iterTot, sps, 4) = linResMonitor
                   endif
+#else
                    write(*,"(f5.3,1x)",advance="no") real(linResMonitor)
 #endif
                 end if
@@ -1617,12 +1617,13 @@ contains
                 if( showCPU ) then
 #ifndef USE_COMPLEX
                    write(*,"(es12.5,1x)",advance="no") mpi_wtime() - t0Solver
+                   if( storeConvInnerIter ) then
+                     solverDataArray(iterTot, sps, 5) = mpi_wtime() - t0Solver
+                  endif
 #else
                    write(*,"(es12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
 #endif
-                   if( storeConvInnerIter ) then
-                      solverDataArray(iterTot, sps, 5) = mpi_wtime() - t0Solver
-                   endif
+                   
                 end if
              end if
           end if
