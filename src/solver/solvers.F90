@@ -904,7 +904,7 @@ contains
          getCurrentResidual, NKStep, computeResidualNK
     use anksolver, only : ANK_switchTol, useANKSolver, ANK_CFL, ANKStep, destroyANKSolver
     use inputio, only : forcedLiftFile, forcedSliceFile, forcedVolumeFile, &
-         forcedSurfaceFile, solFile, newGridFile, surfaceSolFile
+         forcedSurfaceFile, solFile, newGridFile, surfaceSolFile, convSolFileBasename
     use inputIteration, only: CFL, CFLCoarse, minIterNum, nCycles, &
          nCyclesCoarse, nMGSteps, nUpdateBleeds, printIterations, rkReset, timeLimit
     use iteration, only : cycling, approxTotalIts, converged, CFLMonitor, &
@@ -912,7 +912,7 @@ contains
          rhoResStart, totalR0, totalRFinal, totalRStart, stepMonitor, linResMonitor, ordersConverged
     use killSignals, only : globalSignal, localSignal, noSignal, routineFailed, signalWrite, &
          signalWriteQuit
-    use monitor, only : writeGrid, writeSurface, writeVolume
+    use monitor, only : writeGrid, writeSurface, writeVolume, writeSolEachIter
     use utils, only: allocConvArrays, convergenceHeader
     use tecplotIO, only : writeTecplot
     use multiGrid, only : setCycleStrategy, executeMGCycle
@@ -942,8 +942,6 @@ contains
 
     ! Some initializations.
 
-    writeVolume  = .false.
-    writeSurface = .false.
     converged    = .false.
     globalSignal = noSignal
     localSignal  = noSignal
@@ -1186,18 +1184,22 @@ contains
             ierr)
 #endif
 
-       if (globalSignal == signalWrite) then
+       if (globalSignal == signalWrite .or. writeSolEachIter) then
+         ! We have been told to write the solution even though we are not done iterating
 
-          ! We have been told to write the solution
-
-          writeGrid = .True.
-          writeVolume = .True.
-          writeSurface = .True.
-
-          surfaceSolFile = forcedSurfaceFile
-          newGridFile = forcedVolumeFile
-          solFile = forcedVolumeFile
-
+          if (writeSolEachIter) then
+               write(numberString,"(i7)") iterTot
+               numberString = adjustl(numberString)
+               numberString = trim(numberString)
+               surfaceSolFile = trim(convSolFileBasename)//"_"//trim(numberString)//"_surf.cgns"
+               newGridFile = trim(convSolFileBasename)//"_"//trim(numberString)//".cgns"
+               solFile = trim(convSolFileBasename)//"_"//trim(numberString)//"_vol.cgns"
+          else
+               surfaceSolFile = forcedSurfaceFile
+               newGridFile = forcedVolumeFile
+               solFile = forcedVolumeFile
+          end if
+          
           call writeSol(fullFamList, size(fullFamList))
 
           ! Also write potential tecplot files. Note that we are not

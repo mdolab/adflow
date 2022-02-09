@@ -4751,6 +4751,7 @@ class ADFLOW(AeroSolver):
             "outputSurfaceFamily": [str, "allSurfaces"],
             "writeSurfaceSolution": [bool, True],
             "writeVolumeSolution": [bool, True],
+            "writeSolutionEachIter": [bool, False], 
             "writeTecplotSurfaceSolution": [bool, False],
             "nSaveVolume": [int, 1],
             "nSaveSurface": [int, 1],
@@ -5028,6 +5029,7 @@ class ADFLOW(AeroSolver):
             "parallel": self.adflow.inputparallel,
             "ts": self.adflow.inputtimespectral,
             "overset": self.adflow.inputoverset,
+            "monitor": self.adflow.monitor,
         }
 
         # In the option map, we first list the "module" defined in
@@ -5343,8 +5345,10 @@ class ADFLOW(AeroSolver):
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
             "computecavitation": ["cost", "computecavitation"],
+            "writesolutioneachiter": ["monitor", "writesoleachiter"],
+            "writesurfacesolution": ["monitor", "writesurface"],
+            "writevolumesolution": ["monitor", "writevolume"]
         }
-
         return optionMap, moduleMap
 
     def _getSpecialOptionLists(self):
@@ -5356,8 +5360,6 @@ class ADFLOW(AeroSolver):
 
         pythonOptions = {
             "numbersolutions",
-            "writesurfacesolution",
-            "writevolumesolution",
             "writetecplotsurfacesolution",
             "coupledsolution",
             "partitiononly",
@@ -5581,7 +5583,11 @@ class ADFLOW(AeroSolver):
         surfFileName = base + "_forced_surf.cgns"
         liftFileName = base + "_forced_lift.dat"
         sliceFileName = base + "_forced_slices.dat"
+        
+        convSolFileBaseName = base + "_intermediate_sol"
 
+        self.adflow.inputio.convsolfilebasename = self._expandString(convSolFileBaseName)
+        
         self.adflow.inputio.forcedvolumefile = self._expandString(volFileName)
         self.adflow.inputio.forcedsurfacefile = self._expandString(surfFileName)
         self.adflow.inputio.forcedliftfile = self._expandString(liftFileName)
