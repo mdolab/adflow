@@ -28,7 +28,7 @@ import types
 import numpy
 import sys
 from mpi4py import MPI
-from baseclasses import AeroSolver, AeroProblem, getPy3SafeString 
+from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
 from baseclasses.utils import Error, CaseInsensitiveDict
 from . import MExt
 import hashlib
@@ -1207,9 +1207,9 @@ class ADFLOW(AeroSolver):
             A dictionary of arrays and lists. The keys are the data types.
             The indices of the arrays are the major iteration numbers.
         """
-        
+
         # only the root proc has all the data and the data should be global.
-        # so get the data from the root proc and then broadcast it. 
+        # so get the data from the root proc and then broadcast it.
         if self.comm.rank == 0:
             # --- get data ---
             convergeArray = self.adflow.monitor.convarray
@@ -1244,14 +1244,15 @@ class ADFLOW(AeroSolver):
                 type_list = type_list[0]
 
             # --- create a dictionary with the labels and the values ---
-            
-            convergeDict = CaseInsensitiveDict({
-                "total minor iters": numpy.array(solverDataArray[:, 0], dtype=int),
-                "CFL": solverDataArray[:, 1],
-                "step": solverDataArray[:, 2],
-                "linear res": solverDataArray[:, 3],
-                "iter type": type_list,
-            })
+            convergeDict = CaseInsensitiveDict(
+                {
+                    "total minor iters": numpy.array(solverDataArray[:, 0], dtype=int),
+                    "CFL": solverDataArray[:, 1],
+                    "step": solverDataArray[:, 2],
+                    "linear res": solverDataArray[:, 3],
+                    "iter type": type_list,
+                }
+            )
 
             if self.adflow.monitor.showcpu:
                 convergeDict["wall time"] = solverDataArray[:, 4]
@@ -1262,10 +1263,9 @@ class ADFLOW(AeroSolver):
                 convergeDict[var] = convergeArray[:, idx]
         else:
             convergeDict = {}
-            
+
         convergeDict = self.comm.bcast(convergeDict, root=0)
 
-        
         return convergeDict
 
     def _trimHistoryData(self, data_array):
