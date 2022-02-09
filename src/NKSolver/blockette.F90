@@ -169,8 +169,6 @@ contains
        storeWall = useStoreWall
     end if
 
-   !  spatial = .true. # HACK: HSC for FAD check
-
     ! Spatial-only updates first
     if (spatial) then
        call adjustInflowAngle()

@@ -410,8 +410,8 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         if self.name == "Rotating_wing":
             rtol = 4e-6
         else:
-            rtol = 1e-8
-        atol = 5e-10
+            rtol = 5e-9
+        atol = 5e-9
 
         for dv in ["span", "twist", "shape"]:
 
