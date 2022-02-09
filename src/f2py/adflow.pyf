@@ -1219,7 +1219,6 @@ python module libadflow
          logical :: viscpc
          logical :: frozenturbulence
          logical :: usediagtspc
-         logical :: restartadjoint
          logical :: setmonitor
          logical :: printtiming
          logical :: firstrun
