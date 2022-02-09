@@ -28,8 +28,8 @@ import types
 import numpy
 import sys
 from mpi4py import MPI
-from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
-from baseclasses.utils import Error
+from baseclasses import AeroSolver, AeroProblem, getPy3SafeString 
+from baseclasses.utils import Error, CaseInsensitiveDict
 from . import MExt
 import hashlib
 from collections import OrderedDict
@@ -1188,7 +1188,7 @@ class ADFLOW(AeroSolver):
 
     def getConvergenceHistory(self, workUnitTime=None):
         """
-        retrive the convergence history from the fortran level.
+        Retrieve the convergence history from the fortran level.
 
         This information is printed to the terminal during a run.
         It is iterTot, IterType, CFL, Step, Linear Res, and CPU time (if added as a monitor variable)
@@ -1198,8 +1198,8 @@ class ADFLOW(AeroSolver):
         ----------
         workUnitTime : float
             The scaling factor specific to the processor.
-            If provided and `showcpu` is true, the work units (a processor independent time unit)
-            will be added to the returned dict too.
+            If provided and CPU time is a monitor variable (`showcpu` is true), the work units
+            (a processor independent time unit) ~will be added to the returned dict too.
 
         Returns
         -------
@@ -1208,7 +1208,7 @@ class ADFLOW(AeroSolver):
             The indices of the arrays are the major iteration numbers.
         """
         # --- get data ---
-        converge_Array = self.adflow.monitor.convarray
+        convergeArray = self.adflow.monitor.convarray
         solverDataArray = self.adflow.monitor.solverdataarray
 
         # We can't access monnames directly, because f2py apparently can't
@@ -1216,7 +1216,7 @@ class ADFLOW(AeroSolver):
         # related stackoverflow posts:
         # https://stackoverflow.com/questions/60141710/f2py-on-module-with-allocatable-string
         # https://stackoverflow.com/questions/64900066/dealing-with-character-arrays-in-f2py
-        monNames = self.adflow.utils.getmonitorvariblenames(int(self.adflow.monitor.nmon))
+        monNames = self.adflow.utils.getmonitorvariablenames(int(self.adflow.monitor.nmon))
 
         # similarly we need to use a special function to
         # retrive the additional solver type information
@@ -1227,10 +1227,10 @@ class ADFLOW(AeroSolver):
         # --- format the data ---
         # trim the array
         solverDataArray = self._trimHistoryData(solverDataArray)
-        converge_Array = self._trimHistoryData(converge_Array)
+        convergeArray = self._trimHistoryData(convergeArray)
         monNames = self._convertFortranStringArrayToList(monNames)
 
-        # converge_ert the fortran sting array to a list of strings
+        # convert the fortran sting array to a list of strings
         type_list = []
         for idx_sps in range(self.adflow.inputtimespectral.ntimeintervalsspectral):
             type_list.append(self._convertFortranStringArrayToList(type_array[:, idx_sps, :]))
@@ -1240,34 +1240,35 @@ class ADFLOW(AeroSolver):
             type_list = type_list[0]
 
         # --- create a dictionary with the labels and the values ---
-        converge_Dict = {
+        
+        convergeDict = CaseInsensitiveDict({
             "total minor iters": numpy.array(solverDataArray[:, 0], dtype=int),
             "CFL": solverDataArray[:, 1],
             "step": solverDataArray[:, 2],
-            "linear Res": solverDataArray[:, 3],
+            "linear res": solverDataArray[:, 3],
             "iter type": type_list,
-        }
+        })
 
         if self.adflow.monitor.showcpu:
-            converge_Dict["wall time"] = solverDataArray[:, 4]
+            convergeDict["wall time"] = solverDataArray[:, 4]
             if workUnitTime is not None:
-                converge_Dict["work units"] = converge_Dict["wall time"] * (self.comm.size) / workUnitTime
+                convergeDict["work units"] = convergeDict["wall time"] * (self.comm.size) / workUnitTime
 
         for idx, var in enumerate(monNames):
-            converge_Dict[var] = converge_Array[:, idx]
+            convergeDict[var] = convergeArray[:, idx]
 
-        return converge_Dict
+        return convergeDict
 
     def _trimHistoryData(self, data_array):
         """
         Trim the convergence history data to the number of iterations actually run.
-        and revmove the extra dimensions if only one time spectral instance was used.
+        and remove the extra dimensions if only one time spectral instance was used.
         """
 
         # --- trim the array ---
         # how many iterations were actually run
         num_iters = self.adflow.iteration.itertot
-        # add an iteration for the initail residual evaluation
+        # add an iteration for the initial residual evaluation
         data_array = data_array[: (num_iters + 1)]
 
         # remove possibly unnecessary dimensions
@@ -5749,42 +5750,10 @@ class ADFLOW(AeroSolver):
 
         return arr
 
-    def _convertListToFortranStringArray(self, strList):
-        """Setting arrays of strings in Fortran can be kinda nasty. This
-        takes a list of strings and returns the array"""
-        chartype = numpy.dtype(("U", 1))
-
-        def getArrayfromNestedList(listOfElem):
-            """Get number of elements in a nested list"""
-            # Iterate over the list
-            arr = numpy.zeros((0, self.adflow.constants.maxcgnsnamelen), dtype=chartype)
-            for elem in listOfElem:
-                # Check if type of element is list
-                if type(elem) == list:
-                    # Again call this function to get the size of this element
-                    arr = numpy.vstack((arr, getArrayfromNestedList(elem)))
-                else:
-                    arr = numpy.vstack((arr, numpy.zeros((1, self.adflow.constants.maxcgnsnamelen), dtype=chartype)))
-                    arr[-1] = addStr(arr[-1], elem)
-
-            return arr
-
-        def addStr(arr, s):
-            arr[:] = " "
-            for j in range(len(s)):
-                arr[j] = s[j]
-            return arr
-
-        strArray = getArrayfromNestedList(strList)
-
-        return strArray
-
     def _convertFortranStringArrayToList(self, fortArray):
         """Undoes the _createFotranStringArray"""
         strList = []
         for ii in range(len(fortArray)):
-            # fort_array = fortArray[ii]
-
             if fortArray[ii].dtype == numpy.dtype("|S1"):
                 strList.append(b"".join(fortArray[ii]).decode().strip())
             elif fortArray[ii].dtype == numpy.dtype("<U1"):

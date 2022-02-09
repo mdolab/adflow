@@ -5865,7 +5865,7 @@ end subroutine cross_prod
     !
     integer :: ierr
 
-    integer(kind=intType):: nSolverMon ! numbet of solver monitor variables
+    integer(kind=intType):: nSolverMon ! number of solver monitor variables
     
     ! Return immediately if the convergence history (of the inner
     ! iterations) does not need to be stored. This logical can
@@ -5939,7 +5939,7 @@ end subroutine cross_prod
 
   end subroutine allocTimeArrays
 
-  subroutine getMonitorVaribleNames(nvar, monitor_variables)
+  subroutine getMonitorVariableNames(nvar, monitor_variables)
    !
    !  copy the names in monnames to another array so that is can be
    !  passed back up the python level
@@ -5966,7 +5966,7 @@ end subroutine cross_prod
    end do 
    
    
-  end subroutine getMonitorVaribleNames
+  end subroutine getMonitorVariableNames
    
   subroutine getSolverTypeArray(niter, nsps, type_array)
    !

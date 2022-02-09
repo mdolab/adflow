@@ -968,11 +968,11 @@ printTiming:
 
 printAllOptions:
   desc: >
-    Flag to set whether to print all the options during initalization.
+    Flag to set whether to print all the options during initialization.
 
 printIntro:
   desc: >
-    Flag to set whether to print the adflow intro message during initalization.
+    Flag to set whether to print the ADflow intro message during initialization.
 
 setMonitor:
   desc: >
