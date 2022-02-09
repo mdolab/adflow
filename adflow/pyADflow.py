@@ -1207,56 +1207,65 @@ class ADFLOW(AeroSolver):
             A dictionary of arrays and lists. The keys are the data types.
             The indices of the arrays are the major iteration numbers.
         """
-        # --- get data ---
-        convergeArray = self.adflow.monitor.convarray
-        solverDataArray = self.adflow.monitor.solverdataarray
-
-        # We can't access monnames directly, because f2py apparently can't
-        # handle an allocatable array of strings.
-        # related stackoverflow posts:
-        # https://stackoverflow.com/questions/60141710/f2py-on-module-with-allocatable-string
-        # https://stackoverflow.com/questions/64900066/dealing-with-character-arrays-in-f2py
-        monNames = self.adflow.utils.getmonitorvariablenames(int(self.adflow.monitor.nmon))
-
-        # similarly we need to use a special function to
-        # retrive the additional solver type information
-        type_array = self.adflow.utils.getsolvertypearray(
-            self.adflow.iteration.itertot, self.adflow.inputtimespectral.ntimeintervalsspectral
-        )
-
-        # --- format the data ---
-        # trim the array
-        solverDataArray = self._trimHistoryData(solverDataArray)
-        convergeArray = self._trimHistoryData(convergeArray)
-        monNames = self._convertFortranStringArrayToList(monNames)
-
-        # convert the fortran sting array to a list of strings
-        type_list = []
-        for idx_sps in range(self.adflow.inputtimespectral.ntimeintervalsspectral):
-            type_list.append(self._convertFortranStringArrayToList(type_array[:, idx_sps, :]))
-
-        # there is only one time spectral instance, so that dimension can be removed
-        if self.adflow.inputtimespectral.ntimeintervalsspectral == 1:
-            type_list = type_list[0]
-
-        # --- create a dictionary with the labels and the values ---
         
-        convergeDict = CaseInsensitiveDict({
-            "total minor iters": numpy.array(solverDataArray[:, 0], dtype=int),
-            "CFL": solverDataArray[:, 1],
-            "step": solverDataArray[:, 2],
-            "linear res": solverDataArray[:, 3],
-            "iter type": type_list,
-        })
+        # only the root proc has all the data and the data should be global.
+        # so get the data from the root proc and then broadcast it. 
+        if self.comm.rank == 0:
+            # --- get data ---
+            convergeArray = self.adflow.monitor.convarray
+            solverDataArray = self.adflow.monitor.solverdataarray
 
-        if self.adflow.monitor.showcpu:
-            convergeDict["wall time"] = solverDataArray[:, 4]
-            if workUnitTime is not None:
-                convergeDict["work units"] = convergeDict["wall time"] * (self.comm.size) / workUnitTime
+            # We can't access monnames directly, because f2py apparently can't
+            # handle an allocatable array of strings.
+            # related stackoverflow posts:
+            # https://stackoverflow.com/questions/60141710/f2py-on-module-with-allocatable-string
+            # https://stackoverflow.com/questions/64900066/dealing-with-character-arrays-in-f2py
+            monNames = self.adflow.utils.getmonitorvariablenames(int(self.adflow.monitor.nmon))
 
-        for idx, var in enumerate(monNames):
-            convergeDict[var] = convergeArray[:, idx]
+            # similarly we need to use a special function to
+            # retrive the additional solver type information
+            typeArray = self.adflow.utils.getsolvertypearray(
+                self.adflow.iteration.itertot, self.adflow.inputtimespectral.ntimeintervalsspectral
+            )
 
+            # --- format the data ---
+            # trim the array
+            solverDataArray = self._trimHistoryData(solverDataArray)
+            convergeArray = self._trimHistoryData(convergeArray)
+            monNames = self._convertFortranStringArrayToList(monNames)
+
+            # convert the fortran sting array to a list of strings
+            type_list = []
+            for idx_sps in range(self.adflow.inputtimespectral.ntimeintervalsspectral):
+                type_list.append(self._convertFortranStringArrayToList(typeArray[:, idx_sps, :]))
+
+            # there is only one time spectral instance, so that dimension can be removed
+            if self.adflow.inputtimespectral.ntimeintervalsspectral == 1:
+                type_list = type_list[0]
+
+            # --- create a dictionary with the labels and the values ---
+            
+            convergeDict = CaseInsensitiveDict({
+                "total minor iters": numpy.array(solverDataArray[:, 0], dtype=int),
+                "CFL": solverDataArray[:, 1],
+                "step": solverDataArray[:, 2],
+                "linear res": solverDataArray[:, 3],
+                "iter type": type_list,
+            })
+
+            if self.adflow.monitor.showcpu:
+                convergeDict["wall time"] = solverDataArray[:, 4]
+                if workUnitTime is not None:
+                    convergeDict["work units"] = convergeDict["wall time"] * (self.comm.size) / workUnitTime
+
+            for idx, var in enumerate(monNames):
+                convergeDict[var] = convergeArray[:, idx]
+        else:
+            convergeDict = {}
+            
+        convergeDict = self.comm.bcast(convergeDict, root=0)
+
+        
         return convergeDict
 
     def _trimHistoryData(self, data_array):
