@@ -931,7 +931,7 @@ contains
     integer :: ierr
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
-    logical :: absConv, relConv, firstNK, firstANK
+    logical :: absConv, relConv, firstNK, firstANK, old_writeGrid
     real(kind=realType) :: nk_switchtol_save, curTime, ordersConvergedOld
 
     ! Allocate the memory for cycling.
@@ -1185,14 +1185,21 @@ contains
 #endif
 
        if (globalSignal == signalWrite .or. writeSolEachIter) then
-         ! We have been told to write the solution even though we are not done iterating
-
+          ! We have been told to write the solution even though we are not done iterating
+          
+          ! The grid must be written along with the volume solution solution         
+         if (writeVolume) then
+            ! temporary change the writeGrid option
+            old_writeGrid = writeGrid
+            writeGrid = .True.
+         end if
+          
           if (writeSolEachIter) then
                write(numberString,"(i7)") iterTot
                numberString = adjustl(numberString)
                numberString = trim(numberString)
                surfaceSolFile = trim(convSolFileBasename)//"_"//trim(numberString)//"_surf.cgns"
-               newGridFile = trim(convSolFileBasename)//"_"//trim(numberString)//".cgns"
+               newGridFile = trim(convSolFileBasename)//"_"//trim(numberString)//"_vol.cgns"
                solFile = trim(convSolFileBasename)//"_"//trim(numberString)//"_vol.cgns"
           else
                surfaceSolFile = forcedSurfaceFile
@@ -1208,6 +1215,11 @@ contains
           call writeTecplot(forcedSliceFile, .True., forcedLiftFile, .True., &
                "", .False., [0], 1)
 
+         if (writeVolume) then
+            ! change the writeGrid option back
+            writeGrid = old_writeGrid
+         end if
+               
           ! Reset the signal
           localSignal = noSignal
        end if
