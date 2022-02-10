@@ -3807,7 +3807,8 @@ contains
 
     cpFile = ""                  ! Serves as a check later on.
 
-    storeConvInnerIter = .false. ! Do not store the convergence of iterations 
+    storeConvInnerIter = .false. ! Do not store the convergence of
+                                 ! iterations(inner iterations in unsteady mode). 
 
 #ifdef USE_SINGLE_PRECISION
     precisionGrid = precisionSingle   ! Default IO precision depends

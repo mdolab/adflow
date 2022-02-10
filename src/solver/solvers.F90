@@ -1567,9 +1567,9 @@ contains
                 write(*,"(a,1x)", advance="no") iterType
                 
                 if( storeConvInnerIter ) then
-                  solverDataArray(iterTot, sps, 1) = approxTotalIts
-                  solverTypeArray(iterTot, sps) = iterType
-               endif
+                   solverDataArray(iterTot, sps, 1) = approxTotalIts
+                   solverTypeArray(iterTot, sps) = iterType
+                endif
                 
                 if (CFLMonitor < zero) then
                    ! Print dashes if no cfl term is used, i.e. NK solver

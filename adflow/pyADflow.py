@@ -1206,6 +1206,15 @@ class ADFLOW(AeroSolver):
         converge_dict : dict
             A dictionary of arrays and lists. The keys are the data types.
             The indices of the arrays are the major iteration numbers.
+            
+        Examples
+        --------
+        >>> CFDsolver(ap)
+        >>> CFDsolver.evalFunctions(ap1, funcs, ['cl', 'cd'])
+        >>> hist = CFDSolver.getConvergenceHistory()
+        >>> if MPI.COMM_WORLD.rank == 0:
+        >>>     with open(os.path.join(output_dir, "convergence_history.pkl"), "wb") as f:
+        >>>         pickle.dump(hist, f)
         """
 
         # only the root proc has all the data and the data should be global.

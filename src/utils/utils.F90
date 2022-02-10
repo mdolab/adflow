@@ -5950,7 +5950,6 @@ end subroutine cross_prod
    
    ! save the monitor variable names into a new array
    integer(kind=intType), intent(in):: nvar
-   ! character(len=maxCGNSNameLen), dimension(nvar), intent(out):: monitor_variables
    character, dimension(nvar,maxCGNSNameLen), intent(out):: monitor_variables
    
    ! working variables 
@@ -5981,7 +5980,6 @@ end subroutine cross_prod
    
    ! save the monitor variable names into a new array
    integer(kind=intType), intent(in):: niter, nsps
-   ! character(len=maxCGNSNameLen), dimension(nvar), intent(out):: monitor_variables
    character, dimension(0:niter, ntimeintervalsspectral, maxIterTypelen), intent(out):: type_array
    
    ! working variables 
