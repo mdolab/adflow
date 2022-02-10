@@ -59,7 +59,7 @@ writeTecplotSurfaceSolution:
 
 writeSolutionEachIter:
   desc: >
-    Flag to write solution files after every major iteration. 
+    Flag to write solution files after every major solver iteration. 
     The solution files written depend on `writeTecplotSurfaceSolution`, `writeVolumeSolution`, and `writeSurfaceSolution`. 
     This useful when debugging or developing the solver. 
 
