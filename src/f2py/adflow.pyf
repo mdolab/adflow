@@ -677,17 +677,17 @@ python module libadflow
                 integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
             end subroutine computematrixfreeproductbwd
-            
-            
+
+
             subroutine computematrixfreeproductbwdfast(dwbar, wbar, statesize)! in :test:adjointapi.f90:adjointapi
                 real(kind=realtype) dimension(:),intent(in) :: dwbar
                 real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
                 integer(kind=inttype) intent(in) :: statesize
-            end subroutine computematrixfreeproductbwdfast     
+            end subroutine computematrixfreeproductbwdfast
 #endif
        end module adjointapi
        module adjointdebug
-        
+
 #ifndef USE_COMPLEX
         subroutine computematrixfreeproductfwdfd(xvdot,extradot,wdot,bcdatavaluesdot,usespatial,usestate,famlists,bcdatanames,bcdatavalues,bcdatafamlists,bcvarsempty,dwdot,funcsdot,fdot,costsize,fsize,ntime,h) ! in :test:adjointAPI.F90:adjointdebug
           real(kind=realtype) dimension(:),intent(in) :: xvdot
@@ -1308,7 +1308,6 @@ python module libadflow
          logical :: showcpu
          logical :: monmasssliding
          logical :: monmassfamilies
-         integer :: nitercur
          real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
          integer(kind=inttype) :: ntimestepsrestart
          integer(kind=inttype) :: timestepunsteady
