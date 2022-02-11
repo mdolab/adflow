@@ -1051,6 +1051,7 @@ python module libadflow
          character(len=maxstringlen) :: forcedsurfacefile
          character(len=maxstringlen) :: forcedliftfile
          character(len=maxstringlen) :: forcedslicefile
+         character(len=maxstringlen) :: convsolfilebasename
        end module inputio
 
        module inputiteration ! in :adflow:../../modules/inputParam.f90
@@ -1318,6 +1319,7 @@ python module libadflow
          logical :: writegrid
          logical :: writevolume
          logical :: writesurface
+         logical :: writesoleachiter
        end module monitor
 
        module block ! in :adflow:../../modules/block.f90

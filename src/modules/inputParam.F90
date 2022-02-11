@@ -171,7 +171,7 @@ module inputIO
   ! interrupt.
   character(len=maxStringLen) :: forcedSurfaceFile, forcedVolumeFile
   character(len=maxStringLen) :: forcedLiftFile, forcedSliceFile
-
+  character(len=maxStringLen) :: convSolFileBasename
   ! logical to control the us of the transition model
   logical :: laminarToTurbulent
 
