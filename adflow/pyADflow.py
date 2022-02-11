@@ -1206,7 +1206,7 @@ class ADFLOW(AeroSolver):
         convergeDict : dict
             A dictionary of arrays and lists. The keys are the data types.
             The indices of the arrays are the major iteration numbers.
-            
+
         Examples
         --------
         >>> CFDsolver(ap)
@@ -5777,7 +5777,7 @@ class ADFLOW(AeroSolver):
             elif fortArray[ii].dtype == numpy.dtype("<U1"):
                 strList.append("".join(fortArray[ii]).strip())
             else:
-                raise TypeError(f"Unalbe to {fortArray[ii]} of type {fortArray[ii].dtype} to string")
+                raise TypeError(f"Unable to convert {fortArray[ii]} of type {fortArray[ii].dtype} to string")
 
         return strList
 
