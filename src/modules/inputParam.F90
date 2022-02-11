@@ -761,11 +761,9 @@ module inputADjoint
   ! viscPC       : Whether or not to keep cross derivative terms
   !                in viscous preconditioner.
   ! FrozenTurbulence: Whether to use frozen turbulence assumption
-  ! restartADjoint: Whether or not we want to restart the adjoint
-  !                 from the previous solution
   ! useDiagTSPC   : Whether or not the off time instance terms are
   !                 included in the TS preconditioner.
-  logical :: setMonitor, ApproxPC, restartADjoint, useDiagTSPC
+  logical :: setMonitor, ApproxPC, useDiagTSPC
   logical :: frozenTurbulence, viscPC, ADPC
 
   ! ADjointSolverType: Type of linear solver for the ADjoint

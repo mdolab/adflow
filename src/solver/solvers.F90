@@ -957,7 +957,7 @@ contains
     nMGCycles = nCycles
     if(groundLevel > 1) nMGCycles = nCyclesCoarse
 
-    ! Allocate (or reallocate) the convergence arry for this solveState.
+    ! Allocate (or reallocate) the convergence array for this solveState.
     call allocConvArrays(nMGCycles)
 
     ! Allocate space for storing hisotry of function evaluations for NK
@@ -1297,7 +1297,7 @@ contains
     ! Determine whether or not the iterations must be written.
 
     writeIterations = .true.
-    if(equationMode          == unsteady .and. &
+    if(equationMode            == unsteady .and. &
          timeIntegrationScheme == explicitRK) writeIterations = .false.
 
     ! Initializations

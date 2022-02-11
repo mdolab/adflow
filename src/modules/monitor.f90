@@ -65,11 +65,6 @@
 !
 !       Variables to store the convergence info.
 !
-       ! nIterCur: Current number of iterations. Also niterCur is an
-       !           integer, because of cgns.
-
-       integer :: nIterCur
-
        ! convArray(0:nIterMax,nsps,nmon): 3D array to store the
        !                                  convergence histories.
 

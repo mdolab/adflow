@@ -3405,11 +3405,16 @@ class ADFLOW(AeroSolver):
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
         if not (self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint")):
-            # Extract the psi:
-            psi = self.curAP.adflowData.adjoints[objective]
 
-            # Actually Solve the adjoint system...psi is updated with the
-            # new solution.
+            if self.getOption("restartAdjoint"):
+                # Use the previous solution as the initial guess
+                psi = self.curAP.adflowData.adjoints[objective]
+            else:
+                # Use a zero initial guess
+                psi = numpy.zeros_like(self.curAP.adflowData.adjoints[objective])
+
+            # Actually solve the adjoint system
+            # psi is updated with the new solution
             self.adflow.adjointapi.solveadjoint(RHS, psi, True)
 
             # Now set the flags and possibly reset adjoint
@@ -5303,7 +5308,6 @@ class ADFLOW(AeroSolver):
             "viscpc": ["adjoint", "viscpc"],
             "frozenturbulence": ["adjoint", "frozenturbulence"],
             "usediagtspc": ["adjoint", "usediagtspc"],
-            "restartadjoint": ["adjoint", "restartadjoint"],
             "adjointsolver": {
                 "gmres": "gmres",
                 "tfqmr": "tfqmr",
@@ -5371,6 +5375,7 @@ class ADFLOW(AeroSolver):
             "outputsurfacefamily",
             "cutcallback",
             "infchangecorrection",
+            "restartadjoint",
             "skipafterfailedadjoint",
             "useexternaldynamicmesh",
         }
