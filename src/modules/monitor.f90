@@ -113,6 +113,6 @@
        ! writeVolume:  Idem for a volume solution file.
        ! writeSurface: Idem for a surface solution file.
 
-       logical :: writeGrid, writeVolume, writeSurface
+       logical :: writeGrid, writeVolume, writeSurface, writeSolEachIter
 
        end module monitor

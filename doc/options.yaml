@@ -62,6 +62,12 @@ writeTecplotSurfaceSolution:
     This can be useful because it requires less tweaking in Tecplot to get the end result.
     This also includes the zipper mesh and only the active overset cells if a zipper mesh was created.
 
+writeSolutionEachIter:
+  desc: >
+    Flag to write solution files after every nonlinear solver iteration.
+    The solution files written depend on `writeTecplotSurfaceSolution`, `writeVolumeSolution`, and `writeSurfaceSolution`.
+    This useful when debugging or developing the solver.
+
 nSaveVolume:
   desc: >
     When running unsteady simulations, the volume output will be written every this many unsteady iterations.
