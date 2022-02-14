@@ -28,9 +28,8 @@ contains
     integer(kind=intType) :: i, j, k, l
     integer(kind=intType) :: iale, jale, kale, lale, male ! For loops of ALE
     real(kind=realType), parameter :: K1 = 1.05_realType
-
     ! The line below is only used for the low-speed preconditioner part of this routine
-    real(kind=realType), parameter :: K2 = 639.048910156_realType ! t2_=0.5 for wsp=8
+    real(kind=realType), parameter :: K2 = 0.6_realType ! Random given number
 
     real(kind=realType), parameter :: M0 = 0.2_realType ! Mach number preconditioner activation
     real(kind=realType), parameter :: alpha = 0_realType
@@ -53,14 +52,6 @@ contains
     real(kind=realType) :: dwo(nwf)
     logical :: fineGrid
 
-    ! work on the preconditioner
-    real(kind=realType) :: t1_mean,t1_max,t1_min ! term1 metrics
-    ! we have to get various metrics for term one since it varies for every
-    ! cell
-    real(kind=realType) :: t2_,t3_ ! term2 and term3 in the comparison
-    integer(kind=intType) :: cnt_
-    ! 
-    !
     ! Set the value of rFil, which controls the fraction of the old
     ! dissipation residual to be used. This is only for the runge-kutta
     ! schemes; for other smoothers rFil is simply set to 1.0.
@@ -180,12 +171,6 @@ contains
     ! Add the dissipative and possibly viscous fluxes to the
     ! Euler fluxes. Loop over the owned cells and add fw to dw.
     ! Also multiply by iblank so that no updates occur in holes
-    ! 
-    ! preconditioner work
-    t1_mean = 0.d0
-    t1_max = -1.e20
-    t1_min = 1.e20
-    cnt_ = 0
     if ( lowspeedpreconditioner ) then
        do k=2,kl
           do j=2,jl
@@ -193,9 +178,7 @@ contains
                 !    Compute speed of sound
                 SoS = sqrt(gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho))
 
-                ! Coompute velocities without rho from state vector
- 
-                ! Coompute velocities without rho from state vector 
+                ! Compute velocities without rho from state vector 
                 !      (w is pointer.. see type blockType setup in block.F90)
                 !      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.F90 
                 !      these are per definition nw=[rho,u,v,w,rhoeE] 
@@ -229,7 +212,7 @@ contains
                 !
                 !    Compute K3
                  
-                K3 = K1 * ( 1 + ((1-K1*M0**2)*resM**2)/(K1*M0**4) ) 
+                K3 = K1 * ( 1 + ((1-K1*M0**2)*resM**2)/(K1*M0**4) )
                 !    Compute BetaMr2 
                 ! betaMr2 -> eq. 7 in Garg 2015 
                 ! (use eq. 2.6 in thesis thesis since paper has an error) 
@@ -237,17 +220,6 @@ contains
                 ! 
                 ! again, K1 and K3 are switched compared with paper/thesis
                 !    Compute BetaMr2
-                cnt_=cnt_+1
-                t1_mean = t1_mean + K3*(velXrho**2 + velYrho**2  &
-                     + velZrho**2)
-                t1_max = MAX(t1_max,K3*(velXrho**2 + velYrho**2  &
-                     + velZrho**2))
-                t1_min = MIN(t1_min,K3*(velXrho**2 + velYrho**2  &
-                     + velZrho**2))
-                t2_ = ((K2)*(wInf(ivx)**2 &
-                     + wInf(ivy)**2 + wInf(ivz)**2))
-                t3_ = SoS**2 
-                !
                 betaMr2 = min( max( K3*(velXrho**2 + velYrho**2  &
                      + velZrho**2), ((K2)*(wInf(ivx)**2 &
                      + wInf(ivy)**2 + wInf(ivz)**2))) , SoS**2 )
