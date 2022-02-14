@@ -177,7 +177,6 @@ class ADFLOW(AeroSolver):
         self.updateTime = 0.0
         self.nSlice = 0
         self.nLiftDist = 0
-        self.nMeshFail = 0
 
         # Set default values
         self.adflow.inputio.autoparameterupdate = False
@@ -1042,10 +1041,9 @@ class ADFLOW(AeroSolver):
                 )
 
         if self.adflow.killsignals.fatalfail:
-            fileName = f"failed_mesh_{self.nMeshFail:02}.cgns"
-            print(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
+            fileName = f"failed_mesh_{self.curAP.name}_{self.curAP.adflowData.callCounter:03}.cgns"
+            self.pp(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
             self.writeMeshFile(os.path.join(self.getOption("outputDirectory"), fileName))
-            self.nMeshFail += 1
             self.curAP.fatalFail = True
             self.curAP.solveFailed = True
             return
@@ -3405,11 +3403,16 @@ class ADFLOW(AeroSolver):
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
         if not (self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint")):
-            # Extract the psi:
-            psi = self.curAP.adflowData.adjoints[objective]
 
-            # Actually Solve the adjoint system...psi is updated with the
-            # new solution.
+            if self.getOption("restartAdjoint"):
+                # Use the previous solution as the initial guess
+                psi = self.curAP.adflowData.adjoints[objective]
+            else:
+                # Use a zero initial guess
+                psi = numpy.zeros_like(self.curAP.adflowData.adjoints[objective])
+
+            # Actually solve the adjoint system
+            # psi is updated with the new solution
             self.adflow.adjointapi.solveadjoint(RHS, psi, True)
 
             # Now set the flags and possibly reset adjoint
@@ -4751,6 +4754,7 @@ class ADFLOW(AeroSolver):
             "outputSurfaceFamily": [str, "allSurfaces"],
             "writeSurfaceSolution": [bool, True],
             "writeVolumeSolution": [bool, True],
+            "writeSolutionEachIter": [bool, False],
             "writeTecplotSurfaceSolution": [bool, False],
             "nSaveVolume": [int, 1],
             "nSaveSurface": [int, 1],
@@ -5028,6 +5032,7 @@ class ADFLOW(AeroSolver):
             "parallel": self.adflow.inputparallel,
             "ts": self.adflow.inputtimespectral,
             "overset": self.adflow.inputoverset,
+            "monitor": self.adflow.monitor,
         }
 
         # In the option map, we first list the "module" defined in
@@ -5301,7 +5306,6 @@ class ADFLOW(AeroSolver):
             "viscpc": ["adjoint", "viscpc"],
             "frozenturbulence": ["adjoint", "frozenturbulence"],
             "usediagtspc": ["adjoint", "usediagtspc"],
-            "restartadjoint": ["adjoint", "restartadjoint"],
             "adjointsolver": {
                 "gmres": "gmres",
                 "tfqmr": "tfqmr",
@@ -5343,8 +5347,10 @@ class ADFLOW(AeroSolver):
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
             "computecavitation": ["cost", "computecavitation"],
+            "writesolutioneachiter": ["monitor", "writesoleachiter"],
+            "writesurfacesolution": ["monitor", "writesurface"],
+            "writevolumesolution": ["monitor", "writevolume"],
         }
-
         return optionMap, moduleMap
 
     def _getSpecialOptionLists(self):
@@ -5356,8 +5362,6 @@ class ADFLOW(AeroSolver):
 
         pythonOptions = {
             "numbersolutions",
-            "writesurfacesolution",
-            "writevolumesolution",
             "writetecplotsurfacesolution",
             "coupledsolution",
             "partitiononly",
@@ -5369,6 +5373,7 @@ class ADFLOW(AeroSolver):
             "outputsurfacefamily",
             "cutcallback",
             "infchangecorrection",
+            "restartadjoint",
             "skipafterfailedadjoint",
             "useexternaldynamicmesh",
         }
@@ -5582,6 +5587,9 @@ class ADFLOW(AeroSolver):
         liftFileName = base + "_forced_lift.dat"
         sliceFileName = base + "_forced_slices.dat"
 
+        convSolFileBaseName = base + "_intermediate_sol"
+
+        self.adflow.inputio.convsolfilebasename = self._expandString(convSolFileBaseName)
         self.adflow.inputio.forcedvolumefile = self._expandString(volFileName)
         self.adflow.inputio.forcedsurfacefile = self._expandString(surfFileName)
         self.adflow.inputio.forcedliftfile = self._expandString(liftFileName)
