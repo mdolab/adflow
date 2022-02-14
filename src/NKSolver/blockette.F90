@@ -97,9 +97,6 @@ contains
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
     use actuatorRegionData, only : nActuatorRegions
-    use solverutils, only : gridvelocitiesfinelevel_block, slipvelocitiesfinelevel_block, &
-        normalvelocities_block
-    use monitor, only : timeUnsteadyRestart
     implicit none
 
     ! Input/Output
@@ -111,14 +108,11 @@ contains
     real(kind=realType), optional, dimension(:), intent(in) :: bcDataValues
     integer(kind=intType), optional, dimension(:, :) :: bcDataFamLists
     real(kind=realType), intent(out), optional, dimension(:, :, :) :: forces
-    real(kind=realType), dimension(nSections) :: time
 
     ! Misc
     logical :: dissApprox, viscApprox, updateIntermed, flowRes, turbRes, spatial, storeWall
-    integer(kind=intType) :: nn, sps, fSize, lstart, lend, iRegion, ierr, mm
+    integer(kind=intType) :: nn, sps, fSize, lstart, lend, iRegion
     real(kind=realType) ::  pLocal
-    logical :: useOldCoor
-    useOldCoor = .FALSE.
 
     ! Set the defaults. The default is to compute the full, exact,
     ! RANS residual without updating the spatial values or the local
@@ -211,21 +205,7 @@ contains
           if (spatial) then
              call volume_block
              call metric_block
-             call boundaryNormals\
-
-             time = timeunsteadyrestart
-             if (equationmode .eq. timespectral) then
-                do mm=1,nsections
-                   time(mm) = time(mm) + (sps-1)*sections(mm)%timeperiod/real(&
-                         &         ntimeintervalsspectral, realtype)
-                end do
-             end if
-
-             call gridvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
-             ! required for ts
-             call normalvelocities_block(sps)
-             ! required for ts
-             call slipvelocitiesfinelevel_block(useoldcoor, time, sps, nn)
+             call boundaryNormals
 
              if (equations == RANSEquations .and. useApproxWallDistance) then
                 call updateWallDistancesQuickly(nn, 1, sps)
@@ -794,7 +774,6 @@ contains
     use inputDiscretization, only : spaceDiscr
     use flowUtils, only : allNodalGradients_block=>allNodalGradients, &
          computeSpeedOfSoundSquared_block=>computeSpeedOfSoundSquared
-    use blockPointers, only : nDom, il, jl, kl, dw, fw
 
     implicit none
     ! Input
