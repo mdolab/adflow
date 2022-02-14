@@ -177,7 +177,6 @@ class ADFLOW(AeroSolver):
         self.updateTime = 0.0
         self.nSlice = 0
         self.nLiftDist = 0
-        self.nMeshFail = 0
 
         # Set default values
         self.adflow.inputio.autoparameterupdate = False
@@ -1045,10 +1044,9 @@ class ADFLOW(AeroSolver):
                 )
 
         if self.adflow.killsignals.fatalfail:
-            fileName = f"failed_mesh_{self.nMeshFail:02}.cgns"
-            print(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
+            fileName = f"failed_mesh_{self.curAP.name}_{self.curAP.adflowData.callCounter:03}.cgns"
+            self.pp(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
             self.writeMeshFile(os.path.join(self.getOption("outputDirectory"), fileName))
-            self.nMeshFail += 1
             self.curAP.fatalFail = True
             self.curAP.solveFailed = True
             return
