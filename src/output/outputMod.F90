@@ -1511,22 +1511,22 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
-       ! have to get the mesh coordinates further down in order to compute
-       ! the correct Cp-normalisation for rotational setups with Wind Turbines.
-       ! Careful now; the flow variables, w(0:ib,0:jb,0:kb,1:nw), we point to
+       ! We need to get the mesh coordinates further down in order to compute
+       ! the correct Cp-normalisation for rotational setups.
+       ! The flow variables, w(0:ib,0:jb,0:kb,1:nw), we point to
        ! below uses what is defined in type blockType in block.F90 as
        !   !  ib, jb, kb - Block integer dimensions for double halo
        !   !               cell-centered quantities.
        ! BUT the mesh, x(0:ie,0:je,0:ke,3), is defined with the single halos:
        !   !  ie, je, ke - Block integer dimensions for single halo
        !   !               cell-centered quantities.
-       ! so... Now we can explain e.g. the (iMax)-case below where we see
-       ! the line:        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
-       ! ... i.e., they use single halo's for w(:,:,:,:) which is usually
-       ! defined with double halos...
+       ! This explains why in the (iMax)-case we use:
+       !        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
+       ! namely, we use single halos for w(:,:,:,:) instead of the
+       ! usual double halos...
 
-       ! do NOT cut an idx like they do (w starts from 0 usually)...
-       ! why don't have double halo structure, so we do not cut one off.
+
+       ! we don't have double halo structure for x, so we start from 0
        xx1    => x(0,:,:,:);   xx2    => x(1,:,:,:) ! 1 is our 2 since we are
        ! single haloed...
        ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:) 
@@ -1945,7 +1945,6 @@ contains
        !
        ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
        !
-
 
        !===============================================================
 
