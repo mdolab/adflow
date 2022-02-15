@@ -70,9 +70,6 @@ class ADFLOW(AeroSolver):
         The list of options to use with ADflow. This keyword argument
         is NOT OPTIONAL. It must always be provided. It must contain, at least
         the 'gridFile' entry for the filename of the grid to load
-    pointSetKwargs : dict
-        Keyword arguments to be passed to the DVGeo addPointSet call.
-        Useful for DVGeometryMulti, specifying FFD projection tolerances, etc.
     debug : bool
         Set this flag to true when debugging with a symbolic
         debugger. The MExt module deletes the copied .so file when not
@@ -81,7 +78,7 @@ class ADFLOW(AeroSolver):
         String type for float: 'd' or 'D'. Not needed to be used by user.
     """
 
-    def __init__(self, comm=None, options=None, pointSetKwargs={}, debug=False, dtype="d"):
+    def __init__(self, comm=None, options=None, debug=False, dtype="d"):
 
         startInitTime = time.time()
 
@@ -140,9 +137,6 @@ class ADFLOW(AeroSolver):
                 "adflow. The options dictionary must contain (at least) "
                 "the gridFile entry for the grid."
             )
-
-        # Save kwargs for addPointSet
-        self.pointSetKwargs = pointSetKwargs
 
         # Set all internal adflow default options before we set anything from python
         self.adflow.inputparamroutines.setdefaultvalues()
