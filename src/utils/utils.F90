@@ -4778,10 +4778,10 @@ end subroutine cross_prod
          enddo
       enddo
       deallocate(flowDoms, stat=ierr)
+      if(ierr /= 0)                          &
+           call terminate("releaseMemoryPart2", &
+           "Deallocation failure for flowDoms")
     end if 
-    if(ierr /= 0)                          &
-         call terminate("releaseMemoryPart2", &
-         "Deallocation failure for flowDoms")
 
     ! Some more memory should be deallocated if this code is to
     ! be used in combination with adaptation.
@@ -5854,7 +5854,7 @@ end subroutine cross_prod
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIO, only : storeConvInnerIter
-    use monitor, only : convArray, nMon
+    use monitor, only : convArray, nMon, solverDataArray, solverTypeArray, showCPU
     implicit none
     !
     !      Subroutine argument.
@@ -5865,6 +5865,8 @@ end subroutine cross_prod
     !
     integer :: ierr
 
+    integer(kind=intType):: nSolverMon ! number of solver monitor variables
+    
     ! Return immediately if the convergence history (of the inner
     ! iterations) does not need to be stored. This logical can
     ! only be .false. for an unsteady computation.
@@ -5873,11 +5875,28 @@ end subroutine cross_prod
     if (allocated(convArray)) then
        deallocate(convArray)
     end if
+    if (allocated(solverDataArray)) then
+       deallocate(solverDataArray)
+    end if
+    if (allocated(solverTypeArray)) then
+       deallocate(solverTypeArray)
+    end if
+    
+    if (showCPU) then 
+      nSolverMon = 5
+    else
+      nSolverMon = 4
+    end if
 
     allocate(convArray(0:nIterTot, nTimeIntervalsSpectral, nMon))
+    allocate(solverDataArray(0:nIterTot, nTimeIntervalsSpectral, nSolverMon))
+    allocate(solverTypeArray(0:nIterTot, nTimeIntervalsSpectral))
 
     ! Zero Array:
     convArray = zero
+    solverDataArray = zero
+    
+    
 
   end subroutine allocConvArrays
 
@@ -5920,8 +5939,66 @@ end subroutine cross_prod
 
   end subroutine allocTimeArrays
 
-
-
+  subroutine getMonitorVariableNames(nvar, monitor_variables)
+   !
+   !  copy the names in monnames to another array so that is can be
+   !  passed back up the python level
+   !
+   use constants
+   use monitor, only: nmon, monnames
+   implicit none
+   
+   ! save the monitor variable names into a new array
+   integer(kind=intType), intent(in):: nvar
+   character, dimension(nvar,maxCGNSNameLen), intent(out):: monitor_variables
+   
+   ! working variables 
+   character(len=maxCGNSNameLen) :: var_name
+   integer(kind=intType) :: c, idx_mon
+   
+   do idx_mon=1,nvar 
+      var_name =  monNames(idx_mon)
+      
+      do c =1,len(monNames(idx_mon))
+         monitor_variables(idx_mon, c) =var_name(c:c)
+      end do
+   end do 
+   
+   
+  end subroutine getMonitorVariableNames
+   
+  subroutine getSolverTypeArray(niter, nsps, type_array)
+   !
+   !  copy the names in sovlerTypeArray to another array so that is can be
+   !  passed back up the python level
+   !
+   use constants
+   use monitor, only:  solverTypeArray
+   use inputTimeSpectral, only : nTimeIntervalsSpectral
+   use iteration, only: itertot
+   implicit none
+   
+   ! save the monitor variable names into a new array
+   integer(kind=intType), intent(in):: niter, nsps
+   character, dimension(0:niter, ntimeintervalsspectral, maxIterTypelen), intent(out):: type_array
+   
+   ! working variables 
+   character(len=maxIterTypelen) :: type_name
+   integer(kind=intType) :: c, idx_sps, idx_iter
+   
+   do idx_sps=1,ntimeintervalsspectral
+      do idx_iter=0,itertot 
+         type_name =  solverTypeArray(idx_iter, idx_sps)
+         
+         do c =1,len(solverTypeArray(idx_iter, idx_sps))
+            type_array(idx_iter, idx_sps, c) = type_name(c:c)
+         end do
+         
+      end do 
+   end do 
+   
+   end subroutine getSolverTypeArray
+   
   subroutine convergenceHeader
     !
     !       convergenceHeader writes the convergence header to stdout.

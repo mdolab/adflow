@@ -35,6 +35,11 @@ storeRindLayer:
     Flag to write halo or "rind cell" information into CGNS files.
     This is required for some postprocessors (such as Tecplot) to compute contour lines correctly.
 
+storeConvHist:
+  desc: >
+    Flag to save convergence history information into fortran arrays.
+    This data can be accessed after the solve using `getConvergenceHistory`.
+
 outputDirectory:
   desc: >
     Directory where output files are written.
@@ -966,6 +971,14 @@ printIterations:
 printTiming:
   desc: >
     Flag to set whether to print the time taken for the initialization, flow solution, function evaluations, and adjoint solution.
+
+printAllOptions:
+  desc: >
+    Flag to set whether to print all the options during initialization.
+
+printIntro:
+  desc: >
+    Flag to set whether to print the ADflow intro message during initialization.
 
 setMonitor:
   desc: >

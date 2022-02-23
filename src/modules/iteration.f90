@@ -3,7 +3,7 @@
 !       This module contains the iteration parameters mainly used in
 !       solver.
 !
-       use constants, only: intType, realType, alwaysRealType
+       use constants, only: intType, realType, alwaysRealType, maxIterTypelen
        implicit none
 
        ! groundLevel:  Current ground level of the computation. Needed
@@ -81,7 +81,7 @@
 
        ! iterType: The type of iteration performed. Will be one of RK,
        ! DADI, ANK or NK ( or None on the 0th evaluation)
-       character(len=8) :: iterType
+       character(len=maxIterTypelen) :: iterType
 
        ! approxTotalIts : A rough approximation of the total number of
        ! function evaluations. An RK or DADI multi grid iteration
