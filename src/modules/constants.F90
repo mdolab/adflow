@@ -15,6 +15,7 @@ module constants
 
   integer, parameter :: maxStringLen   = 256
   integer, parameter :: maxCGNSNameLen =  32
+  integer, parameter :: maxIterTypelen =  8
 
   ! Numerical constants
 
