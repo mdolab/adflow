@@ -2571,8 +2571,9 @@ module stringOps
        ! Loop over my nodes and search for it in master tree
        nodeLoop:do j=1, str%nNodes
 
-          ! Reinitialize initial maximum number of neighbours
-          nSearch = 50
+          ! Set the initial maximum number of neighbours
+          ! This can be at most the total number of nodes
+          nSearch = min(nAlloc, master%nNodes)
 
           ! We have to be careful since single-sided chains have only
           ! 1 neighbour at each end.
