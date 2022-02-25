@@ -239,7 +239,7 @@ contains
 
     use constants
     use diffsizes, only :  ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
-    use communication, only : adflow_comm_world
+    use communication, only : adflow_comm_world, myID
     use iteration, only : currentLevel
     use BCExtra_d, only : applyAllBC_Block_d
     use inputAdjoint,  only : viscPC
@@ -351,7 +351,9 @@ contains
           if (oversetUpdateMode == updateFast) then
              call updateOversetConnectivity_d(1_intType, sps)
           else if (oversetUpdateMode == updateFull) then
-             print *,'Full overset update derivatives not implemented'
+             if (myID == 0) then
+                print *,'Full overset update derivatives not implemented'
+             end if
           end if
        end if
     end do
@@ -840,7 +842,9 @@ contains
           if (oversetUpdateMode == updateFast) then
              call updateOversetConnectivity_b(1_intType, sps)
           else if (oversetUpdateMode == updateFull) then
-             print *,'Full overset update derivatives not implemented'
+             if (myID == 0) then
+                print *,'Full overset update derivatives not implemented'
+             end if
           end if
        end if
     end do
