@@ -1410,6 +1410,10 @@ contains
     call KSPSetType(kspObject, kspObjectType, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    ! Use modified Gram-Schmidt orthogonalization
+    call KSPGMRESSetOrthogonalization(kspObject, KSPGMRESModifiedGramSchmidtOrthogonalization, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
     ! If we're using GMRES set the possible gmres restart
     call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
     call EChk(ierr, __FILE__, __LINE__)
