@@ -192,8 +192,8 @@ contains
              print 100, tt, cpTrange(0)
              print "(a)", "# Extrapolation with constant cp is used."
              print "(a)", "#"
-100          format("# Prescribed total temperature ",e12.5,          &
-                  " is less than smallest curve fit value, ",e12.5, &
+100          format("# Prescribed total temperature ",es12.5,          &
+                  " is less than smallest curve fit value, ",es12.5, &
                   ".")
           endif
 
@@ -211,9 +211,9 @@ contains
              print 101, tt, cpTrange(cpNparts)
              print "(a)", "# Extrapolation with constant cp is used."
              print "(a)", "#"
-101          format("# Prescribed total temperature ",e12.5,     &
+101          format("# Prescribed total temperature ",es12.5,     &
                   " is larger than largest curve fit value, ", &
-                  e12.5, ".")
+                  es12.5, ".")
           endif
 
           ht = RGasDim*(cpEint(cpNparts) + tt &

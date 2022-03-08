@@ -171,7 +171,7 @@ module inputIO
   ! interrupt.
   character(len=maxStringLen) :: forcedSurfaceFile, forcedVolumeFile
   character(len=maxStringLen) :: forcedLiftFile, forcedSliceFile
-
+  character(len=maxStringLen) :: convSolFileBasename
   ! logical to control the us of the transition model
   logical :: laminarToTurbulent
 
@@ -669,6 +669,9 @@ module inputTimeSpectral
 
   real(kind=realType), dimension(:,:,:), allocatable :: &
        rotMatrixSpectral
+  logical :: useTSInterpolatedGridVelocity
+
+  real(kind=realType) :: omegaFourier
 
 end module inputTimeSpectral
 
@@ -760,11 +763,9 @@ module inputADjoint
   ! viscPC       : Whether or not to keep cross derivative terms
   !                in viscous preconditioner.
   ! FrozenTurbulence: Whether to use frozen turbulence assumption
-  ! restartADjoint: Whether or not we want to restart the adjoint
-  !                 from the previous solution
   ! useDiagTSPC   : Whether or not the off time instance terms are
   !                 included in the TS preconditioner.
-  logical :: setMonitor, ApproxPC, restartADjoint, useDiagTSPC
+  logical :: setMonitor, ApproxPC, useDiagTSPC
   logical :: frozenTurbulence, viscPC, ADPC
 
   ! ADjointSolverType: Type of linear solver for the ADjoint

@@ -490,7 +490,8 @@ contains
     !
     use inputIO
     use inputPhysics
-    use monitor
+    use monitor, only : nMon, monNames, convArray
+    use iteration, only : iterTot
     use su_cgns
     use outputMod
     use utils, only : terminate
@@ -510,9 +511,9 @@ contains
     if(.not. storeConvInnerIter) return
 
     ! Store the number of iterations to be written in nn.
-    ! This is nIterCur + 1, because the array starts at 0.
+    ! This is iterTot + 1, because the array starts at 0.
 
-    nn = nIterCur + 1
+    nn = iterTot + 1
 
     ! Depending on the input option, set the CGNS type and allocate
     ! the memory for either buf4 or buf8.
@@ -521,7 +522,7 @@ contains
     ! that's what Tecplot needs
 
     realTypeCGNS = RealDouble
-    allocate(buf8(0:nIterCur), stat=ierr)
+    allocate(buf8(0:iterTot), stat=ierr)
 
 
     if(ierr /= 0)                         &
@@ -585,7 +586,7 @@ contains
 
           ! Copy the convergence info to either buf4 or buf8 and write
           ! it to file.
-          do mm=0,nIterCur
+          do mm=0,iterTot
              buf8(mm) = convArray(mm,conv,i)
           enddo
 
