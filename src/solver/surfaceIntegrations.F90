@@ -259,7 +259,7 @@ contains
          funcValues(costFuncForceZCoefMomentum)*dragDirection(3)
 
     ! final part of the KS computation
-    funcValues(costFuncCavitation) = 2 * cavitationnumber &
+    funcValues(costFuncCavitation) = cavitationnumber &
          + log(funcValues(costFuncCavitation)) / cavitationrho
 
     ! -------------------- Time Spectral Objectives ------------------
@@ -513,7 +513,7 @@ contains
           ! Sensor1 = one/(one+exp(-2*10*Sensor1))
           ! Sensor1 = Sensor1 * cellArea * blk
           ! KS formulation with a fixed CPmin at 2 sigmas
-          Sensor1 = exp(cavitationrho * (-Cp - 2 * cavitationnumber))
+          Sensor1 = exp(cavitationrho * (-Cp - cavitationnumber))
           Cavitation = Cavitation + Sensor1
        end if
     enddo
@@ -948,6 +948,7 @@ contains
     use zipperIntegrations, only :integrateZippers
     use userSurfaceIntegrations, only : integrateUserSurfaces
     use actuatorRegion, only : integrateActuatorRegions
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -960,6 +961,10 @@ contains
     integer(kind=intType) :: nn, sps, ierr, iGroup, nFam
     integer(kind=intType), dimension(:), pointer :: famList
     ! Master loop over the each of the groups we have
+
+    if (computeCavitation) then
+     call computeCavitationNumber()
+    end if
 
     groupLoop: do iGroup=1, size(famLists, 1)
 
@@ -1060,6 +1065,68 @@ contains
     end do bocos
 
   end subroutine integrateSurfaces
+
+  subroutine computeCavitationNumber()
+     use constants
+     use communication, only : ADflow_comm_world, myID
+     use inputPhysics, only : cavitationNumber, MachCoef
+     use blockPointers
+     use flowVarRefState
+     use BCPointers
+     use utils, only : setBCPointers, isWallType, EChk
+
+     implicit none
+
+     integer(kind=intType) :: mm
+     integer(kind=intType) :: i, j, ii, blk, ierr
+     real(kind=realType) :: Cp, plocal, tmp, cavitationNumberLocal
+
+     ! here we do a simplified surface integration on walls only to get the cpmin over walls
+     ! write (*,*) "rank", myID, " current cav number", cavitationNumber
+     ! set the cavitation number to a small value so that we get the actual max (- min cp)
+     cavitationNumberLocal = -10000.0_realType
+
+     ! Loop over all possible boundary conditions
+     bocos: do mm=1, nBocos
+
+          ! Set a bunch of pointers depending on the face id to make
+          ! a generic treatment possible.
+          call setBCPointers(mm, .True.)
+
+          ! no post gathered integrations currently
+          isWall: if( isWallType(BCType(mm)) ) then
+
+          !$AD II-LOOP
+               do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+                    i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+                    j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+
+                    ! blank value
+                    blk = max(BCData(mm)%iblank(i,j), 0)
+
+                    ! compute local CP
+
+                    plocal = pp2(i,j)
+                    tmp = two/(gammaInf*MachCoef*MachCoef)
+                    Cp = tmp*(plocal-pinf)
+
+                    ! compare it against the current value on this proc
+                    cavitationNumberLocal = max(cavitationNumberLocal, -Cp * blk)
+               enddo
+          end if isWall
+
+     end do bocos
+
+     ! write (*,*) "rank", myID, " cav before comm", cavitationNumberLocal
+
+     ! finally communicate across all
+     call mpi_allreduce(cavitationNumberLocal, cavitationNumber, 1, adflow_real, &
+     MPI_MAX, adflow_comm_world, ierr)
+     call EChk(ierr, __FILE__, __LINE__)
+
+     ! write (*,*) "rank", myID, " final cav number ", cavitationNumber
+
+  end subroutine computeCavitationNumber
 
 #ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)

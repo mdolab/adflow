@@ -1028,8 +1028,8 @@ contains
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
 ! final part of the ks computation
-    funcvalues(costfunccavitation) = 2*cavitationnumber + log(funcvalues&
-&     (costfunccavitation))/cavitationrho
+    funcvalues(costfunccavitation) = cavitationnumber + log(funcvalues(&
+&     costfunccavitation))/cavitationrho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -1288,7 +1288,7 @@ contains
 ! sensor1 = one/(one+exp(-2*10*sensor1))
 ! sensor1 = sensor1 * cellarea * blk
 ! ks formulation with a fixed cpmin at 2 sigmas
-        sensor1 = exp(cavitationrho*(-cp-2*cavitationnumber))
+        sensor1 = exp(cavitationrho*(-cp-cavitationnumber))
         cavitation = cavitation + sensor1
       end if
     end do
@@ -1594,8 +1594,8 @@ contains
 ! sensor1 = sensor1 * cellarea * blk
 ! ks formulation with a fixed cpmin at 2 sigmas
         sensor1d = cavitationd
-        cpd = -(cavitationrho*exp(cavitationrho*((-2)*cavitationnumber-&
-&         cp))*sensor1d)
+        cpd = -(cavitationrho*exp(cavitationrho*(-cavitationnumber-cp))*&
+&         sensor1d)
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
         pinfd = pinfd - tmp*cpd
@@ -1953,7 +1953,7 @@ contains
 ! sensor1 = one/(one+exp(-2*10*sensor1))
 ! sensor1 = sensor1 * cellarea * blk
 ! ks formulation with a fixed cpmin at 2 sigmas
-        sensor1 = exp(cavitationrho*(-cp-2*cavitationnumber))
+        sensor1 = exp(cavitationrho*(-cp-cavitationnumber))
         cavitation = cavitation + sensor1
       end if
     end do

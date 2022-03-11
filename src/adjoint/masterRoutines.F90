@@ -31,7 +31,8 @@ contains
     use utils, only : setPointers, EChk
     use turbUtils, only : turbAdvection, computeEddyViscosity
     use residuals, only : initRes_block, sourceTerms_block
-    use surfaceIntegrations, only : getSolution
+    use surfaceIntegrations, only : getSolution, computeCavitationNumber
+    use inputCostFunctions, only : computeCavitation
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale
     use oversetData, only : oversetPresent
@@ -39,7 +40,7 @@ contains
     use oversetCommUtilities, only : updateOversetConnectivity
     use actuatorRegionData, only : nActuatorRegions
     use wallDistanceData, only : xSurfVec, xSurf
-    
+
     implicit none
 
     ! Input Arguments:
@@ -99,7 +100,7 @@ contains
 
              call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
              call EChk(ierr,__FILE__,__LINE__)
-    
+
              call volume_block
              call metric_block
              call boundaryNormals
@@ -107,12 +108,12 @@ contains
              if (equations == RANSEquations .and. useApproxWallDistance) then
                 call updateWallDistancesQuickly(nn, 1, sps)
              end if
-          
+
             ! These arrays need to be restored before we can move to the next spectral instance.
              call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
              call EChk(ierr,__FILE__,__LINE__)
- 
-          
+
+
             end if
 
           ! Compute the pressures/viscositites
@@ -223,6 +224,12 @@ contains
 
     ! Compute the final solution values
     if (present(famLists)) then
+       ! if we are computing cavitation, we need to know what cp min (roughly) is across the domain
+       if (computeCavitation) then
+          ! this routine puts the cpmin value in cavitationnumber so the KS can go ahead w/o overflow
+          call computeCavitationNumber()
+       end if
+
        call getSolution(famLists, funcValues)
     end if
 
@@ -269,7 +276,8 @@ contains
     use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
-    use surfaceIntegrations, only : getSolution_d
+    use surfaceIntegrations, only : getSolution_d, computeCavitationNumber
+    use inputCostFunctions, only : computeCavitation
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
     use bcdata, only : setBCData_d, setBCDataFineGrid_d
@@ -452,17 +460,17 @@ contains
           ISIZE1OFDrfbcdata = nBocos
           ISIZE1OFDrfviscsubface = nViscBocos
 
-          ! initalize the residuals for this block 
+          ! initalize the residuals for this block
           dw = zero
           dwd = zero
-          
+
           ! Compute any source terms
           do iRegion=1, nActuatorRegions
              call sourceTerms_block_d(nn, .True. , iRegion, dummyReal, dummyReald)
           end do
 
           call timeStep_block_d(.false.)
-          
+
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -520,6 +528,12 @@ contains
 
     ! Compute final solution values
     if (present(famLists)) then
+
+      if (computeCavitation) then
+         ! this routine puts the cpmin value in cavitationnumber so the KS can go ahead w/o overflow
+         call computeCavitationNumber()
+      end if
+
        call getSolution_d(famLists, funcValues, funcValuesd)
     end if
 
@@ -577,7 +591,8 @@ contains
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
-    use surfaceIntegrations, only : getSolution_b
+    use surfaceIntegrations, only : getSolution_b, computeCavitationNumber
+    use inputCostFunctions, only : computeCavitation
     use flowUtils, only : fixAllNodalGradientsFromAD
     use adjointextra_b, only : resscale_B, sumdwandfw_b
     use adjointExtra_b, only : xhalo_block_b, volume_block_b, metric_block_b, boundarynormals_b
@@ -662,6 +677,12 @@ contains
 
     ! Call the final getSolution_b routine
     if (present(famLists)) then
+         ! if we are computing cavitation, we need to know what cp min (roughly) is across the domain
+         if (computeCavitation) then
+            ! this routine puts the cpmin value in cavitationnumber so the KS can go ahead w/o overflow
+            call computeCavitationNumber()
+         end if
+
        call getSolution_b(famLists, funcValues, funcValuesd)
     end if
 
@@ -719,7 +740,7 @@ contains
           end if
 
           call timeStep_block_b(.false.)
-          
+
           ! Just to be safe, zero the pLocald value...should not matter
           dummyReald = zero
           do iRegion=1, nActuatorRegions
