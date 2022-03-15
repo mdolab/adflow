@@ -1119,6 +1119,15 @@ adjointSolver:
   BCGS: BiCGStab
   IBCGS: Improved BiCGStab
 
+GMRESOrthogonalizationType:
+  desc: >
+    Which orthogonalization method to use with GMRES.
+    This will have the most effect on the adjoint solution, but the same method is also used in the ANK and NK solvers.
+  modified Gram-Schmidt: Modified Gram-Schmidt. This typically gives the best accuracy and performance.
+  CGS never refine: Classical Gram-Schmidt with no refinement. Fast but not the most accurate.
+  CGS refine if needed: Classical Gram-Schmidt with refinement as needed. Slow and inaccurate.
+  CGS always refine: Classical Gram-Schmidt with refinement at every iteration. Slow and inaccurate.
+
 adjointMaxIter:
   desc: >
     Maximum number of iterations for the adjoint solution.
