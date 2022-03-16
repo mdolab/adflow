@@ -33,7 +33,7 @@ class BasicTests(unittest.TestCase):
         CFDSolver = ADFLOW(options=self.options, debug=False)
         res = CFDSolver.getResidual(ap_tutorial_wing)
         res_norm = np.linalg.norm(res)
-        np.testing.assert_allclose(res_norm, 0.0, atol=1e-12, err_msg="residual")
+        np.testing.assert_allclose(res_norm, 0.0, atol=1e-11, err_msg="residual")
 
 
 if __name__ == "__main__":

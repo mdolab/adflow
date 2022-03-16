@@ -3051,9 +3051,9 @@ end subroutine infChangeCorrection
 
              ! Set the cell range to be read from the CGNS file.
 
-             rangeMin(1) = iBegOr + rindSizes(1) - nHiMin
-             rangeMin(2) = jBegOr + rindSizes(3) - nHjMin
-             rangeMin(3) = kBegOr + rindSizes(5) - nHkMin
+             rangeMin(1) = iBegOr - nHiMin
+             rangeMin(2) = jBegOr - nHjMin
+             rangeMin(3) = kBegOr - nHkMin
 
              rangeMax(1) = rangeMin(1) + nx-1 + nHiMin + nHiMax
              rangeMax(2) = rangeMin(2) + ny-1 + nHjMin + nHjMax
@@ -3068,9 +3068,9 @@ end subroutine infChangeCorrection
 
              halosRead   = .false.
 
-             rangeMin(1) = iBegor + rindSizes(1)
-             rangeMin(2) = jBegor + rindSizes(3)
-             rangeMin(3) = kBegor + rindSizes(5)
+             rangeMin(1) = iBegor
+             rangeMin(2) = jBegor
+             rangeMin(3) = kBegor
 
              rangeMax(1) = rangeMin(1) + nx
              rangeMax(2) = rangeMin(2) + ny
