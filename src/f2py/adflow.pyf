@@ -1213,6 +1213,7 @@ python module libadflow
          character(len=maxstringlen) :: adjointpcside
          character(len=maxstringlen) :: matrixordering
          character(len=maxstringlen) :: adjointsolvertype
+         character(len=maxstringlen) :: gmresorthogtype
          character(len=maxstringlen) :: localpctype
          character(len=maxstringlen) :: precondtype
          real(kind=realtype) :: adjabstol
