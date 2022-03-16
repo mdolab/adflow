@@ -1211,8 +1211,9 @@ useMatrixFreedrdw:
   desc: >
     Flag that determines if ADflow will use the matrix-free routines to compute mat-vec products with the full Jacobian.
     If False, ADflow will form the full matrix exactly and mat-vec multiplications will be matrix-based.
+    This should always be True for overset meshes, otherwise the gradients will be inaccurate.
     The matrix-free routines have lower memory usage.
-    The cost is an interesting tradeoff.
+    For runtime, there is a tradeoff between the Jacobian assembly and adjoint solution times.
     See "Effective Adjoint Approaches for Computational Fluid Dynamics" (Kenway2019a) for more details.
 
 skipAfterFailedAdjoint:
