@@ -1,0 +1,27 @@
+
+*****************************************************************************************************************
+
+Tubo Ludwieg 
+
+*****************************************************************************************************************
+
+Il tubo Ludwieg,noto come High Reynolds number Transonic tunnel (HIRT).
+
+Il tunnel transonico (HIRT) del numero di Reynolds è stato all'origine installato presso l'Arnold
+Engineering Development Center come modello in scala 1/13 di una struttura molto più grande che era
+mai stato costruito.
+
+
+Come e' fatto il tunnel.
+
+Il tunnel è costituito da un tubo di carica,
+ugello convergente, sezione di prova, sezione aletta di espulsione, diffusore e un manicotto scorrevole
+valvola (SSV).
+
+The circular charge tube transitions to a rectangular test section via a
+nozzle with a contraction ratio:
+traduzione:
+Il tubo di carica circolare passa a una sezione di prova
+rettangolare tramite a ugello con un rapporto di contrazione,numero ottimale 2.27.
+
+E' da misurare la sezione del test.
