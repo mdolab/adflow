@@ -7,7 +7,7 @@ import sys
 baseDir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(baseDir, "../reg_tests"))
 
-from reg_aeroproblems import ap_tutorial_wing
+from reg_aeroproblems import ap_tutorial_wing  # noqa E402
 
 
 class BasicTests(unittest.TestCase):
