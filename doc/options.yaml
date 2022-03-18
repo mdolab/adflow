@@ -1124,8 +1124,8 @@ adjointSolver:
 GMRESOrthogonalizationType:
   desc: >
     Which orthogonalization method to use with GMRES.
-    This will have the most effect on the adjoint solution, but the same method is also used in the ANK and NK solvers.
-  modified Gram-Schmidt: Modified Gram-Schmidt. This typically gives the best accuracy and performance.
+    This will affect the adjoint solver the most, but the same option is also used in the linear solvers in the ANK and NK solvers.
+  modified Gram-Schmidt: Modified Gram-Schmidt. This typically gives the best accuracy (relative to complex step for the adjoint) and performance.
   CGS never refine: Classical Gram-Schmidt with no refinement. Fast but not the most accurate.
   CGS refine if needed: Classical Gram-Schmidt with refinement as needed. Slow and inaccurate.
   CGS always refine: Classical Gram-Schmidt with refinement at every iteration. Slow and inaccurate.
@@ -1214,6 +1214,7 @@ useMatrixFreedrdw:
     Flag that determines if ADflow will use the matrix-free routines to compute mat-vec products with the full Jacobian.
     If False, ADflow will form the full matrix exactly and mat-vec multiplications will be matrix-based.
     This should always be True for overset meshes, otherwise the gradients will be inaccurate.
+    This is a known bug in ADflow (see https://github.com/mdolab/adflow/issues/204).
     The matrix-free routines have lower memory usage.
     For runtime, there is a tradeoff between the Jacobian assembly and adjoint solution times.
     See "Effective Adjoint Approaches for Computational Fluid Dynamics" (Kenway2019a) for more details.
