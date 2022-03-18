@@ -119,7 +119,7 @@ contains
 
     dvt  => scratch(1:,1:,1:,idvt:)
     prod => scratch(1:,1:,1:,iprod)
-    vort => prod
+    vort => prod !only true if turbProd==vorticity
     kwCD => scratch(1:,1:,1:,icd)
     f1   => scratch(1:,1:,1:,if1SST)
     !
@@ -127,13 +127,13 @@ contains
     !
     select case (turbProd)
     case (strain)
-       call prodSmag2
+       call prodSmag2(2,il,2,jl,2,kl)
 
     case (vorticity)
-       call prodWmag2
+       call prodWmag2(2,il,2,jl,2,kl)
 
     case (katoLaunder)
-       call prodKatoLaunder
+       call prodKatoLaunder(2,il,2,jl,2,kl)
 
     end select
     !
@@ -158,6 +158,9 @@ contains
              ! equation. Note that dw(i,j,k,iprod) currently contains the
              ! unscaled source term. Furthermore the production term of
              ! k is limited to a certain times the destruction term.
+
+             ! These are the same equations as in https://turbmodels.larc.nasa.gov/sst.html
+             ! except that everything is divided by rho here
 
              rhoi = one/w(i,j,k,irho)
              ss   = prod(i,j,k)
@@ -1164,13 +1167,16 @@ contains
     use turbMod
     use utils, only : setPointers
     use turbUtils, only :kwCDTerm
+    use paramTurb, only :rSSTSigw2
     implicit none
     !
     !      Local variables.
     !
     integer(kind=intType) :: sps, nn, mm, i, j, k
 
-    real(kind=realType) :: t1, t2, arg1
+    real(kind=realType) :: t1, t2, arg1, myeps
+
+    myeps = 1e-10_realType/two/rSSTSigw2
 
     ! First part. Compute the values of the blending function f1
     ! for each block and spectral solution.

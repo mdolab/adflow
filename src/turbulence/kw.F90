@@ -118,13 +118,13 @@ contains
     !
     select case (turbProd)
     case (strain)
-       call prodSmag2
+       call prodSmag2(2,il,2,jl,2,kl)
 
     case (vorticity)
-       call prodWmag2
+       call prodWmag2(2,il,2,jl,2,kl)
 
     case (katoLaunder)
-       call prodKatoLaunder
+       call prodKatoLaunder(2,il,2,jl,2,kl)
 
     end select
     !
