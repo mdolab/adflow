@@ -141,6 +141,12 @@ contains
 
           wInf(itu1) = 1.5_realType*uInf2*turbIntensityInf**2
           wInf(itu2) = wInf(itu1)/(eddyVisInfRatio*nuInf)
+          !both are consistent with https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions,
+          ! NASA https://turbmodels.larc.nasa.gov/sst.html has slightly different values
+          !The NASA ref specify that the freestream turbulent viscosity should be between 10-5 and 10-2 times freestream laminar viscosity.
+          ! Not clear why eddyVisInfRatio default to 0.009
+          !This ref suggests similar things: k determined so that nuTInf = nuInf * 0.009
+          ! https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.901.7078&rep=rep1&type=pdf
 
           !=============================================================
 

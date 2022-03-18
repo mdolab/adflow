@@ -109,10 +109,15 @@ contains
 
     ! Set model constants
 
+#ifdef SST_2003
+    rSSTGam1 = 5.0_realType / 9.0_realType
+    rSSTGam2 = 0.44_realType
+#else
     rSSTGam1 = rSSTBeta1/rSSTBetas &
          - rSSTSigw1*rSSTK*rSSTK/sqrt(rSSTBetas)
     rSSTGam2 = rSSTBeta2/rSSTBetas &
          - rSSTSigw2*rSSTK*rSSTK/sqrt(rSSTBetas)
+#endif
 
     ! Set a couple of pointers to the correct entries in dw to
     ! make the code more readable.
@@ -169,8 +174,13 @@ contains
              spk  = min(spk, pklim*sdk)
 
              dvt(i,j,k,1) = spk - sdk
+#ifdef SST_2003
+             dvt(i,j,k,2) = rSSTGam*spk/rev(i,j,k) + two*t2*rSSTSigw2*kwCD(i,j,k) &
+                  - rSSTBeta*w(i,j,k,itu2)**2
+#else
              dvt(i,j,k,2) = rSSTGam*ss + two*t2*rSSTSigw2*kwCD(i,j,k) &
                   - rSSTBeta*w(i,j,k,itu2)**2
+#endif
 
              ! Compute the source term jacobian. Note that only the
              ! destruction terms are linearized to increase the diagonal
@@ -1209,8 +1219,13 @@ contains
                    t2 = 500.0_realType*rlv(i,j,k) &
                         / (w(i,j,k,irho)*w(i,j,k,itu2)*d2Wall(i,j,k)**2)
                    t1 = max(t1,t2)
+#ifdef SST_2003
                    t2 = two*w(i,j,k,itu1)&
-                        / (max(eps,kwCD(i,j,k))*d2Wall(i,j,k)**2)
+                        / (max(myeps/w(i,j,k,irho) ,kwCD(i,j,k))*d2Wall(i,j,k)**2)   
+#else
+                   t2 = two*w(i,j,k,itu1)&
+                        / (max(eps,kwCD(i,j,k))*d2Wall(i,j,k)**2)   
+#endif
 
                    arg1      = min(t1,t2)
                    f1(i,j,k) = tanh(arg1**4)

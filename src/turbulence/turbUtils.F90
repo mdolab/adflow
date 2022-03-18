@@ -358,6 +358,120 @@ contains
     enddo
 #endif
   end subroutine prodWmag2
+
+#ifdef SST_2003
+  subroutine strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+    !
+    !       strainNorm computes the term:
+    !              sqrt(2*sij*sij)  with  sij=0.5*(duidxj+dujdxi)
+    !       which is used for the eddy viscosity.
+    !       It is assumed that the pointer prod, stored in turbMod, is
+    !       already set to the correct entry.
+    !       Should ALWAYS be called with Beg>1 and End!
+    !
+    use constants
+    use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j, k, ii
+    real(kind=realType)   :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
+    real(kind=realType)   :: div2, fact, sxx, syy, szz, sxy, sxz, syz
+
+    ! Loop over the cell centers of the given block. It may be more
+    ! efficient to loop over the faces and to scatter the gradient,
+    ! but in that case the gradients for u, v and w must be stored.
+    ! In the current approach no extra memory is needed.
+
+#ifdef TAPENADE_REVERSE
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
+
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
+#else
+       do k=kBeg,kEnd
+          do j=jBeg,jEnd
+             do i=iBeg,iEnd          
+#endif
+
+                ! Compute the gradient of u in the cell center. Use is made
+                ! of the fact that the surrounding normals sum up to zero,
+                ! such that the cell i,j,k does not give a contribution.
+                ! The gradient is scaled by the factor 2*vol.
+
+                uux = w(i+1,j,k,ivx)*si(i,j,k,1) - w(i-1,j,k,ivx)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,1) - w(i,j-1,k,ivx)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,1) - w(i,j,k-1,ivx)*sk(i,j,k-1,1)
+                uuy = w(i+1,j,k,ivx)*si(i,j,k,2) - w(i-1,j,k,ivx)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,2) - w(i,j-1,k,ivx)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,2) - w(i,j,k-1,ivx)*sk(i,j,k-1,2)
+                uuz = w(i+1,j,k,ivx)*si(i,j,k,3) - w(i-1,j,k,ivx)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,3) - w(i,j-1,k,ivx)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,3) - w(i,j,k-1,ivx)*sk(i,j,k-1,3)
+
+                ! Idem for the gradient of v.
+
+                vvx = w(i+1,j,k,ivy)*si(i,j,k,1) - w(i-1,j,k,ivy)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,1) - w(i,j-1,k,ivy)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,1) - w(i,j,k-1,ivy)*sk(i,j,k-1,1)
+                vvy = w(i+1,j,k,ivy)*si(i,j,k,2) - w(i-1,j,k,ivy)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,2) - w(i,j-1,k,ivy)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,2) - w(i,j,k-1,ivy)*sk(i,j,k-1,2)
+                vvz = w(i+1,j,k,ivy)*si(i,j,k,3) - w(i-1,j,k,ivy)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,3) - w(i,j-1,k,ivy)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,3) - w(i,j,k-1,ivy)*sk(i,j,k-1,3)
+
+                ! And for the gradient of w.
+
+                wwx = w(i+1,j,k,ivz)*si(i,j,k,1) - w(i-1,j,k,ivz)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,1) - w(i,j-1,k,ivz)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,1) - w(i,j,k-1,ivz)*sk(i,j,k-1,1)
+                wwy = w(i+1,j,k,ivz)*si(i,j,k,2) - w(i-1,j,k,ivz)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,2) - w(i,j-1,k,ivz)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,2) - w(i,j,k-1,ivz)*sk(i,j,k-1,2)
+                wwz = w(i+1,j,k,ivz)*si(i,j,k,3) - w(i-1,j,k,ivz)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,3) - w(i,j-1,k,ivz)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,3) - w(i,j,k-1,ivz)*sk(i,j,k-1,3)
+
+                ! Compute the components of the stress tensor.
+                ! The combination of the current scaling of the velocity
+                ! gradients (2*vol) and the definition of the stress tensor,
+                ! leads to the factor 1/(4*vol).
+
+                fact = fourth/vol(i,j,k)
+
+                sxx = two*fact*uux
+                syy = two*fact*vvy
+                szz = two*fact*wwz
+
+                sxy = fact*(uuy + vvx)
+                sxz = fact*(uuz + wwx)
+                syz = fact*(vvz + wwy)
+
+                ! Store the square of strain as the production term.
+
+                scratch(i,j,k, iprod) = SQRT(two*(two*(sxy**2 + sxz**2 + syz**2) &
+                     +           sxx**2 + syy**2 + szz**2))
+#ifdef TAPENADE_REVERSE
+             end do
+#else
+          enddo
+       enddo
+    enddo
+#endif
+  end subroutine strainNorm
+#endif
+
   function saNuKnownEddyRatio(eddyRatio, nuLam)
     !
     !       saNuKnownEddyRatio computes the Spalart-Allmaras transport
@@ -855,7 +969,11 @@ contains
     ! for it; for the actual eddy viscosity computation the vorticity
     ! itself is needed.
 
+#ifdef SST_2003
+    call strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+#else
     call prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+#endif   
 
     ! Loop over the cells of this block and compute the eddy viscosity.
     ! Most of the time, do not include halo's (iBeg=2...il,...)
