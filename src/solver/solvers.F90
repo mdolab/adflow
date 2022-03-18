@@ -735,6 +735,7 @@ contains
 
           call applyAllBC(.true.)
           if(equations == RANSEquations) call applyAllTurbBC(.true.)
+          !QUESTION: the order of the calls to BC and turbBC was permuted everywhere else in the code. Fist applyTurb then applyBC to allow correctForK. Recommend permuting here too.
 
           ! Exchange the halo data. As we are on the fine grid
           ! the second halo is needed.
