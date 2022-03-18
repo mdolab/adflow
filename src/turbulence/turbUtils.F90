@@ -6,7 +6,7 @@ contains
     !
     !       prodKatoLaunder computes the turbulent production term using
     !       the Kato-Launder formulation.
-    !       Should ALWAYS be called with Beg>1 and End!
+    !       Should ALWAYS be called with Beg>1 and <End!
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -142,7 +142,7 @@ contains
     !       which is used for the turbulence equations.
     !       It is assumed that the pointer prod, stored in turbMod, is
     !       already set to the correct entry.
-    !       Should ALWAYS be called with Beg>1 and End!
+    !       Should ALWAYS be called with Beg>1 and <End!
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -261,7 +261,7 @@ contains
     !       This is equal to the magnitude squared of the vorticity.
     !       It is assumed that the pointer vort, stored in turbMod, is
     !       already set to the correct entry.
-    !       Should ALWAYS be called with Beg>1 and End!
+    !       Should ALWAYS be called with Beg>1 and <End!
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -367,7 +367,7 @@ contains
     !       which is used for the eddy viscosity.
     !       It is assumed that the pointer prod, stored in turbMod, is
     !       already set to the correct entry.
-    !       Should ALWAYS be called with Beg>1 and End!
+    !       Should ALWAYS be called with Beg>1 and <End!
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -951,6 +951,7 @@ contains
     !       SSTEddyViscosity computes the eddy viscosity according to
     !       menter's SST variant of the k-omega turbulence model for the
     !       block given in blockPointers.
+    !       Should ALWAYS be called with Beg>1 and <End! d2wall is not defined otherwise.
     !
     use constants
     use blockPointers
