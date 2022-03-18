@@ -1070,7 +1070,9 @@ forcesAsTractions:
 
 adjointL2Convergence:
   desc: >
-    Adjoint solution tolerance relative to the initial residual.
+    Adjoint solution tolerance relative to the residual for a zero initial guess.
+    In some cases (such as with zipper meshes), the adjoint solution can stall well before a typical relative convergence value is reached.
+    For these cases, running the adjoint solution until the absolute residual reaches a minimum should still give accurate derivatives.
 
 adjointL2ConvergenceRel:
   desc: >
