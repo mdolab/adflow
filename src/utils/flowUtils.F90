@@ -923,14 +923,6 @@ if (correctForK) then
 #endif
                 v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
                 p(i, j, k) = gm1*(w(i, j, k, irhoE) - half*w( i, j, k, irho)*v2)
-
-                !missing correctForK !!
-                ! Possible faster implementation: do a second loop after, with the if outside of the loop
-                if( getCorrectForK() ) then
-                   p(i, j ,k) = p(i, j, k) + factK*w(i, j, k, irho) &
-                      * w(i, j, k, itu1)
-                end if    
-
                 p(i, j, k) = max(p(i, j, k), 1.e-4_realType*pInfCorr)
 
 #ifdef TAPENADE_REVERSE
@@ -940,6 +932,33 @@ if (correctForK) then
        end do
     end do
 #endif
+
+    ! Apply correction for K in a separate loop
+    if ( getCorrectForK() ) then
+#ifdef TAPENADE_REVERSE
+       iSize = (iEnd-iBeg)+1
+       jSize = (jEnd-jBeg)+1
+       kSize = (kEnd-kBeg)+1
+   
+       !$AD II-LOOP
+       do ii=0, iSize*jSize*kSize-1
+          i = mod(ii, iSize) + iBeg
+          j = mod(ii/(iSize), jSize) + jBeg
+          k = ii/((iSize*jSize)) + kBeg
+#else
+       do k=kBeg, kEnd
+          do j=jBeg, jEnd
+             do i=iBeg, iEnd
+#endif
+               p(i, j ,k) = p(i, j, k) + factK*w(i, j, k, irho) * w(i, j, k, itu1)
+#ifdef TAPENADE_REVERSE
+             end do
+#else
+             end do
+          end do
+       end do
+#endif
+    end if
   end subroutine computePressureSimple
 
   subroutine computePressure(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
@@ -1007,7 +1026,7 @@ if (correctForK) then
                 w(i,j,k,irhoE) = gm1*(w(ip,jp,kp,irhoE) &
                      - half*w(ip,jp,kp,irho)*v2)
                 w(i,j,k,irhoE) = max(w(i,j,k,irhoE), &
-                     1.e-5_realType*pInf)
+                     1.e-5_realType*pInf) !QUESTION: why is this clipping different than in computePressureSimple: 1e-4?
              enddo
           enddo
        enddo

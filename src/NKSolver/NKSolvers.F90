@@ -1359,7 +1359,7 @@ contains
                    ! Clip the turb to prevent negative turb SA
                    ! values. This is similar to the pressure
                    ! clip. Need to check this for other Turb models. 
-                   ! issue !99: could this be a factor?
+                   ! issue !99: This seems to be ok for SST at least.
                    do l=nt1, nt2
                       w(i, j, k, l) = max(1e-6*winf(l), wvec_pointer(ii))
                       ii = ii + 1

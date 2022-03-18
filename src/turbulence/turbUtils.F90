@@ -732,6 +732,7 @@ contains
     use iteration
     use blockPointers
     use turbBCRoutines, only : applyAllTurbBCThisBlock
+    use haloExchange, only : whalo1
     implicit none
 
     ! Input Parameter
@@ -760,9 +761,8 @@ contains
     ! Determine the turbulence model and call the appropriate
     ! routine to compute the eddy viscosity.
     if (includeHalos) then
-       !Only called from the FD preconditioner from ANK... 
        !  CAUTION: even though the following calls were made consistent to accept iBeg, iEnd, etc. care must be taken when the evaluation of EddyVisc 
-       !    involved derivatives (hence can't be obtained by FD in the halo cells). This is why the SST call is different than the others.
+       !    involves derivatives. They can't be obtained by FD in the halo cells! This is why the SST call is different from the others.
        iBeg = 1
        iEnd = ie
        jBeg = 1
@@ -786,35 +786,30 @@ contains
 
     case (v2f)
        call vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
     case (komegaWilcox, komegaModified)
        call kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 
     case (menterSST)
 
-       !TODO: exchange vorticity in 1st halo region.
+       call SSTEddyViscosity(2, il, 2, jl, 2, kl) 
+       ! Note: 
+       ! - if the above is called with 1,ie..., it will use 2nd halo values for the FD derivatives. These might be unassigned.
+       !    Also, it may also try to use the vorticity and d2wall in the 1st halo cell. These are also unassigned/undefined.
+       !    The vorticity is NEVER computed in the 1st halo.
+       ! - even when called with 2,il,... it will compute derivatives in the production term (vorticity or strain). So the values of velocity 
+       !    better be up to date.
 
-       !SST eddy viscosity can't be computed in the halo region, since it uses the d2wall variable.
-       ! -> previously, evaluating computeEddyViscosity with includeHalos=true caused NaNs!
-       call SSTEddyViscosity(2, il, 2, jl, 2, kl)
-
-
-       ! Well... this is not the spirit!! If I call this with includeHalo, I should be able to compute it... 
-       !   however, I need to have d2wall, omega and rho up to date in all 1st halo cells. I also need vorticity?
-       ! If I get a NaN above, this might be because the halo cells are not assigned?
-       !   The vorticity is obtained as a derivative of velocity. If we call it for halo cell 1, halo cell 2 should have been updated!!!
-       !   Actually it's pretty clear: the vorticity is NEVER computed in the 1st halo.
-
-       ! PROBLEM: what is currently written does NOT compute a value of eddy viscosity in the first halo cell. This is needed when computing the PC for coupled solver.
-       
-
-       !Instead, we can extend the eddy viscosity using the BCs.
        if (includeHalos) then
-         
-            call applyAllTurbBCThisBlock(.false.) !no need to include second halo
+            ! In case Eddy Visc is required in the halo cells, we can rely 
+            ! 1. on the BCs for the walls and boundaries:
 
-            ! ! or using only the required portion on eddy viscosity:
+            call applyAllTurbBCThisBlock(.false.) !QUESTION: should we include second halo?
+
             !======================================================================
-            ! ! (the following snippet could be factored out of applyAllTurbBCThisBlock )
+            ! QUESTION: should we use only the portion on eddy viscosity?
+            ! (the following snippet could be factored out of applyAllTurbBCThisBlock )
+            !======================================================================
             ! bocos: do nn=1,nBocos
 
             !    if(BCType(nn) == NSWallAdiabatic .or. &
@@ -835,6 +830,12 @@ contains
             !    endif
             ! enddo bocos
             !======================================================================
+
+            ! 2. on an exchange of vorticity in 1st halo region
+
+            call whalo1(currentLevel, 1_intType, 0_intType, .false.,.false., .true.)
+            ! QUESTION: should we use whalo2 instead so that we have it in 2nd halo cells as well?
+            
        endif
 
     case (ktau)

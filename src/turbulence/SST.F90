@@ -231,6 +231,7 @@ contains
 
              ! Compute the blended diffusion coefficients for k-1,
              ! k and k+1.
+             ! CAUTION: f1 must be known in neighbouring cells (including halos!)
 
              t1 = f1(i,j,k+1); t2 = one - t1
              rSSTSigkp1 = t1*rSSTSigk1 + t2*rSSTSigk2

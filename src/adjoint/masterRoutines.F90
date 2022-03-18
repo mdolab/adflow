@@ -1165,7 +1165,7 @@ contains
 
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
-    call computeEddyViscosity(.True.)
+    call computeEddyViscosity(.True.) !This is the tricky call for SST: it involves come communication because there are derivatives involved. Should be good.
 
     ! Make sure to call the turb BC's first incase we need to
     ! correct for K

@@ -213,12 +213,16 @@ contains
              end if
           end if
 
+          ! Notes: 
+          ! - we do not compute inside of Halos. Those values will be filled with BCs or communications.
+          ! - second halos can be included for the compuation of BCs. 
+
           ! Compute the pressures/viscositites
           call computePressureSimple(.False.)
 
           ! Compute Laminar/eddy viscosity if required
           call computeLamViscosity(.False.)
-          call computeEddyViscosity(.False.)
+          call computeEddyViscosity(.False.) !for SST, the velocity in 1st halo MUST be up to date before this call. It should be ok here.
 
           ! Make sure to call the turb BC's first incase we need to
           ! correct for K
@@ -252,7 +256,7 @@ contains
        lEnd   = nt2
     end if
 
-    ! Exchange values
+    ! Exchange values: make sure all values, including halos, are up to date everywhere
     call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
 
     ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -272,6 +276,7 @@ contains
        end do
     end if
 
+    ! Update the f1 blending function for Menter SST
     if (turbRes .and. turbModel == menterSST) then
        call f1SST
     end if
@@ -656,7 +661,7 @@ contains
                !     call vfSolve(.True.) !-> this needs a blockette implementation
                !      !dgfix
                 case DEFAULT
-                     print *,'ERROR: no other turbulence model then SA is implemented in blockette'
+                     print *,'ERROR: no other turbulence model than SA is implemented when useBlockettes=True'
                      call EChk(1, __FILE__, __LINE__)
                 end select
              endif

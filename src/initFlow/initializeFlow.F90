@@ -1286,7 +1286,7 @@ end subroutine infChangeCorrection
 
     ! Exchange the solution on the multigrid start level.
     ! It is possible that the halo values are needed for the boundary
-    ! conditions. Viscosities are not exchanged.
+    ! conditions and eddy viscosity. Viscosities are not exchanged.
 
     call whalo2(mgStartlevel, 1_intType, nw, .true., .true., &
          .false.)
@@ -1314,7 +1314,7 @@ end subroutine infChangeCorrection
           ! Compute the eddy viscosity for rans computations using
           ! an eddy viscosity model.
 
-          call computeEddyViscosity(.False.)
+          call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. It should be ok here.
 
           ! In case of a rans computation and no restart, initialize
           ! the turbulent variables a bit better for some turbulence

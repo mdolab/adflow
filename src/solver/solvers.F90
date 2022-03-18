@@ -705,7 +705,7 @@ contains
              ! Compute the laminar and eddy viscosities.
 
              call computeLamViscosity(.False.)
-             call computeEddyViscosity(.False.)
+             call computeEddyViscosity(.False.) !for SST, the velocity in 1st halo MUST be up to date before this call. Does not seem like it is.
 
              ! Step 4. Store dw in dwOldRK if this is not the last
              !         RK stage.
