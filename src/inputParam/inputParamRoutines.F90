@@ -2858,8 +2858,6 @@ contains
     if(equationMode == unsteady) then
        if(timeIntegrationScheme == explicitRK) &
             storeConvInnerIter = .false.
-    else
-       storeConvInnerIter = .true.
     endif
     !
     !       Iteration parameters. Check if the key parameters have specified
@@ -3723,7 +3721,7 @@ contains
     use iteration, only : nOldSolAvail, timeSpectralGridsNotWritten
     use monitor, only : monMassSliding, nTimeStepsRestart, timeUnsteadyRestart
     use killSignals, only : fatalFail, routineFailed
-    use ADjointPETSc, only : adjointPETScVarsAllocated
+    use ADjointPETSc, only : adjointPETScVarsAllocated, adjointPETScPreProcVarsAllocated
     use inputCostFunctions
     implicit none
 
@@ -3810,8 +3808,7 @@ contains
     cpFile = ""                  ! Serves as a check later on.
 
     storeConvInnerIter = .false. ! Do not store the convergence of
-    ! the inner iterations in unsteady
-    ! mode.
+                                 ! iterations(inner iterations in unsteady mode). 
 
 #ifdef USE_SINGLE_PRECISION
     precisionGrid = precisionSingle   ! Default IO precision depends
@@ -4041,6 +4038,7 @@ contains
     useApproxWallDistance = .False.
     cflLimit = 3.0
     adjointPETScVarsAllocated = .False.
+    adjointPETScPreProcVarsAllocated = .False.
     usematrixfreedrdw = .False.
     sepSensorOffset = zero
     sepSensorSharpness = 10_realType

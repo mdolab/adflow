@@ -35,6 +35,11 @@ storeRindLayer:
     Flag to write halo or "rind cell" information into CGNS files.
     This is required for some postprocessors (such as Tecplot) to compute contour lines correctly.
 
+storeConvHist:
+  desc: >
+    Flag to save convergence history information into fortran arrays.
+    This data can be accessed after the solve using `getConvergenceHistory`.
+
 outputDirectory:
   desc: >
     Directory where output files are written.
@@ -56,6 +61,12 @@ writeTecplotSurfaceSolution:
     Flag to write a surface output in Tecplot format.
     This can be useful because it requires less tweaking in Tecplot to get the end result.
     This also includes the zipper mesh and only the active overset cells if a zipper mesh was created.
+
+writeSolutionEachIter:
+  desc: >
+    Flag to write solution files after every nonlinear solver iteration.
+    The solution files written depend on `writeTecplotSurfaceSolution`, `writeVolumeSolution`, and `writeSurfaceSolution`.
+    This useful when debugging or developing the solver.
 
 nSaveVolume:
   desc: >
@@ -554,6 +565,14 @@ useALE:
   desc: >
     Use the arbitrary Lagrangian-Eulerian (ALE) formulation for unsteady mesh deformations.
 
+useExternalDynamicMesh:
+  desc: >
+    Use externally provided deformed mesh for the time spectral equation. Each time instance gets its own deformed grid. This can be used for both an aerodynamic case or an aeroelastic case.
+
+useTSInterpolatedGridVelocity:
+  desc: >
+    Use spectral differentiation to compute the grid velocity for the time spectral equation.
+
 useGridMotion:
   desc: >
     Whether or not a rigid body motion of the grid has been specified.
@@ -953,6 +972,14 @@ printTiming:
   desc: >
     Flag to set whether to print the time taken for the initialization, flow solution, function evaluations, and adjoint solution.
 
+printAllOptions:
+  desc: >
+    Flag to set whether to print all the options during initialization.
+
+printIntro:
+  desc: >
+    Flag to set whether to print the ADflow intro message during initialization.
+
 setMonitor:
   desc: >
     Flag to set whether to monitor the adjoint iterations.
@@ -1056,6 +1083,11 @@ adjointL2ConvergenceAbs:
 adjointDivTol:
   desc: >
     The relative amount the adjoint residual can increase before the solver concludes that the method is diverging.
+
+adjointMaxL2DeviationFactor:
+  desc: >
+    Similar to :py:data:`maxL2DeviationFactor` but for the adjoint solution.
+    This factor is only applied to :py:data:`adjointL2Convergence`.
 
 approxPC:
   desc: >

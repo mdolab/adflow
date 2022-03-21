@@ -1353,7 +1353,7 @@ contains
 
     ! Output format.
 
-10  format(i4, 1x, 'KSP Residual norm', 1x, e16.10)
+10  format(i4, 1x, 'KSP Residual norm', 1x, es16.10)
 
   end subroutine MyKSPMonitor
 

@@ -4425,37 +4425,67 @@ end subroutine cross_prod
        deallocate(cgnsFamilies)
     end if
 
-    deallocate(cgnsDomsd)
+    if (allocated(cgnsDomsd)) then
+       deallocate(cgnsDomsd)
+    end if
     ! deallocate(famIDsDomainInterfaces, &
     !      bcIDsDomainInterfaces,  &
     !      famIDsSliding)
-    deallocate(sections)
+    if (allocated(sections)) then
+       deallocate(sections)
+    end if
 
-    do j=1, size(BCFamExchange, 2)
-       do i=1, size(BCFamExchange, 1)
-          call destroyFamilyExchange(BCFamExchange(i,j))
-       end do
-    end do
-    deallocate(BCFamExchange)
+    if (allocated(BCFamExchange)) then
+      do j=1, size(BCFamExchange, 2)
+         do i=1, size(BCFamExchange, 1)
+            call destroyFamilyExchange(BCFamExchange(i,j))
+         end do
+      end do
+      deallocate(BCFamExchange)
+    end if
+    
+    if (allocated(nCellGlobal)) then
+       deallocate(nCellGlobal)
+    end if
 
-    ! From Communication Stuff
-    do l=1,nLevels
-
-       call deallocateCommType(commPatternCell_1st(l))
-       call deallocateCommType(commPatternCell_2nd(l))
-       call deallocateCommType(commPatternNode_1st(l))
-
-       call deallocateInternalCommType(internalCell_1st(l))
-       call deallocateInternalCommType(internalCell_2nd(l))
-       call deallocateInternalCommType(internalNode_1st(l))
-
-    end do
-    deallocate(nCellGlobal)
-
-    ! Now deallocate the containers
-    deallocate(&
-         commPatternCell_1st, commPatternCell_2nd, commPatternNode_1st, &
-         internalCell_1st, internalCell_2nd, internalNode_1st)
+    
+   ! Now deallocate the containers and communication objects.
+    if (allocated(commPatternCell_1st)) then
+      do l=1,nLevels
+         call deallocateCommType(commPatternCell_1st(l))
+      end do 
+      deallocate(commPatternCell_1st)
+    end if
+    if (allocated(commPatternCell_2nd)) then
+      do l=1,nLevels
+         call deallocateCommType(commPatternCell_2nd(l))
+      end do 
+      deallocate(commPatternCell_2nd)
+    end if
+    if (allocated(commPatternNode_1st)) then
+      do l=1,nLevels
+         call deallocateCommType(commPatternNode_1st(l))
+      end do
+      deallocate(commPatternNode_1st)
+    end if
+    if (allocated(internalCell_1st)) then
+      do l=1,nLevels
+         call deallocateInternalCommType(internalCell_1st(l))
+      end do
+      deallocate(internalCell_1st)
+    end if
+    if (allocated(internalCell_2nd)) then
+      do l=1,nLevels
+         call deallocateInternalCommType(internalCell_2nd(l))
+      end do
+      deallocate(internalCell_2nd)
+    end if
+    if (allocated(internalNode_1st)) then
+      do l=1,nLevels
+         call deallocateInternalCommType(internalNode_1st(l))
+      end do
+      deallocate(internalNode_1st)
+    end if
 
     ! Send/recv buffer
     if (allocated(sendBuffer)) then
@@ -4467,7 +4497,12 @@ end subroutine cross_prod
     end if
 
     ! massFlow stuff from setFamilyInfoFaces.f90
-    deallocate(massFLowFamilyInv, massFlowFamilyDiss)
+    if (allocated(massFlowFamilyInv)) then
+       deallocate(massFlowFamilyInv)
+    end if
+    if (allocated(massFlowFamilyDiss)) then
+       deallocate(massFlowFamilyDiss)
+    end if
 
   end subroutine releaseMemoryPart1
 
@@ -4736,61 +4771,65 @@ end subroutine cross_prod
 
     ! Release the memory of flowDoms of the finest grid and of the
     ! array flowDoms afterwards.
-
-    do sps=1,nTimeIntervalsSpectral
-       do nn=1,nDom
-          call deallocateBlock(nn, 1_intType, sps)
-       enddo
-    enddo
-    deallocate(flowDoms, stat=ierr)
-    if(ierr /= 0)                          &
-         call terminate("releaseMemoryPart2", &
-         "Deallocation failure for flowDoms")
+    if (allocated(flowDoms)) then
+      do sps=1,nTimeIntervalsSpectral
+         do nn=1,nDom
+            call deallocateBlock(nn, 1_intType, sps)
+         enddo
+      enddo
+      deallocate(flowDoms, stat=ierr)
+      if(ierr /= 0)                          &
+           call terminate("releaseMemoryPart2", &
+           "Deallocation failure for flowDoms")
+    end if 
 
     ! Some more memory should be deallocated if this code is to
     ! be used in combination with adaptation.
 
     ! Destroy variables allocated in preprocessingAdjoint
+    if (adjointPETScPreProcVarsAllocated) then
+      call vecDestroy(w_like1,PETScIerr)
+      call EChk(PETScIerr, __FILE__, __LINE__)
 
-    call vecDestroy(w_like1,PETScIerr)
-    call EChk(PETScIerr, __FILE__, __LINE__)
+      call vecDestroy(w_like2,PETScIerr)
+      call EChk(PETScIerr, __FILE__, __LINE__)
 
-    call vecDestroy(w_like2,PETScIerr)
-    call EChk(PETScIerr, __FILE__, __LINE__)
+      call vecDestroy(psi_like1,PETScIerr)
+      call EChk(PETScIerr, __FILE__, __LINE__)
 
-    call vecDestroy(psi_like1,PETScIerr)
-    call EChk(PETScIerr, __FILE__, __LINE__)
+      call vecDestroy(psi_like2,PETScIerr)
+      call EChk(PETScIerr, __FILE__, __LINE__)
 
-    call vecDestroy(psi_like2,PETScIerr)
-    call EChk(PETScIerr, __FILE__, __LINE__)
+      call vecDestroy(psi_like3,PETScIerr)
+      call EChk(PETScIerr, __FILE__, __LINE__)
 
-    call vecDestroy(psi_like3,PETScIerr)
-    call EChk(PETScIerr, __FILE__, __LINE__)
-
-    call vecDestroy(x_like,PETScIerr)
-    call EChk(PETScIerr, __FILE__, __LINE__)
+      call vecDestroy(x_like,PETScIerr)
+      call EChk(PETScIerr, __FILE__, __LINE__)
+    end if
 
     ! Finally delete cgnsDoms...but there is still more
     ! pointers that need to be deallocated...
-    do nn=1,cgnsNDom
-       if (associated(cgnsDoms(nn)%procStored)) &
-            deallocate(cgnsDoms(nn)%procStored)
+    if (allocated(cgnsDoms)) then
+      do nn=1,cgnsNDom
+         if (associated(cgnsDoms(nn)%procStored)) &
+               deallocate(cgnsDoms(nn)%procStored)
 
-       if (associated(cgnsDoms(nn)%conn1to1)) &
-            deallocate(cgnsDoms(nn)%conn1to1)
+         if (associated(cgnsDoms(nn)%conn1to1)) &
+               deallocate(cgnsDoms(nn)%conn1to1)
 
-       if (associated(cgnsDoms(nn)%connNonMatchAbutting)) &
-            deallocate(cgnsDoms(nn)%connNonMatchAbutting)
+         if (associated(cgnsDoms(nn)%connNonMatchAbutting)) &
+               deallocate(cgnsDoms(nn)%connNonMatchAbutting)
 
-       if (associated(cgnsDoms(nn)%bocoInfo)) &
-            deallocate(cgnsDoms(nn)%bocoInfo)
+         if (associated(cgnsDoms(nn)%bocoInfo)) &
+               deallocate(cgnsDoms(nn)%bocoInfo)
 
-       deallocate(&
-            cgnsDoms(nn)%iBegOr, cgnsDoms(nn)%iEndOr, &
-            cgnsDoms(nn)%jBegOr, cgnsDoms(nn)%jEndOr, &
-            cgnsDoms(nn)%kBegOr, cgnsDoms(nn)%kEndOr, &
-            cgnsDoms(nn)%localBlockID)
-    end do
+         deallocate(&
+               cgnsDoms(nn)%iBegOr, cgnsDoms(nn)%iEndOr, &
+               cgnsDoms(nn)%jBegOr, cgnsDoms(nn)%jEndOr, &
+               cgnsDoms(nn)%kBegOr, cgnsDoms(nn)%kEndOr, &
+               cgnsDoms(nn)%localBlockID)
+      end do
+   end if
 
   end subroutine releaseMemoryPart2
 
@@ -5815,7 +5854,7 @@ end subroutine cross_prod
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIO, only : storeConvInnerIter
-    use monitor, only : convArray, nMon
+    use monitor, only : convArray, nMon, solverDataArray, solverTypeArray, showCPU
     implicit none
     !
     !      Subroutine argument.
@@ -5826,6 +5865,8 @@ end subroutine cross_prod
     !
     integer :: ierr
 
+    integer(kind=intType):: nSolverMon ! number of solver monitor variables
+    
     ! Return immediately if the convergence history (of the inner
     ! iterations) does not need to be stored. This logical can
     ! only be .false. for an unsteady computation.
@@ -5834,11 +5875,28 @@ end subroutine cross_prod
     if (allocated(convArray)) then
        deallocate(convArray)
     end if
+    if (allocated(solverDataArray)) then
+       deallocate(solverDataArray)
+    end if
+    if (allocated(solverTypeArray)) then
+       deallocate(solverTypeArray)
+    end if
+    
+    if (showCPU) then 
+      nSolverMon = 5
+    else
+      nSolverMon = 4
+    end if
 
     allocate(convArray(0:nIterTot, nTimeIntervalsSpectral, nMon))
+    allocate(solverDataArray(0:nIterTot, nTimeIntervalsSpectral, nSolverMon))
+    allocate(solverTypeArray(0:nIterTot, nTimeIntervalsSpectral))
 
     ! Zero Array:
     convArray = zero
+    solverDataArray = zero
+    
+    
 
   end subroutine allocConvArrays
 
@@ -5881,8 +5939,66 @@ end subroutine cross_prod
 
   end subroutine allocTimeArrays
 
-
-
+  subroutine getMonitorVariableNames(nvar, monitor_variables)
+   !
+   !  copy the names in monnames to another array so that is can be
+   !  passed back up the python level
+   !
+   use constants
+   use monitor, only: nmon, monnames
+   implicit none
+   
+   ! save the monitor variable names into a new array
+   integer(kind=intType), intent(in):: nvar
+   character, dimension(nvar,maxCGNSNameLen), intent(out):: monitor_variables
+   
+   ! working variables 
+   character(len=maxCGNSNameLen) :: var_name
+   integer(kind=intType) :: c, idx_mon
+   
+   do idx_mon=1,nvar 
+      var_name =  monNames(idx_mon)
+      
+      do c =1,len(monNames(idx_mon))
+         monitor_variables(idx_mon, c) =var_name(c:c)
+      end do
+   end do 
+   
+   
+  end subroutine getMonitorVariableNames
+   
+  subroutine getSolverTypeArray(niter, nsps, type_array)
+   !
+   !  copy the names in sovlerTypeArray to another array so that is can be
+   !  passed back up the python level
+   !
+   use constants
+   use monitor, only:  solverTypeArray
+   use inputTimeSpectral, only : nTimeIntervalsSpectral
+   use iteration, only: itertot
+   implicit none
+   
+   ! save the monitor variable names into a new array
+   integer(kind=intType), intent(in):: niter, nsps
+   character, dimension(0:niter, ntimeintervalsspectral, maxIterTypelen), intent(out):: type_array
+   
+   ! working variables 
+   character(len=maxIterTypelen) :: type_name
+   integer(kind=intType) :: c, idx_sps, idx_iter
+   
+   do idx_sps=1,ntimeintervalsspectral
+      do idx_iter=0,itertot 
+         type_name =  solverTypeArray(idx_iter, idx_sps)
+         
+         do c =1,len(solverTypeArray(idx_iter, idx_sps))
+            type_array(idx_iter, idx_sps, c) = type_name(c:c)
+         end do
+         
+      end do 
+   end do 
+   
+   end subroutine getSolverTypeArray
+   
   subroutine convergenceHeader
     !
     !       convergenceHeader writes the convergence header to stdout.
@@ -6377,7 +6493,7 @@ end subroutine cross_prod
 
     write(integerString,"(i7)") timeStepUnsteady + &
          nTimeStepsRestart
-    write(realString,"(e12.5)") timeUnsteady + &
+    write(realString,"(es12.5)") timeUnsteady + &
          timeUnsteadyRestart
 
     integerString = adjustl(integerString)

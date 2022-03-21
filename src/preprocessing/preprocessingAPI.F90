@@ -1019,7 +1019,7 @@ contains
 100                   format("# Symmetry boundary face",1X,A,1X,"of zone", &
                            1x,a,1x, "is not planar.")
 110                   format("# Maximum deviation from the mean normal: ", &
-                           e12.5, " degrees")
+                           es12.5, " degrees")
 
                    endif
 
@@ -1590,7 +1590,7 @@ contains
           case (iBCGroupFarfield)
              write(*,"(a)",advance="no") '| Farfield Types       : '
           case (iBCGroupOverset)
-             write(*,"(a)",advance="no") '| Oveset Types         : '
+             write(*,"(a)",advance="no") '| Overset Types        : '
           case (iBCGroupOther)
              write(*,"(a)",advance="no") '| Other Types          : '
           end select
@@ -3512,8 +3512,8 @@ contains
                                     trim(intString3), &
                                     xc(1), xc(2), xc(3), -vol(i,j,k)
 102                            format("# Indices (",a,",",a,",",a,"), &
-                                    &coordinates (",e10.3,",",e10.3,",", &
-                                    e10.3,"), Volume: ",e10.3)
+                                    &coordinates (",es10.3,",",es10.3,",", &
+                                    es10.3,"), Volume: ",es10.3)
 
                             endif
                          enddo
@@ -3851,6 +3851,7 @@ contains
        endif
 
        call gridVelocitiesFineLevel(.false., t, mm)
+
        call gridVelocitiesCoarseLevels(mm)
        call normalVelocitiesAllLevels(mm)
 
@@ -3889,7 +3890,10 @@ contains
 
     call timePeriodSpectral
     call timeRotMatricesSpectral
-    call fineGridSpectralCoor
+    ! solve for the new grid only for rigid rotation with analytical deformation case
+    if (.NOT. usetsinterpolatedgridvelocity) then 
+       call fineGridSpectralCoor
+    end if
     call timeSpectralMatrices
 
 
@@ -3963,7 +3967,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputAdjoint, only : frozenTurbulence
     use ADjointPETSc, only: w_like1, w_like2, PETScIerr, &
-         psi_like1, psi_like2, x_like, psi_like3
+         psi_like1, psi_like2, x_like, psi_like3, adjointPETScPreProcVarsAllocated
     use utils, only : setPointers, EChk
 #include <petsc/finclude/petsc.h>
     use petsc
@@ -4014,7 +4018,9 @@ contains
     call VecCreateMPIWithArray(ADFLOW_COMM_WORLD,3,ndimX,PETSC_DECIDE, &
          PETSC_NULL_SCALAR,x_like,PETScIerr)
     call EChk(PETScIerr,__FILE__,__LINE__)
-
+    
+    adjointPETScPreProcVarsAllocated = .True.
+    
     ! Need to initialize the stencils as well, only once:
     call initialize_stencils
 

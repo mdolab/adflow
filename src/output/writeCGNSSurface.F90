@@ -387,7 +387,11 @@ contains
 
     integer(kind=intType) :: i, offset
     integer(kind=intType) :: mm, mBlocks, faceID, nSubfaces
-    integer(kind=intType) :: iBeg, jBeg, kBeg, iEnd, jEnd, kEnd
+    
+    ! extents of the subface in terms of the i,j,k indices of the cgns zone
+    integer(kind=intType) :: zone_iBeg, zone_jBeg, zone_kBeg, zone_iEnd, zone_jEnd, zone_kEnd
+    ! extents of the subface of i,j indices in terms of i,j,k, indices of cgns zone.
+    integer(kind=intType) :: subface_iBeg, subface_jBeg, subface_iEnd, subface_jEnd
     integer(kind=intType) :: il, jl, ind
 
     integer(kind=intType), dimension(nProc)       :: nMessages
@@ -420,20 +424,20 @@ contains
        viscousSubface = .false.
 
        ! Store the nodal range of the cgns subface a bit easier.
-       ! Make sure that iBeg, jBeg and kBeg contain the lowest values
-       ! and iEnd, jEnd and kEnd the highest.
+       ! Make sure that zone_iBeg, zone_jBeg and zone_kBeg contain the lowest values
+       ! and zone_iEnd, zone_jEnd and zone_kEnd the highest.
 
-       iBeg = min(cgnsDoms(zone)%conn1to1(subface)%iBeg, &
+       zone_iBeg = min(cgnsDoms(zone)%conn1to1(subface)%iBeg, &
             cgnsDoms(zone)%conn1to1(subface)%iEnd)
-       jBeg = min(cgnsDoms(zone)%conn1to1(subface)%jBeg, &
+       zone_jBeg = min(cgnsDoms(zone)%conn1to1(subface)%jBeg, &
             cgnsDoms(zone)%conn1to1(subface)%jEnd)
-       kBeg = min(cgnsDoms(zone)%conn1to1(subface)%kBeg, &
+       zone_kBeg = min(cgnsDoms(zone)%conn1to1(subface)%kBeg, &
             cgnsDoms(zone)%conn1to1(subface)%kEnd)
-       iEnd = max(cgnsDoms(zone)%conn1to1(subface)%iBeg, &
+       zone_iEnd = max(cgnsDoms(zone)%conn1to1(subface)%iBeg, &
             cgnsDoms(zone)%conn1to1(subface)%iEnd)
-       jEnd = max(cgnsDoms(zone)%conn1to1(subface)%jBeg, &
+       zone_jEnd = max(cgnsDoms(zone)%conn1to1(subface)%jBeg, &
             cgnsDoms(zone)%conn1to1(subface)%jEnd)
-       kEnd = max(cgnsDoms(zone)%conn1to1(subface)%kBeg, &
+       zone_kEnd = max(cgnsDoms(zone)%conn1to1(subface)%kBeg, &
             cgnsDoms(zone)%conn1to1(subface)%kEnd)
 
     else
@@ -451,17 +455,17 @@ contains
           return
        end if
 
-       iBeg = min(cgnsDoms(zone)%bocoInfo(subface)%iBeg, &
+       zone_iBeg = min(cgnsDoms(zone)%bocoInfo(subface)%iBeg, &
             cgnsDoms(zone)%bocoInfo(subface)%iEnd)
-       jBeg = min(cgnsDoms(zone)%bocoInfo(subface)%jBeg, &
+       zone_jBeg = min(cgnsDoms(zone)%bocoInfo(subface)%jBeg, &
             cgnsDoms(zone)%bocoInfo(subface)%jEnd)
-       kBeg = min(cgnsDoms(zone)%bocoInfo(subface)%kBeg, &
+       zone_kBeg = min(cgnsDoms(zone)%bocoInfo(subface)%kBeg, &
             cgnsDoms(zone)%bocoInfo(subface)%kEnd)
-       iEnd = max(cgnsDoms(zone)%bocoInfo(subface)%iBeg, &
+       zone_iEnd = max(cgnsDoms(zone)%bocoInfo(subface)%iBeg, &
             cgnsDoms(zone)%bocoInfo(subface)%iEnd)
-       jEnd = max(cgnsDoms(zone)%bocoInfo(subface)%jBeg, &
+       zone_jEnd = max(cgnsDoms(zone)%bocoInfo(subface)%jBeg, &
             cgnsDoms(zone)%bocoInfo(subface)%jEnd)
-       kEnd = max(cgnsDoms(zone)%bocoInfo(subface)%kBeg, &
+       zone_kEnd = max(cgnsDoms(zone)%bocoInfo(subface)%kBeg, &
             cgnsDoms(zone)%bocoInfo(subface)%kEnd)
 
        ! Determine whether or not this is a viscous subface.
@@ -480,15 +484,15 @@ contains
 
     ! Determine the face ID on which the given cgns subface is located.
 
-    if(iBeg == iEnd) then
+    if(zone_iBeg == zone_iEnd) then
        faceID = iMax
-       if(iBeg == 1) faceID = iMin
-    else if(jBeg == jEnd) then
+       if(zone_iBeg == 1) faceID = iMin
+    else if(zone_jBeg == zone_jEnd) then
        faceID = jMax
-       if(jBeg == 1) faceID = jMin
+       if(zone_jBeg == 1) faceID = jMin
     else
        faceID = kMax
-       if(kBeg == 1) faceID = kMin
+       if(zone_kBeg == 1) faceID = kMin
     endif
 
     ! Determine the number of nodes in the two coordinate directions.
@@ -496,14 +500,36 @@ contains
 
     select case (faceID)
     case (iMin,iMax)
-       il = jEnd - jBeg + 1
-       jl = kEnd - kBeg + 1
+       il = zone_jEnd - zone_jBeg + 1
+       jl = zone_kEnd - zone_kBeg + 1
+       
+       subface_iBeg = zone_jBeg
+       subface_iEnd = zone_jEnd
+       
+       subface_jBeg = zone_kBeg
+       subface_jEnd = zone_kEnd
+       
     case (jMin,jMax)
-       il = iEnd - iBeg + 1
-       jl = kEnd - kBeg + 1
+       il = zone_iEnd - zone_iBeg + 1
+       jl = zone_kEnd - zone_kBeg + 1
+       
+       subface_iBeg = zone_iBeg
+       subface_iEnd = zone_iEnd
+       
+       subface_jBeg = zone_kBeg
+       subface_jEnd = zone_kEnd
+       
+       
     case (kMin,kMax)
-       il = iEnd - iBeg + 1
-       jl = jEnd - jBeg + 1
+       il = zone_iEnd - zone_iBeg + 1
+       jl = zone_jEnd - zone_jBeg + 1
+       
+       subface_iBeg = zone_iBeg
+       subface_iEnd = zone_iEnd
+       
+       subface_jBeg = zone_jBeg
+       subface_jEnd = zone_jEnd
+       
     end select
 
     ! Allocate the memory for buffer, which is used to communicate
@@ -539,27 +565,27 @@ contains
 
        select case (faceID)
        case (iMin)
-          if(flowDoms(mm,1,1)%iBegor == iBeg) iOverlap = .true.
+          if(flowDoms(mm,1,1)%iBegor == zone_iBeg) iOverlap = .true.
        case (iMax)
-          if(flowDoms(mm,1,1)%iEndor == iEnd) iOverlap = .true.
+          if(flowDoms(mm,1,1)%iEndor == zone_iEnd) iOverlap = .true.
        case (jMin)
-          if(flowDoms(mm,1,1)%jBegor == jBeg) jOverlap = .true.
+          if(flowDoms(mm,1,1)%jBegor == zone_jBeg) jOverlap = .true.
        case (jMax)
-          if(flowDoms(mm,1,1)%jEndor == jEnd) jOverlap = .true.
+          if(flowDoms(mm,1,1)%jEndor == zone_jEnd) jOverlap = .true.
        case (kMin)
-          if(flowDoms(mm,1,1)%kBegor == kBeg) kOverlap = .true.
+          if(flowDoms(mm,1,1)%kBegor == zone_kBeg) kOverlap = .true.
        case (kMax)
-          if(flowDoms(mm,1,1)%kEndor == kEnd) kOverlap = .true.
+          if(flowDoms(mm,1,1)%kEndor == zone_kEnd) kOverlap = .true.
        end select
 
        ! Check the overlap for the other two directions.
 
-       if(iBeg < flowDoms(mm,1,1)%iEndor .and. &
-            iEnd > flowDoms(mm,1,1)%iBegor) iOverlap = .true.
-       if(jBeg < flowDoms(mm,1,1)%jEndor .and. &
-            jEnd > flowDoms(mm,1,1)%jBegor) jOverlap = .true.
-       if(kBeg < flowDoms(mm,1,1)%kEndor .and. &
-            kEnd > flowDoms(mm,1,1)%kBegor) kOverlap = .true.
+       if(zone_iBeg < flowDoms(mm,1,1)%iEndor .and. &
+            zone_iEnd > flowDoms(mm,1,1)%iBegor) iOverlap = .true.
+       if(zone_jBeg < flowDoms(mm,1,1)%jEndor .and. &
+            zone_jEnd > flowDoms(mm,1,1)%jBegor) jOverlap = .true.
+       if(zone_kBeg < flowDoms(mm,1,1)%kEndor .and. &
+            zone_kEnd > flowDoms(mm,1,1)%kBegor) kOverlap = .true.
 
        ! If all three directions overlap, this subblock contributes
        ! to the current cgns subface.
@@ -759,13 +785,13 @@ contains
       ! nodes on the interface are stored on both partitions for the
       ! moment. This is corrected later.
 
-      nodalRange(1,1,ii) = max(iBeg,flowDoms(mm,1,1)%iBegor)
-      nodalRange(2,1,ii) = max(jBeg,flowDoms(mm,1,1)%jBegor)
-      nodalRange(3,1,ii) = max(kBeg,flowDoms(mm,1,1)%kBegor)
+      nodalRange(1,1,ii) = max(zone_iBeg,flowDoms(mm,1,1)%iBegor)
+      nodalRange(2,1,ii) = max(zone_jBeg,flowDoms(mm,1,1)%jBegor)
+      nodalRange(3,1,ii) = max(zone_kBeg,flowDoms(mm,1,1)%kBegor)
 
-      nodalRange(1,2,ii) = min(iEnd,flowDoms(mm,1,1)%iEndor)
-      nodalRange(2,2,ii) = min(jEnd,flowDoms(mm,1,1)%jEndor)
-      nodalRange(3,2,ii) = min(kEnd,flowDoms(mm,1,1)%kEndor)
+      nodalRange(1,2,ii) = min(zone_iEnd,flowDoms(mm,1,1)%iEndor)
+      nodalRange(2,2,ii) = min(zone_jEnd,flowDoms(mm,1,1)%jEndor)
+      nodalRange(3,2,ii) = min(zone_kEnd,flowDoms(mm,1,1)%kEndor)
 
       ! The cell range. Step 1, the interior.
 
@@ -781,13 +807,13 @@ contains
 
       if( storeRindLayer ) then
 
-         if(nodalRange(1,1,ii) == iBeg) cellRange(1,1,ii) = iBeg
-         if(nodalRange(2,1,ii) == jBeg) cellRange(2,1,ii) = jBeg
-         if(nodalRange(3,1,ii) == kBeg) cellRange(3,1,ii) = kBeg
+         if(nodalRange(1,1,ii) == zone_iBeg) cellRange(1,1,ii) = zone_iBeg
+         if(nodalRange(2,1,ii) == zone_jBeg) cellRange(2,1,ii) = zone_jBeg
+         if(nodalRange(3,1,ii) == zone_kBeg) cellRange(3,1,ii) = zone_kBeg
 
-         if(nodalRange(1,2,ii) == iEnd) cellRange(1,2,ii) = iEnd +1
-         if(nodalRange(2,2,ii) == jEnd) cellRange(2,2,ii) = jEnd +1
-         if(nodalRange(3,2,ii) == kEnd) cellRange(3,2,ii) = kEnd +1
+         if(nodalRange(1,2,ii) == zone_iEnd) cellRange(1,2,ii) = zone_iEnd +1
+         if(nodalRange(2,2,ii) == zone_jEnd) cellRange(2,2,ii) = zone_jEnd +1
+         if(nodalRange(3,2,ii) == zone_kEnd) cellRange(3,2,ii) = zone_kEnd +1
 
       endif
 
@@ -798,29 +824,29 @@ contains
          cellRange(1,1,ii) = 2
          cellRange(1,2,ii) = 2
       case (iMax)
-         cellRange(1,1,ii) = iEnd
-         cellRange(1,2,ii) = iEnd
+         cellRange(1,1,ii) = zone_iEnd
+         cellRange(1,2,ii) = zone_iEnd
       case (jMin)
          cellRange(2,1,ii) = 2
          cellRange(2,2,ii) = 2
       case (jMax)
-         cellRange(2,1,ii) = jEnd
-         cellRange(2,2,ii) = jEnd
+         cellRange(2,1,ii) = zone_jEnd
+         cellRange(2,2,ii) = zone_jEnd
       case (kMin)
          cellRange(3,1,ii) = 2
          cellRange(3,2,ii) = 2
       case (kMax)
-         cellRange(3,1,ii) = kEnd
-         cellRange(3,2,ii) = kEnd
+         cellRange(3,1,ii) = zone_kEnd
+         cellRange(3,2,ii) = zone_kEnd
       end select
 
       ! Correct the nodal range for possible overlap.
 
-      if(nodalRange(1,1,ii) > iBeg) &
+      if(nodalRange(1,1,ii) > zone_iBeg) &
            nodalRange(1,1,ii) = nodalRange(1,1,ii) +1
-      if(nodalRange(2,1,ii) > jBeg) &
+      if(nodalRange(2,1,ii) > zone_jBeg) &
            nodalRange(2,1,ii) = nodalRange(2,1,ii) +1
-      if(nodalRange(3,1,ii) > kBeg) &
+      if(nodalRange(3,1,ii) > zone_kBeg) &
            nodalRange(3,1,ii) = nodalRange(3,1,ii) +1
 
     end subroutine determineSubranges
@@ -1025,7 +1051,7 @@ contains
       ! writeBuffer.
 
       if(myID == 0) then
-         mm = (kEnd-kBeg+1) * (jEnd-jBeg+1) * (iEnd-iBeg+1)
+         mm = (zone_kEnd-zone_kBeg+1) * (zone_jEnd-zone_jBeg+1) * (zone_iEnd-zone_iBeg+1)
          select case (precisionSurfGrid)
          case (precisionSingle)
             allocate(writeBuffer4(mm), writeBuffer8(0), stat=ierr)
@@ -1132,14 +1158,14 @@ contains
                case (precisionSingle)
                   call copyDataBufSinglePrecision(writeBuffer4,      &
                        buffer(ii),       &
-                       iBeg, jBeg, kBeg, &
-                       iEnd, jEnd, kEnd, &
+                       zone_iBeg, zone_jBeg, zone_kBeg, &
+                       zone_iEnd, zone_jEnd, zone_kEnd, &
                        rangeNode(1,1,kk))
                case (precisionDouble)
                   call copyDataBufDoublePrecision(writeBuffer8,      &
                        buffer(ii),       &
-                       iBeg, jBeg, kBeg, &
-                       iEnd, jEnd, kEnd, &
+                       zone_iBeg, zone_jBeg, zone_kBeg, &
+                       zone_iEnd, zone_jEnd, zone_kEnd, &
                        rangeNode(1,1,kk))
                end select
 
@@ -1320,7 +1346,8 @@ contains
                call storeSurfsolInBuffer(ind, buffer, jj, ii,       &
                     faceID, cellRange(1,1,kk), &
                     solNames(mm),              &
-                    viscousSubface, storeRindLayer)
+                    viscousSubface, storeRindLayer,&
+                    subface_iBeg, subface_iEnd, subface_jBeg, subface_jEnd)
             endif
          enddo
 

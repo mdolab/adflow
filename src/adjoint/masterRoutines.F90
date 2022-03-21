@@ -42,6 +42,8 @@ contains
     use inputOverset, only : oversetUpdateMode
     use oversetCommUtilities, only : updateOversetConnectivity
     use actuatorRegionData, only : nActuatorRegions
+    use wallDistanceData, only : xSurfVec, xSurf
+    
     implicit none
 
     ! Input Arguments:
@@ -98,6 +100,10 @@ contains
           call setPointers(nn, 1, sps)
 
           if (useSpatial) then
+
+             call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+    
              call volume_block
              call metric_block
              call boundaryNormals
@@ -105,7 +111,13 @@ contains
              if (equations == RANSEquations .and. useApproxWallDistance) then
                 call updateWallDistancesQuickly(nn, 1, sps)
              end if
-          end if
+          
+            ! These arrays need to be restored before we can move to the next spectral instance.
+             call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+             call EChk(ierr,__FILE__,__LINE__)
+ 
+          
+            end if
 
           ! Compute the pressures/viscositites
           call computePressureSimple(.False.)
@@ -158,6 +170,8 @@ contains
              call sourceTerms_block(nn, .True., iRegion, dummyReal)
           end do
 
+          call timeStep_block(.false.)
+
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
 
@@ -200,7 +214,6 @@ contains
           endif
 
           ! Compute the mean flow residuals
-          call timeStep_block(.false.)
           call inviscidCentralFlux
           if (lumpedDiss) then
              select case (spaceDiscr)
@@ -470,14 +483,17 @@ contains
           ISIZE1OFDrfbcdata = nBocos
           ISIZE1OFDrfviscsubface = nViscBocos
 
-          call timeStep_block_d(.false.)
+          ! initalize the residuals for this block 
           dw = zero
           dwd = zero
+          
           ! Compute any source terms
           do iRegion=1, nActuatorRegions
              call sourceTerms_block_d(nn, .True. , iRegion, dummyReal, dummyReald)
           end do
 
+          call timeStep_block_d(.false.)
+          
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -572,7 +588,7 @@ contains
     ! compute the reverse mode sensitivity of *all* outputs with
     ! respect to *all* inputs. Anything that needs to be
     ! differentiated for the adjoint method should be included in this
-    ! function. This routine is written by had, assembling the various
+    ! function. This routine is written by hand, assembling the various
     ! individually differentiated tapenade routines.
 
     use constants
@@ -720,7 +736,6 @@ contains
           end select
 
           call inviscidCentralFlux_b
-          call timeStep_block_b(.false.)
           ! Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              select case (turbModel)
@@ -735,6 +750,8 @@ contains
              !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
           end if
 
+          call timeStep_block_b(.false.)
+          
           ! Just to be safe, zero the pLocald value...should not matter
           dummyReald = zero
           do iRegion=1, nActuatorRegions

@@ -2571,8 +2571,9 @@ module stringOps
        ! Loop over my nodes and search for it in master tree
        nodeLoop:do j=1, str%nNodes
 
-          ! Reinitialize initial maximum number of neighbours
-          nSearch = 50
+          ! Set the initial maximum number of neighbours
+          ! This can be at most the total number of nodes
+          nSearch = min(nAlloc, master%nNodes)
 
           ! We have to be careful since single-sided chains have only
           ! 1 neighbour at each end.
@@ -2820,7 +2821,7 @@ module stringOps
 
     write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
     write(fileID, *) "DATAPACKING=BLOCK"
-13  format (E20.12)
+13  format (ES20.12)
 
     ! Nodes
     do j=1,3
@@ -2928,7 +2929,7 @@ module stringOps
 
     write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
     write(fileID, *) "DATAPACKING=BLOCK"
-13  format (E20.12)
+13  format (ES20.12)
 
     ! Nodes
     do j=1,3
@@ -2965,7 +2966,7 @@ module stringOps
 
     write (101,*) "Nodes = ", string%nNodes, " Elements= ", (endTri-startTri+1), " ZONETYPE=FETRIANGLE"
     write (101,*) "DATAPACKING=POINT"
-13  format (E20.12)
+13  format (ES20.12)
 
     ! Write all the coordinates
     do i=1, string%nNodes
