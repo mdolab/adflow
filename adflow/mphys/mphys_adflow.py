@@ -2,8 +2,6 @@ import numpy as np
 from pprint import pprint as pp
 from mpi4py import MPI
 
-from baseclasses import AeroProblem
-
 from adflow import ADFLOW
 from idwarp import USMesh
 
@@ -171,8 +169,6 @@ class ADflowWarper(ExplicitComponent):
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
 
-        solver = self.solver
-
         if mode == "fwd":
             if "adflow_vol_coords" in d_outputs:
                 if "x_aero" in d_inputs:
@@ -236,7 +232,7 @@ class ADflowSolver(ImplicitComponent):
 
     def _set_ap(self, inputs, print_dict=True):
         tmp = {}
-        for (args, kwargs) in self.ap_vars:
+        for (args, _kwargs) in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -542,7 +538,6 @@ class ADflowForces(ExplicitComponent):
     def compute(self, inputs, outputs):
 
         solver = self.solver
-        ap = self.ap
 
         self._set_ap(inputs)
 
@@ -637,7 +632,7 @@ class AdflowHeatTransfer(ExplicitComponent):
 
     def _set_ap(self, inputs):
         tmp = {}
-        for (args, kwargs) in self.ap_vars:
+        for (args, _kwargs) in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -796,18 +791,6 @@ class ADflowFunctions(ExplicitComponent):
         # self.set_check_partial_options(wrt='*',directional=True)
         self.solution_counter = 0
 
-        solver = self.solver
-        local_state_size = solver.getStateSize()
-        local_coord_size = solver.mesh.getSolverGrid().size
-        s_list = self.comm.allgather(local_state_size)
-        n_list = self.comm.allgather(local_coord_size)
-        irank = self.comm.rank
-
-        s1 = np.sum(s_list[:irank])
-        s2 = np.sum(s_list[: irank + 1])
-        n1 = np.sum(n_list[:irank])
-        n2 = np.sum(n_list[: irank + 1])
-
         self.add_input("adflow_vol_coords", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
         self.add_input("adflow_states", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
 
@@ -815,7 +798,7 @@ class ADflowFunctions(ExplicitComponent):
 
     def _set_ap(self, inputs, print_dict=True):
         tmp = {}
-        for (args, kwargs) in self.ap_vars:
+        for (args, _kwargs) in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -1009,9 +992,6 @@ class ADflowFunctions(ExplicitComponent):
 
             # print(funcsBar, flush=True)
 
-            d_input_vars = list(d_inputs.keys())
-            n_input_vars = len(d_input_vars)
-
             wBar = None
             xVBar = None
             xDVBar = None
@@ -1118,7 +1098,6 @@ class ADflowGroup(Group):
 
         for (args, kwargs) in ap_vars:
             name = args[0]
-            size = args[1]
             self.promotes("solver", inputs=[name])
             # self.promotes('funcs', inputs=[name])
             if self.struct_coupling:
