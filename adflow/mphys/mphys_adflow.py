@@ -1,6 +1,5 @@
 import numpy as np
 from pprint import pprint as pp
-from mpi4py import MPI
 
 from adflow import ADFLOW
 from idwarp import USMesh
@@ -508,7 +507,7 @@ class ADflowForces(ExplicitComponent):
 
     def _set_ap(self, inputs, print_dict=True):
         tmp = {}
-        for (args, kwargs) in self.ap_vars:
+        for (args, _kwargs) in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -1096,7 +1095,7 @@ class ADflowGroup(Group):
         # promote the DVs for this ap
         ap_vars, _ = get_dvs_and_cons(ap=ap)
 
-        for (args, kwargs) in ap_vars:
+        for (args, _kwargs) in ap_vars:
             name = args[0]
             self.promotes("solver", inputs=[name])
             # self.promotes('funcs', inputs=[name])
