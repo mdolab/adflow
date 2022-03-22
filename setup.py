@@ -30,6 +30,9 @@ setup(
         "mpi4py>=3.0",
         "petsc4py>=3.11",
     ],
-    extras_require={"testing": ["parameterized", "testflo"]},
+    extras_require={
+        "testing": ["parameterized", "testflo"],
+        "mphys": ["openmdao", "mphys", "idwarp"],
+    },
     classifiers=["Operating System :: Linux", "Programming Language :: Python, Fortran"],
 )
