@@ -1070,7 +1070,9 @@ forcesAsTractions:
 
 adjointL2Convergence:
   desc: >
-    Adjoint solution tolerance relative to the initial residual.
+    Adjoint solution tolerance relative to the residual for a zero initial guess.
+    In some cases (such as with zipper meshes), the adjoint solution can stall well before a typical relative convergence value is reached.
+    For these cases, running the adjoint solution until the absolute residual reaches a minimum should still give accurate derivatives.
 
 adjointL2ConvergenceRel:
   desc: >
@@ -1118,6 +1120,15 @@ adjointSolver:
   Richardson: Preconditioned Richardson iterative method
   BCGS: BiCGStab
   IBCGS: Improved BiCGStab
+
+GMRESOrthogonalizationType:
+  desc: >
+    Which orthogonalization method to use with GMRES.
+    This will affect the adjoint solver the most, but the same option is also used in the linear solvers in the ANK and NK solvers.
+  modified Gram-Schmidt: Modified Gram-Schmidt. This typically gives the best accuracy (relative to complex step for the adjoint) and performance.
+  CGS never refine: Classical Gram-Schmidt with no refinement. Fast but not the most accurate.
+  CGS refine if needed: Classical Gram-Schmidt with refinement as needed. Slow and inaccurate.
+  CGS always refine: Classical Gram-Schmidt with refinement at every iteration. Slow and inaccurate.
 
 adjointMaxIter:
   desc: >
@@ -1202,8 +1213,10 @@ useMatrixFreedrdw:
   desc: >
     Flag that determines if ADflow will use the matrix-free routines to compute mat-vec products with the full Jacobian.
     If False, ADflow will form the full matrix exactly and mat-vec multiplications will be matrix-based.
+    This should always be True for overset meshes, otherwise the gradients will be inaccurate.
+    This is a known bug in ADflow (see https://github.com/mdolab/adflow/issues/204).
     The matrix-free routines have lower memory usage.
-    The cost is an interesting tradeoff.
+    For runtime, there is a tradeoff between the Jacobian assembly and adjoint solution times.
     See "Effective Adjoint Approaches for Computational Fluid Dynamics" (Kenway2019a) for more details.
 
 skipAfterFailedAdjoint:
