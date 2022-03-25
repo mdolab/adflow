@@ -3595,7 +3595,7 @@ class ADFLOW(AeroSolver):
 
             elif key in self.possibleAeroDVs:
                 funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
-                if key == "alpha":
+                if key in ["alpha", "beta"]:
                     funcsSens[dvName] *= numpy.pi / 180.0
 
             elif key in self.possibleBCDvs:
