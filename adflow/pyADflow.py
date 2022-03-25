@@ -3595,6 +3595,7 @@ class ADFLOW(AeroSolver):
 
             elif key in self.possibleAeroDVs:
                 funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
+                # Convert angle derivatives from 1/rad to 1/deg
                 if key in ["alpha", "beta"]:
                     funcsSens[dvName] *= numpy.pi / 180.0
 
