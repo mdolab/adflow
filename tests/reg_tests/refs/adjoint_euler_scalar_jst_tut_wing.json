@@ -4,7 +4,7 @@
             "P_mdo_tutorial": 6.352747104407253e-22,
             "T_mdo_tutorial": 0.0,
             "alpha_mdo_tutorial": 0.010929721615816863,
-            "beta_mdo_tutorial": -0.14473778375180407,
+            "beta_mdo_tutorial": -0.002526150878508543,
             "mach_mdo_tutorial": 0.3345252749516964,
             "shape": {
                 "__ndarray__": [
@@ -129,7 +129,7 @@
             "P_mdo_tutorial": 6.776263578034403e-21,
             "T_mdo_tutorial": 0.0,
             "alpha_mdo_tutorial": 0.13569359289467547,
-            "beta_mdo_tutorial": -0.7957093943327641,
+            "beta_mdo_tutorial": -0.013887748820156563,
             "mach_mdo_tutorial": 1.563335254554469,
             "shape": {
                 "__ndarray__": [
@@ -254,7 +254,7 @@
             "P_mdo_tutorial": 1.3552527156068805e-20,
             "T_mdo_tutorial": 0.0,
             "alpha_mdo_tutorial": 0.18800535755622158,
-            "beta_mdo_tutorial": -1.4920344491823587,
+            "beta_mdo_tutorial": -0.026040913691411937,
             "mach_mdo_tutorial": 3.079634013747551,
             "shape": {
                 "__ndarray__": [
@@ -378,7 +378,7 @@
             "P_mdo_tutorial": 0.41319814913510167,
             "T_mdo_tutorial": 0.0,
             "alpha_mdo_tutorial": 4455.8289083362215,
-            "beta_mdo_tutorial": -59006.69967993535,
+            "beta_mdo_tutorial": -1029.8611901503616,
             "mach_mdo_tutorial": 157039.17154906213,
             "shape": {
                 "__ndarray__": [
@@ -503,7 +503,7 @@
             "P_mdo_tutorial": 11.189478059600297,
             "T_mdo_tutorial": 0.0,
             "alpha_mdo_tutorial": 55319.56395130125,
-            "beta_mdo_tutorial": -324394.8058815801,
+            "beta_mdo_tutorial": -5661.757439001444,
             "mach_mdo_tutorial": 1196814.4195567812,
             "shape": {
                 "__ndarray__": [
