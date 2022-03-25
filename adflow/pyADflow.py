@@ -2887,7 +2887,6 @@ class ADFLOW(AeroSolver):
 
         alpha = AP.alpha
         beta = AP.beta
-        beta = AP.beta
         mach = AP.mach
         machRef = AP.machRef
         machGrid = AP.machGrid
