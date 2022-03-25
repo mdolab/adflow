@@ -815,8 +815,7 @@ contains
        ! Determine the maximum time using MPI reduce
        ! with operation mpi_max.
 
-       ! call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, &
-       !      mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
+       call mpi_reduce(timeAdjLocal, timeAdj, 1, adflow_real, mpi_max, 0, ADFLOW_COMM_WORLD, ierr)
 
        call MatMult(dRdWT, psi_like1, adjointRes, ierr)
        call EChk(ierr,__FILE__,__LINE__)

@@ -773,6 +773,7 @@ module inputADjoint
   ! Matrix Ordering  : Type of matrix ordering to use
   ! LocalPCType      : Type of preconditioner to use on subdomains
   character(maxStringLen) :: ADjointSolverType
+  character(maxStringLen) :: GMRESOrthogType
   character(maxStringLen) :: PreCondType
   character(maxStringLen) :: matrixOrdering
   character(maxStringLen) :: adjointPCSide
