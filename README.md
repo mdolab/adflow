@@ -1,7 +1,7 @@
 # ADflow
-[![Build Status](https://dev.azure.com/mdolab/Public/_apis/build/status/mdolab.adflow?repoName=mdolab%2Fadflow&branchName=master)](https://dev.azure.com/mdolab/Public/_build/latest?definitionId=4&repoName=mdolab%2Fadflow&branchName=master)
+[![Build Status](https://dev.azure.com/mdolab/Public/_apis/build/status/mdolab.adflow?repoName=mdolab%2Fadflow&branchName=main)](https://dev.azure.com/mdolab/Public/_build/latest?definitionId=4&repoName=mdolab%2Fadflow&branchName=main)
 [![Documentation Status](https://readthedocs.com/projects/mdolab-adflow/badge/?version=latest)](https://mdolab-adflow.readthedocs-hosted.com/?badge=latest)
-[![codecov](https://codecov.io/gh/mdolab/adflow/branch/master/graph/badge.svg?token=DRCCCL12I8)](https://codecov.io/gh/mdolab/adflow)
+[![codecov](https://codecov.io/gh/mdolab/adflow/branch/main/graph/badge.svg?token=DRCCCL12I8)](https://codecov.io/gh/mdolab/adflow)
 
 ADflow is a flow solver developed by the MDO Lab at the University of Michigan.
 It solves the compressible Euler, laminar Navier–Stokes and Reynolds-averaged Navier–Stokes equations using structured multi-block and overset meshes.

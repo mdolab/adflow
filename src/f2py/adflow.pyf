@@ -65,6 +65,17 @@ python module libadflow
          subroutine releasememorypart2
          end subroutine releasememorypart2
 
+         subroutine getmonitorvariablenames(nvar, monitor_variables)
+           integer(kind=inttype), intent(in) :: nvar
+           character, dimension(nvar,32), intent(out):: monitor_variables
+         end subroutine getmonitorvariablenames
+       
+         subroutine getsolvertypearray(niter, nsps, type_array)
+           integer(kind=inttype), intent(in) :: niter, nsps, 
+           character, dimension(0:niter,nsps,8), intent(out):: type_array
+         end subroutine getsolvertypearray
+       
+         
        end module utils
 
        module walldistance
@@ -677,17 +688,17 @@ python module libadflow
                 integer(kind=inttype) dimension(:,:) :: bcdatafamlists
                 logical intent(in) :: bcvarsempty
             end subroutine computematrixfreeproductbwd
-            
-            
+
+
             subroutine computematrixfreeproductbwdfast(dwbar, wbar, statesize)! in :test:adjointapi.f90:adjointapi
                 real(kind=realtype) dimension(:),intent(in) :: dwbar
                 real(kind=realtype) dimension(statesize),intent(out),depend(statesize) :: wbar
                 integer(kind=inttype) intent(in) :: statesize
-            end subroutine computematrixfreeproductbwdfast     
+            end subroutine computematrixfreeproductbwdfast
 #endif
        end module adjointapi
        module adjointdebug
-        
+
 #ifndef USE_COMPLEX
         subroutine computematrixfreeproductfwdfd(xvdot,extradot,wdot,bcdatavaluesdot,usespatial,usestate,famlists,bcdatanames,bcdatavalues,bcdatafamlists,bcvarsempty,dwdot,funcsdot,fdot,costsize,fsize,ntime,h) ! in :test:adjointAPI.F90:adjointdebug
           real(kind=realtype) dimension(:),intent(in) :: xvdot
@@ -1051,6 +1062,7 @@ python module libadflow
          character(len=maxstringlen) :: forcedsurfacefile
          character(len=maxstringlen) :: forcedliftfile
          character(len=maxstringlen) :: forcedslicefile
+         character(len=maxstringlen) :: convsolfilebasename
        end module inputio
 
        module inputiteration ! in :adflow:../../modules/inputParam.f90
@@ -1200,6 +1212,7 @@ python module libadflow
          character(len=maxstringlen) :: adjointpcside
          character(len=maxstringlen) :: matrixordering
          character(len=maxstringlen) :: adjointsolvertype
+         character(len=maxstringlen) :: gmresorthogtype
          character(len=maxstringlen) :: localpctype
          character(len=maxstringlen) :: precondtype
          real(kind=realtype) :: adjabstol
@@ -1219,7 +1232,6 @@ python module libadflow
          logical :: viscpc
          logical :: frozenturbulence
          logical :: usediagtspc
-         logical :: restartadjoint
          logical :: setmonitor
          logical :: printtiming
          logical :: firstrun
@@ -1278,6 +1290,7 @@ python module libadflow
          integer(kind=inttype) :: nstepscycling
          integer(kind=inttype) allocatable,dimension(:) :: cycling
          integer(kind=inttype) :: itertot
+         integer(kind=inttype) :: approxtotalits
          real(kind=realtype) :: rfil
          real(kind=realtype) :: t0solver
          logical :: converged
@@ -1309,8 +1322,8 @@ python module libadflow
          logical :: showcpu
          logical :: monmasssliding
          logical :: monmassfamilies
-         integer :: nitercur
          real(kind=realtype) allocatable,dimension(:,:,:) :: convarray
+         real(kind=realtype) allocatable,dimension(:,:,:) :: solverdataarray
          integer(kind=inttype) :: ntimestepsrestart
          integer(kind=inttype) :: timestepunsteady
          real(kind=realtype) :: timeunsteady
@@ -1320,6 +1333,7 @@ python module libadflow
          logical :: writegrid
          logical :: writevolume
          logical :: writesurface
+         logical :: writesoleachiter
        end module monitor
 
        module block ! in :adflow:../../modules/block.f90
