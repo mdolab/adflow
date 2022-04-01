@@ -435,7 +435,8 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
                 err_msg = "Failed value for: {}".format(key + " " + dv_key)
 
                 ref_val = self.handler.db["Eval Functions Sens:"][key][dv_key]
-                ref_val = ref_val.flatten()[0]
+                if not isinstance(ref_val, float):
+                    ref_val = ref_val.flatten()[0]
 
                 numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=atol, rtol=rtol, err_msg=err_msg)
 
