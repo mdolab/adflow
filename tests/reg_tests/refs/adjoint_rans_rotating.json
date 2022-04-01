@@ -124,7 +124,7 @@
         "mdo_tutorial_my": {
             "T_mdo_tutorial": 0.032972500428710416,
             "alpha_mdo_tutorial": -272.354692815255,
-            "beta_mdo_tutorial": 27327.08844579672,
+            "beta_mdo_tutorial": 476.94766836285334,
             "mach_mdo_tutorial": 157370.49342720048,
             "shape": {
                 "__ndarray__": [
@@ -382,7 +382,7 @@
         "nearWallDist": 0.1,
         "numberSolutions": true,
         "outerPreconIts": 3,
-        "outputDirectory": "tests/reg_tests/tests/output_files",
+        "outputDirectory": "tests/output_files",
         "outputSurfaceFamily": "allSurfaces",
         "overlapFactor": 0.9,
         "oversetLoadBalance": true,
