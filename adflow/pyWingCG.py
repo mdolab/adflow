@@ -157,7 +157,7 @@ def calculateWingMAC(acg):
                     sweepsum = sweepsum + ((ytLE - yrLE) / sumSpan) * numpy.tan(SweepLE)
 
                     # new computation...
-                    numerator = C_root ** 2 * (1 + Taper + Taper ** 2) * (ytLE - yrLE) / sumSpan
+                    numerator = C_root**2 * (1 + Taper + Taper**2) * (ytLE - yrLE) / sumSpan
                     denomenator = C_root * (1 + Taper) * (ytLE - yrLE) / sumSpan
                     SumNumerator = SumNumerator + numerator
                     SumDenomenator = SumDenomenator + denomenator
@@ -247,7 +247,7 @@ def calculateWingInertias(acg):
                     Dihedral = acg[i][j].Dihedral * (numpy.pi / 180)
                     Area = acg[i][j].Area
                     Taper = acg[i][j].Taper
-                    AR = Span ** 2 / Area  # Aspect Ratio
+                    AR = Span**2 / Area  # Aspect Ratio
                     SweepLE = acg[i][j].SweepLE * (numpy.pi / 180)
                     SweepTE = numpy.arctan(
                         numpy.tan(SweepLE) - ((4.0 * (1.0 / 1.0)) / (2.0 * AR)) * ((1.0 - Taper) / (1.0 + Taper))
@@ -283,7 +283,7 @@ def calculateWingInertias(acg):
                     # print 'I1x1',I1x
                     # I1x =(t_root*(C_root/3.0+(Span*tan(SweepTE)/4.0)-Span*tan(SweepLE)/4.0))
                     # print 'I1x2',I1x
-                    I1x = (W * Span ** 3 / V) * (
+                    I1x = (W * Span**3 / V) * (
                         (
                             (t_root - t_tip)
                             * (C_root / 4.0 + (Span * numpy.tan(SweepTE) / 5.0) - Span * numpy.tan(SweepLE) / 5.0)
@@ -300,23 +300,23 @@ def calculateWingInertias(acg):
                         (
                             t_root
                             * (
-                                (C_root ** 3 / 3.0)
+                                (C_root**3 / 3.0)
                                 + Span
                                 * C_root
                                 * numpy.tan(SweepTE)
                                 * ((C_root / 2.0) + (Span * numpy.tan(SweepTE)) / 3.0)
-                                + (Span ** 3 / 12.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
+                                + (Span**3 / 12.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
                             )
                         )
                         - (
                             (t_root - t_tip)
                             * (
-                                (C_root ** 3 / 6.0)
+                                (C_root**3 / 6.0)
                                 + Span
                                 * C_root
                                 * numpy.tan(SweepTE)
                                 * ((C_root / 3.0) + (Span * numpy.tan(SweepTE) / 4.0))
-                                + (Span ** 3 / 15.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
+                                + (Span**3 / 15.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
                             )
                         )
                     )
@@ -342,10 +342,10 @@ def calculateWingInertias(acg):
                     # print 'cb',Cb
                     K_o = 0.703  # (for a wing....)
                     acg[i][j].x_Centroid = (
-                        (-(Ca ** 2) + Cb ** 2 + Cc * Cb + Cc ** 2) / (3 * (Cb + Cc - Ca))
+                        (-(Ca**2) + Cb**2 + Cc * Cb + Cc**2) / (3 * (Cb + Cc - Ca))
                     ) * K_o ** (1.0 / 2.0)
                     # print 'xs1', acg[i][j].x_Centroid
-                    acg[i][j].y_Centroid = (Span ** 2 / V) * (
+                    acg[i][j].y_Centroid = (Span**2 / V) * (
                         (
                             t_root * ((C_root / 2.0) + (Span / 3.0) * (numpy.tan(SweepTE) - numpy.tan(SweepLE)))
                             - (t_root - t_tip)
@@ -369,10 +369,10 @@ def calculateWingInertias(acg):
                     Zs4 = acg[i][j].z_Centroid
 
                     Ix = (
-                        Ix + I1x - W * (Ys_dot ** 2) - W * (Zs3 ** 2) + W * (Ys_dot + Ysoff) ** 2 + W * (Zs3 + Zs1) ** 2
+                        Ix + I1x - W * (Ys_dot**2) - W * (Zs3**2) + W * (Ys_dot + Ysoff) ** 2 + W * (Zs3 + Zs1) ** 2
                     )
-                    Iy = Iy + I1y - W * (Xs ** 2) - W * (Zs3 ** 2) + W * (Xs + Xs4) ** 2 + W * (Zs3 + Zs1) ** 2
-                    Iz = Iz + I1z - W * (Xs ** 2 + Ys_dot ** 2) + W * (Xs + Xs4) ** 2 + W * (Ys_dot + Ysoff) ** 2
+                    Iy = Iy + I1y - W * (Xs**2) - W * (Zs3**2) + W * (Xs + Xs4) ** 2 + W * (Zs3 + Zs1) ** 2
+                    Iz = Iz + I1z - W * (Xs**2 + Ys_dot**2) + W * (Xs + Xs4) ** 2 + W * (Ys_dot + Ysoff) ** 2
                     # Ixz = ...
 
                 # endfor

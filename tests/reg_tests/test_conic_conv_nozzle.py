@@ -246,7 +246,7 @@ class TestSolveOverset(reg_test_classes.RegTest):
         totalR0 = self.CFDSolver.getFreeStreamResidual(self.ap)
         res /= totalR0
 
-        reducedSum = self.CFDSolver.comm.reduce(np.sum(res ** 2))
+        reducedSum = self.CFDSolver.comm.reduce(np.sum(res**2))
         if self.CFDSolver.comm.rank == 0:
             self.assertLessEqual(np.sqrt(reducedSum), self.options["L2Convergence"])
 

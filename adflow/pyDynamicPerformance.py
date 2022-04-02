@@ -72,13 +72,13 @@ def calculateFrequencyAndDamping(Cmq, Clalpha, Cd, Cmalpha, Cmalphadot, mass, Iy
     """
 
     # Normalization of derivatives
-    Mq = Cmq * rho * Area * U * c ** 2 / (4 * Iy)
+    Mq = Cmq * rho * Area * U * c**2 / (4 * Iy)
 
     Zw = (-Clalpha - Cd) * rho * Area * U / (2 * mass)
 
-    Malpha = Cmalpha * rho * Area * U ** 2 * c / (2 * Iy)
+    Malpha = Cmalpha * rho * Area * U**2 * c / (2 * Iy)
 
-    Malphadot = Cmalphadot * rho * Area * U * c ** 2 / (4 * Iy)
+    Malphadot = Cmalphadot * rho * Area * U * c**2 / (4 * Iy)
     # print 'mq',Mq,Zw,Malpha
     # Short period approximation
     Wsp = numpy.sqrt(Mq * Zw - Malpha)
@@ -95,7 +95,7 @@ def calculateNAlpha(Clalpha, rho, Area, U, mass, g):
     calculate the g normalized lift derivative
     """
 
-    nalpha = rho * U ** 2 * Area * Clalpha / (2 * mass * g)
+    nalpha = rho * U**2 * Area * Clalpha / (2 * mass * g)
 
     return nalpha
 
@@ -106,6 +106,6 @@ def calculateCAP(Wsp, nalpha):
     interpretation.
     """
 
-    CAP = Wsp ** 2 / nalpha
+    CAP = Wsp**2 / nalpha
 
     return CAP
