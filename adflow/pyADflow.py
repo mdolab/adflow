@@ -5030,6 +5030,7 @@ class ADFLOW(AeroSolver):
             "ANKNSubiterTurb": [int, 1],
             "ANKTurbKSPDebug": [bool, False],
             "ANKUseMatrixFree": [bool, True],
+            "ANKUseCharTimeStep": [bool, False],
             # Load Balance/partitioning parameters
             "blockSplitting": [bool, True],
             "loadImbalance": [float, 0.1],
@@ -5399,6 +5400,7 @@ class ADFLOW(AeroSolver):
             "anknsubiterturb": ["ank", "ank_nsubiterturb"],
             "ankturbkspdebug": ["ank", "ank_turbdebug"],
             "ankusematrixfree": ["ank", "ank_usematrixfree"],
+            "ankusechartimestep": ["ank", "ank_usechartimestep"],
             # Load Balance Parameters
             "blocksplitting": ["parallel", "splitblocks"],
             "loadimbalance": ["parallel", "loadimbalance"],

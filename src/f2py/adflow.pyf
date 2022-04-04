@@ -291,6 +291,7 @@ python module libadflow
          integer(kind=inttype) :: ank_nsubiterturb
          logical :: ank_turbdebug
          logical :: ank_usematrixfree
+         logical :: ank_usechartimestep
          subroutine destroyanksolver
          end subroutine destroyanksolver
 

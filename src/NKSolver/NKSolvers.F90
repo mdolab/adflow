@@ -1676,6 +1676,7 @@ module ANKSolver
   logical :: ANK_ADPC
   logical :: ANK_turbDebug
   logical :: ANK_useMatrixFree
+  logical :: ANK_useCharTimeStep
   integer(kind=intType) :: ANK_nsubIterTurb
 
   ! Misc variables
