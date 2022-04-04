@@ -90,6 +90,7 @@ contains
     use wallDistance, only : updateWallDistancesQuickly
     use utils, only : setPointers, EChk
     use turbUtils, only : computeEddyViscosity
+    use SST, only : f1SST
     use residuals, only : sourceTerms_block
     use surfaceIntegrations, only : getSolution
     use adjointExtra, only : volume_block, metric_block, boundaryNormals, xhalo_block
@@ -212,22 +213,45 @@ contains
              end if
           end if
 
+          ! Notes: 
+          ! - we do not compute inside of Halos. Those values will be filled with BCs or communications.
+          ! - second halos can be included for the compuation of BCs. 
+
           ! Compute the pressures/viscositites
           call computePressureSimple(.False.)
 
           ! Compute Laminar/eddy viscosity if required
           call computeLamViscosity(.False.)
-          call computeEddyViscosity(.False.)
+          call computeEddyViscosity(.False.) !for SST, the velocity in 1st halo MUST be up to date before this call. It should be ok here.
 
           ! Make sure to call the turb BC's first incase we need to
-          ! correct for K
+          ! correct for K. We may need the updated value of K in the 1st 
+          ! halo to update E, for example.
+
+         ! ********** OPTION 1: DO IT HERE ***********************
+         ! SO question is: first update turb then flow, or the other way around? (outside of this loop?)
           if( equations == RANSEquations .and. turbRes) then
              call BCTurbTreatment
              call applyAllTurbBCthisblock(.True.)
           end if
+
           call applyAllBC_block(.True.)
        end do
     end do
+
+   ! ********** OPTION 2: DO IT OUTSIDE OF THE LOOP, Turb AFTER flow ***********************
+   !  if( equations == RANSEquations .and. turbRes) then
+   !    do sps=1,nTimeIntervalsSpectral
+   !       do nn=1,nDom
+   !          call setPointers(nn, currentLevel, sps)
+                     
+   !             call BCTurbTreatment
+   !             call applyAllTurbBCthisblock(.True.)
+            
+   !       end do
+   !    end do
+   !  end if
+
 
     ! Compute the ranges of the residuals we are dealing with:
     if (flowRes .and. turbRes) then
@@ -243,7 +267,7 @@ contains
        lEnd   = nt2
     end if
 
-    ! Exchange values
+    ! Exchange values: make sure all values, including halos, are up to date everywhere
     call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
 
     ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -261,6 +285,11 @@ contains
              call applyAllBC_block(.True.)
           end do
        end do
+    end if
+
+    ! Update the f1 blending function for Menter SST
+    if (turbRes .and. turbModel == menterSST) then
+       call f1SST
     end if
 
     ! Main loop for the residual...This is where the blockette magic happens.
@@ -626,6 +655,25 @@ contains
                    !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
                    call saViscous
                    call saResScale
+                
+               !  case (komegaWilcox, komegaModified)
+               !     call kwSolve(.True.) !-> this needs a blockette implementation
+       
+               !  case (menterSST)
+               !     call SSTSolve(.True.) !-> this needs a blockette implementation
+          
+               !  case (ktau)
+               !     call ktSolve(.True.) !-> this needs a blockette implementation
+          
+               !  case (v2f)
+               !     !see vf_block for comments
+               !     call vfScale !-> this needs a blockette implementation
+               !     call keSolve(.True.) !-> this needs a blockette implementation
+               !     call vfSolve(.True.) !-> this needs a blockette implementation
+               !      !dgfix
+                case DEFAULT
+                     print *,'ERROR: no other turbulence model than SA is implemented when useBlockettes=True'
+                     call EChk(1, __FILE__, __LINE__)
                 end select
              endif
 
@@ -769,6 +817,11 @@ contains
     use inputPhysics , only : equationMode, equations, turbModel
     use residuals, only : initres_block
     use sa, only : sa_block
+    use SST, only : sst_block
+    use kt, only : kt_block
+    use kw, only : kw_block
+    use vf, only : vf_block
+    use utils, only : EChk
     use adjointExtra, only : sumDwAndFw_block=>sumDwAndFw
     use inputDiscretization, only : spaceDiscr
     use flowUtils, only : allNodalGradients_block=>allNodalGradients, &
@@ -812,6 +865,24 @@ contains
        select case (turbModel)
        case (spalartAllmaras)
           call sa_block(.true.)
+       
+       case (komegaWilcox, komegaModified)
+          call kw_block(.True.)
+ 
+       case (menterSST)
+          ! For this to work, f1sst must have been called prior to enter blockResCore
+          call SST_block(.True.)
+ 
+       case (ktau)
+          call kt_block(.True.)
+ 
+       case (v2f)
+          call vf_block(.True.)
+
+       case DEFAULT
+          print *,'ERROR: requested turbulence model not implemented'
+          call EChk(1, __FILE__, __LINE__)
+   
        end select
     endif
 

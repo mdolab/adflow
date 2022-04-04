@@ -378,6 +378,43 @@ The typical problem with these cases is that the solver takes a lot of nonlinear
 To solve this problem, users should experiment with the second order switch, as this will greatly influence the convergence rate.
 Furthermore, the users can try prescribing a lower linear solver tolerance, again for the same goal.
 
+What if I change the turbulence model
+*************************************
+
+The default turbulence model is Spalart-Allmaras (SA). It is also the only one that is fully differentiated.
+For analysis only, the other available turbulence models can be used, however the user should note that some will require more tweaking and may lead to 
+convergence issues. 
+
+For ``SA`` and ``Menter SST``, the default values provided for ``turbResScale`` should be a good starting point. All other turbulence models require the user 
+to determine the scaling. In some cases (especially when using the coupled solver), the scaling may affect convergence.
+Note that the values of the residuals shown in the output are not scaled. You can use that information to guess an appropriate order of magnitude for the 
+scaling parameter. After scaling, all variables should scale to the same order of magnitude. This is especially true for use with the coupled solver.
+
+Important notes: 
+
+* except for SA, all other turbulence models are not to be used with the coupled solver (CANK) or separate ANK solver for the 
+turbulence variables (TurbKSP). Only the DADI smoother will work. This is because the setup of the preconditionner is not fully implemented in those cases.
+Make sure to set ``ANKUseTurbDADI`` to ``True`` and a low enough ``ANKCoupledSwitchTol``. 
+
+* except for SA, all other turbulence models are incompatible with ``useBlockettes: True``.
+
+Convergence may struggle a bit for 2-variable turbulence models. This can happen in serveral ways.
+If you observe after a couple hundreds iterations that the step size of ANK goes to 0.01 and stays there, that 
+may indicate that the DADI smoother is not able to reduce the residual of the turbulence variables. This prevents the solver
+variables to get solved. The first action to take here is to increase ``nSubiterTurb``, very likely above 10 and even more if necessary.
+
+If convergence struggles because the turbulence variables stall, this may feedback into the  flow variables as well. 
+Here are options to explore in that case:
+
+* Switching between ANK and SANK  may help, following the guidelines outlined above (however, again, CANK should NOT be used). 
+
+* It is possible that increasing ``ANKUnsteadyLSTol`` to a value larger than 1 will help. This was previously observed to solve convergence issues
+at relatively low resolution. 
+
+* When running the same aero problem several times in a row, if the convergence behaves very differently from one run to another (e.g. when establishing
+an airfoil polar), restting the flow for that aero problem before each run may help.
+
+
 Newton--Krylov
 --------------
 

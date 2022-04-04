@@ -2,10 +2,11 @@ module turbUtils
 
 contains
 
-  subroutine prodKatoLaunder
+  subroutine prodKatoLaunder(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       prodKatoLaunder computes the turbulent production term using
     !       the Kato-Launder formulation.
+    !       Should ALWAYS be called with Beg>1 and <End!
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -13,6 +14,10 @@ contains
     use section, only : sections
     use turbMod, only : prod
     implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     !
     !      Local variables.
     !
@@ -40,15 +45,19 @@ contains
     ! but in that case the gradients for u, v and w must be stored.
     ! In the current approach no extra memory is needed.
 #ifdef TAPENADE_REVERSE
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
+
     !$AD II-LOOP
-    do ii=0,nx*ny*nz-1
-       i = mod(ii, nx) + 2
-       j = mod(ii/nx, ny) + 2
-       k = ii/(nx*ny) + 2
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
 #else
-       do k=2, kl
-          do j=2, jl
-             do i=2, il
+       do k=kBeg,kEnd
+          do j=jBeg,jEnd
+             do i=iBeg,iEnd          
 #endif
 
                 ! Compute the gradient of u in the cell center. Use is made
@@ -126,17 +135,22 @@ contains
 #endif
   end subroutine prodKatoLaunder
 
-  subroutine prodSmag2
+  subroutine prodSmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       prodSmag2 computes the term:
     !              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi)
     !       which is used for the turbulence equations.
     !       It is assumed that the pointer prod, stored in turbMod, is
     !       already set to the correct entry.
+    !       Should ALWAYS be called with Beg>1 and <End!
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
     implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     !
     !      Local parameter
     !
@@ -154,15 +168,19 @@ contains
     ! In the current approach no extra memory is needed.
 
 #ifdef TAPENADE_REVERSE
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
+
     !$AD II-LOOP
-    do ii=0,nx*ny*nz-1
-       i = mod(ii, nx) + 2
-       j = mod(ii/nx, ny) + 2
-       k = ii/(nx*ny) + 2
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
 #else
-       do k=2, kl
-          do j=2, jl
-             do i=2, il
+       do k=kBeg,kEnd
+          do j=jBeg,jEnd
+             do i=iBeg,iEnd          
 #endif
 
                 ! Compute the gradient of u in the cell center. Use is made
@@ -236,19 +254,24 @@ contains
 #endif
   end subroutine prodSmag2
 
-  subroutine prodWmag2
+  subroutine prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
     !
     !       prodWmag2 computes the term:
     !          2*oij*oij  with oij=0.5*(duidxj - dujdxi).
     !       This is equal to the magnitude squared of the vorticity.
     !       It is assumed that the pointer vort, stored in turbMod, is
     !       already set to the correct entry.
+    !       Should ALWAYS be called with Beg>1 and <End!
     !
     use constants
     use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
     use flowVarRefState, only : timeRef
     use section, only : sections
     implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
     !
     !      Local variables.
     !
@@ -269,15 +292,19 @@ contains
     ! but in that case the gradients for u, v and w must be stored.
     ! In the current approach no extra memory is needed.
 #ifdef TAPENADE_REVERSE
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
+
     !$AD II-LOOP
-    do ii=0,nx*ny*nz-1
-       i = mod(ii, nx) + 2
-       j = mod(ii/nx, ny) + 2
-       k = ii/(nx*ny) + 2
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
 #else
-       do k=2, kl
-          do j=2, jl
-             do i=2, il
+       do k=kBeg,kEnd
+          do j=jBeg,jEnd
+             do i=iBeg,iEnd             
 #endif
 
                 ! Compute the necessary derivatives of u in the cell center.
@@ -321,7 +348,8 @@ contains
 
                 ! Compute the magnitude squared of the vorticity.
 
-                scratch(i,j,k,ivort) = vortx**2 + vorty**2 + vortz**2
+                scratch(i,j,k,iprod) = vortx**2 + vorty**2 + vortz**2
+                ! update of iProd to be consistent. iVort seems to be never used, and ivort = iprod anyway.
 #ifdef TAPENADE_REVERSE
              end do
 #else
@@ -330,6 +358,120 @@ contains
     enddo
 #endif
   end subroutine prodWmag2
+
+#ifdef SST_2003
+  subroutine strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+    !
+    !       strainNorm computes the term:
+    !              sqrt(2*sij*sij)  with  sij=0.5*(duidxj+dujdxi)
+    !       which is used for the eddy viscosity.
+    !       It is assumed that the pointer prod, stored in turbMod, is
+    !       already set to the correct entry.
+    !       Should ALWAYS be called with Beg>1 and <End!
+    !
+    use constants
+    use blockPointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j, k, ii
+    real(kind=realType)   :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
+    real(kind=realType)   :: div2, fact, sxx, syy, szz, sxy, sxz, syz
+
+    ! Loop over the cell centers of the given block. It may be more
+    ! efficient to loop over the faces and to scatter the gradient,
+    ! but in that case the gradients for u, v and w must be stored.
+    ! In the current approach no extra memory is needed.
+
+#ifdef TAPENADE_REVERSE
+    iSize = (iEnd-iBeg)+1
+    jSize = (jEnd-jBeg)+1
+    kSize = (kEnd-kBeg)+1
+
+    !$AD II-LOOP
+    do ii=0, iSize*jSize*kSize-1
+       i = mod(ii, iSize) + iBeg
+       j = mod(ii/iSize, jSize) + jBeg
+       k = ii/((iSize*jSize)) + kBeg
+#else
+       do k=kBeg,kEnd
+          do j=jBeg,jEnd
+             do i=iBeg,iEnd          
+#endif
+
+                ! Compute the gradient of u in the cell center. Use is made
+                ! of the fact that the surrounding normals sum up to zero,
+                ! such that the cell i,j,k does not give a contribution.
+                ! The gradient is scaled by the factor 2*vol.
+
+                uux = w(i+1,j,k,ivx)*si(i,j,k,1) - w(i-1,j,k,ivx)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,1) - w(i,j-1,k,ivx)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,1) - w(i,j,k-1,ivx)*sk(i,j,k-1,1)
+                uuy = w(i+1,j,k,ivx)*si(i,j,k,2) - w(i-1,j,k,ivx)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,2) - w(i,j-1,k,ivx)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,2) - w(i,j,k-1,ivx)*sk(i,j,k-1,2)
+                uuz = w(i+1,j,k,ivx)*si(i,j,k,3) - w(i-1,j,k,ivx)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivx)*sj(i,j,k,3) - w(i,j-1,k,ivx)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivx)*sk(i,j,k,3) - w(i,j,k-1,ivx)*sk(i,j,k-1,3)
+
+                ! Idem for the gradient of v.
+
+                vvx = w(i+1,j,k,ivy)*si(i,j,k,1) - w(i-1,j,k,ivy)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,1) - w(i,j-1,k,ivy)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,1) - w(i,j,k-1,ivy)*sk(i,j,k-1,1)
+                vvy = w(i+1,j,k,ivy)*si(i,j,k,2) - w(i-1,j,k,ivy)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,2) - w(i,j-1,k,ivy)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,2) - w(i,j,k-1,ivy)*sk(i,j,k-1,2)
+                vvz = w(i+1,j,k,ivy)*si(i,j,k,3) - w(i-1,j,k,ivy)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivy)*sj(i,j,k,3) - w(i,j-1,k,ivy)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivy)*sk(i,j,k,3) - w(i,j,k-1,ivy)*sk(i,j,k-1,3)
+
+                ! And for the gradient of w.
+
+                wwx = w(i+1,j,k,ivz)*si(i,j,k,1) - w(i-1,j,k,ivz)*si(i-1,j,k,1) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,1) - w(i,j-1,k,ivz)*sj(i,j-1,k,1) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,1) - w(i,j,k-1,ivz)*sk(i,j,k-1,1)
+                wwy = w(i+1,j,k,ivz)*si(i,j,k,2) - w(i-1,j,k,ivz)*si(i-1,j,k,2) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,2) - w(i,j-1,k,ivz)*sj(i,j-1,k,2) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,2) - w(i,j,k-1,ivz)*sk(i,j,k-1,2)
+                wwz = w(i+1,j,k,ivz)*si(i,j,k,3) - w(i-1,j,k,ivz)*si(i-1,j,k,3) &
+                     + w(i,j+1,k,ivz)*sj(i,j,k,3) - w(i,j-1,k,ivz)*sj(i,j-1,k,3) &
+                     + w(i,j,k+1,ivz)*sk(i,j,k,3) - w(i,j,k-1,ivz)*sk(i,j,k-1,3)
+
+                ! Compute the components of the stress tensor.
+                ! The combination of the current scaling of the velocity
+                ! gradients (2*vol) and the definition of the stress tensor,
+                ! leads to the factor 1/(4*vol).
+
+                fact = fourth/vol(i,j,k)
+
+                sxx = two*fact*uux
+                syy = two*fact*vvy
+                szz = two*fact*wwz
+
+                sxy = fact*(uuy + vvx)
+                sxz = fact*(uuz + wwx)
+                syz = fact*(vvz + wwy)
+
+                ! Store the square of strain as the production term.
+
+                scratch(i,j,k, iprod) = SQRT(two*(two*(sxy**2 + sxz**2 + syz**2) &
+                     +           sxx**2 + syy**2 + szz**2))
+#ifdef TAPENADE_REVERSE
+             end do
+#else
+          enddo
+       enddo
+    enddo
+#endif
+  end subroutine strainNorm
+#endif
+
   function saNuKnownEddyRatio(eddyRatio, nuLam)
     !
     !       saNuKnownEddyRatio computes the Spalart-Allmaras transport
@@ -589,6 +731,8 @@ contains
     use inputPhysics
     use iteration
     use blockPointers
+    use turbBCRoutines, only : applyAllTurbBCThisBlock
+    use haloExchange, only : whalo1
     implicit none
 
     ! Input Parameter
@@ -617,6 +761,8 @@ contains
     ! Determine the turbulence model and call the appropriate
     ! routine to compute the eddy viscosity.
     if (includeHalos) then
+       !  CAUTION: even though the following calls were made consistent to accept iBeg, iEnd, etc. care must be taken when the evaluation of EddyVisc 
+       !    involves derivatives. They can't be obtained by FD in the halo cells! This is why the SST call is different from the others.
        iBeg = 1
        iEnd = ie
        jBeg = 1
@@ -640,11 +786,57 @@ contains
 
     case (v2f)
        call vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
     case (komegaWilcox, komegaModified)
        call kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 
     case (menterSST)
-       call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
+       call SSTEddyViscosity(2, il, 2, jl, 2, kl) 
+       ! Note: 
+       ! - if the above is called with 1,ie..., it will use 2nd halo values for the FD derivatives. These might be unassigned.
+       !    Also, it may also try to use the vorticity and d2wall in the 1st halo cell. These are also unassigned/undefined.
+       !    The vorticity is NEVER computed in the 1st halo.
+       ! - even when called with 2,il,... it will compute derivatives in the production term (vorticity or strain). So the values of velocity 
+       !    better be up to date.
+
+       if (includeHalos) then
+            ! In case Eddy Visc is required in the halo cells, we can rely 
+            ! 1. on the BCs for the walls and boundaries:
+
+            call applyAllTurbBCThisBlock(.false.) !QUESTION: should we include second halo?
+
+            !======================================================================
+            ! QUESTION: should we use only the portion on eddy viscosity?
+            ! (the following snippet could be factored out of applyAllTurbBCThisBlock )
+            !======================================================================
+            ! bocos: do nn=1,nBocos
+
+            !    if(BCType(nn) == NSWallAdiabatic .or. &
+            !          BCType(nn) == NSWallIsothermal) then
+
+            !       ! Viscous wall boundary condition. Eddy viscosity is
+            !       ! zero at the wall.
+
+            !       call bcEddyWall(nn)
+
+            !    else
+
+            !       ! Any boundary condition but viscous wall. A homogeneous
+            !       ! Neumann condition is applied to the eddy viscosity.
+
+            !       call bcEddyNoWall(nn)
+
+            !    endif
+            ! enddo bocos
+            !======================================================================
+
+            ! 2. on an exchange of vorticity in 1st halo region
+
+            call whalo1(currentLevel, 1_intType, 0_intType, .false.,.false., .true.)
+            ! QUESTION: should we use whalo2 instead so that we have it in 2nd halo cells as well?
+            
+       endif
 
     case (ktau)
        call ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
@@ -759,6 +951,7 @@ contains
     !       SSTEddyViscosity computes the eddy viscosity according to
     !       menter's SST variant of the k-omega turbulence model for the
     !       block given in blockPointers.
+    !       Should ALWAYS be called with Beg>1 and <End! d2wall is not defined otherwise.
     !
     use constants
     use blockPointers
@@ -778,10 +971,14 @@ contains
     ! for it; for the actual eddy viscosity computation the vorticity
     ! itself is needed.
 
-    call prodWmag2
+#ifdef SST_2003
+    call strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+#else
+    call prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+#endif   
 
     ! Loop over the cells of this block and compute the eddy viscosity.
-    ! Do not include halo's.
+    ! Most of the time, do not include halo's (iBeg=2...il,...)
 #ifdef TAPENADE_REVERSE
     iSize = (iEnd-iBeg)+1
     jSize = (jEnd-jBeg)+1
@@ -809,6 +1006,8 @@ contains
                 f2   = tanh(arg2**2)
 
                 ! And compute the eddy viscosity.
+                ! Same definition as in 
+                ! Note that https://www.cfd-online.com/Wiki/SST_k-omega_model utilizes the strain and not the vorticity
 
                 vortMag    = sqrt(scratch(i,j,k,iprod))
                 rev(i,j,k) = w(i,j,k,irho)*rSSTA1*w(i,j,k,itu1) &
@@ -1807,13 +2006,13 @@ contains
     !
     select case (turbProd)
     case (strain)
-       call prodSmag2
+       call prodSmag2(2,il,2,jl,2,kl)
 
     case (vorticity)
-       call prodWmag2
+       call prodWmag2(2,il,2,jl,2,kl)
 
     case (katoLaunder)
-       call prodKatoLaunder
+       call prodKatoLaunder(2,il,2,jl,2,kl)
 
     end select
     !
@@ -2115,6 +2314,7 @@ contains
 
              ! Compute the logarithm of omega in the points that
              ! contribute to the gradient in this cell.
+             ! Because: 1/omega*d/dx_j(omega) = d/dx_j( log(omega) )
 
              lnwip1 = log(abs(w(i+1,j,k,itu2)))
              lnwim1 = log(abs(w(i-1,j,k,itu2)))

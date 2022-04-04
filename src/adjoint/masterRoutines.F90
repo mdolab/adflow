@@ -20,6 +20,10 @@ contains
     use section, only: sections, nSections
     use monitor, only : timeUnsteadyRestart
     use sa, only : saSource, saViscous, saResScale, qq
+    use SST, only : SSTSolve, f1SST
+    use kw, only : kwSolve
+    use kt, only : ktSolve
+    use vf, only : vfSolve, keSolve
     use haloExchange, only : exchangeCoor, whalo2
     use wallDistance, only : updateWallDistancesQuickly
     use solverUtils, only : timeStep_block
@@ -29,7 +33,7 @@ contains
          inviscidUpwindFlux, inviscidDissFluxScalar, inviscidDissFluxMatrix, &
          viscousFlux, viscousFluxApprox, inviscidCentralFlux
     use utils, only : setPointers, EChk
-    use turbUtils, only : turbAdvection, computeEddyViscosity
+    use turbUtils, only : turbAdvection, computeEddyViscosity, vfScale
     use residuals, only : initRes_block, sourceTerms_block
     use surfaceIntegrations, only : getSolution
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
@@ -152,6 +156,11 @@ contains
        end do
     end if
 
+    ! Updating working variables for MenterSST model
+    if (equations == RANSequations .and. turbModel == menterSST) then
+       call f1SST
+    end if
+
     ! Main loop for the residual
     do sps=1, nTimeIntervalsSpectral
        do nn=1, nDom
@@ -169,6 +178,8 @@ contains
              ! Initialize only the Turblent Variables
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
 
+             !we do not need bcTurbTreatment... we just did it before
+             
              select case (turbModel)
 
              case (spalartAllmaras)
@@ -179,6 +190,26 @@ contains
                 call saViscous
                 call saResScale
                 deallocate(qq)
+
+             case (komegaWilcox, komegaModified)
+                call kwSolve(.True.)
+       
+             case (menterSST)
+                call SSTSolve(.True.)
+       
+             case (ktau)
+                call ktSolve(.True.)
+       
+             case (v2f)
+                !see vf_block for comments
+                call vfScale
+                call keSolve(.True.)
+                call vfSolve(.True.)
+
+             case DEFAULT
+                print *,'ERROR: requested turbulence model not implemented'
+                call EChk(1, __FILE__, __LINE__)
+
              end select
           endif
 
@@ -470,7 +501,8 @@ contains
              select case (turbModel)
              case (spalartAllmaras)
                 call saSource_d
-                call turbAdvection_d(1_intType, 1_intType, itu1-1, qq)
+               !  NULLIFY(qq)
+                call turbAdvection_d(1_intType, 1_intType, itu1-1, NULL())
                 !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
                 call saViscous_d
                 call saResScale_d
@@ -711,7 +743,7 @@ contains
                 call saResScale_b
                 call saViscous_b
                 !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-                call turbAdvection_b(1_intType, 1_intType, itu1-1, qq)
+                call turbAdvection_b(1_intType, 1_intType, itu1-1, NULL())
                 call saSource_b
              end select
 
@@ -1028,8 +1060,9 @@ contains
              case (spalartAllmaras)
                 call saResScale_fast_b
                 call saViscous_fast_b
+               !  NULLIFY(qq)
                 !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-                call turbAdvection_fast_b(1_intType, 1_intType, itu1-1, qq)
+                call turbAdvection_fast_b(1_intType, 1_intType, itu1-1, NULL())
                 call saSource_fast_b
              end select
 
@@ -1149,7 +1182,7 @@ contains
 
     call computePressureSimple(.True.)
     call computeLamViscosity(.True.)
-    call computeEddyViscosity(.True.)
+    call computeEddyViscosity(.True.) !This is the tricky call for SST: it involves come communication because there are derivatives involved. Should be good.
 
     ! Make sure to call the turb BC's first incase we need to
     ! correct for K
@@ -1240,7 +1273,7 @@ contains
        select case (turbModel)
        case (spalartAllmaras)
           call saSource_d
-          call turbAdvection_d(1_intType, 1_intType, itu1-1, qq)
+          call turbAdvection_d(1_intType, 1_intType, itu1-1, NULL())
           !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
           call saViscous_d
           call saResScale_d

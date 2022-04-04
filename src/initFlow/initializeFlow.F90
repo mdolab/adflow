@@ -141,6 +141,12 @@ contains
 
           wInf(itu1) = 1.5_realType*uInf2*turbIntensityInf**2
           wInf(itu2) = wInf(itu1)/(eddyVisInfRatio*nuInf)
+          !both are consistent with https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions,
+          ! NASA https://turbmodels.larc.nasa.gov/sst.html has slightly different values
+          !The NASA ref specify that the freestream turbulent viscosity should be between 10-5 and 10-2 times freestream laminar viscosity.
+          ! Not clear why eddyVisInfRatio default to 0.009
+          !This ref suggests similar things: k determined so that nuTInf = nuInf * 0.009
+          ! https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.901.7078&rep=rep1&type=pdf
 
           !=============================================================
 
@@ -1280,7 +1286,7 @@ end subroutine infChangeCorrection
 
     ! Exchange the solution on the multigrid start level.
     ! It is possible that the halo values are needed for the boundary
-    ! conditions. Viscosities are not exchanged.
+    ! conditions and eddy viscosity. Viscosities are not exchanged.
 
     call whalo2(mgStartlevel, 1_intType, nw, .true., .true., &
          .false.)
@@ -1308,7 +1314,7 @@ end subroutine infChangeCorrection
           ! Compute the eddy viscosity for rans computations using
           ! an eddy viscosity model.
 
-          call computeEddyViscosity(.False.)
+          call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. It should be ok here.
 
           ! In case of a rans computation and no restart, initialize
           ! the turbulent variables a bit better for some turbulence

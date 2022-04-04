@@ -1358,7 +1358,8 @@ contains
                    end do
                    ! Clip the turb to prevent negative turb SA
                    ! values. This is similar to the pressure
-                   ! clip. Need to check this for other Turb models.
+                   ! clip. Need to check this for other Turb models. 
+                   ! issue !99: This seems to be ok for SST at least.
                    do l=nt1, nt2
                       w(i, j, k, l) = max(1e-6*winf(l), wvec_pointer(ii))
                       ii = ii + 1
@@ -2083,11 +2084,14 @@ contains
                       ! Energy update is unchanged
                       blk(iRhoE, iRhoE) = dtinv
 
-                      ! For the turbulence variable, additionally scale the cfl.
-                      ! turbresscale is required because the turbulent residuals
-                      ! are scaled with it. Furthermore, the turbulence variable
-                      ! can get a different CFL number. Scale it by turbCFLScale
-                      blk(nt1, nt1) = dtinv*turbResScale(1)/ANK_turbCFLScale
+                      ! Turbulence variables
+                      do l=nt1, nt2
+                        ! For the turbulence variable, additionally scale the cfl.
+                        ! turbresscale is required because the turbulent residuals
+                        ! are scaled with it. Furthermore, the turbulence variable
+                        ! can get a different CFL number. Scale it by turbCFLScale
+                        blk(l, l) = dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
+                      end do
 
                       ! get the global cell index
                       irow = globalCell(i, j, k)
@@ -3006,7 +3010,7 @@ contains
                    ovv = one/volRef(i,j,k)
                    do l=nt1, nt2
                       ii = ii + 1
-                      rvec_pointer(ii) = dw(i, j, k, l)*ovv*turbResScale(1)
+                      rvec_pointer(ii) = dw(i, j, k, l)*ovv*turbResScale(l-nt1+1)
                    end do
                 end do
              end do
@@ -3182,42 +3186,39 @@ contains
                       lambdaL = min(lambdaL, ratio)
                       ii = ii + 1
 
-                      ! if coupled ank is used, nstate = nw and this loop is executed
-                      ! if no turbulence variables, this loop will be automatically skipped
-                      ! check turbulence variable
+
+                      ! check turbulence variables
+                      do l=nt1, nt2
+
+                        ! if coupled ank is used, nstate = nw and this loop is executed
+                        ! if no turbulence variables, this loop will be automatically skipped
+                        ! check turbulence variable
 #ifndef USE_COMPLEX
-                      ratio = (wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTolTurb
+                        ratio = (wvec_pointer(ii)/(dvec_pointer(ii)+eps))*ANK_physLSTolTurb
 #else
-                      ratio = ( real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))*real(ANK_physLSTolTurb)
+                        ratio = ( real(wvec_pointer(ii))/real(dvec_pointer(ii)+eps))*real(ANK_physLSTolTurb)
 #endif
-                      ! if the ratio is less than min step, the update is either
-                      ! in the positive direction, therefore we do not clip it,
-                      ! or the update is very limiting, so we just clip the
-                      ! individual update for this cell.
-                      if (ratio .lt. ANK_stepFactor*ANK_stepMin) then
-                        ! The update was very limiting, so just clip this
-                        ! individual update and dont change the overall
-                        ! step size. To select the new update, instead of
-                        ! clipping to zero, we clip to 1 percent of the original.
-                        if (ratio .gt. zero) &
-                          dvec_pointer(ii) = wvec_pointer(ii)*ANK_physLSTolTurb
+                        ! if the ratio is less than min step, the update is either
+                        ! in the positive direction, therefore we do not clip it,
+                        ! or the update is very limiting, so we just clip the
+                        ! individual update for this cell.
+                        if (ratio .lt. ANK_stepFactor*ANK_stepMin) then
+                           ! The update was very limiting, so just clip this
+                           ! individual update and dont change the overall
+                           ! step size. To select the new update, instead of
+                           ! clipping to zero, we clip to 1 percent of the original.
+                           if (ratio .gt. zero) &
+                           dvec_pointer(ii) = wvec_pointer(ii)*ANK_physLSTolTurb
 
-                        ! Either case, set the ratio to one. Positive updates
-                        ! do not limit the step, negative updates below minimum
-                        ! step were already clipped.
-                        ratio = one
-                      end if
-                      lambdaL = min(lambdaL, ratio)
-                      ii = ii + 1
+                           ! Either case, set the ratio to one. Positive updates
+                           ! do not limit the step, negative updates below minimum
+                           ! step were already clipped.
+                           ratio = one
+                        end if
+                        lambdaL = min(lambdaL, ratio)
+                        ii = ii + 1
 
-                      ! TODO: Do we need physicality checks for the additional turbulence model variables?
-                     !  do l=nt1+1, nt2
-                     !     ii = ii + 1
-                     !  end do
-                      ! do this instead of the above loop for now...
-                      ! Will need to modify this if we want physicality check
-                      ! for the new turb model variables.
-                      ii = ii + (nt2-nt1)
+                      end do
                    end do
                 end do
              end do
@@ -3392,7 +3393,6 @@ contains
     use utils, only : EChk, setPointers, myisnan
     use solverUtils, only : computeUTau
     use NKSolver, only : getEwTol
-    use BCRoutines, only : applyAllBC, applyAllBC_block
     use haloExchange, only : whalo2
     use oversetData, only : oversetPresent
     use flowVarRefState, only : nw, nwf, nt1,nt2 , kPresent, pInfCorr
@@ -3676,12 +3676,10 @@ contains
     use adjointUtils, only : referenceShockSensor
     use NKSolver, only : setRVec, getEwTol
     use initializeFlow, only : setUniformFlow
-    use BCRoutines, only : applyAllBC, applyAllBC_block
     use haloExchange, only : whalo2
     use oversetData, only : oversetPresent
     use flowVarRefState, only : nw, nwf, nt1,nt2 , kPresent, pInfCorr
     use flowUtils, only : computeLamViscosity
-    use turbUtils, only : computeEddyViscosity
     use communication
     use blockette, only : blocketteRes
     implicit none
@@ -3729,7 +3727,8 @@ contains
        call setwVecANK(wVec,1,nstate)
 
        ! Evaluate the residual before we start
-       call blocketteRes(useUpdateIntermed=.True.)
+       call blocketteRes(useUpdateIntermed=.True., useTurbRes=ANK_coupled)
+       
        if (ANK_coupled) then
           call setRvec(rVec)
        else

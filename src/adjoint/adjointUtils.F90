@@ -362,7 +362,12 @@ contains
                       end do
                    end do
                 end if
-
+               
+                !MENTER SST: do we need to update f1sst here, or before entering domainLoopAD?
+                ! I don't think so since we are just computing derivatives...
+                ! However, if we useAD, we didn't call setFDReference above, so might be that f1sst
+                ! values are not initialized...
+                
                 ! Run Block-based residual
                 if (useAD) then
 #ifndef USE_COMPLEX
@@ -1946,6 +1951,11 @@ end subroutine statePreAllocation
     integer(kind=intType) :: level
     ! Working Parameters
     integer(kind=intType) :: i, j, k, l, nn, sps
+
+   ! No need to do that here provided that we did it in the calling routine
+   !  if (turbModel == menterSST) then
+   !     call f1SST
+   !  end if
 
     ! Compute the reference values for doing jacobian with FD
     do nn=1, nDom

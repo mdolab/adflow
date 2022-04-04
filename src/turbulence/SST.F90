@@ -109,17 +109,22 @@ contains
 
     ! Set model constants
 
+#ifdef SST_2003
+    rSSTGam1 = 5.0_realType / 9.0_realType
+    rSSTGam2 = 0.44_realType
+#else
     rSSTGam1 = rSSTBeta1/rSSTBetas &
          - rSSTSigw1*rSSTK*rSSTK/sqrt(rSSTBetas)
     rSSTGam2 = rSSTBeta2/rSSTBetas &
          - rSSTSigw2*rSSTK*rSSTK/sqrt(rSSTBetas)
+#endif
 
     ! Set a couple of pointers to the correct entries in dw to
     ! make the code more readable.
 
     dvt  => scratch(1:,1:,1:,idvt:)
     prod => scratch(1:,1:,1:,iprod)
-    vort => prod
+    vort => prod !only true if turbProd==vorticity
     kwCD => scratch(1:,1:,1:,icd)
     f1   => scratch(1:,1:,1:,if1SST)
     !
@@ -127,13 +132,13 @@ contains
     !
     select case (turbProd)
     case (strain)
-       call prodSmag2
+       call prodSmag2(2,il,2,jl,2,kl)
 
     case (vorticity)
-       call prodWmag2
+       call prodWmag2(2,il,2,jl,2,kl)
 
     case (katoLaunder)
-       call prodKatoLaunder
+       call prodKatoLaunder(2,il,2,jl,2,kl)
 
     end select
     !
@@ -159,6 +164,9 @@ contains
              ! unscaled source term. Furthermore the production term of
              ! k is limited to a certain times the destruction term.
 
+             ! These are the same equations as in https://turbmodels.larc.nasa.gov/sst.html
+             ! except that everything is divided by rho here
+
              rhoi = one/w(i,j,k,irho)
              ss   = prod(i,j,k)
              spk  = rev(i,j,k)*ss*rhoi
@@ -166,8 +174,13 @@ contains
              spk  = min(spk, pklim*sdk)
 
              dvt(i,j,k,1) = spk - sdk
+#ifdef SST_2003
+             dvt(i,j,k,2) = rSSTGam*spk/rev(i,j,k) + two*t2*rSSTSigw2*kwCD(i,j,k) &
+                  - rSSTBeta*w(i,j,k,itu2)**2
+#else
              dvt(i,j,k,2) = rSSTGam*ss + two*t2*rSSTSigw2*kwCD(i,j,k) &
                   - rSSTBeta*w(i,j,k,itu2)**2
+#endif
 
              ! Compute the source term jacobian. Note that only the
              ! destruction terms are linearized to increase the diagonal
@@ -218,6 +231,7 @@ contains
 
              ! Compute the blended diffusion coefficients for k-1,
              ! k and k+1.
+             ! CAUTION: f1 must be known in neighbouring cells (including halos!)
 
              t1 = f1(i,j,k+1); t2 = one - t1
              rSSTSigkp1 = t1*rSSTSigk1 + t2*rSSTSigk2
@@ -1164,13 +1178,16 @@ contains
     use turbMod
     use utils, only : setPointers
     use turbUtils, only :kwCDTerm
+    use paramTurb, only :rSSTSigw2
     implicit none
     !
     !      Local variables.
     !
     integer(kind=intType) :: sps, nn, mm, i, j, k
 
-    real(kind=realType) :: t1, t2, arg1
+    real(kind=realType) :: t1, t2, arg1, myeps
+
+    myeps = 1e-10_realType/two/rSSTSigw2
 
     ! First part. Compute the values of the blending function f1
     ! for each block and spectral solution.
@@ -1203,8 +1220,13 @@ contains
                    t2 = 500.0_realType*rlv(i,j,k) &
                         / (w(i,j,k,irho)*w(i,j,k,itu2)*d2Wall(i,j,k)**2)
                    t1 = max(t1,t2)
+#ifdef SST_2003
                    t2 = two*w(i,j,k,itu1)&
-                        / (max(eps,kwCD(i,j,k))*d2Wall(i,j,k)**2)
+                        / (max(myeps/w(i,j,k,irho) ,kwCD(i,j,k))*d2Wall(i,j,k)**2)   
+#else
+                   t2 = two*w(i,j,k,itu1)&
+                        / (max(eps,kwCD(i,j,k))*d2Wall(i,j,k)**2)   
+#endif
 
                    arg1      = min(t1,t2)
                    f1(i,j,k) = tanh(arg1**4)
