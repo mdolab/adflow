@@ -1223,7 +1223,7 @@ contains
     real(kind=realtype), dimension(3) :: sc, xc, xxc
     real(kind=realtype), dimension(3) :: scd, xcd, xxcd
     real(kind=realtype), dimension(3) :: rotcenter, rotrate
-    real(kind=realtype), dimension(3) :: rotrated
+    real(kind=realtype), dimension(3) :: rotcenterd, rotrated
     real(kind=realtype), dimension(3) :: rotationpoint
     real(kind=realtype), dimension(3, 3) :: rotationmatrix, &
 &   derivrotationmatrix
@@ -1362,57 +1362,25 @@ contains
             do i=0,ie
 ! determine the coordinates of the face center,
 ! which are stored in xc.
+              call pushreal8(xc(1))
               xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
 &               -1, 1)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 1)+flowdoms(&
 &               nn, groundlevel, sps)%x(i, j, k, 1))
+              call pushreal8(xc(2))
               xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
 &               -1, 2)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 2)+flowdoms(&
 &               nn, groundlevel, sps)%x(i, j, k, 2))
+              call pushreal8(xc(3))
               xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
 &               -1, 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 3)+flowdoms(&
 &               nn, groundlevel, sps)%x(i, j, k, 3))
-! determine the coordinates relative to the
-! center of rotation.
-              call pushreal8(xxc(1))
-              xxc(1) = xc(1) - rotcenter(1)
-              call pushreal8(xxc(2))
-              xxc(2) = xc(2) - rotcenter(2)
-              call pushreal8(xxc(3))
-              xxc(3) = xc(3) - rotcenter(3)
-! determine the rotation speed of the face center,
-! which is omega*r.
-              call pushreal8(sc(1))
-              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-              call pushreal8(sc(2))
-              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-              call pushreal8(sc(3))
-              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
-! determine the coordinates relative to the
-! rigid body rotation point.
-              call pushreal8(xxc(1))
-              xxc(1) = xc(1) - rotationpoint(1)
-              call pushreal8(xxc(2))
-              xxc(2) = xc(2) - rotationpoint(2)
-              call pushreal8(xxc(3))
-              xxc(3) = xc(3) - rotationpoint(3)
-! determine the total velocity of the cell face.
-! this is a combination of rotation speed of this
-! block and the entire rigid body rotation.
-              call pushreal8(sc(1))
-              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
-&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
-&               derivrotationmatrix(1, 3)*xxc(3)
-              call pushreal8(sc(2))
-              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
-&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
-&               derivrotationmatrix(2, 3)*xxc(3)
-              call pushreal8(sc(3))
-              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
-&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
-&               derivrotationmatrix(3, 3)*xxc(3)
+              call pushreal8array(sc, 3)
+              call cellfacevelocities(xc, rotcenter, rotrate, velxgrid, &
+&                               velygrid, velzgrid, derivrotationmatrix&
+&                               , sc)
 ! store the dot product of grid velocity sc and
 ! the normal ss in sface.
             end do
@@ -1425,57 +1393,25 @@ contains
             do i=1,ie
 ! determine the coordinates of the face center,
 ! which are stored in xc.
+              call pushreal8(xc(1))
               xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
 &               , 1)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 1)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 1)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 1))
+              call pushreal8(xc(2))
               xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
 &               , 2)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 2)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 2)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 2))
+              call pushreal8(xc(3))
               xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i-1, j, k&
 &               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
-! determine the coordinates relative to the
-! center of rotation.
-              call pushreal8(xxc(1))
-              xxc(1) = xc(1) - rotcenter(1)
-              call pushreal8(xxc(2))
-              xxc(2) = xc(2) - rotcenter(2)
-              call pushreal8(xxc(3))
-              xxc(3) = xc(3) - rotcenter(3)
-! determine the rotation speed of the face center,
-! which is omega*r.
-              call pushreal8(sc(1))
-              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-              call pushreal8(sc(2))
-              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-              call pushreal8(sc(3))
-              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
-! determine the coordinates relative to the
-! rigid body rotation point.
-              call pushreal8(xxc(1))
-              xxc(1) = xc(1) - rotationpoint(1)
-              call pushreal8(xxc(2))
-              xxc(2) = xc(2) - rotationpoint(2)
-              call pushreal8(xxc(3))
-              xxc(3) = xc(3) - rotationpoint(3)
-! determine the total velocity of the cell face.
-! this is a combination of rotation speed of this
-! block and the entire rigid body rotation.
-              call pushreal8(sc(1))
-              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
-&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
-&               derivrotationmatrix(1, 3)*xxc(3)
-              call pushreal8(sc(2))
-              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
-&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
-&               derivrotationmatrix(2, 3)*xxc(3)
-              call pushreal8(sc(3))
-              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
-&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
-&               derivrotationmatrix(3, 3)*xxc(3)
+              call pushreal8array(sc, 3)
+              call cellfacevelocities(xc, rotcenter, rotrate, velxgrid, &
+&                               velygrid, velzgrid, derivrotationmatrix&
+&                               , sc)
 ! store the dot product of grid velocity sc and
 ! the normal ss in sface.
             end do
@@ -1488,57 +1424,25 @@ contains
             do i=1,ie
 ! determine the coordinates of the face center,
 ! which are stored in xc.
+              call pushreal8(xc(1))
               xc(1) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
 &               , 1)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 1)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 1)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 1))
+              call pushreal8(xc(2))
               xc(2) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
 &               , 2)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 2)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 2)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 2))
+              call pushreal8(xc(3))
               xc(3) = fourth*(flowdoms(nn, groundlevel, sps)%x(i, j-1, k&
 &               , 3)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
-! determine the coordinates relative to the
-! center of rotation.
-              call pushreal8(xxc(1))
-              xxc(1) = xc(1) - rotcenter(1)
-              call pushreal8(xxc(2))
-              xxc(2) = xc(2) - rotcenter(2)
-              call pushreal8(xxc(3))
-              xxc(3) = xc(3) - rotcenter(3)
-! determine the rotation speed of the face center,
-! which is omega*r.
-              call pushreal8(sc(1))
-              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-              call pushreal8(sc(2))
-              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-              call pushreal8(sc(3))
-              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
-! determine the coordinates relative to the
-! rigid body rotation point.
-              call pushreal8(xxc(1))
-              xxc(1) = xc(1) - rotationpoint(1)
-              call pushreal8(xxc(2))
-              xxc(2) = xc(2) - rotationpoint(2)
-              call pushreal8(xxc(3))
-              xxc(3) = xc(3) - rotationpoint(3)
-! determine the total velocity of the cell face.
-! this is a combination of rotation speed of this
-! block and the entire rigid body rotation.
-              call pushreal8(sc(1))
-              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
-&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
-&               derivrotationmatrix(1, 3)*xxc(3)
-              call pushreal8(sc(2))
-              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
-&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
-&               derivrotationmatrix(2, 3)*xxc(3)
-              call pushreal8(sc(3))
-              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
-&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
-&               derivrotationmatrix(3, 3)*xxc(3)
+              call pushreal8array(sc, 3)
+              call cellfacevelocities(xc, rotcenter, rotrate, velxgrid, &
+&                               velygrid, velzgrid, derivrotationmatrix&
+&                               , sc)
 ! store the dot product of grid velocity sc and
 ! the normal ss in sface.
             end do
@@ -1547,7 +1451,6 @@ contains
         rotrated = 0.0_8
         velygridd = 0.0_8
         xcd = 0.0_8
-        xxcd = 0.0_8
         velzgridd = 0.0_8
         derivrotationmatrixd = 0.0_8
         scd = 0.0_8
@@ -1562,75 +1465,14 @@ contains
               scd(3) = scd(3) + sk(i, j, k, 3)*sfacekd(i, j, k)
               skd(i, j, k, 3) = skd(i, j, k, 3) + sc(3)*sfacekd(i, j, k)
               sfacekd(i, j, k) = 0.0_8
-              call popreal8(sc(3))
-              velzgridd = velzgridd + scd(3)
-              derivrotationmatrixd(3, 1) = derivrotationmatrixd(3, 1) + &
-&               xxc(1)*scd(3)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(3, 1)*scd(3)
-              derivrotationmatrixd(3, 2) = derivrotationmatrixd(3, 2) + &
-&               xxc(2)*scd(3)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(3, 2)*scd(3)
-              derivrotationmatrixd(3, 3) = derivrotationmatrixd(3, 3) + &
-&               xxc(3)*scd(3)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(3, 3)*scd(3)
-              call popreal8(sc(2))
-              velygridd = velygridd + scd(2)
-              derivrotationmatrixd(2, 1) = derivrotationmatrixd(2, 1) + &
-&               xxc(1)*scd(2)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(2, 1)*scd(2)
-              derivrotationmatrixd(2, 2) = derivrotationmatrixd(2, 2) + &
-&               xxc(2)*scd(2)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(2, 2)*scd(2)
-              derivrotationmatrixd(2, 3) = derivrotationmatrixd(2, 3) + &
-&               xxc(3)*scd(2)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(2, 3)*scd(2)
-              call popreal8(sc(1))
-              velxgridd = velxgridd + scd(1)
-              derivrotationmatrixd(1, 1) = derivrotationmatrixd(1, 1) + &
-&               xxc(1)*scd(1)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(1, 1)*scd(1)
-              derivrotationmatrixd(1, 2) = derivrotationmatrixd(1, 2) + &
-&               xxc(2)*scd(1)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(1, 2)*scd(1)
-              derivrotationmatrixd(1, 3) = derivrotationmatrixd(1, 3) + &
-&               xxc(3)*scd(1)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(1, 3)*scd(1)
-              call popreal8(xxc(3))
-              xcd(3) = xcd(3) + xxcd(3)
-              xxcd(3) = 0.0_8
-              call popreal8(xxc(2))
-              xcd(2) = xcd(2) + xxcd(2)
-              xxcd(2) = 0.0_8
-              call popreal8(xxc(1))
-              xcd(1) = xcd(1) + xxcd(1)
-              xxcd(1) = 0.0_8
-              call popreal8(sc(3))
-              rotrated(1) = rotrated(1) + xxc(2)*scd(3)
-              xxcd(2) = xxcd(2) + rotrate(1)*scd(3)
-              rotrated(2) = rotrated(2) - xxc(1)*scd(3)
-              xxcd(1) = xxcd(1) - rotrate(2)*scd(3)
-              scd(3) = 0.0_8
-              call popreal8(sc(2))
-              rotrated(3) = rotrated(3) + xxc(1)*scd(2)
-              xxcd(1) = xxcd(1) + rotrate(3)*scd(2)
-              rotrated(1) = rotrated(1) - xxc(3)*scd(2)
-              xxcd(3) = xxcd(3) - rotrate(1)*scd(2)
-              scd(2) = 0.0_8
-              call popreal8(sc(1))
-              rotrated(2) = rotrated(2) + xxc(3)*scd(1)
-              xxcd(3) = xxcd(3) + rotrate(2)*scd(1)
-              rotrated(3) = rotrated(3) - xxc(2)*scd(1)
-              xxcd(2) = xxcd(2) - rotrate(3)*scd(1)
-              scd(1) = 0.0_8
-              call popreal8(xxc(3))
-              xcd(3) = xcd(3) + xxcd(3)
-              xxcd(3) = 0.0_8
-              call popreal8(xxc(2))
-              xcd(2) = xcd(2) + xxcd(2)
-              xxcd(2) = 0.0_8
-              call popreal8(xxc(1))
-              xcd(1) = xcd(1) + xxcd(1)
-              xxcd(1) = 0.0_8
+              call popreal8array(sc, 3)
+              rotcenterd = 0.0_8
+              call cellfacevelocities_b(xc, xcd, rotcenter, rotcenterd, &
+&                                 rotrate, rotrated, velxgrid, velxgridd&
+&                                 , velygrid, velygridd, velzgrid, &
+&                                 velzgridd, derivrotationmatrix, &
+&                                 derivrotationmatrixd, sc, scd)
+              call popreal8(xc(3))
               tempd9 = fourth*xcd(3)
               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 3) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 3) + tempd9
@@ -1642,6 +1484,7 @@ contains
               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 3) = flowdomsd(&
 &               nn, groundlevel, sps)%x(i, j, k, 3) + tempd9
               xcd(3) = 0.0_8
+              call popreal8(xc(2))
               tempd10 = fourth*xcd(2)
               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 2) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 2) + &
@@ -1655,6 +1498,7 @@ contains
               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 2) = flowdomsd(&
 &               nn, groundlevel, sps)%x(i, j, k, 2) + tempd10
               xcd(2) = 0.0_8
+              call popreal8(xc(1))
               tempd11 = fourth*xcd(1)
               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 1) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k, 1) + &
@@ -1682,75 +1526,14 @@ contains
               scd(3) = scd(3) + sj(i, j, k, 3)*sfacejd(i, j, k)
               sjd(i, j, k, 3) = sjd(i, j, k, 3) + sc(3)*sfacejd(i, j, k)
               sfacejd(i, j, k) = 0.0_8
-              call popreal8(sc(3))
-              velzgridd = velzgridd + scd(3)
-              derivrotationmatrixd(3, 1) = derivrotationmatrixd(3, 1) + &
-&               xxc(1)*scd(3)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(3, 1)*scd(3)
-              derivrotationmatrixd(3, 2) = derivrotationmatrixd(3, 2) + &
-&               xxc(2)*scd(3)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(3, 2)*scd(3)
-              derivrotationmatrixd(3, 3) = derivrotationmatrixd(3, 3) + &
-&               xxc(3)*scd(3)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(3, 3)*scd(3)
-              call popreal8(sc(2))
-              velygridd = velygridd + scd(2)
-              derivrotationmatrixd(2, 1) = derivrotationmatrixd(2, 1) + &
-&               xxc(1)*scd(2)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(2, 1)*scd(2)
-              derivrotationmatrixd(2, 2) = derivrotationmatrixd(2, 2) + &
-&               xxc(2)*scd(2)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(2, 2)*scd(2)
-              derivrotationmatrixd(2, 3) = derivrotationmatrixd(2, 3) + &
-&               xxc(3)*scd(2)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(2, 3)*scd(2)
-              call popreal8(sc(1))
-              velxgridd = velxgridd + scd(1)
-              derivrotationmatrixd(1, 1) = derivrotationmatrixd(1, 1) + &
-&               xxc(1)*scd(1)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(1, 1)*scd(1)
-              derivrotationmatrixd(1, 2) = derivrotationmatrixd(1, 2) + &
-&               xxc(2)*scd(1)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(1, 2)*scd(1)
-              derivrotationmatrixd(1, 3) = derivrotationmatrixd(1, 3) + &
-&               xxc(3)*scd(1)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(1, 3)*scd(1)
-              call popreal8(xxc(3))
-              xcd(3) = xcd(3) + xxcd(3)
-              xxcd(3) = 0.0_8
-              call popreal8(xxc(2))
-              xcd(2) = xcd(2) + xxcd(2)
-              xxcd(2) = 0.0_8
-              call popreal8(xxc(1))
-              xcd(1) = xcd(1) + xxcd(1)
-              xxcd(1) = 0.0_8
-              call popreal8(sc(3))
-              rotrated(1) = rotrated(1) + xxc(2)*scd(3)
-              xxcd(2) = xxcd(2) + rotrate(1)*scd(3)
-              rotrated(2) = rotrated(2) - xxc(1)*scd(3)
-              xxcd(1) = xxcd(1) - rotrate(2)*scd(3)
-              scd(3) = 0.0_8
-              call popreal8(sc(2))
-              rotrated(3) = rotrated(3) + xxc(1)*scd(2)
-              xxcd(1) = xxcd(1) + rotrate(3)*scd(2)
-              rotrated(1) = rotrated(1) - xxc(3)*scd(2)
-              xxcd(3) = xxcd(3) - rotrate(1)*scd(2)
-              scd(2) = 0.0_8
-              call popreal8(sc(1))
-              rotrated(2) = rotrated(2) + xxc(3)*scd(1)
-              xxcd(3) = xxcd(3) + rotrate(2)*scd(1)
-              rotrated(3) = rotrated(3) - xxc(2)*scd(1)
-              xxcd(2) = xxcd(2) - rotrate(3)*scd(1)
-              scd(1) = 0.0_8
-              call popreal8(xxc(3))
-              xcd(3) = xcd(3) + xxcd(3)
-              xxcd(3) = 0.0_8
-              call popreal8(xxc(2))
-              xcd(2) = xcd(2) + xxcd(2)
-              xxcd(2) = 0.0_8
-              call popreal8(xxc(1))
-              xcd(1) = xcd(1) + xxcd(1)
-              xxcd(1) = 0.0_8
+              call popreal8array(sc, 3)
+              rotcenterd = 0.0_8
+              call cellfacevelocities_b(xc, xcd, rotcenter, rotcenterd, &
+&                                 rotrate, rotrated, velxgrid, velxgridd&
+&                                 , velygrid, velygridd, velzgrid, &
+&                                 velzgridd, derivrotationmatrix, &
+&                                 derivrotationmatrixd, sc, scd)
+              call popreal8(xc(3))
               tempd6 = fourth*xcd(3)
               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 3) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 3) + tempd6
@@ -1762,6 +1545,7 @@ contains
               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 3) = flowdomsd(&
 &               nn, groundlevel, sps)%x(i, j, k, 3) + tempd6
               xcd(3) = 0.0_8
+              call popreal8(xc(2))
               tempd7 = fourth*xcd(2)
               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 2) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 2) + tempd7
@@ -1773,6 +1557,7 @@ contains
               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 2) = flowdomsd(&
 &               nn, groundlevel, sps)%x(i, j, k, 2) + tempd7
               xcd(2) = 0.0_8
+              call popreal8(xc(1))
               tempd8 = fourth*xcd(1)
               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 1) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i-1, j, k, 1) + tempd8
@@ -1798,75 +1583,14 @@ contains
               scd(3) = scd(3) + si(i, j, k, 3)*sfaceid(i, j, k)
               sid(i, j, k, 3) = sid(i, j, k, 3) + sc(3)*sfaceid(i, j, k)
               sfaceid(i, j, k) = 0.0_8
-              call popreal8(sc(3))
-              velzgridd = velzgridd + scd(3)
-              derivrotationmatrixd(3, 1) = derivrotationmatrixd(3, 1) + &
-&               xxc(1)*scd(3)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(3, 1)*scd(3)
-              derivrotationmatrixd(3, 2) = derivrotationmatrixd(3, 2) + &
-&               xxc(2)*scd(3)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(3, 2)*scd(3)
-              derivrotationmatrixd(3, 3) = derivrotationmatrixd(3, 3) + &
-&               xxc(3)*scd(3)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(3, 3)*scd(3)
-              call popreal8(sc(2))
-              velygridd = velygridd + scd(2)
-              derivrotationmatrixd(2, 1) = derivrotationmatrixd(2, 1) + &
-&               xxc(1)*scd(2)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(2, 1)*scd(2)
-              derivrotationmatrixd(2, 2) = derivrotationmatrixd(2, 2) + &
-&               xxc(2)*scd(2)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(2, 2)*scd(2)
-              derivrotationmatrixd(2, 3) = derivrotationmatrixd(2, 3) + &
-&               xxc(3)*scd(2)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(2, 3)*scd(2)
-              call popreal8(sc(1))
-              velxgridd = velxgridd + scd(1)
-              derivrotationmatrixd(1, 1) = derivrotationmatrixd(1, 1) + &
-&               xxc(1)*scd(1)
-              xxcd(1) = xxcd(1) + derivrotationmatrix(1, 1)*scd(1)
-              derivrotationmatrixd(1, 2) = derivrotationmatrixd(1, 2) + &
-&               xxc(2)*scd(1)
-              xxcd(2) = xxcd(2) + derivrotationmatrix(1, 2)*scd(1)
-              derivrotationmatrixd(1, 3) = derivrotationmatrixd(1, 3) + &
-&               xxc(3)*scd(1)
-              xxcd(3) = xxcd(3) + derivrotationmatrix(1, 3)*scd(1)
-              call popreal8(xxc(3))
-              xcd(3) = xcd(3) + xxcd(3)
-              xxcd(3) = 0.0_8
-              call popreal8(xxc(2))
-              xcd(2) = xcd(2) + xxcd(2)
-              xxcd(2) = 0.0_8
-              call popreal8(xxc(1))
-              xcd(1) = xcd(1) + xxcd(1)
-              xxcd(1) = 0.0_8
-              call popreal8(sc(3))
-              rotrated(1) = rotrated(1) + xxc(2)*scd(3)
-              xxcd(2) = xxcd(2) + rotrate(1)*scd(3)
-              rotrated(2) = rotrated(2) - xxc(1)*scd(3)
-              xxcd(1) = xxcd(1) - rotrate(2)*scd(3)
-              scd(3) = 0.0_8
-              call popreal8(sc(2))
-              rotrated(3) = rotrated(3) + xxc(1)*scd(2)
-              xxcd(1) = xxcd(1) + rotrate(3)*scd(2)
-              rotrated(1) = rotrated(1) - xxc(3)*scd(2)
-              xxcd(3) = xxcd(3) - rotrate(1)*scd(2)
-              scd(2) = 0.0_8
-              call popreal8(sc(1))
-              rotrated(2) = rotrated(2) + xxc(3)*scd(1)
-              xxcd(3) = xxcd(3) + rotrate(2)*scd(1)
-              rotrated(3) = rotrated(3) - xxc(2)*scd(1)
-              xxcd(2) = xxcd(2) - rotrate(3)*scd(1)
-              scd(1) = 0.0_8
-              call popreal8(xxc(3))
-              xcd(3) = xcd(3) + xxcd(3)
-              xxcd(3) = 0.0_8
-              call popreal8(xxc(2))
-              xcd(2) = xcd(2) + xxcd(2)
-              xxcd(2) = 0.0_8
-              call popreal8(xxc(1))
-              xcd(1) = xcd(1) + xxcd(1)
-              xxcd(1) = 0.0_8
+              call popreal8array(sc, 3)
+              rotcenterd = 0.0_8
+              call cellfacevelocities_b(xc, xcd, rotcenter, rotcenterd, &
+&                                 rotrate, rotrated, velxgrid, velxgridd&
+&                                 , velygrid, velygridd, velzgrid, &
+&                                 velzgridd, derivrotationmatrix, &
+&                                 derivrotationmatrixd, sc, scd)
+              call popreal8(xc(3))
               tempd3 = fourth*xcd(3)
               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1, 3) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1, 3) + &
@@ -1878,6 +1602,7 @@ contains
               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 3) = flowdomsd(&
 &               nn, groundlevel, sps)%x(i, j, k, 3) + tempd3
               xcd(3) = 0.0_8
+              call popreal8(xc(2))
               tempd4 = fourth*xcd(2)
               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1, 2) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1, 2) + &
@@ -1889,6 +1614,7 @@ contains
               flowdomsd(nn, groundlevel, sps)%x(i, j, k, 2) = flowdomsd(&
 &               nn, groundlevel, sps)%x(i, j, k, 2) + tempd4
               xcd(2) = 0.0_8
+              call popreal8(xc(1))
               tempd5 = fourth*xcd(1)
               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1, 1) = &
 &               flowdomsd(nn, groundlevel, sps)%x(i, j-1, k-1, 1) + &
@@ -1904,6 +1630,7 @@ contains
           end do
           call popinteger4(j)
         end do
+        xxcd = 0.0_8
         do k=ke,1,-1
           do j=je,1,-1
             do i=ie,1,-1
@@ -2261,33 +1988,9 @@ contains
 &               -1, 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j-1, k, 3)+flowdoms(&
 &               nn, groundlevel, sps)%x(i, j, k, 3))
-! determine the coordinates relative to the
-! center of rotation.
-              xxc(1) = xc(1) - rotcenter(1)
-              xxc(2) = xc(2) - rotcenter(2)
-              xxc(3) = xc(3) - rotcenter(3)
-! determine the rotation speed of the face center,
-! which is omega*r.
-              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
-! determine the coordinates relative to the
-! rigid body rotation point.
-              xxc(1) = xc(1) - rotationpoint(1)
-              xxc(2) = xc(2) - rotationpoint(2)
-              xxc(3) = xc(3) - rotationpoint(3)
-! determine the total velocity of the cell face.
-! this is a combination of rotation speed of this
-! block and the entire rigid body rotation.
-              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
-&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
-&               derivrotationmatrix(1, 3)*xxc(3)
-              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
-&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
-&               derivrotationmatrix(2, 3)*xxc(3)
-              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
-&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
-&               derivrotationmatrix(3, 3)*xxc(3)
+              call cellfacevelocities(xc, rotcenter, rotrate, velxgrid, &
+&                               velygrid, velzgrid, derivrotationmatrix&
+&                               , sc)
 ! store the dot product of grid velocity sc and
 ! the normal ss in sface.
               sfacei(i, j, k) = sc(1)*si(i, j, k, 1) + sc(2)*si(i, j, k&
@@ -2313,33 +2016,9 @@ contains
 &               , 3)+flowdoms(nn, groundlevel, sps)%x(i, j, k-1, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j, k-1, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
-! determine the coordinates relative to the
-! center of rotation.
-              xxc(1) = xc(1) - rotcenter(1)
-              xxc(2) = xc(2) - rotcenter(2)
-              xxc(3) = xc(3) - rotcenter(3)
-! determine the rotation speed of the face center,
-! which is omega*r.
-              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
-! determine the coordinates relative to the
-! rigid body rotation point.
-              xxc(1) = xc(1) - rotationpoint(1)
-              xxc(2) = xc(2) - rotationpoint(2)
-              xxc(3) = xc(3) - rotationpoint(3)
-! determine the total velocity of the cell face.
-! this is a combination of rotation speed of this
-! block and the entire rigid body rotation.
-              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
-&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
-&               derivrotationmatrix(1, 3)*xxc(3)
-              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
-&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
-&               derivrotationmatrix(2, 3)*xxc(3)
-              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
-&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
-&               derivrotationmatrix(3, 3)*xxc(3)
+              call cellfacevelocities(xc, rotcenter, rotrate, velxgrid, &
+&                               velygrid, velzgrid, derivrotationmatrix&
+&                               , sc)
 ! store the dot product of grid velocity sc and
 ! the normal ss in sface.
               sfacej(i, j, k) = sc(1)*sj(i, j, k, 1) + sc(2)*sj(i, j, k&
@@ -2365,33 +2044,9 @@ contains
 &               , 3)+flowdoms(nn, groundlevel, sps)%x(i-1, j, k, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i-1, j-1, k, 3)+&
 &               flowdoms(nn, groundlevel, sps)%x(i, j, k, 3))
-! determine the coordinates relative to the
-! center of rotation.
-              xxc(1) = xc(1) - rotcenter(1)
-              xxc(2) = xc(2) - rotcenter(2)
-              xxc(3) = xc(3) - rotcenter(3)
-! determine the rotation speed of the face center,
-! which is omega*r.
-              sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
-              sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
-              sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
-! determine the coordinates relative to the
-! rigid body rotation point.
-              xxc(1) = xc(1) - rotationpoint(1)
-              xxc(2) = xc(2) - rotationpoint(2)
-              xxc(3) = xc(3) - rotationpoint(3)
-! determine the total velocity of the cell face.
-! this is a combination of rotation speed of this
-! block and the entire rigid body rotation.
-              sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1&
-&               ) + derivrotationmatrix(1, 2)*xxc(2) + &
-&               derivrotationmatrix(1, 3)*xxc(3)
-              sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1&
-&               ) + derivrotationmatrix(2, 2)*xxc(2) + &
-&               derivrotationmatrix(2, 3)*xxc(3)
-              sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1&
-&               ) + derivrotationmatrix(3, 2)*xxc(2) + &
-&               derivrotationmatrix(3, 3)*xxc(3)
+              call cellfacevelocities(xc, rotcenter, rotrate, velxgrid, &
+&                               velygrid, velzgrid, derivrotationmatrix&
+&                               , sc)
 ! store the dot product of grid velocity sc and
 ! the normal ss in sface.
               sfacek(i, j, k) = sc(1)*sk(i, j, k, 1) + sc(2)*sk(i, j, k&
@@ -2402,6 +2057,171 @@ contains
       end if
     end if
   end subroutine gridvelocitiesfinelevel_block
+!  differentiation of cellfacevelocities in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: rotrate velygrid xc velzgrid
+!                derivrotationmatrix sc rotcenter velxgrid
+!   with respect to varying inputs: rotrate velygrid xc velzgrid
+!                derivrotationmatrix sc rotcenter velxgrid
+!   rw status of diff variables: rotrate:incr velygrid:incr xc:incr
+!                velzgrid:incr derivrotationmatrix:incr sc:in-out
+!                rotcenter:incr velxgrid:incr
+  subroutine cellfacevelocities_b(xc, xcd, rotcenter, rotcenterd, &
+&   rotrate, rotrated, velxgrid, velxgridd, velygrid, velygridd, &
+&   velzgrid, velzgridd, derivrotationmatrix, derivrotationmatrixd, sc, &
+&   scd)
+!
+!  returns the cell face velocities for a given face center
+!
+    use constants
+    implicit none
+!
+!      subroutine arguments.
+!
+    real(kind=realtype), dimension(3), intent(in) :: xc, rotcenter, &
+&   rotrate
+    real(kind=realtype), dimension(3) :: xcd, rotcenterd, rotrated
+    real(kind=realtype), intent(in) :: velxgrid, velygrid, velzgrid
+    real(kind=realtype) :: velxgridd, velygridd, velzgridd
+    real(kind=realtype), dimension(3, 3), intent(in) :: &
+&   derivrotationmatrix
+    real(kind=realtype), dimension(3, 3) :: derivrotationmatrixd
+    real(kind=realtype), dimension(3) :: sc
+    real(kind=realtype), dimension(3) :: scd
+!
+!      local variables.
+!
+    real(kind=realtype), dimension(3) :: rotationpoint, xxc
+    real(kind=realtype), dimension(3) :: xxcd
+! determine the coordinates relative to the
+! center of rotation.
+    xxc(1) = xc(1) - rotcenter(1)
+    xxc(2) = xc(2) - rotcenter(2)
+    xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+! determine the coordinates relative to the
+! rigid body rotation point.
+    call pushreal8(xxc(1))
+    xxc(1) = xc(1) - rotationpoint(1)
+    call pushreal8(xxc(2))
+    xxc(2) = xc(2) - rotationpoint(2)
+    call pushreal8(xxc(3))
+    xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+    xxcd = 0.0_8
+    velzgridd = velzgridd + scd(3)
+    derivrotationmatrixd(3, 1) = derivrotationmatrixd(3, 1) + xxc(1)*scd&
+&     (3)
+    xxcd(1) = xxcd(1) + derivrotationmatrix(3, 1)*scd(3)
+    derivrotationmatrixd(3, 2) = derivrotationmatrixd(3, 2) + xxc(2)*scd&
+&     (3)
+    xxcd(2) = xxcd(2) + derivrotationmatrix(3, 2)*scd(3)
+    derivrotationmatrixd(3, 3) = derivrotationmatrixd(3, 3) + xxc(3)*scd&
+&     (3)
+    xxcd(3) = xxcd(3) + derivrotationmatrix(3, 3)*scd(3)
+    velygridd = velygridd + scd(2)
+    derivrotationmatrixd(2, 1) = derivrotationmatrixd(2, 1) + xxc(1)*scd&
+&     (2)
+    xxcd(1) = xxcd(1) + derivrotationmatrix(2, 1)*scd(2)
+    derivrotationmatrixd(2, 2) = derivrotationmatrixd(2, 2) + xxc(2)*scd&
+&     (2)
+    xxcd(2) = xxcd(2) + derivrotationmatrix(2, 2)*scd(2)
+    derivrotationmatrixd(2, 3) = derivrotationmatrixd(2, 3) + xxc(3)*scd&
+&     (2)
+    xxcd(3) = xxcd(3) + derivrotationmatrix(2, 3)*scd(2)
+    velxgridd = velxgridd + scd(1)
+    derivrotationmatrixd(1, 1) = derivrotationmatrixd(1, 1) + xxc(1)*scd&
+&     (1)
+    xxcd(1) = xxcd(1) + derivrotationmatrix(1, 1)*scd(1)
+    derivrotationmatrixd(1, 2) = derivrotationmatrixd(1, 2) + xxc(2)*scd&
+&     (1)
+    xxcd(2) = xxcd(2) + derivrotationmatrix(1, 2)*scd(1)
+    derivrotationmatrixd(1, 3) = derivrotationmatrixd(1, 3) + xxc(3)*scd&
+&     (1)
+    xxcd(3) = xxcd(3) + derivrotationmatrix(1, 3)*scd(1)
+    call popreal8(xxc(3))
+    xcd(3) = xcd(3) + xxcd(3)
+    xxcd(3) = 0.0_8
+    call popreal8(xxc(2))
+    xcd(2) = xcd(2) + xxcd(2)
+    xxcd(2) = 0.0_8
+    call popreal8(xxc(1))
+    xcd(1) = xcd(1) + xxcd(1)
+    xxcd(1) = 0.0_8
+    rotrated(1) = rotrated(1) + xxc(2)*scd(3)
+    xxcd(2) = xxcd(2) + rotrate(1)*scd(3)
+    rotrated(2) = rotrated(2) - xxc(1)*scd(3)
+    xxcd(1) = xxcd(1) - rotrate(2)*scd(3)
+    scd(3) = 0.0_8
+    rotrated(3) = rotrated(3) + xxc(1)*scd(2)
+    xxcd(1) = xxcd(1) + rotrate(3)*scd(2)
+    rotrated(1) = rotrated(1) - xxc(3)*scd(2)
+    xxcd(3) = xxcd(3) - rotrate(1)*scd(2)
+    scd(2) = 0.0_8
+    rotrated(2) = rotrated(2) + xxc(3)*scd(1)
+    xxcd(3) = xxcd(3) + rotrate(2)*scd(1)
+    rotrated(3) = rotrated(3) - xxc(2)*scd(1)
+    xxcd(2) = xxcd(2) - rotrate(3)*scd(1)
+    scd(1) = 0.0_8
+    xcd(3) = xcd(3) + xxcd(3)
+    rotcenterd(3) = rotcenterd(3) - xxcd(3)
+    xxcd(3) = 0.0_8
+    xcd(2) = xcd(2) + xxcd(2)
+    rotcenterd(2) = rotcenterd(2) - xxcd(2)
+    xxcd(2) = 0.0_8
+    xcd(1) = xcd(1) + xxcd(1)
+    rotcenterd(1) = rotcenterd(1) - xxcd(1)
+  end subroutine cellfacevelocities_b
+  subroutine cellfacevelocities(xc, rotcenter, rotrate, velxgrid, &
+&   velygrid, velzgrid, derivrotationmatrix, sc)
+!
+!  returns the cell face velocities for a given face center
+!
+    use constants
+    implicit none
+!
+!      subroutine arguments.
+!
+    real(kind=realtype), dimension(3), intent(in) :: xc, rotcenter, &
+&   rotrate
+    real(kind=realtype), intent(in) :: velxgrid, velygrid, velzgrid
+    real(kind=realtype), dimension(3, 3), intent(in) :: &
+&   derivrotationmatrix
+    real(kind=realtype), dimension(3), intent(out) :: sc
+!
+!      local variables.
+!
+    real(kind=realtype), dimension(3) :: rotationpoint, xxc
+! determine the coordinates relative to the
+! center of rotation.
+    xxc(1) = xc(1) - rotcenter(1)
+    xxc(2) = xc(2) - rotcenter(2)
+    xxc(3) = xc(3) - rotcenter(3)
+! determine the rotation speed of the face center,
+! which is omega*r.
+    sc(1) = rotrate(2)*xxc(3) - rotrate(3)*xxc(2)
+    sc(2) = rotrate(3)*xxc(1) - rotrate(1)*xxc(3)
+    sc(3) = rotrate(1)*xxc(2) - rotrate(2)*xxc(1)
+! determine the coordinates relative to the
+! rigid body rotation point.
+    xxc(1) = xc(1) - rotationpoint(1)
+    xxc(2) = xc(2) - rotationpoint(2)
+    xxc(3) = xc(3) - rotationpoint(3)
+! determine the total velocity of the cell face.
+! this is a combination of rotation speed of this
+! block and the entire rigid body rotation.
+    sc(1) = sc(1) + velxgrid + derivrotationmatrix(1, 1)*xxc(1) + &
+&     derivrotationmatrix(1, 2)*xxc(2) + derivrotationmatrix(1, 3)*xxc(3&
+&     )
+    sc(2) = sc(2) + velygrid + derivrotationmatrix(2, 1)*xxc(1) + &
+&     derivrotationmatrix(2, 2)*xxc(2) + derivrotationmatrix(2, 3)*xxc(3&
+&     )
+    sc(3) = sc(3) + velzgrid + derivrotationmatrix(3, 1)*xxc(1) + &
+&     derivrotationmatrix(3, 2)*xxc(2) + derivrotationmatrix(3, 3)*xxc(3&
+&     )
+  end subroutine cellfacevelocities
 !  differentiation of slipvelocitiesfinelevel_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: veldirfreestream machgrid pinf
 !                timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
