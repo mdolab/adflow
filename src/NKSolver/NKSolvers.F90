@@ -1926,14 +1926,13 @@ contains
     use blockPointers, only : nDom, volRef, il, jl, kl, w, dw, dtl, globalCell, iblank
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputIteration, only : turbResScale
-    use inputADjoint, only : viscPC
+    use inputADjoint, only : viscPC, precondtype
     use inputDiscretization, only : approxSA
     use iteration, only : totalR0, totalR
     use utils, only : EChk, setPointers
     use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
     use communication
     use agmg, only : setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
-    use inputadjoint, only : precondtype
     implicit none
 
     ! Local Variables
@@ -1983,48 +1982,16 @@ contains
     blk = zero
 
     if (.not. ANK_coupled) then
-       ! For the segragated solver, only calculate the time step for flow variables
+       ! For the decoupled solver, only calculate the time step for flow variables
        do nn=1, nDom
           do sps=1, nTimeIntervalsSpectral
              call setPointers(nn,1_intType,sps)
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      ! Calculate one over time step for this cell. Multiply
-                      ! the dtl by cell volume to get the actual time step
-                      ! required for a CFL of one, then multiply with the
-                      ! actual cfl number in the solver
-                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                      call computeTimeStepMatrix(i, j, k, blk)
 
-                      ! We need to convert the momentum residuals to velocity
-                      ! residuals to get the desired effect from time steps.
-                      ! To do this, save a "pseudo" jacobian for this cell,
-                      ! that has dU/du, where U is the vector of conservative
-                      ! variables, and u are the primitive variables. For this
-                      ! jacobian, only the velocity entries are modified,
-                      ! since ADflow saves density, velocities and total
-                      ! energy in the state vector w(:,:,:,:).
-
-                      ! Density and energy updates are unchanged.
-                      blk(iRho, iRho) = dtinv
-                      blk(iRhoE, iRhoE) = dtinv
-
-                      ! save the density
-                      rho = w(i,j,k,iRho)
-
-                      ! x-velocity
-                      blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
-                      blk(ivx, ivx)  = rho*dtinv
-
-                      ! y-velocity
-                      blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
-                      blk(ivy, ivy)  = rho*dtinv
-
-                      ! z-velocity
-                      blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
-                      blk(ivz, ivz)  = rho*dtinv
-
-                      ! get the global cell index
+                      ! Get the global cell index
                       irow = globalCell(i, j, k)
 
                       if (useCoarseMats) then
@@ -2179,6 +2146,172 @@ contains
 
     end subroutine setBlock
   end subroutine FormJacobianANK
+
+  subroutine computeTimeStepMatrix(i, j, k, timeStepMatrix, cellState)
+     ! Computes the inverse time step matrix for a given cell i, j, k.
+     ! By default, w(i,j,k) is used as the state vector.
+     ! Optionally, a cellState vector can be provided to manually define the states.
+     ! cellState is used to provide the previous states in the unsteady residual computation.
+
+     use constants
+     use blockPointers, only : volRef, w, dtl, gamma, p, aa
+     use flowVarRefState, only : viscous
+     use communication
+     implicit none
+
+     ! Input variables
+     integer(kind=intType), intent(in) :: i, j, k
+     real(kind=realType), intent(in), optional, dimension(nState) :: cellState
+
+     ! Output variables
+     real(kind=realType), dimension(nState,nState), intent(out) :: timeStepMatrix
+
+     ! Local variables
+     real(kind=realType) :: dtInv, rho, velX, velY, velZ
+     real(kind=realType) :: speed, speedOfSound, mach, machSqr, beta, tau, gammaMinusOne
+     real(kind=realType) :: speedXY, sinTheta, cosTheta, sinAlpha, cosAlpha
+     real(kind=realType), dimension(nState,nState) :: PSymmStreamInv, streamToCart, symmToCons, consToSymm, stateToCons
+
+     ! Zero the block matrices
+     timeStepMatrix = zero
+     stateToCons = zero
+     PSymmStreamInv = zero
+     streamToCart = zero
+     symmToCons = zero
+     consToSymm = zero
+
+     ! Save density and velocity components for convenience
+     if (present(cellState)) then
+        rho = cellState(iRho)
+        velX = cellState(ivx)
+        velY = cellState(ivy)
+        velZ = cellState(ivz)
+     else
+        rho = w(i,j,k,iRho)
+        velX = w(i,j,k,ivx)
+        velY = w(i,j,k,ivy)
+        velZ = w(i,j,k,ivz)
+     end if
+
+     ! Calculate one over time step for this cell.
+     ! Multiply dtl by cell volume to get the time step required for a CFL of one,
+     ! then multiply with the actual CFL number in the solver.
+     dtInv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+
+     ! We need to convert the velocity updates to momentum updates to get the desired effect from time steps.
+     ! To do this, we form a "pseudo" Jacobian dU/du for this cell, where U is the vector of conservative
+     ! variables, and u is the vector of state variables. Only the velocity entries are modified because ADflow
+     ! saves density, velocities, and total energy in the state vector w(:,:,:,:).
+
+     stateToCons(iRho, iRho) = one
+     stateToCons(ivx, iRho) = velX
+     stateToCons(ivx, ivx)  = rho
+     stateToCons(ivy, iRho) = velY
+     stateToCons(ivy, ivy)  = rho
+     stateToCons(ivz, iRho) = velZ
+     stateToCons(ivz, ivz)  = rho
+     stateToCons(iRhoE, iRhoE) = one
+
+     if (ANK_useCharTimeStep) then
+
+        ! Compute the speed of sound squared for inviscid flow
+        if (.not. viscous) then
+           aa(i,j,k) = gamma(i,j,k) * p(i,j,k) / rho
+        end if
+
+        ! Inverse VLR preconditioner
+        speed = SQRT(velX**2 + velY**2 + velZ**2)
+        speedOfSound = SQRT(aa(i,j,k))
+        mach = speed / speedOfSound
+        machSqr = mach**2
+
+        if (mach < one) then
+           beta = SQRT(one - machSqr)
+           tau = beta
+        else
+           beta = SQRT(machSqr - one)
+           tau = SQRT(one - one/machSqr)
+        end if
+
+        PSymmStreamInv(1, 1) = (beta**2 + tau) / (machSqr * tau)
+        PSymmStreamInv(1, 2) = one/mach
+        PSymmStreamInv(2, 1) = one/mach
+        PSymmStreamInv(2, 2) = one
+        PSymmStreamInv(3, 3) = one/tau
+        PSymmStreamInv(4, 4) = one/tau
+        PSymmStreamInv(5, 5) = one
+
+        ! Rotation matrix
+        speedXY = SQRT(velX**2 + velY**2)
+        sinTheta = velY/speedXY
+        cosTheta = velX/speedXY
+        sinAlpha = velZ/speed
+        cosAlpha = speedXY/speed
+
+        streamToCart(1, 1) = one
+        streamToCart(2, 2) = cosAlpha * cosTheta
+        streamToCart(2, 3) = -sinTheta
+        streamToCart(2, 4) = -sinAlpha * cosTheta
+        streamToCart(3, 2) = cosAlpha * sinTheta
+        streamToCart(3, 3) = cosTheta
+        streamToCart(3, 4) = -sinAlpha * sinTheta
+        streamToCart(4, 2) = sinAlpha
+        streamToCart(4, 4) = cosAlpha
+        streamToCart(5, 5) = one
+
+        ! State transformation matrix
+        gammaMinusOne = gamma(i,j,k) - one
+
+        symmToCons(iRho, 1) = rho / speedOfSound
+        symmToCons(iRho, 5) = -one / aa(i,j,k)
+        symmToCons(ivx, 1) = rho * velX / speedOfSound
+        symmToCons(ivx, 2) = rho
+        symmToCons(ivx, 5) = -velX / aa(i,j,k)
+        symmToCons(ivy, 1) = rho * velY / speedOfSound
+        symmToCons(ivy, 3) = rho
+        symmToCons(ivy, 5) = -velY / aa(i,j,k)
+        symmToCons(ivz, 1) = rho * velZ / speedOfSound
+        symmToCons(ivz, 4) = rho
+        symmToCons(ivz, 5) = -velZ / aa(i,j,k)
+        symmToCons(iRhoE, 1) = rho * speedOfSound * (machSqr/2 + 1/gammaMinusOne)
+        symmToCons(iRhoE, 2) = rho * velX
+        symmToCons(iRhoE, 3) = rho * velY
+        symmToCons(iRhoE, 4) = rho * velZ
+        symmToCons(iRhoE, 5) = -machSqr / 2
+
+        ! Inverse state transformation matrix
+        consToSymm(1, iRho) = gammaMinusOne/2 * speedOfSound * machSqr / rho
+        consToSymm(1, ivx) = -gammaMinusOne * velX / (rho * speedOfSound)
+        consToSymm(1, ivy) = -gammaMinusOne * velY / (rho * speedOfSound)
+        consToSymm(1, ivz) = -gammaMinusOne * velZ / (rho * speedOfSound)
+        consToSymm(1, iRhoE) = gammaMinusOne / (rho * speedOfSound)
+        consToSymm(2, iRho) = -velX / rho
+        consToSymm(2, ivx) = one / rho
+        consToSymm(3, iRho) = -velY / rho
+        consToSymm(3, ivy) = one / rho
+        consToSymm(4, iRho) = -velZ / rho
+        consToSymm(4, ivz) = one / rho
+        consToSymm(5, iRho) = aa(i,j,k) * (gammaMinusOne/2 * machSqr - one)
+        consToSymm(5, ivx) = -gammaMinusOne * velX
+        consToSymm(5, ivy) = -gammaMinusOne * velY
+        consToSymm(5, ivz) = -gammaMinusOne * velZ
+        consToSymm(5, iRhoE) = gammaMinusOne
+
+        ! Construct the time step matrix
+        timeStepMatrix = PSymmStreamInv * dtInv
+        timeStepMatrix = MATMUL(streamToCart, timeStepMatrix)
+        timeStepMatrix = MATMUL(timeStepMatrix, TRANSPOSE(streamToCart))
+        timeStepMatrix = MATMUL(symmToCons, timeStepMatrix)
+        timeStepMatrix = MATMUL(timeStepMatrix, consToSymm)
+        timeStepMatrix = MATMUL(timeStepMatrix, stateToCons)
+
+     else
+
+        timeStepMatrix = stateToCons * dtInv
+
+     end if
+
+  end subroutine computeTimeStepMatrix
 
   subroutine FormJacobianANKTurb
 
@@ -2600,6 +2733,9 @@ contains
     real(kind=realType),pointer :: rvec_pointer(:)
     real(kind=realType),pointer :: dvec_pointer(:)
 
+    real(kind=realType), dimension(nState,nState) :: timeStepMatrix
+    real(kind=realType), dimension(nState) :: wPrev
+
     ! Calculate the steady residuals
     call blocketteRes(useTurbRes=ANK_coupled)
     call setRVecANK(rVec)
@@ -2627,45 +2763,15 @@ contains
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
+                      ! Compute the states in the previous nonlinear iteration
+                      wPrev = w(i,j,k,(/iRho,ivx,ivy,ivz,iRhoE/)) + omega*dvec_pointer(ii:ii+nState-1)
 
-                      ! Update the first entry in this block, corresponds to
-                      ! density. Also save this density value.
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*dvec_pointer(ii)
+                      ! Add the contribution from the time stepping term
+                      call computeTimeStepMatrix(i, j, k, timeStepMatrix, wPrev)
+                      rvec_pointer(ii:ii+nState-1) = rvec_pointer(ii:ii+nState-1) &
+                        - omega * MATMUL(timeStepMatrix, dvec_pointer(ii:ii+nState-1))
 
-                      ! calculate the density in the previous non-linear iteration
-                      rho = w(i,j,k,iRho) + omega*dvec_pointer(ii)
-                      iiRho = ii
-                      ii = ii + 1
-
-                      ! updates 2nd-4th are velocities. They need to get converted
-                      ! to momentum residuals.
-
-                      ! Calculate the u velocity in the previous non-linear iter.
-                      uu = w(i,j,k,ivx) + omega*dvec_pointer(ii)
-
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                           uu*dvec_pointer(iiRho)+&
-                           rho * dvec_pointer(ii))
-                      ii = ii + 1
-
-                      vv = w(i,j,k,ivx) + omega*dvec_pointer(ii)
-
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                           vv*dvec_pointer(iiRho)+&
-                           rho * dvec_pointer(ii))
-                      ii = ii + 1
-
-                      ww = w(i,j,k,ivx) + omega*dvec_pointer(ii)
-
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                           ww*dvec_pointer(iiRho)+&
-                           rho * dvec_pointer(ii))
-                      ii = ii + 1
-
-                      ! Finally energy gets the same update
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*dvec_pointer(ii)
-                      ii = ii + 1
+                      ii = ii + nState
                    end do
                 end do
              end do
