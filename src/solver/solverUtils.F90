@@ -1083,43 +1083,7 @@ contains
                    xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,j-1,k-1,3) + flowDoms(nn, groundLevel, sps)%x(i,j,k-1,3) &
                          +         flowDoms(nn, groundLevel, sps)%x(i,j-1,k,  3) + flowDoms(nn, groundLevel, sps)%x(i,j,k,  3))
  
-                   ! Determine the coordinates relative to the
-                   ! center of rotation.
- 
-                   xxc(1) = xc(1) - rotCenter(1)
-                   xxc(2) = xc(2) - rotCenter(2)
-                   xxc(3) = xc(3) - rotCenter(3)
- 
-                   ! Determine the rotation speed of the face center,
-                   ! which is omega*r.
- 
-                   sc(1) = rotRate(2)*xxc(3) - rotRate(3)*xxc(2)
-                   sc(2) = rotRate(3)*xxc(1) - rotRate(1)*xxc(3)
-                   sc(3) = rotRate(1)*xxc(2) - rotRate(2)*xxc(1)
- 
-                   ! Determine the coordinates relative to the
-                   ! rigid body rotation point.
- 
-                   xxc(1) = xc(1) - rotationPoint(1)
-                   xxc(2) = xc(2) - rotationPoint(2)
-                   xxc(3) = xc(3) - rotationPoint(3)
- 
-                   ! Determine the total velocity of the cell face.
-                   ! This is a combination of rotation speed of this
-                   ! block and the entire rigid body rotation.
- 
-                   sc(1) = sc(1) + velxGrid           &
-                      + derivRotationMatrix(1,1)*xxc(1) &
-                      + derivRotationMatrix(1,2)*xxc(2) &
-                      + derivRotationMatrix(1,3)*xxc(3)
-                   sc(2) = sc(2) + velyGrid           &
-                      + derivRotationMatrix(2,1)*xxc(1) &
-                      + derivRotationMatrix(2,2)*xxc(2) &
-                      + derivRotationMatrix(2,3)*xxc(3)
-                   sc(3) = sc(3) + velzGrid           &
-                      + derivRotationMatrix(3,1)*xxc(1) &
-                      + derivRotationMatrix(3,2)*xxc(2) &
-                      + derivRotationMatrix(3,3)*xxc(3)
+                   call cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
  
                    ! Store the dot product of grid velocity sc and
                    ! the normal ss in sFace.
@@ -1145,43 +1109,7 @@ contains
                    xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i-1,j,k,  3) + flowDoms(nn, groundLevel, sps)%x(i,j,k-1,3) &
                          +         flowDoms(nn, groundLevel, sps)%x(i-1,j,k-1,3) + flowDoms(nn, groundLevel, sps)%x(i,j,k,  3))
  
-                   ! Determine the coordinates relative to the
-                   ! center of rotation.
- 
-                   xxc(1) = xc(1) - rotCenter(1)
-                   xxc(2) = xc(2) - rotCenter(2)
-                   xxc(3) = xc(3) - rotCenter(3)
- 
-                   ! Determine the rotation speed of the face center,
-                   ! which is omega*r.
- 
-                   sc(1) = rotRate(2)*xxc(3) - rotRate(3)*xxc(2)
-                   sc(2) = rotRate(3)*xxc(1) - rotRate(1)*xxc(3)
-                   sc(3) = rotRate(1)*xxc(2) - rotRate(2)*xxc(1)
- 
-                   ! Determine the coordinates relative to the
-                   ! rigid body rotation point.
- 
-                   xxc(1) = xc(1) - rotationPoint(1)
-                   xxc(2) = xc(2) - rotationPoint(2)
-                   xxc(3) = xc(3) - rotationPoint(3)
- 
-                   ! Determine the total velocity of the cell face.
-                   ! This is a combination of rotation speed of this
-                   ! block and the entire rigid body rotation.
- 
-                   sc(1) = sc(1) + velxGrid           &
-                      + derivRotationMatrix(1,1)*xxc(1) &
-                      + derivRotationMatrix(1,2)*xxc(2) &
-                      + derivRotationMatrix(1,3)*xxc(3)
-                   sc(2) = sc(2) + velyGrid           &
-                      + derivRotationMatrix(2,1)*xxc(1) &
-                      + derivRotationMatrix(2,2)*xxc(2) &
-                      + derivRotationMatrix(2,3)*xxc(3)
-                   sc(3) = sc(3) + velzGrid           &
-                      + derivRotationMatrix(3,1)*xxc(1) &
-                      + derivRotationMatrix(3,2)*xxc(2) &
-                      + derivRotationMatrix(3,3)*xxc(3)
+                   call cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
  
                    ! Store the dot product of grid velocity sc and
                    ! the normal ss in sFace.
@@ -1207,43 +1135,8 @@ contains
                    xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,  j-1,k,3) + flowDoms(nn, groundLevel, sps)%x(i-1,j,k,3) &
                          +         flowDoms(nn, groundLevel, sps)%x(i-1,j-1,k,3) + flowDoms(nn, groundLevel, sps)%x(i,  j,k,3))
  
-                   ! Determine the coordinates relative to the
-                   ! center of rotation.
- 
-                   xxc(1) = xc(1) - rotCenter(1)
-                   xxc(2) = xc(2) - rotCenter(2)
-                   xxc(3) = xc(3) - rotCenter(3)
- 
-                   ! Determine the rotation speed of the face center,
-                   ! which is omega*r.
- 
-                   sc(1) = rotRate(2)*xxc(3) - rotRate(3)*xxc(2)
-                   sc(2) = rotRate(3)*xxc(1) - rotRate(1)*xxc(3)
-                   sc(3) = rotRate(1)*xxc(2) - rotRate(2)*xxc(1)
- 
-                   ! Determine the coordinates relative to the
-                   ! rigid body rotation point.
- 
-                   xxc(1) = xc(1) - rotationPoint(1)
-                   xxc(2) = xc(2) - rotationPoint(2)
-                   xxc(3) = xc(3) - rotationPoint(3)
- 
-                   ! Determine the total velocity of the cell face.
-                   ! This is a combination of rotation speed of this
-                   ! block and the entire rigid body rotation.
- 
-                   sc(1) = sc(1) + velxGrid           &
-                      + derivRotationMatrix(1,1)*xxc(1) &
-                      + derivRotationMatrix(1,2)*xxc(2) &
-                      + derivRotationMatrix(1,3)*xxc(3)
-                   sc(2) = sc(2) + velyGrid           &
-                      + derivRotationMatrix(2,1)*xxc(1) &
-                      + derivRotationMatrix(2,2)*xxc(2) &
-                      + derivRotationMatrix(2,3)*xxc(3)
-                   sc(3) = sc(3) + velzGrid           &
-                      + derivRotationMatrix(3,1)*xxc(1) &
-                      + derivRotationMatrix(3,2)*xxc(2) &
-                      + derivRotationMatrix(3,3)*xxc(3)
+                  
+                   call cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
  
                    ! Store the dot product of grid velocity sc and
                    ! the normal ss in sFace.
@@ -1258,6 +1151,65 @@ contains
     endif testMoving
 
   end subroutine gridVelocitiesFineLevel_block
+
+  subroutine cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
+   !
+   !  Returns the cell face velocities for a given face center
+   !
+   use constants
+
+   implicit none
+   !
+   !      Subroutine arguments.
+   !
+   real(kind=realType), dimension(3), intent(in) :: xc, rotCenter, rotRate
+   real(kind=realType), intent(in) :: velxGrid, velyGrid, velzGrid
+   real(kind=realType), dimension(3,3), intent(in) :: derivRotationMatrix
+   real(kind=realType), dimension(3), intent(out) :: sc
+   !
+   !      Local variables.
+   !
+   real(kind=realType), dimension(3) :: rotationPoint, xxc
+
+   ! Determine the coordinates relative to the
+   ! center of rotation.
+ 
+   xxc(1) = xc(1) - rotCenter(1)
+   xxc(2) = xc(2) - rotCenter(2)
+   xxc(3) = xc(3) - rotCenter(3)
+
+   ! Determine the rotation speed of the face center,
+   ! which is omega*r.
+
+   sc(1) = rotRate(2)*xxc(3) - rotRate(3)*xxc(2)
+   sc(2) = rotRate(3)*xxc(1) - rotRate(1)*xxc(3)
+   sc(3) = rotRate(1)*xxc(2) - rotRate(2)*xxc(1)
+
+   ! Determine the coordinates relative to the
+   ! rigid body rotation point.
+
+   xxc(1) = xc(1) - rotationPoint(1)
+   xxc(2) = xc(2) - rotationPoint(2)
+   xxc(3) = xc(3) - rotationPoint(3)
+
+   ! Determine the total velocity of the cell face.
+   ! This is a combination of rotation speed of this
+   ! block and the entire rigid body rotation.
+
+   sc(1) = sc(1) + velxGrid           &
+      + derivRotationMatrix(1,1)*xxc(1) &
+      + derivRotationMatrix(1,2)*xxc(2) &
+      + derivRotationMatrix(1,3)*xxc(3)
+   sc(2) = sc(2) + velyGrid           &
+      + derivRotationMatrix(2,1)*xxc(1) &
+      + derivRotationMatrix(2,2)*xxc(2) &
+      + derivRotationMatrix(2,3)*xxc(3)
+   sc(3) = sc(3) + velzGrid           &
+      + derivRotationMatrix(3,1)*xxc(1) &
+      + derivRotationMatrix(3,2)*xxc(2) &
+      + derivRotationMatrix(3,3)*xxc(3)
+   
+  end subroutine cellFaceVelocities
 
 #ifndef USE_TAPENADE
   subroutine slipVelocitiesFineLevel(useOldCoor, t, sps)
