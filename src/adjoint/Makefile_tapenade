@@ -239,6 +239,9 @@ solverutils%normalvelocities_block(sfacei, sfacej, sfacek, si, sj, sk, bcdata%rf
 \
 solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) > \
                                          (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) \
+\
+solverutils%cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) > \
+							  (xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) \
 "
 
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
