@@ -1646,7 +1646,7 @@ module ANKSolver
   use petsc
   implicit none
 
-  Mat  dRdw, dRdwPre
+  Mat  dRdw, dRdwPre, timeStepInv
   Vec wVec, rVec, deltaW, baseRes
   KSP  ANK_KSP
 
@@ -1780,8 +1780,12 @@ contains
             level, .False.)
        call myMatCreate(dRdwPre, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
             __FILE__, __LINE__)
-
        call matSetOption(dRdwPre, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
+       call myMatCreate(timeStepInv, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+            __FILE__, __LINE__)
+       call matSetOption(timeStepInv, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
        call EChk(ierr, __FILE__, __LINE__)
        deallocate(nnzDiagonal, nnzOffDiag)
 
@@ -1982,31 +1986,7 @@ contains
     blk = zero
 
     if (.not. ANK_coupled) then
-       ! For the decoupled solver, only calculate the time step for flow variables
-       do nn=1, nDom
-          do sps=1, nTimeIntervalsSpectral
-             call setPointers(nn,1_intType,sps)
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                      call computeTimeStepMatrix(i, j, k, blk)
-
-                      ! Get the global cell index
-                      irow = globalCell(i, j, k)
-
-                      if (useCoarseMats) then
-                         do lvl=1, agmgLevels-1
-                            coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
-                         end do
-                      end if
-
-                      ! Add the contribution to the matrix in PETSc
-                      call setBlock()
-                   end do
-                end do
-             end do
-          end do
-       end do
+       call computeTimeStepInv()
     else
        ! For the coupled solver, CFL number for the turbulent variable needs scaling
        ! because the residuals are scaled, and additional scaling of the time step
@@ -2105,6 +2085,10 @@ contains
        end do
     end if
 
+    ! Add time step matrix
+    call MatAXPY(dRdwPre, one, timeStepInv, SUBSET_NONZERO_PATTERN, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
     if (PreCondType == 'asm') then
        ! Run the super-dee-duper function to setup the ksp object:
 
@@ -2147,11 +2131,82 @@ contains
     end subroutine setBlock
   end subroutine FormJacobianANK
 
-  subroutine computeTimeStepMatrix(i, j, k, timeStepMatrix, cellState)
-     ! Computes the inverse time step matrix for a given cell i, j, k.
-     ! By default, w(i,j,k) is used as the state vector.
-     ! Optionally, a cellState vector can be provided to manually define the states.
-     ! cellState is used to provide the previous states in the unsteady residual computation.
+  subroutine computeTimeStepInv()
+    ! Loops through all cells and constructs the full inverse time step matrix.
+
+    use constants
+    use blockPointers, only : nDom, il, jl, kl, globalCell
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputIteration, only : turbResScale
+    use inputADjoint, only : precondtype
+    use utils, only : EChk, setPointers
+    use agmg, only : agmgLevels, coarseIndices, A
+    implicit none
+
+    ! Local Variables
+    character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
+    integer(kind=intType) ::ierr
+    integer(kind=intType) :: i, j, k, irow, nn, sps, lvl
+    integer(kind=intType), dimension(2:10) :: coarseRows
+    real(kind=realType), dimension(nState, nState) :: timeStepBlock
+    logical :: useCoarseMats
+
+    if (preCondType == 'mg') then
+       useCoarseMats = .True.
+    else
+       useCoarseMats = .False.
+    end if
+
+    ! Zero out the time step matrix before we start
+    call MatZeroEntries(timeStepInv, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+    ! For the decoupled solver, only calculate the time step for flow variables
+    do nn=1, nDom
+       do sps=1, nTimeIntervalsSpectral
+          call setPointers(nn,1_intType,sps)
+          do k=2, kl
+             do j=2, jl
+                do i=2, il
+                   call computeTimeStepBlock(i, j, k, timeStepBlock)
+
+                   ! Get the global cell index
+                   irow = globalCell(i, j, k)
+
+                   if (useCoarseMats) then
+                      do lvl=1, agmgLevels-1
+                         coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
+                      end do
+                   end if
+
+                  ! Add the contribution to the PETSc matrix
+                  call MatSetValuesBlocked(timeStepInv, 1, irow, 1, irow, timeStepBlock, ADD_VALUES, ierr)
+                  call EChk(ierr, __FILE__, __LINE__)
+
+                  ! Extension for setting coarse grids:
+                  if (useCoarseMats) then
+                     do lvl=2, agmgLevels
+                        call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
+                           timeStepBlock, ADD_VALUES, ierr)
+                     end do
+                  end if
+
+                end do
+             end do
+          end do
+       end do
+    end do
+
+    ! PETSc Matrix Assembly
+    call MatAssemblyBegin(timeStepInv, MAT_FINAL_ASSEMBLY, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+    call MatAssemblyEnd  (timeStepInv, MAT_FINAL_ASSEMBLY, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
+  end subroutine computeTimeStepInv
+
+  subroutine computeTimeStepBlock(i, j, k, timeStepBlock)
+     ! Computes the inverse time step block matrix for a given cell i, j, k.
 
      use constants
      use blockPointers, only : volRef, w, dtl, gamma, p, aa
@@ -2161,10 +2216,9 @@ contains
 
      ! Input variables
      integer(kind=intType), intent(in) :: i, j, k
-     real(kind=realType), intent(in), optional, dimension(nState) :: cellState
 
      ! Output variables
-     real(kind=realType), dimension(nState,nState), intent(out) :: timeStepMatrix
+     real(kind=realType), dimension(nState,nState), intent(out) :: timeStepBlock
 
      ! Local variables
      real(kind=realType) :: dtInv, rho, velX, velY, velZ
@@ -2173,7 +2227,7 @@ contains
      real(kind=realType), dimension(nState,nState) :: PSymmStreamInv, streamToCart, symmToCons, consToSymm, stateToCons
 
      ! Zero the block matrices
-     timeStepMatrix = zero
+     timeStepBlock = zero
      stateToCons = zero
      PSymmStreamInv = zero
      streamToCart = zero
@@ -2181,17 +2235,10 @@ contains
      consToSymm = zero
 
      ! Save density and velocity components for convenience
-     if (present(cellState)) then
-        rho = cellState(iRho)
-        velX = cellState(ivx)
-        velY = cellState(ivy)
-        velZ = cellState(ivz)
-     else
-        rho = w(i,j,k,iRho)
-        velX = w(i,j,k,ivx)
-        velY = w(i,j,k,ivy)
-        velZ = w(i,j,k,ivz)
-     end if
+     rho = w(i,j,k,iRho)
+     velX = w(i,j,k,ivx)
+     velY = w(i,j,k,ivy)
+     velZ = w(i,j,k,ivz)
 
      ! Calculate one over time step for this cell.
      ! Multiply dtl by cell volume to get the time step required for a CFL of one,
@@ -2298,20 +2345,20 @@ contains
         consToSymm(5, iRhoE) = gammaMinusOne
 
         ! Construct the time step matrix
-        timeStepMatrix = PSymmStreamInv * dtInv
-        timeStepMatrix = MATMUL(streamToCart, timeStepMatrix)
-        timeStepMatrix = MATMUL(timeStepMatrix, TRANSPOSE(streamToCart))
-        timeStepMatrix = MATMUL(symmToCons, timeStepMatrix)
-        timeStepMatrix = MATMUL(timeStepMatrix, consToSymm)
-        timeStepMatrix = MATMUL(timeStepMatrix, stateToCons)
+        timeStepBlock = PSymmStreamInv * dtInv
+        timeStepBlock = MATMUL(streamToCart, timeStepBlock)
+        timeStepBlock = MATMUL(timeStepBlock, TRANSPOSE(streamToCart))
+        timeStepBlock = MATMUL(symmToCons, timeStepBlock)
+        timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+        timeStepBlock = MATMUL(timeStepBlock, stateToCons)
 
      else
 
-        timeStepMatrix = stateToCons * dtInv
+        timeStepBlock = stateToCons * dtInv
 
      end if
 
-  end subroutine computeTimeStepMatrix
+  end subroutine computeTimeStepBlock
 
   subroutine FormJacobianANKTurb
 
@@ -2516,36 +2563,6 @@ contains
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-
-                      ! Update the first entry in this block, corresponds to
-                      ! density. Also save this density value.
-                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
-                      rho = wvec_pointer(ii)
-                      iirho = ii
-                      ii = ii + 1
-
-                      ! updates 2nd-4th are velocities. They need to get converted
-                      ! to momentum residuals.
-
-                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                           wvec_pointer(ii)*invec_pointer(iiRho)+&
-                           rho * invec_pointer(ii))
-                      ii = ii + 1
-
-                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                           wvec_pointer(ii)*invec_pointer(iiRho)+&
-                           rho * invec_pointer(ii))
-                      ii = ii + 1
-
-                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                           wvec_pointer(ii)*invec_pointer(iiRho)+&
-                           rho * invec_pointer(ii))
-                      ii = ii + 1
-
-                      ! Finally energy gets the same update
-                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
-                      ii = ii + 1
                    end do
                 end do
              end do
@@ -2605,6 +2622,10 @@ contains
           end do
        end do
     end if
+
+    ! Multiply the perturbed state by the time step terms and add it to the residual
+    call MatMultAdd(timeStepInv, inVec, rVec, rVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
     call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -2736,6 +2757,12 @@ contains
     real(kind=realType), dimension(nState,nState) :: timeStepMatrix
     real(kind=realType), dimension(nState) :: wPrev
 
+    ! Allocate a PETSc vector like deltaW for intermediate computations
+    Vec unsteadyVec
+
+    call VecDuplicate(deltaW, unsteadyVec, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+
     ! Calculate the steady residuals
     call blocketteRes(useTurbRes=ANK_coupled)
     call setRVecANK(rVec)
@@ -2763,14 +2790,6 @@ contains
              do k=2, kl
                 do j=2, jl
                    do i=2, il
-                      ! Compute the states in the previous nonlinear iteration
-                      wPrev = w(i,j,k,(/iRho,ivx,ivy,ivz,iRhoE/)) + omega*dvec_pointer(ii:ii+nState-1)
-
-                      ! Add the contribution from the time stepping term
-                      call computeTimeStepMatrix(i, j, k, timeStepMatrix, wPrev)
-                      rvec_pointer(ii:ii+nState-1) = rvec_pointer(ii:ii+nState-1) &
-                        - omega * MATMUL(timeStepMatrix, dvec_pointer(ii:ii+nState-1))
-
                       ii = ii + nState
                    end do
                 end do
@@ -2840,6 +2859,14 @@ contains
           end do
        end do
     end if
+
+    ! Multiply the delta by the time step terms
+    call MatMult(timeStepInv, deltaW, unsteadyVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! Add unsteady term to the steady residual
+    call VecAXPY(rVec, -omega, unsteadyVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
 
     call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)
@@ -4214,6 +4241,9 @@ contains
       ANK_iter = -1
       lambda = zero
     end if
+
+    ! Update the inverse time-step matrix
+    call computeTimeStepInv()
 
     ! Update the approximate iteration counter. The +1 is for the
     ! residual evaluations.
