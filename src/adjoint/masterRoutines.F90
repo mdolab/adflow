@@ -473,12 +473,9 @@ contains
           ISIZE1OFDrfviscsubface = nViscBocos
 
           call timeStep_block_d(.false.)
-
-          call initRes_block_d(1, nw, nn, sps)
-
+          
           ! initalize the residuals for this block 
-          ! dw = zero
-          ! dwd = zero
+          call initRes_block_d(1, nw, nn, sps)
           
           ! Compute any source terms
           do iRegion=1, nActuatorRegions
