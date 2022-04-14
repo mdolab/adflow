@@ -335,7 +335,10 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             # this will happen when training, but will hopefully be fixed down the line
             return
 
-        rtol = 1e-8
+        if self.name == "Rotating_wing":
+            rtol = 2e-6
+        else:
+            rtol = 1e-8
         atol = 5e-10
 
         for dv in ["alpha", "mach"]:  # defaultAeroDVs:
@@ -377,7 +380,10 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
 
         xRef = {"twist": [0.0] * 6, "span": [0.0], "shape": numpy.zeros(72, dtype="D")}
 
-        rtol = 5e-9
+        if self.name == "Rotating_wing":
+            rtol = 4e-6
+        else:
+            rtol = 5e-9
         atol = 5e-9
 
         for dv in ["span", "twist", "shape"]:
