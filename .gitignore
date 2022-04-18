@@ -23,6 +23,7 @@ src/build/adflow_project.dep
 src/build/libadflow-f2pywrappers2.f90
 src/build/libadflowmodule.c
 src/build/importTest.py
+src/build/version.f90
 
 # Regression test auxiliary files:
 input_files.tar.gz

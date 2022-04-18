@@ -5,6 +5,7 @@ dirs:=	adjoint\
 	adjoint/ADFirstAidKit\
 	ADT\
 	bcdata\
+	build\
 	initFlow\
 	inputParam\
 	NKSolver\
