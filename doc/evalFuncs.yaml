@@ -1,0 +1,1262 @@
+gridFile:
+  desc: >
+    This is the grid file to use.
+    It must be a multiblock structured or overset CGNS file containing all block-to-block information and boundary condition information.
+
+restartFile:
+  desc: >
+    Accepts a single string or a list of strings pointing to a CGNS file(s) which must be a volume solution file that was written by ADflow.
+    For steady state restart, one CGNS file is sufficient and does not need to be provided as a list with a single item.
+    For unsteady restart, you typically provide a list with 2 items for second order restart.
+
+meshSurfaceFamily:
+  desc: >
+    This is a custom family that can be defined to identify the surface mesh to ADflow.
+    This variable is used to set ``self.meshFamilyGroup`` in pyADflow.
+    If None, all wall surfaces are used as the surface mesh.
+    This information is later used for mesh warping and surface output related operations.
+
+designSurfaceFamily:
+  desc: >
+    This is the custom family that is used to define what part of the surface mesh is the "design" surface, meaning that the surface might be modified geometrically.
+    This variable is used to set ``self.designFamilyGroup`` in pyADflow.
+    If None, all wall surfaces are used as the design surface.
+    This can be useful when you want to distinguish between regular surface nodes and design surface nodes.
+    The regular nodes will not change as the design is updated, but they are still included in ``meshFamilyGroup`` for mesh warping purposes.
+
+closedSurfaceFamilies:
+  desc: >
+    This is the set of surfaces that form a closed surface.
+    This information is used in the overset initialization to figure out the wall cells.
+    If None, all wall surfaces are used.
+
+storeRindLayer:
+  desc: >
+    Flag to write halo or "rind cell" information into CGNS files.
+    This is required for some postprocessors (such as Tecplot) to compute contour lines correctly.
+
+storeConvHist:
+  desc: >
+    Flag to save convergence history information into fortran arrays.
+    This data can be accessed after the solve using `getConvergenceHistory`.
+
+outputDirectory:
+  desc: >
+    Directory where output files are written.
+
+outputSurfaceFamily:
+  desc: >
+    The family included in surface output files.
+
+writeSurfaceSolution:
+  desc: >
+    Flag to write surface solution (automatically) after the end of each solution call.
+
+writeVolumeSolution:
+  desc: >
+    Flag to write volume solution (automatically) after the end of each solution call.
+
+writeTecplotSurfaceSolution:
+  desc: >
+    Flag to write a surface output in Tecplot format.
+    This can be useful because it requires less tweaking in Tecplot to get the end result.
+    This also includes the zipper mesh and only the active overset cells if a zipper mesh was created.
+
+writeSolutionEachIter:
+  desc: >
+    Flag to write solution files after every nonlinear solver iteration.
+    The solution files written depend on `writeTecplotSurfaceSolution`, `writeVolumeSolution`, and `writeSurfaceSolution`.
+    This useful when debugging or developing the solver.
+
+nSaveVolume:
+  desc: >
+    When running unsteady simulations, the volume output will be written every this many unsteady iterations.
+
+nSaveSurface:
+  desc: >
+    When running unsteady simulations, the surface output will be written every this many unsteady iterations.
+
+solutionPrecision:
+  desc: >
+    The precision used when writing volume solution files.
+  single: >
+    This is the best option if you are not planning on using restart files.
+    The output files will be half the size, and the accuracy should be enough for visualization purposes.
+  double: This is best used for restart files.
+
+gridPrecision:
+  desc: >
+    The precision used when writing the volume mesh in volume output files.
+  single: This is not typically used.
+  double: This is preferred, especially for RANS grids because lower precision can adversely affect the cells in the boundary layer.
+
+solutionPrecisionSurface:
+  desc: >
+    The precision used when writing surface solution files.
+  single: >
+    This results in a smaller file at the cost of accuracy.
+    The accuracy should be enough for visualization purposes.
+  double: This is preferred for running numerical analyses using the data from the output files.
+
+gridPrecisionSurface:
+  desc: >
+    The precision used when writing the surface mesh in surface output files.
+  single: >
+    This results in a smaller file at the cost of accuracy.
+    The accuracy should be enough for visualization purposes.
+  double: This is preferred for running numerical analyses using the data from the output files.
+
+isosurface:
+  desc: >
+    Dictionary specifying the type and values to be used for isosurfaces.
+    Any of the ``volumeVariables`` may be used.
+    An example dictionary is : ``{"Vx":-0.001, "shock":1.0}``.
+    This will place an isosurface at (essentially) 0 x-velocity and an isosurface at the shock sensor value of 1 (used to visualize the shock region).
+
+isoVariables:
+  desc: >
+    The state variables to be included on the isosurfaces requested with the :py:data:`isosurface` option.
+
+viscousSurfaceVelocities:
+  desc: >
+    Only applicable for RANS and laminar NS computations.
+    Write surface velocities as the value on the first cell off the wall.
+    This means that the velocities on the surface will not be zero as enforced by the boundary conditions.
+    This option enables postprocessing software to compute oil-flow surface streamline patterns.
+
+discretization:
+  desc: >
+    Set the discretization method.
+    The default is generally recommended for both robustness and speed, at the cost of numerical accuracy.
+  central plus scalar dissipation: Uses a central finite volume scheme with JST scalar dissipation.
+  central plus matrix dissipation: >
+    Uses a central finite volume scheme with JST matrix dissipation.
+    This scheme may be beneficial for poor meshes but might show minimal improvements on pyHyp meshes for a well posed problem.
+    For convergence issues try lowering ``vis4`` to 0.1 and lowering the CFL number.
+  upwind: Uses an upwind scheme.
+
+coarseDiscretization:
+  desc: >
+    Set the discretization method for the coarse grid.
+    Generally should be the same as the :py:data:`discretization` option.
+  central plus scalar dissipation: Uses a central finite volume scheme with JST scalar dissipation.
+  central plus matrix dissipation: >
+    Uses a central finite volume scheme with JST matrix dissipation.
+    This scheme may be beneficial for poor meshes but might show minimal improvements on pyHyp meshes for a well posed problem.
+    For convergence issues try lowering ``vis4`` to 0.1 and lowering the CFL number.
+  upwind: Uses an upwind scheme.
+
+limiter:
+  desc: >
+    Type of flux limiter to use for the ``upwind`` scheme.
+  van Albada: van Albada
+  minmod: Minmod
+  no limiter: No limiter
+
+smoother:
+  desc: >
+    Type of smoother to use with the multigrid solver.
+  Runge-Kutta: Five-stage fourth-order low-memory explicit Runge–Kutta time stepping scheme.
+  DADI: >
+    Diagonalized diagonally dominant alternating direction implicit (D3ADI) scheme.
+    This is typically faster than the Runge-Kutta scheme but may be less robust.
+
+equationType:
+  desc: >
+    The type of equations to solve.
+  Euler: Euler
+  laminar NS: laminar Navier-Stokes
+  RANS: Reynolds-averaged Navier-Stokes
+
+equationMode:
+  desc: >
+    The temporal mode of the equations to solve.
+  steady: Extensively tested
+  unsteady: Not well tested
+  time spectral: Extensively tested
+
+flowType:
+  desc: >
+    Type of flow simulation.
+  external: Extensively tested
+  internal: Not well tested
+
+turbulenceModel:
+  desc: >
+    The turbulence model to use for RANS simulations.
+  SA: >
+    Spalart-Allmaras.
+    This is the recommended option for external aerodynamic flow applications because it is the only turbulence model that has been differentiated.
+    This is also the only turbulence model that is tested.
+  SA-Edwards: Spalart-Allmaras with Edwards Modification
+  k-omega Wilcox: Wilcox k-omega
+  k-omega modified: Wilcox modified k-omega
+  k-tau: k-tau
+  Menter SST: Menter SST k-omega
+  v2f: v2-f
+
+turbulenceOrder:
+  desc: >
+    The numerical order of accuracy of the turbulence model.
+  first order: The recommended approach because the adjoint systems are much easier to solve with the first order discretization
+  second order: Not typically used
+
+turbResScale:
+  desc: >
+    This parameter affects how the total residual is scaled.
+    It is set automatically, depending on what turbulence model you select.
+    The defaults are usually sufficient.
+    Depending on the turbulence model, values can be a float scalar to a 4 element list of floats.
+    Refer to the list below for the defaults and the type of input expected:
+
+      * ``SA`` - Type: float scalar - Default: 10e4
+      * ``SA-Edwards`` - NOT IMPLEMENTED
+      * ``k-omega Wilcox`` - NOT IMPLEMENTED
+      * ``k-omega modified`` - NOT IMPLEMENTED
+      * ``k-tau`` - NOT IMPLEMENTED
+      * ``Menter SST`` - Type: float list of 2 elements - Default: [1e3, 1e-6]
+      * ``v2f`` - NOT IMPLEMENTED
+
+turbulenceProduction:
+  desc: >
+    How to compute the production term in the turbulent kinetic energy equation (k equation).
+    Only valid for turbulence models that involve k.
+  strain: Use the strain formulation
+  vorticity: Use the vorticity formulation
+  Kato-Launder: Use the Kato-Launder formulation
+
+useQCR:
+  desc: >
+    Use the QCR2000 version of the Spalart-Allmaras turbulence model.
+
+useRotationSA:
+  desc: >
+    Use the rotation correction with the Spalart-Allmaras turbulence model.
+
+useft2SA:
+  desc: >
+    Include the ft2 term in the Spalart-Allmaras turbulence model.
+
+eddyVisInfRatio:
+  desc: >
+    Free stream value of eddy viscosity.
+    See `here <https://turbmodels.larc.nasa.gov/spalart.html>`__ for more details.
+
+useWallFunctions:
+  desc: >
+    Flag specifying if wall functions are to be used.
+    This is generally not recommended since they give (potentially very) poor drag estimates.
+    Furthermore, the required routines are not differentiated, so wall function simulations cannot be used for optimization.
+
+useApproxWallDistance:
+  desc: >
+    Flag to use a cheap wall distance calculation.
+    When True, the exact wall distances are computed during initialization and the parametric location of the closest wall point is stored for each cell.
+    After the geometry deforms (such as during an optimization) the spatial search algorithm is not run, but the distance between the (new) parametric location and the (new) grid cell center is computed and taken as the wall distance.
+    This is substantially faster and permits efficient wall-distance updates for use in aerostructural analysis.
+
+eulerWallTreatment:
+  desc: >
+    Specifies how wall boundary conditions are implemented for inviscid simulations.
+    Generally, the default value does not need to be changed.
+  linear pressure extrapolation: Known to work with the adjoint method
+  constant pressure extrapolation: Known to work with the adjoint method
+  quadratic pressure extrapolation: Not tested
+  normal momentum: Not tested
+
+viscWallTreatment:
+  desc: >
+    Specifies how wall boundary conditions are implemented for viscous simulations.
+    Generally, the default value does not need to be changed.
+  linear pressure extrapolation: Not typically used
+  constant pressure extrapolation: Standard
+
+dissipationScalingExponent:
+  desc: >
+    Exponent factor to use in the JST dissipation scheme.
+    This value typically will not need to be changed from the default.
+    The value of 2/3 is the theoretical best value assuming an orthogonal 3-dimensional grid.
+
+vis4:
+  desc: >
+    Coefficient of the fourth order dissipation used in the scalar and matrix JST dissipation scheme.
+    The default value is generally recommended if a converged solution can be obtained.
+    It may be raised slightly in the range of 0.02-0.025 which may help achieve better convergence properties at the expense of numerical accuracy.
+
+vis2:
+  desc: >
+    Coefficient of the second order dissipation used in the scalar and matrix JST dissipation schemes.
+    This dissipation is only turned on at shocks, and thus may be set to 0.0 if the user knows a simulation will be entirely subsonic.
+
+vis2Coarse:
+  desc: >
+    The value of ``vis2`` used for the coarse grid.
+    This is typically larger than ``vis2``.
+    The default value of 0.5 is usually sufficient for most cases.
+
+restrictionRelaxation:
+  desc: >
+    The relaxation factor for the restriction operation in multigrid.
+    The value must be between 0.0 and 1.0.
+    A value of 1.0 will not perform any relaxation.
+    On some problems, this may be faster, while slower on others.
+    The default value of 0.80 appears to work well for a wide variety of cases.
+
+liftIndex:
+  desc: >
+    Specify the coordinate index that will be considered the lift direction.
+  2: y-axis
+  3: z-axis
+
+lowSpeedPreconditioner:
+  desc: >
+    Whether or not to use the low-speed preconditioner.
+    This was previously used for very low Mach number cases but has been phased out in favor of the ANK solver.
+
+wallDistCutoff:
+  desc: >
+    The cutoff value for distance where we stop computing the wall distance.
+    For nodes that are farther than this distance away from any surface, the wall distance is set to a large constant.
+
+infChangeCorrection:
+  desc: >
+    Useful option.
+    Setting this to True will adjust the flowfield everywhere if the angle of attack changes between optimization iterations.
+    The idea is that when the angle of attack is changed after a converged simulation, the residuals can stay low since this value only initially affects the residuals of the farfield boundary cells.
+    As a result, the solver logic can do weird stuff because it is often based on the L2 norm of the residual.
+    If this option is set to True, we do a simple linear adjustment of every velocity vector in the solution with the same change in alpha.
+    As a result, the residuals jump up and the solver logic works as designed.
+    This supersedes the :py:data:`RKReset` approach.
+
+cavitationNumber:
+  desc: >
+    The -Cp value used to trigger the cavitation sensor.
+
+nCycles:
+  desc: >
+    The maximum number of "iterations" to run.
+    Iterations are counted differently for the different solvers.
+    For the multigrid solver, this refers to the number of multigrid cycles on the fine grid.
+    For the ANK solver, this refers to the number of steps plus the number of KSP iterations.
+    For the NK solver, this refers to the number of function evalautions either for matrix-vector products or during a line search.
+    Each function evaluation corresponds roughly to single residual evaluation.
+    The run will terminate once the combined number of iterations exceeds ``nCycles``.
+
+timeLimit:
+  desc: >
+    If set to a positive value, this is the maximum number of seconds that the solver will run.
+    The mechanism to trigger this internally is by setting the total number of iterations to the max number, so the solver will say analysis failed.
+    It is up to the user to use this and manage the fail flags.
+    This option can be useful when some cases take extremely long in optimizations, and we are okay with just calling it quits and going back to the line search.
+
+nCyclesCoarse:
+  desc: >
+    The maximum number of iterations to run on the coarse grid when performing a full-multigrid start-up procedure.
+
+nSubiterTurb:
+  desc: >
+    The number of iterations of the turbulent DADI solver to run.
+    Only meaningful for RANS simulations.
+    Increasing this parameter to 5-7 may lower the overall solution time for some cases.
+
+nSubiter:
+  desc: >
+    Number of RK or D3ADI iterations to perform in each nonlinear iteration (between turbulence updates).
+    This does not do anything for the NK or ANK solvers.
+
+CFL:
+  desc: >
+    The Courant–Friedrichs–Lewy (CFL) number to use for the Runge-Kutta simulations.
+    This is the main parameter that determines the overall speed and robustness of RK simulations.
+    Lower CFL numbers give more robust solutions but are slower.
+    The default value of 1.5 is a good place to start.
+    Some experimentation is usually required to determine the maximum CFL for a particular simulation.
+
+CFLCoarse:
+  desc: >
+    The CFL number to use on the coarse grids of the multigrid simulations.
+    It is often desirable to have this number somewhat lower than the CFL number of the fine grid.
+
+MGCycle:
+  desc: >
+    The type of multigrid cycle to use.
+    The dimensions of the grid must be such that the requested multigrid level is possible.
+    To run a single grid simulation (no multigrid) use ``sg``.
+    To run 3 multigrid levels with a 'w' cycle use ``3w``.
+    To use a 'v' cycle use ``3v``, and so on.
+
+MGStartLevel:
+  desc: >
+    Specify the starting grid level.
+    This is used to perform a "full multigrid startup" procedure.
+    This can lead to significantly reduced simulation times since a good starting point can be obtained from approximate solutions on the coarser grids.
+    A ``-1`` indicates that the coarsest grid level should be used.
+    For RANS simulations, it is often not possible to start on the coarsest grid, especially if the coarse grid has very few cells.
+    This should be ``1`` for an unsteady simulation.
+
+resAveraging:
+  desc: >
+    How frequently to perform residual averaging (also known as residual smoothing) for the RK solver.
+  never: Never
+  always: On every RK stage
+  alternate: >
+    On every second RK stage.
+    This saves computation but with minimal impact on the convergence properties.
+
+smoothParameter:
+  desc: >
+    Parameter used in residual smoothing.
+    This value will typically not need to be changed from the default.
+
+CFLLimit:
+  desc: >
+    The maximum CFL that can be run without residual smoothing.
+    If the actual CFL is lower than this, no smoothing will be applied, regardless of the :py:data:`resAveraging` option.
+
+useBlockettes:
+  desc: >
+    Helps speed up residual calculations by working with a smaller subset of data, reducing the number of cache misses.
+    These subsets of data are fractions of the initial block size and thus are called blockettes.
+    The amount of speedup is problem dependent but ranges from 2-3 times.
+    This option has not been exhaustively tested and has been found to cause errors in the past.
+    Verify that it does not change your results.
+
+useLinResMonitor:
+  desc: >
+    Enables the linear residual monitor for the NK and ANK solvers.
+    The output should look like the linear residual output from the adjoint solver.
+
+nearWallDist:
+  desc: >
+    Distance used to determine if a cell will be flagged as "nearWall".
+
+backgroundVolScale:
+  desc: >
+    A factor that modifies the perceived quality of background cells.
+    A higher value will discourage use of the background mesh during implicit hole cutting.
+
+oversetProjTol:
+  desc: >
+    Tolerance used when projecting search points onto the surface definition of a block.
+
+overlapFactor:
+  desc: >
+    How much to derate cell volumes when looking for a donor.
+    The value should be less than 1.0.
+    For example, with an overlap factor of 0.9, a cell with volume 1.0 will not get a cell with volume 0.99 as a donor because 0.99 is greater than 1.0 multiplied by the overlap factor.
+    This is designed to create smoother cuts in an overlap region with very similar cell sizes.
+    Changing the overlap factor generally does not change the overlap much because there are checks for ensuring you have valid donors.
+
+oversetLoadBalance:
+  desc: >
+    Toggle whether to use load balancing for the implicit hole cutting connectivity algorithm.
+    Results with and without load balancing are shown in "An Efficient Parallel Overset Method for Aerodynamic Shape Optimization" (Kenway2017a).
+
+debugZipper:
+  desc: >
+    Toggles verbose printing and writing of information that is useful for debugging issues with the zipper mesh.
+
+zipperSurfaceFamily:
+  desc: >
+    Surface families to use when creating the zipper meshes .
+
+cutCallback:
+  desc: >
+    A user-provided Python function that is used to explicitly blank a number of cells based on whatever pattern the user requires.
+    A typical use case for this is to blank the cells that are on the wrong side of the symmetry plane.
+    The mesh extrusion for a component with free edges may actually go to the other side of the symmetry plane, and we want to explicitly remove these cells from the overset mesh.
+    To do this, ADflow internally sets the flagged cells as a flood seed cell.
+    The ``cutCallback`` function is called from pyADflow and the user filled array ``flags`` is used to determine which cells are flagged.
+    The function signature looks like this:
+
+      .. code-block:: python
+
+        def cutCallback(xCen, CGNSZoneNameIDs, cellIDs, flags):
+           flags[xCen[:, 1] < 0] = 1
+
+    The user would then provide this in the option dictionary as: ``"cutCallback": cutCallback``.
+    The ``xCen`` array returns the center coordinates of the cells.
+    ``CGNSZoneNameIDs`` and ``cellIDs`` can also be used to figure out the blanking pattern.
+    ``flags`` is the NumPy array we fill and return back to pyADflow.
+
+    In this example, we have a symmetry plane on the x-z surface, and we want to only use the +y half of the 3D coordinate system.
+    Therefore, we are flagging every cell where the y-component of the center coordinate (index 0:x, 1:y, 2:z) has a negative value.
+    The flags array is initialized to zero internally by pyADflow, and a value of 1 for a cell tags it for flooding.
+
+oversetUpdateMode:
+  desc: >
+    How to update the overset connectivity after mesh warping.
+  frozen: >
+    The overset connectivity is not updated after initialization.
+    This is the cheapest option to use when the entire overset mesh is warped together, such as with USMesh in IDWarp.
+  fast: >
+    Only the weights are updated and the donors are unchanged.
+    This is usually a fairly small correction and is fast to run.
+    This is used when the entire overset mesh is warped together, such as with USMesh in IDWarp.
+  full: >
+    The overset connectivity is recomputed from stratch.
+    This is usually only used when the component meshes are warped independently, such as with MultiUSMesh in IDWarp.
+
+nRefine:
+  desc: >
+    The maximum number of refinement loop iterations used in the implicit hole cutting method.
+
+nFloodIter:
+  desc: >
+    Number of iterations for the flooding algorithm at each overset hole cutting iteration.
+    Only useful for debugging meshes that flood completely on the first iteration of the overset.
+    The default is set to -1, which will be inactive and run the flooding algorithm until the flooded cells stop changing.
+    Setting a positive integer value will stop the flooding algorithm at the prescribed number of iterations.
+
+useZipperMesh:
+  desc: >
+    Determine whether a zipper mesh will be used.
+    Zipper meshes are required to accurately compute integrated quantities (such as lift and drag) when the surface meshes of interest overlap.
+
+useOversetWallScaling:
+  desc: >
+    Modifies the perceived quality of cells during implicit hole cutting to favor cells that are aligned with viscous walls.
+
+selfZipCutoff:
+  desc: >
+    The cutoff angle in degrees used in the self-zip step of the zipper mesh gap triangulation.
+    Triangulation is triggered if the angle between adjacent substrings is less than the cutoff.
+    This value is only used for the first self-zip iteration at each node.
+    The cutoff angle is 90 degrees for all subsequent iterations.
+
+oversetPriority:
+  desc: >
+    Modifies the perceived quality of cells in block.
+    The dictionary keys are the block IDs, and the values are the multipliers for quality.
+    A higher factor will discourage use of that block mesh.
+    A lower factor will encourage the usage of that block mesh.
+    This option may be required to get the flooding algorithm working properly.
+
+timeIntegrationScheme:
+  desc: >
+    The type of time integration scheme to use for unsteady analysis.
+  BDF: >
+    Backward differentiation formula (BDF).
+    Second order BDF is currently the only option known to work.
+  explicit RK: Explicit Runge-Kutta
+  implicit RK: Implicit Runge-Kutta
+
+timeAccuracy:
+  desc: >
+    Order of accuracy of the time integration scheme.
+  1: First order
+  2: Second order
+  3: Third order
+
+nTimeStepsCoarse:
+  desc: >
+    Number of time steps to be done on the coarse mesh.
+    Only useful for periodic problems where full multigrid can be performed.
+
+nTimeStepsFine:
+  desc: >
+    Number of time steps to run in an unsteady simulation.
+
+deltaT:
+  desc: >
+    Time step to use for unsteady simulation.
+
+useALE:
+  desc: >
+    Use the arbitrary Lagrangian-Eulerian (ALE) formulation for unsteady mesh deformations.
+
+useExternalDynamicMesh:
+  desc: >
+    Use externally provided deformed mesh for the time spectral equation. Each time instance gets its own deformed grid. This can be used for both an aerodynamic case or an aeroelastic case.
+
+useTSInterpolatedGridVelocity:
+  desc: >
+    Use spectral differentiation to compute the grid velocity for the time spectral equation.
+
+useGridMotion:
+  desc: >
+    Whether or not a rigid body motion of the grid has been specified.
+
+coupledSolution:
+  desc: >
+    Flag that determines if ADflow is coupled to other solvers, but only in unsteady mode.
+    Previously used for aerothermoelastic analysis.
+
+timeIntervals:
+  desc: >
+    The number of "spectral instances" to use for a time spectral simulation.
+    This option is only meaningful when :py:data:`equationMode` is ``time spectral``.
+
+alphaMode:
+  desc: >
+    Use a specified alpha motion for the time spectral analysis.
+
+betaMode:
+  desc: >
+    Use a specified beta motion for the time spectral analysis. Untested.
+
+machMode:
+  desc: >
+    Use a specified Mach number motion for the time spectral analysis. Untested.
+
+pMode:
+  desc: >
+    Use a specified p-motion (roll) for the time spectral analysis. Untested.
+
+qMode:
+  desc: >
+    Use a specified q-motion (pitch) for the time spectral analysis.
+
+rMode:
+  desc: >
+    Use a specified r-motion (yaw) for the time spectral analysis. Untested.
+
+altitudeMode:
+  desc: >
+    Use a specified h-variation motion for the time spectral analysis. Untested.
+
+windAxis:
+  desc: >
+    The wind axis used for time spectral stability derivative computations.
+
+alphaFollowing:
+  desc: >
+    Whether or not alpha follows the body in p, q, r mode.
+
+TSStability:
+  desc: >
+    Flag to compute time spectral stability information from a time-spectral CFD solution.
+
+L2Convergence:
+  desc: >
+    This specifies the desired convergence factor.
+    For the multigrid solver, this is taken relative to the initial residual on the fine grid.
+    Since this prolonged solution may be a fairly good starting point, the actual convergence relative to the freestream residual may be 1 to 2 orders of magnitudes lower.
+    For the NK solver, this option also determines the convergence, but the reference is taken as the freestream residual.
+
+L2ConvergenceRel:
+  desc: >
+    This option is typically only used when ADflow is used in conjunction with an aerostructural solver.
+    This specifies the relative tolerance in relation to the current starting point.
+
+L2ConvergenceCoarse:
+  desc: >
+    The convergence factor on the coarse grids during multigrid startup.
+    Most of the benefits of the start-up procedure is obtained after converging between 2 and 3 orders of magnitude so this option is typically 1e-2 to 1e-3.
+
+maxL2DeviationFactor:
+  desc: >
+    If the solver runs out of iterations, the maximum factor the residual can be above the target residual (determined by ``L2Convergence``) and still be considered "converged".
+
+useNKSolver:
+  desc: >
+    Flag to turn on the Newton–Krylov (NK) solver.
+    If False, the remainder of the options that begin with "NK" will have no effect.
+
+NKSwitchTol:
+  desc: >
+    The relative tolerance to converge before the switch is made to the NK solver.
+    This must be low enough that most of the difficult transients have been passed.
+    If the NK solver stalls, this value can be set to a lower value which will run the startup procedure for longer before switching.
+
+NKSubspaceSize:
+  desc: >
+    The size of the GMRES subspace for the NK solver.
+    For difficult problems, convergence may be improved by increasing this value at the expense of more memory.
+
+NKLinearSolveTol:
+  desc: >
+    The initial tolerance to solve the linear system resulting from the Newton approximation.
+    This value is only used for the first iteration if :py:data:`NKUseEW` is True.
+
+NKUseEW:
+  desc: >
+    Flag to use the Eisenstat-Walker algorithm to determine linear convergence at each iteration.
+    If False, the NK solver will always try to converge the linear system to ``NKLinearSolveTol``.
+    If True, only the initial iteration will target the prescribed ``NKLinearSolveTol``.
+    The following iterations will pick a new linear tolerance based on the nonlinear convergence of the previous iteration.
+    This is done to avoid wasting computation when we are far away from the nonlinear solution and also to nail down the linear solution when we are near the nonlinear solution.
+    See `this paper <https://doi.org/10.1137/0917003>`__ for more details.
+    If the algorithm works as expected, the NK solver should converge in a few (or maybe tens) of iterations.
+    However, the algorithm might pick a very low linear convergence repeatedly and get stuck in a loop.
+    For these cases, it might be better to disable this option, but the better approach would be to switch to the NK solver later in the nonlinear convergence.
+
+NKADPC:
+  desc: >
+    Flag determines if the AD version of the NK preconditioner is used.
+    If False, we use finite-difference.
+    Using AD improves preconditioner accuracy and linear solver performance at the cost of more expensive preconditioner computations.
+
+NKViscPC:
+  desc: >
+    Flag that determines if the full viscous stencil is used for the NK preconditioner.
+    This will have a memory and cost penalty, but the resulting preconditioner will be more accurate.
+    Users should experiment with other linear solver options as a smaller stencil preconditioner is usually good enough.
+
+NKASMOverlap:
+  desc: >
+    The number of overlap levels in the additive Schwarz preconditioner for the NK solver.
+    More overlap levels result in a stronger preconditioner, at the expense of more expensive iterations and more memory.
+    Typical values range from 1 for easy cases and up to 2 or 3 for more difficult cases.
+
+NKPCILUFill:
+  desc: >
+    The number of levels of fill to use on the local Incomplete LU (ILU) factorization in the NK solver.
+    Typical values are 1 for easy cases and up to 3 for more difficult cases.
+    More levels of fill result in a stronger preconditioner which will result in fewer (linear) iterations, but individual iterations will be more costly and consume more memory.
+
+NKJacobianLag:
+  desc: >
+    The option determines the frequency at which the NK preconditioner is reformed.
+    In other words, the Jacobian used for the preconditioner is "lagged" behind the actual solution by this many iterations.
+    For simple problems, it may be possible to increase the Jacobian lag to such a high value that the preconditioner is never reformed at all during a solution.
+    For more difficult cases, a lower value may help convergence.
+    A lower value will result in more preconditioner Jacobian assemblies, which are fairly costly in ADflow.
+
+applyPCSubspaceSize:
+  desc: >
+    This option is only used when ADflow is used in an aerostructural analysis.
+    This parameter determines the subspace size and the total number of iterations to run when ADflow is only being used to precondition residuals via the ``globalNKPrecon`` function.
+
+NKInnerPreconIts:
+  desc: >
+    Number of local preconditioning iterations for the NK solver.
+    More iterations may help converge the linear system faster.
+    This should be left at 1 unless a very difficult problem is encountered.
+
+NKOuterPreconIts:
+  desc: >
+    Number of global preconditioning iterations for the NK solver adjoint solution.
+    More iterations may help converge the linear system faster.
+    Typical values are from 1 to 3.
+
+NKLS:
+  desc: >
+    The type of line search used with the NK solver.
+  cubic: Cubic interpolation
+  none: No line search
+  non-monotone: Non-monotone line search
+
+NKFixedStep:
+  desc: >
+    The step size for the NK solver with no line search (``"NKLS": "none"``).
+
+RKReset:
+  desc: >
+    Option to run :py:data:`nRKReset` Runge-Kutta startup iterations when using the NK solver and restarting from a previously converged solution.
+    This allows the residual to increase and prevents the NK solver from stalling.
+
+nRKReset:
+  desc: >
+    The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
+
+AGMGLevels:
+  desc: >
+    Agglomerated multigrid preconditioner levels.
+    Experimental; should not be modified.
+
+AGMGNSmooth:
+  desc: >
+    Agglomerated multigrid preconditioner parameter.
+    Experimental; should not be modified.
+
+useANKSolver:
+  desc: >
+    Flag to enable the ANK solver.
+
+ANKUseTurbDADI:
+  desc: >
+    Flag to determine if turbulence variables are solved with the DADI solver.
+    Only applies to decoupled ANK.
+    If False, an internal ANK-like solver is used for the turbulence in the decoupled mode.
+
+ANKSwitchTol:
+  desc: >
+    Relative convergence in the residual norm before we switch to the ANK solver.
+    A value of 1.0 means that the ANK solver is used from the first iteration.
+
+ANKSubspaceSize:
+  desc: >
+    A positive value sets the subspace size for the ANK solver.
+    Otherwise, the maximum iteration value is taken as the subspace size.
+
+ANKMaxIter:
+  desc: >
+    Maximum number of linear iterations at each ANK step.
+
+ANKLinearSolveTol:
+  desc: >
+    Linear solver tolerance for the ANK solver.
+
+ANKLinResMax:
+  desc: >
+    A parameter that is used to adaptively adjust the CFL number so that the linear residual with the ANK solver does not go above the prescribed value.
+    The target linear convergence may not be reached during nonlinear iterations with the given linear solver options, and this may be fine.
+    However, we want to manage the CFL number so that the linear residual after we run out of linear iterations is still below this target value.
+    This can be seen as the maximum allowed linear residual at each iteration.
+
+ANKASMOverlap:
+  desc: >
+    Similar to the :py:data:`NKASMOverlap` option but for the ANK solver.
+
+ANKPCILUFill:
+  desc: >
+    Similar to the :py:data:`NKPCILUFill` option but for the ANK solver.
+
+ANKJacobianLag:
+  desc: >
+    Number of nonlinear iterations between every preconditioner update.
+    The preconditioner update is determined by an adaptive algorithm, so the updates can happen more frequently.
+    This option sets the upper limit.
+    See "A Jacobian-free approximate Newton–Krylov startup strategy for RANS simulations" (Yildirim2019b) for more details.
+
+ANKInnerPreconIts:
+  desc: >
+    Similar to the :py:data:`NKInnerPreconIts` option but for the ANK solver.
+
+ANKOuterPreconIts:
+  desc: >
+    Similar to the :py:data:`NKOuterPreconIts` option but for the ANK solver.
+
+ANKCFL0:
+  desc: >
+    The initial CFL number for the ANK solver.
+
+ANKCFLMin:
+  desc: >
+    The coefficient in the minimum CFL algorithm for the ANK solver.
+    The minimum CFL number increases as the simulation converges, and this is the initial value.
+    See "A Jacobian-free approximate Newton–Krylov startup strategy for RANS simulations" (Yildirim2019b) for more details.
+
+ANKCFLLimit:
+  desc: >
+    Upper limit for the CFL number in the ANK solver.
+    A larger CFL number will be better for nonlinear convergence at the cost of robustness and expensive linear solutions.
+
+ANKCFLFactor:
+  desc: >
+    Multiplication factor used in the CFL ramping algorithm for the ANK solver.
+    See "A Jacobian-free approximate Newton–Krylov startup strategy for RANS simulations" (Yildirim2019b) for more details.
+
+ANKCFLExponent:
+  desc: >
+    The exponent used in the CFL ramping algorithm for the ANK solver.
+    See "A Jacobian-free approximate Newton–Krylov startup strategy for RANS simulations" (Yildirim2019b) for more details.
+
+ANKCFLCutback:
+  desc: >
+    The cutback factor for the CFL number in the ANK solver.
+    This is the factor used when the CFL is adaptively reduced.
+
+ANKStepFactor:
+  desc: >
+    The initial step size taken by the ANK solver.
+    This value will be used to initialize the line searches in ANK.
+    The actual step size can be lower than this but not higher.
+
+ANKStepMin:
+  desc: >
+    The minimum step size in the ANK solver.
+    If a step less than this value is required, then the CFL is cut back.
+
+ANKConstCFLStep:
+  desc: >
+    If the step size in the ANK solver is lower than this value, we do not ramp up the CFL and keep it constant.
+    If the step size from the last iteration is larger than this (implying that the solver can make progress), we ramp us the CFL.
+
+ANKPhysicalLSTol:
+  desc: >
+    The physical line search parameter in the ANK solver.
+    A value of 0.2 means that the physical parameters (density and energy) are allowed to change by 20% at each iteration for each cell.
+    The line search adjusts the step size to obey this change globally.
+
+ANKPhysicalLSTolTurb:
+  desc: >
+    The physicality check parameter for the turbulence model in the ANK solver.
+    The turbulence model variable is allowed to increase freely, but it is only allowed to decrease by the specified amount at each iteration.
+    A value of 0.99 means that the turbulence model variable can decrease by 99% at each iteration.
+    Because the initial value of the turbulence model is always positive, this effectively prevents negative values.
+
+ANKUnsteadyLSTol:
+  desc: >
+    The reduction factor used in the unsteady line search for the ANK solver.
+    A value of 1.0 means that the unsteady line search will accept any step that does not increase the unsteady residual norm.
+    See "A Jacobian-free approximate Newton–Krylov startup strategy for RANS simulations" (Yildirim2019b) for more details.
+
+ANKSecondOrdSwitchTol:
+  desc: >
+    The relative convergence target where the ANK solver switches to a second order accurate implicit formulation.
+    For transonic flows, this target should be set to be right after the shocks are settled in the solution, which is typically around relative convergence of 1e-4 to 1e-6.
+
+ANKCoupledSwitchTol:
+  desc: >
+    The relative convergence target where the ANK solver switches to a coupled turbulence formulation.
+    In the coupled formulation, the flow and turbulence variables are all solved together.
+    This improves nonlinear convergence but reduces robustness.
+    This should be used after 5 to 6 orders of magnitude of nonlinear convergence.
+
+ANKTurbCFLScale:
+  desc: >
+    The scaling value for the CFL value used for the separate turbulence solver in the ANK solver.
+
+ANKUseFullVisc:
+  desc: >
+    Flag to use the full viscous terms in the implicit formulation for the ANK solver.
+    Setting this to True results in the R1 residual approximation level.
+    See "A Jacobian-free approximate Newton–Krylov startup strategy for RANS simulations" (Yildirim2019b) for more details.
+
+ANKPCUpdateTol:
+  desc: >
+    If the ANK solver converges by this amount relative to the last nonlinear iteration where the preconditioner was updated, the preconditioner is updated again.
+
+ANKADPC:
+  desc: >
+    Whether or not to use the AD-based preconditioner for the ANK solver.
+    The finite-difference preconditioner is usually good enough and is cheaper to compute.
+
+ANKNSubiterTurb:
+  desc: >
+    The number of turbulent subiterations between each ANK iteration if ANK turbKSP is used (``"ANKUseTurbDADI": False``).
+    This should be kept at 1 for most cases because the turbKSP solver is more effective and expensive.
+
+ANKTurbKSPDebug:
+  desc: >
+    Enables debug printout from the ANK turbKSP solver.
+    If turbDADI is disabled, turbKSP is used to solve the turbulence.
+    Without this option also set to true, you will not get any diagnostic output for the turbulence solver.
+
+ANKUseMatrixFree:
+  desc: >
+    Use the matrix-free Jacobian for the ANK solver.
+    If True, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
+
+blockSplitting:
+  desc: >
+    Flag determining if the block may be split to obtain better load balancing.
+
+loadImbalance:
+  desc: >
+    This is the allowable load imbalance.
+    The tolerated load imbalance between processors when mapping the blocks onto these processors.
+    A value of 0.1 means there is 10 percent load imbalance.
+
+loadBalanceIter:
+  desc: >
+    Number of METIS graph partitioning iterations.
+    Increasing this number will give you better load balancing.
+    However, it will also tend to split up blocks more often.
+    Therefore, there is a penalty on communication cost.
+
+partitionOnly:
+  desc: >
+    Flag determines whether to only run the partitioning algorithm, not the flow solution.
+    This is used when checking the load balancing of a grid without running a CFD solution.
+
+partitionLikeNProc:
+  desc: >
+    If this is set to a positive value, the solver partitions the grid like it has that many processors.
+    Useful to recreate a partition-related issue that shows up on a large number of procs using a smaller number of procs.
+    This is a purely debug option.
+    When it is used, the number of processor partitions will be greater than the number of procs.
+    As a result, the remainder partitions will be distributed to procs, and you will likely get a load imbalance of 1.0, which is bad for performance.
+
+numberSolutions:
+  desc: >
+    Flag to set whether to attach the numbering of the AeroProblem to the grid solution file.
+
+printIterations:
+  desc: >
+    Flag to set whether to print out the monitoring values at each iteration.
+
+printTiming:
+  desc: >
+    Flag to set whether to print the time taken for the initialization, flow solution, function evaluations, and adjoint solution.
+
+printAllOptions:
+  desc: >
+    Flag to set whether to print all the options during initialization.
+
+printIntro:
+  desc: >
+    Flag to set whether to print the ADflow intro message during initialization.
+
+setMonitor:
+  desc: >
+    Flag to set whether to monitor the adjoint iterations.
+
+printWarnings:
+  desc: >
+    Flag to print warning messages like for bad quality volumes, etc.
+
+monitorVariables:
+  desc: >
+    List of the variables whose convergence should be monitored.
+    The possible monitoring variables are:
+
+      * ``resrho`` (density residual)
+      * ``resmom`` (momentum residuals)
+      * ``resrhoe`` (total energy residual)
+      * ``resturb`` (turbulence residuals)
+      * ``cl`` (lift coefficient)
+      * ``clp`` (pressure part of cl)
+      * ``clv`` (viscous part of cl)
+      * ``cd`` (drag coefficient)
+      * ``cdp`` (pressure part of cd)
+      * ``cdv`` (viscous part of cd)
+      * ``cfx`` (force coefficient in x-direction)
+      * ``cfy`` (force coefficient in y-direction)
+      * ``cfz`` (force coefficient in z-direction)
+      * ``cmx`` (moment coefficient in x-direction)
+      * ``cmy`` (moment coefficient in y-direction)
+      * ``cmz`` (moment coefficient in z-direction)
+      * ``hdiff`` (maximum relative difference between H and Hinf)
+      * ``mach`` (maximum mach number)
+      * ``yplus`` (maximum y+ value)
+      * ``eddyv`` (maximum ratio of eddy viscosity and laminar viscosity)
+
+surfaceVariables:
+  desc: >
+    The variables which are written to the CGNS surface solution file.
+    The available keywords are:
+
+      * ``rho`` (density)
+      * ``p`` (pressure)
+      * ``temp`` (temperature)
+      * ``vx`` (velocity in x-direction)
+      * ``vy`` (velocity in y-direction)
+      * ``vz`` (velocity in z-direction)
+      * ``cp`` (pressure coefficient)
+      * ``ptloss`` (relative total pressure loss)
+      * ``mach`` (mach number)
+      * ``cf`` (magnitude of the skin friction)
+      * ``cfx`` (x-component of the skin friction)
+      * ``cfy`` (y-component of the skin friction)
+      * ``cfz`` (z-component of the skin friction)
+      * ``ch`` (Stanton number)
+      * ``yplus`` (y+ value of the cell center of the first cell)
+      * ``lift`` (lift force)
+      * ``blank`` (cell iblank values used for visualization or other post-processing)
+
+volumeVariables:
+  desc: >
+    The variables which are, in addition to the variables needed for the restart, written to the CGNS volume solution file.
+    The available keywords are:
+
+      * ``mx`` (momentum in x-direction)
+      * ``my`` (momentum in y-direction)
+      * ``mz`` (momentum in z-direction)
+      * ``rhoe`` (total energy)
+      * ``temp`` (temperature)
+      * ``vort`` (magnitude of the vorticity)
+      * ``vortx`` (x-component of the vorticity)
+      * ``vorty`` (y-component of the vorticity)
+      * ``vortz`` (z-component of the vorticity)
+      * ``cp`` (pressure coefficient)
+      * ``mach`` (Mach number)
+      * ``macht`` (turbulent Mach number)
+      * ``ptloss`` (relative total pressure loss)
+      * ``eddy`` (eddy viscosity)
+      * ``eddyratio`` (ratio of eddy viscosity and laminar viscosity)
+      * ``dist`` (wall distance to the nearest viscous wall)
+      * ``resrho`` (density residual)
+      * ``resmom`` (momentum residuals)
+      * ``resrhoe`` (total energy residual)
+      * ``resturb`` (turbulence residuals)
+      * ``blank`` (cell iblank values used for visualization or other post-processing)
+
+forcesAsTractions:
+  desc: >
+    Flag to return tractions instead of forces.
+
+adjointL2Convergence:
+  desc: >
+    Adjoint solution tolerance relative to the residual for a zero initial guess.
+    In some cases (such as with zipper meshes), the adjoint solution can stall well before a typical relative convergence value is reached.
+    For these cases, running the adjoint solution until the absolute residual reaches a minimum should still give accurate derivatives.
+
+adjointL2ConvergenceRel:
+  desc: >
+    Adjoint solution tolerance relative to the residual at the start of the adjoint call (including a possible non-zero restart).
+
+adjointL2ConvergenceAbs:
+  desc: >
+    Adjoint solution absolute tolerance.
+
+adjointDivTol:
+  desc: >
+    The relative amount the adjoint residual can increase before the solver concludes that the method is diverging.
+
+adjointMaxL2DeviationFactor:
+  desc: >
+    Similar to :py:data:`maxL2DeviationFactor` but for the adjoint solution.
+    This factor is only applied to :py:data:`adjointL2Convergence`.
+
+approxPC:
+  desc: >
+    Whether or not to use the approximate Jacobian for the adjoint preconditioner.
+
+ADPC:
+  desc: >
+    Whether or not to use AD for the adjoint preconditioner.
+
+viscPC:
+  desc: >
+    Whether or not to keep cross derivative terms in the adjoint preconditioner.
+
+useDiagTSPC:
+  desc: >
+    Whether or not the off-time instance terms are included in the time spectral adjoint preconditioner.
+
+restartAdjoint:
+  desc: >
+    Whether or not we want to restart the adjoint from the previous solution.
+
+adjointSolver:
+  desc: >
+    Type of linear solver for the adjoint.
+    See PETSc documentation for details.
+  GMRES: GMRES. Typically gives the best performance.
+  TFQMR: Transpose free QMR
+  Richardson: Preconditioned Richardson iterative method
+  BCGS: BiCGStab
+  IBCGS: Improved BiCGStab
+
+GMRESOrthogonalizationType:
+  desc: >
+    Which orthogonalization method to use with GMRES.
+    This will affect the adjoint solver the most, but the same option is also used in the linear solvers in the ANK and NK solvers.
+  modified Gram-Schmidt: Modified Gram-Schmidt. This typically gives the best accuracy (relative to complex step for the adjoint) and performance.
+  CGS never refine: Classical Gram-Schmidt with no refinement. Fast but not the most accurate.
+  CGS refine if needed: Classical Gram-Schmidt with refinement as needed. Slow and inaccurate.
+  CGS always refine: Classical Gram-Schmidt with refinement at every iteration. Slow and inaccurate.
+
+adjointMaxIter:
+  desc: >
+    Maximum number of iterations for the adjoint solution.
+
+adjointSubspaceSize:
+  desc: >
+    The size of the Krylov subspace for the adjoint solution.
+
+adjointMonitorStep:
+  desc: >
+    The adjoint residual norm is written out every this many iterations.
+
+dissipationLumpingParameter:
+  desc: >
+    Scaling parameter for dissipation lumping in the approximate preconditioner for the adjoint solution.
+
+preconditionerSide:
+  desc: Which side to apply the adjoint preconditioner.
+  left: Left side
+  right: Right side
+
+matrixOrdering:
+  desc: >
+    The matrix ordering algorithm used for the adjoint preconditioner.
+    See PETSc documentation for details.
+  RCM: reverse Cuthill-McKee
+  natural: natural
+  nested dissection: nested dissection
+  one way dissection: one way dissection
+  quotient minimum degree: quotient minimum degree
+
+globalPreconditioner:
+  desc: The type of (global) preconditioner to use for the adjoint system.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Agglomerated multigrid (AGMG)
+
+localPreconditioner:
+  desc: The type of preconditioner to use for the local preconditioning iteration in the adjoint solution.
+  ILU: >
+    Incomplete LU (ILU) factorization.
+    Currently the only supported option.
+
+ILUFill:
+  desc: >
+    The number of levels of fill to use on the local Incomplete LU (ILU) factorization in the adjoint solution.
+    Typical values are 1 for easy cases and up to 3 for more difficult cases.
+    More levels of fill result in a stronger preconditioner which will result in fewer (linear) iterations, but individual iterations will be more costly and consume more memory.
+
+ASMOverlap:
+  desc: >
+    The number of overlap levels in the additive Schwarz preconditioner for the adjoint solution.
+    More overlap levels result in a stronger preconditioner, at the expense of more expensive iterations and more memory.
+    Typical values range from 1 for easy cases and up to 2 or 3 for more difficult cases.
+
+innerPreconIts:
+  desc: >
+    Number of local preconditioning iterations for the adjoint solution.
+    Increasing this number may help with difficult problems.
+    However, each iteration will take more time.
+
+outerPreconIts:
+  desc: >
+    Number of global preconditioning iterations for the adjoint solution.
+    Increasing this number may help with difficult problems.
+    However, each iteration will take more time.
+    The default should be sufficient for most problems.
+
+applyAdjointPCSubspaceSize:
+  desc: >
+    The Krylov subspace size for the adjoint preconditioner.
+
+frozenTurbulence:
+  desc: >
+    Flag to set whether to use frozen turbulence assumption in the adjoint.
+    Frozen turbulence neglects the linearization of the turbulence model.
+    Currently, only the Spalart-Allmaras model is ADed.
+    Using this flag may help with convergence for high transonic flows.
+    However, the resulting sensitivity is less accurate.
+
+useMatrixFreedrdw:
+  desc: >
+    Flag that determines if ADflow will use the matrix-free routines to compute mat-vec products with the full Jacobian.
+    If False, ADflow will form the full matrix exactly and mat-vec multiplications will be matrix-based.
+    This should always be True for overset meshes, otherwise the gradients will be inaccurate.
+    This is a known bug in ADflow (see https://github.com/mdolab/adflow/issues/204).
+    The matrix-free routines have lower memory usage.
+    For runtime, there is a tradeoff between the Jacobian assembly and adjoint solution times.
+    See "Effective Adjoint Approaches for Computational Fluid Dynamics" (Kenway2019a) for more details.
+
+skipAfterFailedAdjoint:
+  desc: >
+    If this option is True, and one of the adjoints fail in the current sensitivity evaluation, the rest of the adjoints will be skipped for the sake of efficiency.
+    The user should use the ``checkAdjointFailure`` method to get the correct fail flag in the dictionary passed back to the optimizer for these cases.
+    In the following design evaluation, ADflow will try to solve the adjoints again.
+    If this option is set to False, all of the adjoints will be solved (to whatever tolerance possible with the given options), and the (possibly) partially converged solutions will be used for total derivative computations.
+    It is again up to the user to decide if this is the behavior they want.
+
+firstRun:
+  desc: >
+    This option is for debugging the adjoint only.
+    Setting this to False will turn on the Tapenade debugger.
+
+verifyState:
+  desc: >
+    This option is for debugging the adjoint only.
+    It is used to verify dRdw.
+
+verifySpatial:
+  desc: >
+    This option is for debugging the adjoint only.
+    It is used to verify dRdx.
+
+verifyExtra:
+  desc: >
+    This option is for debugging the adjoint only.
+    It is used to verify dIda.
+
+sepSensorOffset:
+  desc: >
+    The offset value used for the separation sensor.
+    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
+sepSensorSharpness:
+  desc: >
+    The sharpness parameter for the separation sensor.
+    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
+computeCavitation:
+  desc: >
+    Whether or not to compute cavitation.
