@@ -2462,8 +2462,8 @@ class ADFLOW(AeroSolver):
 
             # Now write out all the Nodes and Forces (or tractions)
             for i in range(len(pts)):
-                f.write("%15.8g %15.8g %15.8g " % (pts[i, 0], pts[i, 1], pts[i, 2]))
-                f.write("%15.8g %15.8g %15.8g\n" % (dXs[i, 0], dXs[i, 1], dXs[i, 2]))
+                f.write("%15.15f %15.15f %15.15f " % (pts[i, 0], pts[i, 1], pts[i, 2]))
+                f.write("%15.15f %15.15f %15.15f\n" % (dXs[i, 0], dXs[i, 1], dXs[i, 2]))
 
             for i in range(len(conn)):
                 f.write("%d %d %d %d\n" % (conn[i, 0], conn[i, 1], conn[i, 2], conn[i, 3]))
@@ -3189,7 +3189,7 @@ class ADFLOW(AeroSolver):
 
         return pts
 
-    def getSurfaceConnectivity(self, groupName=None, includeZipper=True, includeCGNS=False):
+    def getSurfaceConnectivity(self, groupName=None, includeZipper=True, includeCGNS=False, includeStateID=False):
         """Return the connectivity dinates at which the forces (or tractions) are
         defined. This is the complement of getForces() which returns
         the forces at the locations returned in this routine.
@@ -3206,6 +3206,12 @@ class ADFLOW(AeroSolver):
             Whether or not this function should return the indices of the CGNS blocks
             that each face patch belongs to. Zipper mesh patches will have cgnsBlockID = -1.
 
+        includeStateID: bool
+            Whether or not this function should return the indices of the state vector
+            (see getStates function) that correspond to each surface cell.
+            This is useful to manually set the adjoint RHS for surface cells.
+            Note that these indices should be multiplied by the number of state variables
+            (rho, rho*u, rho*v, ...) to get the actual position in the state vector.
         """
 
         # Create the zipper mesh if we need it
@@ -3220,22 +3226,27 @@ class ADFLOW(AeroSolver):
         npts, ncell = self._getSurfaceSize(groupName, includeZipper)
         conn = numpy.zeros((ncell, 4), dtype="intc")
         cgnsBlockID = numpy.zeros(max(1, ncell), dtype="intc")  # f2py will crash if we give a vector of length zero
+        stateCellID = numpy.zeros(max(1, ncell), dtype="intc")  # f2py will crash if we give a vector of length zero
         self.adflow.surfaceutils.getsurfaceconnectivity(
-            numpy.ravel(conn), numpy.ravel(cgnsBlockID), famList, includeZipper
+            numpy.ravel(conn), numpy.ravel(cgnsBlockID), numpy.ravel(stateCellID), famList, includeZipper
         )
 
         faceSizes = 4 * numpy.ones(len(conn), "intc")
 
-        # Fix cgnsBlockID size if its length should be zero
+        # Fix cgnsBlockID and stateCellID size if its length should be zero
         if ncell == 0:
             cgnsBlockID = numpy.zeros(ncell, dtype="intc")
+            stateCellID = numpy.zeros(ncell, dtype="intc")
 
+        # Prepare list of outputs
+        # Convert to 0-based ordering becuase we are in python
+        returns = [conn - 1, faceSizes]
         if includeCGNS:
-            # Convert to 0-based ordering becuase we are in python
-            return conn - 1, faceSizes, cgnsBlockID - 1
-        else:
-            # Convert to 0-based ordering becuase we are in python
-            return conn - 1, faceSizes
+            returns.append(cgnsBlockID-1)
+        elif includeStateID:
+            returns.append(stateCellID-1)
+
+        return returns
 
     def _expandGroupNames(self, groupNames):
         """Take a list of family (group) names and return a 2D array of the

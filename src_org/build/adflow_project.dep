@@ -1,0 +1,1952 @@
+# This file is generated automatically. DO NOT EDIT!
+
+adtUtils.o :  \
+	constants.o \
+	adtData.o
+
+adtBuild.o :  \
+	constants.o \
+	adtUtils.o \
+	adtData.o
+
+adtLocalSearch.o :  \
+	constants.o \
+	adtUtils.o \
+	adtData.o \
+	precision.o
+
+adtSearch.o :  \
+	constants.o \
+	adtUtils.o \
+	adtData.o \
+	adtLocalSearch.o
+
+adtAPI.o :  \
+	constants.o \
+	adtUtils.o \
+	adtBuild.o \
+	adtSearch.o
+
+adjointUtils.o :  \
+	overset.o \
+	block.o \
+	utils.o \
+	flowVarRefState.o \
+	cgnsGrid.o \
+	masterRoutines.o \
+	ADjointPETSc.o \
+	surfaceFamilies.o \
+	residuals.o \
+	haloExchange.o \
+	blockPointers.o \
+	inputParam.o \
+	ADjointVars.o \
+	inputParam.o \
+	constants.o \
+	BCPointers.o \
+	inputParam.o \
+	turbMod.o \
+	stencils.o \
+	wallDistanceData.o \
+	oversetUtilities.o \
+	agmg.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	diffSizes.o \
+	flowVarRefState.o \
+	actuatorRegionData.o \
+	iteration.o \
+	inputParam.o \
+	inputParam.o
+
+adjointAPI.o :  \
+	utils.o \
+	ADjointPETSc.o \
+	masterRoutines.o \
+	ADjointPETSc.o \
+	surfaceUtils.o \
+	killSignals.o \
+	surfaceFamilies.o \
+	ADjointVars.o \
+	blockPointers.o \
+	ADjointVars.o \
+	constants.o \
+	inputParam.o \
+	adjointUtils.o \
+	monitor.o \
+	blockPointers.o \
+	section.o \
+	iteration.o \
+	stencils.o \
+	agmg.o \
+	inputParam.o \
+	communication.o \
+	flowVarRefState.o \
+	inputParam.o \
+	inputParam.o \
+	adjointUtils.o \
+	ADjointVars.o \
+	inputParam.o
+
+fortranPC.o :  \
+	utils.o \
+	block.o \
+	flowVarRefState.o \
+	masterRoutines.o \
+	ADjointPETSc.o \
+	ADjointVars.o \
+	haloExchange.o \
+	blockPointers.o \
+	ADjointVars.o \
+	constants.o \
+	inputParam.o \
+	adjointUtils.o \
+	inputParam.o \
+	turbMod.o \
+	stencils.o \
+	inputParam.o \
+	communication.o \
+	diffSizes.o \
+	flowVarRefState.o \
+	precision.o \
+	iteration.o \
+	inputParam.o \
+	inputParam.o
+
+masterRoutines.o :  \
+	turbBCRoutines.o \
+	inputParam.o \
+	overset.o \
+	BCData.o \
+	utils.o \
+	BCRoutines.o \
+	BCExtra_b.o \
+	turbUtils.o \
+	sa_fast_b.o \
+	solverUtils.o \
+	adjointExtra.o \
+	solverutils_fast_b.o \
+	flowutils_b.o \
+	turbutils_d.o \
+	BCRoutines.o \
+	turbBCRoutines.o \
+	turbUtils.o \
+	ADjointPETSc.o \
+	residuals.o \
+	initializeflow_b.o \
+	haloExchange.o \
+	walldistance_b.o \
+	turbutils_b.o \
+	blockPointers.o \
+	BCExtra_d.o \
+	residuals_b.o \
+	turbutils_b.o \
+	ADjointVars.o \
+	constants.o \
+	inputParam.o \
+	walldistance_d.o \
+	monitor.o \
+	adjointextra_d.o \
+	turbutils_fast_b.o \
+	fluxes_fast_b.o \
+	section.o \
+	inputParam.o \
+	wallDistance.o \
+	oversetCommUtilites.o \
+	initializeflow_d.o \
+	wallDistanceData.o \
+	initializeFlow.o \
+	sa.o \
+	inputParam.o \
+	communication.o \
+	residuals_fast_b.o \
+	sa_d.o \
+	solverutils_d.o \
+	flowVarRefState.o \
+	turbbcroutines_d.o \
+	residuals_d.o \
+	adjointextra_b.o \
+	fluxes.o \
+	diffSizes.o \
+	blockette.o \
+	adjointextra_b.o \
+	flowUtils.o \
+	surfaceIntegrations.o \
+	fluxes_d.o \
+	flowutils_d.o \
+	turbbcroutines_b.o \
+	actuatorRegionData.o \
+	solverutils_b.o \
+	fluxes_b.o \
+	flowutils_fast_b.o \
+	adjointextra_d.o \
+	sa_b.o \
+	iteration.o \
+	inputParam.o
+
+adjointExtra.o :  \
+	precision.o \
+	inputParam.o \
+	flowVarRefState.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	communication.o \
+	constants.o \
+	inputParam.o
+
+BCData.o :  \
+	section.o \
+	utils.o \
+	diffSizes.o \
+	CpCurveFits.o \
+	inputParam.o \
+	bcdata_d.o \
+	bcdata_b.o \
+	blockPointers.o \
+	actuatorRegionData.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	iteration.o \
+	BCDataMod.o \
+	cgnsNames.o \
+	flowVarRefState.o
+
+variableReading.o :  \
+	utils.o \
+	turbUtils.o \
+	IOModule.o \
+	flowUtils.o \
+	blockPointers.o \
+	sorting.o \
+	inputParam.o \
+	su_cgns.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	inputParam.o \
+	monitor.o \
+	cgnsNames.o \
+	flowVarRefState.o
+
+initializeFlow.o :  \
+	overset.o \
+	utils.o \
+	BCData.o \
+	block.o \
+	cgnsGrid.o \
+	paramTurb.o \
+	solverUtils.o \
+	inputParam.o \
+	inputParam.o \
+	turbBCRoutines.o \
+	BCRoutines.o \
+	turbUtils.o \
+	residuals.o \
+	haloExchange.o \
+	blockPointers.o \
+	constants.o \
+	monitor.o \
+	section.o \
+	inputParam.o \
+	turbBCRoutines.o \
+	IOModule.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	variableReading.o \
+	su_cgns.o \
+	flowVarRefState.o \
+	flowUtils.o \
+	inputParam.o \
+	iteration.o \
+	inputParam.o
+
+inputParamRoutines.o :  \
+	inputParam.o \
+	utils.o \
+	inputParam.o \
+	inputParam.o \
+	ADjointPETSc.o \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	constants.o \
+	monitor.o \
+	inputParam.o \
+	inputParam.o \
+	iteration.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	flowVarRefState.o \
+	extraOutput.o \
+	inputParam.o \
+	turbCurveFits.o \
+	inputParam.o \
+	killSignals.o \
+	paramTurb.o \
+	CpCurveFits.o \
+	cgnsNames.o \
+	inputParam.o
+
+precision.o : 
+
+su_cgns.o : 
+
+constants.o :  \
+	precision.o
+
+killSignals.o :  \
+	constants.o
+
+communication.o :  \
+	constants.o
+
+block.o :  \
+	constants.o
+
+blockPointers.o :  \
+	constants.o \
+	block.o
+
+kd_tree.o :  \
+	constants.o \
+	precision.o
+
+IOModule.o :  \
+	constants.o
+
+surfaceFamilies.o :  \
+	constants.o
+
+adtData.o :  \
+	constants.o
+
+BCPointers.o :  \
+	constants.o
+
+wallDistanceData.o :  \
+	constants.o
+
+section.o :  \
+	constants.o
+
+ADjointVars.o :  \
+	constants.o
+
+ADjointPETSc.o :  \
+	constants.o
+
+cgnsGrid.o :  \
+	constants.o \
+	su_cgns.o
+
+cgnsNames.o :  \
+	constants.o
+
+CpCurveFits.o :  \
+	constants.o
+
+extraOutput.o :  \
+	constants.o
+
+flowVarRefState.o :  \
+	constants.o
+
+inputParam.o :  \
+	constants.o \
+	precision.o
+
+iteration.o :  \
+	constants.o
+
+monitor.o :  \
+	constants.o
+
+paramTurb.o :  \
+	constants.o
+
+stencils.o :  \
+	constants.o
+
+diffSizes.o :  \
+	constants.o
+
+overset.o :  \
+	block.o \
+	adtData.o \
+	kd_tree.o \
+	constants.o
+
+BCDataMod.o :  \
+	cgnsGrid.o
+
+userSurfaceIntegrationData.o :  \
+	constants.o
+
+actuatorRegionData.o :  \
+	constants.o
+
+NKSolvers.o :  \
+	overset.o \
+	utils.o \
+	block.o \
+	flowVarRefState.o \
+	solverUtils.o \
+	ADjointPETSc.o \
+	inputParam.o \
+	BCRoutines.o \
+	turbUtils.o \
+	ADjointVars.o \
+	haloExchange.o \
+	blockPointers.o \
+	turbAPI.o \
+	inputParam.o \
+	inputParam.o \
+	constants.o \
+	inputParam.o \
+	monitor.o \
+	adjointUtils.o \
+	inputParam.o \
+	stencils.o \
+	iteration.o \
+	initializeFlow.o \
+	agmg.o \
+	inputParam.o \
+	communication.o \
+	flowVarRefState.o \
+	blockette.o \
+	flowUtils.o \
+	killSignals.o \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o
+
+blockette.o :  \
+	inputParam.o \
+	overset.o \
+	block.o \
+	BCData.o \
+	utils.o \
+	cgnsGrid.o \
+	paramTurb.o \
+	solverUtils.o \
+	adjointExtra.o \
+	inputParam.o \
+	BCRoutines.o \
+	turbBCRoutines.o \
+	turbUtils.o \
+	residuals.o \
+	haloExchange.o \
+	blockPointers.o \
+	flowVarRefState.o \
+	constants.o \
+	section.o \
+	inputParam.o \
+	wallDistance.o \
+	oversetCommUtilites.o \
+	turbMod.o \
+	initializeFlow.o \
+	sa.o \
+	inputParam.o \
+	flowVarRefState.o \
+	fluxes.o \
+	flowUtils.o \
+	surfaceIntegrations.o \
+	actuatorRegionData.o \
+	iteration.o \
+	inputParam.o
+
+outputMod.o :  \
+	overset.o \
+	utils.o \
+	block.o \
+	inputParam.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	constants.o \
+	monitor.o \
+	inputParam.o \
+	IOModule.o \
+	inputParam.o \
+	su_cgns.o \
+	communication.o \
+	flowVarRefState.o \
+	precision.o \
+	flowUtils.o \
+	extraOutput.o \
+	inputParam.o \
+	cgnsNames.o \
+	inputParam.o
+
+writeCGNSSurface.o :  \
+	block.o \
+	utils.o \
+	cgnsGrid.o \
+	inputParam.o \
+	surfaceFamilies.o \
+	blockPointers.o \
+	outputMod.o \
+	constants.o \
+	monitor.o \
+	IOModule.o \
+	sorting.o \
+	inputParam.o \
+	su_cgns.o \
+	communication.o \
+	flowVarRefState.o \
+	precision.o \
+	flowUtils.o \
+	extraOutput.o \
+	inputParam.o \
+	cgnsNames.o \
+	inputParam.o
+
+tecplotIO.o :  \
+	overset.o \
+	utils.o \
+	inputParam.o \
+	surfaceUtils.o \
+	surfaceFamilies.o \
+	surfaceFamilies.o \
+	blockPointers.o \
+	outputMod.o \
+	constants.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	BCPointers.o \
+	flowVarRefState.o \
+	extraOutput.o \
+	inputParam.o \
+	cgnsNames.o \
+	inputParam.o
+
+writeCGNSGrid.o :  \
+	inputParam.o \
+	utils.o \
+	block.o \
+	constants.o \
+	IOModule.o \
+	cgnsGrid.o \
+	inputParam.o \
+	su_cgns.o \
+	communication.o \
+	outputMod.o \
+	inputParam.o \
+	iteration.o \
+	monitor.o \
+	cgnsNames.o \
+	inputParam.o
+
+writeCGNSVolume.o :  \
+	inputParam.o \
+	block.o \
+	utils.o \
+	IOModule.o \
+	flowVarRefState.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	outputMod.o \
+	inputParam.o \
+	iteration.o \
+	monitor.o \
+	cgnsNames.o \
+	inputParam.o
+
+writeSol.o :  \
+	utils.o \
+	haloExchange.o \
+	extraOutput.o \
+	writeCGNSSurface.o \
+	writeCGNSGrid.o \
+	inputParam.o \
+	communication.o \
+	killSignals.o \
+	outputMod.o \
+	constants.o \
+	writeCGNSVolume.o \
+	monitor.o \
+	flowVarRefState.o
+
+stringOps.o :  \
+	inputParam.o \
+	overset.o \
+	utils.o \
+	oversetUtilities.o \
+	kd_tree.o \
+	kd_tree.o \
+	constants.o
+
+cartMesh.o :  \
+	oversetPackingRoutines.o \
+	overset.o \
+	utils.o \
+	surfaceFamilies.o \
+	haloExchange.o \
+	blockPointers.o \
+	sorting.o \
+	communication.o \
+	su_cgns.o \
+	constants.o
+
+oversetAPI.o :  \
+	inputParam.o \
+	overset.o \
+	utils.o \
+	block.o \
+	cgnsGrid.o \
+	oversetInitialization.o \
+	kd_tree.o \
+	adtBuild.o \
+	surfaceFamilies.o \
+	haloExchange.o \
+	blockPointers.o \
+	ADjointVars.o \
+	constants.o \
+	oversetPackingRoutines.o \
+	oversetCommUtilites.o \
+	stencils.o \
+	oversetUtilities.o \
+	communication.o \
+	su_cgns.o \
+	ADjointVars.o \
+	inputParam.o
+
+buildClusterWalls.o :  \
+	warping.o \
+	adtBuild.o \
+	overset.o \
+	inputParam.o \
+	utils.o \
+	inputParam.o \
+	blockPointers.o \
+	sorting.o \
+	communication.o \
+	inputParam.o
+
+zipperMesh.o :  \
+	inputParam.o \
+	overset.o \
+	utils.o \
+	oversetInitialization.o \
+	kd_tree.o \
+	wallSearch.o \
+	surfaceFamilies.o \
+	stringOps.o \
+	blockPointers.o \
+	constants.o \
+	oversetPackingRoutines.o \
+	oversetCommUtilites.o \
+	wallDistanceData.o \
+	oversetUtilities.o \
+	makeBoundaryStrings.o \
+	sorting.o \
+	communication.o \
+	BCPointers.o \
+	ADjointVars.o
+
+computeCellWallPoint.o :  \
+	overset.o \
+	utils.o \
+	haloExchange.o \
+	blockPointers.o \
+	kd_tree.o \
+	communication.o \
+	constants.o
+
+floodInteriorCells.o :  \
+	inputParam.o \
+	utils.o \
+	oversetUtilities.o \
+	haloExchange.o \
+	blockPointers.o \
+	communication.o \
+	constants.o
+
+determineDonors.o :  \
+	overset.o \
+	utils.o \
+	block.o \
+	oversetUtilities.o \
+	communication.o \
+	constants.o
+
+oversetPackingRoutines.o :  \
+	overset.o \
+	blockPointers.o \
+	sorting.o \
+	kd_tree.o \
+	constants.o
+
+fringeSearch.o :  \
+	inputParam.o \
+	overset.o \
+	block.o \
+	utils.o \
+	oversetUtilities.o \
+	adtUtils.o \
+	adtData.o \
+	constants.o \
+	adtLocalSearch.o
+
+oversetUtilities.o :  \
+	adtBuild.o \
+	overset.o \
+	block.o \
+	utils.o \
+	stencils.o \
+	haloExchange.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	kd_tree.o \
+	communication.o \
+	constants.o \
+	inputParam.o
+
+finalOversetCommStructures.o :  \
+	overset.o \
+	block.o \
+	utils.o \
+	oversetUtilities.o \
+	blockPointers.o \
+	communication.o \
+	constants.o
+
+surfaceCorrection.o :  \
+	inputParam.o \
+	overset.o \
+	utils.o \
+	adtData.o \
+	sorting.o \
+	kd_tree.o \
+	constants.o \
+	adtLocalSearch.o \
+	wallSearch.o
+
+wallSearch.o :  \
+	inputParam.o \
+	overset.o \
+	utils.o \
+	adtUtils.o \
+	adtData.o \
+	constants.o \
+	adtLocalSearch.o
+
+makeBoundaryStrings.o :  \
+	oversetPackingRoutines.o \
+	adtBuild.o \
+	overset.o \
+	utils.o \
+	stringOps.o \
+	blockPointers.o \
+	sorting.o \
+	communication.o \
+	constants.o
+
+oversetInitialization.o :  \
+	oversetPackingRoutines.o \
+	inputParam.o \
+	overset.o \
+	utils.o \
+	adtBuild.o \
+	stencils.o \
+	oversetUtilities.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	sorting.o \
+	kd_tree.o \
+	communication.o \
+	constants.o
+
+oversetCommUtilites.o :  \
+	overset.o \
+	utils.o \
+	block.o \
+	oversetutilities_d.o \
+	oversetUtilities.o \
+	oversetutilities_b.o \
+	haloExchange.o \
+	blockPointers.o \
+	sorting.o \
+	communication.o \
+	constants.o
+
+partitionMod.o :  \
+	constants.o \
+	utils.o
+
+loadBalance.o :  \
+	inputParam.o \
+	partitionMod.o \
+	inputParam.o \
+	block.o \
+	inputParam.o \
+	utils.o \
+	partitionMod.o \
+	cgnsGrid.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+gridChecking.o :  \
+	utils.o \
+	partitionMod.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	inputParam.o
+
+readCGNSGrid.o :  \
+	utils.o \
+	block.o \
+	partitionMod.o \
+	IOModule.o \
+	cgnsGrid.o \
+	sorting.o \
+	inputParam.o \
+	su_cgns.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	cgnsNames.o \
+	flowVarRefState.o
+
+partitioning.o :  \
+	utils.o \
+	block.o \
+	loadBalance.o \
+	cgnsGrid.o \
+	inputParam.o \
+	inputParam.o \
+	readCGNSGrid.o \
+	partitionMod.o \
+	blockPointers.o \
+	constants.o \
+	monitor.o \
+	gridChecking.o \
+	section.o \
+	IOModule.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	flowVarRefState.o \
+	inputParam.o \
+	iteration.o \
+	inputParam.o
+
+pointMatchedCommPattern.o :  \
+	block.o \
+	utils.o \
+	preprocessingModules.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	sorting.o \
+	preprocessingModules.o \
+	communication.o \
+	preprocessingModules.o \
+	constants.o \
+	preprocessingModules.o
+
+coarseUtils.o :  \
+	block.o \
+	utils.o \
+	preprocessingModules.o \
+	cgnsGrid.o \
+	preprocessingModules.o \
+	communication.o \
+	constants.o \
+	inputParam.o
+
+preprocessingModules.o :  \
+	precision.o
+
+preprocessingAPI.o :  \
+	overset.o \
+	block.o \
+	BCData.o \
+	utils.o \
+	oversetAPI.o \
+	cgnsGrid.o \
+	pointMatchedCommPattern.o \
+	solverUtils.o \
+	preprocessingModules.o \
+	inputParam.o \
+	partitioning.o \
+	ADjointPETSc.o \
+	inputParam.o \
+	surfaceUtils.o \
+	inputParam.o \
+	surfaceFamilies.o \
+	ADjointVars.o \
+	haloExchange.o \
+	inputParam.o \
+	blockPointers.o \
+	ADjointVars.o \
+	constants.o \
+	inputParam.o \
+	monitor.o \
+	blockPointers.o \
+	section.o \
+	inputParam.o \
+	wallDistance.o \
+	initializeFlow.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	flowVarRefState.o \
+	precision.o \
+	coarseUtils.o \
+	iteration.o \
+	inputParam.o
+
+BCRoutines.o :  \
+	inputParam.o \
+	ALEUtils.o \
+	utils.o \
+	flowVarRefState.o \
+	BCPointers.o \
+	blockPointers.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	CpCurveFits.o \
+	inputParam.o
+
+solverUtils.o :  \
+	utils.o \
+	block.o \
+	cgnsGrid.o \
+	flowVarRefState.o \
+	inputParam.o \
+	inputParam.o \
+	blockPointers.o \
+	constants.o \
+	monitor.o \
+	section.o \
+	inputParam.o \
+	iteration.o \
+	inputParam.o \
+	communication.o \
+	flowVarRefState.o \
+	flowUtils.o \
+	inputParam.o \
+	turbCurveFits.o \
+	iteration.o \
+	inputParam.o
+
+fluxes.o :  \
+	inputParam.o \
+	utils.o \
+	cgnsGrid.o \
+	flowUtils.o \
+	blockPointers.o \
+	inputParam.o \
+	solverUtils.o \
+	constants.o \
+	iteration.o \
+	flowVarRefState.o
+
+surfaceIntegrations.o :  \
+	zipperIntegrations.o \
+	utils.o \
+	surfaceintegrations_b.o \
+	inputParam.o \
+	inputParam.o \
+	flowUtils.o \
+	blockPointers.o \
+	surfaceintegrations_d.o \
+	inputParam.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	userSurfaceIntegrations.o \
+	constants.o \
+	BCPointers.o \
+	actuatorRegion.o \
+	flowVarRefState.o
+
+zipperIntegrations.o :  \
+	overset.o \
+	utils.o \
+	surfaceFamilies.o \
+	haloExchange.o \
+	flowUtils.o \
+	blockPointers.o \
+	zipperintegrations_d.o \
+	sorting.o \
+	inputParam.o \
+	zipperintegrations_b.o \
+	constants.o \
+	flowVarRefState.o
+
+userSurfaceIntegrations.o :  \
+	inputParam.o \
+	overset.o \
+	block.o \
+	utils.o \
+	adtUtils.o \
+	adtLocalSearch.o \
+	zipperIntegrations.o \
+	adtBuild.o \
+	zipperintegrations_d.o \
+	blockPointers.o \
+	userSurfaceIntegrationData.o \
+	constants.o \
+	oversetUtilities.o \
+	adtData.o \
+	sorting.o \
+	communication.o \
+	flowVarRefState.o \
+	flowUtils.o \
+	zipperintegrations_b.o
+
+actuatorRegion.o :  \
+	residuals_d.o \
+	adtBuild.o \
+	utils.o \
+	residuals_b.o \
+	adtData.o \
+	residuals.o \
+	blockPointers.o \
+	adtUtils.o \
+	actuatorRegionData.o \
+	sorting.o \
+	communication.o \
+	ADjointVars.o \
+	constants.o \
+	adtLocalSearch.o \
+	flowVarRefState.o
+
+ALEUtils.o :  \
+	inputParam.o \
+	utils.o \
+	inputParam.o \
+	flowVarRefState.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	inputParam.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	iteration.o \
+	monitor.o \
+	inputParam.o
+
+residuals.o :  \
+	utils.o \
+	cgnsGrid.o \
+	inputParam.o \
+	inputParam.o \
+	blockPointers.o \
+	constants.o \
+	inputParam.o \
+	section.o \
+	inputParam.o \
+	ALEUtils.o \
+	iteration.o \
+	inputParam.o \
+	communication.o \
+	flowVarRefState.o \
+	precision.o \
+	fluxes.o \
+	flowUtils.o \
+	actuatorRegionData.o \
+	iteration.o \
+	inputParam.o
+
+smoothers.o :  \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	utils.o \
+	BCRoutines.o \
+	residuals.o \
+	flowVarRefState.o \
+	haloExchange.o \
+	turbUtils.o \
+	flowUtils.o \
+	blockPointers.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+multiGrid.o :  \
+	inputParam.o \
+	utils.o \
+	BCRoutines.o \
+	turbBCRoutines.o \
+	block.o \
+	residuals.o \
+	flowVarRefState.o \
+	haloExchange.o \
+	turbUtils.o \
+	flowUtils.o \
+	blockPointers.o \
+	turbAPI.o \
+	inputParam.o \
+	solverUtils.o \
+	constants.o \
+	iteration.o \
+	smoothers.o \
+	inputParam.o
+
+solvers.o :  \
+	NKSolvers.o \
+	overset.o \
+	utils.o \
+	BCData.o \
+	block.o \
+	turbUtils.o \
+	solverUtils.o \
+	inputParam.o \
+	partitioning.o \
+	inputParam.o \
+	BCData.o \
+	inputParam.o \
+	BCRoutines.o \
+	zipperIntegrations.o \
+	surfaceFamilies.o \
+	residuals.o \
+	haloExchange.o \
+	blockPointers.o \
+	turbAPI.o \
+	NKSolvers.o \
+	constants.o \
+	multiGrid.o \
+	monitor.o \
+	preprocessingAPI.o \
+	section.o \
+	inputParam.o \
+	wallDistance.o \
+	ALEUtils.o \
+	inputParam.o \
+	turbBCRoutines.o \
+	inputParam.o \
+	communication.o \
+	tecplotIO.o \
+	flowVarRefState.o \
+	flowUtils.o \
+	surfaceIntegrations.o \
+	inputParam.o \
+	killSignals.o \
+	iteration.o \
+	cgnsNames.o \
+	inputParam.o
+
+agmg.o :  \
+	utils.o \
+	haloExchange.o \
+	blockPointers.o \
+	communication.o \
+	ADjointVars.o \
+	constants.o \
+	inputParam.o
+
+turbMod.o :  \
+	precision.o
+
+turbBCRoutines.o :  \
+	utils.o \
+	flowVarRefState.o \
+	paramTurb.o \
+	blockPointers.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+turbUtils.o :  \
+	section.o \
+	turbMod.o \
+	inputParam.o \
+	inputParam.o \
+	utils.o \
+	iteration.o \
+	inputParam.o \
+	blockPointers.o \
+	turbCurveFits.o \
+	inputParam.o \
+	constants.o \
+	paramTurb.o \
+	flowVarRefState.o
+
+turbCurveFits.o :  \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	paramTurb.o \
+	flowVarRefState.o
+
+sa.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	turbBCRoutines.o \
+	flowVarRefState.o \
+	turbUtils.o \
+	paramTurb.o \
+	blockPointers.o \
+	turbCurveFits.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+kw.o :  \
+	turbMod.o \
+	inputParam.o \
+	utils.o \
+	turbBCRoutines.o \
+	turbUtils.o \
+	flowVarRefState.o \
+	paramTurb.o \
+	blockPointers.o \
+	turbCurveFits.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+kt.o :  \
+	turbMod.o \
+	inputParam.o \
+	utils.o \
+	turbBCRoutines.o \
+	turbUtils.o \
+	flowVarRefState.o \
+	paramTurb.o \
+	blockPointers.o \
+	turbCurveFits.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+SST.o :  \
+	turbMod.o \
+	inputParam.o \
+	utils.o \
+	turbBCRoutines.o \
+	block.o \
+	turbUtils.o \
+	flowVarRefState.o \
+	paramTurb.o \
+	blockPointers.o \
+	turbCurveFits.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+vf.o :  \
+	turbMod.o \
+	inputParam.o \
+	utils.o \
+	turbBCRoutines.o \
+	turbUtils.o \
+	flowVarRefState.o \
+	paramTurb.o \
+	blockPointers.o \
+	turbCurveFits.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o
+
+turbAPI.o :  \
+	inputParam.o \
+	inputParam.o \
+	turbMod.o \
+	SST.o \
+	kw.o \
+	vf.o \
+	utils.o \
+	turbUtils.o \
+	inputParam.o \
+	haloExchange.o \
+	blockPointers.o \
+	sa.o \
+	inputParam.o \
+	kt.o \
+	constants.o \
+	iteration.o \
+	flowVarRefState.o
+
+flowUtils.o :  \
+	precision.o \
+	utils.o \
+	inputParam.o \
+	monitor.o \
+	blockPointers.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	CpCurveFits.o \
+	flowVarRefState.o
+
+utils.o :  \
+	block.o \
+	flowVarRefState.o \
+	cgnsGrid.o \
+	kd_tree.o \
+	ADjointPETSc.o \
+	inputParam.o \
+	ADjointPETSc.o \
+	inputParam.o \
+	inputParam.o \
+	surfaceFamilies.o \
+	inputParam.o \
+	blockPointers.o \
+	ADjointVars.o \
+	constants.o \
+	BCPointers.o \
+	monitor.o \
+	blockPointers.o \
+	section.o \
+	wallDistanceData.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	BCPointers.o \
+	flowVarRefState.o \
+	precision.o \
+	BCPointers.o \
+	inputParam.o \
+	inputParam.o \
+	killSignals.o \
+	iteration.o \
+	inputParam.o \
+	cgnsNames.o \
+	inputParam.o
+
+haloExchange.o :  \
+	overset.o \
+	utils.o \
+	block.o \
+	flowutils_b.o \
+	surfaceFamilies.o \
+	inputParam.o \
+	BCPointers.o \
+	flowUtils.o \
+	blockPointers.o \
+	flowutils_d.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	iteration.o \
+	flowVarRefState.o
+
+surfaceUtils.o :  \
+	overset.o \
+	utils.o \
+	surfaceFamilies.o \
+	blockPointers.o \
+	sorting.o \
+	communication.o \
+	constants.o \
+	BCPointers.o
+
+sorting.o :  \
+	constants.o \
+	precision.o \
+	utils.o
+
+signals.o :  \
+	inputParam.o \
+	communication.o \
+	killSignals.o \
+	constants.o \
+	iteration.o
+
+wallDistance.o :  \
+	inputParam.o \
+	overset.o \
+	utils.o \
+	block.o \
+	adtAPI.o \
+	adtUtils.o \
+	adtLocalSearch.o \
+	adtBuild.o \
+	surfaceFamilies.o \
+	inputParam.o \
+	blockPointers.o \
+	ADjointVars.o \
+	constants.o \
+	section.o \
+	inputParam.o \
+	wallDistanceData.o \
+	adtData.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	iteration.o \
+	inputParam.o
+
+warping.o :  \
+	section.o \
+	overset.o \
+	utils.o \
+	surfaceFamilies.o \
+	preprocessingAPI.o \
+	flowVarRefState.o \
+	cgnsGrid.o \
+	blockPointers.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	ADjointVars.o \
+	constants.o \
+	monitor.o \
+	inputParam.o
+
+getForces.o :  \
+	overset.o \
+	utils.o \
+	surfaceFamilies.o \
+	surfaceIntegrations.o \
+	blockPointers.o \
+	sorting.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	BCPointers.o \
+	flowVarRefState.o
+
+getAreas.o :  \
+	utils.o \
+	flowVarRefState.o \
+	blockPointers.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	inputParam.o
+
+setCpTarget.o :  \
+	utils.o \
+	flowVarRefState.o \
+	blockPointers.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	inputParam.o
+
+utils_d.o :  \
+	section.o \
+	precision.o \
+	inputParam.o \
+	BCPointers.o \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	blockPointers.o
+
+flowutils_d.o :  \
+	precision.o \
+	inputParam.o \
+	flowVarRefState.o \
+	CpCurveFits.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	utils_d.o \
+	monitor.o \
+	blockPointers.o
+
+bcroutines_d.o :  \
+	BCPointers.o \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	CpCurveFits.o \
+	constants.o \
+	iteration.o \
+	utils_d.o \
+	blockPointers.o
+
+turbutils_d.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	paramTurb.o \
+	turbMod.o \
+	blockPointers.o
+
+solverutils_d.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	cgnsGrid.o \
+	inputParam.o \
+	flowVarRefState.o \
+	flowutils_d.o \
+	inputParam.o \
+	utils_d.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	blockPointers.o
+
+aleutils_d.o :  \
+	inputParam.o \
+	cgnsGrid.o \
+	flowVarRefState.o \
+	inputParam.o \
+	inputParam.o \
+	communication.o \
+	utils_d.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	blockPointers.o
+
+fluxes_d.o :  \
+	inputParam.o \
+	cgnsGrid.o \
+	diffSizes.o \
+	flowVarRefState.o \
+	inputParam.o \
+	flowutils_d.o \
+	constants.o \
+	iteration.o \
+	utils_d.o \
+	blockPointers.o
+
+turbbcroutines_d.o :  \
+	inputParam.o \
+	flowVarRefState.o \
+	constants.o \
+	paramTurb.o \
+	blockPointers.o
+
+surfaceintegrations_d.o :  \
+	inputParam.o \
+	BCPointers.o \
+	flowVarRefState.o \
+	inputParam.o \
+	flowutils_d.o \
+	inputParam.o \
+	utils_d.o \
+	communication.o \
+	constants.o \
+	inputParam.o \
+	blockPointers.o
+
+zipperintegrations_d.o :  \
+	surfaceFamilies.o \
+	inputParam.o \
+	flowVarRefState.o \
+	flowutils_d.o \
+	sorting.o \
+	constants.o \
+	utils_d.o \
+	blockPointers.o
+
+residuals_d.o :  \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	cgnsGrid.o \
+	flowVarRefState.o \
+	flowutils_d.o \
+	fluxes_d.o \
+	actuatorRegionData.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	blockPointers.o
+
+sa_d.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	constants.o \
+	paramTurb.o \
+	blockPointers.o
+
+walldistance_d.o :  \
+	constants.o \
+	wallDistanceData.o \
+	blockPointers.o
+
+initializeflow_d.o :  \
+	turbutils_d.o \
+	inputParam.o \
+	flowVarRefState.o \
+	flowutils_d.o \
+	constants.o \
+	paramTurb.o
+
+adjointextra_d.o :  \
+	precision.o \
+	inputParam.o \
+	cgnsGrid.o \
+	diffSizes.o \
+	flowVarRefState.o \
+	communication.o \
+	constants.o \
+	inputParam.o \
+	blockPointers.o
+
+oversetutilities_d.o :  \
+	constants.o
+
+bcdata_d.o :  \
+	section.o \
+	cgnsNames.o \
+	diffSizes.o \
+	BCDataMod.o \
+	inputParam.o \
+	flowVarRefState.o \
+	CpCurveFits.o \
+	communication.o \
+	constants.o \
+	utils_d.o \
+	blockPointers.o
+
+BCExtra_d.o :  \
+	inputParam.o \
+	bcroutines_d.o \
+	utils.o \
+	blockPointers.o \
+	BCPointers.o \
+	constants.o \
+	iteration.o \
+	flowVarRefState.o
+
+adjointextra_b.o :  \
+	precision.o \
+	inputParam.o \
+	cgnsGrid.o \
+	flowVarRefState.o \
+	communication.o \
+	constants.o \
+	inputParam.o \
+	blockPointers.o
+
+utils_b.o :  \
+	section.o \
+	precision.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	BCPointers.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	blockPointers.o
+
+flowutils_b.o :  \
+	precision.o \
+	inputParam.o \
+	CpCurveFits.o \
+	flowVarRefState.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	monitor.o \
+	utils_b.o \
+	blockPointers.o
+
+bcroutines_b.o :  \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	BCPointers.o \
+	CpCurveFits.o \
+	constants.o \
+	iteration.o \
+	utils_b.o \
+	blockPointers.o
+
+turbutils_b.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	paramTurb.o \
+	turbMod.o \
+	blockPointers.o
+
+solverutils_b.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	cgnsGrid.o \
+	flowutils_b.o \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	utils_b.o \
+	blockPointers.o
+
+aleutils_b.o :  \
+	inputParam.o \
+	cgnsGrid.o \
+	flowVarRefState.o \
+	inputParam.o \
+	inputParam.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	utils_b.o \
+	blockPointers.o
+
+turbbcroutines_b.o :  \
+	inputParam.o \
+	flowVarRefState.o \
+	constants.o \
+	paramTurb.o \
+	blockPointers.o
+
+residuals_b.o :  \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	cgnsGrid.o \
+	flowutils_b.o \
+	flowVarRefState.o \
+	fluxes_b.o \
+	actuatorRegionData.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	blockPointers.o
+
+surfaceintegrations_b.o :  \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	BCPointers.o \
+	inputParam.o \
+	communication.o \
+	constants.o \
+	blockPointers.o \
+	inputParam.o \
+	utils_b.o \
+	flowutils_b.o
+
+zipperintegrations_b.o :  \
+	flowutils_b.o \
+	surfaceFamilies.o \
+	inputParam.o \
+	flowVarRefState.o \
+	sorting.o \
+	constants.o \
+	utils_b.o \
+	blockPointers.o
+
+sa_b.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	constants.o \
+	paramTurb.o \
+	blockPointers.o
+
+fluxes_b.o :  \
+	inputParam.o \
+	cgnsGrid.o \
+	flowutils_b.o \
+	flowVarRefState.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	utils_b.o \
+	blockPointers.o
+
+walldistance_b.o :  \
+	constants.o \
+	wallDistanceData.o \
+	blockPointers.o
+
+initializeflow_b.o :  \
+	turbutils_b.o \
+	inputParam.o \
+	flowVarRefState.o \
+	constants.o \
+	paramTurb.o \
+	flowutils_b.o
+
+oversetutilities_b.o :  \
+	constants.o
+
+bcdata_b.o :  \
+	section.o \
+	cgnsNames.o \
+	BCDataMod.o \
+	inputParam.o \
+	flowVarRefState.o \
+	CpCurveFits.o \
+	communication.o \
+	constants.o \
+	utils_b.o \
+	blockPointers.o
+
+BCExtra_b.o :  \
+	constants.o \
+	utils.o \
+	blockPointers.o \
+	bcroutines_b.o
+
+utils_fast_b.o :  \
+	section.o \
+	precision.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	BCPointers.o \
+	inputParam.o \
+	communication.o \
+	su_cgns.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	blockPointers.o
+
+flowutils_fast_b.o :  \
+	precision.o \
+	inputParam.o \
+	CpCurveFits.o \
+	flowVarRefState.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	monitor.o \
+	utils_fast_b.o \
+	blockPointers.o
+
+turbutils_fast_b.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	paramTurb.o \
+	turbMod.o \
+	blockPointers.o
+
+solverutils_fast_b.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	cgnsGrid.o \
+	inputParam.o \
+	flowVarRefState.o \
+	flowutils_fast_b.o \
+	inputParam.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	monitor.o \
+	utils_fast_b.o \
+	blockPointers.o
+
+fluxes_fast_b.o :  \
+	inputParam.o \
+	cgnsGrid.o \
+	flowVarRefState.o \
+	inputParam.o \
+	flowutils_fast_b.o \
+	constants.o \
+	iteration.o \
+	utils_fast_b.o \
+	blockPointers.o
+
+residuals_fast_b.o :  \
+	inputParam.o \
+	inputParam.o \
+	inputParam.o \
+	cgnsGrid.o \
+	flowVarRefState.o \
+	flowutils_fast_b.o \
+	actuatorRegionData.o \
+	communication.o \
+	inputParam.o \
+	constants.o \
+	iteration.o \
+	inputParam.o \
+	fluxes_fast_b.o \
+	blockPointers.o
+
+turbbcroutines_fast_b.o :  \
+	inputParam.o \
+	flowVarRefState.o \
+	constants.o \
+	paramTurb.o \
+	blockPointers.o
+
+sa_fast_b.o :  \
+	section.o \
+	inputParam.o \
+	inputParam.o \
+	flowVarRefState.o \
+	constants.o \
+	paramTurb.o \
+	blockPointers.o
