@@ -426,6 +426,53 @@ contains
 
   end subroutine sourceTerms_block
 
+
+  ! ----------------------------------------------------------------------
+  !                                                                      |
+  !                    No Tapenade Routine below this line               |
+  !                                                                      |
+  ! ----------------------------------------------------------------------
+
+#ifndef USE_TAPENADE
+  subroutine initres(varStart, varEnd)
+    !
+    ! Shell function to call initRes_block on all blocks
+    !
+    use blockPointers
+    use constants
+    use inputTimeSpectral
+    use iteration
+    use section
+    use utils, only : setPointers
+    !
+    !      Subroutine argument.
+    !
+    integer(kind=intType), intent(in) :: varStart, varEnd
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: sps, nn
+
+    ! Loop over the number of spectral solutions.
+
+    spectralLoop: do sps=1,nTimeIntervalsSpectral
+
+       ! Loop over the number of blocks.
+
+       domains: do nn=1,nDom
+
+          ! Set the pointers for this block.
+
+          call setPointers(nn, currentLevel, sps)
+
+          call initres_block(varStart, varEnd, nn, sps)
+
+       end do domains
+
+    end do spectralLoop
+
+  end subroutine initRes
+
   subroutine initres_block(varStart, varEnd, nn, sps)
    !
    !       initres initializes the given range of the residual. Either to
@@ -956,53 +1003,6 @@ contains
    enddo
 
  end subroutine initres_block
-
-
-  ! ----------------------------------------------------------------------
-  !                                                                      |
-  !                    No Tapenade Routine below this line               |
-  !                                                                      |
-  ! ----------------------------------------------------------------------
-
-#ifndef USE_TAPENADE
-  subroutine initres(varStart, varEnd)
-    !
-    ! Shell function to call initRes_block on all blocks
-    !
-    use blockPointers
-    use constants
-    use inputTimeSpectral
-    use iteration
-    use section
-    use utils, only : setPointers
-    !
-    !      Subroutine argument.
-    !
-    integer(kind=intType), intent(in) :: varStart, varEnd
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: sps, nn
-
-    ! Loop over the number of spectral solutions.
-
-    spectralLoop: do sps=1,nTimeIntervalsSpectral
-
-       ! Loop over the number of blocks.
-
-       domains: do nn=1,nDom
-
-          ! Set the pointers for this block.
-
-          call setPointers(nn, currentLevel, sps)
-
-          call initres_block(varStart, varEnd, nn, sps)
-
-       end do domains
-
-    end do spectralLoop
-
-  end subroutine initRes
 
   subroutine sourceTerms
 
