@@ -517,4 +517,192 @@ contains
       end if
     end do
   end subroutine sourceterms_block
+!  differentiation of initres_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *dw
+!   with respect to varying inputs: *dw
+!   rw status of diff variables: *dw:in-out
+!   plus diff mem management of: dw:in
+  subroutine initres_block_b(varstart, varend, nn, sps)
+!
+!       initres initializes the given range of the residual. either to
+!       zero, steady computation, or to an unsteady term for the time
+!       spectral and unsteady modes. for the coarser grid levels the
+!       residual forcing term is taken into account.
+!
+    use blockpointers
+    use flowvarrefstate
+    use inputiteration
+    use inputphysics
+    use inputtimespectral
+    use inputunsteady
+    use iteration
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: varstart, varend, nn, sps
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
+    real(kind=realtype) :: oneoverdt, tmp
+    real(kind=realtype), dimension(:, :, :, :), pointer :: ww, wsp, wsp1
+    real(kind=realtype), dimension(:, :, :), pointer :: volsp
+    integer :: branch
+! return immediately of no variables are in the range.
+    if (varend .ge. varstart) then
+! determine the equation mode and act accordingly.
+      select case  (equationmode) 
+      case (steady) 
+! steady state computation.
+! determine the currently active multigrid level.
+        if (currentlevel .eq. groundlevel) then
+          call pushcontrol2b(1)
+        else
+          call pushcontrol2b(0)
+        end if
+      case default
+        call pushcontrol2b(2)
+      end select
+      do l=varend,varstart,-1
+        do j=jl,2,-1
+          do i=il,2,-1
+            dwd(i, j, kb, l) = 0.0_8
+            dwd(i, j, ke, l) = 0.0_8
+            dwd(i, j, 1, l) = 0.0_8
+            dwd(i, j, 0, l) = 0.0_8
+          end do
+        end do
+        do k=kb,0,-1
+          do i=il,2,-1
+            dwd(i, jb, k, l) = 0.0_8
+            dwd(i, je, k, l) = 0.0_8
+            dwd(i, 1, k, l) = 0.0_8
+            dwd(i, 0, k, l) = 0.0_8
+          end do
+        end do
+        do k=kb,0,-1
+          do j=jb,0,-1
+            dwd(ib, j, k, l) = 0.0_8
+            dwd(ie, j, k, l) = 0.0_8
+            dwd(1, j, k, l) = 0.0_8
+            dwd(0, j, k, l) = 0.0_8
+          end do
+        end do
+      end do
+      call popcontrol2b(branch)
+      if (branch .eq. 0) then
+        do l=varend,varstart,-1
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                dwd(i, j, k, l) = 0.0_8
+              end do
+            end do
+          end do
+        end do
+      else if (branch .eq. 1) then
+        do l=varend,varstart,-1
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                dwd(i, j, k, l) = 0.0_8
+              end do
+            end do
+          end do
+        end do
+      end if
+    end if
+  end subroutine initres_block_b
+  subroutine initres_block(varstart, varend, nn, sps)
+!
+!       initres initializes the given range of the residual. either to
+!       zero, steady computation, or to an unsteady term for the time
+!       spectral and unsteady modes. for the coarser grid levels the
+!       residual forcing term is taken into account.
+!
+    use blockpointers
+    use flowvarrefstate
+    use inputiteration
+    use inputphysics
+    use inputtimespectral
+    use inputunsteady
+    use iteration
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: varstart, varend, nn, sps
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
+    real(kind=realtype) :: oneoverdt, tmp
+    real(kind=realtype), dimension(:, :, :, :), pointer :: ww, wsp, wsp1
+    real(kind=realtype), dimension(:, :, :), pointer :: volsp
+! return immediately of no variables are in the range.
+    if (varend .lt. varstart) then
+      return
+    else
+! determine the equation mode and act accordingly.
+      select case  (equationmode) 
+      case (steady) 
+! steady state computation.
+! determine the currently active multigrid level.
+        if (currentlevel .eq. groundlevel) then
+! ground level of the multigrid cycle. initialize the
+! owned residuals to zero.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dw(i, j, k, l) = zero
+                end do
+              end do
+            end do
+          end do
+        else
+! coarse grid level. initialize the owned cells to the
+! residual forcing terms.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dw(i, j, k, l) = wr(i, j, k, l)
+                end do
+              end do
+            end do
+          end do
+        end if
+      end select
+! set the residual in the halo cells to zero. this is just
+! to avoid possible problems. their values do not matter.
+      do l=varstart,varend
+        do k=0,kb
+          do j=0,jb
+            dw(0, j, k, l) = zero
+            dw(1, j, k, l) = zero
+            dw(ie, j, k, l) = zero
+            dw(ib, j, k, l) = zero
+          end do
+        end do
+        do k=0,kb
+          do i=2,il
+            dw(i, 0, k, l) = zero
+            dw(i, 1, k, l) = zero
+            dw(i, je, k, l) = zero
+            dw(i, jb, k, l) = zero
+          end do
+        end do
+        do j=2,jl
+          do i=2,il
+            dw(i, j, 0, l) = zero
+            dw(i, j, 1, l) = zero
+            dw(i, j, ke, l) = zero
+            dw(i, j, kb, l) = zero
+          end do
+        end do
+      end do
+    end if
+  end subroutine initres_block
 end module residuals_b
