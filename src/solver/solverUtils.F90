@@ -686,7 +686,7 @@ contains
     !spectral stability derivative case...
 
 #ifndef USE_TAPENADE
-! We do not differentiate the time spectral stability staff for now ...
+! We do not differentiate the time spectral stability stuff for now
     if(TSStability)then
        ! Determine the time values of the old and new time level.
        ! It is assumed that the rigid body rotation of the mesh is only
