@@ -1859,7 +1859,6 @@ contains
 
     case (cgnsCp)
        ! Factor multiplying p-pInf
-       fact = two/(gammaInf*pInf*MachCoef*MachCoef)
 
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
