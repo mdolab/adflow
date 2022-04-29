@@ -1437,7 +1437,7 @@ contains
     real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
     real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
-    real(kind=realType) :: factDim ! correct factor for rotating Cp-normalisation
+    real(kind=realType) :: uInfDim2 ! MachCoeff-derived (Uinf*Uref)**2
     real(kind=realType) :: rot_speed ! norm of wCrossR
     real(kind=realType),Dimension(3) :: r_ ! spanwise position for given point
     real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
@@ -1859,6 +1859,7 @@ contains
 
     case (cgnsCp)
        ! Factor multiplying p-pInf
+       uInfDim2 = (MachCoef*MachCoef*gammaInf*pInf/rhoInf)*uRef*uRef
 
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
@@ -1874,7 +1875,7 @@ contains
              wCrossR(3) = rrate_(1)*r_(2) - rrate_(2)*r_(1)
              rot_speed = SQRT(wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2 )
              buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
-                  / (half*(rhoInfDim)*((uInf*uRef)**2 + (rot_speed)**2 ))
+                  / (half*(rhoInfDim)*(uInfDim2 + (rot_speed)**2 ))
              ! Comments on the computations above - no code 
              ! Note, that we take rrate_(1) since we rotate 
              !
