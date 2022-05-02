@@ -3040,8 +3040,9 @@ contains
     use constants
     use flowVarRefState, only : pInfCorr
     use inputDiscretization, only: vis2, vis4
+    use inputIteration, only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
     use inputPhysics, only : equations
-    use iteration, only : rFil
+    use iteration, only : rFil, totalR0, totalR
     use flowVarRefState, only : gammaInf, pInfCorr, rhoInf
     implicit none
 
@@ -3111,7 +3112,15 @@ contains
 
     ! Set a couple of constants for the scheme.
 
-    fis2 = rFil*vis2
+    if (useDissContinuation) then
+       if (totalR == zero .or. totalR0 == zero) then
+          fis2 = rFil * vis2
+       else
+          fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness*(log10(totalR / totalR0) + dissContMidpoint))))
+       end if
+    else
+       fis2 = rFil * vis2
+    end if
     fis4 = rFil*vis4
     sfil = one - rFil
 
