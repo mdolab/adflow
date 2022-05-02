@@ -65,17 +65,21 @@
 !
 !       Variables to store the convergence info.
 !
-       ! nIterCur: Current number of iterations. Also niterCur is an
-       !           integer, because of cgns.
-
-       integer :: nIterCur
-
        ! convArray(0:nIterMax,nsps,nmon): 3D array to store the
        !                                  convergence histories.
 
        real(kind=cgnsRealType), dimension(:,:,:), allocatable :: &
                                                                convArray
-!
+
+       ! solverDataArray(0:Itermax, sps, 4): stores the cumulative number of iterations, 
+       !                       CFL, step size, and lin res at each major iter.
+       !                       It is used post processing convergence histories
+       real(kind=realType), dimension(:,:,:), allocatable:: solverDataArray
+       
+       ! solverTypeArray(0:Itermax, sps): Stores string designating the iteration type on 
+       !                      each major iteration. Each string is 8 char long
+       character(len=8), dimension(:,:), allocatable:: solverTypeArray 
+                                                               
 !       Variables to store the time accurate history.
 !       Only allocated for a time accurate computation.
 !
@@ -109,6 +113,6 @@
        ! writeVolume:  Idem for a volume solution file.
        ! writeSurface: Idem for a surface solution file.
 
-       logical :: writeGrid, writeVolume, writeSurface
+       logical :: writeGrid, writeVolume, writeSurface, writeSolEachIter
 
        end module monitor

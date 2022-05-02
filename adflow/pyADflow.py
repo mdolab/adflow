@@ -29,7 +29,7 @@ import numpy
 import sys
 from mpi4py import MPI
 from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
-from baseclasses.utils import Error
+from baseclasses.utils import Error, CaseInsensitiveDict
 from . import MExt
 import hashlib
 from collections import OrderedDict
@@ -66,7 +66,7 @@ class ADFLOW(AeroSolver):
     comm : MPI intra comm
         The communicator on which to create ADflow. If not given, defaults
         to MPI.COMM_WORLD.
-    options : dictionary
+    options : dict
         The list of options to use with ADflow. This keyword argument
         is NOT OPTIONAL. It must always be provided. It must contain, at least
         the 'gridFile' entry for the filename of the grid to load
@@ -81,6 +81,10 @@ class ADFLOW(AeroSolver):
     def __init__(self, comm=None, options=None, debug=False, dtype="d"):
 
         startInitTime = time.time()
+
+        # Define the memory allocation flags ASAP (needed for __del__)
+        # Matrix Setup Flag
+        self.adjointSetup = False
 
         # Load the compiled module using MExt, allowing multiple
         # imports
@@ -173,7 +177,6 @@ class ADFLOW(AeroSolver):
         self.updateTime = 0.0
         self.nSlice = 0
         self.nLiftDist = 0
-        self.nMeshFail = 0
 
         # Set default values
         self.adflow.inputio.autoparameterupdate = False
@@ -187,14 +190,13 @@ class ADFLOW(AeroSolver):
         self.userSurfaceIntegrationsFinalized = False
         self.hasIntegrationSurfaces = False
 
-        # Matrix Setup Flag
-        self.adjointSetup = False
-
         # Write the intro message
-        self.adflow.utils.writeintromessage()
+        if self.getOption("printIntro"):
+            self.adflow.utils.writeintromessage()
 
         # Remind the user of all the adflow options:
-        self.printOptions()
+        if self.getOption("printAllOptions"):
+            self.printOptions()
 
         # Do the remainder of the operations that would have been done
         # had we read in a param file
@@ -359,15 +361,16 @@ class ADFLOW(AeroSolver):
         """
         # Release PETSc memory
         self.releaseAdjointMemory()
-        self.adflow.nksolver.destroynksolver()
-        self.adflow.anksolver.destroyanksolver()
+        if hasattr(self, "adflow"):
+            self.adflow.nksolver.destroynksolver()
+            self.adflow.anksolver.destroyanksolver()
 
-        # Release Fortran memory
-        # Check these fortran routines, they are not complete.
-        # However, they do work and the left over memory
-        # is not too large.
-        self.adflow.utils.releasememorypart1()
-        self.adflow.utils.releasememorypart2()
+            # Release Fortran memory
+            # Check these fortran routines, they are not complete.
+            # However, they do work and the left over memory
+            # is not too large.
+            self.adflow.utils.releasememorypart1()
+            self.adflow.utils.releasememorypart2()
 
     def setMesh(self, mesh):
         """
@@ -981,12 +984,6 @@ class ADFLOW(AeroSolver):
 
         startCallTime = time.time()
 
-        # Make sure the user isn't trying to solve a slave
-        # aeroproblem. Cannot do that
-        if hasattr(aeroProblem, "isSlave"):
-            if aeroProblem.isSlave:
-                raise Error("Cannot solve an aeroProblem created as a slave")
-
         # Get option about adjoint memory
         releaseAdjointMemory = kwargs.pop("relaseAdjointMemory", True)
 
@@ -1041,10 +1038,9 @@ class ADFLOW(AeroSolver):
                 )
 
         if self.adflow.killsignals.fatalfail:
-            fileName = f"failed_mesh_{self.nMeshFail:02}.cgns"
-            print(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
+            fileName = f"failed_mesh_{self.curAP.name}_{self.curAP.adflowData.callCounter:03}.cgns"
+            self.pp(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
             self.writeMeshFile(os.path.join(self.getOption("outputDirectory"), fileName))
-            self.nMeshFail += 1
             self.curAP.fatalFail = True
             self.curAP.solveFailed = True
             return
@@ -1181,6 +1177,116 @@ class ADFLOW(AeroSolver):
             # Solve current step
             self.solveTimeStep()
             self.writeSolution()
+
+    def getConvergenceHistory(self, workUnitTime=None):
+        """
+        Retrieve the convergence history from the fortran level.
+
+        This information is printed to the terminal during a run.
+        It is iterTot, IterType, CFL, Step, Linear Res, and CPU time (if added as a monitor variable)
+        and the data for each monitor variable.
+
+        Parameters
+        ----------
+        workUnitTime : float
+            The scaling factor specific to the processor.
+            If provided and CPU time is a monitor variable (`showcpu` is true), the work units
+            (a processor independent time unit) ~will be added to the returned dict too.
+
+        Returns
+        -------
+        convergeDict : dict
+            A dictionary of arrays and lists. The keys are the data types.
+            The indices of the arrays are the major iteration numbers.
+
+        Examples
+        --------
+        >>> CFDsolver(ap)
+        >>> CFDsolver.evalFunctions(ap1, funcs, ['cl', 'cd'])
+        >>> hist = CFDSolver.getConvergenceHistory()
+        >>> if MPI.COMM_WORLD.rank == 0:
+        >>>     with open(os.path.join(output_dir, "convergence_history.pkl"), "wb") as f:
+        >>>         pickle.dump(hist, f)
+        """
+
+        # only the root proc has all the data and the data should be global.
+        # so get the data from the root proc and then broadcast it.
+        if self.comm.rank == 0:
+            # --- get data ---
+            convergeArray = self.adflow.monitor.convarray
+            solverDataArray = self.adflow.monitor.solverdataarray
+
+            # We can't access monnames directly, because f2py apparently can't
+            # handle an allocatable array of strings.
+            # related stackoverflow posts:
+            # https://stackoverflow.com/questions/60141710/f2py-on-module-with-allocatable-string
+            # https://stackoverflow.com/questions/64900066/dealing-with-character-arrays-in-f2py
+            monNames = self.adflow.utils.getmonitorvariablenames(int(self.adflow.monitor.nmon))
+
+            # similarly we need to use a special function to
+            # retrive the additional solver type information
+            typeArray = self.adflow.utils.getsolvertypearray(
+                self.adflow.iteration.itertot, self.adflow.inputtimespectral.ntimeintervalsspectral
+            )
+
+            # --- format the data ---
+            # trim the array
+            solverDataArray = self._trimHistoryData(solverDataArray)
+            convergeArray = self._trimHistoryData(convergeArray)
+            monNames = self._convertFortranStringArrayToList(monNames)
+
+            # convert the fortran sting array to a list of strings
+            type_list = []
+            for idx_sps in range(self.adflow.inputtimespectral.ntimeintervalsspectral):
+                type_list.append(self._convertFortranStringArrayToList(typeArray[:, idx_sps, :]))
+
+            # there is only one time spectral instance, so that dimension can be removed
+            if self.adflow.inputtimespectral.ntimeintervalsspectral == 1:
+                type_list = type_list[0]
+
+            # --- create a dictionary with the labels and the values ---
+            convergeDict = CaseInsensitiveDict(
+                {
+                    "total minor iters": numpy.array(solverDataArray[:, 0], dtype=int),
+                    "CFL": solverDataArray[:, 1],
+                    "step": solverDataArray[:, 2],
+                    "linear res": solverDataArray[:, 3],
+                    "iter type": type_list,
+                }
+            )
+
+            if self.adflow.monitor.showcpu:
+                convergeDict["wall time"] = solverDataArray[:, 4]
+                if workUnitTime is not None:
+                    convergeDict["work units"] = convergeDict["wall time"] * (self.comm.size) / workUnitTime
+
+            for idx, var in enumerate(monNames):
+                convergeDict[var] = convergeArray[:, idx]
+        else:
+            convergeDict = {}
+
+        convergeDict = self.comm.bcast(convergeDict, root=0)
+
+        return convergeDict
+
+    def _trimHistoryData(self, data_array):
+        """
+        Trim the convergence history data to the number of iterations actually run.
+        and remove the extra dimensions if only one time spectral instance was used.
+        """
+
+        # --- trim the array ---
+        # how many iterations were actually run
+        num_iters = self.adflow.iteration.itertot
+        # add an iteration for the initial residual evaluation
+        data_array = data_array[: (num_iters + 1)]
+
+        # remove possibly unnecessary dimensions
+        # if there is only one grid in the convergence history (no multigrid)
+        if self.adflow.inputtimespectral.ntimeintervalsspectral == 1:
+            data_array = data_array.reshape((data_array.shape[0], data_array.shape[2]))
+
+        return data_array
 
     def advanceTimeStepCounter(self):
         """
@@ -2594,9 +2700,9 @@ class ADFLOW(AeroSolver):
     #   i.e. an Aerostructural solver
     # =========================================================================
 
-    def getSurfaceCoordinates(self, groupName=None, includeZipper=True):
+    def getSurfaceCoordinates(self, groupName=None, includeZipper=True, TS=0):
         # This is an alias for getSurfacePoints
-        return self.getSurfacePoints(groupName, includeZipper)
+        return self.getSurfacePoints(groupName, includeZipper, TS)
 
     def getPointSetName(self, apName):
         """
@@ -2688,7 +2794,7 @@ class ADFLOW(AeroSolver):
             # DVGeo appeared and we have not embedded points!
             if ptSetName not in self.DVGeo.points:
                 coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
-                self.DVGeo.addPointSet(coords0, ptSetName)
+                self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
 
             # Check if our point-set is up to date:
             if not self.DVGeo.pointSetUpToDate(ptSetName) or aeroProblem.adflowData.disp is not None:
@@ -2780,7 +2886,6 @@ class ADFLOW(AeroSolver):
                     AP.savedOptions["adflow"][key] = curVal
 
         alpha = AP.alpha
-        beta = AP.beta
         beta = AP.beta
         mach = AP.mach
         machRef = AP.machRef
@@ -2940,6 +3045,19 @@ class ADFLOW(AeroSolver):
         # 4. Periodic Parameters --- These are not checked/verified
         # and come directly from aeroProblem. Make sure you specify
         # them there properly!!
+        if self.getOption("useExternalDynamicMesh"):
+            # The inputs here are mainly used for TS stability problem.
+            # For general aeroelastic problem, we rely on more general settings.
+            # Currently, polynomial motion is not supported for aeroelastic problem.
+            AP.degreePol = 0
+            AP.coefPol = [0.0]
+            #  no odd number of instance allowed!
+            AP.degreeFourier = (self.adflow.inputtimespectral.ntimeintervalsspectral - 1) // 2
+            AP.cosCoefFourier = [0.0]
+            AP.sinCoefFourier = [0.0]
+        # if use time spectral, we need one of the following
+        # to be true to get a correct time period.
+        # the number of time instance is set directly.
         if self.getOption("alphaMode"):
             self.adflow.inputmotion.degreepolalpha = int(AP.degreePol)
             self.adflow.inputmotion.coefpolalpha = AP.coefPol
@@ -2983,6 +3101,9 @@ class ADFLOW(AeroSolver):
             self.adflow.inputmotion.degreefouryrot = AP.degreeFourier
             self.adflow.inputmotion.coscoeffouryrot = AP.cosCoefFourier
             self.adflow.inputmotion.sincoeffouryrot = AP.sinCoefFourier
+        elif self.getOption("useExternalDynamicMesh"):
+            # if it is an aeroelastic case
+            self.adflow.inputtimespectral.omegafourier = AP.omegaFourier
 
         # Set any possible BC Data coming out of the aeroProblem
         nameArray, dataArray, groupArray, groupNames, empty = self._getBCDataFromAeroProblem(AP)
@@ -3388,11 +3509,16 @@ class ADFLOW(AeroSolver):
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
         if not (self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint")):
-            # Extract the psi:
-            psi = self.curAP.adflowData.adjoints[objective]
 
-            # Actually Solve the adjoint system...psi is updated with the
-            # new solution.
+            if self.getOption("restartAdjoint"):
+                # Use the previous solution as the initial guess
+                psi = self.curAP.adflowData.adjoints[objective]
+            else:
+                # Use a zero initial guess
+                psi = numpy.zeros_like(self.curAP.adflowData.adjoints[objective])
+
+            # Actually solve the adjoint system
+            # psi is updated with the new solution
             self.adflow.adjointapi.solveadjoint(RHS, psi, True)
 
             # Now set the flags and possibly reset adjoint
@@ -3469,7 +3595,8 @@ class ADFLOW(AeroSolver):
 
             elif key in self.possibleAeroDVs:
                 funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
-                if key == "alpha":
+                # Convert angle derivatives from 1/rad to 1/deg
+                if key in ["alpha", "beta"]:
                     funcsSens[dvName] *= numpy.pi / 180.0
 
             elif key in self.possibleBCDvs:
@@ -3604,7 +3731,10 @@ class ADFLOW(AeroSolver):
                 self.adflow.killsignals.routinefailed = False
                 self.adflow.killsignals.fatalFail = False
                 self.updateTime = time.time() - timeA
-                if newGrid is not None:
+                if newGrid is not None and not self.getOption("useExternalDynamicMesh"):
+                    # since updateGeometryInfo assumes one time slice
+                    # when using ts with externally defined mesh, the grid is provided externally;
+                    # updateGeometryInfo mainly serves to update the metrics and etc.
                     self.adflow.warping.setgrid(newGrid)
             # Update geometric data, depending on the type of simulation
             if self.getOption("equationMode").lower() == "unsteady":
@@ -3738,6 +3868,8 @@ class ADFLOW(AeroSolver):
         funcDeriv=False,
         fDeriv=False,
         groupName=None,
+        mode="AD",
+        h=None,
     ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
@@ -3760,12 +3892,16 @@ class ADFLOW(AeroSolver):
         funcDeriv : bool
             Flag specifiying if the derviative of the cost functions
             (as defined in the current aeroproblem) should be returned.
-        Fderiv : bool
+        fderiv : bool
             Flag specifiying if the derviative of the surface forces (tractions)
             should be returned
         groupName : str
             Optional group name to use for evaluating functions. Defaults to all
             surfaces.
+        mode : str ["AD", "FD", or "CS"]
+            Specifies how the jacobian vector products will be computed.
+        h : float
+            Step sized used when the mode is "FD" or "CS
 
         Returns
         -------
@@ -3774,7 +3910,7 @@ class ADFLOW(AeroSolver):
         """
 
         if xDvDot is None and xSDot is None and xVDot is None and wDot is None:
-            raise Error("computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot " "all be None")
+            raise Error("computeJacobianVectorProductFwd: xDvDot, xSDot, xVDot and wDot cannot all be None")
 
         self._setAeroDVs()
         nTime = self.adflow.inputtimespectral.ntimeintervalsspectral
@@ -3869,23 +4005,70 @@ class ADFLOW(AeroSolver):
         else:
             famLists = self._expandGroupNames(groupNames)
 
-        # Extract any possibly BC daa
-        dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
-            xvdot,
-            extradot,
-            wdot,
-            bcDataValuesdot,
-            useSpatial,
-            useState,
-            famLists,
-            bcDataNames,
-            bcDataValues,
-            bcDataFamLists,
-            bcVarsEmpty,
-            costSize,
-            max(1, fSize),
-            nTime,
-        )
+        if mode == "AD":
+            dwdot, tmp, fdot = self.adflow.adjointapi.computematrixfreeproductfwd(
+                xvdot,
+                extradot,
+                wdot,
+                bcDataValuesdot,
+                useSpatial,
+                useState,
+                famLists,
+                bcDataNames,
+                bcDataValues,
+                bcDataFamLists,
+                bcVarsEmpty,
+                costSize,
+                max(1, fSize),
+                nTime,
+            )
+        elif mode == "FD":
+            if h is None:
+                raise Error("if mode 'FD' is used, a stepsize must be specified using the kwarg 'h'")
+
+            dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdfd(
+                xvdot,
+                extradot,
+                wdot,
+                bcDataValuesdot,
+                useSpatial,
+                useState,
+                famLists,
+                bcDataNames,
+                bcDataValues,
+                bcDataFamLists,
+                bcVarsEmpty,
+                costSize,
+                max(1, fSize),
+                nTime,
+                h,
+            )
+        elif mode == "CS":
+            if h is None:
+                raise Error("if mode 'CS' is used, a stepsize must be specified using the kwarg 'h'")
+
+            if self.dtype == "D":
+                dwdot, tmp, fdot = self.adflow.adjointdebug.computematrixfreeproductfwdcs(
+                    xvdot,
+                    extradot,
+                    wdot,
+                    bcDataValuesdot,
+                    useSpatial,
+                    useState,
+                    famLists,
+                    bcDataNames,
+                    bcDataValues,
+                    bcDataFamLists,
+                    bcVarsEmpty,
+                    costSize,
+                    max(1, fSize),
+                    nTime,
+                    h,
+                )
+            else:
+                raise Error("Complexified ADflow must be used to apply the complex step")
+        else:
+            raise Error(f"mode {mode} for computeJacobianVectorProductFwd not availiable")
 
         # Explictly put fdot to nothing if size is zero
         if fSize == 0:
@@ -4134,6 +4317,28 @@ class ADFLOW(AeroSolver):
 
         # Single return (most frequent) is 'clean', otherwise a tuple.
         return tuple(returns) if len(returns) > 1 else returns[0]
+
+    def computeJacobianVectorProductBwdFast(
+        self,
+        resBar=None,
+    ):
+        """
+        This fast routine computes only the derivatives of the residuals with respect to the states.
+        This is the operator used for the matrix-free solution of the adjoint system.
+
+        Parameters
+        ----------
+        resBar : numpy array
+            Seed for the residuals (dwb in adflow)
+
+        Returns
+        -------
+        wbar: array
+            state derivative seeds
+        """
+        wbar = self.adflow.adjointapi.computematrixfreeproductbwdfast(resBar, self.getAdjointStateSize())
+
+        return wbar
 
     def mapVector(self, vec1, groupName1, groupName2, vec2=None, includeZipper=True):
         """This is the main workhorse routine of everything that deals with
@@ -4656,6 +4861,7 @@ class ADFLOW(AeroSolver):
             "outputSurfaceFamily": [str, "allSurfaces"],
             "writeSurfaceSolution": [bool, True],
             "writeVolumeSolution": [bool, True],
+            "writeSolutionEachIter": [bool, False],
             "writeTecplotSurfaceSolution": [bool, False],
             "nSaveVolume": [int, 1],
             "nSaveSurface": [int, 1],
@@ -4718,7 +4924,7 @@ class ADFLOW(AeroSolver):
             "nSubiter": [int, 1],
             "CFL": [float, 1.7],
             "CFLCoarse": [float, 1.0],
-            "MGCycle": [str, "3w"],
+            "MGCycle": [str, "sg"],
             "MGStartLevel": [int, -1],
             "resAveraging": [str, ["alternate", "never", "always"]],
             "smoothParameter": [float, 1.5],
@@ -4766,6 +4972,8 @@ class ADFLOW(AeroSolver):
             "windAxis": [bool, False],
             "alphaFollowing": [bool, True],
             "TSStability": [bool, False],
+            "useTSInterpolatedGridVelocity": [bool, False],
+            "useExternalDynamicMesh": [bool, False],
             # Convergence Parameters
             "L2Convergence": [float, 1e-8],
             "L2ConvergenceRel": [float, 1e-16],
@@ -4836,11 +5044,14 @@ class ADFLOW(AeroSolver):
             "numberSolutions": [bool, True],
             "printIterations": [bool, True],
             "printTiming": [bool, True],
+            "printIntro": [bool, True],
+            "printAllOptions": [bool, True],
             "setMonitor": [bool, True],
             "printWarnings": [bool, True],
             "monitorVariables": [list, ["cpu", "resrho", "resturb", "cl", "cd"]],
             "surfaceVariables": [list, ["cp", "vx", "vy", "vz", "mach"]],
             "volumeVariables": [list, ["resrho"]],
+            "storeConvHist": [bool, True],
             # Multidisciplinary Coupling Parameters
             "forcesAsTractions": [bool, True],
             # Adjoint Parameters
@@ -4857,6 +5068,10 @@ class ADFLOW(AeroSolver):
             "adjointSolver": [str, ["GMRES", "TFQMR", "Richardson", "BCGS", "IBCGS"]],
             "adjointMaxIter": [int, 500],
             "adjointSubspaceSize": [int, 100],
+            "GMRESOrthogonalizationType": [
+                str,
+                ["modified Gram-Schmidt", "CGS never refine", "CGS refine if needed", "CGS always refine"],
+            ],
             "adjointMonitorStep": [int, 10],
             "dissipationLumpingParameter": [float, 6.0],
             "preconditionerSide": [str, ["right", "left"]],
@@ -4935,6 +5150,7 @@ class ADFLOW(AeroSolver):
             "parallel": self.adflow.inputparallel,
             "ts": self.adflow.inputtimespectral,
             "overset": self.adflow.inputoverset,
+            "monitor": self.adflow.monitor,
         }
 
         # In the option map, we first list the "module" defined in
@@ -5125,6 +5341,7 @@ class ADFLOW(AeroSolver):
             "windaxis": ["stab", "usewindaxis"],
             "alphafollowing": ["stab", "tsalphafollowing"],
             "tsstability": ["stab", "tsstability"],
+            "usetsinterpolatedgridvelocity": ["ts", "usetsinterpolatedgridvelocity"],
             # Convergence Parameters
             "l2convergence": ["iter", "l2conv"],
             "l2convergencerel": ["iter", "l2convrel"],
@@ -5200,6 +5417,7 @@ class ADFLOW(AeroSolver):
             "printwarnings": ["iter", "printwarnings"],
             "printtiming": ["adjoint", "printtiming"],
             "setmonitor": ["adjoint", "setmonitor"],
+            "storeconvhist": ["io", "storeconvinneriter"],
             # Adjoint Params
             "adjointl2convergence": ["adjoint", "adjreltol"],
             "adjointl2convergencerel": ["adjoint", "adjreltolrel"],
@@ -5211,7 +5429,6 @@ class ADFLOW(AeroSolver):
             "viscpc": ["adjoint", "viscpc"],
             "frozenturbulence": ["adjoint", "frozenturbulence"],
             "usediagtspc": ["adjoint", "usediagtspc"],
-            "restartadjoint": ["adjoint", "restartadjoint"],
             "adjointsolver": {
                 "gmres": "gmres",
                 "tfqmr": "tfqmr",
@@ -5219,6 +5436,13 @@ class ADFLOW(AeroSolver):
                 "bcgs": "bcgs",
                 "ibcgs": "ibcgs",
                 "location": ["adjoint", "adjointsolvertype"],
+            },
+            "gmresorthogonalizationtype": {
+                "modified gram-schmidt": "modified_gram_schmidt",
+                "cgs never refine": "cgs_never_refine",
+                "cgs refine if needed": "cgs_refine_if_needed",
+                "cgs always refine": "cgs_always_refine",
+                "location": ["adjoint", "gmresorthogtype"],
             },
             "adjointmaxiter": ["adjoint", "adjmaxiter"],
             "adjointsubspacesize": ["adjoint", "adjrestart"],
@@ -5253,8 +5477,10 @@ class ADFLOW(AeroSolver):
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
             "computecavitation": ["cost", "computecavitation"],
+            "writesolutioneachiter": ["monitor", "writesoleachiter"],
+            "writesurfacesolution": ["monitor", "writesurface"],
+            "writevolumesolution": ["monitor", "writevolume"],
         }
-
         return optionMap, moduleMap
 
     def _getSpecialOptionLists(self):
@@ -5266,8 +5492,6 @@ class ADFLOW(AeroSolver):
 
         pythonOptions = {
             "numbersolutions",
-            "writesurfacesolution",
-            "writevolumesolution",
             "writetecplotsurfacesolution",
             "coupledsolution",
             "partitiononly",
@@ -5279,7 +5503,11 @@ class ADFLOW(AeroSolver):
             "outputsurfacefamily",
             "cutcallback",
             "infchangecorrection",
+            "restartadjoint",
             "skipafterfailedadjoint",
+            "useexternaldynamicmesh",
+            "printalloptions",
+            "printintro",
         }
 
         # Deprecated options that may be in old scripts and should not be used.
@@ -5491,6 +5719,9 @@ class ADFLOW(AeroSolver):
         liftFileName = base + "_forced_lift.dat"
         sliceFileName = base + "_forced_slices.dat"
 
+        convSolFileBaseName = base + "_intermediate_sol"
+
+        self.adflow.inputio.convsolfilebasename = self._expandString(convSolFileBaseName)
         self.adflow.inputio.forcedvolumefile = self._expandString(volFileName)
         self.adflow.inputio.forcedsurfacefile = self._expandString(surfFileName)
         self.adflow.inputio.forcedliftfile = self._expandString(liftFileName)
@@ -5558,17 +5789,18 @@ class ADFLOW(AeroSolver):
 
         return arr
 
-    def createSlaveAeroProblem(self, master):
-        """Create a slave aeroproblem"""
+    def _convertFortranStringArrayToList(self, fortArray):
+        """Undoes the _createFotranStringArray"""
+        strList = []
+        for ii in range(len(fortArray)):
+            if fortArray[ii].dtype == numpy.dtype("|S1"):
+                strList.append(b"".join(fortArray[ii]).decode().strip())
+            elif fortArray[ii].dtype == numpy.dtype("<U1"):
+                strList.append("".join(fortArray[ii]).strip())
+            else:
+                raise TypeError(f"Unable to convert {fortArray[ii]} of type {fortArray[ii].dtype} to string")
 
-        # Make sure everything is created for the master
-        self.setAeroProblem(master)
-
-        slave = copy.deepcopy(master)
-        slave.adflowData = master.adflowData
-        slave.surfMesh = master.surfMesh
-        slave.isSlave = True
-        return slave
+        return strList
 
     def _readPlot3DSurfFile(self, fileName, convertToTris=True):
         """Read a plot3d file and return the points and connectivity in

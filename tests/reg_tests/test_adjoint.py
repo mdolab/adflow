@@ -31,10 +31,10 @@ import reg_test_classes
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
-def setDVGeo(ffdFile, cmplx=False):
+def getDVGeo(ffdFile, isComplex=False):
 
     # Setup geometry/mesh
-    DVGeo = DVGeometry(ffdFile, complex=cmplx)
+    DVGeo = DVGeometry(ffdFile, isComplex=isComplex)
 
     nTwist = 6
     DVGeo.addRefAxis(
@@ -220,7 +220,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
-        self.CFDSolver.setDVGeo(setDVGeo(self.ffdFile, cmplx=False))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False))
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
@@ -275,7 +275,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.CFDSolver = ADFLOW_C(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
-        self.CFDSolver.setDVGeo(setDVGeo(self.ffdFile, cmplx=True))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True))
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
@@ -348,7 +348,8 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
                 err_msg = "Failed value for: {}".format(key + " " + dv_key)
 
                 ref_val = self.handler.db["Eval Functions Sens:"][key][dv_key]
-                ref_val = ref_val.flatten()[0]
+                if not isinstance(ref_val, float):
+                    ref_val = ref_val.flatten()[0]
 
                 numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=5e-9, rtol=5e-9, err_msg=err_msg)
 
