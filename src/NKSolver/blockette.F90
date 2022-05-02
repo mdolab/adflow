@@ -4405,12 +4405,12 @@ contains
     end do
 
     ! Set a couple of constants for the scheme.
-    fis2 = vis2
     if (useDissContinuation) then
-       fis4 = vis4 + dissContMagnitude / (1 + exp(-dissContSharpness*(log10(totalR / totalR0) + dissContMidpoint)))
+       fis2 = vis2 + dissContMagnitude / (1 + exp(-dissContSharpness*(log10(totalR / totalR0) + dissContMidpoint)))
     else
-       fis4 = vis4
+       fis2 = vis2
     end if
+    fis4 = vis4
 
     !
     !       Dissipative fluxes in the i-direction.

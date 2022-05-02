@@ -4932,8 +4932,8 @@ class ADFLOW(AeroSolver):
             "useBlockettes": [bool, True],
             "useLinResMonitor": [bool, False],
             "useDissContinuation": [bool, False],
-            "dissContMagnitude": [float, 0.2],
-            "dissContMidpoint": [float, 0.5],
+            "dissContMagnitude": [float, 1.0],
+            "dissContMidpoint": [float, 3.0],
             "dissContSharpness": [float, 3.0],
             # Overset Parameters
             "nearWallDist": [float, 0.1],
