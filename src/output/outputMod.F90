@@ -1438,7 +1438,7 @@ contains
     real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
     real(kind=realType) :: uInfDim2 ! MachCoeff-derived (Uinf*Uref)**2
-    real(kind=realType) :: rot_speed ! norm of wCrossR
+    real(kind=realType) :: rot_speed2 ! norm of wCrossR squared
     real(kind=realType),Dimension(3) :: r_ ! spanwise position for given point
     real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
     real(kind=realType),Dimension(3) :: wCrossR ! rotationrate cross radius    
@@ -1873,9 +1873,9 @@ contains
              wCrossR(1) = rrate_(2)*r_(3) - rrate_(3)*r_(2)
              wCrossR(2) = rrate_(3)*r_(1) - rrate_(1)*r_(3)
              wCrossR(3) = rrate_(1)*r_(2) - rrate_(2)*r_(1)
-             rot_speed = SQRT(wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2 )
+             rot_speed2 = wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2
              buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
-                  / (half*(rhoInfDim)*(uInfDim2 + (rot_speed)**2 ))
+                  / (half*(rhoInfDim)*(uInfDim2 + rot_speed2 ))
              ! Comments on the computations above - no code 
              ! Note, that we take rrate_(1) since we rotate 
              !
