@@ -169,7 +169,7 @@ class WEIGHTANDBALANCE(Base):
 
                         sweepsum = sweepsum + ((ytLE - yrLE) / sumSpan) * numpy.tan(SweepLE)
                         # new computation...
-                        numerator = C_root ** 2 * (1 + Taper + Taper ** 2) * (ytLE - yrLE) / sumSpan
+                        numerator = C_root**2 * (1 + Taper + Taper**2) * (ytLE - yrLE) / sumSpan
                         # print 'numpart',C_root,C_root**2,(1+Taper+Taper**2),(ytLE-yrLE)/sumSpan
                         denomenator = C_root * (1 + Taper) * (ytLE - yrLE) / sumSpan
                         SumNumerator = SumNumerator + numerator
@@ -272,7 +272,7 @@ class WEIGHTANDBALANCE(Base):
                         Dihedral = acg[i][j].Dihedral * (numpy.pi / 180)
                         Area = acg[i][j].Area
                         Taper = acg[i][j].Taper
-                        AR = Span ** 2 / Area  # Aspect Ratio
+                        AR = Span**2 / Area  # Aspect Ratio
                         SweepLE = acg[i][j].SweepLE * (numpy.pi / 180)
                         SweepTE = catan(
                             numpy.tan(SweepLE) - ((4.0 * (1.0 / 1.0)) / (2.0 * AR)) * ((1.0 - Taper) / (1.0 + Taper))
@@ -314,7 +314,7 @@ class WEIGHTANDBALANCE(Base):
                         # print 'I1x1',I1x
                         # I1x =(t_root*(C_root/3.0+(Span*tan(SweepTE)/4.0)-Span*tan(SweepLE)/4.0))
                         # print 'I1x2',I1x
-                        I1x = (W * Span ** 3 / (3 * V)) * (
+                        I1x = (W * Span**3 / (3 * V)) * (
                             (
                                 (t_root - t_tip)
                                 * (C_root / 4.0 + (Span * numpy.tan(SweepTE) / 5.0) - Span * numpy.tan(SweepLE) / 5.0)
@@ -334,23 +334,23 @@ class WEIGHTANDBALANCE(Base):
                             (
                                 t_root
                                 * (
-                                    (C_root ** 3 / 3.0)
+                                    (C_root**3 / 3.0)
                                     + Span
                                     * C_root
                                     * numpy.tan(SweepTE)
                                     * ((C_root / 2.0) + (Span * numpy.tan(SweepTE)) / 3.0)
-                                    + (Span ** 3 / 12.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
+                                    + (Span**3 / 12.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
                                 )
                             )
                             - (
                                 (t_root - t_tip)
                                 * (
-                                    (C_root ** 3 / 6.0)
+                                    (C_root**3 / 6.0)
                                     + Span
                                     * C_root
                                     * numpy.tan(SweepTE)
                                     * ((C_root / 3.0) + (Span * numpy.tan(SweepTE) / 4.0))
-                                    + (Span ** 3 / 15.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
+                                    + (Span**3 / 15.0) * (numpy.tan(SweepTE) ** 3 - numpy.tan(SweepLE) ** 3)
                                 )
                             )
                         )
@@ -377,10 +377,10 @@ class WEIGHTANDBALANCE(Base):
                         # print 'cb',Cb
                         K_o = 0.703  # (for a wing....)
                         acg[i][j].x_Centroid = (
-                            (-(Ca ** 2) + Cb ** 2 + Cc * Cb + Cc ** 2) / (3 * (Cb + Cc - Ca))
+                            (-(Ca**2) + Cb**2 + Cc * Cb + Cc**2) / (3 * (Cb + Cc - Ca))
                         ) * K_o ** (1.0 / 2.0)
                         # print 'xs1', acg[i][j].x_Centroid
-                        acg[i][j].y_Centroid = (Span ** 2 / V) * (
+                        acg[i][j].y_Centroid = (Span**2 / V) * (
                             (
                                 t_root * ((C_root / 2.0) + (Span / 3.0) * (numpy.tan(SweepTE) - numpy.tan(SweepLE)))
                                 - (t_root - t_tip)
@@ -408,17 +408,17 @@ class WEIGHTANDBALANCE(Base):
                         Ix = (
                             Ix
                             + I1x
-                            - W * (Ys_dot ** 2)
-                            - W * (Zs3 ** 2)
+                            - W * (Ys_dot**2)
+                            - W * (Zs3**2)
                             + W * (Ys_dot + Ysoff) ** 2
                             + W * (Zs3 + Zs1) ** 2
                         )
                         # print 'w',W,(Ys_dot),W*(Ys_dot**2)
                         # Ix = Ix-W*(Ys_dot**2)#-W*(Zs3**2)+W*(Ys_dot+Ysoff)**2 + W*(Zs3+Zs1)**2
                         # print 'ix',Ix,I1x
-                        Iy = Iy + I1y - W * (Xs ** 2) - W * (Zs3 ** 2) + W * (Xs + Xs4) ** 2 + W * (Zs3 + Zs1) ** 2
+                        Iy = Iy + I1y - W * (Xs**2) - W * (Zs3**2) + W * (Xs + Xs4) ** 2 + W * (Zs3 + Zs1) ** 2
 
-                        Iz = Iz + I1z - W * (Xs ** 2 + Ys_dot ** 2) + W * (Xs + Xs4) ** 2 + W * (Ys_dot + Ysoff) ** 2
+                        Iz = Iz + I1z - W * (Xs**2 + Ys_dot**2) + W * (Xs + Xs4) ** 2 + W * (Ys_dot + Ysoff) ** 2
                         # Ixz = ...
 
                     # endfor
@@ -505,9 +505,9 @@ class WEIGHTANDBALANCE(Base):
                     dy = tempXc[j, k, 1] - Xcg[1]
                     dz = tempXc[j, k, 2] - Xcg[2]
                     # print 'dist.',dx,dy,dz
-                    r2[j, k, 0] = dy ** 2 + dz ** 2  # aboutx axis
-                    r2[j, k, 1] = dx ** 2 + dz ** 2  # about y axis
-                    r2[j, k, 2] = dy ** 2 + dx ** 2  # about z axis
+                    r2[j, k, 0] = dy**2 + dz**2  # aboutx axis
+                    r2[j, k, 1] = dx**2 + dz**2  # about y axis
+                    r2[j, k, 2] = dy**2 + dx**2  # about z axis
                     # print 'r2',r2[j,k,:]
                     inertia[j, k, 0] = mass[j, k] * r2[j, k, 0]  # Ixx
                     inertia[j, k, 1] = mass[j, k] * r2[j, k, 1]  # Iyy
@@ -548,14 +548,14 @@ class WEIGHTANDBALANCE(Base):
             elasticMomentx = momx + fy * (geom.zRootec - ref.zref) - fz * (geom.yRootec - ref.yref)
             elasticMomentz = momz - fy * (geom.xRootec - ref.xref) + fx * (geom.yRootec - ref.yref)
 
-            BendingMoment = numpy.sqrt(elasticMomentx ** 2 + elasticMomentz ** 2)
+            BendingMoment = numpy.sqrt(elasticMomentx**2 + elasticMomentz**2)
 
         elif liftIndex == 3:
             # y out wing sum momentx,momenty
             elasticMomentx = momx + fz * (geom.yRootec - ref.yref) + fy * (geom.zRootec - ref.zref)
             elasticMomenty = momy + fz * (geom.xRootec - ref.xref) + fx * (geom.zRootec - ref.zref)
 
-            BendingMoment = numpy.sqrt(elasticMomentx ** 2 + elasticMomenty ** 2)
+            BendingMoment = numpy.sqrt(elasticMomentx**2 + elasticMomenty**2)
 
         return BendingMoment
 

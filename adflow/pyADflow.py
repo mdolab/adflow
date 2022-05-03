@@ -984,12 +984,6 @@ class ADFLOW(AeroSolver):
 
         startCallTime = time.time()
 
-        # Make sure the user isn't trying to solve a slave
-        # aeroproblem. Cannot do that
-        if hasattr(aeroProblem, "isSlave"):
-            if aeroProblem.isSlave:
-                raise Error("Cannot solve an aeroProblem created as a slave")
-
         # Get option about adjoint memory
         releaseAdjointMemory = kwargs.pop("relaseAdjointMemory", True)
 
@@ -2893,7 +2887,6 @@ class ADFLOW(AeroSolver):
 
         alpha = AP.alpha
         beta = AP.beta
-        beta = AP.beta
         mach = AP.mach
         machRef = AP.machRef
         machGrid = AP.machGrid
@@ -3602,7 +3595,8 @@ class ADFLOW(AeroSolver):
 
             elif key in self.possibleAeroDVs:
                 funcsSens[dvName] = dIda[self.possibleAeroDVs[key]]
-                if key == "alpha":
+                # Convert angle derivatives from 1/rad to 1/deg
+                if key in ["alpha", "beta"]:
                     funcsSens[dvName] *= numpy.pi / 180.0
 
             elif key in self.possibleBCDvs:
@@ -4931,7 +4925,7 @@ class ADFLOW(AeroSolver):
             "nSubiter": [int, 1],
             "CFL": [float, 1.7],
             "CFLCoarse": [float, 1.0],
-            "MGCycle": [str, "3w"],
+            "MGCycle": [str, "sg"],
             "MGStartLevel": [int, -1],
             "resAveraging": [str, ["alternate", "never", "always"]],
             "smoothParameter": [float, 1.5],
@@ -5801,18 +5795,6 @@ class ADFLOW(AeroSolver):
                 raise TypeError(f"Unable to convert {fortArray[ii]} of type {fortArray[ii].dtype} to string")
 
         return strList
-
-    def createSlaveAeroProblem(self, master):
-        """Create a slave aeroproblem"""
-
-        # Make sure everything is created for the master
-        self.setAeroProblem(master)
-
-        slave = copy.deepcopy(master)
-        slave.adflowData = master.adflowData
-        slave.surfMesh = master.surfMesh
-        slave.isSlave = True
-        return slave
 
     def _readPlot3DSurfFile(self, fileName, convertToTris=True):
         """Read a plot3d file and return the points and connectivity in
