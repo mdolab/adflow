@@ -3114,7 +3114,7 @@ contains
 
     if (useDissContinuation) then
        if (totalR == zero .or. totalR0 == zero) then
-          fis2 = rFil * vis2
+          fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness * dissContMidpoint)))
        else
           fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness*(log10(totalR / totalR0) + dissContMidpoint))))
        end if
