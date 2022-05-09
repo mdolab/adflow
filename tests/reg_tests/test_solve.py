@@ -124,6 +124,9 @@ class TestSolve(reg_test_classes.RegTest):
 
 
 class TestFailedMesh(unittest.TestCase):
+
+    N_PROCS = 1
+
     def test_failed_mesh(self):
         options = copy.copy(adflowDefOpts)
         options.update(
