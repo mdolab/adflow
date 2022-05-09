@@ -1166,13 +1166,14 @@ contains
     end if
   end subroutine timestep_block
 !  differentiation of gridvelocitiesfinelevel_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: veldirfreestream *(flowdoms.x)
-!                *sfacei *sfacej *s *sfacek *si *sj *sk
+!   gradient     of useful results: veldirfreestream pinf timeref
+!                rhoinf *(flowdoms.x) *sfacei *sfacej *s *sfacek
+!                *si *sj *sk
 !   with respect to varying inputs: veldirfreestream machgrid pinf
 !                timeref rhoinf *(flowdoms.x) *sfacei *sfacej *s
 !                *sfacek *si *sj *sk
 !   rw status of diff variables: veldirfreestream:incr machgrid:out
-!                pinf:out timeref:out rhoinf:out *(flowdoms.x):incr
+!                pinf:incr timeref:incr rhoinf:incr *(flowdoms.x):incr
 !                *sfacei:in-out *sfacej:in-out *s:in-out *sfacek:in-out
 !                *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: flowdoms.x:in sfacei:in sfacej:in
@@ -1267,7 +1268,6 @@ contains
     if (blockismoving) then
 ! determine the situation we are having here.
       if (useoldcoor) then
-        timerefd = 0.0_8
         velxgrid0d = 0.0_8
         velzgrid0d = 0.0_8
         derivrotationmatrixd = 0.0_8
@@ -1782,10 +1782,9 @@ contains
         velzgrid0d = velzgridd
         velygrid0d = velygridd
         velxgrid0d = velxgridd
-        timerefd = sum(cgnsdoms(j)%rotrate*rotrated)
+        timerefd = timerefd + sum(cgnsdoms(j)%rotrate*rotrated)
       end if
     else
-      timerefd = 0.0_8
       velxgrid0d = 0.0_8
       velzgrid0d = 0.0_8
       derivrotationmatrixd = 0.0_8
@@ -1810,8 +1809,8 @@ contains
     else
       tempd = gammainf*ainfd/(2.0*sqrt(gammainf*(pinf/rhoinf))*rhoinf)
     end if
-    pinfd = tempd
-    rhoinfd = -(pinf*tempd/rhoinf)
+    pinfd = pinfd + tempd
+    rhoinfd = rhoinfd - pinf*tempd/rhoinf
   end subroutine gridvelocitiesfinelevel_block_b
   subroutine gridvelocitiesfinelevel_block(useoldcoor, t, sps, nn)
 !
@@ -2222,11 +2221,12 @@ contains
 &     )
   end subroutine cellfacevelocities
 !  differentiation of slipvelocitiesfinelevel_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *(flowdoms.x) *(*bcdata.uslip)
+!   gradient     of useful results: veldirfreestream pinf timeref
+!                rhoinf *(flowdoms.x) *(*bcdata.uslip)
 !   with respect to varying inputs: veldirfreestream machgrid pinf
 !                timeref rhoinf *(flowdoms.x) *(*bcdata.uslip)
-!   rw status of diff variables: veldirfreestream:out machgrid:out
-!                pinf:out timeref:out rhoinf:out *(flowdoms.x):incr
+!   rw status of diff variables: veldirfreestream:incr machgrid:out
+!                pinf:incr timeref:incr rhoinf:incr *(flowdoms.x):incr
 !                *(*bcdata.uslip):in-out
 !   plus diff mem management of: flowdoms.x:in bcdata:in *bcdata.uslip:in
   subroutine slipvelocitiesfinelevel_block_b(useoldcoor, t, sps, nn)
@@ -2332,11 +2332,7 @@ contains
     real(kind=realtype) :: tempd15
 ! determine the situation we are having here.
     if (useoldcoor) then
-      veldirfreestreamd = 0.0_8
       machgridd = 0.0_8
-      pinfd = 0.0_8
-      timerefd = 0.0_8
-      rhoinfd = 0.0_8
     else
 ! the velocities must be determined analytically.
 ! compute the mesh velocity from the given mesh mach number.
@@ -2665,7 +2661,6 @@ bocoloop2:do mm=1,nviscbocos
           call pushcontrol3b(0)
         end if
       end do bocoloop2
-      timerefd = 0.0_8
       velxgrid0d = 0.0_8
       velzgrid0d = 0.0_8
       xcd = 0.0_8
@@ -3502,7 +3497,6 @@ bocoloop2:do mm=1,nviscbocos
       call derivativerotmatrixrigid_b(derivrotationmatrix, &
 &                               derivrotationmatrixd, rotationpoint, t(1&
 &                               ))
-      veldirfreestreamd = 0.0_8
       ainfd = -(veldirfreestream(2)*machgrid*velygrid0d) - &
 &       veldirfreestream(1)*machgrid*velxgrid0d - veldirfreestream(3)*&
 &       machgrid*velzgrid0d
@@ -3520,8 +3514,8 @@ bocoloop2:do mm=1,nviscbocos
       else
         tempd = gammainf*ainfd/(2.0*sqrt(gammainf*(pinf/rhoinf))*rhoinf)
       end if
-      pinfd = tempd
-      rhoinfd = -(pinf*tempd/rhoinf)
+      pinfd = pinfd + tempd
+      rhoinfd = rhoinfd - pinf*tempd/rhoinf
     end if
   end subroutine slipvelocitiesfinelevel_block_b
   subroutine slipvelocitiesfinelevel_block(useoldcoor, t, sps, nn)

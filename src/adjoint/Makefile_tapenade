@@ -232,13 +232,13 @@ oversetUtilities%fracToWeights(frac) > \
 			      (weights) \
 \
 solverutils%slipVelocitiesFineLevel_block(pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > \
-										 (bcdata%uslip, flowDoms%x) \
+										 (pinf, timeref, rhoinf, veldirfreestream, bcdata%uslip, flowDoms%x) \
 \
 solverutils%normalvelocities_block(sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) > \
 			      				  (sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) \
 \
 solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) > \
-                                         (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream) \
+                                         (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf,) \
 \
 solverutils%cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) > \
 							  (xc, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) \
