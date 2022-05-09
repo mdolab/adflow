@@ -1858,95 +1858,49 @@ contains
        !================================================================
 
     case (cgnsCp)
-       ! Factor multiplying p-pInf
+       ! Calclulating the square of (dimensional) inflow velocity from MachCoef
+       !
+       ! Same formula used in referenceState (see initializeFlow.F90),
+       ! multiplied by the square of the reference velocity (uRef).
+       ! MachCoef is initialized in inputParamRoutines.F90 and can also be passed from the python layer
+       ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module 
+       ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
+       ! (see initializeFlow.F90).
        uInfDim2 = (MachCoef*MachCoef*gammaInf*pInf/rhoInf)*uRef*uRef
 
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
              nn = nn + 1
-             ! Cp normalisation:
+             ! Get frame rotation rate and local surface coordinates
+             ! by averaging wall and halo cell centers
+             ! (xx1,xx2 are pointers to the mesh coordinates, see block.F90)
              rrate_=cgnsdoms(1)%rotrate
              r_(1) =   (half*(xx1(i,j,1) + xx2(i,j,1)))
              r_(2) =   (half*(xx1(i,j,2) + xx2(i,j,2)))
              r_(3) =   (half*(xx1(i,j,3) + xx2(i,j,3)))
              ! calc cross-product between rotation rate and r_
+             ! to obtain local apparent wall velocity
              wCrossR(1) = rrate_(2)*r_(3) - rrate_(3)*r_(2)
              wCrossR(2) = rrate_(3)*r_(1) - rrate_(1)*r_(3)
              wCrossR(3) = rrate_(1)*r_(2) - rrate_(2)*r_(1)
              rot_speed2 = wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2
              buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
-                  / (half*(rhoInfDim)*(uInfDim2 + rot_speed2 ))
-             ! Comments on the computations above - no code 
-             ! Note, that we take rrate_(1) since we rotate 
+                  / (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+             ! Comments on the Cp (buffer(nn)) calculation above:
              !
              ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
              !
-             ! Nominator: (P_i-P_0) -> (half*(pp1Dim(i,j)+pp2Dim(i,j))-pInfDim)
-             ! pp1Dim  = pp1 * pRef
-             ! pp2Dim  = pp2 * pRef
-             ! pInfDim = pInf * pRef             
-             ! pRef is defined in  module flowVarRefState (see the 'save')
-             !       but pRef is first set in the subr referenceState. However,
-             !       since it is defined in module flowVarRefState and we load
-             !       that module above it should be available to us.
+             ! Numerator (dimensionalized): 
+             !     (P_i-P_0) -> (half*(pp1(i,j)+pp2(i,j))-pInf) * pRef
+             !     P_i is given by the average of the wall and halo cell
+             !     (see comment at the beginning of storeSurfsolInBuffer)     
+             !     pp1, pp2 are (nondimensional) pressure pointers, e.g. pp1 => p(1,1:,1:)
              !
-             ! Denominator: (0.5*rho*(U_a)^2) -> 
-             !       factDIM = two/(rhoDim * ((V_infDim)**2) + ((rDim*wDim)**2))
-             ! rhoDim  = rhoInfDim ! l. 81, initializeFlow.F90
-             ! V_infDim   = uInf*uRef ! also from initializeFlow.F90, l. 83
+             ! Denominator (dimensionalized): (0.5*rho*(U_a)^2) -> 
+             !       (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+             !       The local velocity term includes the rotational components! 
           enddo
-          ! Comments on the computations above - no code 
-          ! pp1 and pp2 are just pressure-pointers, e.g.
-          ! pp1    => p(1,1:,1:);
-          ! Thus, they point to p and should be rescaled back to SI
-          ! as explained in the opening paragraph of this subroutine, we
-          ! have to get the average of the p in the first cell and the p in the
-          ! ghostcell/halo. This explains: half*(pp1(i,j) + pp2(i,j))
-          ! From start of subr:
-          !       As the solution
-          !       must be stored in the center of the boundary face the average
-          !       value of the first internal cell and its corresponding halo is
-          !       computed. The counter nn is updated in this routine. However
-          !       it is not initialized, because multiple contributions may be
-          !       stored in buffer.
        enddo
-       ! Comments on the computations above - no code 
-       ! [pRef] l. 19 flowVarRefState.F90
-       ! Reference pressure (in Pa) used to nondimensionalize
-       ! the flow equations. See e.g. two lines below.
-       ! [pInf] l. 81, initializeFlow.90
-       ! non-dimensional pressure
-       !    pInf   = pInfDim/pRef
-       ! [pInfDim] l. 52 flowVarRefState.F90
-       ! Free stream pressure in Pa.,
-       ! [p] l. 515 block.F90, p(:,:,:) is a pointer for static pressure
-       ! [x] l. 432 block.F90, the actual mesh for a given block. We need
-       ! these to compute the apparent velocity. Size(x) is:
-       ! x(0:ie,0:je,0:ke,3)
-       ! Well, wrt mesh it seems:
-       ! block.F90, l. 432 has the 'x'
-       ! AND
-       ! blockPointers.F90 l. 94 both have an 'x' pointer. This blockPointers
-       ! has holds the pointers for all variables inside a block.
-       !
-       ! Necessities                       units
-       ! U_i - inflow speed                      [m/s]
-       ! w   - rotational rate                   [rad/sec]
-       ! L_  - the span at point (i,j,k)         [m]
-       ! P_i - farfield pressure                 [N/m^2]
-       ! P_0 - pressure at surface point (i,j,k) [N/m^2]
-       !
-       ! fomula for apparent velocity:
-       ! (U_a)^2 = ([U_i,0,0]^T - [0,0,(2*pi*L_)/(2*pi)[m/rad]*w[rad/sec]])^2
-       ! (U_a)^2 = ([U_i,0,0]^T - [0,0,L_*w [m/sec] ])^2
-       ! (U_a)^2 = ([U_i,0,0]^T - [0,0,L_*w])^2 (just removing units ...)
-       ! (U_a)^2 = (U_i)^2 + (L_*w)^2
-       ! formula for Cp:
-       !
-       ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
-       !
-
-       !===============================================================
 
     case (cgnsPtotloss)
 
