@@ -8571,17 +8571,16 @@ contains
     end subroutine riemannflux
   end subroutine inviscidupwindflux_b
 !  differentiation of viscousflux in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev *aa *wx *wy *wz *w *rlv
-!                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
-!                *vz *fw *(*viscsubface.tau) *(*viscsubface.q)
+!   gradient     of useful results: *w *x *si *sj *sk *fw *(*viscsubface.tau)
+!                *(*viscsubface.q)
 !   with respect to varying inputs: *rev *aa *wx *wy *wz *w *rlv
 !                *x *qx *qy *qz *ux *uy *uz *si *sj *sk *vx *vy
 !                *vz *fw *(*viscsubface.tau) *(*viscsubface.q)
-!   rw status of diff variables: *rev:incr *aa:incr *wx:incr *wy:incr
-!                *wz:incr *w:incr *rlv:incr *x:incr *qx:incr *qy:incr
-!                *qz:incr *ux:incr *uy:incr *uz:incr *si:incr *sj:incr
-!                *sk:incr *vx:incr *vy:incr *vz:incr *fw:in-out
-!                *(*viscsubface.tau):in-out *(*viscsubface.q):in-out
+!   rw status of diff variables: *rev:out *aa:out *wx:out *wy:out
+!                *wz:out *w:incr *rlv:out *x:incr *qx:out *qy:out
+!                *qz:out *ux:out *uy:out *uz:out *si:incr *sj:incr
+!                *sk:incr *vx:out *vy:out *vz:out *fw:in-out *(*viscsubface.tau):in-out
+!                *(*viscsubface.q):in-out
 !   plus diff mem management of: rev:in aa:in wx:in wy:in wz:in
 !                w:in rlv:in x:in qx:in qy:in qz:in ux:in uy:in
 !                uz:in si:in sj:in sk:in vx:in vy:in vz:in fw:in
@@ -8746,7 +8745,23 @@ contains
     else
       abs0 = -rfilv
     end if
-    if (abs0 .ge. thresholdreal) then
+    if (abs0 .lt. thresholdreal) then
+      revd = 0.0_8
+      aad = 0.0_8
+      wxd = 0.0_8
+      wyd = 0.0_8
+      wzd = 0.0_8
+      rlvd = 0.0_8
+      qxd = 0.0_8
+      qyd = 0.0_8
+      qzd = 0.0_8
+      uxd = 0.0_8
+      uyd = 0.0_8
+      uzd = 0.0_8
+      vxd = 0.0_8
+      vyd = 0.0_8
+      vzd = 0.0_8
+    else
 ! determine whether or not the wall stress tensor and wall heat
 ! flux must be stored for viscous walls.
       storewalltensor = .false.
@@ -8838,8 +8853,38 @@ contains
       call pushreal8(fact)
       call pushreal8(por)
       call pushreal8(tauxys)
+      revd = 0.0_8
+      aad = 0.0_8
+      wxd = 0.0_8
+      wyd = 0.0_8
+      wzd = 0.0_8
+      rlvd = 0.0_8
+      qxd = 0.0_8
+      qyd = 0.0_8
+      qzd = 0.0_8
+      uxd = 0.0_8
+      uyd = 0.0_8
+      uzd = 0.0_8
+      vxd = 0.0_8
+      vyd = 0.0_8
+      vzd = 0.0_8
       mued = 0.0_8
       mue = zero
+      revd = 0.0_8
+      aad = 0.0_8
+      wxd = 0.0_8
+      wyd = 0.0_8
+      wzd = 0.0_8
+      rlvd = 0.0_8
+      qxd = 0.0_8
+      qyd = 0.0_8
+      qzd = 0.0_8
+      uxd = 0.0_8
+      uyd = 0.0_8
+      uzd = 0.0_8
+      vxd = 0.0_8
+      vyd = 0.0_8
+      vzd = 0.0_8
       mued = 0.0_8
       do ii=0,il*ny*nz-1
         i = mod(ii, il) + 1

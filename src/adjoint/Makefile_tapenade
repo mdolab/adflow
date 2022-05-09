@@ -202,7 +202,7 @@ flowUtils%allNodalGradients(w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, 
                            (w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
 \
 fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw, viscsubface%tau, viscSubface%q) > \
-                  (w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw, viscsubface%tau, viscSubface%q) \
+                  (w, x, si, sj, sk, fw, viscsubface%tau, viscSubface%q) \
 \
 fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw, si, sj, sk) > \
                         (w, x, fw) \
