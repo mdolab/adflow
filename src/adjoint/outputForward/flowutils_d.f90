@@ -228,8 +228,8 @@ contains
   end subroutine computeptot
 !  differentiation of computespeedofsoundsquared in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *aa
-!   with respect to varying inputs: *aa *p *w
-!   rw status of diff variables: *aa:in-out *p:in *w:in
+!   with respect to varying inputs: *p *w
+!   rw status of diff variables: *aa:out *p:in *w:in
 !   plus diff mem management of: aa:in p:in w:in
   subroutine computespeedofsoundsquared_d()
 !
@@ -250,6 +250,7 @@ contains
 ! determine if we need to correct for k
     correctfork = getcorrectfork()
     if (correctfork) then
+      aad = 0.0_8
       do k=1,ke
         do j=1,je
           do i=1,ie
@@ -263,6 +264,7 @@ contains
         end do
       end do
     else
+      aad = 0.0_8
       do k=1,ke
         do j=1,je
           do i=1,ie

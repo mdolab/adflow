@@ -195,7 +195,7 @@ fluxes%inviscidDissFluxMatrixApprox(w, p, fw, pinfcorr, sfacei, sfacej, sfacek, 
 fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > \
                          (w, si, sj, sk, p, fw, sfacei, sfacej, sfacek) \
 \
-flowUtils%computeSpeedOfSoundSquared(w, p, aa) > \
+flowUtils%computeSpeedOfSoundSquared(w, p) > \
                                     (w, p, aa) \
 \
 flowUtils%allNodalGradients(w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) > \
