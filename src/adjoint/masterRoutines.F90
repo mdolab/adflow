@@ -471,8 +471,6 @@ contains
           call setPointers_d(nn, 1, sps)
           ISIZE1OFDrfbcdata = nBocos
           ISIZE1OFDrfviscsubface = nViscBocos
-
-          call timeStep_block_d(.false.)
           
           ! initalize the residuals for this block 
           call initRes_block_d(1, nw, nn, sps)
