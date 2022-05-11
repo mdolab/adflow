@@ -4924,7 +4924,7 @@ class ADFLOW(AeroSolver):
             "nSubiter": [int, 1],
             "CFL": [float, 1.7],
             "CFLCoarse": [float, 1.0],
-            "MGCycle": [str, "3w"],
+            "MGCycle": [str, "sg"],
             "MGStartLevel": [int, -1],
             "resAveraging": [str, ["alternate", "never", "always"]],
             "smoothParameter": [float, 1.5],
@@ -4999,7 +4999,7 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             "useANKSolver": [bool, True],
             "ANKUseTurbDADI": [bool, True],
-            "ANKSwitchTol": [float, 1.0],
+            "ANKSwitchTol": [float, 1e3],
             "ANKSubspaceSize": [int, -1],
             "ANKMaxIter": [int, 40],
             "ANKLinearSolveTol": [float, 0.05],
