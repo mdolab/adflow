@@ -277,6 +277,14 @@ dissipationScalingExponent:
     This value typically will not need to be changed from the default.
     The value of 2/3 is the theoretical best value assuming an orthogonal 3-dimensional grid.
 
+acousticScaleFactor:
+  desc: >
+    A scale factor that multiplies the speed of sound squared in the spectral radii computation.
+    A value of 1.0 will compute the spectral radii with acoustic and advective contributions weighted in the usual manner.
+    A value of 0.0 will compute the spectral radii based only on the advective contribution.
+    This will result in more accurate solutions for low Mach number flows, but convergence will be slower.
+    A value around 1e-6 tends to provide a reasonable tradeoff between accuracy and speed.
+
 vis4:
   desc: >
     Coefficient of the fourth order dissipation used in the scalar and matrix JST dissipation scheme.

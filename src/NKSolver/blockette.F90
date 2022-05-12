@@ -1905,7 +1905,7 @@ contains
     use blockPointers, only : sectionID
     use flowvarRefState, only : pInfCorr, rhoInf, gammaInf, viscous, timeRef
     use inputPhysics, only : equationMode
-    use inputDiscretization, only : adis
+    use inputDiscretization, only : adis, acousticScaleFactor
     use section, only : sections
     use inputTimeSpectral, only : nTimeIntervalsSpectral
 
@@ -1963,6 +1963,9 @@ contains
              uuz  = w(i,j,k,ivz)
              cc2 = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
              cc2 = max(cc2,clim2)
+
+             ! Scale the acoustic contribution
+             cc2 = acousticScaleFactor * cc2
 
              ! Set the dot product of the grid velocity and the
              ! normal in i-direction for a moving face. To avoid

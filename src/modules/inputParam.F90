@@ -76,6 +76,7 @@ module inputDiscretization
   integer(kind=intType) :: nonMatchTreatment
 
   real(kind=realType) :: vis2, vis4, vis2Coarse, adis
+  real(kind=realType) :: acousticScaleFactor
   real(kind=realType) :: kappaCoef
   logical :: lumpedDiss
   logical :: approxSA

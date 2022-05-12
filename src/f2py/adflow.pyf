@@ -1021,6 +1021,7 @@ python module libadflow
          real(kind=realtype) :: vis4
          real(kind=realtype) :: vis2coarse
          real(kind=realtype) :: adis
+         real(kind=realtype) :: acousticscalefactor
          real(kind=realtype) :: kappacoef
          logical :: vortexcorr
          logical :: dirscaling
