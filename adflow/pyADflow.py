@@ -5000,7 +5000,7 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             "useANKSolver": [bool, True],
             "ANKUseTurbDADI": [bool, True],
-            "ANKSwitchTol": [float, 1.0],
+            "ANKSwitchTol": [float, 1e3],
             "ANKSubspaceSize": [int, -1],
             "ANKMaxIter": [int, 40],
             "ANKLinearSolveTol": [float, 0.05],

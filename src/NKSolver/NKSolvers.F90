@@ -2092,6 +2092,12 @@ contains
                       ! get the global cell index
                       irow = globalCell(i, j, k)
 
+                      if (useCoarseMats) then
+                         do lvl=1, agmgLevels-1
+                            coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
+                         end do
+                      end if
+
                       ! Add the contribution to the matrix in PETSc
                       call setBlock()
                    end do
