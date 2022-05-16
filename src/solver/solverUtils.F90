@@ -56,7 +56,7 @@ contains
     use flowVarRefState, only : timeRef, eddyModel, gammaInf, pInfCorr, &
          viscous, rhoInf
     use inputDiscretization, only : adis, dirScaling, radiiNeededCoarse, &
-         radiiNeededFine, precond
+         radiiNeededFine, precond, acousticScaleFactor
     use inputPhysics, only : equationMode
     use iteration, only : groundLevel, currentLevel
     use section, only : sections
@@ -156,7 +156,7 @@ contains
                    qsi = uux*sx + uuy*sy + uuz*sz - sFace
 
                    ri = half*(abs(qsi) &
-                        +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                        + acousticScaleFactor * sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
                    ! The grid velocity in j-direction.
 
@@ -172,7 +172,7 @@ contains
                    qsj = uux*sx + uuy*sy + uuz*sz - sFace
 
                    rj = half*(abs(qsj) &
-                        +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                        + acousticScaleFactor * sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
                    ! The grid velocity in k-direction.
 
@@ -188,7 +188,7 @@ contains
                    qsk = uux*sx + uuy*sy + uuz*sz - sFace
 
                    rk = half*(abs(qsk) &
-                        +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                        + acousticScaleFactor * sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
                    ! Compute the inviscid contribution to the time step.
 
