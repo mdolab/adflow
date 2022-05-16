@@ -1964,9 +1964,6 @@ contains
              cc2 = gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho)
              cc2 = max(cc2,clim2)
 
-             ! Scale the acoustic contribution
-             cc2 = acousticScaleFactor * cc2
-
              ! Set the dot product of the grid velocity and the
              ! normal in i-direction for a moving face. To avoid
              ! a number of multiplications by 0.5 simply the sum
@@ -1983,7 +1980,7 @@ contains
              qsi = uux*sx + uuy*sy + uuz*sz - sFace
 
              ri = half*(abs(qsi) &
-                  +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                  + acousticScaleFactor * sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
              ! The grid velocity in j-direction.
              sFace = sFaceJ(i,j-1,k) + sFaceJ(i,j,k)
@@ -1997,7 +1994,7 @@ contains
              qsj = uux*sx + uuy*sy + uuz*sz - sFace
 
              rj = half*(abs(qsj) &
-                  +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                  + acousticScaleFactor * sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
              ! The grid velocity in k-direction.
              sFace = sFaceK(i,j,k-1) + sFaceK(i,j,k)
@@ -2011,7 +2008,7 @@ contains
              qsk = uux*sx + uuy*sy + uuz*sz - sFace
 
              rk = half*(abs(qsk) &
-                  +       sqrt(cc2*(sx**2 + sy**2 + sz**2)))
+                  + acousticScaleFactor * sqrt(cc2*(sx**2 + sy**2 + sz**2)))
 
              ! Store in tdl if required
              if (updateDt) then
