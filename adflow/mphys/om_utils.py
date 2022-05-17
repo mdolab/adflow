@@ -21,13 +21,13 @@ class DummyOptProb(object):
 
 
 def get_dvs_and_cons(ap=None, geo=None, con=None):
-    vars = []
+    dvs = []
     cons = []
 
     if ap is not None:
         ap_vars = DummyOptProb()
         ap.addVariablesPyOpt(ap_vars)
-        vars.extend(ap_vars.variables)
+        dvs.extend(ap_vars.variables)
         # for long_name, dv in ap.DVs.items():
         #     dv_data = {'scalar': True,
         #                'value': dv.value,
@@ -41,11 +41,11 @@ def get_dvs_and_cons(ap=None, geo=None, con=None):
     if geo is not None:
         geo_vars = DummyOptProb()
         geo.addVariablesPyOpt(geo_vars)
-        vars.extend(geo_vars.variables)
+        dvs.extend(geo_vars.variables)
 
     if con is not None:
         dv_cons = DummyOptProb()
         con.addConstraintsPyOpt(dv_cons)
         cons.extend(dv_cons.constraints)
 
-    return vars, cons
+    return dvs, cons
