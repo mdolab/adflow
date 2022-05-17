@@ -237,6 +237,59 @@ contains
       tsmachdot = machdot
     end if
   end function tsmachdot
+!  differentiation of derivativerigidrotangle in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: timeref derivativerigidrotangle
+!   with respect to varying inputs: timeref
+  subroutine derivativerigidrotangle_b(degreepolrot, coefpolrot, &
+&   degreefourrot, omegafourrot, coscoeffourrot, sincoeffourrot, t, &
+&   derivativerigidrotangled)
+!
+!       derivativerigidrotangle computes the time derivative of the
+!       rigid body rotation angle at the given time for the given
+!       arguments. the angle is described by a combination of a
+!       polynomial and fourier series.
+!
+    use constants
+    use inputphysics, only : equationmode
+    use flowvarrefstate, only : timeref, timerefd
+    implicit none
+!
+!      function type
+!
+    real(kind=realtype) :: derivativerigidrotangle
+    real(kind=realtype) :: derivativerigidrotangled
+!
+!      function arguments.
+!
+    integer(kind=inttype), intent(in) :: degreepolrot
+    integer(kind=inttype), intent(in) :: degreefourrot
+    real(kind=realtype), intent(in) :: omegafourrot, t
+    real(kind=realtype), dimension(0:*), intent(in) :: coefpolrot
+    real(kind=realtype), dimension(0:*), intent(in) :: coscoeffourrot
+    real(kind=realtype), dimension(*), intent(in) :: sincoeffourrot
+!
+!      local variables.
+!
+    integer(kind=inttype) :: nn
+    real(kind=realtype) :: dphi, val
+    intrinsic sin
+    intrinsic cos
+! return immediately if this is a steady computation.
+    if (equationmode .ne. steady) then
+! compute the polynomial contribution.
+      dphi = zero
+      do nn=1,degreepolrot
+        dphi = dphi + nn*coefpolrot(nn)*t**(nn-1)
+      end do
+! compute the fourier contribution.
+      do nn=1,degreefourrot
+        val = nn*omegafourrot
+        dphi = dphi - val*coscoeffourrot(nn)*sin(val*t)
+        dphi = dphi + val*sincoeffourrot(nn)*cos(val*t)
+      end do
+      timerefd = timerefd + dphi*derivativerigidrotangled
+    end if
+  end subroutine derivativerigidrotangle_b
   function derivativerigidrotangle(degreepolrot, coefpolrot, &
 &   degreefourrot, omegafourrot, coscoeffourrot, sincoeffourrot, t)
 !

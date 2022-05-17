@@ -567,7 +567,7 @@ class ADFLOW(AeroSolver):
 
         for i in range(len(positions)):
             # It is important to ensure each slice get a unique
-            # name...so we will number sequentially from pythhon
+            # name...so we will number sequentially from python
             j = self.nSlice + i + 1
             if sliceType == "relative":
                 sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])
@@ -3975,9 +3975,9 @@ class ADFLOW(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None and self.DVGeo is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(
-                    xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name
-                ).reshape(xsdot.shape)
+                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, config=self.curAP.name).reshape(
+                    xsdot.shape
+                )
             if self.mesh is not None:
                 xsdot = self.mapVector(xsdot, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
                 xvdot += self.mesh.warpDerivFwd(xsdot)
