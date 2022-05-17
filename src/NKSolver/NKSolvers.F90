@@ -2294,7 +2294,7 @@ contains
       !   PSymmStreamInv(4, 4) = one/tau
       !   PSymmStreamInv(5, 5) = one
 
-      !   blendFactor = ANK_CFL / ANK_CFLLimit
+        blendFactor = ANK_CFL / ANK_CFLLimit
       !   blendFactor = ANK_CFL / ANK_CFLLimit * mach / machInf
       !   blendFactor = mach / machInf
 
@@ -2334,43 +2334,43 @@ contains
       !   streamToCart(4, 4) = cosAlpha
       !   streamToCart(5, 5) = one
 
-      !   ! State transformation matrix
-      !   gammaMinusOne = gamma(i,j,k) - one
+        ! State transformation matrix
+        gammaMinusOne = gamma(i,j,k) - one
 
-      !   symmToCons(iRho, 1) = rho / speedOfSound
-      !   symmToCons(iRho, 5) = -one / aa(i,j,k)
-      !   symmToCons(ivx, 1) = rho * velX / speedOfSound
-      !   symmToCons(ivx, 2) = rho
-      !   symmToCons(ivx, 5) = -velX / aa(i,j,k)
-      !   symmToCons(ivy, 1) = rho * velY / speedOfSound
-      !   symmToCons(ivy, 3) = rho
-      !   symmToCons(ivy, 5) = -velY / aa(i,j,k)
-      !   symmToCons(ivz, 1) = rho * velZ / speedOfSound
-      !   symmToCons(ivz, 4) = rho
-      !   symmToCons(ivz, 5) = -velZ / aa(i,j,k)
-      !   symmToCons(iRhoE, 1) = rho * speedOfSound * (machSqr/2 + 1/gammaMinusOne)
-      !   symmToCons(iRhoE, 2) = rho * velX
-      !   symmToCons(iRhoE, 3) = rho * velY
-      !   symmToCons(iRhoE, 4) = rho * velZ
-      !   symmToCons(iRhoE, 5) = -machSqr / 2
+        symmToCons(iRho, 1) = rho / speedOfSound
+        symmToCons(iRho, 5) = -one / aa(i,j,k)
+        symmToCons(ivx, 1) = rho * velX / speedOfSound
+        symmToCons(ivx, 2) = rho
+        symmToCons(ivx, 5) = -velX / aa(i,j,k)
+        symmToCons(ivy, 1) = rho * velY / speedOfSound
+        symmToCons(ivy, 3) = rho
+        symmToCons(ivy, 5) = -velY / aa(i,j,k)
+        symmToCons(ivz, 1) = rho * velZ / speedOfSound
+        symmToCons(ivz, 4) = rho
+        symmToCons(ivz, 5) = -velZ / aa(i,j,k)
+        symmToCons(iRhoE, 1) = rho * speedOfSound * (machSqr/2 + 1/gammaMinusOne)
+        symmToCons(iRhoE, 2) = rho * velX
+        symmToCons(iRhoE, 3) = rho * velY
+        symmToCons(iRhoE, 4) = rho * velZ
+        symmToCons(iRhoE, 5) = -machSqr / 2
 
-      !   ! Inverse state transformation matrix
-      !   consToSymm(1, iRho) = gammaMinusOne/2 * speedOfSound * machSqr / rho
-      !   consToSymm(1, ivx) = -gammaMinusOne * velX / (rho * speedOfSound)
-      !   consToSymm(1, ivy) = -gammaMinusOne * velY / (rho * speedOfSound)
-      !   consToSymm(1, ivz) = -gammaMinusOne * velZ / (rho * speedOfSound)
-      !   consToSymm(1, iRhoE) = gammaMinusOne / (rho * speedOfSound)
-      !   consToSymm(2, iRho) = -velX / rho
-      !   consToSymm(2, ivx) = one / rho
-      !   consToSymm(3, iRho) = -velY / rho
-      !   consToSymm(3, ivy) = one / rho
-      !   consToSymm(4, iRho) = -velZ / rho
-      !   consToSymm(4, ivz) = one / rho
-      !   consToSymm(5, iRho) = aa(i,j,k) * (gammaMinusOne/2 * machSqr - one)
-      !   consToSymm(5, ivx) = -gammaMinusOne * velX
-      !   consToSymm(5, ivy) = -gammaMinusOne * velY
-      !   consToSymm(5, ivz) = -gammaMinusOne * velZ
-      !   consToSymm(5, iRhoE) = gammaMinusOne
+        ! Inverse state transformation matrix
+        consToSymm(1, iRho) = gammaMinusOne/2 * speedOfSound * machSqr / rho
+        consToSymm(1, ivx) = -gammaMinusOne * velX / (rho * speedOfSound)
+        consToSymm(1, ivy) = -gammaMinusOne * velY / (rho * speedOfSound)
+        consToSymm(1, ivz) = -gammaMinusOne * velZ / (rho * speedOfSound)
+        consToSymm(1, iRhoE) = gammaMinusOne / (rho * speedOfSound)
+        consToSymm(2, iRho) = -velX / rho
+        consToSymm(2, ivx) = one / rho
+        consToSymm(3, iRho) = -velY / rho
+        consToSymm(3, ivy) = one / rho
+        consToSymm(4, iRho) = -velZ / rho
+        consToSymm(4, ivz) = one / rho
+        consToSymm(5, iRho) = aa(i,j,k) * (gammaMinusOne/2 * machSqr - one)
+        consToSymm(5, ivx) = -gammaMinusOne * velX
+        consToSymm(5, ivy) = -gammaMinusOne * velY
+        consToSymm(5, ivz) = -gammaMinusOne * velZ
+        consToSymm(5, iRhoE) = gammaMinusOne
 
       !   ! Construct the time step matrix
       !   timeStepBlock = PSymmStreamInv * dtInv
@@ -2380,12 +2380,13 @@ contains
       !   timeStepBlock = MATMUL(timeStepBlock, consToSymm)
       !   timeStepBlock = MATMUL(timeStepBlock, stateToCons)
 
-      !   ! Weiss and Smith
+        ! Weiss and Smith
       !   timeStepBlock(1, 1) = one / MIN(one, MAX(machSqr, 1e-4 * machInf**2))
-      !   timeStepBlock(2, 2) = one
-      !   timeStepBlock(3, 3) = one
-      !   timeStepBlock(4, 4) = one
-      !   timeStepBlock(5, 5) = one
+        timeStepBlock(1, 1) = blendFactor * one / MIN(one, MAX(machSqr, 1e-4 * machInf**2)) + (one - blendFactor) * one
+        timeStepBlock(2, 2) = one
+        timeStepBlock(3, 3) = one
+        timeStepBlock(4, 4) = one
+        timeStepBlock(5, 5) = one
 
       !   ! Choi and Merkle
       !   timeStepBlock(1, 5) = one / (rho * speedOfSound)
@@ -2393,13 +2394,13 @@ contains
       !   ! Inverse PTC
       !   dtInv = ANK_CFLMin + (one - ANK_CFL / ANK_CFLLimit) * (ANK_CFLLimit - ANK_CFLMin)
       !   dtInv = one/(dtInv * dtl(i,j,k) * volRef(i,j,k))
-        timeStepBlock = stateToCons * dtInv
+      !   timeStepBlock = stateToCons * dtInv
       !   timeStepBlock = stateToCons * dtInv * mach
 
-      !   timeStepBlock = timeStepBlock * dtInv
-      !   timeStepBlock = MATMUL(symmToCons, timeStepBlock)
-      !   timeStepBlock = MATMUL(timeStepBlock, consToSymm)
-      !   timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+        timeStepBlock = timeStepBlock * dtInv
+        timeStepBlock = MATMUL(symmToCons, timeStepBlock)
+        timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+        timeStepBlock = MATMUL(timeStepBlock, stateToCons)
 
       !   ! Larger time steps for low speed cells
       !   if (mach < 0.5 * machInf) then
