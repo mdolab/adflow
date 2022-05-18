@@ -2381,12 +2381,16 @@ contains
       !   timeStepBlock = MATMUL(timeStepBlock, stateToCons)
 
         ! Weiss and Smith
-      !   timeStepBlock(1, 1) = one / MIN(one, MAX(machSqr, 1e-4 * machInf**2))
         timeStepBlock(1, 1) = blendFactor * one / MIN(one, MAX(machSqr, 1e-4 * machInf**2)) + (one - blendFactor) * one
         timeStepBlock(2, 2) = one
         timeStepBlock(3, 3) = one
         timeStepBlock(4, 4) = one
         timeStepBlock(5, 5) = one
+
+        ! Turkel alpha = 1
+        timeStepBlock(2, 1) = blendFactor * one / MIN(one, MAX(mach, 1e-2 * machInf))
+        timeStepBlock(3, 1) = blendFactor * one / MIN(one, MAX(mach, 1e-2 * machInf))
+        timeStepBlock(4, 1) = blendFactor * one / MIN(one, MAX(mach, 1e-2 * machInf))
 
       !   ! Choi and Merkle
       !   timeStepBlock(1, 5) = one / (rho * speedOfSound)
