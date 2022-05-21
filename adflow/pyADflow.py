@@ -106,6 +106,7 @@ class ADFLOW(AeroSolver):
         self.optionMap, self.moduleMap = self._getOptionMap()
         self.pythonOptions, deprecatedOptions, self.specialOptions = self._getSpecialOptionLists()
         immutableOptions = self._getImmutableOptions()
+        self.rootChangedOptions = None
 
         self.possibleAeroDVs, self.possibleBCDvs, self.basicCostFunctions = self._getObjectivesAndDVs()
 
@@ -981,7 +982,10 @@ class ADFLOW(AeroSolver):
             is used in a multidisciplinary environment when the outer
             solver can suppress all I/O during intermediate solves.
         """
-
+        self.rootChangedOptions = self.comm.bcast(self.rootChangedOptions, root=0)
+        if self.rootChangedOptions is not None:
+            for key, val in self.rootChangedOptions.items():
+                self.setOption(key, val)
         startCallTime = time.time()
 
         # Get option about adjoint memory
@@ -4674,6 +4678,12 @@ class ADFLOW(AeroSolver):
 
         [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(self.families[groupName], includeZipper)
         return nPts, nCells
+
+    def rootSetOption(self, name, value):
+        if self.rootChangedOptions is None:
+            self.rootChangedOptions = {}
+        self.rootChangedOptions[name] = value
+        self.setOption(name, value)
 
     def setOption(self, name, value):
         """
