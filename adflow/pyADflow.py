@@ -4662,8 +4662,8 @@ class ADFLOW(AeroSolver):
 
     def solveErrorEstimate(self, aeroProblem, funcError, evalFuncs=None):
         r"""
-        Evaluate the desired function errors given in iterable object,
-        'evalFuncs' and add them to the dictionary 'funcError'. The keys
+        Evaluate the desired function errors given in iterable object
+        'evalFuncs', and add them to the dictionary 'funcError'. The keys
         in the funcError dictionary will be have an ``<ap.name>_`` prepended to them.
 
         Parameters
@@ -4672,7 +4672,7 @@ class ADFLOW(AeroSolver):
             The aerodynamic problem to to get the error for
 
         funcError : dict
-            Dictionary into which the function errorss are saved.
+            Dictionary into which the function errors are saved.
             We define error to be :math:`f^\ast - f` such that :math:`f^\ast = f + \epsilon`
 
         evalFuncs : iterable object containing strings
@@ -4682,7 +4682,7 @@ class ADFLOW(AeroSolver):
         --------
         >>> funcs = {}
         >>> CFDsolver(ap)
-        >>> CFDsolver.solveErrorEstimate(ap1, funcError, ['cl', 'cd'])
+        >>> CFDsolver.solveErrorEstimate(ap, funcError, ['cl', 'cd'])
         >>> funcs
         >>> # Result will look like (if aeroProblem, ap1, has name of 'wing'):
         >>> # {'wing_cl':0.00085, 'wing_cd':0.000021}
@@ -4701,7 +4701,7 @@ class ADFLOW(AeroSolver):
         # Do the functions one at a time:
         for f in evalFuncs:
 
-            key = self.curAP.name + "_%s" % f
+            key = f"{self.curAP.name}_{f}"
 
             # Set dict structure for this derivative
             psi = self.getAdjoint(f)
