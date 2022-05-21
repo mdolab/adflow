@@ -4683,7 +4683,7 @@ class ADFLOW(AeroSolver):
         >>> CFDsolver(ap)
         >>> CFDsolver.solveErrorEstimate(ap, funcError, ['cl', 'cd'])
         >>> funcs
-        >>> # Result will look like (if aeroProblem, ap1, has name of 'wing'):
+        >>> # Result will look like (if aeroProblem, ap, has name of 'wing'):
         >>> # {'wing_cl':0.00085, 'wing_cd':0.000021}
         """
         self.setAeroProblem(aeroProblem)
