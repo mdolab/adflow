@@ -4680,11 +4680,11 @@ class ADFLOW(AeroSolver):
 
         Examples
         --------
-        >>> funcs = {}
         >>> CFDsolver(ap)
         >>> funcsSens = {}
         >>> CFDSolver.evalFunctionsSens(ap, funcsSens)
-        >>> CFDsolver.solveErrorEstimate(ap, funcError, ['cl', 'cd'])
+        >>> funcError = {}
+        >>> CFDsolver.solveErrorEstimate(ap, funcError)
         >>> # Result will look like (if aeroProblem, ap, has name of 'wing'):
         >>> print(funcError)
         >>> # {'wing_cl':0.00085, 'wing_cd':0.000021}
