@@ -4668,11 +4668,12 @@ class ADFLOW(AeroSolver):
         Parameters
         ----------
         aeroProblem : pyAero_problem class
-            The aerodynamic problem to to get the error for
+            The aerodynamic problem to get the error for
 
         funcError : dict
             Dictionary into which the function errors are saved.
-            We define error to be :math:`f^\ast - f` such that :math:`f^\ast = f + \epsilon`
+            We define error to be :math:`\epsilon = f^\ast - f`, where
+            :math:`f^\ast` is the converged solution and :math:`f` is the unconverged solution.
 
         evalFuncs : iterable object containing strings
             If not None, use these functions to evaluate.
@@ -4681,9 +4682,11 @@ class ADFLOW(AeroSolver):
         --------
         >>> funcs = {}
         >>> CFDsolver(ap)
+        >>> funcsSens = {}
+        >>> CFDSolver.evalFunctionsSens(ap, funcsSens)
         >>> CFDsolver.solveErrorEstimate(ap, funcError, ['cl', 'cd'])
-        >>> funcs
         >>> # Result will look like (if aeroProblem, ap, has name of 'wing'):
+        >>> print(funcError)
         >>> # {'wing_cl':0.00085, 'wing_cd':0.000021}
         """
         self.setAeroProblem(aeroProblem)
