@@ -99,7 +99,7 @@ class TestError(reg_test_classes.RegTest):
             for value in funcsError.values():
                 assert_allclose(value, 0, atol=1e-7)
 
-        self.handler.root_add_dict("errors", funcsError, tol=1e-6)
+        self.handler.root_add_dict("errors", funcsError, tol=1e-5)
 
 
 if __name__ == "__main__":
