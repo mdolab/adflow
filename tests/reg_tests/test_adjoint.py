@@ -25,7 +25,7 @@ import reg_test_utils as utils
 
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
-from reg_aeroproblems import ap_tutorial_wing, ap_tutorial_wing_laminar
+from reg_aeroproblems import ap_tutorial_wing, ap_tutorial_wing_laminar, ap_tutorial_wing_rotating
 import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -70,20 +70,19 @@ test_params = [
     {
         "name": "euler_scalar_JST_tut_wing_1core",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
-            "l2convergence": 1e-14,
-            "monitorvariables": ["cpu", "resrho", "totalr"],
-            "adjointl2convergence": 1e-14,
-            "mgcycle": "2w",
-            "ncycles": 1000,
-            "ncyclescoarse": 250,
-            "usenksolver": True,
-            "nkswitchtol": 2.5e-4,
-            "ankswitchtol": 1e-2,
-            "anksecondordswitchtol": 1e-2,
-            "useblockettes": False,
-            "frozenturbulence": False,
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "L2Convergence": 1e-14,
+            "monitorVariables": ["cpu", "resrho", "totalr"],
+            "adjointL2Convergence": 1e-14,
+            "MGCycle": "2w",
+            "nCycles": 1000,
+            "nCyclesCoarse": 250,
+            "useNKsolver": True,
+            "NKSwitchTol": 2.5e-4,
+            "ANKSwitchTol": 1e-2,
+            "ANKSecondordSwitchTol": 1e-2,
+            "useBlockettes": False,
             "blockSplitting": False,
         },
         "ref_file": "adjoint_euler_scalar_jst_tut_wing.json",
@@ -95,20 +94,19 @@ test_params = [
     {
         "name": "euler_scalar_JST_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
-            "l2convergence": 1e-14,
-            "monitorvariables": ["cpu", "resrho", "totalr"],
-            "adjointl2convergence": 1e-14,
-            "mgcycle": "2w",
-            "ncycles": 1000,
-            "ncyclescoarse": 250,
-            "usenksolver": True,
-            "nkswitchtol": 2.5e-4,
-            "ankswitchtol": 1e-2,
-            "anksecondordswitchtol": 1e-2,
-            "useblockettes": False,
-            "frozenturbulence": False,
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_euler_scalar_jst.cgns"),
+            "L2Convergence": 1e-14,
+            "monitorVariables": ["cpu", "resrho", "totalr"],
+            "adjointL2Convergence": 1e-14,
+            "MGCycle": "2w",
+            "nCycles": 1000,
+            "nCyclesCoarse": 250,
+            "useNKsolver": True,
+            "NKSwitchTol": 2.5e-4,
+            "ANKSwitchtol": 1e-2,
+            "ANKSecondordSwitchTol": 1e-2,
+            "useBlockettes": False,
             "blockSplitting": False,
         },
         "ref_file": "adjoint_euler_scalar_jst_tut_wing.json",
@@ -119,23 +117,23 @@ test_params = [
     {
         "name": "laminar_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
-            "l2convergence": 1e-15,
-            "l2convergencecoarse": 1e-2,
-            "monitorvariables": ["cpu", "resrho", "totalr"],
-            "adjointl2convergence": 1e-16,
-            "ncycles": 500,
-            "cfl": 1.5,
-            "cflcoarse": 1.25,
-            "mgcycle": "2w",
-            "ncyclescoarse": 250,
-            "usenksolver": True,
-            "ankswitchtol": 1e-2,
-            "anksecondordswitchtol": 1e-2,
-            "nkswitchtol": 1e-2,
-            "equationtype": "laminar NS",
-            "useblockettes": False,
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_viscous_scalar_jst.cgns"),
+            "L2Convergence": 1e-15,
+            "L2ConvergenceCoarse": 1e-2,
+            "monitorVariables": ["cpu", "resrho", "totalr"],
+            "adjointL2Convergence": 1e-16,
+            "nCycles": 500,
+            "CFL": 1.5,
+            "CFLCoarse": 1.25,
+            "MGCycle": "2w",
+            "nCyclesCoarse": 250,
+            "useNKsolver": True,
+            "ANKSwitchTol": 1e-2,
+            "ANKSecondordSwitchTol": 1e-2,
+            "NKSwitchTol": 1e-2,
+            "equationType": "laminar NS",
+            "useBlockettes": False,
         },
         "ref_file": "adjoint_laminar_tut_wing.json",
         "aero_prob": ap_tutorial_wing_laminar,
@@ -145,32 +143,70 @@ test_params = [
     {
         "name": "rans_tut_wing",
         "options": {
-            "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
-            "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
-            "mgcycle": "2w",
-            "equationtype": "RANS",
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
+            "MGCycle": "2w",
+            "equationType": "RANS",
             "smoother": "DADI",
-            "cfl": 1.5,
-            "cflcoarse": 1.25,
-            "resaveraging": "never",
-            "nsubiter": 3,
-            "nsubiterturb": 3,
-            "ncyclescoarse": 100,
-            "ncycles": 1000,
-            "monitorvariables": ["cpu", "resrho", "resturb", "totalr"],
-            "usenksolver": True,
-            "ankswitchtol": 1e-2,
-            "anksecondordswitchtol": 1e-2,
-            "l2convergence": 1e-15,
-            "nkswitchtol": 1e-5,
-            "adjointl2convergence": 1e-16,
-            "frozenturbulence": False,
+            "CFL": 1.5,
+            "CFLCoarse": 1.25,
+            "resAveraging": "never",
+            "nSubiter": 3,
+            "nSubiterTurb": 3,
+            "nCyclesCoarse": 100,
+            "nCycles": 1000,
+            "monitorVariables": ["cpu", "resrho", "resturb", "totalr"],
+            "useNKsolver": True,
+            "ANKSwitchTol": 1e-2,
+            "ANKSecondordSwitchTol": 1e-2,
+            "L2Convergence": 1e-15,
+            "NKSwitchTol": 1e-5,
+            "adjointL2Convergence": 1e-16,
             "blockSplitting": True,
-            "nkjacobianlag": 2,
+            "NKjacobianlag": 2,
         },
         "ref_file": "adjoint_rans_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
         "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag"],
+    },
+    # # Rotating frame test
+    {
+        "name": "Rotating_wing",
+        "options": {
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_rotframe.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_rotframe.cgns"),
+            "nCycles": 20000,
+            "equationType": "RANS",
+            "smoother": "DADI",
+            "useRotationSA": True,
+            "useQCR": True,
+            "useBlockettes": False,
+            "restrictionRelaxation": 1.0,
+            "CFL": 1.5,
+            "NKinnerpreconits": 2,
+            "NKjacobianlag": 3,
+            "NKouterpreconits": 3,
+            "NKsubspacesize": 100,
+            "ANKmaxiter": 80,
+            "ANKasmoverlap": 2,
+            "ANKinnerpreconits": 2,
+            "ANKouterpreconits": 2,
+            "nsubiterturb": 10,
+            "ANKSecondordSwitchTol": 1e-2,
+            "ANKcoupledSwitchTol": 1e-8,
+            "ANKCFLlimit": 1e10,
+            "L2Convergence": 1e-14,
+            "adjointL2Convergence": 1e-14,
+            "ADPC": True,
+            "adjointMaxIter": 1000,
+            "adjointSubspaceSize": 500,
+            "monitorVariables": ["cpu", "resrho", "resturb", "cmx"],
+            "volumevariables": ["resrho"],
+        },
+        "ref_file": "adjoint_rans_rotating.json",
+        "aero_prob": ap_tutorial_wing_rotating,
+        "evalFuncs": ["fy", "my"],
+        "N_PROCS": 2,
     },
 ]
 
@@ -206,7 +242,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.ffdFile = os.path.join(baseDir, "../../input_files/mdo_tutorial_ffd.fmt")
 
         mesh_options = copy.copy(IDWarpDefOpts)
-        mesh_options.update({"gridFile": options["gridfile"]})
+        mesh_options.update({"gridFile": options["gridFile"]})
 
         self.ap = copy.deepcopy(self.aero_prob)
 
@@ -214,13 +250,21 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.ap.evalFuncs = self.evalFuncs
 
         # add the default dvs to the problem
-        for dv in defaultAeroDVs:
-            self.ap.addDV(dv)
+        if self.name != "Rotating_wing":
+            for dv in defaultAeroDVs:
+                self.ap.addDV(dv)
+        else:
+            for dv in ["alpha", "beta", "mach", "T", "xRef", "yRef", "zRef"]:
+                self.ap.addDV(dv)
 
         self.CFDSolver = ADFLOW(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
         self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False))
+        if self.name == "Rotating_wing":
+            # Add rotation component to the frame
+            rotRate_x = 0.5
+            self.CFDSolver.setRotationRate([0, 0, 0], [0, -rotRate_x, 0])
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
@@ -261,7 +305,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.ffdFile = os.path.join(baseDir, "../../input_files/mdo_tutorial_ffd.fmt")
 
         mesh_options = copy.copy(IDWarpDefOpts)
-        mesh_options.update({"gridFile": options["gridfile"]})
+        mesh_options.update({"gridFile": options["gridFile"]})
 
         self.ap = copy.deepcopy(self.aero_prob)
 
@@ -276,6 +320,10 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
         self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True))
+        if self.name == "Rotating_wing":
+            # Add rotation component to the frame
+            rotRate_x = 0.5
+            self.CFDSolver.setRotationRate([0, 0, 0], [0, -rotRate_x, 0])
 
         # propagates the values from the restart file throughout the code
         self.CFDSolver.getResidual(self.ap)
@@ -286,6 +334,12 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
             return
+
+        if self.name == "Rotating_wing":
+            rtol = 2e-6
+        else:
+            rtol = 1e-8
+        atol = 5e-10
 
         for dv in ["alpha", "mach"]:  # defaultAeroDVs:
 
@@ -312,7 +366,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             print(self.name, funcsSens)
             print("====================================")
 
-        self.handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=1e-8, atol=5e-10)
+        self.handler.root_add_dict("Eval Functions Sens:", funcsSens, rtol=rtol, atol=atol)
 
     def cmplx_test_geom_dvs(self):
         if not hasattr(self, "name"):
@@ -325,6 +379,12 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         funcsSens = defaultdict(lambda: {})
 
         xRef = {"twist": [0.0] * 6, "span": [0.0], "shape": numpy.zeros(72, dtype="D")}
+
+        if self.name == "Rotating_wing":
+            rtol = 4e-6
+        else:
+            rtol = 5e-9
+        atol = 5e-9
 
         for dv in ["span", "twist", "shape"]:
 
@@ -351,7 +411,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
                 if not isinstance(ref_val, float):
                     ref_val = ref_val.flatten()[0]
 
-                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=5e-9, rtol=5e-9, err_msg=err_msg)
+                numpy.testing.assert_allclose(funcsSens[key][dv_key], ref_val, atol=atol, rtol=rtol, err_msg=err_msg)
 
         if MPI.COMM_WORLD.rank == 0:
             print("====================================")

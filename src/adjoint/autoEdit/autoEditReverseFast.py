@@ -35,30 +35,31 @@ print("Directory of input source files  :", DIR_ORI)
 print("Directory of output source files :", DIR_MOD)
 
 useful_modules = [
-    "bcroutines_b",
-    "turbbcroutines_b",
-    "utils_b",
-    "flowutils_b",
-    "walldistance_b",
     "bcpointers_b",
-    "initializeflow_b",
-    "turbutils_b",
-    "sa_b",
+    "bcroutines_b",
+    "flowutils_b",
     "fluxes_b",
-    "solverutils_b",
+    "initializeflow_b",
     "residuals_b",
+    "sa_b",
+    "solverutils_b",
     "surfaceintegrations_b",
+    "turbbcroutines_b",
+    "turbutils_b",
+    "utils_b",
+    "walldistance_b",
 ]
 
+FILE_IGNORE = ["adjointextra_b.f90", "bcdata_b.f90", "oversetutilities_b.f90", "zipperintegrations_b.f90"]
+
 for f in os.listdir(DIR_ORI):
-    if f.endswith(EXT):
+    if f not in FILE_IGNORE and f.endswith(EXT):
         # open original file in read mode
         file_object_ori = open(os.path.join(DIR_ORI, f), "r")
         print("\nParsing input file", file_object_ori.name)
 
         # read to whole file to string and reposition the pointer
         # at the first byte for future reading
-        all_src = file_object_ori.read()
         file_object_ori.seek(0)
 
         # First we want to dertmine if it is a 'useful' module or a
@@ -93,13 +94,6 @@ for f in os.listdir(DIR_ORI):
         for line in file_object_ori:
             # Just deal with lower case string
             line = line.lower()
-
-            # # Replace modules
-            # m = patt_modules.match(line)
-            # if m:
-            #     if not addedModule:
-            #         file_object_mod.write('  use myPushPopLib\n')
-            #         addedModule = True
 
             # Replace _cb on calls
             if "_cb" in line:

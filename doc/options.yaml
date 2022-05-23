@@ -781,7 +781,7 @@ ANKUseTurbDADI:
 ANKSwitchTol:
   desc: >
     Relative convergence in the residual norm before we switch to the ANK solver.
-    A value of 1.0 means that the ANK solver is used from the first iteration.
+    For most cases, the default value should ensure that the ANK solver is used from the first iteration, even after design changes.
 
 ANKSubspaceSize:
   desc: >
