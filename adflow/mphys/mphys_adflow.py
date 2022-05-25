@@ -162,7 +162,7 @@ class ADflowWarper(ExplicitComponent):
         solver = self.solver
 
         x_a = inputs["x_aero"].reshape((-1, 3))
-        solver.setSurfaceCoordinates(x_a)
+        solver.setSurfaceCoordinates(x_a, groupName=solver.meshFamilyGroup)
         solver.updateGeometryInfo()
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
@@ -1147,16 +1147,16 @@ class ADflowBuilder(Builder):
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
-        des_surfs=None,
+        my_surfs=None,
     ):
 
         # options dictionary for ADflow
         self.options = options
 
-        if des_surfs is None:
-            self.des_surfs = None
+        if my_surfs is None:
+            self.my_surfs = None
         else:
-            self.des_surfs = des_surfs
+            self.my_surfs = my_surfs
 
         # MACH tools require separate option dictionaries for solver and mesh
         # if user did not provide a separate mesh_options dictionary, we just use
@@ -1223,8 +1223,8 @@ class ADflowBuilder(Builder):
     def initialize(self, comm):
         self.solver = ADFLOW(options=self.options, comm=comm)
 
-        if self.des_surfs is not None:
-            self.solver.addFamilyGroup("des_surf", self.des_surfs)
+        if self.my_surfs is not None:
+            self.solver.addFamilyGroup("my_surf", self.my_surfs)
 
         mesh = USMesh(options=self.mesh_options, comm=comm)
 
