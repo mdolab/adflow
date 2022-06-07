@@ -180,6 +180,8 @@ contains
 &       ovrnts*cmoment(3, sps)
       funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
 &       ovrnts*globalvals(isepsensor, sps)
+      funcvalues(costfuncsepconstraint) = funcvalues(&
+&       costfuncsepconstraint) + ovrnts*globalvals(isepconstraint, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
@@ -673,6 +675,8 @@ contains
 &         ovrnts*funcvaluesd(costfuncaxismoment)
         globalvalsd(icavitation, sps) = globalvalsd(icavitation, sps) + &
 &         ovrnts*funcvaluesd(costfunccavitation)
+        globalvalsd(isepconstraint, sps) = globalvalsd(isepconstraint, &
+&         sps) + ovrnts*funcvaluesd(costfuncsepconstraint)
         globalvalsd(isepsensor, sps) = globalvalsd(isepsensor, sps) + &
 &         ovrnts*funcvaluesd(costfuncsepsensor)
         cmomentd(3, sps) = cmomentd(3, sps) + ovrnts*funcvaluesd(&
@@ -879,6 +883,8 @@ contains
 &       ovrnts*cmoment(3, sps)
       funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
 &       ovrnts*globalvals(isepsensor, sps)
+      funcvalues(costfuncsepconstraint) = funcvalues(&
+&       costfuncsepconstraint) + ovrnts*globalvals(isepconstraint, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
@@ -1076,6 +1082,12 @@ contains
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: xcd, ycd, zcd, rd(3)
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
+    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), vectnorm(3&
+&   )
+    real(kind=realtype) :: vectcorrectedd(3), veccrossprodd(3), &
+&   vectnormd(3)
+    real(kind=realtype) :: vectnormprod, sensorval, sepconstraint
+    real(kind=realtype) :: vectnormprodd, sensorvald, sepconstraintd
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
     real(kind=realtype) :: vd(3), sensord, sensor1d, cpd, tmpd, plocald
     real(kind=realtype) :: tauxx, tauyy, tauzz
@@ -1094,6 +1106,8 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic sqrt
+    intrinsic cos
+    intrinsic sin
     intrinsic exp
     real(kind=realtype), dimension(3) :: tmp0
     integer :: branch
@@ -1152,9 +1166,12 @@ contains
     axispoints(3, 2) = lref*momentaxis(3, 2)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
+    call pushreal8array(vectcorrected, 3)
     call pushreal8array(n, 3)
     call pushreal8array(r, 3)
     call pushreal8array(v, 3)
+    call pushreal8array(veccrossprod, 3)
+    call pushreal8array(vectnorm, 3)
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -1247,6 +1264,35 @@ contains
       v(2) = ww2(i, j, ivy)
       v(3) = ww2(i, j, ivz)
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
+! compute the vector product of freestream velocity to surface normal
+      vectnormprod = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1) + &
+&       veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + veldirfreestream(&
+&       3)*bcdata(mm)%norm(i, j, 3)
+      vectnorm(1) = veldirfreestream(1) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 1)
+      vectnorm(2) = veldirfreestream(2) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 2)
+      vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 3)
+! compute cross product of vectnorm to surface normal
+      veccrossprod(1) = vectnorm(2)*bcdata(mm)%norm(i, j, 3) - vectnorm(&
+&       3)*bcdata(mm)%norm(i, j, 2)
+      veccrossprod(2) = vectnorm(3)*bcdata(mm)%norm(i, j, 1) - vectnorm(&
+&       1)*bcdata(mm)%norm(i, j, 3)
+      veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - vectnorm(&
+&       2)*bcdata(mm)%norm(i, j, 1)
+! do the sweep angle correction
+      vectcorrected(1) = cos(degtorad*sweepanglecorrection)*vectnorm(1) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(1)
+      vectcorrected(2) = cos(degtorad*sweepanglecorrection)*vectnorm(2) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(2)
+      vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+      sensorval = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
+&       vectcorrected(3)
+      sensorval = one/two*(one-sensorval)
+      sensorval = sensorval*cellarea*blk
+      sepconstraint = sepconstraint + sensorval
 ! dot product with free stream
       sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
 &       veldirfreestream(3))
@@ -1300,6 +1346,7 @@ contains
     sepsensoravgd = 0.0_8
     sepsensoravgd = localvaluesd(isepavg:isepavg+2)
     cavitationd = localvaluesd(icavitation)
+    sepconstraintd = localvaluesd(isepconstraint)
     sepsensord = localvaluesd(isepsensor)
     mvd = 0.0_8
     mvd = localvaluesd(imv:imv+2)
@@ -1486,10 +1533,16 @@ contains
       rd = 0.0_8
       refpointd = 0.0_8
     end if
+    vectcorrectedd = 0.0_8
     vd = 0.0_8
+    veccrossprodd = 0.0_8
+    vectnormd = 0.0_8
+    call popreal8array(vectnorm, 3)
+    call popreal8array(veccrossprod, 3)
     call popreal8array(v, 3)
     call popreal8array(r, 3)
     call popreal8array(n, 3)
+    call popreal8array(vectcorrected, 3)
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -1549,6 +1602,33 @@ contains
       tmp0 = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
       call pushreal8array(v, 3)
       v = tmp0
+! compute the vector product of freestream velocity to surface normal
+      vectnormprod = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1) + &
+&       veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + veldirfreestream(&
+&       3)*bcdata(mm)%norm(i, j, 3)
+      vectnorm(1) = veldirfreestream(1) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 1)
+      vectnorm(2) = veldirfreestream(2) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 2)
+      vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 3)
+! compute cross product of vectnorm to surface normal
+      veccrossprod(1) = vectnorm(2)*bcdata(mm)%norm(i, j, 3) - vectnorm(&
+&       3)*bcdata(mm)%norm(i, j, 2)
+      veccrossprod(2) = vectnorm(3)*bcdata(mm)%norm(i, j, 1) - vectnorm(&
+&       1)*bcdata(mm)%norm(i, j, 3)
+      veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - vectnorm(&
+&       2)*bcdata(mm)%norm(i, j, 1)
+! do the sweep angle correction
+      vectcorrected(1) = cos(degtorad*sweepanglecorrection)*vectnorm(1) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(1)
+      vectcorrected(2) = cos(degtorad*sweepanglecorrection)*vectnorm(2) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(2)
+      vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+      sensorval = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
+&       vectcorrected(3)
+      sensorval = one/two*(one-sensorval)
 ! dot product with free stream
       sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
 &       veldirfreestream(3))
@@ -1601,6 +1681,7 @@ contains
       m0xd = n(1)*tempd11
       m0yd = n(2)*tempd11
       m0zd = n(3)*tempd11
+      sensorvald = sepconstraintd
       sensord = yc*sepsensoravgd(2) + sepsensord + xc*sepsensoravgd(1) +&
 &       zc*sepsensoravgd(3)
       zcd = sensor*sepsensoravgd(3)
@@ -1625,7 +1706,8 @@ contains
       xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
       xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
       call popreal8(sensor)
-      cellaread = cellaread + blk*sensor*sensord
+      cellaread = cellaread + blk*sensorval*sensorvald + blk*sensor*&
+&       sensord
       sensord = blk*cellarea*sensord
       call popreal8(sensor)
       temp3 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
@@ -1636,7 +1718,60 @@ contains
       vd(2) = vd(2) - veldirfreestream(2)*sensord
       veldirfreestreamd(2) = veldirfreestreamd(2) - v(2)*sensord
       vd(3) = vd(3) - veldirfreestream(3)*sensord
-      veldirfreestreamd(3) = veldirfreestreamd(3) - v(3)*sensord
+      sensorvald = blk*cellarea*sensorvald
+      sensorvald = -(one*sensorvald/two)
+      vd(1) = vd(1) + vectcorrected(1)*sensorvald
+      vectcorrectedd(1) = vectcorrectedd(1) + v(1)*sensorvald
+      vd(2) = vd(2) + vectcorrected(2)*sensorvald
+      vectcorrectedd(2) = vectcorrectedd(2) + v(2)*sensorvald
+      vd(3) = vd(3) + vectcorrected(3)*sensorvald
+      vectcorrectedd(3) = vectcorrectedd(3) + v(3)*sensorvald
+      vectnormd(3) = vectnormd(3) + cos(degtorad*sweepanglecorrection)*&
+&       vectcorrectedd(3)
+      veccrossprodd(3) = veccrossprodd(3) + sin(degtorad*&
+&       sweepanglecorrection)*vectcorrectedd(3)
+      vectcorrectedd(3) = 0.0_8
+      vectnormd(2) = vectnormd(2) + cos(degtorad*sweepanglecorrection)*&
+&       vectcorrectedd(2)
+      veccrossprodd(2) = veccrossprodd(2) + sin(degtorad*&
+&       sweepanglecorrection)*vectcorrectedd(2)
+      vectcorrectedd(2) = 0.0_8
+      veccrossprodd(1) = veccrossprodd(1) + sin(degtorad*&
+&       sweepanglecorrection)*vectcorrectedd(1)
+      vectnormd(1) = vectnormd(1) + bcdata(mm)%norm(i, j, 2)*&
+&       veccrossprodd(3) + cos(degtorad*sweepanglecorrection)*&
+&       vectcorrectedd(1)
+      vectcorrectedd(1) = 0.0_8
+      vectnormd(2) = vectnormd(2) - bcdata(mm)%norm(i, j, 1)*&
+&       veccrossprodd(3)
+      veccrossprodd(3) = 0.0_8
+      vectnormd(3) = vectnormd(3) + bcdata(mm)%norm(i, j, 1)*&
+&       veccrossprodd(2)
+      vectnormd(1) = vectnormd(1) - bcdata(mm)%norm(i, j, 3)*&
+&       veccrossprodd(2)
+      veccrossprodd(2) = 0.0_8
+      vectnormd(2) = vectnormd(2) + bcdata(mm)%norm(i, j, 3)*&
+&       veccrossprodd(1)
+      vectnormd(3) = vectnormd(3) - bcdata(mm)%norm(i, j, 2)*&
+&       veccrossprodd(1)
+      veldirfreestreamd(3) = veldirfreestreamd(3) + vectnormd(3) - v(3)*&
+&       sensord
+      veccrossprodd(1) = 0.0_8
+      vectnormprodd = -(bcdata(mm)%norm(i, j, 3)*vectnormd(3))
+      vectnormd(3) = 0.0_8
+      veldirfreestreamd(2) = veldirfreestreamd(2) + vectnormd(2)
+      vectnormprodd = vectnormprodd - bcdata(mm)%norm(i, j, 2)*vectnormd&
+&       (2)
+      vectnormd(2) = 0.0_8
+      vectnormprodd = vectnormprodd - bcdata(mm)%norm(i, j, 1)*vectnormd&
+&       (1)
+      veldirfreestreamd(1) = veldirfreestreamd(1) + bcdata(mm)%norm(i, j&
+&       , 1)*vectnormprodd + vectnormd(1)
+      vectnormd(1) = 0.0_8
+      veldirfreestreamd(2) = veldirfreestreamd(2) + bcdata(mm)%norm(i, j&
+&       , 2)*vectnormprodd
+      veldirfreestreamd(3) = veldirfreestreamd(3) + bcdata(mm)%norm(i, j&
+&       , 3)*vectnormprodd
       call popreal8array(v, 3)
       tmpd0 = vd
       temp0 = v(1)**2 + v(2)**2 + v(3)**2
@@ -1781,6 +1916,9 @@ contains
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
+    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), vectnorm(3&
+&   )
+    real(kind=realtype) :: vectnormprod, sensorval, sepconstraint
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
@@ -1792,6 +1930,8 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic sqrt
+    intrinsic cos
+    intrinsic sin
     intrinsic exp
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
@@ -1821,6 +1961,7 @@ contains
     sepsensor = zero
     cavitation = zero
     sepsensoravg = zero
+    sepconstraint = zero
     mpaxis = zero
     mvaxis = zero
     cperror2 = zero
@@ -1916,6 +2057,35 @@ contains
       v(2) = ww2(i, j, ivy)
       v(3) = ww2(i, j, ivz)
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
+! compute the vector product of freestream velocity to surface normal
+      vectnormprod = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1) + &
+&       veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + veldirfreestream(&
+&       3)*bcdata(mm)%norm(i, j, 3)
+      vectnorm(1) = veldirfreestream(1) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 1)
+      vectnorm(2) = veldirfreestream(2) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 2)
+      vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm(i&
+&       , j, 3)
+! compute cross product of vectnorm to surface normal
+      veccrossprod(1) = vectnorm(2)*bcdata(mm)%norm(i, j, 3) - vectnorm(&
+&       3)*bcdata(mm)%norm(i, j, 2)
+      veccrossprod(2) = vectnorm(3)*bcdata(mm)%norm(i, j, 1) - vectnorm(&
+&       1)*bcdata(mm)%norm(i, j, 3)
+      veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - vectnorm(&
+&       2)*bcdata(mm)%norm(i, j, 1)
+! do the sweep angle correction
+      vectcorrected(1) = cos(degtorad*sweepanglecorrection)*vectnorm(1) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(1)
+      vectcorrected(2) = cos(degtorad*sweepanglecorrection)*vectnorm(2) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(2)
+      vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3) &
+&       + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+      sensorval = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
+&       vectcorrected(3)
+      sensorval = one/two*(one-sensorval)
+      sensorval = sensorval*cellarea*blk
+      sepconstraint = sepconstraint + sensorval
 ! dot product with free stream
       sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
 &       veldirfreestream(3))
@@ -2059,6 +2229,8 @@ contains
     localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
+    localvalues(isepconstraint) = localvalues(isepconstraint) + &
+&     sepconstraint
     localvalues(icavitation) = localvalues(icavitation) + cavitation
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg

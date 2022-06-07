@@ -291,12 +291,15 @@ contains
 
        case(cgnsSepSensor)
           sortNumber(i) = 114
-
-       case (cgnsCavitation)
+        
+       case(cgnsSepConstraint)
           sortNumber(i) = 115
 
-       case(cgnsAxisMoment)
+       case (cgnsCavitation)
           sortNumber(i) = 116
+
+       case(cgnsAxisMoment)
+          sortNumber(i) = 117
 
        case (cgnsHdiffMax)
           sortNumber(i) = 201
@@ -1597,6 +1600,10 @@ contains
        case("sepsensor")
           nMon = nMon + 1; nMonSum = nMonSum + 1
           tmpNames(nMon) = cgnsSepSensor
+       
+       case("sepconstraint")
+          nMon = nMon + 1; nMonSum = nMonSum + 1
+          tmpNames(nMon) = cgnsSepConstraint
 
        case("cavitation")
           nMon = nMon + 1; nMonSum = nMonSum + 1
@@ -2357,6 +2364,7 @@ contains
 
     surfWriteBlank = .false.
     surfWriteSepSensor = .false.
+    surfWriteSepConstraint = .false.
     surfWriteCavitation = .false.
     surfWriteAxisMoment = .false.
     surfWriteGC = .false.
@@ -2473,6 +2481,10 @@ contains
 
        case ("sepsensor")
           surfWriteSepSensor = .true.
+          nVarSpecified = nVarSpecified + 1
+       
+       case ("sepconstraint")
+          surfWriteSepConstraint = .true.
           nVarSpecified = nVarSpecified + 1
 
        case ("cavitation")
@@ -4042,6 +4054,7 @@ contains
     usematrixfreedrdw = .False.
     sepSensorOffset = zero
     sepSensorSharpness = 10_realType
+    sweepAngleCorrection = zero
   end subroutine setDefaultValues
 
   subroutine initializeIsoSurfaceVariables(values, nValues)

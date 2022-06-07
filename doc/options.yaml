@@ -1257,6 +1257,11 @@ sepSensorSharpness:
     The sharpness parameter for the separation sensor.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
+sweepAngleCorrection:
+  desc: >
+    The sweep angle of the wing (25% chord sweep angle is recommended)
+    The value should be in degrees.
+
 computeCavitation:
   desc: >
     Whether or not to compute cavitation.

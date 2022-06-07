@@ -1285,7 +1285,7 @@ contains
 
     real(kind=realType) :: hdiffMax, MachMax
     real(kind=realType) :: eddyvisMax, yplusMax, sepSensor, Cavitation, axisMoment
-    real(kind=realType) :: sepSensorAvg(3)
+    real(kind=realType) :: sepSensorAvg(3), sepConstraint
 
     real(kind=realType) :: L2ConvThisLevel, fact
     real(kind=realType), dimension(3) :: cfp, cfv, cmp, cmv
@@ -1447,6 +1447,9 @@ contains
 
              case (cgnsSepSensor)
                 monLoc(mm) = monLoc(mm) + localValues(isepSensor)
+
+             case (cgnsSepConstraint)
+                monLoc(mm) = monLoc(mm) + localValues(iSepConstraint)
 
              case (cgnsCavitation)
                 monLoc(mm) = monLoc(mm) + localValues(iCavitation)

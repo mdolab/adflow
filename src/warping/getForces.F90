@@ -18,7 +18,7 @@ subroutine getForces(forces, npts, sps)
   integer(kind=intType) :: mm, nn, i, j, ii, jj, iDim, ierr
   integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
   real(kind=realType) :: sss(3),v2(3),v1(3), qa, sepSensor, Cavitation
-  real(kind=realType) :: sepSensorAvg(3)
+  real(kind=realType) :: sepSensorAvg(3), sepConstraint
   real(kind=realType) :: Fp(3), Fv(3), Mp(3), Mv(3), yplusmax, qf(3)
   real(kind=realType) :: localValues(nLocalValues)
   type(zipperMesh), pointer :: zipper

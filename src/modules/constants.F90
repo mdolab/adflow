@@ -22,6 +22,7 @@ module constants
   real(kind=realType), parameter :: pi    = 3.1415926535897931_realType
   real(kind=realType), parameter :: eps   = 1.e-25_realType
   real(kind=realType), parameter :: large = 1.e+37_realType
+  
 
   ! Constants to define the porosity values
 
@@ -84,6 +85,9 @@ module constants
   real(kind=realType), parameter :: eighth = 0.125_realType
   real(kind=realType), parameter :: threefourth = 0.75_realType
   real(kind=realType), parameter :: sqrtthree = 1.7320508075688772_realType
+  
+  ! radian to degree conversion
+  real(kind=realType), parameter :: degtorad    = pi/180.0_realType
 
   ! String constants
   CHARACTER( * ), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
@@ -341,7 +345,7 @@ module constants
   integer(kind=intType), parameter :: iTotal=16
 
   ! Cost functions.
-  integer(kind=intType), parameter :: nCostFunction = 88
+  integer(kind=intType), parameter :: nCostFunction = 89
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -430,9 +434,10 @@ module constants
        costfuncmavgvz = 85, &
        costfunccperror2 = 86, &
        costfuncaavgptot = 87, &
-       costfuncaavgps   = 88
+       costfuncaavgps   = 88, &
+       costfuncsepconstraint = 89
 
-  integer(kind=intType), parameter :: nLocalValues=49
+  integer(kind=intType), parameter :: nLocalValues=50
   integer(kind=intType), parameter :: &
        iFp =  1, &
        iFv =  4, &
@@ -466,7 +471,8 @@ module constants
        iPower      = 46, &
        iCpError2   = 47, &
        iAreaPTot   = 48, &
-       iAreaPs     = 49
+       iAreaPs     = 49, &
+       iSepConstraint = 50
 
   ! Constants for zipper comm
 

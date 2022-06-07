@@ -2001,7 +2001,7 @@ end subroutine statePreAllocation
 
     ! Working Parameters
     integer(kind=intType) :: i, j, k, l, nn, sps
-    real(kind=realType) :: sepSensor, Cavitation, axisMoment
+    real(kind=realType) :: sepSensor, Cavitation, axisMoment, sepConstraint
 
     do nn=1, nDom
        do sps=1, nTimeIntervalsSpectral
@@ -2075,6 +2075,11 @@ end subroutine statePreAllocation
     ! sepSensor
     ISIZE1OFDrfDrfbcdata_sepSensor = 0
     ISIZE2OFDrfDrfbcdata_sepSensor = 0
+
+    ! sepConstraint
+    ISIZE1OFDrfDrfbcdata_sepConstraint = 0
+    ISIZE2OFDrfDrfbcdata_sepConstraint = 0
+    
 
     ! Cavitation
     ISIZE1OFDrfDrfbcdata_Cavitation = 0

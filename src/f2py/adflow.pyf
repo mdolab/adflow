@@ -993,6 +993,8 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccperror2=86
          integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
          integer(kind=inttype) parameter,optional :: costfuncaavgps=88
+         integer(kind=inttype) parameter,optional :: costfuncsepconstraint=89
+         
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
@@ -1385,6 +1387,7 @@ python module libadflow
          use constants
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
+         real(kind=realtype) sweepanglecorrection
          logical::computecavitation
        end module inputcostfunctions
 

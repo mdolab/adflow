@@ -2058,10 +2058,10 @@ class ADFLOW(AeroSolver):
         delta : angle (deg)
             Initial step. Only the magnitude is significant
         tol : float
-            Desired tolerance for sepSensor
+            Desired tolerance for sepSensor or sepConstraint
 
         sepName : str or None
-            User supplied function to use for sep sensor. May be a
+            User supplied function to use for sep sensor (default) or sep constraint. May be a
             user-added group function.
 
         Returns
@@ -5171,6 +5171,7 @@ class ADFLOW(AeroSolver):
             # Function parmeters
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
+            "sweepAngleCorrection": [float, 0.0],
             "computeCavitation": [bool, False],
         }
 
@@ -5546,6 +5547,7 @@ class ADFLOW(AeroSolver):
             # Parameters for functions
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
+            "sweepanglecorrection": ["cost", "sweepanglecorrection"],
             "computecavitation": ["cost", "computecavitation"],
             "writesolutioneachiter": ["monitor", "writesoleachiter"],
             "writesurfacesolution": ["monitor", "writesurface"],
@@ -5685,6 +5687,7 @@ class ADFLOW(AeroSolver):
             "sepsensoravgx": self.adflow.constants.costfuncsepsensoravgx,
             "sepsensoravgy": self.adflow.constants.costfuncsepsensoravgy,
             "sepsensoravgz": self.adflow.constants.costfuncsepsensoravgz,
+            "sepconstraint": self.adflow.constants.costfuncsepconstraint,
             "cavitation": self.adflow.constants.costfunccavitation,
             "mdot": self.adflow.constants.costfuncmdot,
             "mavgptot": self.adflow.constants.costfuncmavgptot,
