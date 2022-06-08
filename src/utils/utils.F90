@@ -6194,9 +6194,6 @@ end subroutine cross_prod
           case (cgnsSepSensor)
              write(*,"(a)",advance="no") "        SepSensor       |"
 
-          case (cgnsSepConstraint)
-             write(*,"(a)",advance="no") "        SepConstraint   |"
-
           case (cgnsCavitation)
              write(*,"(a)",advance="no") "       Cavitation       |"
 
@@ -6298,9 +6295,6 @@ end subroutine cross_prod
 
          case (cgnsSepSensor)
             write(*,"(a)",advance="no") "                    SepSensor                    |"
-
-         case (cgnsSepConstraint)
-            write(*,"(a)",advance="no") "                    SepConstraint                |"
 
          case (cgnsCavitation)
             write(*,"(a)",advance="no") "                   Cavitation                    |"

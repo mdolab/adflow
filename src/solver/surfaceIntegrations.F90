@@ -104,7 +104,6 @@ contains
        funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS*cMoment(3, sps)
 
        funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*globalVals(iSepSensor, sps)
-       funcValues(costFuncSepConstraint) = funcValues(costFuncSepConstraint) + ovrNTS*globalVals(iSepConstraint, sps)
        funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*globalVals(iCavitation, sps)
        funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
        funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
@@ -329,7 +328,7 @@ contains
     real(kind=realType) :: xc, yc, zc, qf(3), r(3), n(3), L
     real(kind=realType) :: fact, rho, mul, yplus, dwall 
     real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectNorm(3)
-    real(kind=realType) :: vectNormProd, sensorVal, sepConstraint
+    real(kind=realType) :: vectNormProd
     real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
     real(kind=realType) :: tauXx, tauYy, tauZz
     real(kind=realType) :: tauXy, tauXz, tauYz
@@ -370,7 +369,6 @@ contains
     sepSensor = zero
     Cavitation = zero
     sepSensorAvg = zero
-    sepConstraint = zero
     Mpaxis = zero; Mvaxis = zero;
     CpError2 = zero;
 
@@ -481,62 +479,65 @@ contains
        v(3) = ww2(i, j, ivz)
        v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
        
-       ! compute the vector product of freestream velocity to surface normal
-       vectNormProd = velDirFreeStream(1)*BCData(mm)%norm(i,j,1) + &
-            velDirFreeStream(2)*BCData(mm)%norm(i,j,2) + &
-            velDirFreeStream(3)*BCData(mm)%norm(i,j,3)
-     
-       vectNorm(1) =velDirFreeStream(1) - vectNormProd * BCData(mm)%norm(i,j,1)
-       vectNorm(2) =velDirFreeStream(2) - vectNormProd * BCData(mm)%norm(i,j,2)
-       vectNorm(3) =velDirFreeStream(3) - vectNormProd * BCData(mm)%norm(i,j,3)
-       
-       ! compute cross product of vectnorm to surface normal
-       vecCrossProd(1) = (vectNorm(2)*BCData(mm)%norm(i,j,3) - vectNorm(3)*BCData(mm)%norm(i,j,2))
-       vecCrossProd(2) = (vectNorm(3)*BCData(mm)%norm(i,j,1) - vectNorm(1)*BCData(mm)%norm(i,j,3))
-       vecCrossProd(3) = (vectNorm(1)*BCData(mm)%norm(i,j,2) - vectNorm(2)*BCData(mm)%norm(i,j,1))
-       
-       ! do the sweep angle correction
-       vectCorrected(1) = cos(degtorad*sweepAngleCorrection) *vectnorm(1) + &
-            sin(degtorad*sweepAngleCorrection) * vecCrossProd(1)
-       
-       vectCorrected(2) = cos(degtorad*sweepAngleCorrection) *vectnorm(2) + &
-            sin(degtorad*sweepAngleCorrection) * vecCrossProd(2)
-       
-       vectCorrected(3) = cos(degtorad*sweepAngleCorrection) *vectnorm(3) + &
-            sin(degtorad*sweepAngleCorrection) * vecCrossProd(3)
+       if (sepmodel == surfvec) then
+          vectNormProd = velDirFreeStream(1)*BCData(mm)%norm(i,j,1) + &
+          velDirFreeStream(2)*BCData(mm)%norm(i,j,2) + &
+          velDirFreeStream(3)*BCData(mm)%norm(i,j,3)
 
-
-       sensorVal = (v(1)*vectCorrected(1) + v(2)*vectCorrected(2) + &
-            v(3)*vectCorrected(3))
-       
-       sensorVal = one/two*(one - sensorVal)
+          vectNorm(1) =velDirFreeStream(1) - vectNormProd * BCData(mm)%norm(i,j,1)
+          vectNorm(2) =velDirFreeStream(2) - vectNormProd * BCData(mm)%norm(i,j,2)
+          vectNorm(3) =velDirFreeStream(3) - vectNormProd * BCData(mm)%norm(i,j,3)
   
-       sensorVal = sensorVal * cellArea * blk
-     
-       sepConstraint = sepConstraint + sensorVal
-       
-       ! Dot product with free stream
-       sensor = -(v(1)*velDirFreeStream(1) + v(2)*velDirFreeStream(2) + &
+          ! compute cross product of vectnorm to surface normal
+          vecCrossProd(1) = vectNorm(2)*BCData(mm)%norm(i,j,3) - &
+             vectNorm(3)*BCData(mm)%norm(i,j,2)
+          vecCrossProd(2) = vectNorm(3)*BCData(mm)%norm(i,j,1) - &
+             vectNorm(1)*BCData(mm)%norm(i,j,3)
+          vecCrossProd(3) = vectNorm(1)*BCData(mm)%norm(i,j,2) - &
+             vectNorm(2)*BCData(mm)%norm(i,j,1)
+  
+          ! do the sweep angle correction
+          vectCorrected(1) = cos(degtorad*sweepAngleCorrection) *vectNorm(1) + &
+             sin(degtorad*sweepAngleCorrection) * vecCrossProd(1)
+  
+          vectCorrected(2) = cos(degtorad*sweepAngleCorrection) *vectNorm(2) + &
+             sin(degtorad*sweepAngleCorrection) * vecCrossProd(2)
+  
+          vectCorrected(3) = cos(degtorad*sweepAngleCorrection) *vectNorm(3) + &
+             sin(degtorad*sweepAngleCorrection) * vecCrossProd(3)
+
+
+          sensor = (v(1)*vectCorrected(1) + v(2)*vectCorrected(2) + &
+             v(3)*vectCorrected(3))
+  
+          sensor = one/two*(one - sensor)
+          sensor = sensor * cellArea * blk
+          sepSensor = sepSensor + sensor
+       else 
+
+          ! Dot product with free stream
+          sensor = -(v(1)*velDirFreeStream(1) + v(2)*velDirFreeStream(2) + &
             v(3)*velDirFreeStream(3))
        
-       !Now run through a smooth heaviside function:
-       sensor = one/(one + exp(-2*sepSensorSharpness*(sensor-sepSensorOffset)))
+          !Now run through a smooth heaviside function:
+          sensor = one/(one + exp(-2*sepSensorSharpness*(sensor-sepSensorOffset)))
 
-       ! And integrate over the area of this cell and save, blanking as we go.
-       sensor = sensor * cellArea * blk
-       sepSensor = sepSensor + sensor
+          ! And integrate over the area of this cell and save, blanking as we go.
+           sensor = sensor * cellArea * blk
+          sepSensor = sepSensor + sensor
 
-       ! Also accumulate into the sepSensorAvg
-       xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+          ! Also accumulate into the sepSensorAvg
+          xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
             +         xx(i,j+1,1) + xx(i+1,j+1,1))
-       yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+          yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
             +         xx(i,j+1,2) + xx(i+1,j+1,2))
-       zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+          zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
             +         xx(i,j+1,3) + xx(i+1,j+1,3))
 
-       sepSensorAvg(1) = sepSensorAvg(1)  + sensor * xc
-       sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yc
-       sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
+          sepSensorAvg(1) = sepSensorAvg(1)  + sensor * xc
+          sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yc
+          sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
+       endif
 
        if (computeCavitation) then
           plocal = pp2(i,j)
@@ -695,7 +696,6 @@ contains
     localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
     localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
     localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
-    localValues(iSepConstraint) = localValues(iSepConstraint) + sepConstraint
     localValues(iCavitation) = localValues(iCavitation) + cavitation
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
     localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis

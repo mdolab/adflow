@@ -838,6 +838,8 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
          integer(kind=inttype) parameter,optional :: nsequations=2_inttype
          integer(kind=inttype) parameter,optional :: ransequations=3_inttype
+         integer(kind=inttype) parameter,optional :: surfvec=1_inttype
+         integer(kind=inttype) parameter,optional :: heaviside=2_inttype
          integer(kind=inttype) parameter,optional :: steady=1_inttype
          integer(kind=inttype) parameter,optional :: unsteady=2_inttype
          integer(kind=inttype) parameter,optional :: timespectral=3_inttype
@@ -993,7 +995,6 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccperror2=86
          integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
          integer(kind=inttype) parameter,optional :: costfuncaavgps=88
-         integer(kind=inttype) parameter,optional :: costfuncsepconstraint=89
          
         end module constants
 
@@ -1385,6 +1386,7 @@ python module libadflow
 
        module inputcostfunctions ! in :test:costFunctions.F90
          use constants
+         integer(kind=inttype) :: sepmodel
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
          real(kind=realtype) sweepanglecorrection

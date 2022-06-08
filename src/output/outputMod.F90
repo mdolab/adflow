@@ -165,9 +165,8 @@ contains
     if( surfWriteCfz )      nSolVar = nSolVar +1
     if( surfWriteBlank )    nSolVar = nSolVar +1
     if( surfWriteSepSensor )      nSolVar = nSolVar +1
-    if( surfWriteSepConstraint )      nSolVar = nSolVar +1
-    if( surfWriteCavitation )     nsolVar = nsolVar +1
-    if( surfWriteGC )             nsolVar = nsolVar +1
+    if( surfWriteCavitation )     nSolVar = nSolVar +1
+    if( surfWriteGC )             nSolVar = nSolVar +1
 
   end subroutine numberOfSurfSolVariables
 
@@ -709,11 +708,6 @@ contains
     if (surfWriteAxisMoment) then
        nn = nn + 1
        solNames(nn) = cgnsAxisMoment
-    end if
-
-    if (surfWriteSepConstraint) then
-      nn = nn + 1
-      solNames(nn) = cgnsSepConstraint
     end if
 
     if (surfWriteGC) then
@@ -1411,7 +1405,6 @@ contains
     real(kind=realType), dimension(*), intent(out) :: buffer
     character(len=*), intent(in) :: solName
     logical, intent(in) :: viscousSubface, useRindLayer
-    
     ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine 
     ! when the indices are in the rind layer.
     integer(kind=intType), optional, intent(in) :: iBeg, iEnd, jBeg, jEnd
@@ -1434,7 +1427,7 @@ contains
     real(kind=realType) :: tauxy, tauxz, tauyz
     real(kind=realType) :: pm1, a, sensor, plocal, sensor1
     real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectNorm(3)
-    real(kind=realType) :: vectNormProd, sensorVal
+    real(kind=realType) :: vectNormProd
     real(kind=realType), dimension(3) :: norm, V
 
     real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
@@ -2195,62 +2188,48 @@ contains
              ! Normalize
              v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-             ! Dot product with free stream
-             sensor = -dot_product(v, velDirFreeStream)
-
-             !Now run through a smooth heaviside function:
-             sensor = one/(one + exp(-2*sepSensorSharpness*(sensor - sepSensorOffset)))
-             buffer(nn) = sensor
-          enddo
-       enddo
-
-    case (cgnsSepConstraint)
-
-       do j=rangeFace(2,1), rangeFace(2,2)
-          do i=rangeFace(1,1), rangeFace(1,2)
-             nn = nn + 1
-
-             ! Get normalized surface velocity:
-             v(1) = ww2(i, j, ivx)
-             v(2) = ww2(i, j, ivy)
-             v(3) = ww2(i, j, ivz)
-
-             ! Normalize
-             v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
-
-             vectNormProd = velDirFreeStream(1)*BCData(mm)%norm(i,j,1) + &
-             velDirFreeStream(2)*BCData(mm)%norm(i,j,2) + &
-             velDirFreeStream(3)*BCData(mm)%norm(i,j,3)
+             if (sepmodel == surfvec) then
+               vectNormProd = velDirFreeStream(1)*BCData(mm)%norm(i,j,1) + &
+               velDirFreeStream(2)*BCData(mm)%norm(i,j,2) + &
+               velDirFreeStream(3)*BCData(mm)%norm(i,j,3)
      
-             vectNorm(1) =velDirFreeStream(1) - vectNormProd * BCData(mm)%norm(i,j,1)
-             vectNorm(2) =velDirFreeStream(2) - vectNormProd * BCData(mm)%norm(i,j,2)
-             vectNorm(3) =velDirFreeStream(3) - vectNormProd * BCData(mm)%norm(i,j,3)
+               vectNorm(1) =velDirFreeStream(1) - vectNormProd * BCData(mm)%norm(i,j,1)
+               vectNorm(2) =velDirFreeStream(2) - vectNormProd * BCData(mm)%norm(i,j,2)
+               vectNorm(3) =velDirFreeStream(3) - vectNormProd * BCData(mm)%norm(i,j,3)
        
-             ! compute cross product of vectnorm to surface normal
-             vecCrossProd(1) = vectNorm(2)*BCData(mm)%norm(i,j,3) - &
-               vectNorm(3)*BCData(mm)%norm(i,j,2)
-             vecCrossProd(2) = vectNorm(3)*BCData(mm)%norm(i,j,1) - &
-               vectNorm(1)*BCData(mm)%norm(i,j,3)
-             vecCrossProd(3) = vectNorm(1)*BCData(mm)%norm(i,j,2) - &
-               vectNorm(2)*BCData(mm)%norm(i,j,1)
+               ! compute cross product of vectnorm to surface normal
+               vecCrossProd(1) = vectNorm(2)*BCData(mm)%norm(i,j,3) - &
+                  vectNorm(3)*BCData(mm)%norm(i,j,2)
+               vecCrossProd(2) = vectNorm(3)*BCData(mm)%norm(i,j,1) - &
+                  vectNorm(1)*BCData(mm)%norm(i,j,3)
+               vecCrossProd(3) = vectNorm(1)*BCData(mm)%norm(i,j,2) - &
+                  vectNorm(2)*BCData(mm)%norm(i,j,1)
        
-             ! do the sweep angle correction
-             vectCorrected(1) = cos(degtorad*sweepAngleCorrection) *vectNorm(1) + &
-               sin(degtorad*sweepAngleCorrection) * vecCrossProd(1)
+               ! do the sweep angle correction
+               vectCorrected(1) = cos(degtorad*sweepAngleCorrection) *vectNorm(1) + &
+                  sin(degtorad*sweepAngleCorrection) * vecCrossProd(1)
        
-             vectCorrected(2) = cos(degtorad*sweepAngleCorrection) *vectNorm(2) + &
-               sin(degtorad*sweepAngleCorrection) * vecCrossProd(2)
+               vectCorrected(2) = cos(degtorad*sweepAngleCorrection) *vectNorm(2) + &
+                  sin(degtorad*sweepAngleCorrection) * vecCrossProd(2)
        
-             vectCorrected(3) = cos(degtorad*sweepAngleCorrection) *vectNorm(3) + &
-               sin(degtorad*sweepAngleCorrection) * vecCrossProd(3)
+               vectCorrected(3) = cos(degtorad*sweepAngleCorrection) *vectNorm(3) + &
+                  sin(degtorad*sweepAngleCorrection) * vecCrossProd(3)
 
 
-            sensorVal = (v(1)*vectCorrected(1) + v(2)*vectCorrected(2) + &
-               v(3)*vectCorrected(3))
+               sensor = (v(1)*vectCorrected(1) + v(2)*vectCorrected(2) + &
+                  v(3)*vectCorrected(3))
        
-            sensorVal = one/two*(one - sensorVal)
+               sensor = one/two*(one - sensor)
+               buffer(nn) = sensor
+            else
 
-             buffer(nn) = sensorVal
+               ! Dot product with free stream
+               sensor = -dot_product(v, velDirFreeStream)
+
+               !Now run through a smooth heaviside function:
+               sensor = one/(one + exp(-2*sepSensorSharpness*(sensor - sepSensorOffset)))
+               buffer(nn) = sensor  
+            endif
           enddo
        enddo
 
