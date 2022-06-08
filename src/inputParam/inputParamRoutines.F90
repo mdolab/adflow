@@ -4040,7 +4040,7 @@ contains
     adjointPETScVarsAllocated = .False.
     adjointPETScPreProcVarsAllocated = .False.
     usematrixfreedrdw = .False.
-    sepmodel = heaviside
+    sepmodel = surfvec
     sepSensorOffset = zero
     sepSensorSharpness = 10_realType
     sweepAngleCorrection = zero

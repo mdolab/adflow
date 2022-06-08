@@ -1386,7 +1386,7 @@ python module libadflow
 
        module inputcostfunctions ! in :test:costFunctions.F90
          use constants
-         integer(kind=inttype) :: sepmodel
+         integer(kind=inttype) sepmodel
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
          real(kind=realtype) sweepanglecorrection

@@ -1287,7 +1287,9 @@ contains
         sensor = one/two*(one-sensor)
         sensor = sensor*cellarea*blk
         sepsensor = sepsensor + sensor
-      else
+        print*, 'surfvec'
+      else if (sepmodel .eq. heaviside) then
+        print*, 'heaviside'
 ! dot product with free stream
         sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
 &         )*veldirfreestream(3))
@@ -1624,8 +1626,8 @@ contains
         sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
 &         vectcorrected(3)
         sensor = one/two*(one-sensor)
-        call pushcontrol1b(0)
-      else
+        call pushcontrol2b(0)
+      else if (sepmodel .eq. heaviside) then
 ! dot product with free stream
         sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
 &         )*veldirfreestream(3))
@@ -1646,7 +1648,9 @@ contains
         call pushreal8(zc)
         zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &         , 3))
-        call pushcontrol1b(1)
+        call pushcontrol2b(1)
+      else
+        call pushcontrol2b(2)
       end if
       if (computecavitation) then
         plocal = pp2(i, j)
@@ -1673,7 +1677,7 @@ contains
       else
         cellaread = 0.0_8
       end if
-      call popcontrol1b(branch)
+      call popcontrol2b(branch)
       if (branch .eq. 0) then
         sensord = sepsensord
         cellaread = cellaread + blk*sensor*sensord
@@ -1730,7 +1734,7 @@ contains
 &         , j, 2)*vectnormprodd
         veldirfreestreamd(3) = veldirfreestreamd(3) + bcdata(mm)%norm(i&
 &         , j, 3)*vectnormprodd
-      else
+      else if (branch .eq. 1) then
         sensord = yc*sepsensoravgd(2) + sepsensord + xc*sepsensoravgd(1)&
 &         + zc*sepsensoravgd(3)
         zcd = sensor*sepsensoravgd(3)
@@ -2088,7 +2092,9 @@ contains
         sensor = one/two*(one-sensor)
         sensor = sensor*cellarea*blk
         sepsensor = sepsensor + sensor
-      else
+        print*, 'surfvec'
+      else if (sepmodel .eq. heaviside) then
+        print*, 'heaviside'
 ! dot product with free stream
         sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
 &         )*veldirfreestream(3))

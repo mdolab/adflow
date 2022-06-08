@@ -2187,7 +2187,7 @@ contains
 
              ! Normalize
              v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
-
+             mm = viscPointer(i,j)
              if (sepmodel == surfvec) then
                vectNormProd = velDirFreeStream(1)*BCData(mm)%norm(i,j,1) + &
                velDirFreeStream(2)*BCData(mm)%norm(i,j,2) + &
@@ -2221,7 +2221,8 @@ contains
        
                sensor = one/two*(one - sensor)
                buffer(nn) = sensor
-            else
+
+             else if (sepmodel == heaviside) then
 
                ! Dot product with free stream
                sensor = -dot_product(v, velDirFreeStream)
