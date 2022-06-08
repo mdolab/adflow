@@ -20,7 +20,7 @@ module tecplotIO
      integer(kind=intType), dimension(:,:), allocatable :: ind, conn
      real(kind=realType), dimension(:, :), allocatable :: w, vars
      integer(kind=intType) :: nNodes
-     real(kind=realType) :: pL, vL, pD, vD, CLp, CLv, CDp, CDv
+     real(kind=realType) :: pL, vL, pD, vD, pM, vM, CLp, CLv, CDp, CDv, CMp, CMv
      real(kind=realType) :: chord, twist, thickness
      real(kind=realType), dimension(3) :: le, te
      real(kind=realType), dimension(3) :: pt, dir
@@ -59,7 +59,7 @@ module tecplotIO
 
   ! Tecplot Variable names of the data in the lift distribution data file:
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistName
-  integer(kind=intType), parameter :: nLiftDistVar=18
+  integer(kind=intType), parameter :: nLiftDistVar=23
 
 contains
   subroutine addParaSlice(sliceName, pt, direction, famList, n)
@@ -492,7 +492,7 @@ contains
     integer(kind=intType) :: i, j, ii, jj, iDist, ierr
     real(kind=realType), dimension(:,:), allocatable :: values
     character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistNames
-    real(kind=realType) :: dmin, dmax, sumL, sumD, span, delta, xCur(3)
+    real(kind=realType) :: dmin, dmax, sumL, sumD, sumM, span, delta, xCur(3)
     type(slice) :: localSlice, globalSlice
     integer(kind=intType) :: sizeNode, sizeCell
     integer(kind=intType), dimension(:), pointer :: wallList
@@ -555,18 +555,23 @@ contains
        liftDistNames(4) = cgnsCoorZ
        liftDistNames(5) = "Lift"
        liftDistNames(6) = "Drag"
-       liftDistNames(7) = "Normalized Lift"
-       liftDistNames(8) = "Normalized Drag"
-       liftDistNames(9) = "CL"
-       liftDistNames(10) = "CD"
-       liftDistNames(11) = "CLp"
-       liftDistNames(12) = "CDp"
-       liftDistNames(13) = "CLv"
-       liftDistNames(14) = "CDv"
-       liftDistNames(15) = "Elliptical"
-       liftDistNames(16) = "thickness"
-       liftDistNames(17) = "twist"
-       liftDistNames(18) = "chord"
+       liftDistNames(7) = "Moment"
+       liftDistNames(8) = "Normalized Lift"
+       liftDistNames(9) = "Normalized Drag"
+       liftDistNames(10) = "Normalized Moment"
+       liftDistNames(11) = "CL"
+       liftDistNames(12) = "CD"
+       liftDistNames(13) = "CM"
+       liftDistNames(14) = "CLp"
+       liftDistNames(15) = "CDp"
+       liftDistNames(16) = "CMp"
+       liftDistNames(17) = "CLv"
+       liftDistNames(18) = "CDv"
+       liftDistNames(19) = "CMv"
+       liftDistNames(20) = "Elliptical"
+       liftDistNames(21) = "thickness"
+       liftDistNames(22) = "twist"
+       liftDistNames(23) = "chord"
 
        ! Only write header info for first distribution only
        if (myid == 0) then
@@ -618,38 +623,44 @@ contains
                d%dir, "does_not_matter", d%famList)
           call integrateSlice(localSlice, globalSlice, nodalValues, 0, .False.)
 
-          ! Total lift and drag
+          ! Total lift, drag, and moment
           values(i, 5)  = globalSlice%pL + globalSlice%vL
           values(i, 6)  = globalSlice%pD + globalSlice%vD
+          values(i, 7)  = globalSlice%pM + globalSlice%vM
 
-          ! Total CL and CD
-          values(i, 9)  = globalSlice%CLp + globalSlice%CLv
-          values(i, 10) = globalSlice%CDp + globalSlice%CDv
+          ! Total CL, CD, and CM
+          values(i, 11)  = globalSlice%CLp + globalSlice%CLv
+          values(i, 12) = globalSlice%CDp + globalSlice%CDv
+          values(i, 13) = globalSlice%CMp + globalSlice%CMv
 
-          ! Pressure lift and drag coefficients
-          values(i, 11) = globalSlice%CLp
-          values(i, 12) = globalSlice%CDp
+          ! Pressure lift, drag, and moment coefficients
+          values(i, 14) = globalSlice%CLp
+          values(i, 15) = globalSlice%CDp
+          values(i, 16) = globalSlice%CMp
 
-          ! Viscous lift and drag coefficients
-          values(i, 13) = globalSlice%CLv
-          values(i, 14) = globalSlice%CDv
+          ! Viscous lift, drag, and moment coefficients
+          values(i, 17) = globalSlice%CLv
+          values(i, 18) = globalSlice%CDv
+          values(i, 19) = globalSlice%CMv
 
           ! t/c, twist, chord
-          values(i, 16) = globalSlice%thickness
-          values(i, 17) = globalSlice%twist
-          values(i, 18) = globalSlice%chord
+          values(i, 21) = globalSlice%thickness
+          values(i, 22) = globalSlice%twist
+          values(i, 23) = globalSlice%chord
 
           call destroySlice(localSlice)
           call destroySlice(globalSlice)
 
        end do
 
-       ! Sum up the lift and drag values from the slices:
+       ! Sum up the lift, drag, and moment values from the slices:
        sumL = zero
        sumD = zero
+       sumM = zero
        do i=1,d%nSegments-1
           sumL = sumL + half*(values(i, 5) + values(i+1, 5))
           sumD = sumD + half*(values(i, 6) + values(i+1, 6))
+          sumM = sumM + half*(values(i, 7) + values(i+1, 7))
        end do
 
        ! Now compute the normalized lift, drag and elliptical since
@@ -662,15 +673,17 @@ contains
        dmin = minval(values(:, 1))
        sumL = sumL * delta
        sumD = sumD * delta
+       sumM = sumM * delta
 
        do i=1,d%nSegments
 
-          ! Normalized Lift
-          values(i, 7) = values(i, 5) / sumL
-          values(i, 8) = values(i, 6) / sumD
+          ! Normalized Lift, Drag, and Moment
+          values(i, 8) = values(i, 5) / sumL
+          values(i, 9) = values(i, 6) / sumD
+          values(i, 10) = values(i, 7) / abs(sumM)
 
           ! elliptical value
-          values(i, 15) = four/pi/span*sqrt(one-(values(i, 1)-dmin)**2/span**2)
+          values(i, 20) = four/pi/span*sqrt(one-(values(i, 1)-dmin)**2/span**2)
        end do
 
        ! Write all variables in block format
@@ -1815,14 +1828,16 @@ contains
     real(kind=realType), dimension(:, :), intent(in) :: nodalValues
     ! Working variables
     integer(kind=intType) :: i, j, i1, i2
-    real(kind=realType), dimension(3) :: x1, x2, pT1, pT2, vT1, vT2, pF, vF
-    real(kind=realType) :: len, dmax, dmin, dist, fact, M(3,3), tmp(4)
+    real(kind=realType), dimension(3) :: x1, x2, pT1, pT2, vT1, vT2, pF, vF, pF_elem, vF_elem
+    real(kind=realType) :: len, dmax, dmin, dist, fact, M(3,3), tmp(6)
     real(kind=realType) :: r(3), r_new(3), hyp, te(3), le(3), theta, w1, w2
     integer(kind=intType) :: bestPair(2), dir_ind, iProc, ierr, iSize
     real(kind=realtype), dimension(:,:), allocatable :: tempCoords
     real(kind=realtype), dimension(:,:), allocatable :: localVals
     integer(kind=intType), dimension(:), allocatable :: sliceNodeSizes, sliceCellSizes
     integer(kind=intType), dimension(:), allocatable :: nodeDisps, cellDisps
+    real(kind=realType), dimension(3) :: refPoint, pM, vM
+    real(kind=realType) :: xc, yc, zc
 
     ! Copy the info related to slice
     gSlc%sliceName = trim(lSlc%sliceName)
@@ -1831,11 +1846,24 @@ contains
 
     pF = zero
     vF = zero
+    pM = zero  ! pressure moment
+    vM = zero  ! viscous moment
     iSize = 3 + 6 + nFields
 
     allocate(localVals(iSize,lSlc%nNodes))
 
     ! Compute all the local variables we need.
+
+    ! Back out what is the main index of the slice, x, y or z based on
+    ! the direction. Not the best approach, but that's ok
+    dir_ind = maxloc(abs(gSlc%dir),1)
+
+    ! Determine the reference point for the moment computation in
+    ! meters.
+
+    refPoint(1) = LRef*pointRef(1)
+    refPoint(2) = LRef*pointRef(2)
+    refPoint(3) = LRef*pointRef(3)
 
     ! Interpolate the required values
     do i=1, lSlc%nNodes
@@ -1846,6 +1874,7 @@ contains
        localVals(1:iSize, i) = w1*nodalValues(i1, 1:iSize) + w2*nodalValues(i2, 1:iSize)
     end do
 
+    ! loop over elements
     do i=1, size(lSlc%conn, 2)
 
        ! extract nodes:
@@ -1866,14 +1895,33 @@ contains
        ! Length of this segment
        len = sqrt((x1(1)-x2(1))**2 + (x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
 
+       ! compute the pressure and viscous forces on this element
+       pF_elem = half*(pT1 + pT2)*len
+       vF_elem = half*(vT1 + vT2)*len
+
        ! Integrate the pressure and viscous forces separately
-       pF = pF + half*(pT1 + pT2)*len
-       vF = vF + half*(vT1 + vT2)*len
+       pF = pF + pF_elem
+       vF = vF + vF_elem
+
+       ! compute moment about the global reference locations
+       xc = half * (x1(1) + x2(1)) - refPoint(1)
+       yc = half * (x1(2) + x2(2)) - refPoint(2)
+       zc = half * (x1(3) + x2(3)) - refPoint(3)
+
+       ! pressure components
+       pM(1) = pM(1) + yc*pF_elem(3) - zc*pF_elem(2)
+       pM(2) = pM(2) + zc*pF_elem(1) - xc*pF_elem(3)
+       pM(3) = pM(3) + xc*pF_elem(2) - yc*pF_elem(1)
+
+       ! viscous components
+       vM(1) = vM(1) + yc*vF_elem(3) - zc*vF_elem(2)
+       vM(2) = vM(2) + zc*vF_elem(1) - xc*vF_elem(3)
+       vM(3) = vM(3) + xc*vF_elem(2) - yc*vF_elem(1)
 
     end do
 
     ! That is as far as we can go in parallel. We now have to gather up
-    ! pL, pD, vL vD as well as the nodes to the root proc.
+    ! pL, pD, pM, vL, vD, vM as well as the nodes to the root proc.
 
     ! Gather up the number of nodes to be set to the root proc:
     allocate(sliceNodeSizes(nProc), nodeDisps(0:nProc))
@@ -1937,16 +1985,24 @@ contains
     lSlc%vL = liftDirection(1)*vF(1) + liftDirection(2)*vF(2) + liftDirection(3)*vF(3)
     lSlc%vD = dragDirection(1)*vF(1) + dragDirection(2)*vF(2) + dragDirection(3)*vF(3)
 
+    ! the moments are a bit different than lift and drag. we keep the 3 components of the moment
+    ! in pM in this routine but then the slc%pM variable only has the component of the moment
+    ! we are interested in. we use the direction index to get this value out and set it in the slice
+    lSlc%pM = pM(dir_ind)
+    lSlc%vM = vM(dir_ind)
+
     ! Reduce the lift/drag values
-    call mpi_reduce((/lSlc%pL, lSlc%pD, lSlc%vL, lSlc%vD/), tmp, 4, adflow_real, MPI_SUM, &
+    call mpi_reduce((/lSlc%pL, lSlc%pD, lSlc%pM, lSlc%vL, lSlc%vD, lSlc%vM/), tmp, 6, adflow_real, MPI_SUM, &
          0, adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
     if (myid == 0) then
        gSlc%pL = tmp(1)
        gSlc%pD = tmp(2)
-       gSlc%vL = tmp(3)
-       gSlc%vD = tmp(4)
+       gSlc%pM = tmp(3)
+       gSlc%vL = tmp(4)
+       gSlc%vD = tmp(5)
+       gSlc%vM = tmp(6)
 
        ! Compute the chord as the max length between any two nodes...this
        ! is n^2, so should be changed in the future
@@ -1982,6 +2038,13 @@ contains
        gSlc%CLv = gSlc%vL / gSlc%chord * fact
        gSlc%CDv = gSlc%vD / gSlc%chord * fact
 
+       ! Moment factor has an extra lengthRef
+       fact = fact/(lengthRef*LRef)
+
+       ! moments
+       gSlc%CMp = gSlc%pM / gSlc%chord * fact
+       gSlc%CMv = gSlc%vM / gSlc%chord * fact
+
        ! Default values
        gSlc%twist = zero
        gSlc%thickness = zero
@@ -2012,10 +2075,6 @@ contains
        ! Finally we need to get the thickness. For this, compute temporary
        ! section nodes and rotate them by the twist values we just computed
        ! and take the max and min
-
-       ! Back out what is the main index of the slice, x, y or z based on
-       ! the direction. Not the best approach, but that's ok
-       dir_ind = maxloc(abs(gSlc%dir),1)
 
        ! Length of hyptoneuse is the same
        hyp = sqrt((x1(1)-x2(1))**2 + (x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
