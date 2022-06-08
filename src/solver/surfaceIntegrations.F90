@@ -513,9 +513,8 @@ contains
           sensor = one/two*(one - sensor)
           sensor = sensor * cellArea * blk
           sepSensor = sepSensor + sensor
-          print*,'surfvec'
+          
        else if (sepmodel == heaviside) then
-          print*,'heaviside' 
 
           ! Dot product with free stream
           sensor = -(v(1)*velDirFreeStream(1) + v(2)*velDirFreeStream(2) + &

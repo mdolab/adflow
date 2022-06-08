@@ -1287,9 +1287,7 @@ contains
         sensor = one/two*(one-sensor)
         sensor = sensor*cellarea*blk
         sepsensor = sepsensor + sensor
-        print*, 'surfvec'
       else if (sepmodel .eq. heaviside) then
-        print*, 'heaviside'
 ! dot product with free stream
         sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
 &         )*veldirfreestream(3))
@@ -2092,9 +2090,7 @@ contains
         sensor = one/two*(one-sensor)
         sensor = sensor*cellarea*blk
         sepsensor = sepsensor + sensor
-        print*, 'surfvec'
       else if (sepmodel .eq. heaviside) then
-        print*, 'heaviside'
 ! dot product with free stream
         sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
 &         )*veldirfreestream(3))

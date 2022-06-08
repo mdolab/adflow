@@ -2177,44 +2177,79 @@ contains
     case (cgnsSepSensor)
 
        do j=rangeFace(2,1), rangeFace(2,2)
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+            jor = j + jBegOr - 1
+            if (jor == jBeg) then 
+               jj = j + 1 
+            else if (jor == jEnd + 1) then
+               jj = j - 1
+            else
+               jj = j 
+            endif
+         else
+            jj = j
+
+         end if
+
           do i=rangeFace(1,1), rangeFace(1,2)
+
+            if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+               ior = i + iBegor - 1
+               if (ior == iBeg) then 
+                  ii = i + 1 
+               else if (ior == iEnd + 1) then
+                  ii = i - 1
+               else
+                  ii = i 
+               endif
+            else
+               ii = i
+            endif
+
              nn = nn + 1
 
-             ! Get normalized surface velocity:
-             v(1) = ww2(i, j, ivx)
-             v(2) = ww2(i, j, ivy)
-             v(3) = ww2(i, j, ivz)
-
-             ! Normalize
-             v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
-             mm = viscPointer(i,j)
+             
              if (sepmodel == surfvec) then
-               vectNormProd = velDirFreeStream(1)*BCData(mm)%norm(i,j,1) + &
-               velDirFreeStream(2)*BCData(mm)%norm(i,j,2) + &
-               velDirFreeStream(3)*BCData(mm)%norm(i,j,3)
-     
-               vectNorm(1) =velDirFreeStream(1) - vectNormProd * BCData(mm)%norm(i,j,1)
-               vectNorm(2) =velDirFreeStream(2) - vectNormProd * BCData(mm)%norm(i,j,2)
-               vectNorm(3) =velDirFreeStream(3) - vectNormProd * BCData(mm)%norm(i,j,3)
-       
+               print*,'check1'
+               ! Get normalized surface velocity:
+               v(1) = ww2(ii, jj, ivx)
+               v(2) = ww2(ii, jj, ivy)
+               v(3) = ww2(ii, jj, ivz)
+
+               ! Normalize
+               v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+               mm = viscPointer(ii,jj)
+               print*,'check2',mm,ii,jj
+               norm(1) = BCData(mm)%norm(ii,jj,1)
+               norm(2) = BCData(mm)%norm(ii,jj,2)
+               norm(3) = BCData(mm)%norm(ii,jj,3)
+               print*,'hcenorm',norm(1),norm(2),norm(3)
+               vectNormProd = velDirFreeStream(1)*norm(1) + &
+               velDirFreeStream(2)*norm(2) + &
+               velDirFreeStream(3)*norm(3)
+               print*,'check3'
+               vectNorm(1) =velDirFreeStream(1) - vectNormProd * norm(1)
+               vectNorm(2) =velDirFreeStream(2) - vectNormProd * norm(2)
+               vectNorm(3) =velDirFreeStream(3) - vectNormProd * norm(3)
+               print*,'check4'
                ! compute cross product of vectnorm to surface normal
-               vecCrossProd(1) = vectNorm(2)*BCData(mm)%norm(i,j,3) - &
-                  vectNorm(3)*BCData(mm)%norm(i,j,2)
-               vecCrossProd(2) = vectNorm(3)*BCData(mm)%norm(i,j,1) - &
-                  vectNorm(1)*BCData(mm)%norm(i,j,3)
-               vecCrossProd(3) = vectNorm(1)*BCData(mm)%norm(i,j,2) - &
-                  vectNorm(2)*BCData(mm)%norm(i,j,1)
-       
+               vecCrossProd(1) = vectNorm(2)*norm(3) - &
+                  vectNorm(3)*norm(2)
+               vecCrossProd(2) = vectNorm(3)*norm(1) - &
+                  vectNorm(1)*norm(3)
+               vecCrossProd(3) = vectNorm(1)*norm(2) - &
+                  vectNorm(2)*norm(1)
+               print*,'check5'
                ! do the sweep angle correction
                vectCorrected(1) = cos(degtorad*sweepAngleCorrection) *vectNorm(1) + &
                   sin(degtorad*sweepAngleCorrection) * vecCrossProd(1)
-       
+               print*,'check6'
                vectCorrected(2) = cos(degtorad*sweepAngleCorrection) *vectNorm(2) + &
                   sin(degtorad*sweepAngleCorrection) * vecCrossProd(2)
-       
+               print*,'check7'
                vectCorrected(3) = cos(degtorad*sweepAngleCorrection) *vectNorm(3) + &
                   sin(degtorad*sweepAngleCorrection) * vecCrossProd(3)
-
+               print*,'check8'
 
                sensor = (v(1)*vectCorrected(1) + v(2)*vectCorrected(2) + &
                   v(3)*vectCorrected(3))
@@ -2223,6 +2258,14 @@ contains
                buffer(nn) = sensor
 
              else if (sepmodel == heaviside) then
+
+               ! Get normalized surface velocity:
+               v(1) = ww2(i, j, ivx)
+               v(2) = ww2(i, j, ivy)
+               v(3) = ww2(i, j, ivz)
+
+               ! Normalize
+               v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
                ! Dot product with free stream
                sensor = -dot_product(v, velDirFreeStream)
