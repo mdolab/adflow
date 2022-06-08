@@ -291,14 +291,14 @@ contains
 
        case(cgnsSepSensor)
           sortNumber(i) = 114
-        
-       case(cgnsSepConstraint)
-          sortNumber(i) = 115
 
        case (cgnsCavitation)
-          sortNumber(i) = 116
+          sortNumber(i) = 115
 
        case(cgnsAxisMoment)
+          sortNumber(i) = 116
+
+       case(cgnsSepConstraint)
           sortNumber(i) = 117
 
        case (cgnsHdiffMax)

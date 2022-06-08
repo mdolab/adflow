@@ -1448,15 +1448,14 @@ contains
              case (cgnsSepSensor)
                 monLoc(mm) = monLoc(mm) + localValues(isepSensor)
 
-             case (cgnsSepConstraint)
-                monLoc(mm) = monLoc(mm) + localValues(iSepConstraint)
-
              case (cgnsCavitation)
                 monLoc(mm) = monLoc(mm) + localValues(iCavitation)
 
              case (cgnsAxisMoment)
                 monLoc(mm) = monLoc(mm) + localValues(iaxisMoment)
 
+               case (cgnsSepConstraint)
+                  monLoc(mm) = monLoc(mm) + localValues(iSepConstraint)
              end select
 
           end do nMonitoringVar

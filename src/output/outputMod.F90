@@ -701,11 +701,6 @@ contains
        solNames(nn) = cgnsSepSensor
     end if
 
-    if (surfWriteSepConstraint) then
-       nn = nn + 1
-       solNames(nn) = cgnsSepConstraint
-    end if
-
     if (surfWriteCavitation) then
        nn = nn + 1
        solNames(nn) = cgnsCavitation
@@ -714,6 +709,11 @@ contains
     if (surfWriteAxisMoment) then
        nn = nn + 1
        solNames(nn) = cgnsAxisMoment
+    end if
+
+    if (surfWriteSepConstraint) then
+      nn = nn + 1
+      solNames(nn) = cgnsSepConstraint
     end if
 
     if (surfWriteGC) then
@@ -1434,7 +1434,7 @@ contains
     real(kind=realType) :: tauxy, tauxz, tauyz
     real(kind=realType) :: pm1, a, sensor, plocal, sensor1
     real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectNorm(3)
-    real(kind=realType) :: vectNormProd, sensorVal, sepConstraint
+    real(kind=realType) :: vectNormProd, sensorVal
     real(kind=realType), dimension(3) :: norm, V
 
     real(kind=realType), dimension(:,:,:), pointer :: ww1, ww2
