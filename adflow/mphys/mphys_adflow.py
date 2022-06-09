@@ -23,7 +23,9 @@ class ADflowMesh(ExplicitComponent):
 
         self.aero_solver = self.options["aero_solver"]
 
-        self.x_a0 = self.aero_solver.getSurfaceCoordinates(groupName=self.aero_solver.meshFamilyGroup, includeZipper=False).flatten(order="C")
+        self.x_a0 = self.aero_solver.getSurfaceCoordinates(
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
+        ).flatten(order="C")
 
         coord_size = self.x_a0.size
         self.add_output(
@@ -1227,7 +1229,6 @@ class ADflowBuilder(Builder):
             self.solver.addFamilyGroup("my_surf", self.my_surfs)
 
         mesh = USMesh(options=self.mesh_options, comm=comm)
-
 
         self.solver.setMesh(mesh)
 
