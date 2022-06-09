@@ -1477,15 +1477,15 @@ contains
        select case (solName)
 
        case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
-            cgnsSkinFx, cgnsSkinFy, cgnsSkinFz)
+            cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsSepSensor)
 
           ! Update the counter and set this entry of buffer to 0.
 
           do k=rangeCell(3,1),rangeCell(3,2)
              do j=rangeCell(2,1),rangeCell(2,2)
                 do i=rangeCell(1,1),rangeCell(1,2)
-                   nn = nn + 1
-                   buffer(nn) = zero
+                     nn = nn + 1
+                     buffer(nn) = zero
                 enddo
              enddo
           enddo
@@ -2210,7 +2210,6 @@ contains
 
              
              if (sepmodel == surfvec) then
-               print*,'check1'
                ! Get normalized surface velocity:
                v(1) = ww2(ii, jj, ivx)
                v(2) = ww2(ii, jj, ivy)
@@ -2219,19 +2218,19 @@ contains
                ! Normalize
                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
                mm = viscPointer(ii,jj)
-               print*,'check2',mm,ii,jj
+
                norm(1) = BCData(mm)%norm(ii,jj,1)
                norm(2) = BCData(mm)%norm(ii,jj,2)
                norm(3) = BCData(mm)%norm(ii,jj,3)
-               print*,'hcenorm',norm(1),norm(2),norm(3)
+
                vectNormProd = velDirFreeStream(1)*norm(1) + &
                velDirFreeStream(2)*norm(2) + &
                velDirFreeStream(3)*norm(3)
-               print*,'check3'
+
                vectNorm(1) =velDirFreeStream(1) - vectNormProd * norm(1)
                vectNorm(2) =velDirFreeStream(2) - vectNormProd * norm(2)
                vectNorm(3) =velDirFreeStream(3) - vectNormProd * norm(3)
-               print*,'check4'
+
                ! compute cross product of vectnorm to surface normal
                vecCrossProd(1) = vectNorm(2)*norm(3) - &
                   vectNorm(3)*norm(2)
@@ -2239,17 +2238,16 @@ contains
                   vectNorm(1)*norm(3)
                vecCrossProd(3) = vectNorm(1)*norm(2) - &
                   vectNorm(2)*norm(1)
-               print*,'check5'
+
                ! do the sweep angle correction
                vectCorrected(1) = cos(degtorad*sweepAngleCorrection) *vectNorm(1) + &
                   sin(degtorad*sweepAngleCorrection) * vecCrossProd(1)
-               print*,'check6'
+
                vectCorrected(2) = cos(degtorad*sweepAngleCorrection) *vectNorm(2) + &
                   sin(degtorad*sweepAngleCorrection) * vecCrossProd(2)
-               print*,'check7'
+
                vectCorrected(3) = cos(degtorad*sweepAngleCorrection) *vectNorm(3) + &
                   sin(degtorad*sweepAngleCorrection) * vecCrossProd(3)
-               print*,'check8'
 
                sensor = (v(1)*vectCorrected(1) + v(2)*vectCorrected(2) + &
                   v(3)*vectCorrected(3))
@@ -2260,10 +2258,9 @@ contains
              else if (sepmodel == heaviside) then
 
                ! Get normalized surface velocity:
-               v(1) = ww2(i, j, ivx)
-               v(2) = ww2(i, j, ivy)
-               v(3) = ww2(i, j, ivz)
-
+               v(1) = ww2(ii, jj, ivx)
+               v(2) = ww2(ii, jj, ivy)
+               v(3) = ww2(ii, jj, ivz)
                ! Normalize
                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
