@@ -917,7 +917,7 @@ contains
               &some faces.")
 
           call returnFail("totalSubsonicInlet", errorMessage)
-          call mpi_barrier(ADflow_comm_world, ierr)
+         !  call mpi_barrier(ADflow_comm_world, ierr)
 
          ! call terminate("totalSubsonicInlet", errorMessage)
       endif
