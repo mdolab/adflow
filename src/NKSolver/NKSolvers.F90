@@ -2223,7 +2223,7 @@ contains
 
      ! Local variables
      real(kind=realType) :: blendFactor, dtInv, rho, velX, velY, velZ
-     real(kind=realType) :: speed, speedOfSound, mach, machSqr, beta, tau, gammaMinusOne
+     real(kind=realType) :: speed, speedOfSound, mach, machSqr, beta, tau, gammaMinusOne, betaSqr
      real(kind=realType) :: speedXY, sinTheta, cosTheta, sinAlpha, cosAlpha
      real(kind=realType), dimension(nState,nState) :: PSymmStreamInv, streamToCart, symmToCons, consToSymm, stateToCons
 
@@ -2380,17 +2380,19 @@ contains
       !   timeStepBlock = MATMUL(timeStepBlock, consToSymm)
       !   timeStepBlock = MATMUL(timeStepBlock, stateToCons)
 
+        betaSqr = MIN(one, MAX(machSqr, 1e-4 * machInf**2))
+
         ! Weiss and Smith
-        timeStepBlock(1, 1) = blendFactor * one / MIN(one, MAX(machSqr, 1e-4 * machInf**2)) + (one - blendFactor) * one
+        timeStepBlock(1, 1) = blendFactor * one / betaSqr + (one - blendFactor) * one
         timeStepBlock(2, 2) = one
         timeStepBlock(3, 3) = one
         timeStepBlock(4, 4) = one
         timeStepBlock(5, 5) = one
 
         ! Turkel alpha = 1
-        timeStepBlock(2, 1) = blendFactor * one / MIN(one, MAX(mach, 1e-2 * machInf))
-        timeStepBlock(3, 1) = blendFactor * one / MIN(one, MAX(mach, 1e-2 * machInf))
-        timeStepBlock(4, 1) = blendFactor * one / MIN(one, MAX(mach, 1e-2 * machInf))
+        timeStepBlock(2, 1) = blendFactor * velX / speedOfSound / betaSqr
+        timeStepBlock(3, 1) = blendFactor * velY / speedOfSound / betaSqr
+        timeStepBlock(4, 1) = blendFactor * velZ / speedOfSound / betaSqr
 
       !   ! Choi and Merkle
       !   timeStepBlock(1, 5) = one / (rho * speedOfSound)
