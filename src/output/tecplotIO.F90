@@ -1844,6 +1844,10 @@ contains
     gSlc%pt = lSlc%pt
     gSlc%dir = lSlc%dir
 
+    ! Back out what is the main index of the slice, x, y or z based on
+    ! the direction. Not the best approach, but that's ok
+    dir_ind = maxloc(abs(gSlc%dir),1)
+
     pF = zero
     vF = zero
     pM = zero  ! pressure moment
@@ -1852,20 +1856,7 @@ contains
 
     allocate(localVals(iSize,lSlc%nNodes))
 
-    ! Compute all the local variables we need.
-
-    ! Back out what is the main index of the slice, x, y or z based on
-    ! the direction. Not the best approach, but that's ok
-    dir_ind = maxloc(abs(gSlc%dir),1)
-
-    ! Determine the reference point for the moment computation in
-    ! meters.
-
-    refPoint(1) = LRef*pointRef(1)
-    refPoint(2) = LRef*pointRef(2)
-    refPoint(3) = LRef*pointRef(3)
-
-    ! Interpolate the required values
+   ! Interpolate the required values
     do i=1, lSlc%nNodes
        i1 = lSlc%ind(1, i)
        i2 = lSlc%ind(2, i)
@@ -1874,8 +1865,132 @@ contains
        localVals(1:iSize, i) = w1*nodalValues(i1, 1:iSize) + w2*nodalValues(i2, 1:iSize)
     end do
 
+    ! first communicate the coordinates and connectivities to get the chord and the LE/TE
+    ! we need this information to get the quarter-chord location,
+    ! which is needed for the moment computations
+
+    ! Gather up the number of nodes to be set to the root proc:
+    allocate(sliceNodeSizes(nProc), nodeDisps(0:nProc))
+    sliceNodeSizes = 0
+    nodeDisps = 0
+    call mpi_allgather(lSlc%nNodes,1, adflow_integer, sliceNodeSizes, 1, adflow_integer, &
+         adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+    nodeDisps(0) = 0
+    do iProc=1, nProc
+       nodeDisps(iProc) = nodeDisps(iProc-1) + sliceNodeSizes(iProc)*iSize
+    end do
+
+    if (myid == 0) then
+       gSlc%nNodes = sum(sliceNodeSizes)
+       allocate(gSlc%vars(iSize, gSlc%nNodes))
+    end if
+
+    call mpi_gatherv(localVals, iSize*lSlc%nNodes, adflow_real, gSlc%vars, sliceNodeSizes*iSize, &
+         nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! We may also need to gather the connectivity if the slice will have
+    ! to be written to a file.
+    if (doConnectivity) then
+       i = size(lslc%conn, 2)
+       allocate(cellDisps(0:nProc), sliceCellSizes(nProc))
+
+       call mpi_gather(i, 1, adflow_integer, sliceCellSizes, 1, adflow_integer, &
+            0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       if (myid == 0) then
+          cellDisps(0) = 0
+          do iProc=1, nProc
+             cellDisps(iProc) = cellDisps(iProc-1) + sliceCellSizes(iProc)*2
+          end do
+          allocate(gSlc%conn(2, sum(sliceCellSizes)))
+       end if
+
+       ! We offset the conn array by nodeDisps(iProc) which
+       ! automagically adjust the connectivity to account for the
+       ! number of nodes from different processors
+
+       call mpi_gatherv(lSlc%conn+nodeDisps(myid)/iSize, 2*size(lSlc%conn, 2), adflow_integer, gSlc%conn, &
+            sliceCellSizes*2, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
+       call EChk(ierr,__FILE__,__LINE__)
+
+       ! Not quite finished yet since we will have gathered nodes from
+       ! multiple procs we have to adjust the connectivity
+
+       deallocate(sliceCellSizes, cellDisps)
+    end if
+
+    deallocate(sliceNodeSizes, nodeDisps)
+    ! done communicating the geometry info
+
+    ! process the geometry on the root processor to figure out the LE, TE, and the chord
+    if (myid == 0) then
+       ! TODO the comments below can be used for a _slightly_ more accurate LE/TE detection.
+       ! this does not really show any difference other than the twist computation,
+       ! but depending on the application, getting the twist distribution from ADflow data might be critical.
+       ! so we leave the comments below for a better implementation.
+       ! For now, we just work with the 2 max-distance nodes
+
+       ! begin template:
+         ! loop over the elements and find the TE bends
+         ! if we have 2 TE bends, then take the mid-TE point as the TE
+         ! find the largest distance node
+         ! if we dont have 2 bends, just get the max distance between any 2 nodes, thats our chord line
+       ! end template.
+
+       ! Compute the chord as the max length between any two nodes...this
+       ! is n^2, so should be changed in the future
+       dmax = zero
+       bestPair = (/1, 1/)
+       do i=1,size(gSlc%vars, 2)
+          ! extract node:
+          x1 = gSlc%vars(1:3, i)
+
+          do j=i+1,size(gSlc%vars, 2)
+             ! extract node:
+             x2 = gSlc%vars(1:3, j)
+
+             dist = sqrt((x1(1)-x2(1))**2 +(x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
+
+             if (dist > dmax) then
+                dmax = dist
+                bestPair = (/i, j/)
+             end if
+          end  do
+       end do
+
+       ! Set chord, protected from zero
+       gSlc%chord = max(dmax, 1e-12)
+
+       ! figure out which node is the LE and the TE
+       if (gSlc%vars(1, bestPair(1)) < gSlc%vars(1, bestPair(2))) then
+         ! first entry in the "bestPair" is the LE node
+         x1 = gSlc%vars(1:3, bestPair(1))
+         x2 = gSlc%vars(1:3, bestPair(2))
+       else
+         ! second entry in the "bestPair" is the LE node
+         x1 = gSlc%vars(1:3, bestPair(2))
+         x2 = gSlc%vars(1:3, bestPair(1))
+       end if
+
+       ! using the LE and TE coordinates, compute the quarter chord point
+       ! we will use this as reference for the moment computation
+       refPoint(1) = 0.75_realType * x1(1) + 0.25_realType * x2(1)
+       refPoint(2) = 0.75_realType * x1(2) + 0.25_realType * x2(2)
+       refPoint(3) = 0.75_realType * x1(3) + 0.25_realType * x2(3)
+    end if
+
+    ! communicate the reference point coordinates across processors.
+    call mpi_bcast(refPoint, 3, adflow_real, 0, adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
+    ! now we are done with the global geometric operations. go back to integrating the slices locally on each proc
+
     ! loop over elements
     do i=1, size(lSlc%conn, 2)
+       ! Compute all the local variables we need.
 
        ! extract nodes:
        i1 = lslc%conn(1, i)
@@ -1923,62 +2038,6 @@ contains
     ! That is as far as we can go in parallel. We now have to gather up
     ! pL, pD, pM, vL, vD, vM as well as the nodes to the root proc.
 
-    ! Gather up the number of nodes to be set to the root proc:
-    allocate(sliceNodeSizes(nProc), nodeDisps(0:nProc))
-    sliceNodeSizes = 0
-    nodeDisps = 0
-    call mpi_allgather(lSlc%nNodes,1, adflow_integer, sliceNodeSizes, 1, adflow_integer, &
-         adflow_comm_world, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-    nodeDisps(0) = 0
-    do iProc=1, nProc
-       nodeDisps(iProc) = nodeDisps(iProc-1) + sliceNodeSizes(iProc)*iSize
-    end do
-
-    if (myid == 0) then
-       gSlc%nNodes = sum(sliceNodeSizes)
-       allocate(gSlc%vars(iSize, gSlc%nNodes))
-
-    end if
-
-    call mpi_gatherv(localVals, iSize*lSlc%nNodes, adflow_real, gSlc%vars, sliceNodeSizes*iSize, &
-         nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
-    call EChk(ierr,__FILE__,__LINE__)
-
-    ! We may also need to gather the connectivity if the slice will have
-    ! to be written to a file.
-    if (doConnectivity) then
-       i = size(lslc%conn, 2)
-       allocate(cellDisps(0:nProc), sliceCellSizes(nProc))
-
-       call mpi_gather(i, 1, adflow_integer, sliceCellSizes, 1, adflow_integer, &
-            0, adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-
-
-       if (myid == 0) then
-          cellDisps(0) = 0
-          do iProc=1, nProc
-             cellDisps(iProc) = cellDisps(iProc-1) + sliceCellSizes(iProc)*2
-          end do
-          allocate(gSlc%conn(2, sum(sliceCellSizes)))
-       end if
-
-       ! We offset the conn array by nodeDisps(iProc) which
-       ! automagically adjust the connectivity to account for the
-       ! number of nodes from different processors
-
-       call mpi_gatherv(lSlc%conn+nodeDisps(myid)/iSize, 2*size(lSlc%conn, 2), adflow_integer, gSlc%conn, &
-            sliceCellSizes*2, cellDisps, adflow_integer, 0, adflow_comm_world, ierr)
-       call EChk(ierr,__FILE__,__LINE__)
-
-       ! Not quite finished yet since we will have gathered nodes from
-       ! multiple procs we have to adjust the connectivity
-
-       deallocate(sliceCellSizes, cellDisps)
-    end if
-
-    deallocate(sliceNodeSizes, nodeDisps)
     ! Set the local values we can in the slice
     lSlc%pL = liftDirection(1)*pF(1) + liftDirection(2)*pF(2) + liftDirection(3)*pF(3)
     lSlc%pD = dragDirection(1)*pF(1) + dragDirection(2)*pF(2) + dragDirection(3)*pF(3)
@@ -2003,31 +2062,6 @@ contains
        gSlc%vL = tmp(4)
        gSlc%vD = tmp(5)
        gSlc%vM = tmp(6)
-
-       ! Compute the chord as the max length between any two nodes...this
-       ! is n^2, so should be changed in the future
-
-       dmax = zero
-       bestPair = (/1, 1/)
-       do i=1,size(gSlc%vars, 2)
-          ! extract node:
-          x1 = gSlc%vars(1:3, i)
-
-          do j=i+1,size(gSlc%vars, 2)
-             ! extract node:
-             x2 = gSlc%vars(1:3, j)
-
-             dist = sqrt((x1(1)-x2(1))**2 +(x1(2)-x2(2))**2 + (x1(3)-x2(3))**2)
-
-             if (dist > dmax) then
-                dmax = dist
-                bestPair = (/i, j/)
-             end if
-          end  do
-       end do
-
-       ! Set chord, protected from zero
-       gSlc%chord = max(dmax, 1e-12)
 
        ! Compute factor to get coefficient
        fact = two/(gammaInf*pInf*MachCoef*MachCoef*pRef)
