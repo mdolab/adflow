@@ -1976,79 +1976,6 @@ contains
     viscPC = tmp
     approxSA = .False.
 
-    ! Add the contribution from the time step term
-
-    ! Generic block to use while setting values
-    allocate(blk(nState, nState))
-
-    ! Zero the block once, since the previous entries will be overwritten
-    ! for each cell, and zero entries will remain zero.
-    blk = zero
-
-    if (.not. ANK_coupled) then
-       call computeTimeStepInv()
-    else
-       ! For the coupled solver, CFL number for the turbulent variable needs scaling
-       ! because the residuals are scaled, and additional scaling of the time step
-       ! for the turbulence variable might be required.
-       ii = 1
-       do nn=1, nDom
-          do sps=1, nTimeIntervalsSpectral
-             call setPointers(nn,1_intType,sps)
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                      ! See the comment for the same calculation above
-                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-
-                      ! We need to convert the momentum residuals to velocity
-                      ! residuals to get the desired effect from time steps.
-                      ! To do this, save a "pseudo" jacobian for this cell,
-                      ! that has dU/du, where U is the vector of conservative
-                      ! variables, and u are the primitive variables. For this
-                      ! jacobian, only the velocity entries are modified,
-                      ! since ADflow saves density, velocities and total
-                      ! energy in the state vector w(:,:,:,:).
-
-                      ! Density update is unchanged.
-                      blk(iRho, iRho) = dtinv
-
-                      ! save the density
-                      rho = w(i,j,k,iRho)
-
-                      ! x-velocity
-                      blk(ivx, iRho) = w(i,j,k,ivx)*dtinv
-                      blk(ivx, ivx)  = rho*dtinv
-
-                      ! y-velocity
-                      blk(ivy, iRho) = w(i,j,k,ivy)*dtinv
-                      blk(ivy, ivy)  = rho*dtinv
-
-                      ! z-velocity
-                      blk(ivz, iRho) = w(i,j,k,ivz)*dtinv
-                      blk(ivz, ivz)  = rho*dtinv
-
-                      ! Energy update is unchanged
-                      blk(iRhoE, iRhoE) = dtinv
-
-                      ! For the turbulence variable, additionally scale the cfl.
-                      ! turbresscale is required because the turbulent residuals
-                      ! are scaled with it. Furthermore, the turbulence variable
-                      ! can get a different CFL number. Scale it by turbCFLScale
-                      blk(nt1, nt1) = dtinv*turbResScale(1)/ANK_turbCFLScale
-
-                      ! get the global cell index
-                      irow = globalCell(i, j, k)
-
-                      ! Add the contribution to the matrix in PETSc
-                      call setBlock()
-                   end do
-                end do
-             end do
-          end do
-       end do
-    end if
-
     ! PETSc Matrix Assembly begin
     call MatAssemblyBegin(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
@@ -2068,9 +1995,6 @@ contains
        subspace = ANK_subspace
     end if
 
-    ! de-allocate the generic block
-    deallocate(blk)
-
     ! Complete the matrix assembly.
     call MatAssemblyEnd  (dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
@@ -2081,11 +2005,11 @@ contains
           call EChk(ierr, __FILE__, __LINE__)
           call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
           call EChk(ierr, __FILE__, __LINE__)
-
        end do
     end if
 
-    ! Add time step matrix
+    ! Add the contribution from the time step matrix
+    call computeTimeStepInv()
     call MatAXPY(dRdwPre, one, timeStepInv, SUBSET_NONZERO_PATTERN, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
@@ -2109,26 +2033,7 @@ contains
     call EChk(ierr, __FILE__, __LINE__)
 
   contains
-    subroutine setBlock()
-      ! This subroutine is used to set the diagonal time stepping terms
-      ! for the Jacobians in ANK. It is only used to set diagonal blocks
 
-      implicit none
-
-      call MatSetValuesBlocked(dRdwPre, 1, irow, 1, irow, blk, &
-           ADD_VALUES, ierr)
-      call EChk(ierr, __FILE__, __LINE__)
-
-      ! Extension for setting coarse grids:
-      if (useCoarseMats) then
-         do lvl=2, agmgLevels
-            call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
-                 blk, ADD_VALUES, ierr)
-         end do
-      end if
-
-
-    end subroutine setBlock
   end subroutine FormJacobianANK
 
   subroutine computeTimeStepInv()
@@ -2211,7 +2116,8 @@ contains
      use constants
      use inputPhysics, only: machInf => mach
      use blockPointers, only : volRef, w, dtl, gamma, p, aa
-     use flowVarRefState, only : viscous
+     use flowVarRefState, only : viscous, nt1
+     use inputIteration, only : turbResScale
      use communication
      implicit none
 
@@ -2260,7 +2166,21 @@ contains
      stateToCons(ivz, ivz)  = rho
      stateToCons(iRhoE, iRhoE) = one
 
+     if (ANK_coupled) then
+        ! The turbulence variable can get a different CFL number, so we scale it by ANK_turbCFLScale.
+        ! In addition, turbResScale is required because the turbulent residuals are scaled with it.
+        stateToCons(nt1, nt1) = turbResScale(1)/ANK_turbCFLScale
+     end if
+
      if (ANK_useCharTimeStep) then
+
+        ! Characteristic time-stepping is not applied to the turbulence equation
+        if (ANK_coupled) then
+           PSymmStreamInv(6, 6) = one
+           streamToCart(6, 6) = one
+           symmToCons(nt1, 6) = one
+           consToSymm(6, nt1) = one
+        end if
 
         ! Compute the speed of sound squared for inviscid flow
         if (.not. viscous) then
@@ -2603,8 +2523,7 @@ contains
        call setRVecANK(rVec)
     end if
 
-    ! Add the contribution from the time stepping term
-
+    ! rVec contains the full steady residual vector
     call VecGetArrayF90(rVec,rvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
@@ -2615,76 +2534,6 @@ contains
     ! Also read the wVec to access the un-perturbed state vector.
     call VecGetArrayReadF90(wVec,wvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
-
-    if (.not. ANK_coupled) then
-       ! Only flow variables
-       ii = 1
-       do nn=1, nDom
-          do sps=1, nTimeIntervalsSpectral
-             call setPointers(nn,1_intType,sps)
-             ! read the density residuals and set local CFL
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                   end do
-                end do
-             end do
-          end do
-       end do
-    else
-       ! Include time step for turbulence
-       ii = 1
-       do nn=1, nDom
-          do sps=1, nTimeIntervalsSpectral
-             call setPointers(nn,1_intType,sps)
-             ! read the density residuals and set local CFL
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-
-                      ! Update the first entry in this block, corresponds to
-                      ! density. Also save this density value.
-                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
-                      rho = wvec_pointer(ii)
-                      iirho = ii
-                      ii = ii + 1
-
-                      ! updates 2nd-4th are velocities. They need to get converted
-                      ! to momentum residuals.
-
-                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                           wvec_pointer(ii)*invec_pointer(iiRho)+&
-                           rho * invec_pointer(ii))
-                      ii = ii + 1
-
-                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                           wvec_pointer(ii)*invec_pointer(iiRho)+&
-                           rho * invec_pointer(ii))
-                      ii = ii + 1
-
-                      rvec_pointer(ii) = rvec_pointer(ii) + dtinv*( &
-                           wvec_pointer(ii)*invec_pointer(iiRho)+&
-                           rho * invec_pointer(ii))
-                      ii = ii + 1
-
-                      ! energy gets the same update
-                      rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)*dtinv
-                      ii = ii + 1
-
-                      do l=nt1, nt2
-                         ! turbulence variable needs additional scaling, and it may
-                         ! get a different CFL number
-                         rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii)* &
-                              dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
-                         ii = ii + 1
-                      end do
-                   end do
-                end do
-             end do
-          end do
-       end do
-    end if
 
     ! Multiply the perturbed state by the time step terms and add it to the residual
     call MatMultAdd(timeStepInv, inVec, rVec, rVec, ierr)
@@ -2830,98 +2679,16 @@ contains
     call blocketteRes(useTurbRes=ANK_coupled)
     call setRVecANK(rVec)
 
-    ! Add the contribution from the time stepping term
-
+    ! rVec contains the full steady residual vector
     call VecGetArrayF90(rVec,rvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-    ! deltaW contains the full update to the state
+    ! deltaW contains the full state update vector
     call VecGetArrayReadF90(deltaW,dvec_pointer,ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
-
     ! TODO AY: check if this routine is fine with complex mode...
     ! dtl and volume can both have complex values in them
-
-    if (.not. ANK_coupled) then
-       ! Only flow variables
-       ii = 1
-       do nn=1, nDom
-          do sps=1, nTimeIntervalsSpectral
-             call setPointers(nn,1_intType,sps)
-             ! read the density residuals and set local CFL
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                      ii = ii + nState
-                   end do
-                end do
-             end do
-          end do
-       end do
-    else
-       ! Include time step for turbulence
-       ii = 1
-       do nn=1, nDom
-          do sps=1, nTimeIntervalsSpectral
-             call setPointers(nn,1_intType,sps)
-             ! read the density residuals and set local CFL
-             do k=2, kl
-                do j=2, jl
-                   do i=2, il
-                      dtinv = one/(ANK_CFL * dtl(i,j,k) * volRef(i,j,k))
-
-                      ! Update the first entry in this block, corresponds to
-                      ! density. Also save this density value.
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*dvec_pointer(ii)
-
-                      ! calculate the density in the previous non-linear iteration
-                      rho = w(i,j,k,iRho) + omega*dvec_pointer(ii)
-                      iiRho = ii
-                      ii = ii + 1
-
-                      ! updates 2nd-4th are velocities. They need to get converted
-                      ! to momentum residuals.
-
-                      ! Calculate the u velocity in the previous non-linear iter.
-                      uu = w(i,j,k,ivx) + omega*dvec_pointer(ii)
-
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                           uu*dvec_pointer(iiRho)+&
-                           rho * dvec_pointer(ii))
-                      ii = ii + 1
-
-                      vv = w(i,j,k,ivx) + omega*dvec_pointer(ii)
-
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                           vv*dvec_pointer(iiRho)+&
-                           rho * dvec_pointer(ii))
-                      ii = ii + 1
-
-                      ww = w(i,j,k,ivx) + omega*dvec_pointer(ii)
-
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*( &
-                           ww*dvec_pointer(iiRho)+&
-                           rho * dvec_pointer(ii))
-                      ii = ii + 1
-
-                      ! Finally energy gets the same update
-                      rvec_pointer(ii) = rvec_pointer(ii) - omega*dtinv*dvec_pointer(ii)
-                      ii = ii + 1
-
-                      do l=nt1, nt2
-                         ! turbulence variable needs additional scaling, and it may
-                         ! get a different CFL number
-                         rvec_pointer(ii) = rvec_pointer(ii) - omega*dvec_pointer(ii)* &
-                              dtinv*turbResScale(l-nt1+1)/ANK_turbCFLScale
-                         ii = ii + 1
-                      end do
-                   end do
-                end do
-             end do
-          end do
-       end do
-    end if
 
     ! Multiply the delta by the time step terms
     call MatMult(timeStepInv, deltaW, unsteadyVec, ierr)
