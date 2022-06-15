@@ -164,10 +164,11 @@ test_params = [
             "adjointL2Convergence": 1e-16,
             "blockSplitting": True,
             "NKjacobianlag": 2,
+            # "computecavitation": True,
         },
         "ref_file": "adjoint_rans_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
-        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag"],
+        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation"],
     },
     # # Rotating frame test
     {
