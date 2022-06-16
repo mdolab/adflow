@@ -164,7 +164,7 @@ test_params = [
             "adjointL2Convergence": 1e-16,
             "blockSplitting": True,
             "NKjacobianlag": 2,
-            # "computecavitation": True,
+            "computecavitation": True,
         },
         "ref_file": "adjoint_rans_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
