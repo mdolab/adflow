@@ -279,11 +279,10 @@ dissipationScalingExponent:
 
 acousticScaleFactor:
   desc: >
-    A scale factor that multiplies the acoustic contribution in the spectral radii computation.
-    A value of 1.0 will compute the spectral radii with acoustic and advective contributions weighted in the usual manner.
-    A value of 0.0 will compute the spectral radii based only on the advective contribution.
-    This will result in more accurate solutions for low Mach number flows, but convergence will be slower.
-    A value around 1e-3 tends to provide a reasonable tradeoff between accuracy and speed.
+    A scale factor that multiplies the acoustic contribution in the spectral radius computation.
+    A value of 1.0 will compute the spectral radius with acoustic and advective contributions weighted in the usual manner.
+    Values lower than 1.0 will result in more accurate solutions for low Mach number flows, but using too small a value will slow down convergence.
+    Setting this to the freestream Mach number tends to work well for most low Mach number cases.
 
 vis4:
   desc: >
