@@ -1128,7 +1128,7 @@ contains
         end if
         pwr1 = sensor1**cavexponent
         arg1d = -(2*cavsensorsharpness*sensor1d)
-        arg1 = -(2*cavsensorsharpness*(sensor1-cavsensoroffset))
+        arg1 = 2*cavsensorsharpness*(-sensor1+cavsensoroffset)
         sensor1d = (pwr1d*(one+exp(arg1))-pwr1*arg1d*exp(arg1))/(one+exp&
 &         (arg1))**2
         sensor1 = pwr1/(one+exp(arg1))
@@ -1522,7 +1522,7 @@ contains
         cp = tmp*(plocal-pinf)
         sensor1 = -cp - cavitationnumber
         pwr1 = sensor1**cavexponent
-        arg1 = -(2*cavsensorsharpness*(sensor1-cavsensoroffset))
+        arg1 = 2*cavsensorsharpness*(-sensor1+cavsensoroffset)
         sensor1 = pwr1/(one+exp(arg1))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
