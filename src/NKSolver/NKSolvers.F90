@@ -1676,7 +1676,7 @@ module ANKSolver
   logical :: ANK_ADPC
   logical :: ANK_turbDebug
   logical :: ANK_useMatrixFree
-  logical :: ANK_useCharTimeStep
+  character(len=maxStringLen) :: ANK_charTimeStepType
   integer(kind=intType) :: ANK_nsubIterTurb
 
   ! Misc variables
@@ -2172,7 +2172,11 @@ contains
         stateToCons(nt1, nt1) = turbResScale(1)/ANK_turbCFLScale
      end if
 
-     if (ANK_useCharTimeStep) then
+     if (ANK_charTimeStepType == 'None') then
+
+        timeStepBlock = stateToCons * dtInv
+
+     else
 
         ! Characteristic time-stepping is not applied to the turbulence equation
         if (ANK_coupled) then
@@ -2193,66 +2197,7 @@ contains
         mach = speed / speedOfSound
         machSqr = mach**2
 
-      !   ! Truncate the squared Mach number
-      !   machSqr = MAX(machSqr, 1e-4 * machInf**2)
-      !   machSqr = MIN(1e-2, 1e-2 * machInf**2)
-
-      !   ! Inverse VLR preconditioner
-      !   if (mach < one) then
-      !      beta = SQRT(one - machSqr)
-      !      tau = beta
-      !   else
-      !      beta = SQRT(machSqr - one)
-      !      tau = SQRT(one - one/machSqr)
-      !   end if
-
-      !   PSymmStreamInv(1, 1) = (beta**2 + tau) / (machSqr * tau)
-      !   PSymmStreamInv(1, 2) = one/mach
-      !   PSymmStreamInv(2, 1) = one/mach
-      !   PSymmStreamInv(2, 2) = one
-      !   PSymmStreamInv(3, 3) = one/tau
-      !   PSymmStreamInv(4, 4) = one/tau
-      !   PSymmStreamInv(5, 5) = one
-
         blendFactor = ANK_CFL / ANK_CFLLimit
-      !   blendFactor = ANK_CFL / ANK_CFLLimit * mach / machInf
-      !   blendFactor = mach / machInf
-
-      !   ! VLR blending into ANK
-      !   PSymmStreamInv(1, 1) = (one - blendFactor) * (beta**2 + tau) / (machSqr * tau) + blendFactor * one
-      !   PSymmStreamInv(1, 2) = (one - blendFactor) * one/mach
-      !   PSymmStreamInv(2, 1) = (one - blendFactor) * one/mach
-      !   PSymmStreamInv(2, 2) = one
-      !   PSymmStreamInv(3, 3) = (one - blendFactor) * one/tau + blendFactor * one
-      !   PSymmStreamInv(4, 4) = (one - blendFactor) * one/tau + blendFactor * one
-      !   PSymmStreamInv(5, 5) = one
-
-      !   ! ANK blending into VLR
-      !   PSymmStreamInv(1, 1) = blendFactor * (beta**2 + tau) / (machSqr * tau) + (one - blendFactor) * one
-      !   PSymmStreamInv(1, 2) = blendFactor * one/mach
-      !   PSymmStreamInv(2, 1) = blendFactor * one/mach
-      !   PSymmStreamInv(2, 2) = one
-      !   PSymmStreamInv(3, 3) = blendFactor * one/tau + (one - blendFactor) * one
-      !   PSymmStreamInv(4, 4) = blendFactor * one/tau + (one - blendFactor) * one
-      !   PSymmStreamInv(5, 5) = one
-
-      !   ! Rotation matrix
-      !   speedXY = SQRT(velX**2 + velY**2)
-      !   sinTheta = velY/speedXY
-      !   cosTheta = velX/speedXY
-      !   sinAlpha = velZ/speed
-      !   cosAlpha = speedXY/speed
-
-      !   streamToCart(1, 1) = one
-      !   streamToCart(2, 2) = cosAlpha * cosTheta
-      !   streamToCart(2, 3) = -sinTheta
-      !   streamToCart(2, 4) = -sinAlpha * cosTheta
-      !   streamToCart(3, 2) = cosAlpha * sinTheta
-      !   streamToCart(3, 3) = cosTheta
-      !   streamToCart(3, 4) = -sinAlpha * sinTheta
-      !   streamToCart(4, 2) = sinAlpha
-      !   streamToCart(4, 4) = cosAlpha
-      !   streamToCart(5, 5) = one
 
         ! State transformation matrix
         gammaMinusOne = gamma(i,j,k) - one
@@ -2292,52 +2237,78 @@ contains
         consToSymm(5, ivz) = -gammaMinusOne * velZ
         consToSymm(5, iRhoE) = gammaMinusOne
 
-      !   ! Construct the time step matrix
-      !   timeStepBlock = PSymmStreamInv * dtInv
-      !   timeStepBlock = MATMUL(streamToCart, timeStepBlock)
-      !   timeStepBlock = MATMUL(timeStepBlock, TRANSPOSE(streamToCart))
-      !   timeStepBlock = MATMUL(symmToCons, timeStepBlock)
-      !   timeStepBlock = MATMUL(timeStepBlock, consToSymm)
-      !   timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+        if (ANK_charTimeStepType == 'VLR') then
 
-        betaSqr = MIN(one, MAX(machSqr, 1e-4 * machInf**2))
+           ! Truncate the squared Mach number
+           machSqr = MAX(machSqr, 1e-4 * machInf**2)
 
-        ! Weiss and Smith
-        timeStepBlock(1, 1) = blendFactor * one / betaSqr + (one - blendFactor) * one
-        timeStepBlock(2, 2) = one
-        timeStepBlock(3, 3) = one
-        timeStepBlock(4, 4) = one
-        timeStepBlock(5, 5) = one
+           ! Inverse VLR preconditioner
+           if (mach < one) then
+              beta = SQRT(one - machSqr) + 1e-4
+              tau = beta
+           else
+              beta = SQRT(machSqr - one) + 1e-4
+              tau = SQRT(one - one/machSqr) + 1e-4
+           end if
 
-        ! Turkel alpha = 1
-        timeStepBlock(2, 1) = blendFactor * velX / speedOfSound / betaSqr
-        timeStepBlock(3, 1) = blendFactor * velY / speedOfSound / betaSqr
-        timeStepBlock(4, 1) = blendFactor * velZ / speedOfSound / betaSqr
+           PSymmStreamInv(1, 1) = blendFactor * (beta**2 + tau) / (machSqr * tau) + (one - blendFactor) * one
+           PSymmStreamInv(1, 2) = blendFactor * one/mach
+           PSymmStreamInv(2, 1) = blendFactor * one/mach
+           PSymmStreamInv(2, 2) = one
+           PSymmStreamInv(3, 3) = blendFactor * one/tau + (one - blendFactor) * one
+           PSymmStreamInv(4, 4) = blendFactor * one/tau + (one - blendFactor) * one
+           PSymmStreamInv(5, 5) = one
 
-      !   ! Choi and Merkle
-      !   timeStepBlock(1, 5) = one / (rho * speedOfSound)
+           ! Rotation matrix
+           speedXY = SQRT(velX**2 + velY**2)
+           sinTheta = velY/speedXY
+           cosTheta = velX/speedXY
+           sinAlpha = velZ/speed
+           cosAlpha = speedXY/speed
 
-      !   ! Inverse PTC
-      !   dtInv = ANK_CFLMin + (one - ANK_CFL / ANK_CFLLimit) * (ANK_CFLLimit - ANK_CFLMin)
-      !   dtInv = one/(dtInv * dtl(i,j,k) * volRef(i,j,k))
-      !   timeStepBlock = stateToCons * dtInv
-      !   timeStepBlock = stateToCons * dtInv * mach
+           streamToCart(1, 1) = one
+           streamToCart(2, 2) = cosAlpha * cosTheta
+           streamToCart(2, 3) = -sinTheta
+           streamToCart(2, 4) = -sinAlpha * cosTheta
+           streamToCart(3, 2) = cosAlpha * sinTheta
+           streamToCart(3, 3) = cosTheta
+           streamToCart(3, 4) = -sinAlpha * sinTheta
+           streamToCart(4, 2) = sinAlpha
+           streamToCart(4, 4) = cosAlpha
+           streamToCart(5, 5) = one
 
-        timeStepBlock = timeStepBlock * dtInv
-        timeStepBlock = MATMUL(symmToCons, timeStepBlock)
-        timeStepBlock = MATMUL(timeStepBlock, consToSymm)
-        timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+           ! Construct the time step matrix
+           timeStepBlock = PSymmStreamInv * dtInv
+           timeStepBlock = MATMUL(streamToCart, timeStepBlock)
+           timeStepBlock = MATMUL(timeStepBlock, TRANSPOSE(streamToCart))
+           timeStepBlock = MATMUL(symmToCons, timeStepBlock)
+           timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+           timeStepBlock = MATMUL(timeStepBlock, stateToCons)
 
-      !   ! Larger time steps for low speed cells
-      !   if (mach < 0.5 * machInf) then
-      !     timeStepBlock = stateToCons * dtInv * 100
-      !   else
-      !     timeStepBlock = stateToCons * dtinv
-      !   end if
+        else
 
-     else
+           betaSqr = MIN(one, MAX(machSqr, 1e-4 * machInf**2))
 
-        timeStepBlock = stateToCons * dtInv
+           ! Turkel alpha = 0 (Weiss and Smith)
+           timeStepBlock(1, 1) = blendFactor * one / betaSqr + (one - blendFactor) * one
+           timeStepBlock(2, 2) = one
+           timeStepBlock(3, 3) = one
+           timeStepBlock(4, 4) = one
+           timeStepBlock(5, 5) = one
+
+           if (ANK_charTimeStepType == 'Turkel 1') then
+              ! Turkel alpha = 1
+              timeStepBlock(2, 1) = blendFactor * velX / speedOfSound / betaSqr
+              timeStepBlock(3, 1) = blendFactor * velY / speedOfSound / betaSqr
+              timeStepBlock(4, 1) = blendFactor * velZ / speedOfSound / betaSqr
+           end if
+
+           timeStepBlock = timeStepBlock * dtInv
+           timeStepBlock = MATMUL(symmToCons, timeStepBlock)
+           timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+           timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+
+        end if
 
      end if
 
