@@ -5109,7 +5109,7 @@ class ADFLOW(AeroSolver):
             "ANKNSubiterTurb": [int, 1],
             "ANKTurbKSPDebug": [bool, False],
             "ANKUseMatrixFree": [bool, True],
-            "ANKCharTimeStepType": [str, ["None", "VLR", "Turkel 1", "Turkel 0"]],
+            "ANKCharTimeStepType": [str, ["None", "Turkel", "VLR"]],
             # Load Balance/partitioning parameters
             "blockSplitting": [bool, True],
             "loadImbalance": [float, 0.1],
@@ -5482,9 +5482,8 @@ class ADFLOW(AeroSolver):
             "ankusematrixfree": ["ank", "ank_usematrixfree"],
             "ankchartimesteptype": {
                 "none": "None",
+                "turkel": "Turkel",
                 "vlr": "VLR",
-                "turkel 1": "Turkel 1",
-                "turkel 0": "Turkel 0",
                 "location": ["ank", "ank_chartimesteptype"],
             },
             # Load Balance Parameters

@@ -2129,7 +2129,7 @@ contains
 
      ! Local variables
      real(kind=realType) :: blendFactor, dtInv, rho, velX, velY, velZ
-     real(kind=realType) :: speed, speedOfSound, mach, machSqr, beta, tau, gammaMinusOne, betaSqr
+     real(kind=realType) :: speed, speedOfSound, mach, machSqr, machSqrTrunc, alpha, beta, tau, gammaMinusOne
      real(kind=realType) :: speedXY, sinTheta, cosTheta, sinAlpha, cosAlpha
      real(kind=realType), dimension(nState,nState) :: PSymmStreamInv, streamToCart, symmToCons, consToSymm, stateToCons
 
@@ -2197,8 +2197,6 @@ contains
         mach = speed / speedOfSound
         machSqr = mach**2
 
-        blendFactor = ANK_CFL / ANK_CFLLimit
-
         ! State transformation matrix
         gammaMinusOne = gamma(i,j,k) - one
 
@@ -2237,21 +2235,23 @@ contains
         consToSymm(5, ivz) = -gammaMinusOne * velZ
         consToSymm(5, iRhoE) = gammaMinusOne
 
+        ! Compute common blend factor
+        blendFactor = ANK_CFL / ANK_CFLLimit
+
         if (ANK_charTimeStepType == 'VLR') then
 
            ! Truncate the squared Mach number
-           machSqr = MAX(machSqr, 1e-4 * machInf**2)
+           machSqrTrunc = MAX(machSqr, 1e-4 * machInf**2)
 
-           ! Inverse VLR preconditioner
            if (mach < one) then
-              beta = SQRT(one - machSqr) + 1e-4
+              beta = SQRT(one - machSqrTrunc)
               tau = beta
            else
-              beta = SQRT(machSqr - one) + 1e-4
-              tau = SQRT(one - one/machSqr) + 1e-4
+              beta = SQRT(machSqrTrunc - one)
+              tau = SQRT(one - one/machSqrTrunc) + 1e-4
            end if
 
-           PSymmStreamInv(1, 1) = blendFactor * (beta**2 + tau) / (machSqr * tau) + (one - blendFactor) * one
+           PSymmStreamInv(1, 1) = blendFactor * (beta**2 + tau) / (machSqrTrunc * tau) + (one - blendFactor) * one
            PSymmStreamInv(1, 2) = blendFactor * one/mach
            PSymmStreamInv(2, 1) = blendFactor * one/mach
            PSymmStreamInv(2, 2) = one
@@ -2285,23 +2285,25 @@ contains
            timeStepBlock = MATMUL(timeStepBlock, consToSymm)
            timeStepBlock = MATMUL(timeStepBlock, stateToCons)
 
-        else
+        else if (ANK_charTimeStepType == 'Turkel') then
 
-           betaSqr = MIN(one, MAX(machSqr, 1e-4 * machInf**2))
+           ! Truncate the squared Mach number
+           machSqrTrunc = MIN(one, MAX(machSqr, 1e-4 * machInf**2))
 
-           ! Turkel alpha = 0 (Weiss and Smith)
-           timeStepBlock(1, 1) = blendFactor * one / betaSqr + (one - blendFactor) * one
+           ! Set alpha to turn off preconditioning for locally supersonic flow
+           alpha = one - machSqrTrunc ** 10
+
+           ! Diagonals
+           timeStepBlock(1, 1) = blendFactor * one / machSqrTrunc + (one - blendFactor) * one
            timeStepBlock(2, 2) = one
            timeStepBlock(3, 3) = one
            timeStepBlock(4, 4) = one
            timeStepBlock(5, 5) = one
 
-           if (ANK_charTimeStepType == 'Turkel 1') then
-              ! Turkel alpha = 1
-              timeStepBlock(2, 1) = blendFactor * velX / speedOfSound / betaSqr
-              timeStepBlock(3, 1) = blendFactor * velY / speedOfSound / betaSqr
-              timeStepBlock(4, 1) = blendFactor * velZ / speedOfSound / betaSqr
-           end if
+           ! Off-diagonals
+           timeStepBlock(2, 1) = blendFactor * alpha * velX / speedOfSound / machSqrTrunc
+           timeStepBlock(3, 1) = blendFactor * alpha * velY / speedOfSound / machSqrTrunc
+           timeStepBlock(4, 1) = blendFactor * alpha * velZ / speedOfSound / machSqrTrunc
 
            timeStepBlock = timeStepBlock * dtInv
            timeStepBlock = MATMUL(symmToCons, timeStepBlock)
