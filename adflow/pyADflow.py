@@ -5179,6 +5179,9 @@ class ADFLOW(AeroSolver):
             # Function parmeters
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
+            "cavSensorOffset": [float, 0.0],
+            "cavSensorSharpness": [float, 10.0],
+            "cavExponent": [int, 0],
             "computeCavitation": [bool, False],
         }
 
@@ -5554,6 +5557,9 @@ class ADFLOW(AeroSolver):
             # Parameters for functions
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
+            "cavsensoroffset": ["cost", "cavsensoroffset"],
+            "cavsensorsharpness": ["cost", "cavsensorsharpness"],
+            "cavexponent": ["cost", "cavexponent"],
             "computecavitation": ["cost", "computecavitation"],
             "writesolutioneachiter": ["monitor", "writesoleachiter"],
             "writesurfacesolution": ["monitor", "writesurface"],
