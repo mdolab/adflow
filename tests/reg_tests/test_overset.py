@@ -12,6 +12,13 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 
 # Tests for overset and zipper meshes using a mesh with two overlapping cubes
 
+# This does not affect the hole cutting for this case but tests that cutCallback is working
+def cutCallback(xCen, CGNSZoneNameIDs, cellIDs, flags):
+
+    # Blank cells in the negative y-axis
+    flags[xCen[:, 1] < 0] = 1
+
+
 gridFile = os.path.join(baseDir, "../../input_files/cube_overset.cgns")
 commonTestOptions = {
     "gridFile": gridFile,
@@ -25,6 +32,7 @@ commonTestOptions = {
     "useANKSolver": True,
     "useNKSolver": True,
     "nearWallDist": 1.0,
+    "cutCallback": cutCallback,
 }
 
 test_params = [
