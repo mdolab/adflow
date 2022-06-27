@@ -1212,6 +1212,7 @@ python module libadflow
          character(len=maxstringlen) :: adjointpcside
          character(len=maxstringlen) :: matrixordering
          character(len=maxstringlen) :: adjointsolvertype
+         character(len=maxstringlen) :: gmresorthogtype
          character(len=maxstringlen) :: localpctype
          character(len=maxstringlen) :: precondtype
          real(kind=realtype) :: adjabstol
@@ -1384,6 +1385,9 @@ python module libadflow
          use constants
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
+         real(kind=realtype) cavsensoroffset
+         real(kind=realtype) cavsensorsharpness
+         integer(kind=inttype) cavexponent
          logical::computecavitation
        end module inputcostfunctions
 

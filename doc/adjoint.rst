@@ -95,5 +95,4 @@ The user can give a custom function that uses the intrinsic ADflow functions. AD
 
 The boundary condition definition and sensitivities are stored under ``AeroProblem`` to facilitate the use of different boundary conditions for multipoint cases.
 
-The reverse master (``master_b``) routine is wrapped by a thin wrapper which is the ``computeMatrixFreeProductBwd`` subroutine defined in ``adjointAPI.F90``. This wrapper allocates memory etc. before the derivatives are calculated. 
-
+The reverse master (``master_b``) routine is wrapped by a thin wrapper which is the ``computeMatrixFreeProductBwd`` subroutine defined in ``adjointAPI.F90``. This wrapper allocates memory etc. before the derivatives are calculated.

@@ -796,6 +796,7 @@ contains
                flowDomsd(nn, level, sps)%qz(il,jl,kl), &
                flowDomsd(nn, level, sps)%rlv(0:ib,0:jb,0:kb), &
                flowDomsd(nn, level, sps)%rev(0:ib,0:jb,0:kb), &
+               flowDomsd(nn, level, sps)%dtl(1:ie,1:je,1:ke), &
                flowDomsd(nn, level, sps)%radI(1:ie,1:je,1:ke), &
                flowDomsd(nn, level, sps)%radJ(1:ie,1:je,1:ke), &
                flowDomsd(nn, level, sps)%radK(1:ie,1:je,1:ke), &
@@ -941,6 +942,8 @@ contains
 
     flowDomsd(nn, level, sps)%rlv = zero
     flowDomsd(nn, level, sps)%rev = zero
+
+    flowDomsd(nn, level, sps)%dtl = zero
 
     flowDomsd(nn, level, sps)%radI = zero
     flowDomsd(nn, level, sps)%radJ = zero
@@ -1384,6 +1387,7 @@ contains
     ! and if localPreConIts=1 then subKSP is set to preOnly.
     use constants
     use utils, only : ECHk
+    use inputADjoint, only : GMRESOrthogType
 #include <petsc/finclude/petsc.h>
     use petsc
     implicit none
@@ -1414,9 +1418,21 @@ contains
     call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    ! If you're using GMRES, set refinement type
-    call KSPGMRESSetCGSRefinementType(kspObject, &
-         KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)
+    ! Set the orthogonalization method for GMRES
+    select case (GMRESOrthogType)
+       case ('modified_gram_schmidt')
+          ! Use modified Gram-Schmidt
+          call KSPGMRESSetOrthogonalization(kspObject, KSPGMRESModifiedGramSchmidtOrthogonalization, ierr)
+       case ('cgs_never_refine')
+          ! Use classical Gram-Schmidt with no refinement
+          call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_NEVER, ierr)
+       case ('cgs_refine_if_needed')
+          ! Use classical Gram-Schmidt with refinement if needed
+          call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)
+       case ('cgs_always_refine')
+          ! Use classical Gram-Schmidt with refinement at every iteration
+          call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_ALWAYS, ierr)
+    end select
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Set the preconditioner side from option:
@@ -2220,6 +2236,11 @@ end subroutine statePreAllocation
     ISIZE1OFDrfgamma = ib + 1
     ISIZE2OFDrfgamma = jb + 1
     ISIZE3OFDrfgamma = kb + 1
+
+    ! dtl
+    ISIZE1OFDrfdtl = ie
+    ISIZE2OFDrfdtl = je
+    ISIZE3OFDrfdtl = ke
 
     ! radI
     ISIZE1OFDrfradI = ie
