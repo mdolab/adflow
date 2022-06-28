@@ -210,6 +210,7 @@ contains
              allocate(recvBuffer1d(6*nPts), recvBuffer2d(3*nPts))
           else
              allocate(recvBuffer1(0), recvBuffer2(0))
+             allocate(recvBuffer1d(0), recvBuffer2d(0))
           end if
 
           call commUserIntegrationSurfaceVars_d(recvBuffer1, recvBuffer1d, iRho, iZippFlowGamma, surf%flowComm)
