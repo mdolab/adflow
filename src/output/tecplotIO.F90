@@ -23,7 +23,8 @@ module tecplotIO
      real(kind=realType) :: pL, vL, pD, vD, pM, vM, CLp, CLv, CDp, CDv, CMp, CMv
      real(kind=realType) :: chord, twist, thickness
      real(kind=realType), dimension(3) :: le, te
-     real(kind=realType), dimension(3) :: pt, dir
+     ! TODO propagate the change to normal and dir throughout
+     real(kind=realType), dimension(3) :: pt, normal, dir
      integer(kind=intType), allocatable, dimension(:) :: famList
   end type slice
 
@@ -38,6 +39,7 @@ module tecplotIO
      character(len=maxStringLen) :: distName
      integer(kind=intType) :: nSegments, dir_ind
      integer(kind=intType), dimension(:), allocatable :: famList
+     real(kind=realType) :: normal(3)
      real(kind=realType) :: dir(3)
      real(kind=realType) :: delta
      real(kind=realType), dimension(:,:), allocatable :: slicePts
@@ -62,7 +64,7 @@ module tecplotIO
   integer(kind=intType), parameter :: nLiftDistVar=23
 
 contains
-  subroutine addParaSlice(sliceName, pt, direction, famList, n)
+  subroutine addParaSlice(sliceName, pt, normal, direction, famList, n)
     !
     !       This subroutine is intended to be called from python.
     !       This routine will add a parametric slice to the list of user
@@ -76,7 +78,7 @@ contains
 
     ! Input parameters
     character*(*), intent(in) :: sliceName
-    real(kind=realType), dimension(3), intent(in) :: pt, direction
+    real(kind=realType), dimension(3), intent(in) :: pt, normal, direction
     integer(kind=intType), intent(in) :: famList(n), n
 
     ! Working
@@ -109,7 +111,7 @@ contains
        call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
        ! Create actual slice
-       call createSlice(pts, conn, elemFam, paraSlices(nParaSlices, sps), pt, direction, &
+       call createSlice(pts, conn, elemFam, paraSlices(nParaSlices, sps), pt, normal, direction, &
             sliceName, famList)
 
        ! Clean up memory.
@@ -118,7 +120,7 @@ contains
 
   end subroutine addParaSlice
 
-  subroutine addAbsSlice(sliceName, pt, direction, famList, n)
+  subroutine addAbsSlice(sliceName, pt, normal, direction, famList, n)
     !
     !       This subroutine is intended to be called from python.
     !       This routine will add an absolute slice to the list of user
@@ -132,7 +134,7 @@ contains
 
     ! Input parameters
     character*(*), intent(in) :: sliceName
-    real(kind=realType), dimension(3), intent(in) :: pt, direction
+    real(kind=realType), dimension(3), intent(in) :: pt, normal, direction
     integer(kind=intType), intent(in) :: famList(n), n
 
     ! Working
@@ -160,7 +162,7 @@ contains
        call getSurfaceConnectivity(conn, cgnsBlockID, sizeCell, wallList, size(wallList), .True.)
        call getSurfacePoints(pts, sizeNode, sps, wallList, size(wallList), .True.)
        call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
-       call createSlice(pts, conn, elemFam, absSlices(nAbsSlices, sps), pt, direction, &
+       call createSlice(pts, conn, elemFam, absSlices(nAbsSlices, sps), pt, normal, direction, &
             sliceName, famList)
 
        ! Clean up memory.
@@ -195,6 +197,7 @@ contains
 
     liftDists(nLIftDists)%nSegments = nSegments
     liftDists(nLiftDists)%dir = dir_vec
+    liftDists(nLiftDists)%normal = dir_vec
     liftDists(nLiftDists)%distName = distName
     liftDists(nLIftDists)%dir_ind = dir_ind
 
@@ -373,8 +376,9 @@ contains
              call destroySlice(absSlices(i, sps))
 
              ! Make new one in the same location
+             ! TODO update here
              call createSlice(pts, conn, elemFam, absSlices(i, sps), &
-                  absSlices(i, sps)%pt, absSlices(i, sps)%dir, &
+                  absSlices(i, sps)%pt, absSlices(i, sps)%normal, absSlices(i, sps)%dir, &
                   absSlices(i, sps)%sliceName, famList)
 
              call integrateSlice(absSlices(i, sps), globalSlice, &
@@ -619,8 +623,9 @@ contains
 
        do i=1, d%nSegments
           ! Make new one in the same location
+          ! TODO update here
           call createSlice(pts, conn, elemFam, localSlice, d%slicePts(:, i), &
-               d%dir, "does_not_matter", d%famList)
+               d%normal, d%dir, "does_not_matter", d%famList)
           call integrateSlice(localSlice, globalSlice, nodalValues, 0, .False.)
 
           ! Total lift, drag, and moment
@@ -1624,7 +1629,7 @@ contains
 
   end subroutine computeSurfaceOutputNodalData
 
-  subroutine createSlice(pts, conn, elemFam, slc, pt, dir, sliceName, famList)
+  subroutine createSlice(pts, conn, elemFam, slc, pt, normal, dir, sliceName, famList)
     !
     !       This subroutine creates a slice on a plane defined by pt and
     !       and dir. It only uses the families specified in the famList.
@@ -1640,25 +1645,26 @@ contains
     integer(kind=intType), dimension(:,:), intent(in) :: conn
     integer(kind=intType), dimension(:), intent(in) :: elemFam
     type(slice), intent(inout) :: slc
-    real(kind=realType), dimension(3), intent(in) :: pt, dir
+    real(kind=realType), dimension(3), intent(in) :: pt, dir, normal
     character*(*), intent(in) :: sliceName
     integer(kind=intType), dimension(:), intent(in) :: famList
 
     ! Working param
     integer(kind=intType) :: i, nMax, nUnique, oldInd, newInd
     integer(kind=intType) :: patchIndices(4), indexSquare, jj, kk, icon, iCoor, num1, num2
-    real(kind=realType) :: f(4), d, ovrdnom, tol
+    real(kind=realType) :: f(4), d, ovrdnom, tol, len_vec
     logical :: logic1, foundFam
     real(kind=realType), dimension(:, :), pointer :: tmpWeight, dummy, tmpNodes
     integer(kind=intType), dimension(:, :), pointer :: tmpInd
     integer(kind=intType), dimension(:), allocatable :: link
     real(kind=realType), dimension(:), allocatable :: fc
+    real(kind=realType), dimension(3) :: elemc, vec
 
     ! Allocate the family list this slice is to use:
     slc%sliceName = sliceName
     ! Set the info for the slice:
     slc%pt = pt
-    slc%dir = dir
+    slc%normal = normal
     slc%nNodes = 0
     allocate(slc%famList(size(famList)))
     slc%famList = famList
@@ -1666,15 +1672,15 @@ contains
     ! for the contour.
 
     ! Equation of plane: ax + by + cz + d = 0
-    d = -pt(1)*dir(1) - pt(2)*dir(2) - pt(3)*dir(3)
-    ovrdnom = one/sqrt(dir(1)**2 + dir(2)**2 + dir(3)**2)
+    d = -pt(1)*normal(1) - pt(2)*normal(2) - pt(3)*normal(3)
+    ovrdnom = one/sqrt(normal(1)**2 + normal(2)**2 + normal(3)**2)
 
     ! Compute the distance function on all possible surfaces on this
     ! processor.
     allocate(fc(size(pts,2)))
     do i=1, size(pts, 2)
        ! Now compute the signed distance
-       fc(i) = (dir(1)*pts(1, i) + dir(2)*pts(2, i) + dir(3)*pts(3, i) + d)*ovrdnom
+       fc(i) = (normal(1)*pts(1, i) + normal(2)*pts(2, i) + normal(3)*pts(3, i) + d)*ovrdnom
     end do
 
     ! Estimate size of slice by the sqrt of the number of nodes in the
@@ -1690,11 +1696,27 @@ contains
 
        famInclude: if (famInList(elemFam(i), famList)) then
 
+          ! zero out the centroid
+          elemc = zero
+
           ! Extract the indices and function values at each corner
           do jj=1,4
              patchIndices(jj) = conn(jj, i)
              f(jj) = fc(patchIndices(jj))
+             elemc = elemc + 0.25_realType * pts(:, patchIndices(jj))
           end do
+
+          ! check if the centroid of this element is in the correct direction
+          vec = elemc - pt
+          ! normalize vector
+          len_vec = sqrt(vec(1) * vec(1) + vec(2) * vec(2) + vec(3) * vec(3))
+          vec = vec / len_vec
+          if ((vec(1)*dir(1) + vec(2)*dir(2) + vec(3)*dir(3)) .lt. zero) then
+            ! we reject this element; just set all signed distances to 1.0
+            do jj=1,4
+              f(jj) = one
+            end do
+          end if
 
           ! Based on the values at each corner, determine which
           ! type contour we have
@@ -1842,11 +1864,11 @@ contains
     ! Copy the info related to slice
     gSlc%sliceName = trim(lSlc%sliceName)
     gSlc%pt = lSlc%pt
-    gSlc%dir = lSlc%dir
+    gSlc%normal = lSlc%normal
 
     ! Back out what is the main index of the slice, x, y or z based on
     ! the direction. Not the best approach, but that's ok
-    dir_ind = maxloc(abs(gSlc%dir),1)
+    dir_ind = maxloc(abs(gSlc%normal),1)
 
     pF = zero
     vF = zero
