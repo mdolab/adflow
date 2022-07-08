@@ -1267,3 +1267,17 @@ sepSensorSharpness:
 computeCavitation:
   desc: >
     Whether or not to compute cavitation.
+
+cavSensorOffset:
+  desc: >
+    The offset value used for the cavitation sensor.
+    Similar to sepSensorOffset.
+
+cavSensorSharpness:
+  desc: >
+    The sharpness parameter for the cavitation sensor.
+    Similar to sepSensorSharpness.
+
+cavExponent:
+  desc: >
+    The exponent for the numerator term (- Cp - cavitationnumber) of the cavitation sensor.
