@@ -37,6 +37,7 @@ contains
 ! for loops of ale
     integer(kind=inttype) :: iale, jale, kale, lale, male
     real(kind=realtype), parameter :: k1=1.05_realtype
+! the line below is only used for the low-speed preconditioner part of this routine
 ! random given number
     real(kind=realtype), parameter :: k2=0.6_realtype
 ! mach number preconditioner activation
@@ -172,12 +173,34 @@ contains
           do i=2,il
 !    compute speed of sound
             sos = sqrt(gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho))
-! coompute velocities without rho from state vector
+! compute velocities without rho from state vector 
+!      (w is pointer.. see type blocktype setup in block.f90)
+!      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.f90 
+!      these are per definition nw=[rho,u,v,w,rhoee] 
+!      so the velocity is simply just taken out below... 
+!      we do not have to divide with rho since it is already 
+!      without rho... 
+! ivx: l. 60 in constants.f90
             velxrho = w(i, j, k, ivx)
             velyrho = w(i, j, k, ivy)
             velzrho = w(i, j, k, ivz)
             q = velxrho**2 + velyrho**2 + velzrho**2
             resm = sqrt(q)/sos
+! resm above is used as m_a (thesis) and m (paper 2015) 
+! and is the free stream mach number 
+! see routine setup above: 
+! l. 30: real(kind=realtype), parameter :: k1 = 1.05_realtype 
+! random given number for k2: 
+! l. 31: real(kind=realtype), parameter :: k2 = 0.6_realtype 
+! mach number preconditioner activation for k3: 
+! l. 32: real(kind=realtype), parameter :: m0 = 0.2_realtype 
+! 
+!    compute k3 
+! eq. 2.7 in garg 2015. k1, m0 and resm are scalars 
+! 
+! unfortunately, garg has switched the k1 and k3 here in the 
+! code. in both paper and thesis it is k3 that is used to det- 
+! ermine k1 below 
 !
 !    compute k3
             k3 = k1*(1+(1-k1*m0**2)*resm**2/(k1*m0**4))
@@ -192,6 +215,9 @@ contains
             else
               betamr2 = x1
             end if
+! above, the winf is the free stream velocity 
+! 
+! should this first line's first element have sos^4 or sos^2  
             a11 = betamr2*(1/sos**4)
             a12 = zero
             a13 = zero
@@ -212,6 +238,7 @@ contains
             a43 = zero
             a44 = one*w(i, j, k, irho)
             a45 = zero + one*(-velzrho)/sos**2
+! mham: seems he fixed the above line an irregular way?
             a51 = one*(1/(gamma(i, j, k)-1)+resm**2/2)
             a52 = one*w(i, j, k, irho)*velxrho
             a53 = one*w(i, j, k, irho)*velyrho
@@ -291,6 +318,8 @@ contains
         end do
       end do
     else
+! end of lowspeedpreconditioners three cells loops
+! else.. i.e. if we do not have preconditioner turned on...
       do l=1,nwf
         do k=2,kl
           do j=2,jl
@@ -439,4 +468,192 @@ contains
       end if
     end do
   end subroutine sourceterms_block
+!  differentiation of initres_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *dw
+!   with respect to varying inputs: *dw
+!   rw status of diff variables: *dw:in-out
+!   plus diff mem management of: dw:in
+  subroutine initres_block_fast_b(varstart, varend, nn, sps)
+!
+!       initres initializes the given range of the residual. either to
+!       zero, steady computation, or to an unsteady term for the time
+!       spectral and unsteady modes. for the coarser grid levels the
+!       residual forcing term is taken into account.
+!
+    use blockpointers
+    use flowvarrefstate
+    use inputiteration
+    use inputphysics
+    use inputtimespectral
+    use inputunsteady
+    use iteration
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: varstart, varend, nn, sps
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
+    real(kind=realtype) :: oneoverdt, tmp
+    real(kind=realtype), dimension(:, :, :, :), pointer :: ww, wsp, wsp1
+    real(kind=realtype), dimension(:, :, :), pointer :: volsp
+    integer :: branch
+! return immediately of no variables are in the range.
+    if (varend .ge. varstart) then
+! determine the equation mode and act accordingly.
+      select case  (equationmode) 
+      case (steady) 
+! steady state computation.
+! determine the currently active multigrid level.
+        if (currentlevel .eq. groundlevel) then
+          call pushcontrol2b(1)
+        else
+          call pushcontrol2b(0)
+        end if
+      case default
+        call pushcontrol2b(2)
+      end select
+      do l=varend,varstart,-1
+        do j=jl,2,-1
+          do i=il,2,-1
+            dwd(i, j, kb, l) = 0.0_8
+            dwd(i, j, ke, l) = 0.0_8
+            dwd(i, j, 1, l) = 0.0_8
+            dwd(i, j, 0, l) = 0.0_8
+          end do
+        end do
+        do k=kb,0,-1
+          do i=il,2,-1
+            dwd(i, jb, k, l) = 0.0_8
+            dwd(i, je, k, l) = 0.0_8
+            dwd(i, 1, k, l) = 0.0_8
+            dwd(i, 0, k, l) = 0.0_8
+          end do
+        end do
+        do k=kb,0,-1
+          do j=jb,0,-1
+            dwd(ib, j, k, l) = 0.0_8
+            dwd(ie, j, k, l) = 0.0_8
+            dwd(1, j, k, l) = 0.0_8
+            dwd(0, j, k, l) = 0.0_8
+          end do
+        end do
+      end do
+      call popcontrol2b(branch)
+      if (branch .eq. 0) then
+        do l=varend,varstart,-1
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                dwd(i, j, k, l) = 0.0_8
+              end do
+            end do
+          end do
+        end do
+      else if (branch .eq. 1) then
+        do l=varend,varstart,-1
+          do k=kl,2,-1
+            do j=jl,2,-1
+              do i=il,2,-1
+                dwd(i, j, k, l) = 0.0_8
+              end do
+            end do
+          end do
+        end do
+      end if
+    end if
+  end subroutine initres_block_fast_b
+  subroutine initres_block(varstart, varend, nn, sps)
+!
+!       initres initializes the given range of the residual. either to
+!       zero, steady computation, or to an unsteady term for the time
+!       spectral and unsteady modes. for the coarser grid levels the
+!       residual forcing term is taken into account.
+!
+    use blockpointers
+    use flowvarrefstate
+    use inputiteration
+    use inputphysics
+    use inputtimespectral
+    use inputunsteady
+    use iteration
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: varstart, varend, nn, sps
+!
+!      local variables.
+!
+    integer(kind=inttype) :: mm, ll, ii, jj, i, j, k, l, m
+    real(kind=realtype) :: oneoverdt, tmp
+    real(kind=realtype), dimension(:, :, :, :), pointer :: ww, wsp, wsp1
+    real(kind=realtype), dimension(:, :, :), pointer :: volsp
+! return immediately of no variables are in the range.
+    if (varend .lt. varstart) then
+      return
+    else
+! determine the equation mode and act accordingly.
+      select case  (equationmode) 
+      case (steady) 
+! steady state computation.
+! determine the currently active multigrid level.
+        if (currentlevel .eq. groundlevel) then
+! ground level of the multigrid cycle. initialize the
+! owned residuals to zero.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dw(i, j, k, l) = zero
+                end do
+              end do
+            end do
+          end do
+        else
+! coarse grid level. initialize the owned cells to the
+! residual forcing terms.
+          do l=varstart,varend
+            do k=2,kl
+              do j=2,jl
+                do i=2,il
+                  dw(i, j, k, l) = wr(i, j, k, l)
+                end do
+              end do
+            end do
+          end do
+        end if
+      end select
+! set the residual in the halo cells to zero. this is just
+! to avoid possible problems. their values do not matter.
+      do l=varstart,varend
+        do k=0,kb
+          do j=0,jb
+            dw(0, j, k, l) = zero
+            dw(1, j, k, l) = zero
+            dw(ie, j, k, l) = zero
+            dw(ib, j, k, l) = zero
+          end do
+        end do
+        do k=0,kb
+          do i=2,il
+            dw(i, 0, k, l) = zero
+            dw(i, 1, k, l) = zero
+            dw(i, je, k, l) = zero
+            dw(i, jb, k, l) = zero
+          end do
+        end do
+        do j=2,jl
+          do i=2,il
+            dw(i, j, 0, l) = zero
+            dw(i, j, 1, l) = zero
+            dw(i, j, ke, l) = zero
+            dw(i, j, kb, l) = zero
+          end do
+        end do
+      end do
+    end if
+  end subroutine initres_block
 end module residuals_fast_b

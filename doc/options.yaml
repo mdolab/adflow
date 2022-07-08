@@ -794,7 +794,7 @@ ANKUseTurbDADI:
 ANKSwitchTol:
   desc: >
     Relative convergence in the residual norm before we switch to the ANK solver.
-    A value of 1.0 means that the ANK solver is used from the first iteration.
+    For most cases, the default value should ensure that the ANK solver is used from the first iteration, even after design changes.
 
 ANKSubspaceSize:
   desc: >
@@ -1281,3 +1281,17 @@ sepSensorSharpness:
 computeCavitation:
   desc: >
     Whether or not to compute cavitation.
+
+cavSensorOffset:
+  desc: >
+    The offset value used for the cavitation sensor.
+    Similar to sepSensorOffset.
+
+cavSensorSharpness:
+  desc: >
+    The sharpness parameter for the cavitation sensor.
+    Similar to sepSensorSharpness.
+
+cavExponent:
+  desc: >
+    The exponent for the numerator term (- Cp - cavitationnumber) of the cavitation sensor.

@@ -505,7 +505,7 @@ contains
           tmp = two/(gammaInf*MachCoef*MachCoef)
           Cp = tmp*(plocal-pinf)
           Sensor1 = -Cp - cavitationnumber
-          Sensor1 = one/(one+exp(-2*10*Sensor1))
+          Sensor1 = (Sensor1**cavExponent)/(one+exp(2*cavSensorSharpness*(-Sensor1+cavSensorOffset)))
           Sensor1 = Sensor1 * cellArea * blk
           Cavitation = Cavitation + Sensor1
        end if
@@ -959,7 +959,7 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
-       funcValues = zero
+       funcValues(:, iGroup) = zero
        localVal = zero
 
        do sps=1, nTimeIntervalsSpectral
