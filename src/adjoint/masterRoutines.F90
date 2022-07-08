@@ -31,7 +31,7 @@ contains
     use utils, only : setPointers, EChk
     use turbUtils, only : turbAdvection, computeEddyViscosity
     use residuals, only : initRes_block, sourceTerms_block
-    use surfaceIntegrations, only : getSolution, computeCavitationNumber
+    use surfaceIntegrations, only : getSolution
     use inputCostFunctions, only : computeCavitation
     use adjointExtra, only : volume_block, metric_block, boundaryNormals,&
          xhalo_block, sumdwandfw, resScale
@@ -224,12 +224,6 @@ contains
 
     ! Compute the final solution values
     if (present(famLists)) then
-       ! if we are computing cavitation, we need to know what cp min (roughly) is across the domain
-       if (computeCavitation) then
-          ! this routine puts the cpmin value in cavitationnumber so the KS can go ahead w/o overflow
-          call computeCavitationNumber()
-       end if
-
        call getSolution(famLists, funcValues)
     end if
 
@@ -276,7 +270,7 @@ contains
     use solverutils_d, only : timeStep_Block_d
     use turbbcroutines_d, only : applyAllTurbBCthisblock_d,  bcTurbTreatment_d
     use initializeflow_d, only : referenceState_d
-    use surfaceIntegrations, only : getSolution_d, computeCavitationNumber
+    use surfaceIntegrations, only : getSolution_d
     use inputCostFunctions, only : computeCavitation
     use adjointExtra_d, only : xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
     use adjointextra_d, only : resscale_D, sumdwandfw_d
@@ -528,12 +522,6 @@ contains
 
     ! Compute final solution values
     if (present(famLists)) then
-
-      if (computeCavitation) then
-         ! this routine puts the cpmin value in cavitationnumber so the KS can go ahead w/o overflow
-         call computeCavitationNumber()
-      end if
-
        call getSolution_d(famLists, funcValues, funcValuesd)
     end if
 
@@ -591,7 +579,7 @@ contains
     use adjointPETSc, only : x_like
     use haloExchange, only : whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
     use wallDistanceData, only : xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
-    use surfaceIntegrations, only : getSolution_b, computeCavitationNumber
+    use surfaceIntegrations, only : getSolution_b
     use inputCostFunctions, only : computeCavitation
     use flowUtils, only : fixAllNodalGradientsFromAD
     use adjointextra_b, only : resscale_B, sumdwandfw_b
@@ -677,12 +665,6 @@ contains
 
     ! Call the final getSolution_b routine
     if (present(famLists)) then
-         ! if we are computing cavitation, we need to know what cp min (roughly) is across the domain
-         if (computeCavitation) then
-            ! this routine puts the cpmin value in cavitationnumber so the KS can go ahead w/o overflow
-            call computeCavitationNumber()
-         end if
-
        call getSolution_b(famLists, funcValues, funcValuesd)
     end if
 

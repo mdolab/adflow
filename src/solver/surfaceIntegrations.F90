@@ -513,8 +513,15 @@ contains
           ! Sensor1 = one/(one+exp(-2*10*Sensor1))
           ! Sensor1 = Sensor1 * cellArea * blk
           ! KS formulation with a fixed CPmin at 2 sigmas
+          ! only include the cavitation contribution if we are not underflowing.
+          ! otherwise, this will cause NaNs with bwd AD because of the order of the operations
+          ! TODO the if checks below might be needed for preventing nans with bwd ad but it seems to work without it.
+          ! if ((cavitationrho * (-Cp - cavitationnumber)) .lt. -200.0_realType) then
           Sensor1 = exp(cavitationrho * (-Cp - cavitationnumber))
-          Cavitation = Cavitation + Sensor1
+          ! else
+          !      Sensor1 = zero
+          ! end if
+          Cavitation = Cavitation + Sensor1 * blk
        end if
     enddo
 
@@ -962,10 +969,6 @@ contains
     integer(kind=intType), dimension(:), pointer :: famList
     ! Master loop over the each of the groups we have
 
-    if (computeCavitation) then
-     call computeCavitationNumber()
-    end if
-
     groupLoop: do iGroup=1, size(famLists, 1)
 
        ! Extract the current family list
@@ -973,6 +976,11 @@ contains
        famList => famLists(iGroup, 2:2+nFam-1)
        funcValues = zero
        localVal = zero
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCavitationNumber(famList)
+       end if
 
        do sps=1, nTimeIntervalsSpectral
           ! Integrate the normal block surfaces.
@@ -1066,18 +1074,22 @@ contains
 
   end subroutine integrateSurfaces
 
-  subroutine computeCavitationNumber()
+  subroutine computeCavitationNumber(famList)
      use constants
+     use inputTimeSpectral , only : nTimeIntervalsSpectral
      use communication, only : ADflow_comm_world, myID
+     use blockPointers, only : nDom
      use inputPhysics, only : cavitationNumber, MachCoef
      use blockPointers
      use flowVarRefState
      use BCPointers
-     use utils, only : setBCPointers, isWallType, EChk
+     use utils, only : setPointers, setBCPointers, isWallType, EChk
+     use sorting, only : famInList
 
      implicit none
 
-     integer(kind=intType) :: mm
+     integer(kind=intType), dimension(:), intent(in) :: famList
+     integer(kind=intType) :: mm, nn, sps
      integer(kind=intType) :: i, j, ii, blk, ierr
      real(kind=realType) :: Cp, plocal, tmp, cavitationNumberLocal
 
@@ -1086,45 +1098,56 @@ contains
      ! set the cavitation number to a small value so that we get the actual max (- min cp)
      cavitationNumberLocal = -10000.0_realType
 
-     ! Loop over all possible boundary conditions
-     bocos: do mm=1, nBocos
+     ! loop over the TS instances just because its the same convention everywhere.
+     ! in an actual TS computation, this wont work most likely.
+     ts: do sps=1, nTimeIntervalsSpectral
+      domains: do nn=1, nDom
+           call setPointers(nn, 1, sps)
 
-          ! Set a bunch of pointers depending on the face id to make
-          ! a generic treatment possible.
-          call setBCPointers(mm, .True.)
+           ! Loop over all possible boundary conditions
+           bocos: do mm=1, nBocos
+              ! Determine if this boundary condition is to be incldued in the
+              ! currently active group
+            famInclude: if (famInList(BCData(mm)%famID, famList)) then
 
-          ! no post gathered integrations currently
-          isWall: if( isWallType(BCType(mm)) ) then
+               ! Set a bunch of pointers depending on the face id to make
+               ! a generic treatment possible.
+               call setBCPointers(mm, .True.)
 
-          !$AD II-LOOP
-               do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
-                    i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
-                    j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+               ! no post gathered integrations currently
+               isWall: if( isWallType(BCType(mm)) ) then
 
-                    ! blank value
-                    blk = max(BCData(mm)%iblank(i,j), 0)
+                  !$AD II-LOOP
+                  do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+                     i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+                     j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
 
-                    ! compute local CP
+                     ! compute local CP
+                     plocal = pp2(i,j)
+                     tmp = two/(gammaInf*MachCoef*MachCoef)
+                     Cp = tmp*(plocal-pinf)
 
-                    plocal = pp2(i,j)
-                    tmp = two/(gammaInf*MachCoef*MachCoef)
-                    Cp = tmp*(plocal-pinf)
+                     ! only take this if its a compute cell
+                     if (BCData(mm)%iblank(i,j) .gt. zero) then
+                        ! compare it against the current value on this proc
+                        cavitationNumberLocal = max(cavitationNumberLocal, -Cp)
+                     end if
+                  enddo
+               end if isWall
 
-                    ! compare it against the current value on this proc
-                    cavitationNumberLocal = max(cavitationNumberLocal, -Cp * blk)
-               enddo
-          end if isWall
+            end if famInclude
+         end do bocos
+      end do domains
+     end do ts
 
-     end do bocos
-
-     ! write (*,*) "rank", myID, " cav before comm", cavitationNumberLocal
+   !   write (*,*) "rank", myID, " cav before comm", cavitationNumberLocal
 
      ! finally communicate across all
      call mpi_allreduce(cavitationNumberLocal, cavitationNumber, 1, adflow_real, &
      MPI_MAX, adflow_comm_world, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
-     ! write (*,*) "rank", myID, " final cav number ", cavitationNumber
+   !   write (*,*) "rank", myID, " final cav number ", cavitationNumber
 
   end subroutine computeCavitationNumber
 
@@ -1237,6 +1260,7 @@ contains
     use zipperIntegrations, only :integrateZippers_d
     use userSurfaceIntegrations, only : integrateUserSurfaces_d
     use actuatorRegion, only : integrateActuatorRegions_d
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -1254,6 +1278,11 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCavitationNumber(famList)
+       end if
 
        localVal = zero
        localVald = zero
@@ -1313,6 +1342,7 @@ contains
     use zipperIntegrations, only :integrateZippers_b
     use userSurfaceIntegrations, only : integrateUserSurfaces_b
     use actuatorRegion, only : integrateActuatorRegions_b
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -1334,6 +1364,11 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCavitationNumber(famList)
+       end if
 
        localVal = zero
        localVald = zero

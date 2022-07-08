@@ -466,8 +466,15 @@ contains
 ! sensor1 = one/(one+exp(-2*10*sensor1))
 ! sensor1 = sensor1 * cellarea * blk
 ! ks formulation with a fixed cpmin at 2 sigmas
+! only include the cavitation contribution if we are not underflowing.
+! otherwise, this will cause nans with bwd ad because of the order of the operations
+! todo the if checks below might be needed for preventing nans with bwd ad but it seems to work without it.
+! if ((cavitationrho * (-cp - cavitationnumber)) .lt. -200.0_realtype) then
         sensor1 = exp(cavitationrho*(-cp-cavitationnumber))
-        cavitation = cavitation + sensor1
+! else
+!      sensor1 = zero
+! end if
+        cavitation = cavitation + sensor1*blk
       end if
     end do
 !
