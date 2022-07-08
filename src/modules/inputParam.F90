@@ -579,6 +579,7 @@ module inputPhysics
   real(kind=realType), dimension(3,2) :: momentAxis
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
   real(kind=realType) :: cavitationnumber
+  real(kind=realType) :: cavitationsensor
   real(kind=realType) :: cavitationrho
 
 #ifndef USE_TAPENADE

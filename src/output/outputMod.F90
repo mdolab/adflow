@@ -1404,8 +1404,8 @@ contains
     real(kind=realType), dimension(*), intent(out) :: buffer
     character(len=*), intent(in) :: solName
     logical, intent(in) :: viscousSubface, useRindLayer
-    
-    ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine 
+
+    ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine
     ! when the indices are in the rind layer.
     integer(kind=intType), optional, intent(in) :: iBeg, iEnd, jBeg, jEnd
     !
@@ -1438,7 +1438,7 @@ contains
 
     ! The original i,j beging of the local block in the entire cgns block.
     real(kind=realType) :: subface_jBegOr, subface_jEndOr, subface_iBegOr, subface_iEndOr
-    
+
     ! Set the pointers to this block.
     call setPointers(blockID, 1_intType, sps)
 
@@ -1525,10 +1525,10 @@ contains
        if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
        subface_iBegOr = jBegOr
        subface_iEndOr = jEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
-       
+
        !===============================================================
 
     case (iMax)
@@ -1554,13 +1554,13 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
-       
+
        subface_iBegOr = jBegOr
        subface_iEndOr = jEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
-       
+
        !===============================================================
 
     case (jMin)
@@ -1587,10 +1587,10 @@ contains
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
 
-              
+
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
 
@@ -1622,7 +1622,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
 
@@ -1654,7 +1654,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = jBegOr
        subface_jEndOr = jEndOr
 
@@ -1686,7 +1686,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = jBegOr
        subface_jEndOr = jEndOr
 
@@ -1927,14 +1927,14 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
             jor = j + subface_jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
+            if (jor == jBeg) then
+               jj = j + 1
             else if (jor == jEnd +1 ) then
                jj = j - 1
             else
-               jj = j 
+               jj = j
             endif
          else
             jj = j
@@ -1942,19 +1942,19 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
                ior = i + subface_iBegOr - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
+               if (ior == iBeg) then
+                  ii = i + 1
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else
-                  ii = i 
+                  ii = i
                endif
             else
                ii = i
             endif
-            
+
              ! Determine the viscous subface on which this
              ! face is located.
 
@@ -2040,14 +2040,14 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
             jor = j + jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
+            if (jor == jBeg) then
+               jj = j + 1
             else if (jor == jEnd + 1) then
                jj = j - 1
             else
-               jj = j 
+               jj = j
             endif
          else
             jj = j
@@ -2055,14 +2055,14 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
                ior = i + iBegor - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
+               if (ior == iBeg) then
+                  ii = i + 1
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else
-                  ii = i 
+                  ii = i
                endif
             else
                ii = i
@@ -2140,7 +2140,7 @@ contains
              ! Get local pressure
              plocal = half*(pp1(i,j) + pp2(i,j))
 
-             sensor1 = (-(fact)*(plocal-pInf))- cavitationnumber
+             sensor1 = (-(fact)*(plocal-pInf))- cavitationsensor
              sensor1 = one/(one + exp(-2*10*sensor1))
              buffer(nn) = sensor1
              !print*, sensor
