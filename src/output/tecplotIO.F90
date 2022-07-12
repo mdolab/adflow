@@ -675,9 +675,9 @@ contains
           values(i, 23) = globalSlice%chord
 
           ! here we now save our new, added values that we have desired to use
-          values(i, 19) = globalSlice%fx
-          values(i, 20) = globalSlice%fy
-          values(i, 21) = globalSlice%fz
+          values(i, 24) = globalSlice%fx
+          values(i, 25) = globalSlice%fy
+          values(i, 26) = globalSlice%fz
 
           call destroySlice(localSlice)
           call destroySlice(globalSlice)
@@ -2105,6 +2105,12 @@ contains
     ! we are interested in. we use the direction index to get this value out and set it in the slice
     lSlc%pM = pM(normal_ind)
     lSlc%vM = vM(normal_ind)
+
+    ! save the x,y,z-forces into the appropriate real-container
+    ! from their type(slice) definition (see the top of this file)
+    lSlc%fx = pF(1) + vF(1)
+    lSlc%fy = pF(2) + vF(2)
+    lSlc%fz = pF(3) + vF(3)
 
     ! Reduce the lift/drag values
     call mpi_reduce((/lSlc%pL, lSlc%pD, lSlc%pM, lSlc%vL, lSlc%vD, lSlc%vM/), tmp, 6, adflow_real, MPI_SUM, &
