@@ -106,6 +106,7 @@ class ADFLOW(AeroSolver):
         self.optionMap, self.moduleMap = self._getOptionMap()
         self.pythonOptions, deprecatedOptions, self.specialOptions = self._getSpecialOptionLists()
         immutableOptions = self._getImmutableOptions()
+        self.rootChangedOptions = {}
 
         self.possibleAeroDVs, self.possibleBCDvs, self.basicCostFunctions = self._getObjectivesAndDVs()
 
@@ -567,7 +568,7 @@ class ADFLOW(AeroSolver):
 
         for i in range(len(positions)):
             # It is important to ensure each slice get a unique
-            # name...so we will number sequentially from pythhon
+            # name...so we will number sequentially from python
             j = self.nSlice + i + 1
             if sliceType == "relative":
                 sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])
@@ -981,7 +982,9 @@ class ADFLOW(AeroSolver):
             is used in a multidisciplinary environment when the outer
             solver can suppress all I/O during intermediate solves.
         """
-
+        self.rootChangedOptions = self.comm.bcast(self.rootChangedOptions, root=0)
+        for key, val in self.rootChangedOptions.items():
+            self.setOption(key, val)
         startCallTime = time.time()
 
         # Get option about adjoint memory
@@ -3975,9 +3978,9 @@ class ADFLOW(AeroSolver):
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
             if xDvDot is not None and self.DVGeo is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(
-                    xDvDot, self.curAP.ptSetName, self.comm, config=self.curAP.name
-                ).reshape(xsdot.shape)
+                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, config=self.curAP.name).reshape(
+                    xsdot.shape
+                )
             if self.mesh is not None:
                 xsdot = self.mapVector(xsdot, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
                 xvdot += self.mesh.warpDerivFwd(xsdot)
@@ -4656,6 +4659,59 @@ class ADFLOW(AeroSolver):
 
         return res
 
+    def solveErrorEstimate(self, aeroProblem, funcError, evalFuncs=None):
+        r"""
+        Evaluate the desired function errors given in iterable object
+        'evalFuncs', and add them to the dictionary 'funcError'. The keys
+        in the funcError dictionary will be have an ``<ap.name>_`` prepended to them.
+
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem class
+            The aerodynamic problem to get the error for
+
+        funcError : dict
+            Dictionary into which the function errors are saved.
+            We define error to be :math:`\epsilon = f^\ast - f`, where
+            :math:`f^\ast` is the converged solution and :math:`f` is the unconverged solution.
+
+        evalFuncs : iterable object containing strings
+            If not None, use these functions to evaluate.
+
+        Examples
+        --------
+        >>> CFDsolver(ap)
+        >>> funcsSens = {}
+        >>> CFDSolver.evalFunctionsSens(ap, funcsSens)
+        >>> funcError = {}
+        >>> CFDsolver.solveErrorEstimate(ap, funcError)
+        >>> # Result will look like (if aeroProblem, ap, has name of 'wing'):
+        >>> print(funcError)
+        >>> # {'wing_cl':0.00085, 'wing_cd':0.000021}
+        """
+        self.setAeroProblem(aeroProblem)
+        res = self.getResidual(aeroProblem)
+        if evalFuncs is None:
+            evalFuncs = sorted(self.curAP.evalFuncs)
+
+        # Make sure we have a list that has only lower-cased entries
+        tmp = []
+        for f in evalFuncs:
+            tmp.append(f.lower())
+        evalFuncs = tmp
+
+        # Do the functions one at a time:
+        for f in evalFuncs:
+
+            key = f"{self.curAP.name}_{f}"
+
+            # Set dict structure for this derivative
+            psi = self.getAdjoint(f)
+            error = numpy.dot(psi, res)
+            errorTot = self.comm.allreduce(error)
+            errorTot = -1 * errorTot  # multiply by -1 so that estimate is added to current output
+            funcError[key] = errorTot
+
     def getFreeStreamResidual(self, aeroProblem):
         self.setAeroProblem(aeroProblem)
         rhoRes, totalRRes = self.adflow.nksolver.getfreestreamresidual()
@@ -4674,6 +4730,28 @@ class ADFLOW(AeroSolver):
 
         [nPts, nCells] = self.adflow.surfaceutils.getsurfacesize(self.families[groupName], includeZipper)
         return nPts, nCells
+
+    def rootSetOption(self, name, value, reset=False):
+        """
+        Set ADflow options from the root proc.
+        The option will be broadcast to all procs when __call__ is invoked.
+
+        Parameters
+        ----------
+        name : str
+            The name of the option
+        value : Any
+            The value of the option
+        reset : Bool
+            If True, we reset all previously-set rootChangedOptions.
+
+        See Also
+        --------
+        :func: setOption
+        """
+        if reset:
+            self.rootChangedOptions = {}
+        self.rootChangedOptions[name] = value
 
     def setOption(self, name, value):
         """
@@ -5095,6 +5173,9 @@ class ADFLOW(AeroSolver):
             # Function parmeters
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
+            "cavSensorOffset": [float, 0.0],
+            "cavSensorSharpness": [float, 10.0],
+            "cavExponent": [int, 0],
             "computeCavitation": [bool, False],
         }
 
@@ -5472,6 +5553,9 @@ class ADFLOW(AeroSolver):
             # Parameters for functions
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
+            "cavsensoroffset": ["cost", "cavsensoroffset"],
+            "cavsensorsharpness": ["cost", "cavsensorsharpness"],
+            "cavexponent": ["cost", "cavexponent"],
             "computecavitation": ["cost", "computecavitation"],
             "writesolutioneachiter": ["monitor", "writesoleachiter"],
             "writesurfacesolution": ["monitor", "writesurface"],

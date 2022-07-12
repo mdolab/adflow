@@ -28,7 +28,9 @@ contains
     integer(kind=intType) :: i, j, k, l
     integer(kind=intType) :: iale, jale, kale, lale, male ! For loops of ALE
     real(kind=realType), parameter :: K1 = 1.05_realType
+    ! The line below is only used for the low-speed preconditioner part of this routine
     real(kind=realType), parameter :: K2 = 0.6_realType ! Random given number
+
     real(kind=realType), parameter :: M0 = 0.2_realType ! Mach number preconditioner activation
     real(kind=realType), parameter :: alpha = 0_realType
     real(kind=realType), parameter :: delta = 0_realType
@@ -49,7 +51,6 @@ contains
     real(kind=realType) :: b1, b2, b3, b4, b5
     real(kind=realType) :: dwo(nwf)
     logical :: fineGrid
-
 
     ! Set the value of rFil, which controls the fraction of the old
     ! dissipation residual to be used. This is only for the runge-kutta
@@ -177,21 +178,56 @@ contains
                 !    Compute speed of sound
                 SoS = sqrt(gamma(i,j,k)*p(i,j,k)/w(i,j,k,irho))
 
-                ! Coompute velocities without rho from state vector
-                velXrho = w(i,j,k,ivx)
+                ! Compute velocities without rho from state vector 
+                !      (w is pointer.. see type blockType setup in block.F90)
+                !      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.F90 
+                !      these are per definition nw=[rho,u,v,w,rhoeE] 
+                !      so the velocity is simply just taken out below... 
+                !      we do not have to divide with rho since it is already 
+                !      without rho... 
+                velXrho = w(i,j,k,ivx) ! ivx: l. 60 in constants.F90
                 velYrho = w(i,j,k,ivy)
                 velZrho = w(i,j,k,ivz)
 
                 q = (velXrho**2 + velYrho**2 + velZrho**2)
-                resM=sqrt(q)/SoS
+ 
+                resM=sqrt(q)/SoS 
+                ! resM above is used as M_a (thesis) and M (paper 2015) 
+                ! and is the Free Stream Mach number 
+ 
+                ! see routine setup above: 
+                ! l. 30: real(kind=realType), parameter :: K1 = 1.05_realType 
+                ! Random given number for K2: 
+                ! l. 31: real(kind=realType), parameter :: K2 = 0.6_realType 
+                ! Mach number preconditioner activation for K3: 
+                ! l. 32: real(kind=realType), parameter :: M0 = 0.2_realType 
+                ! 
+                !    Compute K3 
+                ! eq. 2.7 in Garg 2015. K1, M0 and resM are scalars 
+                ! 
+                ! unfortunately, Garg has switched the K1 and K3 here in the 
+                ! code. In both paper and thesis it is K3 that is used to det- 
+                ! ermine K1 below 
 
                 !
                 !    Compute K3
+                 
                 K3 = K1 * ( 1 + ((1-K1*M0**2)*resM**2)/(K1*M0**4) )
+                !    Compute BetaMr2 
+                ! betaMr2 -> eq. 7 in Garg 2015 
+                ! (use eq. 2.6 in thesis thesis since paper has an error) 
+                ! where a==SoS 
+                ! 
+                ! again, K1 and K3 are switched compared with paper/thesis
                 !    Compute BetaMr2
                 betaMr2 = min( max( K3*(velXrho**2 + velYrho**2  &
                      + velZrho**2), ((K2)*(wInf(ivx)**2 &
                      + wInf(ivy)**2 + wInf(ivz)**2))) , SoS**2 )
+
+
+                ! above, the wInf is the free stream velocity 
+                ! 
+                ! Should this first line's first element have SoS^4 or SoS^2  
 
                 A11=  (betaMr2)*(1/SoS**4)
                 A12 = zero
@@ -216,6 +252,9 @@ contains
                 A43 = zero
                 A44 = one*w(i,j,k,irho)
                 A45 = zero + one *(-velZrho)/SoS**2
+
+                ! mham: seems he fixed the above line an irregular way?
+
 
                 A51=  one*((1/(gamma(i,j,k)-1))+(resM**2)/2)
                 A52 = one * w(i,j,k,irho)*velXrho
@@ -291,8 +330,9 @@ contains
 
              enddo
           enddo
-       enddo
-    else
+       enddo ! end of lowspeedpreconditioners three cells loops
+
+    else ! else.. i.e. if we do not have preconditioner turned on...
        do l=1,nwf
           do k=2,kl
              do j=2,jl
@@ -306,7 +346,6 @@ contains
     endif
 
   end subroutine residual_block
-
 
   subroutine sourceTerms_block(nn, res, iRegion, pLocal)
 
@@ -387,6 +426,536 @@ contains
 
   end subroutine sourceTerms_block
 
+  subroutine initres_block(varStart, varEnd, nn, sps)
+   !
+   !       initres initializes the given range of the residual. Either to
+   !       zero, steady computation, or to an unsteady term for the time
+   !       spectral and unsteady modes. For the coarser grid levels the
+   !       residual forcing term is taken into account.
+   !
+   use blockPointers
+   use flowVarRefState
+   use inputIteration
+   use inputPhysics
+   use inputTimeSpectral
+   use inputUnsteady
+   use iteration
+
+   implicit none
+   !
+   !      Subroutine arguments.
+   !
+   integer(kind=intType), intent(in) :: varStart, varEnd, nn, sps
+   !
+   !      Local variables.
+   !
+   integer(kind=intType) :: mm, ll, ii, jj, i, j, k, l, m
+   real(kind=realType)   :: oneOverDt, tmp
+
+   real(kind=realType), dimension(:,:,:,:), pointer :: ww, wsp, wsp1
+   real(kind=realType), dimension(:,:,:),   pointer :: volsp
+
+   ! Return immediately of no variables are in the range.
+
+   if(varEnd < varStart) return
+
+   ! Determine the equation mode and act accordingly.
+
+   select case (equationMode)
+   case (steady)
+
+      ! Steady state computation.
+      ! Determine the currently active multigrid level.
+
+      steadyLevelTest: if(currentLevel == groundLevel) then
+
+         ! Ground level of the multigrid cycle. Initialize the
+         ! owned residuals to zero.
+
+         do l=varStart,varEnd
+            do k=2,kl
+               do j=2,jl
+                  do i=2,il
+                     dw(i,j,k,l) = zero
+                  enddo
+               enddo
+            enddo
+         enddo
+
+      else steadyLevelTest
+
+         ! Coarse grid level. Initialize the owned cells to the
+         ! residual forcing terms.
+
+         do l=varStart,varEnd
+            do k=2,kl
+               do j=2,jl
+                  do i=2,il
+                     dw(i,j,k,l) = wr(i,j,k,l)
+                  enddo
+               enddo
+            enddo
+         enddo
+      endif steadyLevelTest
+
+#ifndef USE_TAPENADE
+
+   case (unsteady)
+
+      ! Unsteady computation.
+      ! A further distinction must be made.
+
+      select case(timeIntegrationScheme)
+
+      case (explicitRK)
+
+         ! We are always on the finest grid.
+         ! Initialize the residual to zero.
+
+         do l=varStart,varEnd
+            do k=2,kl
+               do j=2,jl
+                  do i=2,il
+                     dw(i,j,k,l) = zero
+                  enddo
+               enddo
+            enddo
+         enddo
+
+         !=======================================================
+
+      case (MD,BDF) ! Modified by HDN
+
+         ! Store the inverse of the physical nonDimensional
+         ! time step a bit easier.
+
+         oneOverDt = timeRef/deltaT
+
+         ! Store the pointer for the variable to be used to compute
+         ! the unsteady source term. For a runge-kutta smoother this
+         ! is the solution of the zeroth runge-kutta stage. As for
+         ! rkStage == 0 this variable is not yet set w is used.
+         ! For other smoothers w is to be used as well.
+
+         if(smoother == RungeKutta .and. rkStage > 0) then
+            ww => wn
+         else
+            ww => w
+         endif
+
+         ! Determine the currently active multigrid level.
+
+         unsteadyLevelTest: if(currentLevel == groundLevel) then
+
+            ! Ground level of the multigrid cycle. Initialize the
+            ! owned cells to the unsteady source term. First the
+            ! term for the current time level. Note that in w the
+            ! velocities are stored and not the momentum variables.
+            ! Therefore the if-statement is present to correct this.
+
+            do l=varStart,varEnd
+
+               if(l == ivx .or. l == ivy .or. l == ivz) then
+
+                  ! Momentum variables.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+                           dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
+                                * ww(i,j,k,l)*ww(i,j,k,irho)
+                        enddo
+                     enddo
+                  enddo
+
+               else
+
+                  ! Non-momentum variables, for which the variable
+                  ! to be solved is stored; for the flow equations this
+                  ! is the conservative variable, for the turbulent
+                  ! equations the primitive variable.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+                           dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
+                                * ww(i,j,k,l)
+                        enddo
+                     enddo
+                  enddo
+
+               endif
+
+            enddo
+
+            ! The terms from the older time levels. Here the
+            ! conservative variables are stored. In case of a
+            ! deforming mesh, also the old volumes must be taken.
+
+            deformingTest: if( deforming_Grid ) then
+
+               ! Mesh is deforming and thus the volumes can change.
+               ! Use the old volumes as well.
+
+               do m=1,nOldLevels
+                  do l=varStart,varEnd
+                     do k=2,kl
+                        do j=2,jl
+                           do i=2,il
+                              dw(i,j,k,l) = dw(i,j,k,l)                 &
+                                   + coefTime(m)*volOld(m,i,j,k) &
+                                   * wOld(m,i,j,k,l)
+                           enddo
+                        enddo
+                     enddo
+                  enddo
+               enddo
+
+            else deformingTest
+
+               ! Rigid mesh. The volumes remain constant.
+
+               do m=1,nOldLevels
+                  do l=varStart,varEnd
+                     do k=2,kl
+                        do j=2,jl
+                           do i=2,il
+                              dw(i,j,k,l) = dw(i,j,k,l)            &
+                                   + coefTime(m)*vol(i,j,k) &
+                                   * wOld(m,i,j,k,l)
+                           enddo
+                        enddo
+                     enddo
+                  enddo
+               enddo
+
+            endif deformingTest
+
+            ! Multiply the time derivative by the inverse of the
+            ! time step to obtain the true time derivative.
+            ! This is done after the summation has been done, because
+            ! otherwise you run into finite accuracy problems for
+            ! very small time steps.
+
+            do l=varStart,varEnd
+               do k=2,kl
+                  do j=2,jl
+                     do i=2,il
+                        dw(i,j,k,l) = oneOverDt*dw(i,j,k,l)
+                     enddo
+                  enddo
+               enddo
+            enddo
+
+         else unsteadyLevelTest
+
+            ! Coarse grid level. Initialize the owned cells to the
+            ! residual forcing term plus a correction for the
+            ! multigrid treatment of the time derivative term.
+            ! As the velocities are stored instead of the momentum,
+            ! these terms must be multiplied by the density.
+
+            tmp = oneOverDt*coefTime(0)
+
+            do l=varStart,varEnd
+
+               if(l == ivx .or. l == ivy .or. l == ivz) then
+
+                  ! Momentum variables.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+                           dw(i,j,k,l) = tmp*vol(i,j,k)               &
+                                * (ww(i,j,k,l)*ww(i,j,k,irho)  &
+                                -  w1(i,j,k,l)*w1(i,j,k,irho))
+                           dw(i,j,k,l) = dw(i,j,k,l) + wr(i,j,k,l)
+                        enddo
+                     enddo
+                  enddo
+
+               else
+
+                  ! Non-momentum variables.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+                           dw(i,j,k,l) = tmp*vol(i,j,k)             &
+                                * (ww(i,j,k,l) - w1(i,j,k,l))
+                           dw(i,j,k,l) =  dw(i,j,k,l) + wr(i,j,k,l)
+                        enddo
+                     enddo
+                  enddo
+
+               endif
+
+            enddo
+
+         endif unsteadyLevelTest
+
+      end select
+
+      !===========================================================
+
+   case (timeSpectral)
+
+      ! Time spectral computation. The time derivative of the
+      ! current solution is given by a linear combination of
+      ! all other solutions, i.e. a matrix vector product.
+
+      ! First store the section to which this block belongs
+      ! in jj.
+
+      jj = sectionID
+
+      ! Determine the currently active multigrid level.
+
+      spectralLevelTest: if(currentLevel == groundLevel) then
+
+         ! Finest multigrid level. The residual must be
+         ! initialized to the time derivative.
+
+         ! Initialize it to zero.
+
+         do l=varStart,varEnd
+            do k=2,kl
+               do j=2,jl
+                  do i=2,il
+                     dw(i,j,k,l) = zero
+                  enddo
+               enddo
+            enddo
+         enddo
+
+         ! Loop over the number of terms which contribute
+         ! to the time derivative.
+
+         timeLoopFine: do mm=1,nTimeIntervalsSpectral
+
+            ! Store the pointer for the variable to be used to
+            ! compute the unsteady source term and the volume.
+            ! Also store in ii the offset needed for vector
+            ! quantities.
+
+            wsp   => flowDoms(nn,currentLevel,mm)%w
+            volsp => flowDoms(nn,currentLevel,mm)%vol
+            ii    =  3*(mm-1)
+
+            ! Loop over the number of variables to be set.
+
+            varLoopFine: do l=varStart,varEnd
+
+               ! Test for a momentum variable.
+
+               if(l == ivx .or. l == ivy .or. l == ivz) then
+
+                  ! Momentum variable. A special treatment is
+                  ! needed because it is a vector and the velocities
+                  ! are stored instead of the momentum. Set the
+                  ! coefficient ll, which defines the row of the
+                  ! matrix used later on.
+
+                  if(l == ivx) ll = 3*sps - 2
+                  if(l == ivy) ll = 3*sps - 1
+                  if(l == ivz) ll = 3*sps
+
+                  ! Loop over the owned cell centers to add the
+                  ! contribution from wsp.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+
+                           ! Store the matrix vector product with the
+                           ! velocity in tmp.
+
+                           tmp = dvector(jj,ll,ii+1)*wsp(i,j,k,ivx) &
+                                + dvector(jj,ll,ii+2)*wsp(i,j,k,ivy) &
+                                + dvector(jj,ll,ii+3)*wsp(i,j,k,ivz)
+
+                           ! Update the residual. Note the
+                           ! multiplication with the density to obtain
+                           ! the correct time derivative for the
+                           ! momentum variable.
+
+                           dw(i,j,k,l) = dw(i,j,k,l) &
+                                + tmp*volsp(i,j,k)*wsp(i,j,k,irho)
+
+                        enddo
+                     enddo
+                  enddo
+
+               else
+
+                  ! Scalar variable.  Loop over the owned cells to
+                  ! add the contribution of wsp to the time
+                  ! derivative.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+                           dw(i,j,k,l) = dw(i,j,k,l)        &
+                                + dscalar(jj,sps,mm) &
+                                * volsp(i,j,k)*wsp(i,j,k,l)
+
+                        enddo
+                     enddo
+                  enddo
+
+               endif
+
+            enddo varLoopFine
+
+         enddo timeLoopFine
+      else spectralLevelTest
+
+         ! Coarse grid level. Initialize the owned cells to the
+         ! residual forcing term plus a correction for the
+         ! multigrid treatment of the time derivative term.
+
+         ! Initialization to the residual forcing term.
+
+         do l=varStart,varEnd
+            do k=2,kl
+               do j=2,jl
+                  do i=2,il
+                     dw(i,j,k,l) = wr(i,j,k,l)
+                  enddo
+               enddo
+            enddo
+         enddo
+
+         ! Loop over the number of terms which contribute
+         ! to the time derivative.
+
+         timeLoopCoarse: do mm=1,nTimeIntervalsSpectral
+
+            ! Store the pointer for the variable to be used to
+            ! compute the unsteady source term and the pointers
+            ! for wsp1, the solution when entering this MG level
+            ! and for the volume.
+            ! Furthermore store in ii the offset needed for
+            ! vector quantities.
+
+            wsp   => flowDoms(nn,currentLevel,mm)%w
+            wsp1  => flowDoms(nn,currentLevel,mm)%w1
+            volsp => flowDoms(nn,currentLevel,mm)%vol
+            ii    =  3*(mm-1)
+
+            ! Loop over the number of variables to be set.
+
+            varLoopCoarse: do l=varStart,varEnd
+
+               ! Test for a momentum variable.
+
+               if(l == ivx .or. l == ivy .or. l == ivz) then
+
+                  ! Momentum variable. A special treatment is
+                  ! needed because it is a vector and the velocities
+                  ! are stored instead of the momentum. Set the
+                  ! coefficient ll, which defines the row of the
+                  ! matrix used later on.
+
+                  if(l == ivx) ll = 3*sps - 2
+                  if(l == ivy) ll = 3*sps - 1
+                  if(l == ivz) ll = 3*sps
+
+                  ! Add the contribution of wps to the correction
+                  ! of the time derivative. The difference between
+                  ! the current time derivative and the one when
+                  ! entering this grid level must be added, because
+                  ! the residual forcing term only takes the spatial
+                  ! part of the coarse grid residual into account.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+
+                           ! Store the matrix vector product with the
+                           ! momentum in tmp.
+
+                           tmp = dvector(jj,ll,ii+1)                &
+                                * (wsp( i,j,k,irho)*wsp( i,j,k,ivx)  &
+                                -  wsp1(i,j,k,irho)*wsp1(i,j,k,ivx)) &
+                                +  dvector(jj,ll,ii+2)               &
+                                * (wsp( i,j,k,irho)*wsp( i,j,k,ivy)  &
+                                -  wsp1(i,j,k,irho)*wsp1(i,j,k,ivy)) &
+                                + dvector(jj,ll,ii+3)                &
+                                * (wsp( i,j,k,irho)*wsp( i,j,k,ivz)  &
+                                -  wsp1(i,j,k,irho)*wsp1(i,j,k,ivz))
+
+                           ! Add tmp to the residual. Multiply it by
+                           ! the volume to obtain the finite volume
+                           ! formulation of the  derivative of the
+                           ! momentum.
+
+                           dw(i,j,k,l) = dw(i,j,k,l) + tmp*volsp(i,j,k)
+
+                        enddo
+                     enddo
+                  enddo
+
+               else
+
+                  ! Scalar variable. Loop over the owned cells
+                  ! to add the contribution of wsp to the correction
+                  ! of the time derivative.
+
+                  do k=2,kl
+                     do j=2,jl
+                        do i=2,il
+                           dw(i,j,k,l) = dw(i,j,k,l)        &
+                                + dscalar(jj,sps,mm) &
+                                * volsp(i,j,k)       &
+                                * (wsp(i,j,k,l) - wsp1(i,j,k,l))
+                        enddo
+                     enddo
+                  enddo
+
+               endif
+
+            enddo varLoopCoarse
+
+         enddo timeLoopCoarse
+      endif spectralLevelTest
+#endif
+   end select
+
+   ! Set the residual in the halo cells to zero. This is just
+   ! to avoid possible problems. Their values do not matter.
+
+   do l=varStart,varEnd
+      do k=0,kb
+         do j=0,jb
+            dw(0,j,k,l)  = zero
+            dw(1,j,k,l)  = zero
+            dw(ie,j,k,l) = zero
+            dw(ib,j,k,l) = zero
+         enddo
+      enddo
+
+      do k=0,kb
+         do i=2,il
+            dw(i,0,k,l)  = zero
+            dw(i,1,k,l)  = zero
+            dw(i,je,k,l) = zero
+            dw(i,jb,k,l) = zero
+         enddo
+      enddo
+
+      do j=2,jl
+         do i=2,il
+            dw(i,j,0,l)  = zero
+            dw(i,j,1,l)  = zero
+            dw(i,j,ke,l) = zero
+            dw(i,j,kb,l) = zero
+         enddo
+      enddo
+   enddo
+
+ end subroutine initres_block
+
 
   ! ----------------------------------------------------------------------
   !                                                                      |
@@ -433,536 +1002,6 @@ contains
     end do spectralLoop
 
   end subroutine initRes
-
-  subroutine initres_block(varStart, varEnd, nn, sps)
-    !
-    !       initres initializes the given range of the residual. Either to
-    !       zero, steady computation, or to an unsteady term for the time
-    !       spectral and unsteady modes. For the coarser grid levels the
-    !       residual forcing term is taken into account.
-    !
-    use blockPointers
-    use flowVarRefState
-    use inputIteration
-    use inputPhysics
-    use inputTimeSpectral
-    use inputUnsteady
-    use iteration
-
-    implicit none
-    !
-    !      Subroutine arguments.
-    !
-    integer(kind=intType), intent(in) :: varStart, varEnd, nn, sps
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: mm, ll, ii, jj, i, j, k, l, m
-    real(kind=realType)   :: oneOverDt, tmp
-
-    real(kind=realType), dimension(:,:,:,:), pointer :: ww, wsp, wsp1
-    real(kind=realType), dimension(:,:,:),   pointer :: volsp
-
-    ! Return immediately of no variables are in the range.
-
-    if(varEnd < varStart) return
-
-    ! Determine the equation mode and act accordingly.
-
-    select case (equationMode)
-    case (steady)
-
-       ! Steady state computation.
-       ! Determine the currently active multigrid level.
-
-       steadyLevelTest: if(currentLevel == groundLevel) then
-
-          ! Ground level of the multigrid cycle. Initialize the
-          ! owned residuals to zero.
-
-          do l=varStart,varEnd
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
-                      dw(i,j,k,l) = zero
-                   enddo
-                enddo
-             enddo
-          enddo
-
-       else steadyLevelTest
-
-          ! Coarse grid level. Initialize the owned cells to the
-          ! residual forcing terms.
-
-          do l=varStart,varEnd
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
-                      dw(i,j,k,l) = wr(i,j,k,l)
-                   enddo
-                enddo
-             enddo
-          enddo
-       endif steadyLevelTest
-
-       !===========================================================
-
-    case (unsteady)
-
-       ! Unsteady computation.
-       ! A further distinction must be made.
-
-       select case(timeIntegrationScheme)
-
-       case (explicitRK)
-
-          ! We are always on the finest grid.
-          ! Initialize the residual to zero.
-
-          do l=varStart,varEnd
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
-                      dw(i,j,k,l) = zero
-                   enddo
-                enddo
-             enddo
-          enddo
-
-          !=======================================================
-
-       case (MD,BDF) ! Modified by HDN
-
-          ! Store the inverse of the physical nonDimensional
-          ! time step a bit easier.
-
-          oneOverDt = timeRef/deltaT
-
-          ! Store the pointer for the variable to be used to compute
-          ! the unsteady source term. For a runge-kutta smoother this
-          ! is the solution of the zeroth runge-kutta stage. As for
-          ! rkStage == 0 this variable is not yet set w is used.
-          ! For other smoothers w is to be used as well.
-
-          if(smoother == RungeKutta .and. rkStage > 0) then
-             ww => wn
-          else
-             ww => w
-          endif
-
-          ! Determine the currently active multigrid level.
-
-          unsteadyLevelTest: if(currentLevel == groundLevel) then
-
-             ! Ground level of the multigrid cycle. Initialize the
-             ! owned cells to the unsteady source term. First the
-             ! term for the current time level. Note that in w the
-             ! velocities are stored and not the momentum variables.
-             ! Therefore the if-statement is present to correct this.
-
-             do l=varStart,varEnd
-
-                if(l == ivx .or. l == ivy .or. l == ivz) then
-
-                   ! Momentum variables.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-                            dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
-                                 * ww(i,j,k,l)*ww(i,j,k,irho)
-                         enddo
-                      enddo
-                   enddo
-
-                else
-
-                   ! Non-momentum variables, for which the variable
-                   ! to be solved is stored; for the flow equations this
-                   ! is the conservative variable, for the turbulent
-                   ! equations the primitive variable.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-                            dw(i,j,k,l) = coefTime(0)*vol(i,j,k) &
-                                 * ww(i,j,k,l)
-                         enddo
-                      enddo
-                   enddo
-
-                endif
-
-             enddo
-
-             ! The terms from the older time levels. Here the
-             ! conservative variables are stored. In case of a
-             ! deforming mesh, also the old volumes must be taken.
-
-             deformingTest: if( deforming_Grid ) then
-
-                ! Mesh is deforming and thus the volumes can change.
-                ! Use the old volumes as well.
-
-                do m=1,nOldLevels
-                   do l=varStart,varEnd
-                      do k=2,kl
-                         do j=2,jl
-                            do i=2,il
-                               dw(i,j,k,l) = dw(i,j,k,l)                 &
-                                    + coefTime(m)*volOld(m,i,j,k) &
-                                    * wOld(m,i,j,k,l)
-                            enddo
-                         enddo
-                      enddo
-                   enddo
-                enddo
-
-             else deformingTest
-
-                ! Rigid mesh. The volumes remain constant.
-
-                do m=1,nOldLevels
-                   do l=varStart,varEnd
-                      do k=2,kl
-                         do j=2,jl
-                            do i=2,il
-                               dw(i,j,k,l) = dw(i,j,k,l)            &
-                                    + coefTime(m)*vol(i,j,k) &
-                                    * wOld(m,i,j,k,l)
-                            enddo
-                         enddo
-                      enddo
-                   enddo
-                enddo
-
-             endif deformingTest
-
-             ! Multiply the time derivative by the inverse of the
-             ! time step to obtain the true time derivative.
-             ! This is done after the summation has been done, because
-             ! otherwise you run into finite accuracy problems for
-             ! very small time steps.
-
-             do l=varStart,varEnd
-                do k=2,kl
-                   do j=2,jl
-                      do i=2,il
-                         dw(i,j,k,l) = oneOverDt*dw(i,j,k,l)
-                      enddo
-                   enddo
-                enddo
-             enddo
-
-          else unsteadyLevelTest
-
-             ! Coarse grid level. Initialize the owned cells to the
-             ! residual forcing term plus a correction for the
-             ! multigrid treatment of the time derivative term.
-             ! As the velocities are stored instead of the momentum,
-             ! these terms must be multiplied by the density.
-
-             tmp = oneOverDt*coefTime(0)
-
-             do l=varStart,varEnd
-
-                if(l == ivx .or. l == ivy .or. l == ivz) then
-
-                   ! Momentum variables.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-                            dw(i,j,k,l) = tmp*vol(i,j,k)               &
-                                 * (ww(i,j,k,l)*ww(i,j,k,irho)  &
-                                 -  w1(i,j,k,l)*w1(i,j,k,irho))
-                            dw(i,j,k,l) = dw(i,j,k,l) + wr(i,j,k,l)
-                         enddo
-                      enddo
-                   enddo
-
-                else
-
-                   ! Non-momentum variables.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-                            dw(i,j,k,l) = tmp*vol(i,j,k)             &
-                                 * (ww(i,j,k,l) - w1(i,j,k,l))
-                            dw(i,j,k,l) =  dw(i,j,k,l) + wr(i,j,k,l)
-                         enddo
-                      enddo
-                   enddo
-
-                endif
-
-             enddo
-
-          endif unsteadyLevelTest
-
-       end select
-
-       !===========================================================
-
-    case (timeSpectral)
-
-       ! Time spectral computation. The time derivative of the
-       ! current solution is given by a linear combination of
-       ! all other solutions, i.e. a matrix vector product.
-
-       ! First store the section to which this block belongs
-       ! in jj.
-
-       jj = sectionID
-
-       ! Determine the currently active multigrid level.
-
-       spectralLevelTest: if(currentLevel == groundLevel) then
-
-          ! Finest multigrid level. The residual must be
-          ! initialized to the time derivative.
-
-          ! Initialize it to zero.
-
-          do l=varStart,varEnd
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
-                      dw(i,j,k,l) = zero
-                   enddo
-                enddo
-             enddo
-          enddo
-
-          ! Loop over the number of terms which contribute
-          ! to the time derivative.
-
-          timeLoopFine: do mm=1,nTimeIntervalsSpectral
-
-             ! Store the pointer for the variable to be used to
-             ! compute the unsteady source term and the volume.
-             ! Also store in ii the offset needed for vector
-             ! quantities.
-
-             wsp   => flowDoms(nn,currentLevel,mm)%w
-             volsp => flowDoms(nn,currentLevel,mm)%vol
-             ii    =  3*(mm-1)
-
-             ! Loop over the number of variables to be set.
-
-             varLoopFine: do l=varStart,varEnd
-
-                ! Test for a momentum variable.
-
-                if(l == ivx .or. l == ivy .or. l == ivz) then
-
-                   ! Momentum variable. A special treatment is
-                   ! needed because it is a vector and the velocities
-                   ! are stored instead of the momentum. Set the
-                   ! coefficient ll, which defines the row of the
-                   ! matrix used later on.
-
-                   if(l == ivx) ll = 3*sps - 2
-                   if(l == ivy) ll = 3*sps - 1
-                   if(l == ivz) ll = 3*sps
-
-                   ! Loop over the owned cell centers to add the
-                   ! contribution from wsp.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-
-                            ! Store the matrix vector product with the
-                            ! velocity in tmp.
-
-                            tmp = dvector(jj,ll,ii+1)*wsp(i,j,k,ivx) &
-                                 + dvector(jj,ll,ii+2)*wsp(i,j,k,ivy) &
-                                 + dvector(jj,ll,ii+3)*wsp(i,j,k,ivz)
-
-                            ! Update the residual. Note the
-                            ! multiplication with the density to obtain
-                            ! the correct time derivative for the
-                            ! momentum variable.
-
-                            dw(i,j,k,l) = dw(i,j,k,l) &
-                                 + tmp*volsp(i,j,k)*wsp(i,j,k,irho)
-
-                         enddo
-                      enddo
-                   enddo
-
-                else
-
-                   ! Scalar variable.  Loop over the owned cells to
-                   ! add the contribution of wsp to the time
-                   ! derivative.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-                            dw(i,j,k,l) = dw(i,j,k,l)        &
-                                 + dscalar(jj,sps,mm) &
-                                 * volsp(i,j,k)*wsp(i,j,k,l)
-
-                         enddo
-                      enddo
-                   enddo
-
-                endif
-
-             enddo varLoopFine
-
-          enddo timeLoopFine
-       else spectralLevelTest
-
-          ! Coarse grid level. Initialize the owned cells to the
-          ! residual forcing term plus a correction for the
-          ! multigrid treatment of the time derivative term.
-
-          ! Initialization to the residual forcing term.
-
-          do l=varStart,varEnd
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
-                      dw(i,j,k,l) = wr(i,j,k,l)
-                   enddo
-                enddo
-             enddo
-          enddo
-
-          ! Loop over the number of terms which contribute
-          ! to the time derivative.
-
-          timeLoopCoarse: do mm=1,nTimeIntervalsSpectral
-
-             ! Store the pointer for the variable to be used to
-             ! compute the unsteady source term and the pointers
-             ! for wsp1, the solution when entering this MG level
-             ! and for the volume.
-             ! Furthermore store in ii the offset needed for
-             ! vector quantities.
-
-             wsp   => flowDoms(nn,currentLevel,mm)%w
-             wsp1  => flowDoms(nn,currentLevel,mm)%w1
-             volsp => flowDoms(nn,currentLevel,mm)%vol
-             ii    =  3*(mm-1)
-
-             ! Loop over the number of variables to be set.
-
-             varLoopCoarse: do l=varStart,varEnd
-
-                ! Test for a momentum variable.
-
-                if(l == ivx .or. l == ivy .or. l == ivz) then
-
-                   ! Momentum variable. A special treatment is
-                   ! needed because it is a vector and the velocities
-                   ! are stored instead of the momentum. Set the
-                   ! coefficient ll, which defines the row of the
-                   ! matrix used later on.
-
-                   if(l == ivx) ll = 3*sps - 2
-                   if(l == ivy) ll = 3*sps - 1
-                   if(l == ivz) ll = 3*sps
-
-                   ! Add the contribution of wps to the correction
-                   ! of the time derivative. The difference between
-                   ! the current time derivative and the one when
-                   ! entering this grid level must be added, because
-                   ! the residual forcing term only takes the spatial
-                   ! part of the coarse grid residual into account.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-
-                            ! Store the matrix vector product with the
-                            ! momentum in tmp.
-
-                            tmp = dvector(jj,ll,ii+1)                &
-                                 * (wsp( i,j,k,irho)*wsp( i,j,k,ivx)  &
-                                 -  wsp1(i,j,k,irho)*wsp1(i,j,k,ivx)) &
-                                 +  dvector(jj,ll,ii+2)               &
-                                 * (wsp( i,j,k,irho)*wsp( i,j,k,ivy)  &
-                                 -  wsp1(i,j,k,irho)*wsp1(i,j,k,ivy)) &
-                                 + dvector(jj,ll,ii+3)                &
-                                 * (wsp( i,j,k,irho)*wsp( i,j,k,ivz)  &
-                                 -  wsp1(i,j,k,irho)*wsp1(i,j,k,ivz))
-
-                            ! Add tmp to the residual. Multiply it by
-                            ! the volume to obtain the finite volume
-                            ! formulation of the  derivative of the
-                            ! momentum.
-
-                            dw(i,j,k,l) = dw(i,j,k,l) + tmp*volsp(i,j,k)
-
-                         enddo
-                      enddo
-                   enddo
-
-                else
-
-                   ! Scalar variable. Loop over the owned cells
-                   ! to add the contribution of wsp to the correction
-                   ! of the time derivative.
-
-                   do k=2,kl
-                      do j=2,jl
-                         do i=2,il
-                            dw(i,j,k,l) = dw(i,j,k,l)        &
-                                 + dscalar(jj,sps,mm) &
-                                 * volsp(i,j,k)       &
-                                 * (wsp(i,j,k,l) - wsp1(i,j,k,l))
-                         enddo
-                      enddo
-                   enddo
-
-                endif
-
-             enddo varLoopCoarse
-
-          enddo timeLoopCoarse
-       endif spectralLevelTest
-
-    end select
-
-    ! Set the residual in the halo cells to zero. This is just
-    ! to avoid possible problems. Their values do not matter.
-
-    do l=varStart,varEnd
-       do k=0,kb
-          do j=0,jb
-             dw(0,j,k,l)  = zero
-             dw(1,j,k,l)  = zero
-             dw(ie,j,k,l) = zero
-             dw(ib,j,k,l) = zero
-          enddo
-       enddo
-
-       do k=0,kb
-          do i=2,il
-             dw(i,0,k,l)  = zero
-             dw(i,1,k,l)  = zero
-             dw(i,je,k,l) = zero
-             dw(i,jb,k,l) = zero
-          enddo
-       enddo
-
-       do j=2,jl
-          do i=2,il
-             dw(i,j,0,l)  = zero
-             dw(i,j,1,l)  = zero
-             dw(i,j,ke,l) = zero
-             dw(i,j,kb,l) = zero
-          enddo
-       enddo
-    enddo
-
-  end subroutine initres_block
 
   subroutine sourceTerms
 
