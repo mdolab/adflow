@@ -33,6 +33,8 @@ module tecplotIO
      real(kind=realType), dimension(3) :: pt, normal, dir_vec
      logical :: use_dir
      integer(kind=intType), allocatable, dimension(:) :: famList
+     ! here we declare that 'slice'-types also now have fx,fy and fz:
+     real(kind=realType) :: fx, fy, fz
   end type slice
 
   type liftDist
@@ -67,7 +69,7 @@ module tecplotIO
 
   ! Tecplot Variable names of the data in the lift distribution data file:
   character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistName
-  integer(kind=intType), parameter :: nLiftDistVar=23
+  integer(kind=intType), parameter :: nLiftDistVar=26
 
 contains
   subroutine addParaSlice(sliceName, pt, normal, dir_vec, use_dir, famList, n)
@@ -582,13 +584,16 @@ contains
        liftDistNames(21) = "thickness"
        liftDistNames(22) = "twist"
        liftDistNames(23) = "chord"
+       liftDistNames(24) = "fx"
+       liftDistNames(25) = "fy"
+       liftDistNames(26) = "fz"
 
        ! Only write header info for first distribution only
        if (myid == 0) then
           if (iDist == 1) then
              write (fileID,*) "Title= ""ADflow Lift Distribution Data"""
              write (fileID,"(a)", advance="no") "Variables = "
-             do i=1,nLIftDistVar
+             do i=1,nLIftDistVar ! here we just write var-names in the header
                 write(fileID,"(a,a,a)",advance="no") """",trim(liftDistNames(i)),""" "
              end do
              write(fileID,"(1x)")
@@ -617,6 +622,9 @@ contains
        dmin = minVal(d%slicePts(d%normal_ind, :))
        dmax = maxval(d%slicePts(d%normal_ind, :))
 
+       ! next line we save ETA as the first column. This corresponds to
+       ! when we open a lift file, e.g. fc_000_lift.dat where we find
+       ! ETA as the first entry... (also visible through tec360)
        values(:, 1) = (d%slicePts(d%normal_ind, :) - dmin)/(dmax-dmin)
        ! Coordinate Varaibles
        if (d%normal_ind == 1) then! X slices
@@ -627,6 +635,13 @@ contains
           values(:, 4) = d%slicePts(3, :)
        end if
 
+       !      as mentioned above nSegments are number of nodes in the
+       !      distribution, e.g. maybe you have asked for 150 points out along
+       !      your wing where you want the lift. Ok, we now for each of these
+       !      150 points have to create a slice and integrate our metrics around
+       !      said slice, save the integrated metrics (e.g. lift, drag) for the
+       !      current point. We then move on to the next point, make a new slice
+       !      get the new point's metrics and save them ... we do this 150 times
        do i=1, d%nSegments
           ! Make new one in the same location
           ! we just pass the normal again as the direction vector because its not used
@@ -658,6 +673,11 @@ contains
           values(i, 21) = globalSlice%thickness
           values(i, 22) = globalSlice%twist
           values(i, 23) = globalSlice%chord
+
+          ! here we now save our new, added values that we have desired to use
+          values(i, 19) = globalSlice%fx
+          values(i, 20) = globalSlice%fy
+          values(i, 21) = globalSlice%fz
 
           call destroySlice(localSlice)
           call destroySlice(globalSlice)
@@ -1872,6 +1892,8 @@ contains
     integer(kind=intType), dimension(:), allocatable :: nodeDisps, cellDisps
     real(kind=realType), dimension(3) :: refPoint, pM, vM
     real(kind=realType) :: xc, yc, zc
+    ! Need another tmp to reduce the fx, fy and fz values
+    real(kind=realType) :: tmp_(3)
 
     ! Copy the info related to slice
     gSlc%sliceName = trim(lSlc%sliceName)
@@ -1888,7 +1910,6 @@ contains
     pM = zero  ! pressure moment
     vM = zero  ! viscous moment
     iSize = 3 + 6 + nFields
-
     allocate(localVals(iSize,lSlc%nNodes))
 
    ! Interpolate the required values
@@ -2090,6 +2111,11 @@ contains
          0, adflow_comm_world, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
+    ! Reduce the fx, fy and fz using THE OTHER tmp, i.e. tmp_
+    call mpi_reduce((/lSlc%fx, lSlc%fy, lSlc%fz/), tmp_, 3, adflow_real, MPI_SUM, &
+         0, adflow_comm_world, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
     if (myid == 0) then
        gSlc%pL = tmp(1)
        gSlc%pD = tmp(2)
@@ -2097,6 +2123,12 @@ contains
        gSlc%vL = tmp(4)
        gSlc%vD = tmp(5)
        gSlc%vM = tmp(6)
+
+       ! we now also must remember to store the MPIreduced fx, fy and fz in the
+       ! global slice type:
+       gSlc%fx = tmp_(1)
+       gSlc%fy = tmp_(2)
+       gSlc%fz = tmp_(3)
 
        ! Compute factor to get coefficient
        fact = two/(gammaInf*pInf*MachCoef*MachCoef*pRef)
