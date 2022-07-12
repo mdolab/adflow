@@ -557,19 +557,17 @@ class ADFLOW(AeroSolver):
         tmp = numpy.zeros((N, 3), self.dtype)
         if direction == "x":
             tmp[:, 0] = positions
-            tmp[:, 1] = -1e50
-            slice_dir = [0.0, 1.0, 0.0]
             normal = [1.0, 0.0, 0.0]
         elif direction == "y":
             tmp[:, 1] = positions
-            tmp[:, 2] = -1e50
-            slice_dir = [0.0, 0.0, 1.0]
             normal = [0.0, 1.0, 0.0]
         elif direction == "z":
             tmp[:, 2] = positions
-            tmp[:, 0] = -1e50
-            slice_dir = [1.0, 0.0, 0.0]
             normal = [0.0, 0.0, 1.0]
+
+        # for regular slices, we dont use the direction vector to pick a projection direction
+        slice_dir = [1.0, 0.0, 0.0]
+        use_dir = False
 
         for i in range(len(positions)):
             # It is important to ensure each slice get a unique
@@ -577,10 +575,10 @@ class ADFLOW(AeroSolver):
             j = self.nSlice + i + 1
             if sliceType == "relative":
                 sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])
-                self.adflow.tecplotio.addparaslice(sliceName, tmp[i], normal, slice_dir, famList)
+                self.adflow.tecplotio.addparaslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
             else:
                 sliceName = "Slice_%4.4d %s Absolute %s=%7.3f" % (j, groupTag, direction, positions[i])
-                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], normal, slice_dir, famList)
+                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
 
         self.nSlice += N
 
@@ -673,16 +671,18 @@ class ADFLOW(AeroSolver):
             # from the center axis. We will reject cells directly if their centroid are behind this
             # direction (i.e. <pt1, centroid> dot slice_dir is negative) and only use the cells that are in
             # the same direction (i.e. dot product positive.)
+            # this flag determines that we will use the direction vector as well to pick the slice dir.
+            use_dir = True
 
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from python
             jj = self.nSlice + ii + 1
             if sliceType == "relative":
                 sliceName = f"Slice_{jj:04d} {groupTag} Para Init Theta={angle * 180.0 / numpy.pi:.4f} pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, {slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
-                self.adflow.tecplotio.addparaslice(sliceName, pt1, slice_normal, slice_dir, famList)
+                self.adflow.tecplotio.addparaslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
             else:
                 sliceName = f"Slice_{jj:04d} {groupTag} Absolute Theta={angle * 180.0 / numpy.pi:.4f} pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, {slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
-                self.adflow.tecplotio.addabsslice(sliceName, pt1, slice_normal, slice_dir, famList)
+                self.adflow.tecplotio.addabsslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
 
         self.nSlice += n_slice
 
