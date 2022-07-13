@@ -687,7 +687,7 @@ class ADFLOW(AeroSolver):
 
         self.nSlice += n_slice
 
-    def addIntegrationSurface(self, fileName, familyName, isInflow=True):
+    def addIntegrationSurface(self, fileName, familyName, isInflow=True, disp_vec=None):
         """Add a specific integration surface for performing massflow-like
         computations.
 
@@ -730,6 +730,12 @@ class ADFLOW(AeroSolver):
         # small that we do not have to worry about parallelization.
 
         pts, conn = self._readPlot3DSurfFile(fileName)
+
+        # displace the points if asked for
+        if disp_vec is not None:
+            for idim in range(3):
+                pts[:, idim] += disp_vec[idim]
+
         self.adflow.usersurfaceintegrations.addintegrationsurface(pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(
