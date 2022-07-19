@@ -2101,16 +2101,16 @@ contains
   subroutine updateOverset(flag, n, closedFamList, nFam)
 
     ! This is the main gateway routine for updating the overset
-    ! connecitivty during a solution. It is wrapped and intended to be
+    ! connectivity during a solution. It is wrapped and intended to be
     ! called from Python. What this routine does depends on the value
     ! of oversetUpdateMode:
 
     ! updateFrozen: Nothing happens. The initial
-    ! connecitivty computed during initialzation is kept.
+    ! connectivity computed during initialzation is kept.
 
-    ! updteFast: Update just the weight, but leave the donors
+    ! updateFast: Update just the weight, but leave the donors
     ! unchanged. This is only applicable when the entire mesh is
-    ! warped at the same time with pyWarpuStruct.
+    ! warped at the same time like with USMesh in IDWarp.
 
     ! updateFull: Complete from scratch update. Run the full
     ! oversetComm routine.

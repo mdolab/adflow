@@ -1740,7 +1740,7 @@ contains
     ! mesh. It does *not* completely redo the connectivity. Rather, a
     ! newton search on the existing donors are performed using the
     ! updated coordinates. This type of update is only applicable if the
-    ! entire volume mesh is warped as one a-la pyWarpUstruct. This
+    ! entire volume mesh is warped as one like with USMesh in IDWarp. This
     ! actually ends up being a fairly small correction most of the time,
     ! however, desipite looks to the contrary is actually quite fast to
     ! run.
@@ -1766,6 +1766,9 @@ contains
     integer, dimension(mpi_status_size) :: mpiStatus
     real(kind=realType) :: frac(3), frac0(3), xCen(3)
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
+
+    ! Set a tolerance for checking whether fractions are between 0 and 1
+    real(kind=realType) :: fracTol=1e-8
 
     ! Pointers to the overset comms to make it easier to read
     commPattern => commPatternOverset(level, sps)
@@ -1913,6 +1916,12 @@ contains
        call newtonUpdate(xCen, &
             flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), frac0, frac)
 
+       ! Check if the fractions are between 0 and 1
+       if (ANY(frac > one + fracTol) .or. ANY(frac < zero - fracTol)) then
+          print *, "Invalid overset connectivity update. Use 'frozen' or 'full' oversetUpdateMode instead."
+          error stop
+       end if
+
        ! Set the new weights
        call fracToWeights(frac, internal%donorInterp(i, :))
     enddo localInterp
@@ -1950,6 +1959,12 @@ contains
           frac0 = (/half, half, half/)
           call newtonUpdate(xCen, &
                flowDoms(d2, level, sps)%x(i2-1:i2+1, j2-1:j2+1, k2-1:k2+1, :), frac0, frac)
+
+          ! Check if the fractions are between zero and one
+          if (ANY(frac > one + fracTol) .or. ANY(frac < zero - fracTol)) then
+             print *, "Invalid overset connectivity update. Use 'frozen' or 'full' oversetUpdateMode instead."
+             error stop
+          end if
 
           ! Set the new weights
           call fracToWeights(frac, commPattern%sendList(ii)%interp(j, :))
