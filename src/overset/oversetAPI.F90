@@ -2106,7 +2106,7 @@ contains
     ! of oversetUpdateMode:
 
     ! updateFrozen: Nothing happens. The initial
-    ! connectivity computed during initialzation is kept.
+    ! connectivity computed during initialization is kept.
 
     ! updateFast: Update just the weight, but leave the donors
     ! unchanged. This is only applicable when the entire mesh is

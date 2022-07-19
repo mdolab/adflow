@@ -1917,7 +1917,7 @@ contains
             flowDoms(d1, level, sps)%x(i1-1:i1+1, j1-1:j1+1, k1-1:k1+1, :), frac0, frac)
 
        ! Check if the fractions are between 0 and 1
-       if (ANY(frac > one + fracTol) .or. ANY(frac < zero - fracTol)) then
+       if (MAXVAL(frac) > one + fracTol .or. MINVAL(frac) < zero - fracTol) then
           print *, "Invalid overset connectivity update. Use 'frozen' or 'full' oversetUpdateMode instead."
           error stop
        end if
@@ -1961,7 +1961,7 @@ contains
                flowDoms(d2, level, sps)%x(i2-1:i2+1, j2-1:j2+1, k2-1:k2+1, :), frac0, frac)
 
           ! Check if the fractions are between zero and one
-          if (ANY(frac > one + fracTol) .or. ANY(frac < zero - fracTol)) then
+          if (MAXVAL(frac) > one + fracTol .or. MINVAL(frac) < zero - fracTol) then
              print *, "Invalid overset connectivity update. Use 'frozen' or 'full' oversetUpdateMode instead."
              error stop
           end if
