@@ -1768,7 +1768,7 @@ contains
     integer(kind=intType), dimension(8), parameter :: indices=(/1,2,4,3,5,6,8,7/)
 
     ! Set a tolerance for checking whether fractions are between 0 and 1
-    real(kind=realType) :: fracTol=1e-8
+    real(kind=realType) :: fracTol=1e-4
 
     ! Pointers to the overset comms to make it easier to read
     commPattern => commPatternOverset(level, sps)
