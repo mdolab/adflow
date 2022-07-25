@@ -2671,6 +2671,10 @@ contains
     call VecAXPY(rVec, -omega, unsteadyVec, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
+    ! Deallocate the intermediate vector
+    call VecDestroy(unsteadyVec, ierr)
+    call EChk(ierr,__FILE__,__LINE__)
+
     call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
     call EChk(ierr,__FILE__,__LINE__)
 
