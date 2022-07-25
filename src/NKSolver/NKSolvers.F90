@@ -1685,6 +1685,7 @@ module ANKSolver
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
   real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
   real(kind=realType) :: ANK_pcUpdateTol
+  real(kind=realType) :: ANK_pcUpdateCutoff
   real(kind=realType) :: lambda
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
@@ -2196,8 +2197,9 @@ contains
     use inputDiscretization, only : approxSA
     use iteration, only : totalR0, totalR
     use utils, only : EChk, setPointers
-    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
-    use communication
+    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
+    use inputadjoint, only : precondtype
+    use agmg, only : setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
     implicit none
 
     ! Local Variables
@@ -2205,8 +2207,16 @@ contains
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp, frozenTurb
     real(kind=realType) :: dtinv, rho
-    integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace
+    integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace, lvl
+    integer(kind=intType), dimension(2:10) :: coarseRows
     real(kind=realType), dimension(:,:), allocatable :: blk
+    logical :: useCoarseMats
+
+    if (preCondType == 'mg') then
+       useCoarseMats = .True.
+    else
+       useCoarseMats = .False.
+    end if
 
     ! Assemble the approximate PC (fine leve, level 1)
     useAD = ANK_ADPC
@@ -2222,7 +2232,7 @@ contains
 
     ! Create the preconditoner matrix
     call setupStateResidualMatrix(dRdwPreTurb, useAD, usePC, useTranspose, &
-         useObjective, frozenTurb, 1_intType, .True.)
+         useObjective, frozenTurb, 1_intType, .True., useCoarseMats=useCoarseMats)
 
     ! Reset saved value
     viscPC = tmp
@@ -2266,6 +2276,12 @@ contains
                       ! get the global cell index
                       irow = globalCell(i, j, k)
 
+                      if (useCoarseMats) then
+                         do lvl=1, agmgLevels-1
+                            coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
+                         end do
+                      end if
+
                       ! Add the contribution to the matrix in PETSc
                       call setBlock()
                     end do
@@ -2299,10 +2315,28 @@ contains
     call MatAssemblyEnd  (dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
+    if (useCoarseMats) then
+       do lvl=2, agmgLevels
+          call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+          call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+       end do
+    end if
 
-    call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
-         preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
-         localOrdering, ANK_iluFill, ANK_innerPreConIts)
+
+    if (PreCondType == 'asm') then
+       call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
+            preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+            localOrdering, ANK_iluFill, ANK_innerPreConIts)
+
+    else if (PreCondType == 'mg') then
+
+       ! Setup the MG preconditioner!
+       call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
+            preConSide, ANK_asmOverlap, outerPreConIts, &
+            localOrdering, ANK_iluFill)
+    end if
 
     ! Don't do iterative refinement for the NKSolver.
     call KSPGMRESSetCGSRefinementType(ANK_KSPTurb, &
@@ -2319,6 +2353,14 @@ contains
       call MatSetValuesBlocked(dRdwPreTurb, 1, irow, 1, irow, blk, &
            ADD_VALUES, ierr)
       call EChk(ierr, __FILE__, __LINE__)
+
+      ! Extension for setting coarse grids:
+      if (useCoarseMats) then
+         do lvl=2, agmgLevels
+            call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
+                 blk, ADD_VALUES, ierr)
+         end do
+      end if
 
     end subroutine setBlock
   end subroutine FormJacobianANKTurb
@@ -3701,7 +3743,7 @@ contains
     real(kind=realType) :: atol, val, v2, factK, gm1
     real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
     real(kind=alwaysRealType) :: resHist(ANK_maxIter+1)
-    real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old
+    real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old, rel_pcUpdateTol
     logical :: correctForK, LSFailed
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
@@ -3767,13 +3809,28 @@ contains
        ANK_iter = ANK_iter + 1
     end if
 
+    ! figure out if we want to scale the ANKPCUpdateTol
+    if (.not. ANK_coupled) then
+      rel_pcUpdateTol = ANK_pcUpdateTol
+    else
+      ! for coupled ANK, we dont want to update the PC as frequently,
+      ! so we reduce the relative tol by 4 orders of magnitude,
+      ! *if* we are converged past pc update cutoff wrt free stream already
+      if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
+         rel_pcUpdateTol = ANK_pcUpdateTol * 1e-4_realType
+      else
+         ! if we are not that far down converged, use the option directly
+         rel_pcUpdateTol = ANK_pcUpdateTol
+      end if
+    end if
+
     ! Compute the norm of rVec, which is identical to the
     ! norm of the unsteady residual vector.
     call VecNorm(rVec, NORM_2, unsteadyNorm_old, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Determine if if we need to form the Preconditioner
-    if (mod(ANK_iter, ANK_jacobianLag) == 0 .or. totalR/totalR_pcUpdate < ANK_pcUpdateTol) then
+    if (mod(ANK_iter, ANK_jacobianLag) == 0 .or. totalR/totalR_pcUpdate < rel_pcUpdateTol) then
 
        ! First of all, update the minimum cfl wrt the overall convergence
        ANK_CFLMin = min(ANK_CFLLimit, ANK_CFLMinBase*(totalR0/totalR)**ANK_CFLExponent)
