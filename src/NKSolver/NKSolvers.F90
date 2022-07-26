@@ -2197,9 +2197,8 @@ contains
     use inputDiscretization, only : approxSA
     use iteration, only : totalR0, totalR
     use utils, only : EChk, setPointers
-    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
-    use inputadjoint, only : precondtype
-    use agmg, only : setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
+    use adjointUtils, only :setupStateResidualMatrix, setupStandardKSP
+    use communication
     implicit none
 
     ! Local Variables
@@ -2207,16 +2206,8 @@ contains
     integer(kind=intType) ::ierr
     logical :: useAD, usePC, useTranspose, useObjective, tmp, frozenTurb
     real(kind=realType) :: dtinv, rho
-    integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace, lvl
-    integer(kind=intType), dimension(2:10) :: coarseRows
+    integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace
     real(kind=realType), dimension(:,:), allocatable :: blk
-    logical :: useCoarseMats
-
-    if (preCondType == 'mg') then
-       useCoarseMats = .True.
-    else
-       useCoarseMats = .False.
-    end if
 
     ! Assemble the approximate PC (fine leve, level 1)
     useAD = ANK_ADPC
@@ -2232,7 +2223,7 @@ contains
 
     ! Create the preconditoner matrix
     call setupStateResidualMatrix(dRdwPreTurb, useAD, usePC, useTranspose, &
-         useObjective, frozenTurb, 1_intType, .True., useCoarseMats=useCoarseMats)
+         useObjective, frozenTurb, 1_intType, .True.)
 
     ! Reset saved value
     viscPC = tmp
@@ -2276,12 +2267,6 @@ contains
                       ! get the global cell index
                       irow = globalCell(i, j, k)
 
-                      if (useCoarseMats) then
-                         do lvl=1, agmgLevels-1
-                            coarseRows(lvl+1) = coarseIndices(nn, lvl)%arr(i, j, k)
-                         end do
-                      end if
-
                       ! Add the contribution to the matrix in PETSc
                       call setBlock()
                     end do
@@ -2315,28 +2300,10 @@ contains
     call MatAssemblyEnd  (dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
-    if (useCoarseMats) then
-       do lvl=2, agmgLevels
-          call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
-          call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
-          call EChk(ierr, __FILE__, __LINE__)
-       end do
-    end if
 
-
-    if (PreCondType == 'asm') then
-       call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
-            preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
-            localOrdering, ANK_iluFill, ANK_innerPreConIts)
-
-    else if (PreCondType == 'mg') then
-
-       ! Setup the MG preconditioner!
-       call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
-            preConSide, ANK_asmOverlap, outerPreConIts, &
-            localOrdering, ANK_iluFill)
-    end if
+    call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
+         preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+         localOrdering, ANK_iluFill, ANK_innerPreConIts)
 
     ! Don't do iterative refinement for the NKSolver.
     call KSPGMRESSetCGSRefinementType(ANK_KSPTurb, &
@@ -2353,14 +2320,6 @@ contains
       call MatSetValuesBlocked(dRdwPreTurb, 1, irow, 1, irow, blk, &
            ADD_VALUES, ierr)
       call EChk(ierr, __FILE__, __LINE__)
-
-      ! Extension for setting coarse grids:
-      if (useCoarseMats) then
-         do lvl=2, agmgLevels
-            call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
-                 blk, ADD_VALUES, ierr)
-         end do
-      end if
 
     end subroutine setBlock
   end subroutine FormJacobianANKTurb
