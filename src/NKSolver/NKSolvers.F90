@@ -1671,6 +1671,7 @@ module ANKSolver
   real(kind=realType)   :: ANK_switchTol
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
+  logical :: ANK_useApproxSA
   real(kind=realType) :: ANK_turbcflscale
   logical :: ANK_useFullVisc
   logical :: ANK_ADPC
@@ -3904,6 +3905,10 @@ contains
        rtol = min(ANK_rtol, rtol)
     end if
 
+    ! also check if we are using approxSA always
+    if (ANK_useApproxSA) &
+      approxSA = .True.
+
     ! Record the total residual and relative convergence for next iteration
     totalR_old = totalR
     rtolLast = rtol
@@ -3967,6 +3972,10 @@ contains
        orderturb = orderturbsave
 
     end if
+
+   ! put back the approxsa flag if we were using it
+    if (ANK_useApproxSA) &
+      approxSA = .False.
 
     ! Compute the maximum step that will limit the change in pressure
     ! and energy to some user defined fraction.
