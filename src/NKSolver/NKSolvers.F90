@@ -3474,6 +3474,10 @@ contains
             rtol = min(ANK_rtol, rtol)
         end if
 
+        ! also check if we are using approxSA always
+        if (ANK_useApproxSA) &
+           approxSA = .True.
+
         ! Record the total residual and relative convergence for next iteration
         totalR_old = totalR
         rtolLast = rtol
@@ -3532,6 +3536,10 @@ contains
             orderturb = orderturbsave
             approxSA = .False.
         end if
+
+        ! put back the approxsa flag if we were using it
+        if (ANK_useApproxSA) &
+          approxSA = .False.
 
         ! Compute the maximum step that will limit the change
         ! in SA variable to some user defined fraction.
