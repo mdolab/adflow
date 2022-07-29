@@ -2794,6 +2794,9 @@ contains
        call MatDestroy(dRdwPre, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
+       call MatDestroy(timeStepInv, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+
        call VecDestroy(wVec, ierr)
        call EChk(ierr, __FILE__, __LINE__)
 
