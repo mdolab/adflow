@@ -688,10 +688,10 @@ contains
 
     ! Input/Output
     Vec x, f, g, y, w
-    !x 	- current iterate
-    !f 	- residual evaluated at x
-    !y 	- search direction
-    !w 	- work vector -> On output, new iterate
+    !x    - current iterate
+    !f    - residual evaluated at x
+    !y    - search direction
+    !w    - work vector -> On output, new iterate
     !g    - residual evaluated at new iterate y
 
     real(kind=alwaysrealType) :: fnorm, gnorm, ynorm
@@ -954,10 +954,10 @@ contains
 
     ! Input/Output
     Vec x, f, g, y, w
-    !x 	- current iterate
-    !f 	- residual evaluated at x
-    !y 	- search direction
-    !w 	- work vector -> On output, new iterate
+    !x    - current iterate
+    !f    - residual evaluated at x
+    !y    - search direction
+    !w    - work vector -> On output, new iterate
     !g    - residual evaluated at new iterate y
 
     integer(kind=intType) :: nfevals
@@ -990,10 +990,10 @@ contains
 
     ! Input/Output
     Vec x, f, g, y, w
-    !x 	- current iterate
-    !f 	- residual evaluated at x
-    !y 	- search direction
-    !w 	- work vector -> On output, new iterate
+    !x    - current iterate
+    !f    - residual evaluated at x
+    !y    - search direction
+    !w    - work vector -> On output, new iterate
     !g    - residual evaluated at new iterate y
 
     real(kind=alwaysRealType) :: fnorm, gnorm, ynorm
