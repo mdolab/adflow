@@ -19,7 +19,7 @@
 
 
 %.o: %.f
-	$(FF90) $(FF90_ALL_FLAGS) -c $< -o $*.o
+	$(FF90) $(FF77_ALL_FLAGS) -c $< -o $*.o
 	@echo
 	@echo "        --- Compiled $*.f successfully ---"
 	@echo
