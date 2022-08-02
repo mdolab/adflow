@@ -79,7 +79,7 @@ contains
     ! Input parameters
     character*(*), intent(in) :: sliceName
     real(kind=realType), dimension(3), intent(in) :: pt, direction
-    integer(kind=intType), intent(in) :: famList(n), n
+    integer(kind=intType), intent(in) :: n, famList(n)
 
     ! Working
     integer(kind=intType) :: sps, sizeNode, sizeCell
@@ -135,7 +135,7 @@ contains
     ! Input parameters
     character*(*), intent(in) :: sliceName
     real(kind=realType), dimension(3), intent(in) :: pt, direction
-    integer(kind=intType), intent(in) :: famList(n), n
+    integer(kind=intType), intent(in) :: n, famList(n)
 
     ! Working
     integer(kind=intType) :: sps, sizeNode, sizeCell
@@ -186,7 +186,7 @@ contains
     integer(kind=intType), intent(in) :: nSegments
     real(kind=realType), dimension(3) :: dir_vec
     integer(kind=intType), intent(in) :: dir_ind
-    integer(kind=intType), intent(in) :: famList(n), n
+    integer(kind=intType), intent(in) :: n, famList(n)
 
     nLiftDists = nLiftDists + 1
     if (nLiftDists > nLiftDistMax) then
@@ -225,8 +225,8 @@ contains
     ! Input Params
     character*(*), intent(in) :: sliceFile, liftFile, surfFile
     logical, intent(in) :: writeSlices, writeLift, writeSurf
-    integer(kind=intType), intent(in), dimension(nFamList) :: famList
     integer(kind=intType), intent(in) :: nFamList
+    integer(kind=intType), intent(in), dimension(nFamList) :: famList
     real(kind=realType), dimension(:, :, :), allocatable :: nodalValues
     ! Working
     integer(kind=intType) :: sps, nSolVar, sizeNOde, sizeCell

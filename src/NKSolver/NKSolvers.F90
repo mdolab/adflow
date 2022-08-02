@@ -1520,8 +1520,8 @@ contains
     use utils, only : setPointers
     implicit none
 
-    real(kind=realType), intent(in), dimension(iSize) :: info
     integer(kind=intType), intent(in) :: iSize
+    real(kind=realType), intent(in), dimension(iSize) :: info
     integer(kind=intType) :: nn, counter, i, j, k, l, sps
     ! Determine the size of a flat array needed to store w, P, ( and
     ! rlv, rev if necessary) with full double halos.
@@ -1566,8 +1566,8 @@ contains
 
     implicit none
 
-    real(kind=realType), intent(out), dimension(iSize) :: info
     integer(kind=intType), intent(in) :: iSize
+    real(kind=realType), intent(out), dimension(iSize) :: info
     integer(kind=intType) ::  nn, counter, i, j, k, l, sps
     ! Determine the size of a flat array needed to store w, P, ( and
     ! rlv, rev if necessary) with full double halos.

@@ -44,8 +44,8 @@ contains
     implicit none
 
     ! Input Parameters
-    integer(kind=intType), intent(in), dimension(nZipFam) :: zipperFamList
     integer(kind=intType), intent(in) :: nZipFam
+    integer(kind=intType), intent(in), dimension(nZipFam) :: zipperFamList
 
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, sps, level, iStr
