@@ -186,7 +186,7 @@ contains
              if (ierr /= CG_OK) &
                   call terminate("WriteCGNSSurfaceSol", &
                   "Something wrong when calling cg_base_write_f for &
-                  isoSurface")
+                  &isoSurface")
           end do solLoop2
        end if testRootProc2
 

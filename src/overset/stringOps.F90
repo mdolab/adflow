@@ -2038,8 +2038,8 @@ module stringOps
        open(unit=101, file="strings_pocket.dat", form='formatted')
        write(101,*) 'TITLE = "PocketStrings Data" '
 
-       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind &
+            &gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
        do i=1, nFullStrings
           ! Temporarily allocate otherID
           allocate(pocketStringsArr(i)%otherID(2, pocketStringsArr(i)%nNodes))
