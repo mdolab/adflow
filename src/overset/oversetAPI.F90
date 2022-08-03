@@ -1575,7 +1575,7 @@ contains
           sizes(8) = 0
           sizes(9) = 0
 
-999       FORMAT('domain.', I5.5,'proc.'I3.3)
+999       FORMAT('domain.', I5.5,'proc.', I3.3)
           zoneCounter = zoneCounter + 1
           write(zonename, 999) zoneCounter, myid
 

@@ -1364,8 +1364,8 @@ contains
     defaultFamName(UserDefined) = 'userDefined'
 
 101 format("CGNS Block ",I4,", boundary condition ",I4, ", of type ",a, &
-         " does not have a family. Based on the boundary condition type," &
-         " a name of: '", a, "' will be used.")
+         " does not have a family. Based on the boundary condition type, &
+         &a name of: '", a, "' will be used.")
 
     nFam = 0
     do i=1, size(cgnsDoms)
