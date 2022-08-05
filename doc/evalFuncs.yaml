@@ -8,87 +8,90 @@ restartFile:
 TODO: automate it so it reads adflowcost functions from pyadflow
 lift:
   desc: >
-    INSERT DESCRIPTION HERE
+    Surface pressures integrated in the direction of the lift index (see options page), Newtons
 
 drag:
   desc: >
-    INSERT DESCRIPTION HERE
+    Surface pressures integrated in the streamwise direction, Newtons
 
 cl:
   desc: >
-    INSERT DESCRIPTION HERE
+    Lift coefficient computed as lift over the product of dynamic pressure and refArea declared in AeroProblem(), unitless
 
 cd:
   desc: >
-    INSERT DESCRIPTION HERE
+    Drag coefficient computed as drag over the product of dynamic pressure and refArea declared in AeroProblem(), unitless 
 
 clp:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of the lift coefficient, unitless
+    TODO: I don't actually know this
 
 clv:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of the lift coefficient, unitless
+    TODO: I don't actually know this
 
 clm:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of the lift coefficient, unitless
+    TODO: What even is this
 
 cdp:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of the drag coefficient, unitless
 
 cdv:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of the drag coefficient, unitless
 
 cdm:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of the drag coefficient, unitless
 
 fx:
   desc: >
-    INSERT DESCRIPTION HERE
+    Force from surface pressures integrated x direction, Newtons
 
 fy:
   desc: >
-    INSERT DESCRIPTION HERE
+    Force from surface pressures integrated y direction, Newtons
 
 fz:
   desc: >
-    INSERT DESCRIPTION HERE
+    Force from surface pressures integrated z direction, Newtons
 
 cfx:
   desc: >
-    INSERT DESCRIPTION HERE
+    fx coefficient computed as fx over the product of dynamic pressure and refArea, unitless
 
 cfxp:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of fx coefficient, unitless
 
 cfxv:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of fx coefficient, unitless
 
 cfxm:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of fx coefficient, unitless
 
 cfy:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of fy coefficient, unitless
 
 cfyp:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of fy coefficient, unitless
 
 cfyv:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of fy coefficient, unitless
 
 cfym:
   desc: >
-    INSERT DESCRIPTION HERE
+    fy coefficient computed as fy over the product of dynamic pressure and refArea, unitless
 
 cfz:
   desc: >
