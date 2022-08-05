@@ -79,83 +79,83 @@ cfxm:
 
 cfy:
   desc: >
-    Momentum component of fy coefficient, unitless
+    fy coefficient computed as fy over the product of dynamic pressure and refArea, unitless
 
 cfyp:
   desc: >
-    Viscous component of fy coefficient, unitless
+    Pressure component of fy coefficient, unitless
 
 cfyv:
   desc: >
-    Pressure component of fy coefficient, unitless
+    Viscous component of fy coefficient, unitless
 
 cfym:
   desc: >
-    fy coefficient computed as fy over the product of dynamic pressure and refArea, unitless
+    Momentum component of fy coefficient, unitless
 
 cfz:
   desc: >
-    INSERT DESCRIPTION HERE
+    fz coefficient computed as fz over the product of dynamic pressure and refArea, unitless
 
 cfzp:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of fz coefficient, unitless
 
 cfzv:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of fz coefficient, unitless
 
 cfzm:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of fz coefficient, unitless
 
 mx:
   desc: >
-    INSERT DESCRIPTION HERE
+    Moment about x axis, origin if refAxis not specified, N-m 
 
 my:
   desc: >
-    INSERT DESCRIPTION HERE
+    Moment about y axis, origin if refAxis not specified, N-m 
 
 mz:
   desc: >
-    INSERT DESCRIPTION HERE
+    Moment about z axis, origin if refAxis not specified, N-m 
 
 cmx:
   desc: >
-    INSERT DESCRIPTION HERE
+    Moment coefficient about x axis, origin if refAxis not specified, unitless 
 
 cmy:
   desc: >
-    INSERT DESCRIPTION HERE
+    Moment coefficient about y axis, origin if refAxis not specified, unitless 
 
 cmz:
   desc: >
-    INSERT DESCRIPTION HERE
+    Moment coefficient about z axis, origin if refAxis not specified, unitless 
 
 cm0:
   desc: >
-    INSERT DESCRIPTION HERE
+    TODO: don't know this 
 
 cmzalpha:
   desc: >
-    INSERT DESCRIPTION HERE
+    Don't know either, Stability derivative, moment slope
 
 cmzalphadot:
   desc: >
-    INSERT DESCRIPTION HERE
+    Stability derivative? Pitch rate coef moment?
 
 cl0:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 clalpha:
   desc: >
-    INSERT DESCRIPTION HERE
+    Lift slope dcl/dalpha
 
 clalphadot:
   desc: >
-    INSERT DESCRIPTION HERE
+    Lift stability pitch derivative
 
 cfy0:
   desc: >
@@ -219,7 +219,7 @@ sepsensoravgz:
 
 cavitation:
   desc: >
-    INSERT DESCRIPTION HERE
+    Cavitation sensor, not to be confused with the cavitation number
 
 mdot:
   desc: >
