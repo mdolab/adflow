@@ -3118,9 +3118,7 @@ class ADFLOW(AeroSolver):
 
             # We need to do an all reduce here in case there's a BC failure
             # on any of the procs after we update the bc data.
-            self.adflow.killsignals.fatalfail = self.comm.allreduce(
-                bool(self.adflow.killsignals.fatalfail), op=MPI.LOR
-            )
+            self.adflow.killsignals.fatalfail = self.comm.allreduce(bool(self.adflow.killsignals.fatalfail), op=MPI.LOR)
 
             if self.getOption("equationMode").lower() == "time spectral":
                 self.adflow.preprocessingapi.updateperiodicinfoalllevels()
