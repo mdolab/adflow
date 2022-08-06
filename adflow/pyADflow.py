@@ -3117,13 +3117,10 @@ class ADFLOW(AeroSolver):
             self.adflow.initializeflow.updatebcdataalllevels()
 
             # We need to do an all reduce here in case there's a BC failure
-            # on any of the procs, but only if there's not already a mesh
-            # failure.
-            if not self.adflow.killsignals.routinefailed or not self.adflow.killsignals.fatafail:
-                self.adflow.killsignals.routinefailed = self.comm.allreduce(
-                    bool(self.adflow.killsignals.routinefailed), op=MPI.LOR
-                )
-                self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
+            # on any of the procs after we update the bc data.
+            self.adflow.killsignals.fatalfail = self.comm.allreduce(
+                bool(self.adflow.killsignals.fatalfail), op=MPI.LOR
+            )
 
             if self.getOption("equationMode").lower() == "time spectral":
                 self.adflow.preprocessingapi.updateperiodicinfoalllevels()
@@ -4002,25 +3999,22 @@ class ADFLOW(AeroSolver):
         if evalFuncs is None:
             evalFuncs = sorted(self.curAP.evalFuncs)
 
-        # Make sure we have a list that has only lower-cased entries
-        tmp = []
-        for f in evalFuncs:
-            tmp.append(f.lower())
-        evalFuncs = tmp
-
         # Generate the list of families we need for the functions in curAP
+        # We need to use a list to have the same ordering on every proc, but
+        # we need 'set like' behavior so we don't include duplicate group names.
         groupNames = []
         for f in evalFuncs:
             fl = f.lower()
             if fl in self.adflowCostFunctions:
                 groupName = self.adflowCostFunctions[fl][0]
-                groupNames.append(groupName)
+                if groupName not in groupNames:
+                    groupNames.append(groupName)
             if f in self.adflowUserCostFunctions:
                 for sf in self.adflowUserCostFunctions[f].functions:
                     groupName = self.adflowCostFunctions[sf.lower()][0]
-                    groupNames.append(groupName)
+                    if groupName not in groupNames:
+                        groupNames.append(groupName)
 
-        # groupNames = list(groupNames)
         if len(groupNames) == 0:
             famLists = self._expandGroupNames([self.allWallsGroup])
         else:
