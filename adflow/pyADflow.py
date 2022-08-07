@@ -4748,7 +4748,7 @@ class ADFLOW(AeroSolver):
 
         See Also
         --------
-        :func: setOption
+        :func:`ADFLOW.setOption`
         """
         if reset:
             self.rootChangedOptions = {}
@@ -5635,7 +5635,7 @@ class ADFLOW(AeroSolver):
         for key in iDV:
             iDV[key] = iDV[key] - 1
 
-            # Extra DVs for the Boundary condition variables
+        # Extra DVs for the boundary condition variables
         BCDV = ["pressure", "pressurestagnation", "temperaturestagnation", "thrust", "heat"]
 
         # This is ADflow's internal mapping for cost functions
