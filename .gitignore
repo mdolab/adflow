@@ -16,7 +16,7 @@ src/adjoint/temp*
 *.mod
 doc/_build/*
 doc/_static/doxydoc/*
-doc/tmp.rst
+doc/tmp*.rst
 *.fmt
 *.bak
 src/build/adflow_project.dep

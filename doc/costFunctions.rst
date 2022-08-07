@@ -3,4 +3,4 @@
 Cost Functions
 ==============
 
-.. optionslist:: adflow.pyADflow.ADFLOW
+.. costfunctionslist:: adflow.pyADflow.ADFLOW

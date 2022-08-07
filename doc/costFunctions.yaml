@@ -1,11 +1,3 @@
-
-restartFile:
-  desc: >
-    Accepts a single string or a list of strings pointing to a CGNS file(s) which must be a volume solution file that was written by ADflow.
-    For steady state restart, one CGNS file is sufficient and does not need to be provided as a list with a single item.
-    For unsteady restart, you typically provide a list with 2 items for second order restart.
-
-TODO: automate it so it reads adflowcost functions from pyadflow
 lift:
   desc: >
     Surface pressures integrated in the direction of the lift index (see options page), Newtons

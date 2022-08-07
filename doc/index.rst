@@ -19,6 +19,7 @@ multi-block and overset 3D CFD solver.
    install
    tutorial
    options
+   costFunctions
    API
    solvers
    performance
