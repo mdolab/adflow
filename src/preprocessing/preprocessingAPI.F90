@@ -906,7 +906,7 @@ contains
 
              ! Check for symmetry boundary condition.
 
-             symmetry: if(BCType(mm) == symm) then
+             symmetry: if(BCType(mm) == symm .or. BCType(mm) == antisymm) then
 
                 ! Determine the block face on which this subface is
                 ! located and set some variables accordingly.
@@ -1146,7 +1146,7 @@ contains
              ! The actual correction of the coordinates only takes
              ! place for symmetry planes.
 
-             testSymmetry: if(BCType(mm) == Symm) then
+             testSymmetry: if(BCType(mm) == Symm .or. BCType(mm) == antisymm) then
                 ! Set some variables, depending on the block face on
                 ! which the subface is located.
 
@@ -1463,7 +1463,7 @@ contains
     ! scatterd based on groups of BC types. Specifically the following groups:
 
     ! 1. Walls : EulerWall, NSWallAdiabatic, NSWallIsothermal
-    ! 2. Symm : Symm, SymmPolar
+    ! 2. Symm : Symm, AntiSymm, SymmPolar
     ! 3. Inflow/Outflow : subSonicInflow, subSonicOutflow, supersonicInflow, superSonicOutflow
     ! 4. Farfield : Farfield
     ! 5. Overset : OversetouterBound
@@ -1504,7 +1504,7 @@ contains
                       end if
 
                    case (iBCGroupSymm)
-                      if (BCType(mm) == Symm .or. BCType(mm) == SymmPolar) then
+                      if (BCType(mm) == Symm .or. BCType(mm) == SymmPolar .or. BCType(mm) == AntiSymm) then
                          localFlag(iFam) = 1
                       end if
 

@@ -2793,6 +2793,9 @@ contains
        case ("BCDomainInterfaceTotal")
           internalBC = DomainInterfaceTotal
 
+       case ("BCAntiSymmetry")
+          internalBC = AntiSymm
+
        case default
           internalBC = bcNull
 

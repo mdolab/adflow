@@ -276,7 +276,8 @@ module constants
   integer(kind=intType), parameter :: DomainInterfaceP      = -22
   integer(kind=intType), parameter :: DomainInterfaceRho    = -23
   integer(kind=intType), parameter :: DomainInterfaceTotal  = -24
-  integer(kind=intType), parameter :: BCNotValid            = -25
+  integer(kind=intType), parameter :: AntiSymm             =  -25
+  integer(kind=intType), parameter :: BCNotValid            = -26
   !
   !      Number of actual boundary conditions supported by the code
   !      This number refers to bocos, not flow-through BCs

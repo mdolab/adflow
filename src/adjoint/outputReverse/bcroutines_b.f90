@@ -49,6 +49,23 @@ contains
       end do
     end if
 ! ------------------------------------
+!  antisymmetry boundary condition
+! ------------------------------------
+    do nn=1,nbocos
+      if (bctype(nn) .eq. antisymm) then
+        call setbcpointers(nn, .false.)
+        call bcantisymm1sthalo(nn)
+      end if
+    end do
+    if (secondhalo) then
+      do nn=1,nbocos
+        if (bctype(nn) .eq. antisymm) then
+          call setbcpointers(nn, .false.)
+          call bcantisymm2ndhalo(nn)
+        end if
+      end do
+    end if
+! ------------------------------------
 !  symmetry polar boundary condition
 ! ------------------------------------
     do nn=1,nbocos
@@ -416,6 +433,348 @@ contains
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do
   end subroutine bcsymm2ndhalo
+!  differentiation of bcantisymm1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: pinf winf *rev1 *rev2 *pp1
+!                *pp2 *rlv1 *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   with respect to varying inputs: pinf winf *rev1 *rev2 *pp1
+!                *pp2 *rlv1 *rlv2 *ww1 *ww2 *(*bcdata.norm)
+!   rw status of diff variables: pinf:incr winf:incr *rev1:in-out
+!                *rev2:incr *pp1:in-out *pp2:incr *rlv1:in-out
+!                *rlv2:incr *ww1:in-out *ww2:incr *(*bcdata.norm):incr
+!   plus diff mem management of: rev1:in rev2:in pp1:in pp2:in
+!                rlv1:in rlv2:in ww1:in ww2:in bcdata:in *bcdata.norm:in
+  subroutine bcantisymm1sthalo_b(nn)
+!  bcantisymm1sthalo applies the antisymmetry boundary conditions to a
+!  block.  * it is assumed that the pointers in blockpointers are
+!  already set to the correct block on the correct grid level.
+!  it should only be applied for high-speed near free-face operation,
+!  unless you are clear what you use it for
+!
+!  in case also the second halo must be set, a second loop is
+!  execulted calling bcsymm2ndhalo. this is the only correct way
+!  in case the block contains only 1 cell between two symmetry
+!  planes, i.e. a 2d problem.
+    use constants
+    use blockpointers, only : bcdata, bcdatad
+    use flowvarrefstate, only : viscous, eddymodel, pinf, pinfd, winf,&
+&   winfd
+    use bcpointers_b, only : gamma1, gamma2, ww1, ww1d, ww2, ww2d, pp1, &
+&   pp1d, pp2, pp2d, rlv1, rlv1d, rlv2, rlv2d, istart, jstart, isize, &
+&   jsize, rev1, rev1d, rev2, rev2d
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    real(kind=realtype) :: vnd
+    real(kind=realtype), dimension(5) :: dww2
+    real(kind=realtype), dimension(5) :: dww2d
+    intrinsic mod
+    integer :: branch
+    real(kind=realtype) :: tempd
+    dww2d = 0.0_8
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! determine twice the normal velocity component,
+! which must be substracted from the donor velocity
+! to obtain the halo velocity.
+      dww2(irho) = ww2(i, j, irho) - winf(irho)
+      dww2(ivx) = ww2(i, j, ivx) - winf(ivx)
+      dww2(ivy) = ww2(i, j, ivy) - winf(ivy)
+      dww2(ivz) = ww2(i, j, ivz) - winf(ivz)
+      dww2(irhoe) = ww2(i, j, irhoe) - winf(irhoe)
+      vn = two*(dww2(ivx)*bcdata(nn)%norm(i, j, 1)+dww2(ivy)*bcdata(nn)%&
+&       norm(i, j, 2)+dww2(ivz)*bcdata(nn)%norm(i, j, 3))
+! determine the flow variables in the halo cell.
+! set the pressure and gamma and possibly the
+! laminar and eddy viscosity in the halo.
+      if (viscous) then
+        call pushcontrol1b(0)
+      else
+        call pushcontrol1b(1)
+      end if
+      if (eddymodel) then
+        rev2d(i, j) = rev2d(i, j) - rev1d(i, j)
+        rev1d(i, j) = 0.0_8
+      end if
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        rlv2d(i, j) = rlv2d(i, j) - rlv1d(i, j)
+        rlv1d(i, j) = 0.0_8
+      end if
+      pinfd = pinfd + 2*pp1d(i, j)
+      pp2d(i, j) = pp2d(i, j) - pp1d(i, j)
+      pp1d(i, j) = 0.0_8
+      winfd(irhoe) = winfd(irhoe) + ww1d(i, j, irhoe)
+      dww2d(irhoe) = dww2d(irhoe) - ww1d(i, j, irhoe)
+      ww1d(i, j, irhoe) = 0.0_8
+      winfd(ivz) = winfd(ivz) + ww1d(i, j, ivz)
+      winfd(ivy) = winfd(ivy) + ww1d(i, j, ivy)
+      winfd(ivx) = winfd(ivx) + ww1d(i, j, ivx)
+      winfd(irho) = winfd(irho) + ww1d(i, j, irho)
+      dww2d(irho) = dww2d(irho) - ww1d(i, j, irho)
+      ww1d(i, j, irho) = 0.0_8
+      vnd = bcdata(nn)%norm(i, j, 3)*ww1d(i, j, ivz)
+      bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + vn*ww1d(i&
+&       , j, ivz)
+      dww2d(ivz) = dww2d(ivz) - ww1d(i, j, ivz)
+      ww1d(i, j, ivz) = 0.0_8
+      vnd = vnd + bcdata(nn)%norm(i, j, 2)*ww1d(i, j, ivy)
+      bcdatad(nn)%norm(i, j, 2) = bcdatad(nn)%norm(i, j, 2) + vn*ww1d(i&
+&       , j, ivy)
+      dww2d(ivy) = dww2d(ivy) - ww1d(i, j, ivy)
+      ww1d(i, j, ivy) = 0.0_8
+      vnd = vnd + bcdata(nn)%norm(i, j, 1)*ww1d(i, j, ivx)
+      bcdatad(nn)%norm(i, j, 1) = bcdatad(nn)%norm(i, j, 1) + vn*ww1d(i&
+&       , j, ivx)
+      tempd = two*vnd
+      dww2d(ivx) = dww2d(ivx) + bcdata(nn)%norm(i, j, 1)*tempd - ww1d(i&
+&       , j, ivx)
+      ww1d(i, j, ivx) = 0.0_8
+      bcdatad(nn)%norm(i, j, 1) = bcdatad(nn)%norm(i, j, 1) + dww2(ivx)*&
+&       tempd
+      dww2d(ivy) = dww2d(ivy) + bcdata(nn)%norm(i, j, 2)*tempd
+      bcdatad(nn)%norm(i, j, 2) = bcdatad(nn)%norm(i, j, 2) + dww2(ivy)*&
+&       tempd
+      dww2d(ivz) = dww2d(ivz) + bcdata(nn)%norm(i, j, 3)*tempd
+      bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + dww2(ivz)*&
+&       tempd
+      ww2d(i, j, irhoe) = ww2d(i, j, irhoe) + dww2d(irhoe)
+      winfd(irhoe) = winfd(irhoe) - dww2d(irhoe)
+      dww2d(irhoe) = 0.0_8
+      ww2d(i, j, ivz) = ww2d(i, j, ivz) + dww2d(ivz)
+      winfd(ivz) = winfd(ivz) - dww2d(ivz)
+      dww2d(ivz) = 0.0_8
+      ww2d(i, j, ivy) = ww2d(i, j, ivy) + dww2d(ivy)
+      winfd(ivy) = winfd(ivy) - dww2d(ivy)
+      dww2d(ivy) = 0.0_8
+      ww2d(i, j, ivx) = ww2d(i, j, ivx) + dww2d(ivx)
+      winfd(ivx) = winfd(ivx) - dww2d(ivx)
+      dww2d(ivx) = 0.0_8
+      ww2d(i, j, irho) = ww2d(i, j, irho) + dww2d(irho)
+      winfd(irho) = winfd(irho) - dww2d(irho)
+      dww2d(irho) = 0.0_8
+    end do
+  end subroutine bcantisymm1sthalo_b
+  subroutine bcantisymm1sthalo(nn)
+!  bcantisymm1sthalo applies the antisymmetry boundary conditions to a
+!  block.  * it is assumed that the pointers in blockpointers are
+!  already set to the correct block on the correct grid level.
+!  it should only be applied for high-speed near free-face operation,
+!  unless you are clear what you use it for
+!
+!  in case also the second halo must be set, a second loop is
+!  execulted calling bcsymm2ndhalo. this is the only correct way
+!  in case the block contains only 1 cell between two symmetry
+!  planes, i.e. a 2d problem.
+    use constants
+    use blockpointers, only : bcdata
+    use flowvarrefstate, only : viscous, eddymodel, pinf, winf
+    use bcpointers_b, only : gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, &
+&   rlv2, istart, jstart, isize, jsize, rev1, rev2
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    real(kind=realtype), dimension(5) :: dww2
+    intrinsic mod
+! loop over the generic subface to set the state in the
+! 1-st level halos
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! determine twice the normal velocity component,
+! which must be substracted from the donor velocity
+! to obtain the halo velocity.
+      dww2(irho) = ww2(i, j, irho) - winf(irho)
+      dww2(ivx) = ww2(i, j, ivx) - winf(ivx)
+      dww2(ivy) = ww2(i, j, ivy) - winf(ivy)
+      dww2(ivz) = ww2(i, j, ivz) - winf(ivz)
+      dww2(irhoe) = ww2(i, j, irhoe) - winf(irhoe)
+      vn = two*(dww2(ivx)*bcdata(nn)%norm(i, j, 1)+dww2(ivy)*bcdata(nn)%&
+&       norm(i, j, 2)+dww2(ivz)*bcdata(nn)%norm(i, j, 3))
+! determine the flow variables in the halo cell.
+      ww1(i, j, ivx) = -dww2(ivx) + vn*bcdata(nn)%norm(i, j, 1)
+      ww1(i, j, ivy) = -dww2(ivy) + vn*bcdata(nn)%norm(i, j, 2)
+      ww1(i, j, ivz) = -dww2(ivz) + vn*bcdata(nn)%norm(i, j, 3)
+      ww1(i, j, irho) = -dww2(irho) + winf(irho)
+      ww1(i, j, ivx) = winf(ivx) + ww1(i, j, ivx)
+      ww1(i, j, ivy) = winf(ivy) + ww1(i, j, ivy)
+      ww1(i, j, ivz) = winf(ivz) + ww1(i, j, ivz)
+      ww1(i, j, irhoe) = -dww2(irhoe) + winf(irhoe)
+! set the pressure and gamma and possibly the
+! laminar and eddy viscosity in the halo.
+      gamma1(i, j) = gamma2(i, j)
+      pp1(i, j) = pinf - (pp2(i, j)-pinf)
+      if (viscous) rlv1(i, j) = -rlv2(i, j)
+      if (eddymodel) rev1(i, j) = -rev2(i, j)
+    end do
+  end subroutine bcantisymm1sthalo
+!  differentiation of bcantisymm2ndhalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: pinf winf *rev0 *rev3 *pp0
+!                *pp3 *rlv0 *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!   with respect to varying inputs: pinf winf *rev0 *rev3 *pp0
+!                *pp3 *rlv0 *rlv3 *ww0 *ww3 *(*bcdata.norm)
+!   rw status of diff variables: pinf:incr winf:incr *rev0:in-out
+!                *rev3:incr *pp0:in-out *pp3:incr *rlv0:in-out
+!                *rlv3:incr *ww0:in-out *ww3:incr *(*bcdata.norm):incr
+!   plus diff mem management of: rev0:in rev3:in pp0:in pp3:in
+!                rlv0:in rlv3:in ww0:in ww3:in bcdata:in *bcdata.norm:in
+  subroutine bcantisymm2ndhalo_b(nn)
+!  bcsymm2ndhalo applies the symmetry boundary conditions to a
+!  block for the 2nd halo. this routine is separate as it makes
+!  ad slightly easier.
+    use constants
+    use blockpointers, only : bcdata, bcdatad
+    use flowvarrefstate, only : viscous, eddymodel, pinf, pinfd, winf,&
+&   winfd
+    use bcpointers_b, only : gamma0, gamma3, ww0, ww0d, ww3, ww3d, pp0, &
+&   pp0d, pp3, pp3d, rlv0, rlv0d, rlv3, rlv3d, rev0, rev0d, rev3, rev3d,&
+&   istart, jstart, isize, jsize
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    real(kind=realtype) :: vnd
+    real(kind=realtype), dimension(5) :: dww3
+    real(kind=realtype), dimension(5) :: dww3d
+    intrinsic mod
+    integer :: branch
+    real(kind=realtype) :: tempd
+    dww3d = 0.0_8
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+      dww3(irho) = ww3(i, j, irho) - winf(irho)
+      dww3(ivx) = ww3(i, j, ivx) - winf(ivx)
+      dww3(ivy) = ww3(i, j, ivy) - winf(ivy)
+      dww3(ivz) = ww3(i, j, ivz) - winf(ivz)
+      dww3(irhoe) = ww3(i, j, irhoe) - winf(irhoe)
+      vn = two*(dww3(ivx)*bcdata(nn)%norm(i, j, 1)+dww3(ivy)*bcdata(nn)%&
+&       norm(i, j, 2)+dww3(ivz)*bcdata(nn)%norm(i, j, 3))
+! determine the flow variables in the halo cell.
+! set the pressure and gamma and possibly the
+! laminar and eddy viscosity in the halo.
+      if (viscous) then
+        call pushcontrol1b(0)
+      else
+        call pushcontrol1b(1)
+      end if
+      if (eddymodel) then
+        rev3d(i, j) = rev3d(i, j) - rev0d(i, j)
+        rev0d(i, j) = 0.0_8
+      end if
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        rlv3d(i, j) = rlv3d(i, j) - rlv0d(i, j)
+        rlv0d(i, j) = 0.0_8
+      end if
+      pinfd = pinfd + 2*pp0d(i, j)
+      pp3d(i, j) = pp3d(i, j) - pp0d(i, j)
+      pp0d(i, j) = 0.0_8
+      winfd(irhoe) = winfd(irhoe) + ww0d(i, j, irhoe)
+      dww3d(irhoe) = dww3d(irhoe) - ww0d(i, j, irhoe)
+      ww0d(i, j, irhoe) = 0.0_8
+      winfd(ivz) = winfd(ivz) + ww0d(i, j, ivz)
+      winfd(ivy) = winfd(ivy) + ww0d(i, j, ivy)
+      winfd(ivx) = winfd(ivx) + ww0d(i, j, ivx)
+      winfd(irho) = winfd(irho) + ww0d(i, j, irho)
+      dww3d(irho) = dww3d(irho) - ww0d(i, j, irho)
+      ww0d(i, j, irho) = 0.0_8
+      vnd = bcdata(nn)%norm(i, j, 3)*ww0d(i, j, ivz)
+      bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + vn*ww0d(i&
+&       , j, ivz)
+      dww3d(ivz) = dww3d(ivz) - ww0d(i, j, ivz)
+      ww0d(i, j, ivz) = 0.0_8
+      vnd = vnd + bcdata(nn)%norm(i, j, 2)*ww0d(i, j, ivy)
+      bcdatad(nn)%norm(i, j, 2) = bcdatad(nn)%norm(i, j, 2) + vn*ww0d(i&
+&       , j, ivy)
+      dww3d(ivy) = dww3d(ivy) - ww0d(i, j, ivy)
+      ww0d(i, j, ivy) = 0.0_8
+      vnd = vnd + bcdata(nn)%norm(i, j, 1)*ww0d(i, j, ivx)
+      bcdatad(nn)%norm(i, j, 1) = bcdatad(nn)%norm(i, j, 1) + vn*ww0d(i&
+&       , j, ivx)
+      tempd = two*vnd
+      dww3d(ivx) = dww3d(ivx) + bcdata(nn)%norm(i, j, 1)*tempd - ww0d(i&
+&       , j, ivx)
+      ww0d(i, j, ivx) = 0.0_8
+      bcdatad(nn)%norm(i, j, 1) = bcdatad(nn)%norm(i, j, 1) + dww3(ivx)*&
+&       tempd
+      dww3d(ivy) = dww3d(ivy) + bcdata(nn)%norm(i, j, 2)*tempd
+      bcdatad(nn)%norm(i, j, 2) = bcdatad(nn)%norm(i, j, 2) + dww3(ivy)*&
+&       tempd
+      dww3d(ivz) = dww3d(ivz) + bcdata(nn)%norm(i, j, 3)*tempd
+      bcdatad(nn)%norm(i, j, 3) = bcdatad(nn)%norm(i, j, 3) + dww3(ivz)*&
+&       tempd
+      ww3d(i, j, irhoe) = ww3d(i, j, irhoe) + dww3d(irhoe)
+      winfd(irhoe) = winfd(irhoe) - dww3d(irhoe)
+      dww3d(irhoe) = 0.0_8
+      ww3d(i, j, ivz) = ww3d(i, j, ivz) + dww3d(ivz)
+      winfd(ivz) = winfd(ivz) - dww3d(ivz)
+      dww3d(ivz) = 0.0_8
+      ww3d(i, j, ivy) = ww3d(i, j, ivy) + dww3d(ivy)
+      winfd(ivy) = winfd(ivy) - dww3d(ivy)
+      dww3d(ivy) = 0.0_8
+      ww3d(i, j, ivx) = ww3d(i, j, ivx) + dww3d(ivx)
+      winfd(ivx) = winfd(ivx) - dww3d(ivx)
+      dww3d(ivx) = 0.0_8
+      ww3d(i, j, irho) = ww3d(i, j, irho) + dww3d(irho)
+      winfd(irho) = winfd(irho) - dww3d(irho)
+      dww3d(irho) = 0.0_8
+    end do
+  end subroutine bcantisymm2ndhalo_b
+  subroutine bcantisymm2ndhalo(nn)
+!  bcsymm2ndhalo applies the symmetry boundary conditions to a
+!  block for the 2nd halo. this routine is separate as it makes
+!  ad slightly easier.
+    use constants
+    use blockpointers, only : bcdata
+    use flowvarrefstate, only : viscous, eddymodel, pinf, winf
+    use bcpointers_b, only : gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, &
+&   rlv3, rev0, rev3, istart, jstart, isize, jsize
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    real(kind=realtype), dimension(5) :: dww3
+    intrinsic mod
+! if we need the second halo, do everything again, but using ww0,
+! ww3 etc instead of ww2 and ww1.
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+      dww3(irho) = ww3(i, j, irho) - winf(irho)
+      dww3(ivx) = ww3(i, j, ivx) - winf(ivx)
+      dww3(ivy) = ww3(i, j, ivy) - winf(ivy)
+      dww3(ivz) = ww3(i, j, ivz) - winf(ivz)
+      dww3(irhoe) = ww3(i, j, irhoe) - winf(irhoe)
+      vn = two*(dww3(ivx)*bcdata(nn)%norm(i, j, 1)+dww3(ivy)*bcdata(nn)%&
+&       norm(i, j, 2)+dww3(ivz)*bcdata(nn)%norm(i, j, 3))
+! determine the flow variables in the halo cell.
+      ww0(i, j, ivx) = -dww3(ivx) + vn*bcdata(nn)%norm(i, j, 1)
+      ww0(i, j, ivy) = -dww3(ivy) + vn*bcdata(nn)%norm(i, j, 2)
+      ww0(i, j, ivz) = -dww3(ivz) + vn*bcdata(nn)%norm(i, j, 3)
+      ww0(i, j, irho) = -dww3(irho) + winf(irho)
+      ww0(i, j, ivx) = winf(ivx) + ww0(i, j, ivx)
+      ww0(i, j, ivy) = winf(ivy) + ww0(i, j, ivy)
+      ww0(i, j, ivz) = winf(ivz) + ww0(i, j, ivz)
+      ww0(i, j, irhoe) = -dww3(irhoe) + winf(irhoe)
+! set the pressure and gamma and possibly the
+! laminar and eddy viscosity in the halo.
+      gamma0(i, j) = gamma3(i, j)
+      pp0(i, j) = pinf - (pp3(i, j)-pinf)
+      if (viscous) rlv0(i, j) = -rlv3(i, j)
+      if (eddymodel) rev0(i, j) = -rev3(i, j)
+    end do
+  end subroutine bcantisymm2ndhalo
 !  differentiation of bcsymmpolar1sthalo in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: *xx *rev1 *rev2 *pp1 *pp2 *rlv1
 !                *rlv2 *ww1 *ww2

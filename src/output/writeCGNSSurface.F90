@@ -918,6 +918,8 @@ contains
             select case (cgnsDoms(zone)%bocoInfo(subface)%BCType)
             case (Symm)
                zonename = "Symmetry"
+            case (AntiSymm)
+               zonename = "AntiSymmetry"
             case (SymmPolar)
                zonename = "SymmetryPolar"
             case (NSWallAdiabatic)
