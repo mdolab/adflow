@@ -22,7 +22,7 @@ clp:
 clv:
   desc: >
     Viscous component of the lift coefficient, unitless
-    TODO: I don't actually know this
+    TODO: I don't actually know if this is correct or if it means lift considering viscosity, same applies to all other funcs with 'viscous in name'
 
 clm:
   desc: >
@@ -151,63 +151,63 @@ clalphadot:
 
 cfy0:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cfyalpha:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cfyalphddot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cd0:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cdalpha:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cdalphadot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cmzq:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cmzqdot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 clq:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 clqdot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cbend:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 sepsensor:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 sepsensoravgx:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 sepsensoravgy:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 sepsensoravgz:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cavitation:
   desc: >
@@ -215,116 +215,116 @@ cavitation:
 
 mdot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 mavgptot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 aavgptot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 aavgps:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 mavgttot:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 mavgps:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 mavgmn:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 area:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 axismoment:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 flowpower:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 forcexpressure:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of force in x direction
 
 forceypressure:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of force in y direction
 
 forcezpressure:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of force in z direction
 
 forcexviscous:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of force in x direction
 
 forceyviscous:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of force in y direction
 
 forcezviscous:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous component of force in z direction
 
 forcexmomentum:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of force in x direction
 
 forceymomentum:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of force in y direction
 
 forcezmomentum:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum component of force in z direction
 
 dragpressure:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure drag
 
 dragviscous:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous drag
 
 dragmomentum:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum deficit drag?
 
 liftpressure:
   desc: >
-    INSERT DESCRIPTION HERE
+    Pressure component of lift
 
 liftviscous:
   desc: >
-    INSERT DESCRIPTION HERE
+    Viscous lift
 
 liftmomentum:
   desc: >
-    INSERT DESCRIPTION HERE
+    Momentum lift (due to changing momentum of flow?)
 
 mavgvx:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 mavgvy:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 mavgvz:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
 
 cperror2:
   desc: >
-    INSERT DESCRIPTION HERE
+    ??
