@@ -974,7 +974,7 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
-       funcValues = zero
+       funcValues(:, iGroup) = zero
        localVal = zero
 
        ! compute the current cp min value for the cavitation computation with KS aggregation

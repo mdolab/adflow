@@ -1394,6 +1394,7 @@ contains
     use utils, only : setPointers
     use flowUtils, only : computePtot
     use inputCostFunctions
+    use cgnsGrid, only : cgnsDoms,cgnsNDom ! see subroutine updateRotationRate in preprocessingAPI.F90
     implicit none
     !
     !      Subroutine arguments.
@@ -1436,6 +1437,12 @@ contains
     real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
     real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
+    real(kind=realType) :: uInfDim2 ! MachCoeff-derived (Uinf*Uref)**2
+    real(kind=realType) :: rot_speed2 ! norm of wCrossR squared
+    real(kind=realType),Dimension(3) :: r_ ! spanwise position for given point
+    real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
+    real(kind=realType),Dimension(3) :: wCrossR ! rotationrate cross radius
+    real(kind=realType), dimension(:,:,:), pointer :: xx1, xx2 ! for the coords
     ! The original i,j beging of the local block in the entire cgns block.
     real(kind=realType) :: subface_jBegOr, subface_jEndOr, subface_iBegOr, subface_iEndOr
 
@@ -1504,6 +1511,24 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
+       ! We need to get the mesh coordinates further down in order to compute
+       ! the correct Cp-normalisation for rotational setups.
+       ! The flow variables, w(0:ib,0:jb,0:kb,1:nw), we point to
+       ! below uses what is defined in type blockType in block.F90 as
+       !   !  ib, jb, kb - Block integer dimensions for double halo
+       !   !               cell-centered quantities.
+       ! BUT the mesh, x(0:ie,0:je,0:ke,3), is defined with the single halos:
+       !   !  ie, je, ke - Block integer dimensions for single halo
+       !   !               cell-centered quantities.
+       ! This explains why in the (iMax)-case we use:
+       !        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
+       ! namely, we use single halos for w(:,:,:,:) instead of the
+       ! usual double halos...
+
+
+       ! we don't have double halo structure for x, so we start from 0
+       xx1    => x(0,:,:,:);   xx2    => x(1,:,:,:) ! 1 is our 2 since we are
+       ! single haloed...
        ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
        pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
        ss => si(1,:,:,:) ; fact = -one
@@ -1536,6 +1561,8 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
+       xx1    => x(ie-1,:,:,:);  xx2   => x(il-1,:,:,:)
+       !
        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
        ss => si(il,:,:,:) ; fact = one
 
@@ -1568,6 +1595,8 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
+       xx1    => x(:,0,:,:);  xx2   => x(:,1,:,:)
+       !
        ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
        ss => sj(:,1,:,:) ; fact = -one
 
@@ -1601,6 +1630,8 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
+       xx1    => x(:,je-1,:,:);  xx2   => x(:,jl-1,:,:)
+       !
        ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
        ss => sj(:,jl,:,:); fact = one
 
@@ -1633,6 +1664,8 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
+       xx1    => x(:,:,0,:);  xx2   => x(:,:,1,:)
+       !
        ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
        ss => sk(:,:,1,:);  fact = -one
 
@@ -1665,6 +1698,8 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
+       xx1    => x(:,:,ke-1,:);  xx2   => x(:,:,kl-1,:)
+       !
        ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
        ss => sk(:,:,kl,:);  fact = one
 
@@ -1823,19 +1858,49 @@ contains
        !================================================================
 
     case (cgnsCp)
-
-       ! Factor multiplying p-pInf
-
-       fact = two/(gammaInf*pInf*MachCoef*MachCoef)
+       ! Calclulating the square of (dimensional) inflow velocity from MachCoef
+       !
+       ! Same formula used in referenceState (see initializeFlow.F90),
+       ! multiplied by the square of the reference velocity (uRef).
+       ! MachCoef is initialized in inputParamRoutines.F90 and can also be passed from the python layer
+       ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module
+       ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
+       ! (see initializeFlow.F90).
+       uInfDim2 = (MachCoef*MachCoef*gammaInf*pInf/rhoInf)*uRef*uRef
 
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
              nn = nn + 1
-             buffer(nn) = fact*(half*(pp1(i,j) + pp2(i,j)) - pInf)
+             ! Get frame rotation rate and local surface coordinates
+             ! by averaging wall and halo cell centers
+             ! (xx1,xx2 are pointers to the mesh coordinates, see block.F90)
+             rrate_=cgnsdoms(1)%rotrate
+             r_(1) =   (half*(xx1(i,j,1) + xx2(i,j,1)))
+             r_(2) =   (half*(xx1(i,j,2) + xx2(i,j,2)))
+             r_(3) =   (half*(xx1(i,j,3) + xx2(i,j,3)))
+             ! calc cross-product between rotation rate and r_
+             ! to obtain local apparent wall velocity
+             wCrossR(1) = rrate_(2)*r_(3) - rrate_(3)*r_(2)
+             wCrossR(2) = rrate_(3)*r_(1) - rrate_(1)*r_(3)
+             wCrossR(3) = rrate_(1)*r_(2) - rrate_(2)*r_(1)
+             rot_speed2 = wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2
+             buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
+                  / (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+             ! Comments on the Cp (buffer(nn)) calculation above:
+             !
+             ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
+             !
+             ! Numerator (dimensionalized):
+             !     (P_i-P_0) -> (half*(pp1(i,j)+pp2(i,j))-pInf) * pRef
+             !     P_i is given by the average of the wall and halo cell
+             !     (see comment at the beginning of storeSurfsolInBuffer)
+             !     pp1, pp2 are (nondimensional) pressure pointers, e.g. pp1 => p(1,1:,1:)
+             !
+             ! Denominator (dimensionalized): (0.5*rho*(U_a)^2) ->
+             !       (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+             !       The local velocity term includes the rotational components!
           enddo
        enddo
-
-       !===============================================================
 
     case (cgnsPtotloss)
 
@@ -2140,8 +2205,8 @@ contains
              ! Get local pressure
              plocal = half*(pp1(i,j) + pp2(i,j))
 
-             sensor1 = (-(fact)*(plocal-pInf))- cavitationsensor
-             sensor1 = one/(one + exp(-2*10*sensor1))
+             sensor1 = (-(fact)*(plocal-pInf))- cavitationnumber
+             sensor1 = (sensor1**cavExponent)/(one + exp(2*cavSensorSharpness*(-sensor1 + cavSensorOffset)))
              buffer(nn) = sensor1
              !print*, sensor
           enddo

@@ -1671,6 +1671,7 @@ module ANKSolver
   real(kind=realType)   :: ANK_switchTol
   real(kind=realType)   :: ANK_divTol = 10
   logical :: ANK_useTurbDADI
+  logical :: ANK_useApproxSA
   real(kind=realType) :: ANK_turbcflscale
   logical :: ANK_useFullVisc
   logical :: ANK_ADPC
@@ -1685,6 +1686,7 @@ module ANKSolver
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
   real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
   real(kind=realType) :: ANK_pcUpdateTol
+  real(kind=realType) :: ANK_pcUpdateCutoff
   real(kind=realType) :: lambda
   logical :: ANK_solverSetup=.False.
   integer(kind=intTYpe) :: ANK_iter
@@ -3472,6 +3474,10 @@ contains
             rtol = min(ANK_rtol, rtol)
         end if
 
+        ! also check if we are using approxSA always
+        if (ANK_useApproxSA) &
+           approxSA = .True.
+
         ! Record the total residual and relative convergence for next iteration
         totalR_old = totalR
         rtolLast = rtol
@@ -3530,6 +3536,10 @@ contains
             orderturb = orderturbsave
             approxSA = .False.
         end if
+
+        ! put back the approxsa flag if we were using it
+        if (ANK_useApproxSA) &
+          approxSA = .False.
 
         ! Compute the maximum step that will limit the change
         ! in SA variable to some user defined fraction.
@@ -3701,7 +3711,7 @@ contains
     real(kind=realType) :: atol, val, v2, factK, gm1
     real(kind=alwaysRealType) :: rtol, totalR_dummy, linearRes, norm
     real(kind=alwaysRealType) :: resHist(ANK_maxIter+1)
-    real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old
+    real(kind=alwaysRealType) :: unsteadyNorm, unsteadyNorm_old, rel_pcUpdateTol
     logical :: correctForK, LSFailed
 
     ! Enter this check if this is the first ANK step OR we are switching to the coupled ANK solver
@@ -3767,13 +3777,28 @@ contains
        ANK_iter = ANK_iter + 1
     end if
 
+    ! figure out if we want to scale the ANKPCUpdateTol
+    if (.not. ANK_coupled) then
+      rel_pcUpdateTol = ANK_pcUpdateTol
+    else
+      ! for coupled ANK, we dont want to update the PC as frequently,
+      ! so we reduce the relative tol by 4 orders of magnitude,
+      ! *if* we are converged past pc update cutoff wrt free stream already
+      if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
+         rel_pcUpdateTol = ANK_pcUpdateTol * 1e-4_realType
+      else
+         ! if we are not that far down converged, use the option directly
+         rel_pcUpdateTol = ANK_pcUpdateTol
+      end if
+    end if
+
     ! Compute the norm of rVec, which is identical to the
     ! norm of the unsteady residual vector.
     call VecNorm(rVec, NORM_2, unsteadyNorm_old, ierr)
     call EChk(ierr, __FILE__, __LINE__)
 
     ! Determine if if we need to form the Preconditioner
-    if (mod(ANK_iter, ANK_jacobianLag) == 0 .or. totalR/totalR_pcUpdate < ANK_pcUpdateTol) then
+    if (mod(ANK_iter, ANK_jacobianLag) == 0 .or. totalR/totalR_pcUpdate < rel_pcUpdateTol) then
 
        ! First of all, update the minimum cfl wrt the overall convergence
        ANK_CFLMin = min(ANK_CFLLimit, ANK_CFLMinBase*(totalR0/totalR)**ANK_CFLExponent)
@@ -3888,6 +3913,10 @@ contains
        rtol = min(ANK_rtol, rtol)
     end if
 
+    ! also check if we are using approxSA always
+    if (ANK_useApproxSA) &
+      approxSA = .True.
+
     ! Record the total residual and relative convergence for next iteration
     totalR_old = totalR
     rtolLast = rtol
@@ -3951,6 +3980,10 @@ contains
        orderturb = orderturbsave
 
     end if
+
+   ! put back the approxsa flag if we were using it
+    if (ANK_useApproxSA) &
+      approxSA = .False.
 
     ! Compute the maximum step that will limit the change in pressure
     ! and energy to some user defined fraction.

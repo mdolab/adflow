@@ -1561,6 +1561,7 @@ contains
     use stencils, only : visc_drdw_stencil, N_visc_drdw
     use communication, only : myid, adflow_comm_world
     use utils, only : setPointers, EChk
+    use inputOverset, only : oversetDebugPrint
     implicit none
 
     ! Input/Output
@@ -1595,7 +1596,8 @@ contains
                       end if
                    end do stencilLoop
                    if (badCell .and. printBadCells) then
-                      print *,'Error in connectivity at :',nbkglobal, i+iBegOr, j+jBegOr, k+kBegOr
+                      if (oversetDebugPrint) &
+                        print *,'Error in connectivity at :',nbkglobal, i+iBegOr, j+jBegOr, k+kBegOr
                       ! we can modify iBlankLast because this is the last checkOverset call.
                       ! we set iBlankLast to -5 to mark orphan cells, this value will then
                       ! be moved to iBlank after we are done with other loops.

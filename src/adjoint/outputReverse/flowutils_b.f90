@@ -1284,6 +1284,122 @@ contains
     refdir2(liftindex) = one
     call getdirvector(refdir2, alpha, beta, liftdirection, liftindex)
   end subroutine adjustinflowangle
+!  differentiation of derivativerotmatrixrigid in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: timeref rotationmatrix
+!   with respect to varying inputs: timeref
+  subroutine derivativerotmatrixrigid_b(rotationmatrix, rotationmatrixd&
+&   , rotationpoint, t)
+!
+!       derivativerotmatrixrigid determines the derivative of the
+!       rotation matrix at the given time for the rigid body rotation,
+!       such that the grid velocities can be determined analytically.
+!       also the rotation point of the current time level is
+!       determined. this value can change due to translation of the
+!       entire grid.
+!
+    use constants
+    use flowvarrefstate
+    use inputmotion
+    use monitor
+    use utils_b, only : rigidrotangle, derivativerigidrotangle, &
+&   derivativerigidrotangle_b
+    implicit none
+!
+!      subroutine arguments.
+!
+    real(kind=realtype), intent(in) :: t
+    real(kind=realtype), dimension(3), intent(out) :: rotationpoint
+    real(kind=realtype), dimension(3, 3) :: rotationmatrix
+    real(kind=realtype), dimension(3, 3) :: rotationmatrixd
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j
+    real(kind=realtype) :: phi, dphix, dphiy, dphiz
+    real(kind=realtype) :: dphixd, dphiyd, dphizd
+    real(kind=realtype) :: cosx, cosy, cosz, sinx, siny, sinz
+    real(kind=realtype), dimension(3, 3) :: dm, m
+    real(kind=realtype), dimension(3, 3) :: dmd
+    intrinsic sin
+    intrinsic cos
+! determine the rotation angle around the x-axis for the new
+! time level and the corresponding values of the sine and cosine.
+    phi = rigidrotangle(degreepolxrot, coefpolxrot, degreefourxrot, &
+&     omegafourxrot, coscoeffourxrot, sincoeffourxrot, t)
+    sinx = sin(phi)
+    cosx = cos(phi)
+! idem for the y-axis.
+    phi = rigidrotangle(degreepolyrot, coefpolyrot, degreefouryrot, &
+&     omegafouryrot, coscoeffouryrot, sincoeffouryrot, t)
+    siny = sin(phi)
+    cosy = cos(phi)
+! idem for the z-axis.
+    phi = rigidrotangle(degreepolzrot, coefpolzrot, degreefourzrot, &
+&     omegafourzrot, coscoeffourzrot, sincoeffourzrot, t)
+    sinz = sin(phi)
+    cosz = cos(phi)
+! compute the time derivative of the rotation angles around the
+! x-axis, y-axis and z-axis.
+! compute the time derivative of the rotation matrix applied to
+! the coordinates at t == 0.
+! part 1. derivative of the z-rotation matrix multiplied by the
+! x and y rotation matrix, i.e. dmz * my * mx
+! part 2: mz * dmy * mx.
+! part 3: mz * my * dmx
+! determine the rotation matrix at t == t.
+    m(1, 1) = cosy*cosz
+    m(2, 1) = cosy*sinz
+    m(3, 1) = -siny
+    m(1, 2) = sinx*siny*cosz - cosx*sinz
+    m(2, 2) = sinx*siny*sinz + cosx*cosz
+    m(3, 2) = sinx*cosy
+    m(1, 3) = cosx*siny*cosz + sinx*sinz
+    m(2, 3) = cosx*siny*sinz - sinx*cosz
+    m(3, 3) = cosx*cosy
+    dmd = 0.0_8
+    do j=3,1,-1
+      do i=3,1,-1
+        dmd(i, 1) = dmd(i, 1) + m(j, 1)*rotationmatrixd(i, j)
+        dmd(i, 2) = dmd(i, 2) + m(j, 2)*rotationmatrixd(i, j)
+        dmd(i, 3) = dmd(i, 3) + m(j, 3)*rotationmatrixd(i, j)
+        rotationmatrixd(i, j) = 0.0_8
+      end do
+    end do
+    dphixd = cosx*cosy*dmd(3, 2) + (cosx*siny*sinz-sinx*cosz)*dmd(2, 2) &
+&     + (sinx*sinz+cosx*siny*cosz)*dmd(1, 2) + (cosx*sinz-sinx*siny*cosz&
+&     )*dmd(1, 3) - (sinx*siny*sinz+cosx*cosz)*dmd(2, 3) - sinx*cosy*dmd&
+&     (3, 3)
+    dphiyd = cosx*cosy*sinz*dmd(2, 3) - sinx*siny*dmd(3, 2) - siny*sinz*&
+&     dmd(2, 1) + sinx*cosy*cosz*dmd(1, 2) - siny*cosz*dmd(1, 1) + cosx*&
+&     cosy*cosz*dmd(1, 3) + sinx*cosy*sinz*dmd(2, 2) - cosy*dmd(3, 1) - &
+&     cosx*siny*dmd(3, 3)
+    dmd(3, 3) = 0.0_8
+    dmd(3, 2) = 0.0_8
+    dmd(3, 1) = 0.0_8
+    dphizd = (cosx*siny*cosz+sinx*sinz)*dmd(2, 3)
+    dmd(2, 3) = 0.0_8
+    dphizd = dphizd + (sinx*siny*cosz-cosx*sinz)*dmd(2, 2)
+    dmd(2, 2) = 0.0_8
+    dphizd = dphizd + cosy*cosz*dmd(2, 1)
+    dmd(2, 1) = 0.0_8
+    dphizd = dphizd + (sinx*cosz-cosx*siny*sinz)*dmd(1, 3)
+    dmd(1, 3) = 0.0_8
+    dphizd = dphizd + (-(cosx*cosz)-sinx*siny*sinz)*dmd(1, 2)
+    dmd(1, 2) = 0.0_8
+    dphizd = dphizd - cosy*sinz*dmd(1, 1)
+    call derivativerigidrotangle_b(degreepolzrot, coefpolzrot, &
+&                            degreefourzrot, omegafourzrot, &
+&                            coscoeffourzrot, sincoeffourzrot, t, dphizd&
+&                           )
+    call derivativerigidrotangle_b(degreepolyrot, coefpolyrot, &
+&                            degreefouryrot, omegafouryrot, &
+&                            coscoeffouryrot, sincoeffouryrot, t, dphiyd&
+&                           )
+    call derivativerigidrotangle_b(degreepolxrot, coefpolxrot, &
+&                            degreefourxrot, omegafourxrot, &
+&                            coscoeffourxrot, sincoeffourxrot, t, dphixd&
+&                           )
+  end subroutine derivativerotmatrixrigid_b
   subroutine derivativerotmatrixrigid(rotationmatrix, rotationpoint, t)
 !
 !       derivativerotmatrixrigid determines the derivative of the

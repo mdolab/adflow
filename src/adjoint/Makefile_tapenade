@@ -103,7 +103,7 @@ adjointExtra%volume_block(x) > \
 \
 adjointExtra%metric_block(x) > \
                          (x, si, sj, sk) \
-wallDistance%updateWallDistancesQuickly(x, xSurf) > \
+wallDistance%updateWallDistancesQuickly(x, xSurf, d2wall) > \
 	                               (x, xSurf, d2wall) \
 \
 adjointExtra%boundaryNormals(si, sj, sk) > \
@@ -132,14 +132,14 @@ BCRoutines%bcSymmPolar1stHalo(xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) > 
 BCRoutines%bcSymmPolar2ndHalo(xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) > \
                              (xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) \
 \
-BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) > \
-                            (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2) \
+BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip) > \
+                            (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip) \
 \
-BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall) > \
-                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall) \
+BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall, bcData%uSlip) > \
+                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall, bcData%uSlip) \
 \
-BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm) > \
-                     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm) \
+BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm, bcData%rface) > \
+                     (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm, bcData%rface) \
 \
 BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss) > \
                       (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss) \
@@ -156,14 +156,14 @@ turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1
 turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > \
                               (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
 \
-solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, p) > \
-              (w, pInfCorr, rhoInf, si, sj, sk, p, radi, radj, radk) \
+solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > \
+              (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) \
 \
 sa%saSource(w, rlv, vol, si, sj, sk, timeRef, d2wall) > \
            (w, rlv, vol, si, sj, sk, timeREf, scratch) \
 \
-turbutils%turbAdvection(w, vol, si, sj, sk, scratch) > \
-                       (w, vol, si, sj, sk, scratch) \
+turbutils%turbAdvection(w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) > \
+                       (w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) \
 \
 sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
             (w, vol, si, sj, sk, rlv, scratch) \
@@ -174,34 +174,37 @@ sa%saResScale(scratch, dw) > \
 residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) > \
                            (w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) \
 \
-fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw) > \
-                          (w, timeRef, vol, si, sj, sk, p, dw) \
+residuals%initres_block(dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) > \
+                       (dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) \
+\
+fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) > \
+                          (w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) \
 \
 fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw) > \
-                             (w, pInfCOrr, rhoInf, p, fw) \
+                             (w, pInfCOrr, rhoInf, p, radi, radj, radk, fw) \
 \
-fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw) > \
-                             (w, pInfCorr, si, sj, sk, p, fw) \
+fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > \
+                             (w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek) \
 \
-fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw) > \
+fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw, rhoinf, pinfcorr) > \
                                    (w, p, fw) \
 \
-fluxes%inviscidDissFluxMatrixApprox(w, p, fw) > \
-                                   (w, p, fw) \
+fluxes%inviscidDissFluxMatrixApprox(w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk) > \
+                                   (w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk) \
 \
-fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw) > \
-                         (w, si, sj, sk, p, fw) \
+fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > \
+                         (w, si, sj, sk, p, fw, sfacei, sfacej, sfacek) \
 \
 flowUtils%computeSpeedOfSoundSquared(w, p) > \
                                     (w, p, aa) \
 \
-flowUtils%allNodalGradients(w, vol, si, sj, sk, aa) > \
+flowUtils%allNodalGradients(w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) > \
                            (w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) \
 \
-fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw) > \
-                  (w, x, si, sj, sk, fw, viscsubface%tau) \
+fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw, viscsubface%tau, viscSubface%q) > \
+                  (w, x, si, sj, sk, fw, viscsubface%tau, viscSubface%q) \
 \
-fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw) > \
+fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw, si, sj, sk) > \
                         (w, x, fw) \
 \
 adjointExtra%sumDwandFw(fw, dw) > (dw) \
@@ -228,6 +231,17 @@ oversetUtilities%newtonUpdate(xCen, blk, frac) > \
 oversetUtilities%fracToWeights(frac) > \
 			      (weights) \
 \
+solverutils%slipVelocitiesFineLevel_block(pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > \
+										 (veldirfreestream, bcdata%uslip, flowDoms%x) \
+\
+solverutils%normalvelocities_block(sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) > \
+			      				  (sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) \
+\
+solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) > \
+                                         (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream) \
+\
+solverutils%cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) > \
+							  (xc, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) \
 "
 
 #applyLowSpeedPreconditioner(w, P, dw) > (w, dw, P) \
@@ -242,6 +256,9 @@ oversetUtilities%fracToWeights(frac) > \
 stateOnlyRoutines = "\
 residuals%sourceTerms_block(w, dw) > \
                            (w, dw) \
+\
+residuals%initres_block(dw, fw, flowDoms%w) > \
+                       (dw, fw, flowDoms%w) \
 \
 fluxes%inviscidCentralFlux(w, p, dw) > \
                           (w, p, dw) \
