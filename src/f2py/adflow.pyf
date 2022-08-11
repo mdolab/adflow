@@ -80,7 +80,7 @@ python module libadflow
 
        module walldistance
 
-         subroutine updatewalldistancealllevelsx
+         subroutine updatewalldistancealllevels
          end subroutine updatewalldistancealllevels
 
        end module walldistance
