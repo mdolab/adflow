@@ -583,6 +583,72 @@ class ADFLOW(AeroSolver):
 
         self.nSlice += N
 
+    def addArbitrarySlices(self, normals, points, sliceType="relative", groupName=None):
+        """
+        Add slices that vary arbitrarily in space. this is a generalization
+        of the routine above, where we have the user specify a list of "normals"
+        and "points" that define slice planes. Rest of the code is the same.
+        this way users can add slices that follow the dihedral of a wing for example.
+
+        Parameters
+        ----------
+        normals : 3-d array or ndarray (n_slice, 3)
+            The normals of the slice directions. If an array of size 3 is passed,
+            we use the same normal for all slices. if an array of multiple normals
+            are passed, we use the individual normals for each point. in this case,
+            the numbers of points and normals must match.
+        points : ndarray (n_slice, 3)
+            Point coordinates that define a slicing plane along with the normals
+        sliceType : str {'relative', 'absolute'}
+            Relative slices are 'sliced' at the beginning and then parametricly
+            move as the geometry deforms. As a result, the slice through the
+            geometry may not remain planar. An absolute slice is re-sliced for
+            every out put so is always exactly planar and always at the initial
+            position the user indicated.
+        groupName : str
+             The family to use for the slices. Default is None corresponding to all
+             wall groups.
+        """
+
+        # Create the zipper mesh if not done so
+        self._createZipperMesh()
+
+        # Determine the families we want to use
+        if groupName is None:
+            groupName = self.allWallsGroup
+        groupTag = "%s: " % groupName
+        famList = self._getFamilyList(groupName)
+
+        sliceType = sliceType.lower()
+        if sliceType not in ["relative", "absolute"]:
+            raise Error("'sliceType' must be 'relative' or 'absolute'.")
+
+        n_slice = len(points)
+        normals = numpy.atleast_2d(normals)
+        points = numpy.atleast_2d(points)
+
+        if len(normals) == 1:
+            tmp = numpy.zeros((n_slice, 3), self.dtype)
+            tmp[:] = normals
+            normals = tmp
+
+        # for regular slices, we dont use the direction vector to pick a projection direction
+        slice_dir = [1.0, 0.0, 0.0]
+        use_dir = False
+
+        for i in range(n_slice):
+            # It is important to ensure each slice get a unique
+            # name...so we will number sequentially from python
+            j = self.nSlice + i + 1
+            if sliceType == "relative":
+                sliceName = "Slice_%4.4d %s Para Init Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (j, groupTag, normals[i, 0], normals[i, 1], normals[i, 2], points[i, 0], points[i, 1], points[i, 2])
+                self.adflow.tecplotio.addparaslice(sliceName, points[i], normals[i], slice_dir, use_dir, famList)
+            else:
+                sliceName = "Slice_%4.4d %s Absolute Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (j, groupTag, normals[i, 0], normals[i, 1], normals[i, 2], points[i, 0], points[i, 1], points[i, 2])
+                self.adflow.tecplotio.addabsslice(sliceName, points[i], normals[i], slice_dir, use_dir, famList)
+
+        self.nSlice += n_slice
+
     def addCylindricalSlices(
         self, pt1, pt2, n_slice=180, slice_beg=0.0, slice_end=360.0, sliceType="relative", groupName=None
     ):
