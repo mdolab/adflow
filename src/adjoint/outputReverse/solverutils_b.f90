@@ -141,8 +141,8 @@ contains
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond)
-      case (noprecond)
+      select case  (precond) 
+      case (noprecond) 
         call pushreal8(sface)
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
@@ -246,9 +246,9 @@ contains
           end if
         end do
         call pushcontrol2b(1)
-      case (turkel)
+      case (turkel) 
         call pushcontrol2b(2)
-      case (choimerkle)
+      case (choimerkle) 
         call pushcontrol2b(3)
       case default
         call pushcontrol2b(0)
@@ -957,8 +957,8 @@ contains
 !           inviscid contribution, depending on the preconditioner.
 !           compute the cell centered values of the spectral radii.
 !
-      select case  (precond)
-      case (noprecond)
+      select case  (precond) 
+      case (noprecond) 
 ! no preconditioner. simply the standard spectral radius.
 ! loop over the cells, including the first level halo.
         do ii=0,ie*je*ke-1
@@ -1060,10 +1060,10 @@ contains
             radk(i, j, k) = rk
           end if
         end do
-      case (turkel)
+      case (turkel) 
         call terminate('timestep', &
 &                'turkel preconditioner not implemented yet')
-      case (choimerkle)
+      case (choimerkle) 
         call terminate('timestep', &
 &                'choi merkle preconditioner not implemented yet')
       end select
@@ -1352,8 +1352,8 @@ contains
 !             normal grid velocities of the faces.
 !
 ! loop over the three directions.
-! the original code is elegant but the tapenade has a difficult time
-! to understand it. thus, we unfold it and make it easier for the
+! the original code is elegant but the tapenade has a difficult time 
+! to understand it. thus, we unfold it and make it easier for the 
 ! tapenade.
 ! i-direction
         do k=1,ke
@@ -1965,8 +1965,8 @@ contains
 !             normal grid velocities of the faces.
 !
 ! loop over the three directions.
-! the original code is elegant but the tapenade has a difficult time
-! to understand it. thus, we unfold it and make it easier for the
+! the original code is elegant but the tapenade has a difficult time 
+! to understand it. thus, we unfold it and make it easier for the 
 ! tapenade.
 ! i-direction
         do k=1,ke

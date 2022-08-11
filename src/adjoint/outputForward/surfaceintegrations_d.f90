@@ -887,12 +887,10 @@ contains
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
-    real(kind=realtype) :: pwr1
-    real(kind=realtype) :: pwr1d
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1378,11 +1376,10 @@ contains
     intrinsic exp
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
-    real(kind=realtype) :: pwr1
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1744,10 +1741,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
@@ -2116,10 +2113,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
