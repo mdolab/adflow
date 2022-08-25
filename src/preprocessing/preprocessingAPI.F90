@@ -891,6 +891,8 @@ contains
     real(kind=realType), dimension(3) :: faceNorm
     real(kind=realType), dimension(:,:,:), pointer :: ss
 
+    character(len=maxStringLen) :: fmt1
+
     ! Loop over the number of spectral solutions and local domains.
 
     spectral: do sps=1,nTimeIntervalsSpectral
@@ -1009,15 +1011,15 @@ contains
 
                       ! Print a warning.
 
+                      fmt1 = '("# Symmetry boundary face",1X,A,1X,"of zone", 1x,a,1x, "is not planar.")'
+
                       print "(a)", "#"
                       print "(a)", "#                      Warning"
-                      print 100,                              &
+                      print fmt1,                              &
                            trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
                            trim(cgnsDoms(i)%zonename)
                       print 110, fact
                       print "(a)", "#"
-100                   format("# Symmetry boundary face",1X,A,1X,"of zone", &
-                           1x,a,1x, "is not planar.")
 110                   format("# Maximum deviation from the mean normal: ", &
                            es12.5, " degrees")
 
