@@ -39,6 +39,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		modules/CpCurveFits.f90\
 		modules/extraOutput.f90\
 		modules/flowVarRefState.F90\
+		modules/format.F90\
 		modules/inputParam.F90\
 		modules/iteration.f90\
 		modules/monitor.f90\
