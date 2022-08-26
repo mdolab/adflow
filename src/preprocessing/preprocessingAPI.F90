@@ -872,6 +872,7 @@ contains
     use cgnsGrid
     use inputTimeSpectral
     use utils, only : setPointers
+    use format, only : stringSpace, stringSci5
     implicit none
     !
     !      Subroutine arguments.
@@ -890,8 +891,6 @@ contains
 
     real(kind=realType), dimension(3) :: faceNorm
     real(kind=realType), dimension(:,:,:), pointer :: ss
-
-    character(len=maxStringLen) :: fmt1
 
     ! Loop over the number of spectral solutions and local domains.
 
@@ -1011,17 +1010,12 @@ contains
 
                       ! Print a warning.
 
-                      fmt1 = '("# Symmetry boundary face",1X,A,1X,"of zone", 1x,a,1x, "is not planar.")'
-
                       print "(a)", "#"
                       print "(a)", "#                      Warning"
-                      print fmt1,                              &
-                           trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
-                           trim(cgnsDoms(i)%zonename)
-                      print 110, fact
+                      print stringSpace, "# Symmetry boundary face", trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
+                           "of zone", trim(cgnsDoms(i)%zonename), "is not planar."
+                      print stringSci5, "# Maximum deviation from the mean normal: ", fact, " degrees"
                       print "(a)", "#"
-110                   format("# Maximum deviation from the mean normal: ", &
-                           es12.5, " degrees")
 
                    endif
 
@@ -2738,6 +2732,7 @@ contains
     use checkVolBlock
     use inputIteration
     use utils, only : setPointers, terminate, returnFail
+    use format, only : stringSpace
     implicit none
     !
     !      Subroutine arguments.
@@ -3324,11 +3319,9 @@ contains
           integerString = trim(integerString)
           print "(a)", "#"
           print "(a)", "#                      Warning"
-          print 101, trim(integerString)
-          print 102
+          print stringSpace, "#", trim(integerString), "bad quality volumes found."
+          print "(a)", "# Computation will continue, but be aware of this."
           print "(a)", "#"
-101       format("# ",a," bad quality volumes found.")
-102       format("# Computation will continue, but be aware of this")
        endif
     endif
 
@@ -3396,6 +3389,7 @@ contains
     use inputTimeSpectral
     use checkVolBlock
     use utils, only : setPointers, terminate
+    use format, only : stringSpace
     implicit none
     !
     !      Subroutine arguments.
@@ -3420,8 +3414,7 @@ contains
        print "(a)", "#"
        print "(a)", "#                      Error"
        print "(a)", "# Negative volumes found in the grid."
-       print "(a)", "# A list of the negative volumes is &
-            &printed below"
+       print "(a)", "# A list of the negative volumes is printed below"
        print "(a)", "#"
     endif
 
@@ -3458,11 +3451,8 @@ contains
                    case (steady, unsteady)
 
                       print "(a)", "#"
-                      print 100, trim(cgnsDoms(nbkGlobal)%zoneName)
-100                   format("# Block",1x,a,1x,"contains the following &
-                           &negative volumes")
-                      print "(a)", "#=================================&
-                           &==================================="
+                      print stringSpace, "# Block", trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following negative volumes"
+                      print "(a)", "#===================================================================="
                       print "(a)", "#"
 
                       !====================================================
@@ -3473,13 +3463,9 @@ contains
                       intString1 = adjustl(intString1)
 
                       print "(a)", "#"
-                      print 101, trim(intString1), &
-                           trim(cgnsDoms(nbkGlobal)%zoneName)
-101                   format("# Spectral solution",1x,a, ":block", &
-                           1x,a,1x,"contains the following negative &
-                           &volumes")
-                      print "(a)", "#=================================&
-                           &==================================="
+                      print stringSpace, "# Spectral solution", trim(intString1), "block", trim(cgnsDoms(nbkGlobal)%zoneName), &
+                           "contains the following negative volumes"
+                      print "(a)", "#===================================================================="
                       print "(a)", "#"
 
                    end select
