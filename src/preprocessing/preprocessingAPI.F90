@@ -478,6 +478,7 @@ contains
     use constants
     use block
     use communication
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -516,9 +517,8 @@ contains
        int2String = adjustl(int2String)
 
        print "(a)", "#"
-       print 101, trim(int1String), trim(int2String)
+       print strings, "# Grid level: ", trim(int1String),", Total number of cells: ", trim(int2String)
        print "(a)", "#"
-101    format("# Grid level: ", a,", Total number of cells: ", a)
 
     endif
 
@@ -1327,6 +1327,7 @@ contains
     integer(kind=intType), dimension(:), allocatable :: localFlag, famIsPartOfBCGroup
     integer(kind=intType), dimension(:), allocatable :: localIndices, nodeSizes, nodeDisps
     integer(kind=intType) :: iProc, nodeSize, cellSize
+    character(len=maxStringLen) :: bcFormat
 
     ! Process out the family information. The goal here is to
     ! assign a unique integer to each family in each boundary
@@ -1359,9 +1360,7 @@ contains
     defaultFamName(BCWallViscousIsothermal) = 'wall'
     defaultFamName(UserDefined) = 'userDefined'
 
-101 format("CGNS Block ",I4,", boundary condition ",I4, ", of type ",a, &
-         " does not have a family. Based on the boundary condition type," &
-         " a name of: '", a, "' will be used.")
+    bcFormat = '(2(A, I4), *(A))'
 
     nFam = 0
     do i=1, size(cgnsDoms)
@@ -1370,8 +1369,10 @@ contains
              if (trim(cgnsDoms(i)%bocoInfo(j)%wallBCName) == "") then
                 if (myid == 0) then
                    ! Tell the user we are adding an automatic family name
-                   write(*, 101) i, j, trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
-                        trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
+                   write(*, bcFormat) "CGNS Block ", i, ", boundary condition ", j, ", of type ", &
+                   trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
+                   " does not have a family. Based on the boundary condition type,", &
+                   " a name of: '", trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), "' will be used."
                 end if
                 cgnsDoms(i)%bocoInfo(j)%wallBCName = trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
              end if
@@ -2732,7 +2733,7 @@ contains
     use checkVolBlock
     use inputIteration
     use utils, only : setPointers, terminate, returnFail
-    use format, only : stringSpace
+    use format, only : stringSpace, stringInt1
     implicit none
     !
     !      Subroutine arguments.
@@ -3291,11 +3292,8 @@ contains
           if(myID == 0) then
              print "(a)", "#"
              print "(a)", "#                      Warning"
-             print 100, level
-100          format("#* Negative volumes present on coarse grid &
-                  &level",1x,i1,".")
-             print "(a)", "#* Computation continues, &
-                  &but be aware of this"
+             print stringInt1, "#* Negative volumes present on coarse grid level ", level, "."
+             print "(a)", "#* Computation continues, but be aware of this"
              print "(a)", "#"
           endif
 
@@ -3400,12 +3398,10 @@ contains
     !      Local variables.
     !
     integer :: proc, ierr
-
     integer(kind=intType) :: nn, sps, i, j, k
-
     real(kind=realType), dimension(3) :: xc
-
     character(len=10) :: intString1, intString2, intString3
+    character(len=maxStringLen) :: negVolumeFormat
 
     ! Processor 0 prints a message that negative volumes are present
     ! in the grid.
@@ -3473,6 +3469,8 @@ contains
                    ! Loop over the owned volumes and write the
                    ! negative ones.
 
+                   negVolumeFormat = '(7(A), 4(ES10.3, A))'
+
                    do k=2,kl
                       do j=2,jl
                          do i=2,il
@@ -3495,13 +3493,9 @@ contains
                                intString2 = adjustl(intString2)
                                intString3 = adjustl(intString3)
 
-                               print 102, trim(intString1), &
-                                    trim(intString2), &
-                                    trim(intString3), &
-                                    xc(1), xc(2), xc(3), -vol(i,j,k)
-102                            format("# Indices (",a,",",a,",",a,"), &
-                                    &coordinates (",es10.3,",",es10.3,",", &
-                                    es10.3,"), Volume: ",es10.3)
+                               print negVolumeFormat, "# Indices (", trim(intString1), &
+                                     ",", trim(intString2), ",", trim(intString3), "), coordinates (", &
+                                     xc(1), ",", xc(2), ",", xc(3), "), Volume: ", -vol(i,j,k)
 
                             endif
                          enddo
