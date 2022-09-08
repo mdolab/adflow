@@ -2368,7 +2368,7 @@ class ADFLOW(AeroSolver):
             if abs(fnm1) < tol:
                 break
 
-    def writeSolution(self, outputDir=None, baseName=None, number=None):
+    def writeSolution(self, outputDir=None, baseName=None, number=None, writeSlices=True, writeLift=True):
         """This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
         calling program can call this file and ADflow write all the
@@ -2439,7 +2439,7 @@ class ADFLOW(AeroSolver):
         writeSurf = self.getOption("writeTecplotSurfaceSolution")
 
         # # Call fully compbined fortran routine.
-        self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True, surfName, writeSurf, famList)
+        self.adflow.tecplotio.writetecplot(sliceName, writeSlices, liftName, writeLift, surfName, writeSurf, famList)
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
