@@ -1500,8 +1500,8 @@ contains
     integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
     integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
-    character*40 :: tmpStr, zoneName
-    character*32 :: coorNames(3)
+    character(len=40) :: tmpStr, zoneName
+    character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
 
     coorNames(1) = "CoordinateX"
@@ -1693,8 +1693,8 @@ contains
     integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
     integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
-    character*40 :: tmpStr, zoneName
-    character*32 :: coorNames(3)
+    character(len=40) :: tmpStr, zoneName
+    character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
 
     coorNames(1) = "CoordinateX"
