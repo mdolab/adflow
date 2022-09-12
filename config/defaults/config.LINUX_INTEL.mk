@@ -28,7 +28,7 @@ CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
 # ------- Define Compiler Flags ----------------------------------------
 FF77_FLAGS   = -DHAS_ISNAN -fPIC -r8 -O2 -g
-FF90_FLAGS = $(FF77_FLAGS) -std=f2008
+FF90_FLAGS = $(FF77_FLAGS) -std08
 C_FLAGS      = -DHAS_ISNAN -O -fPIC
 
 # ------- Define Archiver  and Flags -----------------------------------
