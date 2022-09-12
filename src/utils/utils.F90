@@ -1,4 +1,9 @@
 module utils
+ implicit none
+ interface myIsNAN
+  module procedure myIsNAN_r
+  module procedure myIsNAN_c
+ end interface
 
  contains
 
@@ -2553,31 +2558,43 @@ end subroutine cross_prod
   end function delta
 
 
-  logical function myIsNAN(val)
+  logical function myIsNAN_r(val)
     !
-    !       myIsNAN determines whether or not the given value is a NAN and
+    !       myIsNAN_r determines whether or not the given real value is a NAN or INF and
     !       returns the according logical.
     !
     use constants
+    use, intrinsic :: ieee_arithmetic, only : ieee_is_nan, ieee_is_finite
     implicit none
     !
     !      Function arguments.
     !
-    real(kind=realType), intent(in) :: val
-    !
-    !      Local variable.
-    !
-    integer(kind=intType) :: res
+    real(kind=alwaysRealType), intent(in) :: val
 
-    call myIsNaNC(val, res)
-    if(res == 1) then
-       myIsNAN = .true.
-    else
-       myIsNAN = .false.
-    endif
+    ! Check if NAN or INF
+    myIsNAN_r = ieee_is_nan(val) .or. .not. ieee_is_finite(val)
 
-  end function myIsNAN
-  !
+  end function myIsNAN_r
+
+  logical function myIsNAN_c(val)
+    !
+    !       myIsNAN_c determines whether or not the given complex value contains NAN of INF and
+    !       returns the according logical.
+    !
+    use constants
+    use, intrinsic :: ieee_arithmetic, only : ieee_is_nan, ieee_is_finite
+    implicit none
+    !
+    !      Function arguments.
+    !
+    complex(kind=realType), intent(in) :: val
+
+    ! Check if either real or imag part is NAN or INF
+    myIsNAN_c = ieee_is_nan(real(val)) .or. .not. ieee_is_finite(real(val))
+    myIsNAN_c = myIsNAN_c .or. ieee_is_nan(aimag(val)) .or. .not. ieee_is_finite(aimag(val))
+
+  end function myIsNAN_c
+
   subroutine nullifyCGNSDomPointers(nn)
     !
     !       nullifyCGNSDomPointers nullifies all the pointers of the
@@ -4445,23 +4462,23 @@ end subroutine cross_prod
       end do
       deallocate(BCFamExchange)
     end if
-    
+
     if (allocated(nCellGlobal)) then
        deallocate(nCellGlobal)
     end if
 
-    
+
    ! Now deallocate the containers and communication objects.
     if (allocated(commPatternCell_1st)) then
       do l=1,nLevels
          call deallocateCommType(commPatternCell_1st(l))
-      end do 
+      end do
       deallocate(commPatternCell_1st)
     end if
     if (allocated(commPatternCell_2nd)) then
       do l=1,nLevels
          call deallocateCommType(commPatternCell_2nd(l))
-      end do 
+      end do
       deallocate(commPatternCell_2nd)
     end if
     if (allocated(commPatternNode_1st)) then
@@ -4784,7 +4801,7 @@ end subroutine cross_prod
       if(ierr /= 0)                          &
            call terminate("releaseMemoryPart2", &
            "Deallocation failure for flowDoms")
-    end if 
+    end if
 
     ! Some more memory should be deallocated if this code is to
     ! be used in combination with adaptation.
@@ -5869,7 +5886,7 @@ end subroutine cross_prod
     integer :: ierr
 
     integer(kind=intType):: nSolverMon ! number of solver monitor variables
-    
+
     ! Return immediately if the convergence history (of the inner
     ! iterations) does not need to be stored. This logical can
     ! only be .false. for an unsteady computation.
@@ -5884,8 +5901,8 @@ end subroutine cross_prod
     if (allocated(solverTypeArray)) then
        deallocate(solverTypeArray)
     end if
-    
-    if (showCPU) then 
+
+    if (showCPU) then
       nSolverMon = 5
     else
       nSolverMon = 4
@@ -5898,8 +5915,8 @@ end subroutine cross_prod
     ! Zero Array:
     convArray = zero
     solverDataArray = zero
-    
-    
+
+
 
   end subroutine allocConvArrays
 
@@ -5950,26 +5967,26 @@ end subroutine cross_prod
    use constants
    use monitor, only: nmon, monnames
    implicit none
-   
+
    ! save the monitor variable names into a new array
    integer(kind=intType), intent(in):: nvar
    character, dimension(nvar,maxCGNSNameLen), intent(out):: monitor_variables
-   
-   ! working variables 
+
+   ! working variables
    character(len=maxCGNSNameLen) :: var_name
    integer(kind=intType) :: c, idx_mon
-   
-   do idx_mon=1,nvar 
+
+   do idx_mon=1,nvar
       var_name =  monNames(idx_mon)
-      
+
       do c =1,len(monNames(idx_mon))
          monitor_variables(idx_mon, c) =var_name(c:c)
       end do
-   end do 
-   
-   
+   end do
+
+
   end subroutine getMonitorVariableNames
-   
+
   subroutine getSolverTypeArray(niter, nsps, type_array)
    !
    !  copy the names in sovlerTypeArray to another array so that is can be
@@ -5980,28 +5997,28 @@ end subroutine cross_prod
    use inputTimeSpectral, only : nTimeIntervalsSpectral
    use iteration, only: itertot
    implicit none
-   
+
    ! save the monitor variable names into a new array
    integer(kind=intType), intent(in):: niter, nsps
    character, dimension(0:niter, ntimeintervalsspectral, maxIterTypelen), intent(out):: type_array
-   
-   ! working variables 
+
+   ! working variables
    character(len=maxIterTypelen) :: type_name
    integer(kind=intType) :: c, idx_sps, idx_iter
-   
+
    do idx_sps=1,ntimeintervalsspectral
-      do idx_iter=0,itertot 
+      do idx_iter=0,itertot
          type_name =  solverTypeArray(idx_iter, idx_sps)
-         
+
          do c =1,len(solverTypeArray(idx_iter, idx_sps))
             type_array(idx_iter, idx_sps, c) = type_name(c:c)
          end do
-         
-      end do 
-   end do 
-   
+
+      end do
+   end do
+
    end subroutine getSolverTypeArray
-   
+
   subroutine convergenceHeader
     !
     !       convergenceHeader writes the convergence header to stdout.
