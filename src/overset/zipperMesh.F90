@@ -624,8 +624,8 @@ contains
     if (debugZipper) then
        open(unit=101, file="strings_beforeSelfZip.dat", form='formatted')
        write(101,*) 'TITLE = "Gap Strings Data" '
-       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind &
-            &gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+            &"gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
        do i=1, nStrings
           call writeOversetString(strings(i), strings, nStrings, 101)
        end do
@@ -645,8 +645,8 @@ contains
     if (debugZipper) then
        open(unit=101, file="strings_afterSelfZip.dat", form='formatted')
        write(101,*) 'TITLE = "Gap Strings Data" '
-       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind &
-            &gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+       write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
+            &"gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
        do i=1, nStrings
           call writeOversetString(strings(i), strings, nStrings, 101)
        end do
