@@ -77,7 +77,7 @@ contains
     implicit none
 
     ! Input parameters
-    character*(*), intent(in) :: sliceName
+    character(len=*), intent(in) :: sliceName
     real(kind=realType), dimension(3), intent(in) :: pt, direction
     integer(kind=intType), intent(in) :: n, famList(n)
 
@@ -133,7 +133,7 @@ contains
     implicit none
 
     ! Input parameters
-    character*(*), intent(in) :: sliceName
+    character(len=*), intent(in) :: sliceName
     real(kind=realType), dimension(3), intent(in) :: pt, direction
     integer(kind=intType), intent(in) :: n, famList(n)
 
@@ -182,7 +182,7 @@ contains
     implicit none
 
     ! Input parameters
-    character*(*), intent(in) :: distName
+    character(len=*), intent(in) :: distName
     integer(kind=intType), intent(in) :: nSegments
     real(kind=realType), dimension(3) :: dir_vec
     integer(kind=intType), intent(in) :: dir_ind
@@ -223,7 +223,7 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: sliceFile, liftFile, surfFile
+    character(len=*), intent(in) :: sliceFile, liftFile, surfFile
     logical, intent(in) :: writeSlices, writeLift, writeSurf
     integer(kind=intType), intent(in) :: nFamList
     integer(kind=intType), intent(in), dimension(nFamList) :: famList
@@ -281,7 +281,7 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
     real(kind=realType), intent(inout), dimension(:, :, :) :: nodalValues
 
     ! Working parameters
@@ -419,7 +419,7 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
     real(kind=realType), dimension(:, :, :), allocatable :: nodalValues
 
     ! Working parameters
@@ -577,7 +577,7 @@ contains
           if (iDist == 1) then
              write (fileID,*) "Title= ""ADflow Lift Distribution Data"""
              write (fileID,"(a)", advance="no") "Variables = "
-             do i=1,nLIftDistVar ! here we just write var-names in the header 
+             do i=1,nLIftDistVar ! here we just write var-names in the header
                 write(fileID,"(a,a,a)",advance="no") """",trim(liftDistNames(i)),""" "
              end do
              write(fileID,"(1x)")
@@ -656,7 +656,7 @@ contains
           values(i, 19) = globalSlice%fx
           values(i, 20) = globalSlice%fy
           values(i, 21) = globalSlice%fz
-          
+
           call destroySlice(localSlice)
           call destroySlice(globalSlice)
 
@@ -729,7 +729,7 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
     integer(kind=intType), intent(in), dimension(:) :: famList
 
     ! Working parameters
@@ -1213,7 +1213,7 @@ contains
 
         implicit none
 
-        character*(*)::  str
+        character(len=*)::  str
         integer(kind=intType) :: i
 
         do i=1,len(str)
@@ -1646,7 +1646,7 @@ contains
     integer(kind=intType), dimension(:), intent(in) :: elemFam
     type(slice), intent(inout) :: slc
     real(kind=realType), dimension(3), intent(in) :: pt, dir
-    character*(*), intent(in) :: sliceName
+    character(len=*), intent(in) :: sliceName
     integer(kind=intType), dimension(:), intent(in) :: famList
 
     ! Working param
@@ -1980,7 +1980,7 @@ contains
        gSlc%fx = tmp_(1)
        gSlc%fy = tmp_(2)
        gSlc%fz = tmp_(3)
-       
+
        ! Compute the chord as the max length between any two nodes...this
        ! is n^2, so should be changed in the future
 

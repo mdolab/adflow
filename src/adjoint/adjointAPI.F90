@@ -233,7 +233,7 @@ contains
     ! of the fact that only wbar needs to be zeroed since all other
     ! required seeds are zeroed in the individual fast routines. This is
     ! slightly unsafe, but it necessary for speed.
-    
+
     ! Allocate the memory for reverse
     if (.not. derivVarsAllocated) then
       call allocDerivativeValues(level)
@@ -440,7 +440,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
@@ -468,7 +468,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
@@ -496,7 +496,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
     integer(kind=intType) :: nstate
     real(kind=realType), dimension(nState) :: RHS
 
@@ -966,7 +966,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer

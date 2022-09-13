@@ -1288,7 +1288,7 @@ contains
     Mat matrix
     integer(kind=intType), intent(in) :: blockSize, m, n
     integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
-    character*(*) :: file
+    character(len=*) :: file
     integer(kind=intType) :: ierr, line
     ! if (blockSize > 1) then
        call MatCreateBAIJ(ADFLOW_COMM_WORLD, blockSize, &

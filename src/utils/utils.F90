@@ -5758,7 +5758,7 @@ end subroutine cross_prod
     implicit none
 
     integer(kind=intType),intent(in) :: errorcode
-    character*(*),intent(in) :: file
+    character(len=*),intent(in) :: file
     integer(kind=intType),intent(in) :: line
     integer::ierr
 
