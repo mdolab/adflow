@@ -4709,6 +4709,7 @@ end subroutine cross_prod
                   flowDomsd(nn, level, sps)%BCData(mm)%area, &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip, &
                   flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall, &
+!                  flowDomsd(nn, level, sps)%BCData(mm)%ksNS_Wall, &
                   stat=ierr)
              call EChk(ierr,__FILE__,__LINE__)
           enddo
@@ -4937,6 +4938,10 @@ end subroutine cross_prod
             deallocate(BCData(i)%TNS_Wall, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
 
+       if( associated(BCData(i)%ksNS_Wall) ) &
+            deallocate(BCData(i)%ksNS_Wall, stat=ierr)
+       if(ierr /= 0) deallocationFailure = .true.
+
        if( associated(BCData(i)%ptInlet) ) &
             deallocate(BCData(i)%ptInlet, stat=ierr)
        if(ierr /= 0) deallocationFailure = .true.
@@ -5016,6 +5021,7 @@ end subroutine cross_prod
 
        nullify(BCData(i)%uSlip)
        nullify(BCData(i)%TNS_Wall)
+       nullify(BCData(i)%ksNS_Wall)
 
        nullify(BCData(i)%normALE)
        nullify(BCData(i)%rfaceALE)

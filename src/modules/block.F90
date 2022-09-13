@@ -95,10 +95,12 @@ module block
 
      ! uSlip(:,:,3):  the 3 components of the velocity vector on
      !                a viscous wall.
-     ! TNS_Wall(:,:): Wall temperature for isothermal walls.
+     ! KSTNS_Wall(:,:): Wall temperature for isothermal walls.
+     ! ksNS_Wall(:,:): Equivalent Sand Grain Roughness on viscous walls.
 
      real(kind=realType), dimension(:,:,:), pointer :: uSlip
      real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
+     real(kind=realType), dimension(:,:),   pointer :: ksNS_Wall
 
      ! The name of this boundary condition and it's index
      character(maxCGNSNameLen) :: family

@@ -13,8 +13,18 @@ contains
     implicit none
     nbcVar = nbcVarIsothermalWall
     bcVarNames(1) = cgnsTemp
+    ! TODO: Add Sand grain roughness !!!!
 
   end subroutine setBCVarNamesIsothermalWall
+
+  subroutine setBCVarNamesAdiabaticWall
+    use cgnsNames
+    use constants
+    implicit none
+    nbcVar = nbcVarAdiabaticWall
+    bcVarNames(1) = cgnsSandGrainRoughness
+
+  end subroutine setBCVarNamesAdiabaticWall
 
   subroutine setBCVarNamesSubsonicInflow
     use constants
@@ -467,6 +477,42 @@ contains
     enddo
 
   end subroutine BCDataIsothermalWall
+
+  subroutine BCDataAdiabaticWall(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd)
+    !
+    !       Tries to extract the equivalent sand grain roughness. It sets
+    !       a default value of 0.0
+    !
+    use constants
+    use cgnsNames
+    use blockPointers, only : BCFaceID, BCData, nBKGlobal
+    implicit none
+    !
+    !      Subroutine arguments.
+    !
+    integer(kind=intType) :: boco
+    integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
+    real(kind=realType), dimension(iBeg:iEnd,jBeg:jEnd, nbcVarMax) :: bcVarArray
+    !
+    !      Local variables.
+    !
+    integer(kind=intType) :: i, j
+
+    ! Set a value of 0 if it was not possible to determine the
+    ! sand grain roughness
+
+    if(.not. bcVarPresent(1)) then
+       bcVarArray(:,:,1) = zero
+    endif
+
+    do j=jBeg,jEnd
+       do i=iBeg,iEnd
+          BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,1)
+       enddo
+    enddo
+
+  end subroutine BCDataAdiabaticWall
+
 
   subroutine BCDataSubsonicInflow(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd, allTurbPresent)
     !
@@ -1446,8 +1492,12 @@ contains
 
                 select case (BCType(j))
 
+
+                case (NSWallAdiabatic)
+                   call setBCVarNamesAdiabaticWall
+                   call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                 case (NSWallIsothermal)
-                   call setBCVarNamesSupersonicInflow
+                   call setBCVarNamesSupersonicInflow  ! possible bug?
                    call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
                 case (SupersonicInflow)
                    call setBCVarNamesSupersonicInflow
@@ -1544,8 +1594,11 @@ contains
 
                 select case (BCType(j))
 
+                case (NSWallAdiabatic)
+                   call setBCVarNamesAdiabaticWall
+                   call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                 case (NSWallIsothermal)
-                   call setBCVarNamesSupersonicInflow
+                   call setBCVarNamesSupersonicInflow  ! possible bug?
                    call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
                 case (SupersonicInflow)
                    call setBCVarNamesSupersonicInflow
@@ -1649,8 +1702,11 @@ contains
 
                 select case (BCType(j))
 
+                case (NSWallAdiabatic)
+                   call setBCVarNamesAdiabaticWall
+                   call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                 case (NSWallIsothermal)
-                   call setBCVarNamesSupersonicInflow
+                   call setBCVarNamesSupersonicInflow  ! possible bug?
                    call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
                 case (SupersonicInflow)
                    call setBCVarNamesSupersonicInflow
@@ -2248,6 +2304,7 @@ contains
                 case (NSWallAdiabatic)
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
+                        BCData(mm)%ksNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
@@ -2269,6 +2326,7 @@ contains
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
+                        ! TODO: Add KS!
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
@@ -2640,6 +2698,7 @@ contains
                 nullify(BCData(j)%surfIndex)
                 nullify(BCData(j)%uSlip)
                 nullify(BCData(j)%TNS_Wall)
+                nullify(BCData(j)%ksNS_Wall)
                 nullify(BCData(j)%CpTarget)
 
                 nullify(BCData(j)%normALE)
@@ -2763,6 +2822,11 @@ contains
              ! call the appropriate routine.
 
              select case (BCType(j))
+
+             case (NSWallAdiabatic)
+                call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+                call extractFromDataSet(bcVarArray)
+                call BCDataAdiabaticWall(j, bcVarArray, iBeg, iEnd, jBeg, jEnd)
 
              case (NSWallIsothermal)
                 call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
@@ -3018,6 +3082,11 @@ contains
              ! call the appropriate routine.
              select case (BCType(j))
 
+!            case (NSWallAdiabatic)
+!               call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+!               call extractFromDataSet_d(bcVarArray, bcVarArrayd)
+!               call BCDataAdiabaticWall_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
+
              case (NSWallIsothermal)
                 call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
                 call extractFromDataSet_d(bcVarArray, bcVarArrayd)
@@ -3113,6 +3182,12 @@ contains
              ! Determine the boundary condition we are having here and
              ! call the appropriate routine.
              select case (BCType(j))
+
+!            case (NSWallAdiabatic)
+!               call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+!               call extractFromDataSet(bcVarArray)
+!               call BCDataAdiabaticWall_b(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
+!               call extractFromDataSet_b(bcVarArray, bcVarArrayd)
 
              case (NSWallIsothermal)
                 call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
