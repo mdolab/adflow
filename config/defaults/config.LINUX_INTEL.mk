@@ -37,7 +37,7 @@ AR_FLAGS = -rvs
 
 # ------- Define Linker Flags ------------------------------------------
 LINKER       = $(FF90)
-LINKER_FLAGS = -nofor_main
+LINKER_FLAGS = -nofor-main
 
 # ------- Define Petsc Info ---
 include ${PETSC_DIR}/lib/petsc/conf/variables
