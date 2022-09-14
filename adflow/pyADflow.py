@@ -297,7 +297,8 @@ class ADFLOW(AeroSolver):
             # index needs to go in as fortran numbering, so add 1
             name = getPy3SafeString(self.adflow.utils.getcgnszonename(i + 1).strip())
             self.CGNSZoneNameIDs[name] = i + 1
-            # do we need to do this on root and broadcast?
+            # TODO check this: do we need to do this on root and broadcast?
+            # Looks like it is fine
 
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption("cutCallBack")
@@ -307,7 +308,47 @@ class ADFLOW(AeroSolver):
             cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
             cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
+        # TODO remove these, barriers, but for now, to get an accurate timing, sync procs
+        self.comm.barrier()
         cutCallBackTime = time.time()
+
+        # exlclude the cells inside closed surfaces if we are provided with them
+        explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
+        if explicitSurfaceCallback is not None:
+            # the user wants to exclude cells that lie within a list of surfaces.
+
+            # first, call the callback function with cgns zone name IDs.
+            # this need to return us a dictionary with the surface mesh information,
+            # as well as which blocks in the cgns mesh to include in the search
+            surf_dict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
+
+            # loop over the surfaces
+            for surf in surf_dict:
+
+                if self.comm.rank == 0:
+                    print(f"Explicitly blanking surface: {surf}")
+
+                # this is the plot3d surface that defines the closed volume
+                surf_file = surf_dict[surf]["surf_file"]
+                # the indices of cgns blocks that we want to consider when blanking inside the surface
+                block_ids = surf_dict[surf]["block_ids"]
+
+                # read the plot3d surface
+                pts, conn = self._readPlot3DSurfFile(surf_file, convertToTris=False)
+
+                # get a new flag array
+                surf_flag = numpy.zeros(n, "intc")
+
+                # call the fortran routine to determine if the cells are inside or outside.
+                # this code is very similar to the actuator zone creation.
+                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surf_flag, block_ids)
+
+                # update the flag array with the new info
+                flag = numpy.any([flag, surf_flag], axis=0)
+
+        # TODO remove these, barriers, but for now, to get an accurate timing, sync procs
+        self.comm.barrier()
+        explicitSurfaceCutTime = time.time()
 
         # Need to reset the oversetPriority option since the CGNSGrid
         # structure wasn't available before;
@@ -344,13 +385,14 @@ class ADFLOW(AeroSolver):
             print("|")
             print("| %-30s: %10.3f sec" % ("Library Load Time", libLoadTime - startInitTime))
             print("| %-30s: %10.3f sec" % ("Set Defaults Time", defSetupTime - libLoadTime))
-            print("| %-30s: %10.3f sec" % ("Base class init Time", baseClassTime - defSetupTime))
+            print("| %-30s: %10.3f sec" % ("Base Class Init Time", baseClassTime - defSetupTime))
             print("| %-30s: %10.3f sec" % ("Introductory Time", introTime - baseClassTime))
             print("| %-30s: %10.3f sec" % ("Partitioning Time", partitioningTime - introTime))
             print("| %-30s: %10.3f sec" % ("Preprocessing Time", preprocessingTime - partitioningTime))
             print("| %-30s: %10.3f sec" % ("Family Setup Time", familySetupTime - preprocessingTime))
-            print("| %-30s: %10.3f sec" % ("Cut callback Time", cutCallBackTime - familySetupTime))
-            print("| %-30s: %10.3f sec" % ("Overset Preprocessing Time", oversetPreTime - cutCallBackTime))
+            print("| %-30s: %10.3f sec" % ("Cut Callback Time", cutCallBackTime - familySetupTime))
+            print("| %-30s: %10.3f sec" % ("Explicit Surface Cut Time", explicitSurfaceCutTime - cutCallBackTime))
+            print("| %-30s: %10.3f sec" % ("Overset Preprocessing Time", oversetPreTime - explicitSurfaceCutTime))
             print("| %-30s: %10.3f sec" % ("Initialize Flow Time", initFlowTime - oversetPreTime))
             print("|")
             print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
@@ -5200,6 +5242,7 @@ class ADFLOW(AeroSolver):
             "debugZipper": [bool, False],
             "zipperSurfaceFamily": [(str, type(None)), None],
             "cutCallback": [(types.FunctionType, type(None)), None],
+            "explicitSurfaceCallback": [(types.FunctionType, type(None)), None],
             "oversetUpdateMode": [str, ["frozen", "fast", "full"]],
             "nRefine": [int, 10],
             "nFloodIter": [int, -1],
@@ -5391,6 +5434,7 @@ class ADFLOW(AeroSolver):
             "closedsurfacefamilies",
             "zippersurfacefamily",
             "cutcallback",
+            "explicitsurfacecallback",
         )
 
     def _getOptionMap(self):
@@ -5767,6 +5811,7 @@ class ADFLOW(AeroSolver):
             "zippersurfacefamily",
             "outputsurfacefamily",
             "cutcallback",
+            "explicitsurfacecallback",
             "infchangecorrection",
             "restartadjoint",
             "skipafterfailedadjoint",

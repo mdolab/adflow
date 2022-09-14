@@ -2098,6 +2098,231 @@ contains
 
   end subroutine setExplicitHoleCut
 
+  subroutine flagCellsInSurface(pts, npts, conn, nconn, flag, ncell, blockids, nblocks)
+
+    use constants
+    use communication, only : myID
+    use adtBuild, only : buildSerialQuad, destroySerialQuad
+    use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
+    use ADTUtils, only : stack
+    use ADTData
+    use blockPointers, only : x, il, jl, kl, nDom, iBlank, vol, nbkGlobal
+    use adjointVars, only : nCellsLocal
+    use utils, only : setPointers, EChk
+    implicit none
+
+    ! Input/Output
+    real(kind=realType), intent(in), dimension(3,npts) :: pts
+    integer(kind=intType), intent(in), dimension(4,nconn) :: conn
+    integer(kind=intType), intent(inout), dimension(ncell) :: flag
+    integer(kind=intType), intent(in), dimension(nblocks) :: blockids
+    integer(kind=intType), intent(in) :: npts, nconn, ncell, nblocks
+
+    ! Working variables
+    integer(kind=intType) :: i, j, k, l, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr, iblock, cell_counter
+    real(kind=realType) :: dStar, frac, volLocal
+    real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, xCen, axisVec
+    real(kind=realType), dimension(3) :: diag1, diag2, diag3, diag4
+    real(kind=realType) :: dd1, dd2, dd3, dd4, diag_max
+    type(adtType) :: ADT
+    real(kind=realType), dimension(:, :), allocatable :: norm
+    integer(kind=intType), dimension(:), allocatable :: normCount
+    integer(kind=intType), dimension(:, :), pointer :: tmp
+
+    ! ADT Type required data
+    integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew
+    type(adtBBoxTargetType), dimension(:), pointer :: BB
+    real(kind=realType) :: coor(4), uvw(5)
+    real(kind=realType) :: dummy(3, 2)
+
+    ! we use the same approach as the actuator zone addition; we project the cell centers to the
+    ! surface provided. This way, we can fairly quickly determine the coordinates
+    ! that are inside the closed volumes. The surface mesh is duplicated on all procs, whereas
+    ! the nodes projected are distributed based on the grid paritioning.
+
+    ! Since this is effectively a wall-distance calc it gets super
+    ! costly for the points far away. Luckly, we can do a fairly
+    ! simple shortcut: Just compute the bounding box of the region and
+    ! use that as the "already found" distance in the cloest point
+    ! search. This will eliminate all the points further away
+    ! immediately and this should be sufficiently fast.
+
+    ! So...compute that bounding box:
+    do iDim=1,3
+       minX(iDim) = minval(pts(iDim, :))
+       maxX(iDim) = maxval(pts(iDim, :))
+    end do
+
+    ! Get the max distance. This should be quite conservative.
+    dStar = (maxX(1)-minx(1))**2 + (maxX(2)-minX(2))**2  + (maxX(3)-minX(3))**2
+
+    ! Now build the tree.
+    call buildSerialQuad(size(conn, 2), size(pts, 2), pts, conn, ADT)
+
+    ! Compute the (averaged) uniqe nodal vectors:
+    allocate(norm(3, size(pts, 2)), normCount(size(pts, 2)))
+
+    norm = zero
+    normCount = 0
+
+    do i=1, size(conn, 2)
+
+       ! Compute cross product normal and normize
+       v1 = pts(:, conn(3, i)) -  pts(:, conn(1, i))
+       v2 = pts(:, conn(4, i)) -  pts(:, conn(2, i))
+
+       sss(1) = (v1(2)*v2(3) - v1(3)*v2(2))
+       sss(2) = (v1(3)*v2(1) - v1(1)*v2(3))
+       sss(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+       sss = sss / sqrt(sss(1)**2 + sss(2)**2 + sss(3)**2)
+
+       ! Add to each of the four pts and increment the number added
+       do j=1, 4
+          norm(:, conn(j, i)) = norm(:, conn(j, i)) + sss
+          normCount(conn(j, i)) = normCount(conn(j, i)) + 1
+       end do
+    end do
+
+    ! Now just divide by the norm count
+    do i=1, size(pts, 2)
+       norm(:, i) = norm(:, i) / normCount(i)
+    end do
+
+    ! Node count is no longer needed
+    deallocate(normCount)
+
+   !  write(*,*) myid, "after weird norm calc"
+
+    ! Allocate the extra data the tree search requires.
+    allocate(stack(100), BB(20), frontLeaves(25), frontLeavesNew(25))
+
+    ! Now search for all the coordinate. Note that We have explictly
+    ! set sps to 1 becuase it is only implemented for single grid.
+    sps = 1
+    level = 1
+    cell_counter = 1
+
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
+
+       ! only check this cell if it is within one of the block IDs we are asked to look at
+       if (any( blockids .eq. nbkGlobal) )then
+         do k=2, kl
+            do j=2, jl
+               do i=2, il
+                  ! calculate the 4 diagonals of the cell
+                  diag1 = x(i-1,j-1,k-1,:) - x(i,j,k,:)
+                  diag2 = x(i,j-1,k-1,:) - x(i-1,j,k,:)
+                  diag3 = x(i,j,k-1,:) - x(i-1,j-1,k,:)
+                  diag4 = x(i-1,j,k-1,:) - x(i,j-1,k,:)
+
+                  dd1 = diag1(1)*diag1(1) + diag1(2)*diag1(2) + diag1(3)*diag1(3)
+                  dd2 = diag2(1)*diag2(1) + diag2(2)*diag2(2) + diag2(3)*diag2(3)
+                  dd3 = diag3(1)*diag3(1) + diag3(2)*diag3(2) + diag3(3)*diag3(3)
+                  dd4 = diag4(1)*diag4(1) + diag4(2)*diag4(2) + diag4(3)*diag4(3)
+
+                  ! get the max
+                  diag_max = max(dd1, dd2, dd3, dd4)
+                  ! if the projection is greater than this for any node, we stop testing the current point.
+                  ! we can work with squared distances for the sake of efficiency. the projection routine
+                  ! will also return the squared distance for the same reason.
+
+                  ! actually test each node
+                  do l=1, 8
+                     select case (l)
+                        case (1)
+                           xCen = x(i-1,j-1,k-1,:)
+                        case (2)
+                           xCen = x(i,  j-1,k-1,:)
+                        case (3)
+                           xCen = x(i,  j,  k-1,:)
+                        case (4)
+                           xCen = x(i-1,j,  k-1,:)
+                        case (5)
+                           xCen = x(i-1,j-1,k,  :)
+                        case (6)
+                           xCen = x(i,  j-1,k,  :)
+                        case (7)
+                           xCen = x(i,  j,  k,  :)
+                        case (8)
+                           xCen = x(i-1,j,  k,  :)
+                     end select
+
+                     ! The current point to search for and continually
+                     ! reset the "closest point already found" variable.
+                     coor(1:3) = xCen
+                     coor(4) = dStar
+                     intInfo(3) = 0
+                     call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
+                           uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                     cellID = intInfo(3)
+                     if (cellID > 0) then
+                        ! Now check if this was successful or not:
+                        if (checkInside()) then
+                           ! Whoohoo! We are inside the region. Flag this cell
+                           flag(cell_counter) = 1
+                           exit
+                        else
+                           ! we are outside. now check if the projection distance is larger than
+                           ! the max diagonal. if so, we can quit early here.
+                           if (uvw(4) .gt. diag_max) then
+                              ! projection is larger than our biggest diagonal.
+                              ! other nodes wont be in the surface, so we can exit the cell early here
+                              exit
+                           end if
+                        end if
+                     end if
+                  end do
+                  cell_counter = cell_counter + 1
+               end do
+            end do
+         end do
+       else
+          ! we dont want to consider block, but we need to increment the counter
+          cell_counter = cell_counter + (kl - 1) * (jl - 1) * (il - 1)
+       end if
+    end do
+
+    ! Final memory cleanup
+    deallocate(norm, frontLeaves, frontLeavesNew, BB)
+    call destroySerialQuad(ADT)
+
+  contains
+
+    function checkInside()
+
+      implicit none
+      logical :: checkInside
+      integer(kind=intType) :: jj
+      real(kind=realType) :: shp(4), xp(3), normal(3), v1(3), dp
+
+      ! bi-linear shape functions (CCW ordering)
+      shp(1) = (one-uvw(1))*(one-uvw(2))
+      shp(2) = (    uvw(1))*(one-uvw(2))
+      shp(3) = (    uvw(1))*(    uvw(2))
+      shp(4) = (one-uvw(1))*(    uvw(2))
+
+      xp = zero
+      normal = zero
+      do jj=1, 4
+         xp = xp + shp(jj)*pts(:, conn(jj, cellID))
+         normal = normal + shp(jj)*norm(:, conn(jj, cellID))
+      end do
+
+      ! Compute the dot product of normal with cell center
+      ! (stored in coor) with the point on the surface.
+      v1 = coor(1:3) - xp
+      dp = normal(1)*v1(1) + normal(2)*v1(2) + normal(3)*v1(3)
+
+      if (dp < zero) then
+         checkInside = .True.
+      else
+         checkInside = .False.
+      end if
+    end function checkInside
+
+  end subroutine flagCellsInSurface
+
   subroutine updateOverset(flag, n, closedFamList, nFam)
 
     ! This is the main gateway routine for updating the overset
