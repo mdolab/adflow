@@ -1,3 +1,5 @@
+fortranFilesNoOpt= utils/genericISNAN.F90
+
 fortranFiles=	ADT/adtUtils.F90\
 		ADT/adtBuild.F90\
 		ADT/adtLocalSearch.F90\
