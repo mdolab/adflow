@@ -589,7 +589,7 @@ python module libadflow
            real(kind=realtype), intent(in) :: value
            logical, intent(out) :: setvalue
          end subroutine setblockpriority
-         subroutine flagcellsinsurface(pts,npts,conn,nconn,flag,ncell,blockids,nblocks)
+         subroutine flagcellsinsurface(pts,npts,conn,nconn,flag,ncell,blockids,nblocks,k_min)
            real(kind=realtype) dimension(3,npts),intent(in) :: pts
            integer(kind=inttype), optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
            integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
@@ -598,6 +598,7 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(flag)==ncell),depend(flag) :: ncell=len(flag)
            integer(kind=inttype) dimension(nblocks),intent(in) :: blockids
            integer(kind=inttype), optional,intent(in),check(len(blockids)==nblocks),depend(blockids) :: nblocks=len(blockids)
+           integer(kind=inttype), intent(in) :: k_min
          end subroutine flagcellsinsurface
        end module oversetapi
 

@@ -2098,7 +2098,7 @@ contains
 
   end subroutine setExplicitHoleCut
 
-  subroutine flagCellsInSurface(pts, npts, conn, nconn, flag, ncell, blockids, nblocks)
+  subroutine flagCellsInSurface(pts, npts, conn, nconn, flag, ncell, blockids, nblocks, k_min)
 
     use constants
     use communication, only : myID
@@ -2106,7 +2106,7 @@ contains
     use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
     use ADTUtils, only : stack
     use ADTData
-    use blockPointers, only : x, il, jl, kl, nDom, iBlank, vol, nbkGlobal
+    use blockPointers, only : x, il, jl, kl, nDom, iBlank, vol, nbkGlobal, kBegOr
     use adjointVars, only : nCellsLocal
     use utils, only : setPointers, EChk
     implicit none
@@ -2117,9 +2117,11 @@ contains
     integer(kind=intType), intent(inout), dimension(ncell) :: flag
     integer(kind=intType), intent(in), dimension(nblocks) :: blockids
     integer(kind=intType), intent(in) :: npts, nconn, ncell, nblocks
+    integer(kind=intType), intent(in) :: k_min
 
     ! Working variables
-    integer(kind=intType) :: i, j, k, l, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr, iblock, cell_counter
+    integer(kind=intType) :: i, j, k, l, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
+    integer(kind=intType) :: iblock, cell_counter, k_cgns
     real(kind=realType) :: dStar, frac, volLocal
     real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, xCen, axisVec
     real(kind=realType), dimension(3) :: diag1, diag2, diag3, diag4
@@ -2210,69 +2212,79 @@ contains
          do k=2, kl
             do j=2, jl
                do i=2, il
-                  ! calculate the 4 diagonals of the cell
-                  diag1 = x(i-1,j-1,k-1,:) - x(i,j,k,:)
-                  diag2 = x(i,j-1,k-1,:) - x(i-1,j,k,:)
-                  diag3 = x(i,j,k-1,:) - x(i-1,j-1,k,:)
-                  diag4 = x(i-1,j,k-1,:) - x(i,j-1,k,:)
 
-                  dd1 = diag1(1)*diag1(1) + diag1(2)*diag1(2) + diag1(3)*diag1(3)
-                  dd2 = diag2(1)*diag2(1) + diag2(2)*diag2(2) + diag2(3)*diag2(3)
-                  dd3 = diag3(1)*diag3(1) + diag3(2)*diag3(2) + diag3(3)*diag3(3)
-                  dd4 = diag4(1)*diag4(1) + diag4(2)*diag4(2) + diag4(3)*diag4(3)
+                  ! get the k index of this cell in the cgns grid
+                  k_cgns = k + kBegOr - 2
 
-                  ! get the max
-                  diag_max = max(dd1, dd2, dd3, dd4)
-                  ! if the projection is greater than this for any node, we stop testing the current point.
-                  ! we can work with squared distances for the sake of efficiency. the projection routine
-                  ! will also return the squared distance for the same reason.
+                  ! check if we are above the kmin range needed. if no kmin is provided, then the value
+                  ! defaults to -1 from python, so all points satisfy the check
+                  if (k_cgns .gt. k_min) then
 
-                  ! actually test each node
-                  do l=1, 8
-                     select case (l)
-                        case (1)
-                           xCen = x(i-1,j-1,k-1,:)
-                        case (2)
-                           xCen = x(i,  j-1,k-1,:)
-                        case (3)
-                           xCen = x(i,  j,  k-1,:)
-                        case (4)
-                           xCen = x(i-1,j,  k-1,:)
-                        case (5)
-                           xCen = x(i-1,j-1,k,  :)
-                        case (6)
-                           xCen = x(i,  j-1,k,  :)
-                        case (7)
-                           xCen = x(i,  j,  k,  :)
-                        case (8)
-                           xCen = x(i-1,j,  k,  :)
-                     end select
+                     ! calculate the 4 diagonals of the cell
+                     diag1 = x(i-1,j-1,k-1,:) - x(i,j,k,:)
+                     diag2 = x(i,j-1,k-1,:) - x(i-1,j,k,:)
+                     diag3 = x(i,j,k-1,:) - x(i-1,j-1,k,:)
+                     diag4 = x(i-1,j,k-1,:) - x(i,j-1,k,:)
 
-                     ! The current point to search for and continually
-                     ! reset the "closest point already found" variable.
-                     coor(1:3) = xCen
-                     coor(4) = dStar
-                     intInfo(3) = 0
-                     call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
-                           uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
-                     cellID = intInfo(3)
-                     if (cellID > 0) then
-                        ! Now check if this was successful or not:
-                        if (checkInside()) then
-                           ! Whoohoo! We are inside the region. Flag this cell
-                           flag(cell_counter) = 1
-                           exit
-                        else
-                           ! we are outside. now check if the projection distance is larger than
-                           ! the max diagonal. if so, we can quit early here.
-                           if (uvw(4) .gt. diag_max) then
-                              ! projection is larger than our biggest diagonal.
-                              ! other nodes wont be in the surface, so we can exit the cell early here
+                     dd1 = diag1(1)*diag1(1) + diag1(2)*diag1(2) + diag1(3)*diag1(3)
+                     dd2 = diag2(1)*diag2(1) + diag2(2)*diag2(2) + diag2(3)*diag2(3)
+                     dd3 = diag3(1)*diag3(1) + diag3(2)*diag3(2) + diag3(3)*diag3(3)
+                     dd4 = diag4(1)*diag4(1) + diag4(2)*diag4(2) + diag4(3)*diag4(3)
+
+                     ! get the max
+                     diag_max = max(dd1, dd2, dd3, dd4)
+                     ! if the projection is greater than this for any node, we stop testing the current point.
+                     ! we can work with squared distances for the sake of efficiency. the projection routine
+                     ! will also return the squared distance for the same reason.
+
+                     ! actually test each node
+                     do l=1, 8
+                        select case (l)
+                           case (1)
+                              xCen = x(i-1,j-1,k-1,:)
+                           case (2)
+                              xCen = x(i,  j-1,k-1,:)
+                           case (3)
+                              xCen = x(i,  j,  k-1,:)
+                           case (4)
+                              xCen = x(i-1,j,  k-1,:)
+                           case (5)
+                              xCen = x(i-1,j-1,k,  :)
+                           case (6)
+                              xCen = x(i,  j-1,k,  :)
+                           case (7)
+                              xCen = x(i,  j,  k,  :)
+                           case (8)
+                              xCen = x(i-1,j,  k,  :)
+                        end select
+
+                        ! The current point to search for and continually
+                        ! reset the "closest point already found" variable.
+                        coor(1:3) = xCen
+                        coor(4) = dStar
+                        intInfo(3) = 0
+                        call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
+                              uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                        cellID = intInfo(3)
+                        if (cellID > 0) then
+                           ! Now check if this was successful or not:
+                           if (checkInside()) then
+                              ! Whoohoo! We are inside the region. Flag this cell
+                              flag(cell_counter) = 1
                               exit
+                           else
+                              ! we are outside. now check if the projection distance is larger than
+                              ! the max diagonal. if so, we can quit early here.
+                              if (uvw(4) .gt. diag_max) then
+                                 ! projection is larger than our biggest diagonal.
+                                 ! other nodes wont be in the surface, so we can exit the cell early here
+                                 exit
+                              end if
                            end if
                         end if
-                     end if
-                  end do
+                     end do
+                  end if
+
                   cell_counter = cell_counter + 1
                end do
             end do

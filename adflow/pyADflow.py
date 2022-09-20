@@ -308,7 +308,7 @@ class ADFLOW(AeroSolver):
             cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
             cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
-        # TODO remove these, barriers, but for now, to get an accurate timing, sync procs
+        # TODO remove these barriers, but for now, to get an accurate timing, sync procs
         self.comm.barrier()
         cutCallBackTime = time.time()
 
@@ -333,20 +333,34 @@ class ADFLOW(AeroSolver):
                 # the indices of cgns blocks that we want to consider when blanking inside the surface
                 block_ids = surf_dict[surf]["block_ids"]
 
+                # check if there is a kmin provided
+                if "kmin" in surf_dict[surf]:
+                    kmin = surf_dict[surf]["kmin"]
+                else:
+                    kmin = -1
+
                 # read the plot3d surface
                 pts, conn = self._readPlot3DSurfFile(surf_file, convertToTris=False)
+
+                # optionally add the offsets to the surface mesh we just read
+                if "dx" in surf_dict[surf]:
+                    pts[:, 0] += surf_dict[surf]["dx"]
+                if "dy" in surf_dict[surf]:
+                    pts[:, 1] += surf_dict[surf]["dy"]
+                if "dz" in surf_dict[surf]:
+                    pts[:, 2] += surf_dict[surf]["dz"]
 
                 # get a new flag array
                 surf_flag = numpy.zeros(n, "intc")
 
                 # call the fortran routine to determine if the cells are inside or outside.
                 # this code is very similar to the actuator zone creation.
-                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surf_flag, block_ids)
+                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surf_flag, block_ids, kmin)
 
                 # update the flag array with the new info
                 flag = numpy.any([flag, surf_flag], axis=0)
 
-        # TODO remove these, barriers, but for now, to get an accurate timing, sync procs
+        # TODO remove these barriers, but for now, to get an accurate timing, sync procs
         self.comm.barrier()
         explicitSurfaceCutTime = time.time()
 
