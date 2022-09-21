@@ -2231,6 +2231,9 @@ contains
                vectNorm(2) =velDirFreeStream(2) - vectNormProd * norm(2)
                vectNorm(3) =velDirFreeStream(3) - vectNormProd * norm(3)
 
+               vectNorm = vectNorm / (sqrt(vectNorm(1)**2 + vectNorm(2)**2 + &
+                  vectNorm(3)**2) + 1e-16)
+
                ! compute cross product of vectnorm to surface normal
                vecCrossProd(1) = vectNorm(2)*norm(3) - &
                   vectNorm(3)*norm(2)
@@ -2238,6 +2241,9 @@ contains
                   vectNorm(1)*norm(3)
                vecCrossProd(3) = vectNorm(1)*norm(2) - &
                   vectNorm(2)*norm(1)
+               
+               vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
+                  + vecCrossProd(3)**2) + 1e-16)
 
                ! do the sweep angle correction
                vectCorrected(1) = cos(degtorad*sweepAngleCorrection) *vectNorm(1) + &
@@ -2248,6 +2254,9 @@ contains
 
                vectCorrected(3) = cos(degtorad*sweepAngleCorrection) *vectNorm(3) + &
                   sin(degtorad*sweepAngleCorrection) * vecCrossProd(3)
+
+               vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
+                  + vectCorrected(3)**2) + 1e-16)
 
                sensor = (v(1)*vectCorrected(1) + v(2)*vectCorrected(2) + &
                   v(3)*vectCorrected(3))

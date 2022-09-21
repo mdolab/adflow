@@ -1101,6 +1101,18 @@ contains
 &         vectnormprodd
         vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm&
 &         (i, j, 3)
+        arg1d = 2*vectnorm(1)*vectnormd(1) + 2*vectnorm(2)*vectnormd(2) &
+&         + 2*vectnorm(3)*vectnormd(3)
+        arg1 = vectnorm(1)**2 + vectnorm(2)**2 + vectnorm(3)**2
+        if (arg1 .eq. 0.0_8) then
+          result1d = 0.0_8
+        else
+          result1d = arg1d/(2.0*sqrt(arg1))
+        end if
+        result1 = sqrt(arg1)
+        vectnormd = (vectnormd*(result1+1e-16)-vectnorm*result1d)/(&
+&         result1+1e-16)**2
+        vectnorm = vectnorm/(result1+1e-16)
 ! compute cross product of vectnorm to surface normal
         veccrossprodd(1) = bcdata(mm)%norm(i, j, 3)*vectnormd(2) - &
 &         bcdata(mm)%norm(i, j, 2)*vectnormd(3)
@@ -1114,6 +1126,19 @@ contains
 &         bcdata(mm)%norm(i, j, 1)*vectnormd(2)
         veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - &
 &         vectnorm(2)*bcdata(mm)%norm(i, j, 1)
+        arg1d = 2*veccrossprod(1)*veccrossprodd(1) + 2*veccrossprod(2)*&
+&         veccrossprodd(2) + 2*veccrossprod(3)*veccrossprodd(3)
+        arg1 = veccrossprod(1)**2 + veccrossprod(2)**2 + veccrossprod(3)&
+&         **2
+        if (arg1 .eq. 0.0_8) then
+          result1d = 0.0_8
+        else
+          result1d = arg1d/(2.0*sqrt(arg1))
+        end if
+        result1 = sqrt(arg1)
+        veccrossprodd = (veccrossprodd*(result1+1e-16)-veccrossprod*&
+&         result1d)/(result1+1e-16)**2
+        veccrossprod = veccrossprod/(result1+1e-16)
 ! do the sweep angle correction
         vectcorrectedd(1) = cos(degtorad*sweepanglecorrection)*vectnormd&
 &         (1) + sin(degtorad*sweepanglecorrection)*veccrossprodd(1)
@@ -1127,6 +1152,19 @@ contains
 &         (3) + sin(degtorad*sweepanglecorrection)*veccrossprodd(3)
         vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3&
 &         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+        arg1d = 2*vectcorrected(1)*vectcorrectedd(1) + 2*vectcorrected(2&
+&         )*vectcorrectedd(2) + 2*vectcorrected(3)*vectcorrectedd(3)
+        arg1 = vectcorrected(1)**2 + vectcorrected(2)**2 + vectcorrected&
+&         (3)**2
+        if (arg1 .eq. 0.0_8) then
+          result1d = 0.0_8
+        else
+          result1d = arg1d/(2.0*sqrt(arg1))
+        end if
+        result1 = sqrt(arg1)
+        vectcorrectedd = (vectcorrectedd*(result1+1e-16)-vectcorrected*&
+&         result1d)/(result1+1e-16)**2
+        vectcorrected = vectcorrected/(result1+1e-16)
         sensord = vd(1)*vectcorrected(1) + v(1)*vectcorrectedd(1) + vd(2&
 &         )*vectcorrected(2) + v(2)*vectcorrectedd(2) + vd(3)*&
 &         vectcorrected(3) + v(3)*vectcorrectedd(3)
@@ -1567,6 +1605,9 @@ contains
 &         (i, j, 2)
         vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm&
 &         (i, j, 3)
+        arg1 = vectnorm(1)**2 + vectnorm(2)**2 + vectnorm(3)**2
+        result1 = sqrt(arg1)
+        vectnorm = vectnorm/(result1+1e-16)
 ! compute cross product of vectnorm to surface normal
         veccrossprod(1) = vectnorm(2)*bcdata(mm)%norm(i, j, 3) - &
 &         vectnorm(3)*bcdata(mm)%norm(i, j, 2)
@@ -1574,6 +1615,10 @@ contains
 &         vectnorm(1)*bcdata(mm)%norm(i, j, 3)
         veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - &
 &         vectnorm(2)*bcdata(mm)%norm(i, j, 1)
+        arg1 = veccrossprod(1)**2 + veccrossprod(2)**2 + veccrossprod(3)&
+&         **2
+        result1 = sqrt(arg1)
+        veccrossprod = veccrossprod/(result1+1e-16)
 ! do the sweep angle correction
         vectcorrected(1) = cos(degtorad*sweepanglecorrection)*vectnorm(1&
 &         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(1)
@@ -1581,6 +1626,10 @@ contains
 &         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(2)
         vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3&
 &         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+        arg1 = vectcorrected(1)**2 + vectcorrected(2)**2 + vectcorrected&
+&         (3)**2
+        result1 = sqrt(arg1)
+        vectcorrected = vectcorrected/(result1+1e-16)
         sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
 &         vectcorrected(3)
         sensor = one/two*(one-sensor)
