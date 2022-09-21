@@ -624,6 +624,111 @@ class ADFLOW(AeroSolver):
         pts, conn = self._readPlot3DSurfFile(fileName)
         self.adflow.usersurfaceintegrations.addintegrationsurface(pts.T, conn.T, familyName, famID, isInflow)
 
+    def addCylindricalSlices(
+        self, pt1, pt2, n_slice=180, slice_beg=0.0, slice_end=360.0, sliceType="relative", groupName=None
+    ):
+        """
+        Add cylindrical projection slices. The cylinrical projection axis is defined
+        from pt1 to pt2. Then we start from the lift direction and rotate around this
+        axis until we are back at the beginning. The rotation direction follows the
+        right hand rule; we rotate the plane in the direction of vectors from pt1 to
+        pt2 crossed with the lift direction.
+        Parameters
+        ----------
+        pt1 : numpy array, length 3
+            beginning point of the vector that defines the rotation axis
+        pt2 : numpy array, length 3
+            end point of the vector that defines the rotation axis
+        n_slice : int
+            number of slices around a 360 degree full rotation.
+        slice_beg : float
+            beginning of the slices in the rotation direction
+        slice_end : float
+            end of the slices in the rotation direction
+        sliceType : str {'relative', 'absolute'}
+            Relative slices are 'sliced' at the beginning and then parametricly
+            move as the geometry deforms. As a result, the slice through the
+            geometry may not remain planar. An absolute slice is re-sliced for
+            every out put so is always exactly planar and always at the initial
+            position the user indicated.
+        groupName : str
+             The family to use for the slices. Default is None corresponding to all
+             wall groups.
+        """
+
+        # Create the zipper mesh if not done so
+        self._createZipperMesh()
+
+        # Determine the families we want to use
+        if groupName is None:
+            groupName = self.allWallsGroup
+        groupTag = "%s: " % groupName
+
+        famList = self._getFamilyList(groupName)
+
+        sliceType = sliceType.lower()
+        if sliceType not in ["relative", "absolute"]:
+            raise Error("'sliceType' must be 'relative' or 'absolute'.")
+
+        # get the angles that we are slicing in radians
+        angles = numpy.linspace(slice_beg, slice_end, n_slice) * numpy.pi / 180.0
+
+        # unit vector in the lift direction
+        lift_dir = numpy.zeros(3)
+        lift_dir[self.getOption("liftIndex") - 1] = 1.0
+
+        # the unit vector on the axis
+        vec1 = pt2 - pt1
+        vec1 /= numpy.linalg.norm(vec1)
+        # update p2 so that the distance between p1 and p2 is one.
+        # not necessary, but probably better for numerical stability
+        pt2 = pt1 + vec1
+
+        # loop over angles
+        for ii, angle in enumerate(angles):
+            sin = numpy.sin(angle)
+            cos = numpy.cos(angle)
+            omc = 1.0 - cos
+            vx = vec1[0]
+            vy = vec1[1]
+            vz = vec1[2]
+            # rotation matrix by theta about vec1
+            rot_mat = numpy.array(
+                [
+                    [cos + vx * vx * omc, vx * vy * omc - vz * sin, vx * vz * omc + vy * sin],
+                    [vy * vx * omc + vz * sin, cos + vy * vy * omc, vy * vz * omc - vx * sin],
+                    [vz * vx * omc - vy * sin, vz * vy * omc + vx * sin, cos + vz * vz * omc],
+                ]
+            )
+
+            # rotate the lift direction vector to get the slice direction
+            slice_dir = rot_mat.dot(lift_dir)
+
+            # cross product vec1 and vec2 to get the normal vector of this plane
+            slice_normal = numpy.cross(vec1, slice_dir)
+            # normalize for good measure
+            slice_normal /= numpy.linalg.norm(slice_normal)
+
+            # we can now define a plane for the slice using p1 and slice_normal.
+            # in the cylindrical version, we also pick a "direction". This is which direction we are going
+            # from the center axis. We will reject cells directly if their centroid are behind this
+            # direction (i.e. <pt1, centroid> dot slice_dir is negative) and only use the cells that are in
+            # the same direction (i.e. dot product positive.)
+            # this flag determines that we will use the direction vector as well to pick the slice dir.
+            use_dir = True
+
+            # It is important to ensure each slice get a unique
+            # name...so we will number sequentially from python
+            jj = self.nSlice + ii + 1
+            if sliceType == "relative":
+                sliceName = f"Slice_{jj:04d} {groupTag} Para Init Theta={angle * 180.0 / numpy.pi:.4f} pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, {slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
+                self.adflow.tecplotio.addparaslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
+            else:
+                sliceName = f"Slice_{jj:04d} {groupTag} Absolute Theta={angle * 180.0 / numpy.pi:.4f} pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, {slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
+                self.adflow.tecplotio.addabsslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
+
+        self.nSlice += n_slice
+
     def addActuatorRegion(
         self, fileName, axis1, axis2, familyName, thrust=0.0, torque=0.0, heat=0.0, relaxStart=None, relaxEnd=None
     ):
@@ -5169,7 +5274,7 @@ class ADFLOW(AeroSolver):
             "verifySpatial": [bool, True],
             "verifyExtra": [bool, True],
             # Function parmeters
-            "sepSensorModel":  [str, ["surfvec", "heaviside"]],
+            "sepSensorModel": [str, ["surfvec", "heaviside"]],
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
             "sweepAngleCorrection": [float, 0.0],
