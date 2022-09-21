@@ -414,26 +414,30 @@ python module libadflow
        end module surfaceutils
 
        module tecplotio
-         subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addparaslice(slicename,pt,normal,dir_vec,use_dir,famlist,n) ! in :test:liftDistribution.F90
            character*(*) intent(in) :: slicename
            real(kind=realtype) dimension(3),intent(in) :: pt
-           real(kind=realtype) dimension(3),intent(in) :: direction
+           real(kind=realtype) dimension(3),intent(in) :: normal
+           real(kind=realtype) dimension(3),intent(in) :: dir_vec
+           logical, intent(in) :: use_dir
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addparaslice
 
-         subroutine addabsslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addabsslice(slicename,pt,normal,dir_vec,use_dir,famlist,n) ! in :test:liftDistribution.F90
            character*(*) intent(in) :: slicename
            real(kind=realtype) dimension(3),intent(in) :: pt
-           real(kind=realtype) dimension(3),intent(in) :: direction
+           real(kind=realtype) dimension(3),intent(in) :: normal
+           real(kind=realtype) dimension(3),intent(in) :: dir_vec
+           logical, intent(in) :: use_dir
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addabsslice
 
-         subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addliftdistribution(nsegments,normal,normal_ind, distname,famlist,n) ! in :test:liftDistribution.F90
            integer(kind=inttype) intent(in) :: nsegments
-           real(kind=realtype) dimension(3), intent(in) :: dir_vec
-           integer(kind=inttype), intent(in) :: dir_ind
+           real(kind=realtype) dimension(3), intent(in) :: normal
+           integer(kind=inttype), intent(in) :: normal_ind
            character*(*) intent(in) :: distname
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
