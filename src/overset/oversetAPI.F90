@@ -2123,7 +2123,7 @@ contains
     integer(kind=intType) :: i, j, k, l, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
     integer(kind=intType) :: iblock, cell_counter, k_cgns
     real(kind=realType) :: dStar, frac, volLocal
-    real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, xCen, axisVec
+    real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, axisVec
     real(kind=realType), dimension(3) :: diag1, diag2, diag3, diag4
     real(kind=realType) :: dd1, dd2, dd3, dd4, diag_max
     type(adtType) :: ADT
@@ -2239,26 +2239,24 @@ contains
                      do l=1, 8
                         select case (l)
                            case (1)
-                              xCen = x(i-1,j-1,k-1,:)
+                              coor(1:3) = x(i-1,j-1,k-1,:)
                            case (2)
-                              xCen = x(i,  j-1,k-1,:)
+                              coor(1:3) = x(i,  j-1,k-1,:)
                            case (3)
-                              xCen = x(i,  j,  k-1,:)
+                              coor(1:3) = x(i,  j,  k-1,:)
                            case (4)
-                              xCen = x(i-1,j,  k-1,:)
+                              coor(1:3) = x(i-1,j,  k-1,:)
                            case (5)
-                              xCen = x(i-1,j-1,k,  :)
+                              coor(1:3) = x(i-1,j-1,k,  :)
                            case (6)
-                              xCen = x(i,  j-1,k,  :)
+                              coor(1:3) = x(i,  j-1,k,  :)
                            case (7)
-                              xCen = x(i,  j,  k,  :)
+                              coor(1:3) = x(i,  j,  k,  :)
                            case (8)
-                              xCen = x(i-1,j,  k,  :)
+                              coor(1:3) = x(i-1,j,  k,  :)
                         end select
 
-                        ! The current point to search for and continually
                         ! reset the "closest point already found" variable.
-                        coor(1:3) = xCen
                         coor(4) = dStar
                         intInfo(3) = 0
                         call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
