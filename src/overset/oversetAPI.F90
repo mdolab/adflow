@@ -2193,8 +2193,6 @@ contains
     ! Node count is no longer needed
     deallocate(normCount)
 
-   !  write(*,*) myid, "after weird norm calc"
-
     ! Allocate the extra data the tree search requires.
     allocate(stack(100), BB(20), frontLeaves(25), frontLeavesNew(25))
 
