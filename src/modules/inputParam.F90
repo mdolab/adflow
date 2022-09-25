@@ -582,7 +582,6 @@ module inputPhysics
   real(kind=realType), dimension(3,2) :: momentAxis
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
   real(kind=realType) :: cavitationnumber
-  real(kind=realType) :: cavitationsensor
   real(kind=realType) :: cpmin_rho
   real(kind=realType) :: cpmin_exact
 

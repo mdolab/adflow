@@ -1222,7 +1222,7 @@ python module libadflow
          real(kind=realtype) :: alpha
          real(kind=realtype) :: beta
          integer(kind=inttype) :: liftindex
-         real(kind=realtype) :: cavitationsensor
+         real(kind=realtype) :: cavitationnumber
          real(kind=realtype) :: cpmin_rho
        end module inputphysics
 
