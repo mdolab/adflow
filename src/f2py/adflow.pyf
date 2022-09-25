@@ -1010,6 +1010,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccperror2=86
          integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
          integer(kind=inttype) parameter,optional :: costfuncaavgps=88
+         integer(kind=inttype) parameter,optional :: costfunccpmin=89
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
@@ -1222,7 +1223,7 @@ python module libadflow
          real(kind=realtype) :: beta
          integer(kind=inttype) :: liftindex
          real(kind=realtype) :: cavitationsensor
-         real(kind=realtype) :: cavitationrho
+         real(kind=realtype) :: cpmin_rho
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90

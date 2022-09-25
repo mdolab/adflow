@@ -25,8 +25,8 @@ contains
 &   trefd, lref, gammainf, pinf, pinfd, uref, urefd, uinf, uinfd
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
-&   lengthref, alpha, alphad, beta, betad, liftindex, cavitationnumber, &
-&   cavitationrho
+&   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_exact, &
+&   cpmin_rho
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector, getdirvector_b
@@ -344,8 +344,8 @@ contains
     if (tsstability) then
       stop
     else
-      funcvaluesd(costfunccavitation) = funcvaluesd(costfunccavitation)/&
-&       (cavitationrho*funcvalues(costfunccavitation))
+      funcvaluesd(costfunccpmin) = funcvaluesd(costfunccpmin)/(cpmin_rho&
+&       *funcvalues(costfunccpmin))
       call popreal8(funcvalues(costfuncdragcoefmomentum))
       tmpd = funcvaluesd(costfuncdragcoefmomentum)
       funcvaluesd(costfuncdragcoefmomentum) = 0.0_8
@@ -782,8 +782,7 @@ contains
     use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf, &
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
-&   machcoef, lengthref, alpha, beta, liftindex, cavitationnumber, &
-&   cavitationrho
+&   machcoef, lengthref, alpha, beta, liftindex, cpmin_exact, cpmin_rho
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector
@@ -1028,8 +1027,8 @@ contains
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
 ! final part of the ks computation
-    funcvalues(costfunccavitation) = cavitationnumber + log(funcvalues(&
-&     costfunccavitation))/cavitationrho
+    funcvalues(costfunccpmin) = cpmin_exact + log(funcvalues(&
+&     costfunccpmin))/cpmin_rho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -1071,7 +1070,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cavitationnumber, cavitationrho
+&   cpmin_exact, cpmin_rho
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1084,7 +1083,7 @@ contains
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation
+&   cavitation, cp_min_ks
     real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
@@ -1122,6 +1121,7 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
+    real :: cavitationnumber
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8(3)
@@ -1134,15 +1134,19 @@ contains
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd0(3)
+    real(kind=realtype) :: ks_exponent
     real(kind=realtype) :: tempd24
     real(kind=realtype) :: tempd23
     real(kind=realtype) :: tempd22
     real(kind=realtype) :: tempd21
     real(kind=realtype) :: tempd20
+    real*8 :: cpmin_ks_sum
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd19
     real(kind=realtype) :: tempd18
+    real(kind=realtype) :: temp6
     real(kind=realtype) :: tempd17
+    real(kind=realtype) :: temp5
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: temp4
     real(kind=realtype) :: tempd15
@@ -1284,19 +1288,14 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-! sensor1 = -cp - cavitationnumber
-! sensor1 = one/(one+exp(-2*10*sensor1))
-! sensor1 = sensor1 * cellarea * blk
-! ks formulation with a fixed cpmin at 2 sigmas
-! only include the cavitation contribution if we are not underflowing.
-! otherwise, this will cause nans with bwd ad because of the order of the operations
-! todo the if checks below might be needed for preventing nans with bwd ad but it seems to work without it.
-! if ((cavitationrho * (-cp - cavitationnumber)) .lt. -200.0_realtype) then
-        sensor1 = exp(cavitationrho*(-cp-cavitationnumber))
-! else
-!      sensor1 = zero
-! end if
-        cavitation = cavitation + sensor1*blk
+        sensor1 = -cp - cavitationnumber
+        sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
+&         sensor1+cavsensoroffset)))
+        sensor1 = sensor1*cellarea*blk
+        cavitation = cavitation + sensor1
+! also do the ks-based cpmin computation
+        ks_exponent = exp(cpmin_rho*(-cp-cpmin_exact))
+        cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
 !
@@ -1596,20 +1595,27 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-! sensor1 = -cp - cavitationnumber
-! sensor1 = one/(one+exp(-2*10*sensor1))
-! sensor1 = sensor1 * cellarea * blk
-! ks formulation with a fixed cpmin at 2 sigmas
-! only include the cavitation contribution if we are not underflowing.
-! otherwise, this will cause nans with bwd ad because of the order of the operations
-! todo the if checks below might be needed for preventing nans with bwd ad but it seems to work without it.
-! if ((cavitationrho * (-cp - cavitationnumber)) .lt. -200.0_realtype) then
-! else
-!      sensor1 = zero
-! end if
-        sensor1d = blk*cavitationd
-        cpd = -(cavitationrho*exp(cavitationrho*(-cavitationnumber-cp))*&
-&         sensor1d)
+        sensor1 = -cp - cavitationnumber
+        call pushreal8(sensor1)
+        sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
+&         sensor1+cavsensoroffset)))
+! also do the ks-based cpmin computation
+        sensor1d = cavitationd
+        cellaread = blk*sensor1*sensor1d
+        sensor1d = blk*cellarea*sensor1d
+        call popreal8(sensor1)
+        temp6 = 2*cavsensorsharpness*(cavsensoroffset-sensor1)
+        temp5 = one + exp(temp6)
+        if (sensor1 .le. 0.0_8 .and. (cavexponent .eq. 0.0_8 .or. &
+&           cavexponent .ne. int(cavexponent))) then
+          sensor1d = cavsensorsharpness*2*exp(temp6)*sensor1**&
+&           cavexponent*sensor1d/temp5**2
+        else
+          sensor1d = (cavsensorsharpness*2*exp(temp6)*sensor1**&
+&           cavexponent/temp5**2+cavexponent*sensor1**(cavexponent-1)/&
+&           temp5)*sensor1d
+        end if
+        cpd = -sensor1d
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
         pinfd = pinfd - tmp*cpd
@@ -1617,6 +1623,8 @@ contains
         machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp4**2
         tmp = two/(gammainf*pinf*machcoef*machcoef)
         pp2d(i, j) = pp2d(i, j) + plocald
+      else
+        cellaread = 0.0_8
       end if
       mxd = blk*mpd(1)
       myd = blk*mpd(2)
@@ -1649,7 +1657,7 @@ contains
       xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
       xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
       call popreal8(sensor)
-      cellaread = blk*sensor*sensord
+      cellaread = cellaread + blk*sensor*sensord
       sensord = blk*cellarea*sensord
       call popreal8(sensor)
       temp3 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
@@ -1790,7 +1798,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cavitationnumber, cavitationrho
+&   equations, momentaxis, cpmin_exact, cpmin_rho
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1800,7 +1808,7 @@ contains
 ! local variables.
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation
+&   cavitation, cp_min_ks
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
@@ -1817,6 +1825,9 @@ contains
     intrinsic max
     intrinsic sqrt
     intrinsic exp
+    real :: cavitationnumber
+    real(kind=realtype) :: ks_exponent
+    real*8 :: cpmin_ks_sum
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -1844,6 +1855,7 @@ contains
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
+    cp_min_ks = zero
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
@@ -1963,19 +1975,14 @@ contains
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
-! sensor1 = -cp - cavitationnumber
-! sensor1 = one/(one+exp(-2*10*sensor1))
-! sensor1 = sensor1 * cellarea * blk
-! ks formulation with a fixed cpmin at 2 sigmas
-! only include the cavitation contribution if we are not underflowing.
-! otherwise, this will cause nans with bwd ad because of the order of the operations
-! todo the if checks below might be needed for preventing nans with bwd ad but it seems to work without it.
-! if ((cavitationrho * (-cp - cavitationnumber)) .lt. -200.0_realtype) then
-        sensor1 = exp(cavitationrho*(-cp-cavitationnumber))
-! else
-!      sensor1 = zero
-! end if
-        cavitation = cavitation + sensor1*blk
+        sensor1 = -cp - cavitationnumber
+        sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
+&         sensor1+cavsensoroffset)))
+        sensor1 = sensor1*cellarea*blk
+        cavitation = cavitation + sensor1
+! also do the ks-based cpmin computation
+        ks_exponent = exp(cpmin_rho*(-cp-cpmin_exact))
+        cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
 !
@@ -2093,6 +2100,7 @@ contains
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvalues(icavitation) = localvalues(icavitation) + cavitation
+    localvalues(icpmin) = localvalues(icpmin) + cp_min_ks
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &

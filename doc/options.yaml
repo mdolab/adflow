@@ -334,9 +334,9 @@ cavitationNumber:
     This "sensor" is only used for the surface output.
     The actual cavitation cost function in adflow uses a KS aggregation under the hood and returns the cpmin value for a given family.
 
-cavitationRho:
+cpMinRho:
   desc: >
-    The rho parameter used for the KS aggregation used for computing cavitation.
+    The rho parameter used for the KS aggregation used for computing minimum Cp.
     KS aggregation is used to compute the differentiable min Cp within the given family group.
     A higher rho value will approach the actual min Cp more accurately, at the cost of a more nonlinear function.
 

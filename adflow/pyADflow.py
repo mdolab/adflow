@@ -5231,7 +5231,7 @@ class ADFLOW(AeroSolver):
             "wallDistCutoff": [float, 1e20],
             "infChangeCorrection": [bool, True],
             "cavitationNumber": [float, 1.4],
-            "cavitationRho": [float, 100.0],
+            "cpMinRho": [float, 100.0],
             # Common Parameters
             "nCycles": [int, 2000],
             "timeLimit": [float, -1.0],
@@ -5593,7 +5593,7 @@ class ADFLOW(AeroSolver):
             "forcesastractions": ["physics", "forcesastractions"],
             "lowspeedpreconditioner": ["discr", "lowspeedpreconditioner"],
             "cavitationnumber": ["physics", "cavitationsensor"],
-            "cavitationrho": ["physics", "cavitationrho"],
+            "cpminrho": ["physics", "cpmin_rho"],
             # Common Parameters
             "ncycles": ["iter", "ncycles"],
             "timelimit": ["iter", "timelimit"],
@@ -5940,6 +5940,7 @@ class ADFLOW(AeroSolver):
             "sepsensoravgy": self.adflow.constants.costfuncsepsensoravgy,
             "sepsensoravgz": self.adflow.constants.costfuncsepsensoravgz,
             "cavitation": self.adflow.constants.costfunccavitation,
+            "cpmin": self.adflow.constants.costfunccpmin,
             "mdot": self.adflow.constants.costfuncmdot,
             "mavgptot": self.adflow.constants.costfuncmavgptot,
             "aavgptot": self.adflow.constants.costfuncaavgptot,

@@ -8,8 +8,8 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf, pInf, uRef, uInf
     use inputPhysics, only : liftDirection, dragDirection, surfaceRef, &
-    machCoef, lengthRef, alpha, beta, liftIndex, cavitationnumber, &
-    cavitationrho
+    machCoef, lengthRef, alpha, beta, liftIndex, cpmin_exact, &
+    cpmin_rho
     use inputTSStabDeriv, only : TSstability
     use utils, only : computeTSDerivatives
     use flowUtils, only : getDirVector
@@ -259,8 +259,8 @@ contains
          funcValues(costFuncForceZCoefMomentum)*dragDirection(3)
 
     ! final part of the KS computation
-    funcValues(costFuncCavitation) = cavitationnumber &
-         + log(funcValues(costFuncCavitation)) / cavitationrho
+    funcValues(costfunccpmin) = cpmin_exact &
+         + log(funcValues(costfunccpmin)) / cpmin_rho
 
     ! -------------------- Time Spectral Objectives ------------------
 
@@ -316,7 +316,8 @@ contains
     use blockPointers
     use flowVarRefState
     use inputCostFunctions
-    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis, cavitationnumber, cavitationrho
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, &
+          equations, momentAxis, cpmin_exact, cpmin_rho, cavitationnumber
     use BCPointers
     implicit none
 
@@ -326,13 +327,13 @@ contains
 
     ! Local variables.
     real(kind=realType), dimension(3)  :: Fp, Fv, Mp, Mv
-    real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation
+    real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
     integer(kind=intType) :: i, j, ii, blk
 
     real(kind=realType) :: pm1, fx, fy, fz, fn
     real(kind=realType) :: xc, yc, zc, qf(3), r(3), n(3), L
     real(kind=realType) :: fact, rho, mul, yplus, dwall
-    real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
+    real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal, ks_exponent
     real(kind=realType) :: tauXx, tauYy, tauZz
     real(kind=realType) :: tauXy, tauXz, tauYz
 
@@ -371,6 +372,7 @@ contains
     yplusMax = zero
     sepSensor = zero
     Cavitation = zero
+    cpmin_ks_sum = zero
     sepSensorAvg = zero
     Mpaxis = zero; Mvaxis = zero;
     CpError2 = zero;
@@ -509,19 +511,14 @@ contains
           plocal = pp2(i,j)
           tmp = two/(gammaInf*MachCoef*MachCoef)
           Cp = tmp*(plocal-pinf)
-          ! Sensor1 = -Cp - cavitationnumber
-          ! Sensor1 = one/(one+exp(-2*10*Sensor1))
-          ! Sensor1 = Sensor1 * cellArea * blk
-          ! KS formulation with a fixed CPmin at 2 sigmas
-          ! only include the cavitation contribution if we are not underflowing.
-          ! otherwise, this will cause NaNs with bwd AD because of the order of the operations
-          ! TODO the if checks below might be needed for preventing nans with bwd ad but it seems to work without it.
-          ! if ((cavitationrho * (-Cp - cavitationnumber)) .lt. -200.0_realType) then
-          Sensor1 = exp(cavitationrho * (-Cp - cavitationnumber))
-          ! else
-          !      Sensor1 = zero
-          ! end if
-          Cavitation = Cavitation + Sensor1 * blk
+          Sensor1 = -Cp - cavitationnumber
+          Sensor1 = (Sensor1**cavExponent)/(one+exp(2*cavSensorSharpness*(-Sensor1+cavSensorOffset)))
+          Sensor1 = Sensor1 * cellArea * blk
+          Cavitation = Cavitation + Sensor1
+
+          ! also do the ks-based cpmin computation
+          ks_exponent = exp(cpmin_rho * (-Cp - cpmin_exact))
+          cpmin_ks_sum = cpmin_ks_sum + ks_exponent * blk
        end if
     enddo
 
@@ -672,6 +669,7 @@ contains
     localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
     localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
     localValues(iCavitation) = localValues(iCavitation) + cavitation
+    localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
     localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis
     localValues(iCpError2) = localValues(iCpError2) + CpError2
@@ -979,7 +977,7 @@ contains
 
        ! compute the current cp min value for the cavitation computation with KS aggregation
        if (computeCavitation) then
-          call computeCavitationNumber(famList)
+          call computeCpMinExact(famList)
        end if
 
        do sps=1, nTimeIntervalsSpectral
@@ -1074,12 +1072,12 @@ contains
 
   end subroutine integrateSurfaces
 
-  subroutine computeCavitationNumber(famList)
+  subroutine computeCpMinExact(famList)
      use constants
      use inputTimeSpectral , only : nTimeIntervalsSpectral
      use communication, only : ADflow_comm_world, myID
      use blockPointers, only : nDom
-     use inputPhysics, only : cavitationNumber, MachCoef
+     use inputPhysics, only : cpmin_exact, MachCoef
      use blockPointers
      use flowVarRefState
      use BCPointers
@@ -1091,12 +1089,14 @@ contains
      integer(kind=intType), dimension(:), intent(in) :: famList
      integer(kind=intType) :: mm, nn, sps
      integer(kind=intType) :: i, j, ii, blk, ierr
-     real(kind=realType) :: Cp, plocal, tmp, cavitationNumberLocal
+     real(kind=realType) :: Cp, plocal, tmp, cpmin_local
 
-     ! here we do a simplified surface integration on walls only to get the cpmin over walls
-     ! write (*,*) "rank", myID, " current cav number", cavitationNumber
-     ! set the cavitation number to a small value so that we get the actual max (- min cp)
-     cavitationNumberLocal = -10000.0_realType
+     ! this routine loops over the surface cells in the given family and computes the true minimum Cp value.
+     ! this is then used in the surface integration routine to compute the cpmin using KS aggregation.
+     ! the goal is to get a differentiable cpmin output
+
+     ! set the local cp min to a small value so that we get the actual min
+     cpmin_local = -10000.0_realType
 
      ! loop over the TS instances just because its the same convention everywhere.
      ! in an actual TS computation, this wont work most likely.
@@ -1122,15 +1122,16 @@ contains
                      i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
                      j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
 
-                     ! compute local CP
-                     plocal = pp2(i,j)
-                     tmp = two/(gammaInf*MachCoef*MachCoef)
-                     Cp = tmp*(plocal-pinf)
-
                      ! only take this if its a compute cell
                      if (BCData(mm)%iblank(i,j) .gt. zero) then
-                        ! compare it against the current value on this proc
-                        cavitationNumberLocal = max(cavitationNumberLocal, -Cp)
+
+                         ! compute local CP
+                         plocal = pp2(i,j)
+                         tmp = two/(gammaInf*MachCoef*MachCoef)
+                         Cp = tmp*(plocal-pinf)
+
+                         ! compare it against the current value on this proc
+                         cpmin_local = min(cpmin_local, Cp)
                      end if
                   enddo
                end if isWall
@@ -1140,16 +1141,12 @@ contains
       end do domains
      end do ts
 
-   !   write (*,*) "rank", myID, " cav before comm", cavitationNumberLocal
-
-     ! finally communicate across all
-     call mpi_allreduce(cavitationNumberLocal, cavitationNumber, 1, adflow_real, &
-     MPI_MAX, adflow_comm_world, ierr)
+     ! finally communicate across all processors
+     call mpi_allreduce(cpmin_local, cpmin_exact, 1, adflow_real, &
+          MPI_MAX, adflow_comm_world, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
-   !   write (*,*) "rank", myID, " final cav number ", cavitationNumber
-
-  end subroutine computeCavitationNumber
+  end subroutine computeCpMinExact
 
 #ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)
@@ -1281,7 +1278,7 @@ contains
 
        ! compute the current cp min value for the cavitation computation with KS aggregation
        if (computeCavitation) then
-          call computeCavitationNumber(famList)
+          call computeCpMinExact(famList)
        end if
 
        localVal = zero
@@ -1367,7 +1364,7 @@ contains
 
        ! compute the current cp min value for the cavitation computation with KS aggregation
        if (computeCavitation) then
-          call computeCavitationNumber(famList)
+          call computeCpMinExact(famList)
        end if
 
        localVal = zero
