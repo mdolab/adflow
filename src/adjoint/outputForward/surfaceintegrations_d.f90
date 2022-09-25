@@ -842,7 +842,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cpmin_exact, cpmin_rho
+&   cpmin_exact, cpmin_rho, cavitationnumber
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -855,16 +855,19 @@ contains
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation, cp_min_ks
-    real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd
+&   cavitation, cpmin_ks_sum
+    real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd, &
+&   cpmin_ks_sumd
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: xcd, ycd, zcd, rd(3)
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
-    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
-    real(kind=realtype) :: vd(3), sensord, sensor1d, cpd, tmpd, plocald
+    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
+&   ks_exponent
+    real(kind=realtype) :: vd(3), sensord, sensor1d, cpd, tmpd, plocald&
+&   , ks_exponentd
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
@@ -888,9 +891,6 @@ contains
     real(kind=realtype) :: result1d
     real(kind=realtype) :: pwr1
     real(kind=realtype) :: pwr1d
-    real :: cavitationnumber
-    real(kind=realtype) :: ks_exponent
-    real*8 :: cpmin_ks_sum
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -922,13 +922,14 @@ contains
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
-    cp_min_ks = zero
+    cpmin_ks_sum = zero
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
     cperror2 = zero
     sepsensoravgd = 0.0_8
     rd = 0.0_8
+    cpmin_ks_sumd = 0.0_8
     vd = 0.0_8
     mpaxisd = 0.0_8
     cperror2d = 0.0_8
@@ -1152,7 +1153,9 @@ contains
         cavitationd = cavitationd + sensor1d
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
+        ks_exponentd = -(cpmin_rho*cpd*exp(cpmin_rho*(-cp-cpmin_exact)))
         ks_exponent = exp(cpmin_rho*(-cp-cpmin_exact))
+        cpmin_ks_sumd = cpmin_ks_sumd + blk*ks_exponentd
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
@@ -1331,7 +1334,8 @@ contains
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvaluesd(icavitation) = localvaluesd(icavitation) + cavitationd
     localvalues(icavitation) = localvalues(icavitation) + cavitation
-    localvalues(icpmin) = localvalues(icpmin) + cp_min_ks
+    localvaluesd(icpmin) = localvaluesd(icpmin) + cpmin_ks_sumd
+    localvalues(icpmin) = localvalues(icpmin) + cpmin_ks_sum
     localvaluesd(isepavg:isepavg+2) = localvaluesd(isepavg:isepavg+2) + &
 &     sepsensoravgd
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
@@ -1360,7 +1364,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cpmin_exact, cpmin_rho
+&   equations, momentaxis, cpmin_exact, cpmin_rho, cavitationnumber
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1370,12 +1374,13 @@ contains
 ! local variables.
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation, cp_min_ks
+&   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
-    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
+    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
+&   ks_exponent
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype), dimension(3) :: refpoint
@@ -1390,9 +1395,6 @@ contains
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
     real(kind=realtype) :: pwr1
-    real :: cavitationnumber
-    real(kind=realtype) :: ks_exponent
-    real*8 :: cpmin_ks_sum
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -1420,7 +1422,7 @@ contains
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
-    cp_min_ks = zero
+    cpmin_ks_sum = zero
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
@@ -1670,7 +1672,7 @@ contains
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvalues(icavitation) = localvalues(icavitation) + cavitation
-    localvalues(icpmin) = localvalues(icpmin) + cp_min_ks
+    localvalues(icpmin) = localvalues(icpmin) + cpmin_ks_sum
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &

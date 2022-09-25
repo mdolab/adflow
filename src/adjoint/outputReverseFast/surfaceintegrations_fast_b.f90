@@ -288,7 +288,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cpmin_exact, cpmin_rho
+&   equations, momentaxis, cpmin_exact, cpmin_rho, cavitationnumber
     use bcpointers_fast_b
     implicit none
 ! input/output variables
@@ -298,12 +298,13 @@ contains
 ! local variables.
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation, cp_min_ks
+&   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
-    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
+    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
+&   ks_exponent
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype), dimension(3) :: refpoint
@@ -315,9 +316,6 @@ contains
     intrinsic max
     intrinsic sqrt
     intrinsic exp
-    real :: cavitationnumber
-    real(kind=realtype) :: ks_exponent
-    real*8 :: cpmin_ks_sum
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -345,7 +343,7 @@ contains
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
-    cp_min_ks = zero
+    cpmin_ks_sum = zero
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
@@ -590,7 +588,7 @@ contains
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvalues(icavitation) = localvalues(icavitation) + cavitation
-    localvalues(icpmin) = localvalues(icpmin) + cp_min_ks
+    localvalues(icpmin) = localvalues(icpmin) + cpmin_ks_sum
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &
