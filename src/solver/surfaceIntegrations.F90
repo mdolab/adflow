@@ -107,6 +107,9 @@ contains
 
        funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*globalVals(iSepSensor, sps)
        funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*globalVals(iCavitation, sps)
+       ! final part of the KS computation
+       funcValues(costfunccpmin) = funcValues(costfunccpmin) + ovrNTS * &
+          (cpmin_exact - log(globalVals(iCpMin, sps)) / cpmin_rho)
        funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
        funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
@@ -257,10 +260,6 @@ contains
          funcValues(costFuncForceXCoefMomentum)*dragDirection(1) + &
          funcValues(costFuncForceYCoefMomentum)*dragDirection(2) + &
          funcValues(costFuncForceZCoefMomentum)*dragDirection(3)
-
-    ! final part of the KS computation
-    funcValues(costfunccpmin) = cpmin_exact &
-         + log(funcValues(costfunccpmin)) / cpmin_rho
 
     ! -------------------- Time Spectral Objectives ------------------
 
@@ -517,7 +516,7 @@ contains
           Cavitation = Cavitation + Sensor1
 
           ! also do the ks-based cpmin computation
-          ks_exponent = exp(cpmin_rho * (-Cp - cpmin_exact))
+          ks_exponent = exp(cpmin_rho * (-Cp + cpmin_exact))
           cpmin_ks_sum = cpmin_ks_sum + ks_exponent * blk
        end if
     enddo
@@ -1145,7 +1144,7 @@ contains
      end do
 
      ! finally communicate across all processors
-     call mpi_allreduce(cpmin_local, cpmin_exact, 1, adflow_real, &
+     call mpi_allreduce(cpmin_local, cpmin_exact, 1, MPI_DOUBLE, &
           MPI_MIN, adflow_comm_world, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 

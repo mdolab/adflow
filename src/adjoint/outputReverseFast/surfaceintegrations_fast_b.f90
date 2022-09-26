@@ -37,8 +37,8 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
-    intrinsic sqrt
     intrinsic log
+    intrinsic sqrt
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -127,6 +127,9 @@ contains
 &       ovrnts*globalvals(isepsensor, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
+! final part of the ks computation
+      funcvalues(costfunccpmin) = funcvalues(costfunccpmin) + ovrnts*(&
+&       cpmin_exact-log(globalvals(icpmin, sps))/cpmin_rho)
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
 &       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
@@ -260,9 +263,6 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
-! final part of the ks computation
-    funcvalues(costfunccpmin) = cpmin_exact + log(funcvalues(&
-&     costfunccpmin))/cpmin_rho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -469,7 +469,7 @@ contains
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        ks_exponent = exp(cpmin_rho*(-cp-cpmin_exact))
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_exact))
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do

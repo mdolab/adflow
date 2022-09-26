@@ -55,8 +55,8 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
-    intrinsic sqrt
     intrinsic log
+    intrinsic sqrt
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmp0
     real(kind=realtype) :: tmp1
@@ -184,6 +184,9 @@ contains
 &       ovrnts*globalvals(isepsensor, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
+! final part of the ks computation
+      funcvalues(costfunccpmin) = funcvalues(costfunccpmin) + ovrnts*(&
+&       cpmin_exact-log(globalvals(icpmin, sps))/cpmin_rho)
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
 &       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
@@ -334,19 +337,10 @@ contains
 &     funcvalues(costfuncforcezcoefviscous)*dragdirection(3)
     call pushreal8(funcvalues(costfuncdragcoefviscous))
     funcvalues(costfuncdragcoefviscous) = tmp13
-    tmp14 = funcvalues(costfuncforcexcoefmomentum)*dragdirection(1) + &
-&     funcvalues(costfuncforceycoefmomentum)*dragdirection(2) + &
-&     funcvalues(costfuncforcezcoefmomentum)*dragdirection(3)
-    call pushreal8(funcvalues(costfuncdragcoefmomentum))
-    funcvalues(costfuncdragcoefmomentum) = tmp14
-! final part of the ks computation
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       stop
     else
-      funcvaluesd(costfunccpmin) = funcvaluesd(costfunccpmin)/(cpmin_rho&
-&       *funcvalues(costfunccpmin))
-      call popreal8(funcvalues(costfuncdragcoefmomentum))
       tmpd = funcvaluesd(costfuncdragcoefmomentum)
       funcvaluesd(costfuncdragcoefmomentum) = 0.0_8
       funcvaluesd(costfuncforcexcoefmomentum) = funcvaluesd(&
@@ -600,6 +594,7 @@ contains
       do sps=1,ntimeintervalsspectral
 ! ------------
 ! ------------
+! final part of the ks computation
 ! mass flow like objective
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
@@ -682,6 +677,8 @@ contains
 &         funcvaluesd(costfuncsepsensoravgx)
         globalvalsd(iaxismoment, sps) = globalvalsd(iaxismoment, sps) + &
 &         ovrnts*funcvaluesd(costfuncaxismoment)
+        globalvalsd(icpmin, sps) = globalvalsd(icpmin, sps) - ovrnts*&
+&         funcvaluesd(costfunccpmin)/(cpmin_rho*globalvals(icpmin, sps))
         globalvalsd(icavitation, sps) = globalvalsd(icavitation, sps) + &
 &         ovrnts*funcvaluesd(costfunccavitation)
         globalvalsd(isepsensor, sps) = globalvalsd(isepsensor, sps) + &
@@ -803,8 +800,8 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
-    intrinsic sqrt
     intrinsic log
+    intrinsic sqrt
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
 ! sum pressure and viscous contributions
@@ -893,6 +890,9 @@ contains
 &       ovrnts*globalvals(isepsensor, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
+! final part of the ks computation
+      funcvalues(costfunccpmin) = funcvalues(costfunccpmin) + ovrnts*(&
+&       cpmin_exact-log(globalvals(icpmin, sps))/cpmin_rho)
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
 &       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
@@ -1026,9 +1026,6 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
-! final part of the ks computation
-    funcvalues(costfunccpmin) = cpmin_exact + log(funcvalues(&
-&     costfunccpmin))/cpmin_rho
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -1294,7 +1291,7 @@ contains
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        ks_exponent = exp(cpmin_rho*(-cp-cpmin_exact))
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_exact))
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
@@ -1617,7 +1614,7 @@ contains
 &           temp5)*sensor1d
         end if
         ks_exponentd = blk*cpmin_ks_sumd
-        cpd = -sensor1d - cpmin_rho*exp(cpmin_rho*(-cpmin_exact-cp))*&
+        cpd = -sensor1d - cpmin_rho*exp(cpmin_rho*(cpmin_exact-cp))*&
 &         ks_exponentd
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
@@ -1982,7 +1979,7 @@ contains
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        ks_exponent = exp(cpmin_rho*(-cp-cpmin_exact))
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_exact))
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
