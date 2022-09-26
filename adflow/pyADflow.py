@@ -697,10 +697,28 @@ class ADFLOW(AeroSolver):
             # name...so we will number sequentially from python
             j = self.nSlice + i + 1
             if sliceType == "relative":
-                sliceName = "Slice_%4.4d %s Para Init Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (j, groupTag, normals[i, 0], normals[i, 1], normals[i, 2], points[i, 0], points[i, 1], points[i, 2])
+                sliceName = "Slice_%4.4d %s Para Init Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (
+                    j,
+                    groupTag,
+                    normals[i, 0],
+                    normals[i, 1],
+                    normals[i, 2],
+                    points[i, 0],
+                    points[i, 1],
+                    points[i, 2],
+                )
                 self.adflow.tecplotio.addparaslice(sliceName, points[i], normals[i], slice_dir, use_dir, famList)
             else:
-                sliceName = "Slice_%4.4d %s Absolute Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (j, groupTag, normals[i, 0], normals[i, 1], normals[i, 2], points[i, 0], points[i, 1], points[i, 2])
+                sliceName = "Slice_%4.4d %s Absolute Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (
+                    j,
+                    groupTag,
+                    normals[i, 0],
+                    normals[i, 1],
+                    normals[i, 2],
+                    points[i, 0],
+                    points[i, 1],
+                    points[i, 2],
+                )
                 self.adflow.tecplotio.addabsslice(sliceName, points[i], normals[i], slice_dir, use_dir, famList)
 
         self.nSlice += n_slice
@@ -775,11 +793,13 @@ class ADFLOW(AeroSolver):
             vy = vec1[1]
             vz = vec1[2]
             # rotation matrix by theta about vec1
-            rot_mat = numpy.array([
-                [cos + vx * vx * omc, vx * vy * omc - vz * sin, vx * vz * omc + vy * sin],
-                [vy * vx * omc + vz * sin, cos + vy * vy * omc, vy * vz * omc - vx * sin],
-                [vz * vx * omc - vy * sin, vz * vy * omc + vx * sin, cos + vz * vz * omc],
-            ])
+            rot_mat = numpy.array(
+                [
+                    [cos + vx * vx * omc, vx * vy * omc - vz * sin, vx * vz * omc + vy * sin],
+                    [vy * vx * omc + vz * sin, cos + vy * vy * omc, vy * vz * omc - vx * sin],
+                    [vz * vx * omc - vy * sin, vz * vy * omc + vx * sin, cos + vz * vz * omc],
+                ]
+            )
 
             # rotate the lift direction vector to get the slice direction
             slice_dir = rot_mat.dot(lift_dir)
