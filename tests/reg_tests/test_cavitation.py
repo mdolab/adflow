@@ -110,7 +110,9 @@ class CavitationBasicTests(reg_test_classes.RegTest):
 
             # dot product these two vectors to get a total derivative
             dotLocal = np.dot(xVDot, xVBar)
-            self.handler.par_add_sum(f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-10)
+            self.handler.par_add_sum(
+                f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-10
+            )
 
             ##################
             # DOT PRODUCT TEST
