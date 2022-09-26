@@ -49,7 +49,7 @@ class CavitationBasicTests(reg_test_classes.RegTest):
                 "adjointl2convergence": 1e-13,
                 "computeCavitation": True,
                 "cavitationNumber": 1.0,
-                "cpminrho": 1.0,
+                "cpminrho": 1e3,
             }
         )
 
@@ -68,7 +68,7 @@ class CavitationBasicTests(reg_test_classes.RegTest):
     def test_cavitation_metrics_and_derivatives(self):
         "Tests if the correct amount of momentum is added to the flow by the actuator"
 
-        evalFuncs = ["cavitation"]
+        evalFuncs = ["cavitation", "cpmin"]
 
         self.CFDSolver(self.ap)
 
@@ -91,27 +91,30 @@ class CavitationBasicTests(reg_test_classes.RegTest):
         self.handler.root_print("cavitation totals")
         self.handler.root_add_dict("cavitation totals", funcsSens, rtol=1e-10, atol=1e-10)
 
-        # Now that we have the adjoint solution,
-        # also get a total derivative wrt a random spatial perturbation DV
-        psi = -self.CFDSolver.getAdjoint("cavitation")
-        funcsBar = self.CFDSolver._getFuncsBar("cavitation")
-
-        # this is the reverse seed up to the volume coordinates
-        xVBar = self.CFDSolver.computeJacobianVectorProductBwd(resBar=psi, funcsBar=funcsBar, xVDeriv=True)
-        # get a random volume perturbation
-        xVDot = self.CFDSolver.getSpatialPerturbation(314)
-
-        # dot product these two vectors to get a total derivative
-        dotLocal = np.dot(xVDot, xVBar)
-        self.handler.par_add_sum("total cavitation derivative wrt random volume perturbation", dotLocal, rtol=1e-10)
-
-        ##################
-        # DOT PRODUCT TEST
-        ##################
-        wDot = self.CFDSolver.getStatePerturbation(314)
-        # xVDot was evaluated above so no need to re-run the spatial perturbation routine
-
         for func_name in evalFuncs:
+            ##################
+            # GEOMETRIC TOTALS
+            ##################
+
+            # random state and volume coordinate perturbations for tests below
+            wDot = self.CFDSolver.getStatePerturbation(314)
+            xVDot = self.CFDSolver.getSpatialPerturbation(314)
+
+            # Now that we have the adjoint solution for both functionals
+            # also get a total derivative wrt a random spatial perturbation DV
+            psi = -self.CFDSolver.getAdjoint(func_name)
+            funcsBar = self.CFDSolver._getFuncsBar(func_name)
+
+            # this is the reverse seed up to the volume coordinates
+            xVBar = self.CFDSolver.computeJacobianVectorProductBwd(resBar=psi, funcsBar=funcsBar, xVDeriv=True)
+
+            # dot product these two vectors to get a total derivative
+            dotLocal = np.dot(xVDot, xVBar)
+            self.handler.par_add_sum(f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-10)
+
+            ##################
+            # DOT PRODUCT TEST
+            ##################
             fDot_w = self.CFDSolver.computeJacobianVectorProductFwd(wDot=wDot, funcDeriv=True)
             fDot_xv = self.CFDSolver.computeJacobianVectorProductFwd(xVDot=xVDot, funcDeriv=True)
             funcsBar = {func_name: 1.0}

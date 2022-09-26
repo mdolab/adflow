@@ -1,12 +1,18 @@
 {
-    "Dot product test for w -> cavitation": -0.3915858868609155,
-    "Dot product test for xV -> cavitation": 0.04422042901616901,
+    "Dot product test for w -> cavitation": -0.39158588686091544,
+    "Dot product test for w -> cpmin": 0.6673403415536877,
+    "Dot product test for xV -> cavitation": 0.044220429016168836,
+    "Dot product test for xV -> cpmin": 0.0,
     "cavitation outputs": {
-        "naca0012_rans_2D_cavitation": 0.12991147313880522
+        "naca0012_rans_2D_cavitation": 0.12991147313880522,
+        "naca0012_rans_2D_cpmin": -1.2254790918172702
     },
     "cavitation totals": {
         "naca0012_rans_2D_cavitation": {
-            "alpha": 0.09506523526801869
+            "alpha": 0.09506523526801867
+        },
+        "naca0012_rans_2D_cpmin": {
+            "alpha": -0.40811659835075603
         }
     },
     "metadata": {
@@ -31,6 +37,7 @@
         "ANKNSubiterTurb": 1,
         "ANKOuterPreconIts": 1,
         "ANKPCILUFill": 2,
+        "ANKPCUpdateCutoff": 1e-06,
         "ANKPCUpdateTol": 0.5,
         "ANKPhysicalLSTol": 0.2,
         "ANKPhysicalLSTolTurb": 0.99,
@@ -42,6 +49,7 @@
         "ANKTurbCFLScale": 1.0,
         "ANKTurbKSPDebug": false,
         "ANKUnsteadyLSTol": 1.0,
+        "ANKUseApproxSA": false,
         "ANKUseFullVisc": true,
         "ANKUseMatrixFree": true,
         "ANKUseTurbDADI": true,
@@ -97,6 +105,7 @@
         "coarseDiscretization": "central plus scalar dissipation",
         "computeCavitation": true,
         "coupledSolution": false,
+        "cpMinRho": 1000.0,
         "cutCallback": null,
         "debugZipper": false,
         "deltaT": 0.01,
@@ -108,6 +117,7 @@
         "equationMode": "steady",
         "equationType": "RANS",
         "eulerWallTreatment": "linear pressure extrapolation",
+        "explicitSurfaceCallback": null,
         "firstRun": true,
         "flowType": "external",
         "forcesAsTractions": true,
@@ -154,6 +164,7 @@
         "outputDirectory": "tests/output_files",
         "outputSurfaceFamily": "allSurfaces",
         "overlapFactor": 0.9,
+        "oversetDebugPrint": false,
         "oversetLoadBalance": true,
         "oversetPriority": {},
         "oversetProjTol": 1e-12,
@@ -239,5 +250,6 @@
         "writeVolumeSolution": false,
         "zipperSurfaceFamily": null
     },
-    "total cavitation derivative wrt random volume perturbation": -2.0565995469114675
+    "total cavitation derivative wrt random volume perturbation": -2.0565995469114533,
+    "total cpmin derivative wrt random volume perturbation": -80.3115105107785
 }

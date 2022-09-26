@@ -114,7 +114,7 @@ ap_naca0012_cavitation = AeroProblem(
     R=R,
     areaRef=1.0,
     chordRef=c,
-    evalFuncs=["cavitation"],
+    evalFuncs=["cavitation", "cpmin"],
     xRef=0.25,
 )
 
