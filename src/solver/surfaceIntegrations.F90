@@ -1073,8 +1073,9 @@ contains
   end subroutine integrateSurfaces
 
   subroutine computeCpMinExact(famList)
+
      use constants
-     use inputTimeSpectral , only : nTimeIntervalsSpectral
+     use inputTimeSpectral, only : nTimeIntervalsSpectral
      use communication, only : ADflow_comm_world, myID
      use blockPointers, only : nDom
      use inputPhysics, only : cpmin_exact, MachCoef
@@ -1084,15 +1085,17 @@ contains
      use utils, only : setPointers, setBCPointers, isWallType, EChk
      use sorting, only : famInList
 
-     implicit none
+    implicit none
 
      integer(kind=intType), dimension(:), intent(in) :: famList
      integer(kind=intType) :: mm, nn, sps
      integer(kind=intType) :: i, j, ii, blk, ierr
      real(kind=realType) :: Cp, plocal, tmp, cpmin_local
 
-     ! this routine loops over the surface cells in the given family and computes the true minimum Cp value.
-     ! this is then used in the surface integration routine to compute the cpmin using KS aggregation.
+     ! this routine loops over the surface cells in the given family
+     ! and computes the true minimum Cp value.
+     ! this is then used in the surface integration routine to compute
+     ! the cpmin using KS aggregation.
      ! the goal is to get a differentiable cpmin output
 
      ! set the local cp min to a small value so that we get the actual min
@@ -1100,8 +1103,8 @@ contains
 
      ! loop over the TS instances just because its the same convention everywhere.
      ! in an actual TS computation, this wont work most likely.
-     ts: do sps=1, nTimeIntervalsSpectral
-      domains: do nn=1, nDom
+     do sps=1, nTimeIntervalsSpectral
+       do nn=1, nDom
            call setPointers(nn, 1, sps)
 
            ! Loop over all possible boundary conditions
@@ -1138,8 +1141,8 @@ contains
 
             end if famInclude
          end do bocos
-      end do domains
-     end do ts
+       end do
+     end do
 
      ! finally communicate across all processors
      call mpi_allreduce(cpmin_local, cpmin_exact, 1, adflow_real, &

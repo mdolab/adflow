@@ -2109,6 +2109,7 @@ contains
     use blockPointers, only : x, il, jl, kl, nDom, iBlank, vol, nbkGlobal, kBegOr
     use adjointVars, only : nCellsLocal
     use utils, only : setPointers, EChk
+    use sorting, only : famInList
     implicit none
 
     ! Input/Output
@@ -2206,7 +2207,11 @@ contains
        call setPointers(nn, level, sps)
 
        ! only check this cell if it is within one of the block IDs we are asked to look at
-       if (any( blockids .eq. nbkGlobal) )then
+       ! here, we reuse the famInList function from sorting.F90. The reason is just having
+       ! if (any(blockids == nbkGlobal)) does not work with complexify; complexify changes the
+       ! == (or .eq.) to .ceq., which does not work with integers. The famInList is originally
+       ! written for surface integrations, but the same idea applies here.
+       if (famInList(nbkGlobal, blockids))then
          do k=2, kl
             do j=2, jl
                do i=2, il
