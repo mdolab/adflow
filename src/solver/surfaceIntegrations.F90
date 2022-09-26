@@ -1096,7 +1096,7 @@ contains
      ! the goal is to get a differentiable cpmin output
 
      ! set the local cp min to a small value so that we get the actual min
-     cpmin_local = -10000.0_realType
+     cpmin_local = 10000.0_realType
 
      ! loop over the TS instances just because its the same convention everywhere.
      ! in an actual TS computation, this wont work most likely.
@@ -1143,7 +1143,7 @@ contains
 
      ! finally communicate across all processors
      call mpi_allreduce(cpmin_local, cpmin_exact, 1, adflow_real, &
-          MPI_MAX, adflow_comm_world, ierr)
+          MPI_MIN, adflow_comm_world, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
   end subroutine computeCpMinExact

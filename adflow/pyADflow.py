@@ -5592,7 +5592,7 @@ class ADFLOW(AeroSolver):
             "restrictionrelaxation": ["iter", "fcoll"],
             "forcesastractions": ["physics", "forcesastractions"],
             "lowspeedpreconditioner": ["discr", "lowspeedpreconditioner"],
-            "cavitationnumber": ["physics", "cavitationsensor"],
+            "cavitationnumber": ["physics", "cavitationnumber"],
             "cpminrho": ["physics", "cpmin_rho"],
             # Common Parameters
             "ncycles": ["iter", "ncycles"],
