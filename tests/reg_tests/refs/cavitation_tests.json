@@ -1,18 +1,18 @@
 {
-    "Dot product test for w -> cavitation": -0.39158588686091544,
-    "Dot product test for w -> cpmin": 0.6673403415536877,
-    "Dot product test for xV -> cavitation": 0.044220429016168836,
+    "Dot product test for w -> cavitation": -0.3915858868621817,
+    "Dot product test for w -> cpmin": 0.6673403415494966,
+    "Dot product test for xV -> cavitation": 0.04422042901525445,
     "Dot product test for xV -> cpmin": 0.0,
     "cavitation outputs": {
-        "naca0012_rans_2D_cavitation": 0.12991147313880522,
-        "naca0012_rans_2D_cpmin": -1.2254790918172702
+        "naca0012_rans_2D_cavitation": 0.12991147313819204,
+        "naca0012_rans_2D_cpmin": -1.225479091815022
     },
     "cavitation totals": {
         "naca0012_rans_2D_cavitation": {
-            "alpha": 0.09506523526801867
+            "alpha": 0.09506523526898285
         },
         "naca0012_rans_2D_cpmin": {
-            "alpha": -0.40811659835075603
+            "alpha": -0.4081165983499211
         }
     },
     "metadata": {
@@ -59,7 +59,7 @@
         "CFLLimit": 1.5,
         "GMRESOrthogonalizationType": "modified Gram-Schmidt",
         "ILUFill": 2,
-        "L2Convergence": 1e-13,
+        "L2Convergence": 1e-15,
         "L2ConvergenceCoarse": 0.01,
         "L2ConvergenceRel": 1e-16,
         "MGCycle": "sg",
@@ -80,7 +80,7 @@
         "RKReset": false,
         "TSStability": false,
         "adjointDivTol": 100000.0,
-        "adjointL2Convergence": 1e-13,
+        "adjointL2Convergence": 1e-15,
         "adjointL2ConvergenceAbs": 1e-16,
         "adjointL2ConvergenceRel": 1e-16,
         "adjointMaxIter": 500,
@@ -250,6 +250,6 @@
         "writeVolumeSolution": false,
         "zipperSurfaceFamily": null
     },
-    "total cavitation derivative wrt random volume perturbation": -2.0565995469114533,
-    "total cpmin derivative wrt random volume perturbation": -80.3115105107785
+    "total cavitation derivative wrt random volume perturbation": -2.0566154094703144,
+    "total cpmin derivative wrt random volume perturbation": -80.31134681285023
 }

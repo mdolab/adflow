@@ -45,8 +45,8 @@ class CavitationBasicTests(reg_test_classes.RegTest):
                 "nkswitchtol": 1e-6,
                 "volumevariables": ["temp", "mach", "resrho", "cp"],
                 "equationType": "RANS",
-                "l2convergence": 1e-13,
-                "adjointl2convergence": 1e-13,
+                "l2convergence": 1e-15,
+                "adjointl2convergence": 1e-15,
                 "computeCavitation": True,
                 "cavitationNumber": 1.0,
                 "cpminrho": 1e3,
@@ -110,8 +110,11 @@ class CavitationBasicTests(reg_test_classes.RegTest):
 
             # dot product these two vectors to get a total derivative
             dotLocal = np.dot(xVDot, xVBar)
+            # this is not the best test out there; the final answer does get affected quite a bit
+            # by the processor count or architecture. We just have it here to have some test on the
+            # cavitation functionals' derivatives w.r.t. spatial changes in a lazy way.
             self.handler.par_add_sum(
-                f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-10
+                f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-4
             )
 
             ##################
@@ -171,6 +174,8 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
                 "adjointl2convergence": 1e-13,
                 "computeCavitation": True,
                 "cavitationNumber": 1.0,
+                "cpminrho": 1e3,
+                # to get slightly better complex convergence
                 "NKUseEW": False,
                 "NKLinearSolveTol": 1e-4,
             }
@@ -238,7 +243,7 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
 
             # compute the sens
             funcsSensCS[dv] = {}
-            for f in ["cavitation"]:
+            for f in ["cavitation", "cpmin"]:
                 funcsSensCS[dv][self.ap[f]] = np.imag(funcs_plus[dv][self.ap[f]]) / self.h
 
             # reset the DV
@@ -257,13 +262,15 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
         # we treat the CS value as the truth, so if this test passes,
         # we assume the adjoint sensitivities are also true
 
-        func_name = "naca0012_rans_2D_cavitation"
+        for func_name in ["cavitation", "cpmin"]:
 
-        ref_val = self.handler.db["cavitation totals"][func_name]["alpha"]
-        np.testing.assert_allclose(funcsSensCS["alpha"][func_name], ref_val, atol=1e-10, rtol=1e-10)
+            full_name = f"naca0012_rans_2D_{func_name}"
 
-        ref_val = self.handler.db["total cavitation derivative wrt random volume perturbation"]
-        np.testing.assert_allclose(funcsSensCS["vol_perturbation"][func_name], ref_val, rtol=1e-4)
+            ref_val = self.handler.db["cavitation totals"][full_name]["alpha"]
+            np.testing.assert_allclose(funcsSensCS["alpha"][full_name], ref_val, atol=1e-10, rtol=1e-10)
+
+            ref_val = self.handler.db[f"total {func_name} derivative wrt random volume perturbation"]
+            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][full_name], ref_val, rtol=1e-4)
 
 
 if __name__ == "__main__":
