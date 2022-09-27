@@ -185,8 +185,7 @@ contains
                   cgnsPhysDim, cgnsIsoSurfBases(nn), ierr)
              if (ierr /= CG_OK) &
                   call terminate("WriteCGNSSurfaceSol", &
-                  "Something wrong when calling cg_base_write_f for &
-                  &isoSurface")
+                  "Something wrong when calling cg_base_write_f for isoSurface")
           end do solLoop2
        end if testRootProc2
 
@@ -387,7 +386,7 @@ contains
 
     integer(kind=intType) :: i, offset
     integer(kind=intType) :: mm, mBlocks, faceID, nSubfaces
-    
+
     ! extents of the subface in terms of the i,j,k indices of the cgns zone
     integer(kind=intType) :: zone_iBeg, zone_jBeg, zone_kBeg, zone_iEnd, zone_jEnd, zone_kEnd
     ! extents of the subface of i,j indices in terms of i,j,k, indices of cgns zone.
@@ -502,34 +501,34 @@ contains
     case (iMin,iMax)
        il = zone_jEnd - zone_jBeg + 1
        jl = zone_kEnd - zone_kBeg + 1
-       
+
        subface_iBeg = zone_jBeg
        subface_iEnd = zone_jEnd
-       
+
        subface_jBeg = zone_kBeg
        subface_jEnd = zone_kEnd
-       
+
     case (jMin,jMax)
        il = zone_iEnd - zone_iBeg + 1
        jl = zone_kEnd - zone_kBeg + 1
-       
+
        subface_iBeg = zone_iBeg
        subface_iEnd = zone_iEnd
-       
+
        subface_jBeg = zone_kBeg
        subface_jEnd = zone_kEnd
-       
-       
+
+
     case (kMin,kMax)
        il = zone_iEnd - zone_iBeg + 1
        jl = zone_jEnd - zone_jBeg + 1
-       
+
        subface_iBeg = zone_iBeg
        subface_iEnd = zone_iEnd
-       
+
        subface_jBeg = zone_jBeg
        subface_jEnd = zone_jEnd
-       
+
     end select
 
     ! Allocate the memory for buffer, which is used to communicate
