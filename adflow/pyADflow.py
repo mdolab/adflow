@@ -308,8 +308,6 @@ class ADFLOW(AeroSolver):
             cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
             cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
-        # TODO remove these barriers, but for now, to get an accurate timing, sync procs
-        self.comm.barrier()
         cutCallBackTime = time.time()
 
         # exlclude the cells inside closed surfaces if we are provided with them
@@ -339,16 +337,14 @@ class ADFLOW(AeroSolver):
                 else:
                     kmin = -1
 
-                # read the plot3d surface
-                pts, conn = self._readPlot3DSurfFile(surf_file, convertToTris=False)
+                # optional coordinate transformation to do general manipulation of the coordinates
+                if "coord_xfer" in surf_dict[surf]:
+                    coord_xfer = surf_dict[surf]["coord_xfer"]
+                else:
+                    coord_xfer = None
 
-                # optionally add the offsets to the surface mesh we just read
-                if "dx" in surf_dict[surf]:
-                    pts[:, 0] += surf_dict[surf]["dx"]
-                if "dy" in surf_dict[surf]:
-                    pts[:, 1] += surf_dict[surf]["dy"]
-                if "dz" in surf_dict[surf]:
-                    pts[:, 2] += surf_dict[surf]["dz"]
+                # read the plot3d surface
+                pts, conn = self._readPlot3DSurfFile(surf_file, convertToTris=False, coord_xfer=coord_xfer)
 
                 # get a new flag array
                 surf_flag = numpy.zeros(n, "intc")
@@ -360,8 +356,6 @@ class ADFLOW(AeroSolver):
                 # update the flag array with the new info
                 flag = numpy.any([flag, surf_flag], axis=0)
 
-        # TODO remove these barriers, but for now, to get an accurate timing, sync procs
-        self.comm.barrier()
         explicitSurfaceCutTime = time.time()
 
         # Need to reset the oversetPriority option since the CGNSGrid
@@ -829,7 +823,7 @@ class ADFLOW(AeroSolver):
 
         self.nSlice += n_slice
 
-    def addIntegrationSurface(self, fileName, familyName, isInflow=True, disp_vec=None):
+    def addIntegrationSurface(self, fileName, familyName, isInflow=True, coord_xfer=None):
         """Add a specific integration surface for performing massflow-like
         computations.
 
@@ -848,6 +842,14 @@ class ADFLOW(AeroSolver):
         isInflow : bool
            Flag to treat momentum forces as if it is an inflow or outflow
            face. Default is True
+
+        coord_xfer : function
+            A callback function that performs a coordinate transformation
+            between the original reference frame and any other reference
+            frame relevant to the current CFD case. This allows user to apply
+            arbitrary modifications to the loaded plot3d surface. The call
+            signature is documented in the DVGeometry's addPointset method:
+            https://github.com/mdolab/pygeo/blob/main/pygeo/parameterization/DVGeo.py
         """
 
         self.hasIntegrationSurfaces = True
@@ -871,17 +873,22 @@ class ADFLOW(AeroSolver):
         # of nodes/elements of the defined surface are sufficiently
         # small that we do not have to worry about parallelization.
 
-        pts, conn = self._readPlot3DSurfFile(fileName)
-
-        # displace the points if asked for
-        if disp_vec is not None:
-            for idim in range(3):
-                pts[:, idim] += disp_vec[idim]
+        pts, conn = self._readPlot3DSurfFile(fileName, coord_xfer=coord_xfer)
 
         self.adflow.usersurfaceintegrations.addintegrationsurface(pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(
-        self, fileName, axis1, axis2, familyName, thrust=0.0, torque=0.0, heat=0.0, relaxStart=None, relaxEnd=None
+        self,
+        fileName,
+        axis1,
+        axis2,
+        familyName,
+        thrust=0.0,
+        torque=0.0,
+        heat=0.0,
+        relaxStart=None,
+        relaxEnd=None,
+        coord_xfer=None,
     ):
         """
         Add an actuator disk zone defined by the supplied closed
@@ -960,13 +967,21 @@ class ADFLOW(AeroSolver):
             The end of the relaxation in terms of
             orders of magnitude of relative convergence
 
+        coord_xfer : function
+            A callback function that performs a coordinate transformation
+            between the original reference frame and any other reference
+            frame relevant to the current CFD case. This allows user to apply
+            arbitrary modifications to the loaded plot3d surface. The call
+            signature is documented in the DVGeometry's addPointset method:
+            https://github.com/mdolab/pygeo/blob/main/pygeo/parameterization/DVGeo.py
+
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
         if self.getOption("equationMode").lower() == "time spectral":
             raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
 
         # Load in the user supplied surface file.
-        pts, conn = self._readPlot3DSurfFile(fileName, convertToTris=False)
+        pts, conn = self._readPlot3DSurfFile(fileName, convertToTris=False, coord_xfer=coord_xfer)
 
         # We should do a topology check to ensure that the surface the
         # user supplied is actually closed.
@@ -6147,7 +6162,7 @@ class ADFLOW(AeroSolver):
 
         return strList
 
-    def _readPlot3DSurfFile(self, fileName, convertToTris=True):
+    def _readPlot3DSurfFile(self, fileName, convertToTris=True, coord_xfer=None):
         """Read a plot3d file and return the points and connectivity in
         an unstructured mesh format"""
 
@@ -6191,6 +6206,15 @@ class ADFLOW(AeroSolver):
             # cheap anyway
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(pts.T, 1e-12)
             pts = uniquePts[:, 0:nUnique].T
+
+            # coordinate transformation for the coordinates if we have any.
+            # this is where the user can rotate, translate, or generally manipulate
+            # the coordinates coming from the plot3d file before they are used
+            if coord_xfer is not None:
+                # this callback function has the same call signature with the
+                # method described in the DVGeometry addPointSet method:
+                # https://github.com/mdolab/pygeo/blob/main/pygeo/parameterization/DVGeo.py
+                pts = coord_xfer(pts, mode="fwd", apply_displacement=True)
 
             # Update the conn
             newConn = numpy.zeros_like(conn)
