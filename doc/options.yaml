@@ -546,7 +546,10 @@ explicitSurfaceCallback:
                    # is coming from the inside of the surface, the cell is
                    # tagged. So a CFD mesh with a symmetry plane can
                    # have a plot3d surface thats open at the symmetry plane.
-                   # The normals must always point outside.
+                   # The normals must always point outside. An easy way to
+                   # obtain this surface file is to convert the surface
+                   # CGNS grid used to generate the mesh into the plot3d
+                   # format using the cgns2plot3d method in cgnsutils.
                    "surf_file": "wing_surface.x",
 
                    # The block IDs we will search and blank using this surface.
