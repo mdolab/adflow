@@ -583,12 +583,16 @@ explicitSurfaceCallback:
                    # they intersect the wing geometry itself somehow. E.g. very large splay.
                    # However, we only want to blank cells that have a k-index that is
                    # larger than 32 to avoid tagging cells near the wall. The
-                   # "kmin" option is used to achieves this.
+                   # optional "kmin" entry is used to achieve this.
                    "surf_file": "wing_surface.x",
                    "block_ids": wing_blocks,
                    "kmin": 32,
                },
            }
+
+           # pyADflow will loop over the entries of this dictionary and perform the
+           # explicit blanking with the information provided.
+           return surf_dict
 
 oversetUpdateMode:
   desc: >
