@@ -114,7 +114,7 @@ class CavitationBasicTests(reg_test_classes.RegTest):
             # by the processor count or architecture. We just have it here to have some test on the
             # cavitation functionals' derivatives w.r.t. spatial changes in a lazy way.
             self.handler.par_add_sum(
-                f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-4
+                f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-3
             )
 
             ##################
@@ -270,7 +270,7 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
             np.testing.assert_allclose(funcsSensCS["alpha"][full_name], ref_val, atol=1e-10, rtol=1e-10)
 
             ref_val = self.handler.db[f"total {func_name} derivative wrt random volume perturbation"]
-            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][full_name], ref_val, rtol=1e-4)
+            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][full_name], ref_val, rtol=1e-3)
 
 
 if __name__ == "__main__":
