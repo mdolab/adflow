@@ -491,6 +491,105 @@ cutCallback:
     Therefore, we are flagging every cell where the y-component of the center coordinate (index 0:x, 1:y, 2:z) has a negative value.
     The flags array is initialized to zero internally by pyADflow, and a value of 1 for a cell tags it for flooding.
 
+explicitSurfaceCallback:
+  desc: >
+    A user-provided Python function that is used as a callback method to pass the information required for the explicit surface blanking method.
+    To be able to understand what this option does, you should really understand how the overset flooding method works.
+
+    With some configurations, the automatic flooding algorithm makes it extremely challenging to prevent the entire mesh from flooding.
+    The overlap of volume blocks can even be such that setting the ``"oversetPriority"`` option for each block is not enough.
+    To handle these extreme cases, we have a surface based explicit blanking method.
+    The idea is very similar to the ``cutCallback`` option above; this option is used to tag cells that are _inside_ a closed geometry provided by the user.
+    This way, we try to eliminate as much of the flood seeds and flooded cells as possible.
+    The approach is not perfect; we only tag the cells that have at least one vertex inside the provided surface geometry as explicitly blanked (-4).
+    This results in two layers of fringe cells that are automatically added, which prevent flooding under most cases.
+    However, the flooding algorithm is actually more involved than this; normally, potential wall donors are tagged as flood seeds, not just the cells that have a vertex inside a wall BC.
+    Regardless, the method works well enough that it can give you a valid hole cutting with cases that are practically impossible to get a valid hole cutting with just the default approach.
+
+    The way user interacts with this method is through this callback function.
+    The reason we have the callback function is that we need the CGNS block names for each "computational block".
+    These names are used to determine which volume blocks will be explicitly blanked by which surface; we do not want every surface to act on every computational domain because that would result in most near wall cells getting tagged and would be very error prone.
+
+    To understand how this option is used, consider an example where we have a wing and a fuselage, in an overset mesh.
+    The wing and fuselage component meshes are joined together with a collar mesh and a background cartesian mesh.
+    Some of the wing mesh is inside the fuselage surface, and some of the fuselage mesh is overlapping with the wing surface.
+    Normally, this case would be handled by the automatic flooding, which works fairly well for most applications including this example, but here, we are just demonstrating the alternative approach.
+    With the regular flooding algorithm, some cells in these overlap regions would get tagged as flood seeds on both the wing and the fuselage.
+    Then, these flood seeds are used to flood the cells that are located inside these geometries; e.g. all of the wing volume cells that are inside the fuselage surface.
+
+    Instead of relying on the flooding, here, we want to explicitly blank cells that are inside the other component's surface.
+    To do this, we want to explicitly tag the wing mesh volume cells that have at least one vertex inside the fuselage surface, and similarly, tag the fuselage volume cells that have at least one vertex inside the wing surface.
+    The ``explicitSurfaceCallback`` option that would achieve this would look something like this:
+
+      .. code-block:: python
+
+        def explicitSurfaceCallback(CGNSZoneNameIDs):
+           # arrays to save the integer CGNS block IDs for each component
+           fuselage_blocks = []
+           wing_blocks = []
+
+           for name, id in CGNSZoneNameIDs.items():
+               # We can only get the blocks we want by checking the CGNS blocks' name.
+               # In this example, we don't want the explicit blanking algorithm to work
+               # on the cartesian background or the collar meshes.
+               if "wing" in name:
+                   wing_blocks.append(id)
+               elif "fuselage" in name:
+                   fuselage_blocks.append(id)
+
+           surf_dict = {
+               "wing": {
+                   # The surface file for each entry must be provided.
+                   # This is a closed plot3d surface mesh. It does not
+                   # necessarily need to be closed; we project the cell
+                   # vertices on this mesh and if the projection direction
+                   # is coming from the inside of the surface, the cell is
+                   # tagged. So a CFD mesh with a symmetry plane can
+                   # have a plot3d surface thats open at the symmetry plane.
+                   # The normals must always point outside.
+                   "surf_file": "wing_surface.x",
+
+                   # The block IDs we will search and blank using this surface.
+                   # Here, we only blank the fuselage cells that are inside the wing
+                   # and don't want to consider the background or collar meshes.
+                   "block_ids": fuselage_blocks,
+
+                   # Optional entry: coord_xfer
+                   # This is another callback function that performs a coordinate
+                   # transformation on the loaded plot3d mesh nodes. See the
+                   # addPointSet method in DVGeo.py at
+                   # https://github.com/mdolab/pygeo for the call signature.
+                   # We use this approach so that the users can have complete
+                   # control over the surface mesh nodes after they are loaded.
+                   "coord_xfer": coord_xfer,
+               },
+
+               # Similar entries for the fuselage.
+               "fuselage": {
+                   "surf_file": "fuselage_surface.x",
+                   "block_ids": wing_blocks,
+               },
+
+               # We can have multiple entries with the same surface to blank different
+               # subsets of CGNS blocks. The entries of this top level dictionary
+               # is just for bookkeeping, and is not important. The code prints
+               # which entry it is blanking as it works through the dictionary.
+               # With large meshes (millions of cells) on few number of processors (<10)
+               # this process can take up to a minute or so. The process should run quicker
+               # with more processors. The surface mesh is loaded on all processors
+               # so there is a memory limit on the surface mesh refinement.
+               "wing_self": {
+                   # Here, assume we also want to blank some of the wing cells because
+                   # they intersect the wing geometry itself somehow. E.g. very large splay.
+                   # However, we only want to blank cells that have a k-index that is
+                   # larger than 32 to avoid tagging cells near the wall. The
+                   # "kmin" option is used to achieves this.
+                   "surf_file": "wing_surface.x",
+                   "block_ids": wing_blocks,
+                   "kmin": 32,
+               },
+           }
+
 oversetUpdateMode:
   desc: >
     How to update the overset connectivity after mesh warping.
