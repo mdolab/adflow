@@ -643,6 +643,11 @@ oversetPriority:
     A lower factor will encourage the usage of that block mesh.
     This option may be required to get the flooding algorithm working properly.
 
+oversetDebugPrint:
+  desc: >
+    Flag to enable or disable the debug printout from the overset algorithm when a hole cutting process fails.
+    This information is not useful anymore and users should obtain the volume solution after an unsuccessful hole cutting and debug the mesh by plotting the cells with incomplete connectivities, which receive an iblank value of -5.
+
 timeIntegrationScheme:
   desc: >
     The type of time integration scheme to use for unsteady analysis.
