@@ -30,8 +30,7 @@ CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 FF77_FLAGS = -fPIC -fdefault-real-8 -fdefault-double-8 -march=native
 FF90_FLAGS = $(FF77_FLAGS) -std=f2008
 FFXX_OPT_FLAGS = -O3 -ffast-math
-
-C_FLAGS   = -O -fPIC
+C_FLAGS   = -fPIC -O
 
 # ------- Define Archiver  and Flags -----------------------------------
 AR       = ar
