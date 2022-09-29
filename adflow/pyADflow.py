@@ -558,13 +558,17 @@ class ADFLOW(AeroSolver):
         tmp = numpy.zeros((N, 3), self.dtype)
         if direction == "x":
             tmp[:, 0] = positions
-            dirVec = [1.0, 0.0, 0.0]
+            normal = [1.0, 0.0, 0.0]
         elif direction == "y":
             tmp[:, 1] = positions
-            dirVec = [0.0, 1.0, 0.0]
+            normal = [0.0, 1.0, 0.0]
         elif direction == "z":
             tmp[:, 2] = positions
-            dirVec = [0.0, 0.0, 1.0]
+            normal = [0.0, 0.0, 1.0]
+
+        # for regular slices, we dont use the direction vector to pick a projection direction
+        slice_dir = [1.0, 0.0, 0.0]
+        use_dir = False
 
         for i in range(len(positions)):
             # It is important to ensure each slice get a unique
@@ -572,10 +576,10 @@ class ADFLOW(AeroSolver):
             j = self.nSlice + i + 1
             if sliceType == "relative":
                 sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])
-                self.adflow.tecplotio.addparaslice(sliceName, tmp[i], dirVec, famList)
+                self.adflow.tecplotio.addparaslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
             else:
                 sliceName = "Slice_%4.4d %s Absolute %s=%7.3f" % (j, groupTag, direction, positions[i])
-                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], dirVec, famList)
+                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
 
         self.nSlice += N
 
