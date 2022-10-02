@@ -330,6 +330,8 @@ class ADFLOW(AeroSolver):
                 surf_file = surf_dict[surf]["surf_file"]
                 # the indices of cgns blocks that we want to consider when blanking inside the surface
                 block_ids = surf_dict[surf]["block_ids"]
+                # the fortran lookup expects this list in increaasing order
+                block_ids.sort()
 
                 # check if there is a kmin provided
                 if "kmin" in surf_dict[surf]:
