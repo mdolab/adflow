@@ -1,4 +1,5 @@
-fortranFilesNoOpt= utils/genericISNAN.F90
+fortranFilesNoOpt=	modules/precision.F90\
+		utils/genericISNAN.F90
 
 fortranFiles=	ADT/adtUtils.F90\
 		ADT/adtBuild.F90\
@@ -20,7 +21,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		inputParam/inputParamRoutines.F90\
 		\
-		modules/precision.F90\
 		modules/su_cgns.F90\
 		modules/constants.F90\
 		modules/killSignals.f90\
