@@ -1,5 +1,5 @@
 fortranFilesNoOpt=	modules/precision.F90\
-		utils/genericISNAN.F90
+		utils/genericISNAN.F90\
 
 fortranFiles=	ADT/adtUtils.F90\
 		ADT/adtBuild.F90\
