@@ -27,8 +27,9 @@ CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
 CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
 # ------- Define Compiler Flags ----------------------------------------
-FF77_FLAGS   = -fPIC -r8 -O2
+FF77_FLAGS   = -fPIC -r8
 FF90_FLAGS = $(FF77_FLAGS) -std08
+FFXX_OPT_FLAGS = -O2
 C_FLAGS      = -fPIC -O
 
 # ------- Define Archiver  and Flags -----------------------------------
