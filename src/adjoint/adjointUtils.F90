@@ -599,7 +599,7 @@ contains
       ! Sets a block at irow, icol, if useTranspose is False
       ! Sets a block at icol, irow with transpose of blk if useTranspose is True
 
-      use utils, only : myisnan
+      use genericISNAN, only : myisnan
       implicit none
       real(kind=realType), dimension(nState, nState) :: blk
 
