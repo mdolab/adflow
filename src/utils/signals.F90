@@ -13,6 +13,7 @@
     use inputPhysics, only : equationMode
     use killSignals, only : localSignal, noSignal, signalWrite
     use iteration, only : groundLevel
+    use format, only : strings
     implicit none
     !
     !      Local variables.
@@ -31,9 +32,7 @@
     integerString = adjustl(integerString)
     integerString = trim(integerString)
     print "(a)", "#"
-    print 101, integerString(:len_trim(integerString))
-101 format("# Processor",1X,A,": Received write signal.")
-
+    print strings, "# Processor ", integerString(:len_trim(integerString)),": Received write signal."
 
     ! Check if a signal was set previously.
 
@@ -44,9 +43,7 @@
 
        localSignal = noSignal
 
-       print 102
-102    format("# Signal was set previously and will now be &
-            &overwritten to no signal")
+       print "(a)", "# Signal was set previously and will now be overwritten to no signal"
 
     else testPrevious
 
@@ -65,24 +62,18 @@
           select case (equationMode)
 
           case (steady, timeSpectral)
-             print 103
-103          format("# Solution will be written after this iteration")
+             print "(a)", "# Solution will be written after this iteration"
 
           case (unsteady)
-             print 104
-104          format("# Solution will be written after this time step")
+             print "(a)", "# Solution will be written after this time step"
           end select
 
        else
 
           ! Coarser grid. Signal information will be ignored.
 
-          print 105
-          print 106
-105       format("# Solver is still on a coarse grid and therefore &
-               &the signal is ignored.")
-106       format("# Use kill -USR2 if you want to go to the next &
-               &finer grid level.")
+          print "(a)", "# Solver is still on a coarse grid and therefore the signal is ignored."
+          print "(a)", "# Use kill -USR2 if you want to go to the next finer grid level."
 
        endif
 
@@ -116,6 +107,7 @@
     use inputPhysics, only : equationMode
     use killSignals, only : localSignal, noSignal, signalWriteQuit
     use iteration, only : groundLevel
+    use format, only : strings
     implicit none
     !
     !      Local variables.
@@ -135,8 +127,7 @@
     integerString = adjustl(integerString)
     integerString = trim(integerString)
     print "(a)", "#"
-    print 201, integerString(:len_trim(integerString))
-201 format("# Processor",1X,A,": Received write and quit signal.")
+    print strings, "# Processor ", integerString(:len_trim(integerString)),": Received write and quit signal."
 
     ! Check if a signal was set previously.
 
@@ -147,9 +138,7 @@
 
        localSignal = noSignal
 
-       print 202
-202    format("# Signal was set previously and will now be &
-            &overwritten to no signal")
+       print "(a)", "# Signal was set previously and will now be overwritten to no signal"
 
     else testPrevious
 
@@ -168,14 +157,10 @@
 
           select case (equationMode)
           case (steady, timeSpectral)
-             print 203
-203          format("# Solution will be written and computation &
-                  &stopped after this multigrid cycle")
+             print "(a)", "# Solution will be written and computation stopped after this multigrid cycle"
 
           case (unsteady)
-             print 204
-204          format("# Solution will be written and computation &
-                  &stopped after this time step")
+             print "(a)", "# Solution will be written and computation stopped after this time step"
           end select
 
        else
@@ -185,19 +170,14 @@
           ! or after this time step depending on whether this is a
           ! steady or an unsteady computation.
 
-          print 205
-205       format("# Solver is still on the coarse grid.")
+          print "(a)", "# Solver is still on the coarse grid."
 
           select case (equationMode)
           case (steady, timeSpectral)
-             print 206
-206          format("# Solution will be transferred to the next &
-                  &finer grid after this multigrid cycle.")
+             print "(a)", "# Solution will be transferred to the next finer grid after this multigrid cycle."
 
           case (unsteady)
-             print 207
-207          format("# Solution will be transferred to the next &
-                  &finer grid after this time step.")
+             print "(a)", "# Solution will be transferred to the next finer grid after this time step."
           end select
 
        endif
