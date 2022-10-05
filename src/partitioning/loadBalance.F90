@@ -439,6 +439,8 @@ contains
 
     type(splitCGNSType), dimension(cgnsNDom) :: splitInfo
 
+    character(len=maxStringLen) :: loadFormat
+
     ! If it is not allowed to split the blocks, check that the
     ! number of blocks is equal or larger than the number of
     ! processors. If not, print an error message and exit.
@@ -591,32 +593,26 @@ contains
     if(commNeglected .and. myID == 0) then
        print "(a)", "#"
        print "(a)", "#                    Warning"
-       print "(a)", "# Communication costs neglected to obtain&
-            & a valid partitioning."
+       print "(a)", "# Communication costs neglected to obtain a valid partitioning."
     endif
 
     ! If the load imbalance tolerance was not met, print a warning
     ! message if I am processor 0.
 
+    loadFormat = "(*(A, F6.3))"
+
     if (myid == 0) then
        if(.not.(cellsBalanced .and. facesBalanced)) then
           print "(a)", "#"
           print "(a)", "#                    Warning"
-          print 100, loadImbalance
-          print 101, ubvec(1), ubvec(2)
+          print loadFormat, "# Specified load imbalance tolerance", loadImbalance, " not achieved."
+          print loadFormat, "# Continuing with", ubvec(1), " load imbalance for the cells and", ubvec(2), " for the faces"
           print "(a)", "#"
-100       format("# Specified load imbalance tolerance",1X,F6.3,1X,"not &
-               &achieved.")
-101       format("# I continue with",1X,F6.3,1X,"load imbalance for the &
-               &cells and",1X,F6.3,1X,"for the faces")
        else
           print "(a)","#"
 
-          print 102, loadImbalance
-          print 103, ubvec(1), ubvec(2)
-102       format("# Specified load imbalance tolerance",1X,F6.3,1X,"acheived")
-103       format("# Continuing with",1X,F6.3,1X,"load imbalance for the &
-               &cells and",1X,F6.3,1X,"for the faces")
+          print loadFormat, "# Specified load imbalance tolerance", loadImbalance, " achieved."
+          print loadFormat, "# Continuing with", ubvec(1), " load imbalance for the cells and", ubvec(2), " for the faces"
           print "(a)", "#"
        end if
 
@@ -1558,6 +1554,7 @@ contains
     use inputPhysics
     use partitionMod
     use utils, only : terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -1639,9 +1636,8 @@ contains
              if(myID == 0) then
                 zoneName = cgnsDoms(cgnsID)%zoneName
                 subName  = cgnsDoms(cgnsID)%bocoInfo(j)%bocoName
-                write(errorMessage,100) trim(zoneName), trim(subName)
-100             format("Zone",1X,A,", boundary subface",1X,A, &
-                     ": No constant index found for subface")
+                write(errorMessage, strings) "Zone ", trim(zoneName), ", boundary subface ", trim(subName), &
+                  ": No constant index found for subface"
                 call terminate("BCFacesSubblock", errorMessage)
              endif
 
@@ -1726,15 +1722,11 @@ contains
                 ! accordingly.
 
                 if(flowType == internalFlow) then
-                   write(errorMessage,120) trim(zoneName), trim(subName)
-120                format("Zone",1X,A,", boundary subface",1X,A, &
-                        ": Not a valid boundary condition for &
-                        &internal flow")
+                   write(errorMessage, strings) "Zone ", trim(zoneName), ", boundary subface ", trim(subName), &
+                     ": Not a valid boundary condition for internal flow"
                 else
-                   write(errorMessage,130) trim(zoneName), trim(subName)
-130                format("Zone",1X,A,", boundary subface",1X,A, &
-                        ": Not a valid boundary condition for &
-                        &external flow")
+                  write(errorMessage, strings) "Zone ", trim(zoneName), ", boundary subface ", trim(subName), &
+                    ": Not a valid boundary condition for external flow"
                 endif
 
                 call terminate("BCFacesSubblock", errorMessage)
@@ -1788,6 +1780,7 @@ contains
     use communication
     use partitionMod
     use utils, only : delta, terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -1877,9 +1870,8 @@ contains
              if(myID == 0) then
                 zoneName = cgnsDoms(cgnsID)%zoneName
                 subName  = cgnsDoms(cgnsID)%bocoInfo(j)%bocoName
-                write(errorMessage,140) trim(zoneName), trim(subName)
-140             format("Zone",1X,A,", 1 to 1 block connectivity",1X,A, &
-                     ": No constant index found for subface")
+                write(errorMessage, strings) "Zone ", trim(zoneName), ", 1 to 1 block connectivity ", trim(subName), &
+                  ": No constant index found for subface"
                 call terminate("externalFacesSubblock", errorMessage)
              endif
 
