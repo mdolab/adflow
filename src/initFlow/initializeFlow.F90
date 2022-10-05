@@ -1160,6 +1160,7 @@ end subroutine infChangeCorrection
     use communication
     use utils, only : terminate
     use variableReading, only : solFiles, nSolsRead
+    use format, only : strings
     implicit none
     !
     !      Local variables
@@ -1180,9 +1181,8 @@ end subroutine infChangeCorrection
 
        if(myID == 0) then
           print "(a)", "#"
-          write (*,100) trim(solFiles(nn))
+          write (*, strings) "# Found restart file: ", trim(solFiles(nn))
           print "(a)", "#"
-100       format("# Found restart file: ", A, 1X)
        end if
     enddo
 
@@ -2783,6 +2783,7 @@ end subroutine infChangeCorrection
     use monitor, only : nTimeStepsRestart, timeUnsteadyRestart
     use utils, only : terminate, setPointers
     use sorting, only : bsearchStrings
+    use format, only : strings, stringInt1
     implicit none
     !
     !      Local variables.
@@ -2859,9 +2860,8 @@ end subroutine infChangeCorrection
        ! this code to work.
 
        if(cellDim /= 3 .or. physDim /= 3) then
-          write(errorMessage,100) cellDim, physDim
-100       format("Both the number of cell and physical dimensions &
-               &should be 3, not",1X,I1,1X,"and",1X,I1)
+          write(errorMessage, stringInt1) "Both the number of cell and physical dimensions should be 3, not ", &
+            cellDim," and ", physDim
           call terminate("readRestartFile", errorMessage)
        endif
 
@@ -3184,10 +3184,8 @@ end subroutine infChangeCorrection
 
        print "(a)", "#"
        print "(a)", "#                      Warning"
-       print 120, trim(integerString)
+       print strings, "# ", trim(integerString)," type mismatches occured when reading the solution of the blocks"
        print "(a)", "#"
-120    format("# ",a," type mismatches occured when reading the &
-            &solution of the blocks")
     endif
 
   end subroutine readRestartFile
@@ -3209,6 +3207,7 @@ end subroutine infChangeCorrection
     use variableReading, only : zoneNames, zoneNumbers, cgnsInd, cgnsBase
     use sorting, only : qsortStrings, bsearchStrings
     use utils, only : terminate
+    use format, only : strings
     implicit none
     !
     !      Local variables.
@@ -3259,9 +3258,8 @@ end subroutine infChangeCorrection
           write(int2String,"(i7)") zone
           int2String = adjustl(int2String)
 
-          write(errorMessage,100) trim(int1String), trim(int2String)
-100       format("Base",1X,A,": Zone",1X,A, " of the cgns restart &
-               &file is not structured")
+          write(errorMessage, strings) "Base ", trim(int1String),": Zone ", trim(int2String), &
+            " of the cgns restart file is not structured"
           call terminate("getSortedZoneNumbers", errorMessage)
 
        endif
