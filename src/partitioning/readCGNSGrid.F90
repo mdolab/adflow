@@ -431,6 +431,7 @@ contains
     use partitionMod, only : nGridsRead, fileIDs, gridFiles
     use utils, only : terminate, siAngle, siLen, siAngle
     use sorting, only: bsearchStrings
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -551,8 +552,7 @@ contains
        ii = bsearchStrings(familyName, sortedFamName)
        if(ii == 0) then
 
-          write(errorMessage,100) trim(familyName)
-100       format("Family name",1X,A,1X,"not present in the grid")
+          write(errorMessage, strings) "Family name ", trim(familyName)," not present in the grid"
           if(myID == 0) call terminate("readZoneInfo", errorMessage)
           call mpi_barrier(ADflow_comm_world, ierr)
 
@@ -642,12 +642,10 @@ contains
 
           print "(a)", "#"
           print "(a)", "#                      Warning"
-          print 103, trim(cgnsDoms(nZone)%zoneName)
-          print 104
+          print strings, "# Zone ", trim(cgnsDoms(nZone)%zoneName), &
+            ": Conversion factor to meters not identical to global conversion factor."
+          print "(a)", "# Global conversion factor is ignored."
           print "(a)", "#"
-103       format("# Zone",1X,A,": Conversion factor to meters &
-               &not identical to global conversion factor.")
-104       format("# Global conversion factor is ignored.")
        endif
 
        ! In case no global conversion factor was specified,
@@ -769,10 +767,9 @@ contains
 
                 print "(a)", "#"
                 print "(a)", "#                      Warning"
-                print 101, trim(cgnsDoms(nZone)%zoneName)
+                print strings, "# Zone ",  trim(cgnsDoms(nZone)%zoneName), &
+                  ": No unit specified for the rotation rate, assuming rad/s."
                 print "(a)", "#"
-101             format("# Zone",1X,A,": No unit specified for &
-                     &the rotation rate, assuming rad/s.")
              endif
 
           endif
@@ -811,6 +808,7 @@ contains
     use communication, only : myid, adflow_comm_world
     use partitionMod, only : subfaceNonMatchType, qsortSubfaceNonMatchType
     use utils, only : terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -834,11 +832,9 @@ contains
 
     integer(kind=intType), dimension(:), allocatable :: multSubfaces
 
-    type(subfaceNonMatchType), dimension(:), allocatable :: &
-         subfaceNonMatch
+    type(subfaceNonMatchType), dimension(:), allocatable :: subfaceNonMatch
 
-    type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
-         connNonMatch
+    type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: connNonMatch
 
     character(len=maxStringLen)   :: errorMessage
     character(len=maxCGNSNameLen) :: connectName, donorName
@@ -869,8 +865,7 @@ contains
          myRangeNonMatch(3,2,ngeneral),stat=ierr)
     if(ierr /= CG_OK)                      &
          call terminate("countConnectivities", &
-         "Memory allocation failure for connIDNonMatch &
-         &and myRangeNonMatch")
+         "Memory allocation failure for connIDNonMatch and myRangeNonMatch")
 
     ! Loop over ngeneral to find out how many of each supported
     ! types of connectivities are stored here.
@@ -907,8 +902,9 @@ contains
 
              ! CGNS format not supported.
 
-             write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
-                  trim(connectName)
+             write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName),", connectivity ", &
+               trim(connectName), ": No support for this format of an abutting 1 to 1 connectivity"
+
              if(myID == 0) &
                   call terminate("countConnectivities", errorMessage)
              call mpi_barrier(ADflow_comm_world, ierr)
@@ -935,16 +931,14 @@ contains
              allocate(donorData(3,ndataDonor), stat=ierr)
              if(ierr /= 0)                           &
                   call terminate("countConnectivities", &
-                  "Memory allocation failure for &
-                  &donorData")
+                  "Memory allocation failure for donorData")
 
              call cg_conn_read_f(cgnsInd, cgnsBase, nZone, i,    &
                   myRangeNonMatch(1,1,nNonMatch), &
                   Integer, donorData, ierr)
              if(ierr /= CG_OK)                      &
                   call terminate("countConnectivities", &
-                  "Something wrong when calling &
-                  &cg_conn_read_f")
+                  "Something wrong when calling cg_conn_read_f")
 
              deallocate(donorData, stat=ierr)
              if(ierr /= 0)                           &
@@ -954,8 +948,8 @@ contains
 
              ! CGNS format not supported.
 
-             write(errorMessage,102) trim(cgnsDoms(nZone)%zoneName), &
-                  trim(connectName)
+             write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), ", connectivity ", &
+               trim(connectName), ": No support for this format of a non-matching abutting connectivity"
              if(myID == 0) &
                   call terminate("countConnectivities", errorMessage)
              call mpi_barrier(ADflow_comm_world, ierr)
@@ -1117,14 +1111,6 @@ contains
     cgnsDoms(nZone)%n1to1             = n1to1
     cgnsDoms(nZone)%n1to1General      = n1to1General
     cgnsDoms(nZone)%nNonMatchAbutting = nNonMatch
-    !
-    !       Format statements.
-    !
-101 format("Zone",1x,a,", connectivity", 1x,a, ": No support for &
-         &this format of an abutting 1 to 1 connectivity")
-102 format("Zone",1x,a,", connectivity", 1x,a, ": No support for &
-         &this format of a non-matching abutting connectivity")
-
 
   end subroutine countConnectivities
 
