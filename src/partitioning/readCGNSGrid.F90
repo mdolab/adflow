@@ -22,6 +22,7 @@ contains
     use partitionMod, only: fileIds, gridFiles, nGridsRead
     use utils, only : terminate, nullifyCGNSDomPointers
     use sorting, only : bsearchStrings, qsortStrings
+    use format, only : strings, stringInt1
     implicit none
     !
     !      Local variables
@@ -92,9 +93,8 @@ contains
     ! this code to work.
 
     if(cgnsCelldim /= 3 .or. cgnsPhysdim /= 3) then
-       write(errorMessage,100) cgnsCelldim, cgnsPhysdim
-100    format("Both the number of cell and physical dimensions should &
-            &be 3, not",1X,I1,1X,"and",1X,I1)
+       write(errorMessage, stringInt1) "Both the number of cell and physical dimensions should be 3, not ", &
+         cgnsCelldim, " and ", cgnsPhysdim
        call terminate("readBlockSizes", errorMessage)
     endif
 
@@ -227,8 +227,7 @@ contains
     deallocate(sortedFamName, famID, stat=ierr)
     if(ierr /= 0)                      &
          call terminate("readBlockSizes", &
-         "Deallocation error for sortedFamName &
-         &and famID")
+         "Deallocation error for sortedFamName and famID")
 
     ! If there are double boundary faces, print a warning.
 
@@ -238,11 +237,9 @@ contains
 
        print "(a)", "#"
        print "(a)", "#                      Warning"
-       print 110, trim(integerString)
-       print "(a)", "# Block connectivity is kept, boundary info &
-            &is neglected."
+       print strings, "# ", trim(integerString), " double boundary faces found."
+       print "(a)", "# Block connectivity is kept, boundary info is neglected."
        print "(a)", "#"
-110    format("# ",a, " double boundary faces found.")
 
     endif
 
@@ -274,6 +271,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, cgnsNFamilies
     use communication, only : myid, adflow_comm_world
     use utils, only: terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -349,8 +347,7 @@ contains
                cgnsFamilies(nn)%BCTypeCGNS, ierr)
           if(ierr /= CG_OK)                 &
                call terminate("readFamilyInfo", &
-               "Something wrong when calling &
-               &cg_fambc_read_f")
+               "Something wrong when calling cg_fambc_read_f")
 
           ! If this is a user defined boundary condition it must
           ! contain more information to determine the internally
@@ -362,8 +359,7 @@ contains
              ! Move to the family and determine the number of
              ! user defined data nodes.
 
-             call cg_goto_f(cgnsInd, cgnsBase, ierr, &
-                  "Family_t", nn, "end")
+             call cg_goto_f(cgnsInd, cgnsBase, ierr, "Family_t", nn, "end")
              if(ierr /= CG_OK)                 &
                   call terminate("readFamilyInfo", &
                   "Something wrong when calling cg_goto_f")
@@ -371,13 +367,13 @@ contains
              call cg_nuser_data_f(nUserData, ierr)
              if(ierr /= CG_OK)                 &
                   call terminate("readFamilyInfo", &
-                  "Something wrong when calling &
-                  &cg_nuser_data_f")
+                  "Something wrong when calling cg_nuser_data_f")
 
              ! nUserData should be 1. Check this.
 
              if(nUserData /= 1) then
-                write(errorMessage,101) trim(cgnsFamilies(nn)%familyName)
+                write(errorMessage, strings) "Family ", trim(cgnsFamilies(nn)%familyName), &
+                  ": Need 1 UserDefinedData_t node for user defined boundary condition"
                 if(myID == 0) &
                      call terminate("readFamilyInfo", errorMessage)
                 call mpi_barrier(ADflow_comm_world, ierr)
@@ -385,13 +381,10 @@ contains
 
              ! Read the name of the user defined data node.
 
-             call cg_user_data_read_f(nUserData,                        &
-                  cgnsFamilies(nn)%userDefinedName, &
-                  ierr)
+             call cg_user_data_read_f(nUserData, cgnsFamilies(nn)%userDefinedName, ierr)
              if(ierr /= CG_OK)                 &
                   call terminate("readFamilyInfo", &
-                  "Something wrong when calling &
-                  &cg_user_data_read_f")
+                  "Something wrong when calling cg_user_data_read_f")
 
           else testUserDefined
 
@@ -411,7 +404,8 @@ contains
           !=============================================================
 
        case default
-          write(errorMessage,201) trim(cgnsFamilies(nn)%familyName)
+          write(errorMessage, strings) "Family ", trim(cgnsFamilies(nn)%familyName), &
+            ": More than 1 boundary condition specified"
           if(myID == 0) &
                call terminate("readFamilyInfo", errorMessage)
           call mpi_barrier(ADflow_comm_world, ierr)
@@ -419,15 +413,6 @@ contains
        end select
 
     enddo nFam
-
-    ! Format statements.
-
-101 format("Family",1x,a,": Need 1 UserDefinedData_t node for &
-         &user defined boundary condition")
-102 format("Family",1x,a,": Unknown user defined boundary &
-         &condition",1x,a)
-201 format("Family",1x,a,": More than 1 boundary condition specified")
-
 
   end subroutine readFamilyInfo
 
