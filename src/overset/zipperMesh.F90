@@ -1239,6 +1239,7 @@ contains
     use sorting, only : famInList
     use communication, only : myid, adflow_comm_world, nProc
     use utils, only : EChk
+    use format, only : sci12
     implicit none
     integer(kind=intType), intent(in), dimension(:) :: famList
     character(80) :: fileName, zoneName
@@ -1415,19 +1416,19 @@ contains
 
         character(80) :: zoneName
         integer(kind=intType) :: iDim
+        character(len=maxStringLen) :: zoneFormat
 
         write(zoneName, "(a,I5.5)") "Zone_", nBkGlobal
-110     format('ZONE T=',a, " I=", i5, " J=", i5)
-        write(101, 110) trim(zoneName), iEnd-iBeg+1, jEnd-jBeg+1
+        zoneFormat = "(3(A), I5, A, I5)"
+        write(101, zoneFormat) 'ZONE T=', trim(zoneName), " I=", iEnd-iBeg+1, " J=", jEnd-jBeg+1
         write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
-13      format (ES20.12)
 
         ! The 3 is for the three coordinate directions
         nNode = (iEnd - iBeg + 1)*(jEnd - jBeg + 1)
         nCell = (iEnd - iBeg)*(jEnd - jBeg)
 
         do i=1, 3*nNode
-           write(101, 13) xx(i)
+           write(101, sci12) xx(i)
         end do
 
         do i=1, nCell
