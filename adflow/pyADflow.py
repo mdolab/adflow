@@ -4968,6 +4968,7 @@ class ADFLOW(AeroSolver):
             ],
             "turbulenceOrder": [str, ["first order", "second order"]],
             "turbResScale": [(float, list, type(None)), None],
+            "meshMaxSkewness": [float, 1.0],
             "turbulenceProduction": [str, ["strain", "vorticity", "Kato-Launder"]],
             "useQCR": [bool, False],
             "useRotationSA": [bool, False],
@@ -5318,6 +5319,7 @@ class ADFLOW(AeroSolver):
             },
             "turbulenceorder": {"first order": 1, "second order": 2, "location": ["discr", "orderturb"]},
             "turbresscale": ["iter", "turbresscale"],
+            "meshmaxskewness": ["iter", "meshmaxskewness"],
             "turbulenceproduction": {
                 "strain": self.adflow.constants.strain,
                 "vorticity": self.adflow.constants.vorticity,

@@ -3401,6 +3401,8 @@ end subroutine cross_prod
     volRef => flowDoms(nn,mm,ll)%volRef
     volOld => flowDoms(nn,1,ll)%volOld
 
+    skew   => flowDoms(nn,mm,ll)%skew
+
     porI => flowDoms(nn,mm,1)%porI
     porJ => flowDoms(nn,mm,1)%porJ
     porK => flowDoms(nn,mm,1)%porK

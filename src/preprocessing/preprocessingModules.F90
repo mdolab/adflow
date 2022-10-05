@@ -775,6 +775,8 @@ module checkVolBlock
 
      logical :: blockHasNegVol
      logical, dimension(:,:,:), pointer :: volumeIsNeg
+     logical :: blockHasSkewedVol
+     logical, dimension(:,:,:), pointer :: volumeIsSkewed
 
   end type checkVolBlockType
 
