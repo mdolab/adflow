@@ -3447,8 +3447,10 @@ contains
                    case (steady, unsteady)
 
                       print "(a)", "#"
-                      print stringSpace, "# Block", trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following negative volumes"
-                      print "(a)", "#===================================================================="
+                      print stringSpace, "# Block", trim(cgnsDoms(nbkGlobal)%zoneName), &
+                        "contains the following negative volumes"
+                      print "(a)", "#================================&
+                      &===================================="
                       print "(a)", "#"
 
                       !====================================================
@@ -3459,9 +3461,10 @@ contains
                       intString1 = adjustl(intString1)
 
                       print "(a)", "#"
-                      print stringSpace, "# Spectral solution", trim(intString1), "block", trim(cgnsDoms(nbkGlobal)%zoneName), &
-                           "contains the following negative volumes"
-                      print "(a)", "#===================================================================="
+                      print stringSpace, "# Spectral solution", trim(intString1), "block", &
+                        trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following negative volumes"
+                      print "(a)", "#===================================&
+                      &================================="
                       print "(a)", "#"
 
                    end select
