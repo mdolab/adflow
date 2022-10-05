@@ -18,4 +18,10 @@ module format
        ! Strings followed by a one-digit integer
        character(len=maxStringLen) :: stringInt1 = '(*(A, I1))'
 
+       ! Numbers in scientific notation with 12 decimal places
+       character(len=maxStringLen) :: sci12 = '(*(ES20.12))'
+
+       ! Integers written with 5 characters
+       character(len=maxStringLen) :: int5 = '(*(I5))'
+
 end module format

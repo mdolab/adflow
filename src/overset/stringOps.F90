@@ -2804,6 +2804,7 @@ module stringOps
 
     use constants
     use utils, only : mynorm2
+    use format, only : sci12, int5
     implicit none
 
     type(oversetString), intent(in) :: str
@@ -2821,19 +2822,18 @@ module stringOps
 
     write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
     write(fileID, *) "DATAPACKING=BLOCK"
-13  format (ES20.12)
 
     ! Nodes
     do j=1,3
        do i=1, str%nNodes
-          write(fileID,13) str%x(j, i)
+          write(fileID, sci12) str%x(j, i)
        end do
     end do
 
     ! Node normal
     do j=1,3
        do i=1, str%nNodes
-          write(fileID,13) str%norm(j, i)
+          write(fileID, sci12) str%norm(j, i)
        end do
     end do
 
@@ -2850,38 +2850,38 @@ module stringOps
              vec = zero
           end if
 
-          write(fileID,13) vec(j)
+          write(fileID, sci12) vec(j)
        end do
     end do
 
     ! global node ID
     do i=1, str%nNodes
-       write(fileID,13) real(str%ind(i))
+       write(fileID, sci12) real(str%ind(i))
     end do
 
     ! gapID
     do i=1, str%nNodes
-       write(fileID,13) real(str%myID)
+       write(fileID, sci12) real(str%myID)
     end do
 
     ! gap Index
     do i=1, str%nNodes
-       write(fileID,13) real(i)
+       write(fileID, sci12) real(i)
     end do
 
     if (associated(str%otherID)) then
        ! otherID
        do i=1, str%nNodes
-          write(fileID,13) real(str%otherID(1, i))
+          write(fileID, sci12) real(str%otherID(1, i))
        end do
 
        ! other Index
        do i=1, str%nNodes
-          write(fileID,13) real(str%otherID(2, i))
+          write(fileID, sci12) real(str%otherID(2, i))
        end do
     else
        do i=1, 2*str%nNodes
-          write(fileID,13) zero
+          write(fileID, sci12) zero
        end do
     end if
 
@@ -2899,12 +2899,11 @@ module stringOps
           ratio = zero
        end if
 
-       write(fileID,13) ratio
+       write(fileID, sci12) ratio
     end do
 
-15  format(I5, I5)
     do i=1, str%nElems
-       write(fileID, 15) str%conn(1, i), str%conn(2, i)
+       write(fileID, int5) str%conn(1, i), str%conn(2, i)
     end do
 
   end subroutine writeOversetString
@@ -2913,6 +2912,7 @@ module stringOps
 
     use constants
     use utils, only : mynorm2
+    use format, only :  sci12, int5
     implicit none
 
     type(oversetString), intent(in) :: str
@@ -2929,18 +2929,16 @@ module stringOps
 
     write (fileID,*) "Nodes = ", str%nNodes, " Elements= ", str%nElems, " ZONETYPE=FELINESEG"
     write(fileID, *) "DATAPACKING=BLOCK"
-13  format (ES20.12)
 
     ! Nodes
     do j=1,3
        do i=1, str%nNodes
-          write(fileID,13) str%x(j, i)
+          write(fileID, sci12) str%x(j, i)
        end do
     end do
 
-15  format(I5, I5)
     do i=1, str%nElems
-       write(fileID, 15) str%conn(1, i), str%conn(2, i)
+       write(fileID, int5) str%conn(1, i), str%conn(2, i)
     end do
 
   end subroutine writeOversetMaster
@@ -2949,6 +2947,7 @@ module stringOps
   subroutine writeOversetTriangles(string, fileName, startTri, endTri)
 
     use constants
+    use format, only : sci12
     implicit none
 
     type(oversetString), intent(inout) :: string
@@ -2966,19 +2965,17 @@ module stringOps
 
     write (101,*) "Nodes = ", string%nNodes, " Elements= ", (endTri-startTri+1), " ZONETYPE=FETRIANGLE"
     write (101,*) "DATAPACKING=POINT"
-13  format (ES20.12)
 
     ! Write all the coordinates
     do i=1, string%nNodes
        do j=1, 3
-          write(101,13, advance='no') string%x(j, i)
+          write(101, sci12, advance='no') string%x(j, i)
        end do
        write(101,"(1x)")
     end do
 
-15  format(I7, I7, I7)
     do i=startTri, endTri
-       write(101, 15) string%tris(1, i), string%tris(2, i), string%tris(3, i)
+       write(101, "(*(I7))") string%tris(1, i), string%tris(2, i), string%tris(3, i)
     end do
     close(101)
   end subroutine writeOversetTriangles
