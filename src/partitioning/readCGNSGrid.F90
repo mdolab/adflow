@@ -459,6 +459,7 @@ contains
 
     character(len=maxCGNSNameLen) :: familyName
     character(len=maxStringLen)   :: errorMessage
+    character(len=maxStringLen)   :: coordFormat
 
     logical :: overwrite
 
@@ -577,9 +578,9 @@ contains
     ! Check that 3 coordinates are present. If not, terminate.
 
     if(nCoords /= 3) then
-       write(errorMessage,102) trim(cgnsDoms(nZone)%zoneName), nCoords
-102    format("The number of coordinates of zone ", a, &
-            " of base 1 is", i1, ". This should 3.")
+       coordFormat = "(3(A), I1, A)"
+       write(errorMessage, coordFormat) "The number of coordinates of zone ", trim(cgnsDoms(nZone)%zoneName), &
+         " of base 1 is", nCoords, ". This should 3."
 
        if(myID == 0) call terminate("readZoneInfo", errorMessage)
        call mpi_barrier(ADflow_comm_world, ierr)
@@ -754,7 +755,7 @@ contains
 
           if(ierr == CG_OK .and. angle /= Null) then
 
-             ! Determine the conversion factor to radIans.
+             ! Determine the conversion factor to radians.
 
              call siAngle(angle, mult, trans)
 
@@ -2526,13 +2527,10 @@ contains
 
                print "(a)", "#"
                print "(a)", "#                      Warning"
-               print 100, trim(cgnsDoms(nZone)%zoneName), &
-                    trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
-               print 101, trim(arr(k)%arrayName)
+               print strings, "# Zone ", trim(cgnsDoms(nZone)%zoneName), &
+                 ", boundary subface ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
+               print strings, "# BC data set ", trim(arr(k)%arrayName), ": No units specified, assuming SI units"
                print "(a)", "#"
-100            format("# Zone ",a,", boundary subface ", a)
-101            format("# BC data set ",a, &
-                    ": No units specified, assuming SI units")
             endif
          endif
 
@@ -2768,6 +2766,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom
     use communication, only : adflow_comm_world, myid
     use utils, only : siAngle, terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -2834,12 +2833,10 @@ contains
 
              print "(a)", "#"
              print "(a)", "#                      Warning"
-             print 100, trim(cgnsDoms(zone)%zonename), trim(connectName)
+             print strings, "# Zone ", trim(cgnsDoms(zone)%zonename), &
+               ", General connectivity ", trim(connectName), &
+               ": No unit specified for periodic angles, assuming radians."
              print "(a)", "#"
-
-100          format("# Zone",1X,A,", General connectivity",1X,A, &
-                  ": No unit specified for periodic angles, &
-                  &assuming radians.")
 
           endif
 
@@ -2911,6 +2908,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom
     use communication, only : adflow_comm_world, myid
     use utils, only : siAngle, terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -2976,12 +2974,9 @@ contains
 
              print "(a)", "#"
              print "(a)", "#                      Warning"
-             print 100, trim(cgnsDoms(zone)%zonename), trim(connectName)
+             print strings, "# Zone ", trim(cgnsDoms(zone)%zonename), ", 1to1 connectivity ", trim(connectName), &
+               ": No unit specified for periodic angles, assuming radians."
              print "(a)", "#"
-
-100          format("# Zone",1X,A,", 1to1 connectivity",1X,A, &
-                  ": No unit specified for periodic angles, &
-                  &assuming radians.")
 
           endif
 
@@ -3056,6 +3051,7 @@ contains
     use IOModule, only : IOVar
     use partitionMod, only : nGridsRead, fileIDs, gridFiles
     use utils, only: setCGNSRealType, terminate
+    use format, only : strings
     implicit none
     !
     !      Local variables.
@@ -3073,6 +3069,7 @@ contains
     character(len=7)              :: int1String
     character(len=2*maxStringLen) :: errorMessage
     character(len=maxCGNSNameLen) :: coordname
+    character(len=maxCGNSNameLen) :: coordFormat
 
     real(kind=cgnsRealType), allocatable, dimension(:,:,:) :: buffer
 
@@ -3168,11 +3165,8 @@ contains
                 case (cgnsCoorZ)
                    ll = 3
                 case default
-                   write(errorMessage,110)                        &
-                        trim(cgnsDoms(cgnsZone)%zoneName), &
-                        trim(coordname)
-110                format("Zone ",a," :Unknown coordinate name, ",a, &
-                        ",in grid file")
+                   write(errorMessage, strings) "Zone ", trim(cgnsDoms(cgnsZone)%zoneName), &
+                     " :Unknown coordinate name, ", trim(coordname), ", in grid file"
                    call terminate("readGrid", errorMessage)
                 end select
 
@@ -3183,8 +3177,7 @@ contains
                      rangeMin, rangeMax, buffer, ierr)
                 if(ierr /= CG_OK)           &
                      call terminate("readGrid", &
-                     "Something wrong when calling &
-                     &cg_coord_read_f")
+                     "Something wrong when calling cg_coord_read_f")
 
                 ! Copy the data into IOVar and scale it to meters.
                 ! The is effectivly copying into the variable x. w is just temporary through IOVar
@@ -3206,11 +3199,11 @@ contains
              ! There are not three coordinates present in this base.
              ! An error message is printed and an exit is made.
 
-             write(errorMessage,101) trim(gridFiles(nn)),               &
-                  trim(cgnsDoms(cgnsZone)%zoneName), &
-                  nCoords
-101          format("File ", a, ": The number of coordinates of zone ", &
-                  a, " should be 3, not ", i1)
+             coordFormat = "(5(A), I1)"
+
+             write(errorMessage, coordFormat) "File ", trim(gridFiles(nn)), &
+               ": The number of coordinates of zone ", trim(cgnsDoms(cgnsZone)%zoneName), &
+               " should be 3, not ", nCoords
 
              call terminate("readGrid", errorMessage)
 
@@ -3248,10 +3241,9 @@ contains
 
        print "(a)", "#"
        print "(a)", "#                      Warning"
-       print 120, trim(int1String)
+       print strings, "# ", trim(int1String)," type mismatches occured when reading the coordinates of the blocks"
        print "(a)", "#"
-120    format("# ",a," type mismatches occured when reading the &
-            &coordinates of the blocks")
+
     endif
 
     ! If the coordinates in the solution files must be written in
