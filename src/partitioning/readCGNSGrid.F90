@@ -1229,6 +1229,7 @@ contains
     use cgnsGrid, only : cgnsDoms
     use communication, only : myID, adflow_comm_world
     use utils, only : delta, terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -1284,9 +1285,8 @@ contains
 
     if(nDirFace > 3) then
        if(myID == 0) then
-          write(errorMessage,100) trim(connectName), trim(zoneName)
-100       format("1 to 1 subface",1X,A,1X,"of zone",1X,A, &
-               ": No constant index found")
+          write(errorMessage, strings) "1 to 1 subface ", trim(connectName)," of zone ", trim(zoneName), &
+               ": No constant index found"
           call terminate("checkTransform", errorMessage)
        endif
 
@@ -1303,9 +1303,8 @@ contains
 
     if(nDirDonor > 3) then
        if(myID == 0) then
-          write(errorMessage,110) trim(connectName), trim(zoneName)
-110       format("1 to 1 subface",1X,A,1X,"of zone",1X,A, &
-               ": No constant index found for donor")
+          write(errorMessage, strings) "1 to 1 subface ", trim(connectName)," of zone ", trim(zoneName), &
+          ": No constant index found for donor"
           call terminate("checkTransform", errorMessage)
        endif
 
@@ -1333,10 +1332,8 @@ contains
           ! Something seriously wrong. I cannot repair this.
 
           if(myID == 0) then
-             write(errorMessage,120) trim(connectName), trim(zoneName)
-120          format("1 to 1 subface",1X,A,1X,"of zone",1X,A,  &
-                  ": Something seriously wrong with the &
-                  &transformation matrix")
+             write(errorMessage, strings) "1 to 1 subface ", trim(connectName)," of zone ", trim(zoneName), &
+             ": Something seriously wrong with the transformation matrix"
              call terminate("checkTransform", errorMessage)
           endif
 
@@ -1351,10 +1348,8 @@ contains
           if(myID == 0 .and. printWarning) then
              print "(a)", "#"
              print "(a)", "#                          Warning"
-             print 130, trim(connectName), trim(zoneName)
-130          format("# 1 to 1 subface",1X,A,1X,"of zone",1X,A, &
-                  ": Normal component of the transformation&
-                  & matrix successfully corrected.")
+             write(errorMessage, strings) "1 to 1 subface ", trim(connectName)," of zone ", trim(zoneName), &
+             ": Normal component of the transformation matrix successfully corrected."
              print "(a)", "#"
           endif
        endif
@@ -1414,10 +1409,8 @@ contains
        ! Something seriously wrong. Exit the program.
 
        if(myID == 0) then
-          write(errorMessage,140) trim(connectName), trim(zoneName)
-140       format("1 to 1 subface",1X,A,1X,"of zone",1X,A,  &
-               ": Something seriously wrong with the &
-               &transformation matrix")
+          write(errorMessage, strings) "1 to 1 subface ", trim(connectName)," of zone ", trim(zoneName), &
+          ": Something seriously wrong with the transformation matrix"
           call terminate("checkTransform", errorMessage)
        endif
 
@@ -1435,10 +1428,8 @@ contains
        if(myID == 0 .and. printWarning) then
           print "(a)", "#"
           print "(a)", "#                            Warning"
-          print 150, trim(connectName), trim(zoneName)
-150       format("# 1 to 1 subface",1X,A,1X,"of zone",1X,A, &
-               ": Normal component of the transformation&
-               & matrix reversed")
+          write(errorMessage, strings) "1 to 1 subface ", trim(connectName)," of zone ", trim(zoneName), &
+          ": Normal component of the transformation matrix reversed"
           print "(a)", "#"
        endif
    endif
@@ -1456,6 +1447,7 @@ contains
          cgnsNOnMatchAbuttingConnType
     use communication, only : myid, adflow_comm_world
     use utils, only : terminate
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -1491,8 +1483,7 @@ contains
 
     type(cgns1to1ConnType),    pointer, dimension(:) :: conn1to1
 
-    type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: &
-         connNonMatch
+    type(cgnsNonMatchAbuttingConnType), pointer, dimension(:) :: connNonMatch
     !
     !      Function definition.
     !
@@ -1741,8 +1732,8 @@ contains
 
           else
 
-             write(errorMessage,100) trim(cgnsDoms(nZone)%zoneName), &
-                  trim(connectName)
+             write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), ", connectivity ", &
+               trim(connectName), ": Invalid donor subface."
              if(myID == 0) &
                   call terminate("readGeneralConn", errorMessage)
              call mpi_barrier(ADflow_comm_world, ierr)
@@ -1820,9 +1811,10 @@ contains
              ! Print an error message and exit if inconsistent
              ! data was found.
 
-             write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
-                  trim(connectName),              &
-                  trim(connNonMatch(i)%connectNames(1))
+             write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), ", connectivity ", &
+               trim(connectName), ": Inconsistent periodic info compared to connectivity ", &
+               trim(connNonMatch(i)%connectNames(1)), "."
+
              if(myID == 0) &
                   call terminate("readGeneralConn", errorMessage)
              call mpi_barrier(ADflow_comm_world, ierr)
@@ -1842,19 +1834,6 @@ contains
          call terminate("readGeneralConn", &
          "Deallocation failure for map2NonMatch")
 
-    ! Format statements.
-
-100 format("Zone",1x,a,", connectivity", 1x,a, &
-         ": Invalid donor subface.")
-101 format("Zone",1x,a,", connectivity", 1x,a, &
-         ": Inconsistent periodic info compared to connectivity", &
-         1x,a,".")
-102 format("Zone",1x,a,", connectivity", 1x,a, &
-         ": InterpolantsDonor node is missing.")
-103 format("Zone",1x,a,", connectivity", 1x,a, &
-         ": Wrong number or size of interpolants array.")
-
-
   end subroutine readGeneralConn
 
   subroutine readBocos(cgnsInd, cgnsBase, nZone,                &
@@ -1870,6 +1849,7 @@ contains
     use communication, only : myID, adflow_comm_world
     use utils, only: terminate, setcgnsRealType
     use sorting, only: bsearchStrings
+    use format, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -2075,8 +2055,9 @@ contains
 
              if(ierr /= CG_OK) then
 
-                write(errorMessage,101) trim(cgnsDoms(nZone)%zoneName), &
-                     trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
+                write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), &
+                  ", boundary face ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
+                  ": Corresponding family name not given."
                 if(myID == 0) call terminate("readBocos", errorMessage)
                 call mpi_barrier(ADflow_comm_world, ierr)
 
@@ -2089,7 +2070,7 @@ contains
              ii = bsearchStrings(familyName, sortedFamName)
              if(ii == 0) then
 
-                write(errorMessage,102) trim(familyName)
+                write(errorMessage, strings) "Family name ", trim(familyName), " not present in the grid"
                 if(myID == 0) call terminate("readBocos", errorMessage)
                 call mpi_barrier(ADflow_comm_world, ierr)
 
@@ -2112,8 +2093,7 @@ contains
              ! More information should be present. Determine the
              ! number of user defined data nodes.
 
-             call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, &
-                  "ZoneBC_t", 1, "BC_t", i, "end")
+             call cg_goto_f(cgnsInd, cgnsBase, ierr, "Zone_t", nZone, "ZoneBC_t", 1, "BC_t", i, "end")
              if(ierr /= CG_OK)             &
                   call terminate("readBocos", &
                   "Something wrong when calling cg_goto_f")
@@ -2121,14 +2101,14 @@ contains
              call cg_nuser_data_f(nUserData, ierr)
              if(ierr /= CG_OK)            &
                   call terminate("readBocos", &
-                  "Something wrong when calling &
-                  &cg_nuser_data_f")
+                  "Something wrong when calling cg_nuser_data_f")
 
              ! nUserData should be 1. Check this.
 
              if(nUserData /= 1) then
-                write(errorMessage,103) trim(cgnsDoms(nZone)%zoneName), &
-                     trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
+                write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), ", boundary face ", &
+                  trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
+                  ": Need 1 UserDefinedData_t node for user defined boundary condition"
                 if(myID == 0) call terminate("readBocos", errorMessage)
                 call mpi_barrier(ADflow_comm_world, ierr)
              endif
@@ -2140,8 +2120,7 @@ contains
                   ierr)
              if(ierr /= CG_OK)            &
                   call terminate("readBocos", &
-                  "Something wrong when calling &
-                  &cg_user_data_read_f")
+                  "Something wrong when calling cg_user_data_read_f")
 
              ! Determine the corresponding internal boundary
              ! condition from the name just read.
@@ -2153,9 +2132,9 @@ contains
              ! Print an error message if the BC type was not recognized.
 
              if(cgnsDoms(nZone)%bocoInfo(i)%BCType == bcNull) then
-                write(errorMessage,104) trim(cgnsDoms(nZone)%zoneName), &
-                     trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName),        &
-                     trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
+                write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), &
+                  ", boundary face ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
+                  ": Unknown user-defined boundary condition ", trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
                 if(myID == 0) call terminate("readBocos", errorMessage)
                 call mpi_barrier(ADflow_comm_world, ierr)
              endif
@@ -2170,9 +2149,11 @@ contains
                   DomainInterfaceP,   DomainInterfaceRho,    &
                   DomainInterfaceTotal)
 
-                write(errorMessage,105) trim(cgnsDoms(nZone)%zoneName), &
-                     trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName),       &
-                     trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
+                write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), &
+                  ", boundary face ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
+                  ": User-defined boundary condition ", trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName), &
+                  " only possible for a family"
+
                 if(myID == 0) &
                      call terminate("readBocos", errorMessage)
                 call mpi_barrier(ADflow_comm_world, ierr)
@@ -2206,8 +2187,9 @@ contains
              ! Print an error message if the BC type was not recognized.
 
              if(cgnsDoms(nZone)%bocoInfo(i)%BCType == bcNull) then
-                write(errorMessage,106) trim(cgnsDoms(nZone)%zoneName), &
-                     trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
+                write(errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), &
+                  ", boundary face ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
+                  ": boundary condition type missing or not supported"
                 if(myID == 0) call terminate("readBocos", errorMessage)
                 call mpi_barrier(ADflow_comm_world, ierr)
              endif
@@ -2361,22 +2343,6 @@ contains
        endif testFamilySpecified
 
     enddo bocoLoop
-
-    ! Format statements.
-
-101 format("Zone",1x,a,", boundary face", 1x,a, &
-         ": Corresponding family name not given.")
-102 format("Family name",1x,a,1x,"not present in the grid")
-103 format("Zone",1x,a,", boundary face", 1x,a, &
-         ": Need 1 UserDefinedData_t node for user defined &
-         &boundary condition")
-104 format("Zone",1x,a,", boundary face", 1x,a, &
-         ": Unknown user-defined boundary condition", 1x,a)
-105 format("Zone",1x,a,", boundary face", 1x,a, &
-         ": User-defined boundary condition", 1x,a,1x, &
-         "only possible for a family")
-106 format("Zone",1x,a,", boundary face", 1x,a, &
-         ": boundary condition type missing or not supported")
 
     !=================================================================
 
