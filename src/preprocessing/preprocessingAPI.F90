@@ -2773,7 +2773,7 @@ contains
     real(kind=realType) :: fact, mult
     real(kind=realType) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
 
-    real(kind=realType), dimension(6) :: mina, maxa
+    real(kind=realType), dimension(24) :: angles
 
     real(kind=realType), dimension(3) :: v1, v2
 
@@ -2942,23 +2942,23 @@ contains
                    ! If we are not interested in skewness, skip it
 
                    if (meshMaxSkewness < 1) then
-                      call minMaxAngle(mina(1), maxa(1), &
-                              x(i,j,k,:), x(l,j,k,:), x(l,m,k,:), x(i,m,k,:))
+                      call minMaxAngle(angles(1:4), &
+                              x(i,m,k,:), x(i,j,k,:), x(l,j,k,:), x(l,m,k,:))
 
-                      call minMaxAngle(mina(2), maxa(2), &
-                              x(i,j,n,:), x(l,j,n,:), x(l,m,n,:), x(i,m,n,:))
+                      call minMaxAngle(angles(5:8), &
+                              x(i,m,n,:), x(i,j,n,:), x(l,j,n,:), x(l,m,n,:))
 
-                      call minMaxAngle(mina(3), maxa(3), &
-                              x(i,j,k,:), x(i,j,n,:), x(i,m,n,:), x(i,m,k,:))
+                      call minMaxAngle(angles(9:12), &
+                              x(i,m,k,:), x(i,m,n,:), x(i,j,n,:), x(i,j,k,:))
 
-                      call minMaxAngle(mina(4), maxa(4), &
-                              x(l,j,k,:), x(l,j,n,:), x(l,m,n,:), x(l,m,k,:))
+                      call minMaxAngle(angles(13:16), &
+                              x(l,m,k,:), x(l,m,n,:), x(l,j,n,:), x(l,j,k,:))
 
-                      call minMaxAngle(mina(5), maxa(5), &
-                              x(i,j,k,:), x(l,j,k,:), x(l,j,n,:), x(i,j,n,:))
+                      call minMaxAngle(angles(17:20), &
+                              x(i,j,k,:), x(i,j,n,:), x(l,j,n,:), x(l,j,k,:))
 
-                      call minMaxAngle(mina(6), maxa(6), &
-                              x(i,m,k,:), x(l,m,k,:), x(l,m,n,:), x(i,m,n,:))
+                      call minMaxAngle(angles(21:24), &
+                              x(i,m,k,:), x(i,m,n,:), x(l,m,n,:), x(l,m,k,:))
                    endif
 
                    ! Check the volume and update the number of positive
@@ -3009,8 +3009,10 @@ contains
                       ! Skip it if we don't care about skewness
 
                      if (meshMaxSkewness < 1) then
-                        skew(i,j,k) = max((maxval(maxa) - pi/two) / pi/two, &
-                             (pi/two - minval(mina)) / pi/two)
+                        skew(i,j,k) = max((maxval(angles) - (pi/two)) / &
+                                             (pi/two), &
+                                      ((pi/two) - minval(angles)) / &
+                                             (pi/two))
 
                          if (skew(i,j,k) > meshMaxSkewness) then
                             volumeIsSkewed(i,j,k) = .true.
@@ -3510,7 +3512,7 @@ contains
 
   end subroutine metric
 
-  subroutine minMaxAngle(min_angle, max_angle, p1, p2, p3, p4)
+  subroutine minMaxAngle(angles, p1, p2, p3, p4)
     !
     ! Calculates the min and max angles inside a quadrilateral
     !
@@ -3520,18 +3522,17 @@ contains
     !      Subroutine arguments.
     !
     real(kind=realType), dimension(3), intent(in) :: p1, p2, p3, p4
-    real(kind=realType), intent(out) :: min_angle, max_angle
+    real(kind=realType), dimension(4), intent(out) :: angles
     !
     !      Local variables.
     !
     integer(kind=intType) :: i
     real(kind=realType), dimension(4,3) :: v
-    real(kind=realType), dimension(4) :: angles
 
     ! initialize variables
-    v(1, :) = p1 - p2
-    v(2, :) = p2 - p3
-    v(3, :) = p3 - p4
+    v(1, :) = p2 - p1
+    v(2, :) = p3 - p2
+    v(3, :) = p4 - p3
     v(4, :) = p1 - p4
 
     ! loop through vectors and calculate the first 3 angles
@@ -3543,10 +3544,6 @@ contains
     ! since it is a quadrilateral, the last angle must be:
     ! 360° - sum(first 3 angles)
     angles(4) = two*pi - sum(angles(:3))
-
-    ! lets figure out the max and min angles
-    min_angle = minval(angles)
-    max_angle = maxval(angles)
 
   end subroutine minMaxAngle
 
@@ -3661,7 +3658,7 @@ contains
                       print 100, trim(cgnsDoms(nbkGlobal)%zoneName), &
                                  trim(modeString)
 100                   format("# Block",1x,a,1x,"contains the following &
-                           &",a" volumes")
+                           &",a," volumes")
                       print "(a)", "#=================================&
                            &==================================="
                       print "(a)", "#"
@@ -3678,7 +3675,7 @@ contains
                            trim(modeString), &
                            trim(cgnsDoms(nbkGlobal)%zoneName)
 101                   format("# Spectral solution",1x,a, ":block", &
-                           1x,a,1x,"contains the following"1x,a,1x, &
+                           1x,a,1x,"contains the following",1x,a,1x, &
                            "volumes")
                       print "(a)", "#=================================&
                            &==================================="
