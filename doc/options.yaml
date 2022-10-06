@@ -1278,3 +1278,7 @@ cavSensorSharpness:
 cavExponent:
   desc: >
     The exponent for the numerator term (- Cp - cavitationnumber) of the cavitation sensor.
+
+meshMaxSkewness:
+  desc: >
+    Adflow throws an error and fails if the `skewness` of the mesh is above this value. `Skewness` is defined as described `here <https://www.simscale.com/docs/simulation-setup/meshing/mesh-quality/#skewness>`__.
