@@ -1014,7 +1014,7 @@ contains
                       print "(a)", "#                      Warning"
                       print stringSpace, "# Symmetry boundary face", trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
                            "of zone", trim(cgnsDoms(i)%zonename), "is not planar."
-                      print stringSci5, "# Maximum deviation from the mean normal: ", fact, " degrees"
+                      write(*, stringSci5) "# Maximum deviation from the mean normal: ", real(fact), " degrees"
                       print "(a)", "#"
 
                    endif
