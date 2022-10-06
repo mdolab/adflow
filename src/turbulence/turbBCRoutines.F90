@@ -846,39 +846,39 @@ contains
        case (iMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmti1(i,j,itu1,itu1) = one
+                bmti1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(2,i,j))
              enddo
           enddo
        case (iMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmti2(i,j,itu1,itu1) = one
+                bmti2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(il,i,j))
              enddo
           enddo
        case (jMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtj1(i,j,itu1,itu1) = one
+                bmtj1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,2,j))
              enddo
           enddo
        case (jMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtj2(i,j,itu1,itu1) = one
+                bmtj2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,jl,j))
              enddo
           enddo
 
        case (kMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtk1(i,j,itu1,itu1) = one
+                bmtk1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,2))
              enddo
           enddo
 
        case (kMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtk2(i,j,itu1,itu1) = one
+                bmtk2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,kl))
              enddo
           enddo
        end select
