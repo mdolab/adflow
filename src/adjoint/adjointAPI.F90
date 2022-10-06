@@ -647,7 +647,7 @@ contains
 
     if (.not. useMatrixFreedRdw) then
        if( myid ==0 ) then
-          write(*, 10) "Assembling State Residual Matrix in Forward mode..."
+          write(*, "(A)") "Assembling State Residual Matrix in Forward mode..."
        end if
        time(1) = mpi_wtime()
        call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, &
@@ -660,13 +660,9 @@ contains
        call EChk(ierr,  __FILE__, __LINE__)
 
        if(myid ==0)  then
-          write(*, 20) "Assembling State Residaul Matrices Fwd time (s) = ", timeAdj
+          write(*, "(A, 1X, F8.2)") "Assembling State Residaul Matrices Fwd time (s) = ", timeAdj
        end if
     end if
-
-    ! Output formats.
-10  format(a)
-20  format(a, 1x, f8.2)
 
   end subroutine setupAllResidualMatricesfwd
 
@@ -715,7 +711,7 @@ contains
     ! Send some feedback to screen.
 
     if(myid ==0 .and. printTiming)  &
-         write(*,10) "Solving ADjoint Transpose with PETSc..."
+         write(*, "(A)") "Solving ADjoint Transpose with PETSc..."
 
     call cpu_time(time(1))
 
@@ -834,15 +830,13 @@ contains
        ! the norm of error and the number of iterations
 
        if( myid ==0 .and. printTiming) then
-          write(*,20) "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
-          write(*,30) "Norm of error =",norm,"Iterations =",adjConvIts
+          write(*, "(A, 1X, F8.2)") "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
+          write(*, "(1X, A, 1X, ES10.4, 4X, A, 1X, I4)") "Norm of error =",norm,"Iterations =",adjConvIts
           write(*,*) "------------------------------------------------"
           if( adjConvIts.lt.0 ) then
-             write(*,40) "PETSc solver diverged after", -adjConvIts, &
-                  "iterations..."
+             write(*, "(1X, A, 1X, I5, 1X, A)") "PETSc solver diverged after", -adjConvIts, "iterations..."
           else
-             write(*,40) "PETSc solver converged after", adjConvIts, &
-                  "iterations."
+            write(*, "(1X, A, 1X, I5, 1X, A)") "PETSc solver converged after", adjConvIts, "iterations."
           endif
           write(*,*) "------------------------------------------------"
        endif
@@ -873,13 +867,6 @@ contains
     else
        adjointFailed = .True.
     end if
-
-    ! Output formats.
-
-10  format(a)
-20  format(a,1x,f8.2)
-30  format(1x,a,1x,es10.4,4x,a,1x,i4)
-40  format(1x,a,1x,i5,1x,a)
 
 #endif
 
