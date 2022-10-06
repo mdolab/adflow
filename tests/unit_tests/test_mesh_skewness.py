@@ -20,7 +20,7 @@ class BasicTests(unittest.TestCase):
             "gridfile": os.path.join(baseDir, "../../", gridFile),
             "meshMaxSkewness": 0.5,
         }
-        self.idwarp_options =  {
+        self.idwarp_options = {
             "gridfile": os.path.join(baseDir, "../../", gridFile),
         }
         eps = 1e-12
@@ -69,7 +69,6 @@ class BasicTests(unittest.TestCase):
         self.warp_mesh(CFDSolver, hold, move, self.warp_fail)
         self.assertTrue(CFDSolver.adflow.killsignals.fatalfail)
 
-
     def create_solver(self):
         CFDSolver = ADFLOW(options=self.options, debug=False)
         mesh = USMesh(options=self.idwarp_options)
@@ -79,14 +78,14 @@ class BasicTests(unittest.TestCase):
     def warp_mesh(self, CFDSolver, hold, move, amount):
         # setup warping
         coords = CFDSolver.mesh.getSurfaceCoordinates().copy()
-        index = np.argwhere(coords[:,hold] == 0)
-        coords[index,move] += amount
+        index = np.argwhere(coords[:, hold] == 0)
+        coords[index, move] += amount
 
         # warp
         CFDSolver.mesh.setSurfaceCoordinates(coords)
-        CFDSolver.setAeroProblem(ap_tutorial_wing) # dummy AP
+        CFDSolver.setAeroProblem(ap_tutorial_wing)  # dummy AP
         if self.write_mesh:
-            CFDSolver.writeMeshFile(f'skewed_{hold}_{move}_{amount}.cgns')
+            CFDSolver.writeMeshFile(f"skewed_{hold}_{move}_{amount}.cgns")
 
 
 if __name__ == "__main__":
