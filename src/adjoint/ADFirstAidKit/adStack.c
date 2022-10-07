@@ -307,7 +307,7 @@ void lookpointer4_(char *ppp) {
 }
 
 void poppointer4_(char *ppp) {
-  popNarray(ppp, 4) ;  
+  popNarray(ppp, 4) ;
 }
 
 void pushpointer8_(char *ppp) {
@@ -319,7 +319,7 @@ void lookpointer8_(char *ppp) {
 }
 
 void poppointer8_(char *ppp) {
-  popNarray(ppp, 8) ;  
+  popNarray(ppp, 8) ;
 }
 
 /*   --> Called from C:                                   */
@@ -608,7 +608,7 @@ void printstackmax_() {
 	stack = stack->next ;
 	nbBlocks++ ;
     }
-    
+
     printf(" Max Stack size (%i blocks): ", nbBlocks) ;
     printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE, (long int)0) ;
     printf(" bytes\n") ;
