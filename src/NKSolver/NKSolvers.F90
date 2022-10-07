@@ -680,7 +680,8 @@ contains
   subroutine LSCubic(x, f, g, y, w, fnorm, ynorm, gnorm, nfevals, flag, lambda)
 
     use constants
-    use utils, only : EChk, myisnan
+    use utils, only : EChk
+    use genericISNAN, only : myisnan
     use communication, only : myid
     use initializeFlow, only : setUniformFlow
     use iteration, only : totalR0
@@ -3063,7 +3064,8 @@ contains
     use blockPointers, only : ndom, il, jl, kl
     use flowVarRefState, only : nw, nwf, nt1, nt2
     use inputtimespectral, only : nTimeIntervalsSpectral
-    use utils, only : setPointers, EChk, myisnan
+    use utils, only : setPointers, EChk
+    use genericISNAN, only : myisnan
     use communication, only : ADflow_comm_world
     implicit none
 
@@ -3260,7 +3262,8 @@ contains
     use blockPointers, only : ndom, il, jl, kl
     use flowVarRefState, only : nw, nwf, nt1,nt2
     use inputtimespectral, only : nTimeIntervalsSpectral
-    use utils, only : setPointers, EChk, myisnan
+    use utils, only : setPointers, EChk
+    use genericISNAN, only : myisnan
     use communication, only : ADflow_comm_world
     implicit none
 
@@ -3389,7 +3392,8 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputDiscretization, only : approxSA, orderturb
     use iteration, only : approxTotalIts, totalR0, totalR, currentLevel
-    use utils, only : EChk, setPointers, myisnan
+    use utils, only : EChk, setPointers
+    use genericISNAN, only : myisnan
     use solverUtils, only : computeUTau
     use NKSolver, only : getEwTol
     use BCRoutines, only : applyAllBC, applyAllBC_block
@@ -3670,7 +3674,8 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputDiscretization, only : lumpedDiss, approxSA, orderturb
     use iteration, only : approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
-    use utils, only : EChk, setPointers, myisnan
+    use utils, only : EChk, setPointers
+    use genericISNAN, only : myisnan
     use turbAPI, only : turbSolveDDADI
     use solverUtils, only : computeUTau
     use adjointUtils, only : referenceShockSensor

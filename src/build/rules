@@ -17,7 +17,6 @@
 	@echo "        --- Compiled $*.c successfully ---"
 	@echo
 
-
 %.o: %.f
 	$(FF90) $(FF77_ALL_FLAGS) -c $< -o $*.o
 	@echo
