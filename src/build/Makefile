@@ -134,5 +134,5 @@ python: lib ../f2py/adflow.pyf
 
 # Final Link:
 	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so
-	$(PYTHON) importTest.py
+	$(PYTHON) importTest.py libadflow.so
 	mv libadflow.so ../../adflow
