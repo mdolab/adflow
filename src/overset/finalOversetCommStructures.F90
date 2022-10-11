@@ -303,7 +303,8 @@ subroutine finalOversetCommStructures(level, sps)
              commPatternOverset(level, sps)%sendList(iSendProc)%block(n), &
              commPatternOverset(level, sps)%sendList(iSendProc)%indices(n, 3), &
              commPatternOverset(level, sps)%sendList(iSendProc)%interp(n, 8), &
-             commPatternOverset(level, sps)%sendList(iSendProc)%interpd(n, 8))
+             commPatternOverset(level, sps)%sendList(iSendProc)%interpd(n, 8), &
+             commPatternOverset(level, sps)%sendList(iSendProc)%xCen(n, 3))
 
         ! Now set the data
         do i=1, n
@@ -323,6 +324,7 @@ subroutine finalOversetCommStructures(level, sps)
            call fracToWeights(realRecvBuf(jj+1:jj+3), &
                 commPatternOverset(level, sps)%sendList(iSendProc)%interp(i, :))
            commPatternOverset(level, sps)%sendList(iSendProc)%interpd(i, :) = zero
+           commPatternOverset(level, sps)%sendList(iSendProc)%xCen(i, :) = zero
            jj = jj + 3
         end do
      end if
