@@ -1060,8 +1060,9 @@ contains
          w, p, porI, porJ, porK, fw, radI, radJ, radK, gamma
     use flowVarRefState, only : gammaInf, pInfCorr, rhoInf
     use inputDiscretization, only: vis2, vis4
+    use inputIteration, only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
     use inputPhysics, only : equations
-    use iteration, only : rFil
+    use iteration, only : rFil, totalR0, totalR
     use utils, only : myDim
     implicit none
     !
@@ -1168,7 +1169,15 @@ contains
 
     ! Set a couple of constants for the scheme.
 
-    fis2 = rFil*vis2
+    if (useDissContinuation) then
+       if (totalR == zero .or. totalR0 == zero) then
+          fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness * dissContMidpoint)))
+       else
+          fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness*(log10(totalR / totalR0) + dissContMidpoint))))
+       end if
+    else
+       fis2 = rFil * vis2
+    end if
     fis4 = rFil*vis4
     sfil = one - rFil
 
@@ -3847,6 +3856,7 @@ contains
     use constants
     use flowVarRefState
     use inputDiscretization
+    use inputIteration, only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
     use inputPhysics
     use iteration
     implicit none
@@ -3900,7 +3910,11 @@ contains
 
     ! Set a couple of constants for the scheme.
 
-    fis2 = rFil*vis2
+    if (useDissContinuation) then
+       fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness*(log10(totalR / totalR0) + dissContMidpoint))))
+    else
+       fis2 = rFil * vis2
+    end if
     fis4 = rFil*vis4
     sfil = one - rFil
 
