@@ -3359,8 +3359,10 @@ branch = myIntStack(myIntPtr)
 &   radjd, radk, radkd, gamma
     use flowvarrefstate, only : gammainf, pinfcorr, rhoinf
     use inputdiscretization, only : vis2, vis4
+    use inputiteration, only : usedisscontinuation, disscontmagnitude,&
+&   disscontmidpoint, disscontsharpness
     use inputphysics, only : equations
-    use iteration, only : rfil
+    use iteration, only : rfil, totalr0, totalr
     use utils_fast_b, only : mydim, mydim_fast_b
     implicit none
 !
@@ -3383,6 +3385,8 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype), dimension(0:ib, 0:jb, 0:kb) :: ssd
     intrinsic abs
     intrinsic mod
+    intrinsic exp
+    intrinsic log10
     intrinsic max
     intrinsic min
     real(kind=realtype) :: arg1
@@ -3543,7 +3547,17 @@ branch = myIntStack(myIntPtr)
         end if
       end do
 ! set a couple of constants for the scheme.
-      fis2 = rfil*vis2
+      if (usedisscontinuation) then
+        if (totalr .eq. zero .or. totalr0 .eq. zero) then
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
+&           *disscontmidpoint))))
+        else
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
+&           *(log10(totalr/totalr0)+disscontmidpoint)))))
+        end if
+      else
+        fis2 = rfil*vis2
+      end if
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
@@ -4096,8 +4110,10 @@ branch = myIntStack(myIntPtr)
 &   jb, kb, w, p, pori, porj, pork, fw, radi, radj, radk, gamma
     use flowvarrefstate, only : gammainf, pinfcorr, rhoinf
     use inputdiscretization, only : vis2, vis4
+    use inputiteration, only : usedisscontinuation, disscontmagnitude,&
+&   disscontmidpoint, disscontsharpness
     use inputphysics, only : equations
-    use iteration, only : rfil
+    use iteration, only : rfil, totalr0, totalr
     use utils_fast_b, only : mydim
     implicit none
 !
@@ -4116,6 +4132,8 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype), dimension(0:ib, 0:jb, 0:kb) :: ss
     intrinsic abs
     intrinsic mod
+    intrinsic exp
+    intrinsic log10
     intrinsic max
     intrinsic min
     real(kind=realtype) :: arg1
@@ -4196,7 +4214,17 @@ branch = myIntStack(myIntPtr)
         end if
       end do
 ! set a couple of constants for the scheme.
-      fis2 = rfil*vis2
+      if (usedisscontinuation) then
+        if (totalr .eq. zero .or. totalr0 .eq. zero) then
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
+&           *disscontmidpoint))))
+        else
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
+&           *(log10(totalr/totalr0)+disscontmidpoint)))))
+        end if
+      else
+        fis2 = rfil*vis2
+      end if
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
@@ -10528,6 +10556,8 @@ branch = myIntStack(myIntPtr)
     use constants
     use flowvarrefstate
     use inputdiscretization
+    use inputiteration, only : usedisscontinuation, disscontmagnitude,&
+&   disscontmidpoint, disscontsharpness
     use inputphysics
     use iteration
     implicit none
@@ -10544,6 +10574,8 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: ppor, rrad, dis2
     real(kind=realtype) :: dss1, dss2, ddw, fs
     intrinsic abs
+    intrinsic log10
+    intrinsic exp
     intrinsic max
     intrinsic min
     real(kind=realtype) :: min3
@@ -10588,7 +10620,12 @@ branch = myIntStack(myIntPtr)
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
       end select
 ! set a couple of constants for the scheme.
-      fis2 = rfil*vis2
+      if (usedisscontinuation) then
+        fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness*(&
+&         log10(totalr/totalr0)+disscontmidpoint)))))
+      else
+        fis2 = rfil*vis2
+      end if
       fis4 = rfil*vis4
       sfil = one - rfil
 ! replace the total energy by rho times the total enthalpy.
