@@ -512,11 +512,15 @@ oversetUpdateMode:
     This is the cheapest option to use when the entire overset mesh is warped together, such as with USMesh in IDWarp.
   fast: >
     Only the weights are updated and the donors are unchanged.
-    This is usually a fairly small correction and is fast to run.
     This is used when the entire overset mesh is warped together, such as with USMesh in IDWarp.
+    This is fast to run but only works for small design changes.
+    Large design changes can shift the position of interpolate cells relative to their donors enough to cause nonphysical interpolation weights.
+    In this case, an error is raised.
   full: >
     The overset connectivity is recomputed from stratch.
     This is usually only used when the component meshes are warped independently, such as with MultiUSMesh in IDWarp.
+    The hole cutting is likely to fail if there are large design changes.
+    Even if the hole cutting works, the aerodynamic derivatives will be inaccurate because the hole cutting routines are not differentiated.
 
 nRefine:
   desc: >
