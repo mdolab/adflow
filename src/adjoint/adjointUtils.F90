@@ -59,7 +59,7 @@ contains
     integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
     integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
     integer(kind=intType) :: nTransfer, nState, lStart, lEnd, tmp, icount, cols(8), nCol
-    integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave
+    integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave, acousticScaleSave
     integer(kind=intType), dimension(:, :), pointer :: stencil
     real(kind=alwaysRealType) :: delta_x, one_over_dx
     real(kind=realType) :: weights(8)
@@ -179,6 +179,9 @@ contains
 
        ! Very important to use only Second-Order dissipation for PC
        lumpedDiss=.True.
+       ! We also do not apply acoustic scaling because the dissipation stabilizes ILU
+       acousticScaleSave = acousticScaleFactor
+       acousticScaleFactor = 1.0_realType
        ! also use first order advection terms for turbulence
        orderturbsave = orderturb
        orderturb = firstOrder
@@ -560,6 +563,7 @@ contains
     ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
     if (usePC) then
        lumpedDiss = .False.
+       acousticScaleFactor = acousticScaleSave
        ! also recover the turbulence advection order
        orderturb = orderturbsave
     end if
