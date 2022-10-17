@@ -1405,12 +1405,8 @@ contains
     real(kind=realType), dimension(*), intent(out) :: buffer
     character(len=*), intent(in) :: solName
     logical, intent(in) :: viscousSubface, useRindLayer
-<<<<<<< HEAD
-    ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine 
-=======
 
     ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine
->>>>>>> origin/main
     ! when the indices are in the rind layer.
     integer(kind=intType), optional, intent(in) :: iBeg, iEnd, jBeg, jEnd
     !
