@@ -1337,7 +1337,8 @@ contains
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
         sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
+&         sensor1+cavsensoroffset)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
       end if
@@ -1692,14 +1693,23 @@ contains
         cp = tmp*(plocal-pinf)
         sensor1 = -cp - cavitationnumber
         call pushreal8(sensor1)
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
+&         sensor1+cavsensoroffset)))
         sensor1d = cavitationd
         cellaread = blk*sensor1*sensor1d
         sensor1d = blk*cellarea*sensor1d
         call popreal8(sensor1)
-        temp12 = -(10*2*sensor1)
+        temp12 = 2*cavsensorsharpness*(cavsensoroffset-sensor1)
         temp11 = one + exp(temp12)
-        sensor1d = exp(temp12)*one*10*2*sensor1d/temp11**2
+        if (sensor1 .le. 0.0_8 .and. (cavexponent .eq. 0.0_8 .or. &
+&           cavexponent .ne. int(cavexponent))) then
+          sensor1d = cavsensorsharpness*2*exp(temp12)*sensor1**&
+&           cavexponent*sensor1d/temp11**2
+        else
+          sensor1d = (cavsensorsharpness*2*exp(temp12)*sensor1**&
+&           cavexponent/temp11**2+cavexponent*sensor1**(cavexponent-1)/&
+&           temp11)*sensor1d
+        end if
         cpd = -sensor1d
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
@@ -2207,7 +2217,8 @@ contains
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
         sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
+&         sensor1+cavsensoroffset)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
       end if

@@ -1394,6 +1394,9 @@ python module libadflow
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
          real(kind=realtype) sweepanglecorrection
+         real(kind=realtype) cavsensoroffset
+         real(kind=realtype) cavsensorsharpness
+         integer(kind=inttype) cavexponent
          logical::computecavitation
        end module inputcostfunctions
 

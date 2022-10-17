@@ -3868,7 +3868,8 @@ class ADFLOW(AeroSolver):
                     cutCallBack = self.getOption("cutCallBack")
                     if cutCallBack is not None:
                         xCen = self.adflow.utils.getcellcenters(1, n).T
-                        cutCallBack(xCen, flag)
+                        cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
+                        cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
                     # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = self.comm.allreduce(
@@ -5282,6 +5283,9 @@ class ADFLOW(AeroSolver):
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
             "sweepAngleCorrection": [float, 0.0],
+            "cavSensorOffset": [float, 0.0],
+            "cavSensorSharpness": [float, 10.0],
+            "cavExponent": [int, 0],
             "computeCavitation": [bool, False],
         }
 
@@ -5663,6 +5667,9 @@ class ADFLOW(AeroSolver):
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
             "sweepanglecorrection": ["cost", "sweepanglecorrection"],
+            "cavsensoroffset": ["cost", "cavsensoroffset"],
+            "cavsensorsharpness": ["cost", "cavsensorsharpness"],
+            "cavexponent": ["cost", "cavexponent"],
             "computecavitation": ["cost", "computecavitation"],
             "writesolutioneachiter": ["monitor", "writesoleachiter"],
             "writesurfacesolution": ["monitor", "writesurface"],

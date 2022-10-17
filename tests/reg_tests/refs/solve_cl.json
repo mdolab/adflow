@@ -1,5 +1,6 @@
 {
     "CL-CL*": -1.4009587882557e-06,
+    "cavitation": 0.0001541945765953487,
     "metadata": {
         "ADPC": false,
         "AGMGLevels": 1,
@@ -81,7 +82,7 @@
         "cavitationNumber": 1.4,
         "closedSurfaceFamilies": null,
         "coarseDiscretization": "central plus scalar dissipation",
-        "computeCavitation": false,
+        "computeCavitation": true,
         "coupledSolution": false,
         "cutCallback": null,
         "debugZipper": false,

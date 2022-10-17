@@ -500,7 +500,8 @@ contains
         tmp = two/(gammainf*machcoef*machcoef)
         cp = tmp*(plocal-pinf)
         sensor1 = -cp - cavitationnumber
-        sensor1 = one/(one+exp(-(2*10*sensor1)))
+        sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
+&         sensor1+cavsensoroffset)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
       end if
