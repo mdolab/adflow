@@ -35,6 +35,7 @@ adflowDefOpts = CaseInsensitiveDict(
         # Physics Parameters
         "smoother": "Runge-Kutta",
         "equationType": "Euler",
+        "sepSensorModel": "heaviside",
     }
 )
 

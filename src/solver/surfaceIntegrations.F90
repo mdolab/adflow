@@ -369,6 +369,10 @@ contains
     sepSensor = zero
     Cavitation = zero
     sepSensorAvg = zero
+!     vectCorrected = zero
+!     vecCrossProd = zero
+!     vectNorm = zero
+!     vectNormProd = zero
     Mpaxis = zero; Mvaxis = zero;
     CpError2 = zero;
 

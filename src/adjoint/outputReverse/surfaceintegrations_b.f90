@@ -1178,6 +1178,10 @@ contains
     axispoints(3, 2) = lref*momentaxis(3, 2)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
+!     vectcorrected = zero
+!     veccrossprod = zero
+!     vectnorm = zero
+!     vectnormprod = zero
     call pushreal8array(vectcorrected, 3)
     call pushreal8array(n, 3)
     call pushreal8array(r, 3)
@@ -2061,6 +2065,10 @@ contains
     sepsensor = zero
     cavitation = zero
     sepsensoravg = zero
+!     vectcorrected = zero
+!     veccrossprod = zero
+!     vectnorm = zero
+!     vectnormprod = zero
     mpaxis = zero
     mvaxis = zero
     cperror2 = zero

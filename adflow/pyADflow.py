@@ -5279,7 +5279,7 @@ class ADFLOW(AeroSolver):
             "verifySpatial": [bool, True],
             "verifyExtra": [bool, True],
             # Function parmeters
-            "sepSensorModel": [str, ["surfvec", "heaviside"]],
+            "sepSensorModel": [str, ["heaviside", "surfvec"]],
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
             "sweepAngleCorrection": [float, 0.0],
@@ -5660,8 +5660,8 @@ class ADFLOW(AeroSolver):
             "usematrixfreedrdw": ["adjoint", "usematrixfreedrdw"],
             # Parameters for functions
             "sepsensormodel": {
-                "surfvec": self.adflow.constants.surfvec,
                 "heaviside": self.adflow.constants.heaviside,
+                "surfvec": self.adflow.constants.surfvec,
                 "location": ["cost", "sepmodel"],
             },
             "sepsensoroffset": ["cost", "sepsensoroffset"],

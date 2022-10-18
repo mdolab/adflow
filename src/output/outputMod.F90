@@ -2176,41 +2176,41 @@ contains
        enddo
 
     case (cgnsSepSensor)
-
-       do j=rangeFace(2,1), rangeFace(2,2)
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
-            jor = j + jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
-            else if (jor == jEnd + 1) then
-               jj = j - 1
-            else
-               jj = j 
-            endif
-         else
-            jj = j
-
-         end if
-
-          do i=rangeFace(1,1), rangeFace(1,2)
-
-            if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
-               ior = i + iBegor - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
-               else if (ior == iEnd + 1) then
-                  ii = i - 1
+       if (sepmodel == surfvec) then
+         do j=rangeFace(2,1), rangeFace(2,2)
+            if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+               jor = j + jBegOr - 1
+               if (jor == jBeg) then 
+                  jj = j + 1 
+               else if (jor == jEnd + 1) then
+                  jj = j - 1
                else
-                  ii = i 
+                  jj = j 
                endif
             else
-               ii = i
-            endif
+               jj = j
 
-             nn = nn + 1
+            end if
+
+            do i=rangeFace(1,1), rangeFace(1,2)
+
+               if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+                  ior = i + iBegor - 1
+                  if (ior == iBeg) then 
+                     ii = i + 1 
+                  else if (ior == iEnd + 1) then
+                     ii = i - 1
+                  else
+                     ii = i 
+                  endif
+               else
+                  ii = i
+               endif
+
+               nn = nn + 1
 
              
-             if (sepmodel == surfvec) then
+             
                ! Get normalized surface velocity:
                v(1) = ww2(ii, jj, ivx)
                v(2) = ww2(ii, jj, ivy)
@@ -2264,13 +2264,20 @@ contains
        
                sensor = one/two*(one - sensor)
                buffer(nn) = sensor
-
-             else if (sepmodel == heaviside) then
-
+             enddo
+            enddo
+       else if (sepmodel == heaviside) then
+            do j=rangeFace(2,1), rangeFace(2,2)
+             do i=rangeFace(1,1), rangeFace(1,2)
+               nn = nn + 1
                ! Get normalized surface velocity:
-               v(1) = ww2(ii, jj, ivx)
-               v(2) = ww2(ii, jj, ivy)
-               v(3) = ww2(ii, jj, ivz)
+               v(1) = ww2(i, j, ivx)
+               v(2) = ww2(i, j, ivy)
+               v(3) = ww2(i, j, ivz)
+               ! Get normalized surface velocity:
+               ! v(1) = ww2(ii, jj, ivx)
+               ! v(2) = ww2(ii, jj, ivy)
+               ! v(3) = ww2(ii, jj, ivz)
                ! Normalize
                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
@@ -2279,10 +2286,11 @@ contains
 
                !Now run through a smooth heaviside function:
                sensor = one/(one + exp(-2*sepSensorSharpness*(sensor - sepSensorOffset)))
-               buffer(nn) = sensor  
-            endif
-          enddo
-       enddo
+               buffer(nn) = sensor
+             enddo
+            enddo  
+      endif
+          
 
     case (cgnsCavitation)
        fact = two/(gammaInf*pInf*MachCoef*MachCoef)

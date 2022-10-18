@@ -344,6 +344,10 @@ contains
     sepsensor = zero
     cavitation = zero
     sepsensoravg = zero
+!     vectcorrected = zero
+!     veccrossprod = zero
+!     vectnorm = zero
+!     vectnormprod = zero
     mpaxis = zero
     mvaxis = zero
     cperror2 = zero
