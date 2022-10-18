@@ -1251,6 +1251,12 @@ verifyExtra:
     This option is for debugging the adjoint only.
     It is used to verify dIda.
 
+sepSensorModel:
+  desc: >
+    This option allows to pick separation sensor option. The 2 options are "heaviside" and "surfvec".
+  heaviside: Based on (Kenway2017b)
+  surfvec: Surface vector projection
+
 sepSensorOffset:
   desc: >
     The offset value used for the separation sensor.
@@ -1263,7 +1269,7 @@ sepSensorSharpness:
 
 sweepAngleCorrection:
   desc: >
-    The sweep angle of the wing (25% chord sweep angle is recommended)
+    The sweep angle of the wing (25% chord sweep angle is recommended).
     The value should be in degrees.
 
 computeCavitation:
