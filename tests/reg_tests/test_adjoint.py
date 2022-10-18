@@ -198,7 +198,7 @@ test_params = [
             "computecavitation": True,
             "sepSensorModel": "surfvec",
         },
-        "ref_file": "adjoint_rans_tut_wing.json",
+        "ref_file": "adjoint_rans_sep_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
         "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation", "sepsensor"],
     },
