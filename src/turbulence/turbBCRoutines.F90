@@ -312,7 +312,6 @@ contains
     !
     use constants
     use blockPointers
-    use inputPhysics, only : kssa
     implicit none
     !
     !      Subroutine arguments.
