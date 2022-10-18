@@ -20,8 +20,8 @@ ap_tutorial_wing = AeroProblem(
 
 ap_tutorial_wing_sep = AeroProblem(
     name="mdo_tutorial",
-    alpha=0.0,
-    mach=0.40,
+    alpha=1.8,
+    mach=0.50,
     P=20000.0,
     T=220.0,
     areaRef=45.5,
