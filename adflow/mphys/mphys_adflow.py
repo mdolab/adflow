@@ -1143,7 +1143,7 @@ class ADflowBuilder(Builder):
         self,
         options,  # adflow options
         mesh_options=None,  # idwarp options
-        MultiUSmesh_optionsDict=None,
+        multiUSmesh_optionsDict=None,  # dict for multi US mesh
         scenario="aerodynamic",  # scenario type to configure the groups
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
@@ -1161,26 +1161,26 @@ class ADflowBuilder(Builder):
                 self.mesh_options = {
                     "gridFile": options["gridFile"],
                 }
-                self.MultiUSmeshGrid = options["gridFile"]
+                self.multiUSmeshGrid = options["gridFile"]
             elif "gridfile" in options:
                 self.mesh_options = {
                     "gridFile": options["gridfile"],
                 }
 
-                self.MultiUSmeshGrid = options["gridfile"]
+                self.multiUSmeshGrid = options["gridfile"]
 
         else:
             self.mesh_options = mesh_options
-            self.MultiUSmeshGrid = mesh_options["gridFile"]
-        print(self.MultiUSmeshGrid)
-        if MultiUSmesh_optionsDict is not None:
-            self.MultiUSmesh = True
+            self.multiUSmeshGrid = mesh_options["gridFile"]
+
+        if multiUSmesh_optionsDict is not None:
+            self.multiUSmesh = True
             # self.MultiUSmeshGrid = options["gridfile"]
-            self.Multimesh_options = MultiUSmesh_optionsDict
+            self.multimesh_options = multiUSmesh_optionsDict
         else:
-            self.MultiUSmesh = False
+            self.multiUSmesh = False
             # self.MultiUSmeshGrid = None
-            self.Multimesh_options = None
+            self.multimesh_options = None
 
         # defaults:
 
@@ -1231,8 +1231,8 @@ class ADflowBuilder(Builder):
     # api level method for all builders
     def initialize(self, comm):
         self.solver = ADFLOW(options=self.options, comm=comm)
-        if self.MultiUSmesh:
-            mesh = MultiUSMesh(self.MultiUSmeshGrid, self.Multimesh_options, comm=comm)
+        if self.multiUSmesh:
+            mesh = MultiUSMesh(self.multiUSmeshGrid, self.multimesh_options, comm=comm)
         else:
             mesh = USMesh(options=self.mesh_options, comm=comm)
         self.solver.setMesh(mesh)
