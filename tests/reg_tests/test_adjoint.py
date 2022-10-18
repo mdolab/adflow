@@ -25,7 +25,7 @@ import reg_test_utils as utils
 
 from reg_default_options import adflowDefOpts, defaultAeroDVs, IDWarpDefOpts
 
-from reg_aeroproblems import ap_tutorial_wing, ap_tutorial_wing_laminar, ap_tutorial_wing_rotating
+from reg_aeroproblems import ap_tutorial_wing, ap_tutorial_wing_sep, ap_tutorial_wing_laminar, ap_tutorial_wing_rotating
 import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
@@ -199,8 +199,8 @@ test_params = [
             "sepSensorModel": "surfvec",
         },
         "ref_file": "adjoint_rans_sep_tut_wing.json",
-        "aero_prob": ap_tutorial_wing,
-        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation", "sepsensor"],
+        "aero_prob": ap_tutorial_wing_sep,
+        "evalFuncs": ["cl", "cd", "cmz", "sepsensor"],
     },
     # # Rotating frame test
     {
