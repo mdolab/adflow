@@ -66,38 +66,6 @@ def getDVGeo(ffdFile, isComplex=False):
 
 
 test_params = [
-    # # Tutorial wing RANS separation
-    {
-        "name": "rans_tut_wing_sepsensor",
-        "options": {
-            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
-            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
-            "MGCycle": "2w",
-            "equationType": "RANS",
-            "smoother": "DADI",
-            "CFL": 1.5,
-            "CFLCoarse": 1.25,
-            "resAveraging": "never",
-            "nSubiter": 3,
-            "nSubiterTurb": 3,
-            "nCyclesCoarse": 100,
-            "nCycles": 1000,
-            "monitorVariables": ["cpu", "resrho", "resturb", "totalr"],
-            "useNKsolver": True,
-            "ANKSwitchTol": 1e-2,
-            "ANKSecondordSwitchTol": 1e-2,
-            "L2Convergence": 1e-15,
-            "NKSwitchTol": 1e-5,
-            "adjointL2Convergence": 1e-16,
-            "blockSplitting": True,
-            "NKjacobianlag": 2,
-            "computecavitation": True,
-            "sepSensorModel": "surfvec",
-        },
-        "ref_file": "adjoint_rans_sep_tut_wing.json",
-        "aero_prob": ap_tutorial_wing,
-        "evalFuncs": ["cl", "cd", "cmz", "sepsensor"],
-    },
     # # Tutorial scalar JST
     {
         "name": "euler_scalar_JST_tut_wing_1core",
@@ -200,7 +168,7 @@ test_params = [
         },
         "ref_file": "adjoint_rans_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
-        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation"],
+        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation","sepsensor"],
     },
     # # Rotating frame test
     {
