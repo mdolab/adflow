@@ -168,7 +168,7 @@ test_params = [
         },
         "ref_file": "adjoint_rans_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
-        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation","sepsensor"],
+        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation", "sepsensor"],
     },
     # # Rotating frame test
     {
