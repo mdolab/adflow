@@ -3264,6 +3264,7 @@ end subroutine cross_prod
     ! from blockPointers so use a bare use.
     use constants
     use blockPointers
+    use inputPhysics, only : useRoughSA
     implicit none
     !
     !      Subroutine arguments
@@ -3501,6 +3502,9 @@ end subroutine cross_prod
 
     d2Wall => flowDoms(nn,mm,ll)%d2Wall
     filterDES   => flowDoms(nn,mm,ll)%filterDES  ! eran-des
+    if (useRoughSA) then
+       ks => flowDoms(nn,mm,ll)%ks
+    end if
 
     ! Arrays used for the implicit treatment of the turbulent wall
     ! boundary conditions. As these variables are only allocated for
@@ -4626,7 +4630,7 @@ end subroutine cross_prod
     use inputtimespectral, only : nTimeIntervalsSpectral
     use wallDistanceData, only : xSurfVec, xSurfVecd
     use flowVarRefState, only : winfd
-    use inputPhysics, only : wallDistanceNeeded
+    use inputPhysics, only : wallDistanceNeeded, useRoughSA
     use adjointVars, only : derivVarsAllocated
     use BCPointers_b
 
@@ -4709,7 +4713,6 @@ end subroutine cross_prod
                   flowDomsd(nn, level, sps)%BCData(mm)%area, &
                   flowDomsd(nn, level, sps)%BCData(mm)%uSlip, &
                   flowDomsd(nn, level, sps)%BCData(mm)%TNS_Wall, &
-!                  flowDomsd(nn, level, sps)%BCData(mm)%ksNS_Wall, &
                   stat=ierr)
              call EChk(ierr,__FILE__,__LINE__)
           enddo

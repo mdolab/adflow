@@ -331,42 +331,42 @@ contains
     case (iMin)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             rev(1,i,j) = saFact(kssa, d2Wall(2,i,j))*rev(2,i,j)
+             rev(1,i,j) = saRoughFact(2,i,j)*rev(2,i,j)
           enddo
        enddo
 
     case (iMax)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             rev(ie,i,j) = saFact(kssa, d2Wall(il,i,j))*rev(il,i,j)
+             rev(ie,i,j) = saRoughFact(il,i,j)*rev(il,i,j)
           enddo
        enddo
 
     case (jMin)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             rev(i,1,j) = saFact(kssa, d2Wall(i,2,j))*rev(i,2,j)
+             rev(i,1,j) = saRoughFact(i,2,j)*rev(i,2,j)
           enddo
        enddo
 
     case (jMax)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             rev(i,je,j) = saFact(kssa, d2Wall(i,jl,j))*rev(i,jl,j)
+             rev(i,je,j) = saRoughFact(i,jl,j)*rev(i,jl,j)
           enddo
        enddo
 
     case (kMin)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             rev(i,j,1) = saFact(kssa, d2Wall(i,j,2))*rev(i,j,2)
+             rev(i,j,1) = saRoughFact(i,j,2)*rev(i,j,2)
           enddo
        enddo
 
     case (kMax)
        do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
           do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-             rev(i,j,ke) = saFact(kssa, d2Wall(i,j,kl))*rev(i,j,kl)
+             rev(i,j,ke) = saRoughFact(i,j,kl)*rev(i,j,kl)
           enddo
        enddo
     end select
@@ -845,39 +845,39 @@ contains
        case (iMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmti1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(2,i,j))
+                bmti1(i,j,itu1,itu1) = -saRoughFact(2,i,j)
              enddo
           enddo
        case (iMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmti2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(il,i,j))
+                bmti2(i,j,itu1,itu1) = -saRoughFact(il,i,j)
              enddo
           enddo
        case (jMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtj1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,2,j))
+                bmtj1(i,j,itu1,itu1) = -saRoughFact(i,2,j)
              enddo
           enddo
        case (jMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtj2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,jl,j))
+                bmtj2(i,j,itu1,itu1) = -saRoughFact(i,jl,j)
              enddo
           enddo
 
        case (kMin)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtk1(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,2))
+                bmtk1(i,j,itu1,itu1) = -saRoughFact(i,j,2)
              enddo
           enddo
 
        case (kMax)
           do j=BCData(nn)%jcBeg, BCData(nn)%jcEnd
              do i=BCData(nn)%icBeg, BCData(nn)%icEnd
-                bmtk2(i,j,itu1,itu1) = -saFact(kssa, d2Wall(i,j,kl))
+                bmtk2(i,j,itu1,itu1) = -saRoughFact(i,j,kl)
              enddo
           enddo
        end select
@@ -1392,26 +1392,30 @@ contains
     enddo bocos
   end subroutine turbBCNSWall
 
-  function  saFact(ks, d)
+  function  saRoughFact(i,j,k)
+
+    ! returns either the regular SA-boundary condition
+    ! or the modified Roughness-boundary condition
 
    use constants
+   use inputPhysics, only : useRoughSA
+   use BlockPointers, only : ks, d2wall
    implicit none
 
    ! dummy arguments
-   real(kind=realType) :: saFact
+   real(kind=realType) :: saRoughFact
 
    ! local variablse
-   real(kind=realType) :: ks
-   real(kind=realType) :: d
+   integer(kind=intType) :: i, j, k
 
-   if (ks .eq. zero) then
-      saFact = -one
-   else if (d .eq. zero) then
-      saFact = one
-   else
-      saFact = (ks - d/0.03) / (ks + d/0.03)
+   if (useRoughSA) then
+      saRoughFact = (ks(i,j,k) - d2wall(i,j,k)/0.03) / &
+           (ks(i,j,k) + d2wall(i,j,k)/0.03)
+      return
    end if
 
-  end function  saFact
+   saRoughFact = one
+
+  end function  saRoughFact
 
 end module turbBCRoutines

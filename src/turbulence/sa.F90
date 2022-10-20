@@ -107,7 +107,7 @@ contains
 
     ! Local variables.
     integer(kind=intType) :: i, j, k, nn, ii
-    real(kind=realType) :: dnew,cr1
+    real(kind=realType) :: dist, ksLocal
     real(kind=realType) :: fv1, fv2, ft2
     real(kind=realType) :: ss, sst, nu, dist2Inv, chi, chi2, chi3
     real(kind=realType) :: rr, gg, gg6, termFw, fwSa, term1, term2
@@ -124,9 +124,6 @@ contains
     kar2Inv = one/(rsaK**2)
     cw36    = rsaCw3**6
     cb3Inv  = one/rsaCb3
-
-    ! constants for SA rough
-    cr1=0.5
 
     ! Determine the non-dimensional wheel speed of this block.
 
@@ -247,12 +244,20 @@ contains
                 ! and nu) and the functions fv1 and fv2. The latter corrects
                 ! the production term near a viscous wall.
 
-                ! SA rough
-                dnew     = d2Wall(i,j,k) + 0.03*kssa
+                ! As the rough Version of SA is supported, this looks slightly different
+                ! than the standard SA implementation
+
+                if (useRoughSA) then
+                   ksLocal = ks(i,j,k)
+                   dist = d2Wall(i,j,k) + 0.03 * ksLocal
+                else
+                   ksLocal = zero
+                   dist = d2Wall(i,j,k)
+                end if
 
                 nu       = rlv(i,j,k)/w(i,j,k,irho)
-                dist2Inv = one/(dnew**2)
-                chi      = w(i,j,k,itu1)/nu + cr1*kssa/dnew
+                dist2Inv = one/(dist**2)
+                chi      = w(i,j,k,itu1)/nu + rsaCr1*ksLocal/dist
                 chi2     = chi*chi
                 chi3     = chi*chi2
                 fv1      = chi3/(chi3+cv13)

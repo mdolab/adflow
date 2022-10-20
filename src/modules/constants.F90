@@ -300,7 +300,7 @@ module constants
   integer(kind=intType), parameter :: nbcVarSubsonicInflow = 17
   integer(kind=intType), parameter :: nbcVarSubsonicOutflow = 1
   integer(kind=intType), parameter :: nbcVarSupersonicInflow = 7
-  integer(kind=intType), parameter :: nbcVarAdiabaticWall = 1
+  integer(kind=intType), parameter :: nbcVarAdiabaticWall = 0
   integer(kind=intType), parameter :: nbcVarIsothermalWall = 1
 
   ! Indices of specific familyExcahnge groups based on BC

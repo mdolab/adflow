@@ -57,6 +57,9 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
   integer(kind=intType), dimension(:), allocatable :: cellIndicesLocal
   integer(kind=intType), dimension(:), allocatable :: cgnsIndices, curCGNSNode
 
+  integer(kind=intType), dimension(:,:), allocatable :: cellBCCellLocal
+  integer(kind=intType), dimension(:,:), allocatable :: cellBCCellGlobal
+
   integer(kind=intType), dimension(:),    allocatable :: nCellProc, cumCellProc
   integer(kind=intType), dimension(:),    allocatable :: nNodeProc, cumNodeProc
   real(kind=realType),   dimension(:, :), allocatable :: uniqueNodes
@@ -163,6 +166,10 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
        clusterCellLocal(nCellsLocal), clusterNodeLocal(NNodesLocal), &
        nodeIndicesLocal(nNodesLocal), nodeIndicesCGNSLocal(nNodesLocal), &
        cellIndicesLocal(nCellsLocal))
+
+  if (useRoughSA) then
+     allocate(cellBCCellLocal(4, nCellsLocal))
+  end if
 
   iCell = 0
   iNode = 0
@@ -335,10 +342,16 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
 
                     ! Save the global cell index
                     if (useDual) then
-                       cellIndicesLocal(iCell) = 0
+                        cellIndicesLocal(iCell) = 0
                     else
-                       ! Valid only when using primary nodes
-                       cellIndicesLocal(iCell) = indCell(iBeg+i+1, jBeg+j+1)
+                        ! Valid only when using primary nodes
+                        cellIndicesLocal(iCell) = indCell(iBeg+i+1, jBeg+j+1)
+                        if (useRoughSA) then
+                            cellBCCellLocal(1, iCell) = nn
+                            cellBCCellLocal(2, iCell) = mm
+                            cellBCCellLocal(3, iCell) = i
+                            cellBCCellLocal(4, iCell) = j
+                        end if
                     end if
                  end do
               end do
@@ -359,8 +372,14 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
                     if (useDual) then
                        cellIndicesLocal(iCell) = 0
                     else
-                       ! Valid only when using primary nodes
-                       cellIndicesLocal(iCell) = indCell(iBeg+i+1, jBeg+j+1)
+                        ! Valid only when using primary nodes
+                        cellIndicesLocal(iCell) = indCell(iBeg+i+1, jBeg+j+1)
+                        if (useRoughSA) then
+                            cellBCCellLocal(1, iCell) = nn
+                            cellBCCellLocal(2, iCell) = mm
+                            cellBCCellLocal(3, iCell) = i
+                            cellBCCellLocal(4, iCell) = j
+                        end if
                     end if
                  end do
               end do
@@ -393,6 +412,10 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
        clusterCellGlobal(nCellsGlobal), clusterNodeGlobal(nNodesGlobal), &
        nodeIndicesGlobal(nNodesGlobal), nodeIndicesCGNSGlobal(nNodesGlobal), &
        cellIndicesGlobal(nCellsGlobal))
+
+  if (useRoughSA) then
+     allocate(cellBCCellGlobal(4, nCellsGlobal))
+  end if
 
   ! Communicate the nodes, connectivity and cluster information to everyone
   call mpi_allgatherv(nodesLocal, 3*nNodesLocal, adflow_real, &
@@ -430,10 +453,22 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
        adflow_comm_world, ierr)
   call EChk(ierr, __FILE__, __LINE__)
 
+  if (useRoughSA) then
+    call mpi_allgatherv(cellBCCellLocal, nCellsLocal*4, adflow_integer, &
+        cellBCCellGlobal, nCellProc*4, cumCellProc, adflow_integer, &
+        adflow_comm_world, ierr)
+    call EChk(ierr, __FILE__, __LINE__)
+  end if
+
+
   ! Free the local data we do not need anymore
   deallocate(nodesLocal, connLocal, clusterCellLocal, clusterNodeLocal, &
        nCellProc, cumCellProc, nNodeProc, cumNodeProc, nodeIndicesLocal, &
        nodeIndicesCGNSLocal, cellIndicesLocal)
+
+  if (useRoughSA) then
+     deallocate(cellBCCellLocal)
+  end if
 
   ! We will now build separate trees for each cluster.
   allocate(nodesPerCluster(nClusters), cellsPerCluster(nClusters), &
@@ -463,6 +498,9 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      allocate(walls(i)%x(3, nNodes), walls(i)%conn(4, nCells), &
           walls(i)%ind(nNodes))
      allocate(walls(i)%indCell(nCells))
+     if (useRoughSA) then
+        allocate(walls(i)%BCCell(4, nCells))
+     end if
   end do
 
   ! We now loop through the master list of nodes and elements and
@@ -487,6 +525,10 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
      walls(c)%conn(:, ccc(c)) = connGlobal(:, i)
 
      walls(c)%indCell(ccc(c)) = cellIndicesGlobal(i)
+
+     if (useRoughSA) then
+        walls(c)%BCCell(:, ccc(c)) = cellBCCellGlobal(:, i)
+     end if
   end do
 
   do i=1, nClusters
@@ -563,6 +605,10 @@ subroutine buildClusterWalls(level, sps, useDual, walls, famList, nFamList)
   deallocate(nodesGlobal, connGlobal, clusterCellGlobal, &
        clusterNodeGlobal, localNodeNums, nodeIndicesGlobal, &
        nodeIndicesCGNSGlobal)
+
+  if (useRoughSA) then
+     deallocate(cellBCCellGlobal)
+  end if
 
   do nn=1, nDom
      deallocate(flowDoms(nn, level, sps)%globalCGNSNode)

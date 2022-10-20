@@ -37,7 +37,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
-    real(kind=realtype) :: dnew, cr1
+    real(kind=realtype) :: dist, kslocal
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
@@ -87,8 +87,6 @@ contains
     cv13 = rsacv1**3
     kar2inv = one/rsak**2
     cw36 = rsacw3**6
-! constants for sa rough
-    cr1 = 0.5
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -186,11 +184,18 @@ contains
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
-! sa rough
-        dnew = d2wall(i, j, k) + 0.03*kssa
+! as the rough version of sa is supported, this looks slightly different
+! than the standard sa implementation
+        if (useroughsa) then
+          kslocal = ks(i, j, k)
+          dist = d2wall(i, j, k) + 0.03*kslocal
+        else
+          kslocal = zero
+          dist = d2wall(i, j, k)
+        end if
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/dnew**2
-        chi = w(i, j, k, itu1)/nu + cr1*kssa/dnew
+        dist2inv = one/dist**2
+        chi = w(i, j, k, itu1)/nu + rsacr1*kslocal/dist
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)
@@ -478,7 +483,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
-    real(kind=realtype) :: dnew, cr1
+    real(kind=realtype) :: dist, kslocal
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
@@ -501,8 +506,6 @@ branch = myIntStack(myIntPtr)
     kar2inv = one/rsak**2
     cw36 = rsacw3**6
     cb3inv = one/rsacb3
-! constants for sa rough
-    cr1 = 0.5
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -595,11 +598,18 @@ branch = myIntStack(myIntPtr)
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
-! sa rough
-        dnew = d2wall(i, j, k) + 0.03*kssa
+! as the rough version of sa is supported, this looks slightly different
+! than the standard sa implementation
+        if (useroughsa) then
+          kslocal = ks(i, j, k)
+          dist = d2wall(i, j, k) + 0.03*kslocal
+        else
+          kslocal = zero
+          dist = d2wall(i, j, k)
+        end if
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/dnew**2
-        chi = w(i, j, k, itu1)/nu + cr1*kssa/dnew
+        dist2inv = one/dist**2
+        chi = w(i, j, k, itu1)/nu + rsacr1*kslocal/dist
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)

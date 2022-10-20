@@ -981,7 +981,7 @@ contains
     use constants
     use paramTurb
     use blockPointers, only : sectionID
-    use inputPhysics, only :useft2SA, useRotationSA, turbProd, equations, kssa
+    use inputPhysics, only :useft2SA, useRotationSA, turbProd, equations
     use inputDiscretization, only : approxSA
     use section, only : sections
     use sa, only : cv13, kar2Inv, cw36, cb3Inv

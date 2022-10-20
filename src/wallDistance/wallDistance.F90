@@ -120,6 +120,53 @@ contains
 
   end subroutine updateWallDistancesQuickly
 
+  subroutine updateWallRoughness()
+
+    ! Sets the roughness-value (ks) of the nearest wall-cell.
+
+    use constants
+    use blockPointers, only : il, jl, kl, flowDoms, ks, BCData, nDom, nBocos
+    use inputTimeSpectral, only :nTimeIntervalsSpectral
+    use utils, only : setPointers
+    use iteration, only : groundLevel
+    implicit none
+
+    ! Local Variables
+    integer(kind=intType) :: i, j, k, iii, jjj, boco, dom
+    integer(kind=intType) :: nn, sps, level, nLevels
+
+    nLevels = ubound(flowDoms,2)
+
+    do level=1, nLevels
+        do sps=1, nTimeIntervalsSpectral
+            do nn=1, nDom
+                call setPointers(nn, level, sps)
+                do k=2,kl
+                    do j=2,jl
+                        do i=2,il
+                            if (flowDoms(nn, level, sps)%nearestBCCell(1, i, j, k) == 0) then
+                                ! This cell is too far away and has no
+                                ! association. Set the roughness to zero.
+                                print *, 'ks cutoff'
+                                ks(i, j, k) = zero
+                                cycle
+                            end if
+
+                            dom = flowDoms(nn, level, sps)%nearestBCCell(1, i, j, k)
+                            boco = flowDoms(nn, level, sps)%nearestBCCell(2, i, j, k)
+                            iii = flowDoms(nn, level, sps)%nearestBCCell(3, i, j, k)
+                            jjj = flowDoms(nn, level, sps)%nearestBCCell(4, i, j, k)
+
+                            ks(i, j, k) = flowDoms(dom, level, sps)%BCData(boco)%ksNS_Wall(iii,jjj)
+                        end do
+                    end do
+                end do
+            end do
+        end do
+    end do
+
+  end subroutine updateWallRoughness
+
   ! ----------------------------------------------------------------------
   !                                                                      |
   !                    No Tapenade Routine below this line               |
@@ -474,6 +521,7 @@ contains
     !
     use constants
     use blockPointers, only : nDom, flowDoms
+    use inputPhysics, only : useRoughSA
     use utils, only : terminate
     implicit none
     !
@@ -505,6 +553,13 @@ contains
           if(ierr /= 0)                          &
                call terminate("initWallDistance", &
                "Memory allocation failure for d2Wall")
+          if (useRoughSA) then
+            allocate(flowDoms(nn,level,sps)%ks(2:il,2:jl,2:kl), &
+                stat=ierr)
+            if(ierr /= 0)                          &
+                call terminate("initWallDistance", &
+                "Memory allocation failure for ks")
+          end if
        endif
 
        ! Initialize the wall distances to a large value.
@@ -1782,6 +1837,9 @@ contains
        if (.not. associated(flowDoms(nn,level,sps)%surfNodeIndices)) then
           allocate(flowDoms(nn,level,sps)%surfNodeIndices(4, 2:il, 2:jl, 2:kl))
           allocate(flowDoms(nn,level,sps)%uv(2, 2:il, 2:jl, 2:kl))
+          if (useRoughSA) then
+             allocate(flowDoms(nn,level,sps)%nearestBCCell(4, 2:il, 2:jl, 2:kl))
+          end if
        end if
 
        ! Set the cluster for this block
@@ -1824,10 +1882,16 @@ contains
                               walls(c)%ind(walls(c)%conn(kk, cellID))
                       end do
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
+                      if (useRoughSA) then
+                         flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID)
+                      end if
                    else
                       ! Just set dummy values. These will never be used.
                       flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
+                      if (useRoughSA) then
+                          flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = 0
+                      end if
                    end if
 
                    ! We are done with this point.
@@ -1857,7 +1921,9 @@ contains
                               fullWall%ind(fullWall%conn(kk, cellID))
                       end do
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
-
+                      if (useRoughSA) then
+                         flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID)
+                      end if
                    else
 
                       ! This point is *closer* than the nearWallDist AND
@@ -1876,6 +1942,9 @@ contains
                                  walls(c)%ind(walls(c)%conn(kk, cellID2))
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw2(1:2)
+                         if (useRoughSA) then
+                            flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID2)
+                         end if
                       else
                          ! The full wall distance is better. Take that.
 
@@ -1884,7 +1953,9 @@ contains
                                  fullWall%ind(fullWall%conn(kk, cellID))
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
-
+                         if (useRoughSA) then
+                            flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID)
+                         end if
                       end if
                    end if
                 else
@@ -1895,6 +1966,9 @@ contains
 
                    flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                    flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
+                   if (useRoughSA) then
+                       flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = 0
+                   end if
 
                 end if
              end do
@@ -1997,6 +2071,9 @@ contains
     if (oversetPresent) then
        deallocate(fullWall%x, fullWall%conn, fullWall%ind)
        call destroySerialQuad(fullWall%ADT)
+       if (useRoughSA) then
+          deallocate(walls(c)%BCCell)
+       end if
     end if
 
   end subroutine determineWallAssociation

@@ -172,6 +172,10 @@ module oversetData
      ! indCell: Global cell index for wall cells
      integer(kind=intType), dimension(:), pointer :: indCell
 
+     ! BCCell: dom,boco,i,j values that define this cell in the CGNS-mesh
+     ! I it is only used for the rough SA variant (when 'useRoughSA' = True)
+     integer(kind=intType), dimension(:, :), pointer :: BCCell
+
      ! Blanking values for Nodes
      integer(kind=intType), dimension(:), allocatable :: iBlank
      integer(kind=intType), dimension(:), allocatable :: cellPtr

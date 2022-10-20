@@ -10,19 +10,29 @@ contains
   subroutine setBCVarNamesIsothermalWall
     use cgnsNames
     use constants
+    use inputPhysics, only : useRoughSA
     implicit none
     nbcVar = nbcVarIsothermalWall
     bcVarNames(1) = cgnsTemp
-    ! TODO: Add Sand grain roughness !!!!
+
+    if (useRoughSA) then
+       nbcVar = nbcVar + 1
+       bcVarNames(2) = cgnsSandGrainRoughness
+    end if
 
   end subroutine setBCVarNamesIsothermalWall
 
   subroutine setBCVarNamesAdiabaticWall
     use cgnsNames
     use constants
+    use inputPhysics, only : useRoughSA
     implicit none
     nbcVar = nbcVarAdiabaticWall
-    bcVarNames(1) = cgnsSandGrainRoughness
+
+    if (useRoughSA) then
+       nbcVar = nbcVar + 1
+       bcVarNames(1) = cgnsSandGrainRoughness
+    end if
 
   end subroutine setBCVarNamesAdiabaticWall
 
@@ -433,6 +443,7 @@ contains
     use blockPointers, only : BCFaceID, BCData, nBKGlobal
     use utils, only : terminate, siTemperature
     use flowVarRefState, only : Tref
+    use inputPhysics, only : useRoughSA
     implicit none
     !
     !      Subroutine arguments.
@@ -476,6 +487,22 @@ contains
        enddo
     enddo
 
+    ! Set a value of 0 if it was not possible to determine the
+    ! sand grain roughness
+
+    if (useRoughSA) then
+        if(.not. bcVarPresent(2)) then
+        bcVarArray(:,:,1) = zero
+        endif
+
+        do j=jBeg,jEnd
+            do i=iBeg,iEnd
+                BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,2)
+            enddo
+        enddo
+    end if
+
+
   end subroutine BCDataIsothermalWall
 
   subroutine BCDataAdiabaticWall(boco, bcVarArray, iBeg, iEnd, jBeg, jEnd)
@@ -485,6 +512,7 @@ contains
     !
     use constants
     use cgnsNames
+    use inputPhysics, only : useRoughSA
     use blockPointers, only : BCFaceID, BCData, nBKGlobal
     implicit none
     !
@@ -501,15 +529,17 @@ contains
     ! Set a value of 0 if it was not possible to determine the
     ! sand grain roughness
 
-    if(.not. bcVarPresent(1)) then
-       bcVarArray(:,:,1) = zero
-    endif
+    if (useRoughSA) then
+        if(.not. bcVarPresent(1)) then
+           bcVarArray(:,:,1) = zero
+        endif
 
-    do j=jBeg,jEnd
-       do i=iBeg,iEnd
-          BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,1)
-       enddo
-    enddo
+        do j=jBeg,jEnd
+            do i=iBeg,iEnd
+                BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,1)
+            enddo
+        enddo
+    end if
 
   end subroutine BCDataAdiabaticWall
 
@@ -2243,6 +2273,7 @@ contains
     use blockPointers, only : BCData, flowDoms, nBocos, nDom, BCType
     use flowVarRefState, only : nt1, nt2
     use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputPhysics, only : useRoughSA
     use iteration, only : nALESteps
     use utils, only : setPointers, terminate
     implicit none
@@ -2304,7 +2335,6 @@ contains
                 case (NSWallAdiabatic)
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
-                        BCData(mm)%ksNS_Wall(iBeg:iEnd,jBeg:jEnd), &
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
@@ -2314,6 +2344,9 @@ contains
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
                         BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         stat=ierr)
+                    if (useRoughSA .and. ierr == 0) then
+                        allocate(BCData(mm)%ksNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+                   end if
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
                         "Memory allocation failure for &
