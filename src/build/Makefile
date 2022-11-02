@@ -1,8 +1,11 @@
 # Include the user supplied makefile
 include ../../config/config.mk
 
+# Check compiler and version and add flags if needed
+EXTRA_FF90_FLAGS = $(shell bash ../../config/compilerCheck.sh $(FF90))
+
 # Group all the fortran, C and compiler flags together.
-FF90_ALL_FLAGS_NO_OPT = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. \
+FF90_ALL_FLAGS_NO_OPT   = $(FF90_FLAGS) $(EXTRA_FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. \
 		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
 
 FF90_ALL_FLAGS = $(FF90_ALL_FLAGS_NO_OPT) $(FFXX_OPT_FLAGS)
