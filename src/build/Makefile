@@ -13,6 +13,8 @@ CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDE
 
 LINKER_ALL_FLAGS = $(CGNS_LINKER_FLAGS) $(PETSC_LIB) $(LINKER_FLAGS)
 
+GIT_VERSION = $(shell git describe --dirty --always --tags)
+
 # Include the full filelist
 include fileList
 
@@ -49,9 +51,31 @@ OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77F
 DEP_FILE=adflow_project.dep
 
 # Not real targets are "phony"
-.PHONY: sources lib
+.PHONY: version sources lib
 
 default: all
+
+version: ../build/version.f90
+
+../build/version.f90:
+	@echo "Making auto-generated version file"
+	@echo GIT_VERSION is $(GIT_VERSION)
+#	@echo "module fortranversion" > version.f90
+#	@echo "  use constants, only : maxStringLen" >> version.f90
+#	@echo "contains" >> version.f90
+	@echo "  subroutine version(ver)" > version.f90
+	@echo "    ! Automatically generated version function" >> version.f90
+	@echo "    !" >> version.f90
+	@echo "    ! Desricption of Arguments" >> version.f90
+	@echo "    ! Output" >> version.f90
+	@echo "    ! ver    - string, contains git tag and commit hash" >> version.f90
+	@echo "    use precision" >> version.f90
+	@echo "    implicit none" >> version.f90
+	@echo "    character(len=256), intent(out) :: ver" >> version.f90
+	@echo "    " >> version.f90
+	@echo "    ver = '$(GIT_VERSION)'" >> version.f90
+	@echo "  end subroutine version" >> version.f90
+#	@echo "end module fortranVersion" >> version.f90
 
 # The 'source's makes all the .o files. It also depends on the dependence file "DEP_FILE".
 sources: $(OFILES) $(DEP_FILE)

@@ -1447,6 +1447,9 @@ python module libadflow
           end subroutine getfam
         end module surfacefamilies
 
+        subroutine version(ver) ! in :test:version.f90
+          character(len=256) intent(out) :: ver
+        end subroutine version
 
     end interface
 

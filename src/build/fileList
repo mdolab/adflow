@@ -13,6 +13,8 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		bcdata/BCData.F90\
 		\
+		build/version.f90\
+		\
 		initFlow/variableReading.F90\
 		initFlow/initializeFlow.F90\
 		\
