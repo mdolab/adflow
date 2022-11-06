@@ -1234,9 +1234,9 @@ class ADflowBuilder(Builder):
         # The user can't do this in the setup method because we set the mesh
         # within the initialize method.  Allowing the user to set the
         # 'user_family_group' variable gives them a way to specificy custom
-        # family groups within the setup when the create the builder.
+        # family groups within the setup when they create the builder.
         if self.user_family_groups is not None:
-            # Loop over the surface family groups.  They keys are the
+            # Loop over the surface family groups.  The keys are the
             # new group names and the vals are the subsurface to add
             # to the group.
             for key, val in self.user_family_groups.items():
