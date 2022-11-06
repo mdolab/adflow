@@ -233,7 +233,7 @@ contains
     ! of the fact that only wbar needs to be zeroed since all other
     ! required seeds are zeroed in the individual fast routines. This is
     ! slightly unsafe, but it necessary for speed.
-    
+
     ! Allocate the memory for reverse
     if (.not. derivVarsAllocated) then
       call allocDerivativeValues(level)
@@ -275,10 +275,10 @@ contains
     implicit none
 
     ! Input Variables
+    integer(kind=intType), intent(in) :: nDOF
     real(kind=realType), dimension(ndof), intent(in) :: inVec
     real(kind=realType), dimension(ndof), intent(out) :: outVec
     real(kind=realType), intent(in) :: relativeTolerance
-    integer(kind=intType), intent(in) :: nDOF
     integer(kind=intTYpe) :: adjointConvergedReason
     ! Working variables
     integer(kind=intType) :: ierr, nn, sps
@@ -360,10 +360,10 @@ contains
     implicit none
 
     ! Input Variables
+    integer(kind=intType), intent(in) :: nDOF
     real(kind=realType), dimension(ndof), intent(in) :: inVec
     real(kind=realType), dimension(ndof), intent(out) :: outVec
     real(kind=realType), intent(in) :: relativeTolerance
-    integer(kind=intType), intent(in) :: nDOF
     integer(kind=intTYpe) :: adjointConvergedReason
     ! Working variables
     integer(kind=intType) :: ierr, nn, sps
@@ -440,7 +440,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
@@ -468,7 +468,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
@@ -496,9 +496,9 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
-    real(kind=realType), dimension(nState) :: RHS
+    character(len=*), intent(in) :: fileName
     integer(kind=intType) :: nstate
+    real(kind=realType), dimension(nState) :: RHS
 
     ! Working parameters
     PetscViewer binViewer
@@ -697,8 +697,8 @@ contains
     implicit none
 
     ! Input Parameters
-    real(kind=realType), dimension(nState) :: RHS, psi
     integer(kind=intType) :: nState
+    real(kind=realType), dimension(nState) :: RHS, psi
     logical :: checkSolution
     !
     !     Local variables.
@@ -966,7 +966,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
