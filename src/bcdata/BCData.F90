@@ -916,10 +916,10 @@ contains
               ": Flow direction points out of the domain for &
               &some faces.")
 
+          ! Call returnFail if the flow direction is pointing out of a 
+          ! BC domain.  This will be caught by an allreduce in the
+          ! python layer.
           call returnFail("totalSubsonicInlet", errorMessage)
-         !  call mpi_barrier(ADflow_comm_world, ierr)
-
-         ! call terminate("totalSubsonicInlet", errorMessage)
       endif
 #endif
     end subroutine totalSubsonicInlet
