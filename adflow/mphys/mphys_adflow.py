@@ -1149,16 +1149,21 @@ class ADflowBuilder(Builder):
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
-        my_surfs=None,
+        user_family_groups=None, # Dictonary of {group: surfs} to add
     ):
 
         # options dictionary for ADflow
         self.options = options
 
-        if my_surfs is None:
-            self.my_surfs = None
+        # Check the user family groups to see if anything was set
+        if user_family_groups is None:
+            self.user_family_groups = None
         else:
-            self.my_surfs = my_surfs
+            # Throw a type error if the user family group is not a dictionary
+            if isinstance(user_family_groups, dict):
+                self.user_family_groups = user_family_groups
+            else:
+                raise TypeError("ADflowBuilder parameter 'user_family_groups' must be a dictionary or NoneType")
 
         # MACH tools require separate option dictionaries for solver and mesh
         # if user did not provide a separate mesh_options dictionary, we just use
@@ -1225,8 +1230,17 @@ class ADflowBuilder(Builder):
     def initialize(self, comm):
         self.solver = ADFLOW(options=self.options, comm=comm)
 
-        if self.my_surfs is not None:
-            self.solver.addFamilyGroup("my_surf", self.my_surfs)
+        # We need to set the family groups here before we initialize the mesh.
+        # The user can't do this in the setup method because we set the mesh
+        # within the initialize method.  Allowing the user to set the
+        # 'user_family_group' variable gives them a way to specificy custom
+        # family groups within the setup when the create the builder.
+        if self.user_family_groups is not None:
+            # Loop over the surface family groups.  They keys are the
+            # new group names and the vals are the subsurface to add
+            # to the group.
+            for key, val in self.user_family_groups.items():
+                self.solver.addFamilyGroup(key, val)
 
         mesh = USMesh(options=self.mesh_options, comm=comm)
 
