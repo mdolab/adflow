@@ -190,50 +190,6 @@ contains
     end do
   end subroutine updatewalldistancesquickly
   subroutine updatewallroughness()
-! sets the roughness-value (ks) of the nearest wall-cell.
-    use constants
-    use blockpointers, only : il, jl, kl, flowdoms, ks, bcdata, ndom, &
-&   nbocos
-    use inputtimespectral, only : ntimeintervalsspectral
-    ! use utils_b, only : setpointers
-    use iteration, only : groundlevel
     implicit none
-! local variables
-    integer(kind=inttype) :: i, j, k, iii, jjj, boco, dom
-    integer(kind=inttype) :: nn, sps, level, nlevels
-    intrinsic ubound
-    external setpointers
-    nlevels = ubound(flowdoms, 2)
-    do level=1,nlevels
-      do sps=1,ntimeintervalsspectral
-        do nn=1,ndom
-          ! call setpointers(nn, level, sps)
-          do k=2,kl
-            do j=2,jl
-              do i=2,il
-                if (flowdoms(nn, level, sps)%nearestbccell(1, i, j, k) &
-&                   .eq. 0) then
-! this cell is too far away and has no
-! association. set the roughness to zero.
-                  print*, 'ks cutoff'
-                  ks(i, j, k) = zero
-                else
-                  dom = flowdoms(nn, level, sps)%nearestbccell(1, i, j, &
-&                   k)
-                  boco = flowdoms(nn, level, sps)%nearestbccell(2, i, j&
-&                   , k)
-                  iii = flowdoms(nn, level, sps)%nearestbccell(3, i, j, &
-&                   k)
-                  jjj = flowdoms(nn, level, sps)%nearestbccell(4, i, j, &
-&                   k)
-                  ks(i, j, k) = flowdoms(dom, level, sps)%bcdata(boco)%&
-&                   ksns_wall(iii, jjj)
-                end if
-              end do
-            end do
-          end do
-        end do
-      end do
-    end do
   end subroutine updatewallroughness
 end module walldistance_b

@@ -122,49 +122,188 @@ contains
 
   subroutine updateWallRoughness()
 
+#ifndef USE_TAPENADE
+
     ! Sets the roughness-value (ks) of the nearest wall-cell.
 
     use constants
-    use blockPointers, only : il, jl, kl, flowDoms, ks, BCData, nDom, nBocos
+    ! use blockPointers, only : il, jl, kl, flowDoms, ks, BCData, nDom, nBocos, nx, ny, nz
+    use blockPointers
     use inputTimeSpectral, only :nTimeIntervalsSpectral
-    use utils, only : setPointers
+    use utils, only : setPointers, EChk
     use iteration, only : groundLevel
+    use surfaceFamilies, only : BCFamGroups
+    use communication, only : adflow_comm_world, nProc, myID
+    use sorting, only : famInList
+    use wallDistanceData, only : nCellBlockOffset
     implicit none
 
     ! Local Variables
-    integer(kind=intType) :: i, j, k, iii, jjj, boco, dom
-    integer(kind=intType) :: nn, sps, level, nLevels
+    integer(kind=intType) :: i, j, k, ii, jj, ierr, iCell
+    integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd, ni, nj
+    integer(kind=intType) :: nn, sps, level, nLevels, mm
+    integer(kind=intType) :: nCellsLocal, nCellsGlobal
+    integer(kind=intType), dimension(:), allocatable :: nCellProc, cumCellProc
+    integer(kind=intType), dimension(:), pointer :: wallFamList
+    integer(kind=intType), dimension(:), allocatable :: cellIdLocal, cellIdGlobal
+    real(kind=realType), dimension(:), allocatable :: ksLocal, ksGlobal
 
+
+    wallFamList => BCFamGroups(iBCGroupWalls)%famList
     nLevels = ubound(flowDoms,2)
 
     do level=1, nLevels
-        do sps=1, nTimeIntervalsSpectral
-            do nn=1, nDom
-                call setPointers(nn, level, sps)
-                do k=2,kl
-                    do j=2,jl
-                        do i=2,il
-                            if (flowDoms(nn, level, sps)%nearestBCCell(1, i, j, k) == 0) then
-                                ! This cell is too far away and has no
-                                ! association. Set the roughness to zero.
-                                print *, 'ks cutoff'
-                                ks(i, j, k) = zero
-                                cycle
-                            end if
+       do sps=1, nTimeIntervalsSpectral
 
-                            dom = flowDoms(nn, level, sps)%nearestBCCell(1, i, j, k)
-                            boco = flowDoms(nn, level, sps)%nearestBCCell(2, i, j, k)
-                            iii = flowDoms(nn, level, sps)%nearestBCCell(3, i, j, k)
-                            jjj = flowDoms(nn, level, sps)%nearestBCCell(4, i, j, k)
+          ! figure out the local space needed
+          nCellsLocal = 0
+          do nn=1,nDom
+            call setPointers(nn, level, sps)
 
-                            ks(i, j, k) = flowDoms(dom, level, sps)%BCData(boco)%ksNS_Wall(iii,jjj)
-                        end do
-                    end do
-                end do
+            do mm=1, nBocos
+                if (.not. famInList(BCdata(mm)%famID, wallFamlist)) then
+                   cycle
+                end if
+                nCellsLocal = nCellsLocal + &
+                (bcData(mm)%inEnd - bcData(mm)%inBeg)*(bcData(mm)%jnEnd - bcData(mm)%jnBeg)
             end do
-        end do
+          end do
+
+          ! Now communicate these sizes with everyone
+          allocate(nCellProc(nProc), cumCellProc(0:nProc))
+
+          call mpi_allgather(nCellsLocal, 1, adflow_integer, nCellProc, 1, adflow_integer, &
+               adflow_comm_world, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          ! Now make cumulative versions of these
+          cumCellProc(0) = 0
+          do i=1,nProc
+             cumCellProc(i) = cumCellProc(i-1) + nCellProc(i)
+          end do
+
+          ! And save the total number of nodes and cells for reference
+          nCellsGlobal = cumCellProc(nProc)
+
+          ! Allocate the space for the local ks values and cellId's
+          allocate(ksLocal(nCellsLocal), cellIdLocal(nCellsLocal))
+
+
+          ! Move all the local ks-values in a list
+          ! Create a seccond list with the global cell ID corresponding to the ks-values
+          iCell = 0
+          do nn=1, nDom
+             call setPointers(nn, level, sps)
+             do mm=1, nBocos
+                if (.not. famInList(BCdata(mm)%famID, wallFamlist)) then
+                   cycle
+                end if
+
+                jBeg = BCData(mm)%jnBeg ; jEnd = BCData(mm)%jnEnd
+                iBeg = BCData(mm)%inBeg ; iEnd = BCData(mm)%inEnd
+                ni = iEnd - iBeg
+                nj = jEnd - jBeg
+
+                do jj=1, nj
+                   do ii=1, ni
+                      iCell = iCell + 1
+
+                      ! saving local ks-value is easy
+                      ksLocal(iCell) = BCData(mm)%ksNS_Wall(ii, jj)
+
+                      ! to calculate the global cellID, we must associate the
+                      ! BC-cell to the volume cell first We basically have to
+                      ! set surface i-j values to global i,j,k values. The +1 is
+                      ! needed because there are no halo-cells on the BC
+
+                      ! TODO: Do I need to care about the rightHanded-stuff?
+                      select case (BCFaceID(mm))
+                      case (iMin)
+                         i = 2
+                         j = ii + 1
+                         k = jj + 1
+                      case (iMax)
+                         i = il
+                         j = ii + 1
+                         k = jj + 1
+                      case (jMin)
+                         i = ii + 1
+                         j = 2
+                         k = jj + 1
+                      case (jMax)
+                         i = ii + 1
+                         j = jl
+                         k = jj + 1
+                      case (kMin)
+                         i = jj + 1
+                         j = ii + 1
+                         k = 2
+                      case (kMax)
+                         i = ii + 1
+                         j = jj + 1
+                         k = kl
+                      end select
+
+                      cellIdLocal(iCell) = nCellBLockOffset(level,nn)*nTimeIntervalsSpectral+nx*ny*nz*(sps-1)+&
+                           (i-2) +(j-2)*nx +(k-2)*nx*ny
+                   end do
+                end do
+             end do
+          end do
+
+
+          ! allocate global arrays
+          allocate(ksGlobal(nCellsGlobal), cellIdGlobal(nCellsGlobal))
+
+          ! gather all the surface-ks values on each proc
+          call mpi_allgatherv(ksLocal, nCellsLocal, adflow_real, &
+               ksGlobal, nCellProc, cumCellProc, adflow_real, &
+               adflow_comm_world, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          ! gather all the cellId's on each proc
+          call mpi_allgatherv(cellIdLocal, nCellsLocal, adflow_integer, &
+               cellIdGlobal, nCellProc, cumCellProc, adflow_integer, &
+               adflow_comm_world, ierr)
+          call EChk(ierr, __FILE__, __LINE__)
+
+          ! free local memmory
+          deallocate(cumCellProc, nCellProc, ksLocal, cellIdLocal)
+
+          ! set the ks-values in the volume
+          do nn=1, nDom
+             call setPointers(nn, level, sps)
+             do k=2,kl
+                do j=2,jl
+                   do i=2,il
+                      if (flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) == 0) then
+                         ! This cell is too far away and has no
+                         ! association. Set the roughness to zero.
+                         ks(i, j, k) = zero
+                         cycle
+                      end if
+
+                      ! find the index of the surface cell (Requires gfortran > 9.0 )
+                      iCell = findloc(cellIdGlobal, flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), DIM=1)
+
+                      ! findloc did not find the requested cell, set a value of 0
+                      if (iCell == 0) then
+                         ks(i, j, k) = zero
+                         cycle
+                      end if
+
+                      flowDoms(nn, level, sps)%ks(i, j, k) = ksGlobal(iCell)
+                   end do
+                end do
+             end do
+          end do
+
+          ! free global memory
+          deallocate(ksGlobal, cellIdGlobal)
+       end do
     end do
 
+#endif
   end subroutine updateWallRoughness
 
   ! ----------------------------------------------------------------------
@@ -1838,7 +1977,7 @@ contains
           allocate(flowDoms(nn,level,sps)%surfNodeIndices(4, 2:il, 2:jl, 2:kl))
           allocate(flowDoms(nn,level,sps)%uv(2, 2:il, 2:jl, 2:kl))
           if (useRoughSA) then
-             allocate(flowDoms(nn,level,sps)%nearestBCCell(4, 2:il, 2:jl, 2:kl))
+             allocate(flowDoms(nn,level,sps)%nearestWallCellInd(2:il, 2:jl, 2:kl))
           end if
        end if
 
@@ -1883,14 +2022,14 @@ contains
                       end do
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
                       if (useRoughSA) then
-                         flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID)
+                         flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
                       end if
                    else
                       ! Just set dummy values. These will never be used.
                       flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
                       if (useRoughSA) then
-                          flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = 0
+                          flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = 0
                       end if
                    end if
 
@@ -1922,7 +2061,7 @@ contains
                       end do
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
                       if (useRoughSA) then
-                         flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID)
+                         flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
                       end if
                    else
 
@@ -1943,7 +2082,7 @@ contains
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw2(1:2)
                          if (useRoughSA) then
-                            flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID2)
+                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
                          end if
                       else
                          ! The full wall distance is better. Take that.
@@ -1954,7 +2093,7 @@ contains
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
                          if (useRoughSA) then
-                            flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = walls(c)%BCCell(:, cellID)
+                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
                          end if
                       end if
                    end if
@@ -1967,7 +2106,7 @@ contains
                    flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                    flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
                    if (useRoughSA) then
-                       flowDoms(nn, level, sps)%nearestBCCell(:, i, j, k) = 0
+                       flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = 0
                    end if
 
                 end if
@@ -2071,9 +2210,6 @@ contains
     if (oversetPresent) then
        deallocate(fullWall%x, fullWall%conn, fullWall%ind)
        call destroySerialQuad(fullWall%ADT)
-       if (useRoughSA) then
-          deallocate(walls(c)%BCCell)
-       end if
     end if
 
   end subroutine determineWallAssociation

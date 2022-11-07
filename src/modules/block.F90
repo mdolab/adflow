@@ -674,12 +674,12 @@ module block
      ! intermittency( )       - Function defining the transition location
      !
      ! The next two variables are only initialized if roughness is requested (useRoughSA = True)
-     ! nearestBCCell(2:il,2:jl,2:kl,4)   - dom,boco,i,j indices for the nearest wall cell; is needed for rougness
+     ! nearestWallCellInd(2:il,2:jl,2:kl)   - global cell ID for the nearest wall cell; is needed for rougness
      ! ks(2:il,2:jl,2:kl)     - Roughness value of the nearest wall
 
      real(kind=realType), dimension(:,:,:), pointer :: d2Wall, filterDES
      real(kind=realType), dimension(:,:,:), pointer :: intermittency
-     integer(kind=intType), dimension(:,:,:,:), pointer :: nearestBCCell
+     integer(kind=intType), dimension(:,:,:), pointer :: nearestWallCellInd
      real(kind=realType), dimension(:,:,:), pointer :: ks
 
      ! bmti1(je,ke,nt1:nt2,nt1:nt2): Matrix used for the implicit
