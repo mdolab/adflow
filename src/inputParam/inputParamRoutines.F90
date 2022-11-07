@@ -4055,8 +4055,8 @@ contains
     !
     !      Subroutine arguments.
     !
-    real(kind=realType), dimension(nValues), intent(in) :: values
     integer(kind=intType), intent(in) :: nValues
+    real(kind=realType), dimension(nValues), intent(in) :: values
 
     ! Basically just copy into module
     if (allocated(isoValues)) then
