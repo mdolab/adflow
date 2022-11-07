@@ -2513,6 +2513,7 @@ contains
     use constants
     use extraOutput
     use utils, only : convertToLowerCase, terminate
+    use inputPhysics, only : useRoughSA
     implicit none
     !
     !      Subroutine arguments.
@@ -2563,6 +2564,8 @@ contains
     volWriteGC = .false.
     volWriteStatus = .false.
     volWriteIntermittency = .false.
+
+    volWriteKs = .false.
 
 
     ! Initialize nVarSpecified to 0. This serves as a test
@@ -2713,6 +2716,15 @@ contains
 
        case("intermittency")
           volWriteIntermittency = .true.
+          nVarSpecified = nVarSpecified + 1
+
+       case("ks")
+          if (.not. useRoughSA) then
+             call terminate("volumeVariables", "Can not write Surface-Roughness &
+             &values ('ks' in 'volumeVariables') when the rough SA variant is not &
+             &used (useRoughSA = False)")
+          end if
+          volWriteKs = .true.
           nVarSpecified = nVarSpecified + 1
 
        case default

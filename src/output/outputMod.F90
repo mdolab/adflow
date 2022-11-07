@@ -232,6 +232,8 @@ contains
 
     if( volWriteBlank ) nVolDiscrVar  = nVolDiscrVar + 1
 
+    if( volwriteKs )    nVolDiscrVar  = nVolDiscrVar + 1
+
 
   end subroutine numberOfVolSolVariables
 
@@ -566,6 +568,11 @@ contains
     if( volWriteIntermittency) then
        nn = nn + 1
        solNames(nn) = cgnsIntermittency
+    endif
+
+    if( volWriteKs) then
+       nn = nn + 1
+       solNames(nn) = cgnsSandGrainRoughness
     endif
 
   end subroutine volSolNames
@@ -1347,6 +1354,19 @@ contains
              end do
           end do
        end do
+
+    case  (cgnsSandGrainRoughness)
+       ! It is only possible to write this when it was allocated in the first place
+       ! (useRoughSA = True) but this has been check in 'inputParamRoutines'
+       ! allready
+       do k=kBeg,kEnd
+          do j=jBeg,jEnd
+             do i=iBeg,iEnd
+                wIO(i,j,k,1) = real(ks(i,j,k),realType)
+             enddo
+          enddo
+       enddo
+
 
 
     case default
