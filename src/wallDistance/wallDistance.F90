@@ -286,12 +286,7 @@ contains
                       ! find the index of the surface cell (Requires gfortran > 9.0 )
                       iCell = findloc(cellIdGlobal, flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), DIM=1)
 
-                      ! findloc did not find the requested cell, set a value of 0
-                      if (iCell == 0) then
-                         ks(i, j, k) = zero
-                         cycle
-                      end if
-
+                      ! set the ks value
                       flowDoms(nn, level, sps)%ks(i, j, k) = ksGlobal(iCell)
                    end do
                 end do
