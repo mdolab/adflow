@@ -276,7 +276,7 @@ contains
              do k=2,kl
                 do j=2,jl
                    do i=2,il
-                      if (flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) == 0) then
+                      if (flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) == -1) then
                          ! This cell is too far away and has no
                          ! association. Set the roughness to zero.
                          ks(i, j, k) = zero
@@ -2024,7 +2024,7 @@ contains
                       flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
                       if (useRoughSA) then
-                          flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = 0
+                          flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = -1
                       end if
                    end if
 
@@ -2077,7 +2077,7 @@ contains
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw2(1:2)
                          if (useRoughSA) then
-                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
+                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID2)
                          end if
                       else
                          ! The full wall distance is better. Take that.
@@ -2101,7 +2101,7 @@ contains
                    flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                    flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
                    if (useRoughSA) then
-                       flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = 0
+                       flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = -1
                    end if
 
                 end if
