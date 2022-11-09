@@ -3120,6 +3120,7 @@ contains
              select case (BCType(j))
 
 !            case (NSWallAdiabatic)
+!            TODO: This is not needed, right?
 !               call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
 !               call extractFromDataSet_d(bcVarArray, bcVarArrayd)
 !               call BCDataAdiabaticWall_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
@@ -3221,6 +3222,7 @@ contains
              select case (BCType(j))
 
 !            case (NSWallAdiabatic)
+!            TODO: This is not needed, right?
 !               call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
 !               call extractFromDataSet(bcVarArray)
 !               call BCDataAdiabaticWall_b(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
