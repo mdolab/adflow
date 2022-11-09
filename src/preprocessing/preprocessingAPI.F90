@@ -4170,8 +4170,6 @@ contains
 
     integer(kind=intType) :: nLevels, level, sps, nn, mm
 
-    print *, 'setting', ks_in
-
     nLevels = ubound(flowDoms,2)
 
     do level=1, nLevels
