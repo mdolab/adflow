@@ -442,7 +442,9 @@ contains
 ! set a value of 0 if it was not possible to determine the
 ! sand grain roughness
     if (useroughsa) then
-      if (.not.bcvarpresent(2)) bcvararray(:, :, 1) = zero
+! set a value of 0 if it was not possible to determine the
+! sand grain roughness
+      if (.not.bcvarpresent(1)) bcvararray(:, :, 2) = zero
       do j=jbeg,jend
         do i=ibeg,iend
           bcdata(boco)%ksns_wall(i, j) = bcvararray(i, j, 2)
@@ -474,9 +476,9 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: i, j
+    if (useroughsa) then
 ! set a value of 0 if it was not possible to determine the
 ! sand grain roughness
-    if (useroughsa) then
       if (.not.bcvarpresent(1)) bcvararray(:, :, 1) = zero
       do j=jbeg,jend
         do i=ibeg,iend
