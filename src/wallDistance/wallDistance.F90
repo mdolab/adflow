@@ -124,7 +124,22 @@ contains
 
 #ifndef USE_TAPENADE
 
-    ! Sets the roughness-value (ks) of the nearest wall-cell.
+    ! Sets the roughness-value (ks) of the nearest wall-cell in the volume cells.
+    !
+    ! At first, it creates two lists: (1) ks values on the surface; (2) global
+    ! cellIndex corresponding to this ks-value.
+    !
+    ! Then it gathers the full list on each proc *THIS DOES NOT SCALE IN MEMORY*
+    !
+    ! After that, it iterate through every volume cell and finds the index in
+    ! list (1) that corresponds to the cellIndex of the nearest surface-cell.
+    ! Then it uses this index to set the ks value listed in (2).
+    !
+    !
+    ! A more memory efficient approach would be to create a 'PETSc Scatter'.
+    ! This should be straight forward using the cellIndex-list mentioned above.
+    ! You might take a look at 'wallScatter' further down this file for
+    ! inspiration.
 
     use constants
     use blockPointers
@@ -215,11 +230,9 @@ contains
                       ksLocal(iCell) = BCData(mm)%ksNS_Wall(ii, jj)
 
                       ! to calculate the global cellID, we must associate the
-                      ! BC-cell to the volume cell first We basically have to
-                      ! set surface i-j values to global i,j,k values. The +1 is
-                      ! needed because there are no halo-cells on the BC
+                      ! BC-cell to the volume cell first. We basically have to
+                      ! set surface i-j values to global i,j,k values.
 
-                      ! TODO: Do I need to care about the rightHanded-stuff?
                       select case (BCFaceID(mm))
                       case (iMin)
                          i = 2

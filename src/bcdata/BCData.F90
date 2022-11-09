@@ -2361,7 +2361,6 @@ contains
                    allocate(BCData(mm)%uSlip(iBeg:iEnd,jBeg:jEnd,3),  &
                         BCData(mm)%uSlipALE(0:nALEsteps,iBeg:iEnd,jBeg:jEnd,3), &
                         BCData(mm)%TNS_Wall(iBeg:iEnd,jBeg:jEnd), &
-                        ! TODO: Add KS!
                         BCData(mm)%F(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%T(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
                         BCData(mm)%Tp(iNodeBeg:iNodeEnd,jNodeBeg:jNodeEnd,3), &
@@ -2373,6 +2372,9 @@ contains
                         BCData(mm)%area(iNodeBeg+1:iNodeEnd, jNodeBeg+1:jNodeEnd), &
                         BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd), &
                         stat=ierr)
+                    if (useRoughSA .and. ierr == 0) then
+                        allocate(BCData(mm)%ksNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+                   end if
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
                         "Memory allocation failure for &

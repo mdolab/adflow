@@ -2720,8 +2720,8 @@ contains
 
        case("ks")
           if (.not. useRoughSA) then
-             call terminate("volumeVariables", "Can not write Surface-Roughness &
-             &values ('ks' in 'volumeVariables') when the rough SA variant is not &
+             call terminate("volumeVariables", "Can not export surface roughness &
+             &values ('volumeVariables': ['ks']) when the rough SA variant is not &
              &used (useRoughSA = False)")
           end if
           volWriteKs = .true.
