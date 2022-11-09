@@ -1,3 +1,6 @@
+fortranFilesNoOpt=	modules/precision.F90\
+		utils/genericISNAN.F90\
+
 fortranFiles=	ADT/adtUtils.F90\
 		ADT/adtBuild.F90\
 		ADT/adtLocalSearch.F90\
@@ -18,7 +21,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		inputParam/inputParamRoutines.F90\
 		\
-		modules/precision.F90\
 		modules/su_cgns.F90\
 		modules/constants.F90\
 		modules/killSignals.f90\
@@ -186,7 +188,6 @@ fortranFiles=	ADT/adtUtils.F90\
 
 
 cFiles = 	metis-4.0/metis.c\
-		utils/myIsNaNC.c\
 		utils/connect_signals.c\
 		adjoint/initPETScWrap.c\
 		partitioning/metisInterface.c\
