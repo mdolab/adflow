@@ -3565,7 +3565,7 @@ contains
     !
     !      Subroutine arguments.
     !
-    character*(*), intent(in) :: setSubroutineName
+    character(len=*), intent(in) :: setSubroutineName
     character, dimension(:, :), intent(in) :: bcDatanamesIn
     !
     !      Local variables.

@@ -18,7 +18,7 @@ contains
     logical, intent(in) :: includeZipper
     integer(kind=intType) :: nn, mm, i, j,iimax, shp(1)
     integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iBCGroup
-    integer(kind=intType), intent(in) :: famList(n), n
+    integer(kind=intType), intent(in) :: n, famList(n)
     type(zipperMesh), pointer :: zipper
     logical :: BCGroupNeeded
     sizeNode = 0_intType
@@ -288,7 +288,7 @@ contains
     ! Input/Output
     integer(kind=intType), intent(in) :: ncell
     integer(kind=intType), intent(inout) :: elemFam(nCell)
-    integer(kind=intType), intent(in) :: famList(nFamList), nFamList
+    integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
     logical, intent(in) :: includeZipper
 
     ! Working

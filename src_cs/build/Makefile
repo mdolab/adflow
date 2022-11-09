@@ -1,9 +1,11 @@
-# Include the user supplied makefil
+# Include the user supplied makefile
 include ../../config/config.mk
 
 # Group all the fortran, C and compiler flags together.
-FF90_ALL_FLAGS   = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. -DUSE_COMPLEX \
+FF90_ALL_FLAGS_NO_OPT = $(FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. -DUSE_COMPLEX \
 		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
+
+FF90_ALL_FLAGS = $(FF90_ALL_FLAGS_NO_OPT) $(FFXX_OPT_FLAGS)
 
 CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDES) \
 		   $(CC_PRECISION_FLAGS)
@@ -39,17 +41,21 @@ VPATH:=$(dirs)
 fortranFiles:=$(fortranFiles) modules/complexify.f90
 
 # Need to add the ../ to each of the file lists:
+fortranFilesNoOpt:=$(addprefix ../,$(fortranFilesNoOpt))
 fortranFiles:=$(addprefix ../,$(fortranFiles))
 cFiles:=$(addprefix ../,$(cFiles))
 f77Files:=$(addprefix ../,$(f77Files))
 
 # Now strip off the directory part. This is because fort_depend gives
 # us targets that are like <filename.o>.
+fortranFilesNoOptNoDir=$(notdir $(fortranFilesNoOpt))
 fortranFilesNoDir=$(notdir $(fortranFiles))
 cFilesNoDir=$(notdir $(cFiles))
 f77FilesNoDir=$(notdir $(f77Files))
 
 # Generate two separate list of .F90 and .f90 files using the filter command
+f90FilesNoOpt=$(filter %.f90,$(fortranFilesNoOptNoDir))
+F90FilesNoOpt=$(filter %.F90,$(fortranFilesNoOptNoDir))
 f90Files=$(filter %.f90,$(fortranFilesNoDir))
 F90Files=$(filter %.F90,$(fortranFilesNoDir))
 
@@ -58,32 +64,37 @@ realFiles:=$(addprefix ../../src/,$(fortranFiles))
 cmplxFiles:=$(addprefix ../,$(fortranFiles))
 
 # Finally convert all source files to .o
+OFILES_NO_OPT=$(f90FilesNoOpt:%.f90=%.o) $(F90FilesNoOpt:%.F90=%.o)
 OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o)
 
 # Define the file name for the auto-generated dependency file.
 DEP_FILE=adflow_project.dep
 
 # Not real targets are "phony"
-.PHONY: sources lib
+.PHONY: sourcesNoOpt sources lib
 
 default: all
+
+# This rule will build source files (and their depenedencies) without any optimization flags
+sourcesNoOpt: FF90_ALL_FLAGS=$(FF90_ALL_FLAGS_NO_OPT)
+sourcesNoOpt: $(OFILES_NO_OPT) $(DEP_FILE)
 
 # The 'source's makes all the .o files. It also depends on the dependence file "DEP_FILE".
 sources: $(OFILES) $(DEP_FILE)
 
 # The .dep file depends on the source files, so it automatically gets updated
 # when you change your source
-$(DEP_FILE): $(fortranFiles)
-	@echo "Making dependencies!\n"
-	@echo "fortran Files" $(fortranFiles)
-	$(PYTHON) ../../src/build/fort_depend.py -w -o $(DEP_FILE) -f $(fortranFiles)
+$(DEP_FILE): $(fortranFilesNoOpt) $(fortranFiles)
+	@echo "Making complex dependencies!\n"
+	@echo "fortran Files" $(fortranFilesNoOpt) $(fortranFiles)
+	$(PYTHON) ../../src/build/fort_depend.py -w -o $(DEP_FILE) -f $(fortranFilesNoOpt) $(fortranFiles)
 	@echo "VPATH" $(dirs)
 # Include the automatically generated file.
 include $(DEP_FILE)
 
 # The 'lib' target builds the static archive. It depends on "sources".
-lib: sources
-	$(AR) $(AR_FLAGS) libadflow.a $(OFILES)
+lib: sourcesNoOpt sources
+	$(AR) $(AR_FLAGS) libadflow.a $(OFILES_NO_OPT) $(OFILES)
 
 # These are the extra python objects for the python library
 PYTHON_OBJECTS = fortranobject.o\
@@ -137,5 +148,5 @@ python: lib ../f2py/adflow.pyf
 
 # Final Link:
 	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow_cs.so
-	$(PYTHON) importTest.py
+	$(PYTHON) ../../src/build/importTest.py libadflow_cs.so
 	mv libadflow_cs.so ../../adflow
