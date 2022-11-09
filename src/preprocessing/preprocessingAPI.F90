@@ -4156,4 +4156,43 @@ contains
 
   end subroutine updateRotationRate
 
+  subroutine updateSurfaceRoughness(ks_in, famList, nFamList)
+
+    use constants
+    use blockPointers
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use utils, only : setPointers
+    use sorting, only : famInList
+    implicit none
+
+    real(kind=realType), intent(in) :: ks_in
+    integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
+
+    integer(kind=intType) :: nLevels, level, sps, nn, mm
+
+    print *, 'setting', ks_in
+
+    nLevels = ubound(flowDoms,2)
+
+    do level=1, nLevels
+       do sps=1, nTimeIntervalsSpectral
+          do nn=1,nDom
+             call setPointers(nn, level, sps)
+
+             ! Loop over the number of boundary subfaces of this block.
+             do mm=1,nBocos
+
+                if ( .not. famInList(BCData(mm)%famID, famList)) then
+                   cycle
+                end if
+
+                BCData(mm)%ksNS_Wall = ks_in
+
+             end do
+          end do
+       end do
+    end do
+
+  end subroutine updateSurfaceRoughness
+
 end module preprocessingAPI

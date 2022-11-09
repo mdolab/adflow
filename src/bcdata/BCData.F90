@@ -491,13 +491,15 @@ contains
     ! sand grain roughness
 
     if (useRoughSA) then
-        if(.not. bcVarPresent(2)) then
-        bcVarArray(:,:,1) = zero
+        ! Set a value of 0 if it was not possible to determine the
+        ! sand grain roughness
+        if(.not. bcVarPresent(1)) then
+           bcVarArray(:,:,2) = zero
         endif
 
         do j=jBeg,jEnd
             do i=iBeg,iEnd
-                BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,2)
+               BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,2)
             enddo
         enddo
     end if
@@ -526,17 +528,17 @@ contains
     !
     integer(kind=intType) :: i, j
 
-    ! Set a value of 0 if it was not possible to determine the
-    ! sand grain roughness
 
     if (useRoughSA) then
+        ! Set a value of 0 if it was not possible to determine the
+        ! sand grain roughness
         if(.not. bcVarPresent(1)) then
            bcVarArray(:,:,1) = zero
         endif
 
         do j=jBeg,jEnd
             do i=iBeg,iEnd
-                BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,1)
+               BCData(boco)%ksNS_Wall(i,j) = bcVarArray(i,j,1)
             enddo
         enddo
     end if

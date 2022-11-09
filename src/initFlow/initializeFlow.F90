@@ -272,8 +272,6 @@ end subroutine infChangeCorrection
     use constants
     use iteration, only : groundLevel
     use bcdata, only : setbcdataFineGrid, setBCDataCoarseGrid
-    use wallDistance, only : updateWallRoughness
-    use inputPhysics, only : useRoughSA
     implicit none
 
     ! Allocate the memory for the prescribed boundary data at the
@@ -291,11 +289,6 @@ end subroutine infChangeCorrection
 #ifndef USE_TAPENADE
     call setBCDataCoarseGrid
 #endif
-
-    ! update the roughness value in flowdoms
-    if (useRoughSA) then
-       call updateWallRoughness
-    end if
 
   end subroutine updateBCDataAllLevels
 

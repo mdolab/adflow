@@ -142,6 +142,9 @@ class ADFLOW(AeroSolver):
         # Set all internal adflow default options before we set anything from python
         self.adflow.inputparamroutines.setdefaultvalues()
 
+        # surface-roughness overwrite-dict
+        self.surfaceRoughness = dict()
+
         defSetupTime = time.time()
 
         # Initialize the inherited AeroSolver
@@ -940,6 +943,50 @@ class ADFLOW(AeroSolver):
 
         self.adflow.preprocessingapi.updaterotationrate(rotCenter, rotations, cgnsBlocks)
         self._updateVelInfo = True
+
+    def setSurfaceRoughness(self, ks, groupName=None):
+        """
+        Sets the equivalent sandgrain roughness on the specified surface family.
+        It may only be used when the rough SA-variant (useRoughSA = True) is
+        active.
+
+        This function takes precendence over all boundary conditions set in the
+        mesh.
+
+        Parameters:
+        ----------
+        ks : float
+            Equivalent sandgrain roughness
+        groupName : str
+            Family group to use. Default to all walls if not given (None)
+        """
+
+        if not self.options['useroughsa']:
+           raise Error (
+               "It is not possible to set a surface roughness value without "
+               "using the rough SA-variant (useRoughSA = False)"
+           )
+
+        if groupName is None:
+            groupName = self.allWallsGroup
+
+        if groupName in self.surfaceRoughness:
+            raise Error(
+                f"The roughness value for surface group '{groupName}' has "
+                f"allready been set to {self.surfaceRoughness[groupName]}"
+            )
+
+        self.surfaceRoughness[groupName] = ks
+
+    def _setSurfaceRoughness(self):
+        """
+        Set the actual roughness values. It must be postponed for as long as
+        possible. Otherwise it might get overwritten.
+        """
+
+        for groupName, ks in self.surfaceRoughness.items():
+            famList = self._getFamilyList(groupName)
+            self.adflow.preprocessingapi.updatesurfaceroughness(ks, famList)
 
     def checkPartitioning(self, nprocs):
         """This function determines the potential load balancing for
@@ -3119,6 +3166,14 @@ class ADFLOW(AeroSolver):
                 self.adflow.preprocessingapi.updateperiodicinfoalllevels()
                 self.adflow.preprocessingapi.updatemetricsalllevels()
             self.adflow.preprocessingapi.updategridvelocitiesalllevels()
+
+            # overwrite BC surface roughness
+            if len(self.surfaceRoughness) > 0:
+                self._setSurfaceRoughness()
+
+            # Propagate roughness values through volume
+            self.adflow.walldistance.updatewallroughness()
+
 
     def _getBCDataFromAeroProblem(self, AP):
 

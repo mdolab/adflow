@@ -127,11 +127,10 @@ contains
     ! Sets the roughness-value (ks) of the nearest wall-cell.
 
     use constants
-    ! use blockPointers, only : il, jl, kl, flowDoms, ks, BCData, nDom, nBocos, nx, ny, nz
     use blockPointers
-    use inputTimeSpectral, only :nTimeIntervalsSpectral
+    use inputTimeSpectral, only : nTimeIntervalsSpectral
+    use inputPhysics, only : useRoughSA
     use utils, only : setPointers, EChk
-    use iteration, only : groundLevel
     use surfaceFamilies, only : BCFamGroups
     use communication, only : adflow_comm_world, nProc, myID
     use sorting, only : famInList
@@ -148,6 +147,10 @@ contains
     integer(kind=intType), dimension(:), allocatable :: cellIdLocal, cellIdGlobal
     real(kind=realType), dimension(:), allocatable :: ksLocal, ksGlobal
 
+    ! exit if not in use
+    if (.not. useRoughSA) then
+       return
+    end if
 
     wallFamList => BCFamGroups(iBCGroupWalls)%famList
     nLevels = ubound(flowDoms,2)

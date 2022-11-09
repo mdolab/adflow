@@ -83,6 +83,9 @@ python module libadflow
          subroutine updatewalldistancealllevels
          end subroutine updatewalldistancealllevels
 
+         subroutine updatewallroughness
+         end subroutine updatewallroughness
+
        end module walldistance
 
        module initializeflow
@@ -553,6 +556,12 @@ python module libadflow
            integer(kind=inttype) dimension(nblocks),intent(in) :: blocks
            integer(kind=inttype), optional,intent(in),check(len(blocks)>=nblocks),depend(blocks) :: nblocks=len(blocks)
          end subroutine updaterotationrate
+
+         subroutine updatesurfaceroughness(ks_in, famlist, nfamlist) ! in :test:updatesurfaceroughness.f90
+           real(kind=realtype) ,intent(in) :: ks_in
+           integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+           integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
+         end subroutine updatesurfaceroughness
 
          subroutine preprocessingoverset(flag,n, closedfamlist, nfam) ! in :test:preprocessingAPI.F90:preprocessingapi
            integer(kind=inttype) dimension(n) :: flag
