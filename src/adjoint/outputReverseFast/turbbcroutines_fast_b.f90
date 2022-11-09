@@ -1182,12 +1182,12 @@ bocos:do nn=1,nviscbocos
     real(kind=realtype) :: saroughfact
 ! local variablse
     integer(kind=inttype) :: i, j, k
-    if (useroughsa) then
-      saroughfact = (ks(i, j, k)-d2wall(i, j, k)/0.03)/(ks(i, j, k)+&
-&       d2wall(i, j, k)/0.03)
+    if (.not.useroughsa) then
+      saroughfact = one
       return
     else
-      saroughfact = one
+      saroughfact = (ks(i, j, k)-d2wall(i, j, k)/0.03)/(ks(i, j, k)+&
+&       d2wall(i, j, k)/0.03)
     end if
   end function saroughfact
 end module turbbcroutines_fast_b

@@ -1408,13 +1408,13 @@ contains
    ! local variablse
    integer(kind=intType) :: i, j, k
 
-   if (useRoughSA) then
-      saRoughFact = (ks(i,j,k) - d2wall(i,j,k)/0.03) / &
-           (ks(i,j,k) + d2wall(i,j,k)/0.03)
+   if (.not. useRoughSA) then
+      saRoughFact = one
       return
    end if
 
-   saRoughFact = one
+   saRoughFact = (ks(i,j,k) - d2wall(i,j,k)/0.03) / &
+        (ks(i,j,k) + d2wall(i,j,k)/0.03)
 
   end function  saRoughFact
 
