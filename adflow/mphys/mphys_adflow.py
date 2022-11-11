@@ -1,11 +1,11 @@
-import numpy as np
 from pprint import pprint as pp
 
-from adflow import ADFLOW
+import numpy as np
 from idwarp import USMesh
-
-from openmdao.api import Group, ImplicitComponent, ExplicitComponent, AnalysisError
 from mphys.builder import Builder
+from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
+
+from adflow import ADFLOW
 
 from .om_utils import get_dvs_and_cons
 
@@ -1149,7 +1149,7 @@ class ADflowBuilder(Builder):
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
-        user_family_groups=None, # Dictonary of {group: surfs} to add
+        user_family_groups=None,  # Dictonary of {group: surfs} to add
     ):
 
         # options dictionary for ADflow
