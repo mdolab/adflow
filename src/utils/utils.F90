@@ -1247,7 +1247,7 @@ module utils
     !
     !      Computes the stability derivatives based on the time spectral
     !      solution of a given mesh. Takes in the force coefficients at
-    !      all time instantces and computes the agregate parameters
+    !      all time instantces and computes the aggregate parameters
     !
     use constants
     use communication

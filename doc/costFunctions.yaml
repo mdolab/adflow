@@ -10,12 +10,12 @@ drag:
 
 cl:
   desc: >
-    Lift coefficient computed as lift over the product of dynamic pressure and ``refArea`` declared in ``AeroProblem()``.
+    Lift coefficient computed as :math:`\frac{L}{qA}` where :math:`A` is ``refArea`` declared in ``AeroProblem()`` and :math:`q` is dynamic pressure.
     Units: None
 
 cd:
   desc: >
-    Drag coefficient computed as drag over the product of dynamic pressure and ``refArea`` declared in ``AeroProblem()``.
+    Drag coefficient computed as :math:`\frac{D}{qA}` where :math:`A` is ``refArea`` declared in ``AeroProblem()`` and :math:`q` is dynamic pressure.
     Units: None
 
 clp:
@@ -50,19 +50,19 @@ cdm:
 
 fx:
   desc: >
-    Force from surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the global ``x`` direction.
-    Note that if ``x`` is the streamwise direction for a zero angle of attack wing, this is NOT the drag force when you apply a non-zero angle of attack.
+    Force from surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the global :math:`x` direction.
+    Note that if :math:`x` is the streamwise direction for a zero angle of attack wing, this is NOT the drag force when you apply a non-zero angle of attack.
     The same logic applies for ``fy`` and ``fz``.
     Units: Newtons
 
 fy:
   desc: >
-    Like ``fx`` but in the global ``y`` direction
+    Like ``fx`` but in the global :math:`y` direction
     Units: Newtons
 
 fz:
   desc: >
-    Like ``fx`` but in the global ``z`` direction
+    Like ``fx`` but in the global :math:`z` direction
     Units: Newtons
 
 cfx:
@@ -87,153 +87,161 @@ cfxm:
 
 cfy:
   desc: >
-    Like ``cfx`` but in the global ``y`` direction.
+    Like ``cfx`` but in the global :math:`y` direction.
 
 cfyp:
   desc: >
-    Like ``cfxp`` but in the global ``y`` direction.
+    Like ``cfxp`` but in the global :math:`y` direction.
 
 cfyv:
   desc: >
-    Like ``cfxv`` but in the global ``y`` direction.
+    Like ``cfxv`` but in the global :math:`y` direction.
 
 cfym:
   desc: >
-    Like ``cfxm`` but in the global ``y`` direction.
+    Like ``cfxm`` but in the global :math:`y` direction.
 
 cfz:
   desc: >
-    Like ``cfx`` but in the global ``z`` direction.
+    Like ``cfx`` but in the global :math:`z` direction.
 
 cfzp:
   desc: >
-    Like ``cfxp`` but in the global ``z`` direction.
+    Like ``cfxp`` but in the global :math:`z` direction.
 
 cfzv:
   desc: >
-    Like ``cfxv`` but in the global ``z`` direction.
+    Like ``cfxv`` but in the global :math:`z` direction.
 
 cfzm:
   desc: >
-    Like ``cfxm`` but in the global ``z`` direction.
+    Like ``cfxm`` but in the global :math:`z` direction.
 
 mx:
   desc: >
-    Moment about ``x`` axis, origin if ``refAxis`` not specified.
+    Moment about :math:`x` axis, origin if ``refAxis`` not specified.
     Units: Newton-meter 
 
 my:
   desc: >
-    Moment about ``y`` axis, origin if ``refAxis`` not specified.
+    Moment about :math:`y` axis, origin if ``refAxis`` not specified.
     Units: Newton-meter 
 
 mz:
   desc: >
-    Moment about ``z`` axis, origin if ``refAxis`` not specified.
+    Moment about :math:`z` axis, origin if ``refAxis`` not specified.
     Units: Newton-meter 
 
 cmx:
   desc: >
-    Moment coefficient about ``x`` axis, origin if ``refAxis`` not specified.
+    Moment coefficient about :math:`x` axis, origin if ``refAxis`` not specified.
     Units: None
 
 cmy:
   desc: >
-    Moment coefficient about ``y`` axis, origin if ``refAxis`` not specified.
+    Moment coefficient about :math:`y` axis, origin if ``refAxis`` not specified.
     Units: None
 
 cmz:
   desc: >
-    Moment coefficient about ``z`` axis computed as moment over the product of dynamic pressure, ``refArea``, and a reference length (usually the mean aerodynamic chord) # TODO GN: someone please check this reference length.
-    The ``z`` axis is at the origin if ``refAxis`` not specified.
+    Moment coefficient about :math:`z` axis computed :math:`\frac{M_z}{qAc_{MAC}}` where :math:`A` is ``refArea`` and :math:`c_{MAC}` is a reference length (usually the mean aerodynamic chord) # TODO GN: someone please check this reference length.
+    The :math:`z` axis is at the origin if ``refAxis`` not specified.
     Units: None
 
 cm0:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    
+    TODO
+
 cmzalpha:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    Don't know either, Stability derivative, moment slope
+    Stability derivative, moment slope
+    TODO
 
 cmzalphadot:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
     Stability derivative? Pitch rate coef moment?
+    TODO
 
 cl0:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO
 
 clalpha:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
     Lift slope dcl/dalpha
+    TODO: Someone who knows aircraft stability should verify these
 
 clalphadot:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
     Lift stability pitch derivative
+    TODO: Someone who knows aircraft stability should verify these
 
 cfy0:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 cfyalpha:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
+    TODO: Someone who knows aircraft stability should verify these
     ??
 
 cfyalphddot:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 cd0:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 cdalpha:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 cdalphadot:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
 
 cmzq:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 cmzqdot:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 clq:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 clqdot:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
-    ??
+    TODO: Someone who knows aircraft stability should verify these
 
 cbend:
   desc: >
-    ??
+    NOTE: Time spectral stability derivatives are broken as of 2022.
+    Bending coefficient defined as :math:`\sigma L^2/ (qA)`
+    TODO: Someone who knows aircraft stability should verify these
 
 sepsensor:
   desc: >
-    ??
+    TODO: Saja
+    See :cite:t:`<add relevant citation>`
 
 sepsensoravgx:
   desc: >
@@ -249,35 +257,48 @@ sepsensoravgz:
 
 cavitation:
   desc: >
-    Cavitation sensor, not to be confused with the cavitation number
+    Cavitation sensor, not to be confused with the cavitation number.
+    It is a modified Heaviside function accounting for how much :math:`-C_p` exceeds the cavitation number.
+    See :cite:t:`Liao2021a`.
+    Units: None
 
 mdot:
   desc: >
-    ??
+    Mass flow rate in the freestream direction.
+    This quantity is important for computing momentum forces.
+    Units: kg - s:math:`^{-1}`
 
 mavgptot:
   desc: >
-    ??
+    Mass flow rate averaged total pressure 
+    # TODO: GN- I have no idea if this is right based on the source code --> surfaceIntegrations.F90 --> search for 'mass_Ptot'
+    Units: Pascal
 
 aavgptot:
   desc: >
-    ??
+    Cell area averaged total pressure 
+    Units: Pascal
 
 aavgps:
   desc: >
-    ??
+    Cell area averaged static pressure
+    Units: Pascal
 
 mavgttot:
   desc: >
-    ??
+    Mass flow rate averaged total temperature 
+    # TODO: GN- I have no idea if this is right based on the source code --> surfaceIntegrations.F90 --> search for 'mass_Ttot'
+    Units: Kelvin
 
 mavgps:
   desc: >
-    ??
+    Mass flow rate averaged static pressure
+    Units: Pascal
 
 mavgmn:
   desc: >
-    ??
+    Mass flow rate averaged Mach number
+    Units: None
 
 area:
   desc: >
