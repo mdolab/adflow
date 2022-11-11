@@ -261,7 +261,7 @@ contains
 
     if (TSSTability) then
        print *,'Error: TSStabilityDerivatives are *BROKEN*. They need to be '&
-            &'completely verifed from scratch'
+            &'completely verified from scratch'
        stop
 
        call computeTSDerivatives(force, moment, coef0, dcdalpha, &
@@ -853,7 +853,7 @@ contains
       Mp(3) = Mp(3) + mz
 
       ! Momentum forces are a little tricky.  We negate because
-      ! have to re-apply fact to massFlowRateLocal to undoo it, because
+      ! have to re-apply fact to massFlowRateLocal to undo it, because
       ! we need the signed behavior of ssi to get the momentum forces correct.
       ! Also, the sign is flipped between inflow and outflow types
 
@@ -1028,7 +1028,7 @@ contains
     ! Loop over all possible boundary conditions
     bocos: do mm=1, nBocos
 
-       ! Determine if this boundary condition is to be incldued in the
+       ! Determine if this boundary condition is to be included in the
        ! currently active group
        famInclude: if (famInList(BCData(mm)%famID, famList)) then
 

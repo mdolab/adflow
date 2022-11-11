@@ -1,192 +1,230 @@
 lift:
   desc: >
-    Surface pressures integrated in the direction of the lift index (see options page), Newtons
+    Surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the direction of the ``liftIndex`` (i.e., dot product in this direction).
+    Units: Newtons
 
 drag:
   desc: >
-    Surface pressures integrated in the streamwise direction, Newtons
+    Surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the streamwise direction (i.e., dot product in this direction).
+    Units: Newtons
 
 cl:
   desc: >
-    Lift coefficient computed as lift over the product of dynamic pressure and refArea declared in AeroProblem(), unitless
+    Lift coefficient computed as lift over the product of dynamic pressure and ``refArea`` declared in ``AeroProblem()``.
+    Units: None
 
 cd:
   desc: >
-    Drag coefficient computed as drag over the product of dynamic pressure and refArea declared in AeroProblem(), unitless 
+    Drag coefficient computed as drag over the product of dynamic pressure and ``refArea`` declared in ``AeroProblem()``.
+    Units: None
 
 clp:
   desc: >
-    Pressure component of the lift coefficient, unitless
-    TODO: I don't actually know this
+    Components of the lift coefficient ``cl`` from pressure / normal stresses.
+    Units: None
 
 clv:
   desc: >
-    Viscous component of the lift coefficient, unitless
-    TODO: I don't actually know if this is correct or if it means lift considering viscosity, same applies to all other funcs with 'viscous in name'
+    Components of the lift coefficient ``cl`` from viscous / shear stresses.
+    Units: None
 
 clm:
   desc: >
-    Momentum component of the lift coefficient, unitless
-    TODO: What even is this
+    Momentum component of the lift coefficient ``cl`` that stems from time rate of change of velocity (unsteady simulation).
+    Units: None
 
 cdp:
   desc: >
-    Pressure component of the drag coefficient, unitless
+    Components of the drag coefficient ``cd`` from pressure / normal stresses.
+    Units: None
 
 cdv:
   desc: >
-    Viscous component of the drag coefficient, unitless
+    Components of the drag coefficient ``cd`` from viscous / shear stresses.
+    Units: None
 
 cdm:
   desc: >
-    Momentum component of the drag coefficient, unitless
+    Momentum component of the drag coefficient ``cd`` that stems from time rate of change of velocity (unsteady simulation).
+    Units: None
 
 fx:
   desc: >
-    Force from surface pressures integrated x direction, Newtons
+    Force from surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the global ``x`` direction.
+    Note that if ``x`` is the streamwise direction for a zero angle of attack wing, this is NOT the drag force when you apply a non-zero angle of attack.
+    The same logic applies for ``fy`` and ``fz``.
+    Units: Newtons
 
 fy:
   desc: >
-    Force from surface pressures integrated y direction, Newtons
+    Like ``fx`` but in the global ``y`` direction
+    Units: Newtons
 
 fz:
   desc: >
-    Force from surface pressures integrated z direction, Newtons
+    Like ``fx`` but in the global ``z`` direction
+    Units: Newtons
 
 cfx:
   desc: >
-    fx coefficient computed as fx over the product of dynamic pressure and refArea, unitless
+    fx force coefficient computed as ``fx`` over the product of dynamic pressure and ``refArea``
+    Units: None
 
 cfxp:
   desc: >
-    Pressure component of fx coefficient, unitless
+    Components of the fx coefficient ``cfx`` from pressure / normal stresses.
+    Units: None
 
 cfxv:
   desc: >
-    Viscous component of fx coefficient, unitless
+    Components of the fx coefficient ``cfx`` from viscous / shear stresses.
+    Units: None
 
 cfxm:
   desc: >
-    Momentum component of fx coefficient, unitless
+    Momentum component of the fx coefficient ``cfx`` that stems from time rate of change of velocity (unsteady simulation).
+    Units: None
 
 cfy:
   desc: >
-    fy coefficient computed as fy over the product of dynamic pressure and refArea, unitless
+    Like ``cfx`` but in the global ``y`` direction.
 
 cfyp:
   desc: >
-    Pressure component of fy coefficient, unitless
+    Like ``cfxp`` but in the global ``y`` direction.
 
 cfyv:
   desc: >
-    Viscous component of fy coefficient, unitless
+    Like ``cfxv`` but in the global ``y`` direction.
 
 cfym:
   desc: >
-    Momentum component of fy coefficient, unitless
+    Like ``cfxm`` but in the global ``y`` direction.
 
 cfz:
   desc: >
-    fz coefficient computed as fz over the product of dynamic pressure and refArea, unitless
+    Like ``cfx`` but in the global ``z`` direction.
 
 cfzp:
   desc: >
-    Pressure component of fz coefficient, unitless
+    Like ``cfxp`` but in the global ``z`` direction.
 
 cfzv:
   desc: >
-    Viscous component of fz coefficient, unitless
+    Like ``cfxv`` but in the global ``z`` direction.
 
 cfzm:
   desc: >
-    Momentum component of fz coefficient, unitless
+    Like ``cfxm`` but in the global ``z`` direction.
 
 mx:
   desc: >
-    Moment about x axis, origin if refAxis not specified, N-m 
+    Moment about ``x`` axis, origin if ``refAxis`` not specified.
+    Units: Newton-meter 
 
 my:
   desc: >
-    Moment about y axis, origin if refAxis not specified, N-m 
+    Moment about ``y`` axis, origin if ``refAxis`` not specified.
+    Units: Newton-meter 
 
 mz:
   desc: >
-    Moment about z axis, origin if refAxis not specified, N-m 
+    Moment about ``z`` axis, origin if ``refAxis`` not specified.
+    Units: Newton-meter 
 
 cmx:
   desc: >
-    Moment coefficient about x axis, origin if refAxis not specified, unitless 
+    Moment coefficient about ``x`` axis, origin if ``refAxis`` not specified.
+    Units: None
 
 cmy:
   desc: >
-    Moment coefficient about y axis, origin if refAxis not specified, unitless 
+    Moment coefficient about ``y`` axis, origin if ``refAxis`` not specified.
+    Units: None
 
 cmz:
   desc: >
-    Moment coefficient about z axis, origin if refAxis not specified, unitless 
+    Moment coefficient about ``z`` axis computed as moment over the product of dynamic pressure, ``refArea``, and a reference length (usually the mean aerodynamic chord) # TODO GN: someone please check this reference length.
+    The ``z`` axis is at the origin if ``refAxis`` not specified.
+    Units: None
 
 cm0:
   desc: >
-    TODO: don't know this 
-
+    NOTE: Time spectral stability derivatives are broken as of 2022.
+    
 cmzalpha:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     Don't know either, Stability derivative, moment slope
 
 cmzalphadot:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     Stability derivative? Pitch rate coef moment?
 
 cl0:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 clalpha:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     Lift slope dcl/dalpha
 
 clalphadot:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     Lift stability pitch derivative
 
 cfy0:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cfyalpha:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cfyalphddot:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cd0:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cdalpha:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cdalphadot:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cmzq:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cmzqdot:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 clq:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 clqdot:
   desc: >
+    NOTE: Time spectral stability derivatives are broken as of 2022.
     ??
 
 cbend:
