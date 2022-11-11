@@ -22,8 +22,8 @@ subroutine writeSol(famList, nFamList)
   implicit none
 
 
-  integer(kind=intType), dimension(nFamList), intent(in) :: famList
   integer(kind=intType), intent(in) :: nFamList
+  integer(kind=intType), dimension(nFamList), intent(in) :: famList
   !
   !      Local variables.
   !

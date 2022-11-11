@@ -106,10 +106,10 @@ contains
     use cpcurvefits
     use inputphysics, only : cpmodel, gammaconstant
     implicit none
-    integer(kind=inttype), intent(in) :: mm
 !
 !      subroutine arguments.
 !
+    integer(kind=inttype), intent(in) :: mm
     real(kind=realtype), dimension(mm), intent(in) :: t
     real(kind=realtype), dimension(mm), intent(out) :: gamma
 !
