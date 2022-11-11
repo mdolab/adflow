@@ -302,12 +302,12 @@ contains
 
        if(myID == 0 .and. printIterations) then
           print "(a)", "#"
-          print "(a)", "# Writing slices file(s) ..."
+          print "(a)", "# Writing slices file(s): "
        endif
 
-       do sps=1,nTimeIntervalsSpectral
+       do sps=1, nTimeIntervalsSpectral
 
-          ! If it is time spectral we need to agument the filename
+          ! If it is time spectral we need to augument the filename
           if (equationMode == timeSpectral) then
              write(intString,"(i7)") sps
              intString = adjustl(intString)
@@ -319,6 +319,8 @@ contains
           file = 11
           ! Open file on root proc:
           if (myid == 0) then
+             ! Print the filename to stdout
+             print "(a,4x,a)", "#", trim(fname)
              open(unit=file, file=trim(fname))
 
              ! Write Header Information
