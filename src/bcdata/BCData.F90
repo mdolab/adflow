@@ -993,7 +993,7 @@ contains
     use blockPointers, only : BCData, nbkGlobal, BCFaceID, sectionID
     use flowVarRefState, only : nwt, pInfCorr, wInf, uRef, rhoRef, pRef, muRef
     use inputPhysics, onlY : equations, flowType, velDirFreeStream
-    use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate
+    use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate, returnFail
     implicit none
     !
     !      Subroutine arguments.
