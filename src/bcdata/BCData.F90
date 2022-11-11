@@ -1116,7 +1116,7 @@ contains
 102    format("Zone ",a,", supersonic inlet boundary subface ",a, &
             ": Velocity points out of the domain for some faces.")
 
-       call terminate("BCDataSupersonicInflow", errorMessage)
+       call returnFail("BCDataSupersonicInflow", errorMessage)
     endif
 
   contains
