@@ -1500,8 +1500,8 @@ contains
     integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
     integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
-    character*40 :: tmpStr, zoneName
-    character*32 :: coorNames(3)
+    character(len=40) :: tmpStr, zoneName
+    character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
 
     coorNames(1) = "CoordinateX"
@@ -1575,7 +1575,7 @@ contains
           sizes(8) = 0
           sizes(9) = 0
 
-999       FORMAT('domain.', I5.5,'proc.'I3.3)
+999       FORMAT('domain.', I5.5,'proc.', I3.3)
           zoneCounter = zoneCounter + 1
           write(zonename, 999) zoneCounter, myid
 
@@ -1693,8 +1693,8 @@ contains
     integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
     integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
-    character*40 :: tmpStr, zoneName
-    character*32 :: coorNames(3)
+    character(len=40) :: tmpStr, zoneName
+    character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
 
     coorNames(1) = "CoordinateX"
@@ -2124,9 +2124,9 @@ contains
     implicit none
 
     ! Input/Output
+    integer(kind=intType), intent(in) :: n, nFam
     integer(kind=intType), dimension(n) :: flag
     integer(kind=intType), dimension(nFam) :: closedFamList
-    integer(kind=intType), intent(in) :: n, nFam
 
     ! Working
     integer(kind=intType) :: nLevels, level, sps, nn, nDoms, mm

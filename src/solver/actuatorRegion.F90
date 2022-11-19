@@ -22,9 +22,9 @@ contains
     implicit none
 
     ! Input variables
+    integer(kind=intType), intent(in) :: nPts, nConn, famID
     real(kind=realType), dimension(3, nPts), intent(in), target :: pts
     integer(kind=intType), dimension(4, nConn), intent(in), target :: conn
-    integer(kind=intType), intent(in) :: nPts, nConn, famID
     real(kind=realType), intent(in), dimension(3) :: axis1, axis2
     character(len=*) :: famName
     real(kind=realType) :: thrust, torque, heat, relaxStart, relaxEnd
