@@ -27,6 +27,7 @@ contains
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
 &   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_exact, &
 &   cpmin_rho
+    use inputcostfunctions, only : computecavitation
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector, getdirvector_b
@@ -185,8 +186,12 @@ contains
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
 ! final part of the ks computation
-      funcvalues(costfunccpmin) = funcvalues(costfunccpmin) + ovrnts*(&
-&       cpmin_exact-log(globalvals(icpmin, sps))/cpmin_rho)
+      if (computecavitation) funcvalues(costfunccpmin) = funcvalues(&
+&         costfunccpmin) + ovrnts*(cpmin_exact-log(globalvals(icpmin, &
+&         sps))/cpmin_rho)
+! only calculate the log part if we are actually computing for cavitation.
+! if we are not computing cavitation, the icpmin in globalvals will be zero,
+! which doesn't play well with log. we just want to return zero here.
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
 &       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
@@ -595,6 +600,11 @@ contains
 ! ------------
 ! ------------
 ! final part of the ks computation
+        if (computecavitation) then
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
 ! mass flow like objective
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
@@ -677,8 +687,10 @@ contains
 &         funcvaluesd(costfuncsepsensoravgx)
         globalvalsd(iaxismoment, sps) = globalvalsd(iaxismoment, sps) + &
 &         ovrnts*funcvaluesd(costfuncaxismoment)
-        globalvalsd(icpmin, sps) = globalvalsd(icpmin, sps) - ovrnts*&
-&         funcvaluesd(costfunccpmin)/(cpmin_rho*globalvals(icpmin, sps))
+        call popcontrol1b(branch)
+        if (branch .eq. 0) globalvalsd(icpmin, sps) = globalvalsd(icpmin&
+&           , sps) - ovrnts*funcvaluesd(costfunccpmin)/(cpmin_rho*&
+&           globalvals(icpmin, sps))
         globalvalsd(icavitation, sps) = globalvalsd(icavitation, sps) + &
 &         ovrnts*funcvaluesd(costfunccavitation)
         globalvalsd(isepsensor, sps) = globalvalsd(isepsensor, sps) + &
@@ -780,6 +792,7 @@ contains
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
 &   machcoef, lengthref, alpha, beta, liftindex, cpmin_exact, cpmin_rho
+    use inputcostfunctions, only : computecavitation
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector
@@ -891,8 +904,12 @@ contains
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
 ! final part of the ks computation
-      funcvalues(costfunccpmin) = funcvalues(costfunccpmin) + ovrnts*(&
-&       cpmin_exact-log(globalvals(icpmin, sps))/cpmin_rho)
+      if (computecavitation) funcvalues(costfunccpmin) = funcvalues(&
+&         costfunccpmin) + ovrnts*(cpmin_exact-log(globalvals(icpmin, &
+&         sps))/cpmin_rho)
+! only calculate the log part if we are actually computing for cavitation.
+! if we are not computing cavitation, the icpmin in globalvals will be zero,
+! which doesn't play well with log. we just want to return zero here.
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
 &       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
