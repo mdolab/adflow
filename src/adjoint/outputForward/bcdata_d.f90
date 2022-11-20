@@ -1572,6 +1572,7 @@ contains
     logical :: velxpresent, velypresent, velzpresent
     logical :: velrpresent, veltpresent
     intrinsic trim
+    external returnfail
 ! store the logicals, which indicate success or failure
 ! a bit more readable.
     rhopresent = bcvarpresent(1)
@@ -1634,7 +1635,7 @@ contains
     if (nn .gt. 0) then
       write(errormessage, 102) trim(cgnsdoms(nbkglobal)%zonename), trim(&
 &     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasupersonicinflow', errormessage)
+      call returnfail('bcdatasupersonicinflow', errormessage)
     end if
  100 format('zone ',a,', boundary subface ',a, &
 &          ': not enough data specified for supersonic inlet')
@@ -1824,6 +1825,7 @@ contains
     logical :: velxpresent, velypresent, velzpresent
     logical :: velrpresent, veltpresent
     intrinsic trim
+    external returnfail
     integer :: ii1
 ! store the logicals, which indicate success or failure
 ! a bit more readable.
@@ -1948,7 +1950,7 @@ contains
     if (nn .gt. 0) then
       write(errormessage, 102) trim(cgnsdoms(nbkglobal)%zonename), trim(&
 &     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasupersonicinflow', errormessage)
+      call returnfail('bcdatasupersonicinflow', errormessage)
     end if
  100 format('zone ',a,', boundary subface ',a, &
 &          ': not enough data specified for supersonic inlet')
