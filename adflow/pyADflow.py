@@ -576,10 +576,10 @@ class ADFLOW(AeroSolver):
         positions : float or array
             The list of slice positions *along the axis given by direction*.
         sliceType : str {'relative', 'absolute'}
-            Relative slices are 'sliced' at the beginning and then parametricly
+            Relative slices are 'sliced' at the beginning and then parametrically
             move as the geometry deforms. As a result, the slice through the
             geometry may not remain planar. An absolute slice is re-sliced for
-            every out put so is always exactly planar and always at the initial
+            every output so is always exactly planar and always at the initial
             position the user indicated.
         groupName : str
              The family to use for the slices. Default is None corresponding to all
@@ -635,10 +635,10 @@ class ADFLOW(AeroSolver):
 
     def addArbitrarySlices(self, normals, points, sliceType="relative", groupName=None):
         """
-        Add slices that vary arbitrarily in space. this is a generalization
-        of the routine above, where we have the user specify a list of "normals"
+        Add slices that vary arbitrarily in space. This is a generalization
+        of the :meth:`addSlices <.addSlices>` routine, where we have the user specify a list of "normals"
         and "points" that define slice planes. Rest of the code is the same.
-        this way users can add slices that follow the dihedral of a wing for example.
+        This way users can add slices that follow the dihedral of a wing for example.
 
         Parameters
         ----------
@@ -650,10 +650,10 @@ class ADFLOW(AeroSolver):
         points : ndarray (n_slice, 3)
             Point coordinates that define a slicing plane along with the normals
         sliceType : str {'relative', 'absolute'}
-            Relative slices are 'sliced' at the beginning and then parametricly
+            Relative slices are 'sliced' at the beginning and then parametrically
             move as the geometry deforms. As a result, the slice through the
             geometry may not remain planar. An absolute slice is re-sliced for
-            every out put so is always exactly planar and always at the initial
+            every output so is always exactly planar and always at the initial
             position the user indicated.
         groupName : str
              The family to use for the slices. Default is None corresponding to all
@@ -682,7 +682,9 @@ class ADFLOW(AeroSolver):
             tmp[:] = normals
             normals = tmp
 
-        # for regular slices, we dont use the direction vector to pick a projection direction
+        # for non-cylindrical slices, we dont use the direction vector to pick a projection direction
+        # so the slice_dir value can be set arbitrarily, and because the use_dir flag is False, the code
+        # doesn't actually use it.
         slice_dir = [1.0, 0.0, 0.0]
         use_dir = False
 
@@ -721,7 +723,7 @@ class ADFLOW(AeroSolver):
         self, pt1, pt2, n_slice=180, slice_beg=0.0, slice_end=360.0, sliceType="relative", groupName=None
     ):
         """
-        Add cylindrical projection slices. The cylinrical projection axis is defined
+        Add cylindrical projection slices. The cylindrical projection axis is defined
         from pt1 to pt2. Then we start from the lift direction and rotate around this
         axis until we are back at the beginning. The rotation direction follows the
         right hand rule; we rotate the plane in the direction of vectors from pt1 to
@@ -736,14 +738,14 @@ class ADFLOW(AeroSolver):
         n_slice : int
             number of slices around a 360 degree full rotation.
         slice_beg : float
-            beginning of the slices in the rotation direction
+            beginning of the slices in the rotation direction in degrees
         slice_end : float
-            end of the slices in the rotation direction
+            end of the slices in the rotation direction in degrees
         sliceType : str {'relative', 'absolute'}
-            Relative slices are 'sliced' at the beginning and then parametricly
+            Relative slices are 'sliced' at the beginning and then parametrically
             move as the geometry deforms. As a result, the slice through the
             geometry may not remain planar. An absolute slice is re-sliced for
-            every out put so is always exactly planar and always at the initial
+            every output so is always exactly planar and always at the initial
             position the user indicated.
         groupName : str
              The family to use for the slices. Default is None corresponding to all
@@ -774,9 +776,6 @@ class ADFLOW(AeroSolver):
         # the unit vector on the axis
         vec1 = pt2 - pt1
         vec1 /= numpy.linalg.norm(vec1)
-        # update p2 so that the distance between p1 and p2 is one.
-        # not necessary, but probably better for numerical stability
-        pt2 = pt1 + vec1
 
         # loop over angles
         for ii, angle in enumerate(angles):

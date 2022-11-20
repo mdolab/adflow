@@ -11,8 +11,8 @@ module tecplotIO
      !                  side of node
      ! w(2, nNodes) : Weights used to multiply the two global nodes defined in
      !                ind to get compute nodal values (positions, forces etc)
-     ! pL, vL, pD, vD : Pressure and viscous lift, pressure and viscous drag
-     ! CLp, CLv, CDp, CDv : Coefficients of pressure and viscous lift and drag
+     ! pL, vL, pD, vD, pM, vM : Pressure and viscous components of lift, drag, and moment
+     ! CLp, CLv, CDp, CDv, CMp, CMv : Coefficients of pressure and viscous lift, drag, and moment
      ! chord: chord of section
      ! pt, normal: The point and the normal that defines the slicing plane
      ! dir_vec: a direction vector that we use to filter sliced line elements.
