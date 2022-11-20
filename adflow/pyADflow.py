@@ -297,8 +297,6 @@ class ADFLOW(AeroSolver):
             # index needs to go in as fortran numbering, so add 1
             name = getPy3SafeString(self.adflow.utils.getcgnszonename(i + 1).strip())
             self.CGNSZoneNameIDs[name] = i + 1
-            # TODO check this: do we need to do this on root and broadcast?
-            # Looks like it is fine
 
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption("cutCallBack")
@@ -851,7 +849,7 @@ class ADFLOW(AeroSolver):
             frame relevant to the current CFD case. This allows user to apply
             arbitrary modifications to the loaded plot3d surface. The call
             signature is documented in the DVGeometry's addPointset method:
-            https://github.com/mdolab/pygeo/blob/main/pygeo/parameterization/DVGeo.py
+            :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>`
         """
 
         self.hasIntegrationSurfaces = True
@@ -975,7 +973,7 @@ class ADFLOW(AeroSolver):
             frame relevant to the current CFD case. This allows user to apply
             arbitrary modifications to the loaded plot3d surface. The call
             signature is documented in the DVGeometry's addPointset method:
-            https://github.com/mdolab/pygeo/blob/main/pygeo/parameterization/DVGeo.py
+            :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>`
 
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
