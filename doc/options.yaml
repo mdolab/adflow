@@ -1399,7 +1399,8 @@ sepSensorSharpness:
 
 computeCavitation:
   desc: >
-    Whether or not to compute cavitation.
+    Whether or not to compute cavitation related cost functions, which are `cavitation` and `cpMin`.
+    If this option is not set to `True`, the code will return zero for these two cost functions.
 
 cavSensorOffset:
   desc: >
