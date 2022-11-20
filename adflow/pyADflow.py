@@ -836,14 +836,18 @@ class ADFLOW(AeroSolver):
             # name...so we will number sequentially from python
             jj = self.nSlice + ii + 1
             if sliceType == "relative":
-                sliceName = f"Slice_{jj:04d} {groupTag} Para Init Theta={angle * 180.0 / numpy.pi:.4f}" + \
-                    f" pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, " + \
-                    f"{slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
+                sliceName = (
+                    f"Slice_{jj:04d} {groupTag} Para Init Theta={angle * 180.0 / numpy.pi:.4f}"
+                    + f" pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, "
+                    + f"{slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
+                )
                 self.adflow.tecplotio.addparaslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
             else:
-                sliceName = f"Slice_{jj:04d} {groupTag} Absolute Theta={angle * 180.0 / numpy.pi:.4f}" + \
-                    f" pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, " + \
-                    f"{slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
+                sliceName = (
+                    f"Slice_{jj:04d} {groupTag} Absolute Theta={angle * 180.0 / numpy.pi:.4f}"
+                    + f" pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, "
+                    + f"{slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
+                )
                 self.adflow.tecplotio.addabsslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
 
         self.nSlice += n_slice
