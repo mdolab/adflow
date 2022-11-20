@@ -8,7 +8,7 @@ import copy
 from adflow import ADFLOW
 from adflow import ADFLOW_C
 
-# import the testing utilities that live a few directories up
+# import the testing utilities
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_naca0012_cavitation
 import reg_test_classes
@@ -66,7 +66,6 @@ class CavitationBasicTests(reg_test_classes.RegTest):
         self.CFDSolver = CFDSolver
 
     def test_cavitation_metrics_and_derivatives(self):
-        "Tests if the correct amount of momentum is added to the flow by the actuator"
 
         evalFuncs = ["cavitation", "cpmin"]
 
