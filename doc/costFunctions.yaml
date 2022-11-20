@@ -258,9 +258,20 @@ sepsensoravgz:
 cavitation:
   desc: >
     Cavitation sensor, not to be confused with the cavitation number.
-    It is a modified Heaviside function accounting for how much :math:`-C_p` exceeds the cavitation number.
+    It is a modified Heaviside function accounting for how much :math:`-C_p` exceeds the cavitation number over the given surface family.
+    The `computeCavitation` flag must be set to `True` because this introduces additional computations.
+    You probably will specify the surface family with `cgnsutilities`.
     See :cite:t:`Liao2021a`.
     Units: None
+
+cpmin:
+  desc: >
+    Minimum coefficient of pressure (:math:`C_p`) over the given surface family.
+    This function is computed with Kreisselmeier-Steinhauser (KS) function aggregation resulting in a conservative constraint because the `cpmin` outputted will never be more negative than the true :math:`C_{p,min}`.
+    The `computeCavitation` flag must be set to `True` because this introduces additional computations involving global communications across processors;
+    If `False`, the returned value is zero.
+    You probably will specify the surface family with `cgnsutilities`.
+    Units: None 
 
 mdot:
   desc: >
