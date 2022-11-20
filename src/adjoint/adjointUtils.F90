@@ -599,7 +599,7 @@ contains
       ! Sets a block at irow, icol, if useTranspose is False
       ! Sets a block at icol, irow with transpose of blk if useTranspose is True
 
-      use utils, only : myisnan
+      use genericISNAN, only : myisnan
       implicit none
       real(kind=realType), dimension(nState, nState) :: blk
 
@@ -1288,7 +1288,7 @@ contains
     Mat matrix
     integer(kind=intType), intent(in) :: blockSize, m, n
     integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
-    character*(*) :: file
+    character(len=*) :: file
     integer(kind=intType) :: ierr, line
     ! if (blockSize > 1) then
        call MatCreateBAIJ(ADFLOW_COMM_WORLD, blockSize, &

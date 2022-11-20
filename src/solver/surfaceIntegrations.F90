@@ -936,9 +936,9 @@ contains
     use inputTimeSpectral , only : nTimeIntervalsSpectral
     implicit none
     ! Input/output Variables
+    integer(kind=intType) :: nGroups, nCost, nFamMax
     integer(kind=intType), dimension(nGroups, nFamMax) :: famLists
     real(kind=realType), dimension(nCost, nGroups), intent(out)  :: funcValues
-    integer(kind=intType) :: nGroups, nCost, nFamMax
 
     ! Local variable
 
