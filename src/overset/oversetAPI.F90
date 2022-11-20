@@ -2113,11 +2113,11 @@ contains
     implicit none
 
     ! Input/Output
+    integer(kind=intType), intent(in) :: npts, nconn, ncell, nblocks
     real(kind=realType), intent(in), dimension(3,npts) :: pts
     integer(kind=intType), intent(in), dimension(4,nconn) :: conn
     integer(kind=intType), intent(inout), dimension(ncell) :: flag
     integer(kind=intType), intent(in), dimension(nblocks) :: blockids
-    integer(kind=intType), intent(in) :: npts, nconn, ncell, nblocks
     integer(kind=intType), intent(in) :: k_min
 
     ! Working variables
