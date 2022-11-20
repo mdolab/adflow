@@ -10,6 +10,7 @@ contains
     use inputPhysics, only : liftDirection, dragDirection, surfaceRef, &
     machCoef, lengthRef, alpha, beta, liftIndex, cpmin_exact, &
     cpmin_rho
+    use inputCostFunctions, only : computeCavitation
     use inputTSStabDeriv, only : TSstability
     use utils, only : computeTSDerivatives
     use flowUtils, only : getDirVector
@@ -108,8 +109,14 @@ contains
        funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*globalVals(iSepSensor, sps)
        funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*globalVals(iCavitation, sps)
        ! final part of the KS computation
-       funcValues(costfunccpmin) = funcValues(costfunccpmin) + ovrNTS * &
-          (cpmin_exact - log(globalVals(iCpMin, sps)) / cpmin_rho)
+       if (computeCavitation) then
+          ! only calculate the log part if we are actually computing for cavitation.
+          ! If we are not computing cavitation, the iCpMin in globalVals will be zero,
+          ! which doesn't play well with log. we just want to return zero here.
+          funcValues(costfunccpmin) = funcValues(costfunccpmin) + ovrNTS * &
+               (cpmin_exact - log(globalVals(iCpMin, sps)) / cpmin_rho)
+       endif
+
        funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
        funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)

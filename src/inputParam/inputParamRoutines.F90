@@ -3808,7 +3808,7 @@ contains
     cpFile = ""                  ! Serves as a check later on.
 
     storeConvInnerIter = .false. ! Do not store the convergence of
-                                 ! iterations(inner iterations in unsteady mode). 
+                                 ! iterations(inner iterations in unsteady mode).
 
 #ifdef USE_SINGLE_PRECISION
     precisionGrid = precisionSingle   ! Default IO precision depends
@@ -4042,6 +4042,7 @@ contains
     usematrixfreedrdw = .False.
     sepSensorOffset = zero
     sepSensorSharpness = 10_realType
+    cpmin_exact = zero
   end subroutine setDefaultValues
 
   subroutine initializeIsoSurfaceVariables(values, nValues)
