@@ -633,7 +633,7 @@ class ADFLOW(AeroSolver):
 
         self.nSlice += N
 
-    def addArbitrarySlices(self, normals, points, sliceType="relative", groupName=None):
+    def addArbitrarySlices(self, normals, points, sliceType="relative", groupName=None, slice_dir=None):
         """
         Add slices that vary arbitrarily in space. This is a generalization
         of the :meth:`addSlices <.addSlices>` routine, where we have the user specify a list of "normals"
@@ -649,6 +649,11 @@ class ADFLOW(AeroSolver):
             the numbers of points and normals must match.
         points : ndarray (n_slice, 3)
             Point coordinates that define a slicing plane along with the normals
+        slice_dir : ndarray (n_slice, 3)
+            If this is provided, only the intersections that is in this direction
+            starting from the normal is kept. This is useful if you are slicing a
+            closed geometry and only want to keep one side of it. It is similar to
+            the functionality provided in :meth:`addCylindricalSlices <.addCylindricalSlices>`.
         sliceType : str {'relative', 'absolute'}
             Relative slices are 'sliced' at the beginning and then parametrically
             move as the geometry deforms. As a result, the slice through the
@@ -682,16 +687,25 @@ class ADFLOW(AeroSolver):
             tmp[:] = normals
             normals = tmp
 
-        # for non-cylindrical slices, we dont use the direction vector to pick a projection direction
-        # so the slice_dir value can be set arbitrarily, and because the use_dir flag is False, the code
-        # doesn't actually use it.
-        slice_dir = [1.0, 0.0, 0.0]
-        use_dir = False
+        if slice_dir is None:
+            # if we dont have a direction vector to pick a projection direction, we can just set this
+            # array to an arbitrary direction. Because the use_dir flag is false, the code won't actually
+            # use this array
+            dummy_slice_dir = [1.0, 0.0, 0.0]
+            use_dir = False
+        else:
+            use_dir = True
 
         for i in range(n_slice):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from python
             j = self.nSlice + i + 1
+
+            if use_dir:
+                direction = slice_dir[j]
+            else:
+                direction = dummy_slice_dir
+
             if sliceType == "relative":
                 sliceName = "Slice_%4.4d %s Para Init Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (
                     j,
@@ -703,7 +717,7 @@ class ADFLOW(AeroSolver):
                     points[i, 1],
                     points[i, 2],
                 )
-                self.adflow.tecplotio.addparaslice(sliceName, points[i], normals[i], slice_dir, use_dir, famList)
+                self.adflow.tecplotio.addparaslice(sliceName, points[i], normals[i], direction, use_dir, famList)
             else:
                 sliceName = "Slice_%4.4d %s Absolute Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (
                     j,
@@ -715,7 +729,7 @@ class ADFLOW(AeroSolver):
                     points[i, 1],
                     points[i, 2],
                 )
-                self.adflow.tecplotio.addabsslice(sliceName, points[i], normals[i], slice_dir, use_dir, famList)
+                self.adflow.tecplotio.addabsslice(sliceName, points[i], normals[i], direction, use_dir, famList)
 
         self.nSlice += n_slice
 
@@ -727,7 +741,9 @@ class ADFLOW(AeroSolver):
         from pt1 to pt2. Then we start from the lift direction and rotate around this
         axis until we are back at the beginning. The rotation direction follows the
         right hand rule; we rotate the plane in the direction of vectors from pt1 to
-        pt2 crossed with the lift direction.
+        pt2 crossed with the lift direction. This routine will not work as is if the
+        cylinder axis is exactly aligned with the lift direction. If that use case is
+        needed, consider using :meth:`addArbitrarySlices <.addArbitrarySlices>`.
 
         Parameters
         ----------
@@ -796,6 +812,12 @@ class ADFLOW(AeroSolver):
 
             # rotate the lift direction vector to get the slice direction
             slice_dir = rot_mat.dot(lift_dir)
+
+            # In general, the "slice_dir" does not need to be orthogonal to vec1, which is the center axis of the cylinder. So we make it orthogonal
+            slice_dir -= vec1.dot(slice_dir) * vec1
+
+            # normalize slice_dir
+            slice_dir /= numpy.linalg.norm(slice_dir)
 
             # cross product vec1 and vec2 to get the normal vector of this plane
             slice_normal = numpy.cross(vec1, slice_dir)
