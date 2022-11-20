@@ -1097,7 +1097,7 @@ contains
      ! the cpmin using KS aggregation.
      ! the goal is to get a differentiable cpmin output
 
-     ! set the local cp min to a small value so that we get the actual min
+     ! set the local cp min to a large value so that we get the actual min
      cpmin_local = 10000.0_realType
 
      ! loop over the TS instances just because its the same convention everywhere.
@@ -1125,7 +1125,7 @@ contains
                      j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
 
                      ! only take this if its a compute cell
-                     if (BCData(mm)%iblank(i,j) .gt. zero) then
+                     if (BCData(mm)%iblank(i,j) .eq. one) then
 
                          ! compute local CP
                          plocal = pp2(i,j)
