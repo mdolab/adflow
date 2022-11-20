@@ -1,11 +1,11 @@
-import numpy as np
 from pprint import pprint as pp
 
-from adflow import ADFLOW
+import numpy as np
 from idwarp import USMesh
-
-from openmdao.api import Group, ImplicitComponent, ExplicitComponent, AnalysisError
 from mphys.builder import Builder
+from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
+
+from adflow import ADFLOW
 
 from .om_utils import get_dvs_and_cons
 
@@ -23,7 +23,9 @@ class ADflowMesh(ExplicitComponent):
 
         self.aero_solver = self.options["aero_solver"]
 
-        self.x_a0 = self.aero_solver.getSurfaceCoordinates(includeZipper=False).flatten(order="C")
+        self.x_a0 = self.aero_solver.getSurfaceCoordinates(
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
+        ).flatten(order="C")
 
         coord_size = self.x_a0.size
         self.add_output(
@@ -49,7 +51,7 @@ class ADflowMesh(ExplicitComponent):
         # this is a list of lists of 3 points
         # p0, v1, v2
 
-        return self._getTriangulatedMeshSurface()
+        return self._getTriangulatedMeshSurface(groupName=groupName)
 
     def _getTriangulatedMeshSurface(self, groupName=None, **kwargs):
         """
@@ -162,7 +164,7 @@ class ADflowWarper(ExplicitComponent):
         solver = self.solver
 
         x_a = inputs["x_aero"].reshape((-1, 3))
-        solver.setSurfaceCoordinates(x_a)
+        solver.setSurfaceCoordinates(x_a, groupName=solver.meshFamilyGroup)
         solver.updateGeometryInfo()
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
@@ -1147,10 +1149,21 @@ class ADflowBuilder(Builder):
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
+        user_family_groups=None,  # Dictonary of {group: surfs} to add
     ):
 
         # options dictionary for ADflow
         self.options = options
+
+        # Check the user family groups to see if anything was set
+        if user_family_groups is None:
+            self.user_family_groups = None
+        else:
+            # Throw a type error if the user family group is not a dictionary
+            if isinstance(user_family_groups, dict):
+                self.user_family_groups = user_family_groups
+            else:
+                raise TypeError("ADflowBuilder parameter 'user_family_groups' must be a dictionary or NoneType")
 
         # MACH tools require separate option dictionaries for solver and mesh
         # if user did not provide a separate mesh_options dictionary, we just use
@@ -1216,7 +1229,21 @@ class ADflowBuilder(Builder):
     # api level method for all builders
     def initialize(self, comm):
         self.solver = ADFLOW(options=self.options, comm=comm)
+
+        # We need to set the family groups here before we initialize the mesh.
+        # The user can't do this in the setup method because we set the mesh
+        # within the initialize method.  Allowing the user to set the
+        # 'user_family_group' variable gives them a way to specificy custom
+        # family groups within the setup when they create the builder.
+        if self.user_family_groups is not None:
+            # Loop over the surface family groups.  The keys are the
+            # new group names and the vals are the subsurface to add
+            # to the group.
+            for key, val in self.user_family_groups.items():
+                self.solver.addFamilyGroup(key, val)
+
         mesh = USMesh(options=self.mesh_options, comm=comm)
+
         self.solver.setMesh(mesh)
 
     def get_solver(self):
