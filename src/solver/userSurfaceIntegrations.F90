@@ -459,9 +459,9 @@ contains
     implicit none
 
     ! Input variables
+    integer(kind=intType), intent(in) :: nPts, nConn, famID
     real(kind=realType), dimension(3, nPts), intent(in) :: pts
     integer(kind=intType), dimension(3, nConn), intent(in) :: conn
-    integer(kind=intType), intent(in) :: nPts, nConn, famID
     logical, intent(in) :: isInflow
     character(len=*) :: famName
     type(userIntSurf), pointer :: surf
