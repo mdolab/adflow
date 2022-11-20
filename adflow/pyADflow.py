@@ -3115,6 +3115,11 @@ class ADFLOW(AeroSolver):
 
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
+
+            # We need to do an all reduce here in case there's a BC failure
+            # on any of the procs after we update the bc data.
+            self.adflow.killsignals.fatalfail = self.comm.allreduce(bool(self.adflow.killsignals.fatalfail), op=MPI.LOR)
+
             if self.getOption("equationMode").lower() == "time spectral":
                 self.adflow.preprocessingapi.updateperiodicinfoalllevels()
                 self.adflow.preprocessingapi.updatemetricsalllevels()
@@ -3874,12 +3879,12 @@ class ADFLOW(AeroSolver):
         groupName=None,
         mode="AD",
         h=None,
+        evalFuncs=None,
     ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
         mesh object must both be set for this routine.
-
         Parameters
         ----------
         xDvDot : dict
@@ -3890,7 +3895,6 @@ class ADFLOW(AeroSolver):
             Perturbation on the volume
         wDot : numpy array
             Perturbation the state variables
-
         residualDeriv : bool
             Flag specifiying if the residualDerivative (dwDot) should be returned
         funcDeriv : bool
@@ -3906,7 +3910,6 @@ class ADFLOW(AeroSolver):
             Specifies how the jacobian vector products will be computed.
         h : float
             Step sized used when the mode is "FD" or "CS
-
         Returns
         -------
         dwdot, funcsdot, fDot : array, dict, array
@@ -3991,19 +3994,26 @@ class ADFLOW(AeroSolver):
         costSize = self.adflow.constants.ncostfunction
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
 
+        # process the functions and groups
+        if evalFuncs is None:
+            evalFuncs = sorted(self.curAP.evalFuncs)
+
         # Generate the list of families we need for the functions in curAP
-        groupNames = set()
-        for f in self.curAP.evalFuncs:
+        # We need to use a list to have the same ordering on every proc, but
+        # we need 'set like' behavior so we don't include duplicate group names.
+        groupNames = []
+        for f in evalFuncs:
             fl = f.lower()
             if fl in self.adflowCostFunctions:
                 groupName = self.adflowCostFunctions[fl][0]
-                groupNames.add(groupName)
+                if groupName not in groupNames:
+                    groupNames.append(groupName)
             if f in self.adflowUserCostFunctions:
                 for sf in self.adflowUserCostFunctions[f].functions:
                     groupName = self.adflowCostFunctions[sf.lower()][0]
-                    groupNames.add(groupName)
+                    if groupName not in groupNames:
+                        groupNames.append(groupName)
 
-        groupNames = list(groupNames)
         if len(groupNames) == 0:
             famLists = self._expandGroupNames([self.allWallsGroup])
         else:
@@ -4080,7 +4090,7 @@ class ADFLOW(AeroSolver):
 
         # Process the derivative of the functions
         funcsDot = {}
-        for f in self.curAP.evalFuncs:
+        for f in evalFuncs:
             fl = f.lower()
             if fl in self.adflowCostFunctions:
                 groupName = self.adflowCostFunctions[fl][0]
