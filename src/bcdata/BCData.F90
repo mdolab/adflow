@@ -1112,6 +1112,7 @@ contains
        enddo
     enddo
 
+#ifndef USE_TAPENADE
     if(nn > 0) then
        write(errorMessage,102)                   &
             trim(cgnsDoms(nbkGlobal)%zonename), &
@@ -1121,6 +1122,7 @@ contains
 
        call returnFail("BCDataSupersonicInflow", errorMessage)
     endif
+#endif
 
   contains
 
