@@ -877,8 +877,7 @@ class ADFLOW(AeroSolver):
             between the original reference frame and any other reference
             frame relevant to the current CFD case. This allows user to apply
             arbitrary modifications to the loaded plot3d surface. The call
-            signature is documented in the DVGeometry's addPointset method:
-            :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>`
+            signature is documented in DVGeometry's :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>` method.
         """
 
         self.hasIntegrationSurfaces = True
@@ -1001,8 +1000,7 @@ class ADFLOW(AeroSolver):
             between the original reference frame and any other reference
             frame relevant to the current CFD case. This allows user to apply
             arbitrary modifications to the loaded plot3d surface. The call
-            signature is documented in the DVGeometry's addPointset method:
-            :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>`
+            signature is documented in DVGeometry's :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>` method.
 
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
