@@ -1979,19 +1979,23 @@ class ADFLOW(AeroSolver):
 
         # create the string template we want to print for each iteration
         iter_string = (
-            "\n###############################################\n" +
-            "CLSolve iteration   {iIter}\n" +
-            "L2 convergence      {l2_conv}\n" +
-            "L2 rel convergence  {l2_conv_rel}\n" +
-            "Alpha               {cur_alpha}\n" +
-            "CL                  {CL}\n" +
-            "CLStar              {CLStar}\n" +
-            "Error               {err}\n" +
-            "-----------------------------------------------\n" +
-            "CLAlpha             {clalpha}\n" +
-            "Delta alpha         {delta_alpha}\n" +
-            "New alpha           {new_alpha}\n" +
-            "###############################################\n"
+            "\n"+
+            "+--------------------------------------------------+\n" +
+            "|\n" +
+            "| CLSolve Iteration   {iIter}\n" +
+            "| Elapsed Time        {cur_time:.3f} sec\n" +
+            "|\n" +
+            "| L2 Convergence      {l2_conv}\n" +
+            "| L2 Rel Convergence  {l2_conv_rel}\n" +
+            "| Alpha               {cur_alpha}\n" +
+            "| CL                  {CL}\n" +
+            "| CLStar              {CLStar}\n" +
+            "| Error               {err}\n" +
+            "| \n" +
+            "| CLAlpha             {clalpha}\n" +
+            "| Delta Alpha         {delta_alpha}\n" +
+            "| New Alpha           {new_alpha}\n" +
+            "+--------------------------------------------------+\n"
         )
 
         # pointer to the iteration module for faster access
@@ -2057,6 +2061,7 @@ class ADFLOW(AeroSolver):
         if self.comm.rank == 0:
             print(iter_string.format(
                 iIter=0,
+                cur_time=time.time() - t1,
                 l2_conv=iteration_module.totalrfinal / iteration_module.totalr0,
                 l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
                 cur_alpha=aeroProblem.alpha,
@@ -2132,12 +2137,13 @@ class ADFLOW(AeroSolver):
             if self.comm.rank == 0:
                 print(iter_string.format(
                     iIter=_iIter,
+                    cur_time=time.time() - t1,
                     l2_conv=l2_conv,
                     l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
                     cur_alpha=aeroProblem.alpha,
                     CL=sol["cl"],
                     CLStar=CLStar,
-                    err=fnm2,
+                    err=fnm1,
                     clalpha=clalpha,
                     delta_alpha=anew - aeroProblem.alpha,
                     new_alpha=anew,
@@ -2180,20 +2186,22 @@ class ADFLOW(AeroSolver):
         if self.comm.rank == 0:
             # create the string template we want to print for each iteration
             final_string = (
-                "\n###############################################\n" +
-                "CL solve finished!\n" +
-                f"CLSolve converged?  {converged}\n"
-                "-----------------------------------------------\n" +
-                f"Total iterations    {_iIter + 1}\n" +
-                f"L2 convergence      {l2_conv}\n" +
-                f"Alpha               {aeroProblem.alpha}\n" +
-                f"CL                  {CL}\n" +
-                f"CLStar              {CLStar}\n" +
-                f"Error               {err}\n" +
-                f"CLAlpha             {clalpha}\n" +
-                "-----------------------------------------------\n" +
-                f"Total Time          {t2 - t1}\n" +
-                "###############################################\n"
+                f"\n"+
+                f"+--------------------------------------------------+\n" +
+                f"|\n"
+                f"| CLSolve Results:\n" +
+                f"|\n" +
+                f"| Converged?          {converged}\n"
+                f"| Total Iterations    {_iIter + 1}\n" +
+                f"| L2 Convergence      {l2_conv}\n" +
+                f"| Alpha               {aeroProblem.alpha}\n" +
+                f"| CL                  {CL}\n" +
+                f"| CLStar              {CLStar}\n" +
+                f"| Error               {err}\n" +
+                f"| CLAlpha             {clalpha}\n" +
+                f"|\n" +
+                f"| Total Time          {t2 - t1:.3f} sec\n" +
+                f"+--------------------------------------------------+\n"
             )
             print(final_string)
 
