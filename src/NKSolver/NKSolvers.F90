@@ -3681,7 +3681,7 @@ contains
 
   end subroutine ANKTurbSolveKSP
 
-  subroutine ANKStep(firstCall)
+  subroutine ANKStep(firstCall, reset_ank_cfl)
 
     use constants
     use blockPointers, only : nDom, flowDoms, shockSensor, ib, jb, kb, p, w, gamma
@@ -3708,7 +3708,7 @@ contains
     implicit none
 
     ! Input Variables
-    logical, intent(in) :: firstCall
+    logical, intent(in) :: firstCall, reset_ank_cfl
 
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval, orderturbsave
@@ -3771,7 +3771,10 @@ contains
           ! Initialize some variables
           totalR_old = totalR ! Record the old residual for the first iteration
           rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
-          ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
+          if (reset_ank_cfl) then
+            ! TODO make this an option
+            ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
+          end if
           ANK_CFLMinBase = ANK_CFLMin0
           totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
           linResOld = zero
@@ -3790,7 +3793,8 @@ contains
       ! so we reduce the relative tol by 4 orders of magnitude,
       ! *if* we are converged past pc update cutoff wrt free stream already
       if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
-         rel_pcUpdateTol = ANK_pcUpdateTol * 1e-4_realType
+         ! TODO make this an option
+         rel_pcUpdateTol = ANK_pcUpdateTol * 1e-16_realType
       else
          ! if we are not that far down converged, use the option directly
          rel_pcUpdateTol = ANK_pcUpdateTol
@@ -3930,7 +3934,8 @@ contains
 #ifndef USE_COMPLEX
     ! in the real mode, we set the atol slightly lower than the target L2 convergence
     ! the reasoning for this is detailed in the NKStep subroutine
-    atol = totalR0*L2Conv*0.01_realType
+    ! TODO make this an option
+    atol = totalR0*L2Conv*0.1_realType
 #else
     ! in complex mode, we want to tightly solve the linear system every time
     ! again, see the NKStep subroutine for the explanation

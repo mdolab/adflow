@@ -1930,9 +1930,14 @@ class ADFLOW(AeroSolver):
         delta=0.5,
         tol=1e-3,
         autoReset=True,
+        # TODO add this
+        # infChangeCorrection=True,
         CLalphaGuess=None,
         maxIter=20,
         nReset=25,
+        relaxCLa=1.0,
+        relaxAlpha=1.0,
+        L2ConvRel=None,
     ):
 
         """This is a simple secant method search for solving for a
@@ -1970,6 +1975,48 @@ class ADFLOW(AeroSolver):
         None, but the correct alpha is stored in the aeroProblem
 
         """
+
+        # time the CL solve
+        t1 = time.time()
+
+        # create the string template we want to print for each iteration
+        iter_string = (
+            "\n###############################################\n" +
+            "CLSolve iteration   {iIter}\n" +
+            "L2 convergence      {l2_conv}\n" +
+            "L2 rel convergence  {l2_conv_rel}\n" +
+            "Alpha               {cur_alpha}\n" +
+            "CL                  {CL}\n" +
+            "CLStar              {CLStar}\n" +
+            "Error               {err}\n" +
+            "-----------------------------------------------\n" +
+            "CLAlpha             {clalpha}\n" +
+            "New Alpha           {new_alpha}\n" +
+            "###############################################\n"
+        )
+
+        # pointer to the iteration module for faster access
+        iteration_module = self.adflow.iteration
+
+        # check if we have a custom relative l2 convergence.
+        if L2ConvRel is not None:
+            # save the original value
+            L2_conv_rel_save = self.getOption("L2ConvergenceRel")
+
+            # if a single value is provided, convert it into a list so that we can apply it at each iteration
+            if isinstance(L2ConvRel, float):
+                L2ConvRel = [L2ConvRel] * maxIter
+            elif isinstance(L2ConvRel, list):
+                # we may need to extend this list if its shorter than maxIter
+                if len(L2ConvRel) < maxIter:
+                    # pick the last value and add
+                    L2ConvRel += [L2ConvRel[-1]] * (maxIter - len(L2ConvRel))
+            else:
+                raise Error("L2ConvRel needs to be a float or a list of floats")
+
+            # set the first rel conv value.
+            self.setOption("L2ConvergenceRel", L2ConvRel[0])
+
         self.setAeroProblem(aeroProblem)
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
@@ -1981,12 +2028,8 @@ class ADFLOW(AeroSolver):
             print("Cannot run CLSolve due to mesh failures.")
             return
 
-        # Set the startign value
+        # Set the starting value
         anm2 = aeroProblem.alpha
-
-        # Print alpha
-        if self.comm.rank == 0:
-            print("Current alpha is: ", aeroProblem.alpha)
 
         self.__call__(aeroProblem, writeSolution=False)
         self.curAP.adflowData.callCounter -= 1
@@ -1999,13 +2042,32 @@ class ADFLOW(AeroSolver):
                 anm1 = alpha0 + abs(delta)
             else:
                 anm1 = alpha0 - abs(delta)
+            # set this to zero for the initial printout
+            clalpha = 0.0
         else:
             # Use CLalphaGuess option to define the next Aoa
             anm1 = alpha0 - fnm2 / CLalphaGuess
+            # initialize the clalpha working variable
+            clalpha = CLalphaGuess
 
         # Check for convergence if the starting point is already ok.
         if abs(fnm2) < tol:
             return
+
+        # print iteration info
+        if self.comm.rank == 0:
+            print(iter_string.format(
+                iIter=0,
+                l2_conv=iteration_module.totalrfinal / iteration_module.totalr0,
+                l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
+                cur_alpha=aeroProblem.alpha,
+                CL=sol["cl"],
+                CLStar=CLStar,
+                err=fnm2,
+                clalpha=clalpha,
+                new_alpha=anm1,
+            ))
+
 
         # Overwrite the RK options momentarily.
         # We need to do this to avoid using NK right at the beggining
@@ -2019,8 +2081,13 @@ class ADFLOW(AeroSolver):
         self.setOption("nRKReset", nReset)
         self.setOption("rkreset", True)
 
+        self.setOption("L2ConvergenceRel", 1e-6)
+        self.setOption("ankcoupledswitchtol", 1.0)
+
         # Secant method iterations
-        for _iIter in range(maxIter):
+        for _iIter in range(1, maxIter):
+            self.setOption("L2ConvergenceRel", L2ConvRel[_iIter])
+
             # We may need to reset the flow since changing strictly
             # alpha leads to problems with the NK solver
             if autoReset:
@@ -2029,22 +2096,49 @@ class ADFLOW(AeroSolver):
             # Set current alpha
             aeroProblem.alpha = anm1
 
-            # Print alpha
-            if self.comm.rank == 0:
-                print("Current alpha is: ", aeroProblem.alpha)
-
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
+
+            # check if the relative L2 target was achieved. if not, warn the user
+            # TODO, we may want to reset?
+
             self.curAP.adflowData.callCounter -= 1
             sol = self.getSolution()
             fnm1 = sol["cl"] - CLStar
 
+            # TODO also check if L2 Convergence is achieved, if not, we cant quit yet
+            l2_conv = iteration_module.totalrfinal / iteration_module.totalr0
+            l2_conv_target = self.getOption("L2Convergence")
+
             # Check for convergence
-            if abs(fnm1) < tol:
+            if abs(fnm1) < tol and l2_conv <= l2_conv_target:
                 break
 
             # Secant Update
-            anew = anm1 - fnm1 * (anm1 - anm2) / (fnm1 - fnm2)
+            if _iIter == 1 and CLalphaGuess is None:
+                # we first need to compute the estimate to clalpha
+                clalpha = (fnm1 - fnm2) / (anm1 - anm2)
+            else:
+                # we update the clalpha using a relaxed update
+                cla_new = (fnm1 - fnm2) / (anm1 - anm2)
+                clalpha += relaxCLa * (cla_new - clalpha)
+
+            # similarly, the user might want to relax the alpha update
+            anew = anm1 - (fnm1 / clalpha) * relaxAlpha
+
+            # print iteration info
+            if self.comm.rank == 0:
+                print(iter_string.format(
+                    iIter=_iIter,
+                    l2_conv=l2_conv,
+                    l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
+                    cur_alpha=aeroProblem.alpha,
+                    CL=sol["cl"],
+                    CLStar=CLStar,
+                    err=fnm2,
+                    clalpha=clalpha,
+                    new_alpha=anew,
+                ))
 
             # Shift n-1 values to n-2 values
             fnm2 = fnm1
@@ -2056,6 +2150,48 @@ class ADFLOW(AeroSolver):
         # Restore the min iter option given initially by user
         self.setOption("nRKReset", minIterSave)
         self.setOption("rkreset", rkresetSave)
+        # also fix the relative L2 conv if we used a custom value
+        if L2ConvRel is not None:
+            self.setOption("L2ConvergenceRel", L2_conv_rel_save)
+
+        t2 = time.time()
+
+        # check for adflow solution failure
+        f_failure = {}
+        self.checkSolutionFailure(aeroProblem, f_failure)
+
+        # also check the L2 tolerance
+        l2_conv = iteration_module.totalrfinal / iteration_module.totalr0
+        l2_conv_target = self.getOption("L2Convergence")
+
+        # check for the CLSolve tolerance
+        CL = sol["cl"]
+        err = sol["cl"] - CLStar
+
+        if err < tol and l2_conv < l2_conv_target:
+            converged = True
+        else:
+            converged = False
+
+        if self.comm.rank == 0:
+            # create the string template we want to print for each iteration
+            final_string = (
+                "\n###############################################\n" +
+                "CL solve finished!\n" +
+                f"CLSolve converged?  {converged}\n"
+                "-----------------------------------------------\n" +
+                f"Total iterations    {_iIter + 1}\n" +
+                f"L2 convergence      {l2_conv}\n" +
+                f"Alpha               {aeroProblem.alpha}\n" +
+                f"CL                  {CL}\n" +
+                f"CLStar              {CLStar}\n" +
+                f"Error               {err}\n" +
+                f"CLAlpha             {clalpha}\n" +
+                "-----------------------------------------------\n" +
+                f"Total Time          {t2 - t1}\n" +
+                "###############################################\n"
+            )
+            print(final_string)
 
     def solveTrimCL(
         self,
@@ -3303,7 +3439,7 @@ class ADFLOW(AeroSolver):
         self.adflow.flowutils.adjustinflowangle()
 
         if self.getOption("printIterations") and self.comm.rank == 0:
-            print("-> Alpha... %f " % numpy.real(alpha))
+            print("-> Alpha... %.16f " % numpy.real(alpha))
 
         # 2. Reference Points:
         self.adflow.inputphysics.pointref = [xRef, yRef, zRef]

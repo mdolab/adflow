@@ -931,7 +931,7 @@ contains
     integer :: ierr
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
-    logical :: absConv, relConv, firstNK, firstANK, old_writeGrid
+    logical :: absConv, relConv, firstNK, firstANK, old_writeGrid, reset_ank_cfl
     real(kind=realType) :: nk_switchtol_save, curTime, ordersConvergedOld
 
     ! Allocate the memory for cycling.
@@ -965,6 +965,13 @@ contains
     if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then
        allocate(NKLSFuncEvals(nMGCycles))
     end if
+
+   ! TODO make this an option
+   if (freeStreamResSet) then
+      reset_ank_cfl = .False.
+   else
+      reset_ank_cfl = .True.
+   end if
 
     ! Only compute the free stream resisudal once for efficiency on the
     ! fine grid only.
@@ -1083,8 +1090,9 @@ contains
                 call executeMGCycle
 
              else
-                call ANKStep(firstANK)
+                call ANKStep(firstANK, reset_ank_cfl)
                 firstANK = .False.
+                reset_ank_cfl = .False.
                 CFLMonitor = ANK_CFL
 
              end if
@@ -1116,9 +1124,10 @@ contains
              else if (totalR <= ANK_switchTol*totalR0 .and. &
                   totalR > NK_switchTol*totalR0) then
 
-                call ANKStep(firstANK)
+                call ANKStep(firstANK, reset_ank_cfl)
                 firstANK = .False.
                 firstNK = .True.
+                reset_ank_cfl = .False.
                 CFLMonitor = ANK_CFL
 
              else
@@ -1186,14 +1195,14 @@ contains
 
        if (globalSignal == signalWrite .or. writeSolEachIter) then
           ! We have been told to write the solution even though we are not done iterating
-          
-          ! The grid must be written along with the volume solution solution         
+
+          ! The grid must be written along with the volume solution solution
          if (writeVolume) then
             ! temporary change the writeGrid option
             old_writeGrid = writeGrid
             writeGrid = .True.
          end if
-          
+
           if (writeSolEachIter) then
                write(numberString,"(i7)") iterTot
                numberString = adjustl(numberString)
@@ -1206,7 +1215,7 @@ contains
                newGridFile = forcedVolumeFile
                solFile = forcedVolumeFile
           end if
-          
+
           call writeSol(fullFamList, size(fullFamList))
 
           ! Also write potential tecplot files. Note that we are not
@@ -1219,7 +1228,7 @@ contains
             ! change the writeGrid option back
             writeGrid = old_writeGrid
          end if
-               
+
           ! Reset the signal
           localSignal = noSignal
        end if
@@ -1579,12 +1588,12 @@ contains
                 write(*,"(i6,1x)",advance="no") iterTot
                 write(*,"(i6,1x)",advance="no") approxTotalIts
                 write(*,"(a,1x)", advance="no") iterType
-                
+
                 if( storeConvInnerIter ) then
                    solverDataArray(iterTot, sps, 1) = approxTotalIts
                    solverTypeArray(iterTot, sps) = iterType
                 endif
-                
+
                 if (CFLMonitor < zero) then
                    ! Print dashes if no cfl term is used, i.e. NK solver
                    write(*,"(a,1x)", advance="no") "    ----  "
@@ -1637,7 +1646,7 @@ contains
 #else
                    write(*,"(es12.5,1x)",advance="no") real(mpi_wtime() - t0Solver)
 #endif
-                   
+
                 end if
              end if
           end if
