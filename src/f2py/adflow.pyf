@@ -268,6 +268,7 @@ python module libadflow
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
+         real(kind=realtype) :: ank_atol_buffer
          real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
@@ -288,6 +289,7 @@ python module libadflow
          real(kind=realtype) :: ank_turbcflscale
          logical :: ank_usefullvisc
          real(kind=realtype) :: ank_pcupdatetol
+         real(kind=realtype) :: ank_pcupdatetol2
          real(kind=realtype) :: ank_pcupdatecutoff
          logical :: ank_adpc
          integer(kind=inttype) :: ank_nsubiterturb

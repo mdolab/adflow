@@ -1668,6 +1668,7 @@ module ANKSolver
   integer(kind=intType) :: ANK_innerPreConIts
   integer(kind=intType) :: ANK_outerPreConIts
   real(kind=realType)   :: ANK_rtol
+  real(kind=realType)   :: ANK_atol_buffer
   real(kind=realType)   :: ANK_linResMax
   real(kind=realType)   :: ANK_switchTol
   real(kind=realType)   :: ANK_divTol = 10
@@ -1686,7 +1687,7 @@ module ANKSolver
   real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
   real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
   real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
-  real(kind=realType) :: ANK_pcUpdateTol
+  real(kind=realType) :: ANK_pcUpdateTol, ANK_pcUpdateTol2
   real(kind=realType) :: ANK_pcUpdateCutoff
   real(kind=realType) :: lambda
   logical :: ANK_solverSetup=.False.
@@ -3772,7 +3773,6 @@ contains
           totalR_old = totalR ! Record the old residual for the first iteration
           rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
           if (reset_ank_cfl) then
-            ! TODO make this an option
             ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
           end if
           ANK_CFLMinBase = ANK_CFLMin0
@@ -3790,11 +3790,10 @@ contains
       rel_pcUpdateTol = ANK_pcUpdateTol
     else
       ! for coupled ANK, we dont want to update the PC as frequently,
-      ! so we reduce the relative tol by 4 orders of magnitude,
+      ! so we use a different tolerance set from python,
       ! *if* we are converged past pc update cutoff wrt free stream already
       if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
-         ! TODO make this an option
-         rel_pcUpdateTol = ANK_pcUpdateTol * 1e-16_realType
+         rel_pcUpdateTol = ANK_pcUpdateTol2
       else
          ! if we are not that far down converged, use the option directly
          rel_pcUpdateTol = ANK_pcUpdateTol
@@ -3934,8 +3933,7 @@ contains
 #ifndef USE_COMPLEX
     ! in the real mode, we set the atol slightly lower than the target L2 convergence
     ! the reasoning for this is detailed in the NKStep subroutine
-    ! TODO make this an option
-    atol = totalR0*L2Conv*0.1_realType
+    atol = totalR0*L2Conv*ANK_atol_buffer
 #else
     ! in complex mode, we want to tightly solve the linear system every time
     ! again, see the NKStep subroutine for the explanation

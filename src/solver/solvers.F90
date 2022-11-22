@@ -968,8 +968,12 @@ contains
 
    ! TODO make this an option
    if (freeStreamResSet) then
+      ! free stream residual was already set, meaning this is not the first call
+      ! TODO fix this. normally, we want to only reset ank if this is not a clean restart
+      ! this needs to be done on the AP level since we have no knowledge of the AP in here
       reset_ank_cfl = .False.
    else
+      ! we always reset the CFL if the free stream residual is not set
       reset_ank_cfl = .True.
    end if
 

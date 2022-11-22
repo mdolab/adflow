@@ -1928,11 +1928,11 @@ class ADFLOW(AeroSolver):
         delta=0.5,
         tol=1e-3,
         autoReset=True,
-        # TODO add this
-        # infChangeCorrection=True,
+        useRKReset=False,
+        nReset=25,
+        useCorrection=True,
         CLalphaGuess=None,
         maxIter=20,
-        nReset=25,
         relaxCLa=1.0,
         relaxAlpha=1.0,
         L2ConvRel=None,
@@ -1989,7 +1989,8 @@ class ADFLOW(AeroSolver):
             "Error               {err}\n" +
             "-----------------------------------------------\n" +
             "CLAlpha             {clalpha}\n" +
-            "New Alpha           {new_alpha}\n" +
+            "Delta alpha         {delta_alpha}\n" +
+            "New alpha           {new_alpha}\n" +
             "###############################################\n"
         )
 
@@ -2063,9 +2064,9 @@ class ADFLOW(AeroSolver):
                 CLStar=CLStar,
                 err=fnm2,
                 clalpha=clalpha,
+                delta_alpha=anm1 - aeroProblem.alpha,
                 new_alpha=anm1,
             ))
-
 
         # Overwrite the RK options momentarily.
         # We need to do this to avoid using NK right at the beggining
@@ -2077,10 +2078,13 @@ class ADFLOW(AeroSolver):
         minIterSave = self.getOption("nRKReset")
         rkresetSave = self.getOption("rkreset")
         self.setOption("nRKReset", nReset)
-        self.setOption("rkreset", True)
-
-        self.setOption("L2ConvergenceRel", 1e-6)
-        self.setOption("ankcoupledswitchtol", 1.0)
+        self.setOption("rkreset", useRKReset)
+        # also overwrite the free stream correction option. This in general, works
+        # better with the newton type solvers than RK. Keeping the RK switch
+        # for backwards compatability, but the default for this routine now uses
+        # the free stream correction
+        useCorrection_save = self.getOption("infchangecorrection")
+        self.setOption("infchangecorrection", useCorrection)
 
         # Secant method iterations
         for _iIter in range(1, maxIter):
@@ -2104,7 +2108,7 @@ class ADFLOW(AeroSolver):
             sol = self.getSolution()
             fnm1 = sol["cl"] - CLStar
 
-            # TODO also check if L2 Convergence is achieved, if not, we cant quit yet
+            # check if L2 Convergence is achieved, if not, we cant quit yet
             l2_conv = iteration_module.totalrfinal / iteration_module.totalr0
             l2_conv_target = self.getOption("L2Convergence")
 
@@ -2135,6 +2139,7 @@ class ADFLOW(AeroSolver):
                     CLStar=CLStar,
                     err=fnm2,
                     clalpha=clalpha,
+                    delta_alpha=anew - aeroProblem.alpha,
                     new_alpha=anew,
                 ))
 
@@ -2145,9 +2150,10 @@ class ADFLOW(AeroSolver):
             # Se the n-1 alpha value from update
             anm1 = anew
 
-        # Restore the min iter option given initially by user
+        # Restore the options given initially by user
         self.setOption("nRKReset", minIterSave)
         self.setOption("rkreset", rkresetSave)
+        self.setOption("infchangecorrection", useCorrection_save)
         # also fix the relative L2 conv if we used a custom value
         if L2ConvRel is not None:
             self.setOption("L2ConvergenceRel", L2_conv_rel_save)
@@ -5530,6 +5536,7 @@ class ADFLOW(AeroSolver):
             "ANKSubspaceSize": [int, -1],
             "ANKMaxIter": [int, 40],
             "ANKLinearSolveTol": [float, 0.05],
+            "ANKLinearSolveBuffer": [float, 0.01],
             "ANKLinResMax": [float, 0.1],
             "ANKASMOverlap": [int, 1],
             "ANKPCILUFill": [int, 2],
@@ -5554,6 +5561,7 @@ class ADFLOW(AeroSolver):
             "ANKUseFullVisc": [bool, True],
             "ANKPCUpdateTol": [float, 0.5],
             "ANKPCUpdateCutoff": [float, 1e-6],
+            "ANKPCUpdateTolAfterCutoff": [float, 1e-4],
             "ANKADPC": [bool, False],
             "ANKNSubiterTurb": [int, 1],
             "ANKTurbKSPDebug": [bool, False],
@@ -5907,6 +5915,7 @@ class ADFLOW(AeroSolver):
             "anksubspacesize": ["ank", "ank_subspace"],
             "ankmaxiter": ["ank", "ank_maxiter"],
             "anklinearsolvetol": ["ank", "ank_rtol"],
+            "anklinearsolvebuffer": ["ank", "ank_atol_buffer"],
             "anklinresmax": ["ank", "ank_linresmax"],
             "ankasmoverlap": ["ank", "ank_asmoverlap"],
             "ankpcilufill": ["ank", "ank_ilufill"],
@@ -5931,6 +5940,7 @@ class ADFLOW(AeroSolver):
             "ankusefullvisc": ["ank", "ank_usefullvisc"],
             "ankpcupdatetol": ["ank", "ank_pcupdatetol"],
             "ankpcupdatecutoff": ["ank", "ank_pcupdatecutoff"],
+            "ankpcupdatetolaftercutoff": ["ank", "ank_pcupdatetol2"],
             "ankadpc": ["ank", "ank_adpc"],
             "anknsubiterturb": ["ank", "ank_nsubiterturb"],
             "ankturbkspdebug": ["ank", "ank_turbdebug"],
