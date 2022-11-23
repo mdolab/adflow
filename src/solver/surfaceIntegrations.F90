@@ -49,9 +49,24 @@ contains
 
     ! before we go any further, compute the actual COP for each time spectral instance.
     do sps=1, nTimeIntervalsSpectral
-          coFx(:, sps) = coFx(:, sps) / force(1, sps)
-          coFy(:, sps) = coFy(:, sps) / force(2, sps)
-          coFz(:, sps) = coFz(:, sps) / force(3, sps)
+          ! protect the divisions against zero
+          if (force(1, sps) /= zero) then
+               coFx(:, sps) = coFx(:, sps) / force(1, sps)
+          else
+               coFx(:, sps) = zero
+          end if
+
+          if (force(2, sps) /= zero) then
+               coFy(:, sps) = coFy(:, sps) / force(2, sps)
+          else
+               coFy(:, sps) = zero
+          end if
+
+          if (force(3, sps) /= zero) then
+               coFz(:, sps) = coFz(:, sps) / force(3, sps)
+          else
+               coFz(:, sps) = zero
+          end if
     end do
 
     Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
@@ -468,6 +483,12 @@ contains
        fy = pm1*ssi(i,j,2)
        fz = pm1*ssi(i,j,3)
 
+       ! Note from AY: Technically, we can just compute the moments using the center of force
+       ! terms. However, the moment computations coded here distinguish pressure,
+       ! viscous, and momentum contributions to moment. Even though these individual
+       ! contributions are not exposed to python, I still wanted to keep how it's done in the
+       ! code in case its useful in the future. This is also true for the face integrations
+
        ! Update the inviscid force and moment coefficients. Iblank as we sum
        Fp(1) = Fp(1) + fx*blk
        Fp(2) = Fp(2) + fy*blk
@@ -794,7 +815,7 @@ contains
     real(kind=realType) ::  area_Ptot, area_Ps
     real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
-    real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, mx, my, mz
+    real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, xco, yc, yco, zc, zco, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vnmFreeStreamRef, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, am
     real(kind=realType) :: area, cellArea, overCellArea
@@ -964,45 +985,34 @@ contains
 
       ! the force integral for the center of pressure computation.
       ! We need the cell centers wrt origin
-      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+      xco = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
            +         xx(i,j+1,1) + xx(i+1,j+1,1))
-      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+      yco = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
            +         xx(i,j+1,2) + xx(i+1,j+1,2))
-      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+      zco = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
            +         xx(i,j+1,3) + xx(i+1,j+1,3))
 
-      ! accumulate in the sums. each force component is bookkept separately
+      ! accumulate in the sums. each force component is tracked separately
 
       ! Force-X
-      COFSumFx(1) = COFSumFx(1) + xc * fx * blk
-      COFSumFx(2) = COFSumFx(2) + yc * fx * blk
-      COFSumFx(3) = COFSumFx(3) + zc * fx * blk
+      COFSumFx(1) = COFSumFx(1) + xco * fx * blk
+      COFSumFx(2) = COFSumFx(2) + yco * fx * blk
+      COFSumFx(3) = COFSumFx(3) + zco * fx * blk
 
       ! Force-Y
-      COFSumFy(1) = COFSumFy(1) + xc * fy * blk
-      COFSumFy(2) = COFSumFy(2) + yc * fy * blk
-      COFSumFy(3) = COFSumFy(3) + zc * fy * blk
+      COFSumFy(1) = COFSumFy(1) + xco * fy * blk
+      COFSumFy(2) = COFSumFy(2) + yco * fy * blk
+      COFSumFy(3) = COFSumFy(3) + zco * fy * blk
 
       ! Force-Z
-      COFSumFz(1) = COFSumFz(1) + xc * fz * blk
-      COFSumFz(2) = COFSumFz(2) + yc * fz * blk
-      COFSumFz(3) = COFSumFz(3) + zc * fz * blk
+      COFSumFz(1) = COFSumFz(1) + xco * fz * blk
+      COFSumFz(2) = COFSumFz(2) + yco * fz * blk
+      COFSumFz(3) = COFSumFz(3) + zco * fz * blk
 
       ! Momentum forces are a little tricky.  We negate because
       ! have to re-apply fact to massFlowRateLocal to undoo it, because
       ! we need the signed behavior of ssi to get the momentum forces correct.
       ! Also, the sign is flipped between inflow and outflow types
-
-      ! compute the coordinates wrt reference point again.
-      ! TODO Remove these duplicate cell center computations.
-      ! ultimately, we can just compute the moment ONCE in the final
-      ! layer, based on the COP computations
-      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-          +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
-      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-          +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
-      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-          +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
       massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
 
@@ -1022,32 +1032,24 @@ contains
       MMom(2) = MMom(2) + my
       MMom(3) = MMom(3) + mz
 
-      ! the force integral for the center of pressure computation.
-      ! We need the cell centers wrt origin
-      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-           +         xx(i,j+1,1) + xx(i+1,j+1,1))
-      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-           +         xx(i,j+1,2) + xx(i+1,j+1,2))
-      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-           +         xx(i,j+1,3) + xx(i+1,j+1,3))
-
-      ! accumulate in the sums. each force component is bookkept separately
+      ! Center of force computations. Here we accumulate in the sums.
+      ! each force component is tracked separately
       ! blanking is included in the mdot multiplier for the force.
 
       ! Force-X
-      COFSumFx(1) = COFSumFx(1) + xc * fx
-      COFSumFx(2) = COFSumFx(2) + yc * fx
-      COFSumFx(3) = COFSumFx(3) + zc * fx
+      COFSumFx(1) = COFSumFx(1) + xco * fx
+      COFSumFx(2) = COFSumFx(2) + yco * fx
+      COFSumFx(3) = COFSumFx(3) + zco * fx
 
       ! Force-Y
-      COFSumFy(1) = COFSumFy(1) + xc * fy
-      COFSumFy(2) = COFSumFy(2) + yc * fy
-      COFSumFy(3) = COFSumFy(3) + zc * fy
+      COFSumFy(1) = COFSumFy(1) + xco * fy
+      COFSumFy(2) = COFSumFy(2) + yco * fy
+      COFSumFy(3) = COFSumFy(3) + zco * fy
 
       ! Force-Z
-      COFSumFz(1) = COFSumFz(1) + xc * fz
-      COFSumFz(2) = COFSumFz(2) + yc * fz
-      COFSumFz(3) = COFSumFz(3) + zc * fz
+      COFSumFz(1) = COFSumFz(1) + xco * fz
+      COFSumFz(2) = COFSumFz(2) + yco * fz
+      COFSumFz(3) = COFSumFz(3) + zco * fz
 
     enddo
 
