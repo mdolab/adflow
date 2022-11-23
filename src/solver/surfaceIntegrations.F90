@@ -23,7 +23,7 @@ contains
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceP, forceV, forceM, &
-         moment, cForce, cForceP, cForceV, cForceM, cMoment
+         moment, cForce, cForceP, cForceV, cForceM, cMoment, coFx, coFy, coFz
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                             mAvgVx, mAvgVy, mAvgVz, gArea
@@ -42,6 +42,17 @@ contains
     forceP = globalvals(iFp:iFp+2, :)
     forceV = globalvals(iFv:iFv+2, :)
     forceM = globalvals(iFlowFm:iFlowFm+2, :)
+
+    coFx = globalvals(coForceX:coForceX+2, :)
+    coFy = globalvals(coForceY:coForceY+2, :)
+    coFz = globalvals(coForceZ:coForceZ+2, :)
+
+    ! before we go any further, compute the actual COP for each time spectral instance.
+    do sps=1, nTimeIntervalsSpectral
+          coFx(:, sps) = coFx(:, sps) / force(1, sps)
+          coFy(:, sps) = coFy(:, sps) / force(2, sps)
+          coFz(:, sps) = coFz(:, sps) / force(3, sps)
+    end do
 
     Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
@@ -95,6 +106,25 @@ contains
        funcValues(costFuncForceXCoefMomentum) = funcValues(costFuncForceXCoefMomentum) + ovrNTS*cForceM(1, sps)
        funcValues(costFuncForceYCoefMomentum) = funcValues(costFuncForceYCoefMomentum) + ovrNTS*cForceM(2, sps)
        funcValues(costFuncForceZCoefMomentum) = funcValues(costFuncForceZCoefMomentum) + ovrNTS*cForceM(3, sps)
+
+       ! ------------
+
+       ! center of pressure (these are actually center of all forces)
+
+       ! Fx
+       funcValues(costFuncCOForceXX) = funcValues(costFuncCOForceXX) + ovrNTS*coFx(1, sps)
+       funcValues(costFuncCOForceXY) = funcValues(costFuncCOForceXY) + ovrNTS*coFx(2, sps)
+       funcValues(costFuncCOForceXZ) = funcValues(costFuncCOForceXZ) + ovrNTS*coFx(3, sps)
+
+       ! Fy
+       funcValues(costFuncCOForceYX) = funcValues(costFuncCOForceYX) + ovrNTS*coFy(1, sps)
+       funcValues(costFuncCOForceYY) = funcValues(costFuncCOForceYY) + ovrNTS*coFy(2, sps)
+       funcValues(costFuncCOForceYZ) = funcValues(costFuncCOForceYZ) + ovrNTS*coFy(3, sps)
+
+       ! Fz
+       funcValues(costFuncCOForceZX) = funcValues(costFuncCOForceZX) + ovrNTS*coFz(1, sps)
+       funcValues(costFuncCOForceZY) = funcValues(costFuncCOForceZY) + ovrNTS*coFz(2, sps)
+       funcValues(costFuncCOForceZZ) = funcValues(costFuncCOForceZZ) + ovrNTS*coFz(3, sps)
 
        ! ------------
 
@@ -333,6 +363,7 @@ contains
 
     ! Local variables.
     real(kind=realType), dimension(3)  :: Fp, Fv, Mp, Mv
+    real(kind=realType), dimension(3)  :: COFSumFx, COFSumFy, COFSumFz
     real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
     integer(kind=intType) :: i, j, ii, blk
 
@@ -375,6 +406,7 @@ contains
 
     Fp = zero; Fv = zero;
     Mp = zero; Mv = zero;
+    COFSumFx = zero; COFSumFy = zero; COFSumFz = zero
     yplusMax = zero
     sepSensor = zero
     Cavitation = zero
@@ -448,6 +480,32 @@ contains
        Mp(1) = Mp(1) + mx*blk
        Mp(2) = Mp(2) + my*blk
        Mp(3) = Mp(3) + mz*blk
+
+       ! the force integral for the center of pressure computation.
+       ! We need the cell centers wrt origin
+       xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+            +         xx(i,j+1,1) + xx(i+1,j+1,1))
+       yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+            +         xx(i,j+1,2) + xx(i+1,j+1,2))
+       zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+            +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+       ! accumulate in the sums. each force component is tracked separately
+
+       ! Force-X
+       COFSumFx(1) = COFSumFx(1) + xc * fx * blk
+       COFSumFx(2) = COFSumFx(2) + yc * fx * blk
+       COFSumFx(3) = COFSumFx(3) + zc * fx * blk
+
+       ! Force-Y
+       COFSumFy(1) = COFSumFy(1) + xc * fy * blk
+       COFSumFy(2) = COFSumFy(2) + yc * fy * blk
+       COFSumFy(3) = COFSumFy(3) + zc * fy * blk
+
+       ! Force-Z
+       COFSumFz(1) = COFSumFz(1) + xc * fz * blk
+       COFSumFz(2) = COFSumFz(2) + yc * fz * blk
+       COFSumFz(3) = COFSumFz(3) + zc * fz * blk
 
        ! Compute the r and n vectores for the moment around an
        ! axis computation where r is the distance from the
@@ -595,6 +653,32 @@ contains
           Mv(2) = Mv(2) + my * blk
           Mv(3) = Mv(3) + mz * blk
 
+          ! the force integral for the center of pressure computation.
+          ! We need the cell centers wrt origin
+          xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+               +         xx(i,j+1,1) + xx(i+1,j+1,1))
+          yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+               +         xx(i,j+1,2) + xx(i+1,j+1,2))
+          zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+               +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+          ! accumulate in the sums. each force component is tracked separately
+
+          ! Force-X
+          COFSumFx(1) = COFSumFx(1) + xc * fx * blk
+          COFSumFx(2) = COFSumFx(2) + yc * fx * blk
+          COFSumFx(3) = COFSumFx(3) + zc * fx * blk
+
+          ! Force-Y
+          COFSumFy(1) = COFSumFy(1) + xc * fy * blk
+          COFSumFy(2) = COFSumFy(2) + yc * fy * blk
+          COFSumFy(3) = COFSumFy(3) + zc * fy * blk
+
+          ! Force-Z
+          COFSumFz(1) = COFSumFz(1) + xc * fz * blk
+          COFSumFz(2) = COFSumFz(2) + yc * fz * blk
+          COFSumFz(3) = COFSumFz(3) + zc * fz * blk
+
           ! Compute the r and n vectors for the moment around an
           ! axis computation where r is the distance from the
           ! force to the first point on the axis and n is a unit
@@ -673,6 +757,9 @@ contains
     localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
     localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
     localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
+    localValues(coForceX:coForceX+2) = localValues(coForceX:coForceX+2) + COFSumFx
+    localValues(coForceY:coForceY+2) = localValues(coForceY:coForceY+2) + COFSumFy
+    localValues(coForceZ:coForceZ+2) = localValues(coForceZ:coForceZ+2) + COFSumFz
     localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
     localValues(iCavitation) = localValues(iCavitation) + cavitation
     localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
@@ -712,6 +799,7 @@ contains
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, am
     real(kind=realType) :: area, cellArea, overCellArea
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, sFaceCoordRef
+    real(kind=realType), dimension(3)  :: COFSumFx, COFSumFy, COFSumFz
     real(kind=realType) :: MNm, massFlowRateLocal
 
     refPoint(1) = LRef*pointRef(1)
@@ -756,6 +844,10 @@ contains
     Mp = zero
     FMom = zero
     MMom = zero
+
+    COFSumFx = zero
+    COFSumFy = zero
+    COFSumFz = zero
 
     massFlowRate = zero
     area = zero
@@ -870,10 +962,47 @@ contains
       Mp(2) = Mp(2) + my
       Mp(3) = Mp(3) + mz
 
+      ! the force integral for the center of pressure computation.
+      ! We need the cell centers wrt origin
+      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+           +         xx(i,j+1,1) + xx(i+1,j+1,1))
+      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+           +         xx(i,j+1,2) + xx(i+1,j+1,2))
+      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+           +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+      ! accumulate in the sums. each force component is bookkept separately
+
+      ! Force-X
+      COFSumFx(1) = COFSumFx(1) + xc * fx * blk
+      COFSumFx(2) = COFSumFx(2) + yc * fx * blk
+      COFSumFx(3) = COFSumFx(3) + zc * fx * blk
+
+      ! Force-Y
+      COFSumFy(1) = COFSumFy(1) + xc * fy * blk
+      COFSumFy(2) = COFSumFy(2) + yc * fy * blk
+      COFSumFy(3) = COFSumFy(3) + zc * fy * blk
+
+      ! Force-Z
+      COFSumFz(1) = COFSumFz(1) + xc * fz * blk
+      COFSumFz(2) = COFSumFz(2) + yc * fz * blk
+      COFSumFz(3) = COFSumFz(3) + zc * fz * blk
+
       ! Momentum forces are a little tricky.  We negate because
       ! have to re-apply fact to massFlowRateLocal to undoo it, because
       ! we need the signed behavior of ssi to get the momentum forces correct.
       ! Also, the sign is flipped between inflow and outflow types
+
+      ! compute the coordinates wrt reference point again.
+      ! TODO Remove these duplicate cell center computations.
+      ! ultimately, we can just compute the moment ONCE in the final
+      ! layer, based on the COP computations
+      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+          +         xx(i,j+1,1) + xx(i+1,j+1,1)) - refPoint(1)
+      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+          +         xx(i,j+1,2) + xx(i+1,j+1,2)) - refPoint(2)
+      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+          +         xx(i,j+1,3) + xx(i+1,j+1,3)) - refPoint(3)
 
       massFlowRateLocal = massFlowRateLocal*fact/timeRef*blk/cellArea*internalFlowFact*inFlowFact
 
@@ -893,6 +1022,33 @@ contains
       MMom(2) = MMom(2) + my
       MMom(3) = MMom(3) + mz
 
+      ! the force integral for the center of pressure computation.
+      ! We need the cell centers wrt origin
+      xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+           +         xx(i,j+1,1) + xx(i+1,j+1,1))
+      yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+           +         xx(i,j+1,2) + xx(i+1,j+1,2))
+      zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+           +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+      ! accumulate in the sums. each force component is bookkept separately
+      ! blanking is included in the mdot multiplier for the force.
+
+      ! Force-X
+      COFSumFx(1) = COFSumFx(1) + xc * fx
+      COFSumFx(2) = COFSumFx(2) + yc * fx
+      COFSumFx(3) = COFSumFx(3) + zc * fx
+
+      ! Force-Y
+      COFSumFy(1) = COFSumFy(1) + xc * fy
+      COFSumFy(2) = COFSumFy(2) + yc * fy
+      COFSumFy(3) = COFSumFy(3) + zc * fy
+
+      ! Force-Z
+      COFSumFz(1) = COFSumFz(1) + xc * fz
+      COFSumFz(2) = COFSumFz(2) + yc * fz
+      COFSumFz(3) = COFSumFz(3) + zc * fz
+
     enddo
 
     ! Increment the local values array with what we computed here
@@ -908,6 +1064,10 @@ contains
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+
+    localValues(coForceX:coForceX+2) = localValues(coForceX:coForceX+2) + COFSumFx
+    localValues(coForceY:coForceY+2) = localValues(coForceY:coForceY+2) + COFSumFy
+    localValues(coForceZ:coForceZ+2) = localValues(coForceZ:coForceZ+2) + COFSumFz
 
     localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
     localValues(iAreaPs) = localValues(iAreaPs) + area_Ps
