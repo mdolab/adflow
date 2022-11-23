@@ -41,10 +41,10 @@ contains
     real(kind=realtype) :: factd
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   forcep, forcev, forcem, moment, cforce, cforcep, cforcev, cforcem, &
-&   cmoment
+&   cmoment, cofx, cofy, cofz
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: forced&
 &   , forcepd, forcevd, forcemd, momentd, cforced, cforcepd, cforcevd, &
-&   cforcemd, cmomentd
+&   cforcemd, cmomentd, cofxd, cofyd, cofzd
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
 &   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
@@ -71,6 +71,40 @@ contains
     forcev = globalvals(ifv:ifv+2, :)
     forcemd = globalvalsd(iflowfm:iflowfm+2, :)
     forcem = globalvals(iflowfm:iflowfm+2, :)
+    cofxd = globalvalsd(coforcex:coforcex+2, :)
+    cofx = globalvals(coforcex:coforcex+2, :)
+    cofyd = globalvalsd(coforcey:coforcey+2, :)
+    cofy = globalvals(coforcey:coforcey+2, :)
+    cofzd = globalvalsd(coforcez:coforcez+2, :)
+    cofz = globalvals(coforcez:coforcez+2, :)
+! before we go any further, compute the actual cop for each time spectral instance.
+    do sps=1,ntimeintervalsspectral
+! protect the divisions against zero
+      if (force(1, sps) .ne. zero) then
+        cofxd(:, sps) = (cofxd(:, sps)*force(1, sps)-cofx(:, sps)*forced&
+&         (1, sps))/force(1, sps)**2
+        cofx(:, sps) = cofx(:, sps)/force(1, sps)
+      else
+        cofxd(:, sps) = 0.0_8
+        cofx(:, sps) = zero
+      end if
+      if (force(2, sps) .ne. zero) then
+        cofyd(:, sps) = (cofyd(:, sps)*force(2, sps)-cofy(:, sps)*forced&
+&         (2, sps))/force(2, sps)**2
+        cofy(:, sps) = cofy(:, sps)/force(2, sps)
+      else
+        cofyd(:, sps) = 0.0_8
+        cofy(:, sps) = zero
+      end if
+      if (force(3, sps) .ne. zero) then
+        cofzd(:, sps) = (cofzd(:, sps)*force(3, sps)-cofz(:, sps)*forced&
+&         (3, sps))/force(3, sps)**2
+        cofz(:, sps) = cofz(:, sps)/force(3, sps)
+      else
+        cofzd(:, sps) = 0.0_8
+        cofz(:, sps) = zero
+      end if
+    end do
     momentd = globalvalsd(imp:imp+2, :) + globalvalsd(imv:imv+2, :) + &
 &     globalvalsd(iflowmm:iflowmm+2, :)
     moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
@@ -194,6 +228,47 @@ contains
 &       costfuncforcezcoefmomentum) + ovrnts*cforcemd(3, sps)
       funcvalues(costfuncforcezcoefmomentum) = funcvalues(&
 &       costfuncforcezcoefmomentum) + ovrnts*cforcem(3, sps)
+! ------------
+! center of pressure (these are actually center of all forces)
+! fx
+      funcvaluesd(costfunccoforcexx) = funcvaluesd(costfunccoforcexx) + &
+&       ovrnts*cofxd(1, sps)
+      funcvalues(costfunccoforcexx) = funcvalues(costfunccoforcexx) + &
+&       ovrnts*cofx(1, sps)
+      funcvaluesd(costfunccoforcexy) = funcvaluesd(costfunccoforcexy) + &
+&       ovrnts*cofxd(2, sps)
+      funcvalues(costfunccoforcexy) = funcvalues(costfunccoforcexy) + &
+&       ovrnts*cofx(2, sps)
+      funcvaluesd(costfunccoforcexz) = funcvaluesd(costfunccoforcexz) + &
+&       ovrnts*cofxd(3, sps)
+      funcvalues(costfunccoforcexz) = funcvalues(costfunccoforcexz) + &
+&       ovrnts*cofx(3, sps)
+! fy
+      funcvaluesd(costfunccoforceyx) = funcvaluesd(costfunccoforceyx) + &
+&       ovrnts*cofyd(1, sps)
+      funcvalues(costfunccoforceyx) = funcvalues(costfunccoforceyx) + &
+&       ovrnts*cofy(1, sps)
+      funcvaluesd(costfunccoforceyy) = funcvaluesd(costfunccoforceyy) + &
+&       ovrnts*cofyd(2, sps)
+      funcvalues(costfunccoforceyy) = funcvalues(costfunccoforceyy) + &
+&       ovrnts*cofy(2, sps)
+      funcvaluesd(costfunccoforceyz) = funcvaluesd(costfunccoforceyz) + &
+&       ovrnts*cofyd(3, sps)
+      funcvalues(costfunccoforceyz) = funcvalues(costfunccoforceyz) + &
+&       ovrnts*cofy(3, sps)
+! fz
+      funcvaluesd(costfunccoforcezx) = funcvaluesd(costfunccoforcezx) + &
+&       ovrnts*cofzd(1, sps)
+      funcvalues(costfunccoforcezx) = funcvalues(costfunccoforcezx) + &
+&       ovrnts*cofz(1, sps)
+      funcvaluesd(costfunccoforcezy) = funcvaluesd(costfunccoforcezy) + &
+&       ovrnts*cofzd(2, sps)
+      funcvalues(costfunccoforcezy) = funcvalues(costfunccoforcezy) + &
+&       ovrnts*cofz(2, sps)
+      funcvaluesd(costfunccoforcezz) = funcvaluesd(costfunccoforcezz) + &
+&       ovrnts*cofzd(3, sps)
+      funcvalues(costfunccoforcezz) = funcvalues(costfunccoforcezz) + &
+&       ovrnts*cofz(3, sps)
 ! ------------
       funcvaluesd(costfuncmomx) = funcvaluesd(costfuncmomx) + ovrnts*&
 &       momentd(1, sps)
@@ -573,7 +648,7 @@ contains
     real(kind=realtype) :: fact, factmoment, ovrnts
     real(kind=realtype), dimension(3, ntimeintervalsspectral) :: force, &
 &   forcep, forcev, forcem, moment, cforce, cforcep, cforcev, cforcem, &
-&   cmoment
+&   cmoment, cofx, cofy, cofz
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
 &   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
@@ -593,6 +668,28 @@ contains
     forcep = globalvals(ifp:ifp+2, :)
     forcev = globalvals(ifv:ifv+2, :)
     forcem = globalvals(iflowfm:iflowfm+2, :)
+    cofx = globalvals(coforcex:coforcex+2, :)
+    cofy = globalvals(coforcey:coforcey+2, :)
+    cofz = globalvals(coforcez:coforcez+2, :)
+! before we go any further, compute the actual cop for each time spectral instance.
+    do sps=1,ntimeintervalsspectral
+! protect the divisions against zero
+      if (force(1, sps) .ne. zero) then
+        cofx(:, sps) = cofx(:, sps)/force(1, sps)
+      else
+        cofx(:, sps) = zero
+      end if
+      if (force(2, sps) .ne. zero) then
+        cofy(:, sps) = cofy(:, sps)/force(2, sps)
+      else
+        cofy(:, sps) = zero
+      end if
+      if (force(3, sps) .ne. zero) then
+        cofz(:, sps) = cofz(:, sps)/force(3, sps)
+      else
+        cofz(:, sps) = zero
+      end if
+    end do
     moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
 &     globalvals(iflowmm:iflowmm+2, :)
     fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
@@ -656,6 +753,29 @@ contains
 &       costfuncforceycoefmomentum) + ovrnts*cforcem(2, sps)
       funcvalues(costfuncforcezcoefmomentum) = funcvalues(&
 &       costfuncforcezcoefmomentum) + ovrnts*cforcem(3, sps)
+! ------------
+! center of pressure (these are actually center of all forces)
+! fx
+      funcvalues(costfunccoforcexx) = funcvalues(costfunccoforcexx) + &
+&       ovrnts*cofx(1, sps)
+      funcvalues(costfunccoforcexy) = funcvalues(costfunccoforcexy) + &
+&       ovrnts*cofx(2, sps)
+      funcvalues(costfunccoforcexz) = funcvalues(costfunccoforcexz) + &
+&       ovrnts*cofx(3, sps)
+! fy
+      funcvalues(costfunccoforceyx) = funcvalues(costfunccoforceyx) + &
+&       ovrnts*cofy(1, sps)
+      funcvalues(costfunccoforceyy) = funcvalues(costfunccoforceyy) + &
+&       ovrnts*cofy(2, sps)
+      funcvalues(costfunccoforceyz) = funcvalues(costfunccoforceyz) + &
+&       ovrnts*cofy(3, sps)
+! fz
+      funcvalues(costfunccoforcezx) = funcvalues(costfunccoforcezx) + &
+&       ovrnts*cofz(1, sps)
+      funcvalues(costfunccoforcezy) = funcvalues(costfunccoforcezy) + &
+&       ovrnts*cofz(2, sps)
+      funcvalues(costfunccoforcezz) = funcvalues(costfunccoforcezz) + &
+&       ovrnts*cofz(3, sps)
 ! ------------
       funcvalues(costfuncmomx) = funcvalues(costfuncmomx) + ovrnts*&
 &       moment(1, sps)
@@ -865,6 +985,8 @@ contains
 ! local variables.
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
+    real(kind=realtype), dimension(3) :: cofsumfxd, cofsumfyd, cofsumfzd
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
 &   cavitation, cpmin_ks_sum
     real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd, &
@@ -930,6 +1052,9 @@ contains
     fv = zero
     mp = zero
     mv = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
@@ -939,6 +1064,9 @@ contains
     mvaxis = zero
     cperror2 = zero
     sepsensoravgd = 0.0_8
+    cofsumfxd = 0.0_8
+    cofsumfyd = 0.0_8
+    cofsumfzd = 0.0_8
     rd = 0.0_8
     cpmin_ks_sumd = 0.0_8
     vd = 0.0_8
@@ -1013,6 +1141,11 @@ contains
       fy = pm1*ssi(i, j, 2)
       fzd = pm1d*ssi(i, j, 3) + pm1*ssid(i, j, 3)
       fz = pm1*ssi(i, j, 3)
+! note from ay: technically, we can just compute the moments using the center of force
+! terms. however, the moment computations coded here distinguish pressure,
+! viscous, and momentum contributions to moment. even though these individual
+! contributions are not exposed to python, i still wanted to keep how it's done in the
+! code in case its useful in the future. this is also true for the face integrations
 ! update the inviscid force and moment coefficients. iblank as we sum
       fpd(1) = fpd(1) + blk*fxd
       fp(1) = fp(1) + fx*blk
@@ -1032,6 +1165,42 @@ contains
       mp(2) = mp(2) + my*blk
       mpd(3) = mpd(3) + blk*mzd
       mp(3) = mp(3) + mz*blk
+! the force integral for the center of pressure computation.
+! we need the cell centers wrt origin
+      xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i+1, &
+&       j+1, 1))
+      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
+&       1))
+      ycd = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i+1, &
+&       j+1, 2))
+      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
+&       2))
+      zcd = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i+1, &
+&       j+1, 3))
+      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
+&       3))
+! accumulate in the sums. each force component is tracked separately
+! force-x
+      cofsumfxd(1) = cofsumfxd(1) + blk*(xcd*fx+xc*fxd)
+      cofsumfx(1) = cofsumfx(1) + xc*fx*blk
+      cofsumfxd(2) = cofsumfxd(2) + blk*(ycd*fx+yc*fxd)
+      cofsumfx(2) = cofsumfx(2) + yc*fx*blk
+      cofsumfxd(3) = cofsumfxd(3) + blk*(zcd*fx+zc*fxd)
+      cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+! force-y
+      cofsumfyd(1) = cofsumfyd(1) + blk*(xcd*fy+xc*fyd)
+      cofsumfy(1) = cofsumfy(1) + xc*fy*blk
+      cofsumfyd(2) = cofsumfyd(2) + blk*(ycd*fy+yc*fyd)
+      cofsumfy(2) = cofsumfy(2) + yc*fy*blk
+      cofsumfyd(3) = cofsumfyd(3) + blk*(zcd*fy+zc*fyd)
+      cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+! force-z
+      cofsumfzd(1) = cofsumfzd(1) + blk*(xcd*fz+xc*fzd)
+      cofsumfz(1) = cofsumfz(1) + xc*fz*blk
+      cofsumfzd(2) = cofsumfzd(2) + blk*(ycd*fz+yc*fzd)
+      cofsumfz(2) = cofsumfz(2) + yc*fz*blk
+      cofsumfzd(3) = cofsumfzd(3) + blk*(zcd*fz+zc*fzd)
+      cofsumfz(3) = cofsumfz(3) + zc*fz*blk
 ! compute the r and n vectores for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
@@ -1263,6 +1432,42 @@ contains
         mv(2) = mv(2) + my*blk
         mvd(3) = mvd(3) + blk*mzd
         mv(3) = mv(3) + mz*blk
+! the force integral for the center of pressure computation.
+! we need the cell centers wrt origin
+        xcd = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i+1&
+&         , j+1, 1))
+        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&         , 1))
+        ycd = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i+1&
+&         , j+1, 2))
+        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&         , 2))
+        zcd = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i+1&
+&         , j+1, 3))
+        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&         , 3))
+! accumulate in the sums. each force component is tracked separately
+! force-x
+        cofsumfxd(1) = cofsumfxd(1) + blk*(xcd*fx+xc*fxd)
+        cofsumfx(1) = cofsumfx(1) + xc*fx*blk
+        cofsumfxd(2) = cofsumfxd(2) + blk*(ycd*fx+yc*fxd)
+        cofsumfx(2) = cofsumfx(2) + yc*fx*blk
+        cofsumfxd(3) = cofsumfxd(3) + blk*(zcd*fx+zc*fxd)
+        cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+! force-y
+        cofsumfyd(1) = cofsumfyd(1) + blk*(xcd*fy+xc*fyd)
+        cofsumfy(1) = cofsumfy(1) + xc*fy*blk
+        cofsumfyd(2) = cofsumfyd(2) + blk*(ycd*fy+yc*fyd)
+        cofsumfy(2) = cofsumfy(2) + yc*fy*blk
+        cofsumfyd(3) = cofsumfyd(3) + blk*(zcd*fy+zc*fyd)
+        cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+! force-z
+        cofsumfzd(1) = cofsumfzd(1) + blk*(xcd*fz+xc*fzd)
+        cofsumfz(1) = cofsumfz(1) + xc*fz*blk
+        cofsumfzd(2) = cofsumfzd(2) + blk*(ycd*fz+yc*fzd)
+        cofsumfz(2) = cofsumfz(2) + yc*fz*blk
+        cofsumfzd(3) = cofsumfzd(3) + blk*(zcd*fz+zc*fzd)
+        cofsumfz(3) = cofsumfz(3) + zc*fz*blk
 ! compute the r and n vectors for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
@@ -1341,6 +1546,18 @@ contains
     localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
     localvaluesd(imv:imv+2) = localvaluesd(imv:imv+2) + mvd
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
+    localvaluesd(coforcex:coforcex+2) = localvaluesd(coforcex:coforcex+2&
+&     ) + cofsumfxd
+    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
+&     + cofsumfx
+    localvaluesd(coforcey:coforcey+2) = localvaluesd(coforcey:coforcey+2&
+&     ) + cofsumfyd
+    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
+&     + cofsumfy
+    localvaluesd(coforcez:coforcez+2) = localvaluesd(coforcez:coforcez+2&
+&     ) + cofsumfzd
+    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
+&     + cofsumfz
     localvaluesd(isepsensor) = localvaluesd(isepsensor) + sepsensord
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvaluesd(icavitation) = localvaluesd(icavitation) + cavitationd
@@ -1384,6 +1601,7 @@ contains
     integer(kind=inttype) :: mm
 ! local variables.
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
 &   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
@@ -1430,6 +1648,9 @@ contains
     fv = zero
     mp = zero
     mv = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
@@ -1486,6 +1707,11 @@ contains
       fx = pm1*ssi(i, j, 1)
       fy = pm1*ssi(i, j, 2)
       fz = pm1*ssi(i, j, 3)
+! note from ay: technically, we can just compute the moments using the center of force
+! terms. however, the moment computations coded here distinguish pressure,
+! viscous, and momentum contributions to moment. even though these individual
+! contributions are not exposed to python, i still wanted to keep how it's done in the
+! code in case its useful in the future. this is also true for the face integrations
 ! update the inviscid force and moment coefficients. iblank as we sum
       fp(1) = fp(1) + fx*blk
       fp(2) = fp(2) + fy*blk
@@ -1496,6 +1722,27 @@ contains
       mp(1) = mp(1) + mx*blk
       mp(2) = mp(2) + my*blk
       mp(3) = mp(3) + mz*blk
+! the force integral for the center of pressure computation.
+! we need the cell centers wrt origin
+      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
+&       1))
+      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
+&       2))
+      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
+&       3))
+! accumulate in the sums. each force component is tracked separately
+! force-x
+      cofsumfx(1) = cofsumfx(1) + xc*fx*blk
+      cofsumfx(2) = cofsumfx(2) + yc*fx*blk
+      cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+! force-y
+      cofsumfy(1) = cofsumfy(1) + xc*fy*blk
+      cofsumfy(2) = cofsumfy(2) + yc*fy*blk
+      cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+! force-z
+      cofsumfz(1) = cofsumfz(1) + xc*fz*blk
+      cofsumfz(2) = cofsumfz(2) + yc*fz*blk
+      cofsumfz(3) = cofsumfz(3) + zc*fz*blk
 ! compute the r and n vectores for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
@@ -1624,6 +1871,27 @@ contains
         mv(1) = mv(1) + mx*blk
         mv(2) = mv(2) + my*blk
         mv(3) = mv(3) + mz*blk
+! the force integral for the center of pressure computation.
+! we need the cell centers wrt origin
+        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&         , 1))
+        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&         , 2))
+        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&         , 3))
+! accumulate in the sums. each force component is tracked separately
+! force-x
+        cofsumfx(1) = cofsumfx(1) + xc*fx*blk
+        cofsumfx(2) = cofsumfx(2) + yc*fx*blk
+        cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+! force-y
+        cofsumfy(1) = cofsumfy(1) + xc*fy*blk
+        cofsumfy(2) = cofsumfy(2) + yc*fy*blk
+        cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+! force-z
+        cofsumfz(1) = cofsumfz(1) + xc*fz*blk
+        cofsumfz(2) = cofsumfz(2) + yc*fz*blk
+        cofsumfz(3) = cofsumfz(3) + zc*fz*blk
 ! compute the r and n vectors for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
@@ -1681,6 +1949,12 @@ contains
     localvalues(ifv:ifv+2) = localvalues(ifv:ifv+2) + fv
     localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
+    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
+&     + cofsumfx
+    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
+&     + cofsumfy
+    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
+&     + cofsumfz
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvalues(icavitation) = localvalues(icavitation) + cavitation
     localvalues(icpmin) = localvalues(icpmin) + cpmin_ks_sum
@@ -1733,9 +2007,10 @@ contains
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
-&   zc, mx, my, mz
-    real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
+    real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, xco, &
+&   yc, yco, zc, zco, mx, my, mz
+    real(kind=realtype) :: xcd, xcod, ycd, ycod, zcd, zcod, mxd, myd, &
+&   mzd
     real(kind=realtype) :: sf, vmag, vnm, vnmfreestreamref, vxm, vym, &
 &   vzm, fx, fy, fz, u, v, w
     real(kind=realtype) :: vmagd, vnmd, vxmd, vymd, vzmd, fxd, fyd, fzd&
@@ -1748,6 +2023,8 @@ contains
 &   sfacecoordref
     real(kind=realtype), dimension(3) :: fpd, mpd, fmomd, mmomd, &
 &   refpointd, sfacecoordrefd
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
+    real(kind=realtype), dimension(3) :: cofsumfxd, cofsumfyd, cofsumfzd
     real(kind=realtype) :: mnm, massflowratelocal
     real(kind=realtype) :: mnmd, massflowratelocald
     intrinsic sqrt
@@ -1799,6 +2076,9 @@ contains
     mp = zero
     fmom = zero
     mmom = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
     massflowrate = zero
     area = zero
     mass_ptot = zero
@@ -1816,6 +2096,9 @@ contains
     area_ptot = zero
     area_ps = zero
     mass_ptotd = 0.0_8
+    cofsumfxd = 0.0_8
+    cofsumfyd = 0.0_8
+    cofsumfzd = 0.0_8
     aread = 0.0_8
     mmomd = 0.0_8
     mass_vxd = 0.0_8
@@ -2010,6 +2293,42 @@ contains
       mp(2) = mp(2) + my
       mpd(3) = mpd(3) + mzd
       mp(3) = mp(3) + mz
+! the force integral for the center of pressure computation.
+! we need the cell centers wrt origin
+      xcod = fourth*(xxd(i, j, 1)+xxd(i+1, j, 1)+xxd(i, j+1, 1)+xxd(i+1&
+&       , j+1, 1))
+      xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1))
+      ycod = fourth*(xxd(i, j, 2)+xxd(i+1, j, 2)+xxd(i, j+1, 2)+xxd(i+1&
+&       , j+1, 2))
+      yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2))
+      zcod = fourth*(xxd(i, j, 3)+xxd(i+1, j, 3)+xxd(i, j+1, 3)+xxd(i+1&
+&       , j+1, 3))
+      zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3))
+! accumulate in the sums. each force component is tracked separately
+! force-x
+      cofsumfxd(1) = cofsumfxd(1) + blk*(xcod*fx+xco*fxd)
+      cofsumfx(1) = cofsumfx(1) + xco*fx*blk
+      cofsumfxd(2) = cofsumfxd(2) + blk*(ycod*fx+yco*fxd)
+      cofsumfx(2) = cofsumfx(2) + yco*fx*blk
+      cofsumfxd(3) = cofsumfxd(3) + blk*(zcod*fx+zco*fxd)
+      cofsumfx(3) = cofsumfx(3) + zco*fx*blk
+! force-y
+      cofsumfyd(1) = cofsumfyd(1) + blk*(xcod*fy+xco*fyd)
+      cofsumfy(1) = cofsumfy(1) + xco*fy*blk
+      cofsumfyd(2) = cofsumfyd(2) + blk*(ycod*fy+yco*fyd)
+      cofsumfy(2) = cofsumfy(2) + yco*fy*blk
+      cofsumfyd(3) = cofsumfyd(3) + blk*(zcod*fy+zco*fyd)
+      cofsumfy(3) = cofsumfy(3) + zco*fy*blk
+! force-z
+      cofsumfzd(1) = cofsumfzd(1) + blk*(xcod*fz+xco*fzd)
+      cofsumfz(1) = cofsumfz(1) + xco*fz*blk
+      cofsumfzd(2) = cofsumfzd(2) + blk*(ycod*fz+yco*fzd)
+      cofsumfz(2) = cofsumfz(2) + yco*fz*blk
+      cofsumfzd(3) = cofsumfzd(3) + blk*(zcod*fz+zco*fzd)
+      cofsumfz(3) = cofsumfz(3) + zco*fz*blk
 ! momentum forces are a little tricky.  we negate because
 ! have to re-apply fact to massflowratelocal to undoo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.
@@ -2047,6 +2366,30 @@ contains
       mmom(2) = mmom(2) + my
       mmomd(3) = mmomd(3) + mzd
       mmom(3) = mmom(3) + mz
+! center of force computations. here we accumulate in the sums.
+! each force component is tracked separately
+! blanking is included in the mdot multiplier for the force.
+! force-x
+      cofsumfxd(1) = cofsumfxd(1) + xcod*fx + xco*fxd
+      cofsumfx(1) = cofsumfx(1) + xco*fx
+      cofsumfxd(2) = cofsumfxd(2) + ycod*fx + yco*fxd
+      cofsumfx(2) = cofsumfx(2) + yco*fx
+      cofsumfxd(3) = cofsumfxd(3) + zcod*fx + zco*fxd
+      cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+      cofsumfyd(1) = cofsumfyd(1) + xcod*fy + xco*fyd
+      cofsumfy(1) = cofsumfy(1) + xco*fy
+      cofsumfyd(2) = cofsumfyd(2) + ycod*fy + yco*fyd
+      cofsumfy(2) = cofsumfy(2) + yco*fy
+      cofsumfyd(3) = cofsumfyd(3) + zcod*fy + zco*fyd
+      cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+      cofsumfzd(1) = cofsumfzd(1) + xcod*fz + xco*fzd
+      cofsumfz(1) = cofsumfz(1) + xco*fz
+      cofsumfzd(2) = cofsumfzd(2) + ycod*fz + yco*fzd
+      cofsumfz(2) = cofsumfz(2) + yco*fz
+      cofsumfzd(3) = cofsumfzd(3) + zcod*fz + zco*fzd
+      cofsumfz(3) = cofsumfz(3) + zco*fz
     end do
 ! increment the local values array with what we computed here
     localvaluesd(imassflow) = localvaluesd(imassflow) + massflowrated
@@ -2078,6 +2421,18 @@ contains
 &     mmomd
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
+    localvaluesd(coforcex:coforcex+2) = localvaluesd(coforcex:coforcex+2&
+&     ) + cofsumfxd
+    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
+&     + cofsumfx
+    localvaluesd(coforcey:coforcey+2) = localvaluesd(coforcey:coforcey+2&
+&     ) + cofsumfyd
+    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
+&     + cofsumfy
+    localvaluesd(coforcez:coforcez+2) = localvaluesd(coforcez:coforcez+2&
+&     ) + cofsumfzd
+    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
+&     + cofsumfz
     localvaluesd(iareaptot) = localvaluesd(iareaptot) + area_ptotd
     localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvaluesd(iareaps) = localvaluesd(iareaps) + area_psd
@@ -2119,14 +2474,15 @@ contains
     real(kind=realtype) :: area_ptot, area_ps
     real(kind=realtype) :: mredim
     integer(kind=inttype) :: i, j, ii, blk
-    real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, yc, &
-&   zc, mx, my, mz
+    real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, xco, &
+&   yc, yco, zc, zco, mx, my, mz
     real(kind=realtype) :: sf, vmag, vnm, vnmfreestreamref, vxm, vym, &
 &   vzm, fx, fy, fz, u, v, w
     real(kind=realtype) :: pm, ptot, ttot, rhom, gammam, am
     real(kind=realtype) :: area, cellarea, overcellarea
     real(kind=realtype), dimension(3) :: fp, mp, fmom, mmom, refpoint, &
 &   sfacecoordref
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     real(kind=realtype) :: mnm, massflowratelocal
     intrinsic sqrt
     intrinsic mod
@@ -2166,6 +2522,9 @@ contains
     mp = zero
     fmom = zero
     mmom = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
     massflowrate = zero
     area = zero
     mass_ptot = zero
@@ -2260,6 +2619,27 @@ contains
       mp(1) = mp(1) + mx
       mp(2) = mp(2) + my
       mp(3) = mp(3) + mz
+! the force integral for the center of pressure computation.
+! we need the cell centers wrt origin
+      xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1))
+      yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2))
+      zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3))
+! accumulate in the sums. each force component is tracked separately
+! force-x
+      cofsumfx(1) = cofsumfx(1) + xco*fx*blk
+      cofsumfx(2) = cofsumfx(2) + yco*fx*blk
+      cofsumfx(3) = cofsumfx(3) + zco*fx*blk
+! force-y
+      cofsumfy(1) = cofsumfy(1) + xco*fy*blk
+      cofsumfy(2) = cofsumfy(2) + yco*fy*blk
+      cofsumfy(3) = cofsumfy(3) + zco*fy*blk
+! force-z
+      cofsumfz(1) = cofsumfz(1) + xco*fz*blk
+      cofsumfz(2) = cofsumfz(2) + yco*fz*blk
+      cofsumfz(3) = cofsumfz(3) + zco*fz*blk
 ! momentum forces are a little tricky.  we negate because
 ! have to re-apply fact to massflowratelocal to undoo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.
@@ -2278,6 +2658,21 @@ contains
       mmom(1) = mmom(1) + mx
       mmom(2) = mmom(2) + my
       mmom(3) = mmom(3) + mz
+! center of force computations. here we accumulate in the sums.
+! each force component is tracked separately
+! blanking is included in the mdot multiplier for the force.
+! force-x
+      cofsumfx(1) = cofsumfx(1) + xco*fx
+      cofsumfx(2) = cofsumfx(2) + yco*fx
+      cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+      cofsumfy(1) = cofsumfy(1) + xco*fy
+      cofsumfy(2) = cofsumfy(2) + yco*fy
+      cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+      cofsumfz(1) = cofsumfz(1) + xco*fz
+      cofsumfz(2) = cofsumfz(2) + yco*fz
+      cofsumfz(3) = cofsumfz(3) + zco*fz
     end do
 ! increment the local values array with what we computed here
     localvalues(imassflow) = localvalues(imassflow) + massflowrate
@@ -2294,6 +2689,12 @@ contains
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
+    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
+&     + cofsumfx
+    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
+&     + cofsumfy
+    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
+&     + cofsumfz
     localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvalues(iareaps) = localvalues(iareaps) + area_ps
     localvalues(imassvx) = localvalues(imassvx) + mass_vx
