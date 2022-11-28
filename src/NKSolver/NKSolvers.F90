@@ -1691,6 +1691,7 @@ module ANKSolver
   real(kind=realType) :: ANK_pcUpdateCutoff
   real(kind=realType) :: lambda
   logical :: ANK_solverSetup=.False.
+  logical :: ANK_CFLReset
   integer(kind=intTYpe) :: ANK_iter
   integer(kind=intType) :: nState
   real(kind=alwaysRealType) :: totalR_old, totalR_pcUpdate ! for recording the previous residual
@@ -3682,7 +3683,7 @@ contains
 
   end subroutine ANKTurbSolveKSP
 
-  subroutine ANKStep(firstCall, reset_ank_cfl)
+  subroutine ANKStep(firstCall)
 
     use constants
     use blockPointers, only : nDom, flowDoms, shockSensor, ib, jb, kb, p, w, gamma
@@ -3709,7 +3710,7 @@ contains
     implicit none
 
     ! Input Variables
-    logical, intent(in) :: firstCall, reset_ank_cfl
+    logical, intent(in) :: firstCall
 
     ! Working Variables
     integer(kind=intType) :: ierr, maxIt, kspIterations, nn, sps, reason, nHist, iter, feval, orderturbsave
@@ -3772,8 +3773,11 @@ contains
           ! Initialize some variables
           totalR_old = totalR ! Record the old residual for the first iteration
           rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
-          if (reset_ank_cfl) then
-            ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
+          if (ANK_CFLReset) then
+            ! we are asked to reset the cfl to the initial value on every first ANK iteration.
+            ! if this is set to false, the CFL must be set from the python layer using either the
+            ! initial CFL or the last CFL for the aeroproblem
+            ANK_CFL = ANK_CFL0
           end if
           ANK_CFLMinBase = ANK_CFLMin0
           totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration

@@ -931,7 +931,7 @@ contains
     integer :: ierr
     integer(kind=intType) ::  nMGCycles
     character (len=7) :: numberString
-    logical :: absConv, relConv, firstNK, firstANK, old_writeGrid, reset_ank_cfl
+    logical :: absConv, relConv, firstNK, firstANK, old_writeGrid
     real(kind=realType) :: nk_switchtol_save, curTime, ordersConvergedOld
 
     ! Allocate the memory for cycling.
@@ -965,17 +965,6 @@ contains
     if (currentLevel == 1 .and. useNKSolver .and. NK_LS==nonMonotoneLineSearch) then
        allocate(NKLSFuncEvals(nMGCycles))
     end if
-
-   ! TODO make this an option
-   if (freeStreamResSet) then
-      ! free stream residual was already set, meaning this is not the first call
-      ! TODO fix this. normally, we want to only reset ank if this is not a clean restart
-      ! this needs to be done on the AP level since we have no knowledge of the AP in here
-      reset_ank_cfl = .False.
-   else
-      ! we always reset the CFL if the free stream residual is not set
-      reset_ank_cfl = .True.
-   end if
 
     ! Only compute the free stream resisudal once for efficiency on the
     ! fine grid only.
@@ -1094,9 +1083,8 @@ contains
                 call executeMGCycle
 
              else
-                call ANKStep(firstANK, reset_ank_cfl)
+                call ANKStep(firstANK)
                 firstANK = .False.
-                reset_ank_cfl = .False.
                 CFLMonitor = ANK_CFL
 
              end if
@@ -1128,10 +1116,9 @@ contains
              else if (totalR <= ANK_switchTol*totalR0 .and. &
                   totalR > NK_switchTol*totalR0) then
 
-                call ANKStep(firstANK, reset_ank_cfl)
+                call ANKStep(firstANK)
                 firstANK = .False.
                 firstNK = .True.
-                reset_ank_cfl = .False.
                 CFLMonitor = ANK_CFL
 
              else

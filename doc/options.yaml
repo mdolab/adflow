@@ -991,6 +991,12 @@ ANKCFLCutback:
     The cutback factor for the CFL number in the ANK solver.
     This is the factor used when the CFL is adaptively reduced.
 
+ANKCFLReset:
+  desc: >
+    Flag that determines if the ANK CFL is reset to :py:data:`ANKCFL0` at first ANK iterations.
+    Each aero problem saves the last ANK CFL, and if this flag is set to false, subsequent solutions with the same aero problem starts at the last ANK CFL.
+    If the flag is set to true, then ANK CFL is always reset to the initial value of :py:data:`ANKCFL0`.
+
 ANKStepFactor:
   desc: >
     The initial step size taken by the ANK solver.

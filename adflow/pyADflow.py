@@ -1387,6 +1387,9 @@ class ADFLOW(AeroSolver):
         # Save the winf vector. (just the flow part)
         self.curAP.adflowData.oldWinf = self.adflow.flowvarrefstate.winf[0:5].copy()
 
+        # Save the current ANK CFL in the ap data
+        self.curAP.adflowData.ank_cfl = self.adflow.anksolver.ank_cfl
+
         # Assign Fail Flags
         self.curAP.solveFailed = bool(self.adflow.killsignals.routinefailed)
         self.curAP.fatalFail = bool(self.adflow.killsignals.fatalfail)
@@ -3063,6 +3066,8 @@ class ADFLOW(AeroSolver):
 
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         self._resetFlow()
+        # also reset the ank cfl for this AP
+        aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
 
     def _resetFlow(self):
         strLvl = self.getOption("MGStartLevel")
@@ -3290,6 +3295,8 @@ class ADFLOW(AeroSolver):
             else:
                 self._resetFlow()
 
+            aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
+
         if failedMesh:
             self.adflow.killsignals.fatalfail = True
 
@@ -3313,6 +3320,10 @@ class ADFLOW(AeroSolver):
             self.adflow.anksolver.destroyanksolver()
             if releaseAdjointMemory:
                 self.releaseAdjointMemory()
+
+        if not self.getOption("ANKCFLReset"):
+            # also set the ANK CFL to the last value if we are restarting
+            self.adflow.anksolver.ank_cfl = aeroProblem.adflowData.ank_cfl
 
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
@@ -5557,6 +5568,7 @@ class ADFLOW(AeroSolver):
             "ANKCFLFactor": [float, 10.0],
             "ANKCFLExponent": [float, 0.5],
             "ANKCFLCutback": [float, 0.5],
+            "ANKCFLReset": [bool, True],
             "ANKStepFactor": [float, 1.0],
             "ANKStepMin": [float, 0.01],
             "ANKConstCFLStep": [float, 0.4],
@@ -5936,6 +5948,7 @@ class ADFLOW(AeroSolver):
             "ankcflfactor": ["ank", "ank_cflfactor"],
             "ankcflexponent": ["ank", "ank_cflexponent"],
             "ankcflcutback": ["ank", "ank_cflcutback"],
+            "ankcflreset": ["ank", "ank_cflreset"],
             "ankstepfactor": ["ank", "ank_stepfactor"],
             "ankstepmin": ["ank", "ank_stepmin"],
             "ankconstcflstep": ["ank", "ank_constcflstep"],
@@ -6446,6 +6459,7 @@ class adflowFlowCase(object):
         self.callCounter = -1
         self.disp = None
         self.oldWinf = None
+        self.ank_cfl = None
 
 
 class adflowUserFunc(object):
