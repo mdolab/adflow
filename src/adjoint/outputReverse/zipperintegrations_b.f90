@@ -20,8 +20,8 @@ contains
     use sorting, only : faminlist
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, pref, prefd, timeref, timerefd, lref, tref, trefd, rgas, &
-&   rgasd, uref, urefd, uinf, uinfd, rhoinf, rhoinfd
-    use inputphysics, only : pointref, pointrefd, flowtype
+&   rgasd, uref, urefd, uinf, uinfd, rhoinf, rhoinfd, gammainf
+    use inputphysics, only : pointref, pointrefd, flowtype, rgasdim
     use flowutils_b, only : computeptot, computeptot_b, computettot, &
 &   computettot_b
     use surfacefamilies, only : familyexchange, bcfamexchange
@@ -56,14 +56,16 @@ contains
 &   massflowratelocald, amd
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
-&   mass_ny, mass_nz
+&   mass_ny, mass_nz, mass_vi
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
 &   mass_psd, mass_mnd, mass_ad, mass_rhod, mass_vxd, mass_vyd, mass_vzd&
-&   , mass_nxd, mass_nyd, mass_nzd
+&   , mass_nxd, mass_nyd, mass_nzd, mass_vid
     real(kind=realtype) :: area, cellarea, overcellarea
     real(kind=realtype) :: aread, cellaread, overcellaread
     real(kind=realtype) :: area_ptot, area_ps
     real(kind=realtype) :: area_ptotd, area_psd
+    real(kind=realtype) :: govgm1, gm1ovg, viconst, vilocal, pratio
+    real(kind=realtype) :: vilocald, pratiod
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
@@ -73,14 +75,18 @@ contains
     intrinsic sqrt
     intrinsic size
     intrinsic present
+    intrinsic min
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg1d
     real(kind=realtype), dimension(3) :: arg2
     real(kind=realtype), dimension(3) :: arg2d
     logical :: res
+    integer :: branch
+    real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd5
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tempd3
     real(kind=realtype) :: tempd2
@@ -95,6 +101,7 @@ contains
     if (flowtype .eq. internalflow) internalflowfact = -one
     inflowfact = one
     if (isinflow) inflowfact = -one
+    mass_vid = localvaluesd(imassvi)
     mass_nzd = localvaluesd(imassnz)
     mass_nyd = localvaluesd(imassny)
     mass_nxd = localvaluesd(imassnx)
@@ -185,6 +192,17 @@ contains
           sfacecoordref(1) = sf*ss(1)*overcellarea
           sfacecoordref(2) = sf*ss(2)*overcellarea
           sfacecoordref(3) = sf*ss(3)*overcellarea
+          govgm1 = gammainf/(gammainf-one)
+          gm1ovg = one/govgm1
+          viconst = two*govgm1*rgasdim
+          if (one .gt. one/ptot) then
+            pratio = one/ptot
+            call pushcontrol1b(0)
+          else
+            call pushcontrol1b(1)
+            pratio = one
+          end if
+          vilocal = sqrt(viconst*(one-pratio**gm1ovg)*ttot*tref)
 ! compute the average cell center.
           xc = zero
           yc = zero
@@ -233,10 +251,10 @@ contains
           ssd(1) = ssd(1) + massflowratelocal*vxm*fxd
           vxmd = ss(1)*massflowratelocal*fxd
           call popreal8(massflowratelocal)
-          tempd4 = internalflowfact*inflowfact*massflowratelocald/&
+          tempd5 = internalflowfact*inflowfact*massflowratelocald/&
 &           timeref
-          timerefd = timerefd - massflowratelocal*tempd4/timeref
-          massflowratelocald = tempd4
+          timerefd = timerefd - massflowratelocal*tempd5/timeref
+          massflowratelocald = tempd5
           call popreal8array(ss, 3)
           cellaread = sum(-(ss*ssd/cellarea))/cellarea
           ssd = ssd/cellarea
@@ -273,78 +291,67 @@ contains
             varsd(conn(1, i), izippflowx) = varsd(conn(1, i), izippflowx&
 &             ) + xcd
           end do
+          ssd(3) = ssd(3) + overcellarea*massflowratelocal*mass_nzd
+          overcellaread = ss(2)*massflowratelocal*mass_nyd + ss(1)*&
+&           massflowratelocal*mass_nxd + ss(3)*massflowratelocal*&
+&           mass_nzd
+          massflowratelocald = massflowratelocald + ss(2)*overcellarea*&
+&           mass_nyd + vilocal*mass_vid + ss(1)*overcellarea*mass_nxd + &
+&           ss(3)*overcellarea*mass_nzd
+          ssd(2) = ssd(2) + overcellarea*massflowratelocal*mass_nyd
+          ssd(1) = ssd(1) + overcellarea*massflowratelocal*mass_nxd
+          vilocald = massflowratelocal*mass_vid
+          temp2 = one - pratio**gm1ovg
+          if (viconst*(temp2*(ttot*tref)) .eq. 0.0_8) then
+            tempd4 = 0.0
+          else
+            tempd4 = viconst*vilocald/(2.0*sqrt(viconst*(temp2*(ttot*&
+&             tref))))
+          end if
+          if (pratio .le. 0.0_8 .and. (gm1ovg .eq. 0.0_8 .or. gm1ovg &
+&             .ne. int(gm1ovg))) then
+            pratiod = 0.0
+          else
+            pratiod = -(ttot*tref*gm1ovg*pratio**(gm1ovg-1)*tempd4)
+          end if
+          ttotd = ttotd + temp2*tref*tempd4
+          trefd = trefd + temp2*ttot*tempd4
+          call popcontrol1b(branch)
+          if (branch .eq. 0) ptotd = ptotd - one*pratiod/ptot**2
           sfacecoordrefd(3) = sfacecoordrefd(3) - massflowratelocal*&
+&           mass_vzd
+          massflowratelocald = massflowratelocald + (uref*vym-&
+&           sfacecoordref(2))*mass_vyd + mnm*mass_mnd + uref*am*mass_ad &
+&           + tref*ttot*mass_ttotd + massflowrated + pref*ptot*&
+&           mass_ptotd + rhoref*rhom*mass_rhod + pm*mass_psd + (uref*vxm&
+&           -sfacecoordref(1))*mass_vxd + (uref*vzm-sfacecoordref(3))*&
 &           mass_vzd
           sfacecoordrefd(2) = sfacecoordrefd(2) - massflowratelocal*&
 &           mass_vyd
           sfacecoordrefd(1) = sfacecoordrefd(1) - massflowratelocal*&
 &           mass_vxd
-          ssd(3) = ssd(3) + overcellarea*massflowratelocal*mass_nzd
-          overcellaread = ss(2)*massflowratelocal*mass_nyd + ss(3)*sf*&
-&           sfacecoordrefd(3) + ss(1)*massflowratelocal*mass_nxd + ss(3)&
-&           *massflowratelocal*mass_nzd
-          massflowratelocald = massflowratelocald + ss(2)*overcellarea*&
-&           mass_nyd + (uref*vzm-sfacecoordref(3))*mass_vzd + (uref*vxm-&
-&           sfacecoordref(1))*mass_vxd + pm*mass_psd + rhoref*rhom*&
-&           mass_rhod + pref*ptot*mass_ptotd + massflowrated + tref*ttot&
-&           *mass_ttotd + uref*am*mass_ad + mnm*mass_mnd + (uref*vym-&
-&           sfacecoordref(2))*mass_vyd + ss(1)*overcellarea*mass_nxd + &
-&           ss(3)*overcellarea*mass_nzd
-          ssd(2) = ssd(2) + overcellarea*massflowratelocal*mass_nyd
-          ssd(1) = ssd(1) + overcellarea*massflowratelocal*mass_nxd
           ssd(3) = ssd(3) + sf*overcellarea*sfacecoordrefd(3)
           sfd = ss(3)*overcellarea*sfacecoordrefd(3)
+          overcellaread = overcellaread + ss(3)*sf*sfacecoordrefd(3)
           sfacecoordrefd(3) = 0.0_8
           ssd(2) = ssd(2) + sf*overcellarea*sfacecoordrefd(2)
           sfd = sfd + ss(2)*overcellarea*sfacecoordrefd(2)
           overcellaread = overcellaread + ss(2)*sf*sfacecoordrefd(2)
           sfacecoordrefd(2) = 0.0_8
           overcellaread = overcellaread + ss(1)*sf*sfacecoordrefd(1)
-          pmd = pmd + massflowratelocal*mass_psd + cellarea*area_psd
           cellaread = cellaread + ptot*pref*area_ptotd + aread - &
 &           overcellaread/cellarea**2 + pm*area_psd
-          ptotd = ptotd + pref*massflowratelocal*mass_ptotd + cellarea*&
-&           pref*area_ptotd
           mnmd = massflowratelocal*mass_mnd
-          amd = uref*massflowratelocal*mass_ad
-          rhorefd = rhorefd + rhom*massflowratelocal*mass_rhod
-          ttotd = ttotd + tref*massflowratelocal*mass_ttotd
-          trefd = trefd + ttot*massflowratelocal*mass_ttotd
           call popreal8(pm)
-          prefd = prefd + ptot*massflowratelocal*mass_ptotd + pm*pmd + &
-&           cellarea*ptot*area_ptotd
           vnmd = mredim*rhom*massflowratelocald
-          mredimd = mredimd + rhom*vnm*massflowratelocald
           if (ss(1)**2 + ss(2)**2 + ss(3)**2 .eq. 0.0_8) then
             tempd1 = 0.0
           else
             tempd1 = cellaread/(2.0*sqrt(ss(1)**2+ss(2)**2+ss(3)**2))
           end if
-          ssd(1) = ssd(1) + 2*ss(1)*tempd1 + sf*overcellarea*&
-&           sfacecoordrefd(1)
-          ssd(2) = ssd(2) + 2*ss(2)*tempd1
-          ssd(3) = ssd(3) + 2*ss(3)*tempd1
           temp0 = gammam*pm/rhom
           temp1 = sqrt(temp0)
-          if (temp0 .eq. 0.0_8) then
-            tempd3 = 0.0
-          else
-            tempd3 = -(vmag*mnmd/(2.0*temp1**3*rhom))
-          end if
           vmagd = mnmd/temp1
-          sfd = sfd + ss(1)*overcellarea*sfacecoordrefd(1) - vnmd - &
-&           vmagd
-          sfacecoordrefd(1) = 0.0_8
-          temp = gammam*pm/rhom
-          if (temp .eq. 0.0_8) then
-            tempd2 = 0.0
-          else
-            tempd2 = amd/(2.0*sqrt(temp)*rhom)
-          end if
-          rhomd = mredim*vnm*massflowratelocald - temp*tempd2 - temp0*&
-&           tempd3 + rhoref*massflowratelocal*mass_rhod
-          pmd = gammam*tempd3 + gammam*tempd2 + pref*pmd
-          gammamd = pm*tempd2 + pm*tempd3
           if (vxm**2 + vym**2 + vzm**2 .eq. 0.0_8) then
             tempd0 = 0.0
           else
@@ -356,6 +363,38 @@ contains
 &           uref*mass_vyd
           vxmd = vxmd + 2*vxm*tempd0 + ss(1)*vnmd + massflowratelocal*&
 &           uref*mass_vxd
+          ssd(1) = ssd(1) + 2*ss(1)*tempd1 + sf*overcellarea*&
+&           sfacecoordrefd(1)
+          sfd = sfd + ss(1)*overcellarea*sfacecoordrefd(1) - vnmd - &
+&           vmagd
+          sfacecoordrefd(1) = 0.0_8
+          pmd = pmd + massflowratelocal*mass_psd + cellarea*area_psd
+          ptotd = ptotd + pref*massflowratelocal*mass_ptotd + cellarea*&
+&           pref*area_ptotd
+          prefd = prefd + ptot*massflowratelocal*mass_ptotd + pm*pmd + &
+&           cellarea*ptot*area_ptotd
+          amd = uref*massflowratelocal*mass_ad
+          rhorefd = rhorefd + rhom*massflowratelocal*mass_rhod
+          ttotd = ttotd + tref*massflowratelocal*mass_ttotd
+          trefd = trefd + ttot*massflowratelocal*mass_ttotd
+          mredimd = mredimd + rhom*vnm*massflowratelocald
+          ssd(2) = ssd(2) + 2*ss(2)*tempd1
+          ssd(3) = ssd(3) + 2*ss(3)*tempd1
+          if (temp0 .eq. 0.0_8) then
+            tempd3 = 0.0
+          else
+            tempd3 = -(vmag*mnmd/(2.0*temp1**3*rhom))
+          end if
+          temp = gammam*pm/rhom
+          if (temp .eq. 0.0_8) then
+            tempd2 = 0.0
+          else
+            tempd2 = amd/(2.0*sqrt(temp)*rhom)
+          end if
+          rhomd = mredim*vnm*massflowratelocald - temp*tempd2 - temp0*&
+&           tempd3 + rhoref*massflowratelocal*mass_rhod
+          pmd = gammam*tempd3 + gammam*tempd2 + pref*pmd
+          gammamd = pm*tempd2 + pm*tempd3
           ssd(1) = ssd(1) + vxm*vnmd
           ssd(2) = ssd(2) + vym*vnmd
           ssd(3) = ssd(3) + vzm*vnmd
@@ -419,8 +458,8 @@ contains
     use blockpointers, only : bctype
     use sorting, only : faminlist
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
-&   lref, tref, rgas, uref, uinf, rhoinf
-    use inputphysics, only : pointref, flowtype
+&   lref, tref, rgas, uref, uinf, rhoinf, gammainf
+    use inputphysics, only : pointref, flowtype, rgasdim
     use flowutils_b, only : computeptot, computettot
     use surfacefamilies, only : familyexchange, bcfamexchange
     use utils_b, only : mynorm2, cross_prod
@@ -445,9 +484,10 @@ contains
 &   massflowratelocal, am
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
-&   mass_ny, mass_nz
+&   mass_ny, mass_nz, mass_vi
     real(kind=realtype) :: area, cellarea, overcellarea
     real(kind=realtype) :: area_ptot, area_ps
+    real(kind=realtype) :: govgm1, gm1ovg, viconst, vilocal, pratio
     real(kind=realtype) :: mredim
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
 &   , my, mz
@@ -455,6 +495,7 @@ contains
     intrinsic sqrt
     intrinsic size
     intrinsic present
+    intrinsic min
     real(kind=realtype), dimension(3) :: arg1
     real(kind=realtype), dimension(3) :: arg2
     mredim = sqrt(pref*rhoref)
@@ -476,6 +517,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
     area_ptot = zero
     area_ps = zero
     refpoint(1) = lref*pointref(1)
@@ -560,6 +602,16 @@ contains
 &           massflowratelocal
           mass_vz = mass_vz + (vzm*uref-sfacecoordref(3))*&
 &           massflowratelocal
+          govgm1 = gammainf/(gammainf-one)
+          gm1ovg = one/govgm1
+          viconst = two*govgm1*rgasdim
+          if (one .gt. one/ptot) then
+            pratio = one/ptot
+          else
+            pratio = one
+          end if
+          vilocal = sqrt(viconst*(one-pratio**gm1ovg)*ttot*tref)
+          mass_vi = mass_vi + vilocal*massflowratelocal
           mass_nx = mass_nx + ss(1)*overcellarea*massflowratelocal
           mass_ny = mass_ny + ss(2)*overcellarea*massflowratelocal
           mass_nz = mass_nz + ss(3)*overcellarea*massflowratelocal
@@ -636,6 +688,7 @@ contains
     localvalues(imassnx) = localvalues(imassnx) + mass_nx
     localvalues(imassny) = localvalues(imassny) + mass_ny
     localvalues(imassnz) = localvalues(imassnz) + mass_nz
+    localvalues(imassvi) = localvalues(imassvi) + mass_vi
   end subroutine flowintegrationzipper
 !  differentiation of wallintegrationzipper in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: pointref vars localvalues

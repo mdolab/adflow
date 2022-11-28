@@ -19,8 +19,8 @@ contains
     use sorting, only : faminlist
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, pref, prefd, timeref, timerefd, lref, tref, trefd, rgas, &
-&   rgasd, uref, urefd, uinf, uinfd, rhoinf, rhoinfd
-    use inputphysics, only : pointref, pointrefd, flowtype
+&   rgasd, uref, urefd, uinf, uinfd, rhoinf, rhoinfd, gammainf
+    use inputphysics, only : pointref, pointrefd, flowtype, rgasdim
     use flowutils_d, only : computeptot, computeptot_d, computettot, &
 &   computettot_d
     use surfacefamilies, only : familyexchange, bcfamexchange
@@ -55,14 +55,16 @@ contains
 &   massflowratelocald, amd
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
-&   mass_ny, mass_nz
+&   mass_ny, mass_nz, mass_vi
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
 &   mass_psd, mass_mnd, mass_ad, mass_rhod, mass_vxd, mass_vyd, mass_vzd&
-&   , mass_nxd, mass_nyd, mass_nzd
+&   , mass_nxd, mass_nyd, mass_nzd, mass_vid
     real(kind=realtype) :: area, cellarea, overcellarea
     real(kind=realtype) :: aread, cellaread, overcellaread
     real(kind=realtype) :: area_ptot, area_ps
     real(kind=realtype) :: area_ptotd, area_psd
+    real(kind=realtype) :: govgm1, gm1ovg, viconst, vilocal, pratio
+    real(kind=realtype) :: vilocald, pratiod
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
@@ -72,10 +74,13 @@ contains
     intrinsic sqrt
     intrinsic size
     intrinsic present
+    intrinsic min
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
+    real(kind=realtype) :: pwr1
+    real(kind=realtype) :: pwr1d
     if (pref*rhoref .eq. 0.0_8) then
       mredimd = 0.0_8
     else
@@ -100,6 +105,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
     area_ptot = zero
     area_ps = zero
     refpointd = 0.0_8
@@ -115,6 +121,7 @@ contains
     if (isinflow) then
       inflowfact = -one
       mass_ptotd = 0.0_8
+      mass_vid = 0.0_8
       aread = 0.0_8
       mmomd = 0.0_8
       mass_vxd = 0.0_8
@@ -140,6 +147,7 @@ contains
       mpd = 0.0_8
     else
       mass_ptotd = 0.0_8
+      mass_vid = 0.0_8
       aread = 0.0_8
       mmomd = 0.0_8
       mass_vxd = 0.0_8
@@ -335,6 +343,37 @@ contains
 &           massflowratelocald
           mass_vz = mass_vz + (vzm*uref-sfacecoordref(3))*&
 &           massflowratelocal
+          govgm1 = gammainf/(gammainf-one)
+          gm1ovg = one/govgm1
+          viconst = two*govgm1*rgasdim
+          if (one .gt. one/ptot) then
+            pratiod = -(one*ptotd/ptot**2)
+            pratio = one/ptot
+          else
+            pratio = one
+            pratiod = 0.0_8
+          end if
+          if (pratio .gt. 0.0_8 .or. (pratio .lt. 0.0_8 .and. gm1ovg &
+&             .eq. int(gm1ovg))) then
+            pwr1d = gm1ovg*pratio**(gm1ovg-1)*pratiod
+          else if (pratio .eq. 0.0_8 .and. gm1ovg .eq. 1.0) then
+            pwr1d = pratiod
+          else
+            pwr1d = 0.0_8
+          end if
+          pwr1 = pratio**gm1ovg
+          arg1d = viconst*((one-pwr1)*(ttotd*tref+ttot*trefd)-pwr1d*ttot&
+&           *tref)
+          arg1 = viconst*(one-pwr1)*ttot*tref
+          if (arg1 .eq. 0.0_8) then
+            vilocald = 0.0_8
+          else
+            vilocald = arg1d/(2.0*sqrt(arg1))
+          end if
+          vilocal = sqrt(arg1)
+          mass_vid = mass_vid + vilocald*massflowratelocal + vilocal*&
+&           massflowratelocald
+          mass_vi = mass_vi + vilocal*massflowratelocal
           mass_nxd = mass_nxd + ssd(1)*overcellarea*massflowratelocal + &
 &           ss(1)*(overcellaread*massflowratelocal+overcellarea*&
 &           massflowratelocald)
@@ -487,6 +526,8 @@ contains
     localvalues(imassny) = localvalues(imassny) + mass_ny
     localvaluesd(imassnz) = localvaluesd(imassnz) + mass_nzd
     localvalues(imassnz) = localvalues(imassnz) + mass_nz
+    localvaluesd(imassvi) = localvaluesd(imassvi) + mass_vid
+    localvalues(imassvi) = localvalues(imassvi) + mass_vi
   end subroutine flowintegrationzipper_d
   subroutine flowintegrationzipper(isinflow, conn, fams, vars, &
 &   localvalues, famlist, sps, ptvalid)
@@ -495,8 +536,8 @@ contains
     use blockpointers, only : bctype
     use sorting, only : faminlist
     use flowvarrefstate, only : pref, pinf, rhoref, pref, timeref, &
-&   lref, tref, rgas, uref, uinf, rhoinf
-    use inputphysics, only : pointref, flowtype
+&   lref, tref, rgas, uref, uinf, rhoinf, gammainf
+    use inputphysics, only : pointref, flowtype, rgasdim
     use flowutils_d, only : computeptot, computettot
     use surfacefamilies, only : familyexchange, bcfamexchange
     use utils_d, only : mynorm2, cross_prod
@@ -521,9 +562,10 @@ contains
 &   massflowratelocal, am
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
-&   mass_ny, mass_nz
+&   mass_ny, mass_nz, mass_vi
     real(kind=realtype) :: area, cellarea, overcellarea
     real(kind=realtype) :: area_ptot, area_ps
+    real(kind=realtype) :: govgm1, gm1ovg, viconst, vilocal, pratio
     real(kind=realtype) :: mredim
     real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
 &   , my, mz
@@ -531,8 +573,10 @@ contains
     intrinsic sqrt
     intrinsic size
     intrinsic present
+    intrinsic min
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
+    real(kind=realtype) :: pwr1
     mredim = sqrt(pref*rhoref)
     fp = zero
     mp = zero
@@ -552,6 +596,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
     area_ptot = zero
     area_ps = zero
     refpoint(1) = lref*pointref(1)
@@ -640,6 +685,18 @@ contains
 &           massflowratelocal
           mass_vz = mass_vz + (vzm*uref-sfacecoordref(3))*&
 &           massflowratelocal
+          govgm1 = gammainf/(gammainf-one)
+          gm1ovg = one/govgm1
+          viconst = two*govgm1*rgasdim
+          if (one .gt. one/ptot) then
+            pratio = one/ptot
+          else
+            pratio = one
+          end if
+          pwr1 = pratio**gm1ovg
+          arg1 = viconst*(one-pwr1)*ttot*tref
+          vilocal = sqrt(arg1)
+          mass_vi = mass_vi + vilocal*massflowratelocal
           mass_nx = mass_nx + ss(1)*overcellarea*massflowratelocal
           mass_ny = mass_ny + ss(2)*overcellarea*massflowratelocal
           mass_nz = mass_nz + ss(3)*overcellarea*massflowratelocal
@@ -716,6 +773,7 @@ contains
     localvalues(imassnx) = localvalues(imassnx) + mass_nx
     localvalues(imassny) = localvalues(imassny) + mass_ny
     localvalues(imassnz) = localvalues(imassnz) + mass_nz
+    localvalues(imassvi) = localvalues(imassvi) + mass_vi
   end subroutine flowintegrationzipper
 !  differentiation of wallintegrationzipper in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: localvalues

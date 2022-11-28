@@ -47,9 +47,9 @@ contains
 &   cforcemd, cmomentd, cofxd, cofyd, cofzd
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgrhod, mavgpsd, &
-&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead
+&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead, mavgvid
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -371,6 +371,9 @@ contains
         mavgvzd = (globalvalsd(imassvz, sps)*mflow-globalvals(imassvz, &
 &         sps)*mflowd)/mflow**2
         mavgvz = globalvals(imassvz, sps)/mflow
+        mavgvid = (globalvalsd(imassvi, sps)*mflow-globalvals(imassvi, &
+&         sps)*mflowd)/mflow**2
+        mavgvi = globalvals(imassvi, sps)/mflow
         arg1 = globalvals(imassnx, sps)**2 + globalvals(imassny, sps)**2&
 &         + globalvals(imassnz, sps)**2
         mag = sqrt(arg1)
@@ -384,6 +387,7 @@ contains
         mavgvx = zero
         mavgvy = zero
         mavgvz = zero
+        mavgvi = zero
         mavgvyd = 0.0_8
         mavgvzd = 0.0_8
         mavgttotd = 0.0_8
@@ -392,6 +396,7 @@ contains
         mavgrhod = 0.0_8
         mavgmnd = 0.0_8
         mavgptotd = 0.0_8
+        mavgvid = 0.0_8
         mavgvxd = 0.0_8
       end if
 ! area averaged objectives
@@ -449,6 +454,10 @@ contains
 &       *mavgvzd
       funcvalues(costfuncmavgvz) = funcvalues(costfuncmavgvz) + ovrnts*&
 &       mavgvz
+      funcvaluesd(costfuncmavgvi) = funcvaluesd(costfuncmavgvi) + ovrnts&
+&       *mavgvid
+      funcvalues(costfuncmavgvi) = funcvalues(costfuncmavgvi) + ovrnts*&
+&       mavgvi
     end do
 ! bending moment calc - also broken.
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -651,7 +660,7 @@ contains
 &   cmoment, cofx, cofy, cofz
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -826,6 +835,7 @@ contains
         mavgvx = globalvals(imassvx, sps)/mflow
         mavgvy = globalvals(imassvy, sps)/mflow
         mavgvz = globalvals(imassvz, sps)/mflow
+        mavgvi = globalvals(imassvi, sps)/mflow
         arg1 = globalvals(imassnx, sps)**2 + globalvals(imassny, sps)**2&
 &         + globalvals(imassnz, sps)**2
         mag = sqrt(arg1)
@@ -839,6 +849,7 @@ contains
         mavgvx = zero
         mavgvy = zero
         mavgvz = zero
+        mavgvi = zero
       end if
 ! area averaged objectives
       garea = globalvals(iarea, sps)
@@ -868,6 +879,8 @@ contains
 &       mavgvy
       funcvalues(costfuncmavgvz) = funcvalues(costfuncmavgvz) + ovrnts*&
 &       mavgvz
+      funcvalues(costfuncmavgvi) = funcvalues(costfuncmavgvi) + ovrnts*&
+&       mavgvi
     end do
 ! bending moment calc - also broken.
 ! call computerootbendingmoment(cforce, cmoment, liftindex, bendingmoment)
@@ -1980,8 +1993,8 @@ contains
 &   addgridvelocities
     use flowvarrefstate, only : pref, prefd, pinf, pinfd, rhoref, &
 &   rhorefd, timeref, timerefd, lref, tref, trefd, rgas, rgasd, uref, &
-&   urefd, uinf, uinfd, rhoinf, rhoinfd
-    use inputphysics, only : pointref, pointrefd, flowtype
+&   urefd, uinf, uinfd, rhoinf, rhoinfd, gammainf
+    use inputphysics, only : pointref, pointrefd, flowtype, rgasdim
     use flowutils_d, only : computeptot, computeptot_d, computettot, &
 &   computettot_d
     use bcpointers_d, only : ssi, ssid, sface, ww1, ww1d, ww2, ww2d, pp1&
@@ -1998,12 +2011,14 @@ contains
 ! local variables
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
-&   mass_ny, mass_nz
+&   mass_ny, mass_nz, mass_vi
     real(kind=realtype) :: massflowrated, mass_ptotd, mass_ttotd, &
 &   mass_psd, mass_mnd, mass_ad, mass_rhod, mass_vxd, mass_vyd, mass_vzd&
-&   , mass_nxd, mass_nyd, mass_nzd
+&   , mass_nxd, mass_nyd, mass_nzd, mass_vid
     real(kind=realtype) :: area_ptot, area_ps
     real(kind=realtype) :: area_ptotd, area_psd
+    real(kind=realtype) :: govgm1, gm1ovg, viconst, vilocal, pratio
+    real(kind=realtype) :: vilocald, pratiod
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
     integer(kind=inttype) :: i, j, ii, blk
@@ -2030,10 +2045,13 @@ contains
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    intrinsic min
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
+    real(kind=realtype) :: pwr1
+    real(kind=realtype) :: pwr1d
     refpointd = 0.0_8
     refpointd(1) = lref*pointrefd(1)
     refpoint(1) = lref*pointref(1)
@@ -2093,9 +2111,11 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
     area_ptot = zero
     area_ps = zero
     mass_ptotd = 0.0_8
+    mass_vid = 0.0_8
     cofsumfxd = 0.0_8
     cofsumfyd = 0.0_8
     cofsumfzd = 0.0_8
@@ -2239,6 +2259,37 @@ contains
 &       massflowratelocal + (vzm*uref-sfacecoordref(3))*&
 &       massflowratelocald
       mass_vz = mass_vz + (vzm*uref-sfacecoordref(3))*massflowratelocal
+      govgm1 = gammainf/(gammainf-one)
+      gm1ovg = one/govgm1
+      viconst = two*govgm1*rgasdim
+      if (one .gt. one/ptot) then
+        pratiod = -(one*ptotd/ptot**2)
+        pratio = one/ptot
+      else
+        pratio = one
+        pratiod = 0.0_8
+      end if
+      if (pratio .gt. 0.0_8 .or. (pratio .lt. 0.0_8 .and. gm1ovg .eq. &
+&         int(gm1ovg))) then
+        pwr1d = gm1ovg*pratio**(gm1ovg-1)*pratiod
+      else if (pratio .eq. 0.0_8 .and. gm1ovg .eq. 1.0) then
+        pwr1d = pratiod
+      else
+        pwr1d = 0.0_8
+      end if
+      pwr1 = pratio**gm1ovg
+      arg1d = viconst*((one-pwr1)*(ttotd*tref+ttot*trefd)-pwr1d*ttot*&
+&       tref)
+      arg1 = viconst*(one-pwr1)*ttot*tref
+      if (arg1 .eq. 0.0_8) then
+        vilocald = 0.0_8
+      else
+        vilocald = arg1d/(2.0*sqrt(arg1))
+      end if
+      vilocal = sqrt(arg1)
+      mass_vid = mass_vid + vilocald*massflowratelocal + vilocal*&
+&       massflowratelocald
+      mass_vi = mass_vi + vilocal*massflowratelocal
       mass_nxd = mass_nxd + ssid(i, j, 1)*overcellarea*massflowratelocal&
 &       + ssi(i, j, 1)*(overcellaread*massflowratelocal+overcellarea*&
 &       massflowratelocald)
@@ -2449,14 +2500,16 @@ contains
     localvalues(imassny) = localvalues(imassny) + mass_ny
     localvaluesd(imassnz) = localvaluesd(imassnz) + mass_nzd
     localvalues(imassnz) = localvalues(imassnz) + mass_nz
+    localvaluesd(imassvi) = localvaluesd(imassvi) + mass_vid
+    localvalues(imassvi) = localvalues(imassvi) + mass_vi
   end subroutine flowintegrationface_d
   subroutine flowintegrationface(isinflow, localvalues, mm)
     use constants
     use blockpointers, only : bctype, bcfaceid, bcdata, &
 &   addgridvelocities
     use flowvarrefstate, only : pref, pinf, rhoref, timeref, lref, &
-&   tref, rgas, uref, uinf, rhoinf
-    use inputphysics, only : pointref, flowtype
+&   tref, rgas, uref, uinf, rhoinf, gammainf
+    use inputphysics, only : pointref, flowtype, rgasdim
     use flowutils_d, only : computeptot, computettot
     use bcpointers_d, only : ssi, sface, ww1, ww2, pp1, pp2, xx, gamma1,&
 &   gamma2
@@ -2470,8 +2523,9 @@ contains
 ! local variables
     real(kind=realtype) :: massflowrate, mass_ptot, mass_ttot, mass_ps, &
 &   mass_mn, mass_a, mass_rho, mass_vx, mass_vy, mass_vz, mass_nx, &
-&   mass_ny, mass_nz
+&   mass_ny, mass_nz, mass_vi
     real(kind=realtype) :: area_ptot, area_ps
+    real(kind=realtype) :: govgm1, gm1ovg, viconst, vilocal, pratio
     real(kind=realtype) :: mredim
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: internalflowfact, inflowfact, fact, xc, xco, &
@@ -2487,8 +2541,10 @@ contains
     intrinsic sqrt
     intrinsic mod
     intrinsic max
+    intrinsic min
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
+    real(kind=realtype) :: pwr1
     refpoint(1) = lref*pointref(1)
     refpoint(2) = lref*pointref(2)
     refpoint(3) = lref*pointref(3)
@@ -2539,6 +2595,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
     area_ptot = zero
     area_ps = zero
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
@@ -2593,6 +2650,18 @@ contains
       mass_vx = mass_vx + (vxm*uref-sfacecoordref(1))*massflowratelocal
       mass_vy = mass_vy + (vym*uref-sfacecoordref(2))*massflowratelocal
       mass_vz = mass_vz + (vzm*uref-sfacecoordref(3))*massflowratelocal
+      govgm1 = gammainf/(gammainf-one)
+      gm1ovg = one/govgm1
+      viconst = two*govgm1*rgasdim
+      if (one .gt. one/ptot) then
+        pratio = one/ptot
+      else
+        pratio = one
+      end if
+      pwr1 = pratio**gm1ovg
+      arg1 = viconst*(one-pwr1)*ttot*tref
+      vilocal = sqrt(arg1)
+      mass_vi = mass_vi + vilocal*massflowratelocal
       mass_nx = mass_nx + ssi(i, j, 1)*overcellarea*massflowratelocal
       mass_ny = mass_ny + ssi(i, j, 2)*overcellarea*massflowratelocal
       mass_nz = mass_nz + ssi(i, j, 3)*overcellarea*massflowratelocal
@@ -2703,5 +2772,6 @@ contains
     localvalues(imassnx) = localvalues(imassnx) + mass_nx
     localvalues(imassny) = localvalues(imassny) + mass_ny
     localvalues(imassnz) = localvalues(imassnz) + mass_nz
+    localvalues(imassvi) = localvalues(imassvi) + mass_vi
   end subroutine flowintegrationface
 end module surfaceintegrations_d
