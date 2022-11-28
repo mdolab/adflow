@@ -2172,7 +2172,8 @@ class ADFLOW(AeroSolver):
 
         # Secant method iterations
         for _iIter in range(1, maxIter):
-            self.setOption("L2ConvergenceRel", L2ConvRel[_iIter])
+            if L2ConvRel is not None:
+                self.setOption("L2ConvergenceRel", L2ConvRel[_iIter])
 
             # We may need to reset the flow since changing strictly
             # alpha leads to problems with the NK solver
