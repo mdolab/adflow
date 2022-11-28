@@ -2025,23 +2025,23 @@ class ADFLOW(AeroSolver):
 
         # create the string template we want to print for each iteration
         iter_string = (
-            "\n"+
-            "+--------------------------------------------------+\n" +
-            "|\n" +
-            "| CLSolve Iteration   {iIter}\n" +
-            "| Elapsed Time        {cur_time:.3f} sec\n" +
-            "|\n" +
-            "| L2 Convergence      {l2_conv}\n" +
-            "| L2 Rel Convergence  {l2_conv_rel}\n" +
-            "| Alpha               {cur_alpha}\n" +
-            "| CL                  {CL}\n" +
-            "| CLStar              {CLStar}\n" +
-            "| Error               {err}\n" +
-            "| \n" +
-            "| CLAlpha             {clalpha}\n" +
-            "| Delta Alpha         {delta_alpha}\n" +
-            "| New Alpha           {new_alpha}\n" +
-            "+--------------------------------------------------+\n"
+            "\n"
+            + "+--------------------------------------------------+\n"
+            + "|\n"
+            + "| CLSolve Iteration   {iIter}\n"
+            + "| Elapsed Time        {cur_time:.3f} sec\n"
+            + "|\n"
+            + "| L2 Convergence      {l2_conv}\n"
+            + "| L2 Rel Convergence  {l2_conv_rel}\n"
+            + "| Alpha               {cur_alpha}\n"
+            + "| CL                  {CL}\n"
+            + "| CLStar              {CLStar}\n"
+            + "| Error               {err}\n"
+            + "| \n"
+            + "| CLAlpha             {clalpha}\n"
+            + "| Delta Alpha         {delta_alpha}\n"
+            + "| New Alpha           {new_alpha}\n"
+            + "+--------------------------------------------------+\n"
         )
 
         # function to check solver failure. we define it here to avoid code duplication
@@ -2063,7 +2063,6 @@ class ADFLOW(AeroSolver):
                     for option, value in modified_options.items():
                         self.setOption(option, value)
                     raise Error("CFD solver failed during CLSolve")
-
 
         # pointer to the iteration module for faster access
         iteration_module = self.adflow.iteration
@@ -2134,19 +2133,21 @@ class ADFLOW(AeroSolver):
 
         # print iteration info
         if self.comm.rank == 0:
-            print(iter_string.format(
-                iIter=0,
-                cur_time=time.time() - t1,
-                l2_conv=iteration_module.totalrfinal / iteration_module.totalr0,
-                l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
-                cur_alpha=aeroProblem.alpha,
-                CL=sol["cl"],
-                CLStar=CLStar,
-                err=fnm2,
-                clalpha=clalpha,
-                delta_alpha=anm1 - aeroProblem.alpha,
-                new_alpha=anm1,
-            ))
+            print(
+                iter_string.format(
+                    iIter=0,
+                    cur_time=time.time() - t1,
+                    l2_conv=iteration_module.totalrfinal / iteration_module.totalr0,
+                    l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
+                    cur_alpha=aeroProblem.alpha,
+                    CL=sol["cl"],
+                    CLStar=CLStar,
+                    err=fnm2,
+                    clalpha=clalpha,
+                    delta_alpha=anm1 - aeroProblem.alpha,
+                    new_alpha=anm1,
+                )
+            )
 
         # check if the solver failed
         check_solver_failure(aeroProblem, modified_options)
@@ -2210,19 +2211,21 @@ class ADFLOW(AeroSolver):
 
             # print iteration info
             if self.comm.rank == 0:
-                print(iter_string.format(
-                    iIter=_iIter,
-                    cur_time=time.time() - t1,
-                    l2_conv=l2_conv,
-                    l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
-                    cur_alpha=aeroProblem.alpha,
-                    CL=sol["cl"],
-                    CLStar=CLStar,
-                    err=fnm1,
-                    clalpha=clalpha,
-                    delta_alpha=anew - aeroProblem.alpha,
-                    new_alpha=anew,
-                ))
+                print(
+                    iter_string.format(
+                        iIter=_iIter,
+                        cur_time=time.time() - t1,
+                        l2_conv=l2_conv,
+                        l2_conv_rel=iteration_module.totalrfinal / iteration_module.totalrstart,
+                        cur_alpha=aeroProblem.alpha,
+                        CL=sol["cl"],
+                        CLStar=CLStar,
+                        err=fnm1,
+                        clalpha=clalpha,
+                        delta_alpha=anew - aeroProblem.alpha,
+                        new_alpha=anew,
+                    )
+                )
 
             # check if the solver failed
             check_solver_failure(aeroProblem, modified_options)
@@ -2260,22 +2263,18 @@ class ADFLOW(AeroSolver):
         if self.comm.rank == 0:
             # create the string template we want to print for each iteration
             final_string = (
-                f"\n"+
-                f"+--------------------------------------------------+\n" +
-                f"|\n"
-                f"| CLSolve Results:\n" +
-                f"|\n" +
-                f"| Converged?          {converged}\n"
-                f"| Total Iterations    {_iIter + 1}\n" +
-                f"| L2 Convergence      {l2_conv}\n" +
-                f"| Alpha               {aeroProblem.alpha}\n" +
-                f"| CL                  {CL}\n" +
-                f"| CLStar              {CLStar}\n" +
-                f"| Error               {err}\n" +
-                f"| CLAlpha             {clalpha}\n" +
-                f"|\n" +
-                f"| Total Time          {t2 - t1:.3f} sec\n" +
-                f"+--------------------------------------------------+\n"
+                "\n+--------------------------------------------------+\n|\n"
+                + f"| CLSolve Results:\n|\n| Converged?          {converged}\n"
+                + f"| Total Iterations    {_iIter + 1}\n"
+                + f"| L2 Convergence      {l2_conv}\n"
+                + f"| Alpha               {aeroProblem.alpha}\n"
+                + f"| CL                  {CL}\n"
+                + f"| CLStar              {CLStar}\n"
+                + f"| Error               {err}\n"
+                + f"| CLAlpha             {clalpha}\n"
+                + f"|\n"
+                + f"| Total Time          {t2 - t1:.3f} sec\n"
+                + f"+--------------------------------------------------+\n"
             )
             print(final_string)
 
