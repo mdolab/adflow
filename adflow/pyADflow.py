@@ -1928,17 +1928,18 @@ class ADFLOW(AeroSolver):
         aeroProblem,
         CLStar,
         alpha0=None,
+        CLalphaGuess=None,
         delta=0.5,
         tol=1e-3,
         autoReset=True,
         useRKReset=False,
         nReset=25,
         useCorrection=True,
-        CLalphaGuess=None,
         maxIter=20,
         relaxCLa=1.0,
         relaxAlpha=1.0,
         L2ConvRel=None,
+        errOnStall=False,
     ):
 
         """This is a simple secant method search for solving for a
@@ -1954,6 +1955,12 @@ class ADFLOW(AeroSolver):
         alpha0 : angle (deg)
             Initial guess for secant search (deg). If None, use the
             value in the aeroProblem
+        CLalphaGuess : float or None
+            The user can provide an estimate for the lift curve slope
+            in order to accelerate convergence. If the user supply a
+            value to this option, it will not use the delta value anymore
+            to select the angle of attack of the second run. The value
+            should be in 1/deg.
         delta : angle (deg)
             Initial step direction for secant search
         tol : float
@@ -1964,12 +1971,48 @@ class ADFLOW(AeroSolver):
             think). This will reset the flow after each solve which
             solves this problem. Not necessary (or desired) when using
             the RK solver.
-        CLalphaGuess : float or None
-            The user can provide an estimate for the lift curve slope
-            in order to accelerate convergence. If the user supply a
-            value to this option, it will not use the delta value anymore
-            to select the angle of attack of the second run. The value
-            should be in 1/deg.
+        useRKReset : bool
+            Flag to use the RKReset startup strategy between solver restarts.
+            The nReset parameter controls the number of RK/DADI iterations
+            before ANK/NK solvers start. Using this option overwrites the
+            global adflow option only during this CL solve, and then the
+            original value is replaced.
+        nReset : int
+            Number of RK/DADI iterations to run if we are using the
+            RKReset startup strategy. Similar to the explanation above,
+            this option temporarily overwrites the ADflow option. The original
+            option value is replaced once the CL Solve is finished.
+        useCorrection : bool
+            Flag to determine if we use the angle of attack correction
+            to the flowfield between iterations. This results in a more
+            robust restart with ANK/NK solvers. Using this option
+            temporarily sets the "infChangeCorrection" to True.
+        maxIter : int
+            Maximum number of secant solver iterations.
+        relaxCLa : float
+            Relaxation factor for the CLalpha update. Value of 1.0
+            will give the standard secant solver. A lower value will
+            damp the update to the CL alpha. Useful when the CL output
+            is expected to be noisy.
+        relaxAlpha : float
+            Relaxation factor for the alpha update. Value of 1.0
+            will give the standard secant solver. A lower value will
+            damp the alpha update. Useful to prevent large changes to
+            alpha.
+        L2ConvRel : float or list or None
+            Temporary relative L2 convergence for each iteration of the
+            CL solver. If the option is set to None, we don't modify the
+            L2ConvergenceRel option. If a float is provided, we use this
+            value as the target relative L2 convergence for each iteration.
+            If a list of floats is provided, we iterate over the values
+            and set the relative L2 convergence target separately for
+            each iteration. If the list length is less than the maximum
+            number of iterations we can perform, we keep using the last
+            value of the list until we run out of iterations.
+        errOnStall : bool
+            Flag to determine if we want to throw an error if the solver
+            fails to achieve the relative or total L2 convergence. This
+            is useful when the user wants to manually handle these exceptions.
 
         Returns
         -------
@@ -2000,6 +2043,26 @@ class ADFLOW(AeroSolver):
             "| New Alpha           {new_alpha}\n" +
             "+--------------------------------------------------+\n"
         )
+
+        # function to check solver failure. we define it here to avoid code duplication
+        def check_solver_failure(ap):
+            # check if the relative L2 target was achieved. if not, warn the user
+            # also, the user might just want us to throw an error flag on non-convergence
+            # so that they can catch it on the higher level.
+            # we do this after the iteration printout so that the latest data is printed.
+            if ap.solveFailed:
+                rel_l2_target = self.getOption("L2ConvergenceRel")
+                l2_target = self.getOption("L2Convergence")
+                if self.myid == 0:
+                    ADFLOWWarning(
+                        f"CFD solver failed to achieve a relative L2 convergence of {rel_l2_target:.1e} or total L2 convergence of {l2_target:.1e}."
+                    )
+                if errOnStall:
+                    # we want to raise an error on stall. Before we can do that, we need to
+                    # replace the options we temporarily modified...
+                    # TODO
+                    raise Error("CFD solver failed during CLSolve")
+
 
         # pointer to the iteration module for faster access
         iteration_module = self.adflow.iteration
@@ -2056,8 +2119,12 @@ class ADFLOW(AeroSolver):
             # initialize the clalpha working variable
             clalpha = CLalphaGuess
 
+        # check if L2 Convergence is achieved, if not, we cant quit yet
+        l2_conv = iteration_module.totalrfinal / iteration_module.totalr0
+        l2_conv_target = self.getOption("L2Convergence")
+
         # Check for convergence if the starting point is already ok.
-        if abs(fnm2) < tol:
+        if abs(fnm2) < tol and l2_conv <= l2_conv_target:
             return
 
         # print iteration info
@@ -2076,6 +2143,9 @@ class ADFLOW(AeroSolver):
                 new_alpha=anm1,
             ))
 
+        # check if the solver failed
+        check_solver_failure(aeroProblem)
+
         # Overwrite the RK options momentarily.
         # We need to do this to avoid using NK right at the beggining
         # of the new AoA iteration. When we change the AoA, we only change
@@ -2087,10 +2157,10 @@ class ADFLOW(AeroSolver):
         rkresetSave = self.getOption("rkreset")
         self.setOption("nRKReset", nReset)
         self.setOption("rkreset", useRKReset)
-        # also overwrite the free stream correction option. This in general, works
+        # also overwrite the free stream correction option. In general, this works
         # better with the newton type solvers than RK. Keeping the RK switch
         # for backwards compatability, but the default for this routine now uses
-        # the free stream correction
+        # the free stream correction.
         useCorrection_save = self.getOption("infchangecorrection")
         self.setOption("infchangecorrection", useCorrection)
 
@@ -2108,9 +2178,6 @@ class ADFLOW(AeroSolver):
 
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
-
-            # check if the relative L2 target was achieved. if not, warn the user
-            # TODO, we may want to reset?
 
             self.curAP.adflowData.callCounter -= 1
             sol = self.getSolution()
@@ -2151,6 +2218,9 @@ class ADFLOW(AeroSolver):
                     delta_alpha=anew - aeroProblem.alpha,
                     new_alpha=anew,
                 ))
+
+            # check if the solver failed
+            check_solver_failure(aeroProblem)
 
             # Shift n-1 values to n-2 values
             fnm2 = fnm1
