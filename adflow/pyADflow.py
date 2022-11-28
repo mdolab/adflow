@@ -2279,6 +2279,21 @@ class ADFLOW(AeroSolver):
             )
             print(final_string)
 
+        # we return everything we printed.
+        # Not all of it is useful, but better to include as much data as possible
+        results_dict = {
+            "converged": converged,
+            "iterations": _iIter + 1,
+            "l2convergence": l2_conv,
+            "alpha": aeroProblem.alpha,
+            "cl": CL,
+            "clstar": CLStar,
+            "error": err,
+            "clalpha": clalpha,
+            "time": t2 - t1,
+        }
+        return results_dict
+
     def solveTrimCL(
         self,
         aeroProblem,
