@@ -2045,7 +2045,7 @@ class ADFLOW(AeroSolver):
         )
 
         # function to check solver failure. we define it here to avoid code duplication
-        def check_solver_failure(ap):
+        def check_solver_failure(ap, modified_options):
             # check if the relative L2 target was achieved. if not, warn the user
             # also, the user might just want us to throw an error flag on non-convergence
             # so that they can catch it on the higher level.
@@ -2060,17 +2060,22 @@ class ADFLOW(AeroSolver):
                 if errOnStall:
                     # we want to raise an error on stall. Before we can do that, we need to
                     # replace the options we temporarily modified...
-                    # TODO
+                    for option, value in modified_options.items():
+                        self.setOption(option, value)
                     raise Error("CFD solver failed during CLSolve")
 
 
         # pointer to the iteration module for faster access
         iteration_module = self.adflow.iteration
 
+        # Dictionary to keep track of all the options we have modified.
+        # We keep the original values in this dictionary to be put back once we are done.
+        modified_options = {}
+
         # check if we have a custom relative l2 convergence.
         if L2ConvRel is not None:
             # save the original value
-            L2_conv_rel_save = self.getOption("L2ConvergenceRel")
+            modified_options["L2ConvergenceRel"] = self.getOption("L2ConvergenceRel")
 
             # if a single value is provided, convert it into a list so that we can apply it at each iteration
             if isinstance(L2ConvRel, float):
@@ -2144,7 +2149,7 @@ class ADFLOW(AeroSolver):
             ))
 
         # check if the solver failed
-        check_solver_failure(aeroProblem)
+        check_solver_failure(aeroProblem, modified_options)
 
         # Overwrite the RK options momentarily.
         # We need to do this to avoid using NK right at the beggining
@@ -2153,15 +2158,15 @@ class ADFLOW(AeroSolver):
         # allow these residuals to change the rest of the solution.
         # A few RK iterations allow the total residual to "go uphill",
         # so that we can converge to a new solution.
-        minIterSave = self.getOption("nRKReset")
-        rkresetSave = self.getOption("rkreset")
+        modified_options["nRKReset"] = self.getOption("nRKReset")
+        modified_options["rkreset"] = self.getOption("rkreset")
         self.setOption("nRKReset", nReset)
         self.setOption("rkreset", useRKReset)
         # also overwrite the free stream correction option. In general, this works
         # better with the newton type solvers than RK. Keeping the RK switch
         # for backwards compatability, but the default for this routine now uses
         # the free stream correction.
-        useCorrection_save = self.getOption("infchangecorrection")
+        modified_options["infchangecorrection"] = self.getOption("infchangecorrection")
         self.setOption("infchangecorrection", useCorrection)
 
         # Secant method iterations
@@ -2220,7 +2225,7 @@ class ADFLOW(AeroSolver):
                 ))
 
             # check if the solver failed
-            check_solver_failure(aeroProblem)
+            check_solver_failure(aeroProblem, modified_options)
 
             # Shift n-1 values to n-2 values
             fnm2 = fnm1
@@ -2230,12 +2235,8 @@ class ADFLOW(AeroSolver):
             anm1 = anew
 
         # Restore the options given initially by user
-        self.setOption("nRKReset", minIterSave)
-        self.setOption("rkreset", rkresetSave)
-        self.setOption("infchangecorrection", useCorrection_save)
-        # also fix the relative L2 conv if we used a custom value
-        if L2ConvRel is not None:
-            self.setOption("L2ConvergenceRel", L2_conv_rel_save)
+        for option, value in modified_options.items():
+            self.setOption(option, value)
 
         t2 = time.time()
 
