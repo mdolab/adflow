@@ -26,7 +26,7 @@ contains
          moment, cForce, cForceP, cForceV, cForceM, cMoment, coFx, coFy, coFz
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
-                            mAvgVx, mAvgVy, mAvgVz, gArea
+                            mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi
 
     real(kind=realType) ::  vdotn, mag, u, v, w
     integer(kind=intType) :: sps
@@ -185,6 +185,8 @@ contains
           mAvgVy   = globalVals(iMassVy, sps)/mFlow
           mAvgVz   = globalVals(iMassVz, sps)/mFlow
 
+          mAvgVi = (globalVals(iMassVi, sps) / mFlow)
+
           mag = sqrt(globalVals(iMassnx, sps)**2 + &
                     globalVals(iMassny, sps)**2 + &
                     globalVals(iMassnz, sps)**2)
@@ -199,6 +201,7 @@ contains
           mAvgVx   = zero
           mAvgVy   = zero
           mAvgVz   = zero
+          mAvgVi = zero
 
        end if
 
@@ -220,6 +223,7 @@ contains
        funcValues(costfuncmavgvx)    = funcValues(costfuncmavgvx) + ovrNTS*mAvgVx
        funcValues(costfuncmavgvy)    = funcValues(costfuncmavgvy) + ovrNTS*mAvgVy
        funcValues(costfuncmavgvz)    = funcValues(costfuncmavgvz) + ovrNTS*mAvgVz
+       funcValues(costfuncmavgvi)    = funcValues(costfuncmavgvi) + ovrNTS*mAvgVi
        ! Bending moment calc - also broken.
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
        ! funcValues(costFuncBendingCoef) = funcValues(costFuncBendingCoef) + ovrNTS*bendingMoment
@@ -797,8 +801,8 @@ contains
 
     use constants
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf, rhoInf
-    use inputPhysics, only : pointRef, flowType
+    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf, rhoInf, gammaInf
+    use inputPhysics, only : pointRef, flowType, rGasDim
     use flowUtils, only : computePtot, computeTtot
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
     use utils, only : mynorm2
@@ -811,8 +815,9 @@ contains
 
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
-                            mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
+                            mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz, mass_Vi
     real(kind=realType) ::  area_Ptot, area_Ps
+    real(kind=realType) ::  govgm1, gm1ovg, viConst, viLocal, pratio
     real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
     real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, xco, yc, yco, zc, zco, mx, my, mz
@@ -885,6 +890,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
 
     area_Ptot = zero
     area_Ps   = zero
@@ -924,8 +930,6 @@ contains
 
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
 
-
-
       massFlowRate = massFlowRate + massFlowRateLocal
 
       ! re-dimentionalize quantities
@@ -949,6 +953,20 @@ contains
       mass_Vx = mass_Vx + (vxm*uRef - sFaceCoordRef(1)) *massFlowRateLocal
       mass_Vy = mass_Vy + (vym*uRef - sFaceCoordRef(2)) *massFlowRateLocal
       mass_Vz = mass_Vz + (vzm*uRef - sFaceCoordRef(3)) *massFlowRateLocal
+
+      govgm1 = gammaInf/(gammaInf-one)
+      gm1ovg = one/govgm1
+      viConst = two * govgm1 * rGasDim
+      ! the prefs in psinf / ptot cancel out so we can just take the ratio
+      ! we need to clip the ratio to stay under one. right next to the wall,
+      ! the pTot can go below the static free stream pressure. To prevent
+      ! nans from the sqrt, we just clip this. This does not affect the computation
+      ! because when pTot is this small, the velocities are also small, and the
+      ! mdot is almost zero, so the cells in this area don't contribute much
+      ! to the mass weighed sum.
+      pratio = min(one, one / pTot)
+      viLocal = sqrt(viConst * (one - (pratio) ** gm1ovg) * Ttot * Tref)
+      mass_vi = mass_vi + viLocal * massFlowRateLocal
 
       mass_nx = mass_nx + ssi(i,j,1)*overCellArea * massFlowRateLocal
       mass_ny = mass_ny + ssi(i,j,2)*overCellArea * massFlowRateLocal
@@ -1080,6 +1098,8 @@ contains
     localValues(iMassnx)   = localValues(iMassnx)   + mass_nx
     localValues(iMassny)   = localValues(iMassny)   + mass_ny
     localValues(iMassnz)   = localValues(iMassnz)   + mass_nz
+
+    localValues(iMassVi) = localValues(iMassVi) + mass_Vi
 
   end subroutine flowIntegrationFace
 

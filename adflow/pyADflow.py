@@ -6041,6 +6041,7 @@ class ADFLOW(AeroSolver):
             "mavgvx": self.adflow.constants.costfuncmavgvx,
             "mavgvy": self.adflow.constants.costfuncmavgvy,
             "mavgvz": self.adflow.constants.costfuncmavgvz,
+            "mavgvi": self.adflow.constants.costfuncmavgvi,
             "cperror2": self.adflow.constants.costfunccperror2,
             "cofxx": self.adflow.constants.costfunccoforcexx,
             "cofxy": self.adflow.constants.costfunccoforcexy,

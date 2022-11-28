@@ -8,8 +8,8 @@ contains
     use constants
     use blockPointers, only : BCType
     use sorting, only : famInList
-    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf, rhoInf
-    use inputPhysics, only : pointRef, flowType
+    use flowVarRefState, only : pRef, pInf, rhoRef, pRef, timeRef, LRef, TRef, rGas, uRef, uInf, rhoInf, gammaInf
+    use inputPhysics, only : pointRef, flowType, rGasDim
     use flowUtils, only : computePtot, computeTtot
     use surfaceFamilies, only : familyExchange, BCFamExchange
     use utils, only : mynorm2, cross_prod
@@ -32,9 +32,10 @@ contains
       norm, sFaceCoordRef
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, MNm, massFlowRateLocal, am
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
-                            mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
+                            mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz, mass_Vi
     real(kind=realType) :: area, cellArea, overCellArea
     real(kind=realType) :: area_Ptot, area_Ps
+    real(kind=realType) ::  govgm1, gm1ovg, viConst, viLocal, pratio
     real(kind=realType) ::  mReDim
     real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, mx, my, mz
 
@@ -61,6 +62,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
 
     area_Ptot = zero
     area_Ps   = zero
@@ -164,6 +166,20 @@ contains
              mass_Vy = mass_Vy + (vym*uRef - sFaceCoordRef(2)) *massFlowRateLocal
              mass_Vz = mass_Vz + (vzm*uRef - sFaceCoordRef(3)) *massFlowRateLocal
 
+             govgm1 = gammaInf/(gammaInf-one)
+             gm1ovg = one/govgm1
+             viConst = two * govgm1 * rGasDim
+             ! the prefs in psinf / ptot cancel out so we can just take the ratio
+             ! we need to clip the ratio to stay under one. right next to the wall,
+             ! the pTot can go below the static free stream pressure. To prevent
+             ! nans from the sqrt, we just clip this. This does not affect the computation
+             ! because when pTot is this small, the velocities are also small, and the
+             ! mdot is almost zero, so the cells in this area don't contribute much
+             ! to the mass weighed sum.
+             pratio = min(one, one / pTot)
+             viLocal = sqrt(viConst * (one - (pRatio) ** gm1ovg) * Ttot * Tref)
+             mass_vi = mass_vi + viLocal * massFlowRateLocal
+
              mass_nx = mass_nx + ss(1)*overCellArea * massFlowRateLocal
              mass_ny = mass_ny + ss(2)*overCellArea * massFlowRateLocal
              mass_nz = mass_nz + ss(3)*overCellArea * massFlowRateLocal
@@ -254,6 +270,7 @@ contains
     localValues(iMassnx)   = localValues(iMassnx)   + mass_nx
     localValues(iMassny)   = localValues(iMassny)   + mass_ny
     localValues(iMassnz)   = localValues(iMassnz)   + mass_nz
+    localValues(iMassVi) = localValues(iMassVi) + mass_Vi
 
 
   end subroutine flowIntegrationZipper
