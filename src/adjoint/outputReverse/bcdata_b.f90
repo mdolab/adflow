@@ -1536,15 +1536,8 @@ contains
         if (var .gt. zero) nn = nn + 1
       end do
     end do
-    if (nn .gt. 0) then
-      write(errormessage, 102) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasupersonicinflow', errormessage)
-    end if
  100 format('zone ',a,', boundary subface ',a, &
 &          ': not enough data specified for supersonic inlet')
- 102 format('zone ',a,', supersonic inlet boundary subface ',a, &
-&          ': velocity points out of the domain for some faces.')
 
   contains
     subroutine prescribedsupersonicinlet()
@@ -1774,8 +1767,6 @@ contains
     end if
  100 format('zone ',a,', boundary subface ',a, &
 &          ': not enough data specified for supersonic inlet')
- 102 format('zone ',a,', supersonic inlet boundary subface ',a, &
-&          ': velocity points out of the domain for some faces.')
 
   contains
 !  differentiation of prescribedsupersonicinlet in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
