@@ -1657,7 +1657,7 @@ class ADFLOW(AeroSolver):
         tmp = []
         for f in evalFuncs:
             tmp.append(f.lower())
-        evalFuncs = tmp
+        evalFuncs = sorted(tmp)
 
         # We need to determine how many different groupings we have,
         # since we will have to call getSolution for each *unique*
