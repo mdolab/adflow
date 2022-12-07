@@ -623,9 +623,8 @@ class ADFLOW(AeroSolver):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from python
             j = self.nSlice + i + 1
-            sliceName = (
-                f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Regular {direction} = {positions[i]:.8f}"
-            )
+            sliceName = f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Regular {direction} = {positions[i]:.8f}"
+
             if sliceType == "relative":
                 self.adflow.tecplotio.addparaslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
             else:
