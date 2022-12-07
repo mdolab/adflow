@@ -624,8 +624,7 @@ class ADFLOW(AeroSolver):
             # name...so we will number sequentially from python
             j = self.nSlice + i + 1
             sliceName = (
-                f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Regular "
-                f"{direction} = {positions[i]:.8f}"
+                f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Regular {direction} = {positions[i]:.8f}"
             )
             if sliceType == "relative":
                 self.adflow.tecplotio.addparaslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
