@@ -592,7 +592,6 @@ class ADFLOW(AeroSolver):
         # Determine the families we want to use
         if groupName is None:
             groupName = self.allWallsGroup
-        groupTag = "%s: " % groupName
 
         famList = self._getFamilyList(groupName)
         direction = direction.lower()
@@ -624,11 +623,13 @@ class ADFLOW(AeroSolver):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from python
             j = self.nSlice + i + 1
+            sliceName = (
+                f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Regular "
+                f"{direction} = {positions[i]:.8f}"
+            )
             if sliceType == "relative":
-                sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])
                 self.adflow.tecplotio.addparaslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
             else:
-                sliceName = "Slice_%4.4d %s Absolute %s=%7.3f" % (j, groupTag, direction, positions[i])
                 self.adflow.tecplotio.addabsslice(sliceName, tmp[i], normal, slice_dir, use_dir, famList)
 
         self.nSlice += N
@@ -671,16 +672,15 @@ class ADFLOW(AeroSolver):
         # Determine the families we want to use
         if groupName is None:
             groupName = self.allWallsGroup
-        groupTag = "%s: " % groupName
         famList = self._getFamilyList(groupName)
 
         sliceType = sliceType.lower()
         if sliceType not in ["relative", "absolute"]:
             raise Error("'sliceType' must be 'relative' or 'absolute'.")
 
-        n_slice = len(points)
         normals = numpy.atleast_2d(normals)
         points = numpy.atleast_2d(points)
+        n_slice = len(points)
 
         if len(normals) == 1:
             tmp = numpy.zeros((n_slice, 3), self.dtype)
@@ -706,29 +706,14 @@ class ADFLOW(AeroSolver):
             else:
                 direction = dummy_slice_dir
 
+            sliceName = (
+                f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Arbitrary "
+                f"Point = ({points[i, 0]:.8f}, {points[i, 1]:.8f}, {points[i, 2]:.8f}) "
+                f"Normal = ({normals[i, 0]:.8f}, {normals[i, 1]:.8f}, {normals[i, 2]:.8f})"
+            )
             if sliceType == "relative":
-                sliceName = "Slice_%4.4d %s Para Init Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (
-                    j,
-                    groupTag,
-                    normals[i, 0],
-                    normals[i, 1],
-                    normals[i, 2],
-                    points[i, 0],
-                    points[i, 1],
-                    points[i, 2],
-                )
                 self.adflow.tecplotio.addparaslice(sliceName, points[i], normals[i], direction, use_dir, famList)
             else:
-                sliceName = "Slice_%4.4d %s Absolute Normal=(%7.3f, %7.3f, %7.3f) Point=(%7.3f, %7.3f, %7.3f)" % (
-                    j,
-                    groupTag,
-                    normals[i, 0],
-                    normals[i, 1],
-                    normals[i, 2],
-                    points[i, 0],
-                    points[i, 1],
-                    points[i, 2],
-                )
                 self.adflow.tecplotio.addabsslice(sliceName, points[i], normals[i], direction, use_dir, famList)
 
         self.nSlice += n_slice
@@ -774,7 +759,6 @@ class ADFLOW(AeroSolver):
         # Determine the families we want to use
         if groupName is None:
             groupName = self.allWallsGroup
-        groupTag = "%s: " % groupName
 
         famList = self._getFamilyList(groupName)
 
@@ -835,19 +819,17 @@ class ADFLOW(AeroSolver):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from python
             jj = self.nSlice + ii + 1
+
+            sliceName = (
+                f"Slice_{jj:04d} {groupName} {sliceType.capitalize()} Cylindrical "
+                f"Point = ({pt1[0]:.8f}, {pt1[1]:.8f}, {pt1[2]:.8f}) "
+                f"Normal = ({slice_normal[0]:.8f}, {slice_normal[1]:.8f}, {slice_normal[2]:.8f}) "
+                f"Axis = ({vec1[0]:.8f}, {vec1[1]:.8f}, {vec1[2]:.8f}) "
+                f"Theta = {angle * 180.0 / numpy.pi:.8f}"
+            )
             if sliceType == "relative":
-                sliceName = (
-                    f"Slice_{jj:04d} {groupTag} Para Init Theta={angle * 180.0 / numpy.pi:.4f}"
-                    + f" pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, "
-                    + f"{slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
-                )
                 self.adflow.tecplotio.addparaslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
             else:
-                sliceName = (
-                    f"Slice_{jj:04d} {groupTag} Absolute Theta={angle * 180.0 / numpy.pi:.4f}"
-                    + f" pt=({pt1[0]:.4f}, {pt1[1]:.4f}, {pt1[2]:.4f}) normal=({slice_normal[0]:.4f}, "
-                    + f"{slice_normal[1]:.4f}, {slice_normal[2]:.4f})"
-                )
                 self.adflow.tecplotio.addabsslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
 
         self.nSlice += n_slice
