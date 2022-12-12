@@ -557,6 +557,12 @@ module inputPhysics
   ! muSuthDim:           Reference viscosity at reference temperature for Sutherlands law (SI Units)
   ! TSuthDim:            Reference temperature for Sutherlands law (SI Units)
   ! momentAxis(3,2)      Axis about which to calculate a moment, provided as 2 points in 3-D
+  ! cavitationnumber     Negative Cp value that triggers the traditional
+  !                      step-function based cavitation sensor.
+  ! cpmin_rho            The rho parameter used with the KS-based cavitation sensor.
+  ! cpmin_exact          The "exact" cpmin for a given surface family that does not have
+  !                      KS-aggregation. The "exact" wording refers to the fact that
+  !                      we directly take the min.
 
 
   integer(kind=intType) :: equations, equationMode, flowType

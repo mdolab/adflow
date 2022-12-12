@@ -308,7 +308,7 @@ class ADFLOW(AeroSolver):
 
         cutCallBackTime = time.time()
 
-        # exlclude the cells inside closed surfaces if we are provided with them
+        # exclude the cells inside closed surfaces if we are provided with them
         explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
         if explicitSurfaceCallback is not None:
             # the user wants to exclude cells that lie within a list of surfaces.
@@ -328,7 +328,7 @@ class ADFLOW(AeroSolver):
                 surf_file = surf_dict[surf]["surf_file"]
                 # the indices of cgns blocks that we want to consider when blanking inside the surface
                 block_ids = surf_dict[surf]["block_ids"]
-                # the fortran lookup expects this list in increaasing order
+                # the fortran lookup expects this list in increasing order
                 block_ids.sort()
 
                 # check if there is a kmin provided
@@ -2483,6 +2483,10 @@ class ADFLOW(AeroSolver):
             Use this supplied string for the base filename. Typically only used from an external solver.
         number : int
             Use the user supplied number to index solution. Again, only typically used from an external solver.
+        writeSlices : bool
+            Flag to determine if the slice files are written, if we have any slices added.
+        writeLift : bool
+            Flag to determine if the lift files are written, if we have any lift distributions added.
         """
         if outputDir is None:
             outputDir = self.getOption("outputDirectory")
