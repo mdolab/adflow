@@ -24,7 +24,7 @@ contains
 &   trefd, lref, gammainf, pinf, pinfd, uref, urefd, uinf, uinfd
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
-&   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_exact, &
+&   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_family, &
 &   cpmin_rho
     use inputcostfunctions, only : computecavitation
     use inputtsstabderiv, only : tsstability
@@ -310,7 +310,7 @@ contains
         funcvaluesd(costfunccpmin) = funcvaluesd(costfunccpmin) - ovrnts&
 &         *globalvalsd(icpmin, sps)/(globalvals(icpmin, sps)*cpmin_rho)
         funcvalues(costfunccpmin) = funcvalues(costfunccpmin) + ovrnts*(&
-&         cpmin_exact-log(globalvals(icpmin, sps))/cpmin_rho)
+&         cpmin_family(sps)-log(globalvals(icpmin, sps))/cpmin_rho)
       end if
       funcvaluesd(costfuncaxismoment) = funcvaluesd(costfuncaxismoment) &
 &       + ovrnts*globalvalsd(iaxismoment, sps)
@@ -644,7 +644,7 @@ contains
     use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf, &
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
-&   machcoef, lengthref, alpha, beta, liftindex, cpmin_exact, cpmin_rho
+&   machcoef, lengthref, alpha, beta, liftindex, cpmin_family, cpmin_rho
     use inputcostfunctions, only : computecavitation
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
@@ -804,8 +804,8 @@ contains
 &       ovrnts*globalvals(icavitation, sps)
 ! final part of the ks computation
       if (computecavitation) funcvalues(costfunccpmin) = funcvalues(&
-&         costfunccpmin) + ovrnts*(cpmin_exact-log(globalvals(icpmin, &
-&         sps))/cpmin_rho)
+&         costfunccpmin) + ovrnts*(cpmin_family(sps)-log(globalvals(&
+&         icpmin, sps))/cpmin_rho)
 ! only calculate the log part if we are actually computing for cavitation.
 ! if we are not computing cavitation, the icpmin in globalvals will be zero,
 ! which doesn't play well with log. we just want to return zero here.
@@ -986,7 +986,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cpmin_exact, cpmin_rho, cavitationnumber
+&   cpmin_family, cpmin_rho, cavitationnumber
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1346,8 +1346,9 @@ contains
         cavitationd = cavitationd + sensor1d
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        ks_exponentd = -(cpmin_rho*cpd*exp(cpmin_rho*(-cp+cpmin_exact)))
-        ks_exponent = exp(cpmin_rho*(-cp+cpmin_exact))
+        ks_exponentd = -(cpmin_rho*cpd*exp(cpmin_rho*(-cp+cpmin_family(&
+&         spectralsol))))
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_family(spectralsol)))
         cpmin_ks_sumd = cpmin_ks_sumd + blk*ks_exponentd
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
@@ -1605,7 +1606,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cpmin_exact, cpmin_rho, cavitationnumber
+&   equations, momentaxis, cpmin_family, cpmin_rho, cavitationnumber
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1823,7 +1824,7 @@ contains
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        ks_exponent = exp(cpmin_rho*(-cp+cpmin_exact))
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_family(spectralsol)))
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
