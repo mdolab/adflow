@@ -114,7 +114,7 @@ contains
           ! If we are not computing cavitation, the iCpMin in globalVals will be zero,
           ! which doesn't play well with log. we just want to return zero here.
           funcValues(costfunccpmin) = funcValues(costfunccpmin) + ovrNTS * &
-               (cpmin_family - log(globalVals(iCpMin, sps)) / cpmin_rho)
+               (cpmin_family(sps) - log(globalVals(iCpMin, sps)) / cpmin_rho)
        endif
 
        funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
@@ -523,7 +523,7 @@ contains
           Cavitation = Cavitation + Sensor1
 
           ! also do the ks-based cpmin computation
-          ks_exponent = exp(cpmin_rho * (-Cp + cpmin_family))
+          ks_exponent = exp(cpmin_rho * (-Cp + cpmin_family(spectralSol)))
           cpmin_ks_sum = cpmin_ks_sum + ks_exponent * blk
        end if
     enddo
@@ -1102,14 +1102,12 @@ contains
      ! and computes the true minimum Cp value.
      ! this is then used in the surface integration routine to compute
      ! the cpmin using KS aggregation.
-     ! the goal is to get a differentiable cpmin output
+     ! the goal is to get a differentiable cpmin output.
 
-     ! set the local cp min to a large value so that we get the actual min
-     cpmin_local = 10000.0_realType
-
-     ! loop over the TS instances just because its the same convention everywhere.
-     ! in an actual TS computation, this wont work most likely.
+     ! loop over the TS instances and compute cpmin_family for each TS instance
      do sps=1, nTimeIntervalsSpectral
+       ! set the local cp min to a large value so that we get the actual min
+       cpmin_local = 10000.0_realType
        do nn=1, nDom
            call setPointers(nn, 1, sps)
 
@@ -1148,12 +1146,11 @@ contains
             end if famInclude
          end do bocos
        end do
+       ! finally communicate across all processors for this time spectral instance
+       call mpi_allreduce(cpmin_local, cpmin_family(sps), 1, MPI_DOUBLE, &
+            MPI_MIN, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
      end do
-
-     ! finally communicate across all processors
-     call mpi_allreduce(cpmin_local, cpmin_family, 1, MPI_DOUBLE, &
-          MPI_MIN, adflow_comm_world, ierr)
-     call EChk(ierr, __FILE__, __LINE__)
 
   end subroutine computeCpMinFamily
 

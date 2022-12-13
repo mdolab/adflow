@@ -588,7 +588,7 @@ module inputPhysics
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
   real(kind=realType) :: cavitationnumber
   real(kind=realType) :: cpmin_rho
-  real(kind=realType) :: cpmin_family
+  real(kind=realType), dimension(:), allocatable :: cpmin_family
 
 #ifndef USE_TAPENADE
   real(kind=realType) :: alphad, betad

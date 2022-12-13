@@ -130,8 +130,8 @@ contains
 &       ovrnts*globalvals(icavitation, sps)
 ! final part of the ks computation
       if (computecavitation) funcvalues(costfunccpmin) = funcvalues(&
-&         costfunccpmin) + ovrnts*(cpmin_family-log(globalvals(icpmin, &
-&         sps))/cpmin_rho)
+&         costfunccpmin) + ovrnts*(cpmin_family(sps)-log(globalvals(&
+&         icpmin, sps))/cpmin_rho)
 ! only calculate the log part if we are actually computing for cavitation.
 ! if we are not computing cavitation, the icpmin in globalvals will be zero,
 ! which doesn't play well with log. we just want to return zero here.
@@ -474,7 +474,7 @@ contains
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        ks_exponent = exp(cpmin_rho*(-cp+cpmin_family))
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_family(spectralsol)))
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
