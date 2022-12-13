@@ -90,7 +90,7 @@ class CavitationBasicTests(reg_test_classes.RegTest):
         self.handler.root_print("cavitation totals")
         self.handler.root_add_dict("cavitation totals", funcsSens, rtol=1e-10, atol=1e-10)
 
-        for func_name in evalFuncs:
+        for funcName in evalFuncs:
             ##################
             # GEOMETRIC TOTALS
             ##################
@@ -101,8 +101,8 @@ class CavitationBasicTests(reg_test_classes.RegTest):
 
             # Now that we have the adjoint solution for both functionals
             # also get a total derivative wrt a random spatial perturbation DV
-            psi = -self.CFDSolver.getAdjoint(func_name)
-            funcsBar = self.CFDSolver._getFuncsBar(func_name)
+            psi = -self.CFDSolver.getAdjoint(funcName)
+            funcsBar = self.CFDSolver._getFuncsBar(funcName)
 
             # this is the reverse seed up to the volume coordinates
             xVBar = self.CFDSolver.computeJacobianVectorProductBwd(resBar=psi, funcsBar=funcsBar, xVDeriv=True)
@@ -113,7 +113,7 @@ class CavitationBasicTests(reg_test_classes.RegTest):
             # by the processor count or architecture. We just have it here to have some test on the
             # cavitation functionals' derivatives w.r.t. spatial changes in a lazy way.
             self.handler.par_add_sum(
-                f"total {func_name} derivative wrt random volume perturbation", dotLocal, rtol=1e-3
+                f"total {funcName} derivative wrt random volume perturbation", dotLocal, rtol=1e-3
             )
 
             ##################
@@ -121,22 +121,22 @@ class CavitationBasicTests(reg_test_classes.RegTest):
             ##################
             fDot_w = self.CFDSolver.computeJacobianVectorProductFwd(wDot=wDot, funcDeriv=True)
             fDot_xv = self.CFDSolver.computeJacobianVectorProductFwd(xVDot=xVDot, funcDeriv=True)
-            funcsBar = {func_name: 1.0}
+            funcsBar = {funcName: 1.0}
             wBar, xVBar = self.CFDSolver.computeJacobianVectorProductBwd(funcsBar=funcsBar, wDeriv=True, xVDeriv=True)
 
             # do the dot product. we test both state partials and volume coordinate partials
             # state
             dotLocal1 = np.dot(wDot, wBar)
-            dotLocal2 = fDot_w[func_name] / self.CFDSolver.comm.size
+            dotLocal2 = fDot_w[funcName] / self.CFDSolver.comm.size
 
-            self.handler.par_add_sum(f"Dot product test for w -> {func_name}", dotLocal1, rtol=1e-10)
-            self.handler.par_add_sum(f"Dot product test for w -> {func_name}", dotLocal2, rtol=1e-10, compare=True)
+            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal1, rtol=1e-10)
+            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal2, rtol=1e-10, compare=True)
 
             # volume coords
             dotLocal1 = np.dot(xVDot, xVBar)
-            dotLocal2 = fDot_xv[func_name] / self.CFDSolver.comm.size
-            self.handler.par_add_sum(f"Dot product test for xV -> {func_name}", dotLocal1, rtol=1e-10)
-            self.handler.par_add_sum(f"Dot product test for xV -> {func_name}", dotLocal2, rtol=1e-10, compare=True)
+            dotLocal2 = fDot_xv[funcName] / self.CFDSolver.comm.size
+            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal1, rtol=1e-10)
+            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal2, rtol=1e-10, compare=True)
 
 
 class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
@@ -214,13 +214,13 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
                 self.ap.setDesignVars(aDV)
             elif dv == "vol_perturbation":
                 xVDot = self.CFDSolver.getSpatialPerturbation(314)
-                # grid_save = np.zeros_like(xVDot)
+                # gridSave = np.zeros_like(xVDot)
                 # get the original grid
-                grid_save = self.CFDSolver.adflow.warping.getgrid(self.CFDSolver.getSpatialSize())
+                gridSave = self.CFDSolver.adflow.warping.getgrid(self.CFDSolver.getSpatialSize())
                 # perturb using the random seed
                 # this is very intrusive but it works and its testing these functions sensitivities
                 # wrt geometric DVs w/o actually having a mesh or dvgeo object
-                self.CFDSolver.adflow.warping.setgrid(grid_save + self.h * 1j * xVDot)
+                self.CFDSolver.adflow.warping.setgrid(gridSave + self.h * 1j * xVDot)
                 self.CFDSolver.adflow.preprocessingapi.updatecoordinatesalllevels()
                 self.CFDSolver.adflow.walldistance.updatewalldistancealllevels()
                 self.CFDSolver.adflow.preprocessingapi.updatemetricsalllevels()
@@ -251,7 +251,7 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
                 self.ap.setDesignVars(aDV)
             elif dv == "vol_perturbation":
                 # set the original grid back
-                self.CFDSolver.adflow.warping.setgrid(grid_save)
+                self.CFDSolver.adflow.warping.setgrid(gridSave)
 
         ##################
         # TEST DERIVATIVES
@@ -261,15 +261,15 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
         # we treat the CS value as the truth, so if this test passes,
         # we assume the adjoint sensitivities are also true
 
-        for func_name in ["cavitation", "cpmin"]:
+        for funcName in ["cavitation", "cpmin"]:
 
-            full_name = f"naca0012_rans_2D_{func_name}"
+            fullName = f"naca0012_rans_2D_{funcName}"
 
-            ref_val = self.handler.db["cavitation totals"][full_name]["alpha"]
-            np.testing.assert_allclose(funcsSensCS["alpha"][full_name], ref_val, atol=1e-10, rtol=1e-10)
+            refVal = self.handler.db["cavitation totals"][fullName]["alpha"]
+            np.testing.assert_allclose(funcsSensCS["alpha"][fullName], refVal, atol=1e-10, rtol=1e-10)
 
-            ref_val = self.handler.db[f"total {func_name} derivative wrt random volume perturbation"]
-            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][full_name], ref_val, rtol=1e-3)
+            refVal = self.handler.db[f"total {funcName} derivative wrt random volume perturbation"]
+            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][fullName], refVal, rtol=1e-3)
 
 
 if __name__ == "__main__":
