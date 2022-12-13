@@ -327,7 +327,7 @@ class ADFLOW(AeroSolver):
                 # this is the plot3d surface that defines the closed volume
                 surfFile = surfDict[surf]["surfFile"]
                 # the indices of cgns blocks that we want to consider when blanking inside the surface
-                blockIDs = surfDict[surf]["blockIds"]
+                blockIDs = surfDict[surf]["blockIDs"]
                 # the fortran lookup expects this list in increasing order
                 blockIDs.sort()
 
