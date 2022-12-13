@@ -699,7 +699,7 @@ class ADFLOW(AeroSolver):
         self.nSlice += nSlice
 
     def addCylindricalSlices(
-        self, pt1, pt2, nSlice=180, sliceBeg=0.0, sliceEnd=360.0, sliceType="relative", groupName=None
+        self, pt1, pt2, nSlice=25, sliceBeg=0.0, sliceEnd=360.0, sliceType="relative", groupName=None
     ):
         """
         Add cylindrical projection slices. The cylindrical projection axis is defined
