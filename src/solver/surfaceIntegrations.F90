@@ -8,7 +8,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf, pInf, uRef, uInf
     use inputPhysics, only : liftDirection, dragDirection, surfaceRef, &
-    machCoef, lengthRef, alpha, beta, liftIndex, cpmin_exact, &
+    machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
     cpmin_rho
     use inputCostFunctions, only : computeCavitation
     use inputTSStabDeriv, only : TSstability
@@ -114,7 +114,7 @@ contains
           ! If we are not computing cavitation, the iCpMin in globalVals will be zero,
           ! which doesn't play well with log. we just want to return zero here.
           funcValues(costfunccpmin) = funcValues(costfunccpmin) + ovrNTS * &
-               (cpmin_exact - log(globalVals(iCpMin, sps)) / cpmin_rho)
+               (cpmin_family - log(globalVals(iCpMin, sps)) / cpmin_rho)
        endif
 
        funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
@@ -323,7 +323,7 @@ contains
     use flowVarRefState
     use inputCostFunctions
     use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, &
-          equations, momentAxis, cpmin_exact, cpmin_rho, cavitationnumber
+          equations, momentAxis, cpmin_family, cpmin_rho, cavitationnumber
     use BCPointers
     implicit none
 
@@ -523,7 +523,7 @@ contains
           Cavitation = Cavitation + Sensor1
 
           ! also do the ks-based cpmin computation
-          ks_exponent = exp(cpmin_rho * (-Cp + cpmin_exact))
+          ks_exponent = exp(cpmin_rho * (-Cp + cpmin_family))
           cpmin_ks_sum = cpmin_ks_sum + ks_exponent * blk
        end if
     enddo
@@ -983,7 +983,7 @@ contains
 
        ! compute the current cp min value for the cavitation computation with KS aggregation
        if (computeCavitation) then
-          call computeCpMinExact(famList)
+          call computeCpMinFamily(famList)
        end if
 
        do sps=1, nTimeIntervalsSpectral
@@ -1078,13 +1078,13 @@ contains
 
   end subroutine integrateSurfaces
 
-  subroutine computeCpMinExact(famList)
+  subroutine computeCpMinFamily(famList)
 
      use constants
      use inputTimeSpectral, only : nTimeIntervalsSpectral
      use communication, only : ADflow_comm_world, myID
      use blockPointers, only : nDom
-     use inputPhysics, only : cpmin_exact, MachCoef
+     use inputPhysics, only : cpmin_family, MachCoef
      use blockPointers
      use flowVarRefState
      use BCPointers
@@ -1151,11 +1151,11 @@ contains
      end do
 
      ! finally communicate across all processors
-     call mpi_allreduce(cpmin_local, cpmin_exact, 1, MPI_DOUBLE, &
+     call mpi_allreduce(cpmin_local, cpmin_family, 1, MPI_DOUBLE, &
           MPI_MIN, adflow_comm_world, ierr)
      call EChk(ierr, __FILE__, __LINE__)
 
-  end subroutine computeCpMinExact
+  end subroutine computeCpMinFamily
 
 #ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)
@@ -1287,7 +1287,7 @@ contains
 
        ! compute the current cp min value for the cavitation computation with KS aggregation
        if (computeCavitation) then
-          call computeCpMinExact(famList)
+          call computeCpMinFamily(famList)
        end if
 
        localVal = zero
@@ -1373,7 +1373,7 @@ contains
 
        ! compute the current cp min value for the cavitation computation with KS aggregation
        if (computeCavitation) then
-          call computeCpMinExact(famList)
+          call computeCpMinFamily(famList)
        end if
 
        localVal = zero

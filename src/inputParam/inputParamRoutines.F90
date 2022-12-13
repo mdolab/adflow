@@ -4042,7 +4042,7 @@ contains
     usematrixfreedrdw = .False.
     sepSensorOffset = zero
     sepSensorSharpness = 10_realType
-    cpmin_exact = zero
+    cpmin_family = zero
   end subroutine setDefaultValues
 
   subroutine initializeIsoSurfaceVariables(values, nValues)

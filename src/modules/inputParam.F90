@@ -560,9 +560,8 @@ module inputPhysics
   ! cavitationnumber     Negative Cp value that triggers the traditional
   !                      step-function based cavitation sensor.
   ! cpmin_rho            The rho parameter used with the KS-based cavitation sensor.
-  ! cpmin_exact          The "exact" cpmin for a given surface family that does not have
-  !                      KS-aggregation. The "exact" wording refers to the fact that
-  !                      we directly take the min.
+  ! cpmin_family         The cpmin for a given surface family that does not use
+  !                      KS-aggregation, but rather an exact min computation.
 
 
   integer(kind=intType) :: equations, equationMode, flowType
@@ -589,7 +588,7 @@ module inputPhysics
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
   real(kind=realType) :: cavitationnumber
   real(kind=realType) :: cpmin_rho
-  real(kind=realType) :: cpmin_exact
+  real(kind=realType) :: cpmin_family
 
 #ifndef USE_TAPENADE
   real(kind=realType) :: alphad, betad
