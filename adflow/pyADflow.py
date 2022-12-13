@@ -1901,7 +1901,7 @@ class ADFLOW(AeroSolver):
         CLalphaGuess=None,
         delta=0.5,
         tol=1e-3,
-        autoReset=True,
+        autoReset=False,
         useRKReset=False,
         nReset=25,
         useCorrection=True,
@@ -2174,8 +2174,8 @@ class ADFLOW(AeroSolver):
                 clalpha = (fnm1 - fnm2) / (anm1 - anm2)
             else:
                 # we update the clalpha using a relaxed update
-                cla_new = (fnm1 - fnm2) / (anm1 - anm2)
-                clalpha += relaxCLa * (cla_new - clalpha)
+                claNew = (fnm1 - fnm2) / (anm1 - anm2)
+                clalpha += relaxCLa * (claNew - clalpha)
 
             # similarly, the user might want to relax the alpha update
             anew = anm1 - (fnm1 / clalpha) * relaxAlpha
