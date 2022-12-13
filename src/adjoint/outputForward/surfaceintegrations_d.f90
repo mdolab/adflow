@@ -902,10 +902,10 @@ contains
     real(kind=realtype) :: result1d
     real(kind=realtype) :: pwr1
     real(kind=realtype) :: pwr1d
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1164,7 +1164,8 @@ contains
         cavitationd = cavitationd + sensor1d
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        ks_exponentd = -(cpmin_rho*cpd*exp(cpmin_rho*(-cp+cpmin_family)))
+        ks_exponentd = -(cpmin_rho*cpd*exp(cpmin_rho*(-cp+cpmin_family))&
+&         )
         ks_exponent = exp(cpmin_rho*(-cp+cpmin_family))
         cpmin_ks_sumd = cpmin_ks_sumd + blk*ks_exponentd
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
@@ -1406,10 +1407,10 @@ contains
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
     real(kind=realtype) :: pwr1
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1769,10 +1770,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
@@ -2141,10 +2142,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows

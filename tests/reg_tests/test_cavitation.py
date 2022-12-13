@@ -112,9 +112,7 @@ class CavitationBasicTests(reg_test_classes.RegTest):
             # this is not the best test out there; the final answer does get affected quite a bit
             # by the processor count or architecture. We just have it here to have some test on the
             # cavitation functionals' derivatives w.r.t. spatial changes in a lazy way.
-            self.handler.par_add_sum(
-                f"total {funcName} derivative wrt random volume perturbation", dotLocal, rtol=1e-3
-            )
+            self.handler.par_add_sum(f"total {funcName} derivative wrt random volume perturbation", dotLocal, rtol=1e-3)
 
             ##################
             # DOT PRODUCT TEST
