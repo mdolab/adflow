@@ -548,27 +548,27 @@ explicitSurfaceCallback:
                    # obtain this surface file is to convert the surface
                    # CGNS grid used to generate the mesh into the plot3d
                    # format using the cgns2plot3d method in cgnsutils.
-                   "surf_file": "wing_surface.x",
+                   "surfFile": "wing_surface.x",
 
                    # The block IDs we will search and blank using this surface.
                    # Here, we only blank the fuselage cells that are inside the wing
                    # and don't want to consider the background or collar meshes.
-                   "block_ids": fuselage_blocks,
+                   "blockIDs": fuselage_blocks,
 
-                   # Optional entry: coord_xfer
+                   # Optional entry: coordXfer
                    # This is another callback function that performs a coordinate
                    # transformation on the loaded plot3d mesh nodes. See the
                    # addPointSet method in DVGeo.py at
                    # https://github.com/mdolab/pygeo for the call signature.
                    # We use this approach so that the users can have complete
                    # control over the surface mesh nodes after they are loaded.
-                   "coord_xfer": coord_xfer,
+                   "coordXfer": coordXfer,
                },
 
                # Similar entries for the fuselage.
                "fuselage": {
-                   "surf_file": "fuselage_surface.x",
-                   "block_ids": wing_blocks,
+                   "surfFile": "fuselage_surface.x",
+                   "blockIDs": wing_blocks,
                },
 
                # We can have multiple entries with the same surface to blank different
@@ -584,10 +584,10 @@ explicitSurfaceCallback:
                    # they intersect the wing geometry itself somehow. E.g. very large splay.
                    # However, we only want to blank cells that have a k-index that is
                    # larger than 32 to avoid tagging cells near the wall. The
-                   # optional "kmin" entry is used to achieve this.
-                   "surf_file": "wing_surface.x",
-                   "block_ids": wing_blocks,
-                   "kmin": 32,
+                   # optional "kMin" entry is used to achieve this.
+                   "surfFile": "wing_surface.x",
+                   "blockIDs": wing_blocks,
+                   "kMin": 32,
                },
            }
 
@@ -595,7 +595,7 @@ explicitSurfaceCallback:
            # explicit blanking with the information provided.
            return surf_dict
 
-    The call signature of the ``coord_xfer`` option is documented in the DVGeometry's addPointset method:
+    The call signature of the ``coordXfer`` option is documented in the DVGeometry's addPointset method:
     :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>`
 
 
