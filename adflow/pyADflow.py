@@ -586,21 +586,12 @@ class ADFLOW(AeroSolver):
              wall groups.
         """
 
-        # Create the zipper mesh if not done so
-        self._createZipperMesh()
+        # call the preprocessing routine that avoids some code duplication across 3 types of slices
+        sliceType, famList = self._preprocessSliceInput(sliceType, groupName)
 
-        # Determine the families we want to use
-        if groupName is None:
-            groupName = self.allWallsGroup
-
-        famList = self._getFamilyList(groupName)
         direction = direction.lower()
         if direction not in ["x", "y", "z"]:
             raise Error("'direction' must be one of 'x', 'y', or 'z'")
-
-        sliceType = sliceType.lower()
-        if sliceType not in ["relative", "absolute"]:
-            raise Error("'sliceType' must be 'relative' or 'absolute'.")
 
         positions = numpy.atleast_1d(positions)
         N = len(positions)
@@ -664,17 +655,8 @@ class ADFLOW(AeroSolver):
              wall groups.
         """
 
-        # Create the zipper mesh if not done so
-        self._createZipperMesh()
-
-        # Determine the families we want to use
-        if groupName is None:
-            groupName = self.allWallsGroup
-        famList = self._getFamilyList(groupName)
-
-        sliceType = sliceType.lower()
-        if sliceType not in ["relative", "absolute"]:
-            raise Error("'sliceType' must be 'relative' or 'absolute'.")
+        # call the preprocessing routine that avoids some code duplication across 3 types of slices
+        sliceType, famList = self._preprocessSliceInput(sliceType, groupName)
 
         normals = numpy.atleast_2d(normals)
         points = numpy.atleast_2d(points)
@@ -751,18 +733,8 @@ class ADFLOW(AeroSolver):
              wall groups.
         """
 
-        # Create the zipper mesh if not done so
-        self._createZipperMesh()
-
-        # Determine the families we want to use
-        if groupName is None:
-            groupName = self.allWallsGroup
-
-        famList = self._getFamilyList(groupName)
-
-        sliceType = sliceType.lower()
-        if sliceType not in ["relative", "absolute"]:
-            raise Error("'sliceType' must be 'relative' or 'absolute'.")
+        # call the preprocessing routine that avoids some code duplication across 3 types of slices
+        sliceType, famList = self._preprocessSliceInput(sliceType, groupName)
 
         # get the angles that we are slicing in radians
         angles = numpy.linspace(slice_beg, slice_end, n_slice) * numpy.pi / 180.0
@@ -831,6 +803,25 @@ class ADFLOW(AeroSolver):
                 self.adflow.tecplotio.addabsslice(sliceName, pt1, slice_normal, slice_dir, use_dir, famList)
 
         self.nSlice += n_slice
+
+    def _preprocessSliceInput(self, sliceType, groupName):
+        """
+        Preprocessing routine that holds some of the duplicated code required for 3 types of slice methods.
+        """
+        # Create the zipper mesh if not done so
+        self._createZipperMesh()
+
+        # Determine the families we want to use
+        if groupName is None:
+            groupName = self.allWallsGroup
+        famList = self._getFamilyList(groupName)
+
+        # check the sliceType
+        sliceType = sliceType.lower()
+        if sliceType not in ["relative", "absolute"]:
+            raise Error("'sliceType' must be 'relative' or 'absolute'.")
+
+        return sliceType, famList
 
     def addIntegrationSurface(self, fileName, familyName, isInflow=True, coord_xfer=None):
         """Add a specific integration surface for performing massflow-like
@@ -1023,8 +1014,7 @@ class ADFLOW(AeroSolver):
         if relaxEnd is None and relaxStart is not None:
             raise Error("relaxEnd must be given is relaxStart is specified")
 
-        #  Now continue to fortran were we setup the actual
-        #  region.
+        # Now continue to fortran were we setup the actual actuator region.
         self.adflow.actuatorregion.addactuatorregion(
             pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, heat, relaxStart, relaxEnd
         )
