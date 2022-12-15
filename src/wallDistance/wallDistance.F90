@@ -145,7 +145,7 @@ contains
     use blockPointers
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use inputPhysics, only : useRoughSA
-    use utils, only : setPointers, EChk
+    use utils, only : setPointers, EChk, terminate
     use surfaceFamilies, only : BCFamGroups
     use communication, only : adflow_comm_world, nProc, myID
     use sorting, only : famInList
@@ -156,11 +156,13 @@ contains
     integer(kind=intType) :: i, j, k, ii, jj, ierr, iCell
     integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd, ni, nj
     integer(kind=intType) :: nn, sps, level, nLevels, mm
-    integer(kind=intType) :: nCellsLocal, nCellsGlobal
     integer(kind=intType), dimension(:), allocatable :: nCellProc, cumCellProc
     integer(kind=intType), dimension(:), pointer :: wallFamList
     integer(kind=intType), dimension(:), allocatable :: cellIdLocal, cellIdGlobal
+    integer(kind=intType) :: nCellsLocal, nCellsGlobal
     real(kind=realType), dimension(:), allocatable :: ksLocal, ksGlobal
+
+    character(len=maxStringLen) :: errorMessage
 
     ! exit if not in use
     if (.not. useRoughSA) then
@@ -208,7 +210,7 @@ contains
 
 
           ! Move all the local ks-values in a list
-          ! Create a seccond list with the global cell ID corresponding to the ks-values
+          ! Create a second list with the global cell ID corresponding to the ks-values
           iCell = 0
           do nn=1, nDom
              call setPointers(nn, level, sps)
@@ -251,8 +253,8 @@ contains
                          j = jl
                          k = jj + 1
                       case (kMin)
-                         i = jj + 1
-                         j = ii + 1
+                         i = ii + 1
+                         j = jj + 1
                          k = 2
                       case (kMax)
                          i = ii + 1
@@ -283,7 +285,8 @@ contains
                adflow_comm_world, ierr)
           call EChk(ierr, __FILE__, __LINE__)
 
-          ! free local memmory
+
+          ! free local memory
           deallocate(cumCellProc, nCellProc, ksLocal, cellIdLocal)
 
           ! set the ks-values in the volume
@@ -301,6 +304,13 @@ contains
 
                       ! find the index of the surface cell (Requires gfortran > 9.0 )
                       iCell = findloc(cellIdGlobal, flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), DIM=1)
+
+                      if (iCell == 0) then
+                         write(errorMessage,100) &
+                              flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k)
+100                      format("Could not find surface cell with id ", I10.1)
+                         call terminate("updateWallRoughness", errorMessage)
+                      endif
 
                       ! set the ks value
                       flowDoms(nn, level, sps)%ks(i, j, k) = ksGlobal(iCell)
