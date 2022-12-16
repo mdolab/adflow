@@ -2353,6 +2353,11 @@ contains
                         stat=ierr)
                     if (useRoughSA .and. ierr == 0) then
                         allocate(BCData(mm)%ksNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+                        if (level > 1) then
+                           ! The extrapolation of the BC for MG does not work
+                           ! properly. Thus it must be initialized with zero
+                           BCData(mm)%ksNS_Wall = zero
+                        end if
                    end if
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
@@ -2379,6 +2384,11 @@ contains
                         stat=ierr)
                     if (useRoughSA .and. ierr == 0) then
                         allocate(BCData(mm)%ksNS_Wall(iBeg:iEnd,jBeg:jEnd), stat=ierr)
+                        if (level > 1) then
+                           ! The extrapolation of the BC for MG does not work
+                           ! properly. Thus it must be initialized with zero
+                           BCData(mm)%ksNS_Wall = zero
+                        end if
                    end if
                    if(ierr /= 0)                      &
                         call terminate("allocMemBCData", &
