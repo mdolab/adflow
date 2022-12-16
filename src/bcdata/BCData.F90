@@ -442,6 +442,7 @@ contains
     ! Write an error message and terminate if it was not
     ! possible to determine the temperature.
 
+#ifndef USE_TAPENADE
     if(.not. bcVarPresent(1)) then
 
        write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename),", &
@@ -451,6 +452,7 @@ contains
        call terminate("BCDataIsothermalWall", errorMessage)
 
     endif
+#endif
 
     ! Convert to si-units and store the temperature in TNS_Wall.
 
@@ -567,11 +569,13 @@ contains
        ! Not enough data is prescribed. Print an error message
        ! and exit.
 
+#ifndef USE_TAPENADE
        write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
          ", boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
          ": Not enough data specified for subsonic inlet"
 
        call terminate("BCDataSubsonicInflow", errorMessage)
+#endif
 
     endif
 
@@ -952,6 +956,7 @@ contains
     ! Write an error message and terminate if it was not
     ! possible to determine the static pressure.
 
+#ifndef USE_TAPENADE
     if(.not. bcVarPresent(1)) then
 
        write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
@@ -961,6 +966,7 @@ contains
        call terminate("BCDataSubsonicOutflow", errorMessage)
 
     endif
+#endif
 
     ! Convert to SI-units and store the pressure in ps.
 
@@ -1052,11 +1058,13 @@ contains
           ! Internal flow. Data at the inlet must be specified;
           ! no free stream data can be taken.
 
+#ifndef USE_TAPENADE
           write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
             ", boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
             ": Not enough data specified for supersonic inlet"
 
           call terminate("BCDataSupersonicInflow", errorMessage)
+#endif
 
           !=============================================================
 
