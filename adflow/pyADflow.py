@@ -327,7 +327,7 @@ class ADFLOW(AeroSolver):
                 # this is the plot3d surface that defines the closed volume
                 surfFile = surfDict[surf]["surfFile"]
                 # the indices of cgns blocks that we want to consider when blanking inside the surface
-                blockIDs = surfDict[surf]["blockIds"]
+                blockIDs = surfDict[surf]["blockIDs"]
                 # the fortran lookup expects this list in increasing order
                 blockIDs.sort()
 
@@ -699,7 +699,7 @@ class ADFLOW(AeroSolver):
         self.nSlice += nSlice
 
     def addCylindricalSlices(
-        self, pt1, pt2, nSlice=180, sliceBeg=0.0, sliceEnd=360.0, sliceType="relative", groupName=None
+        self, pt1, pt2, nSlice=25, sliceBeg=0.0, sliceEnd=360.0, sliceType="relative", groupName=None
     ):
         """
         Add cylindrical projection slices. The cylindrical projection axis is defined
