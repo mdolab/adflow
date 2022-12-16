@@ -33,5 +33,6 @@ bibtex_bibfiles.extend(["citations.bib"])
 
 # intersphinx
 intersphinx_mapping = {
-    "mach-aero": (f"https://mdolab-mach-aero.readthedocs-hosted.com/en/latest", None),
+    "mach-aero": ("https://mdolab-mach-aero.readthedocs-hosted.com/en/latest", None),
+    "pygeo": ("https://mdolab-pygeo.readthedocs-hosted.com/en/latest", None),
 }

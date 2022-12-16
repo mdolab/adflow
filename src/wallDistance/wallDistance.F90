@@ -157,7 +157,7 @@ contains
 
     integer(kind=intType) :: sps, sps2, ll, nLevels
     logical :: tempLogical
-    double precision :: t0
+    real(kind=alwaysRealType) :: t0
     character(len=3) :: integerString
 
     ! Check if the RANS equations are solved. If not, the wall

@@ -908,10 +908,11 @@ contains
          write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
            ", subsonic inlet boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
            ": Flow direction points out of the domain for some faces."
-          call returnFail("totalSubsonicInlet", errorMessage)
-          call mpi_barrier(ADflow_comm_world, ierr)
 
-         ! call terminate("totalSubsonicInlet", errorMessage)
+          ! Call returnFail if the flow direction is pointing out of a 
+          ! BC domain.  This will be caught by an allreduce in the
+          ! python layer.
+          call returnFail("totalSubsonicInlet", errorMessage)
       endif
 #endif
     end subroutine totalSubsonicInlet
@@ -986,6 +987,9 @@ contains
     use inputPhysics, onlY : equations, flowType, velDirFreeStream
     use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate
     use format, only : strings
+#ifndef USE_TAPENADE
+    use utils, only: returnFail
+#endif
     implicit none
     !
     !      Subroutine arguments.
@@ -1099,13 +1103,15 @@ contains
        enddo
     enddo
 
+#ifndef USE_TAPENADE
     if(nn > 0) then
        write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
          ", supersonic inlet boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
          ": Velocity points out of the domain for some faces."
 
-       call terminate("BCDataSupersonicInflow", errorMessage)
+       call returnFail("BCDataSupersonicInflow", errorMessage)
     endif
+#endif
 
   contains
 
@@ -3429,7 +3435,7 @@ contains
     !
     !      Subroutine arguments.
     !
-    character*(*), intent(in) :: setSubroutineName
+    character(len=*), intent(in) :: setSubroutineName
     character, dimension(:, :), intent(in) :: bcDatanamesIn
     !
     !      Local variables.

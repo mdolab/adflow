@@ -211,8 +211,8 @@ module stringOps
 
     ! Input/Output
     type(oversetString) :: master
-    type(oversetString), dimension(nStrings), target ::  strings
     integer(kind=intType) :: nStrings
+    type(oversetString), dimension(nStrings), target ::  strings
     logical, intent(in) :: debugZipper
 
     ! Workging
@@ -2039,7 +2039,7 @@ module stringOps
        write(101,*) 'TITLE = "PocketStrings Data" '
 
        write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+            &"gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
        do i=1, nFullStrings
           ! Temporarily allocate otherID
           allocate(pocketStringsArr(i)%otherID(2, pocketStringsArr(i)%nNodes))
@@ -2521,8 +2521,8 @@ module stringOps
     implicit none
 
     ! Input/output
-    type(oversetString), dimension(nstrings), target :: strings
     integer(kind=intType), intent(in) :: nStrings
+    type(oversetString), dimension(nstrings), target :: strings
     logical, intent(in) :: debugZipper
 
     ! Working
@@ -2807,9 +2807,9 @@ module stringOps
     use format, only : sci12, int5
     implicit none
 
+    integer(kind=intType), intent(in) :: fileID, n
     type(oversetString), intent(in) :: str
     type(oversetString), intent(in), dimension(n) :: strings
-    integer(kind=intType), intent(in) :: fileID, n
     integer(kind=intType) :: i, j, id, index
     real(kind=realType), dimension(3) :: myPt, otherPT, vec
     real(kind=realType) :: maxH, dist, ratio

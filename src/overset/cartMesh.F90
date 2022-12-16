@@ -893,7 +893,7 @@ module cartMesh
     integer(kind=intType) :: ierr
 
     ! CGNS
-    character*32 :: coorNames(3)
+    character(len=32) :: coorNames(3)
     integer(kind=intType) :: base, zoneID, coordID, cg, zone,  iField, iSol, i, j, k, iDim
     real(kind=realType), dimension(:, :, :, :), allocatable :: xTmp
     real(kind=realType), dimension(:), pointer :: cartPointer

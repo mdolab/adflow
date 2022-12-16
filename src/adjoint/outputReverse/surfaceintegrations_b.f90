@@ -25,7 +25,9 @@ contains
 &   trefd, lref, gammainf, pinf, pinfd, uref, urefd, uinf, uinfd
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
-&   lengthref, alpha, alphad, beta, betad, liftindex
+&   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_family, &
+&   cpmin_rho
+    use inputcostfunctions, only : computecavitation
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector, getdirvector_b
@@ -54,6 +56,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic log
     intrinsic sqrt
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmp0
@@ -182,6 +185,13 @@ contains
 &       ovrnts*globalvals(isepsensor, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
+! final part of the ks computation
+      if (computecavitation) funcvalues(costfunccpmin) = funcvalues(&
+&         costfunccpmin) + ovrnts*(cpmin_family(sps)-log(globalvals(&
+&         icpmin, sps))/cpmin_rho)
+! only calculate the log part if we are actually computing for cavitation.
+! if we are not computing cavitation, the icpmin in globalvals will be zero,
+! which doesn't play well with log. we just want to return zero here.
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
 &       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
@@ -589,6 +599,12 @@ contains
       do sps=1,ntimeintervalsspectral
 ! ------------
 ! ------------
+! final part of the ks computation
+        if (computecavitation) then
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
 ! mass flow like objective
         mflow = globalvals(imassflow, sps)
         if (mflow .ne. zero) then
@@ -671,6 +687,10 @@ contains
 &         funcvaluesd(costfuncsepsensoravgx)
         globalvalsd(iaxismoment, sps) = globalvalsd(iaxismoment, sps) + &
 &         ovrnts*funcvaluesd(costfuncaxismoment)
+        call popcontrol1b(branch)
+        if (branch .eq. 0) globalvalsd(icpmin, sps) = globalvalsd(icpmin&
+&           , sps) - ovrnts*funcvaluesd(costfunccpmin)/(cpmin_rho*&
+&           globalvals(icpmin, sps))
         globalvalsd(icavitation, sps) = globalvalsd(icavitation, sps) + &
 &         ovrnts*funcvaluesd(costfunccavitation)
         globalvalsd(isepsensor, sps) = globalvalsd(isepsensor, sps) + &
@@ -771,7 +791,8 @@ contains
     use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf, &
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
-&   machcoef, lengthref, alpha, beta, liftindex
+&   machcoef, lengthref, alpha, beta, liftindex, cpmin_family, cpmin_rho
+    use inputcostfunctions, only : computecavitation
     use inputtsstabderiv, only : tsstability
     use utils_b, only : computetsderivatives
     use flowutils_b, only : getdirvector
@@ -792,6 +813,7 @@ contains
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
+    intrinsic log
     intrinsic sqrt
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
@@ -881,6 +903,13 @@ contains
 &       ovrnts*globalvals(isepsensor, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
 &       ovrnts*globalvals(icavitation, sps)
+! final part of the ks computation
+      if (computecavitation) funcvalues(costfunccpmin) = funcvalues(&
+&         costfunccpmin) + ovrnts*(cpmin_family(sps)-log(globalvals(&
+&         icpmin, sps))/cpmin_rho)
+! only calculate the log part if we are actually computing for cavitation.
+! if we are not computing cavitation, the icpmin in globalvals will be zero,
+! which doesn't play well with log. we just want to return zero here.
       funcvalues(costfuncaxismoment) = funcvalues(costfuncaxismoment) + &
 &       ovrnts*globalvals(iaxismoment, sps)
       funcvalues(costfuncsepsensoravgx) = funcvalues(&
@@ -1055,7 +1084,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cavitationnumber
+&   cpmin_family, cpmin_rho, cavitationnumber
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1068,16 +1097,19 @@ contains
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation
-    real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd
+&   cavitation, cpmin_ks_sum
+    real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd, &
+&   cpmin_ks_sumd
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: xcd, ycd, zcd, rd(3)
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
-    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
-    real(kind=realtype) :: vd(3), sensord, sensor1d, cpd, tmpd, plocald
+    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
+&   ks_exponent
+    real(kind=realtype) :: vd(3), sensord, sensor1d, cpd, tmpd, plocald&
+&   , ks_exponentd
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxxd, tauyyd, tauzzd
     real(kind=realtype) :: tauxy, tauxz, tauyz
@@ -1275,6 +1307,9 @@ contains
 &         sensor1+cavsensoroffset)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
+! also do the ks-based cpmin computation
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_family(spectralsol)))
+        cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
 !
@@ -1300,6 +1335,7 @@ contains
     mvaxisd = localvaluesd(iaxismoment)
     sepsensoravgd = 0.0_8
     sepsensoravgd = localvaluesd(isepavg:isepavg+2)
+    cpmin_ks_sumd = localvaluesd(icpmin)
     cavitationd = localvaluesd(icavitation)
     sepsensord = localvaluesd(isepsensor)
     mvd = 0.0_8
@@ -1578,6 +1614,7 @@ contains
         call pushreal8(sensor1)
         sensor1 = sensor1**cavexponent/(one+exp(2*cavsensorsharpness*(-&
 &         sensor1+cavsensoroffset)))
+! also do the ks-based cpmin computation
         sensor1d = cavitationd
         cellaread = blk*sensor1*sensor1d
         sensor1d = blk*cellarea*sensor1d
@@ -1593,7 +1630,9 @@ contains
 &           cavexponent/temp5**2+cavexponent*sensor1**(cavexponent-1)/&
 &           temp5)*sensor1d
         end if
-        cpd = -sensor1d
+        ks_exponentd = blk*cpmin_ks_sumd
+        cpd = -sensor1d - cpmin_rho*exp(cpmin_rho*(cpmin_family(&
+&         spectralsol)-cp))*ks_exponentd
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
         pinfd = pinfd - tmp*cpd
@@ -1776,7 +1815,7 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cavitationnumber
+&   equations, momentaxis, cpmin_family, cpmin_rho, cavitationnumber
     use bcpointers_b
     implicit none
 ! input/output variables
@@ -1786,12 +1825,13 @@ contains
 ! local variables.
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation
+&   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
-    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal
+    real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
+&   ks_exponent
     real(kind=realtype) :: tauxx, tauyy, tauzz
     real(kind=realtype) :: tauxy, tauxz, tauyz
     real(kind=realtype), dimension(3) :: refpoint
@@ -1830,6 +1870,7 @@ contains
     yplusmax = zero
     sepsensor = zero
     cavitation = zero
+    cpmin_ks_sum = zero
     sepsensoravg = zero
     mpaxis = zero
     mvaxis = zero
@@ -1954,6 +1995,9 @@ contains
 &         sensor1+cavsensoroffset)))
         sensor1 = sensor1*cellarea*blk
         cavitation = cavitation + sensor1
+! also do the ks-based cpmin computation
+        ks_exponent = exp(cpmin_rho*(-cp+cpmin_family(spectralsol)))
+        cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
     end do
 !
@@ -2071,6 +2115,7 @@ contains
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvalues(icavitation) = localvalues(icavitation) + cavitation
+    localvalues(icpmin) = localvalues(icpmin) + cpmin_ks_sum
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
 &     sepsensoravg
     localvalues(iaxismoment) = localvalues(iaxismoment) + mpaxis + &

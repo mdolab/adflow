@@ -248,9 +248,9 @@ contains
     implicit none
 
     ! Input/Output
+    integer(kind=intType), intent(in) :: n, nFam
     integer(kind=intType), dimension(n) :: flag
     integer(kind=intType), dimension(nFam) :: closedFamList
-    integer(kind=intType), intent(in) :: n, nFam
 
     ! Working
     integer(kind=intType) :: level, nLevels

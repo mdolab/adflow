@@ -27,8 +27,10 @@ CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
 CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
 # ------- Define Compiler Flags ----------------------------------------
-FF90_FLAGS   = -DHAS_ISNAN -fPIC -r8 -O2 -g
-C_FLAGS      = -DHAS_ISNAN -O -fPIC
+FF77_FLAGS   = -fPIC -r8
+FF90_FLAGS = $(FF77_FLAGS) -std08
+FFXX_OPT_FLAGS = -O2
+C_FLAGS      = -fPIC -O
 
 # ------- Define Archiver  and Flags -----------------------------------
 AR       = ar
@@ -36,7 +38,7 @@ AR_FLAGS = -rvs
 
 # ------- Define Linker Flags ------------------------------------------
 LINKER       = $(FF90)
-LINKER_FLAGS = -nofor_main
+LINKER_FLAGS = -nofor-main
 
 # ------- Define Petsc Info ---
 include ${PETSC_DIR}/lib/petsc/conf/variables

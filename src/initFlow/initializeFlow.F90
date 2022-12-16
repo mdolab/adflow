@@ -624,8 +624,8 @@ end subroutine infChangeCorrection
           if(ierr /= 0)                              &
                call terminate("allocMemFlovarPart2", &
                "Memory allocation failure for &
-               sVeloIALE, sVeloJALE and sVeloKALE; &
-               sFaceIALE, sFaceJALE and sFaceKALE.")
+               &sVeloIALE, sVeloJALE and sVeloKALE; &
+               &sFaceIALE, sFaceJALE and sFaceKALE.")
        end if
 
 

@@ -44,8 +44,8 @@ contains
     implicit none
 
     ! Input Parameters
-    integer(kind=intType), intent(in), dimension(nZipFam) :: zipperFamList
     integer(kind=intType), intent(in) :: nZipFam
+    integer(kind=intType), intent(in), dimension(nZipFam) :: zipperFamList
 
     ! Local Variables
     integer(kind=intType) :: i, j, k, ii, jj, kk, iStart, iSize, sps, level, iStr
@@ -625,7 +625,7 @@ contains
        open(unit=101, file="strings_beforeSelfZip.dat", form='formatted')
        write(101,*) 'TITLE = "Gap Strings Data" '
        write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+            &"gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
        do i=1, nStrings
           call writeOversetString(strings(i), strings, nStrings, 101)
        end do
@@ -646,7 +646,7 @@ contains
        open(unit=101, file="strings_afterSelfZip.dat", form='formatted')
        write(101,*) 'TITLE = "Gap Strings Data" '
        write(101,*) 'Variables = "X" "Y" "Z" "Nx" "Ny" "Nz" "Vx" "Vy" "Vz" "ind" &
-            "gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
+            &"gapID" "gapIndex" "otherID" "otherIndex" "ratio"'
        do i=1, nStrings
           call writeOversetString(strings(i), strings, nStrings, 101)
        end do
