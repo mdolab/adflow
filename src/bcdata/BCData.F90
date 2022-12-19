@@ -913,7 +913,7 @@ contains
            ", subsonic inlet boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
            ": Flow direction points out of the domain for some faces."
 
-          ! Call returnFail if the flow direction is pointing out of a 
+          ! Call returnFail if the flow direction is pointing out of a
           ! BC domain.  This will be caught by an allreduce in the
           ! python layer.
           call returnFail("totalSubsonicInlet", errorMessage)
@@ -1094,6 +1094,7 @@ contains
 
     endif testPresent
 
+#ifndef USE_TAPENADE
     ! Check if the prescribed velocity is an inflow. No halo's
     ! should be included here and therefore the nodal range
     ! (with an offset) must be used.
@@ -1111,7 +1112,6 @@ contains
        enddo
     enddo
 
-#ifndef USE_TAPENADE
     if(nn > 0) then
        write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
          ", supersonic inlet boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &

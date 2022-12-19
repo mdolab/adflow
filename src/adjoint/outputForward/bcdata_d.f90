@@ -1581,18 +1581,6 @@ contains
         allflowpresent = .false.
       end select
     end if
-! check if the prescribed velocity is an inflow. no halo's
-! should be included here and therefore the nodal range
-! (with an offset) must be used.
-    nn = 0
-    do j=bcdata(boco)%jnbeg+1,bcdata(boco)%jnend
-      do i=bcdata(boco)%inbeg+1,bcdata(boco)%inend
-        var = bcdata(boco)%velx(i, j)*bcdata(boco)%norm(i, j, 1) + &
-&         bcdata(boco)%vely(i, j)*bcdata(boco)%norm(i, j, 2) + bcdata(&
-&         boco)%velz(i, j)*bcdata(boco)%norm(i, j, 3)
-        if (var .gt. zero) nn = nn + 1
-      end do
-    end do
 
   contains
     subroutine prescribedsupersonicinlet()
@@ -1796,7 +1784,6 @@ contains
     if (rhopresent .and. ppresent .and. velpresent) then
 ! all the variables needed are prescribed. set them.
       call prescribedsupersonicinlet_d()
-      goto 100
     else
 ! not all variables are present. check what type of flow
 ! is to be solved.
@@ -1883,18 +1870,6 @@ contains
           bcdatad(ii1)%ps = 0.0_8
         end do
       end select
-! check if the prescribed velocity is an inflow. no halo's
-! should be included here and therefore the nodal range
-! (with an offset) must be used.
- 100  nn = 0
-      do j=bcdata(boco)%jnbeg+1,bcdata(boco)%jnend
-        do i=bcdata(boco)%inbeg+1,bcdata(boco)%inend
-          var = bcdata(boco)%velx(i, j)*bcdata(boco)%norm(i, j, 1) + &
-&           bcdata(boco)%vely(i, j)*bcdata(boco)%norm(i, j, 2) + bcdata(&
-&           boco)%velz(i, j)*bcdata(boco)%norm(i, j, 3)
-          if (var .gt. zero) nn = nn + 1
-        end do
-      end do
     end if
 
   contains
