@@ -2275,9 +2275,7 @@ contains
     !
     character(len=*), intent(out) :: string
 
-    character(len=maxStringLen) :: upwindFormat
-
-    upwindFormat = "(A, F7.3, A)"
+    character(len=maxStringLen) :: upwindFormat = "(A, F7.3, A)"
 
     ! Write the basic scheme info.
 

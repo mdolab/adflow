@@ -1327,7 +1327,6 @@ contains
     integer(kind=intType), dimension(:), allocatable :: localFlag, famIsPartOfBCGroup
     integer(kind=intType), dimension(:), allocatable :: localIndices, nodeSizes, nodeDisps
     integer(kind=intType) :: iProc, nodeSize, cellSize
-    character(len=maxStringLen) :: bcFormat
 
     ! Process out the family information. The goal here is to
     ! assign a unique integer to each family in each boundary
@@ -1360,8 +1359,6 @@ contains
     defaultFamName(BCWallViscousIsothermal) = 'wall'
     defaultFamName(UserDefined) = 'userDefined'
 
-    bcFormat = '(2(A, I4), *(A))'
-
     nFam = 0
     do i=1, size(cgnsDoms)
        do j=1, size(cgnsDoms(i)%bocoInfo)
@@ -1369,7 +1366,7 @@ contains
              if (trim(cgnsDoms(i)%bocoInfo(j)%wallBCName) == "") then
                 if (myid == 0) then
                    ! Tell the user we are adding an automatic family name
-                   write(*, bcFormat) "CGNS Block ", i, ", boundary condition ", j, ", of type ", &
+                   write(*, "(2(A, I4), *(A))") "CGNS Block ", i, ", boundary condition ", j, ", of type ", &
                    trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
                    " does not have a family. Based on the boundary condition type,", &
                    " a name of: '", trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), "' will be used."
@@ -3401,7 +3398,6 @@ contains
     integer(kind=intType) :: nn, sps, i, j, k
     real(kind=realType), dimension(3) :: xc
     character(len=10) :: intString1, intString2, intString3
-    character(len=maxStringLen) :: negVolumeFormat
 
     ! Processor 0 prints a message that negative volumes are present
     ! in the grid.
@@ -3472,8 +3468,6 @@ contains
                    ! Loop over the owned volumes and write the
                    ! negative ones.
 
-                   negVolumeFormat = '(7(A), 4(ES10.3, A))'
-
                    do k=2,kl
                       do j=2,jl
                          do i=2,il
@@ -3496,7 +3490,7 @@ contains
                                intString2 = adjustl(intString2)
                                intString3 = adjustl(intString3)
 
-                               print negVolumeFormat, "# Indices (", trim(intString1), &
+                               print "(7(A), 4(ES10.3, A))", "# Indices (", trim(intString1), &
                                      ",", trim(intString2), ",", trim(intString3), "), coordinates (", &
                                      xc(1), ",", xc(2), ",", xc(3), "), Volume: ", -vol(i,j,k)
 

@@ -1,5 +1,10 @@
 module adjointAPI
 
+  use constants
+
+  character(len=maxStringLen) :: timeFormat = "(A, 1X, F8.2)"
+  character(len=maxStringLen) :: exitFormat = "(1X, A, 1X, I5, 1X, A)"
+
 contains
 #ifndef USE_COMPLEX
   subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, bcDataValuesdot, useSpatial, &
@@ -660,7 +665,7 @@ contains
        call EChk(ierr,  __FILE__, __LINE__)
 
        if(myid ==0)  then
-          write(*, "(A, 1X, F8.2)") "Assembling State Residaul Matrices Fwd time (s) = ", timeAdj
+          write(*, timeFormat) "Assembling State Residaul Matrices Fwd time (s) = ", timeAdj
        end if
     end if
 
@@ -830,13 +835,13 @@ contains
        ! the norm of error and the number of iterations
 
        if( myid ==0 .and. printTiming) then
-          write(*, "(A, 1X, F8.2)") "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
+          write(*, timeFormat) "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
           write(*, "(1X, A, 1X, ES10.4, 4X, A, 1X, I4)") "Norm of error =",norm,"Iterations =",adjConvIts
           write(*,*) "------------------------------------------------"
           if( adjConvIts.lt.0 ) then
-             write(*, "(1X, A, 1X, I5, 1X, A)") "PETSc solver diverged after", -adjConvIts, "iterations..."
+             write(*, exitFormat) "PETSc solver diverged after", -adjConvIts, "iterations..."
           else
-            write(*, "(1X, A, 1X, I5, 1X, A)") "PETSc solver converged after", adjConvIts, "iterations."
+            write(*, exitFormat) "PETSc solver converged after", adjConvIts, "iterations."
           endif
           write(*,*) "------------------------------------------------"
        endif

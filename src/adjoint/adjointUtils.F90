@@ -1340,12 +1340,11 @@ contains
     real(kind=realType), pointer, dimension(:, :) :: myKsp
     integer(kind=intType) :: n, dummy, ierr
     real(kind=realType)   :: rnorm
-    character(len=maxStringLen) :: monitorFormat = "(I4, 1X, A, 1X, ES16.10)"
 
     ! Write the residual norm to stdout every adjMonStep iterations.
 
     if(mod(n, adjMonStep) ==0 ) then
-       if( myid==0 ) write(*, monitorFormat) n, 'KSP Residual norm', rnorm
+       if( myid==0 ) write(*, "(I4, 1X, A, 1X, ES16.10)") n, 'KSP Residual norm', rnorm
     end if
 
     ierr = 0
