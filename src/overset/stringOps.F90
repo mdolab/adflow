@@ -2804,7 +2804,7 @@ module stringOps
 
     use constants
     use utils, only : mynorm2
-    use format, only : sci12, int5
+    use commonFormats, only : sci12, int5
     implicit none
 
     integer(kind=intType), intent(in) :: fileID, n
@@ -2912,7 +2912,7 @@ module stringOps
 
     use constants
     use utils, only : mynorm2
-    use format, only :  sci12, int5
+    use commonFormats, only :  sci12, int5
     implicit none
 
     type(oversetString), intent(in) :: str
@@ -2947,7 +2947,7 @@ module stringOps
   subroutine writeOversetTriangles(string, fileName, startTri, endTri)
 
     use constants
-    use format, only : sci12
+    use commonFormats, only : sci12
     implicit none
 
     type(oversetString), intent(inout) :: string

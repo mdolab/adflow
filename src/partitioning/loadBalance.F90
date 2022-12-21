@@ -1555,7 +1555,7 @@ contains
     use inputPhysics
     use partitionMod
     use utils, only : terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -1781,7 +1781,7 @@ contains
     use communication
     use partitionMod
     use utils, only : delta, terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments

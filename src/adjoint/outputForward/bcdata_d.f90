@@ -129,7 +129,7 @@ contains
     use communication, only : myid
     use inputphysics, only : cpmodel, gammaconstant, rgasdim
     use flowvarrefstate, only : pinfdim, pinfdimd
-    use format, only : stringsci5
+    use commonformats, only : stringsci5
     implicit none
 !
 !      subroutine arguments.
@@ -168,7 +168,7 @@ contains
     use communication, only : myid
     use inputphysics, only : cpmodel, gammaconstant, rgasdim
     use flowvarrefstate, only : pinfdim
-    use format, only : stringsci5
+    use commonformats, only : stringsci5
     implicit none
 !
 !      subroutine arguments.
@@ -344,7 +344,7 @@ contains
     use blockpointers, only : bcfaceid, bcdata, bcdatad, nbkglobal
     use utils_d, only : terminate, sitemperature
     use flowvarrefstate, only : tref, trefd
-    use format, only : strings
+    use commonformats, only : strings
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none
@@ -397,7 +397,7 @@ contains
     use blockpointers, only : bcfaceid, bcdata, nbkglobal
     use utils_d, only : terminate, sitemperature
     use flowvarrefstate, only : tref
-    use format, only : strings
+    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -442,7 +442,7 @@ contains
     use inputphysics, only : equations
     use utils_d, only : sidensity, sivelocity, sipressure, siangle, &
 &   sitemperature, terminate
-    use format, only : strings
+    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -523,7 +523,7 @@ contains
       use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
-      use format, only : strings
+      use commonformats, only : strings
       implicit none
 !
 !        local variables.
@@ -783,7 +783,7 @@ contains
     use inputphysics, only : equations
     use utils_d, only : sidensity, sivelocity, sipressure, siangle, &
 &   sitemperature, terminate
-    use format, only : strings
+    use commonformats, only : strings
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none
@@ -891,7 +891,7 @@ contains
       use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
-      use format, only : strings
+      use commonformats, only : strings
       use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
       implicit none
@@ -1179,7 +1179,7 @@ contains
       use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
-      use format, only : strings
+      use commonformats, only : strings
       implicit none
 !
 !        local variables.
@@ -1426,7 +1426,7 @@ contains
     use blockpointers, only : bcdata, bcdatad, nbkglobal, bcfaceid
     use utils_d, only : terminate, sipressure
     use flowvarrefstate, only : pref, prefd
-    use format, only : strings
+    use commonformats, only : strings
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none
@@ -1474,7 +1474,7 @@ contains
     use blockpointers, only : bcdata, nbkglobal, bcfaceid
     use utils_d, only : terminate, sipressure
     use flowvarrefstate, only : pref
-    use format, only : strings
+    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -1515,7 +1515,7 @@ contains
     use inputphysics, only : equations, flowtype, veldirfreestream
     use utils_d, only : sidensity, sipressure, sivelocity, sitemperature&
 &   , terminate
-    use format, only : strings
+    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -1740,7 +1740,7 @@ contains
 &   veldirfreestreamd
     use utils_d, only : sidensity, sipressure, sivelocity, sitemperature&
 &   , terminate
-    use format, only : strings
+    use commonformats, only : strings
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none

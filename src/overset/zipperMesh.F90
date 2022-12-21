@@ -1239,7 +1239,7 @@ contains
     use sorting, only : famInList
     use communication, only : myid, adflow_comm_world, nProc
     use utils, only : EChk
-    use format, only : sci12
+    use commonFormats, only : sci12
     implicit none
     integer(kind=intType), intent(in), dimension(:) :: famList
     character(80) :: fileName, zoneName

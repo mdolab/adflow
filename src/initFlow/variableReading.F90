@@ -2094,7 +2094,7 @@ contains
          timeUnsteadyRestart, monNames, timeArray
     use sorting, only : qsortStrings, bsearchStrings
     use utils, only : setCGNSRealType, terminate, allocTimeArrays
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.

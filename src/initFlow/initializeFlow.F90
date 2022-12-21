@@ -1160,7 +1160,7 @@ end subroutine infChangeCorrection
     use communication
     use utils, only : terminate
     use variableReading, only : solFiles, nSolsRead
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables
@@ -2783,7 +2783,7 @@ end subroutine infChangeCorrection
     use monitor, only : nTimeStepsRestart, timeUnsteadyRestart
     use utils, only : terminate, setPointers
     use sorting, only : bsearchStrings
-    use format, only : strings, stringInt1
+    use commonFormats, only : strings, stringInt1
     implicit none
     !
     !      Local variables.
@@ -3207,7 +3207,7 @@ end subroutine infChangeCorrection
     use variableReading, only : zoneNames, zoneNumbers, cgnsInd, cgnsBase
     use sorting, only : qsortStrings, bsearchStrings
     use utils, only : terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.

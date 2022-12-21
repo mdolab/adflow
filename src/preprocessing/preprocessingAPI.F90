@@ -478,7 +478,7 @@ contains
     use constants
     use block
     use communication
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -872,7 +872,7 @@ contains
     use cgnsGrid
     use inputTimeSpectral
     use utils, only : setPointers
-    use format, only : stringSpace, stringSci5
+    use commonFormats, only : stringSpace, stringSci5
     implicit none
     !
     !      Subroutine arguments.
@@ -2733,7 +2733,7 @@ contains
     use checkVolBlock
     use inputIteration
     use utils, only : setPointers, terminate, returnFail
-    use format, only : stringSpace, stringInt1
+    use commonFormats, only : stringSpace, stringInt1
     implicit none
     !
     !      Subroutine arguments.
@@ -3387,7 +3387,7 @@ contains
     use inputTimeSpectral
     use checkVolBlock
     use utils, only : setPointers, terminate
-    use format, only : stringSpace
+    use commonFormats, only : stringSpace
     implicit none
     !
     !      Subroutine arguments.

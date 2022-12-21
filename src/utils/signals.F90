@@ -13,7 +13,7 @@
     use inputPhysics, only : equationMode
     use killSignals, only : localSignal, noSignal, signalWrite
     use iteration, only : groundLevel
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.
@@ -107,7 +107,7 @@
     use inputPhysics, only : equationMode
     use killSignals, only : localSignal, noSignal, signalWriteQuit
     use iteration, only : groundLevel
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.

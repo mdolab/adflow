@@ -492,7 +492,7 @@ contains
     use iteration, only : standAloneMode
     use utils, only : terminate
     use sorting, only: qsortstrings, bsearchstrings
-    use format, only : stringSpace
+    use commonFormats, only : stringSpace
 
     implicit none
     !

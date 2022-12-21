@@ -6465,7 +6465,7 @@ end subroutine cross_prod
     !
     use constants
     use monitor, only : nTimeStepsRestart, timeUnsteadyRestart, timeUnsteady, timeStepUnsteady
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables

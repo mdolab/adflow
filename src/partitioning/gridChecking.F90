@@ -14,7 +14,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, terminate
     use partitionMod, only : sortBadEntities
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.
@@ -410,7 +410,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : delta, setPointers, terminate
     use partitionMod, only : sortBadEntities
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.
@@ -1079,7 +1079,7 @@ contains
     use cgnsGrid
     use communication
     use utils, only : setPointers, terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.

@@ -264,7 +264,7 @@ contains
     use utils, only : EChk, pointReduce, setPointers
     use communication, only : myID, adflow_comm_world, nProc
     use blockPointers, only : x, nDom
-    use format, only : sci12
+    use commonFormats, only : sci12
     implicit none
 
     ! Input

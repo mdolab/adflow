@@ -2243,7 +2243,7 @@ contains
     ! Write the data in slice 'slc' to openfile ID fileID
     use constants
     use inputIO
-    use format, only : int5
+    use commonFormats, only : int5
     implicit none
 
     ! Input Parameters

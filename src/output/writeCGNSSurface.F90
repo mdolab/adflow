@@ -20,7 +20,7 @@ contains
     use utils, only : terminate, setPointers
     use surfaceFamilies, only : famNames
     use sorting, only : qsortStrings
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
 
     ! Input Param

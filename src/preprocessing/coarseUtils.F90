@@ -1370,7 +1370,7 @@ contains
     use inputTimeSpectral
     use coarseningInfo
     use utils, only : terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.

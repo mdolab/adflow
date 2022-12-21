@@ -22,7 +22,7 @@ contains
     use partitionMod, only: fileIds, gridFiles, nGridsRead
     use utils, only : terminate, nullifyCGNSDomPointers
     use sorting, only : bsearchStrings, qsortStrings
-    use format, only : strings, stringInt1
+    use commonFormats, only : strings, stringInt1
     implicit none
     !
     !      Local variables
@@ -271,7 +271,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom, cgnsFamilies, cgnsNFamilies
     use communication, only : myid, adflow_comm_world
     use utils, only: terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -431,7 +431,7 @@ contains
     use partitionMod, only : nGridsRead, fileIDs, gridFiles
     use utils, only : terminate, siAngle, siLen, siAngle
     use sorting, only: bsearchStrings
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -809,7 +809,7 @@ contains
     use communication, only : myid, adflow_comm_world
     use partitionMod, only : subfaceNonMatchType, qsortSubfaceNonMatchType
     use utils, only : terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -1230,7 +1230,7 @@ contains
     use cgnsGrid, only : cgnsDoms
     use communication, only : myID, adflow_comm_world
     use utils, only : delta, terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -1448,7 +1448,7 @@ contains
          cgnsNOnMatchAbuttingConnType
     use communication, only : myid, adflow_comm_world
     use utils, only : terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -1850,7 +1850,7 @@ contains
     use communication, only : myID, adflow_comm_world
     use utils, only: terminate, setcgnsRealType
     use sorting, only: bsearchStrings
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -2766,7 +2766,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom
     use communication, only : adflow_comm_world, myid
     use utils, only : siAngle, terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -2908,7 +2908,7 @@ contains
     use cgnsGrid, only : cgnsDoms, cgnsNDom
     use communication, only : adflow_comm_world, myid
     use utils, only : siAngle, terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments
@@ -3051,7 +3051,7 @@ contains
     use IOModule, only : IOVar
     use partitionMod, only : nGridsRead, fileIDs, gridFiles
     use utils, only: setCGNSRealType, terminate
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.

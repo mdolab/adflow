@@ -2268,7 +2268,7 @@ contains
     use inputDiscretization
     use inputPhysics
     use flowVarRefState
-    use format, only : stringSpace, stringSci5
+    use commonFormats, only : stringSpace, stringSci5
     implicit none
     !
     !      Subroutine arguments.
@@ -2719,7 +2719,7 @@ contains
     use inputTimeSpectral
     use monitor
     use utils, only : terminate, setCGNSRealType
-    use format, only : strings
+    use commonFormats, only : strings
 
     implicit none
     !

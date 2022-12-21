@@ -1,4 +1,4 @@
-module format
+module commonFormats
 !
 !       This module contains common format specifiers for printing output.
 !       The convention for adding a format variable in this module or elsewhere is as follows:
@@ -35,4 +35,4 @@ module format
        ! Integers written with 5 characters
        character(len=maxStringLen) :: int5 = '(*(I5))'
 
-end module format
+end module commonFormats

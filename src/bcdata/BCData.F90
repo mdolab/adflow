@@ -148,7 +148,7 @@ contains
     use communication, only : myid
     use inputPhysics, only : cpModel, gammaConstant,rGasDim
     use flowVarRefState, only : PinfDim
-    use format, only : stringSci5
+    use commonFormats, only : stringSci5
     implicit none
     !
     !      Subroutine arguments.
@@ -420,7 +420,7 @@ contains
     use blockPointers, only : BCFaceID, BCData, nBKGlobal
     use utils, only : terminate, siTemperature
     use flowVarRefState, only : Tref
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -482,7 +482,7 @@ contains
     use inputPhysics, only : equations
     use utils, only : siDensity, siVelocity, siPressure, siAngle, &
          siTemperature, terminate
-    use format, only : strings
+    use commonFormats, only : strings
 #ifndef USE_TAPENADE
     use utils, only: returnFail
 #endif
@@ -600,7 +600,7 @@ contains
       use communication, only : adflow_comm_world
       use inputPhysics, only : RGasDim
       use section, only : sections
-      use format, only : strings
+      use commonFormats, only : strings
 #ifndef USE_TAPENADE
       use utils, only: returnFail
 #endif
@@ -934,7 +934,7 @@ contains
     use blockPointers, only : BCData, nbkGlobal, BCFaceID
     use utils, only : terminate, siPressure
     use flowVarRefState, only : pRef
-    use format, only : strings
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -992,7 +992,7 @@ contains
     use flowVarRefState, only : nwt, pInfCorr, wInf, uRef, rhoRef, pRef, muRef
     use inputPhysics, onlY : equations, flowType, velDirFreeStream
     use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate
-    use format, only : strings
+    use commonFormats, only : strings
 #ifndef USE_TAPENADE
     use utils, only: returnFail
 #endif

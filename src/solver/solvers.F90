@@ -20,7 +20,7 @@ contains
     use utils, only : eulerWallsPresent
     use multiGrid, only : transferToFineGrid
     use partitioning, only : updateCoorFineMesh
-    use format, only : stringInt1
+    use commonFormats, only : stringInt1
     implicit none
     !
     !      Local variables.
