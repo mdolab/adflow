@@ -4741,6 +4741,7 @@ end subroutine cross_prod
     !
     use block
     use inputTimeSpectral
+    use inputPhysics, only : cpmin_family
     use ADjointPETSc
     use cgnsGrid
     implicit none
@@ -4767,6 +4768,10 @@ end subroutine cross_prod
 
     ! Some more memory should be deallocated if this code is to
     ! be used in combination with adaptation.
+
+    ! deallocate the cpmin_family array allocated in inputParamRoutines
+    if (allocated(cpmin_family)) &
+        deallocate(cpmin_family)
 
     ! Destroy variables allocated in preprocessingAdjoint
     if (adjointPETScPreProcVarsAllocated) then

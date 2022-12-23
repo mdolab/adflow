@@ -3705,6 +3705,17 @@ contains
        sinCoefFourZRot = zero
     endif
 
+    ! Allocate the memory for cpmin_family. We had to wait until
+    ! nTimeIntervalsSpectral was set.
+    if(.not. allocated(cpmin_family) ) then
+       allocate(cpmin_family(nTimeIntervalsSpectral), stat=ierr)
+       if(ierr /= 0)                         &
+            call terminate("checkInputParam", &
+            "Memory allocation failure for &
+            &cpmin_family")
+       cpmin_family = zero
+    endif
+
   end subroutine checkInputParam
   subroutine setDefaultValues
     !
@@ -3820,7 +3831,7 @@ contains
     cpFile = ""                  ! Serves as a check later on.
 
     storeConvInnerIter = .false. ! Do not store the convergence of
-                                 ! iterations(inner iterations in unsteady mode). 
+                                 ! iterations(inner iterations in unsteady mode).
 
 #ifdef USE_SINGLE_PRECISION
     precisionGrid = precisionSingle   ! Default IO precision depends
