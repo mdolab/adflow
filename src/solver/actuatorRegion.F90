@@ -33,7 +33,7 @@ contains
     integer(kind=intType) :: i, j, k, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
     real(kind=realType) :: dStar, frac, volLocal
     type(actuatorRegionType), pointer :: region
-    real(kind=realType), dimension(3) :: minX, maxX, sss, v1, v2, xCen, axisVec
+    real(kind=realType), dimension(3) :: minX, maxX, v1, v2, v3, xCen, axisVec
     type(adtType) :: ADT
     real(kind=realType) :: axisVecNorm
     real(kind=realType), dimension(:, :), allocatable :: norm
@@ -103,7 +103,7 @@ contains
     ! Now build the tree.
     call buildSerialQuad(size(conn, 2), size(pts, 2), pts, conn, ADT)
 
-    ! Compute the (averaged) uniqe nodal vectors:
+    ! Compute the (averaged) unique nodal vectors:
     allocate(norm(3, size(pts, 2)), normCount(size(pts, 2)))
 
     norm = zero
@@ -111,18 +111,18 @@ contains
 
     do i=1, size(conn, 2)
 
-       ! Compute cross product normal and normize
+       ! Compute cross product normal and normalize
        v1 = pts(:, conn(3, i)) -  pts(:, conn(1, i))
        v2 = pts(:, conn(4, i)) -  pts(:, conn(2, i))
 
-       sss(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-       sss(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-       sss(3) = (v1(1)*v2(2) - v1(2)*v2(1))
-       sss = sss / sqrt(sss(1)**2 + sss(2)**2 + sss(3)**2)
+       v3(1) = (v1(2)*v2(3) - v1(3)*v2(2))
+       v3(2) = (v1(3)*v2(1) - v1(1)*v2(3))
+       v3(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+       v3 = v3 / sqrt(v3(1)**2 + v3(2)**2 + v3(3)**2)
 
        ! Add to each of the four pts and increment the number added
        do j=1, 4
-          norm(:, conn(j, i)) = norm(:, conn(j, i)) + sss
+          norm(:, conn(j, i)) = norm(:, conn(j, i)) + v3
           normCount(conn(j, i)) = normCount(conn(j, i)) + 1
        end do
     end do
@@ -132,7 +132,7 @@ contains
        norm(:, i) = norm(:, i) / normCount(i)
     end do
 
-    ! Node count is no longer needed
+    ! Norm count is no longer needed
     deallocate(normCount)
 
     ! Allocate the extra data the tree search requires.
@@ -214,7 +214,7 @@ contains
     call ECHK(ierr, __FILE__, __LINE__)
 
     ! Final memory cleanup
-    deallocate(norm, frontLeaves, frontLeavesNew, BB)
+    deallocate(stack, norm, frontLeaves, frontLeavesNew, BB)
     call destroySerialQuad(ADT)
 
   contains

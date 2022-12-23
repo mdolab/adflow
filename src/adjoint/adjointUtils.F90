@@ -1614,6 +1614,7 @@ contains
     use constants
     use ADjointPETSc, only : dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
     use inputAdjoint, only : approxPC
+    use agmg, only : destroyAGMG
     use utils, only : EChk
     implicit none
 
@@ -1632,6 +1633,9 @@ contains
 
        call KSPDestroy(adjointKSP, ierr)
        call EChk(ierr,__FILE__,__LINE__)
+
+       call destroyAGMG()
+
        adjointPETScVarsAllocated = .False.
     end if
 

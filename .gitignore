@@ -48,6 +48,7 @@ tests/*out
 
 # for the .cgnsTimestep... files
 tests/output_files/*.cgns*
+tests/output_files/*.plt
 
 *.cgns
 *.txt
