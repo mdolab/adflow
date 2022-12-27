@@ -313,15 +313,16 @@ mavgmn:
 
 area:
   desc: >
-    ??
+    The area of the integrated surface. 
+    This can be all wall surface or the interested surface defined in the runscript.
 
 axismoment:
   desc: >
-    ??
+    Moment of the geometry in the given axis.
 
 flowpower:
   desc: >
-    ??
+    Added power by actuator zone to the flow (f.V).
 
 forcexpressure:
   desc: >
@@ -385,16 +386,16 @@ liftmomentum:
 
 mavgvx:
   desc: >
-    ??
+    Averaged mass flow in the x direction.
 
 mavgvy:
   desc: >
-    ??
+    Averaged mass flow in the y direction.
 
 mavgvz:
   desc: >
-    ??
+    Averaged mass flow in the z direction.
 
 cperror2:
   desc: >
-    ??
+    The square of the different betwween computed cp and target cp*.
