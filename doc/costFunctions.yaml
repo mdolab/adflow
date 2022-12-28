@@ -240,20 +240,24 @@ cbend:
 
 sepsensor:
   desc: >
-    TODO: Saja
-    See :cite:t:`<add relevant citation>`
+    The separation values for the given surface is provided by this cost function.
+    Please see the below paper for further details.
+    See :cite:t:`Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization (Kenway2017b)`
 
 sepsensoravgx:
   desc: >
-    ??
+    The separation sensor average in x direction.
+    The sensor times the distance in x direction value is computed here.
 
 sepsensoravgy:
   desc: >
-    ??
+    The separation sensor average in y direction.
+    The sensor times the distance in y direction value is computed here.
 
 sepsensoravgz:
   desc: >
-    ??
+    The separation sensor average in z direction.
+    The sensor times the distance in z direction value is computed here.
 
 cavitation:
   desc: >
