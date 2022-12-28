@@ -8,7 +8,7 @@ import numpy
 from adflow import ADFLOW
 from idwarp import USMesh
 
-# import the testing utilities that live a few directories up
+# import the testing utilities
 import reg_test_utils as utils
 
 from reg_default_options import adflowDefOpts
