@@ -18,9 +18,13 @@ includeFiles:=	metis-4.0/defs.h\
 # Filter out the precision.F90 file. That is set manually.
 fortranFiles:=$(filter-out modules/precision.F90,$(fortranFiles))
 
+# Define files to be complexified and others that only need to be copied
+filesToComplexify=$(fortranFilesNoOpt) $(fortranFiles)
+filesToCopy=$(f77Files) $(cFiles) $(includeFiles)
+
 complexify:
 # create the full path to the real file and the complex
-	@for file in $(fortranFiles); do \
+	@for file in $(filesToComplexify); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
 		echo Checking $$file $$realFile $$cmplxFile; \
@@ -31,27 +35,7 @@ complexify:
 		fi;\
 	done
 
-	@for file in $(f77Files); do \
-		realFile=$(addprefix ../../src/,$$file); \
-		cmplxFile=$(addprefix ../,$$file); \
-		echo Checking $$file $$realFile $$cmplxFile; \
-		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
-			echo Copying $$file $$realFile $$cmplxFile; \
-			cp $$realFile $$cmplxFile; \
-		fi;\
-	done
-
-	@for file in $(cFiles); do \
-		realFile=$(addprefix ../../src/,$$file); \
-		cmplxFile=$(addprefix ../,$$file); \
-		echo Checking $$file $$realFile $$cmplxFile; \
-		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
-			echo Copying $$file $$realFile $$cmplxFile; \
-			cp $$realFile $$cmplxFile; \
-		fi;\
-	done
-
-	@for file in $(includeFiles); do \
+	@for file in $(filesToCopy); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
 		echo Checking $$file $$realFile $$cmplxFile; \

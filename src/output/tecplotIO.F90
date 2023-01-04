@@ -11,8 +11,8 @@ module tecplotIO
      !                  side of node
      ! w(2, nNodes) : Weights used to multiply the two global nodes defined in
      !                ind to get compute nodal values (positions, forces etc)
-     ! pL, vL, pD, vD : Pressure and viscous lift, pressure and viscous drag
-     ! CLp, CLv, CDp, CDv : Coefficients of pressure and viscous lift and drag
+     ! pL, vL, pD, vD, pM, vM : Pressure and viscous components of lift, drag, and moment
+     ! CLp, CLv, CDp, CDv, CMp, CMv : Coefficients of pressure and viscous lift, drag, and moment
      ! chord: chord of section
      ! pt, normal: The point and the normal that defines the slicing plane
      ! dir_vec: a direction vector that we use to filter sliced line elements.
@@ -85,10 +85,10 @@ contains
     implicit none
 
     ! Input parameters
-    character*(*), intent(in) :: sliceName
+    character(len=*), intent(in) :: sliceName
     real(kind=realType), dimension(3), intent(in) :: pt, normal, dir_vec
     logical, intent(in) :: use_dir
-    integer(kind=intType), intent(in) :: famList(n), n
+    integer(kind=intType), intent(in) :: n, famList(n)
 
     ! Working
     integer(kind=intType) :: sps, sizeNode, sizeCell
@@ -142,10 +142,10 @@ contains
     implicit none
 
     ! Input parameters
-    character*(*), intent(in) :: sliceName
+    character(len=*), intent(in) :: sliceName
     real(kind=realType), dimension(3), intent(in) :: pt, normal, dir_vec
     logical, intent(in) :: use_dir
-    integer(kind=intType), intent(in) :: famList(n), n
+    integer(kind=intType), intent(in) :: n, famList(n)
 
     ! Working
     integer(kind=intType) :: sps, sizeNode, sizeCell
@@ -192,11 +192,11 @@ contains
     implicit none
 
     ! Input parameters
-    character*(*), intent(in) :: distName
+    character(len=*), intent(in) :: distName
     integer(kind=intType), intent(in) :: nSegments
     real(kind=realType), dimension(3) :: normal
     integer(kind=intType), intent(in) :: normal_ind
-    integer(kind=intType), intent(in) :: famList(n), n
+    integer(kind=intType), intent(in) :: n, famList(n)
 
     nLiftDists = nLiftDists + 1
     if (nLiftDists > nLiftDistMax) then
@@ -233,10 +233,10 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: sliceFile, liftFile, surfFile
+    character(len=*), intent(in) :: sliceFile, liftFile, surfFile
     logical, intent(in) :: writeSlices, writeLift, writeSurf
-    integer(kind=intType), intent(in), dimension(nFamList) :: famList
     integer(kind=intType), intent(in) :: nFamList
+    integer(kind=intType), intent(in), dimension(nFamList) :: famList
     real(kind=realType), dimension(:, :, :), allocatable :: nodalValues
     ! Working
     integer(kind=intType) :: sps, nSolVar, sizeNOde, sizeCell
@@ -291,7 +291,7 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
     real(kind=realType), intent(inout), dimension(:, :, :) :: nodalValues
 
     ! Working parameters
@@ -429,7 +429,7 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
     real(kind=realType), dimension(:, :, :), allocatable :: nodalValues
 
     ! Working parameters
@@ -755,7 +755,7 @@ contains
     implicit none
 
     ! Input Params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
     integer(kind=intType), intent(in), dimension(:) :: famList
 
     ! Working parameters
@@ -1239,7 +1239,7 @@ contains
 
         implicit none
 
-        character*(*)::  str
+        character(len=*)::  str
         integer(kind=intType) :: i
 
         do i=1,len(str)
@@ -1673,7 +1673,7 @@ contains
     type(slice), intent(inout) :: slc
     real(kind=realType), dimension(3), intent(in) :: pt, dir_vec, normal
     logical, intent(in) :: use_dir
-    character*(*), intent(in) :: sliceName
+    character(len=*), intent(in) :: sliceName
     integer(kind=intType), dimension(:), intent(in) :: famList
 
     ! Working param

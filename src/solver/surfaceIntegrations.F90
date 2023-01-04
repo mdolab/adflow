@@ -7,7 +7,10 @@ contains
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf, pInf, uRef, uInf
-    use inputPhysics, only : liftDirection, dragDirection, surfaceRef, machCoef, lengthRef, alpha, beta, liftIndex
+    use inputPhysics, only : liftDirection, dragDirection, surfaceRef, &
+    machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
+    cpmin_rho
+    use inputCostFunctions, only : computeCavitation
     use inputTSStabDeriv, only : TSstability
     use utils, only : computeTSDerivatives
     use flowUtils, only : getDirVector
@@ -105,6 +108,15 @@ contains
 
        funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*globalVals(iSepSensor, sps)
        funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*globalVals(iCavitation, sps)
+       ! final part of the KS computation
+       if (computeCavitation) then
+          ! only calculate the log part if we are actually computing for cavitation.
+          ! If we are not computing cavitation, the iCpMin in globalVals will be zero,
+          ! which doesn't play well with log. we just want to return zero here.
+          funcValues(costfunccpmin) = funcValues(costfunccpmin) + ovrNTS * &
+               (cpmin_family(sps) - log(globalVals(iCpMin, sps)) / cpmin_rho)
+       endif
+
        funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
        funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
@@ -256,7 +268,6 @@ contains
          funcValues(costFuncForceYCoefMomentum)*dragDirection(2) + &
          funcValues(costFuncForceZCoefMomentum)*dragDirection(3)
 
-
     ! -------------------- Time Spectral Objectives ------------------
 
     if (TSSTability) then
@@ -311,7 +322,8 @@ contains
     use blockPointers
     use flowVarRefState
     use inputCostFunctions
-    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis, cavitationnumber
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, &
+          equations, momentAxis, cpmin_family, cpmin_rho, cavitationnumber
     use BCPointers
     implicit none
 
@@ -321,7 +333,7 @@ contains
 
     ! Local variables.
     real(kind=realType), dimension(3)  :: Fp, Fv, Mp, Mv
-    real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation 
+    real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
     integer(kind=intType) :: i, j, ii, blk
 
     real(kind=realType) :: pm1, fx, fy, fz, fn
@@ -329,7 +341,7 @@ contains
     real(kind=realType) :: fact, rho, mul, yplus, dwall 
     real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectNorm(3)
     real(kind=realType) :: vectNormProd
-    real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
+    real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal, ks_exponent
     real(kind=realType) :: tauXx, tauYy, tauZz
     real(kind=realType) :: tauXy, tauXz, tauYz
 
@@ -368,6 +380,7 @@ contains
     yplusMax = zero
     sepSensor = zero
     Cavitation = zero
+    cpmin_ks_sum = zero
     sepSensorAvg = zero
 !     vectCorrected = zero
 !     vecCrossProd = zero
@@ -560,6 +573,10 @@ contains
           Sensor1 = (Sensor1**cavExponent)/(one+exp(2*cavSensorSharpness*(-Sensor1+cavSensorOffset)))
           Sensor1 = Sensor1 * cellArea * blk
           Cavitation = Cavitation + Sensor1
+
+          ! also do the ks-based cpmin computation
+          ks_exponent = exp(cpmin_rho * (-Cp + cpmin_family(spectralSol)))
+          cpmin_ks_sum = cpmin_ks_sum + ks_exponent * blk
        end if
     enddo
 
@@ -710,6 +727,7 @@ contains
     localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
     localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
     localValues(iCavitation) = localValues(iCavitation) + cavitation
+    localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
     localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis
     localValues(iCpError2) = localValues(iCpError2) + CpError2
@@ -970,9 +988,9 @@ contains
     use inputTimeSpectral , only : nTimeIntervalsSpectral
     implicit none
     ! Input/output Variables
+    integer(kind=intType) :: nGroups, nCost, nFamMax
     integer(kind=intType), dimension(nGroups, nFamMax) :: famLists
     real(kind=realType), dimension(nCost, nGroups), intent(out)  :: funcValues
-    integer(kind=intType) :: nGroups, nCost, nFamMax
 
     ! Local variable
 
@@ -993,6 +1011,7 @@ contains
     use zipperIntegrations, only :integrateZippers
     use userSurfaceIntegrations, only : integrateUserSurfaces
     use actuatorRegion, only : integrateActuatorRegions
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -1013,6 +1032,11 @@ contains
        famList => famLists(iGroup, 2:2+nFam-1)
        funcValues(:, iGroup) = zero
        localVal = zero
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCpMinFamily(famList)
+       end if
 
        do sps=1, nTimeIntervalsSpectral
           ! Integrate the normal block surfaces.
@@ -1105,6 +1129,82 @@ contains
     end do bocos
 
   end subroutine integrateSurfaces
+
+  subroutine computeCpMinFamily(famList)
+
+     use constants
+     use inputTimeSpectral, only : nTimeIntervalsSpectral
+     use communication, only : ADflow_comm_world, myID
+     use blockPointers, only : nDom
+     use inputPhysics, only : cpmin_family, MachCoef
+     use blockPointers
+     use flowVarRefState
+     use BCPointers
+     use utils, only : setPointers, setBCPointers, isWallType, EChk
+     use sorting, only : famInList
+
+    implicit none
+
+     integer(kind=intType), dimension(:), intent(in) :: famList
+     integer(kind=intType) :: mm, nn, sps
+     integer(kind=intType) :: i, j, ii, blk, ierr
+     real(kind=realType) :: Cp, plocal, tmp, cpmin_local
+
+     ! this routine loops over the surface cells in the given family
+     ! and computes the true minimum Cp value.
+     ! this is then used in the surface integration routine to compute
+     ! the cpmin using KS aggregation.
+     ! the goal is to get a differentiable cpmin output.
+
+     ! loop over the TS instances and compute cpmin_family for each TS instance
+     do sps=1, nTimeIntervalsSpectral
+       ! set the local cp min to a large value so that we get the actual min
+       cpmin_local = 10000.0_realType
+       do nn=1, nDom
+           call setPointers(nn, 1, sps)
+
+           ! Loop over all possible boundary conditions
+           bocos: do mm=1, nBocos
+              ! Determine if this boundary condition is to be incldued in the
+              ! currently active group
+            famInclude: if (famInList(BCData(mm)%famID, famList)) then
+
+               ! Set a bunch of pointers depending on the face id to make
+               ! a generic treatment possible.
+               call setBCPointers(mm, .True.)
+
+               ! no post gathered integrations currently
+               isWall: if( isWallType(BCType(mm)) ) then
+
+                  !$AD II-LOOP
+                  do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+                     i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+                     j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+
+                     ! only take this if its a compute cell
+                     if (BCData(mm)%iblank(i,j) .eq. one) then
+
+                         ! compute local CP
+                         plocal = pp2(i,j)
+                         tmp = two/(gammaInf*MachCoef*MachCoef)
+                         Cp = tmp*(plocal-pinf)
+
+                         ! compare it against the current value on this proc
+                         cpmin_local = min(cpmin_local, Cp)
+                     end if
+                  enddo
+               end if isWall
+
+            end if famInclude
+         end do bocos
+       end do
+       ! finally communicate across all processors for this time spectral instance
+       call mpi_allreduce(cpmin_local, cpmin_family(sps), 1, MPI_DOUBLE, &
+            MPI_MIN, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+     end do
+
+  end subroutine computeCpMinFamily
 
 #ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)
@@ -1215,6 +1315,7 @@ contains
     use zipperIntegrations, only :integrateZippers_d
     use userSurfaceIntegrations, only : integrateUserSurfaces_d
     use actuatorRegion, only : integrateActuatorRegions_d
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -1232,6 +1333,11 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCpMinFamily(famList)
+       end if
 
        localVal = zero
        localVald = zero
@@ -1291,6 +1397,7 @@ contains
     use zipperIntegrations, only :integrateZippers_b
     use userSurfaceIntegrations, only : integrateUserSurfaces_b
     use actuatorRegion, only : integrateActuatorRegions_b
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -1312,6 +1419,11 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCpMinFamily(famList)
+       end if
 
        localVal = zero
        localVald = zero
