@@ -95,7 +95,7 @@ module block
 
      ! uSlip(:,:,3):  the 3 components of the velocity vector on
      !                a viscous wall.
-     ! KSTNS_Wall(:,:): Wall temperature for isothermal walls.
+     ! TNS_Wall(:,:): Wall temperature for isothermal walls.
      ! ksNS_Wall(:,:): Equivalent Sand Grain Roughness on viscous walls.
 
      real(kind=realType), dimension(:,:,:), pointer :: uSlip

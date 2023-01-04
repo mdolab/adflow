@@ -200,14 +200,14 @@ contains
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
         nu = rlv(i, j, k)/w(i, j, k, irho)
+        chi = w(i, j, k, itu1)/nu
         if (.not.useroughsa) then
           dist2inv = one/d2wall(i, j, k)**2
-          chi = w(i, j, k, itu1)/nu
           call pushcontrol1b(0)
         else
-          distrough = d2wall(i, j, k) + 0.03*ks(i, j, k)
+          distrough = d2wall(i, j, k) + 0.03_realtype*ks(i, j, k)
           dist2inv = one/distrough**2
-          chi = w(i, j, k, itu1)/nu + rsacr1*ks(i, j, k)/distrough
+          chi = chi + rsacr1*ks(i, j, k)/distrough
           call pushcontrol1b(1)
         end if
         chi2 = chi*chi
@@ -364,17 +364,15 @@ contains
         chid = chid + 2*chi*chi2d + chi2*chi3d
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
-          nud = nud - w(i, j, k, itu1)*chid/nu**2
           temp0 = d2wall(i, j, k)
           d2walld(i, j, k) = d2walld(i, j, k) - one*2*dist2invd/temp0**3
         else
-          wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
-          nud = nud - w(i, j, k, itu1)*chid/nu**2
           distroughd = -(one*2*dist2invd/distrough**3) - ks(i, j, k)*&
 &           rsacr1*chid/distrough**2
           d2walld(i, j, k) = d2walld(i, j, k) + distroughd
         end if
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
+        nud = nud - w(i, j, k, itu1)*chid/nu**2
         temp = w(i, j, k, irho)
         rlvd(i, j, k) = rlvd(i, j, k) + nud/temp
         wd(i, j, k, irho) = wd(i, j, k, irho) - rlv(i, j, k)*nud/temp**2
@@ -695,13 +693,13 @@ contains
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
         nu = rlv(i, j, k)/w(i, j, k, irho)
+        chi = w(i, j, k, itu1)/nu
         if (.not.useroughsa) then
           dist2inv = one/d2wall(i, j, k)**2
-          chi = w(i, j, k, itu1)/nu
         else
-          distrough = d2wall(i, j, k) + 0.03*ks(i, j, k)
+          distrough = d2wall(i, j, k) + 0.03_realtype*ks(i, j, k)
           dist2inv = one/distrough**2
-          chi = w(i, j, k, itu1)/nu + rsacr1*ks(i, j, k)/distrough
+          chi = chi + rsacr1*ks(i, j, k)/distrough
         end if
         chi2 = chi*chi
         chi3 = chi*chi2

@@ -245,17 +245,20 @@ contains
                 ! the production term near a viscous wall.
 
                 nu       = rlv(i,j,k)/w(i,j,k,irho)
+                chi      = w(i,j,k,itu1)/nu
+
                 if (.not. useRoughSA) then
                    dist2Inv = one/(d2Wall(i,j,k)**2)
-                   chi      = w(i,j,k,itu1)/nu
                 else
-                   distRough = d2Wall(i,j,k) + 0.03 * ks(i,j,k)
+                   distRough = d2Wall(i,j,k) + 0.03_realType * ks(i,j,k)
                    dist2Inv = one/(distRough**2)
-                   chi      = w(i,j,k,itu1)/nu + rsaCr1*ks(i,j,k)/distRough
+                   chi      = chi + rsaCr1*ks(i,j,k)/distRough
                 end if
+
                 chi2     = chi*chi
                 chi3     = chi*chi2
                 fv1      = chi3/(chi3+cv13)
+
                 if (.not. useRoughSA) then
                    fv2      = one - chi/(one + chi*fv1)
                 else
