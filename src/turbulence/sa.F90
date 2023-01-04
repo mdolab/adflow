@@ -107,7 +107,7 @@ contains
 
     ! Local variables.
     integer(kind=intType) :: i, j, k, nn, ii
-    real(kind=realType) :: dist, ksLocal
+    real(kind=realType) :: distRough
     real(kind=realType) :: fv1, fv2, ft2
     real(kind=realType) :: ss, sst, nu, dist2Inv, chi, chi2, chi3
     real(kind=realType) :: rr, gg, gg6, termFw, fwSa, term1, term2
@@ -244,24 +244,23 @@ contains
                 ! and nu) and the functions fv1 and fv2. The latter corrects
                 ! the production term near a viscous wall.
 
-                ! As the rough Version of SA is supported, this looks slightly different
-                ! than the standard SA implementation
-
-                if (useRoughSA) then
-                   ksLocal = ks(i,j,k)
-                   dist = d2Wall(i,j,k) + 0.03 * ksLocal
-                else
-                   ksLocal = zero
-                   dist = d2Wall(i,j,k)
-                end if
-
                 nu       = rlv(i,j,k)/w(i,j,k,irho)
-                dist2Inv = one/(dist**2)
-                chi      = w(i,j,k,itu1)/nu + rsaCr1*ksLocal/dist
+                if (.not. useRoughSA) then
+                   dist2Inv = one/(d2Wall(i,j,k)**2)
+                   chi      = w(i,j,k,itu1)/nu
+                else
+                   distRough = d2Wall(i,j,k) + 0.03 * ks(i,j,k)
+                   dist2Inv = one/(distRough**2)
+                   chi      = w(i,j,k,itu1)/nu + rsaCr1*ks(i,j,k)/distRough
+                end if
                 chi2     = chi*chi
                 chi3     = chi*chi2
                 fv1      = chi3/(chi3+cv13)
-                fv2      = one - w(i,j,k,itu1)/(nu + w(i,j,k,itu1)*fv1)
+                if (.not. useRoughSA) then
+                   fv2      = one - chi/(one + chi*fv1)
+                else
+                   fv2      = one - w(i,j,k,itu1)/(nu + w(i,j,k,itu1)*fv1)
+                end if
 
                 ! The function ft2, which is designed to keep a laminar
                 ! solution laminar. When running in fully turbulent mode
@@ -320,7 +319,11 @@ contains
                 ! treatment.
 
                 dfv1 = three*chi2*cv13/((chi3+cv13)**2)
-                dfv2 = (w(i,j,k,itu1)*dfv1 - nu) / (nu + w(i,j,k,itu1)*fv1)**2
+                if (.not. useRoughSA) then
+                   dfv2 = (chi2*dfv1 - one)/(nu*((one + chi*fv1)**2))
+                else
+                   dfv2 = (w(i,j,k,itu1)*dfv1 - nu) / (nu + w(i,j,k,itu1)*fv1)**2
+                endif
                 dft2 = -two*rsaCt4*chi*ft2/nu
 
                 drr = (one - rr*(fv2 + w(i,j,k,itu1)*dfv2)) &
