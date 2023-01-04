@@ -1409,7 +1409,7 @@ contains
    integer(kind=intType) :: i, j, k
 
    if (.not. useRoughSA) then
-      saRoughFact = one
+      saRoughFact = -one
       return
    end if
 
