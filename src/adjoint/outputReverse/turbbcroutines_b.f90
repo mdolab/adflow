@@ -2615,7 +2615,7 @@ bocos:do nn=1,nviscbocos
 ! local variablse
     integer(kind=inttype) :: i, j, k
     if (.not.useroughsa) then
-      saroughfact = one
+      saroughfact = -one
       return
     else
       saroughfact = (ks(i, j, k)-d2wall(i, j, k)/0.03)/(ks(i, j, k)+&

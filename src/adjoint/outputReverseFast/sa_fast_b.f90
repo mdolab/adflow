@@ -37,7 +37,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
-    real(kind=realtype) :: dist, kslocal
+    real(kind=realtype) :: distrough
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
@@ -67,6 +67,8 @@ contains
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd11
+    real(kind=realtype) :: tempd10
     real(kind=realtype) :: min1
     real(kind=realtype) :: min1d
     real(kind=realtype) :: tempd9
@@ -184,22 +186,31 @@ contains
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
-! as the rough version of sa is supported, this looks slightly different
-! than the standard sa implementation
-        if (useroughsa) then
-          kslocal = ks(i, j, k)
-          dist = d2wall(i, j, k) + 0.03*kslocal
-        else
-          kslocal = zero
-          dist = d2wall(i, j, k)
-        end if
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/dist**2
-        chi = w(i, j, k, itu1)/nu + rsacr1*kslocal/dist
+        if (.not.useroughsa) then
+          dist2inv = one/d2wall(i, j, k)**2
+          chi = w(i, j, k, itu1)/nu
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+        else
+          distrough = d2wall(i, j, k) + 0.03*ks(i, j, k)
+          dist2inv = one/distrough**2
+          chi = w(i, j, k, itu1)/nu + rsacr1*ks(i, j, k)/distrough
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+        end if
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)
-        fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+        if (.not.useroughsa) then
+          fv2 = one - chi/(one+chi*fv1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+        else
+          fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+        end if
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.
@@ -273,16 +284,16 @@ myIntPtr = myIntPtr + 1
         end if
         term2 = dist2inv*(kar2inv*rsacb1*((one-ft2)*fv2+ft2)-rsacw1*fwsa&
 &         )
-        tempd8 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
+        tempd10 = w(i, j, k, itu1)*scratchd(i, j, k, idvt)
         temp3 = w(i, j, k, itu1)
-        term1d = tempd8
-        term2d = temp3*tempd8
+        term1d = tempd10
+        term2d = temp3*tempd10
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + (term1+term2*temp3)*&
-&         scratchd(i, j, k, idvt) + term2*tempd8
+&         scratchd(i, j, k, idvt) + term2*tempd10
         scratchd(i, j, k, idvt) = 0.0_8
-        tempd9 = dist2inv*kar2inv*rsacb1*term2d
-        ft2d = (1.0_8-fv2)*tempd9
-        fv2d = (one-ft2)*tempd9
+        tempd11 = dist2inv*kar2inv*rsacb1*term2d
+        ft2d = (1.0_8-fv2)*tempd11
+        fv2d = (one-ft2)*tempd11
         fwsad = -(dist2inv*rsacw1*term2d)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
@@ -303,9 +314,9 @@ branch = myIntStack(myIntPtr)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) rrd = 0.0_8
-        tempd7 = kar2inv*dist2inv*rrd/sst
-        wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd7
-        sstd = -(w(i, j, k, itu1)*tempd7/sst)
+        tempd9 = kar2inv*dist2inv*rrd/sst
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd9
+        sstd = -(w(i, j, k, itu1)*tempd9/sst)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) sstd = 0.0_8
@@ -323,10 +334,10 @@ branch = myIntStack(myIntPtr)
           if (.not.two*strainmag2 .eq. 0.0_8) strainmag2d = strainmag2d &
 &             + two*y1d/(2.0*sqrt(two*strainmag2))
         end if
-        tempd6 = kar2inv*dist2inv*sstd
+        tempd8 = kar2inv*dist2inv*sstd
         ssd = ssd + sstd
-        wd(i, j, k, itu1) = wd(i, j, k, itu1) + fv2*tempd6
-        fv2d = fv2d + w(i, j, k, itu1)*tempd6
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + fv2*tempd8
+        fv2d = fv2d + w(i, j, k, itu1)*tempd8
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
         if (branch .eq. 0) then
@@ -334,17 +345,37 @@ branch = myIntStack(myIntPtr)
         else
           chi2d = 0.0_8
         end if
-        temp1 = w(i, j, k, itu1)
-        temp0 = nu + temp1*fv1
-        tempd4 = w(i, j, k, itu1)*fv2d/temp0**2
-        wd(i, j, k, itu1) = wd(i, j, k, itu1) + fv1*tempd4 - fv2d/temp0
-        fv1d = temp1*tempd4
-        tempd5 = fv1d/(cv13+chi3)
-        chi3d = (1.0_8-chi3/(cv13+chi3))*tempd5
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+        if (branch .eq. 0) then
+          tempd5 = -(fv2d/(one+chi*fv1))
+          tempd6 = -(chi*tempd5/(one+chi*fv1))
+          chid = fv1*tempd6 + tempd5
+          fv1d = chi*tempd6
+          nud = 0.0_8
+        else
+          temp1 = w(i, j, k, itu1)
+          temp0 = nu + temp1*fv1
+          tempd7 = w(i, j, k, itu1)*fv2d/temp0**2
+          wd(i, j, k, itu1) = wd(i, j, k, itu1) + fv1*tempd7 - fv2d/&
+&           temp0
+          nud = tempd7
+          fv1d = temp1*tempd7
+          chid = 0.0_8
+        end if
+        tempd4 = fv1d/(cv13+chi3)
+        chi3d = (1.0_8-chi3/(cv13+chi3))*tempd4
         chi2d = chi2d + chi*chi3d
-        chid = 2*chi*chi2d + chi2*chi3d
-        nud = tempd4 - w(i, j, k, itu1)*chid/nu**2
-        wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
+        chid = chid + 2*chi*chi2d + chi2*chi3d
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+        if (branch .eq. 0) then
+          wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
+          nud = nud - w(i, j, k, itu1)*chid/nu**2
+        else
+          wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
+          nud = nud - w(i, j, k, itu1)*chid/nu**2
+        end if
         temp = w(i, j, k, irho)
         rlvd(i, j, k) = rlvd(i, j, k) + nud/temp
         wd(i, j, k, irho) = wd(i, j, k, irho) - rlv(i, j, k)*nud/temp**2
@@ -483,7 +514,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
-    real(kind=realtype) :: dist, kslocal
+    real(kind=realtype) :: distrough
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
@@ -598,22 +629,23 @@ branch = myIntStack(myIntPtr)
 ! wall distance squared, the ratio chi (ratio of nutilde
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
-! as the rough version of sa is supported, this looks slightly different
-! than the standard sa implementation
-        if (useroughsa) then
-          kslocal = ks(i, j, k)
-          dist = d2wall(i, j, k) + 0.03*kslocal
-        else
-          kslocal = zero
-          dist = d2wall(i, j, k)
-        end if
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/dist**2
-        chi = w(i, j, k, itu1)/nu + rsacr1*kslocal/dist
+        if (.not.useroughsa) then
+          dist2inv = one/d2wall(i, j, k)**2
+          chi = w(i, j, k, itu1)/nu
+        else
+          distrough = d2wall(i, j, k) + 0.03*ks(i, j, k)
+          dist2inv = one/distrough**2
+          chi = w(i, j, k, itu1)/nu + rsacr1*ks(i, j, k)/distrough
+        end if
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)
-        fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+        if (.not.useroughsa) then
+          fv2 = one - chi/(one+chi*fv1)
+        else
+          fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+        end if
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.
