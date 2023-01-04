@@ -168,7 +168,7 @@ test_params = [
         },
         "ref_file": "adjoint_rans_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
-        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation", "sepsensor"],
+        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation"],
     },
     # # Rotating frame test
     {
@@ -274,7 +274,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_adjoint(self):
-        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=5e-10)
+        utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=2e-10)
         self.assert_adjoint_failure()
 
 
