@@ -242,7 +242,7 @@ sepsensor:
   desc: >
     The separation values for the given surface is provided by this cost function.
     Please see the below paper for further details.
-    See :cite:t:`Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization (Kenway2017b)`
+    See :cite:t:`Kenway2017b`.
 
 sepsensoravgx:
   desc: >
