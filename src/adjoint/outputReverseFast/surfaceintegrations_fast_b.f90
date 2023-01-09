@@ -272,7 +272,7 @@ contains
     if (tsstability) then
       print*, &
 &     'error: tsstabilityderivatives are *broken*. they need to be ', &
-&     'completely verifed from scratch'
+&     'completely verified from scratch'
       stop
     end if
   end subroutine getcostfunctions
@@ -761,7 +761,7 @@ contains
       mp(2) = mp(2) + my
       mp(3) = mp(3) + mz
 ! momentum forces are a little tricky.  we negate because
-! have to re-apply fact to massflowratelocal to undoo it, because
+! have to re-apply fact to massflowratelocal to undo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.
 ! also, the sign is flipped between inflow and outflow types
       massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
