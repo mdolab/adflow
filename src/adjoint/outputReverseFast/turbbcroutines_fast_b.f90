@@ -1186,8 +1186,8 @@ bocos:do nn=1,nviscbocos
       saroughfact = -one
       return
     else
-      saroughfact = (ks(i, j, k)-d2wall(i, j, k)/0.03)/(ks(i, j, k)+&
-&       d2wall(i, j, k)/0.03)
+      saroughfact = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(ks(i, j&
+&       , k)+d2wall(i, j, k)/0.03_realtype)
     end if
   end function saroughfact
 end module turbbcroutines_fast_b

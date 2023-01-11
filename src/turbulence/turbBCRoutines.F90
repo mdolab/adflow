@@ -1413,8 +1413,8 @@ contains
       return
    end if
 
-   saRoughFact = (ks(i,j,k) - d2wall(i,j,k)/0.03) / &
-        (ks(i,j,k) + d2wall(i,j,k)/0.03)
+   saRoughFact = (ks(i,j,k) - d2wall(i,j,k)/0.03_realType) / &
+        (ks(i,j,k) + d2wall(i,j,k)/0.03_realType)
 
   end function  saRoughFact
 
