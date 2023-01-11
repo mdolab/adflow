@@ -1418,6 +1418,7 @@ python module libadflow
        module adjointvars ! in :test:ADjointVars.F90
          use constants
             integer(kind=inttype) dimension(20) :: ncellslocal
+            integer(kind=inttype) dimension(20) :: ncellsglobal
             integer(kind=inttype) dimension(20) :: nnodeslocal
             integer(kind=inttype), parameter,optional :: ialpha=1
             integer(kind=inttype), parameter,optional :: ibeta=2
