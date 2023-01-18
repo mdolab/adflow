@@ -103,6 +103,21 @@ ap_naca0012_time_acc = AeroProblem(
     sinCoefFourier=[deltaAlpha],
 )
 
+ap_naca0012_cavitation = AeroProblem(
+    name="0012cavitation",
+    alpha=alpha_m,
+    mach=M,
+    machRef=M,
+    reynolds=4800000.0,
+    reynoldsLength=c,
+    T=T,
+    R=R,
+    areaRef=1.0,
+    chordRef=c,
+    evalFuncs=["cavitation", "cpmin"],
+    xRef=0.25,
+)
+
 ap_naca64A010_time_spectral = AeroProblem(
     name="64A010pitchingTS",
     alpha=0.0,

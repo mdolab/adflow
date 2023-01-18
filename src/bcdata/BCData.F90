@@ -916,10 +916,10 @@ contains
               ": Flow direction points out of the domain for &
               &some faces.")
 
+          ! Call returnFail if the flow direction is pointing out of a 
+          ! BC domain.  This will be caught by an allreduce in the
+          ! python layer.
           call returnFail("totalSubsonicInlet", errorMessage)
-          call mpi_barrier(ADflow_comm_world, ierr)
-
-         ! call terminate("totalSubsonicInlet", errorMessage)
       endif
 #endif
     end subroutine totalSubsonicInlet
@@ -994,6 +994,9 @@ contains
     use flowVarRefState, only : nwt, pInfCorr, wInf, uRef, rhoRef, pRef, muRef
     use inputPhysics, onlY : equations, flowType, velDirFreeStream
     use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate
+#ifndef USE_TAPENADE
+    use utils, only: returnFail
+#endif
     implicit none
     !
     !      Subroutine arguments.
@@ -1109,6 +1112,7 @@ contains
        enddo
     enddo
 
+#ifndef USE_TAPENADE
     if(nn > 0) then
        write(errorMessage,102)                   &
             trim(cgnsDoms(nbkGlobal)%zonename), &
@@ -1116,8 +1120,9 @@ contains
 102    format("Zone ",a,", supersonic inlet boundary subface ",a, &
             ": Velocity points out of the domain for some faces.")
 
-       call terminate("BCDataSupersonicInflow", errorMessage)
+       call returnFail("BCDataSupersonicInflow", errorMessage)
     endif
+#endif
 
   contains
 
