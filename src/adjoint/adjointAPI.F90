@@ -1,6 +1,7 @@
 module adjointAPI
 
-  use constants
+  use constants, only: realType, intType, alwaysRealType, adflow_real, mpi_max, mpi_sum, mpi_double_precision, &
+   mpi_integer, mpi_double_complex, mpi_wtime, maxStringLen, one, zero, NSEquations, RANSEquations
 
   character(len=maxStringLen) :: timeFormat = "(A, 1X, F8.2)"
   character(len=maxStringLen) :: exitFormat = "(1X, A, 1X, I5, 1X, A)"
@@ -12,7 +13,6 @@ contains
        costSize, fSize, nTime)
 
     ! This is the main matrix-free forward mode computation
-    use constants
     use adjointvars
     use blockPointers, only : nDom
     use communication, only : adflow_comm_world
@@ -96,7 +96,6 @@ contains
   subroutine computeMatrixFreeProductBwd(dwbar, funcsBar, fbar, useSpatial, useState, xvbar, &
        extrabar, wbar, spatialSize, extraSize, stateSize, famLists, &
        bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists, BCVarsEmpty)
-    use constants
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom, dwd, il, jl, kl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -185,7 +184,6 @@ contains
     ! mode computation. It is intended to compute dRdw^T product
     ! ONLY. The main purpose is for fast matrix-vector products for the
     ! actual adjoint solve.
-    use constants
     use inputPhysics, only : equations
     use inputAdjoint, only : frozenTurbulence
     use flowVarRefState, only : nw, nwf
@@ -272,7 +270,6 @@ contains
     use inputADjoint
     use adjointvars
     use killsignals
-    use constants
     use blockPointers
     use inputTimeSpectral
     use utils, only : EChk
@@ -356,7 +353,6 @@ contains
     use ADJointPETSc
     use inputADjoint
     use adjointVars
-    use constants
     use killsignals
     use blockPointers
     use inputTimeSpectral
@@ -436,7 +432,6 @@ contains
 
   subroutine saveADjointMatrix(fileName)
 
-    use constants
     use ADjointPETSc, only: drdwt
     use communication, only : adflow_comm_world
     use utils, only : EChk
@@ -464,7 +459,6 @@ contains
 
   subroutine saveAdjointPC(fileName)
 
-    use constants
     use ADjointPETSc, only: drdwpret
     use communication, only : adflow_comm_world
     use utils, only : EChk
@@ -492,7 +486,6 @@ contains
 
   subroutine saveAdjointRHS(RHS, fileName, nstate)
 
-    use constants
     use ADjointPETSc, only: psi_like1
     use communication, only : adflow_comm_world
     use utils, only : EChk
@@ -530,7 +523,6 @@ contains
 
   subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 
-    use constants
     use blockPointers, only : il, jl, kl, nDom
     use section, only : sections, nSections
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -630,7 +622,6 @@ contains
 
   subroutine setupAllResidualMatricesfwd
 
-    use constants
     use ADjointPETSc, only : dRdwT
     use communication, only : adflow_comm_world, myid
     use inputADjoint, only : frozenTurbulence, useMatrixFreedRdw
@@ -679,8 +670,6 @@ contains
     !      are significant as they are used as the inital guess.
     !
 
-    use constants, only : realType, intType, alwaysRealType, one, adflow_real, &
-         mpi_max, mpi_sum, mpi_double_precision, mpi_integer, mpi_double_complex
     use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
          adjResInit, adjResStart, adjResFinal
 
@@ -1023,7 +1012,6 @@ contains
     ! dRdwT with a vector. Here we just call the much more broadly
     ! useful routine computeMatrixFreeProductBwdFast()
 
-    use constants
     use communication
     use blockPointers
     use iteration
@@ -1068,7 +1056,6 @@ contains
     ! dRdw with a vector. Here we just call the much more broadly
     ! useful routine computeMatrixFreeProductFwd()
 
-    use constants
     use communication
     use blockPointers
     use iteration
@@ -1147,7 +1134,6 @@ contains
     !
     !      Create the matrices/vectors that are required for the adjoint
     !
-    use constants
     use ADjointPETSc, only: dRdwT, dRdwPreT, &
          adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
     use ADjointVars
