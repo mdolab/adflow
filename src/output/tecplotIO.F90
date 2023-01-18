@@ -4,6 +4,8 @@ module tecplotIO
   implicit none
   save
 
+  character(len=maxStringLen) :: sci6 = "(ES14.6)"
+
   type slice
 
      ! nNodes : Number of nodes for this slice
@@ -720,7 +722,7 @@ contains
        if (myid == 0) then
           do j=1,nLiftDistVar
              do i=1,d%nSegments
-                write(fileID, "(ES14.6)") values(i, j)
+                write(fileID, sci6) values(i, j)
              end do
           end do
        end if
@@ -2253,7 +2255,6 @@ contains
     ! Working Variables
     integer(kind=intType) :: i, j
     real(kind=realType) :: tmp, tx, ty, tz
-    character(len=maxStringLen) :: sci6 = "(ES14.6)"
 
     write (fileID,"(a,a,a)") "Zone T= """,trim(slc%sliceName),""""
 
