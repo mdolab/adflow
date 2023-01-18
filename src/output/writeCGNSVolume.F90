@@ -409,6 +409,9 @@ contains
 
     if(writeGrid .and. (.not. useLinksInCGNS)) then
        do nn=1,nVolSolToWrite
+          ! Print the filename to stdout
+          print "(a,4x,a)", "#", trim(volSolFileNames(nn))
+
           call writeCGNSHeader(fileIDs(nn), cgnsBases(nn))
        enddo
 
@@ -464,6 +467,9 @@ contains
        ! in modify mode.
 
        do nn=1,nVolSolToWrite
+          ! Print the filename to stdout
+          print "(a,4x,a)", "#", trim(volSolFileNames(nn))
+
           call cg_open_f(volSolFileNames(nn), mode_modify, &
                fileIDs(nn), ierr)
           if(ierr /= CG_OK) then
