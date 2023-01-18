@@ -129,7 +129,6 @@ contains
     use communication, only : myid
     use inputphysics, only : cpmodel, gammaconstant, rgasdim
     use flowvarrefstate, only : pinfdim, pinfdimd
-    use commonformats, only : stringsci5
     implicit none
 !
 !      subroutine arguments.
@@ -169,7 +168,6 @@ contains
     use communication, only : myid
     use inputphysics, only : cpmodel, gammaconstant, rgasdim
     use flowvarrefstate, only : pinfdim
-    use commonformats, only : stringsci5
     implicit none
 !
 !      subroutine arguments.
@@ -341,7 +339,6 @@ contains
     use blockpointers, only : bcfaceid, bcdata, bcdatad, nbkglobal
     use utils_b, only : terminate, sitemperature
     use flowvarrefstate, only : tref, trefd
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -390,7 +387,6 @@ contains
     use blockpointers, only : bcfaceid, bcdata, nbkglobal
     use utils_b, only : terminate, sitemperature
     use flowvarrefstate, only : tref
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -435,7 +431,6 @@ contains
     use inputphysics, only : equations
     use utils_b, only : sidensity, sivelocity, sipressure, siangle, &
 &   sitemperature, terminate
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -516,7 +511,6 @@ contains
       use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
-      use commonformats, only : strings
       implicit none
 !
 !        local variables.
@@ -774,7 +768,6 @@ contains
     use inputphysics, only : equations
     use utils_b, only : sidensity, sivelocity, sipressure, siangle, &
 &   sitemperature, terminate
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -854,7 +847,6 @@ contains
       use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
-      use commonformats, only : strings
       implicit none
 !
 !        local variables.
@@ -1040,7 +1032,6 @@ contains
       use communication, only : adflow_comm_world
       use inputphysics, only : rgasdim
       use section, only : sections
-      use commonformats, only : strings
       implicit none
 !
 !        local variables.
@@ -1284,7 +1275,6 @@ contains
     use blockpointers, only : bcdata, bcdatad, nbkglobal, bcfaceid
     use utils_b, only : terminate, sipressure
     use flowvarrefstate, only : pref, prefd
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -1329,7 +1319,6 @@ contains
     use blockpointers, only : bcdata, nbkglobal, bcfaceid
     use utils_b, only : terminate, sipressure
     use flowvarrefstate, only : pref
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -1370,7 +1359,6 @@ contains
     use inputphysics, only : equations, flowtype, veldirfreestream
     use utils_b, only : sidensity, sipressure, sivelocity, sitemperature&
 &   , terminate
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
@@ -1595,7 +1583,6 @@ contains
 &   veldirfreestreamd
     use utils_b, only : sidensity, sipressure, sivelocity, sitemperature&
 &   , terminate
-    use commonformats, only : strings
     implicit none
 !
 !      subroutine arguments.
