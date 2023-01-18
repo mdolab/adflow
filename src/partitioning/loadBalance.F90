@@ -605,14 +605,14 @@ contains
        if(.not.(cellsBalanced .and. facesBalanced)) then
           print "(a)", "#"
           print "(a)", "#                    Warning"
-          write(*, loadFormat) "# Specified load imbalance tolerance", real(loadImbalance), " not achieved."
-          write(*, loadFormat)  "# Continuing with", real(ubvec(1)), &
+          print loadFormat, "# Specified load imbalance tolerance", real(loadImbalance), " not achieved."
+          print loadFormat,  "# Continuing with", real(ubvec(1)), &
             " load imbalance for the cells and", real(ubvec(2)), " for the faces"
           print "(a)", "#"
        else
           print "(a)","#"
-          write(*, loadFormat) "# Specified load imbalance tolerance", real(loadImbalance), " achieved."
-          write(*, loadFormat) "# Continuing with", real(ubvec(1)), &
+          print loadFormat, "# Specified load imbalance tolerance", real(loadImbalance), " achieved."
+          print loadFormat, "# Continuing with", real(ubvec(1)), &
             " load imbalance for the cells and", real(ubvec(2)), " for the faces"
           print "(a)", "#"
        end if

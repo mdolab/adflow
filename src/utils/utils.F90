@@ -5733,17 +5733,10 @@ end subroutine cross_prod
        return ! No error, return immediately
     else
 #ifndef USE_TAPENADE
-#ifndef USE_COMPLEX
        print *,'---------------------------------------------------------------------------'
-       write(*, errorCodeFormat) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
-       write(*, errorLineFormat) "Error at line: ",line," in file: ",file
+       print errorCodeFormat, "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
+       print errorLineFormat, "Error at line: ",line," in file: ",file
        print *,'---------------------------------------------------------------------------'
-#else
-       print *,'-----------------------------------------------------------------'
-       write(*, errorCodeFormat) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
-       write(*, errorLineFormat) "Error at line: ",line," in file: ",file
-       print *,'-----------------------------------------------------------------'
-#endif
        call MPI_Abort(adflow_comm_world,errorcode,ierr)
        stop ! Just in case
 #else
