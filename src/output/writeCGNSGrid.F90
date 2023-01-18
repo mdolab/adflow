@@ -446,7 +446,7 @@ contains
     type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
 
     ! Print the filename to stdout
-    print "(a,4x,a)", "#", trim(gridFileNames(nn))
+    print "(a,4x,a)", "#", trim(gridFileNames(ind))
 
     ! Open the CGNS file for writing and check if it went okay.
     ! Store the file index afterwards.
