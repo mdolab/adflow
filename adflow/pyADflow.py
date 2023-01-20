@@ -1910,6 +1910,8 @@ class ADFLOW(AeroSolver):
         relaxAlpha=1.0,
         L2ConvRel=None,
         errOnStall=False,
+        writeSolution=False,
+        workUnitTime=None,
     ):
 
         """This is a simple secant method search for solving for a
@@ -1983,6 +1985,12 @@ class ADFLOW(AeroSolver):
             Flag to determine if we want to throw an error if the solver
             fails to achieve the relative or total L2 convergence. This
             is useful when the user wants to manually handle these exceptions.
+        writeSolution : bool
+            Flag to enable a call to self.writeSolution as the CL solver
+            is finished.
+        workUnitTime : float or None
+            Optional parameter that will be passed to getConvergenceHistory
+            after each adflow call.
 
         Returns
         -------
@@ -2037,6 +2045,9 @@ class ADFLOW(AeroSolver):
         # pointer to the iteration module for faster access
         iterationModule = self.adflow.iteration
 
+        # list to keep track of convergence history
+        convergenceHistory = []
+
         # Dictionary to keep track of all the options we have modified.
         # We keep the original values in this dictionary to be put back once we are done.
         modifiedOptions = {}
@@ -2068,14 +2079,19 @@ class ADFLOW(AeroSolver):
 
         # We can stop here if we have failures in the mesh
         if self.adflow.killsignals.fatalfail:
+            # TODO Fix the logic here. we dont want to return immediately. We first want to
+            # put back any of the modified options, and then quit.
             print("Cannot run CLSolve due to mesh failures.")
             return
 
         # Set the starting value
         anm2 = aeroProblem.alpha
 
+        # first analysis. We let the call counter get incremented here, but any of the following
+        # calls do not increase adflow's call counter. As a result, the solution files will be
+        # consistently named when multiple CL solutions are performed back to back.
         self.__call__(aeroProblem, writeSolution=False)
-        self.curAP.adflowData.callCounter -= 1
+        convergenceHistory.append(self.getConvergenceHistory(workUnitTime=workUnitTime))
         sol = self.getSolution()
         fnm2 = sol["cl"] - CLStar
 
@@ -2099,7 +2115,10 @@ class ADFLOW(AeroSolver):
 
         # Check for convergence if the starting point is already ok.
         if abs(fnm2) < tol and L2Conv <= L2ConvTarget:
-            return
+            # TODO fix this logic. if this happens, we dont want to just return, but exit cleanly
+            # with a possible writeSolution call and put back any modified options. Disabling for now.
+            # return
+            pass
 
         # print iteration info
         if self.comm.rank == 0:
@@ -2155,6 +2174,7 @@ class ADFLOW(AeroSolver):
 
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
+            convergenceHistory.append(self.getConvergenceHistory(workUnitTime=workUnitTime))
 
             self.curAP.adflowData.callCounter -= 1
             sol = self.getSolution()
@@ -2250,6 +2270,9 @@ class ADFLOW(AeroSolver):
             )
             print(final_string)
 
+        if writeSolution:
+            self.writeSolution()
+
         # we return everything we printed.
         # Not all of it is useful, but better to include as much data as possible
         resultsDict = {
@@ -2262,6 +2285,7 @@ class ADFLOW(AeroSolver):
             "error": err,
             "clalpha": clalpha,
             "time": t2 - t1,
+            "history": convergenceHistory,
         }
         return resultsDict
 
