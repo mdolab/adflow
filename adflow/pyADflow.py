@@ -1902,6 +1902,7 @@ class ADFLOW(AeroSolver):
         delta=0.5,
         tol=1e-3,
         autoReset=False,
+        resetANKCFL=False,
         useRKReset=False,
         nReset=25,
         useCorrection=True,
@@ -1943,6 +1944,10 @@ class ADFLOW(AeroSolver):
             think). This will reset the flow after each solve which
             solves this problem. Not necessary (or desired) when using
             the RK solver.
+        resetANKCFL : bool
+            Flag to reset the ANK CFL between solves. Usually, keeping the
+            previous CFL will result in faster convergence. However, this
+            feature might be turned off for additional robustness.
         useRKReset : bool
             Flag to use the RKReset startup strategy between solver restarts.
             The nReset parameter controls the number of RK/DADI iterations
@@ -2087,6 +2092,10 @@ class ADFLOW(AeroSolver):
         # Set the starting value
         anm2 = aeroProblem.alpha
 
+        # reset ANK CFL before going into the solution
+        if resetANKCFL:
+            self.resetANKCFL(aeroProblem)
+
         # first analysis. We let the call counter get incremented here, but any of the following
         # calls do not increase adflow's call counter. As a result, the solution files will be
         # consistently named when multiple CL solutions are performed back to back.
@@ -2171,6 +2180,10 @@ class ADFLOW(AeroSolver):
 
             # Set current alpha
             aeroProblem.alpha = anm1
+
+            # reset ANK CFL before going into the solution
+            if resetANKCFL:
+                self.resetANKCFL(aeroProblem)
 
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
@@ -3152,7 +3165,7 @@ class ADFLOW(AeroSolver):
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         self._resetFlow()
         # also reset the ank cfl for this AP
-        aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
+        self.resetANKCFL(aeroProblem)
 
     def _resetFlow(self):
         strLvl = self.getOption("MGStartLevel")
@@ -3169,6 +3182,20 @@ class ADFLOW(AeroSolver):
         self.adflow.killsignals.routinefailed = False
         self.adflow.killsignals.fatalfail = False
         self.adflow.nksolver.freestreamresset = False
+
+    def resetANKCFL(self, aeroProblem):
+        """
+        Resets the ANK CFL of the aeroProblemto the value set by "ANKCFL0" option.
+        During the first ANK iteration that follows, this will be overwritten
+        by the ANK solver itself with the CFL Min logic based on relative
+        convergence. This is useful if keeping a really high ANK CFL is not desired.
+
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem object
+            The aeroproblem whose ANK CFL will be reset.
+        """
+        aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
 
     def getSolution(self, groupName=None):
         """Retrieve the basic solution variables from the solver. This will
@@ -5019,6 +5046,11 @@ class ADFLOW(AeroSolver):
         ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
 
         return 3 * nnodes * ntime
+
+    def getNCells(self):
+        """Return the total number of cells in the mesh"""
+
+        return self.adflow.adjointvars.ncellsglobal[0]
 
     def getStates(self):
         """Return the states on this processor. Used in aerostructural
