@@ -2045,6 +2045,9 @@ class ADFLOW(AeroSolver):
                     # replace the options we temporarily modified...
                     for option, value in modifiedOptions.items():
                         self.setOption(option, value)
+                    # write solution before quitting if asked for
+                    if writeSolution:
+                        self.writeSolution()
                     raise Error("CFD solver failed during CLSolve")
 
         # pointer to the iteration module for faster access
