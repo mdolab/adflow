@@ -313,7 +313,7 @@ contains
                       endif
 
                       ! set the ks value
-                      flowDoms(nn, level, sps)%ks(i, j, k) = ksGlobal(iCell)
+                      ks(i, j, k) = ksGlobal(iCell)
                    end do
                 end do
              end do
@@ -1953,6 +1953,10 @@ contains
        allocate(fullWall%conn(4, nCells))
        allocate(fullWall%ind(nNodes))
 
+       if (useRoughSA) then
+          allocate(fullWall%indCell(nCells))
+       end if
+
        nNodes = 0
        nCells = 0
        ii = 0
@@ -1969,6 +1973,9 @@ contains
           do j=1, walls(i)%nCells
              nCells = nCells + 1
              fullWall%conn(:, nCells) = walls(i)%conn(:, j) + ii
+             if (useRoughSA) then
+                fullWall%indCell(nCells) = walls(i)%indCell(j)
+             end if
           end do
 
           ! Increment the node offset
@@ -2082,7 +2089,7 @@ contains
                       end do
                       flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
                       if (useRoughSA) then
-                         flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
+                         flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = fullWall%indCell(cellID)
                       end if
                    else
 
@@ -2103,7 +2110,7 @@ contains
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw2(1:2)
                          if (useRoughSA) then
-                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID2)
+                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = fullWall%indCell(cellID2)
                          end if
                       else
                          ! The full wall distance is better. Take that.
@@ -2114,7 +2121,7 @@ contains
                          end do
                          flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
                          if (useRoughSA) then
-                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
+                            flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = fullWall%indCell(cellID)
                          end if
                       end if
                    end if
