@@ -405,7 +405,9 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         funcsSens = {}
         # self.CFDSolver.evalFunctions(self.ap, funcs)
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"])
-        self.CFDSolver.evalFunctionsSens(self.ap, funcsSens, evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"])
+        self.CFDSolver.evalFunctionsSens(
+            self.ap, funcsSens, evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"]
+        )
         # check if adjoint failed
         self.assert_adjoint_failure()
 
@@ -733,7 +735,9 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
             funcs_plus[dv] = {}
 
             # eval functions
-            self.CFDSolver.evalFunctions(self.ap, funcs_plus[dv], evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"])
+            self.CFDSolver.evalFunctions(
+                self.ap, funcs_plus[dv], evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"]
+            )
 
             # compute the sens
             funcsSensCS[dv] = {}
