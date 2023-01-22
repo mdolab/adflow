@@ -75,7 +75,6 @@ contains
     real(kind=realtype) :: tmp13
     real(kind=realtype) :: tmp14
     integer :: branch
-    integer :: ad_to
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: tmpd14
@@ -83,17 +82,17 @@ contains
     real(kind=realtype) :: tmpd12
     real(kind=realtype) :: tmpd11
     real(kind=realtype) :: tmpd10
-    real(kind=realtype) :: tempd(3)
+    real(kind=realtype) :: tempd
     real(kind=realtype) :: tmpd9
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tmpd8
     real(kind=realtype) :: tempd3
-    real(kind=realtype) :: tempd2
     real(kind=realtype) :: tmpd7
-    real(kind=realtype) :: tempd1(3)
+    real(kind=realtype) :: tempd2(3)
     real(kind=realtype) :: tmpd6
-    real(kind=realtype) :: tempd0(3)
+    real(kind=realtype) :: tempd1(3)
     real(kind=realtype) :: tmpd5
+    real(kind=realtype) :: tempd0(3)
     real(kind=realtype) :: tmpd4
     real(kind=realtype) :: tmpd3
     real(kind=realtype) :: tmpd2
@@ -111,35 +110,6 @@ contains
     cofx = globalvals(coforcex:coforcex+2, :)
     cofy = globalvals(coforcey:coforcey+2, :)
     cofz = globalvals(coforcez:coforcez+2, :)
-! before we go any further, compute the actual cop for each time spectral instance.
-    do sps=1,ntimeintervalsspectral
-! protect the divisions against zero
-      if (force(1, sps) .ne. zero) then
-        call pushreal8array(cofx(:, sps), 3)
-        cofx(:, sps) = cofx(:, sps)/force(1, sps)
-        call pushcontrol1b(0)
-      else
-        cofx(:, sps) = zero
-        call pushcontrol1b(1)
-      end if
-      if (force(2, sps) .ne. zero) then
-        call pushreal8array(cofy(:, sps), 3)
-        cofy(:, sps) = cofy(:, sps)/force(2, sps)
-        call pushcontrol1b(0)
-      else
-        cofy(:, sps) = zero
-        call pushcontrol1b(1)
-      end if
-      if (force(3, sps) .ne. zero) then
-        call pushreal8array(cofz(:, sps), 3)
-        cofz(:, sps) = cofz(:, sps)/force(3, sps)
-        call pushcontrol1b(1)
-      else
-        cofz(:, sps) = zero
-        call pushcontrol1b(0)
-      end if
-    end do
-    call pushinteger4(sps - 1)
     moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
 &     globalvals(iflowmm:iflowmm+2, :)
     fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
@@ -153,6 +123,9 @@ contains
     cmoment = fact*moment
 ! zero values since we are summing.
     funcvalues = zero
+    call pushreal8array(cofx, 3*ntimeintervalsspectral)
+    call pushreal8array(cofy, 3*ntimeintervalsspectral)
+    call pushreal8array(cofz, 3*ntimeintervalsspectral)
 ! here we finally assign the final function values
     do sps=1,ntimeintervalsspectral
       funcvalues(costfuncforcex) = funcvalues(costfuncforcex) + ovrnts*&
@@ -206,6 +179,23 @@ contains
 &       costfuncforcezcoefmomentum) + ovrnts*cforcem(3, sps)
 ! ------------
 ! center of pressure (these are actually center of all forces)
+! protect the divisions against zero, and divide the weighed sum by the force magnitude
+! for this time spectral instance before we add it to the sum
+      if (force(1, sps) .ne. zero) then
+        cofx(:, sps) = cofx(:, sps)/force(1, sps)
+      else
+        cofx(:, sps) = zero
+      end if
+      if (force(2, sps) .ne. zero) then
+        cofy(:, sps) = cofy(:, sps)/force(2, sps)
+      else
+        cofy(:, sps) = zero
+      end if
+      if (force(3, sps) .ne. zero) then
+        cofz(:, sps) = cofz(:, sps)/force(3, sps)
+      else
+        cofz(:, sps) = zero
+      end if
 ! fx
       funcvalues(costfunccoforcexx) = funcvalues(costfunccoforcexx) + &
 &       ovrnts*cofx(1, sps)
@@ -662,10 +652,30 @@ contains
       cforcevd = 0.0_8
       cmomentd = 0.0_8
       forcevd = 0.0_8
+      call popreal8array(cofz, 3*ntimeintervalsspectral)
+      call popreal8array(cofy, 3*ntimeintervalsspectral)
+      call popreal8array(cofx, 3*ntimeintervalsspectral)
       do sps=1,ntimeintervalsspectral
 ! ------------
 ! ------------
 ! center of pressure (these are actually center of all forces)
+! protect the divisions against zero, and divide the weighed sum by the force magnitude
+! for this time spectral instance before we add it to the sum
+        if (force(1, sps) .ne. zero) then
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
+        if (force(2, sps) .ne. zero) then
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
+        if (force(3, sps) .ne. zero) then
+          call pushcontrol1b(0)
+        else
+          call pushcontrol1b(1)
+        end if
 ! fx
 ! fy
 ! fz
@@ -799,6 +809,33 @@ contains
 &         costfunccoforcexy)
         cofxd(1, sps) = cofxd(1, sps) + ovrnts*funcvaluesd(&
 &         costfunccoforcexx)
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          tempd2 = cofzd(:, sps)/force(3, sps)
+          forced(3, sps) = forced(3, sps) + sum(-(cofz(:, sps)*tempd2/&
+&           force(3, sps)))
+          cofzd(:, sps) = tempd2
+        else
+          cofzd(:, sps) = 0.0_8
+        end if
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          tempd1 = cofyd(:, sps)/force(2, sps)
+          forced(2, sps) = forced(2, sps) + sum(-(cofy(:, sps)*tempd1/&
+&           force(2, sps)))
+          cofyd(:, sps) = tempd1
+        else
+          cofyd(:, sps) = 0.0_8
+        end if
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          tempd0 = cofxd(:, sps)/force(1, sps)
+          forced(1, sps) = forced(1, sps) + sum(-(cofx(:, sps)*tempd0/&
+&           force(1, sps)))
+          cofxd(:, sps) = tempd0
+        else
+          cofxd(:, sps) = 0.0_8
+        end if
         cforcemd(3, sps) = cforcemd(3, sps) + ovrnts*funcvaluesd(&
 &         costfuncforcezcoefmomentum)
         cforcemd(2, sps) = cforcemd(2, sps) + ovrnts*funcvaluesd(&
@@ -859,46 +896,13 @@ contains
       forced = forced + fact*cforced
       temp0 = gammainf*surfaceref*lref**2
       temp = temp0*machcoef**2*pref
-      tempd2 = -(two*temp0*factd/temp**2)
-      machcoefd = machcoefd + pref*2*machcoef*tempd2
-      prefd = prefd + machcoef**2*tempd2
+      tempd = -(two*temp0*factd/temp**2)
+      machcoefd = machcoefd + pref*2*machcoef*tempd
+      prefd = prefd + machcoef**2*tempd
       globalvalsd(imp:imp+2, :) = globalvalsd(imp:imp+2, :) + momentd
       globalvalsd(imv:imv+2, :) = globalvalsd(imv:imv+2, :) + momentd
       globalvalsd(iflowmm:iflowmm+2, :) = globalvalsd(iflowmm:iflowmm+2&
 &       , :) + momentd
-      call popinteger4(ad_to)
-      do sps=ad_to,1,-1
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          cofzd(:, sps) = 0.0_8
-        else
-          call popreal8array(cofz(:, sps), 3)
-          tempd1 = cofzd(:, sps)/force(3, sps)
-          forced(3, sps) = forced(3, sps) + sum(-(cofz(:, sps)*tempd1/&
-&           force(3, sps)))
-          cofzd(:, sps) = tempd1
-        end if
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          call popreal8array(cofy(:, sps), 3)
-          tempd0 = cofyd(:, sps)/force(2, sps)
-          forced(2, sps) = forced(2, sps) + sum(-(cofy(:, sps)*tempd0/&
-&           force(2, sps)))
-          cofyd(:, sps) = tempd0
-        else
-          cofyd(:, sps) = 0.0_8
-        end if
-        call popcontrol1b(branch)
-        if (branch .eq. 0) then
-          call popreal8array(cofx(:, sps), 3)
-          tempd = cofxd(:, sps)/force(1, sps)
-          forced(1, sps) = forced(1, sps) + sum(-(cofx(:, sps)*tempd/&
-&           force(1, sps)))
-          cofxd(:, sps) = tempd
-        else
-          cofxd(:, sps) = 0.0_8
-        end if
-      end do
       globalvalsd(coforcez:coforcez+2, :) = globalvalsd(coforcez:&
 &       coforcez+2, :) + cofzd
       globalvalsd(coforcey:coforcey+2, :) = globalvalsd(coforcey:&
@@ -957,25 +961,6 @@ contains
     cofx = globalvals(coforcex:coforcex+2, :)
     cofy = globalvals(coforcey:coforcey+2, :)
     cofz = globalvals(coforcez:coforcez+2, :)
-! before we go any further, compute the actual cop for each time spectral instance.
-    do sps=1,ntimeintervalsspectral
-! protect the divisions against zero
-      if (force(1, sps) .ne. zero) then
-        cofx(:, sps) = cofx(:, sps)/force(1, sps)
-      else
-        cofx(:, sps) = zero
-      end if
-      if (force(2, sps) .ne. zero) then
-        cofy(:, sps) = cofy(:, sps)/force(2, sps)
-      else
-        cofy(:, sps) = zero
-      end if
-      if (force(3, sps) .ne. zero) then
-        cofz(:, sps) = cofz(:, sps)/force(3, sps)
-      else
-        cofz(:, sps) = zero
-      end if
-    end do
     moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
 &     globalvals(iflowmm:iflowmm+2, :)
     fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
@@ -1041,6 +1026,23 @@ contains
 &       costfuncforcezcoefmomentum) + ovrnts*cforcem(3, sps)
 ! ------------
 ! center of pressure (these are actually center of all forces)
+! protect the divisions against zero, and divide the weighed sum by the force magnitude
+! for this time spectral instance before we add it to the sum
+      if (force(1, sps) .ne. zero) then
+        cofx(:, sps) = cofx(:, sps)/force(1, sps)
+      else
+        cofx(:, sps) = zero
+      end if
+      if (force(2, sps) .ne. zero) then
+        cofy(:, sps) = cofy(:, sps)/force(2, sps)
+      else
+        cofy(:, sps) = zero
+      end if
+      if (force(3, sps) .ne. zero) then
+        cofz(:, sps) = cofz(:, sps)/force(3, sps)
+      else
+        cofz(:, sps) = zero
+      end if
 ! fx
       funcvalues(costfunccoforcexx) = funcvalues(costfunccoforcexx) + &
 &       ovrnts*cofx(1, sps)
