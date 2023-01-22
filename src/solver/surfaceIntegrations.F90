@@ -47,28 +47,6 @@ contains
     coFy = globalvals(coForceY:coForceY+2, :)
     coFz = globalvals(coForceZ:coForceZ+2, :)
 
-    ! before we go any further, compute the actual COP for each time spectral instance.
-    do sps=1, nTimeIntervalsSpectral
-          ! protect the divisions against zero
-          if (force(1, sps) /= zero) then
-               coFx(:, sps) = coFx(:, sps) / force(1, sps)
-          else
-               coFx(:, sps) = zero
-          end if
-
-          if (force(2, sps) /= zero) then
-               coFy(:, sps) = coFy(:, sps) / force(2, sps)
-          else
-               coFy(:, sps) = zero
-          end if
-
-          if (force(3, sps) /= zero) then
-               coFz(:, sps) = coFz(:, sps) / force(3, sps)
-          else
-               coFz(:, sps) = zero
-          end if
-    end do
-
     Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
     fact = two/(gammaInf*MachCoef*MachCoef &
@@ -125,6 +103,25 @@ contains
        ! ------------
 
        ! center of pressure (these are actually center of all forces)
+       ! protect the divisions against zero, and divide the weighed sum by the force magnitude
+       ! for this time spectral instance before we add it to the sum
+       if (force(1, sps) /= zero) then
+          coFx(:, sps) = coFx(:, sps) / force(1, sps)
+       else
+          coFx(:, sps) = zero
+       end if
+
+       if (force(2, sps) /= zero) then
+          coFy(:, sps) = coFy(:, sps) / force(2, sps)
+       else
+          coFy(:, sps) = zero
+       end if
+
+       if (force(3, sps) /= zero) then
+          coFz(:, sps) = coFz(:, sps) / force(3, sps)
+       else
+          coFz(:, sps) = zero
+       end if
 
        ! Fx
        funcValues(costFuncCOForceXX) = funcValues(costFuncCOForceXX) + ovrNTS*coFx(1, sps)
