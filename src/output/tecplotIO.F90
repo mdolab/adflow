@@ -317,7 +317,7 @@ contains
 
        do sps=1, nTimeIntervalsSpectral
 
-          ! If it is time spectral we need to augument the filename
+          ! If it is time spectral we need to augment the filename
           if (equationMode == timeSpectral) then
              write(intString,"(i7)") sps
              intString = adjustl(intString)
