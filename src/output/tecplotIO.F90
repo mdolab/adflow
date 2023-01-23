@@ -444,7 +444,7 @@ contains
 
        if(myID == 0 .and. printIterations) then
           print "(a)", "#"
-          print "(a)", "# Writing lift distribution file(s) ..."
+          print "(a)", "# Writing lift distribution file(s):"
        endif
 
        do sps=1,nTimeIntervalsSpectral
@@ -461,6 +461,9 @@ contains
           file = 11
           ! Open file on root proc:
           if (myid == 0) then
+             ! Print the filename to stdout
+             print "(a,4x,a)", "#", trim(fname)
+
              open(unit=file, file=trim(fname))
           end if
 
@@ -778,7 +781,7 @@ contains
     type(familyExchange), pointer :: exch
     if(myID == 0 .and. printIterations) then
        print "(a)", "#"
-       print "(a)", "# Writing tecplot surface file(s) ..."
+       print "(a)", "# Writing tecplot surface file(s):"
     endif
 
     ! Number of surface variables. Note that we *explictly*
@@ -807,6 +810,9 @@ contains
        ! Open file on root proc:
 
        if (myid == 0) then
+          ! Print the filename to stdout
+          print "(a,4x,a)", "#", trim(fname)
+
           open(unit=fileID, file=trim(fname), form='UNFORMATTED', access='stream', status='replace')
 
           ! Tecplot magic number
