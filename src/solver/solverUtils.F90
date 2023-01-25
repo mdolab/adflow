@@ -458,7 +458,7 @@ contains
                      +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  2) + flowDoms(nn, 1, mm)%x(i,j-1,k,  2) &
                      +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  2) + flowDoms(nn, 1, mm)%x(i,j,  k,  2))
 
-	              z_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,3) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,3) &
+                z_vc = eighth*(flowDoms(nn, 1, mm)%x(i-1,j-1,k-1,3) + flowDoms(nn, 1, mm)%x(i,j-1,k-1,3) &
                      +         flowDoms(nn, 1, mm)%x(i-1,j,  k-1,3) + flowDoms(nn, 1, mm)%x(i,j,  k-1,3) &
                      +         flowDoms(nn, 1, mm)%x(i-1,j-1,k,  3) + flowDoms(nn, 1, mm)%x(i,j-1,k,  3) &
                      +         flowDoms(nn, 1, mm)%x(i-1,j,  k,  3) + flowDoms(nn, 1, mm)%x(i,j,  k,  3))
@@ -476,7 +476,7 @@ contains
      
     ! Normal grid velocities of the faces.
 
-    ! sFaceI=	dot(sI, v)
+    ! sFaceI=dot(sI, v)
     ! =dot(sI, v_freestream + v_meshmotion)
     ! =dot(sI, v_freestream) + dot(sI, v_meshmotion)
 

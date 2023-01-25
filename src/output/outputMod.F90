@@ -1441,11 +1441,11 @@ contains
     real(kind=realType) :: rot_speed2 ! norm of wCrossR squared
     real(kind=realType),Dimension(3) :: r_ ! spanwise position for given point
     real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
-    real(kind=realType),Dimension(3) :: wCrossR ! rotationrate cross radius    
+    real(kind=realType),Dimension(3) :: wCrossR ! rotationrate cross radius
     real(kind=realType), dimension(:,:,:), pointer :: xx1, xx2 ! for the coords
     ! The original i,j beging of the local block in the entire cgns block.
     real(kind=realType) :: subface_jBegOr, subface_jEndOr, subface_iBegOr, subface_iEndOr
-    
+
     ! Set the pointers to this block.
     call setPointers(blockID, 1_intType, sps)
 
@@ -1529,7 +1529,7 @@ contains
        ! we don't have double halo structure for x, so we start from 0
        xx1    => x(0,:,:,:);   xx2    => x(1,:,:,:) ! 1 is our 2 since we are
        ! single haloed...
-       ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:) 
+       ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
        pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
        ss => si(1,:,:,:) ; fact = -one
 
@@ -1550,10 +1550,10 @@ contains
        if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
        subface_iBegOr = jBegOr
        subface_iEndOr = jEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
-       
+
        !===============================================================
 
     case (iMax)
@@ -1581,13 +1581,13 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
-       
+
        subface_iBegOr = jBegOr
        subface_iEndOr = jEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
-       
+
        !===============================================================
 
     case (jMin)
@@ -1616,10 +1616,10 @@ contains
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
 
-              
+
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
 
@@ -1653,7 +1653,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
 
@@ -1687,7 +1687,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = jBegOr
        subface_jEndOr = jEndOr
 
@@ -1721,7 +1721,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = jBegOr
        subface_jEndOr = jEndOr
 
@@ -1863,7 +1863,7 @@ contains
        ! Same formula used in referenceState (see initializeFlow.F90),
        ! multiplied by the square of the reference velocity (uRef).
        ! MachCoef is initialized in inputParamRoutines.F90 and can also be passed from the python layer
-       ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module 
+       ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module
        ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
        ! (see initializeFlow.F90).
        uInfDim2 = (MachCoef*MachCoef*gammaInf*pInf/rhoInf)*uRef*uRef
@@ -1890,15 +1890,15 @@ contains
              !
              ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
              !
-             ! Numerator (dimensionalized): 
+             ! Numerator (dimensionalized):
              !     (P_i-P_0) -> (half*(pp1(i,j)+pp2(i,j))-pInf) * pRef
              !     P_i is given by the average of the wall and halo cell
-             !     (see comment at the beginning of storeSurfsolInBuffer)     
+             !     (see comment at the beginning of storeSurfsolInBuffer)
              !     pp1, pp2 are (nondimensional) pressure pointers, e.g. pp1 => p(1,1:,1:)
              !
-             ! Denominator (dimensionalized): (0.5*rho*(U_a)^2) -> 
+             ! Denominator (dimensionalized): (0.5*rho*(U_a)^2) ->
              !       (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
-             !       The local velocity term includes the rotational components! 
+             !       The local velocity term includes the rotational components!
           enddo
        enddo
 
@@ -1992,10 +1992,10 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
             jor = j + subface_jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
+            if (jor == jBeg) then
+               jj = j + 1
             else if (jor == jEnd +1 ) then
                jj = j - 1
             else
@@ -2007,10 +2007,10 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
                ior = i + subface_iBegOr - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
+               if (ior == iBeg) then
+                  ii = i + 1
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else

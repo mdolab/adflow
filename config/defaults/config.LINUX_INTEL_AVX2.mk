@@ -1,9 +1,5 @@
 # ----------------------------------------------------------------------
-# Config file for Intel ifort -- safe version. ifort is TERRIBLE for
-# generating WRONG code with O2+. There is a 50-50 chance O2 code is
-# simply wrong. O2 and above MUST BE ASSUMED WRONG until it can be
-# proven otherwise. This is a safe config file at O1 which does not
-# do vectorization which will generally give correct code.
+# Config file for Intel ifort
 # ----------------------------------------------------------------------
 
 # ------- Define a possible parallel make (use PMAKE = make otherwise)--
@@ -31,10 +27,10 @@ CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
 CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
 # ------- Define Compiler Flags ----------------------------------------
-FF77_FLAGS = -fPIC -r8
+FF77_FLAGS   = -fPIC -r8
 FF90_FLAGS = $(FF77_FLAGS) -std08
-FFXX_OPT_FLAGS = -O1
-C_FLAGS      = -fPIC -O
+FFXX_OPT_FLAGS = -O2 -xCORE-AVX2
+C_FLAGS      = -fPIC -O -xCORE-AVX2
 
 # ------- Define Archiver  and Flags -----------------------------------
 AR       = ar

@@ -11,7 +11,7 @@ from mpi4py import MPI
 from adflow import ADFLOW
 from adflow import ADFLOW_C
 
-# import the testing utilities that live a few directories up
+# import the testing utilities
 import reg_test_utils as utils
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_actuator_pipe

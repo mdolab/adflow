@@ -69,13 +69,13 @@ python module libadflow
            integer(kind=inttype), intent(in) :: nvar
            character, dimension(nvar,32), intent(out):: monitor_variables
          end subroutine getmonitorvariablenames
-       
+
          subroutine getsolvertypearray(niter, nsps, type_array)
-           integer(kind=inttype), intent(in) :: niter, nsps, 
+           integer(kind=inttype), intent(in) :: niter, nsps,
            character, dimension(0:niter,nsps,8), intent(out):: type_array
          end subroutine getsolvertypearray
-       
-         
+
+
        end module utils
 
        module walldistance
@@ -263,6 +263,7 @@ python module libadflow
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
          logical :: ank_useturbdadi
+         logical :: ank_useapproxsa
          integer(kind=inttype) :: ank_subspace
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
@@ -287,6 +288,7 @@ python module libadflow
          real(kind=realtype) :: ank_turbcflscale
          logical :: ank_usefullvisc
          real(kind=realtype) :: ank_pcupdatetol
+         real(kind=realtype) :: ank_pcupdatecutoff
          logical :: ank_adpc
          integer(kind=inttype) :: ank_nsubiterturb
          logical :: ank_turbdebug
@@ -415,26 +417,30 @@ python module libadflow
        end module surfaceutils
 
        module tecplotio
-         subroutine addparaslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addparaslice(slicename,pt,normal,dir_vec,use_dir,famlist,n) ! in :test:liftDistribution.F90
            character*(*) intent(in) :: slicename
            real(kind=realtype) dimension(3),intent(in) :: pt
-           real(kind=realtype) dimension(3),intent(in) :: direction
+           real(kind=realtype) dimension(3),intent(in) :: normal
+           real(kind=realtype) dimension(3),intent(in) :: dir_vec
+           logical, intent(in) :: use_dir
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addparaslice
 
-         subroutine addabsslice(slicename,pt,direction,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addabsslice(slicename,pt,normal,dir_vec,use_dir,famlist,n) ! in :test:liftDistribution.F90
            character*(*) intent(in) :: slicename
            real(kind=realtype) dimension(3),intent(in) :: pt
-           real(kind=realtype) dimension(3),intent(in) :: direction
+           real(kind=realtype) dimension(3),intent(in) :: normal
+           real(kind=realtype) dimension(3),intent(in) :: dir_vec
+           logical, intent(in) :: use_dir
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
          end subroutine addabsslice
 
-         subroutine addliftdistribution(nsegments,dir_vec,dir_ind, distname,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addliftdistribution(nsegments,normal,normal_ind, distname,famlist,n) ! in :test:liftDistribution.F90
            integer(kind=inttype) intent(in) :: nsegments
-           real(kind=realtype) dimension(3), intent(in) :: dir_vec
-           integer(kind=inttype), intent(in) :: dir_ind
+           real(kind=realtype) dimension(3), intent(in) :: normal
+           integer(kind=inttype), intent(in) :: normal_ind
            character*(*) intent(in) :: distname
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
@@ -584,6 +590,17 @@ python module libadflow
            real(kind=realtype), intent(in) :: value
            logical, intent(out) :: setvalue
          end subroutine setblockpriority
+         subroutine flagcellsinsurface(pts,npts,conn,nconn,flag,ncell,blockids,nblocks,k_min)
+           real(kind=realtype) dimension(3,npts),intent(in) :: pts
+           integer(kind=inttype), optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+           integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
+           integer(kind=inttype), optional,intent(in),check(shape(conn,1)==nconn),depend(conn) :: nconn=shape(conn,1)
+           integer(kind=inttype) dimension(ncell),intent(inout) :: flag
+           integer(kind=inttype), optional,intent(in),check(len(flag)==ncell),depend(flag) :: ncell=len(flag)
+           integer(kind=inttype) dimension(nblocks),intent(in) :: blockids
+           integer(kind=inttype), optional,intent(in),check(len(blockids)==nblocks),depend(blockids) :: nblocks=len(blockids)
+           integer(kind=inttype), intent(in) :: k_min
+         end subroutine flagcellsinsurface
        end module oversetapi
 
        module oversetutilities
@@ -994,6 +1011,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccperror2=86
          integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
          integer(kind=inttype) parameter,optional :: costfuncaavgps=88
+         integer(kind=inttype) parameter,optional :: costfunccpmin=89
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90
@@ -1207,6 +1225,7 @@ python module libadflow
          real(kind=realtype) :: beta
          integer(kind=inttype) :: liftindex
          real(kind=realtype) :: cavitationnumber
+         real(kind=realtype) :: cpmin_rho
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90
@@ -1270,6 +1289,7 @@ python module libadflow
          logical :: debugzipper
          logical :: usezippermesh
          logical :: useoversetwallscaling
+         logical :: oversetdebugprint
          real(kind=realtype) :: selfzipcutoff
        end module inputoverset
 
