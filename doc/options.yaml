@@ -332,6 +332,12 @@ cavitationNumber:
   desc: >
     The -Cp value used to trigger the cavitation sensor.
 
+cpMinRho:
+  desc: >
+    The rho parameter used for the KS aggregation used for computing minimum Cp.
+    KS aggregation is used to compute the differentiable min Cp within the given family group.
+    A higher rho value will approach the actual min Cp more accurately, at the cost of a more nonlinear function.
+
 nCycles:
   desc: >
     The maximum number of "iterations" to run.
@@ -504,6 +510,116 @@ cutCallback:
     Therefore, we are flagging every cell where the y-component of the center coordinate (index 0:x, 1:y, 2:z) has a negative value.
     The flags array is initialized to zero internally by pyADflow, and a value of 1 for a cell tags it for flooding.
 
+explicitSurfaceCallback:
+  desc: >
+    A user-provided Python function that is used as a callback method to pass the information required for the explicit surface blanking method.
+    To be able to understand what this option does, you should really understand how the overset flooding method works.
+
+    With some configurations, the automatic flooding algorithm makes it extremely challenging to prevent the entire mesh from flooding.
+    The overlap of volume blocks can even be such that setting the ``"oversetPriority"`` option for each block is not enough.
+    To handle these extreme cases, we have a surface based explicit blanking method.
+    The idea is very similar to the ``cutCallback`` option above; this option is used to tag cells that are *inside* a closed geometry provided by the user.
+    This way, we try to eliminate as much of the flood seeds and flooded cells as possible.
+    The approach is not perfect; we only tag the cells that have at least one vertex inside the provided surface geometry as explicitly blanked (-4).
+    This results in two layers of fringe cells that are automatically added, which prevent flooding under most cases.
+    However, the flooding algorithm is actually more involved than this; normally, potential wall donors are tagged as flood seeds, not just the cells that have a vertex inside a wall BC.
+    Regardless, the method works well enough that it can give you a valid hole cutting with cases that are practically impossible to get a valid hole cutting with just the default approach.
+
+    The way user interacts with this method is through this callback function.
+    The reason we have the callback function is that we need the CGNS block names for each "computational block".
+    These names are used to determine which volume blocks will be explicitly blanked by which surface; we do not want every surface to act on every computational domain because that would result in most near wall cells getting tagged and would be very error prone.
+
+    To understand how this option is used, consider an example where we have a wing and a fuselage, in an overset mesh.
+    The wing and fuselage component meshes are joined together with a collar mesh and a background cartesian mesh.
+    Some of the wing mesh is inside the fuselage surface, and some of the fuselage mesh is overlapping with the wing surface.
+    Normally, this case would be handled by the automatic flooding, which works fairly well for most applications including this example, but here, we are just demonstrating the alternative approach.
+    With the regular flooding algorithm, some cells in these overlap regions would get tagged as flood seeds on both the wing and the fuselage.
+    Then, these flood seeds are used to flood the cells that are located inside these geometries; e.g. all of the wing volume cells that are inside the fuselage surface.
+
+    Instead of relying on the flooding, here, we want to explicitly blank cells that are inside the other component's surface.
+    To do this, we want to explicitly tag the wing mesh volume cells that have at least one vertex inside the fuselage surface, and similarly, tag the fuselage volume cells that have at least one vertex inside the wing surface.
+    The ``explicitSurfaceCallback`` option that would achieve this would look something like this:
+
+      .. code-block:: python
+
+        def explicitSurfaceCallback(CGNSZoneNameIDs):
+           # arrays to save the integer CGNS block IDs for each component
+           fuselage_blocks = []
+           wing_blocks = []
+
+           for name, id in CGNSZoneNameIDs.items():
+               # We can only get the blocks we want by checking the CGNS blocks' name.
+               # In this example, we don't want the explicit blanking algorithm to work
+               # on the cartesian background or the collar meshes.
+               if "wing" in name:
+                   wing_blocks.append(id)
+               elif "fuselage" in name:
+                   fuselage_blocks.append(id)
+
+           surf_dict = {
+               "wing": {
+                   # The surface file for each entry must be provided.
+                   # This is a closed plot3d surface mesh. It does not
+                   # necessarily need to be closed; we project the cell
+                   # vertices on this mesh and if the projection direction
+                   # is coming from the inside of the surface, the cell is
+                   # tagged. So a CFD mesh with a symmetry plane can
+                   # have a plot3d surface thats open at the symmetry plane.
+                   # The normals must always point outside. An easy way to
+                   # obtain this surface file is to convert the surface
+                   # CGNS grid used to generate the mesh into the plot3d
+                   # format using the cgns2plot3d method in cgnsutils.
+                   "surfFile": "wing_surface.x",
+
+                   # The block IDs we will search and blank using this surface.
+                   # Here, we only blank the fuselage cells that are inside the wing
+                   # and don't want to consider the background or collar meshes.
+                   "blockIDs": fuselage_blocks,
+
+                   # Optional entry: coordXfer
+                   # This is another callback function that performs a coordinate
+                   # transformation on the loaded plot3d mesh nodes. See the
+                   # addPointSet method in DVGeo.py at
+                   # https://github.com/mdolab/pygeo for the call signature.
+                   # We use this approach so that the users can have complete
+                   # control over the surface mesh nodes after they are loaded.
+                   "coordXfer": coordXfer,
+               },
+
+               # Similar entries for the fuselage.
+               "fuselage": {
+                   "surfFile": "fuselage_surface.x",
+                   "blockIDs": wing_blocks,
+               },
+
+               # We can have multiple entries with the same surface to blank different
+               # subsets of CGNS blocks. The entries of this top level dictionary
+               # is just for bookkeeping, and is not important. The code prints
+               # which entry it is blanking as it works through the dictionary.
+               # With large meshes (millions of cells) on few number of processors (<10)
+               # this process can take up to a minute or so. The process should run quicker
+               # with more processors. The surface mesh is loaded on all processors
+               # so there is a memory limit on the surface mesh refinement.
+               "wing_self": {
+                   # Here, assume we also want to blank some of the wing cells because
+                   # they intersect the wing geometry itself somehow. E.g. very large splay.
+                   # However, we only want to blank cells that have a k-index that is
+                   # larger than 32 to avoid tagging cells near the wall. The
+                   # optional "kMin" entry is used to achieve this.
+                   "surfFile": "wing_surface.x",
+                   "blockIDs": wing_blocks,
+                   "kMin": 32,
+               },
+           }
+
+           # pyADflow will loop over the entries of this dictionary and perform the
+           # explicit blanking with the information provided.
+           return surf_dict
+
+    The call signature of the ``coordXfer`` option is documented in the DVGeometry's addPointset method:
+    :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>`
+
+
 oversetUpdateMode:
   desc: >
     How to update the overset connectivity after mesh warping.
@@ -556,6 +672,11 @@ oversetPriority:
     A higher factor will discourage use of that block mesh.
     A lower factor will encourage the usage of that block mesh.
     This option may be required to get the flooding algorithm working properly.
+
+oversetDebugPrint:
+  desc: >
+    Flag to enable or disable the debug printout from the overset algorithm when a hole cutting process fails.
+    This information is not useful anymore and users should obtain the volume solution after an unsuccessful hole cutting and debug the mesh by plotting the cells with incomplete connectivities, which receive an iblank value of -5.
 
 timeIntegrationScheme:
   desc: >
@@ -795,6 +916,12 @@ ANKUseTurbDADI:
     Only applies to decoupled ANK.
     If False, an internal ANK-like solver is used for the turbulence in the decoupled mode.
 
+ANKUseApproxSA:
+  desc: >
+    The ANK solver switches from the approximate to the exact SA implicit formulation when the solver switches from the first order to the second order routines (printed as SANK or CSANK).
+    Setting this flag to false will force the SA implicit treatment to always use the approximate formulation with the ANK solver variants.
+    This should have no effect on the final solution, but can help with convergence with challenging cases.
+
 ANKSwitchTol:
   desc: >
     Relative convergence in the residual norm before we switch to the ANK solver.
@@ -933,6 +1060,15 @@ ANKUseFullVisc:
 ANKPCUpdateTol:
   desc: >
     If the ANK solver converges by this amount relative to the last nonlinear iteration where the preconditioner was updated, the preconditioner is updated again.
+
+ANKPCUpdateCutoff:
+  desc: >
+    The cutoff tolerance below which we disable the PC update based on nonlinear convergence introduced in the option above.
+    E.g. the default value of 1e-6 will trigger PC updates with the ANK if the solver converges by a certain amount, but past a relative L2 convergence of 1e-6, this algorithm is disabled and the preconditioner is only updated with the mechanisms other than relative convergence.
+    This is useful when CSANK is used, which can take steps that converge the L2 norm by multiple orders of magnitude in each iteration towards the end of the convergence.
+    Here, we do not need to update the PC at each solver iteration, so we disable it with this option.
+    This option only changes the PC update behavior with the coupled ANK variants.
+    Decoupled ANK variants don't get affected by this.
 
 ANKADPC:
   desc: >
@@ -1284,7 +1420,8 @@ sepSensorSharpness:
 
 computeCavitation:
   desc: >
-    Whether or not to compute cavitation.
+    Whether or not to compute cavitation related cost functions, which are `cavitation` and `cpMin`.
+    If this option is not set to `True`, the code will return zero for these two cost functions.
 
 cavSensorOffset:
   desc: >

@@ -297,7 +297,6 @@ class ADFLOW(AeroSolver):
             # index needs to go in as fortran numbering, so add 1
             name = getPy3SafeString(self.adflow.utils.getcgnszonename(i + 1).strip())
             self.CGNSZoneNameIDs[name] = i + 1
-            # do we need to do this on root and broadcast?
 
         # Call the user supplied callback if necessary
         cutCallBack = self.getOption("cutCallBack")
@@ -308,6 +307,56 @@ class ADFLOW(AeroSolver):
             cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
         cutCallBackTime = time.time()
+
+        # exclude the cells inside closed surfaces if we are provided with them
+        explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
+        if explicitSurfaceCallback is not None:
+            # the user wants to exclude cells that lie within a list of surfaces.
+
+            # first, call the callback function with cgns zone name IDs.
+            # this need to return us a dictionary with the surface mesh information,
+            # as well as which blocks in the cgns mesh to include in the search
+            surfDict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
+
+            # loop over the surfaces
+            for surf in surfDict:
+
+                if self.comm.rank == 0:
+                    print(f"Explicitly blanking surface: {surf}")
+
+                # this is the plot3d surface that defines the closed volume
+                surfFile = surfDict[surf]["surfFile"]
+                # the indices of cgns blocks that we want to consider when blanking inside the surface
+                blockIDs = surfDict[surf]["blockIDs"]
+                # the fortran lookup expects this list in increasing order
+                blockIDs.sort()
+
+                # check if there is a kMin provided
+                if "kMin" in surfDict[surf]:
+                    kMin = surfDict[surf]["kMin"]
+                else:
+                    kMin = -1
+
+                # optional coordinate transformation to do general manipulation of the coordinates
+                if "coordXfer" in surfDict[surf]:
+                    coordXfer = surfDict[surf]["coordXfer"]
+                else:
+                    coordXfer = None
+
+                # read the plot3d surface
+                pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
+
+                # get a new flag array
+                surfFlag = numpy.zeros(n, "intc")
+
+                # call the fortran routine to determine if the cells are inside or outside.
+                # this code is very similar to the actuator zone creation.
+                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surfFlag, blockIDs, kMin)
+
+                # update the flag array with the new info
+                flag = numpy.any([flag, surfFlag], axis=0)
+
+        explicitSurfaceCutTime = time.time()
 
         # Need to reset the oversetPriority option since the CGNSGrid
         # structure wasn't available before;
@@ -344,13 +393,14 @@ class ADFLOW(AeroSolver):
             print("|")
             print("| %-30s: %10.3f sec" % ("Library Load Time", libLoadTime - startInitTime))
             print("| %-30s: %10.3f sec" % ("Set Defaults Time", defSetupTime - libLoadTime))
-            print("| %-30s: %10.3f sec" % ("Base class init Time", baseClassTime - defSetupTime))
+            print("| %-30s: %10.3f sec" % ("Base Class Init Time", baseClassTime - defSetupTime))
             print("| %-30s: %10.3f sec" % ("Introductory Time", introTime - baseClassTime))
             print("| %-30s: %10.3f sec" % ("Partitioning Time", partitioningTime - introTime))
             print("| %-30s: %10.3f sec" % ("Preprocessing Time", preprocessingTime - partitioningTime))
             print("| %-30s: %10.3f sec" % ("Family Setup Time", familySetupTime - preprocessingTime))
-            print("| %-30s: %10.3f sec" % ("Cut callback Time", cutCallBackTime - familySetupTime))
-            print("| %-30s: %10.3f sec" % ("Overset Preprocessing Time", oversetPreTime - cutCallBackTime))
+            print("| %-30s: %10.3f sec" % ("Cut Callback Time", cutCallBackTime - familySetupTime))
+            print("| %-30s: %10.3f sec" % ("Explicit Surface Cut Time", explicitSurfaceCutTime - cutCallBackTime))
+            print("| %-30s: %10.3f sec" % ("Overset Preprocessing Time", oversetPreTime - explicitSurfaceCutTime))
             print("| %-30s: %10.3f sec" % ("Initialize Flow Time", initFlowTime - oversetPreTime))
             print("|")
             print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
@@ -526,60 +576,254 @@ class ADFLOW(AeroSolver):
         positions : float or array
             The list of slice positions *along the axis given by direction*.
         sliceType : str {'relative', 'absolute'}
-            Relative slices are 'sliced' at the beginning and then parametricly
+            Relative slices are 'sliced' at the beginning and then parametrically
             move as the geometry deforms. As a result, the slice through the
             geometry may not remain planar. An absolute slice is re-sliced for
-            every out put so is always exactly planar and always at the initial
+            every output so is always exactly planar and always at the initial
             position the user indicated.
         groupName : str
              The family to use for the slices. Default is None corresponding to all
              wall groups.
         """
 
-        # Create the zipper mesh if not done so
-        self._createZipperMesh()
+        # call the preprocessing routine that avoids some code duplication across 3 types of slices
+        sliceType, famList = self._preprocessSliceInput(sliceType, groupName)
 
-        # Determine the families we want to use
-        if groupName is None:
-            groupName = self.allWallsGroup
-        groupTag = "%s: " % groupName
-
-        famList = self._getFamilyList(groupName)
         direction = direction.lower()
         if direction not in ["x", "y", "z"]:
             raise Error("'direction' must be one of 'x', 'y', or 'z'")
-
-        sliceType = sliceType.lower()
-        if sliceType not in ["relative", "absolute"]:
-            raise Error("'sliceType' must be 'relative' or 'absolute'.")
 
         positions = numpy.atleast_1d(positions)
         N = len(positions)
         tmp = numpy.zeros((N, 3), self.dtype)
         if direction == "x":
             tmp[:, 0] = positions
-            dirVec = [1.0, 0.0, 0.0]
+            normal = [1.0, 0.0, 0.0]
         elif direction == "y":
             tmp[:, 1] = positions
-            dirVec = [0.0, 1.0, 0.0]
+            normal = [0.0, 1.0, 0.0]
         elif direction == "z":
             tmp[:, 2] = positions
-            dirVec = [0.0, 0.0, 1.0]
+            normal = [0.0, 0.0, 1.0]
+
+        # for regular slices, we dont use the direction vector to pick a projection direction
+        sliceDir = [1.0, 0.0, 0.0]
+        useDir = False
 
         for i in range(len(positions)):
             # It is important to ensure each slice get a unique
             # name...so we will number sequentially from python
             j = self.nSlice + i + 1
+            sliceName = f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Regular {direction} = {positions[i]:.8f}"
+
             if sliceType == "relative":
-                sliceName = "Slice_%4.4d %s Para Init %s=%7.3f" % (j, groupTag, direction, positions[i])
-                self.adflow.tecplotio.addparaslice(sliceName, tmp[i], dirVec, famList)
+                self.adflow.tecplotio.addparaslice(sliceName, tmp[i], normal, sliceDir, useDir, famList)
             else:
-                sliceName = "Slice_%4.4d %s Absolute %s=%7.3f" % (j, groupTag, direction, positions[i])
-                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], dirVec, famList)
+                self.adflow.tecplotio.addabsslice(sliceName, tmp[i], normal, sliceDir, useDir, famList)
 
         self.nSlice += N
 
-    def addIntegrationSurface(self, fileName, familyName, isInflow=True):
+    def addArbitrarySlices(self, normals, points, sliceType="relative", groupName=None, sliceDir=None):
+        """
+        Add slices that vary arbitrarily in space. This is a generalization
+        of the :meth:`addSlices <.addSlices>` routine, where we have the user specify a list of "normals"
+        and "points" that define slice planes. Rest of the code is the same.
+        This way users can add slices that follow the dihedral of a wing for example.
+
+        Parameters
+        ----------
+        normals : 3-d array or ndarray (nSlice, 3)
+            The normals of the slice directions. If an array of size 3 is passed,
+            we use the same normal for all slices. if an array of multiple normals
+            are passed, we use the individual normals for each point. in this case,
+            the numbers of points and normals must match.
+        points : ndarray (nSlice, 3)
+            Point coordinates that define a slicing plane along with the normals
+        sliceDir : ndarray (nSlice, 3)
+            If this is provided, only the intersections that is in this direction
+            starting from the normal is kept. This is useful if you are slicing a
+            closed geometry and only want to keep one side of it. It is similar to
+            the functionality provided in :meth:`addCylindricalSlices <.addCylindricalSlices>`.
+        sliceType : str {'relative', 'absolute'}
+            Relative slices are 'sliced' at the beginning and then parametrically
+            move as the geometry deforms. As a result, the slice through the
+            geometry may not remain planar. An absolute slice is re-sliced for
+            every output so is always exactly planar and always at the initial
+            position the user indicated.
+        groupName : str
+             The family to use for the slices. Default is None corresponding to all
+             wall groups.
+        """
+
+        # call the preprocessing routine that avoids some code duplication across 3 types of slices
+        sliceType, famList = self._preprocessSliceInput(sliceType, groupName)
+
+        normals = numpy.atleast_2d(normals)
+        points = numpy.atleast_2d(points)
+        nSlice = len(points)
+
+        if len(normals) == 1:
+            tmp = numpy.zeros((nSlice, 3), self.dtype)
+            tmp[:] = normals
+            normals = tmp
+
+        if sliceDir is None:
+            # if we dont have a direction vector to pick a projection direction, we can just set this
+            # array to an arbitrary direction. Because the useDir flag is false, the code won't actually
+            # use this array
+            dummySliceDir = [1.0, 0.0, 0.0]
+            useDir = False
+        else:
+            useDir = True
+
+        for i in range(nSlice):
+            # It is important to ensure each slice get a unique
+            # name...so we will number sequentially from python
+            j = self.nSlice + i + 1
+
+            if useDir:
+                direction = sliceDir[j]
+            else:
+                direction = dummySliceDir
+
+            sliceName = (
+                f"Slice_{j:04d} {groupName} {sliceType.capitalize()} Arbitrary "
+                f"Point = ({points[i, 0]:.8f}, {points[i, 1]:.8f}, {points[i, 2]:.8f}) "
+                f"Normal = ({normals[i, 0]:.8f}, {normals[i, 1]:.8f}, {normals[i, 2]:.8f})"
+            )
+            if sliceType == "relative":
+                self.adflow.tecplotio.addparaslice(sliceName, points[i], normals[i], direction, useDir, famList)
+            else:
+                self.adflow.tecplotio.addabsslice(sliceName, points[i], normals[i], direction, useDir, famList)
+
+        self.nSlice += nSlice
+
+    def addCylindricalSlices(
+        self, pt1, pt2, nSlice=25, sliceBeg=0.0, sliceEnd=360.0, sliceType="relative", groupName=None
+    ):
+        """
+        Add cylindrical projection slices. The cylindrical projection axis is defined
+        from pt1 to pt2. Then we start from the lift direction and rotate around this
+        axis until we are back at the beginning. The rotation direction follows the
+        right hand rule; we rotate the plane in the direction of vectors from pt1 to
+        pt2 crossed with the lift direction. This routine will not work as is if the
+        cylinder axis is exactly aligned with the lift direction. If that use case is
+        needed, consider using :meth:`addArbitrarySlices <.addArbitrarySlices>`.
+
+        Parameters
+        ----------
+        pt1 : numpy array, length 3
+            beginning point of the vector that defines the rotation axis
+        pt2 : numpy array, length 3
+            end point of the vector that defines the rotation axis
+        nSlice : int
+            number of slices around a 360 degree full rotation.
+        sliceBeg : float
+            beginning of the slices in the rotation direction in degrees
+        sliceEnd : float
+            end of the slices in the rotation direction in degrees
+        sliceType : str {'relative', 'absolute'}
+            Relative slices are 'sliced' at the beginning and then parametrically
+            move as the geometry deforms. As a result, the slice through the
+            geometry may not remain planar. An absolute slice is re-sliced for
+            every output so is always exactly planar and always at the initial
+            position the user indicated.
+        groupName : str
+             The family to use for the slices. Default is None corresponding to all
+             wall groups.
+        """
+
+        # call the preprocessing routine that avoids some code duplication across 3 types of slices
+        sliceType, famList = self._preprocessSliceInput(sliceType, groupName)
+
+        # get the angles that we are slicing in radians
+        angles = numpy.linspace(sliceBeg, sliceEnd, nSlice) * numpy.pi / 180.0
+
+        # unit vector in the lift direction
+        liftDir = numpy.zeros(3)
+        liftDir[self.getOption("liftIndex") - 1] = 1.0
+
+        # the unit vector on the axis
+        vec1 = pt2 - pt1
+        vec1 /= numpy.linalg.norm(vec1)
+
+        # loop over angles
+        for ii, angle in enumerate(angles):
+            sin = numpy.sin(angle)
+            cos = numpy.cos(angle)
+            omc = 1.0 - cos
+            vx = vec1[0]
+            vy = vec1[1]
+            vz = vec1[2]
+            # rotation matrix by theta about vec1
+            rot_mat = numpy.array(
+                [
+                    [cos + vx * vx * omc, vx * vy * omc - vz * sin, vx * vz * omc + vy * sin],
+                    [vy * vx * omc + vz * sin, cos + vy * vy * omc, vy * vz * omc - vx * sin],
+                    [vz * vx * omc - vy * sin, vz * vy * omc + vx * sin, cos + vz * vz * omc],
+                ]
+            )
+
+            # rotate the lift direction vector to get the slice direction
+            sliceDir = rot_mat.dot(liftDir)
+
+            # In general, the "sliceDir" does not need to be orthogonal to vec1, which is the center axis of the cylinder. So we make it orthogonal
+            sliceDir -= vec1.dot(sliceDir) * vec1
+
+            # normalize sliceDir
+            sliceDir /= numpy.linalg.norm(sliceDir)
+
+            # cross product vec1 and vec2 to get the normal vector of this plane
+            sliceNormal = numpy.cross(vec1, sliceDir)
+            # normalize for good measure
+            sliceNormal /= numpy.linalg.norm(sliceNormal)
+
+            # we can now define a plane for the slice using p1 and sliceNormal.
+            # in the cylindrical version, we also pick a "direction". This is which direction we are going
+            # from the center axis. We will reject cells directly if their centroid are behind this
+            # direction (i.e. <pt1, centroid> dot sliceDir is negative) and only use the cells that are in
+            # the same direction (i.e. dot product positive.)
+            # this flag determines that we will use the direction vector as well to pick the slice dir.
+            useDir = True
+
+            # It is important to ensure each slice get a unique
+            # name...so we will number sequentially from python
+            jj = self.nSlice + ii + 1
+
+            sliceName = (
+                f"Slice_{jj:04d} {groupName} {sliceType.capitalize()} Cylindrical "
+                f"Point = ({pt1[0]:.8f}, {pt1[1]:.8f}, {pt1[2]:.8f}) "
+                f"Normal = ({sliceNormal[0]:.8f}, {sliceNormal[1]:.8f}, {sliceNormal[2]:.8f}) "
+                f"Axis = ({vec1[0]:.8f}, {vec1[1]:.8f}, {vec1[2]:.8f}) "
+                f"Theta = {angle * 180.0 / numpy.pi:.8f}"
+            )
+            if sliceType == "relative":
+                self.adflow.tecplotio.addparaslice(sliceName, pt1, sliceNormal, sliceDir, useDir, famList)
+            else:
+                self.adflow.tecplotio.addabsslice(sliceName, pt1, sliceNormal, sliceDir, useDir, famList)
+
+        self.nSlice += nSlice
+
+    def _preprocessSliceInput(self, sliceType, groupName):
+        """
+        Preprocessing routine that holds some of the duplicated code required for 3 types of slice methods.
+        """
+        # Create the zipper mesh if not done so
+        self._createZipperMesh()
+
+        # Determine the families we want to use
+        if groupName is None:
+            groupName = self.allWallsGroup
+        famList = self._getFamilyList(groupName)
+
+        # check the sliceType
+        sliceType = sliceType.lower()
+        if sliceType not in ["relative", "absolute"]:
+            raise Error("'sliceType' must be 'relative' or 'absolute'.")
+
+        return sliceType, famList
+
+    def addIntegrationSurface(self, fileName, familyName, isInflow=True, coordXfer=None):
         """Add a specific integration surface for performing massflow-like
         computations.
 
@@ -598,6 +842,13 @@ class ADFLOW(AeroSolver):
         isInflow : bool
            Flag to treat momentum forces as if it is an inflow or outflow
            face. Default is True
+
+        coordXfer : function
+            A callback function that performs a coordinate transformation
+            between the original reference frame and any other reference
+            frame relevant to the current CFD case. This allows user to apply
+            arbitrary modifications to the loaded plot3d surface. The call
+            signature is documented in DVGeometry's :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>` method.
         """
 
         self.hasIntegrationSurfaces = True
@@ -621,11 +872,22 @@ class ADFLOW(AeroSolver):
         # of nodes/elements of the defined surface are sufficiently
         # small that we do not have to worry about parallelization.
 
-        pts, conn = self._readPlot3DSurfFile(fileName)
+        pts, conn = self._readPlot3DSurfFile(fileName, coordXfer=coordXfer)
+
         self.adflow.usersurfaceintegrations.addintegrationsurface(pts.T, conn.T, familyName, famID, isInflow)
 
     def addActuatorRegion(
-        self, fileName, axis1, axis2, familyName, thrust=0.0, torque=0.0, heat=0.0, relaxStart=None, relaxEnd=None
+        self,
+        fileName,
+        axis1,
+        axis2,
+        familyName,
+        thrust=0.0,
+        torque=0.0,
+        heat=0.0,
+        relaxStart=None,
+        relaxEnd=None,
+        coordXfer=None,
     ):
         """
         Add an actuator disk zone defined by the supplied closed
@@ -704,13 +966,20 @@ class ADFLOW(AeroSolver):
             The end of the relaxation in terms of
             orders of magnitude of relative convergence
 
+        coordXfer : function
+            A callback function that performs a coordinate transformation
+            between the original reference frame and any other reference
+            frame relevant to the current CFD case. This allows user to apply
+            arbitrary modifications to the loaded plot3d surface. The call
+            signature is documented in DVGeometry's :meth:`addPointset <pygeo:pygeo.parameterization.DVGeo.DVGeometry.addPointSet>` method.
+
         """
         # ActuatorDiskRegions cannot be used in timeSpectralMode
         if self.getOption("equationMode").lower() == "time spectral":
             raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
 
         # Load in the user supplied surface file.
-        pts, conn = self._readPlot3DSurfFile(fileName, convertToTris=False)
+        pts, conn = self._readPlot3DSurfFile(fileName, convertToTris=False, coordXfer=coordXfer)
 
         # We should do a topology check to ensure that the surface the
         # user supplied is actually closed.
@@ -745,8 +1014,7 @@ class ADFLOW(AeroSolver):
         if relaxEnd is None and relaxStart is not None:
             raise Error("relaxEnd must be given is relaxStart is specified")
 
-        #  Now continue to fortran were we setup the actual
-        #  region.
+        # Now continue to fortran were we setup the actual actuator region.
         self.adflow.actuatorregion.addactuatorregion(
             pts.T, conn.T, axis1, axis2, familyName, famID, thrust, torque, heat, relaxStart, relaxEnd
         )
@@ -1359,7 +1627,7 @@ class ADFLOW(AeroSolver):
         tmp = []
         for f in evalFuncs:
             tmp.append(f.lower())
-        evalFuncs = tmp
+        evalFuncs = sorted(tmp)
 
         # We need to determine how many different groupings we have,
         # since we will have to call getSolution for each *unique*
@@ -2188,7 +2456,7 @@ class ADFLOW(AeroSolver):
             if abs(fnm1) < tol:
                 break
 
-    def writeSolution(self, outputDir=None, baseName=None, number=None):
+    def writeSolution(self, outputDir=None, baseName=None, number=None, writeSlices=True, writeLift=True):
         """This is a generic shell function that potentially writes
         the various output files. The intent is that the user or
         calling program can call this file and ADflow write all the
@@ -2205,6 +2473,10 @@ class ADFLOW(AeroSolver):
             Use this supplied string for the base filename. Typically only used from an external solver.
         number : int
             Use the user supplied number to index solution. Again, only typically used from an external solver.
+        writeSlices : bool
+            Flag to determine if the slice files are written, if we have any slices added.
+        writeLift : bool
+            Flag to determine if the lift files are written, if we have any lift distributions added.
         """
         if outputDir is None:
             outputDir = self.getOption("outputDirectory")
@@ -2259,7 +2531,7 @@ class ADFLOW(AeroSolver):
         writeSurf = self.getOption("writeTecplotSurfaceSolution")
 
         # # Call fully compbined fortran routine.
-        self.adflow.tecplotio.writetecplot(sliceName, True, liftName, True, surfName, writeSurf, famList)
+        self.adflow.tecplotio.writetecplot(sliceName, writeSlices, liftName, writeLift, surfName, writeSurf, famList)
 
     def writeMeshFile(self, fileName):
         """Write the current mesh to a CGNS file. This call isn't used
@@ -3115,6 +3387,11 @@ class ADFLOW(AeroSolver):
 
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
+
+            # We need to do an all reduce here in case there's a BC failure
+            # on any of the procs after we update the bc data.
+            self.adflow.killsignals.fatalfail = self.comm.allreduce(bool(self.adflow.killsignals.fatalfail), op=MPI.LOR)
+
             if self.getOption("equationMode").lower() == "time spectral":
                 self.adflow.preprocessingapi.updateperiodicinfoalllevels()
                 self.adflow.preprocessingapi.updatemetricsalllevels()
@@ -3874,12 +4151,12 @@ class ADFLOW(AeroSolver):
         groupName=None,
         mode="AD",
         h=None,
+        evalFuncs=None,
     ):
         """This the main python gateway for producing forward mode jacobian
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
         mesh object must both be set for this routine.
-
         Parameters
         ----------
         xDvDot : dict
@@ -3890,7 +4167,6 @@ class ADFLOW(AeroSolver):
             Perturbation on the volume
         wDot : numpy array
             Perturbation the state variables
-
         residualDeriv : bool
             Flag specifiying if the residualDerivative (dwDot) should be returned
         funcDeriv : bool
@@ -3906,7 +4182,6 @@ class ADFLOW(AeroSolver):
             Specifies how the jacobian vector products will be computed.
         h : float
             Step sized used when the mode is "FD" or "CS
-
         Returns
         -------
         dwdot, funcsdot, fDot : array, dict, array
@@ -3991,19 +4266,26 @@ class ADFLOW(AeroSolver):
         costSize = self.adflow.constants.ncostfunction
         fSize, nCell = self._getSurfaceSize(self.allWallsGroup, includeZipper=True)
 
+        # process the functions and groups
+        if evalFuncs is None:
+            evalFuncs = sorted(self.curAP.evalFuncs)
+
         # Generate the list of families we need for the functions in curAP
-        groupNames = set()
-        for f in self.curAP.evalFuncs:
+        # We need to use a list to have the same ordering on every proc, but
+        # we need 'set like' behavior so we don't include duplicate group names.
+        groupNames = []
+        for f in evalFuncs:
             fl = f.lower()
             if fl in self.adflowCostFunctions:
                 groupName = self.adflowCostFunctions[fl][0]
-                groupNames.add(groupName)
+                if groupName not in groupNames:
+                    groupNames.append(groupName)
             if f in self.adflowUserCostFunctions:
                 for sf in self.adflowUserCostFunctions[f].functions:
                     groupName = self.adflowCostFunctions[sf.lower()][0]
-                    groupNames.add(groupName)
+                    if groupName not in groupNames:
+                        groupNames.append(groupName)
 
-        groupNames = list(groupNames)
         if len(groupNames) == 0:
             famLists = self._expandGroupNames([self.allWallsGroup])
         else:
@@ -4080,7 +4362,7 @@ class ADFLOW(AeroSolver):
 
         # Process the derivative of the functions
         funcsDot = {}
-        for f in self.curAP.evalFuncs:
+        for f in evalFuncs:
             fl = f.lower()
             if fl in self.adflowCostFunctions:
                 groupName = self.adflowCostFunctions[fl][0]
@@ -4995,6 +5277,7 @@ class ADFLOW(AeroSolver):
             "wallDistCutoff": [float, 1e20],
             "infChangeCorrection": [bool, True],
             "cavitationNumber": [float, 1.4],
+            "cpMinRho": [float, 100.0],
             # Common Parameters
             "nCycles": [int, 2000],
             "timeLimit": [float, -1.0],
@@ -5023,6 +5306,7 @@ class ADFLOW(AeroSolver):
             "debugZipper": [bool, False],
             "zipperSurfaceFamily": [(str, type(None)), None],
             "cutCallback": [(types.FunctionType, type(None)), None],
+            "explicitSurfaceCallback": [(types.FunctionType, type(None)), None],
             "oversetUpdateMode": [str, ["frozen", "fast", "full"]],
             "nRefine": [int, 10],
             "nFloodIter": [int, -1],
@@ -5030,6 +5314,7 @@ class ADFLOW(AeroSolver):
             "useOversetWallScaling": [bool, False],
             "selfZipCutoff": [float, 120.0],
             "oversetPriority": [dict, {}],
+            "oversetDebugPrint": [bool, False],
             # Unsteady Parameters
             "timeIntegrationScheme": [str, ["BDF", "explicit RK", "implicit RK"]],
             "timeAccuracy": [int, [2, 1, 3]],
@@ -5082,6 +5367,7 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             "useANKSolver": [bool, True],
             "ANKUseTurbDADI": [bool, True],
+            "ANKUseApproxSA": [bool, False],
             "ANKSwitchTol": [float, 1e3],
             "ANKSubspaceSize": [int, -1],
             "ANKMaxIter": [int, 40],
@@ -5109,6 +5395,7 @@ class ADFLOW(AeroSolver):
             "ANKTurbCFLScale": [float, 1.0],
             "ANKUseFullVisc": [bool, True],
             "ANKPCUpdateTol": [float, 0.5],
+            "ANKPCUpdateCutoff": [float, 1e-6],
             "ANKADPC": [bool, False],
             "ANKNSubiterTurb": [int, 1],
             "ANKTurbKSPDebug": [bool, False],
@@ -5211,6 +5498,7 @@ class ADFLOW(AeroSolver):
             "closedsurfacefamilies",
             "zippersurfacefamily",
             "cutcallback",
+            "explicitsurfacecallback",
         )
 
     def _getOptionMap(self):
@@ -5355,6 +5643,7 @@ class ADFLOW(AeroSolver):
             "forcesastractions": ["physics", "forcesastractions"],
             "lowspeedpreconditioner": ["discr", "lowspeedpreconditioner"],
             "cavitationnumber": ["physics", "cavitationnumber"],
+            "cpminrho": ["physics", "cpmin_rho"],
             # Common Parameters
             "ncycles": ["iter", "ncycles"],
             "timelimit": ["iter", "timelimit"],
@@ -5397,6 +5686,7 @@ class ADFLOW(AeroSolver):
             "usezippermesh": ["overset", "usezippermesh"],
             "useoversetwallscaling": ["overset", "useoversetwallscaling"],
             "selfzipcutoff": ["overset", "selfzipcutoff"],
+            "oversetdebugprint": ["overset", "oversetdebugprint"],
             # Unsteady Params
             "timeintegrationscheme": {
                 "bdf": self.adflow.constants.bdf,
@@ -5458,6 +5748,7 @@ class ADFLOW(AeroSolver):
             # Approximate Newton-Krylov Parameters
             "useanksolver": ["ank", "useanksolver"],
             "ankuseturbdadi": ["ank", "ank_useturbdadi"],
+            "ankuseapproxsa": ["ank", "ank_useapproxsa"],
             "ankswitchtol": ["ank", "ank_switchtol"],
             "anksubspacesize": ["ank", "ank_subspace"],
             "ankmaxiter": ["ank", "ank_maxiter"],
@@ -5485,6 +5776,7 @@ class ADFLOW(AeroSolver):
             "ankturbcflscale": ["ank", "ank_turbcflscale"],
             "ankusefullvisc": ["ank", "ank_usefullvisc"],
             "ankpcupdatetol": ["ank", "ank_pcupdatetol"],
+            "ankpcupdatecutoff": ["ank", "ank_pcupdatecutoff"],
             "ankadpc": ["ank", "ank_adpc"],
             "anknsubiterturb": ["ank", "ank_nsubiterturb"],
             "ankturbkspdebug": ["ank", "ank_turbdebug"],
@@ -5587,6 +5879,7 @@ class ADFLOW(AeroSolver):
             "zippersurfacefamily",
             "outputsurfacefamily",
             "cutcallback",
+            "explicitsurfacecallback",
             "infchangecorrection",
             "restartadjoint",
             "skipafterfailedadjoint",
@@ -5701,6 +5994,7 @@ class ADFLOW(AeroSolver):
             "sepsensoravgy": self.adflow.constants.costfuncsepsensoravgy,
             "sepsensoravgz": self.adflow.constants.costfuncsepsensoravgz,
             "cavitation": self.adflow.constants.costfunccavitation,
+            "cpmin": self.adflow.constants.costfunccpmin,
             "mdot": self.adflow.constants.costfuncmdot,
             "mavgptot": self.adflow.constants.costfuncmavgptot,
             "aavgptot": self.adflow.constants.costfuncaavgptot,
@@ -5887,7 +6181,7 @@ class ADFLOW(AeroSolver):
 
         return strList
 
-    def _readPlot3DSurfFile(self, fileName, convertToTris=True):
+    def _readPlot3DSurfFile(self, fileName, convertToTris=True, coordXfer=None):
         """Read a plot3d file and return the points and connectivity in
         an unstructured mesh format"""
 
@@ -5931,6 +6225,15 @@ class ADFLOW(AeroSolver):
             # cheap anyway
             uniquePts, link, nUnique = self.adflow.utils.pointreduce(pts.T, 1e-12)
             pts = uniquePts[:, 0:nUnique].T
+
+            # coordinate transformation for the coordinates if we have any.
+            # this is where the user can rotate, translate, or generally manipulate
+            # the coordinates coming from the plot3d file before they are used
+            if coordXfer is not None:
+                # this callback function has the same call signature with the
+                # method described in the DVGeometry addPointSet method:
+                # https://github.com/mdolab/pygeo/blob/main/pygeo/parameterization/DVGeo.py
+                pts = coordXfer(pts, mode="fwd", applyDisplacement=True)
 
             # Update the conn
             newConn = numpy.zeros_like(conn)

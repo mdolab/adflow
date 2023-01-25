@@ -39,7 +39,7 @@ contains
     use oversetCommUtilities, only : updateOversetConnectivity
     use actuatorRegionData, only : nActuatorRegions
     use wallDistanceData, only : xSurfVec, xSurf
-    
+
     implicit none
 
     ! Input Arguments:
@@ -97,7 +97,7 @@ contains
 
              call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
              call EChk(ierr,__FILE__,__LINE__)
-    
+
              call volume_block
              call metric_block
              call boundaryNormals
@@ -105,12 +105,12 @@ contains
              if (equations == RANSEquations .and. useApproxWallDistance) then
                 call updateWallDistancesQuickly(nn, 1, sps)
              end if
-          
+
             ! These arrays need to be restored before we can move to the next spectral instance.
              call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
              call EChk(ierr,__FILE__,__LINE__)
- 
-          
+
+
             end if
 
           ! Compute the pressures/viscositites
@@ -472,17 +472,17 @@ contains
           call setPointers_d(nn, 1, sps)
           ISIZE1OFDrfbcdata = nBocos
           ISIZE1OFDrfviscsubface = nViscBocos
-          
-          ! initalize the residuals for this block 
+
+          ! initalize the residuals for this block
           call initRes_block_d(1, nw, nn, sps)
-          
+
           ! Compute any source terms
           do iRegion=1, nActuatorRegions
              call sourceTerms_block_d(nn, .True. , iRegion, dummyReal, dummyReald)
           end do
 
           call timeStep_block_d(.false.)
-          
+
           !Compute turbulence residual for RANS equations
           if( equations == RANSEquations) then
              !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
@@ -749,7 +749,7 @@ contains
           end if
 
           call timeStep_block_b(.false.)
-          
+
           ! Just to be safe, zero the pLocald value...should not matter
           dummyReald = zero
           do iRegion=1, nActuatorRegions
