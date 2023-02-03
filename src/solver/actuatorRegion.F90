@@ -264,6 +264,7 @@ contains
     use utils, only : EChk, pointReduce, setPointers
     use communication, only : myID, adflow_comm_world, nProc
     use blockPointers, only : x, nDom
+    use commonFormats, only : sci12
     implicit none
 
     ! Input
@@ -394,20 +395,17 @@ contains
           write (101,*) "Nodes = ", nUnique, " Elements= ", totalCount, " ZONETYPE=FEBRICK"
           write (101,*) "DATAPACKING=BLOCK, VARLOCATION=([1,2,3]=NODAL, [4]=CELLCENTERED)"
 
-13        format (ES20.12)
-
           ! Write all the coordinates...this is horrendously slow...
           do iDim=1, 3
              do i=1, nUnique
-                write(101,13) uniquePts(iDim, i)
+                write(101, sci12) uniquePts(iDim, i)
              end do
           end do
 
           ! Write out the connectivity
-15        format(I8)
           do i=1, totalCount
              do j=1,8
-                write(101, 15, advance='no') link(allConn((i-1)*8 + j))
+                write(101, "(I8)", advance='no') link(allConn((i-1)*8 + j))
              end do
              write(101,"(1x)")
           end do
