@@ -1,5 +1,5 @@
-  module diffSizes
-    use constants, only : intType, realType
+module diffSizes
+    use constants, only: intType, realType
     implicit none
     save
 
@@ -110,4 +110,4 @@
     integer(kind=intType) :: ISIZE1OFDRFDTL, ISIZE2OFDRFDTL, ISIZE3OFDRFDTL
     integer(kind=intType) :: ISIZE1OFDRFDRFVISCSUBFACE_UTAU, ISIZE2OFDRFDRFVISCSUBFACE_UTAU
 
-  end module diffSizes
+end module diffSizes
