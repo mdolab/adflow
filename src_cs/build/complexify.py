@@ -113,7 +113,7 @@ patt_inc = re.compile(r'(\s*\d*\s*)include\s*("|\')(\w+.?\w*)(?:"|\')(.*)',
                       re.IGNORECASE)
 
 patt_ge = re.compile(r'(?:>=)|(?:\.\s*ge\s*\.)', re.IGNORECASE)
-patt_eq = re.compile(r'(?:==)|(?:\.\s*eq\s*\.)', re.IGNORECASE)
+patt_eq = re.compile(r'(?: == )|(?:\.\s*eq\s*\.)', re.IGNORECASE)
 patt_ne = re.compile(r'(?:/=)|(?:\.\s*ne\s*\.)', re.IGNORECASE)
 #patt_if = re.compile('(\s*\d*(?:\s*)|(?:\s*else\s*)|(\s*\w+\:\s*))(if\s*\()((?:.|\n)*$)',re.IGNORECASE|re.DOTALL)
 patt_if = re.compile('((?:\s*)|(?:\s*\w+:\s*))((?:else\s*|)if\s*\()(.*$)',re.IGNORECASE|re.DOTALL)
