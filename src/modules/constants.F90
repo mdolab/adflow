@@ -480,9 +480,9 @@ module constants
        iAreaPs     = 49, &
        iCpMin      = 50, &
        ! the following 3 reserve 3 slots each!
-       coForceX   = 51, &
-       coForceY   = 54, &
-       coForceZ   = 57, &
+       iCoForceX   = 51, &
+       iCoForceY   = 54, &
+       iCoForceZ   = 57, &
        iMassVi = 60
 
   ! Constants for zipper comm

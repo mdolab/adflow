@@ -71,12 +71,12 @@ contains
     forcev = globalvals(ifv:ifv+2, :)
     forcemd = globalvalsd(iflowfm:iflowfm+2, :)
     forcem = globalvals(iflowfm:iflowfm+2, :)
-    cofxd = globalvalsd(coforcex:coforcex+2, :)
-    cofx = globalvals(coforcex:coforcex+2, :)
-    cofyd = globalvalsd(coforcey:coforcey+2, :)
-    cofy = globalvals(coforcey:coforcey+2, :)
-    cofzd = globalvalsd(coforcez:coforcez+2, :)
-    cofz = globalvals(coforcez:coforcez+2, :)
+    cofxd = globalvalsd(icoforcex:icoforcex+2, :)
+    cofx = globalvals(icoforcex:icoforcex+2, :)
+    cofyd = globalvalsd(icoforcey:icoforcey+2, :)
+    cofy = globalvals(icoforcey:icoforcey+2, :)
+    cofzd = globalvalsd(icoforcez:icoforcez+2, :)
+    cofz = globalvals(icoforcez:icoforcez+2, :)
     momentd = globalvalsd(imp:imp+2, :) + globalvalsd(imv:imv+2, :) + &
 &     globalvalsd(iflowmm:iflowmm+2, :)
     moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
@@ -675,9 +675,9 @@ contains
     forcep = globalvals(ifp:ifp+2, :)
     forcev = globalvals(ifv:ifv+2, :)
     forcem = globalvals(iflowfm:iflowfm+2, :)
-    cofx = globalvals(coforcex:coforcex+2, :)
-    cofy = globalvals(coforcey:coforcey+2, :)
-    cofz = globalvals(coforcez:coforcez+2, :)
+    cofx = globalvals(icoforcex:icoforcex+2, :)
+    cofy = globalvals(icoforcey:icoforcey+2, :)
+    cofz = globalvals(icoforcez:icoforcez+2, :)
     moment = globalvals(imp:imp+2, :) + globalvals(imv:imv+2, :) + &
 &     globalvals(iflowmm:iflowmm+2, :)
     fact = two/(gammainf*machcoef*machcoef*surfaceref*lref*lref*pref)
@@ -1556,18 +1556,18 @@ contains
     localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
     localvaluesd(imv:imv+2) = localvaluesd(imv:imv+2) + mvd
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
-    localvaluesd(coforcex:coforcex+2) = localvaluesd(coforcex:coforcex+2&
-&     ) + cofsumfxd
-    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
-&     + cofsumfx
-    localvaluesd(coforcey:coforcey+2) = localvaluesd(coforcey:coforcey+2&
-&     ) + cofsumfyd
-    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
-&     + cofsumfy
-    localvaluesd(coforcez:coforcez+2) = localvaluesd(coforcez:coforcez+2&
-&     ) + cofsumfzd
-    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
-&     + cofsumfz
+    localvaluesd(icoforcex:icoforcex+2) = localvaluesd(icoforcex:&
+&     icoforcex+2) + cofsumfxd
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvaluesd(icoforcey:icoforcey+2) = localvaluesd(icoforcey:&
+&     icoforcey+2) + cofsumfyd
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvaluesd(icoforcez:icoforcez+2) = localvaluesd(icoforcez:&
+&     icoforcez+2) + cofsumfzd
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
     localvaluesd(isepsensor) = localvaluesd(isepsensor) + sepsensord
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvaluesd(icavitation) = localvaluesd(icavitation) + cavitationd
@@ -1959,12 +1959,12 @@ contains
     localvalues(ifv:ifv+2) = localvalues(ifv:ifv+2) + fv
     localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
-    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
-&     + cofsumfx
-    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
-&     + cofsumfy
-    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
-&     + cofsumfz
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvalues(icavitation) = localvalues(icavitation) + cavitation
     localvalues(icpmin) = localvalues(icpmin) + cpmin_ks_sum
@@ -2469,18 +2469,18 @@ contains
 &     mmomd
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
-    localvaluesd(coforcex:coforcex+2) = localvaluesd(coforcex:coforcex+2&
-&     ) + cofsumfxd
-    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
-&     + cofsumfx
-    localvaluesd(coforcey:coforcey+2) = localvaluesd(coforcey:coforcey+2&
-&     ) + cofsumfyd
-    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
-&     + cofsumfy
-    localvaluesd(coforcez:coforcez+2) = localvaluesd(coforcez:coforcez+2&
-&     ) + cofsumfzd
-    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
-&     + cofsumfz
+    localvaluesd(icoforcex:icoforcex+2) = localvaluesd(icoforcex:&
+&     icoforcex+2) + cofsumfxd
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvaluesd(icoforcey:icoforcey+2) = localvaluesd(icoforcey:&
+&     icoforcey+2) + cofsumfyd
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvaluesd(icoforcez:icoforcez+2) = localvaluesd(icoforcez:&
+&     icoforcez+2) + cofsumfzd
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
     localvaluesd(iareaptot) = localvaluesd(iareaptot) + area_ptotd
     localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvaluesd(iareaps) = localvaluesd(iareaps) + area_psd
@@ -2755,12 +2755,12 @@ contains
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
-    localvalues(coforcex:coforcex+2) = localvalues(coforcex:coforcex+2) &
-&     + cofsumfx
-    localvalues(coforcey:coforcey+2) = localvalues(coforcey:coforcey+2) &
-&     + cofsumfy
-    localvalues(coforcez:coforcez+2) = localvalues(coforcez:coforcez+2) &
-&     + cofsumfz
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
     localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvalues(iareaps) = localvalues(iareaps) + area_ps
     localvalues(imassvx) = localvalues(imassvx) + mass_vx

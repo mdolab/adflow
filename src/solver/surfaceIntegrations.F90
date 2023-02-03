@@ -43,9 +43,9 @@ contains
     forceV = globalvals(iFv:iFv+2, :)
     forceM = globalvals(iFlowFm:iFlowFm+2, :)
 
-    coFx = globalvals(coForceX:coForceX+2, :)
-    coFy = globalvals(coForceY:coForceY+2, :)
-    coFz = globalvals(coForceZ:coForceZ+2, :)
+    coFx = globalvals(iCoForceX:iCoForceX+2, :)
+    coFy = globalvals(iCoForceY:iCoForceY+2, :)
+    coFz = globalvals(iCoForceZ:iCoForceZ+2, :)
 
     Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
@@ -779,9 +779,9 @@ contains
     localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
     localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
     localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
-    localValues(coForceX:coForceX+2) = localValues(coForceX:coForceX+2) + COFSumFx
-    localValues(coForceY:coForceY+2) = localValues(coForceY:coForceY+2) + COFSumFy
-    localValues(coForceZ:coForceZ+2) = localValues(coForceZ:coForceZ+2) + COFSumFz
+    localValues(iCoForceX:iCoForceX+2) = localValues(iCoForceX:iCoForceX+2) + COFSumFx
+    localValues(iCoForceY:iCoForceY+2) = localValues(iCoForceY:iCoForceY+2) + COFSumFy
+    localValues(iCoForceZ:iCoForceZ+2) = localValues(iCoForceZ:iCoForceZ+2) + COFSumFz
     localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
     localValues(iCavitation) = localValues(iCavitation) + cavitation
     localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
@@ -1082,9 +1082,9 @@ contains
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
-    localValues(coForceX:coForceX+2) = localValues(coForceX:coForceX+2) + COFSumFx
-    localValues(coForceY:coForceY+2) = localValues(coForceY:coForceY+2) + COFSumFy
-    localValues(coForceZ:coForceZ+2) = localValues(coForceZ:coForceZ+2) + COFSumFz
+    localValues(iCoForceX:iCoForceX+2) = localValues(iCoForceX:iCoForceX+2) + COFSumFx
+    localValues(iCoForceY:iCoForceY+2) = localValues(iCoForceY:iCoForceY+2) + COFSumFy
+    localValues(iCoForceZ:iCoForceZ+2) = localValues(iCoForceZ:iCoForceZ+2) + COFSumFz
 
     localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
     localValues(iAreaPs) = localValues(iAreaPs) + area_Ps
