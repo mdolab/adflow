@@ -354,7 +354,8 @@ contains
 &   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
-    real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
+    real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
+&   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
 &   ks_exponent
@@ -469,25 +470,25 @@ contains
       mp(3) = mp(3) + mz*blk
 ! the force integral for the center of pressure computation.
 ! we need the cell centers wrt origin
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
+      xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1))
+      yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2))
+      zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3))
 ! accumulate in the sums. each force component is tracked separately
 ! force-x
-      cofsumfx(1) = cofsumfx(1) + xc*fx*blk
-      cofsumfx(2) = cofsumfx(2) + yc*fx*blk
-      cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+      cofsumfx(1) = cofsumfx(1) + xco*fx*blk
+      cofsumfx(2) = cofsumfx(2) + yco*fx*blk
+      cofsumfx(3) = cofsumfx(3) + zco*fx*blk
 ! force-y
-      cofsumfy(1) = cofsumfy(1) + xc*fy*blk
-      cofsumfy(2) = cofsumfy(2) + yc*fy*blk
-      cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+      cofsumfy(1) = cofsumfy(1) + xco*fy*blk
+      cofsumfy(2) = cofsumfy(2) + yco*fy*blk
+      cofsumfy(3) = cofsumfy(3) + zco*fy*blk
 ! force-z
-      cofsumfz(1) = cofsumfz(1) + xc*fz*blk
-      cofsumfz(2) = cofsumfz(2) + yc*fz*blk
-      cofsumfz(3) = cofsumfz(3) + zc*fz*blk
+      cofsumfz(1) = cofsumfz(1) + xco*fz*blk
+      cofsumfz(2) = cofsumfz(2) + yco*fz*blk
+      cofsumfz(3) = cofsumfz(3) + zco*fz*blk
 ! compute the r and n vectores for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
@@ -532,15 +533,10 @@ contains
       sensor = sensor*cellarea*blk
       sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
-      sepsensoravg(1) = sepsensoravg(1) + sensor*xc
-      sepsensoravg(2) = sepsensoravg(2) + sensor*yc
-      sepsensoravg(3) = sepsensoravg(3) + sensor*zc
+! x-y-zco are computed above for center of force computations
+      sepsensoravg(1) = sepsensoravg(1) + sensor*xco
+      sepsensoravg(2) = sepsensoravg(2) + sensor*yco
+      sepsensoravg(3) = sepsensoravg(3) + sensor*zco
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
@@ -614,25 +610,25 @@ contains
         mv(3) = mv(3) + mz*blk
 ! the force integral for the center of pressure computation.
 ! we need the cell centers wrt origin
-        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
-&         , 1))
-        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
-&         , 2))
-        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
-&         , 3))
+        xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+&
+&         1, 1))
+        yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+&
+&         1, 2))
+        zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+&
+&         1, 3))
 ! accumulate in the sums. each force component is tracked separately
 ! force-x
-        cofsumfx(1) = cofsumfx(1) + xc*fx*blk
-        cofsumfx(2) = cofsumfx(2) + yc*fx*blk
-        cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+        cofsumfx(1) = cofsumfx(1) + xco*fx*blk
+        cofsumfx(2) = cofsumfx(2) + yco*fx*blk
+        cofsumfx(3) = cofsumfx(3) + zco*fx*blk
 ! force-y
-        cofsumfy(1) = cofsumfy(1) + xc*fy*blk
-        cofsumfy(2) = cofsumfy(2) + yc*fy*blk
-        cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+        cofsumfy(1) = cofsumfy(1) + xco*fy*blk
+        cofsumfy(2) = cofsumfy(2) + yco*fy*blk
+        cofsumfy(3) = cofsumfy(3) + zco*fy*blk
 ! force-z
-        cofsumfz(1) = cofsumfz(1) + xc*fz*blk
-        cofsumfz(2) = cofsumfz(2) + yc*fz*blk
-        cofsumfz(3) = cofsumfz(3) + zc*fz*blk
+        cofsumfz(1) = cofsumfz(1) + xco*fz*blk
+        cofsumfz(2) = cofsumfz(2) + yco*fz*blk
+        cofsumfz(3) = cofsumfz(3) + zco*fz*blk
 ! compute the r and n vectors for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit

@@ -1287,8 +1287,9 @@ contains
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
-    real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
-    real(kind=realtype) :: xcd, ycd, zcd, rd(3)
+    real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
+&   , l
+    real(kind=realtype) :: xcd, xcod, ycd, ycod, zcd, zcod, rd(3)
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
 &   ks_exponent
@@ -1322,21 +1323,18 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
-    real(kind=realtype) :: tempd30
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd8(3)
+    real(kind=realtype) :: tempd8
     real(kind=realtype) :: tempd7
     real(kind=realtype) :: tempd6
-    real(kind=realtype) :: tempd5
+    real(kind=realtype) :: tempd5(3)
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tempd3
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd0(3)
-    real(kind=realtype) :: tempd29
-    real(kind=realtype) :: tempd28
     real(kind=realtype) :: tempd27
     real(kind=realtype) :: tempd26
     real(kind=realtype) :: tempd25
@@ -1348,12 +1346,12 @@ contains
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd19
     real(kind=realtype) :: tempd18
-    real(kind=realtype) :: tempd17
     real(kind=realtype) :: temp6
-    real(kind=realtype) :: tempd16
+    real(kind=realtype) :: tempd17
     real(kind=realtype) :: temp5
-    real(kind=realtype) :: tempd15
+    real(kind=realtype) :: tempd16
     real(kind=realtype) :: temp4
+    real(kind=realtype) :: tempd15
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -1442,25 +1440,25 @@ contains
       mp(3) = mp(3) + mz*blk
 ! the force integral for the center of pressure computation.
 ! we need the cell centers wrt origin
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
+      xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1))
+      yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2))
+      zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3))
 ! accumulate in the sums. each force component is tracked separately
 ! force-x
-      cofsumfx(1) = cofsumfx(1) + xc*fx*blk
-      cofsumfx(2) = cofsumfx(2) + yc*fx*blk
-      cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+      cofsumfx(1) = cofsumfx(1) + xco*fx*blk
+      cofsumfx(2) = cofsumfx(2) + yco*fx*blk
+      cofsumfx(3) = cofsumfx(3) + zco*fx*blk
 ! force-y
-      cofsumfy(1) = cofsumfy(1) + xc*fy*blk
-      cofsumfy(2) = cofsumfy(2) + yc*fy*blk
-      cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+      cofsumfy(1) = cofsumfy(1) + xco*fy*blk
+      cofsumfy(2) = cofsumfy(2) + yco*fy*blk
+      cofsumfy(3) = cofsumfy(3) + zco*fy*blk
 ! force-z
-      cofsumfz(1) = cofsumfz(1) + xc*fz*blk
-      cofsumfz(2) = cofsumfz(2) + yc*fz*blk
-      cofsumfz(3) = cofsumfz(3) + zc*fz*blk
+      cofsumfz(1) = cofsumfz(1) + xco*fz*blk
+      cofsumfz(2) = cofsumfz(2) + yco*fz*blk
+      cofsumfz(3) = cofsumfz(3) + zco*fz*blk
 ! compute the r and n vectores for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
@@ -1505,15 +1503,10 @@ contains
       sensor = sensor*cellarea*blk
       sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
-      sepsensoravg(1) = sepsensoravg(1) + sensor*xc
-      sepsensoravg(2) = sepsensoravg(2) + sensor*yc
-      sepsensoravg(3) = sepsensoravg(3) + sensor*zc
+! x-y-zco are computed above for center of force computations
+      sepsensoravg(1) = sepsensoravg(1) + sensor*xco
+      sepsensoravg(2) = sepsensoravg(2) + sensor*yco
+      sepsensoravg(3) = sepsensoravg(3) + sensor*zco
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
@@ -1534,13 +1527,16 @@ contains
 !
     if (bctype(mm) .eq. nswalladiabatic .or. bctype(mm) .eq. &
 &       nswallisothermal) then
+      call pushreal8(xco)
       call pushinteger4(i)
       call pushinteger4(j)
       call pushreal8array(n, 3)
       call pushreal8array(r, 3)
       call pushreal8(xc)
+      call pushreal8(zco)
       call pushinteger4(blk)
       call pushreal8(yc)
+      call pushreal8(yco)
       call pushreal8(zc)
       call pushcontrol1b(0)
     else
@@ -1610,15 +1606,12 @@ contains
 ! update the viscous force and moment coefficients, blanking as we go.
 ! the force integral for the center of pressure computation.
 ! we need the cell centers wrt origin
-        call pushreal8(xc)
-        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
-&         , 1))
-        call pushreal8(yc)
-        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
-&         , 2))
-        call pushreal8(zc)
-        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
-&         , 3))
+        xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+&
+&         1, 1))
+        yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+&
+&         1, 2))
+        zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+&
+&         1, 3))
 ! accumulate in the sums. each force component is tracked separately
 ! force-x
 ! force-y
@@ -1649,20 +1642,24 @@ contains
 ! as later on only the magnitude of the tangential
 ! component is important, there is no need to take the
 ! sign into account (it should be a minus sign).
+        mxd = blk*mvd(1)
         myd = blk*mvd(2)
         mzd = blk*mvd(3)
-        tempd18 = blk*mvaxisd
-        m0xd = n(1)*tempd18
-        m0yd = n(2)*tempd18
-        m0zd = n(3)*tempd18
-        fzd = blk*zc*cofsumfzd(3) - r(1)*m0yd + blk*xc*cofsumfzd(1) + &
-&         blk*yc*cofsumfzd(2) + r(2)*m0xd + bcdatad(mm)%fv(i, j, 3)
+        tempd15 = blk*mvaxisd
+        m0xd = n(1)*tempd15
+        m0yd = n(2)*tempd15
+        m0zd = n(3)*tempd15
+        fzd = blk*zco*cofsumfzd(3) - r(1)*m0yd + blk*xco*cofsumfzd(1) + &
+&         yc*mxd + blk*fvd(3) - xc*myd + blk*yco*cofsumfzd(2) + r(2)*&
+&         m0xd + bcdatad(mm)%fv(i, j, 3)
         bcdatad(mm)%fv(i, j, 3) = 0.0_8
-        fyd = r(1)*m0zd + blk*zc*cofsumfyd(3) + blk*xc*cofsumfyd(1) + &
-&         blk*yc*cofsumfyd(2) - r(3)*m0xd + bcdatad(mm)%fv(i, j, 2)
+        fyd = r(1)*m0zd + blk*zco*cofsumfyd(3) + blk*xco*cofsumfyd(1) - &
+&         zc*mxd + blk*fvd(2) + xc*mzd + blk*yco*cofsumfyd(2) - r(3)*&
+&         m0xd + bcdatad(mm)%fv(i, j, 2)
         bcdatad(mm)%fv(i, j, 2) = 0.0_8
-        fxd = blk*zc*cofsumfxd(3) - r(2)*m0zd + blk*yc*cofsumfxd(2) + r(&
-&         3)*m0yd + bcdatad(mm)%fv(i, j, 1)
+        fxd = blk*zco*cofsumfxd(3) - r(2)*m0zd + blk*xco*cofsumfxd(1) + &
+&         zc*myd + blk*fvd(1) - yc*mzd + blk*yco*cofsumfxd(2) + r(3)*&
+&         m0yd + bcdatad(mm)%fv(i, j, 1)
         bcdatad(mm)%fv(i, j, 1) = 0.0_8
         rd(1) = rd(1) + fy*m0zd
         rd(2) = rd(2) - fx*m0zd
@@ -1670,95 +1667,88 @@ contains
         rd(1) = rd(1) - fz*m0yd
         rd(2) = rd(2) + fz*m0xd
         rd(3) = rd(3) - fy*m0xd
-        tempd19 = fourth*rd(3)
+        tempd16 = fourth*rd(3)
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd16
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd16
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd16
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd16
+        rd(3) = 0.0_8
+        tempd17 = fourth*rd(2)
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd17
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd17
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd17
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd17
+        rd(2) = 0.0_8
+        tempd18 = fourth*rd(1)
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd18
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd18
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd18
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd18
+        rd(1) = 0.0_8
+        zcod = blk*fy*cofsumfyd(3) + blk*fx*cofsumfxd(3) + blk*fz*&
+&         cofsumfzd(3)
+        ycod = blk*fy*cofsumfyd(2) + blk*fx*cofsumfxd(2) + blk*fz*&
+&         cofsumfzd(2)
+        xcod = blk*fy*cofsumfyd(1) + blk*fx*cofsumfxd(1) + blk*fz*&
+&         cofsumfzd(1)
+        tempd19 = fourth*zcod
         xxd(i, j, 3) = xxd(i, j, 3) + tempd19
         xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd19
         xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd19
         xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd19
-        rd(3) = 0.0_8
-        tempd20 = fourth*rd(2)
+        tempd20 = fourth*ycod
         xxd(i, j, 2) = xxd(i, j, 2) + tempd20
         xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd20
         xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd20
         xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd20
-        rd(2) = 0.0_8
-        tempd21 = fourth*rd(1)
+        tempd21 = fourth*xcod
         xxd(i, j, 1) = xxd(i, j, 1) + tempd21
         xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd21
         xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd21
         xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd21
-        rd(1) = 0.0_8
-        zcd = blk*fy*cofsumfyd(3) + blk*fx*cofsumfxd(3) + blk*fz*&
-&         cofsumfzd(3)
-        ycd = blk*fy*cofsumfyd(2) + blk*fx*cofsumfxd(2) + blk*fz*&
-&         cofsumfzd(2)
-        xcd = blk*fy*cofsumfyd(1) + blk*fx*cofsumfxd(1) + blk*fz*&
-&         cofsumfzd(1)
-        call popreal8(zc)
+        xcd = fy*mzd - fz*myd
+        ycd = fz*mxd - fx*mzd
+        zcd = fx*myd - fy*mxd
         tempd22 = fourth*zcd
         xxd(i, j, 3) = xxd(i, j, 3) + tempd22
         xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd22
         xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd22
         xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd22
-        call popreal8(yc)
-        fxd = fxd + blk*fvd(1) - yc*mzd + zc*myd + blk*xc*cofsumfxd(1)
+        refpointd(3) = refpointd(3) - zcd
         tempd23 = fourth*ycd
         xxd(i, j, 2) = xxd(i, j, 2) + tempd23
         xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd23
         xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd23
         xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd23
-        call popreal8(xc)
+        refpointd(2) = refpointd(2) - ycd
         tempd24 = fourth*xcd
         xxd(i, j, 1) = xxd(i, j, 1) + tempd24
         xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd24
         xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd24
         xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd24
-        mxd = blk*mvd(1)
-        xcd = fy*mzd - fz*myd
-        fyd = fyd + blk*fvd(2) - zc*mxd + xc*mzd
-        ycd = fz*mxd - fx*mzd
-        zcd = fx*myd - fy*mxd
-        fzd = fzd + yc*mxd + blk*fvd(3) - xc*myd
-        tempd25 = fourth*zcd
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd25
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd25
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd25
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd25
-        refpointd(3) = refpointd(3) - zcd
-        tempd26 = fourth*ycd
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd26
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd26
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd26
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd26
-        refpointd(2) = refpointd(2) - ycd
-        tempd27 = fourth*xcd
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd27
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd27
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd27
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd27
         refpointd(1) = refpointd(1) - xcd
-        tempd28 = -(fact*pref*fzd)
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd28
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd28
-        tauzzd = ssi(i, j, 3)*tempd28
-        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd28
+        tempd25 = -(fact*pref*fzd)
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd25
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd25
+        tauzzd = ssi(i, j, 3)*tempd25
+        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd25
         prefd = prefd - fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+&
 &         tauzz*ssi(i, j, 3))*fzd
-        tempd30 = -(fact*pref*fyd)
-        tauyzd = ssi(i, j, 3)*tempd30 + ssi(i, j, 2)*tempd28
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd30
-        tauyyd = ssi(i, j, 2)*tempd30
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd30
-        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd30
+        tempd27 = -(fact*pref*fyd)
+        tauyzd = ssi(i, j, 3)*tempd27 + ssi(i, j, 2)*tempd25
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd27
+        tauyyd = ssi(i, j, 2)*tempd27
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd27
+        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd27
         prefd = prefd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+&
 &         tauyz*ssi(i, j, 3))*fyd
-        tempd29 = -(fact*pref*fxd)
-        tauxzd = ssi(i, j, 3)*tempd29 + ssi(i, j, 1)*tempd28
-        tauxyd = ssi(i, j, 2)*tempd29 + ssi(i, j, 1)*tempd30
-        tauxxd = ssi(i, j, 1)*tempd29
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd29
-        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd29
-        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd29
+        tempd26 = -(fact*pref*fxd)
+        tauxzd = ssi(i, j, 3)*tempd26 + ssi(i, j, 1)*tempd25
+        tauxyd = ssi(i, j, 2)*tempd26 + ssi(i, j, 1)*tempd27
+        tauxxd = ssi(i, j, 1)*tempd26
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd26
+        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd26
+        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd26
         prefd = prefd - fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+&
 &         tauxz*ssi(i, j, 3))*fxd
         viscsubfaced(mm)%tau(i, j, 6) = viscsubfaced(mm)%tau(i, j, 6) + &
@@ -1775,13 +1765,16 @@ contains
 &         tauxxd
       end do
       call popreal8(zc)
+      call popreal8(yco)
       call popreal8(yc)
       call popinteger4(blk)
+      call popreal8(zco)
       call popreal8(xc)
       call popreal8array(r, 3)
       call popreal8array(n, 3)
       call popinteger4(j)
       call popinteger4(i)
+      call popreal8(xco)
     else
       bcdatad(mm)%fv = 0.0_8
       rd = 0.0_8
@@ -1829,15 +1822,12 @@ contains
 ! update the inviscid force and moment coefficients. iblank as we sum
 ! the force integral for the center of pressure computation.
 ! we need the cell centers wrt origin
-      call pushreal8(xc)
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      call pushreal8(yc)
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      call pushreal8(zc)
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
+      xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1))
+      yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2))
+      zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3))
 ! accumulate in the sums. each force component is tracked separately
 ! force-x
 ! force-y
@@ -1881,15 +1871,7 @@ contains
       call pushreal8(sensor)
       sensor = sensor*cellarea*blk
 ! also accumulate into the sepsensoravg
-      call pushreal8(xc)
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      call pushreal8(yc)
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      call pushreal8(zc)
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
+! x-y-zco are computed above for center of force computations
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
@@ -1927,35 +1909,21 @@ contains
       else
         cellaread = 0.0_8
       end if
+      mxd = blk*mpd(1)
       myd = blk*mpd(2)
       mzd = blk*mpd(3)
-      tempd11 = blk*mpaxisd
-      m0xd = n(1)*tempd11
-      m0yd = n(2)*tempd11
-      m0zd = n(3)*tempd11
-      sensord = yc*sepsensoravgd(2) + sepsensord + xc*sepsensoravgd(1) +&
-&       zc*sepsensoravgd(3)
-      zcd = sensor*sepsensoravgd(3)
-      ycd = sensor*sepsensoravgd(2)
-      xcd = sensor*sepsensoravgd(1)
-      call popreal8(zc)
-      tempd5 = fourth*zcd
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd5
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd5
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd5
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd5
-      call popreal8(yc)
-      tempd6 = fourth*ycd
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd6
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd6
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd6
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd6
-      call popreal8(xc)
-      tempd7 = fourth*xcd
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd7
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd7
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd7
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd7
+      tempd8 = blk*mpaxisd
+      m0xd = n(1)*tempd8
+      m0yd = n(2)*tempd8
+      m0zd = n(3)*tempd8
+      sensord = yco*sepsensoravgd(2) + sepsensord + xco*sepsensoravgd(1)&
+&       + zco*sepsensoravgd(3)
+      zcod = blk*fz*cofsumfzd(3) + blk*fx*cofsumfxd(3) + blk*fy*&
+&       cofsumfyd(3) + sensor*sepsensoravgd(3)
+      ycod = blk*fz*cofsumfzd(2) + blk*fx*cofsumfxd(2) + blk*fy*&
+&       cofsumfyd(2) + sensor*sepsensoravgd(2)
+      xcod = blk*fz*cofsumfzd(1) + blk*fx*cofsumfxd(1) + blk*fy*&
+&       cofsumfyd(1) + sensor*sepsensoravgd(1)
       call popreal8(sensor)
       cellaread = cellaread + blk*sensor*sensord
       sensord = blk*cellarea*sensord
@@ -1973,16 +1941,16 @@ contains
       tmpd0 = vd
       temp0 = v(1)**2 + v(2)**2 + v(3)**2
       temp1 = sqrt(temp0)
-      tempd8 = tmpd0/(temp1+1e-16)
-      vd = tempd8
+      tempd5 = tmpd0/(temp1+1e-16)
+      vd = tempd5
       if (temp0 .eq. 0.0_8) then
-        tempd9 = 0.0
+        tempd6 = 0.0
       else
-        tempd9 = sum(-(v*tempd8/(temp1+1e-16)))/(2.0*temp1)
+        tempd6 = sum(-(v*tempd5/(temp1+1e-16)))/(2.0*temp1)
       end if
-      vd(1) = vd(1) + 2*v(1)*tempd9
-      vd(2) = vd(2) + 2*v(2)*tempd9
-      vd(3) = vd(3) + 2*v(3)*tempd9
+      vd(1) = vd(1) + 2*v(1)*tempd6
+      vd(2) = vd(2) + 2*v(2)*tempd6
+      vd(3) = vd(3) + 2*v(3)*tempd6
       ww2d(i, j, ivz) = ww2d(i, j, ivz) + vd(3)
       vd(3) = 0.0_8
       ww2d(i, j, ivy) = ww2d(i, j, ivy) + vd(2)
@@ -1993,22 +1961,25 @@ contains
       bcdatad(mm)%area(i, j) = 0.0_8
       if (ssi(i, j, 1)**2 + ssi(i, j, 2)**2 + ssi(i, j, 3)**2 .eq. 0.0_8&
 &     ) then
-        tempd10 = 0.0
+        tempd7 = 0.0
       else
-        tempd10 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+&
-&         ssi(i, j, 3)**2))
+        tempd7 = cellaread/(2.0*sqrt(ssi(i, j, 1)**2+ssi(i, j, 2)**2+ssi&
+&         (i, j, 3)**2))
       end if
-      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd10
-      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd10
-      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd10
-      fzd = blk*zc*cofsumfzd(3) - r(1)*m0yd + blk*xc*cofsumfzd(1) + blk*&
-&       yc*cofsumfzd(2) + r(2)*m0xd + bcdatad(mm)%fp(i, j, 3)
+      ssid(i, j, 1) = ssid(i, j, 1) + 2*ssi(i, j, 1)*tempd7
+      ssid(i, j, 2) = ssid(i, j, 2) + 2*ssi(i, j, 2)*tempd7
+      ssid(i, j, 3) = ssid(i, j, 3) + 2*ssi(i, j, 3)*tempd7
+      fzd = blk*zco*cofsumfzd(3) - r(1)*m0yd + blk*xco*cofsumfzd(1) + yc&
+&       *mxd + blk*fpd(3) - xc*myd + blk*yco*cofsumfzd(2) + r(2)*m0xd + &
+&       bcdatad(mm)%fp(i, j, 3)
       bcdatad(mm)%fp(i, j, 3) = 0.0_8
-      fyd = r(1)*m0zd + blk*zc*cofsumfyd(3) + blk*xc*cofsumfyd(1) + blk*&
-&       yc*cofsumfyd(2) - r(3)*m0xd + bcdatad(mm)%fp(i, j, 2)
+      fyd = r(1)*m0zd + blk*zco*cofsumfyd(3) + blk*xco*cofsumfyd(1) - zc&
+&       *mxd + blk*fpd(2) + xc*mzd + blk*yco*cofsumfyd(2) - r(3)*m0xd + &
+&       bcdatad(mm)%fp(i, j, 2)
       bcdatad(mm)%fp(i, j, 2) = 0.0_8
-      fxd = blk*zc*cofsumfxd(3) - r(2)*m0zd + blk*yc*cofsumfxd(2) + r(3)&
-&       *m0yd + bcdatad(mm)%fp(i, j, 1)
+      fxd = blk*zco*cofsumfxd(3) - r(2)*m0zd + blk*xco*cofsumfxd(1) + zc&
+&       *myd + blk*fpd(1) - yc*mzd + blk*yco*cofsumfxd(2) + r(3)*m0yd + &
+&       bcdatad(mm)%fp(i, j, 1)
       bcdatad(mm)%fp(i, j, 1) = 0.0_8
       rd(1) = rd(1) + fy*m0zd
       rd(2) = rd(2) - fx*m0zd
@@ -2016,55 +1987,42 @@ contains
       rd(1) = rd(1) - fz*m0yd
       rd(2) = rd(2) + fz*m0xd
       rd(3) = rd(3) - fy*m0xd
-      tempd12 = fourth*rd(3)
+      tempd9 = fourth*rd(3)
+      xxd(i, j, 3) = xxd(i, j, 3) + tempd9
+      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd9
+      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd9
+      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd9
+      rd(3) = 0.0_8
+      tempd10 = fourth*rd(2)
+      xxd(i, j, 2) = xxd(i, j, 2) + tempd10
+      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd10
+      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd10
+      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd10
+      rd(2) = 0.0_8
+      tempd11 = fourth*rd(1)
+      xxd(i, j, 1) = xxd(i, j, 1) + tempd11
+      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd11
+      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd11
+      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd11
+      rd(1) = 0.0_8
+      tempd12 = fourth*zcod
       xxd(i, j, 3) = xxd(i, j, 3) + tempd12
       xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd12
       xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd12
       xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd12
-      rd(3) = 0.0_8
-      tempd13 = fourth*rd(2)
+      tempd13 = fourth*ycod
       xxd(i, j, 2) = xxd(i, j, 2) + tempd13
       xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd13
       xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd13
       xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd13
-      rd(2) = 0.0_8
-      tempd14 = fourth*rd(1)
+      tempd14 = fourth*xcod
       xxd(i, j, 1) = xxd(i, j, 1) + tempd14
       xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd14
       xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd14
       xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd14
-      rd(1) = 0.0_8
-      zcd = blk*fy*cofsumfyd(3) + blk*fx*cofsumfxd(3) + blk*fz*cofsumfzd&
-&       (3)
-      ycd = blk*fy*cofsumfyd(2) + blk*fx*cofsumfxd(2) + blk*fz*cofsumfzd&
-&       (2)
-      xcd = blk*fy*cofsumfyd(1) + blk*fx*cofsumfxd(1) + blk*fz*cofsumfzd&
-&       (1)
-      call popreal8(zc)
-      tempd15 = fourth*zcd
-      xxd(i, j, 3) = xxd(i, j, 3) + tempd15
-      xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd15
-      xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd15
-      xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd15
-      call popreal8(yc)
-      fxd = fxd + blk*fpd(1) - yc*mzd + zc*myd + blk*xc*cofsumfxd(1)
-      tempd16 = fourth*ycd
-      xxd(i, j, 2) = xxd(i, j, 2) + tempd16
-      xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd16
-      xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd16
-      xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd16
-      call popreal8(xc)
-      tempd17 = fourth*xcd
-      xxd(i, j, 1) = xxd(i, j, 1) + tempd17
-      xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd17
-      xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd17
-      xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd17
-      mxd = blk*mpd(1)
       xcd = fy*mzd - fz*myd
-      fyd = fyd + blk*fpd(2) - zc*mxd + xc*mzd
       ycd = fz*mxd - fx*mzd
       zcd = fx*myd - fy*mxd
-      fzd = fzd + yc*mxd + blk*fpd(3) - xc*myd
       pm1d = ssi(i, j, 2)*fyd + ssi(i, j, 1)*fxd + ssi(i, j, 3)*fzd
       ssid(i, j, 3) = ssid(i, j, 3) + pm1*fzd
       ssid(i, j, 2) = ssid(i, j, 2) + pm1*fyd
@@ -2140,7 +2098,8 @@ contains
 &   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
-    real(kind=realtype) :: xc, yc, zc, qf(3), r(3), n(3), l
+    real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
+&   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
     real(kind=realtype) :: v(3), sensor, sensor1, cp, tmp, plocal, &
 &   ks_exponent
@@ -2255,25 +2214,25 @@ contains
       mp(3) = mp(3) + mz*blk
 ! the force integral for the center of pressure computation.
 ! we need the cell centers wrt origin
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
+      xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
+&       , 1))
+      yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
+&       , 2))
+      zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
+&       , 3))
 ! accumulate in the sums. each force component is tracked separately
 ! force-x
-      cofsumfx(1) = cofsumfx(1) + xc*fx*blk
-      cofsumfx(2) = cofsumfx(2) + yc*fx*blk
-      cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+      cofsumfx(1) = cofsumfx(1) + xco*fx*blk
+      cofsumfx(2) = cofsumfx(2) + yco*fx*blk
+      cofsumfx(3) = cofsumfx(3) + zco*fx*blk
 ! force-y
-      cofsumfy(1) = cofsumfy(1) + xc*fy*blk
-      cofsumfy(2) = cofsumfy(2) + yc*fy*blk
-      cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+      cofsumfy(1) = cofsumfy(1) + xco*fy*blk
+      cofsumfy(2) = cofsumfy(2) + yco*fy*blk
+      cofsumfy(3) = cofsumfy(3) + zco*fy*blk
 ! force-z
-      cofsumfz(1) = cofsumfz(1) + xc*fz*blk
-      cofsumfz(2) = cofsumfz(2) + yc*fz*blk
-      cofsumfz(3) = cofsumfz(3) + zc*fz*blk
+      cofsumfz(1) = cofsumfz(1) + xco*fz*blk
+      cofsumfz(2) = cofsumfz(2) + yco*fz*blk
+      cofsumfz(3) = cofsumfz(3) + zco*fz*blk
 ! compute the r and n vectores for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
@@ -2318,15 +2277,10 @@ contains
       sensor = sensor*cellarea*blk
       sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
-      xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1, &
-&       1))
-      yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1, &
-&       2))
-      zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1, &
-&       3))
-      sepsensoravg(1) = sepsensoravg(1) + sensor*xc
-      sepsensoravg(2) = sepsensoravg(2) + sensor*yc
-      sepsensoravg(3) = sepsensoravg(3) + sensor*zc
+! x-y-zco are computed above for center of force computations
+      sepsensoravg(1) = sepsensoravg(1) + sensor*xco
+      sepsensoravg(2) = sepsensoravg(2) + sensor*yco
+      sepsensoravg(3) = sepsensoravg(3) + sensor*zco
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
@@ -2400,25 +2354,25 @@ contains
         mv(3) = mv(3) + mz*blk
 ! the force integral for the center of pressure computation.
 ! we need the cell centers wrt origin
-        xc = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+1&
-&         , 1))
-        yc = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+1&
-&         , 2))
-        zc = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
-&         , 3))
+        xco = fourth*(xx(i, j, 1)+xx(i+1, j, 1)+xx(i, j+1, 1)+xx(i+1, j+&
+&         1, 1))
+        yco = fourth*(xx(i, j, 2)+xx(i+1, j, 2)+xx(i, j+1, 2)+xx(i+1, j+&
+&         1, 2))
+        zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+&
+&         1, 3))
 ! accumulate in the sums. each force component is tracked separately
 ! force-x
-        cofsumfx(1) = cofsumfx(1) + xc*fx*blk
-        cofsumfx(2) = cofsumfx(2) + yc*fx*blk
-        cofsumfx(3) = cofsumfx(3) + zc*fx*blk
+        cofsumfx(1) = cofsumfx(1) + xco*fx*blk
+        cofsumfx(2) = cofsumfx(2) + yco*fx*blk
+        cofsumfx(3) = cofsumfx(3) + zco*fx*blk
 ! force-y
-        cofsumfy(1) = cofsumfy(1) + xc*fy*blk
-        cofsumfy(2) = cofsumfy(2) + yc*fy*blk
-        cofsumfy(3) = cofsumfy(3) + zc*fy*blk
+        cofsumfy(1) = cofsumfy(1) + xco*fy*blk
+        cofsumfy(2) = cofsumfy(2) + yco*fy*blk
+        cofsumfy(3) = cofsumfy(3) + zco*fy*blk
 ! force-z
-        cofsumfz(1) = cofsumfz(1) + xc*fz*blk
-        cofsumfz(2) = cofsumfz(2) + yc*fz*blk
-        cofsumfz(3) = cofsumfz(3) + zc*fz*blk
+        cofsumfz(1) = cofsumfz(1) + xco*fz*blk
+        cofsumfz(2) = cofsumfz(2) + yco*fz*blk
+        cofsumfz(3) = cofsumfz(3) + zco*fz*blk
 ! compute the r and n vectors for the moment around an
 ! axis computation where r is the distance from the
 ! force to the first point on the axis and n is a unit
