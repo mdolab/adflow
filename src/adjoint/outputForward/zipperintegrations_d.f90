@@ -67,9 +67,12 @@ contains
     real(kind=realtype) :: vilocald, pratiod
     real(kind=realtype) :: mredim
     real(kind=realtype) :: mredimd
-    real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
-&   , my, mz
-    real(kind=realtype) :: xcd, ycd, zcd, mxd, myd, mzd
+    real(kind=realtype) :: internalflowfact, inflowfact, xc, xco, yc, &
+&   yco, zc, zco, mx, my, mz
+    real(kind=realtype) :: xcd, xcod, ycd, ycod, zcd, zcod, mxd, myd, &
+&   mzd
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
+    real(kind=realtype), dimension(3) :: cofsumfxd, cofsumfyd, cofsumfzd
     logical :: triisvalid
     intrinsic sqrt
     intrinsic size
@@ -91,6 +94,9 @@ contains
     mp = zero
     fmom = zero
     mmom = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
     massflowrate = zero
     area = zero
     mass_ptot = zero
@@ -122,6 +128,9 @@ contains
       inflowfact = -one
       mass_ptotd = 0.0_8
       mass_vid = 0.0_8
+      cofsumfxd = 0.0_8
+      cofsumfyd = 0.0_8
+      cofsumfzd = 0.0_8
       aread = 0.0_8
       mmomd = 0.0_8
       mass_vxd = 0.0_8
@@ -148,6 +157,9 @@ contains
     else
       mass_ptotd = 0.0_8
       mass_vid = 0.0_8
+      cofsumfxd = 0.0_8
+      cofsumfyd = 0.0_8
+      cofsumfzd = 0.0_8
       aread = 0.0_8
       mmomd = 0.0_8
       mass_vxd = 0.0_8
@@ -387,33 +399,34 @@ contains
 &           massflowratelocald)
           mass_nz = mass_nz + ss(3)*overcellarea*massflowratelocal
 ! compute the average cell center.
-          xc = zero
-          yc = zero
-          zc = zero
-          xcd = 0.0_8
-          ycd = 0.0_8
-          zcd = 0.0_8
+          xco = zero
+          yco = zero
+          zco = zero
+          xcod = 0.0_8
+          zcod = 0.0_8
+          ycod = 0.0_8
           do j=1,3
-            xcd = xcd + varsd(conn(1, i), izippflowx)
-            xc = xc + vars(conn(1, i), izippflowx)
-            ycd = ycd + varsd(conn(2, i), izippflowy)
-            yc = yc + vars(conn(2, i), izippflowy)
-            zcd = zcd + varsd(conn(3, i), izippflowz)
-            zc = zc + vars(conn(3, i), izippflowz)
+            xcod = xcod + varsd(conn(1, i), izippflowx)
+            xco = xco + vars(conn(1, i), izippflowx)
+            ycod = ycod + varsd(conn(2, i), izippflowy)
+            yco = yco + vars(conn(2, i), izippflowy)
+            zcod = zcod + varsd(conn(3, i), izippflowz)
+            zco = zco + vars(conn(3, i), izippflowz)
           end do
 ! finish average for cell center
-          xcd = third*xcd
-          xc = third*xc
-          ycd = third*ycd
-          yc = third*yc
-          zcd = third*zcd
-          zc = third*zc
-          xcd = xcd - refpointd(1)
-          xc = xc - refpoint(1)
-          ycd = ycd - refpointd(2)
-          yc = yc - refpoint(2)
-          zcd = zcd - refpointd(3)
-          zc = zc - refpoint(3)
+          xcod = third*xcod
+          xco = third*xco
+          ycod = third*ycod
+          yco = third*yco
+          zcod = third*zcod
+          zco = third*zco
+! x-y-zco is the cell center w.r.t. the origin, x-y-zc is w.r.t. the reference point
+          xcd = xcod - refpointd(1)
+          xc = xco - refpoint(1)
+          ycd = ycod - refpointd(2)
+          yc = yco - refpoint(2)
+          zcd = zcod - refpointd(3)
+          zc = zco - refpoint(3)
           pmd = -(pmd-pinf*prefd)
           pm = -(pm-pinf*pref)
           fxd = pmd*ss(1) + pm*ssd(1)
@@ -441,6 +454,28 @@ contains
           mp(2) = mp(2) + my
           mpd(3) = mpd(3) + mzd
           mp(3) = mp(3) + mz
+! center of force computations. here we accumulate in the sums.
+! force-x
+          cofsumfxd(1) = cofsumfxd(1) + xcod*fx + xco*fxd
+          cofsumfx(1) = cofsumfx(1) + xco*fx
+          cofsumfxd(2) = cofsumfxd(2) + ycod*fx + yco*fxd
+          cofsumfx(2) = cofsumfx(2) + yco*fx
+          cofsumfxd(3) = cofsumfxd(3) + zcod*fx + zco*fxd
+          cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+          cofsumfyd(1) = cofsumfyd(1) + xcod*fy + xco*fyd
+          cofsumfy(1) = cofsumfy(1) + xco*fy
+          cofsumfyd(2) = cofsumfyd(2) + ycod*fy + yco*fyd
+          cofsumfy(2) = cofsumfy(2) + yco*fy
+          cofsumfyd(3) = cofsumfyd(3) + zcod*fy + zco*fyd
+          cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+          cofsumfzd(1) = cofsumfzd(1) + xcod*fz + xco*fzd
+          cofsumfz(1) = cofsumfz(1) + xco*fz
+          cofsumfzd(2) = cofsumfzd(2) + ycod*fz + yco*fzd
+          cofsumfz(2) = cofsumfz(2) + yco*fz
+          cofsumfzd(3) = cofsumfzd(3) + zcod*fz + zco*fzd
+          cofsumfz(3) = cofsumfz(3) + zco*fz
 ! momentum forces
 ! get unit normal vector.
           ssd = (ssd*cellarea-ss*cellaread)/cellarea**2
@@ -477,6 +512,28 @@ contains
           mmom(2) = mmom(2) + my
           mmomd(3) = mmomd(3) + mzd
           mmom(3) = mmom(3) + mz
+! center of force computations. here we accumulate in the sums.
+! force-x
+          cofsumfxd(1) = cofsumfxd(1) + xcod*fx + xco*fxd
+          cofsumfx(1) = cofsumfx(1) + xco*fx
+          cofsumfxd(2) = cofsumfxd(2) + ycod*fx + yco*fxd
+          cofsumfx(2) = cofsumfx(2) + yco*fx
+          cofsumfxd(3) = cofsumfxd(3) + zcod*fx + zco*fxd
+          cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+          cofsumfyd(1) = cofsumfyd(1) + xcod*fy + xco*fyd
+          cofsumfy(1) = cofsumfy(1) + xco*fy
+          cofsumfyd(2) = cofsumfyd(2) + ycod*fy + yco*fyd
+          cofsumfy(2) = cofsumfy(2) + yco*fy
+          cofsumfyd(3) = cofsumfyd(3) + zcod*fy + zco*fyd
+          cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+          cofsumfzd(1) = cofsumfzd(1) + xcod*fz + xco*fzd
+          cofsumfz(1) = cofsumfz(1) + xco*fz
+          cofsumfzd(2) = cofsumfzd(2) + ycod*fz + yco*fzd
+          cofsumfz(2) = cofsumfz(2) + yco*fz
+          cofsumfzd(3) = cofsumfzd(3) + zcod*fz + zco*fzd
+          cofsumfz(3) = cofsumfz(3) + zco*fz
         end if
       end if
     end do
@@ -510,6 +567,18 @@ contains
 &     mmomd
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
+    localvaluesd(icoforcex:icoforcex+2) = localvaluesd(icoforcex:&
+&     icoforcex+2) + cofsumfxd
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvaluesd(icoforcey:icoforcey+2) = localvaluesd(icoforcey:&
+&     icoforcey+2) + cofsumfyd
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvaluesd(icoforcez:icoforcez+2) = localvaluesd(icoforcez:&
+&     icoforcez+2) + cofsumfzd
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
     localvaluesd(iareaptot) = localvaluesd(iareaptot) + area_ptotd
     localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvaluesd(iareaps) = localvaluesd(iareaps) + area_psd
@@ -567,8 +636,9 @@ contains
     real(kind=realtype) :: area_ptot, area_ps
     real(kind=realtype) :: govgm1, gm1ovg, viconst, vilocal, pratio
     real(kind=realtype) :: mredim
-    real(kind=realtype) :: internalflowfact, inflowfact, xc, yc, zc, mx&
-&   , my, mz
+    real(kind=realtype) :: internalflowfact, inflowfact, xc, xco, yc, &
+&   yco, zc, zco, mx, my, mz
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     logical :: triisvalid
     intrinsic sqrt
     intrinsic size
@@ -582,6 +652,9 @@ contains
     mp = zero
     fmom = zero
     mmom = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
     massflowrate = zero
     area = zero
     mass_ptot = zero
@@ -701,21 +774,22 @@ contains
           mass_ny = mass_ny + ss(2)*overcellarea*massflowratelocal
           mass_nz = mass_nz + ss(3)*overcellarea*massflowratelocal
 ! compute the average cell center.
-          xc = zero
-          yc = zero
-          zc = zero
+          xco = zero
+          yco = zero
+          zco = zero
           do j=1,3
-            xc = xc + vars(conn(1, i), izippflowx)
-            yc = yc + vars(conn(2, i), izippflowy)
-            zc = zc + vars(conn(3, i), izippflowz)
+            xco = xco + vars(conn(1, i), izippflowx)
+            yco = yco + vars(conn(2, i), izippflowy)
+            zco = zco + vars(conn(3, i), izippflowz)
           end do
 ! finish average for cell center
-          xc = third*xc
-          yc = third*yc
-          zc = third*zc
-          xc = xc - refpoint(1)
-          yc = yc - refpoint(2)
-          zc = zc - refpoint(3)
+          xco = third*xco
+          yco = third*yco
+          zco = third*zco
+! x-y-zco is the cell center w.r.t. the origin, x-y-zc is w.r.t. the reference point
+          xc = xco - refpoint(1)
+          yc = yco - refpoint(2)
+          zc = zco - refpoint(3)
           pm = -(pm-pinf*pref)
           fx = pm*ss(1)
           fy = pm*ss(2)
@@ -730,6 +804,19 @@ contains
           mp(1) = mp(1) + mx
           mp(2) = mp(2) + my
           mp(3) = mp(3) + mz
+! center of force computations. here we accumulate in the sums.
+! force-x
+          cofsumfx(1) = cofsumfx(1) + xco*fx
+          cofsumfx(2) = cofsumfx(2) + yco*fx
+          cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+          cofsumfy(1) = cofsumfy(1) + xco*fy
+          cofsumfy(2) = cofsumfy(2) + yco*fy
+          cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+          cofsumfz(1) = cofsumfz(1) + xco*fz
+          cofsumfz(2) = cofsumfz(2) + yco*fz
+          cofsumfz(3) = cofsumfz(3) + zco*fz
 ! momentum forces
 ! get unit normal vector.
           ss = ss/cellarea
@@ -747,6 +834,19 @@ contains
           mmom(1) = mmom(1) + mx
           mmom(2) = mmom(2) + my
           mmom(3) = mmom(3) + mz
+! center of force computations. here we accumulate in the sums.
+! force-x
+          cofsumfx(1) = cofsumfx(1) + xco*fx
+          cofsumfx(2) = cofsumfx(2) + yco*fx
+          cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+          cofsumfy(1) = cofsumfy(1) + xco*fy
+          cofsumfy(2) = cofsumfy(2) + yco*fy
+          cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+          cofsumfz(1) = cofsumfz(1) + xco*fz
+          cofsumfz(2) = cofsumfz(2) + yco*fz
+          cofsumfz(3) = cofsumfz(3) + zco*fz
         end if
       end if
     end do
@@ -765,6 +865,12 @@ contains
     localvalues(iflowmp:iflowmp+2) = localvalues(iflowmp:iflowmp+2) + mp
     localvalues(iflowmm:iflowmm+2) = localvalues(iflowmm:iflowmm+2) + &
 &     mmom
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
     localvalues(iareaptot) = localvalues(iareaptot) + area_ptot
     localvalues(iareaps) = localvalues(iareaps) + area_ps
     localvalues(imassvx) = localvalues(imassvx) + mass_vx
@@ -799,6 +905,8 @@ contains
 ! working
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
+    real(kind=realtype), dimension(3) :: cofsumfxd, cofsumfyd, cofsumfzd
     integer(kind=inttype) :: i, j
     real(kind=realtype), dimension(3) :: ss, norm, refpoint
     real(kind=realtype), dimension(3) :: ssd, normd, refpointd
@@ -806,10 +914,10 @@ contains
 &   , x3
     real(kind=realtype), dimension(3) :: p1d, p2d, p3d, v1d, v2d, v3d, &
 &   x1d, x2d, x3d
-    real(kind=realtype) :: fact, triarea, fx, fy, fz, mx, my, mz, xc, yc&
-&   , zc
+    real(kind=realtype) :: fact, triarea, fx, fy, fz, mx, my, mz, xc, &
+&   xco, yc, yco, zc, zco
     real(kind=realtype) :: triaread, fxd, fyd, fzd, mxd, myd, mzd, xcd, &
-&   ycd, zcd
+&   xcod, ycd, ycod, zcd, zcod
     intrinsic size
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
@@ -826,6 +934,12 @@ contains
     fv = zero
     mp = zero
     mv = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
+    cofsumfxd = 0.0_8
+    cofsumfyd = 0.0_8
+    cofsumfzd = 0.0_8
     normd = 0.0_8
     fpd = 0.0_8
     fvd = 0.0_8
@@ -850,18 +964,18 @@ contains
         triaread = third*result1d
         triarea = result1*third
 ! compute the average cell center.
-        xcd = third*(x1d(1)+x2d(1)+x3d(1))
-        xc = third*(x1(1)+x2(1)+x3(1))
-        ycd = third*(x1d(2)+x2d(2)+x3d(2))
-        yc = third*(x1(2)+x2(2)+x3(2))
-        zcd = third*(x1d(3)+x2d(3)+x3d(3))
-        zc = third*(x1(3)+x2(3)+x3(3))
-        xcd = xcd - refpointd(1)
-        xc = xc - refpoint(1)
-        ycd = ycd - refpointd(2)
-        yc = yc - refpoint(2)
-        zcd = zcd - refpointd(3)
-        zc = zc - refpoint(3)
+        xcod = third*(x1d(1)+x2d(1)+x3d(1))
+        xco = third*(x1(1)+x2(1)+x3(1))
+        ycod = third*(x1d(2)+x2d(2)+x3d(2))
+        yco = third*(x1(2)+x2(2)+x3(2))
+        zcod = third*(x1d(3)+x2d(3)+x3d(3))
+        zco = third*(x1(3)+x2(3)+x3(3))
+        xcd = xcod - refpointd(1)
+        xc = xco - refpoint(1)
+        ycd = ycod - refpointd(2)
+        yc = yco - refpoint(2)
+        zcd = zcod - refpointd(3)
+        zc = zco - refpoint(3)
 ! update the pressure force and moment coefficients.
         p1d = varsd(conn(1, i), izippwalltpx:izippwalltpz)
         p1 = vars(conn(1, i), izippwalltpx:izippwalltpz)
@@ -896,6 +1010,28 @@ contains
         mp(2) = mp(2) + my
         mpd(3) = mpd(3) + mzd
         mp(3) = mp(3) + mz
+! accumulate in the sums. each force component is tracked separately
+! force-x
+        cofsumfxd(1) = cofsumfxd(1) + xcod*fx + xco*fxd
+        cofsumfx(1) = cofsumfx(1) + xco*fx
+        cofsumfxd(2) = cofsumfxd(2) + ycod*fx + yco*fxd
+        cofsumfx(2) = cofsumfx(2) + yco*fx
+        cofsumfxd(3) = cofsumfxd(3) + zcod*fx + zco*fxd
+        cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+        cofsumfyd(1) = cofsumfyd(1) + xcod*fy + xco*fyd
+        cofsumfy(1) = cofsumfy(1) + xco*fy
+        cofsumfyd(2) = cofsumfyd(2) + ycod*fy + yco*fyd
+        cofsumfy(2) = cofsumfy(2) + yco*fy
+        cofsumfyd(3) = cofsumfyd(3) + zcod*fy + zco*fyd
+        cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+        cofsumfzd(1) = cofsumfzd(1) + xcod*fz + xco*fzd
+        cofsumfz(1) = cofsumfz(1) + xco*fz
+        cofsumfzd(2) = cofsumfzd(2) + ycod*fz + yco*fzd
+        cofsumfz(2) = cofsumfz(2) + yco*fz
+        cofsumfzd(3) = cofsumfzd(3) + zcod*fz + zco*fzd
+        cofsumfz(3) = cofsumfz(3) + zco*fz
 ! update the viscous force and moment coefficients
         v1d = varsd(conn(1, i), izippwalltvx:izippwalltvz)
         v1 = vars(conn(1, i), izippwalltvx:izippwalltvz)
@@ -931,6 +1067,28 @@ contains
         mv(2) = mv(2) + my
         mvd(3) = mvd(3) + mzd
         mv(3) = mv(3) + mz
+! accumulate in the sums. each force component is tracked separately
+! force-x
+        cofsumfxd(1) = cofsumfxd(1) + xcod*fx + xco*fxd
+        cofsumfx(1) = cofsumfx(1) + xco*fx
+        cofsumfxd(2) = cofsumfxd(2) + ycod*fx + yco*fxd
+        cofsumfx(2) = cofsumfx(2) + yco*fx
+        cofsumfxd(3) = cofsumfxd(3) + zcod*fx + zco*fxd
+        cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+        cofsumfyd(1) = cofsumfyd(1) + xcod*fy + xco*fyd
+        cofsumfy(1) = cofsumfy(1) + xco*fy
+        cofsumfyd(2) = cofsumfyd(2) + ycod*fy + yco*fyd
+        cofsumfy(2) = cofsumfy(2) + yco*fy
+        cofsumfyd(3) = cofsumfyd(3) + zcod*fy + zco*fyd
+        cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+        cofsumfzd(1) = cofsumfzd(1) + xcod*fz + xco*fzd
+        cofsumfz(1) = cofsumfz(1) + xco*fz
+        cofsumfzd(2) = cofsumfzd(2) + ycod*fz + yco*fzd
+        cofsumfz(2) = cofsumfz(2) + yco*fz
+        cofsumfzd(3) = cofsumfzd(3) + zcod*fz + zco*fzd
+        cofsumfz(3) = cofsumfz(3) + zco*fz
       end if
     end do
 ! increment into the local vector
@@ -942,6 +1100,18 @@ contains
     localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
     localvaluesd(imv:imv+2) = localvaluesd(imv:imv+2) + mvd
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
+    localvaluesd(icoforcex:icoforcex+2) = localvaluesd(icoforcex:&
+&     icoforcex+2) + cofsumfxd
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvaluesd(icoforcey:icoforcey+2) = localvaluesd(icoforcey:&
+&     icoforcey+2) + cofsumfyd
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvaluesd(icoforcez:icoforcez+2) = localvaluesd(icoforcez:&
+&     icoforcez+2) + cofsumfzd
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
   end subroutine wallintegrationzipper_d
   subroutine wallintegrationzipper(conn, fams, vars, localvalues, &
 &   famlist, sps)
@@ -960,12 +1130,13 @@ contains
     integer(kind=inttype), intent(in) :: sps
 ! working
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
+    real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     integer(kind=inttype) :: i, j
     real(kind=realtype), dimension(3) :: ss, norm, refpoint
     real(kind=realtype), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2&
 &   , x3
-    real(kind=realtype) :: fact, triarea, fx, fy, fz, mx, my, mz, xc, yc&
-&   , zc
+    real(kind=realtype) :: fact, triarea, fx, fy, fz, mx, my, mz, xc, &
+&   xco, yc, yco, zc, zco
     intrinsic size
     real(kind=realtype) :: result1
 ! determine the reference point for the moment computation in
@@ -977,6 +1148,9 @@ contains
     fv = zero
     mp = zero
     mv = zero
+    cofsumfx = zero
+    cofsumfy = zero
+    cofsumfz = zero
     do i=1,size(conn, 2)
       if (faminlist(fams(i), famlist)) then
 ! get the nodes of triangle.
@@ -990,12 +1164,12 @@ contains
         result1 = mynorm2(ss)
         triarea = result1*third
 ! compute the average cell center.
-        xc = third*(x1(1)+x2(1)+x3(1))
-        yc = third*(x1(2)+x2(2)+x3(2))
-        zc = third*(x1(3)+x2(3)+x3(3))
-        xc = xc - refpoint(1)
-        yc = yc - refpoint(2)
-        zc = zc - refpoint(3)
+        xco = third*(x1(1)+x2(1)+x3(1))
+        yco = third*(x1(2)+x2(2)+x3(2))
+        zco = third*(x1(3)+x2(3)+x3(3))
+        xc = xco - refpoint(1)
+        yc = yco - refpoint(2)
+        zc = zco - refpoint(3)
 ! update the pressure force and moment coefficients.
         p1 = vars(conn(1, i), izippwalltpx:izippwalltpz)
         p2 = vars(conn(2, i), izippwalltpx:izippwalltpz)
@@ -1012,6 +1186,19 @@ contains
         mp(1) = mp(1) + mx
         mp(2) = mp(2) + my
         mp(3) = mp(3) + mz
+! accumulate in the sums. each force component is tracked separately
+! force-x
+        cofsumfx(1) = cofsumfx(1) + xco*fx
+        cofsumfx(2) = cofsumfx(2) + yco*fx
+        cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+        cofsumfy(1) = cofsumfy(1) + xco*fy
+        cofsumfy(2) = cofsumfy(2) + yco*fy
+        cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+        cofsumfz(1) = cofsumfz(1) + xco*fz
+        cofsumfz(2) = cofsumfz(2) + yco*fz
+        cofsumfz(3) = cofsumfz(3) + zco*fz
 ! update the viscous force and moment coefficients
         v1 = vars(conn(1, i), izippwalltvx:izippwalltvz)
         v2 = vars(conn(2, i), izippwalltvx:izippwalltvz)
@@ -1029,6 +1216,19 @@ contains
         mv(1) = mv(1) + mx
         mv(2) = mv(2) + my
         mv(3) = mv(3) + mz
+! accumulate in the sums. each force component is tracked separately
+! force-x
+        cofsumfx(1) = cofsumfx(1) + xco*fx
+        cofsumfx(2) = cofsumfx(2) + yco*fx
+        cofsumfx(3) = cofsumfx(3) + zco*fx
+! force-y
+        cofsumfy(1) = cofsumfy(1) + xco*fy
+        cofsumfy(2) = cofsumfy(2) + yco*fy
+        cofsumfy(3) = cofsumfy(3) + zco*fy
+! force-z
+        cofsumfz(1) = cofsumfz(1) + xco*fz
+        cofsumfz(2) = cofsumfz(2) + yco*fz
+        cofsumfz(3) = cofsumfz(3) + zco*fz
       end if
     end do
 ! increment into the local vector
@@ -1036,5 +1236,11 @@ contains
     localvalues(ifv:ifv+2) = localvalues(ifv:ifv+2) + fv
     localvalues(imp:imp+2) = localvalues(imp:imp+2) + mp
     localvalues(imv:imv+2) = localvalues(imv:imv+2) + mv
+    localvalues(icoforcex:icoforcex+2) = localvalues(icoforcex:icoforcex&
+&     +2) + cofsumfx
+    localvalues(icoforcey:icoforcey+2) = localvalues(icoforcey:icoforcey&
+&     +2) + cofsumfy
+    localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
+&     +2) + cofsumfz
   end subroutine wallintegrationzipper
 end module zipperintegrations_d

@@ -2341,28 +2341,30 @@ contains
 &       , j+1, 3))
       zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &       , 3))
+! center of force computations. here we accumulate in the sums.
 ! accumulate in the sums. each force component is tracked separately
+! blanking is included in the mdot multiplier for the force.
 ! force-x
-      cofsumfxd(1) = cofsumfxd(1) + blk*(xcod*fx+xco*fxd)
-      cofsumfx(1) = cofsumfx(1) + xco*fx*blk
-      cofsumfxd(2) = cofsumfxd(2) + blk*(ycod*fx+yco*fxd)
-      cofsumfx(2) = cofsumfx(2) + yco*fx*blk
-      cofsumfxd(3) = cofsumfxd(3) + blk*(zcod*fx+zco*fxd)
-      cofsumfx(3) = cofsumfx(3) + zco*fx*blk
+      cofsumfxd(1) = cofsumfxd(1) + xcod*fx + xco*fxd
+      cofsumfx(1) = cofsumfx(1) + xco*fx
+      cofsumfxd(2) = cofsumfxd(2) + ycod*fx + yco*fxd
+      cofsumfx(2) = cofsumfx(2) + yco*fx
+      cofsumfxd(3) = cofsumfxd(3) + zcod*fx + zco*fxd
+      cofsumfx(3) = cofsumfx(3) + zco*fx
 ! force-y
-      cofsumfyd(1) = cofsumfyd(1) + blk*(xcod*fy+xco*fyd)
-      cofsumfy(1) = cofsumfy(1) + xco*fy*blk
-      cofsumfyd(2) = cofsumfyd(2) + blk*(ycod*fy+yco*fyd)
-      cofsumfy(2) = cofsumfy(2) + yco*fy*blk
-      cofsumfyd(3) = cofsumfyd(3) + blk*(zcod*fy+zco*fyd)
-      cofsumfy(3) = cofsumfy(3) + zco*fy*blk
+      cofsumfyd(1) = cofsumfyd(1) + xcod*fy + xco*fyd
+      cofsumfy(1) = cofsumfy(1) + xco*fy
+      cofsumfyd(2) = cofsumfyd(2) + ycod*fy + yco*fyd
+      cofsumfy(2) = cofsumfy(2) + yco*fy
+      cofsumfyd(3) = cofsumfyd(3) + zcod*fy + zco*fyd
+      cofsumfy(3) = cofsumfy(3) + zco*fy
 ! force-z
-      cofsumfzd(1) = cofsumfzd(1) + blk*(xcod*fz+xco*fzd)
-      cofsumfz(1) = cofsumfz(1) + xco*fz*blk
-      cofsumfzd(2) = cofsumfzd(2) + blk*(ycod*fz+yco*fzd)
-      cofsumfz(2) = cofsumfz(2) + yco*fz*blk
-      cofsumfzd(3) = cofsumfzd(3) + blk*(zcod*fz+zco*fzd)
-      cofsumfz(3) = cofsumfz(3) + zco*fz*blk
+      cofsumfzd(1) = cofsumfzd(1) + xcod*fz + xco*fzd
+      cofsumfz(1) = cofsumfz(1) + xco*fz
+      cofsumfzd(2) = cofsumfzd(2) + ycod*fz + yco*fzd
+      cofsumfz(2) = cofsumfz(2) + yco*fz
+      cofsumfzd(3) = cofsumfzd(3) + zcod*fz + zco*fzd
+      cofsumfz(3) = cofsumfz(3) + zco*fz
 ! momentum forces are a little tricky.  we negate because
 ! have to re-apply fact to massflowratelocal to undoo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.
@@ -2679,19 +2681,21 @@ contains
 &       , 2))
       zco = fourth*(xx(i, j, 3)+xx(i+1, j, 3)+xx(i, j+1, 3)+xx(i+1, j+1&
 &       , 3))
+! center of force computations. here we accumulate in the sums.
 ! accumulate in the sums. each force component is tracked separately
+! blanking is included in the mdot multiplier for the force.
 ! force-x
-      cofsumfx(1) = cofsumfx(1) + xco*fx*blk
-      cofsumfx(2) = cofsumfx(2) + yco*fx*blk
-      cofsumfx(3) = cofsumfx(3) + zco*fx*blk
+      cofsumfx(1) = cofsumfx(1) + xco*fx
+      cofsumfx(2) = cofsumfx(2) + yco*fx
+      cofsumfx(3) = cofsumfx(3) + zco*fx
 ! force-y
-      cofsumfy(1) = cofsumfy(1) + xco*fy*blk
-      cofsumfy(2) = cofsumfy(2) + yco*fy*blk
-      cofsumfy(3) = cofsumfy(3) + zco*fy*blk
+      cofsumfy(1) = cofsumfy(1) + xco*fy
+      cofsumfy(2) = cofsumfy(2) + yco*fy
+      cofsumfy(3) = cofsumfy(3) + zco*fy
 ! force-z
-      cofsumfz(1) = cofsumfz(1) + xco*fz*blk
-      cofsumfz(2) = cofsumfz(2) + yco*fz*blk
-      cofsumfz(3) = cofsumfz(3) + zco*fz*blk
+      cofsumfz(1) = cofsumfz(1) + xco*fz
+      cofsumfz(2) = cofsumfz(2) + yco*fz
+      cofsumfz(3) = cofsumfz(3) + zco*fz
 ! momentum forces are a little tricky.  we negate because
 ! have to re-apply fact to massflowratelocal to undoo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.

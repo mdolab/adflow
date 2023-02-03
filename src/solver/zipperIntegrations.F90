@@ -37,7 +37,8 @@ contains
     real(kind=realType) :: area_Ptot, area_Ps
     real(kind=realType) ::  govgm1, gm1ovg, viConst, viLocal, pratio
     real(kind=realType) ::  mReDim
-    real(kind=realType) :: internalFlowFact, inflowFact, xc, yc, zc, mx, my, mz
+    real(kind=realType) :: internalFlowFact, inflowFact, xc, xco, yc, yco, zc, zco, mx, my, mz
+    real(kind=realType), dimension(3)  :: COFSumFx, COFSumFy, COFSumFz
 
     logical :: triIsValid
 
@@ -46,6 +47,10 @@ contains
     Mp = zero
     FMom = zero
     MMom = zero
+
+    COFSumFx = zero
+    COFSumFy = zero
+    COFSumFz = zero
 
     massFlowRate = zero
     area = zero
@@ -186,23 +191,24 @@ contains
 
 
              ! Compute the average cell center.
-             xc = zero
-             yc = zero
-             zc = zero
+             xco = zero
+             yco = zero
+             zco = zero
              do j=1,3
-                xc = xc + (vars(conn(1, i), iZippFlowX))
-                yc = yc + (vars(conn(2, i), iZippFlowY))
-                zc = zc + (vars(conn(3, i), iZippFlowZ))
+                xco = xco + (vars(conn(1, i), iZippFlowX))
+                yco = yco + (vars(conn(2, i), iZippFlowY))
+                zco = zco + (vars(conn(3, i), iZippFlowZ))
              end do
 
              ! Finish average for cell center
-             xc = third*xc
-             yc = third*yc
-             zc = third*zc
+             xco = third*xco
+             yco = third*yco
+             zco = third*zco
 
-             xc = xc - refPoint(1)
-             yc = yc - refPoint(2)
-             zc = zc - refPoint(3)
+             ! x-y-zco is the cell center w.r.t. the origin, x-y-zc is w.r.t. the reference point
+             xc = xco - refPoint(1)
+             yc = yco - refPoint(2)
+             zc = zco - refPoint(3)
 
              pm = -(pm-pInf*pRef)
              fx = pm*ss(1)
@@ -221,6 +227,22 @@ contains
              Mp(1) = Mp(1) + mx
              Mp(2) = Mp(2) + my
              Mp(3) = Mp(3) + mz
+
+             ! Center of force computations. Here we accumulate in the sums.
+             ! Force-X
+             COFSumFx(1) = COFSumFx(1) + xco * fx
+             COFSumFx(2) = COFSumFx(2) + yco * fx
+             COFSumFx(3) = COFSumFx(3) + zco * fx
+
+             ! Force-Y
+             COFSumFy(1) = COFSumFy(1) + xco * fy
+             COFSumFy(2) = COFSumFy(2) + yco * fy
+             COFSumFy(3) = COFSumFy(3) + zco * fy
+
+             ! Force-Z
+             COFSumFz(1) = COFSumFz(1) + xco * fz
+             COFSumFz(2) = COFSumFz(2) + yco * fz
+             COFSumFz(3) = COFSumFz(3) + zco * fz
 
              ! Momentum forces
 
@@ -243,6 +265,22 @@ contains
              MMom(1) = MMom(1) + mx
              MMom(2) = MMom(2) + my
              MMom(3) = MMom(3) + mz
+
+             ! Center of force computations. Here we accumulate in the sums.
+             ! Force-X
+             COFSumFx(1) = COFSumFx(1) + xco * fx
+             COFSumFx(2) = COFSumFx(2) + yco * fx
+             COFSumFx(3) = COFSumFx(3) + zco * fx
+
+             ! Force-Y
+             COFSumFy(1) = COFSumFy(1) + xco * fy
+             COFSumFy(2) = COFSumFy(2) + yco * fy
+             COFSumFy(3) = COFSumFy(3) + zco * fy
+
+             ! Force-Z
+             COFSumFz(1) = COFSumFz(1) + xco * fz
+             COFSumFz(2) = COFSumFz(2) + yco * fz
+             COFSumFz(3) = COFSumFz(3) + zco * fz
           end if validTrianlge
        end if
     enddo
@@ -260,6 +298,10 @@ contains
     localValues(iFlowFm:iFlowFm+2)   = localValues(iFlowFm:iFlowFm+2) + FMom
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
+
+    localValues(iCoForceX:iCoForceX+2) = localValues(iCoForceX:iCoForceX+2) + COFSumFx
+    localValues(iCoForceY:iCoForceY+2) = localValues(iCoForceY:iCoForceY+2) + COFSumFy
+    localValues(iCoForceZ:iCoForceZ+2) = localValues(iCoForceZ:iCoForceZ+2) + COFSumFz
 
     localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
     localValues(iAreaPs) = localValues(iAreaPs) + area_Ps
@@ -294,12 +336,14 @@ contains
 
     ! Working
     real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
+    real(kind=realType), dimension(3) :: COFSumFx, COFSumFy, COFSumFz
 
 
     integer(kind=intType) :: i, j
     real(kind=realType), dimension(3) :: ss, norm, refPoint
     real(kind=realType), dimension(3) :: p1, p2, p3, v1, v2, v3, x1, x2, x3
-    real(kind=realType) :: fact, triArea, fx, fy, fz, mx, my, mz, xc, yc, zc
+    real(kind=realType) :: fact, triArea, fx, fy, fz, mx, my, mz, xc, xco, yc, yco, zc, zco
+
     ! Determine the reference point for the moment computation in
     ! meters.
     refPoint(1) = LRef*pointRef(1)
@@ -309,6 +353,9 @@ contains
     Fv = zero
     Mp = zero
     Mv = zero
+    COFSumFx = zero
+    COFSumFy = zero
+    COFSumFz = zero
 
     !$AD II-LOOP
     do i=1, size(conn, 2)
@@ -325,13 +372,13 @@ contains
           triArea = mynorm2(ss)*third
 
           ! Compute the average cell center.
-          xc = third*(x1(1)+x2(1)+x3(1))
-          yc = third*(x1(2)+x2(2)+x3(2))
-          zc = third*(x1(3)+x2(3)+x3(3))
+          xco = third*(x1(1)+x2(1)+x3(1))
+          yco = third*(x1(2)+x2(2)+x3(2))
+          zco = third*(x1(3)+x2(3)+x3(3))
 
-          xc = xc - refPoint(1)
-          yc = yc - refPoint(2)
-          zc = zc - refPoint(3)
+          xc = xco - refPoint(1)
+          yc = yco - refPoint(2)
+          zc = zco - refPoint(3)
 
           ! Update the pressure force and moment coefficients.
           p1 = vars(conn(1, i), iZippWallTpx:iZippWallTpz)
@@ -354,6 +401,23 @@ contains
           Mp(2) = Mp(2) + my
           Mp(3) = Mp(3) + mz
 
+          ! accumulate in the sums. each force component is tracked separately
+
+          ! Force-X
+          COFSumFx(1) = COFSumFx(1) + xco * fx
+          COFSumFx(2) = COFSumFx(2) + yco * fx
+          COFSumFx(3) = COFSumFx(3) + zco * fx
+
+          ! Force-Y
+          COFSumFy(1) = COFSumFy(1) + xco * fy
+          COFSumFy(2) = COFSumFy(2) + yco * fy
+          COFSumFy(3) = COFSumFy(3) + zco * fy
+
+          ! Force-Z
+          COFSumFz(1) = COFSumFz(1) + xco * fz
+          COFSumFz(2) = COFSumFz(2) + yco * fz
+          COFSumFz(3) = COFSumFz(3) + zco * fz
+
           ! Update the viscous force and moment coefficients
           v1 = vars(conn(1, i), iZippWallTvx:iZippWallTvz)
           v2 = vars(conn(2, i), iZippWallTvx:iZippWallTvz)
@@ -375,6 +439,23 @@ contains
           Mv(1) = Mv(1) + mx
           Mv(2) = Mv(2) + my
           Mv(3) = Mv(3) + mz
+
+          ! accumulate in the sums. each force component is tracked separately
+
+          ! Force-X
+          COFSumFx(1) = COFSumFx(1) + xco * fx
+          COFSumFx(2) = COFSumFx(2) + yco * fx
+          COFSumFx(3) = COFSumFx(3) + zco * fx
+
+          ! Force-Y
+          COFSumFy(1) = COFSumFy(1) + xco * fy
+          COFSumFy(2) = COFSumFy(2) + yco * fy
+          COFSumFy(3) = COFSumFy(3) + zco * fy
+
+          ! Force-Z
+          COFSumFz(1) = COFSumFz(1) + xco * fz
+          COFSumFz(2) = COFSumFz(2) + yco * fz
+          COFSumFz(3) = COFSumFz(3) + zco * fz
        end if
     enddo
 
@@ -383,6 +464,9 @@ contains
     localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
     localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
     localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
+    localValues(iCoForceX:iCoForceX+2) = localValues(iCoForceX:iCoForceX+2) + COFSumFx
+    localValues(iCoForceY:iCoForceY+2) = localValues(iCoForceY:iCoForceY+2) + COFSumFy
+    localValues(iCoForceZ:iCoForceZ+2) = localValues(iCoForceZ:iCoForceZ+2) + COFSumFz
 
   end subroutine wallIntegrationZipper
 

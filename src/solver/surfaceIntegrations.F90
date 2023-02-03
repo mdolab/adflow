@@ -1001,22 +1001,24 @@ contains
       zco = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
            +         xx(i,j+1,3) + xx(i+1,j+1,3))
 
+      ! Center of force computations. Here we accumulate in the sums.
       ! accumulate in the sums. each force component is tracked separately
+      ! blanking is included in the mdot multiplier for the force.
 
       ! Force-X
-      COFSumFx(1) = COFSumFx(1) + xco * fx * blk
-      COFSumFx(2) = COFSumFx(2) + yco * fx * blk
-      COFSumFx(3) = COFSumFx(3) + zco * fx * blk
+      COFSumFx(1) = COFSumFx(1) + xco * fx
+      COFSumFx(2) = COFSumFx(2) + yco * fx
+      COFSumFx(3) = COFSumFx(3) + zco * fx
 
       ! Force-Y
-      COFSumFy(1) = COFSumFy(1) + xco * fy * blk
-      COFSumFy(2) = COFSumFy(2) + yco * fy * blk
-      COFSumFy(3) = COFSumFy(3) + zco * fy * blk
+      COFSumFy(1) = COFSumFy(1) + xco * fy
+      COFSumFy(2) = COFSumFy(2) + yco * fy
+      COFSumFy(3) = COFSumFy(3) + zco * fy
 
       ! Force-Z
-      COFSumFz(1) = COFSumFz(1) + xco * fz * blk
-      COFSumFz(2) = COFSumFz(2) + yco * fz * blk
-      COFSumFz(3) = COFSumFz(3) + zco * fz * blk
+      COFSumFz(1) = COFSumFz(1) + xco * fz
+      COFSumFz(2) = COFSumFz(2) + yco * fz
+      COFSumFz(3) = COFSumFz(3) + zco * fz
 
       ! Momentum forces are a little tricky.  We negate because
       ! have to re-apply fact to massFlowRateLocal to undoo it, because
