@@ -1192,13 +1192,11 @@ contains
 
        if (globalChanged) then
           if(myID == 0) then
-             print 100,   nRefine
+             print "(2(A), I4, A)", "Warning: The overset connectivity loop exited ", &
+               "before the connectivity was complete after running: ", nRefine, " iterations."
              print "(a)", "         Increase the number of iterations by setting nRefine."
           end if
        end if
-100    format("Warning: The overset connectivity loop exited ", &
-            "before the connectivity was complete after running:",&
-            1x,I4,1x, "iterations.")
        ! Final operations after the interpolations have
        ! stabilized. Status must be exchanged due to the last
        ! irregular cell correction.
@@ -1503,6 +1501,7 @@ contains
     character(len=40) :: tmpStr, zoneName
     character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
+    character(len=maxStringLen) :: zoneProcFormat = "(A, I5.5, A, I3.3)"
 
     coorNames(1) = "CoordinateX"
     coorNames(2) = "CoordinateY"
@@ -1575,9 +1574,8 @@ contains
           sizes(8) = 0
           sizes(9) = 0
 
-999       FORMAT('domain.', I5.5,'proc.', I3.3)
           zoneCounter = zoneCounter + 1
-          write(zonename, 999) zoneCounter, myid
+          write(zonename, zoneProcFormat) 'domain.', zoneCounter, 'proc.', myid
 
           call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
 
@@ -1609,7 +1607,7 @@ contains
                   adflow_comm_world, mpiStatus, ierr)
 
              zoneCounter = zoneCounter + 1
-             write(zonename, 999) zoneCounter, iProc
+             write(zonename, zoneProcFormat) 'domain.', zoneCounter, 'proc.', iProc
              sizes(1) = dims(1, iDom)
              sizes(2) = dims(2, iDom)
              sizes(3) = dims(3, iDom)
@@ -1696,6 +1694,7 @@ contains
     character(len=40) :: tmpStr, zoneName
     character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
+    character(len=maxStringLen) :: zoneFormat = "(A, I5.5)"
 
     coorNames(1) = "CoordinateX"
     coorNames(2) = "CoordinateY"
@@ -1762,9 +1761,8 @@ contains
           sizes(8) = 0
           sizes(9) = 0
 
-999       FORMAT('domain.', I5.5)
           zoneCounter = zoneCounter + 1
-          write(zonename, 999) zoneCounter
+          write(zonename, zoneFormat) 'domain.', zoneCounter
 
           call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
 
@@ -1819,7 +1817,7 @@ contains
                   adflow_comm_world, mpiStatus, ierr)
 
              zoneCounter = zoneCounter + 1
-             write(zonename, 999) zoneCounter
+             write(zonename, zoneFormat) 'domain.', zoneCounter
              sizes(1) = dims(1, iDom)
              sizes(2) = dims(2, iDom)
              sizes(3) = dims(3, iDom)

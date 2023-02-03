@@ -492,6 +492,7 @@ contains
     use iteration, only : standAloneMode
     use utils, only : terminate
     use sorting, only: qsortstrings, bsearchstrings
+    use commonFormats, only : stringSpace
 
     implicit none
     !
@@ -665,7 +666,7 @@ contains
 
           ! Family name occurs more than once. This is not allowed.
 
-          write(errorMessage,101) trim(namesSliding(ii))
+          write(errorMessage, stringSpace) "Family name", trim(namesSliding(ii)), "occurs more than once."
           if(myID == 0) &
                call terminate("determineInterfaceIDs", errorMessage)
           call mpi_barrier(ADflow_comm_world, ierr)
@@ -722,8 +723,8 @@ contains
        ! form a valid sliding interface.
 
        if(.not. validInterface) then
-          write(errorMessage,102) trim(namesSliding(nn)), &
-               trim(namesSliding(mm))
+          write(errorMessage, stringSpace) "Family names", trim(namesSliding(nn)), "and", &
+            trim(namesSliding(mm)), "do not form a valid sliding mesh interface"
           if(myID == 0) &
                call terminate("determineInterfaceIDs", errorMessage)
           call mpi_barrier(ADflow_comm_world, ierr)
@@ -778,12 +779,6 @@ contains
     if(ierr /= 0) &
          call terminate("determineInterfaceIDs", &
          "Deallocation failure for names, IDs")
-
-    ! Format statements.
-
-101 format("Family name", 1X,A,1X,"occurs more than once.")
-102 format("Family names", 1X,A,1X,"and",1X,A,1X, &
-         "do not form a valid sliding mesh interface")
 
   end subroutine determineInterfaceIDs
 
