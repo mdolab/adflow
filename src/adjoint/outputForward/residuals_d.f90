@@ -176,13 +176,13 @@ contains
 !    compute speed of sound
             arg1 = gamma(i, j, k)*p(i, j, k)/w(i, j, k, irho)
             sos = sqrt(arg1)
-! compute velocities without rho from state vector 
+! compute velocities without rho from state vector
 !      (w is pointer.. see type blocktype setup in block.f90)
-!      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.f90 
-!      these are per definition nw=[rho,u,v,w,rhoee] 
-!      so the velocity is simply just taken out below... 
-!      we do not have to divide with rho since it is already 
-!      without rho... 
+!      w(0:ib,0:jb,0:kb,1:nw) is allocated in block.f90
+!      these are per definition nw=[rho,u,v,w,rhoee]
+!      so the velocity is simply just taken out below...
+!      we do not have to divide with rho since it is already
+!      without rho...
 ! ivx: l. 60 in constants.f90
             velxrho = w(i, j, k, ivx)
             velyrho = w(i, j, k, ivy)
@@ -190,21 +190,21 @@ contains
             q = velxrho**2 + velyrho**2 + velzrho**2
             result1 = sqrt(q)
             resm = result1/sos
-! resm above is used as m_a (thesis) and m (paper 2015) 
-! and is the free stream mach number 
-! see routine setup above: 
-! l. 30: real(kind=realtype), parameter :: k1 = 1.05_realtype 
-! random given number for k2: 
-! l. 31: real(kind=realtype), parameter :: k2 = 0.6_realtype 
-! mach number preconditioner activation for k3: 
-! l. 32: real(kind=realtype), parameter :: m0 = 0.2_realtype 
-! 
-!    compute k3 
-! eq. 2.7 in garg 2015. k1, m0 and resm are scalars 
-! 
-! unfortunately, garg has switched the k1 and k3 here in the 
-! code. in both paper and thesis it is k3 that is used to det- 
-! ermine k1 below 
+! resm above is used as m_a (thesis) and m (paper 2015)
+! and is the free stream mach number
+! see routine setup above:
+! l. 30: real(kind=realtype), parameter :: k1 = 1.05_realtype
+! random given number for k2:
+! l. 31: real(kind=realtype), parameter :: k2 = 0.6_realtype
+! mach number preconditioner activation for k3:
+! l. 32: real(kind=realtype), parameter :: m0 = 0.2_realtype
+!
+!    compute k3
+! eq. 2.7 in garg 2015. k1, m0 and resm are scalars
+!
+! unfortunately, garg has switched the k1 and k3 here in the
+! code. in both paper and thesis it is k3 that is used to det-
+! ermine k1 below
 !
 !    compute k3
             k3 = k1*(1+(1-k1*m0**2)*resm**2/(k1*m0**4))
@@ -219,9 +219,9 @@ contains
             else
               betamr2 = x1
             end if
-! above, the winf is the free stream velocity 
-! 
-! should this first line's first element have sos^4 or sos^2  
+! above, the winf is the free stream velocity
+!
+! should this first line's first element have sos^4 or sos^2
             a11 = betamr2*(1/sos**4)
             a12 = zero
             a13 = zero
