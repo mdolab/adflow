@@ -80,19 +80,16 @@ class TestCenterOfForce(unittest.TestCase):
         mz = funcs[f"{self.ap.name}_mz"]
 
         # center of x-force
-        cofxx = funcs[f"{self.ap.name}_cofxx"]
         cofxy = funcs[f"{self.ap.name}_cofxy"]
         cofxz = funcs[f"{self.ap.name}_cofxz"]
 
         # center of y-force
         cofyx = funcs[f"{self.ap.name}_cofyx"]
-        cofyy = funcs[f"{self.ap.name}_cofyy"]
         cofyz = funcs[f"{self.ap.name}_cofyz"]
 
         # center of z-force
         cofzx = funcs[f"{self.ap.name}_cofzx"]
         cofzy = funcs[f"{self.ap.name}_cofzy"]
-        cofzz = funcs[f"{self.ap.name}_cofzz"]
 
         # reference point for the AP
         xref = self.ap.xRef
