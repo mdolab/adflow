@@ -113,7 +113,7 @@ patt_inc = re.compile(r'(\s*\d*\s*)include\s*("|\')(\w+.?\w*)(?:"|\')(.*)',
                       re.IGNORECASE)
 
 patt_ge = re.compile(r'(?:>=)|(?:\.\s*ge\s*\.)', re.IGNORECASE)
-patt_eq = re.compile(r'(?: == )|(?:\.\s*eq\s*\.)', re.IGNORECASE)
+patt_eq = re.compile(r'(?:==)|(?:\.\s*eq\s*\.)', re.IGNORECASE)
 patt_ne = re.compile(r'(?:/=)|(?:\.\s*ne\s*\.)', re.IGNORECASE)
 #patt_if = re.compile('(\s*\d*(?:\s*)|(?:\s*else\s*)|(\s*\w+\:\s*))(if\s*\()((?:.|\n)*$)',re.IGNORECASE|re.DOTALL)
 patt_if = re.compile('((?:\s*)|(?:\s*\w+:\s*))((?:else\s*|)if\s*\()(.*$)',re.IGNORECASE|re.DOTALL)
@@ -320,7 +320,7 @@ def fix_line(line, implicit_found):
 
     ###if patt_inc.match(line) != None: line = fix_inc(line)
     if fix_relationals:
-        if patt_eq.search(line) != None: line = patt_eq.sub(r' .ceq. ',line)
+        if patt_eq.search(line) != None: line = patt_eq.sub(r'.ceq.',line)
         if patt_ne.search(line) != None: line = patt_ne.sub(r'.cne.',line)
 
     if fix_relationals == 2: # only for MIPS Pro compiler
