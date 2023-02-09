@@ -29,6 +29,10 @@ CC_REAL_PRECISION_FLAG      =
 CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
 CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
 
+# ------- Define complexify inlcude and linker flags -------------------------
+COMPLEXIFY_INCLUDE_FLAGS=-I$(COMPLEXIFY_DIR)/include
+COMPLEXIFY_LINKER_FLAGS=-L$(COMPLEXIFY_DIR)/lib -lcomplexify
+
 # ------- Define Compiler Flags ----------------------------------------
 FF77_FLAGS = -fPIC -fdefault-real-8 -fdefault-double-8 -march=native
 FF90_FLAGS = $(FF77_FLAGS) -std=f2008
