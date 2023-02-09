@@ -5,7 +5,8 @@ include ../../config/config.mk
 EXTRA_FF90_FLAGS = $(shell bash ../../config/compilerCheck.sh $(FF90))
 
 # Group all the fortran, C and compiler flags together.
-FF90_ALL_FLAGS_NO_OPT = $(FF90_FLAGS) $(EXTRA_FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. -DUSE_COMPLEX \
+FF90_ALL_FLAGS_NO_OPT = $(FF90_FLAGS) $(EXTRA_FF90_FLAGS) $(CGNS_INCLUDE_FLAGS) \
+		   -I. -DUSE_COMPLEX $(COMPLEXIFY_INCLUDE_FLAGS) \
 		   $(PETSC_CC_INCLUDES) $(FF90_PRECISION_FLAGS)
 
 FF90_ALL_FLAGS = $(FF90_ALL_FLAGS_NO_OPT) $(FFXX_OPT_FLAGS)
@@ -13,7 +14,7 @@ FF90_ALL_FLAGS = $(FF90_ALL_FLAGS_NO_OPT) $(FFXX_OPT_FLAGS)
 CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDES) \
 		   $(CC_PRECISION_FLAGS)
 
-LINKER_ALL_FLAGS = $(CGNS_LINKER_FLAGS) $(PETSC_LIB) $(LINKER_FLAGS)
+LINKER_ALL_FLAGS = $(CGNS_LINKER_FLAGS) $(COMPLEXIFY_LINKER_FLAGS) $(PETSC_LIB) $(LINKER_FLAGS)
 
 # Include the full filelist
 include ../../src/build/fileList
@@ -39,9 +40,6 @@ include ../../src/build/rules
 # directorylist. We must first append the '../'
 dirs:=$(addprefix ../,$(dirs))
 VPATH:=$(dirs)
-
-# Add the special extra complexify module to the list of files:
-fortranFiles:=$(fortranFiles) modules/complexify.f90
 
 # Need to add the ../ to each of the file lists:
 fortranFilesNoOpt:=$(addprefix ../,$(fortranFilesNoOpt))
