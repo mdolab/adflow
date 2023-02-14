@@ -35,7 +35,6 @@ class PERFORMANCE(object):
     """
 
     def __init__(self, *args, **kwargs):
-
         """
         Performance class initialization
 
@@ -132,7 +131,6 @@ class PERFORMANCE(object):
         return Wsp, Damping
 
     def calculateNAlpha(self, Clalpha, rho, Area, U, mass, g):
-
         """
         calculate the g normalized lift derivative
         """
@@ -651,7 +649,6 @@ class PERFORMANCE(object):
 # PERFOMANCE Analysis Test
 # ==============================================================================
 if __name__ == "__main__":
-
     # Test ADflow
     print("Testing ...")
     acp = PERFORMANCE()

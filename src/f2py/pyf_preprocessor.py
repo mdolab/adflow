@@ -65,7 +65,6 @@ for i in range(len(orig_lines)):
     else:
         # We have a normal line to write:
         if cur_mode == "both" or cur_mode == mode:
-
             # We now have to check for real/integer types and process:
             if "kind=inttype" in orig_lines[i]:
                 orig_lines[i] = orig_lines[i].replace("kind=inttype", "kind=4")

@@ -236,7 +236,6 @@ def calculateWingInertias(acg):
                 nseg = len(acg[i])
                 # loop over wing segments
                 for j in range(nseg):
-
                     # Copy parameters from geometry
                     tc_root = acg[i][j].root_Thickness  # thickness to chord ratio...
                     tc_tip = acg[i][j].tip_Thickness
@@ -447,7 +446,6 @@ def getAverageThickness(acg, thickness):
                 rootIndex = 0
                 nseg = len(acg[i])
                 for j in range(nseg):
-
                     ##  if j ==0:
                     ##                         tipIndex = rootIndex+acg[i][j].surface_SW_segments
                     ##                     else:
@@ -495,7 +493,6 @@ def calculateSegmentWeights(acg, Weight):
                 TotalVolume = 0.0
                 nseg = len(acg[i])
                 for j in range(nseg):
-
                     # thickness to chord ratios...
                     tc_root = acg[i][j].root_Thickness_act
                     tc_tip = acg[i][j].tip_Thickness_act
@@ -529,7 +526,6 @@ def calculateSegmentWeights(acg, Weight):
             if acg[i].Name.lower() == "wing":
                 nseg = len(acg[i])
                 for j in range(nseg):
-
                     acg[i][j].Weight = Weight * (acg[i][j].volumeWeight / TotalVolume)
                 # endfor
             # endif

@@ -87,7 +87,6 @@ class TestSolve(reg_test_classes.RegTest):
         self.CFDSolver.addSlices("z", [0.5])
 
     def test_solve(self):
-
         # do the solve
         self.CFDSolver(self.ap)
 
