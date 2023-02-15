@@ -55,7 +55,6 @@ class TestSolve(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=False)
 
     def test_solve(self):
-
         self.CFDSolver.solveCL(self.ap, 0.475, alpha0=1.20, delta=0.025, tol=1e-4, autoReset=False)
         self.assert_solution_failure()
         funcs = {}

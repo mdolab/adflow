@@ -61,7 +61,6 @@ class RegTest(unittest.TestCase):
 
 # all complex tests should inherit this class instead of RegTest
 class CmplxRegTest(RegTest):
-
     # complex tests have no training method, setting this attribute to True skips the train() function
     # defined in the parent class
     no_train = True
