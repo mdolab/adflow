@@ -55,7 +55,6 @@ class WEIGHTANDBALANCE(Base):
     """
 
     def __init__(self, *args, **kwargs):
-
         """
         Weight and Balance Class Initialization
 
@@ -841,7 +840,6 @@ class WEIGHTANDBALANCE(Base):
         return BMderiv
 
     def _on_setOption(self, name, value):
-
         """
         Get Optimizer Option Value (Optimizer Specific Routine)
 
@@ -851,7 +849,6 @@ class WEIGHTANDBALANCE(Base):
         pass
 
     def _on_getOption(self, name):
-
         """
         Get Optimizer Option Value (Optimizer Specific Routine)
 
@@ -865,7 +862,6 @@ class WEIGHTANDBALANCE(Base):
 # weight and balance Analysis Test
 # ==============================================================================
 if __name__ == "__main__":
-
     # Test ADflow
     print("Testing ...")
     wbc = WEIGHTANDBALANCE()
