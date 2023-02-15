@@ -25,12 +25,12 @@ import copy
 from . import MExt
 from .pyADflow import ADFLOW
 
+
 # =============================================================================
 # ADFLOW_C Class
 # =============================================================================
 class ADFLOW_C(ADFLOW):
     def __init__(self, *args, **kwargs):
-
         # Load the compiled module using MExt, allowing multiple
         # imports
         debug = False
@@ -42,7 +42,6 @@ class ADFLOW_C(ADFLOW):
         ADFLOW.__init__(self, dtype="D", *args, **kwargs)
 
     def _on_setOption(self, name, value):
-
         """
         Set Optimizer Option Value (Optimizer Specific Routine)
 

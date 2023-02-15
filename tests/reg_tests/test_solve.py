@@ -110,7 +110,6 @@ class TestSolve(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=False)
 
     def test_solve(self):
-
         # do the solve
         self.CFDSolver(self.ap)
 
@@ -124,7 +123,6 @@ class TestSolve(reg_test_classes.RegTest):
 
 
 class TestFailedMesh(unittest.TestCase):
-
     N_PROCS = 1
 
     def test_failed_mesh(self):

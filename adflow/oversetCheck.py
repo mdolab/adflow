@@ -21,6 +21,7 @@ from baseclasses.utils import Error
 from . import MExt
 from .pyADflow import ADFLOW
 
+
 # =============================================================================
 # ADFLOW Class
 # =============================================================================
@@ -44,7 +45,6 @@ class OversetCheck(ADFLOW):
     """
 
     def __init__(self, comm=None, options=None, debug=False):
-
         # Load the compiled module using MExt, allowing multiple
         # imports
         curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
