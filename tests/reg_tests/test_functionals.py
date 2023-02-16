@@ -208,7 +208,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "options": {
                 "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
                 "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
-                'equationType':'RANS',
+                'equationType': 'RANS',
                 'useBlockettes': False,
                 'useRoughSA': True,
 
