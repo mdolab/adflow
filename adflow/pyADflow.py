@@ -1224,11 +1224,11 @@ class ADFLOW(AeroSolver):
             Family group to use. Default to all walls if not given (None)
         """
 
-        if not self.options['useroughsa']:
-           raise Error (
-               "It is not possible to set a surface roughness value without "
-               "using the rough SA-variant (useRoughSA = False)"
-           )
+        if not self.options["useroughsa"]:
+            raise Error(
+                "It is not possible to set a surface roughness value without "
+                "using the rough SA-variant (useRoughSA = False)"
+            )
 
         if groupName is None:
             groupName = self.allWallsGroup
@@ -3441,7 +3441,6 @@ class ADFLOW(AeroSolver):
             # Propagate roughness values through volume
             self.adflow.walldistance.updatewallroughness()
 
-
     def _getBCDataFromAeroProblem(self, AP):
         variables = []
         dataArray = []
@@ -5651,7 +5650,7 @@ class ADFLOW(AeroSolver):
             "useqcr": ["physics", "useqcr"],
             "userotationsa": ["physics", "userotationsa"],
             "useft2sa": ["physics", "useft2sa"],
-            "useroughsa":["physics", "useroughsa"],
+            "useroughsa": ["physics", "useroughsa"],
             "eddyvisinfratio": ["physics", "eddyvisinfratio"],
             "usewallfunctions": ["physics", "wallfunctions"],
             "walldistcutoff": ["physics", "walldistcutoff"],
