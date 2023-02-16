@@ -40,6 +40,8 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: distrough
+    real(kind=realtype) :: distroughd
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
@@ -277,20 +279,37 @@ contains
             nud = (rlvd(i, j, k)*w(i, j, k, irho)-rlv(i, j, k)*wd(i, j, &
 &             k, irho))/w(i, j, k, irho)**2
             nu = rlv(i, j, k)/w(i, j, k, irho)
-            dist2invd = -(one*2*d2wall(i, j, k)*d2walld(i, j, k)/(d2wall&
-&             (i, j, k)**2)**2)
-            dist2inv = one/d2wall(i, j, k)**2
             chid = (wd(i, j, k, itu1)*nu-w(i, j, k, itu1)*nud)/nu**2
             chi = w(i, j, k, itu1)/nu
+            if (.not.useroughsa) then
+              dist2invd = -(one*2*d2wall(i, j, k)*d2walld(i, j, k)/(&
+&               d2wall(i, j, k)**2)**2)
+              dist2inv = one/d2wall(i, j, k)**2
+            else
+              distroughd = d2walld(i, j, k)
+              distrough = d2wall(i, j, k) + 0.03_realtype*ks(i, j, k)
+              dist2invd = -(one*2*distrough*distroughd/(distrough**2)**2&
+&               )
+              dist2inv = one/distrough**2
+              chid = chid - rsacr1*ks(i, j, k)*distroughd/distrough**2
+              chi = chi + rsacr1*ks(i, j, k)/distrough
+            end if
             chi2d = chid*chi + chi*chid
             chi2 = chi*chi
             chi3d = chid*chi2 + chi*chi2d
             chi3 = chi*chi2
             fv1d = (chi3d*(chi3+cv13)-chi3*chi3d)/(chi3+cv13)**2
             fv1 = chi3/(chi3+cv13)
-            fv2d = -((chid*(one+chi*fv1)-chi*(chid*fv1+chi*fv1d))/(one+&
-&             chi*fv1)**2)
-            fv2 = one - chi/(one+chi*fv1)
+            if (.not.useroughsa) then
+              fv2d = -((chid*(one+chi*fv1)-chi*(chid*fv1+chi*fv1d))/(one&
+&               +chi*fv1)**2)
+              fv2 = one - chi/(one+chi*fv1)
+            else
+              fv2d = -((wd(i, j, k, itu1)*(nu+w(i, j, k, itu1)*fv1)-w(i&
+&               , j, k, itu1)*(nud+wd(i, j, k, itu1)*fv1+w(i, j, k, itu1&
+&               )*fv1d))/(nu+w(i, j, k, itu1)*fv1)**2)
+              fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+            end if
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.
@@ -402,6 +421,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: distrough
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
@@ -516,12 +536,22 @@ contains
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
             nu = rlv(i, j, k)/w(i, j, k, irho)
-            dist2inv = one/d2wall(i, j, k)**2
             chi = w(i, j, k, itu1)/nu
+            if (.not.useroughsa) then
+              dist2inv = one/d2wall(i, j, k)**2
+            else
+              distrough = d2wall(i, j, k) + 0.03_realtype*ks(i, j, k)
+              dist2inv = one/distrough**2
+              chi = chi + rsacr1*ks(i, j, k)/distrough
+            end if
             chi2 = chi*chi
             chi3 = chi*chi2
             fv1 = chi3/(chi3+cv13)
-            fv2 = one - chi/(one+chi*fv1)
+            if (.not.useroughsa) then
+              fv2 = one - chi/(one+chi*fv1)
+            else
+              fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+            end if
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.

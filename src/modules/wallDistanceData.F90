@@ -44,4 +44,6 @@ module wallDistanceData
   real(kind=realType), dimension(:), pointer :: xVolume
 #endif
 
+  integer(kind=intType), dimension(:,:), allocatable :: nCellBlockOffset
+
 end module wallDistanceData

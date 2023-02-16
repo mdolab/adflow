@@ -208,6 +208,50 @@ test_params = [
         "evalFuncs": ["fy", "my"],
         "N_PROCS": 2,
     },
+    # Rough SA test
+    {
+        "name": "Rough_SA_wing",
+        "options": {
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
+            'equationType':'RANS',
+            'useBlockettes': False,
+            'useRoughSA': True,
+
+            "MGCycle": "2w",
+            "equationType": "RANS",
+            "smoother": "DADI",
+            "CFL": 1.5,
+            "CFLCoarse": 1.25,
+            "resAveraging": "never",
+            "nSubiter": 3,
+            "nSubiterTurb": 3,
+            "nCyclesCoarse": 100,
+            "nCycles": 1000,
+            "monitorVariables": ["resrho", "resturb", "cd"],
+            "volumeVariables": ["resrho"],
+            "useNKsolver": True,
+            "ANKSwitchTol": 1e-2,
+            "ANKSecondordSwitchTol": 1e-2,
+            "NKSwitchTol": 1e-5,
+            "NKjacobianlag": 2,
+            "L2Convergence": 1e-15,
+
+            "adjointL2Convergence": 1e-16,
+
+            # to get slightly better complex convergence
+            "NKUseEW": False,
+            "NKLinearSolveTol": 1e-6,
+
+
+        },
+        "ref_file": "adjoint_rans_rough_sa.json",
+        "aero_prob": ap_tutorial_wing,
+        "evalFuncs": ["cl", "cd", "cmz", "lift", "drag"],
+        # "evalFuncs": ["cd"],
+        "N_PROCS": 2,
+    },
+
 ]
 
 
@@ -386,6 +430,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         atol = 5e-9
 
         for dv in ["span", "twist", "shape"]:
+
             xRef[dv][0] += self.h * 1j
 
             self.CFDSolver.resetFlow(self.ap)

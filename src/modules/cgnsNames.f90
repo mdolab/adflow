@@ -171,6 +171,9 @@
        character(len=maxCGNSNameLen), parameter :: &
             cgnsIntermittency = "Intermittency"
 
+       character(len=maxCGNSNameLen), parameter :: &
+            cgnsSandGrainRoughness = "SandGrainRoughness"
+
 
 !
 !       Residual names.

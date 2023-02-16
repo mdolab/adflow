@@ -202,6 +202,75 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "ref_file": "funcs_euler_scalar_jst_CRM_WBT.json",
             "aero_prob": ap_CRM,
         },
+        # Rough SA test
+        {
+            "name": "Rough_SA_wing",
+            "options": {
+                "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
+                "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
+                'equationType':'RANS',
+                'useBlockettes': False,
+                'useRoughSA': True,
+
+                "MGCycle": "2w",
+                "equationType": "RANS",
+                "smoother": "DADI",
+                "CFL": 1.5,
+                "CFLCoarse": 1.25,
+                "resAveraging": "never",
+                "nSubiter": 3,
+                "nSubiterTurb": 3,
+                "nCyclesCoarse": 100,
+                "nCycles": 1000,
+                "monitorVariables": ["resrho", "resrho", "resturb", "cd"],
+                "volumeVariables": ["resrho"],
+                "useNKsolver": True,
+                "ANKSwitchTol": 1e-2,
+                "ANKSecondordSwitchTol": 1e-2,
+                "L2Convergence": 1e-15,
+                "NKSwitchTol": 1e-5,
+                "adjointL2Convergence": 1e-16,
+                "blockSplitting": True,
+                "NKjacobianlag": 2,
+            },
+            "ref_file": "funcs_rans_rough_sa.json",
+            "aero_prob": ap_tutorial_wing,
+        },
+        # Rough Tutorial wing RANS
+        # This test makes sure a roughness value of 0 equals the standard SA model
+        # It checks if the outcome is consistent with the test 'rans_tut_wing'
+        {
+            "name": "Rough_SA_rans_tut_wing",
+            "options": {
+                "gridfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
+                "restartfile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_scalar_jst.cgns"),
+                "useBlockettes": False,
+                "useRoughSA": True,
+                "mgcycle": "sg",
+                "equationtype": "RANS",
+                "smoother": "DADI",
+                "cfl": 1.5,
+                "cflcoarse": 1.25,
+                "resaveraging": "never",
+                "nsubiter": 3,
+                "nsubiterturb": 3,
+                "ncyclescoarse": 100,
+                "ncycles": 1000,
+                "monitorvariables": ["cpu", "resrho", "resturb", "cl", "cd", "cmz", "yplus", "totalr"],
+                "usenksolver": True,
+                "l2convergence": 1e-14,
+                "l2convergencecoarse": 1e-4,
+                "nkswitchtol": 1e-3,
+                "adjointl2convergence": 1e-14,
+                "frozenturbulence": False,
+            },
+            "ref_file": "funcs_rans_tut_wing.json",
+            "aero_prob": ap_tutorial_wing,
+            "no_train": True,       # This test should not be able to over-write
+                                    # the training file as it is coming from a different test
+        },
+
+
     ]
 )
 class TestFunctionals(reg_test_classes.RegTest):

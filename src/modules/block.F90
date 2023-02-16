@@ -96,9 +96,11 @@ module block
      ! uSlip(:,:,3):  the 3 components of the velocity vector on
      !                a viscous wall.
      ! TNS_Wall(:,:): Wall temperature for isothermal walls.
+     ! ksNS_Wall(:,:): Equivalent Sand Grain Roughness on viscous walls.
 
      real(kind=realType), dimension(:,:,:), pointer :: uSlip
      real(kind=realType), dimension(:,:),   pointer :: TNS_Wall
+     real(kind=realType), dimension(:,:),   pointer :: ksNS_Wall
 
      ! The name of this boundary condition and it's index
      character(maxCGNSNameLen) :: family
@@ -670,9 +672,15 @@ module block
      ! d2Wall(2:il,2:jl,2:kl) - Distance from the center of the cell
      !                          to the nearest viscous wall.
      ! intermittency( )       - Function defining the transition location
+     !
+     ! The next two variables are only initialized if roughness is requested (useRoughSA = True)
+     ! nearestWallCellInd(2:il,2:jl,2:kl)   - global cell ID for the nearest wall cell; is needed for rougness
+     ! ks(2:il,2:jl,2:kl)     - Roughness value of the nearest wall
 
      real(kind=realType), dimension(:,:,:), pointer :: d2Wall, filterDES
      real(kind=realType), dimension(:,:,:), pointer :: intermittency
+     integer(kind=intType), dimension(:,:,:), pointer :: nearestWallCellInd
+     real(kind=realType), dimension(:,:,:), pointer :: ks
 
      ! bmti1(je,ke,nt1:nt2,nt1:nt2): Matrix used for the implicit
      !                               boundary condition treatment of

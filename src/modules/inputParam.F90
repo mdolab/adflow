@@ -519,6 +519,7 @@ module inputPhysics
   !                      when considering turbulence model effects
   ! useRotationSA:       Determines if we will use rotation correction (SA model only)
   ! useft2SA:            Determines if we will use the ft2 term (SA model only)
+  ! useRoughSA:          Whether or not to use rough version of SA (BC values are set via CGNS-Grid)
   ! wallFunctions:       Whether or not to use wall functions.
   ! wallDistanceNeeded:  Whether or not the wall distance is needed
   !                      for the turbulence model in a RANS problem.
@@ -587,6 +588,7 @@ module inputPhysics
   real(kind=realType), dimension(3,2) :: momentAxis
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
   real(kind=realType) :: cavitationnumber
+  logical             :: useRoughSA
   real(kind=realType) :: cpmin_rho
   real(kind=realType), dimension(:), allocatable :: cpmin_family
 
