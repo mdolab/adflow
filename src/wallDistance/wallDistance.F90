@@ -527,12 +527,10 @@ contains
     ! took to compute the distances.
 
     !        if(myID == 0) then
-    !          print 102, trim(integerString)
-    !          print 103, mpi_wtime() - t0
+    !          print "(*(A))", "# End wall distances level ", trim(integerString)
+    !          print "(*(A, ES12.5))", "# Wall clock time:", mpi_wtime() - t0," sec."
     !          print "(a)", "#"
     !        endif
-102 format("# End wall distances level",1X,A)
-103 format("# Wall clock time:",ES12.5," sec.")
 
   end subroutine computeWallDistance
 

@@ -2288,71 +2288,60 @@ contains
     use inputDiscretization
     use inputPhysics
     use flowVarRefState
+    use commonFormats, only : stringSpace, stringSci5
     implicit none
     !
     !      Subroutine arguments.
     !
     character(len=*), intent(out) :: string
 
+    character(len=maxStringLen) :: upwindFormat = "(A, F7.3, A)"
+
     ! Write the basic scheme info.
 
     select case(spaceDiscr)
     case (dissScalar)
-       write(string,100) "Scalar dissipation scheme", vis2, vis4
+       write(string, stringSci5) "Scalar dissipation scheme, k2 = ", vis2, ", k4 = ", vis4, "."
     case (dissMatrix)
-       write(string,100) "Matrix dissipation scheme", vis2, vis4
+       write(string, stringSci5) "Matrix dissipation scheme, k2 = ", vis2, ", k4 = ", vis4, "."
     case (dissCusp)
-       write(string,100) "CUSP dissipation scheme", vis2, vis4
+       write(string, stringSci5) "CUSP dissipation scheme, k2 = ", vis2, ", k4 = ", vis4, "."
     case (upwind)
        select case (limiter)
        case (firstOrder)
-          write(string,110) "First order upwind scheme."
+          write(string, stringSpace) "First order upwind scheme."
        case (noLimiter)
-          write(string,111) kappaCoef
+          write(string, upwindFormat) "Second order upwind scheme using linear reconstruction, &
+          &i.e. no limiter, kappa = ", kappaCoef, "."
        case (vanAlbeda)
-          write(string,112) kappaCoef
+          write(string, upwindFormat) "Second order upwind scheme with Van Albada limiter, &
+          &kappa =", kappaCoef, "."
        case (minmod)
-          write(string,113) kappaCoef
+          write(string, upwindFormat) "Second order upwind scheme with Minmod limiter, &
+          &kappa =", kappaCoef, "."
        end select
 
        select case (riemann)
        case (Roe)
-          write(string,130) trim(string), &
-               "Roe's approximate Riemann Solver."
+          write(string, stringSpace) trim(string), "Roe's approximate Riemann Solver."
        case (vanLeer)
-          write(string,130) trim(string), &
-               "Van Leer flux vector splitting."
+          write(string, stringSpace) trim(string), "Van Leer flux vector splitting."
        case (ausmdv)
-          write(string,130) trim(string), &
-               "ausmdv flux vector splitting."
+          write(string, stringSpace) trim(string), "ausmdv flux vector splitting."
        end select
 
     end select
-
-100 format(1X, A,", k2 = ", es12.5, ", k4 = ", es12.5,".")
-110 format(1X, A)
-111 format(1X, "Second order upwind scheme using linear reconstruction, &
-         &i.e. no limiter, kappa =", 1X, f7.3,".")
-112 format(1X, "Second order upwind scheme with Van Albeda limiter, &
-         &kappa =", 1X, f7.3,".")
-113 format(1X, "Second order upwind scheme with Minmod limiter, &
-         &kappa =", 1X, f7.3,".")
-130 format(1X, A, 1X, A)
 
     ! In case of the scalar dissipation scheme, write whether or not
     ! directional scaling has been applied.
 
     if(spaceDiscr == dissScalar) then
        if( dirScaling ) then
-          write(string,200) trim(string), adis
+          write(string, "(2(A, 1X), ES12.5, A)") trim(string), "Directional scaling of dissipation with exponent", adis, "."
        else
-          write(string,210) trim(string)
+          write(string, stringSpace) trim(string), "No directional scaling of dissipation."
        endif
     endif
-
-200 format(1X, A, 1X, "Directional scaling of dissipation with exponent", &
-         1X,es12.5, ".")
-210 format(1X, A, 1X, "No directional scaling of dissipation.")
 
     ! For the Euler equations, write the inviscid wall boundary
     ! condition treatment.
@@ -2360,42 +2349,34 @@ contains
     if(equations == EulerEquations) then
        select case (eulerWallBcTreatment)
        case (constantPressure)
-          write(string,300) trim(string), &
-               "Zero normal pressure gradIent"
+          write(string, stringSpace) trim(string), "Zero normal pressure gradient", &
+            "for inviscid wall boundary conditions."
        case (linExtrapolPressure)
-          write(string,300) trim(string), &
-               "Linear extrapolation of normal &
-               &pressure gradIent"
+          write(string, stringSpace) trim(string), "Linear extrapolation of normal pressure gradient", &
+            "for inviscid wall boundary conditions."
        case (quadExtrapolPressure)
-          write(string,300) trim(string), &
-               "Quadratic extrapolation of normal &
-               &pressure gradIent"
+          write(string, stringSpace) trim(string), "Quadratic extrapolation of normal pressure gradIent", &
+            "for inviscid wall boundary conditions."
        case (normalMomentum)
-          write(string,300) trim(string), &
-               "Normal momentum equation used to &
-               &determine pressure gradient"
+          write(string, stringSpace) trim(string), "Normal momentum equation used to determine pressure gradient", &
+            "for inviscid wall boundary conditions."
        end select
     endif
-300 format(1X, A, 1X, A, 1X,"for inviscid wall boundary conditions.")
 
     ! If preconditioning is used, write the preconditioner.
 
     select case(precond)
     case (Turkel)
-       write(string,400) trim(string), &
-            "Turkel preconditioner for inviscid fluxes."
+       write(string, stringSpace) trim(string), "Turkel preconditioner for inviscid fluxes."
     case (ChoiMerkle)
-       write(string,400) trim(string), &
-            "Choi Merkle preconditioner for inviscid fluxes."
+       write(string, stringSpace) trim(string), "Choi Merkle preconditioner for inviscid fluxes."
     end select
-400 format(1X, A, 1X, A)
 
     ! For a viscous computation write that a central discretization
     ! is used for the viscous fluxes.
 
     if( viscous ) then
-       write(string,400) trim(string), &
-            "Central discretization for viscous fluxes."
+       write(string, stringSpace) trim(string), "Central discretization for viscous fluxes."
     endif
 
   end subroutine describeScheme
@@ -2756,6 +2737,7 @@ contains
     use inputTimeSpectral
     use monitor
     use utils, only : terminate, setCGNSRealType
+    use commonFormats, only : strings
 
     implicit none
     !
@@ -2852,9 +2834,8 @@ contains
        integerString = adjustl(integerString)
        realString    = adjustl(realString)
 
-       write(message,101) trim(integerString), trim(realString)
-101    format("Unsteady time step ",a,", physical time ",a, &
-            " seconds")
+       write(message, strings) "Unsteady time step ", trim(integerString),", physical time ", &
+         trim(realString), " seconds"
 
        ! And write the info.
 
@@ -2883,10 +2864,8 @@ contains
        write(integerString,"(i7)") nTimeIntervalsSpectral
        integerString = adjustl(integerString)
 
-       write(message,102) trim(integerString)
-102    format("Time spectral mode for periodic problems; ",a,  &
-            " spectral solutions have been used to model the &
-            &problem.")
+       write(message, strings) "Time spectral mode for periodic problems; ", &
+         trim(integerString), " spectral solutions have been used to model the problem."
 
        ! And write the info.
 

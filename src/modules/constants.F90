@@ -342,7 +342,7 @@ module constants
   integer(kind=intType), parameter :: iTotal=16
 
   ! Cost functions.
-  integer(kind=intType), parameter :: nCostFunction = 89
+  integer(kind=intType), parameter :: nCostFunction = 99
   integer(kind=intType), parameter :: &
        costFuncLift       = 1,&
        costFuncDrag       = 2,&
@@ -432,9 +432,19 @@ module constants
        costfunccperror2 = 86, &
        costfuncaavgptot = 87, &
        costfuncaavgps   = 88, &
-       costfunccpmin    = 89
+       costfunccpmin    = 89, &
+       costfuncCoForceXX    = 90, &
+       costfuncCoForceXY    = 91, &
+       costfuncCoForceXZ    = 92, &
+       costfuncCoForceYX    = 93, &
+       costfuncCoForceYY    = 94, &
+       costfuncCoForceYZ    = 95, &
+       costfuncCoForceZX    = 96, &
+       costfuncCoForceZY    = 97, &
+       costfuncCoForceZZ    = 98, &
+       costfuncmavgvi       = 99
 
-  integer(kind=intType), parameter :: nLocalValues=50
+  integer(kind=intType), parameter :: nLocalValues=60
   integer(kind=intType), parameter :: &
        iFp =  1, &
        iFv =  4, &
@@ -469,7 +479,12 @@ module constants
        iCpError2   = 47, &
        iAreaPTot   = 48, &
        iAreaPs     = 49, &
-       iCpMin      = 50
+       iCpMin      = 50, &
+       ! the following 3 reserve 3 slots each!
+       iCoForceX   = 51, &
+       iCoForceY   = 54, &
+       iCoForceZ   = 57, &
+       iMassVi = 60
 
   ! Constants for zipper comm
 

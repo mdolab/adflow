@@ -32,7 +32,6 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 
 
 def getDVGeo(ffdFile, isComplex=False):
-
     # Setup geometry/mesh
     DVGeo = DVGeometry(ffdFile, isComplex=isComplex)
 
@@ -387,7 +386,6 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         atol = 5e-10
 
         for dv in ["alpha", "mach"]:  # defaultAeroDVs:
-
             funcsSens = defaultdict(lambda: {})
             setattr(self.ap, dv, getattr(self.ap, dv) + self.h * 1j)
 
@@ -431,8 +429,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             rtol = 5e-9
         atol = 5e-9
 
-        # for dv in ["span", "twist", "shape"]:
-        for dv in ["shape"]:
+        for dv in ["span", "twist", "shape"]:
 
             xRef[dv][0] += self.h * 1j
 

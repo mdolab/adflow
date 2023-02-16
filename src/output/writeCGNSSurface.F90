@@ -20,6 +20,7 @@ contains
     use utils, only : terminate, setPointers
     use surfaceFamilies, only : famNames
     use sorting, only : qsortStrings
+    use commonFormats, only : strings
     implicit none
 
     ! Input Param
@@ -82,10 +83,8 @@ contains
           call cg_open_f(surfSolFileNames(nn), mode_write, cgnsInd, &
                ierr)
           if(ierr /= CG_OK) then
-             write(errorMessage,101) trim(surfSolFileNames(nn))
-101          format("File",1X,A,1X,"could not be opened by cgns for &
-                  &writing")
-
+             write(errorMessage, strings) "File ", trim(surfSolFileNames(nn)), &
+               " could not be opened by cgns for writing"
              call terminate("writeCGNSSurfaceSol", errorMessage)
           endif
 
@@ -214,8 +213,7 @@ contains
           do iSurf=1,nIsoSurface
              call computeIsoVariable(isoSurfaceNames(iSurf), ll, isoValues(iSurf))
 
-11           format(A,A,A,F7.4)
-             write(contourName, 11) "Contour ", trim(isoSurfaceNames(iSurf)), "=", isoValues(iSurf)
+             write(contourName, "(3(A), F7.4)") "Contour ", trim(isoSurfaceNames(iSurf)), "=", isoValues(iSurf)
              call writeIsoSurface(contourName, ll, nIsoSurfVar, isoSurfSolNames)
           end do
 

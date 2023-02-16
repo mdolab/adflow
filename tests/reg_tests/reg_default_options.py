@@ -24,6 +24,15 @@ defaultFuncList = [
     "sepsensoravgx",
     "sepsensoravgy",
     "sepsensoravgz",
+    "cofxx",
+    "cofxy",
+    "cofxz",
+    "cofyx",
+    "cofyy",
+    "cofyz",
+    "cofzx",
+    "cofzy",
+    "cofzz",
 ]
 
 defaultAeroDVs = ["alpha", "beta", "mach", "P", "T", "xRef", "yRef", "zRef"]
