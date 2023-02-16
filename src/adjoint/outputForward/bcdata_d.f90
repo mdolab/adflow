@@ -409,8 +409,6 @@ contains
         end do
       end do
     end if
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': wall temperature not specified for isothermal wall')
   end subroutine bcdataisothermalwall_d
 ! ---------------------------------------------------------------
 ! routines that set the actual bcdata values from the cgns data set
@@ -466,8 +464,6 @@ contains
         end do
       end do
     end if
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': wall temperature not specified for isothermal wall')
   end subroutine bcdataisothermalwall
   subroutine bcdataadiabaticwall(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend)
