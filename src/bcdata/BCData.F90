@@ -1635,7 +1635,7 @@ contains
                    call setBCVarNamesAdiabaticWall
                    call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                 case (NSWallIsothermal)
-                   call setBCVarNamesSupersonicInflow  ! possible bug?
+                   call setBCVarNamesSupersonicInflow
                    call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
                 case (SupersonicInflow)
                    call setBCVarNamesSupersonicInflow
@@ -3134,11 +3134,11 @@ contains
              ! call the appropriate routine.
              select case (BCType(j))
 
-!            case (NSWallAdiabatic)
-!            TODO: This is not needed, right?
-!               call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
-!               call extractFromDataSet_d(bcVarArray, bcVarArrayd)
-!               call BCDataAdiabaticWall_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
+           ! This would be needed if wall roughness is differentiated
+           ! case (NSWallAdiabatic)
+           !    call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+           !    call extractFromDataSet_d(bcVarArray, bcVarArrayd)
+           !    call BCDataAdiabaticWall_d(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
 
              case (NSWallIsothermal)
                 call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
@@ -3236,12 +3236,12 @@ contains
              ! call the appropriate routine.
              select case (BCType(j))
 
-!            case (NSWallAdiabatic)
-!            TODO: This is not needed, right?
-!               call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
-!               call extractFromDataSet(bcVarArray)
-!               call BCDataAdiabaticWall_b(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
-!               call extractFromDataSet_b(bcVarArray, bcVarArrayd)
+           ! This would be needed if wall roughness is differentiated
+           ! case (NSWallAdiabatic)
+           !    call setBCVarNamesAdiabaticWall ! sets bcVarNames and nbcVar
+           !    call extractFromDataSet(bcVarArray)
+           !    call BCDataAdiabaticWall_b(j, bcVarArray, bcVarArrayd, iBeg, iEnd, jBeg, jEnd)
+           !    call extractFromDataSet_b(bcVarArray, bcVarArrayd)
 
              case (NSWallIsothermal)
                 call setBCVarNamesIsothermalWall ! sets bcVarNames and nbcVar
