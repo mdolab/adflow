@@ -237,6 +237,15 @@ useft2SA:
   desc: >
     Include the ft2 term in the Spalart-Allmaras turbulence model.
 
+useRoughSA:
+  desc: >
+    Activates the rough SA variant described `here
+    <https://turbmodels.larc.nasa.gov/spalart.html#sarough>`__. To use it,
+    blockettes must be disabled ``useBlockettes: False``. The roughness value on
+    the boundary may be prescribed like a regular boundary value using the name
+    ``SandGrainRoughness``. Additionally, the ADflow method ``setSurfaceRoughness``
+    may be used.
+
 eddyVisInfRatio:
   desc: >
     Free stream value of eddy viscosity.
