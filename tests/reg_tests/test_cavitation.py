@@ -66,7 +66,6 @@ class CavitationBasicTests(reg_test_classes.RegTest):
         self.CFDSolver = CFDSolver
 
     def test_cavitation_metrics_and_derivatives(self):
-
         evalFuncs = ["cavitation", "cpmin"]
 
         self.CFDSolver(self.ap)
@@ -191,7 +190,6 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
         self.CFDSolver = CFDSolver
 
     def cmplx_test_cavitation_adjoints(self):
-
         aDV = {"alpha": self.ap.alpha}
         funcs = {}
         funcsSensCS = {}
@@ -260,7 +258,6 @@ class CavitationCmplxTests(reg_test_classes.CmplxRegTest):
         # we assume the adjoint sensitivities are also true
 
         for funcName in ["cavitation", "cpmin"]:
-
             fullName = f"naca0012_rans_2D_{funcName}"
 
             refVal = self.handler.db["cavitation totals"][fullName]["alpha"]

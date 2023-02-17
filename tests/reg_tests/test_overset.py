@@ -12,9 +12,9 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 
 # Tests for overset and zipper meshes using a mesh with two overlapping cubes
 
+
 # This does not affect the hole cutting for this case but tests that cutCallback is working
 def cutCallback(xCen, CGNSZoneNameIDs, cellIDs, flags):
-
     # Blank cells in the negative y-axis
     flags[xCen[:, 1] < 0] = 1
 
@@ -62,7 +62,6 @@ class TestCubeOverset(unittest.TestCase):
     N_PROCS = 2
 
     def setUp(self):
-
         super().setUp()
 
         # Start with the default testing options dictionary
@@ -101,7 +100,6 @@ class TestCubeOverset(unittest.TestCase):
         self.CFDSolver.DVGeo.setDesignVars(dvDict)
 
     def test_convergence(self):
-
         # Solve the flow
         self.CFDSolver(self.ap)
 
