@@ -155,19 +155,19 @@ python module libadflow
          end subroutine setdefaultvalues
 
          subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine monitorvariables
 
          subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine surfacevariables
 
          subroutine volumevariables(variables) ! in :test:volumeVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine volumevariables
 
          subroutine isovariables(variables) ! in :test:volumeVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine isovariables
 
          subroutine initializeisosurfacevariables(values,nvalues) ! in :test:setIsoSurfaceValues.F90
