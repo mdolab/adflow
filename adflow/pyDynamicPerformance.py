@@ -90,7 +90,6 @@ def calculateFrequencyAndDamping(Cmq, Clalpha, Cd, Cmalpha, Cmalphadot, mass, Iy
 
 
 def calculateNAlpha(Clalpha, rho, Area, U, mass, g):
-
     """
     calculate the g normalized lift derivative
     """
