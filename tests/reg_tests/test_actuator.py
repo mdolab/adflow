@@ -29,7 +29,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
     ref_file = "actuator_tests.json"
 
     def setUp(self):
-
         super().setUp()
 
         self.options = {
@@ -477,7 +476,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.handler.root_add_dict("flowpower sens", funcsSens["actuator_pipe_flowpower_az"], rtol=1e-12, atol=1e-12)
 
     def test_actuator_partials(self):
-
         az_force = 600.0
         az_heat = 1e5
         # need to set all dvs because training may re-use leftover dvs from a previous test
@@ -545,7 +543,6 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
     h = 1e-40
 
     def setUp(self):
-
         super().setUp()
 
         self.options = {
@@ -715,7 +712,6 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
 
         funcs_plus = {}
         for dv in ["thrust", "heat"]:
-
             # save the old dv
             dvsave = aDV[dv]
 
@@ -816,7 +812,6 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
 
         funcs_plus = {}
         for dv in ["thrust", "heat"]:
-
             # save the old dv
             dvsave = aDV[dv]
 

@@ -84,7 +84,6 @@ class TestJacVecBWDFast(reg_test_classes.RegTest):
         np.testing.assert_allclose(wBar, wBarfast, atol=1e-16, err_msg="w wrt res")
 
     def test_repeated_calls(self):
-
         dwBar = self.CFDSolver.getStatePerturbation(314)
 
         wBarfast1 = self.CFDSolver.computeJacobianVectorProductBwdFast(resBar=dwBar)

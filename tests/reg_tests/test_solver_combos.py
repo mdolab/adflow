@@ -152,7 +152,6 @@ class TestSolverCombos(reg_test_classes.RegTest):
 # we do the same tests as the previous one but with complex mode here
 @parameterized_class(solver_combo_params)
 class TestCmplxSolverCombos(reg_test_classes.CmplxRegTest):
-
     # TODO add a convergence test with a complex perturbed DV also
 
     N_PROCS = 2

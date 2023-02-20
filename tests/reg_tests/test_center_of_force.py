@@ -24,7 +24,6 @@ class TestCenterOfForce(unittest.TestCase):
     N_PROCS = 2
 
     def setUp(self):
-
         super().setUp()
 
         options = copy.copy(adflowDefOpts)

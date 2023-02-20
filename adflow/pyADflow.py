@@ -79,7 +79,6 @@ class ADFLOW(AeroSolver):
     """
 
     def __init__(self, comm=None, options=None, debug=False, dtype="d"):
-
         startInitTime = time.time()
 
         # Define the memory allocation flags ASAP (needed for __del__)
@@ -320,7 +319,6 @@ class ADFLOW(AeroSolver):
 
             # loop over the surfaces
             for surf in surfDict:
-
                 if self.comm.rank == 0:
                     print(f"Explicitly blanking surface: {surf}")
 
@@ -1093,7 +1091,6 @@ class ADFLOW(AeroSolver):
         return funcName
 
     def addFunction(self, funcName, groupName, name=None):
-
         """Add a "new" function to ADflow by restricting the integration of an
         existing ADflow function by a section of the mesh defined by
         'groupName'. The function will be named 'funcName_groupName'
@@ -1127,7 +1124,6 @@ class ADFLOW(AeroSolver):
         return self.addFunctions([funcName], [groupName], [name])[0]
 
     def addFunctions(self, funcNames, groupNames, names=None):
-
         """Add a series of new functions to ADflow. This is a vector version of
         the addFunction() routine. See that routine for more documentation."""
 
@@ -1168,7 +1164,6 @@ class ADFLOW(AeroSolver):
         return newFuncNames
 
     def setRotationRate(self, rotCenter, rotRate, cgnsBlocks=None):
-
         """
         Set the rotational rate for the grid:
 
@@ -1296,7 +1291,6 @@ class ADFLOW(AeroSolver):
 
         # Mesh warp may have already failed:
         if not self.adflow.killsignals.fatalfail:
-
             if (
                 self.getOption("equationMode").lower() == "steady"
                 or self.getOption("equationMode").lower() == "time spectral"
@@ -1914,7 +1908,6 @@ class ADFLOW(AeroSolver):
         writeSolution=False,
         workUnitTime=None,
     ):
-
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
@@ -2659,7 +2652,6 @@ class ADFLOW(AeroSolver):
 
         # Now try to find the interval
         for i in range(nIter):
-
             if f > 0.0:
                 da = -numpy.abs(da)
             else:
@@ -3083,7 +3075,6 @@ class ADFLOW(AeroSolver):
 
         # Write out Data only on root proc:
         if self.myid == 0:
-
             # Make numpy arrays of all data
             pts = numpy.vstack(pts)
             dXs = numpy.vstack(dXs)
@@ -3236,7 +3227,6 @@ class ADFLOW(AeroSolver):
         return sol
 
     def getIblankCheckSum(self, fileName=None):
-
         ncells = self.adflow.adjointvars.ncellslocal[0]
         nCellTotal = self.comm.allreduce(ncells)
         if self.myid != 0:
@@ -3700,7 +3690,6 @@ class ADFLOW(AeroSolver):
             self.adflow.preprocessingapi.updategridvelocitiesalllevels()
 
     def _getBCDataFromAeroProblem(self, AP):
-
         variables = []
         dataArray = []
         groupNames = []
@@ -3859,7 +3848,6 @@ class ADFLOW(AeroSolver):
         self.adflow.setcptargets(numpy.ravel(fullCpTarget), TS + 1)
 
     def getSurfacePoints(self, groupName=None, includeZipper=True, TS=0):
-
         """Return the coordinates for the surfaces defined by groupName.
 
         Parameters
@@ -3966,7 +3954,6 @@ class ADFLOW(AeroSolver):
         return groupArray
 
     def globalNKPreCon(self, inVec, outVec):
-
         """This function is ONLY used as a preconditioner to the
         global Aero-Structural system. This computes outVec =
         M^(-1)*inVec where M^(-1) is the approximate inverse
@@ -4051,7 +4038,6 @@ class ADFLOW(AeroSolver):
             self.adjointSetup = False
 
     def solveAdjoint(self, aeroProblem, objective, forcePoints=None, structAdjoint=None, groupName=None):
-
         # Remind the user they are using frozen turbulence.
         if self.getOption("frozenTurbulence") and self.myid == 0:
             self.getOption("equationType").lower() == "rans" and ADFLOWWarning(
@@ -4091,7 +4077,6 @@ class ADFLOW(AeroSolver):
         # on this AP, there is no point in solving the reset, so continue
         # with psi set as zero
         if not (self.curAP.adjointFailed and self.getOption("skipafterfailedadjoint")):
-
             if self.getOption("restartAdjoint"):
                 # Use the previous solution as the initial guess
                 psi = self.curAP.adflowData.adjoints[objective]
@@ -4195,7 +4180,6 @@ class ADFLOW(AeroSolver):
         return funcsSens
 
     def _setAeroDVs(self):
-
         """Do everything that is required to deal with aerodynamic
         design variables in ADflow"""
 
@@ -4857,7 +4841,6 @@ class ADFLOW(AeroSolver):
         # Process xVbar back to the xS or xDV (geometric variables) if necessary
         if xDvDeriv or xSDeriv:
             if self.mesh is not None:
-
                 self.mesh.warpDeriv(xvbar)
                 xsbar = self.mesh.getdXs()
                 xsbar = self.mapVector(xsbar, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
@@ -5212,7 +5195,6 @@ class ADFLOW(AeroSolver):
         return self.comm.bcast(norm)
 
     def _getInfo(self):
-
         """Get the haloed state vector, pressure (and viscocities). Used to
         save "state" between aeroProblems
 
@@ -5292,7 +5274,6 @@ class ADFLOW(AeroSolver):
 
         # Do the functions one at a time:
         for f in evalFuncs:
-
             key = f"{self.curAP.name}_{f}"
 
             # Set dict structure for this derivative
@@ -5430,7 +5411,6 @@ class ADFLOW(AeroSolver):
                 val = []
                 isoDict = value
                 for key in isoDict.keys():
-
                     isoVals = numpy.atleast_1d(isoDict[key])
                     for i in range(len(isoVals)):
                         var.append(key)
@@ -6446,7 +6426,6 @@ class ADFLOW(AeroSolver):
                     "wall boundary conditions for the zipper mesh."
                 )
         else:
-
             if zipFam not in self.families:
                 raise Error(
                     "Trying to create the zipper mesh, but '%s' is not a "
@@ -6460,7 +6439,6 @@ class ADFLOW(AeroSolver):
         self.coords0 = self.getSurfaceCoordinates(self.allFamilies)
 
     def finalizeUserIntegrationSurfaces(self):
-
         if self.hasIntegrationSurfaces and (not self.userSurfaceIntegrationsFinalized):
             # We can also do the surface plane integrations here if necessary
             self.adflow.usersurfaceintegrations.interpolateintegrationsurfaces()
