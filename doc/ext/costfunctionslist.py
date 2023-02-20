@@ -9,7 +9,7 @@ TEMP_FILE = "tmp_cost.rst"
 # Helper classes to mock the solver class and attributes
 class Empty:
     def __del__(self):
-        return
+        return None
 
 
 class ReturnsOne:
