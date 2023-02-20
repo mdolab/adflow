@@ -5724,22 +5724,19 @@ end subroutine cross_prod
     character(len=*),intent(in) :: file
     integer(kind=intType),intent(in) :: line
     integer::ierr
+    character(len=maxStringLen) :: errorCodeFormat, errorLineFormat
+
+    errorCodeFormat = "(2(A, I2,)"
+    errorLineFormat = "(A, I5, A, A)"
 
     if (errorcode == 0) then
        return ! No error, return immediately
     else
 #ifndef USE_TAPENADE
-#ifndef USE_COMPLEX
        print *,'---------------------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
-       write(*,901) "Error at line: ",line," in file: ",file
+       print errorCodeFormat, "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
+       print errorLineFormat, "Error at line: ",line," in file: ",file
        print *,'---------------------------------------------------------------------------'
-#else
-       print *,'-----------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
-       write(*,901) "Error at line: ",line," in file: ",file
-       print *,'-----------------------------------------------------------------'
-#endif
        call MPI_Abort(adflow_comm_world,errorcode,ierr)
        stop ! Just in case
 #else
@@ -5747,8 +5744,6 @@ end subroutine cross_prod
 #endif
     end if
 
-900 format(A,I2,A,I2)
-901 format(A,I5,A,A)
   end subroutine EChk
 
   subroutine convertToLowerCase(string)
@@ -6462,8 +6457,8 @@ end subroutine cross_prod
     !       is started.
     !
     use constants
-    use monitor, only : nTimeStepsRestart, timeUnsteadyRestart, &
-         timeUnsteady, timeStepUnsteady
+    use monitor, only : nTimeStepsRestart, timeUnsteadyRestart, timeUnsteady, timeStepUnsteady
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables
@@ -6474,10 +6469,8 @@ end subroutine cross_prod
     ! Write the time step number to the integer string and the
     ! physical time to the real string.
 
-    write(integerString,"(i7)") timeStepUnsteady + &
-         nTimeStepsRestart
-    write(realString,"(es12.5)") timeUnsteady + &
-         timeUnsteadyRestart
+    write(integerString,"(i7)") timeStepUnsteady + nTimeStepsRestart
+    write(realString,"(es12.5)") timeUnsteady + timeUnsteadyRestart
 
     integerString = adjustl(integerString)
     realString    = adjustl(realString)
@@ -6485,17 +6478,12 @@ end subroutine cross_prod
     ! Write the header to stdout.
 
     print "(a)", "#"
-    print 100
-    print 101
-    print 102, trim(integerString), trim(realString)
-    print 101
-    print 100
+    print "(a)", "#**************************************************************************"
     print "(a)", "#"
-
-100 format("#*************************************************&
-         &*************************")
-101 format("#")
-102 format("# Unsteady time step ",a,", physical time ",a, " seconds")
+    print strings, "# Unsteady time step ", trim(integerString),", physical time ", trim(realString), " seconds"
+    print "(a)", "#"
+    print "(a)", "#**************************************************************************"
+    print "(a)", "#"
 
   end subroutine unsteadyHeader
 

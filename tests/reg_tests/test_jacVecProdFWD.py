@@ -237,7 +237,6 @@ class TestJacVecFwdCS(reg_test_classes.CmplxRegTest):
 
     # ------------------- Derivative routine checks ----------------------------
     def cmplx_test_wDot(self):
-
         if not hasattr(self, "name"):
             # return immediately when the setup method is being called on the based class and NOT the
             # classes created using parametrized

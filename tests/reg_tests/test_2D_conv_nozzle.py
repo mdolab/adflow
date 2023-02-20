@@ -93,7 +93,6 @@ class TestSolve(reg_test_classes.RegTest):
         self.CFDSolver.addFunction("dragmomentum", "all_flow", name="thrust_momentum")
 
     def test_solve(self):
-
         # do the solve
         self.CFDSolver(self.ap)
 
