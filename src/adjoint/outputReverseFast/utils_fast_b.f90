@@ -817,7 +817,7 @@ contains
 !
 !      computes the stability derivatives based on the time spectral
 !      solution of a given mesh. takes in the force coefficients at
-!      all time instantces and computes the aggregate parameters
+!      all time instantces and computes the agregate parameters
 !
     use constants
     use communication

@@ -632,7 +632,7 @@ contains
     if (tsstability) then
       print*, &
 &     'error: tsstabilityderivatives are *broken*. they need to be ', &
-&     'completely verified from scratch'
+&     'completely verifed from scratch'
       stop
     end if
   end subroutine getcostfunctions_d
@@ -947,7 +947,7 @@ contains
     if (tsstability) then
       print*, &
 &     'error: tsstabilityderivatives are *broken*. they need to be ', &
-&     'completely verified from scratch'
+&     'completely verifed from scratch'
       stop
     end if
   end subroutine getcostfunctions
@@ -2366,7 +2366,7 @@ contains
       cofsumfzd(3) = cofsumfzd(3) + zcod*fz + zco*fzd
       cofsumfz(3) = cofsumfz(3) + zco*fz
 ! momentum forces are a little tricky.  we negate because
-! have to re-apply fact to massflowratelocal to undo it, because
+! have to re-apply fact to massflowratelocal to undoo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.
 ! also, the sign is flipped between inflow and outflow types
       massflowratelocald = internalflowfact*inflowfact*(blk*(fact*&
@@ -2697,7 +2697,7 @@ contains
       cofsumfz(2) = cofsumfz(2) + yco*fz
       cofsumfz(3) = cofsumfz(3) + zco*fz
 ! momentum forces are a little tricky.  we negate because
-! have to re-apply fact to massflowratelocal to undo it, because
+! have to re-apply fact to massflowratelocal to undoo it, because
 ! we need the signed behavior of ssi to get the momentum forces correct.
 ! also, the sign is flipped between inflow and outflow types
       massflowratelocal = massflowratelocal*fact/timeref*blk/cellarea*&
