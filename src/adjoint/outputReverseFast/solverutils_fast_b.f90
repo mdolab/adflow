@@ -778,8 +778,8 @@ branch = myIntStack(myIntPtr)
 !             normal grid velocities of the faces.
 !
 ! loop over the three directions.
-! the original code is elegant but the tapenade has a difficult time 
-! to understand it. thus, we unfold it and make it easier for the 
+! the original code is elegant but the tapenade has a difficult time
+! to understand it. thus, we unfold it and make it easier for the
 ! tapenade.
 ! i-direction
         do k=1,ke
