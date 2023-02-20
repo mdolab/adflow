@@ -6,10 +6,11 @@ import os
 # This is in the file scope rather than the class so it can be imported in the conf.py file
 TEMP_FILE = "tmp_cost.rst"
 
+
 # Helper classes to mock the solver class and attributes
 class Empty:
     def __del__(self):
-        return None
+        return
 
 
 class ReturnsOne:
