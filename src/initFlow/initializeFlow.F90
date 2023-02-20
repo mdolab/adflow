@@ -204,6 +204,7 @@ contains
     use turbbcRoutines, only : applyallTurbBCthisblock, bcTurbTreatment
     use BCRoutines, only : applyallBC_block
     use utils, only : setPointers, mynorm2
+    use communication, only : myID
     implicit none
 
     real(kind=realType), intent(in), dimension(nwf) :: oldWinf
@@ -214,7 +215,7 @@ contains
 
     ! variables for rotation update
     real(kind=realType), dimension(3) :: v1, v2, v3, vCell
-    real(kind=realType), dimension(3, 3) :: rotMat
+    real(kind=realType), dimension(3, 3) :: rotMat, Wmat, Wmat2
     real(kind=realType) :: theta, dotProd, mag1, mag2, cosine
 
     ! Make sure we have the updated wInf
@@ -230,14 +231,12 @@ contains
        ! update and just return. This will save some time when the
        ! solver is called with the same AP conditions multiple times,
        ! such as during a GS AS solution
-       write (*,*) "change in flow is not big enough, exiting early"
        return
     end if
 
     ! The state changed enough so we will run a correction update.
     ! Check which correction type we are using
     if (correctionType .eq. "offset") then
-      write(*,*) "applying the offset method"
 
       ! Loop over all the blocks, adding the offset between the old and new Winf
       do sps=1, nTimeIntervalsSpectral
@@ -257,7 +256,6 @@ contains
       end do
 
     else if (correctionType .eq. "rotate") then
-    write(*,*) "applying the rotate method"
       ! rotate the flow velocities by the rotation change in Winf. Maintains velocity magnitudes.
       ! v1 is the old free stream velocity vector, v2 is the new one.
       v1 = oldWinf(ivx:ivz)
@@ -281,7 +279,7 @@ contains
       theta = acos(cosine)
 
       ! then compute the normal vector of the rotation plane. This catches all changes in
-      ! alpha and beta, and we don't need to keep track of the individual angles and apply
+      ! alpha and beta, and we don't need to keep track of the individual rotations and apply
       ! them in the same order.
 
       ! Compute the cross product of v1 and v2 to get v3
@@ -291,27 +289,32 @@ contains
       ! normalize
       v3 = v3 / sqrt(sum(v3**2))
 
-      ! set the rotation matrix. we will multiply the velocities by this in each cell.
+      ! compute the rotation matrix.
+      ! for this, we use the "Rodrigues' Rotation Formula" as described here:
+      ! https://mathworld.wolfram.com/RodriguesRotationFormula.html
+      Wmat = zero
+      Wmat2 = zero
       rotMat = zero
+
+      ! compute Wmat and Wmat^2 first
+      ! W is the multiplication of a 3D levi-civita tensor with v3.
+      ! we could do this in a loop but it takes more lines of code
+      ! and is more difficult to understand. so just set the values
+      Wmat(1,2) = -v3(3)
+      Wmat(1,3) =  v3(2)
+      Wmat(2,1) =  v3(3)
+      Wmat(2,3) = -v3(1)
+      Wmat(3,1) = -v3(2)
+      Wmat(3,2) =  v3(1)
+      Wmat2 = matmul(Wmat, Wmat)
+
+      ! start with identity
       do i = 1, 3
-         do j = 1, 3
-            if (i == j) then
-            rotMat(i,j) = cos(theta) + (1.0 - cos(theta)) * v3(i)**2
-            else
-            rotMat(i,j) = (1.0 - cos(theta)) * v3(i) * v3(j)
-            end if
-         end do
-      end do
-      do i = 1, 3
-         do j = 1, 3
-            if (i /= j) then
-            rotMat(i,j) = rotMat(i,j) + sin(theta) * v3(6-i-j)
-            end if
-         end do
+         rotMat(i, i) = one
       end do
 
-      write(*,*) "v1", v1, "v2", v2, "v3", v3
-      write(*,*) "v1 rot by rotmat", matmul(rotMat, v1), "v2", v2
+      ! add the W terms
+      rotMat = rotMat + sin(theta) * Wmat + (1.0 - cos(theta)) * Wmat2
 
       ! Loop over all the blocks, rotate each cell's velocity
       do sps=1, nTimeIntervalsSpectral
