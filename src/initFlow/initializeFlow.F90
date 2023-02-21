@@ -327,6 +327,9 @@ contains
                      vCell = w(i, j, k, ivx:ivz)
                      ! rotate and put back
                      w(i, j, k, ivx:ivz) = matmul(rotMat, vCell)
+                     ! we also add the offset to the density and energy
+                     w(i, j, j, irho) = w(i, j, j, irho) + deltaWinf(irho)
+                     w(i, j, j, irhoE) = w(i, j, j, irhoE) + deltaWinf(irhoE)
                   end do
                end do
             end do
