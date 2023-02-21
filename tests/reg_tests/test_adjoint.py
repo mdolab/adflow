@@ -424,7 +424,6 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         atol = 5e-9
 
         for dv in ["span", "twist", "shape"]:
-
             xRef[dv][0] += self.h * 1j
 
             self.CFDSolver.resetFlow(self.ap)
