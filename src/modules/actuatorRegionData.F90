@@ -1,44 +1,44 @@
 module actuatorRegionData
-  use constants
+    use constants
 
-  type actuatorRegionType
+    type actuatorRegionType
 
-     character(len=maxStringLen) :: famName
-     integer(kind=intType) :: famID
-     ! The block indexes of the cells included in this region
-     integer(kind=intType), dimension(:, :), pointer :: cellIDs
+        character(len=maxStringLen) :: famName
+        integer(kind=intType) :: famID
+        ! The block indexes of the cells included in this region
+        integer(kind=intType), dimension(:, :), pointer :: cellIDs
 
-     ! The total number of cells included this proc has
-     integer(kind=intType) :: nCellIDs
+        ! The total number of cells included this proc has
+        integer(kind=intType) :: nCellIDs
 
-     ! the force vector to be applied on this region
-     ! this is equal to torque * axisVec
-     real(kind=realType) :: force(3)
+        ! the force vector to be applied on this region
+        ! this is equal to torque * axisVec
+        real(kind=realType) :: force(3)
 
-     ! magnitude of the total torque to be applied on this region
-     real(kind=realType) :: torque
-     ! vector that determines the direction of the applied torque
-     real(kind=realType), dimension(3) :: axisVec
+        ! magnitude of the total torque to be applied on this region
+        real(kind=realType) :: torque
+        ! vector that determines the direction of the applied torque
+        real(kind=realType), dimension(3) :: axisVec
 
-     ! total heat flux to be added on this regoin
-     real(kind=realType) :: heat
+        ! total heat flux to be added on this regoin
+        real(kind=realType) :: heat
 
-     ! Volume is the total integrated volume of all cells (on all
-     ! procs) included in this region
-     real(kind=realType) :: volume
+        ! Volume is the total integrated volume of all cells (on all
+        ! procs) included in this region
+        real(kind=realType) :: volume
 
-     integer(kind=intType), dimension(:), allocatable :: blkPtr
+        integer(kind=intType), dimension(:), allocatable :: blkPtr
 
-     ! Set the defaults for solution relaxation
-     real(kind=realType) :: relaxStart = -one
-     real(kind=realType) :: relaxEnd = -one
-  end type actuatorRegionType
+        ! Set the defaults for solution relaxation
+        real(kind=realType) :: relaxStart = -one
+        real(kind=realType) :: relaxEnd = -one
+    end type actuatorRegionType
 
-  integer(kind=intType), parameter :: nActuatorRegionsMax=10
-  type(actuatorRegionType), dimension(nActuatorRegionsMax), target :: actuatorRegions
-  integer(kind=intTYpe) :: nActuatorRegions=0
+    integer(kind=intType), parameter :: nActuatorRegionsMax = 10
+    type(actuatorRegionType), dimension(nActuatorRegionsMax), target :: actuatorRegions
+    integer(kind=intTYpe) :: nActuatorRegions = 0
 
 #ifndef USE_TAPENADE
-  type(actuatorRegionType), dimension(nActuatorRegionsMax), target :: actuatorRegionsd
+    type(actuatorRegionType), dimension(nActuatorRegionsMax), target :: actuatorRegionsd
 #endif
 end module actuatorRegionData
