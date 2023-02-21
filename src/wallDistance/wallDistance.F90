@@ -119,7 +119,6 @@ contains
 
     end subroutine updateWallDistancesQuickly
 
-
     ! ----------------------------------------------------------------------
     !                                                                      |
     !                    No Tapenade Routine below this line               |
@@ -327,7 +326,6 @@ contains
             end do
         end do
     end subroutine updateWallRoughness
-
 
     subroutine computeWallDistance(level, allocMem)
         !

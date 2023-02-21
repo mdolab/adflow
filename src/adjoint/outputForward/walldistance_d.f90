@@ -158,7 +158,4 @@ contains
       end do
     end do
   end subroutine updatewalldistancesquickly
-  subroutine updatewallroughness()
-    implicit none
-  end subroutine updatewallroughness
 end module walldistance_d
