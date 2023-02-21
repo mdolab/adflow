@@ -119,9 +119,16 @@ contains
 
     end subroutine updateWallDistancesQuickly
 
-    subroutine updateWallRoughness()
+
+    ! ----------------------------------------------------------------------
+    !                                                                      |
+    !                    No Tapenade Routine below this line               |
+    !                                                                      |
+    ! ----------------------------------------------------------------------
 
 #ifndef USE_TAPENADE
+
+    subroutine updateWallRoughness()
 
         ! Sets the roughness-value (ks) of the nearest wall-cell in the volume cells.
         !
@@ -319,17 +326,9 @@ contains
                 deallocate (ksGlobal, cellIdGlobal)
             end do
         end do
-
-#endif
     end subroutine updateWallRoughness
 
-    ! ----------------------------------------------------------------------
-    !                                                                      |
-    !                    No Tapenade Routine below this line               |
-    !                                                                      |
-    ! ----------------------------------------------------------------------
 
-#ifndef USE_TAPENADE
     subroutine computeWallDistance(level, allocMem)
         !
         !       wallDistance computes the distances of the cell centers to
@@ -2128,7 +2127,6 @@ contains
                             if (useRoughSA) then
                                 flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = -1
                             end if
-
                         end if
                     end do
                 end do
