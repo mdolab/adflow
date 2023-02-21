@@ -114,7 +114,7 @@ contains
                 do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                         do l = nt1, nt2
-                            ww1(i, j, l) = bvt(i, j, l) - bmt(i, j, l, l)*ww2(i, j, l)
+                            ww1(i, j, l) = bvt(i, j, l) - bmt(i, j, l, l) * ww2(i, j, l)
                             do m = nt1, nt2
                                 if (m /= l .and. bmt(i, j, l, m) /= zero) &
                                     ww1(i, j, l) = ww2(i, j, l)
@@ -132,7 +132,7 @@ contains
                             do l = nt1, nt2
                                 w(1, i, j, l) = bvti1(i, j, l)
                                 do m = nt1, nt2
-                                    w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m)*w(2, i, j, m)
+                                    w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m) * w(2, i, j, m)
                                 end do
                             end do
                         end do
@@ -144,7 +144,7 @@ contains
                             do l = nt1, nt2
                                 w(ie, i, j, l) = bvti2(i, j, l)
                                 do m = nt1, nt2
-                                    w(ie, i, j, l) = w(ie, i, j, l) - bmti2(i, j, l, m)*w(il, i, j, m)
+                                    w(ie, i, j, l) = w(ie, i, j, l) - bmti2(i, j, l, m) * w(il, i, j, m)
                                 end do
                             end do
                         end do
@@ -156,7 +156,7 @@ contains
                             do l = nt1, nt2
                                 w(i, 1, j, l) = bvtj1(i, j, l)
                                 do m = nt1, nt2
-                                    w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m)*w(i, 2, j, m)
+                                    w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m) * w(i, 2, j, m)
                                 end do
                             end do
                         end do
@@ -168,7 +168,7 @@ contains
                             do l = nt1, nt2
                                 w(i, je, j, l) = bvtj2(i, j, l)
                                 do m = nt1, nt2
-                                    w(i, je, j, l) = w(i, je, j, l) - bmtj2(i, j, l, m)*w(i, jl, j, m)
+                                    w(i, je, j, l) = w(i, je, j, l) - bmtj2(i, j, l, m) * w(i, jl, j, m)
                                 end do
                             end do
                         end do
@@ -180,7 +180,7 @@ contains
                             do l = nt1, nt2
                                 w(i, j, 1, l) = bvtk1(i, j, l)
                                 do m = nt1, nt2
-                                    w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m)*w(i, j, 2, m)
+                                    w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m) * w(i, j, 2, m)
                                 end do
                             end do
                         end do
@@ -192,7 +192,7 @@ contains
                             do l = nt1, nt2
                                 w(i, j, ke, l) = bvtk2(i, j, l)
                                 do m = nt1, nt2
-                                    w(i, j, ke, l) = w(i, j, ke, l) - bmtk2(i, j, l, m)*w(i, j, kl, m)
+                                    w(i, j, ke, l) = w(i, j, ke, l) - bmtk2(i, j, l, m) * w(i, j, kl, m)
                                 end do
                             end do
                         end do
@@ -329,42 +329,42 @@ contains
         case (iMin)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(1, i, j) = saRoughFact(2, i, j)*rev(2, i, j)
+                    rev(1, i, j) = saRoughFact(2, i, j) * rev(2, i, j)
                 end do
             end do
 
         case (iMax)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(ie, i, j) = saRoughFact(il, i, j)*rev(il, i, j)
+                    rev(ie, i, j) = saRoughFact(il, i, j) * rev(il, i, j)
                 end do
             end do
 
         case (jMin)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, 1, j) = saRoughFact(i, 2, j)*rev(i, 2, j)
+                    rev(i, 1, j) = saRoughFact(i, 2, j) * rev(i, 2, j)
                 end do
             end do
 
         case (jMax)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, je, j) = saRoughFact(i, jl, j)*rev(i, jl, j)
+                    rev(i, je, j) = saRoughFact(i, jl, j) * rev(i, jl, j)
                 end do
             end do
 
         case (kMin)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, j, 1) = saRoughFact(i, j, 2)*rev(i, j, 2)
+                    rev(i, j, 1) = saRoughFact(i, j, 2) * rev(i, j, 2)
                 end do
             end do
 
         case (kMax)
             do j = BCData(nn)%jcBeg, BCData(nn)%jcEnd
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
-                    rev(i, j, ke) = saRoughFact(i, j, kl)*rev(i, j, kl)
+                    rev(i, j, ke) = saRoughFact(i, j, kl) * rev(i, j, kl)
                 end do
             end do
         end select
@@ -404,9 +404,9 @@ contains
                 ! normal and the free stream velocity direction and add the
                 ! possible grid velocity.
 
-                dot = BCData(nn)%norm(i, j, 1)*wInf(ivx) + &
-                      BCData(nn)%norm(i, j, 2)*wInf(ivy) + &
-                      BCData(nn)%norm(i, j, 3)*wInf(ivz) - BCData(nn)%rface(i, j)
+                dot = BCData(nn)%norm(i, j, 1) * wInf(ivx) + &
+                      BCData(nn)%norm(i, j, 2) * wInf(ivy) + &
+                      BCData(nn)%norm(i, j, 3) * wInf(ivz) - BCData(nn)%rface(i, j)
 
                 ! Determine whether we are dealing with an inflow or
                 ! outflow boundary here.
@@ -491,22 +491,22 @@ contains
                 do l = nt1, nt2
                     select case (BCFaceID(nn))
                     case (iMin)
-                        bvti1(i, j, l) = two*BCData(nn)%turbInlet(i, j, l)
+                        bvti1(i, j, l) = two * BCData(nn)%turbInlet(i, j, l)
                         bmti1(i, j, l, l) = one
                     case (iMax)
-                        bvti2(i, j, l) = two*BCData(nn)%turbInlet(i, j, l)
+                        bvti2(i, j, l) = two * BCData(nn)%turbInlet(i, j, l)
                         bmti2(i, j, l, l) = one
                     case (jMin)
-                        bvtj1(i, j, l) = two*BCData(nn)%turbInlet(i, j, l)
+                        bvtj1(i, j, l) = two * BCData(nn)%turbInlet(i, j, l)
                         bmtj1(i, j, l, l) = one
                     case (jMax)
-                        bvtj2(i, j, l) = two*BCData(nn)%turbInlet(i, j, l)
+                        bvtj2(i, j, l) = two * BCData(nn)%turbInlet(i, j, l)
                         bmtj2(i, j, l, l) = one
                     case (kMin)
-                        bvtk1(i, j, l) = two*BCData(nn)%turbInlet(i, j, l)
+                        bvtk1(i, j, l) = two * BCData(nn)%turbInlet(i, j, l)
                         bmtk1(i, j, l, l) = one
                     case (kMax)
-                        bvtk2(i, j, l) = two*BCData(nn)%turbInlet(i, j, l)
+                        bvtk2(i, j, l) = two * BCData(nn)%turbInlet(i, j, l)
                         bmtk2(i, j, l, l) = one
                     end select
                 end do
@@ -900,13 +900,13 @@ contains
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                         ii = max(2, min(i, iiMax))
 
-                        nu = rlv(2, i, j)/w(2, i, j, irho)
-                        tmpd = one/(rkwBeta1*(d2Wall(2, ii, jj)**2))
+                        nu = rlv(2, i, j) / w(2, i, j, irho)
+                        tmpd = one / (rkwBeta1 * (d2Wall(2, ii, jj)**2))
 
                         bmti1(i, j, itu1, itu1) = one
                         bmti1(i, j, itu2, itu2) = one
 
-                        bvti1(i, j, itu2) = two*60.0_realType*nu*tmpd
+                        bvti1(i, j, itu2) = two * 60.0_realType * nu * tmpd
                     end do
                 end do
 
@@ -919,13 +919,13 @@ contains
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                         ii = max(2, min(i, iiMax))
 
-                        nu = rlv(jl, i, j)/w(il, i, j, irho)
-                        tmpd = one/(rkwBeta1*(d2Wall(il, ii, jj)**2))
+                        nu = rlv(jl, i, j) / w(il, i, j, irho)
+                        tmpd = one / (rkwBeta1 * (d2Wall(il, ii, jj)**2))
 
                         bmti2(i, j, itu1, itu1) = one
                         bmti2(i, j, itu2, itu2) = one
 
-                        bvti2(i, j, itu2) = two*60.0_realType*nu*tmpd
+                        bvti2(i, j, itu2) = two * 60.0_realType * nu * tmpd
                     end do
                 end do
 
@@ -938,13 +938,13 @@ contains
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                         ii = max(2, min(i, iiMax))
 
-                        nu = rlv(i, 2, j)/w(i, 2, j, irho)
-                        tmpd = one/(rkwBeta1*(d2Wall(ii, 2, jj)**2))
+                        nu = rlv(i, 2, j) / w(i, 2, j, irho)
+                        tmpd = one / (rkwBeta1 * (d2Wall(ii, 2, jj)**2))
 
                         bmtj1(i, j, itu1, itu1) = one
                         bmtj1(i, j, itu2, itu2) = one
 
-                        bvtj1(i, j, itu2) = two*60.0_realType*nu*tmpd
+                        bvtj1(i, j, itu2) = two * 60.0_realType * nu * tmpd
                     end do
                 end do
 
@@ -957,13 +957,13 @@ contains
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                         ii = max(2, min(i, iiMax))
 
-                        nu = rlv(i, jl, j)/w(i, jl, j, irho)
-                        tmpd = one/(rkwBeta1*(d2Wall(ii, jl, jj)**2))
+                        nu = rlv(i, jl, j) / w(i, jl, j, irho)
+                        tmpd = one / (rkwBeta1 * (d2Wall(ii, jl, jj)**2))
 
                         bmtj2(i, j, itu1, itu1) = one
                         bmtj2(i, j, itu2, itu2) = one
 
-                        bvtj2(i, j, itu2) = two*60.0_realType*nu*tmpd
+                        bvtj2(i, j, itu2) = two * 60.0_realType * nu * tmpd
                     end do
                 end do
 
@@ -976,13 +976,13 @@ contains
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                         ii = max(2, min(i, iiMax))
 
-                        nu = rlv(i, j, 2)/w(i, j, 2, irho)
-                        tmpd = one/(rkwBeta1*(d2Wall(ii, jj, 2)**2))
+                        nu = rlv(i, j, 2) / w(i, j, 2, irho)
+                        tmpd = one / (rkwBeta1 * (d2Wall(ii, jj, 2)**2))
 
                         bmtk1(i, j, itu1, itu1) = one
                         bmtk1(i, j, itu2, itu2) = one
 
-                        bvtk1(i, j, itu2) = two*60.0_realType*nu*tmpd
+                        bvtk1(i, j, itu2) = two * 60.0_realType * nu * tmpd
                     end do
                 end do
 
@@ -995,13 +995,13 @@ contains
                     do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                         ii = max(2, min(i, iiMax))
 
-                        nu = rlv(i, j, kl)/w(i, j, kl, irho)
-                        tmpd = one/(rkwBeta1*(d2Wall(ii, jj, kl)**2))
+                        nu = rlv(i, j, kl) / w(i, j, kl, irho)
+                        tmpd = one / (rkwBeta1 * (d2Wall(ii, jj, kl)**2))
 
                         bmtk2(i, j, itu1, itu1) = one
                         bmtk2(i, j, itu2, itu2) = one
 
-                        bvtk2(i, j, itu2) = two*60.0_realType*nu*tmpd
+                        bvtk2(i, j, itu2) = two * 60.0_realType * nu * tmpd
                     end do
                 end do
             end select
@@ -1108,11 +1108,11 @@ contains
                 do i = BCData(nn)%icBeg, BCData(nn)%icEnd
                     ii = max(2, min(i, iiMax))
 
-                    nu = rlv2(i, j)/ww2(i, j, irho)
-                    tmpd = one/(dd2Wall(ii - 1, jj - 1)**2)
-                    tmpe = two*nu*tmpd
-                    tmpf = -20.0_realType*(nu*tmpd)**2 &
-                           /abs(tmpe*ww2(i, j, itu1))
+                    nu = rlv2(i, j) / ww2(i, j, irho)
+                    tmpd = one / (dd2Wall(ii - 1, jj - 1)**2)
+                    tmpe = two * nu * tmpd
+                    tmpf = -20.0_realType * (nu * tmpd)**2 &
+                           / abs(tmpe * ww2(i, j, itu1))
                     if (rvfN == 6) tmpf = zero
 
                     bmt(i, j, itu1, itu1) = one
@@ -1120,8 +1120,8 @@ contains
                     bmt(i, j, itu3, itu3) = one
                     bmt(i, j, itu4, itu4) = one
 
-                    bmt(i, j, itu2, itu1) = -two*tmpe
-                    bmt(i, j, itu4, itu3) = -two*tmpf
+                    bmt(i, j, itu2, itu1) = -two * tmpe
+                    bmt(i, j, itu4, itu3) = -two * tmpf
                 end do
             end do
 #endif
@@ -1268,7 +1268,7 @@ contains
                         do l = nt1, nt2
                             w(1, i, j, l) = bvti1(i, j, l)
                             do m = nt1, nt2
-                                w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m)*w(2, i, j, m)
+                                w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m) * w(2, i, j, m)
                             end do
                             if (secondHalo) w(0, i, j, l) = w(1, i, j, l)
                         end do
@@ -1288,7 +1288,7 @@ contains
                         do l = nt1, nt2
                             w(ie, i, j, l) = bvti2(i, j, l)
                             do m = nt1, nt2
-                                w(ie, i, j, l) = w(ie, i, j, l) - bmti2(i, j, l, m)*w(il, i, j, m)
+                                w(ie, i, j, l) = w(ie, i, j, l) - bmti2(i, j, l, m) * w(il, i, j, m)
                             end do
                             if (secondHalo) w(ib, i, j, l) = w(ie, i, j, l)
                         end do
@@ -1308,7 +1308,7 @@ contains
                         do l = nt1, nt2
                             w(i, 1, j, l) = bvtj1(i, j, l)
                             do m = nt1, nt2
-                                w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m)*w(i, 2, j, m)
+                                w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m) * w(i, 2, j, m)
                             end do
                             if (secondHalo) w(i, 0, j, l) = w(i, 1, j, l)
                         end do
@@ -1328,7 +1328,7 @@ contains
                         do l = nt1, nt2
                             w(i, je, j, l) = bvtj2(i, j, l)
                             do m = nt1, nt2
-                                w(i, je, j, l) = w(i, je, j, l) - bmtj2(i, j, l, m)*w(i, jl, j, m)
+                                w(i, je, j, l) = w(i, je, j, l) - bmtj2(i, j, l, m) * w(i, jl, j, m)
                             end do
                             if (secondHalo) w(i, jb, j, l) = w(i, je, j, l)
                         end do
@@ -1348,7 +1348,7 @@ contains
                         do l = nt1, nt2
                             w(i, j, 1, l) = bvtk1(i, j, l)
                             do m = nt1, nt2
-                                w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m)*w(i, j, 2, m)
+                                w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m) * w(i, j, 2, m)
                             end do
                             if (secondHalo) w(i, j, 0, l) = w(i, j, 1, l)
                         end do
@@ -1368,7 +1368,7 @@ contains
                         do l = nt1, nt2
                             w(i, j, ke, l) = bvtk2(i, j, l)
                             do m = nt1, nt2
-                                w(i, j, ke, l) = w(i, j, ke, l) - bmtk2(i, j, l, m)*w(i, j, kl, m)
+                                w(i, j, ke, l) = w(i, j, ke, l) - bmtk2(i, j, l, m) * w(i, j, kl, m)
                             end do
                             if (secondHalo) w(i, j, kb, l) = w(i, j, ke, l)
                         end do
@@ -1406,8 +1406,8 @@ contains
             return
         end if
 
-        saRoughFact = (ks(i, j, k) - d2wall(i, j, k)/0.03_realType)/ &
-                      (ks(i, j, k) + d2wall(i, j, k)/0.03_realType)
+        saRoughFact = (ks(i, j, k) - d2wall(i, j, k) / 0.03_realType) / &
+                      (ks(i, j, k) + d2wall(i, j, k) / 0.03_realType)
 
     end function saRoughFact
 

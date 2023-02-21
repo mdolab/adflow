@@ -102,7 +102,7 @@ contains
         implicit none
 
         ! Local parameters
-        real(kind=realType), parameter :: f23 = two*third
+        real(kind=realType), parameter :: f23 = two * third
 
         ! Local variables.
         integer(kind=intType) :: i, j, k, nn, ii
@@ -120,15 +120,15 @@ contains
 
         ! Set model constants
         cv13 = rsaCv1**3
-        kar2Inv = one/(rsaK**2)
+        kar2Inv = one / (rsaK**2)
         cw36 = rsaCw3**6
-        cb3Inv = one/rsaCb3
+        cb3Inv = one / rsaCb3
 
         ! Determine the non-dimensional wheel speed of this block.
 
-        omegax = timeRef*sections(sectionID)%rotRate(1)
-        omegay = timeRef*sections(sectionID)%rotRate(2)
-        omegaz = timeRef*sections(sectionID)%rotRate(3)
+        omegax = timeRef * sections(sectionID)%rotRate(1)
+        omegay = timeRef * sections(sectionID)%rotRate(2)
+        omegaz = timeRef * sections(sectionID)%rotRate(3)
 
         ! Create switches to production term depending on the variable that
         ! should be used
@@ -139,10 +139,10 @@ contains
 
 #ifdef TAPENADE_REVERSE
         !$AD II-LOOP
-        do ii = 0, nx*ny*nz - 1
+        do ii = 0, nx * ny * nz - 1
             i = mod(ii, nx) + 2
-            j = mod(ii/nx, ny) + 2
-            k = ii/(nx*ny) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
             do k = 2, kl
                 do j = 2, jl
@@ -153,67 +153,67 @@ contains
                         ! such that the cell i,j,k does not give a contribution.
                         ! The gradient is scaled by the factor 2*vol.
 
-                        uux = w(i + 1, j, k, ivx)*si(i, j, k, 1) - w(i - 1, j, k, ivx)*si(i - 1, j, k, 1) &
-                              + w(i, j + 1, k, ivx)*sj(i, j, k, 1) - w(i, j - 1, k, ivx)*sj(i, j - 1, k, 1) &
-                              + w(i, j, k + 1, ivx)*sk(i, j, k, 1) - w(i, j, k - 1, ivx)*sk(i, j, k - 1, 1)
-                        uuy = w(i + 1, j, k, ivx)*si(i, j, k, 2) - w(i - 1, j, k, ivx)*si(i - 1, j, k, 2) &
-                              + w(i, j + 1, k, ivx)*sj(i, j, k, 2) - w(i, j - 1, k, ivx)*sj(i, j - 1, k, 2) &
-                              + w(i, j, k + 1, ivx)*sk(i, j, k, 2) - w(i, j, k - 1, ivx)*sk(i, j, k - 1, 2)
-                        uuz = w(i + 1, j, k, ivx)*si(i, j, k, 3) - w(i - 1, j, k, ivx)*si(i - 1, j, k, 3) &
-                              + w(i, j + 1, k, ivx)*sj(i, j, k, 3) - w(i, j - 1, k, ivx)*sj(i, j - 1, k, 3) &
-                              + w(i, j, k + 1, ivx)*sk(i, j, k, 3) - w(i, j, k - 1, ivx)*sk(i, j, k - 1, 3)
+                        uux = w(i + 1, j, k, ivx) * si(i, j, k, 1) - w(i - 1, j, k, ivx) * si(i - 1, j, k, 1) &
+                              + w(i, j + 1, k, ivx) * sj(i, j, k, 1) - w(i, j - 1, k, ivx) * sj(i, j - 1, k, 1) &
+                              + w(i, j, k + 1, ivx) * sk(i, j, k, 1) - w(i, j, k - 1, ivx) * sk(i, j, k - 1, 1)
+                        uuy = w(i + 1, j, k, ivx) * si(i, j, k, 2) - w(i - 1, j, k, ivx) * si(i - 1, j, k, 2) &
+                              + w(i, j + 1, k, ivx) * sj(i, j, k, 2) - w(i, j - 1, k, ivx) * sj(i, j - 1, k, 2) &
+                              + w(i, j, k + 1, ivx) * sk(i, j, k, 2) - w(i, j, k - 1, ivx) * sk(i, j, k - 1, 2)
+                        uuz = w(i + 1, j, k, ivx) * si(i, j, k, 3) - w(i - 1, j, k, ivx) * si(i - 1, j, k, 3) &
+                              + w(i, j + 1, k, ivx) * sj(i, j, k, 3) - w(i, j - 1, k, ivx) * sj(i, j - 1, k, 3) &
+                              + w(i, j, k + 1, ivx) * sk(i, j, k, 3) - w(i, j, k - 1, ivx) * sk(i, j, k - 1, 3)
 
                         ! Idem for the gradient of v.
 
-                        vvx = w(i + 1, j, k, ivy)*si(i, j, k, 1) - w(i - 1, j, k, ivy)*si(i - 1, j, k, 1) &
-                              + w(i, j + 1, k, ivy)*sj(i, j, k, 1) - w(i, j - 1, k, ivy)*sj(i, j - 1, k, 1) &
-                              + w(i, j, k + 1, ivy)*sk(i, j, k, 1) - w(i, j, k - 1, ivy)*sk(i, j, k - 1, 1)
-                        vvy = w(i + 1, j, k, ivy)*si(i, j, k, 2) - w(i - 1, j, k, ivy)*si(i - 1, j, k, 2) &
-                              + w(i, j + 1, k, ivy)*sj(i, j, k, 2) - w(i, j - 1, k, ivy)*sj(i, j - 1, k, 2) &
-                              + w(i, j, k + 1, ivy)*sk(i, j, k, 2) - w(i, j, k - 1, ivy)*sk(i, j, k - 1, 2)
-                        vvz = w(i + 1, j, k, ivy)*si(i, j, k, 3) - w(i - 1, j, k, ivy)*si(i - 1, j, k, 3) &
-                              + w(i, j + 1, k, ivy)*sj(i, j, k, 3) - w(i, j - 1, k, ivy)*sj(i, j - 1, k, 3) &
-                              + w(i, j, k + 1, ivy)*sk(i, j, k, 3) - w(i, j, k - 1, ivy)*sk(i, j, k - 1, 3)
+                        vvx = w(i + 1, j, k, ivy) * si(i, j, k, 1) - w(i - 1, j, k, ivy) * si(i - 1, j, k, 1) &
+                              + w(i, j + 1, k, ivy) * sj(i, j, k, 1) - w(i, j - 1, k, ivy) * sj(i, j - 1, k, 1) &
+                              + w(i, j, k + 1, ivy) * sk(i, j, k, 1) - w(i, j, k - 1, ivy) * sk(i, j, k - 1, 1)
+                        vvy = w(i + 1, j, k, ivy) * si(i, j, k, 2) - w(i - 1, j, k, ivy) * si(i - 1, j, k, 2) &
+                              + w(i, j + 1, k, ivy) * sj(i, j, k, 2) - w(i, j - 1, k, ivy) * sj(i, j - 1, k, 2) &
+                              + w(i, j, k + 1, ivy) * sk(i, j, k, 2) - w(i, j, k - 1, ivy) * sk(i, j, k - 1, 2)
+                        vvz = w(i + 1, j, k, ivy) * si(i, j, k, 3) - w(i - 1, j, k, ivy) * si(i - 1, j, k, 3) &
+                              + w(i, j + 1, k, ivy) * sj(i, j, k, 3) - w(i, j - 1, k, ivy) * sj(i, j - 1, k, 3) &
+                              + w(i, j, k + 1, ivy) * sk(i, j, k, 3) - w(i, j, k - 1, ivy) * sk(i, j, k - 1, 3)
 
                         ! And for the gradient of w.
 
-                        wwx = w(i + 1, j, k, ivz)*si(i, j, k, 1) - w(i - 1, j, k, ivz)*si(i - 1, j, k, 1) &
-                              + w(i, j + 1, k, ivz)*sj(i, j, k, 1) - w(i, j - 1, k, ivz)*sj(i, j - 1, k, 1) &
-                              + w(i, j, k + 1, ivz)*sk(i, j, k, 1) - w(i, j, k - 1, ivz)*sk(i, j, k - 1, 1)
-                        wwy = w(i + 1, j, k, ivz)*si(i, j, k, 2) - w(i - 1, j, k, ivz)*si(i - 1, j, k, 2) &
-                              + w(i, j + 1, k, ivz)*sj(i, j, k, 2) - w(i, j - 1, k, ivz)*sj(i, j - 1, k, 2) &
-                              + w(i, j, k + 1, ivz)*sk(i, j, k, 2) - w(i, j, k - 1, ivz)*sk(i, j, k - 1, 2)
-                        wwz = w(i + 1, j, k, ivz)*si(i, j, k, 3) - w(i - 1, j, k, ivz)*si(i - 1, j, k, 3) &
-                              + w(i, j + 1, k, ivz)*sj(i, j, k, 3) - w(i, j - 1, k, ivz)*sj(i, j - 1, k, 3) &
-                              + w(i, j, k + 1, ivz)*sk(i, j, k, 3) - w(i, j, k - 1, ivz)*sk(i, j, k - 1, 3)
+                        wwx = w(i + 1, j, k, ivz) * si(i, j, k, 1) - w(i - 1, j, k, ivz) * si(i - 1, j, k, 1) &
+                              + w(i, j + 1, k, ivz) * sj(i, j, k, 1) - w(i, j - 1, k, ivz) * sj(i, j - 1, k, 1) &
+                              + w(i, j, k + 1, ivz) * sk(i, j, k, 1) - w(i, j, k - 1, ivz) * sk(i, j, k - 1, 1)
+                        wwy = w(i + 1, j, k, ivz) * si(i, j, k, 2) - w(i - 1, j, k, ivz) * si(i - 1, j, k, 2) &
+                              + w(i, j + 1, k, ivz) * sj(i, j, k, 2) - w(i, j - 1, k, ivz) * sj(i, j - 1, k, 2) &
+                              + w(i, j, k + 1, ivz) * sk(i, j, k, 2) - w(i, j, k - 1, ivz) * sk(i, j, k - 1, 2)
+                        wwz = w(i + 1, j, k, ivz) * si(i, j, k, 3) - w(i - 1, j, k, ivz) * si(i - 1, j, k, 3) &
+                              + w(i, j + 1, k, ivz) * sj(i, j, k, 3) - w(i, j - 1, k, ivz) * sj(i, j - 1, k, 3) &
+                              + w(i, j, k + 1, ivz) * sk(i, j, k, 3) - w(i, j, k - 1, ivz) * sk(i, j, k - 1, 3)
 
                         ! Compute the components of the stress tensor.
                         ! The combination of the current scaling of the velocity
                         ! gradients (2*vol) and the definition of the stress tensor,
                         ! leads to the factor 1/(4*vol).
 
-                        fact = fourth/vol(i, j, k)
+                        fact = fourth / vol(i, j, k)
 
                         if (turbProd .eq. strain) then
 
-                            sxx = two*fact*uux
-                            syy = two*fact*vvy
-                            szz = two*fact*wwz
+                            sxx = two * fact * uux
+                            syy = two * fact * vvy
+                            szz = two * fact * wwz
 
-                            sxy = fact*(uuy + vvx)
-                            sxz = fact*(uuz + wwx)
-                            syz = fact*(vvz + wwy)
+                            sxy = fact * (uuy + vvx)
+                            sxz = fact * (uuz + wwx)
+                            syz = fact * (vvz + wwy)
 
                             ! Compute 2/3 * divergence of velocity squared
 
-                            div2 = f23*(sxx + syy + szz)**2
+                            div2 = f23 * (sxx + syy + szz)**2
 
                             ! Compute strain production term
 
-                            strainMag2 = two*(sxy**2 + sxz**2 + syz**2) &
+                            strainMag2 = two * (sxy**2 + sxz**2 + syz**2) &
                                          + sxx**2 + syy**2 + szz**2
 
-                            strainProd = two*strainMag2 - div2
+                            strainProd = two * strainMag2 - div2
 
                             ss = sqrt(strainProd)
 
@@ -222,9 +222,9 @@ contains
                             ! Compute the three components of the vorticity vector.
                             ! Substract the part coming from the rotating frame.
 
-                            vortx = two*fact*(wwy - vvz) - two*omegax
-                            vorty = two*fact*(uuz - wwx) - two*omegay
-                            vortz = two*fact*(vvx - uuy) - two*omegaz
+                            vortx = two * fact * (wwy - vvz) - two * omegax
+                            vorty = two * fact * (uuz - wwx) - two * omegay
+                            vortz = two * fact * (vvx - uuy) - two * omegaz
 
                             ! Compute the vorticity production term
 
@@ -243,25 +243,25 @@ contains
                         ! and nu) and the functions fv1 and fv2. The latter corrects
                         ! the production term near a viscous wall.
 
-                        nu = rlv(i, j, k)/w(i, j, k, irho)
-                        chi = w(i, j, k, itu1)/nu
+                        nu = rlv(i, j, k) / w(i, j, k, irho)
+                        chi = w(i, j, k, itu1) / nu
 
                         if (.not. useRoughSA) then
-                            dist2Inv = one/(d2Wall(i, j, k)**2)
+                            dist2Inv = one / (d2Wall(i, j, k)**2)
                         else
-                            distRough = d2Wall(i, j, k) + 0.03_realType*ks(i, j, k)
-                            dist2Inv = one/(distRough**2)
-                            chi = chi + rsaCr1*ks(i, j, k)/distRough
+                            distRough = d2Wall(i, j, k) + 0.03_realType * ks(i, j, k)
+                            dist2Inv = one / (distRough**2)
+                            chi = chi + rsaCr1 * ks(i, j, k) / distRough
                         end if
 
-                        chi2 = chi*chi
-                        chi3 = chi*chi2
-                        fv1 = chi3/(chi3 + cv13)
+                        chi2 = chi * chi
+                        chi3 = chi * chi2
+                        fv1 = chi3 / (chi3 + cv13)
 
                         if (.not. useRoughSA) then
-                            fv2 = one - chi/(one + chi*fv1)
+                            fv2 = one - chi / (one + chi * fv1)
                         else
-                            fv2 = one - w(i, j, k, itu1)/(nu + w(i, j, k, itu1)*fv1)
+                            fv2 = one - w(i, j, k, itu1) / (nu + w(i, j, k, itu1) * fv1)
                         end if
 
                         ! The function ft2, which is designed to keep a laminar
@@ -269,7 +269,7 @@ contains
                         ! this function should be set to 0.0.
 
                         if (useft2SA) then
-                            ft2 = rsaCt3*exp(-rsaCt4*chi2)
+                            ft2 = rsaCt3 * exp(-rsaCt4 * chi2)
                         else
                             ft2 = zero
                         end if
@@ -277,12 +277,12 @@ contains
                         ! Correct the production term to account for the influence
                         ! of the wall.
 
-                        sst = ss + w(i, j, k, itu1)*fv2*kar2Inv*dist2Inv
+                        sst = ss + w(i, j, k, itu1) * fv2 * kar2Inv * dist2Inv
 
                         ! Add rotation term (useRotationSA defined in inputParams.F90)
 
                         if (useRotationSA) then
-                            sst = sst + rsaCrot*min(zero, sqrt(two*strainMag2))
+                            sst = sst + rsaCrot * min(zero, sqrt(two * strainMag2))
                         end if
 
                         ! Make sure that this term remains positive
@@ -295,12 +295,12 @@ contains
                         ! to avoid numerical problems. This is ok, because the
                         ! asymptotical value of fw is then already reached.
 
-                        rr = w(i, j, k, itu1)*kar2Inv*dist2Inv/sst
+                        rr = w(i, j, k, itu1) * kar2Inv * dist2Inv / sst
                         rr = min(rr, 10.0_realType)
-                        gg = rr + rsaCw2*(rr**6 - rr)
+                        gg = rr + rsaCw2 * (rr**6 - rr)
                         gg6 = gg**6
-                        termFw = ((one + cw36)/(gg6 + cw36))**sixth
-                        fwSa = gg*termFw
+                        termFw = ((one + cw36) / (gg6 + cw36))**sixth
+                        fwSa = gg * termFw
 
                         ! Compute the source term; some terms are saved for the
                         ! linearization. The source term is stored in dvt.
@@ -308,30 +308,30 @@ contains
                         if (approxSA) then
                             term1 = zero
                         else
-                            term1 = rsaCb1*(one - ft2)*ss
+                            term1 = rsaCb1 * (one - ft2) * ss
                         end if
-                        term2 = dist2Inv*(kar2Inv*rsaCb1*((one - ft2)*fv2 + ft2) &
-                                          - rsaCw1*fwSa)
+                        term2 = dist2Inv * (kar2Inv * rsaCb1 * ((one - ft2) * fv2 + ft2) &
+                                            - rsaCw1 * fwSa)
 
-                        scratch(i, j, k, idvt) = (term1 + term2*w(i, j, k, itu1))*w(i, j, k, itu1)
+                        scratch(i, j, k, idvt) = (term1 + term2 * w(i, j, k, itu1)) * w(i, j, k, itu1)
 
 #ifndef USE_TAPENADE
                         ! Compute some derivatives w.r.t. nuTilde. These will occur
                         ! in the left hand side, i.e. the matrix for the implicit
                         ! treatment.
 
-                        dfv1 = three*chi2*cv13/((chi3 + cv13)**2)
+                        dfv1 = three * chi2 * cv13 / ((chi3 + cv13)**2)
                         if (.not. useRoughSA) then
-                            dfv2 = (chi2*dfv1 - one)/(nu*((one + chi*fv1)**2))
+                            dfv2 = (chi2 * dfv1 - one) / (nu * ((one + chi * fv1)**2))
                         else
-                            dfv2 = (w(i, j, k, itu1)*dfv1 - nu)/(nu + w(i, j, k, itu1)*fv1)**2
+                            dfv2 = (w(i, j, k, itu1) * dfv1 - nu) / (nu + w(i, j, k, itu1) * fv1)**2
                         end if
-                        dft2 = -two*rsaCt4*chi*ft2/nu
+                        dft2 = -two * rsaCt4 * chi * ft2 / nu
 
-                        drr = (one - rr*(fv2 + w(i, j, k, itu1)*dfv2)) &
-                              *kar2Inv*dist2Inv/sst
-                        dgg = (one - rsaCw2 + six*rsaCw2*(rr**5))*drr
-                        dfw = (cw36/(gg6 + cw36))*termFw*dgg
+                        drr = (one - rr * (fv2 + w(i, j, k, itu1) * dfv2)) &
+                              * kar2Inv * dist2Inv / sst
+                        dgg = (one - rsaCw2 + six * rsaCw2 * (rr**5)) * drr
+                        dfw = (cw36 / (gg6 + cw36)) * termFw * dgg
 
                         ! Compute the source term jacobian. Note that the part
                         ! containing term1 is treated explicitly. The reason is that
@@ -340,10 +340,10 @@ contains
                         ! the stability. You may want to play around and try to
                         ! take this term into account in the jacobian.
                         ! Note that -dsource/dnu is stored.
-                        qq(i, j, k) = -two*term2*w(i, j, k, itu1) &
-                                      - dist2Inv*w(i, j, k, itu1)*w(i, j, k, itu1) &
-                                      *(rsaCb1*kar2Inv*(dfv2 - ft2*dfv2 - fv2*dft2 + dft2) &
-                                        - rsaCw1*dfw)
+                        qq(i, j, k) = -two * term2 * w(i, j, k, itu1) &
+                                      - dist2Inv * w(i, j, k, itu1) * w(i, j, k, itu1) &
+                                      * (rsaCb1 * kar2Inv * (dfv2 - ft2 * dfv2 - fv2 * dft2 + dft2) &
+                                         - rsaCw1 * dfw)
 
                         ! A couple of terms in qq may lead to a negative
                         ! contribution. Clip qq to zero, if the total is negative.
@@ -379,19 +379,19 @@ contains
 
         ! Set model constants
         cv13 = rsaCv1**3
-        kar2Inv = one/(rsaK**2)
+        kar2Inv = one / (rsaK**2)
         cw36 = rsaCw3**6
-        cb3Inv = one/rsaCb3
+        cb3Inv = one / rsaCb3
 
         !
         !       Viscous terms in k-direction.
         !
 #ifdef TAPENADE_REVERSE
         !$AD II-LOOP
-        do ii = 0, nx*ny*nz - 1
+        do ii = 0, nx * ny * nz - 1
             i = mod(ii, nx) + 2
-            j = mod(ii/nx, ny) + 2
-            k = ii/(nx*ny) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
             do k = 2, kl
                 do j = 2, jl
@@ -400,22 +400,22 @@ contains
                         ! Compute the metrics in zeta-direction, i.e. along the
                         ! line k = constant.
 
-                        voli = one/vol(i, j, k)
-                        volmi = two/(vol(i, j, k) + vol(i, j, k - 1))
-                        volpi = two/(vol(i, j, k) + vol(i, j, k + 1))
+                        voli = one / vol(i, j, k)
+                        volmi = two / (vol(i, j, k) + vol(i, j, k - 1))
+                        volpi = two / (vol(i, j, k) + vol(i, j, k + 1))
 
-                        xm = sk(i, j, k - 1, 1)*volmi
-                        ym = sk(i, j, k - 1, 2)*volmi
-                        zm = sk(i, j, k - 1, 3)*volmi
-                        xp = sk(i, j, k, 1)*volpi
-                        yp = sk(i, j, k, 2)*volpi
-                        zp = sk(i, j, k, 3)*volpi
+                        xm = sk(i, j, k - 1, 1) * volmi
+                        ym = sk(i, j, k - 1, 2) * volmi
+                        zm = sk(i, j, k - 1, 3) * volmi
+                        xp = sk(i, j, k, 1) * volpi
+                        yp = sk(i, j, k, 2) * volpi
+                        zp = sk(i, j, k, 3) * volpi
 
-                        xa = half*(sk(i, j, k, 1) + sk(i, j, k - 1, 1))*voli
-                        ya = half*(sk(i, j, k, 2) + sk(i, j, k - 1, 2))*voli
-                        za = half*(sk(i, j, k, 3) + sk(i, j, k - 1, 3))*voli
-                        ttm = xm*xa + ym*ya + zm*za
-                        ttp = xp*xa + yp*ya + zp*za
+                        xa = half * (sk(i, j, k, 1) + sk(i, j, k - 1, 1)) * voli
+                        ya = half * (sk(i, j, k, 2) + sk(i, j, k - 1, 2)) * voli
+                        za = half * (sk(i, j, k, 3) + sk(i, j, k - 1, 3)) * voli
+                        ttm = xm * xa + ym * ya + zm * za
+                        ttp = xp * xa + yp * ya + zp * za
 
                         ! ttm and ttp ~ 1/deltaX^2
 
@@ -433,23 +433,23 @@ contains
                         ! k+1, k and k-1 in the second derivative. Make sure that
                         ! these coefficients are nonnegative.
 
-                        cnud = -rsaCb2*w(i, j, k, itu1)*cb3Inv
-                        cam = ttm*cnud
-                        cap = ttp*cnud
+                        cnud = -rsaCb2 * w(i, j, k, itu1) * cb3Inv
+                        cam = ttm * cnud
+                        cap = ttp * cnud
 
                         ! Compute nuTilde at the faces
 
-                        nutm = half*(w(i, j, k - 1, itu1) + w(i, j, k, itu1))
-                        nutp = half*(w(i, j, k + 1, itu1) + w(i, j, k, itu1))
+                        nutm = half * (w(i, j, k - 1, itu1) + w(i, j, k, itu1))
+                        nutp = half * (w(i, j, k + 1, itu1) + w(i, j, k, itu1))
 
                         ! Compute nu at the faces
 
-                        nu = rlv(i, j, k)/w(i, j, k, irho)
-                        num = half*(rlv(i, j, k - 1)/w(i, j, k - 1, irho) + nu)
-                        nup = half*(rlv(i, j, k + 1)/w(i, j, k + 1, irho) + nu)
+                        nu = rlv(i, j, k) / w(i, j, k, irho)
+                        num = half * (rlv(i, j, k - 1) / w(i, j, k - 1, irho) + nu)
+                        nup = half * (rlv(i, j, k + 1) / w(i, j, k + 1, irho) + nu)
 
-                        cdm = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
-                        cdp = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
+                        cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+                        cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
 
                         c1m = max(cdm + cam, zero)
                         c1p = max(cdp + cap, zero)
@@ -458,8 +458,8 @@ contains
                         ! Update the residual for this cell and store the possible
                         ! coefficients for the matrix in b1, c1 and d1.
 
-                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, k - 1, itu1) &
-                                                 - c10*w(i, j, k, itu1) + c1p*w(i, j, k + 1, itu1)
+                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j, k - 1, itu1) &
+                                                 - c10 * w(i, j, k, itu1) + c1p * w(i, j, k + 1, itu1)
 #ifndef USE_TAPENADE
                         b1 = -c1m
                         c1 = c10
@@ -475,10 +475,10 @@ contains
 
                         if (k == 2) then
                             qq(i, j, k) = qq(i, j, k) + c1 &
-                                          - b1*max(bmtk1(i, j, itu1, itu1), zero)
+                                          - b1 * max(bmtk1(i, j, itu1, itu1), zero)
                         else if (k == kl) then
                             qq(i, j, k) = qq(i, j, k) + c1 &
-                                          - d1*max(bmtk2(i, j, itu1, itu1), zero)
+                                          - d1 * max(bmtk2(i, j, itu1, itu1), zero)
                         else
                             qq(i, j, k) = qq(i, j, k) + c1
                         end if
@@ -495,10 +495,10 @@ contains
         !
 #ifdef TAPENADE_REVERSE
         !$AD II-LOOP
-        do ii = 0, nx*ny*nz - 1
+        do ii = 0, nx * ny * nz - 1
             i = mod(ii, nx) + 2
-            j = mod(ii/nx, ny) + 2
-            k = ii/(nx*ny) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
             do k = 2, kl
                 do j = 2, jl
@@ -507,22 +507,22 @@ contains
                         ! Compute the metrics in eta-direction, i.e. along the
                         ! line j = constant.
 
-                        voli = one/vol(i, j, k)
-                        volmi = two/(vol(i, j, k) + vol(i, j - 1, k))
-                        volpi = two/(vol(i, j, k) + vol(i, j + 1, k))
+                        voli = one / vol(i, j, k)
+                        volmi = two / (vol(i, j, k) + vol(i, j - 1, k))
+                        volpi = two / (vol(i, j, k) + vol(i, j + 1, k))
 
-                        xm = sj(i, j - 1, k, 1)*volmi
-                        ym = sj(i, j - 1, k, 2)*volmi
-                        zm = sj(i, j - 1, k, 3)*volmi
-                        xp = sj(i, j, k, 1)*volpi
-                        yp = sj(i, j, k, 2)*volpi
-                        zp = sj(i, j, k, 3)*volpi
+                        xm = sj(i, j - 1, k, 1) * volmi
+                        ym = sj(i, j - 1, k, 2) * volmi
+                        zm = sj(i, j - 1, k, 3) * volmi
+                        xp = sj(i, j, k, 1) * volpi
+                        yp = sj(i, j, k, 2) * volpi
+                        zp = sj(i, j, k, 3) * volpi
 
-                        xa = half*(sj(i, j, k, 1) + sj(i, j - 1, k, 1))*voli
-                        ya = half*(sj(i, j, k, 2) + sj(i, j - 1, k, 2))*voli
-                        za = half*(sj(i, j, k, 3) + sj(i, j - 1, k, 3))*voli
-                        ttm = xm*xa + ym*ya + zm*za
-                        ttp = xp*xa + yp*ya + zp*za
+                        xa = half * (sj(i, j, k, 1) + sj(i, j - 1, k, 1)) * voli
+                        ya = half * (sj(i, j, k, 2) + sj(i, j - 1, k, 2)) * voli
+                        za = half * (sj(i, j, k, 3) + sj(i, j - 1, k, 3)) * voli
+                        ttm = xm * xa + ym * ya + zm * za
+                        ttp = xp * xa + yp * ya + zp * za
 
                         ! Computation of the viscous terms in eta-direction; note
                         ! that cross-derivatives are neglected, i.e. the mesh is
@@ -538,17 +538,17 @@ contains
                         ! j+1, j and j-1 in the second derivative. Make sure that
                         ! these coefficients are nonnegative.
 
-                        cnud = -rsaCb2*w(i, j, k, itu1)*cb3Inv
-                        cam = ttm*cnud
-                        cap = ttp*cnud
+                        cnud = -rsaCb2 * w(i, j, k, itu1) * cb3Inv
+                        cam = ttm * cnud
+                        cap = ttp * cnud
 
-                        nutm = half*(w(i, j - 1, k, itu1) + w(i, j, k, itu1))
-                        nutp = half*(w(i, j + 1, k, itu1) + w(i, j, k, itu1))
-                        nu = rlv(i, j, k)/w(i, j, k, irho)
-                        num = half*(rlv(i, j - 1, k)/w(i, j - 1, k, irho) + nu)
-                        nup = half*(rlv(i, j + 1, k)/w(i, j + 1, k, irho) + nu)
-                        cdm = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
-                        cdp = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
+                        nutm = half * (w(i, j - 1, k, itu1) + w(i, j, k, itu1))
+                        nutp = half * (w(i, j + 1, k, itu1) + w(i, j, k, itu1))
+                        nu = rlv(i, j, k) / w(i, j, k, irho)
+                        num = half * (rlv(i, j - 1, k) / w(i, j - 1, k, irho) + nu)
+                        nup = half * (rlv(i, j + 1, k) / w(i, j + 1, k, irho) + nu)
+                        cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+                        cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
 
                         c1m = max(cdm + cam, zero)
                         c1p = max(cdp + cap, zero)
@@ -557,8 +557,8 @@ contains
                         ! Update the residual for this cell and store the possible
                         ! coefficients for the matrix in b1, c1 and d1.
 
-                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j - 1, k, itu1) &
-                                                 - c10*w(i, j, k, itu1) + c1p*w(i, j + 1, k, itu1)
+                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j - 1, k, itu1) &
+                                                 - c10 * w(i, j, k, itu1) + c1p * w(i, j + 1, k, itu1)
 #ifndef USE_TAPENADE
                         b1 = -c1m
                         c1 = c10
@@ -574,10 +574,10 @@ contains
 
                         if (j == 2) then
                             qq(i, j, k) = qq(i, j, k) + c1 &
-                                          - b1*max(bmtj1(i, k, itu1, itu1), zero)
+                                          - b1 * max(bmtj1(i, k, itu1, itu1), zero)
                         else if (j == jl) then
                             qq(i, j, k) = qq(i, j, k) + c1 &
-                                          - d1*max(bmtj2(i, k, itu1, itu1), zero)
+                                          - d1 * max(bmtj2(i, k, itu1, itu1), zero)
                         else
                             qq(i, j, k) = qq(i, j, k) + c1
                         end if
@@ -594,10 +594,10 @@ contains
         !
 #ifdef TAPENADE_REVERSE
         !$AD II-LOOP
-        do ii = 0, nx*ny*nz - 1
+        do ii = 0, nx * ny * nz - 1
             i = mod(ii, nx) + 2
-            j = mod(ii/nx, ny) + 2
-            k = ii/(nx*ny) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
             do k = 2, kl
                 do j = 2, jl
@@ -606,22 +606,22 @@ contains
                         ! Compute the metrics in xi-direction, i.e. along the
                         ! line i = constant.
 
-                        voli = one/vol(i, j, k)
-                        volmi = two/(vol(i, j, k) + vol(i - 1, j, k))
-                        volpi = two/(vol(i, j, k) + vol(i + 1, j, k))
+                        voli = one / vol(i, j, k)
+                        volmi = two / (vol(i, j, k) + vol(i - 1, j, k))
+                        volpi = two / (vol(i, j, k) + vol(i + 1, j, k))
 
-                        xm = si(i - 1, j, k, 1)*volmi
-                        ym = si(i - 1, j, k, 2)*volmi
-                        zm = si(i - 1, j, k, 3)*volmi
-                        xp = si(i, j, k, 1)*volpi
-                        yp = si(i, j, k, 2)*volpi
-                        zp = si(i, j, k, 3)*volpi
+                        xm = si(i - 1, j, k, 1) * volmi
+                        ym = si(i - 1, j, k, 2) * volmi
+                        zm = si(i - 1, j, k, 3) * volmi
+                        xp = si(i, j, k, 1) * volpi
+                        yp = si(i, j, k, 2) * volpi
+                        zp = si(i, j, k, 3) * volpi
 
-                        xa = half*(si(i, j, k, 1) + si(i - 1, j, k, 1))*voli
-                        ya = half*(si(i, j, k, 2) + si(i - 1, j, k, 2))*voli
-                        za = half*(si(i, j, k, 3) + si(i - 1, j, k, 3))*voli
-                        ttm = xm*xa + ym*ya + zm*za
-                        ttp = xp*xa + yp*ya + zp*za
+                        xa = half * (si(i, j, k, 1) + si(i - 1, j, k, 1)) * voli
+                        ya = half * (si(i, j, k, 2) + si(i - 1, j, k, 2)) * voli
+                        za = half * (si(i, j, k, 3) + si(i - 1, j, k, 3)) * voli
+                        ttm = xm * xa + ym * ya + zm * za
+                        ttp = xp * xa + yp * ya + zp * za
 
                         ! Computation of the viscous terms in xi-direction; note
                         ! that cross-derivatives are neglected, i.e. the mesh is
@@ -637,17 +637,17 @@ contains
                         ! i+1, i and i-1 in the second derivative. Make sure that
                         ! these coefficients are nonnegative.
 
-                        cnud = -rsaCb2*w(i, j, k, itu1)*cb3Inv
-                        cam = ttm*cnud
-                        cap = ttp*cnud
+                        cnud = -rsaCb2 * w(i, j, k, itu1) * cb3Inv
+                        cam = ttm * cnud
+                        cap = ttp * cnud
 
-                        nutm = half*(w(i - 1, j, k, itu1) + w(i, j, k, itu1))
-                        nutp = half*(w(i + 1, j, k, itu1) + w(i, j, k, itu1))
-                        nu = rlv(i, j, k)/w(i, j, k, irho)
-                        num = half*(rlv(i - 1, j, k)/w(i - 1, j, k, irho) + nu)
-                        nup = half*(rlv(i + 1, j, k)/w(i + 1, j, k, irho) + nu)
-                        cdm = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
-                        cdp = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
+                        nutm = half * (w(i - 1, j, k, itu1) + w(i, j, k, itu1))
+                        nutp = half * (w(i + 1, j, k, itu1) + w(i, j, k, itu1))
+                        nu = rlv(i, j, k) / w(i, j, k, irho)
+                        num = half * (rlv(i - 1, j, k) / w(i - 1, j, k, irho) + nu)
+                        nup = half * (rlv(i + 1, j, k) / w(i + 1, j, k, irho) + nu)
+                        cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+                        cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
 
                         c1m = max(cdm + cam, zero)
                         c1p = max(cdp + cap, zero)
@@ -656,8 +656,8 @@ contains
                         ! Update the residual for this cell and store the possible
                         ! coefficients for the matrix in b1, c1 and d1.
 
-                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i - 1, j, k, itu1) &
-                                                 - c10*w(i, j, k, itu1) + c1p*w(i + 1, j, k, itu1)
+                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i - 1, j, k, itu1) &
+                                                 - c10 * w(i, j, k, itu1) + c1p * w(i + 1, j, k, itu1)
 #ifndef USE_TAPENADE
                         b1 = -c1m
                         c1 = c10
@@ -673,10 +673,10 @@ contains
 
                         if (i == 2) then
                             qq(i, j, k) = qq(i, j, k) + c1 &
-                                          - b1*max(bmti1(j, k, itu1, itu1), zero)
+                                          - b1 * max(bmti1(j, k, itu1, itu1), zero)
                         else if (i == il) then
                             qq(i, j, k) = qq(i, j, k) + c1 &
-                                          - d1*max(bmti2(j, k, itu1, itu1), zero)
+                                          - d1 * max(bmti2(j, k, itu1, itu1), zero)
                         else
                             qq(i, j, k) = qq(i, j, k) + c1
                         end if
@@ -708,17 +708,17 @@ contains
 
 #ifdef TAPENADE_REVERSE
         !$AD II-LOOP
-        do ii = 0, nx*ny*nz - 1
+        do ii = 0, nx * ny * nz - 1
             i = mod(ii, nx) + 2
-            j = mod(ii/nx, ny) + 2
-            k = ii/(nx*ny) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
             do k = 2, kl
                 do j = 2, jl
                     do i = 2, il
 #endif
                         rblank = max(real(iblank(i, j, k), realType), zero)
-                        dw(i, j, k, itu1) = -volRef(i, j, k)*scratch(i, j, k, idvt)*rblank
+                        dw(i, j, k, itu1) = -volRef(i, j, k) * scratch(i, j, k, idvt) * rblank
 #ifdef TAPENADE_REVERSE
                     end do
 #else
@@ -834,11 +834,11 @@ contains
                         ! the update. Also note that the curve fits contain the
                         ! non-dimensional value.
 
-                        yp = ww(i, j, irho)*dd2Wall(i - 1, j - 1) &
-                             *viscSubface(nn)%utau(i, j)/rrlv(i, j)
+                        yp = ww(i, j, irho) * dd2Wall(i - 1, j - 1) &
+                             * viscSubface(nn)%utau(i, j) / rrlv(i, j)
 
                         call curveTupYp(tu1p, yp, itu1, itu1)
-                        ddvt(i, j, 1) = tu1p(1)*rrlv(i, j)/ww(i, j, irho) - ww(i, j, itu1)
+                        ddvt(i, j, 1) = tu1p(1) * rrlv(i, j) / ww(i, j, irho) - ww(i, j, itu1)
 
                         ! Set the wall flag to .true.
 
@@ -862,13 +862,13 @@ contains
 
         factor = one
         if (turbRelax == turbRelaxImplicit) &
-            factor = one + (one - alfaTurb)/alfaTurb
+            factor = one + (one - alfaTurb) / alfaTurb
 
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
 
-                    qq(i, j, k) = factor*qq(i, j, k)
+                    qq(i, j, k) = factor * qq(i, j, k)
 
                     ! Set qq to 1 if the value is determined by the
                     ! wall function table.
@@ -905,37 +905,37 @@ contains
                     ! Consequently, see the j-loop to build the residual for
                     ! the comments.
 
-                    voli = one/vol(i, j, k)
-                    volmi = two/(vol(i, j, k) + vol(i, j - 1, k))
-                    volpi = two/(vol(i, j, k) + vol(i, j + 1, k))
+                    voli = one / vol(i, j, k)
+                    volmi = two / (vol(i, j, k) + vol(i, j - 1, k))
+                    volpi = two / (vol(i, j, k) + vol(i, j + 1, k))
 
-                    xm = sj(i, j - 1, k, 1)*volmi
-                    ym = sj(i, j - 1, k, 2)*volmi
-                    zm = sj(i, j - 1, k, 3)*volmi
-                    xp = sj(i, j, k, 1)*volpi
-                    yp = sj(i, j, k, 2)*volpi
-                    zp = sj(i, j, k, 3)*volpi
+                    xm = sj(i, j - 1, k, 1) * volmi
+                    ym = sj(i, j - 1, k, 2) * volmi
+                    zm = sj(i, j - 1, k, 3) * volmi
+                    xp = sj(i, j, k, 1) * volpi
+                    yp = sj(i, j, k, 2) * volpi
+                    zp = sj(i, j, k, 3) * volpi
 
-                    xa = half*(sj(i, j, k, 1) + sj(i, j - 1, k, 1))*voli
-                    ya = half*(sj(i, j, k, 2) + sj(i, j - 1, k, 2))*voli
-                    za = half*(sj(i, j, k, 3) + sj(i, j - 1, k, 3))*voli
-                    ttm = xm*xa + ym*ya + zm*za
-                    ttp = xp*xa + yp*ya + zp*za
+                    xa = half * (sj(i, j, k, 1) + sj(i, j - 1, k, 1)) * voli
+                    ya = half * (sj(i, j, k, 2) + sj(i, j - 1, k, 2)) * voli
+                    za = half * (sj(i, j, k, 3) + sj(i, j - 1, k, 3)) * voli
+                    ttm = xm * xa + ym * ya + zm * za
+                    ttp = xp * xa + yp * ya + zp * za
 
-                    cnud = -rsaCb2*w(i, j, k, itu1)*cb3Inv
-                    cam = ttm*cnud
-                    cap = ttp*cnud
+                    cnud = -rsaCb2 * w(i, j, k, itu1) * cb3Inv
+                    cam = ttm * cnud
+                    cap = ttp * cnud
 
                     ! Off-diagonal terms due to the diffusion terms
                     ! in j-direction.
 
-                    nutm = half*(w(i, j - 1, k, itu1) + w(i, j, k, itu1))
-                    nutp = half*(w(i, j + 1, k, itu1) + w(i, j, k, itu1))
-                    nu = rlv(i, j, k)/w(i, j, k, irho)
-                    num = half*(rlv(i, j - 1, k)/w(i, j - 1, k, irho) + nu)
-                    nup = half*(rlv(i, j + 1, k)/w(i, j + 1, k, irho) + nu)
-                    cdm = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
-                    cdp = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
+                    nutm = half * (w(i, j - 1, k, itu1) + w(i, j, k, itu1))
+                    nutp = half * (w(i, j + 1, k, itu1) + w(i, j, k, itu1))
+                    nu = rlv(i, j, k) / w(i, j, k, irho)
+                    num = half * (rlv(i, j - 1, k) / w(i, j - 1, k, irho) + nu)
+                    nup = half * (rlv(i, j + 1, k) / w(i, j + 1, k, irho) + nu)
+                    cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+                    cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
 
                     c1m = max(cdm + cam, zero)
                     c1p = max(cdp + cap, zero)
@@ -947,12 +947,12 @@ contains
                     ! It is taken as the average of j and j-1,
 
                     if (addGridVelocities) &
-                        qs = half*(sFaceJ(i, j, k) + sFaceJ(i, j - 1, k))*voli
+                        qs = half * (sFaceJ(i, j, k) + sFaceJ(i, j - 1, k)) * voli
 
                     ! Off-diagonal terms due to the advection term in
                     ! j-direction. First order approximation.
 
-                    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) - qs
+                    uu = xa * w(i, j, k, ivx) + ya * w(i, j, k, ivy) + za * w(i, j, k, ivz) - qs
                     um = zero
                     up = zero
                     if (uu < zero) um = uu
@@ -968,10 +968,10 @@ contains
                     rblank = max(real(iblank(i, j, k), realType), zero)
 
                     cc(j) = qq(i, j, k)
-                    ff(j) = scratch(i, j, k, idvt)*rblank
+                    ff(j) = scratch(i, j, k, idvt) * rblank
 
-                    bb(j) = bb(j)*rblank
-                    dd(j) = dd(j)*rblank
+                    bb(j) = bb(j) * rblank
+                    dd(j) = dd(j) * rblank
 
                     ! Set the off diagonal terms to zero if the wall is flagged.
 
@@ -991,24 +991,24 @@ contains
                 ! First the backward sweep to eliMinate the upper diagonal dd.
 
                 do j = ny, 2, -1
-                    f = dd(j)/cc(j + 1)
-                    cc(j) = cc(j) - f*bb(j + 1)
-                    ff(j) = ff(j) - f*ff(j + 1)
+                    f = dd(j) / cc(j + 1)
+                    cc(j) = cc(j) - f * bb(j + 1)
+                    ff(j) = ff(j) - f * ff(j + 1)
                 end do
 
                 ! The matrix is now in lower block bi-diagonal form.
                 ! Perform a forward sweep to compute the solution.
 
-                ff(2) = ff(2)/cc(2)
+                ff(2) = ff(2) / cc(2)
                 do j = 3, jl
-                    ff(j) = ff(j) - bb(j)*ff(j - 1)
-                    ff(j) = ff(j)/cc(j)
+                    ff(j) = ff(j) - bb(j) * ff(j - 1)
+                    ff(j) = ff(j) / cc(j)
                 end do
 
                 ! Determine the new rhs for the next direction.
 
                 do j = 2, jl
-                    scratch(i, j, k, idvt) = ff(j)*qq(i, j, k)
+                    scratch(i, j, k, idvt) = ff(j) * qq(i, j, k)
                 end do
 
             end do
@@ -1029,37 +1029,37 @@ contains
                     ! Consequently, see the i-loop to build the residual for
                     ! the comments.
 
-                    voli = one/vol(i, j, k)
-                    volmi = two/(vol(i, j, k) + vol(i - 1, j, k))
-                    volpi = two/(vol(i, j, k) + vol(i + 1, j, k))
+                    voli = one / vol(i, j, k)
+                    volmi = two / (vol(i, j, k) + vol(i - 1, j, k))
+                    volpi = two / (vol(i, j, k) + vol(i + 1, j, k))
 
-                    xm = si(i - 1, j, k, 1)*volmi
-                    ym = si(i - 1, j, k, 2)*volmi
-                    zm = si(i - 1, j, k, 3)*volmi
-                    xp = si(i, j, k, 1)*volpi
-                    yp = si(i, j, k, 2)*volpi
-                    zp = si(i, j, k, 3)*volpi
+                    xm = si(i - 1, j, k, 1) * volmi
+                    ym = si(i - 1, j, k, 2) * volmi
+                    zm = si(i - 1, j, k, 3) * volmi
+                    xp = si(i, j, k, 1) * volpi
+                    yp = si(i, j, k, 2) * volpi
+                    zp = si(i, j, k, 3) * volpi
 
-                    xa = half*(si(i, j, k, 1) + si(i - 1, j, k, 1))*voli
-                    ya = half*(si(i, j, k, 2) + si(i - 1, j, k, 2))*voli
-                    za = half*(si(i, j, k, 3) + si(i - 1, j, k, 3))*voli
-                    ttm = xm*xa + ym*ya + zm*za
-                    ttp = xp*xa + yp*ya + zp*za
+                    xa = half * (si(i, j, k, 1) + si(i - 1, j, k, 1)) * voli
+                    ya = half * (si(i, j, k, 2) + si(i - 1, j, k, 2)) * voli
+                    za = half * (si(i, j, k, 3) + si(i - 1, j, k, 3)) * voli
+                    ttm = xm * xa + ym * ya + zm * za
+                    ttp = xp * xa + yp * ya + zp * za
 
-                    cnud = -rsaCb2*w(i, j, k, itu1)*cb3Inv
-                    cam = ttm*cnud
-                    cap = ttp*cnud
+                    cnud = -rsaCb2 * w(i, j, k, itu1) * cb3Inv
+                    cam = ttm * cnud
+                    cap = ttp * cnud
 
                     ! Off-diagonal terms due to the diffusion terms
                     ! in i-direction.
 
-                    nutm = half*(w(i - 1, j, k, itu1) + w(i, j, k, itu1))
-                    nutp = half*(w(i + 1, j, k, itu1) + w(i, j, k, itu1))
-                    nu = rlv(i, j, k)/w(i, j, k, irho)
-                    num = half*(rlv(i - 1, j, k)/w(i - 1, j, k, irho) + nu)
-                    nup = half*(rlv(i + 1, j, k)/w(i + 1, j, k, irho) + nu)
-                    cdm = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
-                    cdp = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
+                    nutm = half * (w(i - 1, j, k, itu1) + w(i, j, k, itu1))
+                    nutp = half * (w(i + 1, j, k, itu1) + w(i, j, k, itu1))
+                    nu = rlv(i, j, k) / w(i, j, k, irho)
+                    num = half * (rlv(i - 1, j, k) / w(i - 1, j, k, irho) + nu)
+                    nup = half * (rlv(i + 1, j, k) / w(i + 1, j, k, irho) + nu)
+                    cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+                    cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
 
                     c1m = max(cdm + cam, zero)
                     c1p = max(cdp + cap, zero)
@@ -1071,12 +1071,12 @@ contains
                     ! It is taken as the average of i and i-1,
 
                     if (addGridVelocities) &
-                        qs = half*(sFaceI(i, j, k) + sFaceI(i - 1, j, k))*voli
+                        qs = half * (sFaceI(i, j, k) + sFaceI(i - 1, j, k)) * voli
 
                     ! Off-diagonal terms due to the advection term in
                     ! i-direction. First order approximation.
 
-                    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) - qs
+                    uu = xa * w(i, j, k, ivx) + ya * w(i, j, k, ivy) + za * w(i, j, k, ivz) - qs
                     um = zero
                     up = zero
                     if (uu < zero) um = uu
@@ -1092,10 +1092,10 @@ contains
                     rblank = max(real(iblank(i, j, k), realType), zero)
 
                     cc(i) = qq(i, j, k)
-                    ff(i) = scratch(i, j, k, idvt)*rblank
+                    ff(i) = scratch(i, j, k, idvt) * rblank
 
-                    bb(i) = bb(i)*rblank
-                    dd(i) = dd(i)*rblank
+                    bb(i) = bb(i) * rblank
+                    dd(i) = dd(i) * rblank
 
                     ! Set the off diagonal terms to zero if the wall is flagged.
 
@@ -1115,24 +1115,24 @@ contains
                 ! First the backward sweep to eliMinate the upper diagonal dd.
 
                 do i = nx, 2, -1
-                    f = dd(i)/cc(i + 1)
-                    cc(i) = cc(i) - f*bb(i + 1)
-                    ff(i) = ff(i) - f*ff(i + 1)
+                    f = dd(i) / cc(i + 1)
+                    cc(i) = cc(i) - f * bb(i + 1)
+                    ff(i) = ff(i) - f * ff(i + 1)
                 end do
 
                 ! The matrix is now in lower block bi-diagonal form.
                 ! Perform a forward sweep to compute the solution.
 
-                ff(2) = ff(2)/cc(2)
+                ff(2) = ff(2) / cc(2)
                 do i = 3, il
-                    ff(i) = ff(i) - bb(i)*ff(i - 1)
-                    ff(i) = ff(i)/cc(i)
+                    ff(i) = ff(i) - bb(i) * ff(i - 1)
+                    ff(i) = ff(i) / cc(i)
                 end do
 
                 ! Determine the new rhs for the next direction.
 
                 do i = 2, il
-                    scratch(i, j, k, idvt) = ff(i)*qq(i, j, k)
+                    scratch(i, j, k, idvt) = ff(i) * qq(i, j, k)
                 end do
 
             end do
@@ -1153,37 +1153,37 @@ contains
                     ! Consequently, see the k-loop to build the residual for
                     ! the comments.
 
-                    voli = one/vol(i, j, k)
-                    volmi = two/(vol(i, j, k) + vol(i, j, k - 1))
-                    volpi = two/(vol(i, j, k) + vol(i, j, k + 1))
+                    voli = one / vol(i, j, k)
+                    volmi = two / (vol(i, j, k) + vol(i, j, k - 1))
+                    volpi = two / (vol(i, j, k) + vol(i, j, k + 1))
 
-                    xm = sk(i, j, k - 1, 1)*volmi
-                    ym = sk(i, j, k - 1, 2)*volmi
-                    zm = sk(i, j, k - 1, 3)*volmi
-                    xp = sk(i, j, k, 1)*volpi
-                    yp = sk(i, j, k, 2)*volpi
-                    zp = sk(i, j, k, 3)*volpi
+                    xm = sk(i, j, k - 1, 1) * volmi
+                    ym = sk(i, j, k - 1, 2) * volmi
+                    zm = sk(i, j, k - 1, 3) * volmi
+                    xp = sk(i, j, k, 1) * volpi
+                    yp = sk(i, j, k, 2) * volpi
+                    zp = sk(i, j, k, 3) * volpi
 
-                    xa = half*(sk(i, j, k, 1) + sk(i, j, k - 1, 1))*voli
-                    ya = half*(sk(i, j, k, 2) + sk(i, j, k - 1, 2))*voli
-                    za = half*(sk(i, j, k, 3) + sk(i, j, k - 1, 3))*voli
-                    ttm = xm*xa + ym*ya + zm*za
-                    ttp = xp*xa + yp*ya + zp*za
+                    xa = half * (sk(i, j, k, 1) + sk(i, j, k - 1, 1)) * voli
+                    ya = half * (sk(i, j, k, 2) + sk(i, j, k - 1, 2)) * voli
+                    za = half * (sk(i, j, k, 3) + sk(i, j, k - 1, 3)) * voli
+                    ttm = xm * xa + ym * ya + zm * za
+                    ttp = xp * xa + yp * ya + zp * za
 
-                    cnud = -rsaCb2*w(i, j, k, itu1)*cb3Inv
-                    cam = ttm*cnud
-                    cap = ttp*cnud
+                    cnud = -rsaCb2 * w(i, j, k, itu1) * cb3Inv
+                    cam = ttm * cnud
+                    cap = ttp * cnud
 
                     ! Off-diagonal terms due to the diffusion terms
                     ! in k-direction.
 
-                    nutm = half*(w(i, j, k - 1, itu1) + w(i, j, k, itu1))
-                    nutp = half*(w(i, j, k + 1, itu1) + w(i, j, k, itu1))
-                    nu = rlv(i, j, k)/w(i, j, k, irho)
-                    num = half*(rlv(i, j, k - 1)/w(i, j, k - 1, irho) + nu)
-                    nup = half*(rlv(i, j, k + 1)/w(i, j, k + 1, irho) + nu)
-                    cdm = (num + (one + rsaCb2)*nutm)*ttm*cb3Inv
-                    cdp = (nup + (one + rsaCb2)*nutp)*ttp*cb3Inv
+                    nutm = half * (w(i, j, k - 1, itu1) + w(i, j, k, itu1))
+                    nutp = half * (w(i, j, k + 1, itu1) + w(i, j, k, itu1))
+                    nu = rlv(i, j, k) / w(i, j, k, irho)
+                    num = half * (rlv(i, j, k - 1) / w(i, j, k - 1, irho) + nu)
+                    nup = half * (rlv(i, j, k + 1) / w(i, j, k + 1, irho) + nu)
+                    cdm = (num + (one + rsaCb2) * nutm) * ttm * cb3Inv
+                    cdp = (nup + (one + rsaCb2) * nutp) * ttp * cb3Inv
 
                     c1m = max(cdm + cam, zero)
                     c1p = max(cdp + cap, zero)
@@ -1195,12 +1195,12 @@ contains
                     ! It is taken as the average of k and k-1,
 
                     if (addGridVelocities) &
-                        qs = half*(sFaceK(i, j, k) + sFaceK(i, j, k - 1))*voli
+                        qs = half * (sFaceK(i, j, k) + sFaceK(i, j, k - 1)) * voli
 
                     ! Off-diagonal terms due to the advection term in
                     ! k-direction. First order approximation.
 
-                    uu = xa*w(i, j, k, ivx) + ya*w(i, j, k, ivy) + za*w(i, j, k, ivz) - qs
+                    uu = xa * w(i, j, k, ivx) + ya * w(i, j, k, ivy) + za * w(i, j, k, ivz) - qs
                     um = zero
                     up = zero
                     if (uu < zero) um = uu
@@ -1216,10 +1216,10 @@ contains
                     rblank = max(real(iblank(i, j, k), realType), zero)
 
                     cc(k) = qq(i, j, k)
-                    ff(k) = scratch(i, j, k, idvt)*rblank
+                    ff(k) = scratch(i, j, k, idvt) * rblank
 
-                    bb(k) = bb(k)*rblank
-                    dd(k) = dd(k)*rblank
+                    bb(k) = bb(k) * rblank
+                    dd(k) = dd(k) * rblank
 
                     ! Set the off diagonal terms to zero if the wall is flagged.
 
@@ -1239,18 +1239,18 @@ contains
                 ! First the backward sweep to eliMinate the upper diagonal dd.
 
                 do k = nz, 2, -1
-                    f = dd(k)/cc(k + 1)
-                    cc(k) = cc(k) - f*bb(k + 1)
-                    ff(k) = ff(k) - f*ff(k + 1)
+                    f = dd(k) / cc(k + 1)
+                    cc(k) = cc(k) - f * bb(k + 1)
+                    ff(k) = ff(k) - f * ff(k + 1)
                 end do
 
                 ! The matrix is now in lower block bi-diagonal form.
                 ! Perform a forward sweep to compute the solution.
 
-                ff(2) = ff(2)/cc(2)
+                ff(2) = ff(2) / cc(2)
                 do k = 3, kl
-                    ff(k) = ff(k) - bb(k)*ff(k - 1)
-                    ff(k) = ff(k)/cc(k)
+                    ff(k) = ff(k) - bb(k) * ff(k - 1)
+                    ff(k) = ff(k) / cc(k)
                 end do
 
                 ! Store the update in dvt.
@@ -1272,7 +1272,7 @@ contains
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
-                    w(i, j, k, itu1) = w(i, j, k, itu1) + factor*scratch(i, j, k, idvt)
+                    w(i, j, k, itu1) = w(i, j, k, itu1) + factor * scratch(i, j, k, idvt)
                     w(i, j, k, itu1) = max(w(i, j, k, itu1), zero)
                 end do
             end do

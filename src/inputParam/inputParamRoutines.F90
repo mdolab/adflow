@@ -830,8 +830,8 @@ contains
         !
         !      Local variables
         !
-        integer                      :: stringLen, error
-        integer(kind=intType)        :: i, ii, nMinus, nn
+        integer :: stringLen, error
+        integer(kind=intType) :: i, ii, nMinus, nn
         character(len=maxStringLen) :: errorMessage
 
         ! For an unsteady computation using explicit Runge-Kutta schemes
@@ -885,7 +885,7 @@ contains
             ! Determine the number of steps in cycleStrategy and allocate
             ! the memory for it.
 
-            nMGSteps = 4*nMGLevels - 4
+            nMGSteps = 4 * nMGLevels - 4
             allocate (cycleStrategy(nMGSteps), stat=error)
             if (error /= 0) then
                 write (errorMessage, *) "Allocation error for", nMGSteps, &
@@ -1112,7 +1112,7 @@ contains
         else if (nLevels == 2) then
             nSteps = 4
         else
-            nSteps = 4 + 2*computeNstepsWcycle(nLevels - 1)
+            nSteps = 4 + 2 * computeNstepsWcycle(nLevels - 1)
         end if
 
     end function computeNstepsWcycle
@@ -1133,7 +1133,7 @@ contains
         !      Subroutine argument.
         !
         integer(kind=intType), intent(inout) :: counter
-        integer(kind=intType), intent(in)    :: nLevels
+        integer(kind=intType), intent(in) :: nLevels
         !
         !      Local variables
         !
@@ -1671,10 +1671,10 @@ contains
         integer :: ios, ierr
 
         integer(kind=intType) :: nn, mm, kk, ii
-        real(kind=realType)   :: T1, T2, e0
+        real(kind=realType) :: T1, T2, e0
 
         character(len=2*maxStringLen) :: errorMessage
-        character(len=512)            :: string
+        character(len=512) :: string
 
         ! Open the file for reading and check if it went okay. If the file
         ! is not found, processor 0 prints an error message.
@@ -1837,17 +1837,17 @@ contains
             ! Update cv0.
 
             T2 = T1**(cpTempFit(1)%exponents(ii))
-            cv0 = cv0 + cpTempFit(1)%constants(ii)*T2
+            cv0 = cv0 + cpTempFit(1)%constants(ii) * T2
 
             ! Update e0, for which this contribution must be integrated.
             ! Take the exceptional case exponent is -1 into account.
 
             if (cpTempFit(1)%exponents(ii) == -1_intType) then
-                e0 = e0 + cpTempFit(1)%constants(ii)*log(T1)
+                e0 = e0 + cpTempFit(1)%constants(ii) * log(T1)
             else
-                T2 = T1*T2
-                e0 = e0 + cpTempFit(1)%constants(ii)*T2 &
-                     /(cpTempFit(1)%exponents(ii) + 1)
+                T2 = T1 * T2
+                e0 = e0 + cpTempFit(1)%constants(ii) * T2 &
+                     / (cpTempFit(1)%exponents(ii) + 1)
             end if
 
         end do
@@ -1856,7 +1856,7 @@ contains
         ! Cv is assumed to be constant in the temperature range 0 - T1.
         ! Idem for the internal enthalpy.
 
-        cpEint(0) = cv0*T1
+        cpEint(0) = cv0 * T1
         cpHint(0) = cpEint(0) + T1
 
         ! Compute the integration constant for the energy.
@@ -1885,11 +1885,11 @@ contains
 
             do ii = 1, cpTempFit(mm)%nterm
                 if (cpTempFit(mm)%exponents(ii) == -1_intType) then
-                    e0 = e0 + cpTempFit(mm)%constants(ii)*log(T1)
+                    e0 = e0 + cpTempFit(mm)%constants(ii) * log(T1)
                 else
                     kk = cpTempFit(mm)%exponents(ii) + 1
                     T2 = T1**kk
-                    e0 = e0 + cpTempFit(mm)%constants(ii)*T2/kk
+                    e0 = e0 + cpTempFit(mm)%constants(ii) * T2 / kk
                 end if
             end do
 
@@ -1904,11 +1904,11 @@ contains
 
             do ii = 1, cpTempFit(nn)%nterm
                 if (cpTempFit(nn)%exponents(ii) == -1_intType) then
-                    e0 = e0 - cpTempFit(nn)%constants(ii)*log(T1)
+                    e0 = e0 - cpTempFit(nn)%constants(ii) * log(T1)
                 else
                     kk = cpTempFit(nn)%exponents(ii) + 1
                     T2 = T1**kk
-                    e0 = e0 - cpTempFit(nn)%constants(ii)*T2/kk
+                    e0 = e0 - cpTempFit(nn)%constants(ii) * T2 / kk
                 end if
             end do
 
@@ -1935,16 +1935,16 @@ contains
             ! Update cvn.
 
             T2 = T1**(cpTempFit(nn)%exponents(ii))
-            cvn = cvn + cpTempFit(nn)%constants(ii)*T2
+            cvn = cvn + cpTempFit(nn)%constants(ii) * T2
 
             ! Update e0, for which this contribution must be integrated.
             ! Take the exceptional case exponent is -1 into account.
 
             if (cpTempFit(nn)%exponents(ii) == -1_intType) then
-                e0 = e0 + cpTempFit(nn)%constants(ii)*log(T1)
+                e0 = e0 + cpTempFit(nn)%constants(ii) * log(T1)
             else
-                e0 = e0 + cpTempFit(nn)%constants(ii)*T2*T1 &
-                     /(cpTempFit(nn)%exponents(ii) + 1)
+                e0 = e0 + cpTempFit(nn)%constants(ii) * T2 * T1 &
+                     / (cpTempFit(nn)%exponents(ii) + 1)
             end if
 
         end do
@@ -1991,20 +1991,20 @@ contains
                 if (T1 > zero) then
                     if (mm == 0_intType) then
                         cpTempFit(nn)%intCpovrT_1 = cpTempFit(nn)%intCpovrT_1 &
-                                                    + cpTempFit(nn)%constants(ii)*log(T1)
+                                                    + cpTempFit(nn)%constants(ii) * log(T1)
                     else
                         cpTempFit(nn)%intCpovrT_1 = cpTempFit(nn)%intCpovrT_1 &
-                                                    + (cpTempFit(nn)%constants(ii)*T1**mm)/mm
+                                                    + (cpTempFit(nn)%constants(ii) * T1**mm) / mm
                     end if
                 end if
 
                 if (T2 > zero) then
                     if (mm == 0_intType) then
                         cpTempFit(nn)%intCpovrT_2 = cpTempFit(nn)%intCpovrT_2 &
-                                                    + cpTempFit(nn)%constants(ii)*log(T2)
+                                                    + cpTempFit(nn)%constants(ii) * log(T2)
                     else
                         cpTempFit(nn)%intCpovrT_2 = cpTempFit(nn)%intCpovrT_2 &
-                                                    + (cpTempFit(nn)%constants(ii)*T2**mm)/mm
+                                                    + (cpTempFit(nn)%constants(ii) * T2**mm) / mm
                     end if
                 end if
 
@@ -2027,7 +2027,7 @@ contains
         !
         !      Subroutine arguments
         !
-        integer, intent(in)             :: readUnit
+        integer, intent(in) :: readUnit
         character(len=512), intent(out) :: string
         !
         !      Local variables.
@@ -2269,15 +2269,15 @@ contains
             ! Low storage (although not exploited in this implemetation)
             ! 3 stage scheme of Le and Moin.
 
-            betaRKUnsteady(1, 1) = 8.0_realType/15.0_realType
-            betaRKUnsteady(2, 1) = -17.0_realType/60.0_realType
-            betaRKUnsteady(2, 2) = 5.0_realType/12.0_realType
-            betaRKUnsteady(3, 2) = -5.0_realType/12.0_realType
-            betaRKUnsteady(3, 3) = 3.0_realType/4.0_realType
+            betaRKUnsteady(1, 1) = 8.0_realType / 15.0_realType
+            betaRKUnsteady(2, 1) = -17.0_realType / 60.0_realType
+            betaRKUnsteady(2, 2) = 5.0_realType / 12.0_realType
+            betaRKUnsteady(3, 2) = -5.0_realType / 12.0_realType
+            betaRKUnsteady(3, 3) = 3.0_realType / 4.0_realType
 
             gammaRKUnsteady(1) = 0.0_realType
-            gammaRKUnsteady(2) = 8.0_realType/15.0_realType
-            gammaRKUnsteady(3) = 2.0_realType/3.0_realType
+            gammaRKUnsteady(2) = 8.0_realType / 15.0_realType
+            gammaRKUnsteady(3) = 2.0_realType / 3.0_realType
 
             ! The TVD Runge Kutta scheme which allows for the maximum
             ! CFL number (1.0).
@@ -2963,9 +2963,9 @@ contains
         ! an error message. Only for external flows.
 
         if (flowType == externalFlow) then
-            vecLength = sqrt(velDirFreestream(1)*velDirFreestream(1) &
-                             + velDirFreestream(2)*velDirFreestream(2) &
-                             + velDirFreestream(3)*velDirFreestream(3))
+            vecLength = sqrt(velDirFreestream(1) * velDirFreestream(1) &
+                             + velDirFreestream(2) * velDirFreestream(2) &
+                             + velDirFreestream(3) * velDirFreestream(3))
             if (vecLength < eps) then
                 if (myID == 0) &
                      call terminate("checkInputParam", &
@@ -2974,10 +2974,10 @@ contains
                 call mpi_barrier(ADflow_comm_world, ierr)
             end if
 
-            vecLength = one/vecLength
-            velDirFreestream(1) = velDirFreestream(1)*vecLength
-            velDirFreestream(2) = velDirFreestream(2)*vecLength
-            velDirFreestream(3) = velDirFreestream(3)*vecLength
+            vecLength = one / vecLength
+            velDirFreestream(1) = velDirFreestream(1) * vecLength
+            velDirFreestream(2) = velDirFreestream(2) * vecLength
+            velDirFreestream(3) = velDirFreestream(3) * vecLength
         else
             ! Internal flow; simply reset the velocity direction. The value
             ! will be determined later from the inflow boundary conditions.
@@ -2999,9 +2999,9 @@ contains
             ! Create a unit vector. Perform the same check as for
             ! for the free stream velocity direction.
 
-            vecLength = sqrt(liftDirection(1)*liftDirection(1) &
-                             + liftDirection(2)*liftDirection(2) &
-                             + liftDirection(3)*liftDirection(3))
+            vecLength = sqrt(liftDirection(1) * liftDirection(1) &
+                             + liftDirection(2) * liftDirection(2) &
+                             + liftDirection(3) * liftDirection(3))
             if (vecLength < eps) then
                 if (myID == 0) &
                     call terminate("checkInputParam", &
@@ -3009,16 +3009,16 @@ contains
                 call mpi_barrier(ADflow_comm_world, ierr)
             end if
 
-            vecLength = one/vecLength
-            liftDirection(1) = liftDirection(1)*vecLength
-            liftDirection(2) = liftDirection(2)*vecLength
-            liftDirection(3) = liftDirection(3)*vecLength
+            vecLength = one / vecLength
+            liftDirection(1) = liftDirection(1) * vecLength
+            liftDirection(2) = liftDirection(2) * vecLength
+            liftDirection(3) = liftDirection(3) * vecLength
 
             ! Check the orthogonality with the drag direction.
 
-            dot = liftDirection(1)*dragDirection(1) &
-                  + liftDirection(2)*dragDirection(2) &
-                  + liftDirection(3)*dragDirection(3)
+            dot = liftDirection(1) * dragDirection(1) &
+                  + liftDirection(2) * dragDirection(2) &
+                  + liftDirection(3) * dragDirection(3)
 
             if (abs(dot) > 1.e-3_realType) then
                 if (myID == 0) &
@@ -3788,11 +3788,11 @@ contains
         ! applied.
 
         vis2 = half
-        vis4 = one/64.0_realType
+        vis4 = one / 64.0_realType
         vis2Coarse = half
 
         dirScaling = .true.                 ! Apply isotropic directional
-        adis = two*third              ! scaling in the artificial
+        adis = two * third              ! scaling in the artificial
         ! dissipation schemes.
 
         hScalingInlet = .false.             ! No total enthalpy scaling.
@@ -4104,7 +4104,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        character(len=*), intent(in):: variable
+        character(len=*), intent(in) :: variable
         integer(kind=intType) :: iVar
 
         select case (variable)

@@ -128,10 +128,10 @@ module blockPointers
     real(kind=realType), dimension(:, :, :, :), pointer :: scratch
     real(kind=realType), dimension(:, :, :, :, :), pointer :: dwOldRK
     real(kind=realType), dimension(:, :, :, :), pointer :: w1, wr
-    real(kind=realType), dimension(:, :, :), pointer:: ux, uy, uz
-    real(kind=realType), dimension(:, :, :), pointer:: vx, vy, vz
-    real(kind=realType), dimension(:, :, :), pointer:: wx, wy, wz
-    real(kind=realType), dimension(:, :, :), pointer:: qx, qy, qz
+    real(kind=realType), dimension(:, :, :), pointer :: ux, uy, uz
+    real(kind=realType), dimension(:, :, :), pointer :: vx, vy, vz
+    real(kind=realType), dimension(:, :, :), pointer :: wx, wy, wz
+    real(kind=realType), dimension(:, :, :), pointer :: qx, qy, qz
 
     integer(kind=intType), dimension(:, :), pointer :: mgIFine
     integer(kind=intType), dimension(:, :), pointer :: mgJFine
@@ -185,7 +185,7 @@ module blockPointers
     REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: xd
     REAL(kind=realtype), DIMENSION(:, :, :, :), POINTER :: sid, sjd, skd
 
-    real(kind=realType), dimension(:, :, :), pointer ::vold
+    real(kind=realType), dimension(:, :, :), pointer :: vold
 
     REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixid
     REAL(kind=realtype), DIMENSION(:, :, :, :, :), POINTER :: rotmatrixjd

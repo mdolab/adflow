@@ -78,9 +78,9 @@ module constants
     real(kind=realType), parameter :: eight = 8.0_realType
 
     real(kind=realType), parameter :: half = 0.5_realType
-    real(kind=realType), parameter :: third = one/three
+    real(kind=realType), parameter :: third = one / three
     real(kind=realType), parameter :: fourth = 0.25_realType
-    real(kind=realType), parameter :: sixth = one/six
+    real(kind=realType), parameter :: sixth = one / six
     real(kind=realType), parameter :: eighth = 0.125_realType
     real(kind=realType), parameter :: threefourth = 0.75_realType
     real(kind=realType), parameter :: sqrtthree = 1.7320508075688772_realType

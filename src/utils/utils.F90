@@ -72,7 +72,7 @@ contains
 
         beta = coefPolBeta(0)
         do nn = 1, degreePolBeta
-            beta = beta + coefPolBeta(nn)*(t**nn)
+            beta = beta + coefPolBeta(nn) * (t**nn)
         end do
 
         ! Compute the fourier contribution. Again the cosine coefficient
@@ -80,9 +80,9 @@ contains
 
         beta = beta + cosCoefFourBeta(0)
         do nn = 1, degreeFourBeta
-            val = nn*omegaFourBeta*t
-            beta = beta + cosCoefFourbeta(nn)*cos(val) &
-                   + sinCoefFourbeta(nn)*sin(val)
+            val = nn * omegaFourBeta * t
+            beta = beta + cosCoefFourbeta(nn) * cos(val) &
+                   + sinCoefFourbeta(nn) * sin(val)
         end do
 
         ! Set TSBeta to phi.
@@ -135,16 +135,16 @@ contains
 
         betadot = zero
         do nn = 1, degreePolBeta
-            betadot = betadot + nn*coefPolBeta(nn)*(t**(nn - 1))
+            betadot = betadot + nn * coefPolBeta(nn) * (t**(nn - 1))
         end do
 
         ! Compute the fourier contribution. Again the cosine coefficient
         ! of index 0 is defaulted to zero if not specified.
 
         do nn = 1, degreeFourBeta
-            val = nn*omegaFourBeta
-            betadot = betadot - val*cosCoefFourbeta(nn)*sin(val*t) &
-                      + val*sinCoefFourbeta(nn)*cos(val*t)
+            val = nn * omegaFourBeta
+            betadot = betadot - val * cosCoefFourbeta(nn) * sin(val * t) &
+                      + val * sinCoefFourbeta(nn) * cos(val * t)
         end do
 
         ! Set TSBeta to phi.
@@ -197,7 +197,7 @@ contains
 
         intervalMach = coefPolMach(0)
         do nn = 1, degreePolMach
-            intervalMach = intervalMach + coefPolMach(nn)*(t**nn)
+            intervalMach = intervalMach + coefPolMach(nn) * (t**nn)
         end do
 
         ! Compute the fourier contribution. Again the cosine coefficient
@@ -205,9 +205,9 @@ contains
 
         intervalMach = intervalMach + cosCoefFourMach(0)
         do nn = 1, degreeFourMach
-            val = nn*omegaFourMach*t
-            intervalMach = intervalMach + cosCoefFourmach(nn)*cos(val) &
-                           + sinCoefFourmach(nn)*sin(val)
+            val = nn * omegaFourMach * t
+            intervalMach = intervalMach + cosCoefFourmach(nn) * cos(val) &
+                           + sinCoefFourmach(nn) * sin(val)
         end do
         print *, 'inTSMach', intervalMach, nn, val, t
         ! Set TSMach to phi.
@@ -260,16 +260,16 @@ contains
 
         machdot = zero
         do nn = 1, degreePolMach
-            machdot = machdot + nn*coefPolMach(nn)*(t**(nn - 1))
+            machdot = machdot + nn * coefPolMach(nn) * (t**(nn - 1))
         end do
 
         ! Compute the fourier contribution. Again the cosine coefficient
         ! of index 0 is defaulted to zero if not specified.
 
         do nn = 1, degreeFourMach
-            val = nn*omegaFourMach
-            machdot = machdot - val*cosCoefFourmach(nn)*sin(val*t) &
-                      + val*sinCoefFourmach(nn)*cos(val*t)
+            val = nn * omegaFourMach
+            machdot = machdot - val * cosCoefFourmach(nn) * sin(val * t) &
+                      + val * sinCoefFourmach(nn) * cos(val * t)
         end do
 
         ! Set TSMach to phi.
@@ -321,7 +321,7 @@ contains
         ! specified, the value of index 0 is set to zero automatically.
         alpha = coefPolAlpha(0)
         do nn = 1, degreePolAlpha
-            alpha = alpha + coefPolAlpha(nn)*(t**nn)
+            alpha = alpha + coefPolAlpha(nn) * (t**nn)
         end do
 
         ! Compute the fourier contribution. Again the cosine coefficient
@@ -329,9 +329,9 @@ contains
 
         alpha = alpha + cosCoefFourAlpha(0)
         do nn = 1, degreeFourAlpha
-            val = nn*omegaFourAlpha*t
-            alpha = alpha + cosCoefFouralpha(nn)*cos(val) &
-                    + sinCoefFouralpha(nn)*sin(val)
+            val = nn * omegaFourAlpha * t
+            alpha = alpha + cosCoefFouralpha(nn) * cos(val) &
+                    + sinCoefFouralpha(nn) * sin(val)
         end do
         !print *,'inTSalpha',alpha,nn,val,t
         ! Set TSAlpha to phi.
@@ -384,16 +384,16 @@ contains
 
         alphadot = zero
         do nn = 1, degreePolAlpha
-            alphadot = alphadot + nn*coefPolAlpha(nn)*(t**(nn - 1))
+            alphadot = alphadot + nn * coefPolAlpha(nn) * (t**(nn - 1))
         end do
 
         ! Compute the fourier contribution. Again the cosine coefficient
         ! of index 0 is defaulted to zero if not specified.
 
         do nn = 1, degreeFourAlpha
-            val = nn*omegaFourAlpha
-            alphadot = alphadot - val*cosCoefFouralpha(nn)*sin(val*t) &
-                       + val*sinCoefFouralpha(nn)*cos(val*t)
+            val = nn * omegaFourAlpha
+            alphadot = alphadot - val * cosCoefFouralpha(nn) * sin(val * t) &
+                       + val * sinCoefFouralpha(nn) * cos(val * t)
         end do
 
         ! Set TSAlpha to phi.
@@ -451,21 +451,21 @@ contains
 
         dPhi = zero
         do nn = 1, degreePolRot
-            dPhi = dPhi + nn*coefPolRot(nn)*(t**(nn - 1))
+            dPhi = dPhi + nn * coefPolRot(nn) * (t**(nn - 1))
         end do
 
         ! Compute the fourier contribution.
 
         do nn = 1, degreeFourRot
-            val = nn*omegaFourRot
-            dPhi = dPhi - val*cosCoefFourRot(nn)*sin(val*t)
-            dPhi = dPhi + val*sinCoefFourRot(nn)*cos(val*t)
+            val = nn * omegaFourRot
+            dPhi = dPhi - val * cosCoefFourRot(nn) * sin(val * t)
+            dPhi = dPhi + val * sinCoefFourRot(nn) * cos(val * t)
         end do
 
         ! Set derivativeRigidRotAngle to dPhi. Multiply by timeRef
         ! to obtain the correct non-dimensional value.
 
-        derivativeRigidRotAngle = timeRef*dPhi
+        derivativeRigidRotAngle = timeRef * dPhi
 
     end function derivativeRigidRotAngle
 
@@ -666,17 +666,17 @@ contains
         ! It is assumed that the sequence of rotation is first around the
         ! x-axis then around the y-axis and finally around the z-axis.
 
-        mNew(1, 1) = cosY*cosZ
-        mNew(2, 1) = cosY*sinZ
+        mNew(1, 1) = cosY * cosZ
+        mNew(2, 1) = cosY * sinZ
         mNew(3, 1) = -sinY
 
-        mNew(1, 2) = sinX*sinY*cosZ - cosX*sinZ
-        mNew(2, 2) = sinX*sinY*sinZ + cosX*cosZ
-        mNew(3, 2) = sinX*cosY
+        mNew(1, 2) = sinX * sinY * cosZ - cosX * sinZ
+        mNew(2, 2) = sinX * sinY * sinZ + cosX * cosZ
+        mNew(3, 2) = sinX * cosY
 
-        mNew(1, 3) = cosX*sinY*cosZ + sinX*sinZ
-        mNew(2, 3) = cosX*sinY*sinZ - sinX*cosZ
-        mNew(3, 3) = cosX*cosY
+        mNew(1, 3) = cosX * sinY * cosZ + sinX * sinZ
+        mNew(2, 3) = cosX * sinY * sinZ - sinX * cosZ
+        mNew(3, 3) = cosX * cosY
 
         ! Determine the rotation angle around the x-axis for the old
         ! time level and the corresponding values of the sine and cosine.
@@ -705,17 +705,17 @@ contains
 
         ! Construct the transformation matrix at the old time level.
 
-        mOld(1, 1) = cosY*cosZ
-        mOld(2, 1) = cosY*sinZ
+        mOld(1, 1) = cosY * cosZ
+        mOld(2, 1) = cosY * sinZ
         mOld(3, 1) = -sinY
 
-        mOld(1, 2) = sinX*sinY*cosZ - cosX*sinZ
-        mOld(2, 2) = sinX*sinY*sinZ + cosX*cosZ
-        mOld(3, 2) = sinX*cosY
+        mOld(1, 2) = sinX * sinY * cosZ - cosX * sinZ
+        mOld(2, 2) = sinX * sinY * sinZ + cosX * cosZ
+        mOld(3, 2) = sinX * cosY
 
-        mOld(1, 3) = cosX*sinY*cosZ + sinX*sinZ
-        mOld(2, 3) = cosX*sinY*sinZ - sinX*cosZ
-        mOld(3, 3) = cosX*cosY
+        mOld(1, 3) = cosX * sinY * cosZ + sinX * sinZ
+        mOld(2, 3) = cosX * sinY * sinZ - sinX * cosZ
+        mOld(3, 3) = cosX * cosY
 
         ! Construct the transformation matrix between the new and the
         ! old time level. This is mNew*inverse(mOld). However the
@@ -723,9 +723,9 @@ contains
 
         do j = 1, 3
             do i = 1, 3
-                rotationMatrix(i, j) = mNew(i, 1)*mOld(j, 1) &
-                                       + mNew(i, 2)*mOld(j, 2) &
-                                       + mNew(i, 3)*mOld(j, 3)
+                rotationMatrix(i, j) = mNew(i, 1) * mOld(j, 1) &
+                                       + mNew(i, 2) * mOld(j, 2) &
+                                       + mNew(i, 3) * mOld(j, 3)
             end do
         end do
 
@@ -741,9 +741,9 @@ contains
         !  rotationPoint(3) = LRef*rotPoint(3) &
         !                   + MachGrid(3)*aInf*tOld/timeRef
 
-        rotationPoint(1) = LRef*rotPoint(1)
-        rotationPoint(2) = LRef*rotPoint(2)
-        rotationPoint(3) = LRef*rotPoint(3)
+        rotationPoint(1) = LRef * rotPoint(1)
+        rotationPoint(2) = LRef * rotPoint(2)
+        rotationPoint(3) = LRef * rotPoint(3)
 
     end subroutine rotMatrixRigidBody
 
@@ -796,21 +796,21 @@ contains
 
         dPhi = zero
         do nn = 2, degreePolRot
-            dPhi = dPhi + (nn - 1)*nn*coefPolRot(nn)*(t**(nn - 2))
+            dPhi = dPhi + (nn - 1) * nn * coefPolRot(nn) * (t**(nn - 2))
         end do
 
         ! Compute the fourier contribution.
 
         do nn = 1, degreeFourRot
-            val = nn*omegaFourRot
-            dPhi = dPhi - val**2*sinCoefFourRot(nn)*sin(val*t)
-            dPhi = dPhi - val**2*cosCoefFourRot(nn)*cos(val*t)
+            val = nn * omegaFourRot
+            dPhi = dPhi - val**2 * sinCoefFourRot(nn) * sin(val * t)
+            dPhi = dPhi - val**2 * cosCoefFourRot(nn) * cos(val * t)
         end do
 
         ! Set derivativeRigidRotAngle to dPhi. Multiply by timeRef
         ! to obtain the correct non-dimensional value.
 
-        secondDerivativeRigidRotAngle = timeRef**2*dPhi
+        secondDerivativeRigidRotAngle = timeRef**2 * dPhi
 
     end function secondDerivativeRigidRotAngle
 
@@ -859,7 +859,7 @@ contains
 
         phi = coefPolRot(0)
         do nn = 1, degreePolRot
-            phi = phi + coefPolRot(nn)*(t**nn)
+            phi = phi + coefPolRot(nn) * (t**nn)
         end do
 
         ! Compute the fourier contribution. Again the cosine coefficient
@@ -867,9 +867,9 @@ contains
 
         phi = phi + cosCoefFourRot(0)
         do nn = 1, degreeFourRot
-            val = nn*omegaFourRot*t
-            phi = phi + cosCoefFourRot(nn)*cos(val) &
-                  + sinCoefFourRot(nn)*sin(val)
+            val = nn * omegaFourRot * t
+            phi = phi + cosCoefFourRot(nn) * cos(val) &
+                  + sinCoefFourRot(nn) * sin(val)
         end do
 
         ! Set rigidRotAngle to phi.
@@ -1191,17 +1191,17 @@ contains
         real(kind=realType), intent(out) :: bendingMoment
 
         !Subroutine Variables
-        real(kind=realType):: elasticMomentx, elasticMomenty, elasticMomentz
+        real(kind=realType) :: elasticMomentx, elasticMomenty, elasticMomentz
         bendingMoment = zero
         if (liftIndex == 2) then
             !z out wing sum momentx,momentz
-            elasticMomentx = cm(1) + cf(2)*(pointRefEC(3) - pointRef(3))/lengthref - cf(3)*(pointRefEC(2) - pointRef(2))/lengthref
-            elasticMomentz = cm(3) - cf(2)*(pointRefEC(1) - pointref(1))/lengthref + cf(1)*(pointRefEC(2) - pointRef(2))/lengthref
+  elasticMomentx = cm(1) + cf(2)*(pointRefEC(3) - pointRef(3))/lengthref - cf(3)*(pointRefEC(2) - pointRef(2))/lengthref
+  elasticMomentz = cm(3) - cf(2)*(pointRefEC(1) - pointref(1))/lengthref + cf(1)*(pointRefEC(2) - pointRef(2))/lengthref
             bendingMoment = sqrt(elasticMomentx**2 + elasticMomentz**2)
         elseif (liftIndex == 3) then
             !y out wing sum momentx,momenty
-            elasticMomentx = cm(1) + cf(3)*(pointrefEC(2) - pointRef(2))/lengthref + cf(3)*(pointrefEC(3) - pointref(3))/lengthref
-            elasticMomenty = cm(2) + cf(3)*(pointRefEC(1) - pointRef(1))/lengthref + cf(1)*(pointrefEC(3) - pointRef(3))/lengthref
+  elasticMomentx = cm(1) + cf(3)*(pointrefEC(2) - pointRef(2))/lengthref + cf(3)*(pointrefEC(3) - pointref(3))/lengthref
+  elasticMomenty = cm(2) + cf(3)*(pointRefEC(1) - pointRef(1))/lengthref + cf(1)*(pointrefEC(3) - pointRef(3))/lengthref
             bendingMoment = sqrt(elasticMomentx**2 + elasticMomenty**2)
         end if
 
@@ -1215,13 +1215,13 @@ contains
         use constants
         implicit none
         !Subroutine arguments
-        integer(kind=intType)::npts
-        real(kind=realType), dimension(npts)  :: x, y
-        real(kind=realType)::m, b
+        integer(kind=intType) :: npts
+        real(kind=realType), dimension(npts) :: x, y
+        real(kind=realType) :: m, b
 
         !local variables
-        real(kind=realType)::sumx, sumy, sumx2, sumxy
-        integer(kind=intType)::i
+        real(kind=realType) :: sumx, sumy, sumx2, sumxy
+        integer(kind=intType) :: i
 
         !begin execution
         sumx = 0.0
@@ -1232,12 +1232,12 @@ contains
 
             sumx = sumx + x(i)
             sumy = sumy + y(i)
-            sumx2 = sumx2 + x(i)*x(i)
-            sumxy = sumxy + x(i)*y(i)
+            sumx2 = sumx2 + x(i) * x(i)
+            sumxy = sumxy + x(i) * y(i)
         end do
 
-        m = ((npts*sumxy) - (sumy*sumx))/((npts*sumx2) - (sumx)**2)
-        b = (sumy*sumx2 - (sumx*sumxy))/((npts*sumx2) - (sumx)**2)
+        m = ((npts * sumxy) - (sumy * sumx)) / ((npts * sumx2) - (sumx)**2)
+        b = (sumy * sumx2 - (sumx * sumxy)) / ((npts * sumx2) - (sumx)**2)
 
     end subroutine computeLeastSquaresRegression
 
@@ -1263,29 +1263,29 @@ contains
         !     Subroutine arguments.
         !
         real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, moment
-        real(kind=realType), dimension(8):: dcdq, dcdqdot
-        real(kind=realType), dimension(8):: dcdalpha, dcdalphadot
-        real(kind=realType), dimension(8):: Coef0
+        real(kind=realType), dimension(8) :: dcdq, dcdqdot
+        real(kind=realType), dimension(8) :: dcdalpha, dcdalphadot
+        real(kind=realType), dimension(8) :: Coef0
 
         ! Working Variables
         real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: baseCoef
-        real(kind=realType), dimension(8) ::coef0dot
-        real(kind=realType), dimension(nTimeIntervalsSpectral, 8)::ResBaseCoef
-        real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalAlpha, intervalAlphadot
-        real(kind=realType), dimension(nTimeIntervalsSpectral)  :: intervalMach, intervalMachdot
+        real(kind=realType), dimension(8) :: coef0dot
+        real(kind=realType), dimension(nTimeIntervalsSpectral, 8) :: ResBaseCoef
+        real(kind=realType), dimension(nTimeIntervalsSpectral) :: intervalAlpha, intervalAlphadot
+        real(kind=realType), dimension(nTimeIntervalsSpectral) :: intervalMach, intervalMachdot
         real(kind=realType), dimension(nSections) :: t
-        integer(kind=intType):: i, sps, nn
+        integer(kind=intType) :: i, sps, nn
         !speed of sound: for normalization of q derivatives
-        real(kind=realType)::a
+        real(kind=realType) :: a
         real(kind=realType) :: fact, factMoment
         ! Functions
-        real(kind=realType), dimension(nTimeIntervalsSpectral)  :: dPhix, dPhiy, dphiz
-        real(kind=realType), dimension(nTimeIntervalsSpectral)  :: dPhixdot, dPhiydot, dphizdot
-        real(kind=realType)::derivativeRigidRotAngle, secondDerivativeRigidRotAngle
+        real(kind=realType), dimension(nTimeIntervalsSpectral) :: dPhix, dPhiy, dphiz
+        real(kind=realType), dimension(nTimeIntervalsSpectral) :: dPhixdot, dPhiydot, dphizdot
+        real(kind=realType) :: derivativeRigidRotAngle, secondDerivativeRigidRotAngle
 
-        fact = two/(gammaInf*pInf*MachCoef**2 &
-                    *surfaceRef*LRef**2)
-        factMoment = fact/(lengthRef*LRef)
+        fact = two / (gammaInf * pInf * MachCoef**2 &
+                      * surfaceRef * LRef**2)
+        factMoment = fact / (lengthRef * LRef)
 
         if (TSqMode) then
 
@@ -1354,8 +1354,8 @@ contains
 
                 if (equationMode == timeSpectral) then
                     do nn = 1, nSections
-                        t(nn) = t(nn) + (sps - 1)*sections(nn)%timePeriod &
-                                /(nTimeIntervalsSpectral*1.0)
+                        t(nn) = t(nn) + (sps - 1) * sections(nn)%timePeriod &
+                                / (nTimeIntervalsSpectral * 1.0)
                     end do
                 end if
 
@@ -1370,32 +1370,32 @@ contains
                 ! THIS CALL IS WRONG!!!!
                 !call getDirAngle(velDirFreestream,liftDirection,liftIndex,alpha+intervalAlpha(sps), beta)
 
-                BaseCoef(sps, 1) = fact*( &
-                                   force(1, sps)*liftDirection(1) + &
-                                   force(2, sps)*liftDirection(2) + &
-                                   force(3, sps)*liftDIrection(3))
-                BaseCoef(sps, 2) = fact*( &
-                                   force(1, sps)*dragDirection(1) + &
-                                   force(2, sps)*dragDirection(2) + &
-                                   force(3, sps)*dragDIrection(3))
-                BaseCoef(sps, 3) = force(1, sps)*fact
-                BaseCoef(sps, 4) = force(2, sps)*fact
-                BaseCoef(sps, 5) = force(3, sps)*fact
-                BaseCoef(sps, 6) = moment(1, sps)*factMoment
-                BaseCoef(sps, 7) = moment(2, sps)*factMoment
-                BaseCoef(sps, 8) = moment(3, sps)*factMoment
+                BaseCoef(sps, 1) = fact * ( &
+                                   force(1, sps) * liftDirection(1) + &
+                                   force(2, sps) * liftDirection(2) + &
+                                   force(3, sps) * liftDIrection(3))
+                BaseCoef(sps, 2) = fact * ( &
+                                   force(1, sps) * dragDirection(1) + &
+                                   force(2, sps) * dragDirection(2) + &
+                                   force(3, sps) * dragDIrection(3))
+                BaseCoef(sps, 3) = force(1, sps) * fact
+                BaseCoef(sps, 4) = force(2, sps) * fact
+                BaseCoef(sps, 5) = force(3, sps) * fact
+                BaseCoef(sps, 6) = moment(1, sps) * factMoment
+                BaseCoef(sps, 7) = moment(2, sps) * factMoment
+                BaseCoef(sps, 8) = moment(3, sps) * factMoment
             end do
 
             !now compute dCl/dalpha
             do i = 1, 8
-                call computeLeastSquaresRegression(BaseCoef(:, i), intervalAlpha, nTimeIntervalsSpectral, dcdAlpha(i), coef0(i))
+        call computeLeastSquaresRegression(BaseCoef(:, i), intervalAlpha, nTimeIntervalsSpectral, dcdAlpha(i), coef0(i))
             end do
 
             ! now subtract off estimated cl,cmz and use remainder to compute
             ! clalphadot and cmzalphadot.
             do i = 1, 8
                 do sps = 1, nTimeIntervalsSpectral
-                    ResBaseCoef(sps, i) = BaseCoef(sps, i) - (dcdalpha(i)*intervalAlpha(sps) + Coef0(i))
+                    ResBaseCoef(sps, i) = BaseCoef(sps, i) - (dcdalpha(i) * intervalAlpha(sps) + Coef0(i))
                 end do
             end do
 
@@ -1404,8 +1404,8 @@ contains
         call computeLeastSquaresRegression(ResBaseCoef(:, i), intervalAlphadot, nTimeIntervalsSpectral, dcdalphadot(i), Coef0dot(i))
             end do
 
-            a = sqrt(gammaInf*pInfDim/rhoInfDim)
-            dcdalphadot = dcdalphadot*2*(machGrid*a)/lengthRef
+            a = sqrt(gammaInf * pInfDim / rhoInfDim)
+            dcdalphadot = dcdalphadot * 2 * (machGrid * a) / lengthRef
 
         else
             call terminate('computeTSDerivatives', 'Not a valid stability motion')
@@ -1445,14 +1445,14 @@ contains
         real(kind=realType), dimension(3), intent(in) :: freeStreamAxis
         real(kind=realType), dimension(3), intent(in) :: liftAxis
         real(kind=realType), intent(out) :: alpha, beta
-        integer(kind=intType), intent(out)::liftIndex
+        integer(kind=intType), intent(out) :: liftIndex
         !
         !     Local variables.
         !
         real(kind=realType) :: rnorm
-        integer(kind=intType):: flowIndex, i
+        integer(kind=intType) :: flowIndex, i
         real(kind=realType), dimension(3) :: freeStreamAxisNorm
-        integer(kind=intType) ::  temp
+        integer(kind=intType) :: temp
 
         ! Assume domoniate flow is x
 
@@ -1474,7 +1474,7 @@ contains
         ! Normalize the freeStreamDirection vector.
         rnorm = sqrt(freeStreamAxis(1)**2 + freeStreamAxis(2)**2 + freeStreamAxis(3)**2)
         do i = 1, 3
-            freeStreamAxisNorm(i) = freeStreamAxis(i)/rnorm
+            freeStreamAxisNorm(i) = freeStreamAxis(i) / rnorm
         end do
 
         if (liftIndex == 2) then
@@ -1513,10 +1513,10 @@ contains
         !
         !     Local variables.
         !
-        real(kind=realType), dimension(8)::dcdalpha, dcdalphadot, dcdbeta, &
-                                            dcdbetadot, dcdMach, dcdMachdot
-        real(kind=realType), dimension(8)::dcdp, dcdpdot, dcdq, dcdqdot, dcdr, dcdrdot
-        real(kind=realType), dimension(8)::Coef0, Coef0dot
+        real(kind=realType), dimension(8) :: dcdalpha, dcdalphadot, dcdbeta, &
+                                             dcdbetadot, dcdMach, dcdMachdot
+        real(kind=realType), dimension(8) :: dcdp, dcdpdot, dcdq, dcdqdot, dcdr, dcdrdot
+        real(kind=realType), dimension(8) :: Coef0, Coef0dot
 
         !call computeTSDerivatives(coef0,dcdalpha,dcdalphadot,dcdq,dcdqdot)
 
@@ -1598,8 +1598,8 @@ contains
                     coefTimeALE(3) = -fourth
                     coefTimeALE(4) = -fourth
 
-                    coefMeshALE(1, 1) = half*(1.0_realType + 1.0_realType/sqrtthree)
-                    coefMeshALE(1, 2) = half*(1.0_realType - 1.0_realType/sqrtthree)
+                    coefMeshALE(1, 1) = half * (1.0_realType + 1.0_realType / sqrtthree)
+                    coefMeshALE(1, 2) = half * (1.0_realType - 1.0_realType / sqrtthree)
                     coefMeshALE(2, 1) = coefMeshALE(1, 2)
                     coefMeshALE(2, 2) = coefMeshALE(1, 1)
                 end if
@@ -1637,8 +1637,8 @@ contains
                 if (useALE .and. equationMode .eq. unsteady) then
                     coefTimeALE(1) = threefourth
                     coefTimeALE(2) = -fourth
-                    coefMeshALE(1, 1) = half*(1.0_realType + 1.0_realType/sqrtthree)
-                    coefMeshALE(1, 2) = half*(1.0_realType - 1.0_realType/sqrtthree)
+                    coefMeshALE(1, 1) = half * (1.0_realType + 1.0_realType / sqrtthree)
+                    coefMeshALE(1, 2) = half * (1.0_realType - 1.0_realType / sqrtthree)
                     coefMeshALE(2, 1) = coefMeshALE(1, 2)
                     coefMeshALE(2, 2) = coefMeshALE(1, 1)
                 end if
@@ -1646,10 +1646,10 @@ contains
                 nLevelsSet = 3
 
             case default   ! 3 or bigger.
-                coefTime(0) = 11.0_realType/6.0_realType
+                coefTime(0) = 11.0_realType / 6.0_realType
                 coefTime(1) = -3.0_realType
                 coefTime(2) = 1.5_realType
-                coefTime(3) = -1.0_realType/3.0_realType
+                coefTime(3) = -1.0_realType / 3.0_realType
 
                 ! These numbers are NOT correct
                 ! DO NOT use 3rd order ALE for now
@@ -1659,8 +1659,8 @@ contains
                     coefTimeALE(2) = threefourth
                     coefTimeALE(3) = -fourth
                     coefTimeALE(4) = -fourth
-                    coefMeshALE(1, 1) = half*(1.0_realType + 1.0_realType/sqrtthree)
-                    coefMeshALE(1, 2) = half*(1.0_realType - 1.0_realType/sqrtthree)
+                    coefMeshALE(1, 1) = half * (1.0_realType + 1.0_realType / sqrtthree)
+                    coefMeshALE(1, 2) = half * (1.0_realType - 1.0_realType / sqrtthree)
                     coefMeshALE(2, 1) = coefMeshALE(1, 2)
                     coefMeshALE(2, 2) = coefMeshALE(1, 1)
                     coefMeshALE(3, 1) = coefMeshALE(1, 2)
@@ -1716,9 +1716,9 @@ contains
         ! Outputs
         real(kind=realType), dimension(3), intent(out) :: c
 
-        c(1) = a(2)*b(3) - a(3)*b(2)
-        c(2) = a(3)*b(1) - a(1)*b(3)
-        c(3) = a(1)*b(2) - a(2)*b(1)
+        c(1) = a(2) * b(3) - a(3) * b(2)
+        c(2) = a(3) * b(1) - a(1) * b(3)
+        c(3) = a(1) * b(2) - a(2) * b(1)
 
     end subroutine cross_prod
 
@@ -1730,7 +1730,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer, intent(in)              :: angle
+        integer, intent(in) :: angle
         real(kind=realType), intent(out) :: mult, trans
 
         ! Determine the situation we are having here.
@@ -1746,7 +1746,7 @@ contains
 
             ! Angle is given in degrees. A multiplication must be performed.
 
-            mult = pi/180.0_realType
+            mult = pi / 180.0_realType
             trans = zero
 
         else
@@ -1772,7 +1772,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer, intent(in)              :: mass, len
+        integer, intent(in) :: mass, len
         real(kind=realType), intent(out) :: mult, trans
 
         ! Determine the situation we are having here.
@@ -1806,7 +1806,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer, intent(in)              :: len
+        integer, intent(in) :: len
         real(kind=realType), intent(out) :: mult, trans
 
         ! Determine the situation we are having here.
@@ -1850,7 +1850,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer, intent(in)              :: mass, len, time
+        integer, intent(in) :: mass, len, time
         real(kind=realType), intent(out) :: mult, trans
 
         ! Determine the situation we are having here.
@@ -1885,7 +1885,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer, intent(in)              :: temp
+        integer, intent(in) :: temp
         real(kind=realType), intent(out) :: mult, trans
 
         ! Determine the situation we are having here.
@@ -1911,7 +1911,7 @@ contains
             ! Temperature is in Rankine. Only a multiplication needs to
             ! be performed.
 
-            mult = 5.0_realType/9.0_realType
+            mult = 5.0_realType / 9.0_realType
             trans = zero
 
         case (Fahrenheit)
@@ -1919,7 +1919,7 @@ contains
             ! Temperature is in Fahrenheit. Both a multiplication and an
             ! offset must be applied.
 
-            mult = 5.0_realType/9.0_realType
+            mult = 5.0_realType / 9.0_realType
             trans = 255.382
 
         case default
@@ -1946,8 +1946,8 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer, intent(in)              :: mass, len, time, temp
-        character(len=*), intent(in)     :: turbName
+        integer, intent(in) :: mass, len, time, temp
+        character(len=*), intent(in) :: turbName
         real(kind=realType), intent(out) :: mult, trans
 
         ! Determine the situation we are having here.
@@ -1983,7 +1983,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer, intent(in)              :: length, time
+        integer, intent(in) :: length, time
         real(kind=realType), intent(out) :: mult, trans
 
         ! Determine the situation we are having here.
@@ -2443,7 +2443,7 @@ contains
                     ! Compute the local viscosity ratio and take the maximum
                     ! with the currently stored value.
 
-                    eddyvis = rev(i, j, k)/rlv(i, j, k)
+                    eddyvis = rev(i, j, k) / rlv(i, j, k)
                     eddyvisMax = max(eddyvisMax, eddyvis)
 
                 end do
@@ -2486,7 +2486,7 @@ contains
 
         ! Set the free stream value of the total enthalpy.
 
-        hInf = (wInf(irhoE) + pInfCorr)/rhoInf
+        hInf = (wInf(irhoE) + pInfCorr) / rhoInf
 
         ! Loop over the owned cells of this block.
 
@@ -2496,9 +2496,9 @@ contains
 
                     ! Compute the local total enthalpy and Mach number squared.
 
-                    hdiff = abs((w(i, j, k, irhoE) + p(i, j, k))/w(i, j, k, irho) - hInf)
+                    hdiff = abs((w(i, j, k, irhoE) + p(i, j, k)) / w(i, j, k, irho) - hInf)
                     Mach2 = (w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 &
-                             + w(i, j, k, ivz)**2)*w(i, j, k, irho)/(gamma(i, j, k)*p(i, j, k))
+                             + w(i, j, k, ivz)**2) * w(i, j, k, irho) / (gamma(i, j, k) * p(i, j, k))
 
                     ! Determine the maximum of these values and the
                     ! currently stored maximum values.
@@ -2515,7 +2515,7 @@ contains
         ! total enthalpy difference.
 
         MachMax = sqrt(MachMax)
-        hdiffMax = hdiffMax/hInf
+        hdiffMax = hdiffMax / hInf
 
     end subroutine maxHdiffMach
 
@@ -2928,8 +2928,8 @@ contains
 
         ! Determine the total new and old size.
 
-        newSize = newSize1*newSize2
-        oldSize = oldSize1*oldSize2
+        newSize = newSize1 * newSize2
+        oldSize = oldSize1 * oldSize2
 
         ! Determine for each of the 2 components the minimum of the new
         ! and the old size. Multiply these values to obtain the total
@@ -2938,7 +2938,7 @@ contains
         nn1 = min(newSize1, oldSize1)
         nn2 = min(newSize2, oldSize2)
 
-        nn = nn1*nn2
+        nn = nn1 * nn2
 
         ! Set the pointer for tmp.
 
@@ -3064,8 +3064,8 @@ contains
 
         ! Determine the total new and old size.
 
-        newSize = newSize1*newSize2
-        oldSize = oldSize1*oldSize2
+        newSize = newSize1 * newSize2
+        oldSize = oldSize1 * oldSize2
 
         ! Determine for each of the 2 components the minimum of the new
         ! and the old size. Multiply these values to obtain the total
@@ -3074,7 +3074,7 @@ contains
         nn1 = min(newSize1, oldSize1)
         nn2 = min(newSize2, oldSize2)
 
-        nn = nn1*nn2
+        nn = nn1 * nn2
 
         ! Set the pointer for tmp.
 
@@ -3176,8 +3176,8 @@ contains
             ! Multiply sendSize and recvSize with the number of variables to
             ! be communicated.
 
-            sendSize = sendSize*nVarComm
-            recvSize = recvSize*nVarComm
+            sendSize = sendSize * nVarComm
+            recvSize = recvSize * nVarComm
 
             ! Store the maximum of the current values and the old values
             ! in sendBufferSize1to1 and recvBufferSize1to1.
@@ -3202,8 +3202,8 @@ contains
             ! Multiply sendSize and recvSize with the number of variables to
             ! be communicated.
 
-            sendSize = sendSize*nVarComm
-            recvSize = recvSize*nVarComm
+            sendSize = sendSize * nVarComm
+            recvSize = recvSize * nVarComm
 
             ! Store the maximum of the current values and the old values.
 
@@ -3692,27 +3692,27 @@ contains
         ! coefficients. Note that the loop starts at 0.
 
         if (mod(nsps, 2) .eq. 0) then
-            nhalfM1 = nsps/2 - 1
+            nhalfM1 = nsps / 2 - 1
         else
-            nhalfM1 = (nsps - 1)/2
+            nhalfM1 = (nsps - 1) / 2
         end if
 
-        nspsInv = one/real(nsps, realType)
+        nspsInv = one / real(nsps, realType)
 
         do j = 0, (nsps - 1)
             if (mod(nsps, 2) .eq. 0) then
-                alpScal(j) = one + cos(j*pi)*cos(nsps*pi*t)
+                alpScal(j) = one + cos(j * pi) * cos(nsps * pi * t)
             else
-                alpScal(j) = one + cos(j*pi*(nsps + 1)/nsps)*cos((nsps + 1)*pi*t)
+                alpScal(j) = one + cos(j * pi * (nsps + 1) / nsps) * cos((nsps + 1) * pi * t)
             end if
 
             do r = 1, nhalfM1
                 alpScal(j) = alpScal(j) &
-                             + two*cos(r*j*two*pi*nspsInv)*cos(r*two*pi*t) &
-                             + two*sin(r*j*two*pi*nspsInv)*sin(r*two*pi*t)
+                             + two * cos(r * j * two * pi * nspsInv) * cos(r * two * pi * t) &
+                             + two * sin(r * j * two * pi * nspsInv) * sin(r * two * pi * t)
             end do
 
-            alpScal(j) = alpScal(j)*nspsInv
+            alpScal(j) = alpScal(j) * nspsInv
 
         end do
         !
@@ -3728,14 +3728,14 @@ contains
             ! Note that also t must be adapted, because t is a ratio between
             ! the actual time and the periodic time.
 
-            m = nsps*sections(nn)%nSlices
+            m = nsps * sections(nn)%nSlices
             if (mod(m, 2) .eq. 0) then
-                mhalfM1 = m/2 - 1
+                mhalfM1 = m / 2 - 1
             else
-                mhalfM1 = (m - 1)/2
+                mhalfM1 = (m - 1) / 2
             end if
-            mInv = one/real(m, realType)
-            tm = t/real(sections(nn)%nSlices, realType)
+            mInv = one / real(m, realType)
+            tm = t / real(sections(nn)%nSlices, realType)
 
             ! Loop over the number of spectral solutions.
 
@@ -3777,28 +3777,28 @@ contains
                     ! Determine the index j, the index of alp in the entire
                     ! wheel.
 
-                    j = jj + p*nsps
+                    j = jj + p * nsps
 
                     ! Compute the scalar coefficient alp of the index j in
                     ! the entire wheel.
 
                     if (mod(m, 2) .eq. 0) then
-                        alp = one + cos(j*pi)*cos(m*pi*tm)
+                        alp = one + cos(j * pi) * cos(m * pi * tm)
                     else
-                        alp = one + cos(j*pi*(m + 1)/m)*cos((m + 1)*pi*tm)
+                        alp = one + cos(j * pi * (m + 1) / m) * cos((m + 1) * pi * tm)
                     end if
                     do r = 1, mhalfM1
-                        alp = alp + two*cos(r*j*two*pi*mInv)*cos(r*two*pi*tm) &
-                              + two*sin(r*j*two*pi*mInv)*sin(r*two*pi*tm)
+                        alp = alp + two * cos(r * j * two * pi * mInv) * cos(r * two * pi * tm) &
+                              + two * sin(r * j * two * pi * mInv) * sin(r * two * pi * tm)
                     end do
 
-                    alp = alp*mInv
+                    alp = alp * mInv
 
                     ! Update the matrix coefficient.
 
                     do r = 1, 3
                         do j = 1, 3
-                            alpMat(nn, jj, r, j) = alpMat(nn, jj, r, j) + alp*rp(r, j)
+                            alpMat(nn, jj, r, j) = alpMat(nn, jj, r, j) + alp * rp(r, j)
                         end do
                     end do
 
@@ -3807,9 +3807,9 @@ contains
 
                     do r = 1, 3
                         do j = 1, 3
-                            tmp(r, j) = rp(r, 1)*rotMatrixSpectral(nn, 1, j) &
-                                        + rp(r, 2)*rotMatrixSpectral(nn, 2, j) &
-                                        + rp(r, 3)*rotMatrixSpectral(nn, 3, j)
+                            tmp(r, j) = rp(r, 1) * rotMatrixSpectral(nn, 1, j) &
+                                        + rp(r, 2) * rotMatrixSpectral(nn, 2, j) &
+                                        + rp(r, 3) * rotMatrixSpectral(nn, 3, j)
                         end do
                     end do
 
@@ -4044,9 +4044,9 @@ contains
                             xx(bcData(mm)%inEnd, bcData(mm)%jnBeg, :)
 
                     ! Cross Product
-                    cp(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-                    cp(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-                    cp(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+                    cp(1) = (v1(2) * v2(3) - v1(3) * v2(2))
+                    cp(2) = (v1(3) * v2(1) - v1(1) * v2(3))
+                    cp(3) = (v1(1) * v2(2) - v1(2) * v2(1))
 
                     ! Only interesed in abs values
                     cp = abs(cp)
@@ -5714,7 +5714,7 @@ contains
         integer(kind=intType), intent(in) :: errorcode
         character(len=*), intent(in) :: file
         integer(kind=intType), intent(in) :: line
-        integer::ierr
+        integer :: ierr
         character(len=maxStringLen) :: errorCodeFormat, errorLineFormat
 
         errorCodeFormat = "(2(A, I2,)"
@@ -5779,8 +5779,8 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: nn, i
-        integer               :: ierr
-        logical               :: localEulerWalls
+        integer :: ierr
+        logical :: localEulerWalls
 
         ! Initialize localEulerWalls to .false. and loop over the
         ! boundary subfaces of the blocks to see if Euler walls are
@@ -5834,7 +5834,7 @@ contains
         !
         integer :: ierr
 
-        integer(kind=intType):: nSolverMon ! number of solver monitor variables
+        integer(kind=intType) :: nSolverMon ! number of solver monitor variables
 
         ! Return immediately if the convergence history (of the inner
         ! iterations) does not need to be stored. This logical can
@@ -5916,8 +5916,8 @@ contains
         implicit none
 
         ! save the monitor variable names into a new array
-        integer(kind=intType), intent(in):: nvar
-        character, dimension(nvar, maxCGNSNameLen), intent(out):: monitor_variables
+        integer(kind=intType), intent(in) :: nvar
+        character, dimension(nvar, maxCGNSNameLen), intent(out) :: monitor_variables
 
         ! working variables
         character(len=maxCGNSNameLen) :: var_name
@@ -5945,8 +5945,8 @@ contains
         implicit none
 
         ! save the monitor variable names into a new array
-        integer(kind=intType), intent(in):: niter, nsps
-        character, dimension(0:niter, ntimeintervalsspectral, maxIterTypelen), intent(out):: type_array
+        integer(kind=intType), intent(in) :: niter, nsps
+        character, dimension(0:niter, ntimeintervalsspectral, maxIterTypelen), intent(out) :: type_array
 
         ! working variables
         character(len=maxIterTypelen) :: type_name
@@ -6007,7 +6007,7 @@ contains
 
 #ifndef USE_COMPLEX
             ! for the real version this is easy
-            nCharWrite = nCharWrite + nMon*(fieldWidthLarge + 1)
+            nCharWrite = nCharWrite + nMon * (fieldWidthLarge + 1)
 #else
             ! for complex we need to differentiate between residuals and functionals
             do i = 1, nMon
@@ -6366,13 +6366,13 @@ contains
             do j = 2, jl
                 do i = 2, il
 #ifndef USE_COMPLEX
-                    monLoc(mm) = monLoc(mm) + (dw(i, j, k, nn)/vol(i, j, k))**2
+                    monLoc(mm) = monLoc(mm) + (dw(i, j, k, nn) / vol(i, j, k))**2
 #else
                     ! TODO squaring the complex residual when its order 1e-200 underflows and we need a better approach here
                     ! we need to square and sum the real and complex parts separately
                     monLoc(mm) = monLoc(mm) + &
-                                 cmplx((real(dw(i, j, k, nn)/vol(i, j, k)))**2, &
-                                       (aimag(dw(i, j, k, nn)/vol(i, j, k)))**2)
+                                 cmplx((real(dw(i, j, k, nn) / vol(i, j, k)))**2, &
+                                       (aimag(dw(i, j, k, nn) / vol(i, j, k)))**2)
 #endif
                 end do
             end do
@@ -6407,27 +6407,27 @@ contains
             do j = 2, jl
                 do i = 2, il
                     state_sum = 0.0
-                    ovv = one/vol(i, j, k)
+                    ovv = one / vol(i, j, k)
                     do l = 1, nwf
 #ifndef USE_COMPLEX
-                        state_sum = state_sum + (dw(i, j, k, l)*ovv)**2
+                        state_sum = state_sum + (dw(i, j, k, l) * ovv)**2
 #else
                         ! TODO squaring the complex residual when its order 1e-200 underflows and we need a better approach here
                         ! we need to square and sum the real and complex parts separately
                         state_sum = state_sum + &
-                                    cmplx((real(dw(i, j, k, l)*ovv))**2, &
-                                          (aimag(dw(i, j, k, l)*ovv))**2)
+                                    cmplx((real(dw(i, j, k, l) * ovv))**2, &
+                                          (aimag(dw(i, j, k, l) * ovv))**2)
 #endif
                     end do
                     do l = nt1, nt2
                         ! l-nt1+1 will index the turbResScale properly
 #ifndef USE_COMPLEX
-                        state_sum = state_sum + (dw(i, j, k, l)*ovv*turbResScale(l - nt1 + 1))**2
+                        state_sum = state_sum + (dw(i, j, k, l) * ovv * turbResScale(l - nt1 + 1))**2
 #else
                         ! we need to square and sum the real and complex parts separately
                         state_sum = state_sum + &
-                                    cmplx((real(dw(i, j, k, l)*ovv*turbResScale(l - nt1 + 1)))**2, &
-                                          (aimag(dw(i, j, k, l)*ovv*turbResScale(l - nt1 + 1)))**2)
+                                    cmplx((real(dw(i, j, k, l) * ovv * turbResScale(l - nt1 + 1)))**2, &
+                                          (aimag(dw(i, j, k, l) * ovv * turbResScale(l - nt1 + 1)))**2)
 #endif
                     end do
                     monLoc(mm) = monLoc(mm) + state_sum
@@ -6449,7 +6449,7 @@ contains
         !
         !      Local variables
         !
-        character(len=7)  :: integerString
+        character(len=7) :: integerString
         character(len=12) :: realString
 
         ! Write the time step number to the integer string and the
@@ -6498,7 +6498,7 @@ contains
                         do i = 2, il
                             ii = ii + 1
 
-                            xCen(:, ii) = eighth*( &
+                            xCen(:, ii) = eighth * ( &
                                           x(i - 1, j - 1, k - 1, :) + &
                                           x(i, j - 1, k - 1, :) + &
                                           x(i - 1, j, k - 1, :) + &

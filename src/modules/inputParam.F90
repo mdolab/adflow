@@ -483,7 +483,7 @@ module inputParallel
     ! loadBalanceIter: The number of refinment iterations to run to try
     !                   to get better load balancing.
     real(realType) :: loadImbalance
-    logical        :: splitBlocks
+    logical :: splitBlocks
     integer(kind=inttype) :: loadBalanceIter, partitionlikenproc
 end module inputParallel
 
@@ -566,8 +566,8 @@ module inputPhysics
     integer(kind=intType) :: equations, equationMode, flowType
     integer(kind=intType) :: turbModel, cpModel, turbProd
     integer(kind=intType) :: rvfN
-    logical               :: rvfB
-    logical               :: useQCR, useRotationSA, useft2SA
+    logical :: rvfB
+    logical :: useQCR, useRotationSA, useft2SA
 
     logical :: wallFunctions, wallDistanceNeeded
 
@@ -586,7 +586,7 @@ module inputPhysics
     real(kind=realType), dimension(3, 2) :: momentAxis
     real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
     real(kind=realType) :: cavitationnumber
-    logical             :: useRoughSA
+    logical :: useRoughSA
     real(kind=realType) :: cpmin_rho
     real(kind=realType), dimension(:), allocatable :: cpmin_family
 
@@ -648,7 +648,7 @@ module inputTimeSpectral
     ! dtUnsteadyRestartSpectral:    The corresponding time step.
 
     real(kind=realType) :: dtUnsteadyRestartSpectral
-    logical ::             writeUnsteadyRestartSpectral
+    logical :: writeUnsteadyRestartSpectral
 
     ! writeUnsteadyVolSpectral:  Whether or not the corresponding
     !                            unsteady volume solution files
@@ -660,8 +660,8 @@ module inputTimeSpectral
     !                            unsteady solutions to be created.
 
     integer(kind=intType) :: nUnsteadySolSpectral
-    logical ::               writeUnsteadyVolSpectral
-    logical ::               writeUnsteadySurfSpectral
+    logical :: writeUnsteadyVolSpectral
+    logical :: writeUnsteadySurfSpectral
 
     ! rotMatrixSpectral(:,3,3):  The corresponding rotation matrices
     !                            for the velocity. No rotation
@@ -787,7 +787,7 @@ module inputADjoint
 
     ! FillLevel     : Number of levels of fill for the ILU local PC
     ! Overlap       : Amount of overlap in the ASM PC
-    integer(kind=intType):: FillLevel, Overlap
+    integer(kind=intType) :: FillLevel, Overlap
 
     ! adjRelTol     : Relative tolerance
     ! adjAbsTol     : Absolute tolerance
@@ -797,14 +797,14 @@ module inputADjoint
     !                 It has a high impact on the required memory!
     ! adjMonStep    : Convergence monitor step
 
-    real(kind=alwaysRealType)    :: adjRelTol
-    real(kind=alwaysRealType)    :: adjAbsTol
-    real(kind=alwaysRealType)    :: adjRelTolRel
-    real(kind=alwaysRealType)    :: adjDivTol
+    real(kind=alwaysRealType) :: adjRelTol
+    real(kind=alwaysRealType) :: adjAbsTol
+    real(kind=alwaysRealType) :: adjRelTolRel
+    real(kind=alwaysRealType) :: adjDivTol
     real(kind=realType) :: adjMaxL2Dev
-    integer(kind=intType)  :: adjMaxIter
-    integer(kind=intType)  :: adjRestart
-    integer(kind=intType)  :: adjMonStep
+    integer(kind=intType) :: adjMaxIter
+    integer(kind=intType) :: adjRestart
+    integer(kind=intType) :: adjMonStep
 
     ! outerPCIts : Number of iterations to run for on (global) preconditioner
     ! intterPCIts : Number of iterations to run on local preconditioner
@@ -840,14 +840,14 @@ module inputTSStabDeriv
 
     ! TSStability : Whether or not the TS stability derivatives should
     !               be computed
-    logical:: TSStability, TSAlphaMode, TSBetaMode, TSpMode, &
-              TSqMode, TSrMode, TSAltitudeMode, TSMachMode
+    logical :: TSStability, TSAlphaMode, TSBetaMode, TSpMode, &
+               TSqMode, TSrMode, TSAltitudeMode, TSMachMode
     ! TSAlphaFollowing : Whether or not alpha follows the body in p,q,r mode
-    logical:: TSAlphaFollowing
+    logical :: TSAlphaFollowing
 
     ! useWindAxis : whether to rotate around the wind axis or the body
     !               axis...
-    logical:: useWindAxis
+    logical :: useWindAxis
 
 end module inputTSStabDeriv
 
@@ -867,8 +867,8 @@ module inputOverset
     integer(kind=intType) :: oversetUpdateMode
     real(kind=realType) :: selfZipCutoff
     ! nRefine: number of connectivity loops to run
-    integer(kind=intType)::nRefine
-    integer(kind=intType)::nFloodIter
+    integer(kind=intType) :: nRefine
+    integer(kind=intType) :: nFloodIter
     logical :: useZipperMesh
     logical :: useOversetWallScaling
     logical :: oversetDebugPrint

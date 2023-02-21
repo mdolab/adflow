@@ -175,7 +175,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        real(kind=realType), intent(in)  :: tt
+        real(kind=realType), intent(in) :: tt
         real(kind=realType), intent(out) :: ht
         !
         !      Local variables.
@@ -192,7 +192,7 @@ contains
 
             ! Constant cp. The total enthalpy is simply cp*tt.
 
-            ht = gammaConstant*RGasDim*tt/(gammaConstant - one)
+            ht = gammaConstant * RGasDim * tt / (gammaConstant - one)
 
             !        ================================================================
 #ifndef USE_TAPENADE
@@ -219,7 +219,7 @@ contains
 
                 end if
 
-                ht = RGasDim*(cpEint(0) + tt + cv0*(tt - cpTrange(0)))
+                ht = RGasDim * (cpEint(0) + tt + cv0 * (tt - cpTrange(0)))
 
             else if (tt > cpTrange(cpNparts)) then
 
@@ -236,7 +236,7 @@ contains
                     print "(a)", "#"
                 end if
 
-                ht = RGasDim*(cpEint(cpNparts) + tt + cvn*(tt - cpTrange(cpNparts)))
+                ht = RGasDim * (cpEint(cpNparts) + tt + cvn * (tt - cpTrange(cpNparts)))
 
             else
 
@@ -249,7 +249,7 @@ contains
 
                     ! Next guess for the interval.
 
-                    nn = start + ii/2
+                    nn = start + ii / 2
 
                     ! Determine the situation we are having here.
 
@@ -271,7 +271,7 @@ contains
 
                     ! Modify ii for the next branch to search.
 
-                    ii = ii/2
+                    ii = ii / 2
 
                 end do interval
 
@@ -281,18 +281,18 @@ contains
                 ht = cpTempFit(nn)%eint0
                 do ii = 1, cpTempFit(nn)%nterm
                     if (cpTempFit(nn)%exponents(ii) == -1_intType) then
-                        ht = ht + cpTempFit(nn)%constants(ii)*log(tt)
+                        ht = ht + cpTempFit(nn)%constants(ii) * log(tt)
                     else
                         mm = cpTempFit(nn)%exponents(ii) + 1
                         t2 = tt**mm
-                        ht = ht + cpTempFit(nn)%constants(ii)*t2/mm
+                        ht = ht + cpTempFit(nn)%constants(ii) * t2 / mm
                     end if
                 end do
 
                 ! Multiply ht by RGasDim to obtain the correct
                 ! dimensional value.
 
-                ht = RGasDim*ht
+                ht = RGasDim * ht
 
             end if
 #endif
@@ -320,7 +320,7 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: i, j
-        real(kind=realType)   :: factInlet, var
+        real(kind=realType) :: factInlet, var
 
         real(kind=realType), dimension(3) :: dir
 
@@ -365,9 +365,9 @@ contains
         ! Multiply by factInlet to make sure that the normal
         ! is inward pointing.
 
-        dir(1) = dir(1)*factInlet
-        dir(2) = dir(2)*factInlet
-        dir(3) = dir(3)*factInlet
+        dir(1) = dir(1) * factInlet
+        dir(2) = dir(2) * factInlet
+        dir(3) = dir(3) * factInlet
 
         ! Determine three unit vectors, which define the local cartesian
         ! coordinate system of the rotation axis. First the axial
@@ -389,7 +389,7 @@ contains
         ! computational domain. If the dot product with dir is
         ! negative the direction of axis should be reversed.
 
-        var = axis(1)*dir(1) + axis(2)*dir(2) + axis(3)*dir(3)
+        var = axis(1) * dir(1) + axis(2) * dir(2) + axis(3) * dir(3)
         if (var < zero) then
             axis(1) = -axis(1); axis(2) = -axis(2); axis(3) = -axis(3)
         end if
@@ -404,24 +404,24 @@ contains
             radVec1(1) = zero; radVec1(2) = zero; radVec1(3) = one
         end if
 
-        var = radVec1(1)*axis(1) + radVec1(2)*axis(2) &
-              + radVec1(3)*axis(3)
-        radVec1(1) = radVec1(1) - var*axis(1)
-        radVec1(2) = radVec1(2) - var*axis(2)
-        radVec1(3) = radVec1(3) - var*axis(3)
+        var = radVec1(1) * axis(1) + radVec1(2) * axis(2) &
+              + radVec1(3) * axis(3)
+        radVec1(1) = radVec1(1) - var * axis(1)
+        radVec1(2) = radVec1(2) - var * axis(2)
+        radVec1(3) = radVec1(3) - var * axis(3)
 
-        var = one/sqrt(radVec1(1)**2 + radVec1(2)**2 &
-                       + radVec1(3)**2)
-        radVec1(1) = radVec1(1)*var
-        radVec1(2) = radVec1(2)*var
-        radVec1(3) = radVec1(3)*var
+        var = one / sqrt(radVec1(1)**2 + radVec1(2)**2 &
+                         + radVec1(3)**2)
+        radVec1(1) = radVec1(1) * var
+        radVec1(2) = radVec1(2) * var
+        radVec1(3) = radVec1(3) * var
 
         ! The second vector of the radial plane is obtained
         ! by taking the cross product of axis and radVec1.
 
-        radVec2(1) = axis(2)*radVec1(3) - axis(3)*radVec1(2)
-        radVec2(2) = axis(3)*radVec1(1) - axis(1)*radVec1(3)
-        radVec2(3) = axis(1)*radVec1(2) - axis(2)*radVec1(1)
+        radVec2(1) = axis(2) * radVec1(3) - axis(3) * radVec1(2)
+        radVec2(2) = axis(3) * radVec1(1) - axis(1) * radVec1(3)
+        radVec2(3) = axis(1) * radVec1(2) - axis(2) * radVec1(1)
 
     end subroutine unitVectorsCylSystem
 
@@ -484,7 +484,7 @@ contains
 
         do j = jBeg, jEnd
             do i = iBeg, iEnd
-                BCData(boco)%TNS_Wall(i, j) = (mult*bcVarArray(i, j, 1) + trans)/Tref
+                BCData(boco)%TNS_Wall(i, j) = (mult * bcVarArray(i, j, 1) + trans) / Tref
             end do
         end do
 
@@ -568,7 +568,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer(kind=intType), intent(in)    :: boco
+        integer(kind=intType), intent(in) :: boco
         integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd
         real(kind=realType), dimension(iBeg:iEnd, jBeg:jEnd, nbcVarMax) :: bcVarArray
         logical, intent(inout) :: allTurbPresent
@@ -707,8 +707,8 @@ contains
 
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        BCData(boco)%ptInlet(i, j) = (mult*bcVarArray(i, j, 1) &
-                                                      + trans)/Pref
+                        BCData(boco)%ptInlet(i, j) = (mult * bcVarArray(i, j, 1) &
+                                                      + trans) / Pref
                     end do
                 end do
             end if
@@ -721,8 +721,8 @@ contains
 
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        BCData(boco)%ttInlet(i, j) = (mult*bcVarArray(i, j, 2) &
-                                                      + trans)/Tref
+                        BCData(boco)%ttInlet(i, j) = (mult * bcVarArray(i, j, 2) &
+                                                      + trans) / Tref
                     end do
                 end do
             end if
@@ -742,9 +742,9 @@ contains
 
                     do j = jBeg, jEnd
                         do i = iBeg, iEnd
-                            rhot = mult*bcVarArray(i, j, 3) + trans
+                            rhot = mult * bcVarArray(i, j, 3) + trans
                             BCData(boco)%ttInlet(i, j) = &
-                                (BCData(boco)%ptInlet(i, j)*pRef/(RGasDim*rhot))/Tref
+                                (BCData(boco)%ptInlet(i, j) * pRef / (RGasDim * rhot)) / Tref
 
                         end do
                     end do
@@ -757,10 +757,10 @@ contains
 
                     do j = jBeg, jEnd
                         do i = iBeg, iEnd
-                            rhot = mult*bcVarArray(i, j, 3) + trans
+                            rhot = mult * bcVarArray(i, j, 3) + trans
 
-                            BCData(boco)%ptInlet(i, j) = (RGasDim*rhot &
-                                                          *BCData(boco)%ttInlet(i, j)*Tref)/Pref
+                            BCData(boco)%ptInlet(i, j) = (RGasDim * rhot &
+                                                          * BCData(boco)%ttInlet(i, j) * Tref) / Pref
                         end do
                     end do
 
@@ -797,25 +797,25 @@ contains
                         ! an offset of 1 is introduced and thus the average should
                         ! be taken of i, i+1, j and j+1.
 
-                        xc(1) = fourth*(xf(i, j, 1) + xf(i + 1, j, 1) &
-                                        + xf(i, j + 1, 1) + xf(i + 1, j + 1, 1)) &
+                        xc(1) = fourth * (xf(i, j, 1) + xf(i + 1, j, 1) &
+                                          + xf(i, j + 1, 1) + xf(i + 1, j + 1, 1)) &
                                 - sections(sectionId)%rotCenter(1)
-                        xc(2) = fourth*(xf(i, j, 2) + xf(i + 1, j, 2) &
-                                        + xf(i, j + 1, 2) + xf(i + 1, j + 1, 2)) &
+                        xc(2) = fourth * (xf(i, j, 2) + xf(i + 1, j, 2) &
+                                          + xf(i, j + 1, 2) + xf(i + 1, j + 1, 2)) &
                                 - sections(sectionId)%rotCenter(2)
-                        xc(3) = fourth*(xf(i, j, 3) + xf(i + 1, j, 3) &
-                                        + xf(i, j + 1, 3) + xf(i + 1, j + 1, 3)) &
+                        xc(3) = fourth * (xf(i, j, 3) + xf(i + 1, j, 3) &
+                                          + xf(i, j + 1, 3) + xf(i + 1, j + 1, 3)) &
                                 - sections(sectionId)%rotCenter(3)
 
                         ! Determine the coordinates in the local cartesian frame,
                         ! i.e. the frame determined by axis, radVec1 and radVec2.
 
-                        ax = xc(1)*axis(1) + xc(2)*axis(2) &
-                             + xc(3)*axis(3)
-                        r1 = xc(1)*radVec1(1) + xc(2)*radVec1(2) &
-                             + xc(3)*radVec1(3)
-                        r2 = xc(1)*radVec2(1) + xc(2)*radVec2(2) &
-                             + xc(3)*radVec2(3)
+                        ax = xc(1) * axis(1) + xc(2) * axis(2) &
+                             + xc(3) * axis(3)
+                        r1 = xc(1) * radVec1(1) + xc(2) * radVec1(2) &
+                             + xc(3) * radVec1(3)
+                        r2 = xc(1) * radVec2(1) + xc(2) * radVec2(2) &
+                             + xc(3) * radVec2(3)
 
                         ! Determine the weights of the unit vectors in the local
                         ! cylindrical system.
@@ -827,24 +827,24 @@ contains
                         ! Determine the direction in the local cartesian frame,
                         ! determined by axis, radVec1 and radVec2.
 
-                        var = one/sqrt(max(eps, (r1*r1 + r2*r2)))
+                        var = one / sqrt(max(eps, (r1 * r1 + r2 * r2)))
                         dir(1) = wax
-                        dir(2) = var*(wrad*r1 - wtheta*r2)
-                        dir(3) = var*(wrad*r2 + wtheta*r1)
+                        dir(2) = var * (wrad * r1 - wtheta * r2)
+                        dir(3) = var * (wrad * r2 + wtheta * r1)
 
                         ! Transform this direction to the global cartesian frame.
 
-                        BCData(boco)%flowXdirInlet(i, j) = dir(1)*axis(1) &
-                                                           + dir(2)*radVec1(1) &
-                                                           + dir(3)*radVec2(1)
+                        BCData(boco)%flowXdirInlet(i, j) = dir(1) * axis(1) &
+                                                           + dir(2) * radVec1(1) &
+                                                           + dir(3) * radVec2(1)
 
-                        BCData(boco)%flowYdirInlet(i, j) = dir(1)*axis(2) &
-                                                           + dir(2)*radVec1(2) &
-                                                           + dir(3)*radVec2(2)
+                        BCData(boco)%flowYdirInlet(i, j) = dir(1) * axis(2) &
+                                                           + dir(2) * radVec1(2) &
+                                                           + dir(3) * radVec2(2)
 
-                        BCData(boco)%flowZdirInlet(i, j) = dir(1)*axis(3) &
-                                                           + dir(2)*radVec1(3) &
-                                                           + dir(3)*radVec2(3)
+                        BCData(boco)%flowZdirInlet(i, j) = dir(1) * axis(3) &
+                                                           + dir(2) * radVec1(3) &
+                                                           + dir(3) * radVec2(3)
                     end do
                 end do
 
@@ -865,7 +865,7 @@ contains
                     do j = jBeg, jEnd
                         do i = iBeg, iEnd
                             BCData(boco)%flowXdirInlet(i, j) = &
-                                cos(mult*bcVarArray(i, j, 4) + trans)
+                                cos(mult * bcVarArray(i, j, 4) + trans)
                         end do
                     end do
 
@@ -893,7 +893,7 @@ contains
                     do j = jBeg, jEnd
                         do i = iBeg, iEnd
                             BCData(boco)%flowYdirInlet(i, j) = &
-                                cos(mult*bcVarArray(i, j, 5) + trans)
+                                cos(mult * bcVarArray(i, j, 5) + trans)
                         end do
                     end do
 
@@ -921,7 +921,7 @@ contains
                     do j = jBeg, jEnd
                         do i = iBeg, iEnd
                             BCData(boco)%flowZdirInlet(i, j) = &
-                                cos(mult*bcVarArray(i, j, 6) + trans)
+                                cos(mult * bcVarArray(i, j, 6) + trans)
                         end do
                     end do
 
@@ -947,9 +947,9 @@ contains
 
                     ! Compute the total enthalpy from the given
                     ! total temperature.
-                    TDim = BCData(boco)%ttInlet(i, j)*Tref
+                    TDim = BCData(boco)%ttInlet(i, j) * Tref
                     call computeHtot(TDim, Hdim)
-                    BCData(boco)%htInlet(i, j) = Hdim/Href
+                    BCData(boco)%htInlet(i, j) = Hdim / Href
 
                     ! Determine the unit vector of the flow direction.
 
@@ -957,11 +957,11 @@ contains
                     dir(2) = BCData(boco)%flowYdirInlet(i, j)
                     dir(3) = BCData(boco)%flowZdirInlet(i, j)
 
-                    var = one/max(eps, sqrt(dir(1)**2 + dir(2)**2 + dir(3)**2))
+                    var = one / max(eps, sqrt(dir(1)**2 + dir(2)**2 + dir(3)**2))
 
-                    BCData(boco)%flowXdirInlet(i, j) = var*dir(1)
-                    BCData(boco)%flowYdirInlet(i, j) = var*dir(2)
-                    BCData(boco)%flowZdirInlet(i, j) = var*dir(3)
+                    BCData(boco)%flowXdirInlet(i, j) = var * dir(1)
+                    BCData(boco)%flowYdirInlet(i, j) = var * dir(2)
+                    BCData(boco)%flowZdirInlet(i, j) = var * dir(3)
 
                 end do
             end do
@@ -975,11 +975,11 @@ contains
                 do i = (BCData(boco)%inbeg + 1), BCData(boco)%inend
 
                     var = BCData(boco)%flowXdirInlet(i, j) &
-                          *BCData(boco)%norm(i, j, 1) &
+                          * BCData(boco)%norm(i, j, 1) &
                           + BCData(boco)%flowYdirInlet(i, j) &
-                          *BCData(boco)%norm(i, j, 2) &
+                          * BCData(boco)%norm(i, j, 2) &
                           + BCData(boco)%flowZdirInlet(i, j) &
-                          *BCData(boco)%norm(i, j, 3)
+                          * BCData(boco)%norm(i, j, 3)
 
                     if (var > zero) nn = nn + 1
 
@@ -1053,7 +1053,7 @@ contains
         call siPressure(mass(1), length(1), time(1), mult, trans)
         do j = jBeg, jEnd
             do i = iBeg, iEnd
-                BCData(boco)%ps(i, j) = (mult*bcVarArray(i, j, 1) + trans)/Pref
+                BCData(boco)%ps(i, j) = (mult * bcVarArray(i, j, 1) + trans) / Pref
             end do
         end do
 
@@ -1183,9 +1183,9 @@ contains
         do j = (BCData(boco)%jnbeg + 1), BCData(boco)%jnend
             do i = (BCData(boco)%inbeg + 1), BCData(boco)%inend
 
-                var = BCData(boco)%velx(i, j)*BCData(boco)%norm(i, j, 1) &
-                      + BCData(boco)%vely(i, j)*BCData(boco)%norm(i, j, 2) &
-                      + BCData(boco)%velz(i, j)*BCData(boco)%norm(i, j, 3)
+                var = BCData(boco)%velx(i, j) * BCData(boco)%norm(i, j, 1) &
+                      + BCData(boco)%vely(i, j) * BCData(boco)%norm(i, j, 2) &
+                      + BCData(boco)%velz(i, j) * BCData(boco)%norm(i, j, 3)
 
                 if (var > zero) nn = nn + 1
 
@@ -1228,7 +1228,7 @@ contains
 
             do j = jBeg, jEnd
                 do i = iBeg, iEnd
-                    BCData(boco)%rho(i, j) = (mult*bcVarArray(i, j, 1) + trans)/rhoRef
+                    BCData(boco)%rho(i, j) = (mult * bcVarArray(i, j, 1) + trans) / rhoRef
                 end do
             end do
 
@@ -1239,7 +1239,7 @@ contains
 
             do j = jBeg, jEnd
                 do i = iBeg, iEnd
-                    BCData(boco)%ps(i, j) = (mult*bcVarArray(i, j, 2) + trans)/pRef
+                    BCData(boco)%ps(i, j) = (mult * bcVarArray(i, j, 2) + trans) / pRef
                 end do
             end do
 
@@ -1282,57 +1282,57 @@ contains
                         ! an offset of 1 is introduced and thus the average should
                         ! be taken of i, i+1, j and j+1.
 
-                        xc(1) = fourth*(xf(i, j, 1) + xf(i + 1, j, 1) &
-                                        + xf(i, j + 1, 1) + xf(i + 1, j + 1, 1)) &
+                        xc(1) = fourth * (xf(i, j, 1) + xf(i + 1, j, 1) &
+                                          + xf(i, j + 1, 1) + xf(i + 1, j + 1, 1)) &
                                 - sections(sectionID)%rotCenter(1)
-                        xc(2) = fourth*(xf(i, j, 2) + xf(i + 1, j, 2) &
-                                        + xf(i, j + 1, 2) + xf(i + 1, j + 1, 2)) &
+                        xc(2) = fourth * (xf(i, j, 2) + xf(i + 1, j, 2) &
+                                          + xf(i, j + 1, 2) + xf(i + 1, j + 1, 2)) &
                                 - sections(sectionID)%rotCenter(2)
-                        xc(3) = fourth*(xf(i, j, 3) + xf(i + 1, j, 3) &
-                                        + xf(i, j + 1, 3) + xf(i + 1, j + 1, 3)) &
+                        xc(3) = fourth * (xf(i, j, 3) + xf(i + 1, j, 3) &
+                                          + xf(i, j + 1, 3) + xf(i + 1, j + 1, 3)) &
                                 - sections(sectionID)%rotCenter(3)
 
                         ! Determine the coordinates in the local cartesian frame,
                         ! i.e. the frame determined by axis, radVec1 and radVec2.
 
-                        ax = xc(1)*axis(1) + xc(2)*axis(2) &
-                             + xc(3)*axis(3)
-                        r1 = xc(1)*radVec1(1) + xc(2)*radVec1(2) &
-                             + xc(3)*radVec1(3)
-                        r2 = xc(1)*radVec2(1) + xc(2)*radVec2(2) &
-                             + xc(3)*radVec2(3)
+                        ax = xc(1) * axis(1) + xc(2) * axis(2) &
+                             + xc(3) * axis(3)
+                        r1 = xc(1) * radVec1(1) + xc(2) * radVec1(2) &
+                             + xc(3) * radVec1(3)
+                        r2 = xc(1) * radVec2(1) + xc(2) * radVec2(2) &
+                             + xc(3) * radVec2(3)
 
                         ! Determine the velocity components in the local
                         ! cylindrical system. Take the conversion to si units
                         ! into account.
 
-                        vax = multVel(1)*bcVarArray(i, j, 3) + transVel(1)
-                        vrad = multVel(2)*bcVarArray(i, j, 6) + transVel(2)
+                        vax = multVel(1) * bcVarArray(i, j, 3) + transVel(1)
+                        vrad = multVel(2) * bcVarArray(i, j, 6) + transVel(2)
                         if (veltPresent) &
-                            vtheta = multVel(3)*bcVarArray(i, j, 7) + transVel(3)
+                            vtheta = multVel(3) * bcVarArray(i, j, 7) + transVel(3)
 
                         ! Determine the velocities in the local cartesian
                         ! frame determined by axis, radVec1 and radVec2.
 
-                        var = one/sqrt(max(eps, (r1*r1 + r2*r2)))
+                        var = one / sqrt(max(eps, (r1 * r1 + r2 * r2)))
                         vloc(1) = vax
-                        vloc(2) = var*(vrad*r1 - vtheta*r2)
-                        vloc(3) = var*(vrad*r2 + vtheta*r1)
+                        vloc(2) = var * (vrad * r1 - vtheta * r2)
+                        vloc(3) = var * (vrad * r2 + vtheta * r1)
 
                         ! Transform vloc to the global cartesian frame and
                         ! store the values.
 
-                        BCData(boco)%velx(i, j) = (vloc(1)*axis(1) &
-                                                   + vloc(2)*radVec1(1) &
-                                                   + vloc(3)*radVec2(1))/uRef
+                        BCData(boco)%velx(i, j) = (vloc(1) * axis(1) &
+                                                   + vloc(2) * radVec1(1) &
+                                                   + vloc(3) * radVec2(1)) / uRef
 
-                        BCData(boco)%vely(i, j) = (vloc(1)*axis(2) &
-                                                   + vloc(2)*radVec1(2) &
-                                                   + vloc(3)*radVec2(2))/uRef
+                        BCData(boco)%vely(i, j) = (vloc(1) * axis(2) &
+                                                   + vloc(2) * radVec1(2) &
+                                                   + vloc(3) * radVec2(2)) / uRef
 
-                        BCData(boco)%velz(i, j) = (vloc(1)*axis(3) &
-                                                   + vloc(2)*radVec1(3) &
-                                                   + vloc(3)*radVec2(3))/uRef
+                        BCData(boco)%velz(i, j) = (vloc(1) * axis(3) &
+                                                   + vloc(2) * radVec1(3) &
+                                                   + vloc(3) * radVec2(3)) / uRef
                     end do
                 end do
 
@@ -1351,12 +1351,12 @@ contains
 
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        BCData(boco)%velx(i, j) = (multVel(1)*bcVarArray(i, j, 3) &
-                                                   + transVel(1))/uRef
-                        BCData(boco)%vely(i, j) = (multVel(2)*bcVarArray(i, j, 4) &
-                                                   + transVel(2))/uRef
-                        BCData(boco)%velz(i, j) = (multVel(3)*bcVarArray(i, j, 5) &
-                                                   + transVel(3))/uRef
+                        BCData(boco)%velx(i, j) = (multVel(1) * bcVarArray(i, j, 3) &
+                                                   + transVel(1)) / uRef
+                        BCData(boco)%vely(i, j) = (multVel(2) * bcVarArray(i, j, 4) &
+                                                   + transVel(2)) / uRef
+                        BCData(boco)%velz(i, j) = (multVel(3) * bcVarArray(i, j, 5) &
+                                                   + transVel(3)) / uRef
                     end do
                 end do
 
@@ -1398,7 +1398,7 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: nn, mm, i, j
-        real(kind=realType)   :: mult, trans, nuRef
+        real(kind=realType) :: mult, trans, nuRef
         real(kind=realType), dimension(nt1:nt2) :: ref
 
         ! Initialize setBCVarTurb to .true. And return immediately
@@ -1409,24 +1409,24 @@ contains
 
         ! Set the reference values depending on the turbulence model.
 
-        nuRef = muRef/rhoRef
+        nuRef = muRef / rhoRef
         select case (turbModel)
 
         case (spalartAllmaras, spalartAllmarasEdwards)
             ref(itu1) = nuRef
 
         case (komegaWilcox, komegaModified, menterSST)
-            ref(itu1) = pRef/rhoRef
-            ref(itu2) = ref(itu1)/nuRef
+            ref(itu1) = pRef / rhoRef
+            ref(itu2) = ref(itu1) / nuRef
 
         case (ktau)
-            ref(itu1) = pRef/rhoRef
-            ref(itu2) = nuRef/ref(itu1)
+            ref(itu1) = pRef / rhoRef
+            ref(itu2) = nuRef / ref(itu1)
 
         case (v2f)
-            ref(itu1) = pRef/rhoRef
-            ref(itu4) = ref(itu1)/nuRef
-            ref(itu2) = ref(itu1)*ref(itu4)
+            ref(itu1) = pRef / rhoRef
+            ref(itu4) = ref(itu1) / nuRef
+            ref(itu2) = ref(itu1) * ref(itu4)
             ref(itu3) = ref(itu1)
 
         end select
@@ -1452,7 +1452,7 @@ contains
 
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        turbInlet(i, j, nn) = (mult*bcVarArray(i, j, mm) + trans)/ref(nn)
+                        turbInlet(i, j, nn) = (mult * bcVarArray(i, j, mm) + trans) / ref(nn)
                     end do
                 end do
 
@@ -1495,7 +1495,7 @@ contains
         character, dimension(nVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
         real(kind=realType), dimension(nVar), intent(in) :: bcDataIn
         integer(kind=intType), dimension(nVar, nFamMax) :: famLists
-        integer(kind=intType), intent(in) ::  sps, nVar, nFamMax
+        integer(kind=intType), intent(in) :: sps, nVar, nFamMax
         !
         !      Local variables.
         !
@@ -1563,7 +1563,7 @@ contains
                     varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
 
                     if (trim(varName) == "Thrust") then
-                        actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec* &
+                        actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
                                                          bcDataIn(iVar)
                     else if (trim(varName) == "Torque") then
                         actuatorRegions(iRegion)%torque = bcDataIn(iVar)
@@ -1594,7 +1594,7 @@ contains
         character, dimension(nVar, maxCGNSNameLen), intent(in) :: bcdatanamesin
         real(kind=realType), dimension(nVar), intent(in) :: bcDataIn, bcDataInd
         integer(kind=intType), dimension(nVar, nFamMax) :: famLists
-        integer(kind=intType), intent(in) ::  sps, nVar, nFamMax
+        integer(kind=intType), intent(in) :: sps, nVar, nFamMax
         !
         !      Local variables.
         !
@@ -1664,9 +1664,9 @@ contains
                     varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
 
                     if (trim(varName) == "Thrust") then
-                        actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec* &
+                        actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
                                                          bcDataIn(iVar)
-                        actuatorRegionsd(iRegion)%force = actuatorRegions(iRegion)%axisVec* &
+                        actuatorRegionsd(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
                                                           bcDataInd(iVar)
                     else if (trim(varName) == "Torque") then
                         actuatorRegions(iRegion)%torque = bcDataIn(iVar)
@@ -1701,7 +1701,7 @@ contains
         real(kind=realType), dimension(nVar), intent(in) :: bcDataIn
         real(kind=realType), dimension(nVar), intent(out) :: bcDataInd
         integer(kind=intType), dimension(nVar, nFamMax) :: famLists
-        integer(kind=intType), intent(in) ::  sps, nVar, nFamMax
+        integer(kind=intType), intent(in) :: sps, nVar, nFamMax
 
         !
         !      Local variables.
@@ -1773,7 +1773,7 @@ contains
 
                     if (trim(varName) == "Thrust") then
                         bcDataInd(ivar) = &
-                            sum(actuatorRegions(iRegion)%axisVec*actuatorRegionsd(iRegion)%force)
+                            sum(actuatorRegions(iRegion)%axisVec * actuatorRegionsd(iRegion)%force)
                     else if (trim(varName) == "Torque") then
                         bcDataInd(ivar) = actuatorRegionsd(iRegion)%torque
                     else if (trim(varName) == "Heat") then
@@ -2074,7 +2074,7 @@ contains
         !      Subroutine arguments.
         !
         character, dimension(:, :), intent(in) :: bcdatanamesin
-        real(kind=realType), dimension(:), intent(in):: bcDataIn
+        real(kind=realType), dimension(:), intent(in) :: bcDataIn
         !
         !      Local variables.
         !
@@ -2136,7 +2136,7 @@ contains
         !      Subroutine arguments.
         !
         character, dimension(:, :), intent(in) :: bcdatanamesin
-        real(kind=realType), dimension(:), intent(in):: bcDataIn, bcDataInd
+        real(kind=realType), dimension(:), intent(in) :: bcDataIn, bcDataInd
         !
         !      Local variables.
         !
@@ -2199,7 +2199,7 @@ contains
         !      Subroutine arguments.
         !
         character, dimension(:, :), intent(in) :: bcdatanamesin
-        real(kind=realType), dimension(:), intent(in):: bcDataIn
+        real(kind=realType), dimension(:), intent(in) :: bcDataIn
         real(kind=realType), dimension(:), intent(out) :: bcDataInd
         !
         !      Local variables.
@@ -3396,9 +3396,9 @@ contains
 
                                     ! Compute the total enthalpy.
 
-                                    TDim = BCData(j)%ttInlet(k, l)*Tref
+                                    TDim = BCData(j)%ttInlet(k, l) * Tref
                                     call computeHtot(TDim, Hdim)
-                                    BCData(j)%htInlet(k, l) = Hdim/Href
+                                    BCData(j)%htInlet(k, l) = Hdim / Href
 
                                     ! Flow direction.
 
@@ -3406,12 +3406,12 @@ contains
                                     dir(2) = BCData(j)%flowYdirInlet(k, l)
                                     dir(3) = BCData(j)%flowZdirInlet(k, l)
 
-                                    var = one/max(eps, sqrt(dir(1)**2 + dir(2)**2 &
-                                                            + dir(3)**2))
+                                    var = one / max(eps, sqrt(dir(1)**2 + dir(2)**2 &
+                                                              + dir(3)**2))
 
-                                    BCData(j)%flowXdirInlet(k, l) = var*dir(1)
-                                    BCData(j)%flowYdirInlet(k, l) = var*dir(2)
-                                    BCData(j)%flowZdirInlet(k, l) = var*dir(3)
+                                    BCData(j)%flowXdirInlet(k, l) = var * dir(1)
+                                    BCData(j)%flowYdirInlet(k, l) = var * dir(2)
+                                    BCData(j)%flowZdirInlet(k, l) = var * dir(3)
 
                                 end do
                             end do
@@ -3479,10 +3479,10 @@ contains
                     ! Compute the coarse grid data as the average of the
                     ! 4 fine grid values.
 
-                    varCoarse(i, j) = fourth*(varFine(if1, jf1) &
-                                              + varFine(if2, jf1) &
-                                              + varFine(if1, jf2) &
-                                              + varFine(if2, jf2))
+                    varCoarse(i, j) = fourth * (varFine(if1, jf1) &
+                                                + varFine(if2, jf1) &
+                                                + varFine(if1, jf2) &
+                                                + varFine(if2, jf2))
                 end do
             end do
 
@@ -3546,10 +3546,10 @@ contains
                     ! 4 fine grid values.
 
                     do nn = nstart, nend
-                        varCoarse(i, j, nn) = fourth*(varFine(if1, jf1, nn) &
-                                                      + varFine(if2, jf1, nn) &
-                                                      + varFine(if1, jf2, nn) &
-                                                      + varFine(if2, jf2, nn))
+                        varCoarse(i, j, nn) = fourth * (varFine(if1, jf1, nn) &
+                                                        + varFine(if2, jf1, nn) &
+                                                        + varFine(if1, jf2, nn) &
+                                                        + varFine(if2, jf2, nn))
                     end do
                 end do
             end do

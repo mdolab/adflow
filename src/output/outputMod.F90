@@ -750,7 +750,7 @@ contains
         integer(kind=intType), intent(in) :: kBeg, kEnd
 
         real(kind=realType), dimension(*), intent(out) :: buffer
-        character(len=*), intent(in)                   :: solName
+        character(len=*), intent(in) :: solName
 
         logical, intent(in) :: copyInBuffer
         !
@@ -793,7 +793,7 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        wIO(i, j, k, 1) = w(i, j, k, irho)*w(i, j, k, ivx)
+                        wIO(i, j, k, 1) = w(i, j, k, irho) * w(i, j, k, ivx)
                     end do
                 end do
             end do
@@ -802,7 +802,7 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        wIO(i, j, k, 1) = w(i, j, k, irho)*w(i, j, k, ivy)
+                        wIO(i, j, k, 1) = w(i, j, k, irho) * w(i, j, k, ivy)
                     end do
                 end do
             end do
@@ -811,7 +811,7 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        wIO(i, j, k, 1) = w(i, j, k, irho)*w(i, j, k, ivz)
+                        wIO(i, j, k, 1) = w(i, j, k, irho) * w(i, j, k, ivz)
                     end do
                 end do
             end do
@@ -928,17 +928,17 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        wIO(i, j, k, 1) = p(i, j, k)/(RGas*w(i, j, k, irho))
+                        wIO(i, j, k, 1) = p(i, j, k) / (RGas * w(i, j, k, irho))
                     end do
                 end do
             end do
 
         case (cgnsCp)
-            tmp = two/(gammaInf*pInf*MachCoef*MachCoef)
+            tmp = two / (gammaInf * pInf * MachCoef * MachCoef)
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        wIO(i, j, k, 1) = tmp*(p(i, j, k) - pInf)
+                        wIO(i, j, k, 1) = tmp * (p(i, j, k) - pInf)
                     end do
                 end do
             end do
@@ -947,10 +947,10 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        a2 = gamma(i, j, k)*max(p(i, j, k), plim) &
-                             /max(w(i, j, k, irho), rholim)
+                        a2 = gamma(i, j, k) * max(p(i, j, k), plim) &
+                             / max(w(i, j, k, irho), rholim)
                         tmp = (w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 &
-                               + w(i, j, k, ivz)**2)/a2
+                               + w(i, j, k, ivz)**2) / a2
                         wIO(i, j, k, 1) = sqrt(max(zero, tmp))
                     end do
                 end do
@@ -960,11 +960,11 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        a2 = gamma(i, j, k)*max(p(i, j, k), plim) &
-                             /max(w(i, j, k, irho), rholim)
+                        a2 = gamma(i, j, k) * max(p(i, j, k), plim) &
+                             / max(w(i, j, k, irho), rholim)
                         tmp = ((w(i, j, k, ivx) - s(i, j, k, 1))**2 + &
                                (w(i, j, k, ivy) - s(i, j, k, 2))**2 &
-                               + (w(i, j, k, ivz) - s(i, j, k, 3))**2)/a2
+                               + (w(i, j, k, ivz) - s(i, j, k, 3))**2) / a2
                         wIO(i, j, k, 1) = sqrt(max(zero, tmp))
                     end do
                 end do
@@ -974,8 +974,8 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        tmp = w(i, j, k, irho)*w(i, j, k, itu1) &
-                              /(gamma(i, j, k)*max(p(i, j, k), plim))
+                        tmp = w(i, j, k, irho) * w(i, j, k, itu1) &
+                              / (gamma(i, j, k) * max(p(i, j, k), plim))
                         wIO(i, j, k, 1) = sqrt(max(zero, tmp))
                     end do
                 end do
@@ -994,7 +994,7 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        wIO(i, j, k, 1) = rev(i, j, k)/rlv(i, j, k)
+                        wIO(i, j, k, 1) = rev(i, j, k) / rlv(i, j, k)
                     end do
                 end do
             end do
@@ -1016,52 +1016,52 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        tmp = half/vol(i, j, k)
-                        uuy = si(i, j, k, 2)*w(i + 1, j, k, ivx) &
-                              - si(i - 1, j, k, 2)*w(i - 1, j, k, ivx) &
-                              + sj(i, j, k, 2)*w(i, j + 1, k, ivx) &
-                              - sj(i, j - 1, k, 2)*w(i, j - 1, k, ivx) &
-                              + sk(i, j, k, 2)*w(i, j, k + 1, ivx) &
-                              - sk(i, j, k - 1, 2)*w(i, j, k - 1, ivx)
+                        tmp = half / vol(i, j, k)
+                        uuy = si(i, j, k, 2) * w(i + 1, j, k, ivx) &
+                              - si(i - 1, j, k, 2) * w(i - 1, j, k, ivx) &
+                              + sj(i, j, k, 2) * w(i, j + 1, k, ivx) &
+                              - sj(i, j - 1, k, 2) * w(i, j - 1, k, ivx) &
+                              + sk(i, j, k, 2) * w(i, j, k + 1, ivx) &
+                              - sk(i, j, k - 1, 2) * w(i, j, k - 1, ivx)
 
-                        uuz = si(i, j, k, 3)*w(i + 1, j, k, ivx) &
-                              - si(i - 1, j, k, 3)*w(i - 1, j, k, ivx) &
-                              + sj(i, j, k, 3)*w(i, j + 1, k, ivx) &
-                              - sj(i, j - 1, k, 3)*w(i, j - 1, k, ivx) &
-                              + sk(i, j, k, 3)*w(i, j, k + 1, ivx) &
-                              - sk(i, j, k - 1, 3)*w(i, j, k - 1, ivx)
+                        uuz = si(i, j, k, 3) * w(i + 1, j, k, ivx) &
+                              - si(i - 1, j, k, 3) * w(i - 1, j, k, ivx) &
+                              + sj(i, j, k, 3) * w(i, j + 1, k, ivx) &
+                              - sj(i, j - 1, k, 3) * w(i, j - 1, k, ivx) &
+                              + sk(i, j, k, 3) * w(i, j, k + 1, ivx) &
+                              - sk(i, j, k - 1, 3) * w(i, j, k - 1, ivx)
 
-                        vvx = si(i, j, k, 1)*w(i + 1, j, k, ivy) &
-                              - si(i - 1, j, k, 1)*w(i - 1, j, k, ivy) &
-                              + sj(i, j, k, 1)*w(i, j + 1, k, ivy) &
-                              - sj(i, j - 1, k, 1)*w(i, j - 1, k, ivy) &
-                              + sk(i, j, k, 1)*w(i, j, k + 1, ivy) &
-                              - sk(i, j, k - 1, 1)*w(i, j, k - 1, ivy)
+                        vvx = si(i, j, k, 1) * w(i + 1, j, k, ivy) &
+                              - si(i - 1, j, k, 1) * w(i - 1, j, k, ivy) &
+                              + sj(i, j, k, 1) * w(i, j + 1, k, ivy) &
+                              - sj(i, j - 1, k, 1) * w(i, j - 1, k, ivy) &
+                              + sk(i, j, k, 1) * w(i, j, k + 1, ivy) &
+                              - sk(i, j, k - 1, 1) * w(i, j, k - 1, ivy)
 
-                        vvz = si(i, j, k, 3)*w(i + 1, j, k, ivy) &
-                              - si(i - 1, j, k, 3)*w(i - 1, j, k, ivy) &
-                              + sj(i, j, k, 3)*w(i, j + 1, k, ivy) &
-                              - sj(i, j - 1, k, 3)*w(i, j - 1, k, ivy) &
-                              + sk(i, j, k, 3)*w(i, j, k + 1, ivy) &
-                              - sk(i, j, k - 1, 3)*w(i, j, k - 1, ivy)
+                        vvz = si(i, j, k, 3) * w(i + 1, j, k, ivy) &
+                              - si(i - 1, j, k, 3) * w(i - 1, j, k, ivy) &
+                              + sj(i, j, k, 3) * w(i, j + 1, k, ivy) &
+                              - sj(i, j - 1, k, 3) * w(i, j - 1, k, ivy) &
+                              + sk(i, j, k, 3) * w(i, j, k + 1, ivy) &
+                              - sk(i, j, k - 1, 3) * w(i, j, k - 1, ivy)
 
-                        wwx = si(i, j, k, 1)*w(i + 1, j, k, ivz) &
-                              - si(i - 1, j, k, 1)*w(i - 1, j, k, ivz) &
-                              + sj(i, j, k, 1)*w(i, j + 1, k, ivz) &
-                              - sj(i, j - 1, k, 1)*w(i, j - 1, k, ivz) &
-                              + sk(i, j, k, 1)*w(i, j, k + 1, ivz) &
-                              - sk(i, j, k - 1, 1)*w(i, j, k - 1, ivz)
+                        wwx = si(i, j, k, 1) * w(i + 1, j, k, ivz) &
+                              - si(i - 1, j, k, 1) * w(i - 1, j, k, ivz) &
+                              + sj(i, j, k, 1) * w(i, j + 1, k, ivz) &
+                              - sj(i, j - 1, k, 1) * w(i, j - 1, k, ivz) &
+                              + sk(i, j, k, 1) * w(i, j, k + 1, ivz) &
+                              - sk(i, j, k - 1, 1) * w(i, j, k - 1, ivz)
 
-                        wwy = si(i, j, k, 2)*w(i + 1, j, k, ivz) &
-                              - si(i - 1, j, k, 2)*w(i - 1, j, k, ivz) &
-                              + sj(i, j, k, 2)*w(i, j + 1, k, ivz) &
-                              - sj(i, j - 1, k, 2)*w(i, j - 1, k, ivz) &
-                              + sk(i, j, k, 2)*w(i, j, k + 1, ivz) &
-                              - sk(i, j, k - 1, 2)*w(i, j, k - 1, ivz)
+                        wwy = si(i, j, k, 2) * w(i + 1, j, k, ivz) &
+                              - si(i - 1, j, k, 2) * w(i - 1, j, k, ivz) &
+                              + sj(i, j, k, 2) * w(i, j + 1, k, ivz) &
+                              - sj(i, j - 1, k, 2) * w(i, j - 1, k, ivz) &
+                              + sk(i, j, k, 2) * w(i, j, k + 1, ivz) &
+                              - sk(i, j, k - 1, 2) * w(i, j, k - 1, ivz)
 
                         vortx = wwy - vvz; vorty = uuz - wwx; vortz = vvx - uuy
 
-                        wIO(i, j, k, 1) = tmp*sqrt(vortx**2 + vorty**2 + vortz**2)
+                        wIO(i, j, k, 1) = tmp * sqrt(vortx**2 + vorty**2 + vortz**2)
                     end do
                 end do
             end do
@@ -1071,22 +1071,22 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        tmp = half/vol(i, j, k)
-                        vvz = si(i, j, k, 3)*w(i + 1, j, k, ivy) &
-                              - si(i - 1, j, k, 3)*w(i - 1, j, k, ivy) &
-                              + sj(i, j, k, 3)*w(i, j + 1, k, ivy) &
-                              - sj(i, j - 1, k, 3)*w(i, j - 1, k, ivy) &
-                              + sk(i, j, k, 3)*w(i, j, k + 1, ivy) &
-                              - sk(i, j, k - 1, 3)*w(i, j, k - 1, ivy)
+                        tmp = half / vol(i, j, k)
+                        vvz = si(i, j, k, 3) * w(i + 1, j, k, ivy) &
+                              - si(i - 1, j, k, 3) * w(i - 1, j, k, ivy) &
+                              + sj(i, j, k, 3) * w(i, j + 1, k, ivy) &
+                              - sj(i, j - 1, k, 3) * w(i, j - 1, k, ivy) &
+                              + sk(i, j, k, 3) * w(i, j, k + 1, ivy) &
+                              - sk(i, j, k - 1, 3) * w(i, j, k - 1, ivy)
 
-                        wwy = si(i, j, k, 2)*w(i + 1, j, k, ivz) &
-                              - si(i - 1, j, k, 2)*w(i - 1, j, k, ivz) &
-                              + sj(i, j, k, 2)*w(i, j + 1, k, ivz) &
-                              - sj(i, j - 1, k, 2)*w(i, j - 1, k, ivz) &
-                              + sk(i, j, k, 2)*w(i, j, k + 1, ivz) &
-                              - sk(i, j, k - 1, 2)*w(i, j, k - 1, ivz)
+                        wwy = si(i, j, k, 2) * w(i + 1, j, k, ivz) &
+                              - si(i - 1, j, k, 2) * w(i - 1, j, k, ivz) &
+                              + sj(i, j, k, 2) * w(i, j + 1, k, ivz) &
+                              - sj(i, j - 1, k, 2) * w(i, j - 1, k, ivz) &
+                              + sk(i, j, k, 2) * w(i, j, k + 1, ivz) &
+                              - sk(i, j, k - 1, 2) * w(i, j, k - 1, ivz)
 
-                        wIO(i, j, k, 1) = tmp*(wwy - vvz)
+                        wIO(i, j, k, 1) = tmp * (wwy - vvz)
                     end do
                 end do
             end do
@@ -1096,22 +1096,22 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        tmp = half/vol(i, j, k)
-                        uuz = si(i, j, k, 3)*w(i + 1, j, k, ivx) &
-                              - si(i - 1, j, k, 3)*w(i - 1, j, k, ivx) &
-                              + sj(i, j, k, 3)*w(i, j + 1, k, ivx) &
-                              - sj(i, j - 1, k, 3)*w(i, j - 1, k, ivx) &
-                              + sk(i, j, k, 3)*w(i, j, k + 1, ivx) &
-                              - sk(i, j, k - 1, 3)*w(i, j, k - 1, ivx)
+                        tmp = half / vol(i, j, k)
+                        uuz = si(i, j, k, 3) * w(i + 1, j, k, ivx) &
+                              - si(i - 1, j, k, 3) * w(i - 1, j, k, ivx) &
+                              + sj(i, j, k, 3) * w(i, j + 1, k, ivx) &
+                              - sj(i, j - 1, k, 3) * w(i, j - 1, k, ivx) &
+                              + sk(i, j, k, 3) * w(i, j, k + 1, ivx) &
+                              - sk(i, j, k - 1, 3) * w(i, j, k - 1, ivx)
 
-                        wwx = si(i, j, k, 1)*w(i + 1, j, k, ivz) &
-                              - si(i - 1, j, k, 1)*w(i - 1, j, k, ivz) &
-                              + sj(i, j, k, 1)*w(i, j + 1, k, ivz) &
-                              - sj(i, j - 1, k, 1)*w(i, j - 1, k, ivz) &
-                              + sk(i, j, k, 1)*w(i, j, k + 1, ivz) &
-                              - sk(i, j, k - 1, 1)*w(i, j, k - 1, ivz)
+                        wwx = si(i, j, k, 1) * w(i + 1, j, k, ivz) &
+                              - si(i - 1, j, k, 1) * w(i - 1, j, k, ivz) &
+                              + sj(i, j, k, 1) * w(i, j + 1, k, ivz) &
+                              - sj(i, j - 1, k, 1) * w(i, j - 1, k, ivz) &
+                              + sk(i, j, k, 1) * w(i, j, k + 1, ivz) &
+                              - sk(i, j, k - 1, 1) * w(i, j, k - 1, ivz)
 
-                        wIO(i, j, k, 1) = tmp*(uuz - wwx)
+                        wIO(i, j, k, 1) = tmp * (uuz - wwx)
                     end do
                 end do
             end do
@@ -1121,22 +1121,22 @@ contains
             do k = kBeg, kEnd
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
-                        tmp = half/vol(i, j, k)
-                        uuy = si(i, j, k, 2)*w(i + 1, j, k, ivx) &
-                              - si(i - 1, j, k, 2)*w(i - 1, j, k, ivx) &
-                              + sj(i, j, k, 2)*w(i, j + 1, k, ivx) &
-                              - sj(i, j - 1, k, 2)*w(i, j - 1, k, ivx) &
-                              + sk(i, j, k, 2)*w(i, j, k + 1, ivx) &
-                              - sk(i, j, k - 1, 2)*w(i, j, k - 1, ivx)
+                        tmp = half / vol(i, j, k)
+                        uuy = si(i, j, k, 2) * w(i + 1, j, k, ivx) &
+                              - si(i - 1, j, k, 2) * w(i - 1, j, k, ivx) &
+                              + sj(i, j, k, 2) * w(i, j + 1, k, ivx) &
+                              - sj(i, j - 1, k, 2) * w(i, j - 1, k, ivx) &
+                              + sk(i, j, k, 2) * w(i, j, k + 1, ivx) &
+                              - sk(i, j, k - 1, 2) * w(i, j, k - 1, ivx)
 
-                        vvx = si(i, j, k, 1)*w(i + 1, j, k, ivy) &
-                              - si(i - 1, j, k, 1)*w(i - 1, j, k, ivy) &
-                              + sj(i, j, k, 1)*w(i, j + 1, k, ivy) &
-                              - sj(i, j - 1, k, 1)*w(i, j - 1, k, ivy) &
-                              + sk(i, j, k, 1)*w(i, j, k + 1, ivy) &
-                              - sk(i, j, k - 1, 1)*w(i, j, k - 1, ivy)
+                        vvx = si(i, j, k, 1) * w(i + 1, j, k, ivy) &
+                              - si(i - 1, j, k, 1) * w(i - 1, j, k, ivy) &
+                              + sj(i, j, k, 1) * w(i, j + 1, k, ivy) &
+                              - sj(i, j - 1, k, 1) * w(i, j - 1, k, ivy) &
+                              + sk(i, j, k, 1) * w(i, j, k + 1, ivy) &
+                              - sk(i, j, k - 1, 1) * w(i, j, k - 1, ivy)
 
-                        wIO(i, j, k, 1) = tmp*(vvx - uuy)
+                        wIO(i, j, k, 1) = tmp * (vvx - uuy)
                     end do
                 end do
             end do
@@ -1147,7 +1147,7 @@ contains
 
             call computePtot(rhoInf, uInf, zero, zero, &
                              pInf, ptotInf)
-            ptotInf = one/ptotInf
+            ptotInf = one / ptotInf
 
             ! Loop over the cell centers and compute the
             ! total pressure loss.
@@ -1159,7 +1159,7 @@ contains
                                          w(i, j, k, ivy), w(i, j, k, ivz), &
                                          p(i, j, k), ptot)
 
-                        wIO(i, j, k, 1) = one - ptot*ptotInf
+                        wIO(i, j, k, 1) = one - ptot * ptotInf
                     end do
                 end do
             end do
@@ -1170,7 +1170,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,irho)
-                        wIO(i, j, k, 1) = dw(i, j, k, irho)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, irho) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1181,7 +1181,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,imx)
-                        wIO(i, j, k, 1) = dw(i, j, k, imx)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, imx) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1192,7 +1192,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,imy)
-                        wIO(i, j, k, 1) = dw(i, j, k, imy)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, imy) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1203,7 +1203,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,imz)
-                        wIO(i, j, k, 1) = dw(i, j, k, imz)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, imz) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1214,7 +1214,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,irhoE)
-                        wIO(i, j, k, 1) = dw(i, j, k, irhoE)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, irhoE) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1225,7 +1225,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,itu1)
-                        wIO(i, j, k, 1) = dw(i, j, k, itu1)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, itu1) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1236,7 +1236,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,itu2)
-                        wIO(i, j, k, 1) = dw(i, j, k, itu2)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, itu2) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1247,7 +1247,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,itu3)
-                        wIO(i, j, k, 1) = dw(i, j, k, itu3)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, itu3) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1258,7 +1258,7 @@ contains
                 do j = jBeg, jEnd
                     do i = iBeg, iEnd
                         !   wIO(i,j,k,1) = dw(i,j,k,itu4)
-                        wIO(i, j, k, 1) = dw(i, j, k, itu4)/vol(i, j, k)
+                        wIO(i, j, k, 1) = dw(i, j, k, itu4) / vol(i, j, k)
                     end do
                 end do
             end do
@@ -1319,36 +1319,36 @@ contains
                         ! sound and P is the pressure.
 
                         ! U / a
-                        a = sqrt(gamma(i, j, k)*max(p(i, j, k), plim) &
-                                 /max(w(i, j, k, irho), rholim))
-                        UovA = (/w(i, j, k, ivx), w(i, j, k, ivy), w(i, j, k, ivz)/)/a
+                        a = sqrt(gamma(i, j, k) * max(p(i, j, k), plim) &
+                                 / max(w(i, j, k, irho), rholim))
+                        UovA = (/w(i, j, k, ivx), w(i, j, k, ivy), w(i, j, k, ivz)/) / a
 
                         ! grad P / ||grad P||
 
-                        gradP(1) = si(i, j, k, 1)*P(i + 1, j, k) &
-                                   - si(i - 1, j, k, 1)*P(i - 1, j, k) &
-                                   + sj(i, j, k, 1)*P(i, j + 1, k) &
-                                   - sj(i, j - 1, k, 1)*P(i, j - 1, k) &
-                                   + sk(i, j, k, 1)*P(i, j, k + 1) &
-                                   - sk(i, j, k - 1, 1)*P(i, j, k - 1)
+                        gradP(1) = si(i, j, k, 1) * P(i + 1, j, k) &
+                                   - si(i - 1, j, k, 1) * P(i - 1, j, k) &
+                                   + sj(i, j, k, 1) * P(i, j + 1, k) &
+                                   - sj(i, j - 1, k, 1) * P(i, j - 1, k) &
+                                   + sk(i, j, k, 1) * P(i, j, k + 1) &
+                                   - sk(i, j, k - 1, 1) * P(i, j, k - 1)
 
-                        gradP(2) = si(i, j, k, 2)*P(i + 1, j, k) &
-                                   - si(i - 1, j, k, 2)*P(i - 1, j, k) &
-                                   + sj(i, j, k, 2)*P(i, j + 1, k) &
-                                   - sj(i, j - 1, k, 2)*P(i, j - 1, k) &
-                                   + sk(i, j, k, 2)*P(i, j, k + 1) &
-                                   - sk(i, j, k - 1, 2)*P(i, j, k - 1)
+                        gradP(2) = si(i, j, k, 2) * P(i + 1, j, k) &
+                                   - si(i - 1, j, k, 2) * P(i - 1, j, k) &
+                                   + sj(i, j, k, 2) * P(i, j + 1, k) &
+                                   - sj(i, j - 1, k, 2) * P(i, j - 1, k) &
+                                   + sk(i, j, k, 2) * P(i, j, k + 1) &
+                                   - sk(i, j, k - 1, 2) * P(i, j, k - 1)
 
-                        gradP(3) = si(i, j, k, 3)*P(i + 1, j, k) &
-                                   - si(i - 1, j, k, 3)*P(i - 1, j, k) &
-                                   + sj(i, j, k, 3)*P(i, j + 1, k) &
-                                   - sj(i, j - 1, k, 3)*P(i, j - 1, k) &
-                                   + sk(i, j, k, 3)*P(i, j, k + 1) &
-                                   - sk(i, j, k - 1, 3)*P(i, j, k - 1)
+                        gradP(3) = si(i, j, k, 3) * P(i + 1, j, k) &
+                                   - si(i - 1, j, k, 3) * P(i - 1, j, k) &
+                                   + sj(i, j, k, 3) * P(i, j + 1, k) &
+                                   - sj(i, j - 1, k, 3) * P(i, j - 1, k) &
+                                   + sk(i, j, k, 3) * P(i, j, k + 1) &
+                                   - sk(i, j, k - 1, 3) * P(i, j, k - 1)
 
-                        gradP = gradP/sqrt(gradP(1)**2 + gradP(2)**2 + gradP(3)**2)
+                        gradP = gradP / sqrt(gradP(1)**2 + gradP(2)**2 + gradP(3)**2)
                         ! Dot product
-                        wIO(i, j, k, 1) = UovA(1)*gradP(1) + UovA(2)*gradP(2) + UovA(3)*gradP(3)
+                        wIO(i, j, k, 1) = UovA(1) * gradP(1) + UovA(2) * gradP(2) + UovA(3) * gradP(3)
                     end do
                 end do
             end do
@@ -1415,7 +1415,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        integer(kind=intType), intent(in)    :: sps, blockID, faceID
+        integer(kind=intType), intent(in) :: sps, blockID, faceID
         integer(kind=intType), intent(inout) :: nn
         integer(kind=intType), dimension(3, 2), intent(in) :: cellRange
         real(kind=realType), dimension(*), intent(out) :: buffer
@@ -1752,7 +1752,7 @@ contains
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
                 nn = nn + 1
-                buffer(nn) = half*(ww1(i, j, irho) + ww2(i, j, irho))
+                buffer(nn) = half * (ww1(i, j, irho) + ww2(i, j, irho))
             end do
         end do
 
@@ -1763,7 +1763,7 @@ contains
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
                 nn = nn + 1
-                buffer(nn) = half*(pp1(i, j) + pp2(i, j))
+                buffer(nn) = half * (pp1(i, j) + pp2(i, j))
             end do
         end do
 
@@ -1775,7 +1775,7 @@ contains
             do i = rangeFace(1, 1), rangeFace(1, 2)
                 nn = nn + 1
                 buffer(nn) = (pp1(i, j) + pp2(i, j)) &
-                             /(RGas*(ww1(i, j, irho) + ww2(i, j, irho)))
+                             / (RGas * (ww1(i, j, irho) + ww2(i, j, irho)))
             end do
         end do
 
@@ -1789,7 +1789,7 @@ contains
                 if (viscousSurfaceVelocities .and. viscous) then
                     buffer(nn) = ww2(i, j, ivx)
                 else
-                    buffer(nn) = half*(ww1(i, j, ivx) + ww2(i, j, ivx))
+                    buffer(nn) = half * (ww1(i, j, ivx) + ww2(i, j, ivx))
                 end if
             end do
         end do
@@ -1804,7 +1804,7 @@ contains
                 if (viscousSurfaceVelocities .and. viscous) then
                     buffer(nn) = ww2(i, j, ivy)
                 else
-                    buffer(nn) = half*(ww1(i, j, ivy) + ww2(i, j, ivy))
+                    buffer(nn) = half * (ww1(i, j, ivy) + ww2(i, j, ivy))
                 end if
             end do
         end do
@@ -1819,7 +1819,7 @@ contains
                 if (viscousSurfaceVelocities .and. viscous) then
                     buffer(nn) = ww2(i, j, ivz)
                 else
-                    buffer(nn) = half*(ww1(i, j, ivz) + ww2(i, j, ivz))
+                    buffer(nn) = half * (ww1(i, j, ivz) + ww2(i, j, ivz))
                 end if
 
             end do
@@ -1834,7 +1834,7 @@ contains
                 if (viscousSurfaceVelocities .and. viscous) then
                     buffer(nn) = ww2(i, j, ivx) - ss2(i, j, 1)
                 else
-                    buffer(nn) = half*(ww1(i, j, ivx) + ww2(i, j, ivx)) - half*(ss1(i, j, 1) + ss2(i, j, 1))
+                    buffer(nn) = half * (ww1(i, j, ivx) + ww2(i, j, ivx)) - half * (ss1(i, j, 1) + ss2(i, j, 1))
                 end if
             end do
         end do
@@ -1848,7 +1848,7 @@ contains
                 if (viscousSurfaceVelocities .and. viscous) then
                     buffer(nn) = ww2(i, j, ivy) - ss2(i, j, 2)
                 else
-                    buffer(nn) = half*(ww1(i, j, ivy) + ww2(i, j, ivy)) - half*(ss1(i, j, 2) + ss2(i, j, 2))
+                    buffer(nn) = half * (ww1(i, j, ivy) + ww2(i, j, ivy)) - half * (ss1(i, j, 2) + ss2(i, j, 2))
                 end if
             end do
         end do
@@ -1862,7 +1862,7 @@ contains
                 if (viscousSurfaceVelocities .and. viscous) then
                     buffer(nn) = ww2(i, j, ivz) - ss2(i, j, 3)
                 else
-                    buffer(nn) = half*(ww1(i, j, ivz) + ww2(i, j, ivz)) - half*(ss1(i, j, 3) + ss2(i, j, 3))
+                    buffer(nn) = half * (ww1(i, j, ivz) + ww2(i, j, ivz)) - half * (ss1(i, j, 3) + ss2(i, j, 3))
                 end if
             end do
         end do
@@ -1878,7 +1878,7 @@ contains
         ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module
         ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
         ! (see initializeFlow.F90).
-        uInfDim2 = (MachCoef*MachCoef*gammaInf*pInf/rhoInf)*uRef*uRef
+        uInfDim2 = (MachCoef * MachCoef * gammaInf * pInf / rhoInf) * uRef * uRef
 
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
@@ -1887,17 +1887,17 @@ contains
                 ! by averaging wall and halo cell centers
                 ! (xx1,xx2 are pointers to the mesh coordinates, see block.F90)
                 rrate_ = cgnsdoms(1)%rotrate
-                r_(1) = (half*(xx1(i, j, 1) + xx2(i, j, 1)))
-                r_(2) = (half*(xx1(i, j, 2) + xx2(i, j, 2)))
-                r_(3) = (half*(xx1(i, j, 3) + xx2(i, j, 3)))
+                r_(1) = (half * (xx1(i, j, 1) + xx2(i, j, 1)))
+                r_(2) = (half * (xx1(i, j, 2) + xx2(i, j, 2)))
+                r_(3) = (half * (xx1(i, j, 3) + xx2(i, j, 3)))
                 ! calc cross-product between rotation rate and r_
                 ! to obtain local apparent wall velocity
-                wCrossR(1) = rrate_(2)*r_(3) - rrate_(3)*r_(2)
-                wCrossR(2) = rrate_(3)*r_(1) - rrate_(1)*r_(3)
-                wCrossR(3) = rrate_(1)*r_(2) - rrate_(2)*r_(1)
+                wCrossR(1) = rrate_(2) * r_(3) - rrate_(3) * r_(2)
+                wCrossR(2) = rrate_(3) * r_(1) - rrate_(1) * r_(3)
+                wCrossR(3) = rrate_(1) * r_(2) - rrate_(2) * r_(1)
                 rot_speed2 = wCrossR(1)**2 + wCrossR(2)**2 + wCrossR(3)**2
-                buffer(nn) = ((half*(pp1(i, j) + pp2(i, j)) - pInf)*pRef) &
-                             /(half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+                buffer(nn) = ((half * (pp1(i, j) + pp2(i, j)) - pInf) * pRef) &
+                             / (half * (rhoInfDim) * (uInfDim2 + rot_speed2))
                 ! Comments on the Cp (buffer(nn)) calculation above:
                 !
                 ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
@@ -1920,24 +1920,24 @@ contains
 
         call computePtot(rhoInf, uInf, zero, zero, &
                          pInf, ptotInf)
-        ptotInf = one/ptotInf
+        ptotInf = one / ptotInf
 
         ! Loop over the faces and compute the total pressure loss.
 
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
 
-                psurf = half*(pp1(i, j) + pp2(i, j))
-                rsurf = half*(ww1(i, j, irho) + ww2(i, j, irho))
-                usurf = half*(ww1(i, j, ivx) + ww2(i, j, ivx))
-                vsurf = half*(ww1(i, j, ivy) + ww2(i, j, ivy))
-                wsurf = half*(ww1(i, j, ivz) + ww2(i, j, ivz))
+                psurf = half * (pp1(i, j) + pp2(i, j))
+                rsurf = half * (ww1(i, j, irho) + ww2(i, j, irho))
+                usurf = half * (ww1(i, j, ivx) + ww2(i, j, ivx))
+                vsurf = half * (ww1(i, j, ivy) + ww2(i, j, ivy))
+                wsurf = half * (ww1(i, j, ivz) + ww2(i, j, ivz))
 
                 call computePtot(rsurf, usurf, vsurf, wsurf, &
                                  psurf, ptot)
 
                 nn = nn + 1
-                buffer(nn) = one - ptot*ptotInf
+                buffer(nn) = one - ptot * ptotInf
             end do
         end do
 
@@ -1948,13 +1948,13 @@ contains
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
 
-                psurf = half*(pp1(i, j) + pp2(i, j))
-                rsurf = half*(ww1(i, j, irho) + ww2(i, j, irho))
-                usurf = half*(ww1(i, j, ivx) + ww2(i, j, ivx))
-                vsurf = half*(ww1(i, j, ivy) + ww2(i, j, ivy))
-                wsurf = half*(ww1(i, j, ivz) + ww2(i, j, ivz))
-                m2surf = rsurf*(usurf**2 + vsurf**2 + wsurf**2) &
-                         /(half*(gamma1(i, j) + gamma2(i, j))*psurf)
+                psurf = half * (pp1(i, j) + pp2(i, j))
+                rsurf = half * (ww1(i, j, irho) + ww2(i, j, irho))
+                usurf = half * (ww1(i, j, ivx) + ww2(i, j, ivx))
+                vsurf = half * (ww1(i, j, ivy) + ww2(i, j, ivy))
+                wsurf = half * (ww1(i, j, ivz) + ww2(i, j, ivz))
+                m2surf = rsurf * (usurf**2 + vsurf**2 + wsurf**2) &
+                         / (half * (gamma1(i, j) + gamma2(i, j)) * psurf)
 
                 nn = nn + 1
                 buffer(nn) = sqrt(m2surf)
@@ -1968,13 +1968,13 @@ contains
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
 
-                psurf = half*(pp1(i, j) + pp2(i, j))
-                rsurf = half*(ww1(i, j, irho) + ww2(i, j, irho))
-                usurf = half*(ww1(i, j, ivx) + ww2(i, j, ivx)) - half*(ss1(i, j, 1) + ss2(i, j, 1))
-                vsurf = half*(ww1(i, j, ivy) + ww2(i, j, ivy)) - half*(ss1(i, j, 2) + ss2(i, j, 2))
-                wsurf = half*(ww1(i, j, ivz) + ww2(i, j, ivz)) - half*(ss1(i, j, 3) + ss2(i, j, 3))
-                m2surf = rsurf*(usurf**2 + vsurf**2 + wsurf**2) &
-                         /(half*(gamma1(i, j) + gamma2(i, j))*psurf)
+                psurf = half * (pp1(i, j) + pp2(i, j))
+                rsurf = half * (ww1(i, j, irho) + ww2(i, j, irho))
+                usurf = half * (ww1(i, j, ivx) + ww2(i, j, ivx)) - half * (ss1(i, j, 1) + ss2(i, j, 1))
+                vsurf = half * (ww1(i, j, ivy) + ww2(i, j, ivy)) - half * (ss1(i, j, 2) + ss2(i, j, 2))
+                wsurf = half * (ww1(i, j, ivz) + ww2(i, j, ivz)) - half * (ss1(i, j, 3) + ss2(i, j, 3))
+                m2surf = rsurf * (usurf**2 + vsurf**2 + wsurf**2) &
+                         / (half * (gamma1(i, j) + gamma2(i, j)) * psurf)
 
                 nn = nn + 1
                 buffer(nn) = sqrt(m2surf)
@@ -1992,7 +1992,7 @@ contains
         ! Multiplication factor to obtain the skin friction from
         ! the wall shear stress.
 
-        fact = two/(gammaInf*pInf*MachCoef*MachCoef)
+        fact = two / (gammaInf * pInf * MachCoef * MachCoef)
 
         ! Loop over the given range of faces. As the viscous data is
         ! only present in the owned faces, the values of the halo's
@@ -2056,15 +2056,15 @@ contains
                 norm(2) = BCData(mm)%norm(ii, jj, 2)
                 norm(3) = BCData(mm)%norm(ii, jj, 3)
 
-                fx = -(tauxx*norm(1) + tauxy*norm(2) + tauxz*norm(3))
-                fy = -(tauxy*norm(1) + tauyy*norm(2) + tauyz*norm(3))
-                fz = -(tauxz*norm(1) + tauyz*norm(2) + tauzz*norm(3))
+                fx = -(tauxx * norm(1) + tauxy * norm(2) + tauxz * norm(3))
+                fy = -(tauxy * norm(1) + tauyy * norm(2) + tauyz * norm(3))
+                fz = -(tauxz * norm(1) + tauyz * norm(2) + tauzz * norm(3))
 
-                fn = fx*norm(1) + fy*norm(2) + fz*norm(3)
+                fn = fx * norm(1) + fy * norm(2) + fz * norm(3)
 
-                fx = fx - fn*norm(1)
-                fy = fy - fn*norm(2)
-                fz = fz - fn*norm(3)
+                fx = fx - fn * norm(1)
+                fy = fy - fn * norm(2)
+                fz = fz - fn * norm(3)
 
                 ! Determine the variable to be stored and compute it.
                 ! Note that an offset of -1 must be used in dd2Wall,
@@ -2075,22 +2075,22 @@ contains
 
                 select case (solName)
                 case (cgnsSkinFmag)
-                    buffer(nn) = fact*sqrt(fx*fx + fy*fy + fz*fz)
+                    buffer(nn) = fact * sqrt(fx * fx + fy * fy + fz * fz)
 
                 case (cgnsSkinFx)
-                    buffer(nn) = fact*fx
+                    buffer(nn) = fact * fx
 
                 case (cgnsSkinFy)
-                    buffer(nn) = fact*fy
+                    buffer(nn) = fact * fy
 
                 case (cgnsSkinFz)
-                    buffer(nn) = fact*fz
+                    buffer(nn) = fact * fz
 
                 case (cgnsYplus)
-                    rsurf = half*(ww1(ii, jj, irho) + ww2(ii, jj, irho))
-                    musurf = half*(rlv1(ii, jj) + rlv2(ii, jj))
-                    buffer(nn) = sqrt(rsurf*sqrt(fx*fx + fy*fy + fz*fz)) &
-                                 *dd2Wall(ii - 1, jj - 1)/musurf
+                    rsurf = half * (ww1(ii, jj, irho) + ww2(ii, jj, irho))
+                    musurf = half * (rlv1(ii, jj) + rlv2(ii, jj))
+                    buffer(nn) = sqrt(rsurf * sqrt(fx * fx + fy * fy + fz * fz)) &
+                                 * dd2Wall(ii - 1, jj - 1) / musurf
                 end select
 
             end do
@@ -2103,9 +2103,9 @@ contains
         ! Some constants needed to compute the stanton number.
 
         gm1 = gammaInf - one
-        a2Tot = gammaInf*pInf*(one + half*gm1*MachCoef*MachCoef) &
-                /rhoInf
-        fact = MachCoef*sqrt(gammaInf*pInf*rhoInf)/gm1
+        a2Tot = gammaInf * pInf * (one + half * gm1 * MachCoef * MachCoef) &
+                / rhoInf
+        fact = MachCoef * sqrt(gammaInf * pInf * rhoInf) / gm1
 
         ! Loop over the given range of faces. As the viscous data is
         ! only present in the owned faces, the values of the halo's
@@ -2151,19 +2151,19 @@ contains
                 ! Compute the heat flux. Multipy with the sign of the
                 ! normal to obtain the correct value.
 
-                qw = viscSubface(mm)%q(ii, jj, 1)*BCData(mm)%norm(ii, jj, 1) &
-                     + viscSubface(mm)%q(ii, jj, 2)*BCData(mm)%norm(ii, jj, 2) &
-                     + viscSubface(mm)%q(ii, jj, 3)*BCData(mm)%norm(ii, jj, 3)
+                qw = viscSubface(mm)%q(ii, jj, 1) * BCData(mm)%norm(ii, jj, 1) &
+                     + viscSubface(mm)%q(ii, jj, 2) * BCData(mm)%norm(ii, jj, 2) &
+                     + viscSubface(mm)%q(ii, jj, 3) * BCData(mm)%norm(ii, jj, 3)
 
                 ! Compute the speed of sound squared at the wall and
                 ! the stanton number, which is stored in buffer.
 
-                a2 = half*(gamma1(ii, jj) + gamma2(ii, jj)) &
-                     *(pp1(ii, jj) + pp2(ii, jj)) &
-                     /(ww1(ii, jj, irho) + ww2(ii, jj, irho))
+                a2 = half * (gamma1(ii, jj) + gamma2(ii, jj)) &
+                     * (pp1(ii, jj) + pp2(ii, jj)) &
+                     / (ww1(ii, jj, irho) + ww2(ii, jj, irho))
 
                 nn = nn + 1
-                buffer(nn) = qw/(fact*(a2Tot - a2))
+                buffer(nn) = qw / (fact * (a2Tot - a2))
 
             end do
         end do
@@ -2196,28 +2196,28 @@ contains
                 v(3) = ww2(i, j, ivz)
 
                 ! Normalize
-                v = v/(sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
                 ! Dot product with free stream
                 sensor = -dot_product(v, velDirFreeStream)
 
                 !Now run through a smooth heaviside function:
-                sensor = one/(one + exp(-2*sepSensorSharpness*(sensor - sepSensorOffset)))
+                sensor = one / (one + exp(-2 * sepSensorSharpness * (sensor - sepSensorOffset)))
                 buffer(nn) = sensor
             end do
         end do
 
         case (cgnsCavitation)
-        fact = two/(gammaInf*pInf*MachCoef*MachCoef)
+        fact = two / (gammaInf * pInf * MachCoef * MachCoef)
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
 
                 nn = nn + 1
                 ! Get local pressure
-                plocal = half*(pp1(i, j) + pp2(i, j))
+                plocal = half * (pp1(i, j) + pp2(i, j))
 
-                sensor1 = (-(fact)*(plocal - pInf)) - cavitationnumber
-                sensor1 = (sensor1**cavExponent)/(one + exp(2*cavSensorSharpness*(-sensor1 + cavSensorOffset)))
+                sensor1 = (-(fact) * (plocal - pInf)) - cavitationnumber
+                sensor1 = (sensor1**cavExponent) / (one + exp(2 * cavSensorSharpness * (-sensor1 + cavSensorOffset)))
                 buffer(nn) = sensor1
                 !print*, sensor
             end do
@@ -2328,7 +2328,7 @@ contains
 
         if (spaceDiscr == dissScalar) then
             if (dirScaling) then
-                write (string, "(2(A, 1X), ES12.5, A)") trim(string), "Directional scaling of dissipation with exponent", adis, "."
+     write (string, "(2(A, 1X), ES12.5, A)") trim(string), "Directional scaling of dissipation with exponent", adis, "."
             else
                 write (string, stringSpace) trim(string), "No directional scaling of dissipation."
             end if
@@ -2349,7 +2349,7 @@ contains
                 write (string, stringSpace) trim(string), "Quadratic extrapolation of normal pressure gradIent", &
                     "for inviscid wall boundary conditions."
             case (normalMomentum)
-                write (string, stringSpace) trim(string), "Normal momentum equation used to determine pressure gradient", &
+             write (string, stringSpace) trim(string), "Normal momentum equation used to determine pressure gradient", &
                     "for inviscid wall boundary conditions."
             end select
         end if
@@ -2652,7 +2652,7 @@ contains
         integer(kind=intType) :: i, nn
 
         integer(kind=intType), dimension(cgnsNDom) :: tmp
-        integer(kind=intType), dimension(4, nDom)   :: buffer
+        integer(kind=intType), dimension(4, nDom) :: buffer
 
         ! Determine for each CGNS block how many (sub) blocks are stored
         ! on this processor. Note that this info is the same for all
@@ -2742,8 +2742,8 @@ contains
         real(kind=cgnsRealType) :: val
 
         character(len=2048) :: message
-        character(len=7)    :: integerString
-        character(len=12)   :: realString
+        character(len=7) :: integerString
+        character(len=12) :: realString
 
         ! Set the cgns real type.
 
@@ -3561,7 +3561,7 @@ contains
                                       1, int(1, cgsize_t), val, ierr)
 
             case (4_intType)
-                val = sqrt(pref/rhoref)
+                val = sqrt(pref / rhoref)
                 call cg_array_write_f(cgnsVelocity, realTypeCGNS, &
                                       1, int(1, cgsize_t), val, ierr)
 

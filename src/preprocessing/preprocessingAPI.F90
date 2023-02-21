@@ -501,8 +501,8 @@ contains
         nCellLocal = 0
         do nn = 1, nDom
             nCellLocal = nCellLocal + flowDoms(nn, level, 1)%nx &
-                         *flowDoms(nn, level, 1)%ny &
-                         *flowDoms(nn, level, 1)%nz
+                         * flowDoms(nn, level, 1)%ny &
+                         * flowDoms(nn, level, 1)%nz
         end do
 
         ! And determine the global sum.
@@ -954,14 +954,14 @@ contains
                         ! is outward pointing by multiplying it by mult;
                         ! mult is either 1.0 or -1.0.
 
-                        fact = sqrt(faceNorm(1)*faceNorm(1) &
-                                    + faceNorm(2)*faceNorm(2) &
-                                    + faceNorm(3)*faceNorm(3))
-                        if (fact > zero) fact = mult/fact
+                        fact = sqrt(faceNorm(1) * faceNorm(1) &
+                                    + faceNorm(2) * faceNorm(2) &
+                                    + faceNorm(3) * faceNorm(3))
+                        if (fact > zero) fact = mult / fact
 
-                        faceNorm(1) = faceNorm(1)*fact
-                        faceNorm(2) = faceNorm(2)*fact
-                        faceNorm(3) = faceNorm(3)*fact
+                        faceNorm(1) = faceNorm(1) * fact
+                        faceNorm(2) = faceNorm(2) * fact
+                        faceNorm(3) = faceNorm(3) * fact
 
                         ! Check if the symmetry plane is really planar. This is
                         ! only done on the finest mesh and for the 1st spectral
@@ -985,9 +985,9 @@ contains
                                     ! Compute the dot product between the normal of
                                     ! this face and the averaged normal of the plane.
 
-                                    dot = BCData(mm)%norm(i, j, 1)*faceNorm(1) &
-                                          + BCData(mm)%norm(i, j, 2)*faceNorm(2) &
-                                          + BCData(mm)%norm(i, j, 3)*faceNorm(3)
+                                    dot = BCData(mm)%norm(i, j, 1) * faceNorm(1) &
+                                          + BCData(mm)%norm(i, j, 2) * faceNorm(2) &
+                                          + BCData(mm)%norm(i, j, 3) * faceNorm(3)
 
                                     ! And determine the minimum of dot and dotMin
 
@@ -1004,7 +1004,7 @@ contains
                                 ! Determine the corresponding angle in degrees of
                                 ! dotmin.
 
-                                fact = acos(dotMin)*180.0_realType/pi
+                                fact = acos(dotMin) * 180.0_realType / pi
 
                                 ! Store the corresponding cgns block id and the
                                 ! subface in this block a bit easier.
@@ -1018,7 +1018,7 @@ contains
                                 print "(a)", "#                      Warning"
                                 print stringSpace, "# Symmetry boundary face", trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
                                     "of zone", trim(cgnsDoms(i)%zonename), "is not planar."
-                                write (*, stringSci5) "# Maximum deviation from the mean normal: ", real(fact), " degrees"
+                              write (*, stringSci5) "# Maximum deviation from the mean normal: ", real(fact), " degrees"
                                 print "(a)", "#"
 
                             end if
@@ -1098,13 +1098,13 @@ contains
 
                 do k = 1, kl
                     do j = 1, jl
-                        x(0, j, k, 1) = two*x(1, j, k, 1) - x(2, j, k, 1)
-                        x(0, j, k, 2) = two*x(1, j, k, 2) - x(2, j, k, 2)
-                        x(0, j, k, 3) = two*x(1, j, k, 3) - x(2, j, k, 3)
+                        x(0, j, k, 1) = two * x(1, j, k, 1) - x(2, j, k, 1)
+                        x(0, j, k, 2) = two * x(1, j, k, 2) - x(2, j, k, 2)
+                        x(0, j, k, 3) = two * x(1, j, k, 3) - x(2, j, k, 3)
 
-                        x(ie, j, k, 1) = two*x(il, j, k, 1) - x(nx, j, k, 1)
-                        x(ie, j, k, 2) = two*x(il, j, k, 2) - x(nx, j, k, 2)
-                        x(ie, j, k, 3) = two*x(il, j, k, 3) - x(nx, j, k, 3)
+                        x(ie, j, k, 1) = two * x(il, j, k, 1) - x(nx, j, k, 1)
+                        x(ie, j, k, 2) = two * x(il, j, k, 2) - x(nx, j, k, 2)
+                        x(ie, j, k, 3) = two * x(il, j, k, 3) - x(nx, j, k, 3)
                     end do
                 end do
 
@@ -1112,13 +1112,13 @@ contains
 
                 do k = 1, kl
                     do i = 0, ie
-                        x(i, 0, k, 1) = two*x(i, 1, k, 1) - x(i, 2, k, 1)
-                        x(i, 0, k, 2) = two*x(i, 1, k, 2) - x(i, 2, k, 2)
-                        x(i, 0, k, 3) = two*x(i, 1, k, 3) - x(i, 2, k, 3)
+                        x(i, 0, k, 1) = two * x(i, 1, k, 1) - x(i, 2, k, 1)
+                        x(i, 0, k, 2) = two * x(i, 1, k, 2) - x(i, 2, k, 2)
+                        x(i, 0, k, 3) = two * x(i, 1, k, 3) - x(i, 2, k, 3)
 
-                        x(i, je, k, 1) = two*x(i, jl, k, 1) - x(i, ny, k, 1)
-                        x(i, je, k, 2) = two*x(i, jl, k, 2) - x(i, ny, k, 2)
-                        x(i, je, k, 3) = two*x(i, jl, k, 3) - x(i, ny, k, 3)
+                        x(i, je, k, 1) = two * x(i, jl, k, 1) - x(i, ny, k, 1)
+                        x(i, je, k, 2) = two * x(i, jl, k, 2) - x(i, ny, k, 2)
+                        x(i, je, k, 3) = two * x(i, jl, k, 3) - x(i, ny, k, 3)
                     end do
                 end do
 
@@ -1126,13 +1126,13 @@ contains
 
                 do j = 0, je
                     do i = 0, ie
-                        x(i, j, 0, 1) = two*x(i, j, 1, 1) - x(i, j, 2, 1)
-                        x(i, j, 0, 2) = two*x(i, j, 1, 2) - x(i, j, 2, 2)
-                        x(i, j, 0, 3) = two*x(i, j, 1, 3) - x(i, j, 2, 3)
+                        x(i, j, 0, 1) = two * x(i, j, 1, 1) - x(i, j, 2, 1)
+                        x(i, j, 0, 2) = two * x(i, j, 1, 2) - x(i, j, 2, 2)
+                        x(i, j, 0, 3) = two * x(i, j, 1, 3) - x(i, j, 2, 3)
 
-                        x(i, j, ke, 1) = two*x(i, j, kl, 1) - x(i, j, nz, 1)
-                        x(i, j, ke, 2) = two*x(i, j, kl, 2) - x(i, j, nz, 2)
-                        x(i, j, ke, 3) = two*x(i, j, kl, 3) - x(i, j, nz, 3)
+                        x(i, j, ke, 1) = two * x(i, j, kl, 1) - x(i, j, nz, 1)
+                        x(i, j, ke, 2) = two * x(i, j, kl, 2) - x(i, j, nz, 2)
+                        x(i, j, ke, 3) = two * x(i, j, kl, 3) - x(i, j, nz, 3)
                     end do
                 end do
                 !
@@ -1200,9 +1200,9 @@ contains
                         ! Determine the normal of the face by taking the cross
                         ! product of v1 and v2 and add it to norm.
 
-                        norm(1) = v1(2)*v2(3) - v1(3)*v2(2)
-                        norm(2) = v1(3)*v2(1) - v1(1)*v2(3)
-                        norm(3) = v1(1)*v2(2) - v1(2)*v2(1)
+                        norm(1) = v1(2) * v2(3) - v1(3) * v2(2)
+                        norm(2) = v1(3) * v2(1) - v1(1) * v2(3)
+                        norm(3) = v1(1) * v2(2) - v1(2) * v2(1)
 
                         ! Check if BCData is allocated yet:
                         if (.not. bcData(mm)%symNormSet) then
@@ -1210,9 +1210,9 @@ contains
                             if (length == 0) then
                                 length = eps
                             end if
-                            bcData(mm)%symNorm(1) = norm(1)/length
-                            bcData(mm)%symNorm(2) = norm(2)/length
-                            bcData(mm)%symNorm(3) = norm(3)/length
+                            bcData(mm)%symNorm(1) = norm(1) / length
+                            bcData(mm)%symNorm(2) = norm(2) / length
+                            bcData(mm)%symNorm(3) = norm(3) / length
                             bcData(mm)%symNormSet = .True.
                         else
 
@@ -1220,7 +1220,7 @@ contains
                             ! different from the stored one:
                             length = sqrt(norm(1)**2 + norm(2)**2 + norm(3)**2)
                             if (length > eps) then
-                                tmp = norm/length
+                                tmp = norm / length
                                 tmp2 = bcData(mm)%symNorm
                                 dot = dot_product(tmp, tmp2)
                                 if (abs(dot) < tolDotmin) then
@@ -1249,9 +1249,9 @@ contains
 
                             ! Compute the unit normal of the subface.
 
-                            norm(1) = norm(1)/length
-                            norm(2) = norm(2)/length
-                            norm(3) = norm(3)/length
+                            norm(1) = norm(1) / length
+                            norm(2) = norm(2) / length
+                            norm(3) = norm(3) / length
 
                             ! Add an overlap to the symmetry subface if the
                             ! boundaries coincide with the block boundaries.
@@ -1282,12 +1282,12 @@ contains
                                     ! coordinates of the internal node to obtain the
                                     ! halo coordinates. Again the offset of +1.
 
-                                    dot = two*(v1(1)*norm(1) + v1(2)*norm(2) &
-                                               + v1(3)*norm(3))
+                                    dot = two * (v1(1) * norm(1) + v1(2) * norm(2) &
+                                                 + v1(3) * norm(3))
 
-                                    x0(i + 1, j + 1, 1) = x2(i + 1, j + 1, 1) + dot*norm(1)
-                                    x0(i + 1, j + 1, 2) = x2(i + 1, j + 1, 2) + dot*norm(2)
-                                    x0(i + 1, j + 1, 3) = x2(i + 1, j + 1, 3) + dot*norm(3)
+                                    x0(i + 1, j + 1, 1) = x2(i + 1, j + 1, 1) + dot * norm(1)
+                                    x0(i + 1, j + 1, 2) = x2(i + 1, j + 1, 2) + dot * norm(2)
+                                    x0(i + 1, j + 1, 3) = x2(i + 1, j + 1, 3) + dot * norm(3)
 
                                 end do
                             end do
@@ -1371,7 +1371,7 @@ contains
                             write (*, "(2(A, I4), *(A))") "CGNS Block ", i, ", boundary condition ", j, ", of type ", &
                                 trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
                                 " does not have a family. Based on the boundary condition type,", &
-                                " a name of: '", trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), "' will be used."
+                            " a name of: '", trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), "' will be used."
                         end if
                         cgnsDoms(i)%bocoInfo(j)%wallBCName = trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
                     end if
@@ -1744,8 +1744,8 @@ contains
 
         ! Send all the nodes to everyone
         allocate (allNodes(3, nNodesTotal))
-        call mpi_allgatherv(localNodes, nNodesLocal*3, adflow_real, allNodes, &
-                            nNodesProc*3, cumNodesProc*3, adflow_real, adflow_comm_world, ierr)
+        call mpi_allgatherv(localNodes, nNodesLocal * 3, adflow_real, allNodes, &
+                            nNodesProc * 3, cumNodesProc * 3, adflow_real, adflow_comm_world, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Local nodes is no longer necessary
@@ -1962,8 +1962,8 @@ contains
         do nn = 1, nDom
             ! Set to first spectral instance since we only need sizes
             call setPointers(nn, level, 1_intType)
-            nCellsLocal(level) = nCellsLocal(level) + nx*ny*nz
-            nNodesLocal(level) = nNodesLocal(level) + il*jl*kl
+            nCellsLocal(level) = nCellsLocal(level) + nx * ny * nz
+            nNodesLocal(level) = nNodesLocal(level) + il * jl * kl
         end do
 
         ! Reduce the number of cells in all processors: add up nCellsLocal
@@ -2005,7 +2005,7 @@ contains
         do nn = 2, nDom
             call setPointers(nn - 1, level, 1)
             nCellBlockOffset(level, nn) = nCellBlockOffset(level, nn - 1) &
-                                          + nx*ny*nz
+                                          + nx * ny * nz
         end do
 
         ! Repeat for nodes.
@@ -2016,7 +2016,7 @@ contains
         nNodeBlockOffset(1) = nNodeOffsetLocal(level)
         do nn = 2, nDom
             call setPointers(nn - 1, level, 1)
-            nNodeBlockOffset(nn) = nNodeBLockOffset(nn - 1) + il*jl*kl
+            nNodeBlockOffset(nn) = nNodeBLockOffset(nn - 1) + il * jl * kl
         end do
 
         ! Determine the global block row index for each (i,j,k) cell in
@@ -2032,8 +2032,8 @@ contains
                             ! instances of a give block adjacent to each other in
                             ! the matrix
                             globalCell(i, j, k) = &
-                                nCellBLockOffset(level, nn)*nTimeIntervalsSpectral + nx*ny*nz*(sps - 1) + &
-                                (i - 2) + (j - 2)*nx + (k - 2)*nx*ny
+                                nCellBLockOffset(level, nn) * nTimeIntervalsSpectral + nx * ny * nz * (sps - 1) + &
+                                (i - 2) + (j - 2) * nx + (k - 2) * nx * ny
                         end do
                     end do
                 end do
@@ -2052,8 +2052,8 @@ contains
                             !instances of a give block adjacent to each other in
                             !the matrix
                             globalNode(i, j, k) = &
-                                nNodeBLockOffset(nn)*nTimeIntervalsSpectral + &
-                                il*jl*kl*(sps - 1) + (i - 1) + (j - 1)*il + (k - 1)*il*jl
+                                nNodeBLockOffset(nn) * nTimeIntervalsSpectral + &
+                                il * jl * kl * (sps - 1) + (i - 1) + (j - 1) * il + (k - 1) * il * jl
 
                         end do
                     end do
@@ -2131,7 +2131,7 @@ contains
         ! followed by the families.
 
         if (monMassSliding) then
-            ii = 2*cgnsNSliding
+            ii = 2 * cgnsNSliding
         else
             ii = 0
         end if
@@ -2234,7 +2234,7 @@ contains
                     ! set the index to 0.
 
                     if (monMassSliding) then
-                        ii = 2*abs(groupNum(mm))
+                        ii = 2 * abs(groupNum(mm))
                         if (groupNum(mm) < 0) ii = ii - 1
                     else
                         ii = 0
@@ -2851,18 +2851,18 @@ contains
 
                             ! Compute the coordinates of the center of gravity.
 
-                            xp = eighth*(x(i, j, k, 1) + x(i, m, k, 1) &
-                                         + x(i, m, n, 1) + x(i, j, n, 1) &
-                                         + x(l, j, k, 1) + x(l, m, k, 1) &
-                                         + x(l, m, n, 1) + x(l, j, n, 1))
-                            yp = eighth*(x(i, j, k, 2) + x(i, m, k, 2) &
-                                         + x(i, m, n, 2) + x(i, j, n, 2) &
-                                         + x(l, j, k, 2) + x(l, m, k, 2) &
-                                         + x(l, m, n, 2) + x(l, j, n, 2))
-                            zp = eighth*(x(i, j, k, 3) + x(i, m, k, 3) &
-                                         + x(i, m, n, 3) + x(i, j, n, 3) &
-                                         + x(l, j, k, 3) + x(l, m, k, 3) &
-                                         + x(l, m, n, 3) + x(l, j, n, 3))
+                            xp = eighth * (x(i, j, k, 1) + x(i, m, k, 1) &
+                                           + x(i, m, n, 1) + x(i, j, n, 1) &
+                                           + x(l, j, k, 1) + x(l, m, k, 1) &
+                                           + x(l, m, n, 1) + x(l, j, n, 1))
+                            yp = eighth * (x(i, j, k, 2) + x(i, m, k, 2) &
+                                           + x(i, m, n, 2) + x(i, j, n, 2) &
+                                           + x(l, j, k, 2) + x(l, m, k, 2) &
+                                           + x(l, m, n, 2) + x(l, j, n, 2))
+                            zp = eighth * (x(i, j, k, 3) + x(i, m, k, 3) &
+                                           + x(i, m, n, 3) + x(i, j, n, 3) &
+                                           + x(l, j, k, 3) + x(l, m, k, 3) &
+                                           + x(l, m, n, 3) + x(l, j, n, 3))
 
                             ! Compute the volumes of the 6 sub pyramids. The
                             ! arguments of volpym must be such that for a (regular)
@@ -2902,7 +2902,7 @@ contains
                             ! pyramid. Remember that volpym computes 6 times the
                             ! volume.
 
-                            vol(i, j, k) = sixth*(vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
+                            vol(i, j, k) = sixth * (vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
 
                             ! Check the volume and update the number of positive
                             ! and negative volumes if needed.
@@ -2924,22 +2924,22 @@ contains
 
                                 ! Set the threshold for the volume quality.
 
-                                fact = thresVolume*abs(vol(i, j, k))
+                                fact = thresVolume * abs(vol(i, j, k))
 
                                 ! Check the quality of the volume.
 
                                 badVolume = .false.
-                                if (vp1*vol(i, j, k) < zero .and. &
+                                if (vp1 * vol(i, j, k) < zero .and. &
                                     abs(vp1) > fact) badVolume = .true.
-                                if (vp2*vol(i, j, k) < zero .and. &
+                                if (vp2 * vol(i, j, k) < zero .and. &
                                     abs(vp2) > fact) badVolume = .true.
-                                if (vp3*vol(i, j, k) < zero .and. &
+                                if (vp3 * vol(i, j, k) < zero .and. &
                                     abs(vp3) > fact) badVolume = .true.
-                                if (vp4*vol(i, j, k) < zero .and. &
+                                if (vp4 * vol(i, j, k) < zero .and. &
                                     abs(vp4) > fact) badVolume = .true.
-                                if (vp5*vol(i, j, k) < zero .and. &
+                                if (vp5 * vol(i, j, k) < zero .and. &
                                     abs(vp5) > fact) badVolume = .true.
-                                if (vp6*vol(i, j, k) < zero .and. &
+                                if (vp6 * vol(i, j, k) < zero .and. &
                                     abs(vp6) > fact) badVolume = .true.
 
                                 ! Update nVolBad if this is a bad volume.
@@ -2960,10 +2960,10 @@ contains
 
                 do k = 2, kl
                     do j = 2, jl
-                        if (vol(1, j, k)/vol(2, j, k) < haloCellRatio) then
+                        if (vol(1, j, k) / vol(2, j, k) < haloCellRatio) then
                             vol(1, j, k) = vol(2, j, k)
                         end if
-                        if (vol(ie, j, k)/vol(il, j, k) < haloCellRatio) then
+                        if (vol(ie, j, k) / vol(il, j, k) < haloCellRatio) then
                             vol(ie, j, k) = vol(il, j, k)
                         end if
                     end do
@@ -2971,10 +2971,10 @@ contains
 
                 do k = 2, kl
                     do i = 1, ie
-                        if (vol(i, 1, k)/vol(i, 2, k) < haloCellRatio) then
+                        if (vol(i, 1, k) / vol(i, 2, k) < haloCellRatio) then
                             vol(i, 1, k) = vol(i, 2, k)
                         end if
-                        if (vol(i, je, k)/voL(i, jl, k) < haloCellRatio) then
+                        if (vol(i, je, k) / voL(i, jl, k) < haloCellRatio) then
                             vol(i, je, k) = vol(i, jl, k)
                         end if
                     end do
@@ -2982,10 +2982,10 @@ contains
 
                 do j = 1, je
                     do i = 1, ie
-                        if (vol(i, j, 1)/vol(i, j, 2) < haloCellRatio) then
+                        if (vol(i, j, 1) / vol(i, j, 2) < haloCellRatio) then
                             vol(i, j, 1) = vol(i, j, 2)
                         end if
-                        if (vol(i, j, ke)/vol(i, j, kl) < haloCellRatio) then
+                        if (vol(i, j, ke) / vol(i, j, kl) < haloCellRatio) then
                             vol(i, j, ke) = vol(i, j, kl)
                         end if
                     end do
@@ -3063,9 +3063,9 @@ contains
                             ! diagonal vectors times fact; remember that fact is
                             ! either -0.5 or 0.5.
 
-                            si(i, j, k, 1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-                            si(i, j, k, 2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-                            si(i, j, k, 3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+                            si(i, j, k, 1) = fact * (v1(2) * v2(3) - v1(3) * v2(2))
+                            si(i, j, k, 2) = fact * (v1(3) * v2(1) - v1(1) * v2(3))
+                            si(i, j, k, 3) = fact * (v1(1) * v2(2) - v1(2) * v2(1))
 
                         end do
                     end do
@@ -3093,9 +3093,9 @@ contains
                             ! diagonal vectors times fact; remember that fact is
                             ! either -0.5 or 0.5.
 
-                            sj(i, j, k, 1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-                            sj(i, j, k, 2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-                            sj(i, j, k, 3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+                            sj(i, j, k, 1) = fact * (v1(2) * v2(3) - v1(3) * v2(2))
+                            sj(i, j, k, 2) = fact * (v1(3) * v2(1) - v1(1) * v2(3))
+                            sj(i, j, k, 3) = fact * (v1(1) * v2(2) - v1(2) * v2(1))
 
                         end do
                     end do
@@ -3123,9 +3123,9 @@ contains
                             ! diagonal vectors times fact; remember that fact is
                             ! either -0.5 or 0.5.
 
-                            sk(i, j, k, 1) = fact*(v1(2)*v2(3) - v1(3)*v2(2))
-                            sk(i, j, k, 2) = fact*(v1(3)*v2(1) - v1(1)*v2(3))
-                            sk(i, j, k, 3) = fact*(v1(1)*v2(2) - v1(2)*v2(1))
+                            sk(i, j, k, 1) = fact * (v1(2) * v2(3) - v1(3) * v2(2))
+                            sk(i, j, k, 2) = fact * (v1(3) * v2(1) - v1(1) * v2(3))
+                            sk(i, j, k, 3) = fact * (v1(1) * v2(2) - v1(2) * v2(1))
 
                         end do
                     end do
@@ -3173,14 +3173,14 @@ contains
                             ! and possibly correct for inward pointing.
 
                             xp = ss(i, j, 1); yp = ss(i, j, 2); zp = ss(i, j, 3)
-                            fact = sqrt(xp*xp + yp*yp + zp*zp)
-                            if (fact > zero) fact = mult/fact
+                            fact = sqrt(xp * xp + yp * yp + zp * zp)
+                            if (fact > zero) fact = mult / fact
 
                             ! Compute the unit normal.
 
-                            BCData(mm)%norm(i, j, 1) = fact*xp
-                            BCData(mm)%norm(i, j, 2) = fact*yp
-                            BCData(mm)%norm(i, j, 3) = fact*zp
+                            BCData(mm)%norm(i, j, 1) = fact * xp
+                            BCData(mm)%norm(i, j, 2) = fact * yp
+                            BCData(mm)%norm(i, j, 3) = fact * zp
 
                         end do
                     end do
@@ -3216,31 +3216,31 @@ contains
                                 ! Store the inverse of the sum of the areas of the
                                 ! six faces in fact.
 
-                                fact = one/(sqrt(si(i, j, k, 1)*si(i, j, k, 1) &
-                                                 + si(i, j, k, 2)*si(i, j, k, 2) &
-                                                 + si(i, j, k, 3)*si(i, j, k, 3)) &
-                                            + sqrt(si(l, j, k, 1)*si(l, j, k, 1) &
-                                                   + si(l, j, k, 2)*si(l, j, k, 2) &
-                                                   + si(l, j, k, 3)*si(l, j, k, 3)) &
-                                            + sqrt(sj(i, j, k, 1)*sj(i, j, k, 1) &
-                                                   + sj(i, j, k, 2)*sj(i, j, k, 2) &
-                                                   + sj(i, j, k, 3)*sj(i, j, k, 3)) &
-                                            + sqrt(sj(i, m, k, 1)*sj(i, m, k, 1) &
-                                                   + sj(i, m, k, 2)*sj(i, m, k, 2) &
-                                                   + sj(i, m, k, 3)*sj(i, m, k, 3)) &
-                                            + sqrt(sk(i, j, k, 1)*sk(i, j, k, 1) &
-                                                   + sk(i, j, k, 2)*sk(i, j, k, 2) &
-                                                   + sk(i, j, k, 3)*sk(i, j, k, 3)) &
-                                            + sqrt(sk(i, j, n, 1)*sk(i, j, n, 1) &
-                                                   + sk(i, j, n, 2)*sk(i, j, n, 2) &
-                                                   + sk(i, j, n, 3)*sk(i, j, n, 3)))
+                                fact = one / (sqrt(si(i, j, k, 1) * si(i, j, k, 1) &
+                                                   + si(i, j, k, 2) * si(i, j, k, 2) &
+                                                   + si(i, j, k, 3) * si(i, j, k, 3)) &
+                                              + sqrt(si(l, j, k, 1) * si(l, j, k, 1) &
+                                                     + si(l, j, k, 2) * si(l, j, k, 2) &
+                                                     + si(l, j, k, 3) * si(l, j, k, 3)) &
+                                              + sqrt(sj(i, j, k, 1) * sj(i, j, k, 1) &
+                                                     + sj(i, j, k, 2) * sj(i, j, k, 2) &
+                                                     + sj(i, j, k, 3) * sj(i, j, k, 3)) &
+                                              + sqrt(sj(i, m, k, 1) * sj(i, m, k, 1) &
+                                                     + sj(i, m, k, 2) * sj(i, m, k, 2) &
+                                                     + sj(i, m, k, 3) * sj(i, m, k, 3)) &
+                                              + sqrt(sk(i, j, k, 1) * sk(i, j, k, 1) &
+                                                     + sk(i, j, k, 2) * sk(i, j, k, 2) &
+                                                     + sk(i, j, k, 3) * sk(i, j, k, 3)) &
+                                              + sqrt(sk(i, j, n, 1) * sk(i, j, n, 1) &
+                                                     + sk(i, j, n, 2) * sk(i, j, n, 2) &
+                                                     + sk(i, j, n, 3) * sk(i, j, n, 3)))
 
                                 ! Multiply v1 by fact to obtain a nonDimensional
                                 ! quantity and take tha absolute value of it.
 
-                                v1(1) = abs(v1(1)*fact)
-                                v1(2) = abs(v1(2)*fact)
-                                v1(3) = abs(v1(3)*fact)
+                                v1(1) = abs(v1(1) * fact)
+                                v1(2) = abs(v1(2) * fact)
+                                v1(3) = abs(v1(3) * fact)
 
                                 ! Check if the control volume is closed.
 
@@ -3356,12 +3356,12 @@ contains
             real(kind=realType), intent(in) :: xa, ya, za, xb, yb, zb
             real(kind=realType), intent(in) :: xc, yc, zc, xd, yd, zd
 
-            volpym = (xp - fourth*(xa + xb + xc + xd)) &
-                     *((ya - yc)*(zb - zd) - (za - zc)*(yb - yd)) + &
-                     (yp - fourth*(ya + yb + yc + yd)) &
-                     *((za - zc)*(xb - xd) - (xa - xc)*(zb - zd)) + &
-                     (zp - fourth*(za + zb + zc + zd)) &
-                     *((xa - xc)*(yb - yd) - (ya - yc)*(xb - xd))
+            volpym = (xp - fourth * (xa + xb + xc + xd)) &
+                     * ((ya - yc) * (zb - zd) - (za - zc) * (yb - yd)) + &
+                     (yp - fourth * (ya + yb + yc + yd)) &
+                     * ((za - zc) * (xb - xd) - (xa - xc) * (zb - zd)) + &
+                     (zp - fourth * (za + zb + zc + zd)) &
+                     * ((xa - xc) * (yb - yd) - (ya - yc) * (xb - xd))
 
         end function volpym
 
@@ -3472,14 +3472,14 @@ contains
                                     do i = 2, il
                                         if (checkVolDoms(nn, sps)%volumeIsNeg(i, j, k)) then
 
-                                            xc(1:3) = eighth*(x(i - 1, j - 1, k - 1, 1:3) &
-                                                              + x(i, j - 1, k - 1, 1:3) &
-                                                              + x(i - 1, j, k - 1, 1:3) &
-                                                              + x(i, j, k - 1, 1:3) &
-                                                              + x(i - 1, j - 1, k, 1:3) &
-                                                              + x(i, j - 1, k, 1:3) &
-                                                              + x(i - 1, j, k, 1:3) &
-                                                              + x(i, j, k, 1:3))
+                                            xc(1:3) = eighth * (x(i - 1, j - 1, k - 1, 1:3) &
+                                                                + x(i, j - 1, k - 1, 1:3) &
+                                                                + x(i - 1, j, k - 1, 1:3) &
+                                                                + x(i, j, k - 1, 1:3) &
+                                                                + x(i - 1, j - 1, k, 1:3) &
+                                                                + x(i, j - 1, k, 1:3) &
+                                                                + x(i - 1, j, k, 1:3) &
+                                                                + x(i, j, k, 1:3))
 
                                             write (intString1, "(i10)") i
                                             write (intString2, "(i10)") j
@@ -3653,7 +3653,7 @@ contains
             !
             integer(kind=intType), intent(in) :: iil, jjl
 
-            real(kind=realType), dimension(:, :, :), intent(in)  :: xx
+            real(kind=realType), dimension(:, :, :), intent(in) :: xx
             real(kind=realType), dimension(2:, 2:, :, :), intent(out) :: rotMat
             !
             !        Local variables.
@@ -3672,23 +3672,23 @@ contains
                     ! Compute the coordinates of the face center relative to
                     ! the center of rotation.
 
-                    xF(1) = fourth*(xx(i - 1, j - 1, 1) + xx(i - 1, j, 1) &
-                                    + xx(i, j - 1, 1) + xx(i, j, 1)) - rotCenter(1)
-                    xF(2) = fourth*(xx(i - 1, j - 1, 2) + xx(i - 1, j, 2) &
-                                    + xx(i, j - 1, 2) + xx(i, j, 2)) - rotCenter(2)
-                    xF(3) = fourth*(xx(i - 1, j - 1, 3) + xx(i - 1, j, 3) &
-                                    + xx(i, j - 1, 3) + xx(i, j, 3)) - rotCenter(3)
+                    xF(1) = fourth * (xx(i - 1, j - 1, 1) + xx(i - 1, j, 1) &
+                                      + xx(i, j - 1, 1) + xx(i, j, 1)) - rotCenter(1)
+                    xF(2) = fourth * (xx(i - 1, j - 1, 2) + xx(i - 1, j, 2) &
+                                      + xx(i, j - 1, 2) + xx(i, j, 2)) - rotCenter(2)
+                    xF(3) = fourth * (xx(i - 1, j - 1, 3) + xx(i - 1, j, 3) &
+                                      + xx(i, j - 1, 3) + xx(i, j, 3)) - rotCenter(3)
 
                     ! Determine the two radial components for this point.
 
-                    r1 = xF(1)*vecR1(1) + xF(2)*vecR1(2) + xF(3)*vecR1(3)
-                    r2 = xF(1)*vecR2(1) + xF(2)*vecR2(2) + xF(3)*vecR2(3)
+                    r1 = xF(1) * vecR1(1) + xF(2) * vecR1(2) + xF(3) * vecR1(3)
+                    r2 = xF(1) * vecR2(1) + xF(2) * vecR2(2) + xF(3) * vecR2(3)
 
                     ! Determine the sine and cosine of the polar angle.
 
-                    rInv = one/sqrt(r1*r1 + r2*r2)
-                    cosTheta = r1*rInv
-                    sinTheta = r2*rInv
+                    rInv = one / sqrt(r1 * r1 + r2 * r2)
+                    cosTheta = r1 * rInv
+                    sinTheta = r2 * rInv
 
                     ! Compute the transformation matrix.
 
@@ -3696,13 +3696,13 @@ contains
                     rotMat(i, j, 1, 2) = axis(2)
                     rotMat(i, j, 1, 3) = axis(3)
 
-                    rotMat(i, j, 2, 1) = cosTheta*vecR1(1) + sinTheta*vecR2(1)
-                    rotMat(i, j, 2, 2) = cosTheta*vecR1(2) + sinTheta*vecR2(2)
-                    rotMat(i, j, 2, 3) = cosTheta*vecR1(3) + sinTheta*vecR2(3)
+                    rotMat(i, j, 2, 1) = cosTheta * vecR1(1) + sinTheta * vecR2(1)
+                    rotMat(i, j, 2, 2) = cosTheta * vecR1(2) + sinTheta * vecR2(2)
+                    rotMat(i, j, 2, 3) = cosTheta * vecR1(3) + sinTheta * vecR2(3)
 
-                    rotMat(i, j, 3, 1) = cosTheta*vecR2(1) - sinTheta*vecR1(1)
-                    rotMat(i, j, 3, 2) = cosTheta*vecR2(2) - sinTheta*vecR1(2)
-                    rotMat(i, j, 3, 3) = cosTheta*vecR2(3) - sinTheta*vecR1(3)
+                    rotMat(i, j, 3, 1) = cosTheta * vecR2(1) - sinTheta * vecR1(1)
+                    rotMat(i, j, 3, 2) = cosTheta * vecR2(2) - sinTheta * vecR1(2)
+                    rotMat(i, j, 3, 3) = cosTheta * vecR2(3) - sinTheta * vecR1(3)
 
                 end do
             end do
@@ -3727,7 +3727,7 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: nLevels, nn
-        real(kind=realType)   :: origGroundLevel
+        real(kind=realType) :: origGroundLevel
 
         ! Determine the halo coordinates of the fine level.
         origGroundLevel = groundLevel
@@ -3807,7 +3807,7 @@ contains
 
         !Local Variables
 
-        integer(kind=inttype):: mm, nnn
+        integer(kind=inttype) :: mm, nnn
 
         real(kind=realType), dimension(nSections) :: t
 
@@ -3822,8 +3822,8 @@ contains
 
             if (equationMode == timeSpectral) then
                 do nnn = 1, nSections
-                    t(nnn) = t(nnn) + (mm - 1)*sections(nnn)%timePeriod &
-                             /real(nTimeIntervalsSpectral, realType)
+                    t(nnn) = t(nnn) + (mm - 1) * sections(nnn)%timePeriod &
+                             / real(nTimeIntervalsSpectral, realType)
                 end do
             end if
 
@@ -3886,7 +3886,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        real(kind=realType), dimension(3), intent(in)  :: axis
+        real(kind=realType), dimension(3), intent(in) :: axis
         real(kind=realType), dimension(3), intent(out) :: vecR1, vecR2
         !
         !      Local variables.
@@ -3910,22 +3910,22 @@ contains
         ! Make sure that vecR1 is normal to axis. Create a unit
         ! vector again.
 
-        dot = vecR1(1)*axis(1) + vecR1(2)*axis(2) + vecR1(3)*axis(3)
-        vecR1(1) = vecR1(1) - dot*axis(1)
-        vecR1(2) = vecR1(2) - dot*axis(2)
-        vecR1(3) = vecR1(3) - dot*axis(3)
+        dot = vecR1(1) * axis(1) + vecR1(2) * axis(2) + vecR1(3) * axis(3)
+        vecR1(1) = vecR1(1) - dot * axis(1)
+        vecR1(2) = vecR1(2) - dot * axis(2)
+        vecR1(3) = vecR1(3) - dot * axis(3)
 
-        dot = one/sqrt(vecR1(1)**2 + vecR1(2)**2 + vecR1(3)**2)
-        vecR1(1) = vecR1(1)*dot
-        vecR1(2) = vecR1(2)*dot
-        vecR1(3) = vecR1(3)*dot
+        dot = one / sqrt(vecR1(1)**2 + vecR1(2)**2 + vecR1(3)**2)
+        vecR1(1) = vecR1(1) * dot
+        vecR1(2) = vecR1(2) * dot
+        vecR1(3) = vecR1(3) * dot
 
         ! Create the second vector which spans the axial plane. This must
         ! be normal to both axis and vecR1, i.e. the cross-product.
 
-        vecR2(1) = axis(2)*vecR1(3) - axis(3)*vecR1(2)
-        vecR2(2) = axis(3)*vecR1(1) - axis(1)*vecR1(3)
-        vecR2(3) = axis(1)*vecR1(2) - axis(2)*vecR1(1)
+        vecR2(1) = axis(2) * vecR1(3) - axis(3) * vecR1(2)
+        vecR2(2) = axis(3) * vecR1(1) - axis(1) * vecR1(3)
+        vecR2(3) = axis(1) * vecR1(2) - axis(2) * vecR1(1)
 
     end subroutine unitVectorsInAxialPlane
 
@@ -3964,9 +3964,9 @@ contains
             nState = nw
         end if
 
-        nDimW = nw*nCellsLocal(1_intType)*nTimeIntervalsSpectral
-        nDimPsi = nState*nCellsLocal(1_intType)*nTimeIntervalsSpectral
-        nDimX = 3*nNodesLocal(1_intType)*nTimeIntervalsSpectral
+        nDimW = nw * nCellsLocal(1_intType) * nTimeIntervalsSpectral
+        nDimPsi = nState * nCellsLocal(1_intType) * nTimeIntervalsSpectral
+        nDimX = 3 * nNodesLocal(1_intType) * nTimeIntervalsSpectral
 
         ! Two w-like vectors.
         call VecCreateMPIWithArray(ADFLOW_COMM_WORLD, nw, ndimW, PETSC_DECIDE, &
@@ -4020,7 +4020,7 @@ contains
         implicit none
 
         ! Working variables
-        integer(kind=intType) ::mm, nnn, nn
+        integer(kind=intType) :: mm, nnn, nn
         real(kind=realType), dimension(nSections) :: t
 
         groundlevel = 1
@@ -4044,8 +4044,8 @@ contains
 
             if (equationMode == timeSpectral) then
                 do nnn = 1, nSections
-                    t(nnn) = t(nnn) + (mm - 1)*sections(nnn)%timePeriod &
-                             /real(nTimeIntervalsSpectral, realType)
+                    t(nnn) = t(nnn) + (mm - 1) * sections(nnn)%timePeriod &
+                             / real(nTimeIntervalsSpectral, realType)
                 end do
             end if
 
@@ -4071,11 +4071,11 @@ contains
         use solverUtils
         implicit none
 
-        real(kind=realType), intent(in)::rotCenter(3), rotRate(3)
+        real(kind=realType), intent(in) :: rotCenter(3), rotRate(3)
         integer(kind=intType), intent(in) :: nblocks
         integer(kind=intType), intent(in) :: blocks(nblocks)
 
-        integer(kind=intType) ::mm, nnn, nn, level, sps, i
+        integer(kind=intType) :: mm, nnn, nn, level, sps, i
         real(kind=realType), dimension(nSections) :: t
 
         groundlevel = 1
@@ -4109,8 +4109,8 @@ contains
 
             if (equationMode == timeSpectral) then
                 do nnn = 1, nSections
-                    t(nnn) = t(nnn) + (mm - 1)*sections(nnn)%timePeriod &
-                             /real(nTimeIntervalsSpectral, realType)
+                    t(nnn) = t(nnn) + (mm - 1) * sections(nnn)%timePeriod &
+                             / real(nTimeIntervalsSpectral, realType)
                 end do
             end if
 

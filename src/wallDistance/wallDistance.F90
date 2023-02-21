@@ -55,10 +55,10 @@ contains
 
 #ifdef TAPENADE_REVERSE
         !$AD II-LOOP
-        do ii = 0, nx*ny*nz - 1
+        do ii = 0, nx * ny * nz - 1
             i = mod(ii, nx) + 2
-            j = mod(ii/nx, ny) + 2
-            k = ii/(nx*ny) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
             do k = 2, kl
                 do j = 2, jl
@@ -83,26 +83,26 @@ contains
                         ! functions o to get target: (CCW ordering remember!)
 
                         xp(:) = &
-                            (one - u)*(one - v)*xSurf(3*(ind(1) - 1) + 1:3*ind(1)) + &
-                            (u)*(one - v)*xSurf(3*(ind(2) - 1) + 1:3*ind(2)) + &
-                            (u)*(v)*xSurf(3*(ind(3) - 1) + 1:3*ind(3)) + &
-                            (one - u)*(v)*xSurf(3*(ind(4) - 1) + 1:3*ind(4))
+                            (one - u) * (one - v) * xSurf(3 * (ind(1) - 1) + 1:3 * ind(1)) + &
+                            (u) * (one - v) * xSurf(3 * (ind(2) - 1) + 1:3 * ind(2)) + &
+                            (u) * (v) * xSurf(3 * (ind(3) - 1) + 1:3 * ind(3)) + &
+                            (one - u) * (v) * xSurf(3 * (ind(4) - 1) + 1:3 * ind(4))
 
                         ! Get the cell center
-                        xc(1) = eighth*(x(i - 1, j - 1, k - 1, 1) + x(i, j - 1, k - 1, 1) &
-                                        + x(i - 1, j, k - 1, 1) + x(i, j, k - 1, 1) &
-                                        + x(i - 1, j - 1, k, 1) + x(i, j - 1, k, 1) &
-                                        + x(i - 1, j, k, 1) + x(i, j, k, 1))
+                        xc(1) = eighth * (x(i - 1, j - 1, k - 1, 1) + x(i, j - 1, k - 1, 1) &
+                                          + x(i - 1, j, k - 1, 1) + x(i, j, k - 1, 1) &
+                                          + x(i - 1, j - 1, k, 1) + x(i, j - 1, k, 1) &
+                                          + x(i - 1, j, k, 1) + x(i, j, k, 1))
 
-                        xc(2) = eighth*(x(i - 1, j - 1, k - 1, 2) + x(i, j - 1, k - 1, 2) &
-                                        + x(i - 1, j, k - 1, 2) + x(i, j, k - 1, 2) &
-                                        + x(i - 1, j - 1, k, 2) + x(i, j - 1, k, 2) &
-                                        + x(i - 1, j, k, 2) + x(i, j, k, 2))
+                        xc(2) = eighth * (x(i - 1, j - 1, k - 1, 2) + x(i, j - 1, k - 1, 2) &
+                                          + x(i - 1, j, k - 1, 2) + x(i, j, k - 1, 2) &
+                                          + x(i - 1, j - 1, k, 2) + x(i, j - 1, k, 2) &
+                                          + x(i - 1, j, k, 2) + x(i, j, k, 2))
 
-                        xc(3) = eighth*(x(i - 1, j - 1, k - 1, 3) + x(i, j - 1, k - 1, 3) &
-                                        + x(i - 1, j, k - 1, 3) + x(i, j, k - 1, 3) &
-                                        + x(i - 1, j - 1, k, 3) + x(i, j - 1, k, 3) &
-                                        + x(i - 1, j, k, 3) + x(i, j, k, 3))
+                        xc(3) = eighth * (x(i - 1, j - 1, k - 1, 3) + x(i, j - 1, k - 1, 3) &
+                                          + x(i - 1, j, k - 1, 3) + x(i, j, k - 1, 3) &
+                                          + x(i - 1, j - 1, k, 3) + x(i, j - 1, k, 3) &
+                                          + x(i - 1, j, k, 3) + x(i, j, k, 3))
 
                         ! Now we have the two points...just take the norm of the
                         ! distance between them
@@ -184,7 +184,7 @@ contains
                             cycle
                         end if
                         nCellsLocal = nCellsLocal + &
-                                      (bcData(mm)%inEnd - bcData(mm)%inBeg)*(bcData(mm)%jnEnd - bcData(mm)%jnBeg)
+                                      (bcData(mm)%inEnd - bcData(mm)%inBeg) * (bcData(mm)%jnEnd - bcData(mm)%jnBeg)
                     end do
                 end do
 
@@ -260,8 +260,8 @@ contains
                                     k = kl
                                 end select
 
-                                cellIdLocal(iCell) = nCellBLockOffset(level, nn)*nTimeIntervalsSpectral + nx*ny*nz*(sps - 1) + &
-                                                     (i - 2) + (j - 2)*nx + (k - 2)*nx*ny
+                cellIdLocal(iCell) = nCellBLockOffset(level, nn) * nTimeIntervalsSpectral + nx * ny * nz * (sps - 1) + &
+                                                     (i - 2) + (j - 2) * nx + (k - 2) * nx * ny
                             end do
                         end do
                     end do
@@ -299,7 +299,7 @@ contains
                                 end if
 
                                 ! find the index of the surface cell (Requires gfortran > 9.0 )
-                                iCell = findloc(cellIdGlobal, flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), DIM=1)
+                              iCell = findloc(cellIdGlobal, flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), DIM=1)
 
                                 if (iCell == 0) then
                                     write (errorMessage, 100) &
@@ -352,7 +352,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level
-        logical, intent(in)               :: allocMem
+        logical, intent(in) :: allocMem
         !
         !      Local variables.
         !
@@ -627,27 +627,27 @@ contains
                         ! Compute the vector from centroid of the adjacent cell
                         ! to the centroid of the face.
 
-                        vecx = eighth*(xFace(i - 1, j - 1, 1) + xFace(i - 1, j, 1) &
-                                       + xFace(i, j - 1, 1) + xFace(i, j, 1) &
-                                       - xInt(i - 1, j - 1, 1) - xInt(i - 1, j, 1) &
-                                       - xInt(i, j - 1, 1) - xInt(i, j, 1))
+                        vecx = eighth * (xFace(i - 1, j - 1, 1) + xFace(i - 1, j, 1) &
+                                         + xFace(i, j - 1, 1) + xFace(i, j, 1) &
+                                         - xInt(i - 1, j - 1, 1) - xInt(i - 1, j, 1) &
+                                         - xInt(i, j - 1, 1) - xInt(i, j, 1))
 
-                        vecy = eighth*(xFace(i - 1, j - 1, 2) + xFace(i - 1, j, 2) &
-                                       + xFace(i, j - 1, 2) + xFace(i, j, 2) &
-                                       - xInt(i - 1, j - 1, 2) - xInt(i - 1, j, 2) &
-                                       - xInt(i, j - 1, 2) - xInt(i, j, 2))
+                        vecy = eighth * (xFace(i - 1, j - 1, 2) + xFace(i - 1, j, 2) &
+                                         + xFace(i, j - 1, 2) + xFace(i, j, 2) &
+                                         - xInt(i - 1, j - 1, 2) - xInt(i - 1, j, 2) &
+                                         - xInt(i, j - 1, 2) - xInt(i, j, 2))
 
-                        vecz = eighth*(xFace(i - 1, j - 1, 3) + xFace(i - 1, j, 3) &
-                                       + xFace(i, j - 1, 3) + xFace(i, j, 3) &
-                                       - xInt(i - 1, j - 1, 3) - xInt(i - 1, j, 3) &
-                                       - xInt(i, j - 1, 3) - xInt(i, j, 3))
+                        vecz = eighth * (xFace(i - 1, j - 1, 3) + xFace(i - 1, j, 3) &
+                                         + xFace(i, j - 1, 3) + xFace(i, j, 3) &
+                                         - xInt(i - 1, j - 1, 3) - xInt(i - 1, j, 3) &
+                                         - xInt(i, j - 1, 3) - xInt(i, j, 3))
 
                         ! Compute the projection of this vector onto the normal
                         ! vector of the face. For a decent mesh there will not be
                         ! much of a difference between the projection and the
                         ! original mesh, but it does not hurt to do it.
 
-                        dot = nnx*vecx + nny*vecy + nnz*vecz
+                        dot = nnx * vecx + nny * vecy + nnz * vecz
 
                         ! As (nnx,nny,nnz) is a unit vector the distance to the
                         ! wall of the first cell center is given by the absolute
@@ -681,7 +681,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, sps
-        logical, intent(in)               :: allocMem
+        logical, intent(in) :: allocMem
         !
         !      Local variables.
         !
@@ -792,8 +792,8 @@ contains
         nCellPer = 0
 
         do nn = 1, nDom
-            ll = flowDoms(nn, level, sps)%nx*flowDoms(nn, level, sps)%ny &
-                 *flowDoms(nn, level, sps)%nz
+            ll = flowDoms(nn, level, sps)%nx * flowDoms(nn, level, sps)%ny &
+                 * flowDoms(nn, level, sps)%nz
             nCell = nCell + ll
 
             mm = flowDoms(nn, level, sps)%sectionID
@@ -834,22 +834,22 @@ contains
                         ! Compute the coordinates of the cell center relative
                         ! to the rotation center of this section.
 
-                        xc(1) = eighth*(x(i - 1, j - 1, k - 1, 1) + x(i, j - 1, k - 1, 1) &
-                                        + x(i - 1, j, k - 1, 1) + x(i, j, k - 1, 1) &
-                                        + x(i - 1, j - 1, k, 1) + x(i, j - 1, k, 1) &
-                                        + x(i - 1, j, k, 1) + x(i, j, k, 1)) &
+                        xc(1) = eighth * (x(i - 1, j - 1, k - 1, 1) + x(i, j - 1, k - 1, 1) &
+                                          + x(i - 1, j, k - 1, 1) + x(i, j, k - 1, 1) &
+                                          + x(i - 1, j - 1, k, 1) + x(i, j - 1, k, 1) &
+                                          + x(i - 1, j, k, 1) + x(i, j, k, 1)) &
                                 - sections(ll)%rotCenter(1)
 
-                        xc(2) = eighth*(x(i - 1, j - 1, k - 1, 2) + x(i, j - 1, k - 1, 2) &
-                                        + x(i - 1, j, k - 1, 2) + x(i, j, k - 1, 2) &
-                                        + x(i - 1, j - 1, k, 2) + x(i, j - 1, k, 2) &
-                                        + x(i - 1, j, k, 2) + x(i, j, k, 2)) &
+                        xc(2) = eighth * (x(i - 1, j - 1, k - 1, 2) + x(i, j - 1, k - 1, 2) &
+                                          + x(i - 1, j, k - 1, 2) + x(i, j, k - 1, 2) &
+                                          + x(i - 1, j - 1, k, 2) + x(i, j - 1, k, 2) &
+                                          + x(i - 1, j, k, 2) + x(i, j, k, 2)) &
                                 - sections(ll)%rotCenter(2)
 
-                        xc(3) = eighth*(x(i - 1, j - 1, k - 1, 3) + x(i, j - 1, k - 1, 3) &
-                                        + x(i - 1, j, k - 1, 3) + x(i, j, k - 1, 3) &
-                                        + x(i - 1, j - 1, k, 3) + x(i, j - 1, k, 3) &
-                                        + x(i - 1, j, k, 3) + x(i, j, k, 3)) &
+                        xc(3) = eighth * (x(i - 1, j - 1, k - 1, 3) + x(i, j - 1, k - 1, 3) &
+                                          + x(i - 1, j, k - 1, 3) + x(i, j, k - 1, 3) &
+                                          + x(i - 1, j - 1, k, 3) + x(i, j - 1, k, 3) &
+                                          + x(i - 1, j, k, 3) + x(i, j, k, 3)) &
                                 - sections(ll)%rotCenter(3)
 
                         ! Apply the periodic transformation for this section to
@@ -857,19 +857,19 @@ contains
                         ! in the appropriate place in coor.
 
                         mm = mm + 1
-                        coor(1, mm) = rotMatrixSections(ll, 1, 1)*xc(1) &
-                                      + rotMatrixSections(ll, 1, 2)*xc(2) &
-                                      + rotMatrixSections(ll, 1, 3)*xc(3) &
+                        coor(1, mm) = rotMatrixSections(ll, 1, 1) * xc(1) &
+                                      + rotMatrixSections(ll, 1, 2) * xc(2) &
+                                      + rotMatrixSections(ll, 1, 3) * xc(3) &
                                       + sections(ll)%rotCenter(1)
 
-                        coor(2, mm) = rotMatrixSections(ll, 2, 1)*xc(1) &
-                                      + rotMatrixSections(ll, 2, 2)*xc(2) &
-                                      + rotMatrixSections(ll, 2, 3)*xc(3) &
+                        coor(2, mm) = rotMatrixSections(ll, 2, 1) * xc(1) &
+                                      + rotMatrixSections(ll, 2, 2) * xc(2) &
+                                      + rotMatrixSections(ll, 2, 3) * xc(3) &
                                       + sections(ll)%rotCenter(2)
 
-                        coor(3, mm) = rotMatrixSections(ll, 3, 1)*xc(1) &
-                                      + rotMatrixSections(ll, 3, 2)*xc(2) &
-                                      + rotMatrixSections(ll, 3, 3)*xc(3) &
+                        coor(3, mm) = rotMatrixSections(ll, 3, 1) * xc(1) &
+                                      + rotMatrixSections(ll, 3, 2) * xc(2) &
+                                      + rotMatrixSections(ll, 3, 3) * xc(3) &
                                       + sections(ll)%rotCenter(3)
 
                         ! Initialize the distance squared, because this is an
@@ -911,8 +911,8 @@ contains
         ! Loop over the domains and find the periodic ones.
 
         domainsPer1: do nn = 1, nDom
-            jj = flowDoms(nn, level, sps)%nx*flowDoms(nn, level, sps)%ny &
-                 *flowDoms(nn, level, sps)%nz
+            jj = flowDoms(nn, level, sps)%nx * flowDoms(nn, level, sps)%ny &
+                 * flowDoms(nn, level, sps)%nz
 
             ll = flowDoms(nn, level, sps)%sectionID
 
@@ -933,21 +933,21 @@ contains
                     xc(2) = coor(2, mm) - sections(ll)%rotCenter(2)
                     xc(3) = coor(3, mm) - sections(ll)%rotCenter(3)
 
-                    coorPer(1, ii) = sections(ll)%rotMatrix(1, 1)*xc(1) &
-                                     + sections(ll)%rotMatrix(1, 2)*xc(2) &
-                                     + sections(ll)%rotMatrix(1, 3)*xc(3) &
+                    coorPer(1, ii) = sections(ll)%rotMatrix(1, 1) * xc(1) &
+                                     + sections(ll)%rotMatrix(1, 2) * xc(2) &
+                                     + sections(ll)%rotMatrix(1, 3) * xc(3) &
                                      + sections(ll)%rotCenter(1) &
                                      + sections(ll)%translation(1)
 
-                    coorPer(2, ii) = sections(ll)%rotMatrix(2, 1)*xc(1) &
-                                     + sections(ll)%rotMatrix(2, 2)*xc(2) &
-                                     + sections(ll)%rotMatrix(2, 3)*xc(3) &
+                    coorPer(2, ii) = sections(ll)%rotMatrix(2, 1) * xc(1) &
+                                     + sections(ll)%rotMatrix(2, 2) * xc(2) &
+                                     + sections(ll)%rotMatrix(2, 3) * xc(3) &
                                      + sections(ll)%rotCenter(2) &
                                      + sections(ll)%translation(2)
 
-                    coorPer(3, ii) = sections(ll)%rotMatrix(3, 1)*xc(1) &
-                                     + sections(ll)%rotMatrix(3, 2)*xc(2) &
-                                     + sections(ll)%rotMatrix(3, 3)*xc(3) &
+                    coorPer(3, ii) = sections(ll)%rotMatrix(3, 1) * xc(1) &
+                                     + sections(ll)%rotMatrix(3, 2) * xc(2) &
+                                     + sections(ll)%rotMatrix(3, 3) * xc(3) &
                                      + sections(ll)%rotCenter(3) &
                                      + sections(ll)%translation(3)
 
@@ -981,8 +981,8 @@ contains
         ! Loop over the domains and find the periodic ones.
 
         domainsPer2: do nn = 1, nDom
-            jj = flowDoms(nn, level, sps)%nx*flowDoms(nn, level, sps)%ny &
-                 *flowDoms(nn, level, sps)%nz
+            jj = flowDoms(nn, level, sps)%nx * flowDoms(nn, level, sps)%ny &
+                 * flowDoms(nn, level, sps)%nz
 
             ll = flowDoms(nn, level, sps)%sectionID
 
@@ -1010,19 +1010,19 @@ contains
                     xc(3) = coor(3, mm) - sections(ll)%rotCenter(3) &
                             - sections(ll)%translation(3)
 
-                    coorPer(1, ii) = sections(ll)%rotMatrix(1, 1)*xc(1) &
-                                     + sections(ll)%rotMatrix(2, 1)*xc(2) &
-                                     + sections(ll)%rotMatrix(3, 1)*xc(3) &
+                    coorPer(1, ii) = sections(ll)%rotMatrix(1, 1) * xc(1) &
+                                     + sections(ll)%rotMatrix(2, 1) * xc(2) &
+                                     + sections(ll)%rotMatrix(3, 1) * xc(3) &
                                      + sections(ll)%rotCenter(1)
 
-                    coorPer(2, ii) = sections(ll)%rotMatrix(1, 2)*xc(1) &
-                                     + sections(ll)%rotMatrix(2, 2)*xc(2) &
-                                     + sections(ll)%rotMatrix(3, 2)*xc(3) &
+                    coorPer(2, ii) = sections(ll)%rotMatrix(1, 2) * xc(1) &
+                                     + sections(ll)%rotMatrix(2, 2) * xc(2) &
+                                     + sections(ll)%rotMatrix(3, 2) * xc(3) &
                                      + sections(ll)%rotCenter(2)
 
-                    coorPer(3, ii) = sections(ll)%rotMatrix(1, 3)*xc(1) &
-                                     + sections(ll)%rotMatrix(2, 3)*xc(2) &
-                                     + sections(ll)%rotMatrix(3, 3)*xc(3) &
+                    coorPer(3, ii) = sections(ll)%rotMatrix(1, 3) * xc(1) &
+                                     + sections(ll)%rotMatrix(2, 3) * xc(2) &
+                                     + sections(ll)%rotMatrix(3, 3) * xc(3) &
                                      + sections(ll)%rotCenter(3)
                 end do
 
@@ -1063,7 +1063,7 @@ contains
 
             if (sections(ll)%periodic) then
 
-                jj = nx*ny*nz
+                jj = nx * ny * nz
 
                 j = mm
                 do i = 1, jj
@@ -1221,11 +1221,11 @@ contains
                 ! Perform gaussian eliMination, because now it's sure that
                 ! the element (k,k) is non-zero.
 
-                aaa = one/a(k, k)
+                aaa = one / a(k, k)
                 do i = (k + 1), 3
-                    bbb = a(i, k)*aaa
+                    bbb = a(i, k) * aaa
                     do j = k, 3
-                        a(i, j) = a(i, j) - bbb*a(k, j)
+                        a(i, j) = a(i, j) - bbb * a(k, j)
                     end do
                 end do
 
@@ -1238,16 +1238,16 @@ contains
             ! determine the other two elements of the eigen vector.
 
             axis(nn, ind(3)) = one
-            axis(nn, ind(2)) = -(a(2, 3)*axis(nn, ind(3)))/a(2, 2)
-            axis(nn, ind(1)) = -(a(1, 3)*axis(nn, ind(3)) &
-                                 + a(1, 2)*axis(nn, ind(2)))/a(1, 1)
+            axis(nn, ind(2)) = -(a(2, 3) * axis(nn, ind(3))) / a(2, 2)
+            axis(nn, ind(1)) = -(a(1, 3) * axis(nn, ind(3)) &
+                                 + a(1, 2) * axis(nn, ind(2))) / a(1, 1)
 
             ! Create a unit vector.
 
-            length = one/sqrt(axis(nn, 1)**2 + axis(nn, 2)**2 + axis(nn, 3)**2)
-            axis(nn, 1) = axis(nn, 1)*length
-            axis(nn, 2) = axis(nn, 2)*length
-            axis(nn, 3) = axis(nn, 3)*length
+            length = one / sqrt(axis(nn, 1)**2 + axis(nn, 2)**2 + axis(nn, 3)**2)
+            axis(nn, 1) = axis(nn, 1) * length
+            axis(nn, 2) = axis(nn, 2) * length
+            axis(nn, 3) = axis(nn, 3) * length
 
             ! Make sure that the largest component of this vector is
             ! positive, such that a unique definition of the rotation
@@ -1287,23 +1287,23 @@ contains
             ! Make sure that rad1 is normal to axis. Create a unit
             ! vector again.
 
-            dot = rad1(nn, 1)*axis(nn, 1) + rad1(nn, 2)*axis(nn, 2) &
-                  + rad1(nn, 3)*axis(nn, 3)
-            rad1(nn, 1) = rad1(nn, 1) - dot*axis(nn, 1)
-            rad1(nn, 2) = rad1(nn, 2) - dot*axis(nn, 2)
-            rad1(nn, 3) = rad1(nn, 3) - dot*axis(nn, 3)
+            dot = rad1(nn, 1) * axis(nn, 1) + rad1(nn, 2) * axis(nn, 2) &
+                  + rad1(nn, 3) * axis(nn, 3)
+            rad1(nn, 1) = rad1(nn, 1) - dot * axis(nn, 1)
+            rad1(nn, 2) = rad1(nn, 2) - dot * axis(nn, 2)
+            rad1(nn, 3) = rad1(nn, 3) - dot * axis(nn, 3)
 
-            length = one/(rad1(nn, 1)**2 + rad1(nn, 2)**2 + rad1(nn, 3)**2)
-            rad1(nn, 1) = rad1(nn, 1)*length
-            rad1(nn, 2) = rad1(nn, 2)*length
-            rad1(nn, 3) = rad1(nn, 3)*length
+            length = one / (rad1(nn, 1)**2 + rad1(nn, 2)**2 + rad1(nn, 3)**2)
+            rad1(nn, 1) = rad1(nn, 1) * length
+            rad1(nn, 2) = rad1(nn, 2) * length
+            rad1(nn, 3) = rad1(nn, 3) * length
 
             ! Create the second vector which spans the radIal plane. This
             ! must be normal to both axis and rad1, i.e. the cross-product.
 
-            rad2(nn, 1) = axis(nn, 2)*rad1(nn, 3) - axis(nn, 3)*rad1(nn, 2)
-            rad2(nn, 2) = axis(nn, 3)*rad1(nn, 1) - axis(nn, 1)*rad1(nn, 3)
-            rad2(nn, 3) = axis(nn, 1)*rad1(nn, 2) - axis(nn, 2)*rad1(nn, 1)
+            rad2(nn, 1) = axis(nn, 2) * rad1(nn, 3) - axis(nn, 3) * rad1(nn, 2)
+            rad2(nn, 2) = axis(nn, 3) * rad1(nn, 1) - axis(nn, 1) * rad1(nn, 3)
+            rad2(nn, 3) = axis(nn, 1) * rad1(nn, 2) - axis(nn, 2) * rad1(nn, 1)
 
         end do
 
@@ -1351,8 +1351,8 @@ contains
                         ! Determine the radIal components in the local
                         ! cylindrical coordinate system of the section.
 
-                        r1 = xx*rad1(sec, 1) + yy*rad1(sec, 2) + zz*rad1(sec, 3)
-                        r2 = xx*rad2(sec, 1) + yy*rad2(sec, 2) + zz*rad2(sec, 3)
+                        r1 = xx * rad1(sec, 1) + yy * rad1(sec, 2) + zz * rad1(sec, 3)
+                        r2 = xx * rad2(sec, 1) + yy * rad2(sec, 2) + zz * rad2(sec, 3)
 
                         ! Determine the angle if r1 or r2 is nonzero.
 
@@ -1376,11 +1376,11 @@ contains
                             ! Determine the quadrant in which this node is located
                             ! and update the corresponding counter.
 
-                            if (theta <= -half*pi) then
+                            if (theta <= -half * pi) then
                                 nq3 = nq3 + 1
                             else if (theta <= zero) then
                                 nq4 = nq4 + 1
-                            else if (theta <= half*pi) then
+                            else if (theta <= half * pi) then
                                 nq1 = nq1 + 1
                             else
                                 nq2 = nq2 + 1
@@ -1478,7 +1478,7 @@ contains
                 ! does not cross the line theta == 0. The rotation matrix
                 ! for alignment must be computed.
 
-                theta = two*pi/sections(nn)%nSlices
+                theta = two * pi / sections(nn)%nSlices
 
                 ! Determine the number of rotations needed to align the mesh.
 
@@ -1488,7 +1488,7 @@ contains
                     ! fourth quadrant. Determine the number of rotations for
                     ! alignment; this is a positive number.
 
-                    mm = -thetaNMax(nn)/theta + 1
+                    mm = -thetaNMax(nn) / theta + 1
 
                 else
 
@@ -1496,46 +1496,46 @@ contains
                     ! quadrant. The number of rotations will be a negative
                     ! number now.
 
-                    mm = -thetaPMin(nn)/theta - 1
+                    mm = -thetaPMin(nn) / theta - 1
 
                 end if
 
                 ! Compute the rotation angle in the local cylindrical frame
                 ! and its sine and cosine.
 
-                theta = mm*theta
+                theta = mm * theta
                 cosTheta = cos(theta)
                 sinTheta = sin(theta)
 
                 ! Apply the transformation to obtain the matrix in the
                 ! original cartesian frame.
 
-                rotMatrixSections(nn, 1, 1) = axis(nn, 1)*axis(nn, 1) &
-                                              + cosTheta*(rad1(nn, 1)*rad1(nn, 1) + rad2(nn, 1)*rad2(nn, 1))
-                rotMatrixSections(nn, 1, 2) = axis(nn, 1)*axis(nn, 2) &
-                                              + cosTheta*(rad1(nn, 1)*rad1(nn, 2) + rad2(nn, 1)*rad2(nn, 2)) &
-                                              + sinTheta*(rad1(nn, 2)*rad2(nn, 1) - rad1(nn, 1)*rad2(nn, 2))
-                rotMatrixSections(nn, 1, 3) = axis(nn, 1)*axis(nn, 3) &
-                                              + cosTheta*(rad1(nn, 1)*rad1(nn, 3) + rad2(nn, 1)*rad2(nn, 3)) &
-                                              + sinTheta*(rad1(nn, 3)*rad2(nn, 1) - rad1(nn, 1)*rad2(nn, 3))
+                rotMatrixSections(nn, 1, 1) = axis(nn, 1) * axis(nn, 1) &
+                                              + cosTheta * (rad1(nn, 1) * rad1(nn, 1) + rad2(nn, 1) * rad2(nn, 1))
+                rotMatrixSections(nn, 1, 2) = axis(nn, 1) * axis(nn, 2) &
+                                              + cosTheta * (rad1(nn, 1) * rad1(nn, 2) + rad2(nn, 1) * rad2(nn, 2)) &
+                                              + sinTheta * (rad1(nn, 2) * rad2(nn, 1) - rad1(nn, 1) * rad2(nn, 2))
+                rotMatrixSections(nn, 1, 3) = axis(nn, 1) * axis(nn, 3) &
+                                              + cosTheta * (rad1(nn, 1) * rad1(nn, 3) + rad2(nn, 1) * rad2(nn, 3)) &
+                                              + sinTheta * (rad1(nn, 3) * rad2(nn, 1) - rad1(nn, 1) * rad2(nn, 3))
 
-                rotMatrixSections(nn, 2, 1) = axis(nn, 1)*axis(nn, 2) &
-                                              + cosTheta*(rad1(nn, 1)*rad1(nn, 2) + rad2(nn, 1)*rad2(nn, 2)) &
-                                              - sinTheta*(rad1(nn, 2)*rad2(nn, 1) - rad1(nn, 1)*rad2(nn, 2))
-                rotMatrixSections(nn, 2, 2) = axis(nn, 2)*axis(nn, 2) &
-                                              + cosTheta*(rad1(nn, 2)*rad1(nn, 2) + rad2(nn, 2)*rad2(nn, 2))
-                rotMatrixSections(nn, 2, 3) = axis(nn, 2)*axis(nn, 3) &
-                                              + cosTheta*(rad1(nn, 2)*rad1(nn, 3) + rad2(nn, 2)*rad2(nn, 3)) &
-                                              + sinTheta*(rad1(nn, 3)*rad2(nn, 2) - rad1(nn, 2)*rad2(nn, 3))
+                rotMatrixSections(nn, 2, 1) = axis(nn, 1) * axis(nn, 2) &
+                                              + cosTheta * (rad1(nn, 1) * rad1(nn, 2) + rad2(nn, 1) * rad2(nn, 2)) &
+                                              - sinTheta * (rad1(nn, 2) * rad2(nn, 1) - rad1(nn, 1) * rad2(nn, 2))
+                rotMatrixSections(nn, 2, 2) = axis(nn, 2) * axis(nn, 2) &
+                                              + cosTheta * (rad1(nn, 2) * rad1(nn, 2) + rad2(nn, 2) * rad2(nn, 2))
+                rotMatrixSections(nn, 2, 3) = axis(nn, 2) * axis(nn, 3) &
+                                              + cosTheta * (rad1(nn, 2) * rad1(nn, 3) + rad2(nn, 2) * rad2(nn, 3)) &
+                                              + sinTheta * (rad1(nn, 3) * rad2(nn, 2) - rad1(nn, 2) * rad2(nn, 3))
 
-                rotMatrixSections(nn, 3, 1) = axis(nn, 1)*axis(nn, 3) &
-                                              + cosTheta*(rad1(nn, 1)*rad1(nn, 3) + rad2(nn, 1)*rad2(nn, 3)) &
-                                              - sinTheta*(rad1(nn, 3)*rad2(nn, 1) - rad1(nn, 1)*rad2(nn, 3))
-                rotMatrixSections(nn, 3, 2) = axis(nn, 2)*axis(nn, 3) &
-                                              + cosTheta*(rad1(nn, 2)*rad1(nn, 3) + rad2(nn, 2)*rad2(nn, 3)) &
-                                              - sinTheta*(rad1(nn, 3)*rad2(nn, 2) - rad1(nn, 2)*rad2(nn, 3))
-                rotMatrixSections(nn, 3, 3) = axis(nn, 3)*axis(nn, 3) &
-                                              + cosTheta*(rad1(nn, 3)*rad1(nn, 3) + rad2(nn, 3)*rad2(nn, 3))
+                rotMatrixSections(nn, 3, 1) = axis(nn, 1) * axis(nn, 3) &
+                                              + cosTheta * (rad1(nn, 1) * rad1(nn, 3) + rad2(nn, 1) * rad2(nn, 3)) &
+                                              - sinTheta * (rad1(nn, 3) * rad2(nn, 1) - rad1(nn, 1) * rad2(nn, 3))
+                rotMatrixSections(nn, 3, 2) = axis(nn, 2) * axis(nn, 3) &
+                                              + cosTheta * (rad1(nn, 2) * rad1(nn, 3) + rad2(nn, 2) * rad2(nn, 3)) &
+                                              - sinTheta * (rad1(nn, 3) * rad2(nn, 2) - rad1(nn, 2) * rad2(nn, 3))
+                rotMatrixSections(nn, 3, 3) = axis(nn, 3) * axis(nn, 3) &
+                                              + cosTheta * (rad1(nn, 3) * rad1(nn, 3) + rad2(nn, 3) * rad2(nn, 3))
 
             end if testRot
 
@@ -1609,19 +1609,19 @@ contains
                             ! coordinates.
 
                             np = np + 1
-                            coorVisc(1, np) = rotMatrixSections(sec, 1, 1)*xx &
-                                              + rotMatrixSections(sec, 1, 2)*yy &
-                                              + rotMatrixSections(sec, 1, 3)*zz &
+                            coorVisc(1, np) = rotMatrixSections(sec, 1, 1) * xx &
+                                              + rotMatrixSections(sec, 1, 2) * yy &
+                                              + rotMatrixSections(sec, 1, 3) * zz &
                                               + sections(sec)%rotCenter(1)
 
-                            coorVisc(2, np) = rotMatrixSections(sec, 2, 1)*xx &
-                                              + rotMatrixSections(sec, 2, 2)*yy &
-                                              + rotMatrixSections(sec, 2, 3)*zz &
+                            coorVisc(2, np) = rotMatrixSections(sec, 2, 1) * xx &
+                                              + rotMatrixSections(sec, 2, 2) * yy &
+                                              + rotMatrixSections(sec, 2, 3) * zz &
                                               + sections(sec)%rotCenter(2)
 
-                            coorVisc(3, np) = rotMatrixSections(sec, 3, 1)*xx &
-                                              + rotMatrixSections(sec, 3, 2)*yy &
-                                              + rotMatrixSections(sec, 3, 3)*zz &
+                            coorVisc(3, np) = rotMatrixSections(sec, 3, 1) * xx &
+                                              + rotMatrixSections(sec, 3, 2) * yy &
+                                              + rotMatrixSections(sec, 3, 3) * zz &
                                               + sections(sec)%rotCenter(3)
                         end do
                     end do
@@ -1639,7 +1639,7 @@ contains
 
                             nq = nq + 1
 
-                            connVisc(1, nq) = npOld + (j - jBeg - 1)*np1 + i - iBeg
+                            connVisc(1, nq) = npOld + (j - jBeg - 1) * np1 + i - iBeg
                             connVisc(2, nq) = connVisc(1, nq) + 1
                             connVisc(3, nq) = connVisc(2, nq) + np1
                             connVisc(4, nq) = connVisc(3, nq) - 1
@@ -1675,21 +1675,21 @@ contains
                             ! Update the counter np and determine the new
                             ! coordinates after the transformation.
 
-                            coorVisc(1, np) = sections(sec)%rotMatrix(1, 1)*xx &
-                                              + sections(sec)%rotMatrix(1, 2)*yy &
-                                              + sections(sec)%rotMatrix(1, 3)*zz &
+                            coorVisc(1, np) = sections(sec)%rotMatrix(1, 1) * xx &
+                                              + sections(sec)%rotMatrix(1, 2) * yy &
+                                              + sections(sec)%rotMatrix(1, 3) * zz &
                                               + sections(sec)%rotCenter(1) &
                                               + sections(sec)%translation(1)
 
-                            coorVisc(2, np) = sections(sec)%rotMatrix(2, 1)*xx &
-                                              + sections(sec)%rotMatrix(2, 2)*yy &
-                                              + sections(sec)%rotMatrix(2, 3)*zz &
+                            coorVisc(2, np) = sections(sec)%rotMatrix(2, 1) * xx &
+                                              + sections(sec)%rotMatrix(2, 2) * yy &
+                                              + sections(sec)%rotMatrix(2, 3) * zz &
                                               + sections(sec)%rotCenter(2) &
                                               + sections(sec)%translation(2)
 
-                            coorVisc(3, np) = sections(sec)%rotMatrix(3, 1)*xx &
-                                              + sections(sec)%rotMatrix(3, 2)*yy &
-                                              + sections(sec)%rotMatrix(3, 3)*zz &
+                            coorVisc(3, np) = sections(sec)%rotMatrix(3, 1) * xx &
+                                              + sections(sec)%rotMatrix(3, 2) * yy &
+                                              + sections(sec)%rotMatrix(3, 3) * zz &
                                               + sections(sec)%rotCenter(3) &
                                               + sections(sec)%translation(3)
                         end do
@@ -1800,8 +1800,8 @@ contains
         ! accurate computation is performed.
 
         do nn = 1, nSections
-            multSections(nn) = sections(nn)%nSlices/mm
-            if (sections(nn)%nSlices > mm*multSections(nn)) &
+            multSections(nn) = sections(nn)%nSlices / mm
+            if (sections(nn)%nSlices > mm * multSections(nn)) &
                 multSections(nn) = multSections(nn) + 1
         end do
 
@@ -1836,10 +1836,10 @@ contains
                     ! Update the number of nodes and quads. Take the
                     ! multiplicity into account.
 
-                    nNodeVisc = nNodeVisc + ii*(ni + 1)*(nj + 1)*(nk + 1)
-                    nquadVisc = nquadVisc + ii*max(ni, 1_intType) &
-                                *max(nj, 1_intType) &
-                                *max(nk, 1_intType)
+                    nNodeVisc = nNodeVisc + ii * (ni + 1) * (nj + 1) * (nk + 1)
+                    nquadVisc = nquadVisc + ii * max(ni, 1_intType) &
+                                * max(nj, 1_intType) &
+                                * max(nk, 1_intType)
                 end if
             end do
         end do
@@ -2009,20 +2009,20 @@ contains
                     do i = 2, il
 
                         ! Compute the coordinates of the cell center
-                        coor(1) = eighth*(x(i - 1, j - 1, k - 1, 1) + x(i, j - 1, k - 1, 1) &
-                                          + x(i - 1, j, k - 1, 1) + x(i, j, k - 1, 1) &
-                                          + x(i - 1, j - 1, k, 1) + x(i, j - 1, k, 1) &
-                                          + x(i - 1, j, k, 1) + x(i, j, k, 1))
+                        coor(1) = eighth * (x(i - 1, j - 1, k - 1, 1) + x(i, j - 1, k - 1, 1) &
+                                            + x(i - 1, j, k - 1, 1) + x(i, j, k - 1, 1) &
+                                            + x(i - 1, j - 1, k, 1) + x(i, j - 1, k, 1) &
+                                            + x(i - 1, j, k, 1) + x(i, j, k, 1))
 
-                        coor(2) = eighth*(x(i - 1, j - 1, k - 1, 2) + x(i, j - 1, k - 1, 2) &
-                                          + x(i - 1, j, k - 1, 2) + x(i, j, k - 1, 2) &
-                                          + x(i - 1, j - 1, k, 2) + x(i, j - 1, k, 2) &
-                                          + x(i - 1, j, k, 2) + x(i, j, k, 2))
+                        coor(2) = eighth * (x(i - 1, j - 1, k - 1, 2) + x(i, j - 1, k - 1, 2) &
+                                            + x(i - 1, j, k - 1, 2) + x(i, j, k - 1, 2) &
+                                            + x(i - 1, j - 1, k, 2) + x(i, j - 1, k, 2) &
+                                            + x(i - 1, j, k, 2) + x(i, j, k, 2))
 
-                        coor(3) = eighth*(x(i - 1, j - 1, k - 1, 3) + x(i, j - 1, k - 1, 3) &
-                                          + x(i - 1, j, k - 1, 3) + x(i, j, k - 1, 3) &
-                                          + x(i - 1, j - 1, k, 3) + x(i, j - 1, k, 3) &
-                                          + x(i - 1, j, k, 3) + x(i, j, k, 3))
+                        coor(3) = eighth * (x(i - 1, j - 1, k - 1, 3) + x(i, j - 1, k - 1, 3) &
+                                            + x(i - 1, j, k - 1, 3) + x(i, j, k - 1, 3) &
+                                            + x(i - 1, j - 1, k, 3) + x(i, j - 1, k, 3) &
+                                            + x(i - 1, j, k, 3) + x(i, j, k, 3))
 
                         if (.not. oversetPresent) then
                             ! No overset present. Simply search our own wall,
@@ -2090,7 +2090,7 @@ contains
 
                                 coor(4) = large
                                 call minDistancetreeSearchSinglePoint(walls(c)%ADT, coor, &
-                                                                      intInfo2, uvw2, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                                                              intInfo2, uvw2, dummy, 0, BB, frontLeaves, frontLeavesNew)
                                 cellID2 = intInfo2(3)
 
                                 if (uvw2(4) < nearWallDist**2) then
@@ -2137,7 +2137,7 @@ contains
 
         ! Now determine all the node indices this processor needs to get.
         mm = 0
-        allocate (indicesToGet(nCellsLocal(level)*4), link(nCellsLocal(level)*4))
+        allocate (indicesToGet(nCellsLocal(level) * 4), link(nCellsLocal(level) * 4))
         do nn = 1, nDom
             call setPointers(nn, level, sps)
             do k = 2, kl
@@ -2153,7 +2153,7 @@ contains
         end do
 
         ! This unique-ifies the indices.
-        call unique(indicesToGet, 4*nCellsLocal(level), nUnique, link)
+        call unique(indicesToGet, 4 * nCellsLocal(level), nUnique, link)
 
         ! we need to update the stored indices to use the ordering of the nodes we will receive.
         mm = 0
@@ -2176,14 +2176,14 @@ contains
         ! expand "indices to get" to include the DOF. Use link for this
         ! temporary array operation.
 
-        allocate (link(nUnique*3))
+        allocate (link(nUnique * 3))
         do i = 1, nUnique
-            link((i - 1)*3 + 1) = indicesToGet(i)*3
-            link((i - 1)*3 + 2) = indicesToGet(i)*3 + 1
-            link((i - 1)*3 + 3) = indicesToGet(i)*3 + 2
+            link((i - 1) * 3 + 1) = indicesToGet(i) * 3
+            link((i - 1) * 3 + 2) = indicesToGet(i) * 3 + 1
+            link((i - 1) * 3 + 3) = indicesToGet(i) * 3 + 2
         end do
 
-        call ISCreateGeneral(adflow_comm_world, nUnique*3, link, PETSC_COPY_VALUES, IS1, ierr)
+        call ISCreateGeneral(adflow_comm_world, nUnique * 3, link, PETSC_COPY_VALUES, IS1, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         deallocate (link)
 
@@ -2191,13 +2191,13 @@ contains
         ! this vector contains all the spectal instances. It is therefore
         ! only allocated on the first call with sps=1
         if (sps == 1) then
-            call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nNodesLocal(level)*nTimeIntervalsSpectral, &
+            call VecCreateMPI(ADFLOW_COMM_WORLD, 3 * nNodesLocal(level) * nTimeIntervalsSpectral, &
                               PETSC_DETERMINE, xVolumeVec(level), ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
 
         ! This is the vector we will scatter the nodes into.
-        call VecCreateMPI(ADFLOW_COMM_WORLD, 3*nUnique, PETSC_DETERMINE, &
+        call VecCreateMPI(ADFLOW_COMM_WORLD, 3 * nUnique, PETSC_DETERMINE, &
                           xSurfVec(level, sps), ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
