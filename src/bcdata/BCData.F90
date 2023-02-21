@@ -1531,7 +1531,7 @@ contains
                             call setBCVarNamesAdiabaticWall
                             call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                         case (NSWallIsothermal)
-                            call setBCVarNamesSupersonicInflow  ! possible bug?
+                            call setBCVarNamesSupersonicInflow
                             call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
                         case (SupersonicInflow)
                             call setBCVarNamesSupersonicInflow
@@ -1740,7 +1740,7 @@ contains
                             call setBCVarNamesAdiabaticWall
                             call errorCheckbcDataNamesIn("NSWallAdiabatic", bcDataNamesIn)
                         case (NSWallIsothermal)
-                            call setBCVarNamesSupersonicInflow  ! possible bug?
+                            call setBCVarNamesSupersonicInflow
                             call errorCheckbcDataNamesIn("NSWallIsothermal", bcDataNamesIn)
                         case (SupersonicInflow)
                             call setBCVarNamesSupersonicInflow
