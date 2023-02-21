@@ -208,10 +208,9 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "options": {
                 "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
                 "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
-                'equationType': 'RANS',
-                'useBlockettes': False,
-                'useRoughSA': True,
-
+                "equationType": "RANS",
+                "useBlockettes": False,
+                "useRoughSA": True,
                 "MGCycle": "2w",
                 "equationType": "RANS",
                 "smoother": "DADI",
@@ -266,11 +265,9 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_rans_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
-            "no_train": True,       # This test should not be able to over-write
-                                    # the training file as it is coming from a different test
+            "no_train": True,  # This test should not be able to over-write
+            # the training file as it is coming from a different test
         },
-
-
     ]
 )
 class TestFunctionals(reg_test_classes.RegTest):

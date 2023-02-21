@@ -214,10 +214,9 @@ test_params = [
         "options": {
             "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
             "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
-            'equationType': 'RANS',
-            'useBlockettes': False,
-            'useRoughSA': True,
-
+            "equationType": "RANS",
+            "useBlockettes": False,
+            "useRoughSA": True,
             "MGCycle": "2w",
             "equationType": "RANS",
             "smoother": "DADI",
@@ -236,14 +235,10 @@ test_params = [
             "NKSwitchTol": 1e-5,
             "NKjacobianlag": 2,
             "L2Convergence": 1e-15,
-
             "adjointL2Convergence": 1e-16,
-
             # to get slightly better complex convergence
             "NKUseEW": False,
             "NKLinearSolveTol": 1e-6,
-
-
         },
         "ref_file": "adjoint_rans_rough_sa.json",
         "aero_prob": ap_tutorial_wing,
@@ -251,7 +246,6 @@ test_params = [
         # "evalFuncs": ["cd"],
         "N_PROCS": 2,
     },
-
 ]
 
 
