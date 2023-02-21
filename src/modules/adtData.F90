@@ -1,4 +1,4 @@
-      module adtData
+module adtData
 !
 !      Module, which defines the derived data types and the arrays to
 !      store multiple ADT's. An array is chosen to store multiple
@@ -7,23 +7,23 @@
 !      is some additional work due to reallocation. However this is
 !      negligible due to the usage of pointers.
 !
-      use constants, only : intType, realType, adtElementType, alwaysRealType
-      implicit none
-      save
+    use constants, only: intType, realType, adtElementType, alwaysRealType
+    implicit none
+    save
 !
 !      Define the functions needed for the sorting of the derived
 !      data types to be private, i.e. they can only be accessed
 !      within this module.
 !
-      public
-      private :: adtBBoxTargetTypeLessEqual
-      private :: adtBBoxTargetTypeLess
-      private :: adtTypeAssign
+    public
+    private :: adtBBoxTargetTypeLessEqual
+    private :: adtBBoxTargetTypeLess
+    private :: adtTypeAssign
 !
 !      Definition of the derived data type store a leaf of an ADT.
 !      The ADT itself is an array of these leaves.
 !
-      type adtLeafType
+    type adtLeafType
 
         ! children(2): Children of the parent. If negative it means that
         !              it is a terminal leaf and the absolute values
@@ -34,41 +34,41 @@
         ! xMax(6):     The maximum coordinates of the leaf.
 
         integer(kind=intType), dimension(2) :: children
-        real(kind=realType),   dimension(6) :: xMin, xMax
+        real(kind=realType), dimension(6) :: xMin, xMax
 
-      end type adtLeafType
+    end type adtLeafType
 !
 !      The definition of adtBBoxTargetType, which stores the data of
 !      a possible bounding box which minimizes the distances to the
 !      given coordinate.
 !
-      type adtBBoxTargetType
+    type adtBBoxTargetType
 
         ! ID:       The id of the bounding box in the list.
         ! posDist2: the possible minimum distance squared to the active
         !           coordinate.
 
         integer(kind=intType) :: ID
-        real(kind=realType)   :: posDist2
+        real(kind=realType) :: posDist2
 
-      end type adtBBoxTargetType
+    end type adtBBoxTargetType
 
-      ! Interfaces for the extension of the operators <= and <.
-      ! These are needed for the sorting of BBoxTargetType. Note
-      ! that the = operator does not need to be defined, because
-      ! BBoxTargetType only contains primitive types.
+    ! Interfaces for the extension of the operators <= and <.
+    ! These are needed for the sorting of BBoxTargetType. Note
+    ! that the = operator does not need to be defined, because
+    ! BBoxTargetType only contains primitive types.
 
-      interface operator(<=)
+    interface operator(<=)
         module procedure adtBBoxTargetTypeLessEqual
-      end interface
+    end interface
 
-      interface operator(<)
+    interface operator(<)
         module procedure adtBBoxTargetTypeLess
-      end interface
+    end interface
 !
 !      Definition of the derived data type to store an ADT.
 !
-      type adtType
+    type adtType
 
         ! comm:   The communicator of this ADT.
         ! nProcs: The number of processors which participate in this
@@ -83,9 +83,9 @@
         ! isActive: Whether or not the ADT is active. If not, this
         !           entry could be used during a reallocation.
 
-        integer           :: adtType
+        integer :: adtType
         character(len=64) :: adtID
-        logical           :: isActive
+        logical :: isActive
 
         ! nNodes:  Number of local nodes in the given grid.
         ! nTria:   Number of local triangles in the given grid.
@@ -101,7 +101,7 @@
         ! coor(3,nNodes): Nodal coordinates of the local grid.
         !                 To save memory this pointer is not
         !                 allocated, but set to the data given.
-        real(kind=realType), dimension(:,:), pointer :: coor
+        real(kind=realType), dimension(:, :), pointer :: coor
 
         ! triaConn(3,nTria):     Local connectivity of the triangles.
         !                        To save memory this pointer is not
@@ -112,12 +112,12 @@
         ! prismsConn(6,nPrisms): Idem for the prisms.
         ! hexaConn(8,nHexa):     Idem for the hexahedra.
 
-        integer(kind=intType), dimension(:,:), pointer :: triaConn
-        integer(kind=intType), dimension(:,:), pointer :: quadsConn
-        integer(kind=intType), dimension(:,:), pointer :: tetraConn
-        integer(kind=intType), dimension(:,:), pointer :: pyraConn
-        integer(kind=intType), dimension(:,:), pointer :: prismsConn
-        integer(kind=intType), dimension(:,:), pointer :: hexaConn
+        integer(kind=intType), dimension(:, :), pointer :: triaConn
+        integer(kind=intType), dimension(:, :), pointer :: quadsConn
+        integer(kind=intType), dimension(:, :), pointer :: tetraConn
+        integer(kind=intType), dimension(:, :), pointer :: pyraConn
+        integer(kind=intType), dimension(:, :), pointer :: prismsConn
+        integer(kind=intType), dimension(:, :), pointer :: hexaConn
 
         ! nRootLeaves:        Number of non-empty root leaves.
         !                     This number is of course less than or
@@ -130,7 +130,7 @@
 
         integer :: nRootLeaves, myEntryInRootProcs
         integer, dimension(:), pointer :: rootLeavesProcs
-        real(kind=realType), dimension(:,:,:), pointer :: rootBBoxes
+        real(kind=realType), dimension(:, :, :), pointer :: rootBBoxes
 
         ! nBBoxes:              Number of bounding boxes stored in
         !                       the ADT.
@@ -144,8 +144,8 @@
         integer(kind=intType) :: nBBoxes
 
         integer(kind=adtElementType), dimension(:), pointer :: elementType
-        integer(kind=intType),     dimension(:), pointer :: elementID
-        real(kind=realType),     dimension(:,:), pointer :: xBBox
+        integer(kind=intType), dimension(:), pointer :: elementID
+        real(kind=realType), dimension(:, :), pointer :: xBBox
 
         ! nLeaves:         Number of present in the ADT. Due to the
         !                  variable splitting the tree is optimally
@@ -155,61 +155,60 @@
         integer(kind=intType) :: nLeaves
         type(adtLeafType), dimension(:), pointer :: ADTree
 
-      end type adtType
+    end type adtType
 
-      ! Interface for the extension of the operator =.
+    ! Interface for the extension of the operator =.
 
-      interface assignment(=)
+    interface assignment(=)
         module procedure adtTypeAssign
-      end interface
+    end interface
 !
 !                Variables stored in this module.
 !
-      ! ADTs(:): The array to store the different ADT's.
+    ! ADTs(:): The array to store the different ADT's.
 
-      type(adtType), dimension(:), allocatable, target :: ADTs
+    type(adtType), dimension(:), allocatable, target :: ADTs
 
-      ! nProcRecv:      Number of processors from which I receive
-      !                 coordinates that must be searched in my ADT.
-      ! nCoorMax:       Maximum number of coordinates that can be
-      !                 searched during an interpolation round.
-      ! nRounds:        Number of rounds in the outer loop of the search
-      !                 algorithm.
-      ! nLocalInterpol: Number of local coordinates that must be
-      !                 searched in the locally stored tree.
+    ! nProcRecv:      Number of processors from which I receive
+    !                 coordinates that must be searched in my ADT.
+    ! nCoorMax:       Maximum number of coordinates that can be
+    !                 searched during an interpolation round.
+    ! nRounds:        Number of rounds in the outer loop of the search
+    !                 algorithm.
+    ! nLocalInterpol: Number of local coordinates that must be
+    !                 searched in the locally stored tree.
 
-      integer :: nProcRecv
+    integer :: nProcRecv
 
-      integer(kind=intType) :: nCoorMax
-      integer(kind=intType) :: nRounds
-      integer(kind=intType) :: nLocalInterpol
+    integer(kind=intType) :: nCoorMax
+    integer(kind=intType) :: nRounds
+    integer(kind=intType) :: nLocalInterpol
 
+    ! procRecv:         Processor ID's from which I will receive
+    !                   coordinates.
+    ! nCoorProcRecv:    Number of coordinates I must receive from the
+    !                   processors which send coordinates to me.
+    ! nCoorPerRootLeaf: Number of coordinates, which may be searched
+    !                   in each of the local ADT's. The array is in
+    !                   cumulative storage format.
+    ! mCoorPerRootLeaf: Idem, but its contents changes during the
+    !                   iterative algorithm.
+    ! coorPerRootLeaf:  The ID's of the corresponding coordinates.
 
-      ! procRecv:         Processor ID's from which I will receive
-      !                   coordinates.
-      ! nCoorProcRecv:    Number of coordinates I must receive from the
-      !                   processors which send coordinates to me.
-      ! nCoorPerRootLeaf: Number of coordinates, which may be searched
-      !                   in each of the local ADT's. The array is in
-      !                   cumulative storage format.
-      ! mCoorPerRootLeaf: Idem, but its contents changes during the
-      !                   iterative algorithm.
-      ! coorPerRootLeaf:  The ID's of the corresponding coordinates.
+    integer, dimension(:), allocatable :: procRecv
 
-      integer, dimension(:), allocatable :: procRecv
+    integer(kind=intType), dimension(:), allocatable :: nCoorProcRecv
+    integer(kind=intType), dimension(:), allocatable :: nCoorPerRootLeaf
+    integer(kind=intType), dimension(:), allocatable :: mCoorPerRootLeaf
+    integer(kind=intType), dimension(:), allocatable :: coorPerRootLeaf
 
-      integer(kind=intType), dimension(:), allocatable :: nCoorProcRecv
-      integer(kind=intType), dimension(:), allocatable :: nCoorPerRootLeaf
-      integer(kind=intType), dimension(:), allocatable :: mCoorPerRootLeaf
-      integer(kind=intType), dimension(:), allocatable :: coorPerRootLeaf
+    !=================================================================
 
-      !=================================================================
+contains
 
-      contains
+    !===============================================================
 
-        !===============================================================
-
-        logical function adtBBoxTargetTypeLessEqual(g1,g2)
+    logical function adtBBoxTargetTypeLessEqual(g1, g2)
 !
 !        This function returns .true. if g1 <= g2. The comparison is
 !        firstly based on the possible minimum distance such that the
@@ -228,33 +227,33 @@
 
         ! Compare the possible minimum distances.
 
-        if(g1%posDist2 < g2%posDist2) then
-          adtBBoxTargetTypeLessEqual = .true.
-          return
-        else if(g1%posDist2 > g2%posDist2) then
-          adtBBoxTargetTypeLessEqual = .false.
-          return
-        endif
+        if (g1%posDist2 < g2%posDist2) then
+            adtBBoxTargetTypeLessEqual = .true.
+            return
+        else if (g1%posDist2 > g2%posDist2) then
+            adtBBoxTargetTypeLessEqual = .false.
+            return
+        end if
 
         ! Compare the bounding box ID's.
 
-        if(g1%ID < g2%ID) then
-          adtBBoxTargetTypeLessEqual = .true.
-          return
-        else if(g1%ID > g2%ID) then
-          adtBBoxTargetTypeLessEqual = .false.
-          return
-        endif
+        if (g1%ID < g2%ID) then
+            adtBBoxTargetTypeLessEqual = .true.
+            return
+        else if (g1%ID > g2%ID) then
+            adtBBoxTargetTypeLessEqual = .false.
+            return
+        end if
 
         ! g1 and g2 are identical. Return .true.
 
         adtBBoxTargetTypeLessEqual = .true.
 
-        end function adtBBoxTargetTypeLessEqual
+    end function adtBBoxTargetTypeLessEqual
 
-        !===============================================================
+    !===============================================================
 
-        logical function adtBBoxTargetTypeLess(g1,g2)
+    logical function adtBBoxTargetTypeLess(g1, g2)
 !
 !        This function returns .true. if g1 < g2. The comparison is
 !        firstly based on the possible minimum distance such that the
@@ -273,33 +272,33 @@
 
         ! Compare the possible minimum distances.
 
-        if(g1%posDist2 < g2%posDist2) then
-          adtBBoxTargetTypeLess = .true.
-          return
-        else if(g1%posDist2 > g2%posDist2) then
-          adtBBoxTargetTypeLess = .false.
-          return
-        endif
+        if (g1%posDist2 < g2%posDist2) then
+            adtBBoxTargetTypeLess = .true.
+            return
+        else if (g1%posDist2 > g2%posDist2) then
+            adtBBoxTargetTypeLess = .false.
+            return
+        end if
 
         ! Compare the bounding box ID's.
 
-        if(g1%ID < g2%ID) then
-          adtBBoxTargetTypeLess = .true.
-          return
-        else if(g1%ID > g2%ID) then
-          adtBBoxTargetTypeLess = .false.
-          return
-        endif
+        if (g1%ID < g2%ID) then
+            adtBBoxTargetTypeLess = .true.
+            return
+        else if (g1%ID > g2%ID) then
+            adtBBoxTargetTypeLess = .false.
+            return
+        end if
 
         ! g1 and g2 are identical. Return .false.
 
         adtBBoxTargetTypeLess = .false.
 
-        end function adtBBoxTargetTypeLess
+    end function adtBBoxTargetTypeLess
 
-        !===============================================================
+    !===============================================================
 
-        subroutine adtTypeAssign(g1, g2)
+    subroutine adtTypeAssign(g1, g2)
 !
 !        This subroutine defines the generic assignment operator for
 !        the derived datatype adtType. The contents of g1 is copied
@@ -316,45 +315,45 @@
 !
 !       Subroutine arguments.
 !
-        type(adtType), intent(in)  :: g2
+        type(adtType), intent(in) :: g2
         type(adtType), intent(out) :: g1
 
-        g1%comm     = g2%comm
-        g1%nProcs   = g2%nProcs
-        g1%myID     = g2%myID
-        g1%adtType  = g2%adtType
-        g1%adtID    = g2%adtID
+        g1%comm = g2%comm
+        g1%nProcs = g2%nProcs
+        g1%myID = g2%myID
+        g1%adtType = g2%adtType
+        g1%adtID = g2%adtID
         g1%isActive = g2%isActive
 
-        g1%nNodes  = g2%nNodes
-        g1%nTria   = g2%nTria
-        g1%nQuads  = g2%nQuads
-        g1%nTetra  = g2%nTetra
-        g1%nPyra   = g2%nPyra
+        g1%nNodes = g2%nNodes
+        g1%nTria = g2%nTria
+        g1%nQuads = g2%nQuads
+        g1%nTetra = g2%nTetra
+        g1%nPyra = g2%nPyra
         g1%nPrisms = g2%nPrisms
-        g1%nHexa   = g2%nHexa
+        g1%nHexa = g2%nHexa
 
-        g1%coor       => g2%coor
-        g1%triaConn   => g2%triaConn
-        g1%quadsConn  => g2%quadsConn
-        g1%tetraConn  => g2%tetraConn
-        g1%pyraConn   => g2%pyraConn
+        g1%coor => g2%coor
+        g1%triaConn => g2%triaConn
+        g1%quadsConn => g2%quadsConn
+        g1%tetraConn => g2%tetraConn
+        g1%pyraConn => g2%pyraConn
         g1%prismsConn => g2%prismsConn
-        g1%hexaConn   => g2%hexaConn
+        g1%hexaConn => g2%hexaConn
 
-        g1%nRootLeaves        = g2%nRootLeaves
+        g1%nRootLeaves = g2%nRootLeaves
         g1%myEntryInRootProcs = g2%myEntryInRootProcs
-        g1%rootLeavesProcs   => g2%rootLeavesProcs
-        g1%rootBBoxes        => g2%rootBBoxes
+        g1%rootLeavesProcs => g2%rootLeavesProcs
+        g1%rootBBoxes => g2%rootBBoxes
 
-        g1%nBBoxes     =  g2%nBBoxes
+        g1%nBBoxes = g2%nBBoxes
         g1%elementType => g2%elementType
-        g1%elementID   => g2%elementID
-        g1%xBBox       => g2%xBBox
+        g1%elementID => g2%elementID
+        g1%xBBox => g2%xBBox
 
         g1%nLeaves = g2%nLeaves
         g1%ADTree => g2%ADTree
 
-        end subroutine adtTypeAssign
+    end subroutine adtTypeAssign
 
-      end module adtData
+end module adtData

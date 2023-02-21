@@ -29,15 +29,12 @@ class TestSolve(reg_test_classes.RegTest):
     ref_file = "solve_euler_time_spectral_naca64A010.json"
 
     def setUp(self):
-
         # Introduce a transfer class for displacement transfer from struct to aero.
         class Transfer:
-
             # simplified transfer class
             # converting csd displacement to cfd surface nodes
 
             def __init__(self, alpha, xRot, aeroSolver):
-
                 # takes in displacement history
 
                 self.alpha = alpha
@@ -48,13 +45,11 @@ class TestSolve(reg_test_classes.RegTest):
                 self.xRot = xRot
 
             def getUndeformedSurfaceNodes(self):
-
                 self.MDGroup = self.aeroSolver.allWallsGroup
 
                 self.cfdPts0 = self.aeroSolver.getSurfaceCoordinates(self.MDGroup, includeZipper=False)
 
             def setDisplacements(self):
-
                 xRot = self.xRot
                 ntimeintervalsspectral = self.ntimeintervalsspectral
                 alpha = self.alpha  # notice a shallow copy introduced here; dont change the underlying obj!
@@ -65,7 +60,6 @@ class TestSolve(reg_test_classes.RegTest):
                 self.cfdPts = []
 
                 for sps in range(ntimeintervalsspectral):
-
                     cfdPoints_deformed = numpy.zeros((N_pts, 3))
 
                     ptch_loc = alpha[sps]
@@ -74,7 +68,6 @@ class TestSolve(reg_test_classes.RegTest):
                     ss = numpy.sin(ptch_loc)
 
                     for j in range(N_pts):
-
                         cfdPoints_deformed[j, 0] = cc * (cfdPoints_init[j, 0] - xRot) + ss * cfdPoints_init[j, 1] + xRot
                         cfdPoints_deformed[j, 1] = -ss * (cfdPoints_init[j, 0] - xRot) + cc * cfdPoints_init[j, 1]
                         cfdPoints_deformed[j, 2] = cfdPoints_init[j, 2]
@@ -82,11 +75,9 @@ class TestSolve(reg_test_classes.RegTest):
                     self.cfdPts.append(cfdPoints_deformed)
 
             def setVolumeMesh(self):
-
                 ntimeintervalsspectral = self.ntimeintervalsspectral
 
                 for sps in range(ntimeintervalsspectral):
-
                     self.aeroSolver.mesh.setSurfaceCoordinates(self.cfdPts[sps])
                     self.aeroSolver.mesh.warpMesh()
                     m = self.aeroSolver.mesh.getSolverGrid()
@@ -161,7 +152,6 @@ class TestSolve(reg_test_classes.RegTest):
         TSTransfer.setVolumeMesh()
 
     def test_solve(self):
-
         # do the solve
         self.CFDSolver(self.ap)
 
