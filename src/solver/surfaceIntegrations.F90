@@ -7,7 +7,10 @@ contains
     use constants
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use flowVarRefState, only : pRef, rhoRef, tRef, LRef, gammaInf, pInf, uRef, uInf
-    use inputPhysics, only : liftDirection, dragDirection, surfaceRef, machCoef, lengthRef, alpha, beta, liftIndex
+    use inputPhysics, only : liftDirection, dragDirection, surfaceRef, &
+    machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
+    cpmin_rho
+    use inputCostFunctions, only : computeCavitation
     use inputTSStabDeriv, only : TSstability
     use utils, only : computeTSDerivatives
     use flowUtils, only : getDirVector
@@ -20,10 +23,10 @@ contains
     ! Working
     real(kind=realType) :: fact, factMoment, ovrNTS
     real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceP, forceV, forceM, &
-         moment, cForce, cForceP, cForceV, cForceM, cMoment
+         moment, cForce, cForceP, cForceV, cForceM, cMoment, coFx, coFy, coFz
     real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
     real(kind=realType) ::  mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
-                            mAvgVx, mAvgVy, mAvgVz, gArea
+                            mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi
 
     real(kind=realType) ::  vdotn, mag, u, v, w
     integer(kind=intType) :: sps
@@ -39,6 +42,10 @@ contains
     forceP = globalvals(iFp:iFp+2, :)
     forceV = globalvals(iFv:iFv+2, :)
     forceM = globalvals(iFlowFm:iFlowFm+2, :)
+
+    coFx = globalvals(iCoForceX:iCoForceX+2, :)
+    coFy = globalvals(iCoForceY:iCoForceY+2, :)
+    coFz = globalvals(iCoForceZ:iCoForceZ+2, :)
 
     Moment = globalvals(iMp:iMp+2, :) + globalvals(iMv:iMv+2, :) + globalvals(iFlowMm:iFlowMm+2, :)
 
@@ -95,6 +102,44 @@ contains
 
        ! ------------
 
+       ! center of pressure (these are actually center of all forces)
+       ! protect the divisions against zero, and divide the weighed sum by the force magnitude
+       ! for this time spectral instance before we add it to the sum
+       if (force(1, sps) /= zero) then
+          coFx(:, sps) = coFx(:, sps) / force(1, sps)
+       else
+          coFx(:, sps) = zero
+       end if
+
+       if (force(2, sps) /= zero) then
+          coFy(:, sps) = coFy(:, sps) / force(2, sps)
+       else
+          coFy(:, sps) = zero
+       end if
+
+       if (force(3, sps) /= zero) then
+          coFz(:, sps) = coFz(:, sps) / force(3, sps)
+       else
+          coFz(:, sps) = zero
+       end if
+
+       ! Fx
+       funcValues(costFuncCOForceXX) = funcValues(costFuncCOForceXX) + ovrNTS*coFx(1, sps)
+       funcValues(costFuncCOForceXY) = funcValues(costFuncCOForceXY) + ovrNTS*coFx(2, sps)
+       funcValues(costFuncCOForceXZ) = funcValues(costFuncCOForceXZ) + ovrNTS*coFx(3, sps)
+
+       ! Fy
+       funcValues(costFuncCOForceYX) = funcValues(costFuncCOForceYX) + ovrNTS*coFy(1, sps)
+       funcValues(costFuncCOForceYY) = funcValues(costFuncCOForceYY) + ovrNTS*coFy(2, sps)
+       funcValues(costFuncCOForceYZ) = funcValues(costFuncCOForceYZ) + ovrNTS*coFy(3, sps)
+
+       ! Fz
+       funcValues(costFuncCOForceZX) = funcValues(costFuncCOForceZX) + ovrNTS*coFz(1, sps)
+       funcValues(costFuncCOForceZY) = funcValues(costFuncCOForceZY) + ovrNTS*coFz(2, sps)
+       funcValues(costFuncCOForceZZ) = funcValues(costFuncCOForceZZ) + ovrNTS*coFz(3, sps)
+
+       ! ------------
+
        funcValues(costFuncMomX) = funcValues(costFuncMomX) + ovrNTS*moment(1, sps)
        funcValues(costFuncMomY) = funcValues(costFuncMomY) + ovrNTS*moment(2, sps)
        funcValues(costFuncMomZ) = funcValues(costFuncMomZ) + ovrNTS*moment(3, sps)
@@ -105,6 +150,15 @@ contains
 
        funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS*globalVals(iSepSensor, sps)
        funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS*globalVals(iCavitation, sps)
+       ! final part of the KS computation
+       if (computeCavitation) then
+          ! only calculate the log part if we are actually computing for cavitation.
+          ! If we are not computing cavitation, the iCpMin in globalVals will be zero,
+          ! which doesn't play well with log. we just want to return zero here.
+          funcValues(costfunccpmin) = funcValues(costfunccpmin) + ovrNTS * &
+               (cpmin_family(sps) - log(globalVals(iCpMin, sps)) / cpmin_rho)
+       endif
+
        funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS*globalVals(iAxisMoment, sps)
        funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS*globalVals(iSepAvg  , sps)
        funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS*globalVals(iSepAvg+1, sps)
@@ -128,6 +182,8 @@ contains
           mAvgVy   = globalVals(iMassVy, sps)/mFlow
           mAvgVz   = globalVals(iMassVz, sps)/mFlow
 
+          mAvgVi = (globalVals(iMassVi, sps) / mFlow)
+
           mag = sqrt(globalVals(iMassnx, sps)**2 + &
                     globalVals(iMassny, sps)**2 + &
                     globalVals(iMassnz, sps)**2)
@@ -142,6 +198,7 @@ contains
           mAvgVx   = zero
           mAvgVy   = zero
           mAvgVz   = zero
+          mAvgVi = zero
 
        end if
 
@@ -163,6 +220,7 @@ contains
        funcValues(costfuncmavgvx)    = funcValues(costfuncmavgvx) + ovrNTS*mAvgVx
        funcValues(costfuncmavgvy)    = funcValues(costfuncmavgvy) + ovrNTS*mAvgVy
        funcValues(costfuncmavgvz)    = funcValues(costfuncmavgvz) + ovrNTS*mAvgVz
+       funcValues(costfuncmavgvi)    = funcValues(costfuncmavgvi) + ovrNTS*mAvgVi
        ! Bending moment calc - also broken.
        ! call computeRootBendingMoment(cForce, cMoment, liftIndex, bendingMoment)
        ! funcValues(costFuncBendingCoef) = funcValues(costFuncBendingCoef) + ovrNTS*bendingMoment
@@ -256,7 +314,6 @@ contains
          funcValues(costFuncForceYCoefMomentum)*dragDirection(2) + &
          funcValues(costFuncForceZCoefMomentum)*dragDirection(3)
 
-
     ! -------------------- Time Spectral Objectives ------------------
 
     if (TSSTability) then
@@ -311,7 +368,8 @@ contains
     use blockPointers
     use flowVarRefState
     use inputCostFunctions
-    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, equations, momentAxis, cavitationnumber
+    use inputPhysics, only : MachCoef, pointRef, velDirFreeStream, &
+          equations, momentAxis, cpmin_family, cpmin_rho, cavitationnumber
     use BCPointers
     implicit none
 
@@ -321,13 +379,14 @@ contains
 
     ! Local variables.
     real(kind=realType), dimension(3)  :: Fp, Fv, Mp, Mv
-    real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation
+    real(kind=realType), dimension(3)  :: COFSumFx, COFSumFy, COFSumFz
+    real(kind=realType)  :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
     integer(kind=intType) :: i, j, ii, blk
 
     real(kind=realType) :: pm1, fx, fy, fz, fn
-    real(kind=realType) :: xc, yc, zc, qf(3), r(3), n(3), L
+    real(kind=realType) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3), L
     real(kind=realType) :: fact, rho, mul, yplus, dwall
-    real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal
+    real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal, ks_exponent
     real(kind=realType) :: tauXx, tauYy, tauZz
     real(kind=realType) :: tauXy, tauXz, tauYz
 
@@ -363,9 +422,11 @@ contains
 
     Fp = zero; Fv = zero;
     Mp = zero; Mv = zero;
+    COFSumFx = zero; COFSumFy = zero; COFSumFz = zero
     yplusMax = zero
     sepSensor = zero
     Cavitation = zero
+    cpmin_ks_sum = zero
     sepSensorAvg = zero
     Mpaxis = zero; Mvaxis = zero;
     CpError2 = zero;
@@ -423,6 +484,12 @@ contains
        fy = pm1*ssi(i,j,2)
        fz = pm1*ssi(i,j,3)
 
+       ! Note from AY: Technically, we can just compute the moments using the center of force
+       ! terms. However, the moment computations coded here distinguish pressure,
+       ! viscous, and momentum contributions to moment. Even though these individual
+       ! contributions are not exposed to python, I still wanted to keep how it's done in the
+       ! code in case its useful in the future. This is also true for the face integrations
+
        ! Update the inviscid force and moment coefficients. Iblank as we sum
        Fp(1) = Fp(1) + fx*blk
        Fp(2) = Fp(2) + fy*blk
@@ -435,6 +502,32 @@ contains
        Mp(1) = Mp(1) + mx*blk
        Mp(2) = Mp(2) + my*blk
        Mp(3) = Mp(3) + mz*blk
+
+       ! the force integral for the center of pressure computation.
+       ! We need the cell centers wrt origin
+       xco = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+            +         xx(i,j+1,1) + xx(i+1,j+1,1))
+       yco = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+            +         xx(i,j+1,2) + xx(i+1,j+1,2))
+       zco = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+            +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+       ! accumulate in the sums. each force component is tracked separately
+
+       ! Force-X
+       COFSumFx(1) = COFSumFx(1) + xco * fx * blk
+       COFSumFx(2) = COFSumFx(2) + yco * fx * blk
+       COFSumFx(3) = COFSumFx(3) + zco * fx * blk
+
+       ! Force-Y
+       COFSumFy(1) = COFSumFy(1) + xco * fy * blk
+       COFSumFy(2) = COFSumFy(2) + yco * fy * blk
+       COFSumFy(3) = COFSumFy(3) + zco * fy * blk
+
+       ! Force-Z
+       COFSumFz(1) = COFSumFz(1) + xco * fz * blk
+       COFSumFz(2) = COFSumFz(2) + yco * fz * blk
+       COFSumFz(3) = COFSumFz(3) + zco * fz * blk
 
        ! Compute the r and n vectores for the moment around an
        ! axis computation where r is the distance from the
@@ -489,25 +582,23 @@ contains
        sepSensor = sepSensor + sensor
 
        ! Also accumulate into the sepSensorAvg
-       xc = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
-            +         xx(i,j+1,1) + xx(i+1,j+1,1))
-       yc = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
-            +         xx(i,j+1,2) + xx(i+1,j+1,2))
-       zc = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
-            +         xx(i,j+1,3) + xx(i+1,j+1,3))
-
-       sepSensorAvg(1) = sepSensorAvg(1)  + sensor * xc
-       sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yc
-       sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zc
+       ! x-y-zco are computed above for center of force computations
+       sepSensorAvg(1) = sepSensorAvg(1)  + sensor * xco
+       sepSensorAvg(2) = sepSensorAvg(2)  + sensor * yco
+       sepSensorAvg(3) = sepSensorAvg(3)  + sensor * zco
 
        if (computeCavitation) then
           plocal = pp2(i,j)
           tmp = two/(gammaInf*MachCoef*MachCoef)
           Cp = tmp*(plocal-pinf)
           Sensor1 = -Cp - cavitationnumber
-          Sensor1 = one/(one+exp(-2*10*Sensor1))
+          Sensor1 = (Sensor1**cavExponent)/(one+exp(2*cavSensorSharpness*(-Sensor1+cavSensorOffset)))
           Sensor1 = Sensor1 * cellArea * blk
           Cavitation = Cavitation + Sensor1
+
+          ! also do the ks-based cpmin computation
+          ks_exponent = exp(cpmin_rho * (-Cp + cpmin_family(spectralSol)))
+          cpmin_ks_sum = cpmin_ks_sum + ks_exponent * blk
        end if
     enddo
 
@@ -577,6 +668,32 @@ contains
           Mv(1) = Mv(1) + mx * blk
           Mv(2) = Mv(2) + my * blk
           Mv(3) = Mv(3) + mz * blk
+
+          ! the force integral for the center of pressure computation.
+          ! We need the cell centers wrt origin
+          xco = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+               +         xx(i,j+1,1) + xx(i+1,j+1,1))
+          yco = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+               +         xx(i,j+1,2) + xx(i+1,j+1,2))
+          zco = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+               +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+          ! accumulate in the sums. each force component is tracked separately
+
+          ! Force-X
+          COFSumFx(1) = COFSumFx(1) + xco * fx * blk
+          COFSumFx(2) = COFSumFx(2) + yco * fx * blk
+          COFSumFx(3) = COFSumFx(3) + zco * fx * blk
+
+          ! Force-Y
+          COFSumFy(1) = COFSumFy(1) + xco * fy * blk
+          COFSumFy(2) = COFSumFy(2) + yco * fy * blk
+          COFSumFy(3) = COFSumFy(3) + zco * fy * blk
+
+          ! Force-Z
+          COFSumFz(1) = COFSumFz(1) + xco * fz * blk
+          COFSumFz(2) = COFSumFz(2) + yco * fz * blk
+          COFSumFz(3) = COFSumFz(3) + zco * fz * blk
 
           ! Compute the r and n vectors for the moment around an
           ! axis computation where r is the distance from the
@@ -656,8 +773,12 @@ contains
     localValues(iFv:iFv+2) = localValues(iFv:iFv+2) + Fv
     localValues(iMp:iMp+2) = localValues(iMp:iMp+2) + Mp
     localValues(iMv:iMv+2) = localValues(iMv:iMv+2) + Mv
+    localValues(iCoForceX:iCoForceX+2) = localValues(iCoForceX:iCoForceX+2) + COFSumFx
+    localValues(iCoForceY:iCoForceY+2) = localValues(iCoForceY:iCoForceY+2) + COFSumFy
+    localValues(iCoForceZ:iCoForceZ+2) = localValues(iCoForceZ:iCoForceZ+2) + COFSumFz
     localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
     localValues(iCavitation) = localValues(iCavitation) + cavitation
+    localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
     localValues(iSepAvg:iSepAvg+2) = localValues(iSepAvg:iSepAvg+2) + sepSensorAvg
     localValues(iAxisMoment) = localValues(iAxisMoment) + Mpaxis + Mvaxis
     localValues(iCpError2) = localValues(iCpError2) + CpError2
@@ -671,8 +792,8 @@ contains
 
     use constants
     use blockPointers, only : BCType, BCFaceID, BCData, addGridVelocities
-    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf, rhoInf
-    use inputPhysics, only : pointRef, flowType
+    use flowVarRefState, only : pRef, pInf, rhoRef, timeRef, LRef, TRef, RGas, uRef, uInf, rhoInf, gammaInf
+    use inputPhysics, only : pointRef, flowType, rGasDim
     use flowUtils, only : computePtot, computeTtot
     use BCPointers, only : ssi, sFace, ww1, ww2, pp1, pp2, xx, gamma1, gamma2
     use utils, only : mynorm2
@@ -685,15 +806,17 @@ contains
 
     ! Local variables
     real(kind=realType) ::  massFlowRate, mass_Ptot, mass_Ttot, mass_Ps, mass_MN, mass_a, mass_rho, &
-                            mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz
+                            mass_Vx, mass_Vy, mass_Vz, mass_nx, mass_ny, mass_nz, mass_Vi
     real(kind=realType) ::  area_Ptot, area_Ps
+    real(kind=realType) ::  govgm1, gm1ovg, viConst, viLocal, pratio
     real(kind=realType) ::  mReDim
     integer(kind=intType) :: i, j, ii, blk
-    real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, yc, zc, mx, my, mz
+    real(kind=realType) :: internalFlowFact, inFlowFact, fact, xc, xco, yc, yco, zc, zco, mx, my, mz
     real(kind=realType) :: sF, vmag, vnm, vnmFreeStreamRef, vxm, vym, vzm, Fx, Fy, Fz, u, v, w
     real(kind=realType) :: pm, Ptot, Ttot, rhom, gammam, am
     real(kind=realType) :: area, cellArea, overCellArea
     real(kind=realType), dimension(3) :: Fp, Mp, FMom, MMom, refPoint, sFaceCoordRef
+    real(kind=realType), dimension(3)  :: COFSumFx, COFSumFy, COFSumFz
     real(kind=realType) :: MNm, massFlowRateLocal
 
     refPoint(1) = LRef*pointRef(1)
@@ -739,6 +862,10 @@ contains
     FMom = zero
     MMom = zero
 
+    COFSumFx = zero
+    COFSumFy = zero
+    COFSumFz = zero
+
     massFlowRate = zero
     area = zero
     mass_Ptot = zero
@@ -754,6 +881,7 @@ contains
     mass_nx = zero
     mass_ny = zero
     mass_nz = zero
+    mass_vi = zero
 
     area_Ptot = zero
     area_Ps   = zero
@@ -793,8 +921,6 @@ contains
 
       massFlowRateLocal = rhom*vnm*blk*fact*mReDim
 
-
-
       massFlowRate = massFlowRate + massFlowRateLocal
 
       ! re-dimentionalize quantities
@@ -818,6 +944,20 @@ contains
       mass_Vx = mass_Vx + (vxm*uRef - sFaceCoordRef(1)) *massFlowRateLocal
       mass_Vy = mass_Vy + (vym*uRef - sFaceCoordRef(2)) *massFlowRateLocal
       mass_Vz = mass_Vz + (vzm*uRef - sFaceCoordRef(3)) *massFlowRateLocal
+
+      govgm1 = gammaInf/(gammaInf-one)
+      gm1ovg = one/govgm1
+      viConst = two * govgm1 * rGasDim
+      ! the prefs in psinf / ptot cancel out so we can just take the ratio
+      ! we need to clip the ratio to stay under one. right next to the wall,
+      ! the pTot can go below the static free stream pressure. To prevent
+      ! nans from the sqrt, we just clip this. This does not affect the computation
+      ! because when pTot is this small, the velocities are also small, and the
+      ! mdot is almost zero, so the cells in this area don't contribute much
+      ! to the mass weighed sum.
+      pratio = min(one, one / pTot)
+      viLocal = sqrt(viConst * (one - (pratio) ** gm1ovg) * Ttot * Tref)
+      mass_vi = mass_vi + viLocal * massFlowRateLocal
 
       mass_nx = mass_nx + ssi(i,j,1)*overCellArea * massFlowRateLocal
       mass_ny = mass_ny + ssi(i,j,2)*overCellArea * massFlowRateLocal
@@ -852,6 +992,34 @@ contains
       Mp(2) = Mp(2) + my
       Mp(3) = Mp(3) + mz
 
+      ! the force integral for the center of pressure computation.
+      ! We need the cell centers wrt origin
+      xco = fourth*(xx(i,j,  1) + xx(i+1,j,  1) &
+           +         xx(i,j+1,1) + xx(i+1,j+1,1))
+      yco = fourth*(xx(i,j,  2) + xx(i+1,j,  2) &
+           +         xx(i,j+1,2) + xx(i+1,j+1,2))
+      zco = fourth*(xx(i,j,  3) + xx(i+1,j,  3) &
+           +         xx(i,j+1,3) + xx(i+1,j+1,3))
+
+      ! Center of force computations. Here we accumulate in the sums.
+      ! accumulate in the sums. each force component is tracked separately
+      ! blanking is included in the mdot multiplier for the force.
+
+      ! Force-X
+      COFSumFx(1) = COFSumFx(1) + xco * fx
+      COFSumFx(2) = COFSumFx(2) + yco * fx
+      COFSumFx(3) = COFSumFx(3) + zco * fx
+
+      ! Force-Y
+      COFSumFy(1) = COFSumFy(1) + xco * fy
+      COFSumFy(2) = COFSumFy(2) + yco * fy
+      COFSumFy(3) = COFSumFy(3) + zco * fy
+
+      ! Force-Z
+      COFSumFz(1) = COFSumFz(1) + xco * fz
+      COFSumFz(2) = COFSumFz(2) + yco * fz
+      COFSumFz(3) = COFSumFz(3) + zco * fz
+
       ! Momentum forces are a little tricky.  We negate because
       ! have to re-apply fact to massFlowRateLocal to undoo it, because
       ! we need the signed behavior of ssi to get the momentum forces correct.
@@ -875,6 +1043,25 @@ contains
       MMom(2) = MMom(2) + my
       MMom(3) = MMom(3) + mz
 
+      ! Center of force computations. Here we accumulate in the sums.
+      ! each force component is tracked separately
+      ! blanking is included in the mdot multiplier for the force.
+
+      ! Force-X
+      COFSumFx(1) = COFSumFx(1) + xco * fx
+      COFSumFx(2) = COFSumFx(2) + yco * fx
+      COFSumFx(3) = COFSumFx(3) + zco * fx
+
+      ! Force-Y
+      COFSumFy(1) = COFSumFy(1) + xco * fy
+      COFSumFy(2) = COFSumFy(2) + yco * fy
+      COFSumFy(3) = COFSumFy(3) + zco * fy
+
+      ! Force-Z
+      COFSumFz(1) = COFSumFz(1) + xco * fz
+      COFSumFz(2) = COFSumFz(2) + yco * fz
+      COFSumFz(3) = COFSumFz(3) + zco * fz
+
     enddo
 
     ! Increment the local values array with what we computed here
@@ -891,6 +1078,10 @@ contains
     localValues(iFlowMp:iFlowMp+2)   = localValues(iFlowMp:iFlowMp+2) + Mp
     localValues(iFlowMm:iFlowMm+2)   = localValues(iFlowMm:iFlowMm+2) + MMom
 
+    localValues(iCoForceX:iCoForceX+2) = localValues(iCoForceX:iCoForceX+2) + COFSumFx
+    localValues(iCoForceY:iCoForceY+2) = localValues(iCoForceY:iCoForceY+2) + COFSumFy
+    localValues(iCoForceZ:iCoForceZ+2) = localValues(iCoForceZ:iCoForceZ+2) + COFSumFz
+
     localValues(iAreaPTot) = localValues(iAreaPTot) + area_pTot
     localValues(iAreaPs) = localValues(iAreaPs) + area_Ps
 
@@ -900,6 +1091,8 @@ contains
     localValues(iMassnx)   = localValues(iMassnx)   + mass_nx
     localValues(iMassny)   = localValues(iMassny)   + mass_ny
     localValues(iMassnz)   = localValues(iMassnz)   + mass_nz
+
+    localValues(iMassVi) = localValues(iMassVi) + mass_Vi
 
   end subroutine flowIntegrationFace
 
@@ -918,9 +1111,9 @@ contains
     use inputTimeSpectral , only : nTimeIntervalsSpectral
     implicit none
     ! Input/output Variables
+    integer(kind=intType) :: nGroups, nCost, nFamMax
     integer(kind=intType), dimension(nGroups, nFamMax) :: famLists
     real(kind=realType), dimension(nCost, nGroups), intent(out)  :: funcValues
-    integer(kind=intType) :: nGroups, nCost, nFamMax
 
     ! Local variable
 
@@ -941,6 +1134,7 @@ contains
     use zipperIntegrations, only :integrateZippers
     use userSurfaceIntegrations, only : integrateUserSurfaces
     use actuatorRegion, only : integrateActuatorRegions
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -959,8 +1153,13 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
-       funcValues = zero
+       funcValues(:, iGroup) = zero
        localVal = zero
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCpMinFamily(famList)
+       end if
 
        do sps=1, nTimeIntervalsSpectral
           ! Integrate the normal block surfaces.
@@ -1053,6 +1252,82 @@ contains
     end do bocos
 
   end subroutine integrateSurfaces
+
+  subroutine computeCpMinFamily(famList)
+
+     use constants
+     use inputTimeSpectral, only : nTimeIntervalsSpectral
+     use communication, only : ADflow_comm_world, myID
+     use blockPointers, only : nDom
+     use inputPhysics, only : cpmin_family, MachCoef
+     use blockPointers
+     use flowVarRefState
+     use BCPointers
+     use utils, only : setPointers, setBCPointers, isWallType, EChk
+     use sorting, only : famInList
+
+    implicit none
+
+     integer(kind=intType), dimension(:), intent(in) :: famList
+     integer(kind=intType) :: mm, nn, sps
+     integer(kind=intType) :: i, j, ii, blk, ierr
+     real(kind=realType) :: Cp, plocal, tmp, cpmin_local
+
+     ! this routine loops over the surface cells in the given family
+     ! and computes the true minimum Cp value.
+     ! this is then used in the surface integration routine to compute
+     ! the cpmin using KS aggregation.
+     ! the goal is to get a differentiable cpmin output.
+
+     ! loop over the TS instances and compute cpmin_family for each TS instance
+     do sps=1, nTimeIntervalsSpectral
+       ! set the local cp min to a large value so that we get the actual min
+       cpmin_local = 10000.0_realType
+       do nn=1, nDom
+           call setPointers(nn, 1, sps)
+
+           ! Loop over all possible boundary conditions
+           bocos: do mm=1, nBocos
+              ! Determine if this boundary condition is to be incldued in the
+              ! currently active group
+            famInclude: if (famInList(BCData(mm)%famID, famList)) then
+
+               ! Set a bunch of pointers depending on the face id to make
+               ! a generic treatment possible.
+               call setBCPointers(mm, .True.)
+
+               ! no post gathered integrations currently
+               isWall: if( isWallType(BCType(mm)) ) then
+
+                  !$AD II-LOOP
+                  do ii=0,(BCData(mm)%jnEnd - bcData(mm)%jnBeg)*(bcData(mm)%inEnd - bcData(mm)%inBeg) -1
+                     i = mod(ii, (bcData(mm)%inEnd-bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+                     j = ii/(bcData(mm)%inEnd-bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+
+                     ! only take this if its a compute cell
+                     if (BCData(mm)%iblank(i,j) .eq. one) then
+
+                         ! compute local CP
+                         plocal = pp2(i,j)
+                         tmp = two/(gammaInf*MachCoef*MachCoef)
+                         Cp = tmp*(plocal-pinf)
+
+                         ! compare it against the current value on this proc
+                         cpmin_local = min(cpmin_local, Cp)
+                     end if
+                  enddo
+               end if isWall
+
+            end if famInclude
+         end do bocos
+       end do
+       ! finally communicate across all processors for this time spectral instance
+       call mpi_allreduce(cpmin_local, cpmin_family(sps), 1, MPI_DOUBLE, &
+            MPI_MIN, adflow_comm_world, ierr)
+       call EChk(ierr, __FILE__, __LINE__)
+     end do
+
+  end subroutine computeCpMinFamily
 
 #ifndef USE_COMPLEX
   subroutine integrateSurfaces_d(localValues, localValuesd, famList)
@@ -1163,6 +1438,7 @@ contains
     use zipperIntegrations, only :integrateZippers_d
     use userSurfaceIntegrations, only : integrateUserSurfaces_d
     use actuatorRegion, only : integrateActuatorRegions_d
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -1180,6 +1456,11 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCpMinFamily(famList)
+       end if
 
        localVal = zero
        localVald = zero
@@ -1239,6 +1520,7 @@ contains
     use zipperIntegrations, only :integrateZippers_b
     use userSurfaceIntegrations, only : integrateUserSurfaces_b
     use actuatorRegion, only : integrateActuatorRegions_b
+    use inputCostFunctions, only : computeCavitation
     implicit none
 
     ! Input/Output Variables
@@ -1260,6 +1542,11 @@ contains
        ! Extract the current family list
        nFam = famLists(iGroup, 1)
        famList => famLists(iGroup, 2:2+nFam-1)
+
+       ! compute the current cp min value for the cavitation computation with KS aggregation
+       if (computeCavitation) then
+          call computeCpMinFamily(famList)
+       end if
 
        localVal = zero
        localVald = zero

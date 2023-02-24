@@ -64,9 +64,9 @@ contains
     !
     !      Subroutine arguments.
     !
+    integer(kind=intType), intent(in)               :: mm
     real(kind=realType), dimension(mm), intent(in)  :: T
     real(kind=realType), dimension(mm), intent(out) :: gamma
-    integer(kind=intType), intent(in)              :: mm
     !
     !      Local variables.
     !

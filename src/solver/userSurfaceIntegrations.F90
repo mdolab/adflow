@@ -210,6 +210,7 @@ contains
              allocate(recvBuffer1d(6*nPts), recvBuffer2d(3*nPts))
           else
              allocate(recvBuffer1(0), recvBuffer2(0))
+             allocate(recvBuffer1d(0), recvBuffer2d(0))
           end if
 
           call commUserIntegrationSurfaceVars_d(recvBuffer1, recvBuffer1d, iRho, iZippFlowGamma, surf%flowComm)
@@ -458,9 +459,9 @@ contains
     implicit none
 
     ! Input variables
+    integer(kind=intType), intent(in) :: nPts, nConn, famID
     real(kind=realType), dimension(3, nPts), intent(in) :: pts
     integer(kind=intType), dimension(3, nConn), intent(in) :: conn
-    integer(kind=intType), intent(in) :: nPts, nConn, famID
     logical, intent(in) :: isInflow
     character(len=*) :: famName
     type(userIntSurf), pointer :: surf

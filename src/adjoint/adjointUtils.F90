@@ -604,7 +604,7 @@ contains
       ! Sets a block at irow, icol, if useTranspose is False
       ! Sets a block at icol, irow with transpose of blk if useTranspose is True
 
-      use utils, only : myisnan
+      use genericISNAN, only : myisnan
       implicit none
       real(kind=realType), dimension(nState, nState) :: blk
 
@@ -801,6 +801,7 @@ contains
                flowDomsd(nn, level, sps)%qz(il,jl,kl), &
                flowDomsd(nn, level, sps)%rlv(0:ib,0:jb,0:kb), &
                flowDomsd(nn, level, sps)%rev(0:ib,0:jb,0:kb), &
+               flowDomsd(nn, level, sps)%dtl(1:ie,1:je,1:ke), &
                flowDomsd(nn, level, sps)%radI(1:ie,1:je,1:ke), &
                flowDomsd(nn, level, sps)%radJ(1:ie,1:je,1:ke), &
                flowDomsd(nn, level, sps)%radK(1:ie,1:je,1:ke), &
@@ -946,6 +947,8 @@ contains
 
     flowDomsd(nn, level, sps)%rlv = zero
     flowDomsd(nn, level, sps)%rev = zero
+
+    flowDomsd(nn, level, sps)%dtl = zero
 
     flowDomsd(nn, level, sps)%radI = zero
     flowDomsd(nn, level, sps)%radJ = zero
@@ -1290,7 +1293,7 @@ contains
     Mat matrix
     integer(kind=intType), intent(in) :: blockSize, m, n
     integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
-    character*(*) :: file
+    character(len=*) :: file
     integer(kind=intType) :: ierr, line
     ! if (blockSize > 1) then
        call MatCreateBAIJ(ADFLOW_COMM_WORLD, blockSize, &
@@ -1346,14 +1349,10 @@ contains
     ! Write the residual norm to stdout every adjMonStep iterations.
 
     if(mod(n, adjMonStep) ==0 ) then
-       if( myid==0 ) write(*, 10) n, rnorm
+       if( myid==0 ) write(*, "(I4, 1X, A, 1X, ES16.10)") n, 'KSP Residual norm', rnorm
     end if
 
     ierr = 0
-
-    ! Output format.
-
-10  format(i4, 1x, 'KSP Residual norm', 1x, es16.10)
 
   end subroutine MyKSPMonitor
 
@@ -1616,6 +1615,7 @@ contains
     use constants
     use ADjointPETSc, only : dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
     use inputAdjoint, only : approxPC
+    use agmg, only : destroyAGMG
     use utils, only : EChk
     implicit none
 
@@ -1634,6 +1634,9 @@ contains
 
        call KSPDestroy(adjointKSP, ierr)
        call EChk(ierr,__FILE__,__LINE__)
+
+       call destroyAGMG()
+
        adjointPETScVarsAllocated = .False.
     end if
 
@@ -2243,6 +2246,11 @@ end subroutine statePreAllocation
     ISIZE1OFDrfgamma = ib + 1
     ISIZE2OFDrfgamma = jb + 1
     ISIZE3OFDrfgamma = kb + 1
+
+    ! dtl
+    ISIZE1OFDrfdtl = ie
+    ISIZE2OFDrfdtl = je
+    ISIZE3OFDrfdtl = ke
 
     ! radI
     ISIZE1OFDrfradI = ie

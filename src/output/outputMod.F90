@@ -1394,6 +1394,7 @@ contains
     use utils, only : setPointers
     use flowUtils, only : computePtot
     use inputCostFunctions
+    use cgnsGrid, only : cgnsDoms,cgnsNDom ! see subroutine updateRotationRate in preprocessingAPI.F90
     implicit none
     !
     !      Subroutine arguments.
@@ -1404,8 +1405,8 @@ contains
     real(kind=realType), dimension(*), intent(out) :: buffer
     character(len=*), intent(in) :: solName
     logical, intent(in) :: viscousSubface, useRindLayer
-    
-    ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine 
+
+    ! if useRindLayer is true, then iBeg, iEnd, jBeg, jEnd are use to determine
     ! when the indices are in the rind layer.
     integer(kind=intType), optional, intent(in) :: iBeg, iEnd, jBeg, jEnd
     !
@@ -1436,9 +1437,15 @@ contains
     real(kind=realType), dimension(:,:),   pointer :: rlv1, rlv2
     real(kind=realType), dimension(:,:),   pointer :: dd2Wall
 
+    real(kind=realType) :: uInfDim2 ! MachCoeff-derived (Uinf*Uref)**2
+    real(kind=realType) :: rot_speed2 ! norm of wCrossR squared
+    real(kind=realType),Dimension(3) :: r_ ! spanwise position for given point
+    real(kind=realType),Dimension(3) :: rrate_  ! the rotational rate of the WT
+    real(kind=realType),Dimension(3) :: wCrossR ! rotationrate cross radius
+    real(kind=realType), dimension(:,:,:), pointer :: xx1, xx2 ! for the coords
     ! The original i,j beging of the local block in the entire cgns block.
     real(kind=realType) :: subface_jBegOr, subface_jEndOr, subface_iBegOr, subface_iEndOr
-    
+
     ! Set the pointers to this block.
     call setPointers(blockID, 1_intType, sps)
 
@@ -1504,6 +1511,24 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
+       ! We need to get the mesh coordinates further down in order to compute
+       ! the correct Cp-normalisation for rotational setups.
+       ! The flow variables, w(0:ib,0:jb,0:kb,1:nw), we point to
+       ! below uses what is defined in type blockType in block.F90 as
+       !   !  ib, jb, kb - Block integer dimensions for double halo
+       !   !               cell-centered quantities.
+       ! BUT the mesh, x(0:ie,0:je,0:ke,3), is defined with the single halos:
+       !   !  ie, je, ke - Block integer dimensions for single halo
+       !   !               cell-centered quantities.
+       ! This explains why in the (iMax)-case we use:
+       !        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
+       ! namely, we use single halos for w(:,:,:,:) instead of the
+       ! usual double halos...
+
+
+       ! we don't have double halo structure for x, so we start from 0
+       xx1    => x(0,:,:,:);   xx2    => x(1,:,:,:) ! 1 is our 2 since we are
+       ! single haloed...
        ww1    => w(1,1:,1:,:);   ww2    => w(2,1:,1:,:)
        pp1    => p(1,1:,1:);     pp2    => p(2,1:,1:)
        ss => si(1,:,:,:) ; fact = -one
@@ -1525,10 +1550,10 @@ contains
        if(equations == RANSEquations) dd2Wall => d2Wall(2,:,:)
        subface_iBegOr = jBegOr
        subface_iEndOr = jEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
-       
+
        !===============================================================
 
     case (iMax)
@@ -1536,6 +1561,8 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = jl; jjMax = kl
 
+       xx1    => x(ie-1,:,:,:);  xx2   => x(il-1,:,:,:)
+       !
        ww1    => w(ie,1:,1:,:);   ww2    => w(il,1:,1:,:)
        ss => si(il,:,:,:) ; fact = one
 
@@ -1554,13 +1581,13 @@ contains
        endif
 
        if(equations == RANSEquations) dd2Wall => d2Wall(il,:,:)
-       
+
        subface_iBegOr = jBegOr
        subface_iEndOr = jEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
-       
+
        !===============================================================
 
     case (jMin)
@@ -1568,6 +1595,8 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
+       xx1    => x(:,0,:,:);  xx2   => x(:,1,:,:)
+       !
        ww1    => w(1:,1,1:,:);   ww2    => w(1:,2,1:,:)
        ss => sj(:,1,:,:) ; fact = -one
 
@@ -1587,10 +1616,10 @@ contains
 
        if(equations == RANSEquations) dd2Wall => d2Wall(:,2,:)
 
-              
+
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
 
@@ -1601,6 +1630,8 @@ contains
        rangeFace(2,1:2) = rangeCell(3,1:2)
        iiMax = il; jjMax = kl
 
+       xx1    => x(:,je-1,:,:);  xx2   => x(:,jl-1,:,:)
+       !
        ww1    => w(1:,je,1:,:);   ww2    => w(1:,jl,1:,:)
        ss => sj(:,jl,:,:); fact = one
 
@@ -1622,7 +1653,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = kBegOr
        subface_jEndOr = kEndOr
 
@@ -1633,6 +1664,8 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
+       xx1    => x(:,:,0,:);  xx2   => x(:,:,1,:)
+       !
        ww1    => w(1:,1:,1,:);   ww2    => w(1:,1:,2,:)
        ss => sk(:,:,1,:);  fact = -one
 
@@ -1654,7 +1687,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = jBegOr
        subface_jEndOr = jEndOr
 
@@ -1665,6 +1698,8 @@ contains
        rangeFace(2,1:2) = rangeCell(2,1:2)
        iiMax = il; jjMax = jl
 
+       xx1    => x(:,:,ke-1,:);  xx2   => x(:,:,kl-1,:)
+       !
        ww1    => w(1:,1:,ke,:);   ww2    => w(1:,1:,kl,:)
        ss => sk(:,:,kl,:);  fact = one
 
@@ -1686,7 +1721,7 @@ contains
 
        subface_iBegOr = iBegOr
        subface_iEndOr = iEndOr
-       
+
        subface_jBegOr = jBegOr
        subface_jEndOr = jEndOr
 
@@ -1823,19 +1858,49 @@ contains
        !================================================================
 
     case (cgnsCp)
-
-       ! Factor multiplying p-pInf
-
-       fact = two/(gammaInf*pInf*MachCoef*MachCoef)
+       ! Calclulating the square of (dimensional) inflow velocity from MachCoef
+       !
+       ! Same formula used in referenceState (see initializeFlow.F90),
+       ! multiplied by the square of the reference velocity (uRef).
+       ! MachCoef is initialized in inputParamRoutines.F90 and can also be passed from the python layer
+       ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module
+       ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
+       ! (see initializeFlow.F90).
+       uInfDim2 = (MachCoef*MachCoef*gammaInf*pInf/rhoInf)*uRef*uRef
 
        do j=rangeFace(2,1), rangeFace(2,2)
           do i=rangeFace(1,1), rangeFace(1,2)
              nn = nn + 1
-             buffer(nn) = fact*(half*(pp1(i,j) + pp2(i,j)) - pInf)
+             ! Get frame rotation rate and local surface coordinates
+             ! by averaging wall and halo cell centers
+             ! (xx1,xx2 are pointers to the mesh coordinates, see block.F90)
+             rrate_=cgnsdoms(1)%rotrate
+             r_(1) =   (half*(xx1(i,j,1) + xx2(i,j,1)))
+             r_(2) =   (half*(xx1(i,j,2) + xx2(i,j,2)))
+             r_(3) =   (half*(xx1(i,j,3) + xx2(i,j,3)))
+             ! calc cross-product between rotation rate and r_
+             ! to obtain local apparent wall velocity
+             wCrossR(1) = rrate_(2)*r_(3) - rrate_(3)*r_(2)
+             wCrossR(2) = rrate_(3)*r_(1) - rrate_(1)*r_(3)
+             wCrossR(3) = rrate_(1)*r_(2) - rrate_(2)*r_(1)
+             rot_speed2 = wCrossR(1)**2 +wCrossR(2)**2 +wCrossR(3)**2
+             buffer(nn) = ((half*(pp1(i,j) + pp2(i,j)) - pInf)*pRef) &
+                  / (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+             ! Comments on the Cp (buffer(nn)) calculation above:
+             !
+             ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
+             !
+             ! Numerator (dimensionalized):
+             !     (P_i-P_0) -> (half*(pp1(i,j)+pp2(i,j))-pInf) * pRef
+             !     P_i is given by the average of the wall and halo cell
+             !     (see comment at the beginning of storeSurfsolInBuffer)
+             !     pp1, pp2 are (nondimensional) pressure pointers, e.g. pp1 => p(1,1:,1:)
+             !
+             ! Denominator (dimensionalized): (0.5*rho*(U_a)^2) ->
+             !       (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+             !       The local velocity term includes the rotational components!
           enddo
        enddo
-
-       !===============================================================
 
     case (cgnsPtotloss)
 
@@ -1927,14 +1992,14 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
             jor = j + subface_jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
+            if (jor == jBeg) then
+               jj = j + 1
             else if (jor == jEnd +1 ) then
                jj = j - 1
             else
-               jj = j 
+               jj = j
             endif
          else
             jj = j
@@ -1942,19 +2007,19 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
                ior = i + subface_iBegOr - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
+               if (ior == iBeg) then
+                  ii = i + 1
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else
-                  ii = i 
+                  ii = i
                endif
             else
                ii = i
             endif
-            
+
              ! Determine the viscous subface on which this
              ! face is located.
 
@@ -2040,14 +2105,14 @@ contains
          ! if statements are used to copy the value of the interior
          ! cell since the value isn't defined in the rind cell
 
-         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then 
+         if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
             jor = j + jBegOr - 1
-            if (jor == jBeg) then 
-               jj = j + 1 
+            if (jor == jBeg) then
+               jj = j + 1
             else if (jor == jEnd + 1) then
                jj = j - 1
             else
-               jj = j 
+               jj = j
             endif
          else
             jj = j
@@ -2055,14 +2120,14 @@ contains
          end if
 
           do i=rangeFace(1,1), rangeFace(1,2)
-             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then 
+             if (present(iBeg) .and. present( iEnd) .and. (useRindLayer)) then
                ior = i + iBegor - 1
-               if (ior == iBeg) then 
-                  ii = i + 1 
+               if (ior == iBeg) then
+                  ii = i + 1
                else if (ior == iEnd + 1) then
                   ii = i - 1
                else
-                  ii = i 
+                  ii = i
                endif
             else
                ii = i
@@ -2141,7 +2206,7 @@ contains
              plocal = half*(pp1(i,j) + pp2(i,j))
 
              sensor1 = (-(fact)*(plocal-pInf))- cavitationnumber
-             sensor1 = one/(one + exp(-2*10*sensor1))
+             sensor1 = (sensor1**cavExponent)/(one + exp(2*cavSensorSharpness*(-sensor1 + cavSensorOffset)))
              buffer(nn) = sensor1
              !print*, sensor
           enddo
@@ -2203,71 +2268,60 @@ contains
     use inputDiscretization
     use inputPhysics
     use flowVarRefState
+    use commonFormats, only : stringSpace, stringSci5
     implicit none
     !
     !      Subroutine arguments.
     !
     character(len=*), intent(out) :: string
 
+    character(len=maxStringLen) :: upwindFormat = "(A, F7.3, A)"
+
     ! Write the basic scheme info.
 
     select case(spaceDiscr)
     case (dissScalar)
-       write(string,100) "Scalar dissipation scheme", vis2, vis4
+       write(string, stringSci5) "Scalar dissipation scheme, k2 = ", vis2, ", k4 = ", vis4, "."
     case (dissMatrix)
-       write(string,100) "Matrix dissipation scheme", vis2, vis4
+       write(string, stringSci5) "Matrix dissipation scheme, k2 = ", vis2, ", k4 = ", vis4, "."
     case (dissCusp)
-       write(string,100) "CUSP dissipation scheme", vis2, vis4
+       write(string, stringSci5) "CUSP dissipation scheme, k2 = ", vis2, ", k4 = ", vis4, "."
     case (upwind)
        select case (limiter)
        case (firstOrder)
-          write(string,110) "First order upwind scheme."
+          write(string, stringSpace) "First order upwind scheme."
        case (noLimiter)
-          write(string,111) kappaCoef
+          write(string, upwindFormat) "Second order upwind scheme using linear reconstruction, &
+          &i.e. no limiter, kappa = ", kappaCoef, "."
        case (vanAlbeda)
-          write(string,112) kappaCoef
+          write(string, upwindFormat) "Second order upwind scheme with Van Albada limiter, &
+          &kappa =", kappaCoef, "."
        case (minmod)
-          write(string,113) kappaCoef
+          write(string, upwindFormat) "Second order upwind scheme with Minmod limiter, &
+          &kappa =", kappaCoef, "."
        end select
 
        select case (riemann)
        case (Roe)
-          write(string,130) trim(string), &
-               "Roe's approximate Riemann Solver."
+          write(string, stringSpace) trim(string), "Roe's approximate Riemann Solver."
        case (vanLeer)
-          write(string,130) trim(string), &
-               "Van Leer flux vector splitting."
+          write(string, stringSpace) trim(string), "Van Leer flux vector splitting."
        case (ausmdv)
-          write(string,130) trim(string), &
-               "ausmdv flux vector splitting."
+          write(string, stringSpace) trim(string), "ausmdv flux vector splitting."
        end select
 
     end select
-
-100 format(1X, A,", k2 = ", es12.5, ", k4 = ", es12.5,".")
-110 format(1X, A)
-111 format(1X, "Second order upwind scheme using linear reconstruction, &
-         &i.e. no limiter, kappa =", 1X, f7.3,".")
-112 format(1X, "Second order upwind scheme with Van Albeda limiter, &
-         &kappa =", 1X, f7.3,".")
-113 format(1X, "Second order upwind scheme with Minmod limiter, &
-         &kappa =", 1X, f7.3,".")
-130 format(1X, A, 1X, A)
 
     ! In case of the scalar dissipation scheme, write whether or not
     ! directional scaling has been applied.
 
     if(spaceDiscr == dissScalar) then
        if( dirScaling ) then
-          write(string,200) trim(string), adis
+          write(string, "(2(A, 1X), ES12.5, A)") trim(string), "Directional scaling of dissipation with exponent", adis, "."
        else
-          write(string,210) trim(string)
+          write(string, stringSpace) trim(string), "No directional scaling of dissipation."
        endif
     endif
-
-200 format(1X, A, 1X, "Directional scaling of dissipation with exponent", &
-         1X,es12.5, ".")
-210 format(1X, A, 1X, "No directional scaling of dissipation.")
 
     ! For the Euler equations, write the inviscid wall boundary
     ! condition treatment.
@@ -2275,42 +2329,34 @@ contains
     if(equations == EulerEquations) then
        select case (eulerWallBcTreatment)
        case (constantPressure)
-          write(string,300) trim(string), &
-               "Zero normal pressure gradIent"
+          write(string, stringSpace) trim(string), "Zero normal pressure gradient", &
+            "for inviscid wall boundary conditions."
        case (linExtrapolPressure)
-          write(string,300) trim(string), &
-               "Linear extrapolation of normal &
-               &pressure gradIent"
+          write(string, stringSpace) trim(string), "Linear extrapolation of normal pressure gradient", &
+            "for inviscid wall boundary conditions."
        case (quadExtrapolPressure)
-          write(string,300) trim(string), &
-               "Quadratic extrapolation of normal &
-               &pressure gradIent"
+          write(string, stringSpace) trim(string), "Quadratic extrapolation of normal pressure gradIent", &
+            "for inviscid wall boundary conditions."
        case (normalMomentum)
-          write(string,300) trim(string), &
-               "Normal momentum equation used to &
-               &determine pressure gradient"
+          write(string, stringSpace) trim(string), "Normal momentum equation used to determine pressure gradient", &
+            "for inviscid wall boundary conditions."
        end select
     endif
-300 format(1X, A, 1X, A, 1X,"for inviscid wall boundary conditions.")
 
     ! If preconditioning is used, write the preconditioner.
 
     select case(precond)
     case (Turkel)
-       write(string,400) trim(string), &
-            "Turkel preconditioner for inviscid fluxes."
+       write(string, stringSpace) trim(string), "Turkel preconditioner for inviscid fluxes."
     case (ChoiMerkle)
-       write(string,400) trim(string), &
-            "Choi Merkle preconditioner for inviscid fluxes."
+       write(string, stringSpace) trim(string), "Choi Merkle preconditioner for inviscid fluxes."
     end select
-400 format(1X, A, 1X, A)
 
     ! For a viscous computation write that a central discretization
     ! is used for the viscous fluxes.
 
     if( viscous ) then
-       write(string,400) trim(string), &
-            "Central discretization for viscous fluxes."
+       write(string, stringSpace) trim(string), "Central discretization for viscous fluxes."
     endif
 
   end subroutine describeScheme
@@ -2671,6 +2717,7 @@ contains
     use inputTimeSpectral
     use monitor
     use utils, only : terminate, setCGNSRealType
+    use commonFormats, only : strings
 
     implicit none
     !
@@ -2767,9 +2814,8 @@ contains
        integerString = adjustl(integerString)
        realString    = adjustl(realString)
 
-       write(message,101) trim(integerString), trim(realString)
-101    format("Unsteady time step ",a,", physical time ",a, &
-            " seconds")
+       write(message, strings) "Unsteady time step ", trim(integerString),", physical time ", &
+         trim(realString), " seconds"
 
        ! And write the info.
 
@@ -2798,10 +2844,8 @@ contains
        write(integerString,"(i7)") nTimeIntervalsSpectral
        integerString = adjustl(integerString)
 
-       write(message,102) trim(integerString)
-102    format("Time spectral mode for periodic problems; ",a,  &
-            " spectral solutions have been used to model the &
-            &problem.")
+       write(message, strings) "Time spectral mode for periodic problems; ", &
+         trim(integerString), " spectral solutions have been used to model the problem."
 
        ! And write the info.
 

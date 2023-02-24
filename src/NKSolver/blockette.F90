@@ -190,9 +190,7 @@ contains
 
        do sps=1, nTimeIntervalsSpectral
           ! Update overset connectivity if necessary
-          if (oversetPresent .and. &
-               (oversetUpdateMode == updateFast .or. &
-               oversetUpdateMode == updateFull)) then
+          if (oversetPresent .and. oversetUpdateMode == updateFast) then
              call updateOversetConnectivity(1_intType, sps)
           end if
        end do
@@ -236,6 +234,7 @@ contains
           end if
 
           call applyAllBC_block(.True.)
+
        end do
     end do
 

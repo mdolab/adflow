@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import re
 import os
 
@@ -22,16 +22,17 @@ setup(
     author_email="",
     url="https://github.com/mdolab/adflow",
     license="LGPL version 2.1",
-    packages=[
-        "adflow",
-    ],
+    packages=find_packages(include=["adflow*"]),
     package_data={"adflow": ["*.so"]},
     install_requires=[
-        "numpy>=1.16",
+        "numpy>=1.16,<1.24",
         "mdolab-baseclasses>=1.4",
         "mpi4py>=3.0",
         "petsc4py>=3.11",
     ],
-    extras_require={"testing": ["parameterized", "testflo"]},
+    extras_require={
+        "testing": ["parameterized", "testflo"],
+        "mphys": ["openmdao", "mphys", "idwarp"],
+    },
     classifiers=["Operating System :: Linux", "Programming Language :: Python, Fortran"],
 )

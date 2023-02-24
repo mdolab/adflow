@@ -2149,17 +2149,18 @@ contains
 
     ! Print some stuff out to the screen for debugging purposes
 
-    !write(*,*)
-    !write(*,*) 'Results of minD2Hexa'
-    !write(*,20)'Point P                = (',xP(1),xP(2),xP(3),' )'
-    !write(*,20)'Found point            = (',x0,y0,z0,' )'
-    !write(*,20)'Parametric coordinates = (',chi(1),chi(2),chi(3),' )'
-    !write(*,30)'Minimum distance       =',sqrt(d2)
-    !write(*,10)'Number of iterations   =',itCount
+    ! write(*,*)
+    ! write(*,*) 'Results of minD2Hexa'
+    ! write(*, coordinateFormat)'Point P                = (',xP(1),xP(2),xP(3),' )'
+    ! write(*, coordinateFormat)'Found point            = (',x0,y0,z0,' )'
+    ! write(*, coordinateFormat)'Parametric coordinates = (',chi(1),chi(2),chi(3),' )'
+    ! write(*, distanceFormat)'Minimum distance       =',sqrt(d2)
+    ! write(*, iterationFormat)'Number of iterations   =',itCount
 
-10  format(a,1x,i3)
-20  format(a,3f10.6,a)
-30  format(a,f20.17,a)
+    ! character(len=maxStringLen) :: iterationFormat = '(A, 1x, i3)'
+    ! character(len=maxStringLen) :: coordinateFormat = '(A, 3f10.6, A)'
+    ! character(len=maxStringLen) :: distanceFormat = '(A, f20.17, A)'
+
     return
 
   end subroutine minD2Hexa

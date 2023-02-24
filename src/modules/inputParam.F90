@@ -290,8 +290,11 @@ end module inputIteration
 
 module inputCostFunctions
   use constants
-  real(kind=realtype) :: sepSensorOffset= zero
-  real(kind=realtype) ::sepSensorSharpness=10.0_realType
+  real(kind=realtype) :: sepSensorOffset = zero
+  real(kind=realtype) :: sepSensorSharpness = 10.0_realType
+  real(kind=realtype) :: cavSensorOffset
+  real(kind=realtype) :: cavSensorSharpness
+  integer(kind=inttype) :: cavExponent
   logical :: computeCavitation
 
 end module inputCostFunctions
@@ -554,6 +557,11 @@ module inputPhysics
   ! muSuthDim:           Reference viscosity at reference temperature for Sutherlands law (SI Units)
   ! TSuthDim:            Reference temperature for Sutherlands law (SI Units)
   ! momentAxis(3,2)      Axis about which to calculate a moment, provided as 2 points in 3-D
+  ! cavitationnumber     Negative Cp value that triggers the traditional
+  !                      step-function based cavitation sensor.
+  ! cpmin_rho            The rho parameter used with the KS-based cavitation sensor.
+  ! cpmin_family         The cpmin for a given surface family that does not use
+  !                      KS-aggregation, but rather an exact min computation.
 
 
   integer(kind=intType) :: equations, equationMode, flowType
@@ -579,6 +587,8 @@ module inputPhysics
   real(kind=realType), dimension(3,2) :: momentAxis
   real(kind=realType) :: SSuthDim, muSuthDim, TSuthDim
   real(kind=realType) :: cavitationnumber
+  real(kind=realType) :: cpmin_rho
+  real(kind=realType), dimension(:), allocatable :: cpmin_family
 
 #ifndef USE_TAPENADE
   real(kind=realType) :: alphad, betad
@@ -864,4 +874,5 @@ module inputOverset
   integer(kind=intType)::nFloodIter
   logical :: useZipperMesh
   logical :: useOversetWallScaling
+  logical :: oversetDebugPrint
 end module inputOverset

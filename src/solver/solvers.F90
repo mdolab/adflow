@@ -20,6 +20,7 @@ contains
     use utils, only : eulerWallsPresent
     use multiGrid, only : transferToFineGrid
     use partitioning, only : updateCoorFineMesh
+    use commonFormats, only : stringInt1
     implicit none
     !
     !      Local variables.
@@ -86,9 +87,8 @@ contains
           if(myID == 0) then
              if (printIterations) then
                 print "(a)", "#"
-                print 100, currentLevel
+                print stringInt1, "# Going down to grid level ", currentLevel
                 print "(a)", "#"
-100             format("# Going down to grid level",1X,I1)
              end if
           endif
 
@@ -555,10 +555,9 @@ contains
        numberString = adjustl(numberString)
 
        print "(a)", "#"
-       print 100, groundLevel, trim(numberString)
+       print "(A, I1, 3(A))", "# Grid ", groundLevel,": Performing ", trim(numberString), &
+         " explicit Runge Kutta time steps."
        print "(a)", "#"
-100    format("# Grid",1x,i1,": Performing",1x,a,1x, &
-            "explicit Runge Kutta time steps.")
 
        ! Also write the convergence header. Technically this is
        ! not really a convergence history for explicit RK, but
@@ -931,9 +930,10 @@ contains
     !
     integer :: ierr
     integer(kind=intType) ::  nMGCycles
-    character (len=7) :: numberString
+    character(len=7) :: numberString
     logical :: absConv, relConv, firstNK, firstANK, old_writeGrid
     real(kind=realType) :: nk_switchtol_save, curTime, ordersConvergedOld
+    character(len=maxStringLen) :: iterFormat
 
     ! Allocate the memory for cycling.
     if (allocated(cycling)) then
@@ -982,25 +982,22 @@ contains
        ! Write a message about the number of multigrid iterations
        ! to be performed.
 
+#ifndef USE_COMPLEX
+      iterFormat = "(A, I1, 3(A), I6, A, ES10.2)"
+#else
+      iterFormat = "(A, I1, 3(A), I6, A, 2ES10.2)"
+#endif
+
        write(numberString,"(i6)") nMGCycles
        numberString = adjustl(numberString)
        numberString = trim(numberString)
        if (printIterations) then
           print "(a)", "#"
-          print 102, groundLevel, trim(numberString),minIterNum,(NK_switchTol * totalR0)
+          print iterFormat, "# Grid ", groundLevel,": Performing ", trim(numberString), &
+            " iterations, unless converged earlier. Minimum required iteration before NK switch: ", &
+            minIterNum,". Switch to NK at totalR of: ", (NK_switchTol * totalR0)
           print "(a)", "#"
        end if
-#ifndef USE_COMPLEX
-102    format("# Grid",1X,I1,": Performing",1X,A,1X, &
-            "iterations, unless converged earlier.",&
-            " Minimum required iteration before NK switch: ",&
-            I6,". Switch to NK at totalR of:",1X,es10.2)
-#else
-102    format("# Grid",1X,I1,": Performing",1X,A,1X, &
-            "iterations, unless converged earlier.",&
-            " Minimum required iteration before NK switch: ",&
-            I6,". Switch to NK at totalR of:",1X,2es10.2)
-#endif
 
        if (printIterations)  then
           call convergenceHeader
@@ -1271,8 +1268,8 @@ contains
     use killSignals, only : routineFailed, fromPython
     use iteration, only : rhoRes, rhoResStart, totalR, totalRStart, totalR0
     use oversetData, only: oversetPresent
-    use utils, only : setPointers, myisnan, returnFail, maxHDiffMach, maxEddyv, &
-         sumResiduals, sumAllResiduals
+    use utils, only : setPointers, returnFail, maxHDiffMach, maxEddyv, sumResiduals, sumAllResiduals
+    use genericISNAN, only : myisnan
     use surfaceIntegrations, only : integrateSurfaces
     use zipperIntegrations, only : integrateZippers
     use surfaceFamilies, only : fullFamLIst

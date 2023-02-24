@@ -14,6 +14,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : setPointers, terminate
     use partitionMod, only : sortBadEntities
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.
@@ -119,9 +120,8 @@ contains
           intString = adjustl(intString)
 
           print "(a)", "#"
-          print 101,  trim(intString)
-          print "(a)", "# is not correct. &
-               &Here is the list of bad blocks"
+          print strings, "# Found ", trim(intString), " blocks for which the boundary or connectivity information"
+          print "(a)", "# is not correct. Here is the list of bad blocks"
           print "(a)", "#"
 
           ! Write the bad blocks.
@@ -141,7 +141,7 @@ contains
              if(nTimeIntervalsSpectral > 1) then
                 write(intString,"(i6)") nBadGlobal
                 intString = adjustl(intString)
-                write(*,102,advance="no") trim(intString)
+                write(*, strings, advance="no") "# Spectral grid ", trim(intString), ", "
              else
                 write(*,"(a)",advance="no") "# "
              endif
@@ -154,62 +154,43 @@ contains
 
                 select case (faceID)
                 case (iMin)
-                   print 103, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": iMin block face not fully described"
                 case (iMax)
-                   print 104, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": iMax block face not fully described"
                 case (jMin)
-                   print 105, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": jMin block face not fully described"
                 case (jMax)
-                   print 106, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": jMax block face not fully described"
                 case (kMin)
-                   print 107, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": kMin block face not fully described"
                 case (kMax)
-                   print 108, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": kMax block face not fully described"
                 case default
-                   print 109, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": Multiple block faces not fully described"
                 end select
 
              else
 
                 select case (faceID)
                 case (iMin)
-                   print 110, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": iMin block face multiple described"
                 case (iMax)
-                   print 111, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": iMax block face multiple described"
                 case (jMin)
-                   print 112, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": jMin block face multiple described"
                 case (jMax)
-                   print 113, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": jMax block face multiple described"
                 case (kMin)
-                   print 114, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": kMin block face multiple described"
                 case (kMax)
-                   print 115, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": kMax block face multiple described"
                 case default
-                   print 116, trim(cgnsDoms(nn)%zoneName)
+                   print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": Multiple block faces multiple described"
                 end select
 
              endif
 
           enddo
-
-101       format("# Found ",a," blocks for which the boundary or &
-               &connectivity information")
-102       format("# Spectral grid ",a, ", ")
-103       format("Zone ",a, ": iMin block face not fully described")
-104       format("Zone ",a, ": iMax block face not fully described")
-105       format("Zone ",a, ": jMin block face not fully described")
-106       format("Zone ",a, ": jMax block face not fully described")
-107       format("Zone ",a, ": kMin block face not fully described")
-108       format("Zone ",a, ": kMax block face not fully described")
-109       format("Zone ",a, ": Multiple block faces not fully &
-               &described")
-110       format("Zone ",a, ": iMin block face multiple described")
-111       format("Zone ",a, ": iMax block face multiple described")
-112       format("Zone ",a, ": jMin block face multiple described")
-113       format("Zone ",a, ": jMax block face multiple described")
-114       format("Zone ",a, ": kMin block face multiple described")
-115       format("Zone ",a, ": kMax block face multiple described")
-116       format("Zone ",a, ": Multiple block faces multiple described")
 
           ! Terminate.
 
@@ -429,6 +410,7 @@ contains
     use inputTimeSpectral, only : nTimeIntervalsSpectral
     use utils, only : delta, setPointers, terminate
     use partitionMod, only : sortBadEntities
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables.
@@ -461,6 +443,7 @@ contains
     real(kind=realType), dimension(:,:), allocatable :: realRecv
 
     character(len=7) :: intString
+    character(len=maxStringLen) :: devFormat, spectralDevFormat
     !
     !       Determine the local number of faces that must be sent to other
     !       processors, including to myself. Also determine the number of
@@ -922,16 +905,19 @@ contains
     ! Print the bad subfaces, if present. Only processor 0 performs
     ! this task.
 
+    devFormat = "(7(A), ES12.5)"
+    spectralDevFormat = "(9(A), ES12.5)"
+
     if(myID == 0 .and. nBadGlobal > 0) then
 
        write(intString,"(i6)") nBadGlobal
        intString = adjustl(intString)
 
        print "(a)",  "#"
-       print 101
-       print 102, trim(intString)
-       print 103
-       print 104
+       print strings, "#                      Warning"
+       print strings, "# Found ", trim(intString)," one to one subfaces which do not coincide."
+       print strings, "# Computation continues, but be aware of it."
+       print strings, "# List of nonmatching one to one subfaces."
        print "(a)", "#"
 
        do nn=1,nBadGlobal
@@ -947,54 +933,35 @@ contains
           if(nTimeIntervalsSpectral > 1) then
 
              if(badGlobal(4,nn) == 1) then
-                print 105, trim(intString),                           &
-                     trim(cgnsDoms(i)%zoneName),                &
-                     trim(cgnsDoms(i)%conn1to1(j)%connectName), &
-                     trim(cgnsDoms(i)%conn1to1(j)%donorName),   &
-                     badDistGlobal(nn)
+                print spectralDevFormat, "# Spectral grid ", trim(intString), ", zone ", trim(cgnsDoms(i)%zoneName), &
+                 ", periodic subface ", trim(cgnsDoms(i)%conn1to1(j)%connectName), &
+                 " does not match donor ", trim(cgnsDoms(i)%conn1to1(j)%donorName), &
+                 ". Maximum deviation: ", badDistGlobal(nn)
              else
-                print 106, trim(intString),                           &
-                     trim(cgnsDoms(i)%zoneName),                &
-                     trim(cgnsDoms(i)%conn1to1(j)%connectName), &
-                     trim(cgnsDoms(i)%conn1to1(j)%donorName),   &
-                     badDistGlobal(nn)
+               print spectralDevFormat, "# Spectral grid ", trim(intString), ", zone ", trim(cgnsDoms(i)%zoneName), &
+               ", subface ", trim(cgnsDoms(i)%conn1to1(j)%connectName), &
+               " does not match donor ", trim(cgnsDoms(i)%conn1to1(j)%donorName), &
+               ". Maximum deviation: ", badDistGlobal(nn)
              endif
 
           else
 
              if(badGlobal(4,nn) == 1) then
-                print 107, trim(cgnsDoms(i)%zoneName),                &
-                     trim(cgnsDoms(i)%conn1to1(j)%connectName), &
-                     trim(cgnsDoms(i)%conn1to1(j)%donorName),   &
-                     badDistGlobal(nn)
+               print devFormat, "Zone ", trim(cgnsDoms(i)%zoneName), &
+               ", periodic subface ", trim(cgnsDoms(i)%conn1to1(j)%connectName), &
+               " does not match donor ", trim(cgnsDoms(i)%conn1to1(j)%donorName), &
+               ". Maximum deviation: ", badDistGlobal(nn)
              else
-                print 108, trim(cgnsDoms(i)%zoneName),                &
-                     trim(cgnsDoms(i)%conn1to1(j)%connectName), &
-                     trim(cgnsDoms(i)%conn1to1(j)%donorName),   &
-                     badDistGlobal(nn)
+               print devFormat, "Zone ", trim(cgnsDoms(i)%zoneName), &
+               ", subface ", trim(cgnsDoms(i)%conn1to1(j)%connectName), &
+               " does not match donor ", trim(cgnsDoms(i)%conn1to1(j)%donorName), &
+               ". Maximum deviation: ", badDistGlobal(nn)
              endif
 
           endif
        enddo
 
        print "(a)", "#"
-
-101    format("#                      Warning")
-102    format("# Found ",a," one to one subfaces which do not &
-            &coincide.")
-103    format("# Computation continues, but be aware of it.")
-104    format("# List of nonmatching one to one subfaces.")
-105    format("# Spectral grid ",a, ", zone ",a, ", periodic &
-            &subface ", a, " does not match donor ", a,". &
-            &Maximum deviation: ", es12.5)
-106    format("# Spectral grid ",a, ", zone ",a, ", subface ", &
-            a, " does not match donor ", a,". &
-            &Maximum deviation: ", es12.5)
-107    format("# Zone ",a, ", periodic subface ", a, " does not &
-            &match donor ", a,". Maximum deviation: ", es12.5)
-
-108    format("# Zone ",a, ", subface ", a, " does not match &
-            &donor ", a,". Maximum deviation: ", es12.5)
 
     endif
 
@@ -1112,6 +1079,7 @@ contains
     use cgnsGrid
     use communication
     use utils, only : setPointers, terminate
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -1196,19 +1164,15 @@ contains
           if(nSpectral > 1) then
              write(intString,"(i6)") sps
              intString = adjustl(intString)
-             write(errorMessage,301) trim(intString), &
-                  trim(cgnsDoms(globalDonID)%zoneName),  &
-                  trim(cgnsDoms(globalDonID)%conn1to1(subfaceID)%connectName)
-301          format("Spectral grid ",a,", Zone ",a, "Connectivity ", a, &
-                  ": 1 to 1 subface not found. Something is &
-                  &seriously wrong with the zone connectivity.")
+             write(errorMessage, strings) "Spectral grid ", trim(intString), &
+               ", Zone ", trim(cgnsDoms(globalDonID)%zoneName), &
+               "Connectivity ", trim(cgnsDoms(globalDonID)%conn1to1(subfaceID)%connectName), &
+               ": 1 to 1 subface not found. Something is seriously wrong with the zone connectivity."
+
           else
-             write(errorMessage,302) &
-                  trim(cgnsDoms(globalDonID)%zoneName), &
-                  trim(cgnsDoms(globalDonID)%conn1to1(subfaceID)%connectName)
-302          format("Zone ",a, "Connectivity", a, &
-                  ": 1 to 1 subface not found. Something is &
-                  &seriously wrong with the zone connectivity.")
+             write(errorMessage, strings) "Zone ", trim(cgnsDoms(globalDonID)%zoneName), &
+               "Connectivity", trim(cgnsDoms(globalDonID)%conn1to1(subfaceID)%connectName), &
+               ": 1 to 1 subface not found. Something is seriously wrong with the zone connectivity."
           endif
 
           call terminate("checkSubfaceCoor", errorMessage)

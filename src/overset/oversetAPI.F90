@@ -1192,13 +1192,11 @@ contains
 
        if (globalChanged) then
           if(myID == 0) then
-             print 100,   nRefine
+             print "(2(A), I4, A)", "Warning: The overset connectivity loop exited ", &
+               "before the connectivity was complete after running: ", nRefine, " iterations."
              print "(a)", "         Increase the number of iterations by setting nRefine."
           end if
        end if
-100    format("Warning: The overset connectivity loop exited ", &
-            "before the connectivity was complete after running:",&
-            1x,I4,1x, "iterations.")
        ! Final operations after the interpolations have
        ! stabilized. Status must be exchanged due to the last
        ! irregular cell correction.
@@ -1500,9 +1498,10 @@ contains
     integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
     integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
-    character*40 :: tmpStr, zoneName
-    character*32 :: coorNames(3)
+    character(len=40) :: tmpStr, zoneName
+    character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
+    character(len=maxStringLen) :: zoneProcFormat = "(A, I5.5, A, I3.3)"
 
     coorNames(1) = "CoordinateX"
     coorNames(2) = "CoordinateY"
@@ -1575,9 +1574,8 @@ contains
           sizes(8) = 0
           sizes(9) = 0
 
-999       FORMAT('domain.', I5.5,'proc.'I3.3)
           zoneCounter = zoneCounter + 1
-          write(zonename, 999) zoneCounter, myid
+          write(zonename, zoneProcFormat) 'domain.', zoneCounter, 'proc.', myid
 
           call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
 
@@ -1609,7 +1607,7 @@ contains
                   adflow_comm_world, mpiStatus, ierr)
 
              zoneCounter = zoneCounter + 1
-             write(zonename, 999) zoneCounter, iProc
+             write(zonename, zoneProcFormat) 'domain.', zoneCounter, 'proc.', iProc
              sizes(1) = dims(1, iDom)
              sizes(2) = dims(2, iDom)
              sizes(3) = dims(3, iDom)
@@ -1693,9 +1691,10 @@ contains
     integer(kind=intType) :: ier, zoneCOunter, base, zoneID, coordID, cg, zone
     integer(kind=cgsize_t) :: sizes(9)
     integer(kind=intType) :: ifield, iSol
-    character*40 :: tmpStr, zoneName
-    character*32 :: coorNames(3)
+    character(len=40) :: tmpStr, zoneName
+    character(len=32) :: coorNames(3)
     integer mpiStatus(MPI_STATUS_SIZE)
+    character(len=maxStringLen) :: zoneFormat = "(A, I5.5)"
 
     coorNames(1) = "CoordinateX"
     coorNames(2) = "CoordinateY"
@@ -1762,9 +1761,8 @@ contains
           sizes(8) = 0
           sizes(9) = 0
 
-999       FORMAT('domain.', I5.5)
           zoneCounter = zoneCounter + 1
-          write(zonename, 999) zoneCounter
+          write(zonename, zoneFormat) 'domain.', zoneCounter
 
           call cg_zone_write_f(cg, base, zonename, sizes, Structured, zoneID, ier)
 
@@ -1819,7 +1817,7 @@ contains
                   adflow_comm_world, mpiStatus, ierr)
 
              zoneCounter = zoneCounter + 1
-             write(zonename, 999) zoneCounter
+             write(zonename, zoneFormat) 'domain.', zoneCounter
              sizes(1) = dims(1, iDom)
              sizes(2) = dims(2, iDom)
              sizes(3) = dims(3, iDom)
@@ -2098,19 +2096,257 @@ contains
 
   end subroutine setExplicitHoleCut
 
+  subroutine flagCellsInSurface(pts, npts, conn, nconn, flag, ncell, blockids, nblocks, k_min)
+
+    use constants
+    use communication, only : myID
+    use adtBuild, only : buildSerialQuad, destroySerialQuad
+    use adtLocalSearch, only : minDistanceTreeSearchSinglePoint
+    use ADTUtils, only : stack
+    use ADTData
+    use blockPointers, only : x, il, jl, kl, nDom, iBlank, vol, nbkGlobal, kBegOr
+    use adjointVars, only : nCellsLocal
+    use utils, only : setPointers, EChk
+    use sorting, only : famInList
+    implicit none
+
+    ! Input/Output
+    integer(kind=intType), intent(in) :: npts, nconn, ncell, nblocks
+    real(kind=realType), intent(in), dimension(3,npts) :: pts
+    integer(kind=intType), intent(in), dimension(4,nconn) :: conn
+    integer(kind=intType), intent(inout), dimension(ncell) :: flag
+    integer(kind=intType), intent(in), dimension(nblocks) :: blockids
+    integer(kind=intType), intent(in) :: k_min
+
+    ! Working variables
+    integer(kind=intType) :: i, j, k, l, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
+    integer(kind=intType) :: iblock, cell_counter, k_cgns
+    real(kind=realType) :: dStar, frac, volLocal
+    real(kind=realType), dimension(3) :: minX, maxX, v1, v2, v3, axisVec
+    real(kind=realType), dimension(3) :: diag1, diag2, diag3, diag4
+    real(kind=realType) :: dd1, dd2, dd3, dd4, diag_max
+    type(adtType) :: ADT
+    real(kind=realType), dimension(:, :), allocatable :: norm
+    integer(kind=intType), dimension(:), allocatable :: normCount
+    integer(kind=intType), dimension(:, :), pointer :: tmp
+
+    ! ADT Type required data
+    integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew
+    type(adtBBoxTargetType), dimension(:), pointer :: BB
+    real(kind=realType) :: coor(4), uvw(5)
+    real(kind=realType) :: dummy(3, 2)
+
+    ! we use the same approach as the actuator zone addition; we project the cell centers to the
+    ! surface provided. This way, we can fairly quickly determine the coordinates
+    ! that are inside the closed volumes. The surface mesh is duplicated on all procs, whereas
+    ! the nodes projected are distributed based on the grid paritioning.
+
+    ! Since this is effectively a wall-distance calc it gets super
+    ! costly for the points far away. Luckly, we can do a fairly
+    ! simple shortcut: Just compute the bounding box of the region and
+    ! use that as the "already found" distance in the closest point
+    ! search. This will eliminate all the points further away
+    ! immediately and this should be sufficiently fast.
+
+    ! So...compute that bounding box:
+    do iDim=1,3
+       minX(iDim) = minval(pts(iDim, :))
+       maxX(iDim) = maxval(pts(iDim, :))
+    end do
+
+    ! Get the max distance. This should be quite conservative.
+    dStar = (maxX(1)-minx(1))**2 + (maxX(2)-minX(2))**2  + (maxX(3)-minX(3))**2
+
+    ! Now build the tree.
+    call buildSerialQuad(size(conn, 2), size(pts, 2), pts, conn, ADT)
+
+    ! Compute the (averaged) unique nodal vectors:
+    allocate(norm(3, size(pts, 2)), normCount(size(pts, 2)))
+
+    norm = zero
+    normCount = 0
+
+    do i=1, size(conn, 2)
+
+       ! Compute cross product normal and normalize
+       v1 = pts(:, conn(3, i)) -  pts(:, conn(1, i))
+       v2 = pts(:, conn(4, i)) -  pts(:, conn(2, i))
+
+       v3(1) = (v1(2)*v2(3) - v1(3)*v2(2))
+       v3(2) = (v1(3)*v2(1) - v1(1)*v2(3))
+       v3(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+       v3 = v3 / sqrt(v3(1)**2 + v3(2)**2 + v3(3)**2)
+
+       ! Add to each of the four pts and increment the number added
+       do j=1, 4
+          norm(:, conn(j, i)) = norm(:, conn(j, i)) + v3
+          normCount(conn(j, i)) = normCount(conn(j, i)) + 1
+       end do
+    end do
+
+    ! Now just divide by the norm count
+    do i=1, size(pts, 2)
+       norm(:, i) = norm(:, i) / normCount(i)
+    end do
+
+    ! Norm count is no longer needed
+    deallocate(normCount)
+
+    ! Allocate the extra data the tree search requires.
+    allocate(stack(100), BB(20), frontLeaves(25), frontLeavesNew(25))
+
+    ! Now search for all the coordinate. Note that We have explictly
+    ! set sps to 1 becuase it is only implemented for single grid.
+    sps = 1
+    level = 1
+    cell_counter = 1
+
+    do nn=1, nDom
+       call setPointers(nn, level, sps)
+
+       ! only check this cell if it is within one of the block IDs we are asked to look at
+       ! here, we reuse the famInList function from sorting.F90. The reason is just having
+       ! if (any(blockids == nbkGlobal)) does not work with complexify; complexify changes the
+       ! == (or .eq.) to .ceq., which does not work with integers. The famInList is originally
+       ! written for surface integrations, but the same idea applies here.
+       if (famInList(nbkGlobal, blockids))then
+         do k=2, kl
+            do j=2, jl
+               do i=2, il
+
+                  ! get the k index of this cell in the cgns grid
+                  k_cgns = k + kBegOr - 2
+
+                  ! check if we are above the kmin range needed. if no kmin is provided, then the value
+                  ! defaults to -1 from python, so all points satisfy the check
+                  if (k_cgns .gt. k_min) then
+
+                     ! calculate the 4 diagonals of the cell
+                     diag1 = x(i-1,j-1,k-1,:) - x(i,j,k,:)
+                     diag2 = x(i,j-1,k-1,:) - x(i-1,j,k,:)
+                     diag3 = x(i,j,k-1,:) - x(i-1,j-1,k,:)
+                     diag4 = x(i-1,j,k-1,:) - x(i,j-1,k,:)
+
+                     dd1 = diag1(1)*diag1(1) + diag1(2)*diag1(2) + diag1(3)*diag1(3)
+                     dd2 = diag2(1)*diag2(1) + diag2(2)*diag2(2) + diag2(3)*diag2(3)
+                     dd3 = diag3(1)*diag3(1) + diag3(2)*diag3(2) + diag3(3)*diag3(3)
+                     dd4 = diag4(1)*diag4(1) + diag4(2)*diag4(2) + diag4(3)*diag4(3)
+
+                     ! get the max
+                     diag_max = max(dd1, dd2, dd3, dd4)
+                     ! if the projection is greater than this for any node, we stop testing the current point.
+                     ! we can work with squared distances for the sake of efficiency. the projection routine
+                     ! will also return the squared distance for the same reason.
+
+                     ! actually test each node
+                     do l=1, 8
+                        select case (l)
+                           case (1)
+                              coor(1:3) = x(i-1,j-1,k-1,:)
+                           case (2)
+                              coor(1:3) = x(i,  j-1,k-1,:)
+                           case (3)
+                              coor(1:3) = x(i,  j,  k-1,:)
+                           case (4)
+                              coor(1:3) = x(i-1,j,  k-1,:)
+                           case (5)
+                              coor(1:3) = x(i-1,j-1,k,  :)
+                           case (6)
+                              coor(1:3) = x(i,  j-1,k,  :)
+                           case (7)
+                              coor(1:3) = x(i,  j,  k,  :)
+                           case (8)
+                              coor(1:3) = x(i-1,j,  k,  :)
+                        end select
+
+                        ! reset the "closest point already found" variable.
+                        coor(4) = dStar
+                        intInfo(3) = 0
+                        call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
+                              uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                        cellID = intInfo(3)
+                        if (cellID > 0) then
+                           ! Now check if this was successful or not:
+                           if (checkInside()) then
+                              ! Whoohoo! We are inside the region. Flag this cell
+                              flag(cell_counter) = 1
+                              exit
+                           else
+                              ! we are outside. now check if the projection distance is larger than
+                              ! the max diagonal. if so, we can quit early here.
+                              if (uvw(4) .gt. diag_max) then
+                                 ! projection is larger than our biggest diagonal.
+                                 ! other nodes wont be in the surface, so we can exit the cell early here
+                                 exit
+                              end if
+                           end if
+                        end if
+                     end do
+                  end if
+
+                  cell_counter = cell_counter + 1
+               end do
+            end do
+         end do
+       else
+          ! we dont want to consider block, but we need to increment the counter
+          cell_counter = cell_counter + (kl - 1) * (jl - 1) * (il - 1)
+       end if
+    end do
+
+    ! Final memory cleanup
+    deallocate(stack, norm, frontLeaves, frontLeavesNew, BB)
+    call destroySerialQuad(ADT)
+
+  contains
+
+    function checkInside()
+
+      implicit none
+      logical :: checkInside
+      integer(kind=intType) :: jj
+      real(kind=realType) :: shp(4), xp(3), normal(3), v1(3), dp
+
+      ! bi-linear shape functions (CCW ordering)
+      shp(1) = (one-uvw(1))*(one-uvw(2))
+      shp(2) = (    uvw(1))*(one-uvw(2))
+      shp(3) = (    uvw(1))*(    uvw(2))
+      shp(4) = (one-uvw(1))*(    uvw(2))
+
+      xp = zero
+      normal = zero
+      do jj=1, 4
+         xp = xp + shp(jj)*pts(:, conn(jj, cellID))
+         normal = normal + shp(jj)*norm(:, conn(jj, cellID))
+      end do
+
+      ! Compute the dot product of normal with cell center
+      ! (stored in coor) with the point on the surface.
+      v1 = coor(1:3) - xp
+      dp = normal(1)*v1(1) + normal(2)*v1(2) + normal(3)*v1(3)
+
+      if (dp < zero) then
+         checkInside = .True.
+      else
+         checkInside = .False.
+      end if
+    end function checkInside
+
+  end subroutine flagCellsInSurface
+
   subroutine updateOverset(flag, n, closedFamList, nFam)
 
     ! This is the main gateway routine for updating the overset
-    ! connecitivty during a solution. It is wrapped and intended to be
+    ! connectivity during a solution. It is wrapped and intended to be
     ! called from Python. What this routine does depends on the value
     ! of oversetUpdateMode:
 
     ! updateFrozen: Nothing happens. The initial
-    ! connecitivty computed during initialzation is kept.
+    ! connectivity computed during initialization is kept.
 
-    ! updteFast: Update just the weight, but leave the donors
+    ! updateFast: Update just the weight, but leave the donors
     ! unchanged. This is only applicable when the entire mesh is
-    ! warped at the same time with pyWarpuStruct.
+    ! warped at the same time like with USMesh in IDWarp.
 
     ! updateFull: Complete from scratch update. Run the full
     ! oversetComm routine.
@@ -2124,9 +2360,9 @@ contains
     implicit none
 
     ! Input/Output
+    integer(kind=intType), intent(in) :: n, nFam
     integer(kind=intType), dimension(n) :: flag
     integer(kind=intType), dimension(nFam) :: closedFamList
-    integer(kind=intType), intent(in) :: n, nFam
 
     ! Working
     integer(kind=intType) :: nLevels, level, sps, nn, nDoms, mm
