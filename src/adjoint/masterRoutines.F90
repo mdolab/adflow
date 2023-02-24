@@ -519,8 +519,7 @@ contains
                     select case (turbModel)
                     case (spalartAllmaras)
                         call saSource_d
-                        !  NULLIFY(qq)
-                        call turbAdvection_d(1_intType, 1_intType, itu1 - 1, NULL())
+                        call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
                 !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
                         call saViscous_d
                         call saResScale_d
@@ -1103,9 +1102,8 @@ contains
                     case (spalartAllmaras)
                         call saResScale_fast_b
                         call saViscous_fast_b
-                        !  NULLIFY(qq)
                         !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-                        call turbAdvection_fast_b(1_intType, 1_intType, itu1 - 1, NULL())
+                        call turbAdvection_fast_b(1_intType, 1_intType, itu1 - 1, qq)
                         call saSource_fast_b
                     end select
 
@@ -1315,7 +1313,7 @@ contains
             select case (turbModel)
             case (spalartAllmaras)
                 call saSource_d
-                call turbAdvection_d(1_intType, 1_intType, itu1 - 1, NULL())
+                call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
           !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
                 call saViscous_d
                 call saResScale_d

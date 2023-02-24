@@ -3397,6 +3397,7 @@ contains
         use genericISNAN, only: myisnan
         use solverUtils, only: computeUTau
         use NKSolver, only: getEwTol
+        use BCRoutines, only: applyAllBC, applyAllBC_block
         use haloExchange, only: whalo2
         use oversetData, only: oversetPresent
         use flowVarRefState, only: nw, nwf, nt1, nt2, kPresent, pInfCorr
@@ -3689,10 +3690,12 @@ contains
         use adjointUtils, only: referenceShockSensor
         use NKSolver, only: setRVec, getEwTol
         use initializeFlow, only: setUniformFlow
+        use BCRoutines, only: applyAllBC, applyAllBC_block
         use haloExchange, only: whalo2
         use oversetData, only: oversetPresent
         use flowVarRefState, only: nw, nwf, nt1, nt2, kPresent, pInfCorr
         use flowUtils, only: computeLamViscosity
+        use turbUtils, only: computeEddyViscosity
         use communication
         use blockette, only: blocketteRes
         implicit none

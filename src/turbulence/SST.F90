@@ -1289,6 +1289,7 @@ contains
                         do j = jcBeg(nn), jcEnd(nn)
                             do i = icBeg(nn), icEnd(nn)
                                 f1(i, j, 1) = f1(i, j, 2)
+
                             end do
                         end do
 
@@ -1663,6 +1664,7 @@ contains
             end do
 
         end do spectralModes
+
 
     end subroutine exchangeF1SSTOverset
 
