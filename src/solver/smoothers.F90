@@ -1,697 +1,695 @@
 module smoothers
 
 contains
-  subroutine RungeKuttaSmoother
-    !
-    !       RungeKuttaSmoother performs one multi-stage runge kutta
-    !       explicit time step for the current multigrid level. On
-    !       entrance it is assumed that the residual and time step are
-    !       already computed. On exit the solution in the halo's contain
-    !       the latest values. However, the residual corresponding to
-    !       these values is not computed.
-    !
-    use constants
-    use blockPointers, only : w, p, wn, pn, il, jl, kl, nDom
-    use flowVarRefState, only: nwf
-    use inputIteration, only : nRKStages
-    use inputTimeSpectral, only :ntimeIntervalsSpectral
-    use iteration, only: currentLevel, rkStage
-    use utils, only : setPointers
-    use residuals, only : initRes, residual, residualAveraging, sourceTerms
-    use BCRoutines, only : applyAllBC
-    implicit none
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: sps, nn, i, j, k, l
-
-    ! Store the variables of the zeroth runge kutta stage.
-
-    spectralLoop: do sps=1,nTimeIntervalsSpectral
-       domains: do nn=1,nDom
-
-          ! Set the pointers to this block.
-
-          call setPointers(nn, currentLevel, sps)
-
-          ! The variables stored in w.
-
-          do l=1,nwf
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
-                      wn(i,j,k,l) = w(i,j,k,l)
-                   enddo
-                enddo
-             enddo
-          enddo
-
-          ! And the pressure.
-
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
-                   pn(i,j,k) = p(i,j,k)
-                enddo
-             enddo
-          enddo
-
-       enddo domains
-    enddo spectralLoop
-
-    ! Loop over all but the last Runge Kutta stages. Note that the
-    ! counter variable rkStage is defined in the module iteration.
-
-    do rkStage=1,(nRKStages-1)
-
-       ! Execute a Runge Kutta stage and exchange the externals.
-
-       call executeRkStage
-
-       ! Compute the residuals for the next stage.
-
-       call initres(1_intType, nwf)
-       call sourceTerms()
-       call residual
-
-    enddo
-
-    ! Execute the last RK stage. Set rkStage to nRKStages, for
-    ! clarity; after the previous loop rkStage == nRKStages.
-
-    rkStage = nRKStages
-
-    call executeRkStage
-
-  end subroutine RungeKuttaSmoother
-
-  !      ==================================================================
-
-  subroutine executeRkStage
-    !
-    !       executeRkStage executes one runge kutta stage. The stage
-    !       number, rkStage, is defined in the local module iteration.
-    !
-    use blockPointers
-    use constants
-    use flowVarRefState
-    use inputIteration
-    use inputPhysics
-    use inputTimeSpectral
-    use inputUnsteady
-    use iteration
-    use inputDiscretization
-    use haloExchange, only : whalo1, whalo2
-    use utils, only : setPointers
-    use flowUtils, only : computeEtotBlock, computeLamViscosity
-    use turbutils, only : computeeddyviscosity
-    use residuals, only : residualAveraging
-    use BCRoutines, only : applyAllBC
-
-    implicit none
-    !
-    !      Local parameter.
-    !
-    real(kind=realType), parameter :: fiveThird = five*third
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: sps, nn, i, j, k, l
-
-    real(kind=realType) :: tmp, unsteadyImpl, mult
-    real(kind=realType) :: dt, currentCfl, gm1, gm53
-    real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
-
-    logical :: secondHalo, smoothResidual, correctForK
-
-    ! Set the value of secondHalo and the current cfl number,
-    ! depending on the situation. On the finest grid in the mg cycle
-    ! the second halo is computed, otherwise not.
-
-    if(currentLevel <= groundLevel) then
-       secondHalo = .true.
-    else
-       secondHalo = .false.
-    endif
-
-    currentCfl = cflCoarse
-    if (currentLevel == 1) then
-       currentCfl = cfl
-    end if
-
-    ! Determine whether or not residual averaging must be applied.
-
-    if(resAveraging == noResAveraging) then
-       smoothResidual = .false.
-    else if(resAveraging == alwaysResAveraging) then
-       smoothResidual = .true.
-    else if(mod(rkStage,2_intType) == 1) then
-       smoothResidual = .true.
-    else
-       smoothResidual = .false.
-    endif
-
-    ! Determine whether or not the total energy must be corrected
-    ! for the presence of the turbulent kinetic energy.
+    subroutine RungeKuttaSmoother
+        !
+        !       RungeKuttaSmoother performs one multi-stage runge kutta
+        !       explicit time step for the current multigrid level. On
+        !       entrance it is assumed that the residual and time step are
+        !       already computed. On exit the solution in the halo's contain
+        !       the latest values. However, the residual corresponding to
+        !       these values is not computed.
+        !
+        use constants
+        use blockPointers, only: w, p, wn, pn, il, jl, kl, nDom
+        use flowVarRefState, only: nwf
+        use inputIteration, only: nRKStages
+        use inputTimeSpectral, only: ntimeIntervalsSpectral
+        use iteration, only: currentLevel, rkStage
+        use utils, only: setPointers
+        use residuals, only: initRes, residual, residualAveraging, sourceTerms
+        use BCRoutines, only: applyAllBC
+        implicit none
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: sps, nn, i, j, k, l
+
+        ! Store the variables of the zeroth runge kutta stage.
+
+        spectralLoop: do sps = 1, nTimeIntervalsSpectral
+            domains: do nn = 1, nDom
+
+                ! Set the pointers to this block.
+
+                call setPointers(nn, currentLevel, sps)
+
+                ! The variables stored in w.
+
+                do l = 1, nwf
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
+                                wn(i, j, k, l) = w(i, j, k, l)
+                            end do
+                        end do
+                    end do
+                end do
+
+                ! And the pressure.
+
+                do k = 2, kl
+                    do j = 2, jl
+                        do i = 2, il
+                            pn(i, j, k) = p(i, j, k)
+                        end do
+                    end do
+                end do
+
+            end do domains
+        end do spectralLoop
+
+        ! Loop over all but the last Runge Kutta stages. Note that the
+        ! counter variable rkStage is defined in the module iteration.
+
+        do rkStage = 1, (nRKStages - 1)
+
+            ! Execute a Runge Kutta stage and exchange the externals.
+
+            call executeRkStage
+
+            ! Compute the residuals for the next stage.
+
+            call initres(1_intType, nwf)
+            call sourceTerms()
+            call residual
+
+        end do
+
+        ! Execute the last RK stage. Set rkStage to nRKStages, for
+        ! clarity; after the previous loop rkStage == nRKStages.
+
+        rkStage = nRKStages
+
+        call executeRkStage
+
+    end subroutine RungeKuttaSmoother
+
+    !      ==================================================================
+
+    subroutine executeRkStage
+        !
+        !       executeRkStage executes one runge kutta stage. The stage
+        !       number, rkStage, is defined in the local module iteration.
+        !
+        use blockPointers
+        use constants
+        use flowVarRefState
+        use inputIteration
+        use inputPhysics
+        use inputTimeSpectral
+        use inputUnsteady
+        use iteration
+        use inputDiscretization
+        use haloExchange, only: whalo1, whalo2
+        use utils, only: setPointers
+        use flowUtils, only: computeEtotBlock, computeLamViscosity
+        use turbutils, only: computeeddyviscosity
+        use residuals, only: residualAveraging
+        use BCRoutines, only: applyAllBC
+
+        implicit none
+        !
+        !      Local parameter.
+        !
+        real(kind=realType), parameter :: fiveThird = five * third
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: sps, nn, i, j, k, l
+
+        real(kind=realType) :: tmp, unsteadyImpl, mult
+        real(kind=realType) :: dt, currentCfl, gm1, gm53
+        real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
+
+        logical :: secondHalo, smoothResidual, correctForK
+
+        ! Set the value of secondHalo and the current cfl number,
+        ! depending on the situation. On the finest grid in the mg cycle
+        ! the second halo is computed, otherwise not.
+
+        if (currentLevel <= groundLevel) then
+            secondHalo = .true.
+        else
+            secondHalo = .false.
+        end if
+
+        currentCfl = cflCoarse
+        if (currentLevel == 1) then
+            currentCfl = cfl
+        end if
+
+        ! Determine whether or not residual averaging must be applied.
+
+        if (resAveraging == noResAveraging) then
+            smoothResidual = .false.
+        else if (resAveraging == alwaysResAveraging) then
+            smoothResidual = .true.
+        else if (mod(rkStage, 2_intType) == 1) then
+            smoothResidual = .true.
+        else
+            smoothResidual = .false.
+        end if
+
+        ! Determine whether or not the total energy must be corrected
+        ! for the presence of the turbulent kinetic energy.
 
-    if( kPresent ) then
-       if((currentLevel <= groundLevel)) then
-          correctForK = .true.
-       else
-          correctForK = .false.
-       endif
-    else
-       correctForK = .false.
-    endif
-    !
-    !       Compute the updates of the conservative variables.
-    !
-    ! Loop over the local number of blocks.
+        if (kPresent) then
+            if ((currentLevel <= groundLevel)) then
+                correctForK = .true.
+            else
+                correctForK = .false.
+            end if
+        else
+            correctForK = .false.
+        end if
+        !
+        !       Compute the updates of the conservative variables.
+        !
+        ! Loop over the local number of blocks.
 
-    domainsUpdate: do nn=1,nDom
+        domainsUpdate: do nn = 1, nDom
 
-       ! Determine the equation mode solved.
+            ! Determine the equation mode solved.
 
-       select case (equationMode)
+            select case (equationMode)
 
-       case (steady, timeSpectral)
+            case (steady, timeSpectral)
 
-          ! Steady equations, including time spectral. Everything is
-          ! solved explicitly. Store the cfl number times the RK
-          ! coefficient in tmp.
+                ! Steady equations, including time spectral. Everything is
+                ! solved explicitly. Store the cfl number times the RK
+                ! coefficient in tmp.
 
-          tmp = currentCfl*etaRk(rkStage)
+                tmp = currentCfl * etaRk(rkStage)
 
-          ! Loop over the number of spectral solutions. Note that
-          ! for the steady mode this value is 1.
+                ! Loop over the number of spectral solutions. Note that
+                ! for the steady mode this value is 1.
 
-          spectralSteady: do sps=1,nTimeIntervalsSpectral
+                spectralSteady: do sps = 1, nTimeIntervalsSpectral
 
-             ! Set the pointers to this block.
+                    ! Set the pointers to this block.
 
-             call setPointers(nn, currentLevel, sps)
+                    call setPointers(nn, currentLevel, sps)
 
-             ! Loop over the owned cells of this block.
+                    ! Loop over the owned cells of this block.
 
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
 
-                      ! Determine the local time step (multiplied by the
-                      ! current rk coefficient).
-                      if ( lowspeedpreconditioner) then
-                         dt = 0.8*tmp*dtl(i,j,k)
-                      else
-                         dt = tmp*dtl(i,j,k)
-                      end if
+                                ! Determine the local time step (multiplied by the
+                                ! current rk coefficient).
+                                if (lowspeedpreconditioner) then
+                                    dt = 0.8 * tmp * dtl(i, j, k)
+                                else
+                                    dt = tmp * dtl(i, j, k)
+                                end if
 
-                      ! Compute the updates of the flow field variables.
+                                ! Compute the updates of the flow field variables.
 
-                      dw(i,j,k,irho)  = dw(i,j,k,irho)*dt
-                      dw(i,j,k,imx)   = dw(i,j,k,imx)*dt
-                      dw(i,j,k,imy)   = dw(i,j,k,imy)*dt
-                      dw(i,j,k,imz)   = dw(i,j,k,imz)*dt
-                      dw(i,j,k,irhoE) = dw(i,j,k,irhoE)*dt
+                                dw(i, j, k, irho) = dw(i, j, k, irho) * dt
+                                dw(i, j, k, imx) = dw(i, j, k, imx) * dt
+                                dw(i, j, k, imy) = dw(i, j, k, imy) * dt
+                                dw(i, j, k, imz) = dw(i, j, k, imz) * dt
+                                dw(i, j, k, irhoE) = dw(i, j, k, irhoE) * dt
 
-                   enddo
-                enddo
-             enddo
+                            end do
+                        end do
+                    end do
 
-          enddo spectralSteady
+                end do spectralSteady
 
-          !=============================================================
+                !=============================================================
 
-       case (unsteady)
+            case (unsteady)
 
-          ! Unsteady equations are solved via the dual time
-          ! stepping technique. The leading term of the time
-          ! integrator must be treated implicitly for stability
-          ! reasons. This leads to a different multiplication
-          ! factor of the residual compared to the steady case.
-          ! Compute this additional term and store the cfl number
-          ! times the rk coefficient in tmp.
+                ! Unsteady equations are solved via the dual time
+                ! stepping technique. The leading term of the time
+                ! integrator must be treated implicitly for stability
+                ! reasons. This leads to a different multiplication
+                ! factor of the residual compared to the steady case.
+                ! Compute this additional term and store the cfl number
+                ! times the rk coefficient in tmp.
 
-          unsteadyImpl = coefTime(0)*timeRef/deltaT
-          tmp          = currentCfl*etaRk(rkStage)
+                unsteadyImpl = coefTime(0) * timeRef / deltaT
+                tmp = currentCfl * etaRk(rkStage)
 
-          ! Loop over the number of spectral modes, although this is
-          ! always 1 for the unsteady mode. The loop is executed for
-          ! consistency reasons.
+                ! Loop over the number of spectral modes, although this is
+                ! always 1 for the unsteady mode. The loop is executed for
+                ! consistency reasons.
 
-          spectralUnsteady: do sps=1,nTimeIntervalsSpectral
+                spectralUnsteady: do sps = 1, nTimeIntervalsSpectral
 
-             ! Set the pointers to this block.
+                    ! Set the pointers to this block.
 
-             call setPointers(nn, currentLevel, sps)
+                    call setPointers(nn, currentLevel, sps)
 
-             ! Determine the updates of the flow field variables.
-             ! Owned cells only. The result is stored in dw.
+                    ! Determine the updates of the flow field variables.
+                    ! Owned cells only. The result is stored in dw.
 
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
 
-                      ! Determine the local time step (multiplied by the
-                      ! current rk coefficient) and the multiplication
-                      ! factor for the residuals.
+                                ! Determine the local time step (multiplied by the
+                                ! current rk coefficient) and the multiplication
+                                ! factor for the residuals.
 
-                      dt   = tmp*dtl(i,j,k)
-                      mult = dt/(dt*unsteadyImpl*vol(i,j,k) + one)
+                                dt = tmp * dtl(i, j, k)
+                                mult = dt / (dt * unsteadyImpl * vol(i, j, k) + one)
 
-                      ! Compute the updates of the flow field variables.
+                                ! Compute the updates of the flow field variables.
 
-                      dw(i,j,k,irho)  = dw(i,j,k,irho)*mult
-                      dw(i,j,k,imx)   = dw(i,j,k,imx)*mult
-                      dw(i,j,k,imy)   = dw(i,j,k,imy)*mult
-                      dw(i,j,k,imz)   = dw(i,j,k,imz)*mult
-                      dw(i,j,k,irhoE) = dw(i,j,k,irhoE)*mult
+                                dw(i, j, k, irho) = dw(i, j, k, irho) * mult
+                                dw(i, j, k, imx) = dw(i, j, k, imx) * mult
+                                dw(i, j, k, imy) = dw(i, j, k, imy) * mult
+                                dw(i, j, k, imz) = dw(i, j, k, imz) * mult
+                                dw(i, j, k, irhoE) = dw(i, j, k, irhoE) * mult
 
-                   enddo
-                enddo
-             enddo
+                            end do
+                        end do
+                    end do
 
-          enddo spectralUnsteady
+                end do spectralUnsteady
 
-       end select
+            end select
 
-    enddo domainsUpdate
-    !
-    !       Compute the new state vector.
-    !
-    ! Loop over the number of spectral solutions and local blocks.
+        end do domainsUpdate
+        !
+        !       Compute the new state vector.
+        !
+        ! Loop over the number of spectral solutions and local blocks.
 
-    spectralLoop: do sps=1,nTimeIntervalsSpectral
-       domainsState: do nn=1,nDom
+        spectralLoop: do sps = 1, nTimeIntervalsSpectral
+            domainsState: do nn = 1, nDom
 
-          ! Set the pointers to this block.
+                ! Set the pointers to this block.
 
-          call setPointers(nn, currentLevel, sps)
+                call setPointers(nn, currentLevel, sps)
 
-          ! Possibility to smooth the updates.
+                ! Possibility to smooth the updates.
 
-          if( smoothResidual ) then
-             call residualAveraging
-          end if
-          ! Flow variables.
+                if (smoothResidual) then
+                    call residualAveraging
+                end if
+                ! Flow variables.
 
-          factK = zero
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
+                factK = zero
+                do k = 2, kl
+                    do j = 2, jl
+                        do i = 2, il
 
-                   ! Store gamma -1 and gamma - 5/3 a bit easier.
+                            ! Store gamma -1 and gamma - 5/3 a bit easier.
 
-                   gm1  = gamma(i,j,k) - one
-                   gm53 = gamma(i,j,k) - fiveThird
+                            gm1 = gamma(i, j, k) - one
+                            gm53 = gamma(i, j, k) - fiveThird
 
-                   ! Compute the pressure update from the conservative
-                   ! updates. The expression used below is valid even if
-                   ! cp is not constant. For the calorically perfect case,
-                   ! cp is constant, it can be simplified to the usual
-                   ! expression, but not for variable cp.
+                            ! Compute the pressure update from the conservative
+                            ! updates. The expression used below is valid even if
+                            ! cp is not constant. For the calorically perfect case,
+                            ! cp is constant, it can be simplified to the usual
+                            ! expression, but not for variable cp.
 
-                   ovr = one/w(i,j,k,irho)
-                   v2  = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 + w(i,j,k,ivz)**2
-                   if( correctForK ) factK = gm53*w(i,j,k,itu1)
+                            ovr = one / w(i, j, k, irho)
+                            v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
+                            if (correctForK) factK = gm53 * w(i, j, k, itu1)
 
-                   dp = (ovr*p(i,j,k) + factK                             &
-                        -  gm1*(ovr*w(i,j,k,irhoE) - v2))*dw(i,j,k,irho)    &
-                        + gm1*(dw(i,j,k,irhoE) - w(i,j,k,ivx)*dw(i,j,k,imx) &
-                        - w(i,j,k,ivy)*dw(i,j,k,imy) &
-                        - w(i,j,k,ivz)*dw(i,j,k,imz))
+                            dp = (ovr * p(i, j, k) + factK &
+                                  - gm1 * (ovr * w(i, j, k, irhoE) - v2)) * dw(i, j, k, irho) &
+                                 + gm1 * (dw(i, j, k, irhoE) - w(i, j, k, ivx) * dw(i, j, k, imx) &
+                                          - w(i, j, k, ivy) * dw(i, j, k, imy) &
+                                          - w(i, j, k, ivz) * dw(i, j, k, imz))
 
-                   ! Compute the density. Correct for negative values.
+                            ! Compute the density. Correct for negative values.
 
-                   w(i,j,k,irho) = wn(i,j,k,irho) - dw(i,j,k,irho)
-                   w(i,j,k,irho) = max(w(i,j,k,irho), 1.e-4_realType*rhoInf)
+                            w(i, j, k, irho) = wn(i, j, k, irho) - dw(i, j, k, irho)
+                            w(i, j, k, irho) = max(w(i, j, k, irho), 1.e-4_realType * rhoInf)
 
-                   ! Compute the velocities.
+                            ! Compute the velocities.
 
-                   ru  = wn(i,j,k,irho)*wn(i,j,k,ivx) - dw(i,j,k,imx)
-                   rv  = wn(i,j,k,irho)*wn(i,j,k,ivy) - dw(i,j,k,imy)
-                   rw  = wn(i,j,k,irho)*wn(i,j,k,ivz) - dw(i,j,k,imz)
+                            ru = wn(i, j, k, irho) * wn(i, j, k, ivx) - dw(i, j, k, imx)
+                            rv = wn(i, j, k, irho) * wn(i, j, k, ivy) - dw(i, j, k, imy)
+                            rw = wn(i, j, k, irho) * wn(i, j, k, ivz) - dw(i, j, k, imz)
 
-                   ovr = one/w(i,j,k,irho)
-                   w(i,j,k,ivx) = ovr*ru
-                   w(i,j,k,ivy) = ovr*rv
-                   w(i,j,k,ivz) = ovr*rw
+                            ovr = one / w(i, j, k, irho)
+                            w(i, j, k, ivx) = ovr * ru
+                            w(i, j, k, ivy) = ovr * rv
+                            w(i, j, k, ivz) = ovr * rw
 
-                   ! Compute the pressure. Correct for negative values.
+                            ! Compute the pressure. Correct for negative values.
 
-                   p(i,j,k) = pn(i,j,k) - dp
-                   p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+                            p(i, j, k) = pn(i, j, k) - dp
+                            p(i, j, k) = max(p(i, j, k), 1.e-4_realType * pInfCorr)
+
+                        end do
+                    end do
+                end do
+
+                ! Compute the total energy and possibly the laminar and eddy
+                ! viscosity in the owned cells.
+
+                call computeEtotBlock(2_intType, il, 2_intType, jl, &
+                                      2_intType, kl, correctForK)
+                call computeLamViscosity(.False.)
+                call computeEddyViscosity(.False.)  !for SST, the velocity in 1st halo MUST be up to date before this call. Does not seem like it is.
+
+            end do domainsState
+        end do spectralLoop
+
+        ! Exchange the pressure if the pressure must be exchanged early.
+        ! Only the first halo's are needed, thus whalo1 is called.
+        ! Only on the fine grid.
+
+        if (exchangePressureEarly .and. currentLevel <= groundLevel) &
+            call whalo1(currentLevel, 1_intType, 0_intType, .true., &
+                        .false., .false.)
+
+        ! Apply all boundary conditions to all blocks on this level.
+
+        call applyAllBC(secondHalo)
+
+        ! Exchange the solution. Either whalo1 or whalo2
+        ! must be called.
+
+        if (secondHalo) then
+            call whalo2(currentLevel, 1_intType, nwf, .true., &
+                        .true., .true.)
+        else
+            call whalo1(currentLevel, 1_intType, nwf, .true., &
+                        .true., .true.)
+        end if
+
+    end subroutine executeRkStage
+    subroutine DADISmoother
+        !
+        !       RungeKuttaSmoother performs one multi-stage runge kutta
+        !       explicit time step for the current multigrid level. On
+        !       entrance it is assumed that the residual and time step are
+        !       already computed. On exit the solution in the halo's contain
+        !       the latest values. However, the residual corresponding to
+        !       these values is not computed.
+        !
+        use blockPointers
+        use flowVarRefState
+        use inputIteration
+        use inputTimeSpectral
+        use iteration
+        use residuals, only: initRes, residual, sourceTerms
+        implicit none
+
+        if (groundLevel == 1) then
+            do Subit = 1, nSubiterations - 1
+
+                ! Execute a DADI step and exchange the externals.
+
+                call executeDADIStep
+
+                ! Compute the residuals for the next stage.
+                call initres(1_intType, nwf)
+                call sourceTerms()
+                call residual
+
+            end do
+
+            ! Set Subit to nSubiterations, for clarity;
+            Subit = nSubiterations
+        end if
+
+        ! Execute the last subiteration.
+        call executeDADIStep
 
-                enddo
-             enddo
-          enddo
-
-          ! Compute the total energy and possibly the laminar and eddy
-          ! viscosity in the owned cells.
-
-          call computeEtotBlock(2_intType,il, 2_intType,jl, &
-               2_intType,kl, correctForK)
-          call computeLamViscosity(.False.)
-          call computeEddyViscosity(.False.)  !for SST, the velocity in 1st halo MUST be up to date before this call. Does not seem like it is.
-
-       enddo domainsState
-    enddo spectralLoop
-
-    ! Exchange the pressure if the pressure must be exchanged early.
-    ! Only the first halo's are needed, thus whalo1 is called.
-    ! Only on the fine grid.
-
-    if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-         call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-         .false., .false.)
-
-    ! Apply all boundary conditions to all blocks on this level.
-
-    call applyAllBC(secondHalo)
-
-    ! Exchange the solution. Either whalo1 or whalo2
-    ! must be called.
-
-    if( secondHalo ) then
-       call whalo2(currentLevel, 1_intType, nwf, .true., &
-            .true., .true.)
-    else
-       call whalo1(currentLevel, 1_intType, nwf, .true., &
-            .true., .true.)
-    endif
-
-  end subroutine executeRkStage
-  subroutine DADISmoother
-    !
-    !       RungeKuttaSmoother performs one multi-stage runge kutta
-    !       explicit time step for the current multigrid level. On
-    !       entrance it is assumed that the residual and time step are
-    !       already computed. On exit the solution in the halo's contain
-    !       the latest values. However, the residual corresponding to
-    !       these values is not computed.
-    !
-    use blockPointers
-    use flowVarRefState
-    use inputIteration
-    use inputTimeSpectral
-    use iteration
-    use residuals, only : initRes, residual, sourceTerms
-    implicit none
-
-
-    if (groundLevel == 1) then
-       do Subit=1,nSubiterations-1
-
-          ! Execute a DADI step and exchange the externals.
-
-          call executeDADIStep
-
-          ! Compute the residuals for the next stage.
-          call initres(1_intType, nwf)
-          call sourceTerms()
-          call residual
+    end subroutine DADISmoother
 
-       enddo
+    !      ==================================================================
 
-       ! Set Subit to nSubiterations, for clarity;
-       Subit = nSubiterations
-    end if
+    subroutine executeDADIStep
+        !
+        !       executeDADIStep executes one DADI step.
+        !
+        use blockPointers
+        use constants
+        use flowVarRefState
+        use inputIteration
+        use inputPhysics
+        use inputTimeSpectral
+        use inputUnsteady
+        use iteration
+        use utils, only: getCorrectForK, setPointers
+        use haloExchange, only: whalo1, whalo2
+        use flowUtils, only: computeETotBlock, computeLamViscosity
+        use turbutils, only: computeeddyviscosity
+        use residuals, only: residualAveraging, computeDwDADI
+        use BCRoutines, only: applyAllBC
+        implicit none
+        !
+        !      Local parameter.
+        !
+        real(kind=realType), parameter :: fiveThird = five * third
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: sps, nn, i, j, k, l
 
-    ! Execute the last subiteration.
-    call executeDADIStep
+        real(kind=realType) :: unsteadyImpl, mult
+        real(kind=realType) :: dt, currentCfl, gm1, gm53
+        real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
 
-  end subroutine DADISmoother
+        logical :: secondHalo, smoothResidual, correctForK
 
-  !      ==================================================================
+        ! Set the value of secondHalo and the current cfl number,
+        ! depending on the situation. On the finest grid in the mg cycle
+        ! the second halo is computed, otherwise not.
 
-  subroutine executeDADIStep
-    !
-    !       executeDADIStep executes one DADI step.
-    !
-    use blockPointers
-    use constants
-    use flowVarRefState
-    use inputIteration
-    use inputPhysics
-    use inputTimeSpectral
-    use inputUnsteady
-    use iteration
-    use utils, only : getCorrectForK, setPointers
-    use haloExchange, only : whalo1, whalo2
-    use flowUtils, only : computeETotBlock, computeLamViscosity
-    use turbutils, only : computeeddyviscosity
-    use residuals, only : residualAveraging, computeDwDADI
-    use BCRoutines, only : applyAllBC
-    implicit none
-    !
-    !      Local parameter.
-    !
-    real(kind=realType), parameter :: fiveThird = five*third
-    !
-    !      Local variables.
-    !
-    integer(kind=intType) :: sps, nn, i, j, k, l
+        if (currentLevel <= groundLevel) then
+            secondHalo = .true.
+        else
+            secondHalo = .false.
+        end if
 
-    real(kind=realType) :: unsteadyImpl, mult
-    real(kind=realType) :: dt, currentCfl, gm1, gm53
-    real(kind=realType) :: v2, ovr, dp, factK, ru, rv, rw
+        currentCfl = cflCoarse
+        if (currentLevel == 1) then
+            currentCfl = cfl
+        end if
 
-    logical :: secondHalo, smoothResidual, correctForK
+        ! Determine whether or not residual averaging must be applied.
 
-    ! Set the value of secondHalo and the current cfl number,
-    ! depending on the situation. On the finest grid in the mg cycle
-    ! the second halo is computed, otherwise not.
+        if (resAveraging == noResAveraging) then
+            smoothResidual = .false.
+        else if (resAveraging == alwaysResAveraging) then
+            smoothResidual = .true.
+        else if (mod(rkStage, 2_intType) == 1) then
+            smoothResidual = .true.
+        else
+            smoothResidual = .false.
+        end if
 
-    if(currentLevel <= groundLevel) then
-       secondHalo = .true.
-    else
-       secondHalo = .false.
-    endif
+        ! Determine whether or not the total energy must be corrected
+        ! for the presence of the turbulent kinetic energy.
+        correctForK = getCorrectForK()
 
-    currentCfl = cflCoarse
-    if (currentLevel == 1) then
-       currentCfl = cfl
-    end if
+        !
+        !       Compute the updates of the conservative variables.
+        !
+        ! Loop over the local number of blocks.
 
-    ! Determine whether or not residual averaging must be applied.
+        domainsUpdate: do nn = 1, nDom
 
-    if(resAveraging == noResAveraging) then
-       smoothResidual = .false.
-    else if(resAveraging == alwaysResAveraging) then
-       smoothResidual = .true.
-    else if(mod(rkStage,2_intType) == 1) then
-       smoothResidual = .true.
-    else
-       smoothResidual = .false.
-    endif
+            ! Determine the equation mode solved.
 
-    ! Determine whether or not the total energy must be corrected
-    ! for the presence of the turbulent kinetic energy.
-    correctForK = getCorrectForK()
+            select case (equationMode)
 
-    !
-    !       Compute the updates of the conservative variables.
-    !
-    ! Loop over the local number of blocks.
+            case (steady, timeSpectral)
 
-    domainsUpdate: do nn=1,nDom
+                ! Loop over the number of spectral solutions. Note that
+                ! for the steady mode this value is 1.
 
-       ! Determine the equation mode solved.
+                spectralSteady: do sps = 1, nTimeIntervalsSpectral
 
-       select case (equationMode)
+                    ! Set the pointers to this block.
 
-       case (steady, timeSpectral)
+                    call setPointers(nn, currentLevel, sps)
 
-          ! Loop over the number of spectral solutions. Note that
-          ! for the steady mode this value is 1.
+                    ! Loop over the owned cells of this block.
 
-          spectralSteady: do sps=1,nTimeIntervalsSpectral
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
 
-             ! Set the pointers to this block.
+                                ! Determine the local time step
 
-             call setPointers(nn, currentLevel, sps)
+                                dt = -currentCfl * dtl(i, j, k) * vol(i, j, k)
 
-             ! Loop over the owned cells of this block.
+                                ! Compute the updates of the flow field variables.
 
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
+                                dw(i, j, k, irho) = dw(i, j, k, irho) * dt
+                                dw(i, j, k, imx) = dw(i, j, k, imx) * dt
+                                dw(i, j, k, imy) = dw(i, j, k, imy) * dt
+                                dw(i, j, k, imz) = dw(i, j, k, imz) * dt
+                                dw(i, j, k, irhoE) = dw(i, j, k, irhoE) * dt
 
-                      ! Determine the local time step
+                            end do
+                        end do
+                    end do
 
-                      dt =-currentCfl*dtl(i,j,k)*vol(i,j,k)
+                    call computedwDADI
 
-                      ! Compute the updates of the flow field variables.
+                end do spectralSteady
 
-                      dw(i,j,k,irho)  =dw(i,j,k,irho)*dt
-                      dw(i,j,k,imx)   =dw(i,j,k,imx)*dt
-                      dw(i,j,k,imy)   =dw(i,j,k,imy)*dt
-                      dw(i,j,k,imz)   =dw(i,j,k,imz)*dt
-                      dw(i,j,k,irhoE) =dw(i,j,k,irhoE)*dt
+                !=============================================================
 
-                   enddo
-                enddo
-             enddo
+            case (unsteady)
 
-             call computedwDADI
+                ! Unsteady equations are solved via the dual time
+                ! stepping technique. The leading term of the time
+                ! integrator must be treated implicitly for stability
+                ! reasons. This leads to a different multiplication
+                ! factor of the residual compared to the steady case.
 
-          enddo spectralSteady
+                unsteadyImpl = coefTime(0) * timeRef / deltaT
 
-          !=============================================================
+                ! Loop over the number of spectral modes, although this is
+                ! always 1 for the unsteady mode. The loop is executed for
+                ! consistency reasons.
 
-       case (unsteady)
+                spectralUnsteady: do sps = 1, nTimeIntervalsSpectral
 
-          ! Unsteady equations are solved via the dual time
-          ! stepping technique. The leading term of the time
-          ! integrator must be treated implicitly for stability
-          ! reasons. This leads to a different multiplication
-          ! factor of the residual compared to the steady case.
+                    ! Set the pointers to this block.
 
-          unsteadyImpl = coefTime(0)*timeRef/deltaT
+                    call setPointers(nn, currentLevel, sps)
 
-          ! Loop over the number of spectral modes, although this is
-          ! always 1 for the unsteady mode. The loop is executed for
-          ! consistency reasons.
+                    ! Determine the updates of the flow field variables.
+                    ! Owned cells only. The result is stored in dw.
 
-          spectralUnsteady: do sps=1,nTimeIntervalsSpectral
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
 
-             ! Set the pointers to this block.
+                                ! Determine the local time step
 
-             call setPointers(nn, currentLevel, sps)
+                                dt = currentCfl * dtl(i, j, k)
+                                mult = dt / (dt * unsteadyImpl * vol(i, j, k) + one)
+                                mult = -mult * vol(i, j, k)
 
-             ! Determine the updates of the flow field variables.
-             ! Owned cells only. The result is stored in dw.
+                                dw(i, j, k, irho) = dw(i, j, k, irho) * mult
+                                dw(i, j, k, imx) = dw(i, j, k, imx) * mult
+                                dw(i, j, k, imy) = dw(i, j, k, imy) * mult
+                                dw(i, j, k, imz) = dw(i, j, k, imz) * mult
+                                dw(i, j, k, irhoE) = dw(i, j, k, irhoE) * mult
 
-             do k=2,kl
-                do j=2,jl
-                   do i=2,il
+                            end do
+                        end do
+                    end do
 
-                      ! Determine the local time step
+                    call computedwDADI
 
-                      dt   = currentCfl*dtl(i,j,k)
-                      mult = dt/(dt*unsteadyImpl*vol(i,j,k) + one)
-                      mult = -mult*vol(i,j,k)
+                end do spectralUnsteady
 
-                      dw(i,j,k,irho)  = dw(i,j,k,irho)*mult
-                      dw(i,j,k,imx)   = dw(i,j,k,imx)*mult
-                      dw(i,j,k,imy)   = dw(i,j,k,imy)*mult
-                      dw(i,j,k,imz)   = dw(i,j,k,imz)*mult
-                      dw(i,j,k,irhoE) = dw(i,j,k,irhoE)*mult
+            end select
 
-                   enddo
-                enddo
-             enddo
+        end do domainsUpdate
+        !
+        !       Compute the new state vector.
+        !
+        ! Loop over the number of spectral solutions and local blocks.
 
-             call computedwDADI
+        spectralLoop: do sps = 1, nTimeIntervalsSpectral
+            domainsState: do nn = 1, nDom
 
-          enddo spectralUnsteady
+                ! Set the pointers to this block.
 
-       end select
+                call setPointers(nn, currentLevel, sps)
 
-    enddo domainsUpdate
-    !
-    !       Compute the new state vector.
-    !
-    ! Loop over the number of spectral solutions and local blocks.
+                ! Possibility to smooth the updates.
 
-    spectralLoop: do sps=1,nTimeIntervalsSpectral
-       domainsState: do nn=1,nDom
+                if (smoothResidual) call residualAveraging
 
-          ! Set the pointers to this block.
+                ! Flow variables.
 
-          call setPointers(nn, currentLevel, sps)
+                factK = zero
+                do k = 2, kl
+                    do j = 2, jl
+                        do i = 2, il
 
-          ! Possibility to smooth the updates.
+                            ! Store gamma -1 and gamma - 5/3 a bit easier.
 
-          if( smoothResidual ) call residualAveraging
+                            gm1 = gamma(i, j, k) - one
+                            gm53 = gamma(i, j, k) - fiveThird
 
-          ! Flow variables.
+                            ! Compute the pressure update from the conservative
+                            ! updates. The expression used below is valid even if
+                            ! cp is not constant. For the calorically perfect case,
+                            ! cp is constant, it can be simplified to the usual
+                            ! expression, but not for variable cp.
 
-          factK = zero
-          do k=2,kl
-             do j=2,jl
-                do i=2,il
+                            ovr = one / w(i, j, k, irho)
+                            v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
+                            if (correctForK) factK = gm53 * w(i, j, k, itu1)
 
-                   ! Store gamma -1 and gamma - 5/3 a bit easier.
+                            dp = (ovr * p(i, j, k) + factK &
+                                  - gm1 * (ovr * w(i, j, k, irhoE) - v2)) * dw(i, j, k, irho) &
+                                 + gm1 * (dw(i, j, k, irhoE) - w(i, j, k, ivx) * dw(i, j, k, imx) &
+                                          - w(i, j, k, ivy) * dw(i, j, k, imy) &
+                                          - w(i, j, k, ivz) * dw(i, j, k, imz))
 
-                   gm1  = gamma(i,j,k) - one
-                   gm53 = gamma(i,j,k) - fiveThird
+                            ! Compute the velocities.
 
-                   ! Compute the pressure update from the conservative
-                   ! updates. The expression used below is valid even if
-                   ! cp is not constant. For the calorically perfect case,
-                   ! cp is constant, it can be simplified to the usual
-                   ! expression, but not for variable cp.
+                            ru = w(i, j, k, irho) * w(i, j, k, ivx) - dw(i, j, k, imx)
+                            rv = w(i, j, k, irho) * w(i, j, k, ivy) - dw(i, j, k, imy)
+                            rw = w(i, j, k, irho) * w(i, j, k, ivz) - dw(i, j, k, imz)
 
-                   ovr = one/w(i,j,k,irho)
-                   v2  = w(i,j,k,ivx)**2 + w(i,j,k,ivy)**2 + w(i,j,k,ivz)**2
-                   if( correctForK ) factK = gm53*w(i,j,k,itu1)
+                            ! Compute the density. Correct for negative values.
 
-                   dp = (ovr*p(i,j,k) + factK                             &
-                        -  gm1*(ovr*w(i,j,k,irhoE) - v2))*dw(i,j,k,irho)    &
-                        + gm1*(dw(i,j,k,irhoE) - w(i,j,k,ivx)*dw(i,j,k,imx) &
-                        - w(i,j,k,ivy)*dw(i,j,k,imy) &
-                        - w(i,j,k,ivz)*dw(i,j,k,imz))
+                            w(i, j, k, irho) = w(i, j, k, irho) - dw(i, j, k, irho)
+                            w(i, j, k, irho) = max(w(i, j, k, irho), 1.e-4_realType * rhoInf)
 
+                            ovr = one / w(i, j, k, irho)
+                            w(i, j, k, ivx) = ovr * ru
+                            w(i, j, k, ivy) = ovr * rv
+                            w(i, j, k, ivz) = ovr * rw
 
-                   ! Compute the velocities.
+                            ! Compute the pressure. Correct for negative values.
 
-                   ru  = w(i,j,k,irho)*w(i,j,k,ivx) - dw(i,j,k,imx)
-                   rv  = w(i,j,k,irho)*w(i,j,k,ivy) - dw(i,j,k,imy)
-                   rw  = w(i,j,k,irho)*w(i,j,k,ivz) - dw(i,j,k,imz)
+                            p(i, j, k) = p(i, j, k) - dp
+                            p(i, j, k) = max(p(i, j, k), 1.e-4_realType * pInfCorr)
 
-                   ! Compute the density. Correct for negative values.
+                        end do
+                    end do
+                end do
 
-                   w(i,j,k,irho) = w(i,j,k,irho) - dw(i,j,k,irho)
-                   w(i,j,k,irho) = max(w(i,j,k,irho), 1.e-4_realType*rhoInf)
+                ! Compute the total energy and possibly the laminar and eddy
+                ! viscosity in the owned cells.
 
-                   ovr = one/w(i,j,k,irho)
-                   w(i,j,k,ivx) = ovr*ru
-                   w(i,j,k,ivy) = ovr*rv
-                   w(i,j,k,ivz) = ovr*rw
+                call computeEtotBlock(2_intType, il, 2_intType, jl, &
+                                      2_intType, kl, correctForK)
+                call computeLamViscosity(.False.)
+                call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. Does not seem like it is.
 
-                   ! Compute the pressure. Correct for negative values.
+            end do domainsState
+        end do spectralLoop
 
-                   p(i,j,k) = p(i,j,k) - dp
-                   p(i,j,k) = max(p(i,j,k), 1.e-4_realType*pInfCorr)
+        ! Exchange the pressure if the pressure must be exchanged early.
+        ! Only the first halo's are needed, thus whalo1 is called.
+        ! Only on the fine grid.
 
-                enddo
-             enddo
-          enddo
+        if (exchangePressureEarly .and. currentLevel <= groundLevel) &
+            call whalo1(currentLevel, 1_intType, 0_intType, .true., &
+                        .false., .false.)
 
-          ! Compute the total energy and possibly the laminar and eddy
-          ! viscosity in the owned cells.
+        ! Apply all boundary conditions to all blocks on this level.
 
-          call computeEtotBlock(2_intType,il, 2_intType,jl, &
-               2_intType,kl, correctForK)
-          call computeLamViscosity(.False.)
-          call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. Does not seem like it is.
+        call applyAllBC(secondHalo)
 
-       enddo domainsState
-    enddo spectralLoop
+        ! Exchange the solution. Either whalo1 or whalo2
+        ! must be called.
 
-    ! Exchange the pressure if the pressure must be exchanged early.
-    ! Only the first halo's are needed, thus whalo1 is called.
-    ! Only on the fine grid.
+        if (secondHalo) then
+            call whalo2(currentLevel, 1_intType, nwf, .true., &
+                        .true., .true.)
+        else
+            call whalo1(currentLevel, 1_intType, nwf, .true., &
+                        .true., .true.)
+        end if
 
-    if(exchangePressureEarly .and. currentLevel <= groundLevel) &
-         call whalo1(currentLevel, 1_intType, 0_intType, .true.,&
-         .false., .false.)
-
-    ! Apply all boundary conditions to all blocks on this level.
-
-    call applyAllBC(secondHalo)
-
-    ! Exchange the solution. Either whalo1 or whalo2
-    ! must be called.
-
-    if( secondHalo ) then
-       call whalo2(currentLevel, 1_intType, nwf, .true., &
-            .true., .true.)
-    else
-       call whalo1(currentLevel, 1_intType, nwf, .true., &
-            .true., .true.)
-    endif
-
-  end subroutine executeDADIStep
+    end subroutine executeDADIStep
 
 end module smoothers

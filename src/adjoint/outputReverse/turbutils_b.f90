@@ -10,10 +10,11 @@ module turbutils_b
 ! ----------------------------------------------------------------------
 
 contains
-  subroutine prodkatolaunder()
+  subroutine prodkatolaunder(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       prodkatolaunder computes the turbulent production term using
 !       the kato-launder formulation.
+!       should always be called with beg>1 and <end!
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
@@ -22,6 +23,11 @@ contains
     use section, only : sections
     use turbmod, only : prod
     implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: ibeg, iend, jbeg, jend, kbeg, &
+&   kend
 !
 !      local variables.
 !
@@ -32,6 +38,9 @@ contains
     real(kind=realtype) :: fact, omegax, omegay, omegaz
     intrinsic mod
     intrinsic sqrt
+    integer*4 :: jsize
+    integer*4 :: isize
+    integer :: ksize
 ! determine the non-dimensional wheel speed of this block.
 ! the vorticity term, which appears in kato-launder is of course
 ! not frame invariant. to approximate frame invariance the wheel
@@ -46,10 +55,13 @@ contains
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for u, v and w must be stored.
 ! in the current approach no extra memory is needed.
-    do ii=0,nx*ny*nz-1
-      i = mod(ii, nx) + 2
-      j = mod(ii/nx, ny) + 2
-      k = ii/(nx*ny) + 2
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
 ! compute the gradient of u in the cell center. use is made
 ! of the fact that the surrounding normals sum up to zero,
 ! such that the cell i,j,k does not give a contribution.
@@ -112,18 +124,24 @@ contains
       scratch(i, j, k, iprod) = two*sqrt(sijsij*oijoij)
     end do
   end subroutine prodkatolaunder
-  subroutine prodsmag2()
+  subroutine prodsmag2(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       prodsmag2 computes the term:
 !              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi)
 !       which is used for the turbulence equations.
 !       it is assumed that the pointer prod, stored in turbmod, is
 !       already set to the correct entry.
+!       should always be called with beg>1 and <end!
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
 &   vol, sectionid, scratch
     implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: ibeg, iend, jbeg, jend, kbeg, &
+&   kend
 !
 !      local parameter
 !
@@ -135,14 +153,20 @@ contains
     real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
     real(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
     intrinsic mod
+    integer*4 :: jsize
+    integer*4 :: isize
+    integer :: ksize
 ! loop over the cell centers of the given block. it may be more
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for u, v and w must be stored.
 ! in the current approach no extra memory is needed.
-    do ii=0,nx*ny*nz-1
-      i = mod(ii, nx) + 2
-      j = mod(ii/nx, ny) + 2
-      k = ii/(nx*ny) + 2
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
 ! compute the gradient of u in the cell center. use is made
 ! of the fact that the surrounding normals sum up to zero,
 ! such that the cell i,j,k does not give a contribution.
@@ -478,6 +502,9 @@ nadvloopspectral:do ii=1,nadv
     use inputphysics
     use iteration
     use blockpointers
+    use turbbcroutines_b, only : applyallturbbcthisblock, &
+&   applyallturbbcthisblock_b
+    use haloexchange, only : whalo1
     implicit none
 ! input parameter
     logical, intent(in) :: includehalos
@@ -500,6 +527,9 @@ nadvloopspectral:do ii=1,nadv
 ! determine the turbulence model and call the appropriate
 ! routine to compute the eddy viscosity.
       if (includehalos) then
+!  caution: even though the following calls were made consistent to accept ibeg, iend, etc. care must be taken when the evaluatio
+!n of eddyvisc
+!    involves derivatives. they can't be obtained by fd in the halo cells! this is why the sst call is different from the others.
         ibeg = 1
         iend = ie
         jbeg = 1
@@ -532,6 +562,8 @@ nadvloopspectral:do ii=1,nadv
     use inputphysics
     use iteration
     use blockpointers
+    use turbbcroutines_b, only : applyallturbbcthisblock
+    use haloexchange, only : whalo1
     implicit none
 ! input parameter
     logical, intent(in) :: includehalos
@@ -556,6 +588,9 @@ nadvloopspectral:do ii=1,nadv
 ! determine the turbulence model and call the appropriate
 ! routine to compute the eddy viscosity.
       if (includehalos) then
+!  caution: even though the following calls were made consistent to accept ibeg, iend, etc. care must be taken when the evaluatio
+!n of eddyvisc
+!    involves derivatives. they can't be obtained by fd in the halo cells! this is why the sst call is different from the others.
         ibeg = 1
         iend = ie
         jbeg = 1
@@ -708,6 +743,7 @@ nadvloopspectral:do ii=1,nadv
 !       ssteddyviscosity computes the eddy viscosity according to
 !       menter's sst variant of the k-omega turbulence model for the
 !       block given in blockpointers.
+!       should always be called with beg>1 and <end! d2wall is not defined otherwise.
 !
     use constants
     use blockpointers
@@ -730,9 +766,9 @@ nadvloopspectral:do ii=1,nadv
 ! for computing the vorticity squared is that a routine exists
 ! for it; for the actual eddy viscosity computation the vorticity
 ! itself is needed.
-    call prodwmag2()
+    call prodwmag2(ibeg, iend, jbeg, jend, kbeg, kend)
 ! loop over the cells of this block and compute the eddy viscosity.
-! do not include halo's.
+! most of the time, do not include halo's (ibeg=2...il,...)
     isize = iend - ibeg + 1
     jsize = jend - jbeg + 1
     ksize = kend - kbeg + 1
@@ -753,6 +789,8 @@ nadvloopspectral:do ii=1,nadv
       end if
       f2 = tanh(arg2**2)
 ! and compute the eddy viscosity.
+! same definition as in
+! note that https://www.cfd-online.com/wiki/sst_k-omega_model utilizes the strain and not the vorticity
       vortmag = sqrt(scratch(i, j, k, iprod))
       if (rssta1*w(i, j, k, itu2) .lt. f2*vortmag) then
         max1 = f2*vortmag
@@ -762,13 +800,14 @@ nadvloopspectral:do ii=1,nadv
       rev(i, j, k) = w(i, j, k, irho)*rssta1*w(i, j, k, itu1)/max1
     end do
   end subroutine ssteddyviscosity
-  subroutine prodwmag2()
+  subroutine prodwmag2(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       prodwmag2 computes the term:
 !          2*oij*oij  with oij=0.5*(duidxj - dujdxi).
 !       this is equal to the magnitude squared of the vorticity.
 !       it is assumed that the pointer vort, stored in turbmod, is
 !       already set to the correct entry.
+!       should always be called with beg>1 and <end!
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, si, sj, sk, &
@@ -776,6 +815,12 @@ nadvloopspectral:do ii=1,nadv
     use flowvarrefstate, only : timeref
     use section, only : sections
     implicit none
+! update of iprod to be consistent. ivort seems to be never used, and ivort = iprod anyway.
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: ibeg, iend, jbeg, jend, kbeg, &
+&   kend
 !
 !      local variables.
 !
@@ -784,6 +829,9 @@ nadvloopspectral:do ii=1,nadv
     real(kind=realtype) :: fact, vortx, vorty, vortz
     real(kind=realtype) :: omegax, omegay, omegaz
     intrinsic mod
+    integer :: jsize
+    integer :: isize
+    integer :: ksize
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)
@@ -792,10 +840,13 @@ nadvloopspectral:do ii=1,nadv
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for u, v and w must be stored.
 ! in the current approach no extra memory is needed.
-    do ii=0,nx*ny*nz-1
-      i = mod(ii, nx) + 2
-      j = mod(ii/nx, ny) + 2
-      k = ii/(nx*ny) + 2
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
 ! compute the necessary derivatives of u in the cell center.
 ! use is made of the fact that the surrounding normals sum up
 ! to zero, such that the cell i,j,k does not give a
@@ -833,7 +884,7 @@ nadvloopspectral:do ii=1,nadv
       vorty = fact*(uuz-wwx) - two*omegay
       vortz = fact*(vvx-uuy) - two*omegaz
 ! compute the magnitude squared of the vorticity.
-      scratch(i, j, k, ivort) = vortx**2 + vorty**2 + vortz**2
+      scratch(i, j, k, iprod) = vortx**2 + vorty**2 + vortz**2
     end do
   end subroutine prodwmag2
 !  differentiation of turbadvection in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
@@ -879,9 +930,8 @@ nadvloopspectral:do ii=1,nadv
 !      subroutine arguments.
 !
     integer(kind=inttype), intent(in) :: nadv, madv, offset
-    real(kind=realtype), pointer, dimension(:,:,:,:,:), &
-&   intent(in) :: qq
-
+    real(kind=realtype), dimension(2:il, 2:jl, 2:kl, madv, madv), &
+&   intent(inout) :: qq
 !
 !      local variables.
 !
@@ -1732,8 +1782,8 @@ nadvloopspectral:do ii=1,nadv
 !      subroutine arguments.
 !
     integer(kind=inttype), intent(in) :: nadv, madv, offset
-    real(kind=realtype), pointer, dimension(:,:,:,:,:), &
-&   intent(in) :: qq
+    real(kind=realtype), dimension(2:il, 2:jl, 2:kl, madv, madv), &
+&   intent(inout) :: qq
 !
 !      local variables.
 !

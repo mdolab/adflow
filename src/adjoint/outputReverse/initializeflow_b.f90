@@ -155,6 +155,12 @@ contains
         winf(itu2) = tmp
         call pushcontrol3b(2)
       case (ktau) 
+!both are consistent with https://www.cfd-online.com/wiki/turbulence_free-stream_boundary_conditions,
+! nasa https://turbmodels.larc.nasa.gov/sst.html has slightly different values
+!the nasa ref specify that the freestream turbulent viscosity should be between 10-5 and 10-2 times freestream laminar viscosity.
+! not clear why eddyvisinfratio default to 0.009
+!this ref suggests similar things: k determined so that nutinf = nuinf * 0.009
+! https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.901.7078&rep=rep1&type=pdf
 !=============================================================
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         tmp0 = eddyvisinfratio*nuinf/winf(itu1)
@@ -429,6 +435,12 @@ contains
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = winf(itu1)/(eddyvisinfratio*nuinf)
       case (ktau) 
+!both are consistent with https://www.cfd-online.com/wiki/turbulence_free-stream_boundary_conditions,
+! nasa https://turbmodels.larc.nasa.gov/sst.html has slightly different values
+!the nasa ref specify that the freestream turbulent viscosity should be between 10-5 and 10-2 times freestream laminar viscosity.
+! not clear why eddyvisinfratio default to 0.009
+!this ref suggests similar things: k determined so that nutinf = nuinf * 0.009
+! https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.901.7078&rep=rep1&type=pdf
 !=============================================================
         winf(itu1) = 1.5_realtype*uinf2*turbintensityinf**2
         winf(itu2) = eddyvisinfratio*nuinf/winf(itu1)

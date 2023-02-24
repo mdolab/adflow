@@ -1,4 +1,4 @@
-       module killSignals
+module killSignals
 !
 !       This module contains the variables used to handle the
 !       kill signals from the user. The user can send two signals that
@@ -12,30 +12,30 @@
 !       The handling can be switched off at compile time using the
 !       compiler flag -DUSE_NO_SIGNALS.
 !
-        use constants, only : intType
-       implicit none
-       save
+    use constants, only: intType
+    implicit none
+    save
 
-       ! Definition of some constants for the signalling. As in the
-       ! reduce functions a maximum is determined, it is important that
-       ! noSignal is less than signalWrite and signalWriteQuit.
+    ! Definition of some constants for the signalling. As in the
+    ! reduce functions a maximum is determined, it is important that
+    ! noSignal is less than signalWrite and signalWriteQuit.
 
-       integer(kind=intType), parameter :: noSignal        = 0
-       integer(kind=intType), parameter :: signalWrite     = 1
-       integer(kind=intType), parameter :: signalWriteQuit = 2
+    integer(kind=intType), parameter :: noSignal = 0
+    integer(kind=intType), parameter :: signalWrite = 1
+    integer(kind=intType), parameter :: signalWriteQuit = 2
 
-       ! localSignal:  Signal stored on this processor.
-       ! globalSignal: Maximum of the local signals.
+    ! localSignal:  Signal stored on this processor.
+    ! globalSignal: Maximum of the local signals.
 
-       integer(kind=intType) :: localSignal, globalSignal
+    integer(kind=intType) :: localSignal, globalSignal
 
-       ! fromPython: was this instance of the solver called from python
-       logical :: fromPython
+    ! fromPython: was this instance of the solver called from python
+    logical :: fromPython
 
-       ! routineFailed: was terminate called from a routine?
-       logical :: routineFailed
-       logical :: fatalFail
+    ! routineFailed: was terminate called from a routine?
+    logical :: routineFailed
+    logical :: fatalFail
 
-       logical :: adjointFailed
+    logical :: adjointFailed
 
-       end module killSignals
+end module killSignals

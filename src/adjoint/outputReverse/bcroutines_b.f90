@@ -1040,7 +1040,7 @@ contains
 !                pp1:in pp2:in rlv0:in rlv1:in rlv2:in ww0:in ww1:in
 !                ww2:in bcdata:in *bcdata.uslip:in *bcdata.tns_wall:in
   subroutine bcnswallisothermal_b(nn, secondhalo, correctfork)
-! bcnswalladiabatic applies the viscous isothermal wall boundary
+! bcnswallisothermal applies the viscous isothermal wall boundary
 ! condition to a block. it is assumed that the bcpointers are
 ! already set
     use constants
@@ -1271,7 +1271,7 @@ contains
     end do
   end subroutine bcnswallisothermal_b
   subroutine bcnswallisothermal(nn, secondhalo, correctfork)
-! bcnswalladiabatic applies the viscous isothermal wall boundary
+! bcnswallisothermal applies the viscous isothermal wall boundary
 ! condition to a block. it is assumed that the bcpointers are
 ! already set
     use constants
