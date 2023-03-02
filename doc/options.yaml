@@ -1077,6 +1077,20 @@ ANKUseMatrixFree:
     Use the matrix-free Jacobian for the ANK solver.
     If True, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
 
+ANKCharTimeStepType:
+  desc: >
+    This applies physics-based preconditioning to the ANK time step matrix.
+    This can accelerate convergence for low Mach number flows when used in combination with :py:data:`acousticScaleFactor`.
+    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+  None: No characteristic time stepping
+  Turkel: >
+    Turkel preconditioner.
+    This only applies to locally subsonic flow.
+  VLR: >
+    van Leer-Lee-Roe preconditioner.
+    This theoretically works for all Mach numbers but is mainly useful for subsonic flows.
+    This usually performs slightly better than Turkel.
+
 blockSplitting:
   desc: >
     Flag determining if the block may be split to obtain better load balancing.
