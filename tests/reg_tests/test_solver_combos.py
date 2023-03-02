@@ -72,6 +72,24 @@ solver_combo_params = [
             "ankuseturbdadi": False,
         },
     },
+    # RANS test with Turkel preconditioner
+    {
+        "name": "rans_smoother_ank_sank_csank_nk_turbdadi_Turkel",
+        "options": {
+            "equationtype": "RANS",
+            "ankuseturbdadi": True,
+            "ANKCharTimeStepType": "Turkel",
+        },
+    },
+    # RANS test with VLR preconditioner
+    {
+        "name": "rans_smoother_ank_sank_csank_nk_turbksp_VLR",
+        "options": {
+            "equationtype": "RANS",
+            "ankuseturbdadi": False,
+            "ANKCharTimeStepType": "VLR",
+        },
+    },
 ]
 
 # common options dict for both real and complex
