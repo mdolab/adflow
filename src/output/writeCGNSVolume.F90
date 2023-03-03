@@ -43,7 +43,7 @@ contains
 
         if (myID == 0 .and. printIterations) then
             print "(a)", "#"
-            print "(a,a)", "# Writing volume solution file(s): ", trim(volSolFileNames(1))
+            print "(a)", "# Writing volume solution file(s):"
         end if
 
         ! Open the CGNS file(s), the convergence info and if needed the
@@ -409,6 +409,9 @@ contains
 
         if (writeGrid .and. (.not. useLinksInCGNS)) then
             do nn = 1, nVolSolToWrite
+                ! Print the filename to stdout
+                print "(a,4x,a)", "#", trim(volSolFileNames(nn))
+
                 call writeCGNSHeader(fileIDs(nn), cgnsBases(nn))
             end do
 
@@ -433,6 +436,10 @@ contains
             ! that the files must be opened in write mode.
 
             do nn = 1, nVolSolToWrite
+                ! Print the filename to stdout
+                print "(a,4x,a)", "#", trim(volSolFileNames(nn))
+
+                ! Open the cgns file for writing and check if it went okay.
                 call cg_open_f(volSolFileNames(nn), mode_write, &
                                fileIDs(nn), ierr)
                 if (ierr /= CG_OK) then
@@ -460,6 +467,9 @@ contains
             ! in modify mode.
 
             do nn = 1, nVolSolToWrite
+                ! Print the filename to stdout
+                print "(a,4x,a)", "#", trim(volSolFileNames(nn))
+
                 call cg_open_f(volSolFileNames(nn), mode_modify, &
                                fileIDs(nn), ierr)
                 if (ierr /= CG_OK) then
