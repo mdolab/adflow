@@ -280,9 +280,11 @@ dissipationScalingExponent:
 acousticScaleFactor:
   desc: >
     A scale factor that multiplies the acoustic contribution in the spectral radius computation.
+    This only applies to the ``central plus scalar dissipation`` :py:data:`discretization`.
     A value of 1.0 will compute the spectral radius with acoustic and advective contributions weighted in the usual manner.
     Values lower than 1.0 will result in more accurate solutions for low Mach number flows, but using too small a value will slow down convergence.
     Setting this to the freestream Mach number tends to work well for most low Mach number cases.
+    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
 
 vis4:
   desc: >
