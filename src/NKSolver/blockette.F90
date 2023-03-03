@@ -3108,7 +3108,8 @@ contains
             if (totalR == zero .or. totalR0 == zero) then
                 fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness * dissContMidpoint)))
             else
- fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness * (log10(totalR / totalR0) + dissContMidpoint))))
+                fis2 = rFil * (vis2 + dissContMagnitude / &
+                               (1 + exp(-dissContSharpness * (log10(totalR / totalR0) + dissContMidpoint))))
             end if
         else
             fis2 = rFil * vis2
@@ -4406,7 +4407,8 @@ contains
 
         ! Set a couple of constants for the scheme.
         if (useDissContinuation) then
-          fis2 = vis2 + dissContMagnitude / (1 + exp(-dissContSharpness * (log10(totalR / totalR0) + dissContMidpoint)))
+            fis2 = vis2 + dissContMagnitude / &
+                   (1 + exp(-dissContSharpness * (log10(totalR / totalR0) + dissContMidpoint)))
         else
             fis2 = vis2
         end if
