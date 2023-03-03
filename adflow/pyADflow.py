@@ -4143,6 +4143,7 @@ class ADFLOW(AeroSolver):
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
         mesh object must both be set for this routine.
+
         Parameters
         ----------
         xDvDot : dict
@@ -4168,6 +4169,7 @@ class ADFLOW(AeroSolver):
             Specifies how the jacobian vector products will be computed.
         h : float
             Step sized used when the mode is "FD" or "CS
+
         Returns
         -------
         dwdot, funcsdot, fDot : array, dict, array
@@ -5013,7 +5015,7 @@ class ADFLOW(AeroSolver):
 
         See Also
         --------
-        :func: setOption
+        :func:`setOption`
         """
         if reset:
             self.rootChangedOptions = {}
