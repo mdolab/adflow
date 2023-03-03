@@ -435,23 +435,28 @@ useLinResMonitor:
 useDissContinuation:
   desc: >
     Use dissipation-based continuation.
-    This adds artificial dissipation at the initial stages of the solution, which helps converge flows with strong transients.
+    This only applies to the ``central plus scalar dissipation`` :py:data:`discretization`.
+    This adds second order dissipation near shocks at the initial stages of the solution, which helps converge supersonic flows.
     The dissipation tapers off as a sigmoid function of the relative convergence.
+    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
 
 dissContMagnitude:
   desc: >
-    The magnitude of the additional dissipation for the dissipation-based continuation.
-    The initial dissipation will typically be close to this value.
+    The magnitude of the additional dissipation for dissipation-based continuation.
+    The initial dissipation is equal to this value plus :py:data:`vis2`.
+    Values between a fifth and a half of the freestream Mach number typically work well.
 
 dissContMidpoint:
   desc: >
     The number of orders of relative convergence at which the additional dissipation is half of :py:data:`dissContMagnitude`.
     For example, a value of 1.0 means that the midpoint is at one order of magnitude of relative convergence.
+    The default value typically works well.
 
 dissContSharpness:
   desc: >
-    The sharpness of the dissipation-based continuation schedule.
+    The sharpness of the dissipation-based continuation sigmoid function.
     Larger values will result in a steeper drop from the initial to final dissipation value.
+    The default value typically works well.
 
 nearWallDist:
   desc: >
