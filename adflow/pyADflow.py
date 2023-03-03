@@ -4820,7 +4820,7 @@ class ADFLOW(AeroSolver):
 
         # Now Re-assemble the global CGNS vector.
         nDOFCGNS = numpy.max(cgnsIndices) + 1
-        CGNSVec = numpy.zeros(nDOFCGNS)
+        CGNSVec = numpy.zeros(nDOFCGNS, dtype=self.dtype)
         CGNSVec[cgnsIndices] = allPts
         CGNSVec = CGNSVec.reshape((len(CGNSVec) // 3, 3))
 
