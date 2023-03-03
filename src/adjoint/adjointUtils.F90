@@ -181,7 +181,7 @@ contains
             lumpedDiss = .True.
             ! We also do not apply acoustic scaling because the dissipation stabilizes ILU
             acousticScaleSave = acousticScaleFactor
-            acousticScaleFactor = 1.0_realType
+            acousticScaleFactor = one
             ! also use first order advection terms for turbulence
             orderturbsave = orderturb
             orderturb = firstOrder
