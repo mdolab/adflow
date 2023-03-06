@@ -59,10 +59,10 @@ contains
         integer(kind=intType) :: ierr, nn, sps, sps2, i, j, k, l, ll, ii, jj, kk
         integer(kind=intType) :: nColor, iColor, jColor, irow, icol, fmDim, frow
         integer(kind=intType) :: nTransfer, nState, lStart, lEnd, tmp, icount, cols(8), nCol
-        integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave, acousticScaleSave
+        integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave
         integer(kind=intType), dimension(:, :), pointer :: stencil
         real(kind=alwaysRealType) :: delta_x, one_over_dx
-        real(kind=realType) :: weights(8)
+        real(kind=realType) :: weights(8), acousticScaleSave
         real(kind=realType), dimension(:, :), allocatable :: blk
         integer(kind=intType), dimension(2:10) :: coarseRows
         integer(kind=intType), dimension(8, 2:10) :: coarseCols
