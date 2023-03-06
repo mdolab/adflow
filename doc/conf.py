@@ -29,7 +29,7 @@ project = "ADflow"
 extensions.extend(["numpydoc", "ext.costfunctionslist"])
 
 # mock import for autodoc
-autodoc_mock_imports = ["numpy", "mpi4py", "petsc4py", "baseclasses"]
+autodoc_mock_imports = ["numpy", "mpi4py", "baseclasses"]
 
 # bibtex sources
 bibtex_bibfiles.extend(["citations.bib"])
