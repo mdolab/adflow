@@ -2032,8 +2032,6 @@ contains
                                           KSP_GMRES_CGS_REFINE_NEVER, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-    contains
-
     end subroutine FormJacobianANK
 
     subroutine computeTimeStepInv()
@@ -2132,7 +2130,8 @@ contains
         real(kind=realType) :: blendFactor, dtInv, rho, velX, velY, velZ
         real(kind=realType) :: speed, speedOfSound, mach, machSqr, machSqrTrunc, alpha, beta, tau, gammaMinusOne
         real(kind=realType) :: speedXY, sinTheta, cosTheta, sinAlpha, cosAlpha
-     real(kind=realType), dimension(nState, nState) :: PSymmStreamInv, streamToCart, symmToCons, consToSymm, stateToCons
+        real(kind=realType), dimension(nState, nState) :: PSymmStreamInv, streamToCart
+        real(kind=realType), dimension(nState, nState) :: symmToCons, consToSymm, stateToCons
 
         ! Zero the block matrices
         timeStepBlock = zero
