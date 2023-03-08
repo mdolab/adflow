@@ -2122,13 +2122,11 @@ contains
         real(kind=realType) :: blendFactor, dtInv, rho, velX, velY, velZ
         real(kind=realType) :: speed, speedOfSound, mach, machSqr, machSqrTrunc, alpha, beta, tau, gammaMinusOne
         real(kind=realType) :: speedXY, sinTheta, cosTheta, sinAlpha, cosAlpha
-        real(kind=realType), dimension(nState, nState) :: PSymmStreamInv, streamToCart
-        real(kind=realType), dimension(nState, nState) :: symmToCons, consToSymm, stateToCons
+        real(kind=realType), dimension(nState, nState) :: streamToCart, symmToCons, consToSymm, stateToCons
 
         ! Zero the block matrices
         timeStepBlock = zero
         stateToCons = zero
-        PSymmStreamInv = zero
         streamToCart = zero
         symmToCons = zero
         consToSymm = zero
@@ -2172,7 +2170,7 @@ contains
 
             ! Characteristic time-stepping is not applied to the turbulence equation
             if (ANK_coupled) then
-                PSymmStreamInv(6, 6) = one
+                timeStepBlock(6, 6) = one
                 streamToCart(6, 6) = one
                 symmToCons(nt1, 6) = one
                 consToSymm(6, nt1) = one
@@ -2243,21 +2241,23 @@ contains
                     tau = SQRT(one - one / machSqrTrunc) + 1e-4
                 end if
 
-                PSymmStreamInv(1, 1) = blendFactor * (beta**2 + tau) / (machSqrTrunc * tau) + (one - blendFactor) * one
-                PSymmStreamInv(1, 2) = blendFactor * one / mach
-                PSymmStreamInv(2, 1) = blendFactor * one / mach
-                PSymmStreamInv(2, 2) = one
-                PSymmStreamInv(3, 3) = blendFactor * one / tau + (one - blendFactor) * one
-                PSymmStreamInv(4, 4) = blendFactor * one / tau + (one - blendFactor) * one
-                PSymmStreamInv(5, 5) = one
+                ! Define the VLR matrix in Euler symmetrizing variables and in the streamwise coordinate frame
+                timeStepBlock(1, 1) = blendFactor * (beta**2 + tau) / (machSqrTrunc * tau) + (one - blendFactor) * one
+                timeStepBlock(1, 2) = blendFactor * one / mach
+                timeStepBlock(2, 1) = blendFactor * one / mach
+                timeStepBlock(2, 2) = one
+                timeStepBlock(3, 3) = blendFactor * one / tau + (one - blendFactor) * one
+                timeStepBlock(4, 4) = blendFactor * one / tau + (one - blendFactor) * one
+                timeStepBlock(5, 5) = one
 
-                ! Rotation matrix
+                ! Define repeated terms in the rotation matrix
                 speedXY = SQRT(velX**2 + velY**2)
                 sinTheta = velY / speedXY
                 cosTheta = velX / speedXY
                 sinAlpha = velZ / speed
                 cosAlpha = speedXY / speed
 
+                ! Define the rotation matrix from streamwise coordinates to Cartesian coordinates
                 streamToCart(1, 1) = one
                 streamToCart(2, 2) = cosAlpha * cosTheta
                 streamToCart(2, 3) = -sinTheta
@@ -2270,7 +2270,7 @@ contains
                 streamToCart(5, 5) = one
 
                 ! Construct the time step matrix
-                timeStepBlock = PSymmStreamInv * dtInv
+                timeStepBlock = timeStepBlock * dtInv
                 timeStepBlock = MATMUL(streamToCart, timeStepBlock)
                 timeStepBlock = MATMUL(timeStepBlock, TRANSPOSE(streamToCart))
                 timeStepBlock = MATMUL(symmToCons, timeStepBlock)
@@ -2285,18 +2285,19 @@ contains
                 ! Set alpha to turn off preconditioning for locally supersonic flow
                 alpha = one - machSqrTrunc**10
 
-                ! Diagonals
+                ! Define the diagonals of the Turkel matrix in Euler symmetrizing variables
                 timeStepBlock(1, 1) = blendFactor * one / machSqrTrunc + (one - blendFactor) * one
                 timeStepBlock(2, 2) = one
                 timeStepBlock(3, 3) = one
                 timeStepBlock(4, 4) = one
                 timeStepBlock(5, 5) = one
 
-                ! Off-diagonals
+                ! Define the off-diagonals of the Turkel matrix in Euler symmetrizing variables
                 timeStepBlock(2, 1) = blendFactor * alpha * velX / speedOfSound / machSqrTrunc
                 timeStepBlock(3, 1) = blendFactor * alpha * velY / speedOfSound / machSqrTrunc
                 timeStepBlock(4, 1) = blendFactor * alpha * velZ / speedOfSound / machSqrTrunc
 
+                ! Construct the time step matrix
                 timeStepBlock = timeStepBlock * dtInv
                 timeStepBlock = MATMUL(symmToCons, timeStepBlock)
                 timeStepBlock = MATMUL(timeStepBlock, consToSymm)
