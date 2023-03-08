@@ -3546,7 +3546,13 @@ branch = myIntStack(myIntPtr)
           dss(i, j, k, 3) = -x3
         end if
       end do
-! set a couple of constants for the scheme.
+! set the dissipation constants for the scheme.
+! rfil and sfil are fractions used by the runge-kutta solver to compute residuals at intermediate steps.
+! this means that fis2 and fis4 will be some fraction of vis2 and vis4, respectively.
+! for other solvers, rfil==1, sfil==0, fis2==vis2, and fis4==vis4.
+! the sigmoid function used for dissipation-based continuation is described in eq. 28 and eq. 29 from the paper:
+! "improving the performance of a compressible rans solver for low and high mach number flows" (seraj2022c).
+! the options documentation also has information on the parameters in this formulation.
       if (usedisscontinuation) then
         if (totalr .eq. zero .or. totalr0 .eq. zero) then
           fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
@@ -4213,7 +4219,13 @@ branch = myIntStack(myIntPtr)
           dss(i, j, k, 3) = -x3
         end if
       end do
-! set a couple of constants for the scheme.
+! set the dissipation constants for the scheme.
+! rfil and sfil are fractions used by the runge-kutta solver to compute residuals at intermediate steps.
+! this means that fis2 and fis4 will be some fraction of vis2 and vis4, respectively.
+! for other solvers, rfil==1, sfil==0, fis2==vis2, and fis4==vis4.
+! the sigmoid function used for dissipation-based continuation is described in eq. 28 and eq. 29 from the paper:
+! "improving the performance of a compressible rans solver for low and high mach number flows" (seraj2022c).
+! the options documentation also has information on the parameters in this formulation.
       if (usedisscontinuation) then
         if (totalr .eq. zero .or. totalr0 .eq. zero) then
           fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
@@ -10619,7 +10631,13 @@ branch = myIntStack(myIntPtr)
 ! set to a fraction of the free stream value.
         sslim = 0.001_realtype*pinfcorr/rhoinf**gammainf
       end select
-! set a couple of constants for the scheme.
+! set the dissipation constants for the scheme.
+! rfil and sfil are fractions used by the runge-kutta solver to compute residuals at intermediate steps.
+! this means that fis2 and fis4 will be some fraction of vis2 and vis4, respectively.
+! for other solvers, rfil==1, sfil==0, fis2==vis2, and fis4==vis4.
+! the sigmoid function used for dissipation-based continuation is described in eq. 28 and eq. 29 from the paper:
+! "improving the performance of a compressible rans solver for low and high mach number flows" (seraj2022c).
+! the options documentation also has information on the parameters in this formulation.
       if (usedisscontinuation) then
         fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness*(&
 &         log10(totalr/totalr0)+disscontmidpoint)))))
