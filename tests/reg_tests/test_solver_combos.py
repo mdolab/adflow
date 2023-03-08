@@ -72,7 +72,16 @@ solver_combo_params = [
             "ankuseturbdadi": False,
         },
     },
-    # RANS test with Turkel preconditioner
+    # RANS test with AGMG preconditioner
+    {
+        "name": "rans_smoother_ank_sank_csank_nk_turbksp_agmg",
+        "options": {
+            "equationtype": "RANS",
+            "ankuseturbdadi": False,
+            "globalPreconditioner": "multigrid",
+        },
+    },
+    # RANS test with Turkel time stepping
     {
         "name": "rans_smoother_ank_sank_csank_nk_turbdadi_Turkel",
         "options": {
@@ -81,7 +90,7 @@ solver_combo_params = [
             "ANKCharTimeStepType": "Turkel",
         },
     },
-    # RANS test with VLR preconditioner
+    # RANS test with VLR time stepping
     {
         "name": "rans_smoother_ank_sank_csank_nk_turbksp_VLR",
         "options": {
