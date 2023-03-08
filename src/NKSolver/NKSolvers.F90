@@ -77,9 +77,8 @@ contains
 
     subroutine setupNKsolver
 
-        ! Setup the PETSc objects for the Newton-Krylov
-        ! solver. destroyNKsolver can be used to destroy the objects created
-        ! in this function
+        ! Setup the PETSc objects for the Newton-Krylov solver.
+        ! destroyNKsolver can be used to destroy the objects created in this function.
 
         use constants
         use stencils, only: visc_pc_stencil, euler_pc_stencil, N_visc_pc, N_euler_pc
@@ -101,9 +100,8 @@ contains
         integer(kind=intType), dimension(:, :), pointer :: stencil
         integer(kind=intType) :: level
 
-        ! Make sure we don't have memory for the approximate and exact
-        ! Newton solvers kicking around at the same time.
-        !call destroyANKSolver()
+        ! We don't have memory for the approximate and exact Newton solvers kicking around at the same time.
+        ! destroyANKSolver() is called in solveState in solvers.F90
 
         if (.not. NK_solverSetup) then
             nDimW = nw * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
@@ -458,8 +456,7 @@ contains
 
     subroutine destroyNKsolver
 
-        ! Destroy all the PETSc objects for the Newton-Krylov
-        ! solver.
+        ! Destroy all the PETSc objects for the Newton-Krylov solver.
 
         use constants
         use utils, only: EChk
@@ -1705,9 +1702,8 @@ contains
 
     subroutine setupANKsolver
 
-        ! Setup the PETSc objects for the Newton-Krylov
-        ! solver. destroyNKsolver can be used to destroy the objects created
-        ! in this function
+        ! Setup the PETSc objects for the approximate Newton-Krylov solver.
+        ! destroyANKsolver can be used to destroy the objects created in this function.
 
         use constants
         use stencils, only: euler_PC_stencil, N_euler_PC
@@ -2775,8 +2771,7 @@ contains
 
     subroutine destroyANKsolver
 
-        ! Destroy all the PETSc objects for the Newton-Krylov
-        ! solver.
+        ! Destroy all the PETSc objects for the approximate Newton-Krylov solver.
 
         use constants
         use utils, only: EChk
