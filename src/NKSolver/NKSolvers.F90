@@ -2073,21 +2073,17 @@ contains
                             ! Get the global cell index
                             irow = globalCell(i, j, k)
 
-                            if (useCoarseMats) then
-                                do lvl = 1, agmgLevels - 1
-                                    coarseRows(lvl + 1) = coarseIndices(nn, lvl)%arr(i, j, k)
-                                end do
-                            end if
-
                             ! Add the contribution to the PETSc matrix
                             call MatSetValuesBlocked(timeStepInv, 1, irow, 1, irow, timeStepBlock, ADD_VALUES, ierr)
                             call EChk(ierr, __FILE__, __LINE__)
 
-                            ! Extension for setting coarse grids:
+                            ! Extension for setting coarse grids
                             if (useCoarseMats) then
                                 do lvl = 2, agmgLevels
+                                    coarseRows(lvl) = coarseIndices(nn, lvl - 1)%arr(i, j, k)
                                     call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
                                                              timeStepBlock, ADD_VALUES, ierr)
+                                    call EChk(ierr, __FILE__, __LINE__)
                                 end do
                             end if
 
