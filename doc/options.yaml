@@ -441,6 +441,7 @@ useDissContinuation:
     The continuation helps converge supersonic flows and can also help with some transonic flows.
     This will have no effect on purely subsonic flows.
     The solution needs to be well converged to ensure that the additional dissipation is reduced to a value that does not affect the converged result.
+    For the default values of :py:data:`dissContMagnitude` and :py:data:`dissContMidpoint`, an L2 convergence of 1e-6 is sufficient.
     See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
 
 dissContMagnitude:
