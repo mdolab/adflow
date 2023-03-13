@@ -2168,6 +2168,9 @@ contains
 
         else
 
+            ! The equations referenced in this block of the code are from the paper:
+            ! "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c)
+
             ! Characteristic time-stepping is not applied to the turbulence equation
             if (ANK_coupled) then
                 timeStepBlock(6, 6) = one
@@ -2181,15 +2184,14 @@ contains
                 aa(i, j, k) = gamma(i, j, k) * p(i, j, k) / rho
             end if
 
-            ! Compute Mach number
+            ! Compute the Mach number in each cell and some other repeated terms
             speed = SQRT(velX**2 + velY**2 + velZ**2)
             speedOfSound = SQRT(aa(i, j, k))
             mach = speed / speedOfSound
             machSqr = mach**2
-
-            ! State transformation matrix
             gammaMinusOne = gamma(i, j, k) - one
 
+            ! Define the state transformation matrix from Euler symmetrizing variables to conservative variables (Eq. 22)
             symmToCons(iRho, 1) = rho / speedOfSound
             symmToCons(iRho, 5) = -one / aa(i, j, k)
             symmToCons(ivx, 1) = rho * velX / speedOfSound
@@ -2207,7 +2209,7 @@ contains
             symmToCons(iRhoE, 4) = rho * velZ
             symmToCons(iRhoE, 5) = -machSqr / 2
 
-            ! Inverse state transformation matrix
+            ! Define the inverse of the state transformation matrix above
             consToSymm(1, iRho) = gammaMinusOne / 2 * speedOfSound * machSqr / rho
             consToSymm(1, ivx) = -gammaMinusOne * velX / (rho * speedOfSound)
             consToSymm(1, ivy) = -gammaMinusOne * velY / (rho * speedOfSound)
@@ -2225,14 +2227,15 @@ contains
             consToSymm(5, ivz) = -gammaMinusOne * velZ
             consToSymm(5, iRhoE) = gammaMinusOne
 
-            ! Compute common blend factor
+            ! Compute the CFL-based blending factor
             blendFactor = ANK_CFL / ANK_CFLLimit
 
             if (ANK_charTimeStepType == 'VLR') then
 
-                ! Truncate the squared Mach number
+                ! Truncate the squared Mach number (Eq. 25)
                 machSqrTrunc = MAX(machSqr, 1e-4 * machInf**2)
 
+                ! Define the beta and tau terms in the VLR matrix (Eq. 24)
                 if (mach < one) then
                     beta = SQRT(one - machSqrTrunc)
                     tau = beta
@@ -2242,6 +2245,7 @@ contains
                 end if
 
                 ! Define the VLR matrix in Euler symmetrizing variables and in the streamwise coordinate frame
+                ! This is Eq. 23 combined with the blending in Eq. 16
                 timeStepBlock(1, 1) = blendFactor * (beta**2 + tau) / (machSqrTrunc * tau) + (one - blendFactor) * one
                 timeStepBlock(1, 2) = blendFactor * one / mach
                 timeStepBlock(2, 1) = blendFactor * one / mach
@@ -2257,7 +2261,7 @@ contains
                 sinAlpha = velZ / speed
                 cosAlpha = speedXY / speed
 
-                ! Define the rotation matrix from streamwise coordinates to Cartesian coordinates
+                ! Define the rotation matrix from streamwise coordinates to Cartesian coordinates (Eq. 27)
                 streamToCart(1, 1) = one
                 streamToCart(2, 2) = cosAlpha * cosTheta
                 streamToCart(2, 3) = -sinTheta
@@ -2269,39 +2273,42 @@ contains
                 streamToCart(4, 4) = cosAlpha
                 streamToCart(5, 5) = one
 
-                ! Construct the time step matrix
-                timeStepBlock = timeStepBlock * dtInv
+                ! Transform the VLR matrix to conservative variables and Cartesian coordinates (Eq. 26)
                 timeStepBlock = MATMUL(streamToCart, timeStepBlock)
                 timeStepBlock = MATMUL(timeStepBlock, TRANSPOSE(streamToCart))
                 timeStepBlock = MATMUL(symmToCons, timeStepBlock)
                 timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+
+                ! Construct the preconditioned time step matrix
                 timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+                timeStepBlock = timeStepBlock * dtInv
 
             else if (ANK_charTimeStepType == 'Turkel') then
 
-                ! Truncate the squared Mach number
+                ! Truncate the squared Mach number (Eq. 19)
                 machSqrTrunc = MIN(one, MAX(machSqr, 1e-4 * machInf**2))
 
-                ! Set alpha to turn off preconditioning for locally supersonic flow
+                ! Set alpha to turn off preconditioning for locally supersonic flow (Eq. 20)
                 alpha = one - machSqrTrunc**10
 
-                ! Define the diagonals of the Turkel matrix in Euler symmetrizing variables
+                ! Define the Turkel matrix in Euler symmetrizing variables
+                ! This is Eq. 18 combined with the blending in Eq. 16
                 timeStepBlock(1, 1) = blendFactor * one / machSqrTrunc + (one - blendFactor) * one
+                timeStepBlock(2, 1) = blendFactor * alpha * velX / speedOfSound / machSqrTrunc
+                timeStepBlock(3, 1) = blendFactor * alpha * velY / speedOfSound / machSqrTrunc
+                timeStepBlock(4, 1) = blendFactor * alpha * velZ / speedOfSound / machSqrTrunc
                 timeStepBlock(2, 2) = one
                 timeStepBlock(3, 3) = one
                 timeStepBlock(4, 4) = one
                 timeStepBlock(5, 5) = one
 
-                ! Define the off-diagonals of the Turkel matrix in Euler symmetrizing variables
-                timeStepBlock(2, 1) = blendFactor * alpha * velX / speedOfSound / machSqrTrunc
-                timeStepBlock(3, 1) = blendFactor * alpha * velY / speedOfSound / machSqrTrunc
-                timeStepBlock(4, 1) = blendFactor * alpha * velZ / speedOfSound / machSqrTrunc
-
-                ! Construct the time step matrix
-                timeStepBlock = timeStepBlock * dtInv
+                ! Transform the Turkel matrix to conservative variables (Eq. 21)
                 timeStepBlock = MATMUL(symmToCons, timeStepBlock)
                 timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+
+                ! Construct the preconditioned time step matrix
                 timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+                timeStepBlock = timeStepBlock * dtInv
 
             end if
 
