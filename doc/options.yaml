@@ -279,11 +279,13 @@ dissipationScalingExponent:
 
 acousticScaleFactor:
   desc: >
-    A scale factor that multiplies the acoustic contribution in the spectral radius computation.
+    A factor that multiplies the acoustic contribution in the spectral radius computation.
     This only applies to the ``central plus scalar dissipation`` :py:data:`discretization`.
-    A value of 1.0 will compute the spectral radius with acoustic and advective contributions weighted in the usual manner.
+    The spectral radius is used to compute dissipation terms, so this option affects the amount of dissipation in the solution.
+    A value of 1.0 will compute the spectral radius with acoustic and advective contributions weighted according to the standard JST scheme.
     Values lower than 1.0 will result in more accurate solutions for low Mach number flows, but using too small a value will slow down convergence.
     Setting this to the freestream Mach number tends to work well for most low Mach number cases.
+    Values greater than 1.0 should not be used because this will compromise the accuracy of the solution.
     See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
 
 vis4:
@@ -1113,16 +1115,19 @@ ANKUseMatrixFree:
 
 ANKCharTimeStepType:
   desc: >
-    This applies physics-based preconditioning to the ANK time step matrix.
-    This can accelerate convergence for low Mach number flows when used in combination with :py:data:`acousticScaleFactor`.
+    This applies characteristic-based preconditioning to the ANK time step matrix.
+    This can accelerate convergence for low Mach number flows.
+    The amount of speedup will depend on how low the local Mach number is across the entire flowfield.
+    This option is mainly useful for cases with freestream Mach numbers of 0.4 or lower.
+    In most cases, this should be used in combination with :py:data:`acousticScaleFactor`.
     See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
   None: No characteristic time stepping
   Turkel: >
     Turkel preconditioner.
-    This only applies to locally subsonic flow.
+    This can be used for all flows, but the preconditioner will only be applied to locally subsonic flow.
   VLR: >
     van Leer-Lee-Roe preconditioner.
-    This theoretically works for all Mach numbers but is mainly useful for subsonic flows.
+    This preconditioner applies to locally subsonic and supersonic flow but is mainly useful for subsonic cases.
     This usually performs slightly better than Turkel.
 
 blockSplitting:
