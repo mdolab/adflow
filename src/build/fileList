@@ -38,6 +38,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		modules/ADjointPETSc.F90\
 		modules/cgnsGrid.F90\
 		modules/cgnsNames.f90\
+		modules/commonFormats.F90\
 		modules/CpCurveFits.f90\
 		modules/extraOutput.f90\
 		modules/flowVarRefState.F90\

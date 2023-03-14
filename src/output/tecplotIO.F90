@@ -4,6 +4,8 @@ module tecplotIO
   implicit none
   save
 
+  character(len=maxStringLen) :: sci6 = "(ES14.6)"
+
   type slice
 
      ! nNodes : Number of nodes for this slice
@@ -602,7 +604,6 @@ contains
           write (fileID,"(a,a,a)") "Zone T= """,trim(d%distName),""""
           write (fileID,*) "I= ",d%nSegments
           write (fileID,*) "DATAPACKING=BLOCK"
-15        format (ES14.6)
        end if
 
        allocate(values(d%nSegments, nLiftDistVar))
@@ -721,7 +722,7 @@ contains
        if (myid == 0) then
           do j=1,nLiftDistVar
              do i=1,d%nSegments
-                write(fileID,15) values(i, j)
+                write(fileID, sci6) values(i, j)
              end do
           end do
        end if
@@ -2244,6 +2245,7 @@ contains
     ! Write the data in slice 'slc' to openfile ID fileID
     use constants
     use inputIO
+    use commonFormats, only : int5
     implicit none
 
     ! Input Parameters
@@ -2253,37 +2255,36 @@ contains
     ! Working Variables
     integer(kind=intType) :: i, j
     real(kind=realType) :: tmp, tx, ty, tz
+
     write (fileID,"(a,a,a)") "Zone T= """,trim(slc%sliceName),""""
 
     ! IF we have nodes actually write:
     if (slc%nNodes > 0) then
        write (fileID,*) "Nodes = ", slc%nNodes, " Elements= ",  size(slc%conn, 2), " ZONETYPE=FELINESEG"
        write (fileID,*) "DATAPACKING=POINT"
-13     format (ES14.6)
 
        do i=1,slc%nNodes
           ! Write the coordinates
           do j=1,3
-             write(fileID,13, advance='no') slc%vars(j, i)
+             write(fileID, sci6, advance='no') slc%vars(j, i)
           end do
 
           ! Write the scaled coordiantes with the LE at (0,0,0)
           do j=1,3
              tmp = slc%vars(j, i)
-             write(fileID,13, advance='no') (tmp - slc%le(j))/slc%chord
+             write(fileID, sci6, advance='no') (tmp - slc%le(j))/slc%chord
           end do
 
           ! Write field data. Starts at 9 (after 3 coordindates and the 6 tractions)
           do j=1,nFields
-             write(fileID,13, advance='no') slc%vars(9+j, i)
+             write(fileID, sci6, advance='no') slc%vars(9+j, i)
           end do
 
           write(fileID,"(1x)")
        end do
 
-15     format(I5, I5)
        do i=1, size(slc%conn, 2)
-          write(fileID, 15) slc%conn(1, i), slc%conn(2, i)
+          write(fileID, int5) slc%conn(1, i), slc%conn(2, i)
        end do
     else ! Write dummy data so the number of zones are the same
 
@@ -2291,16 +2292,16 @@ contains
        write (fileID,*) "DATAPACKING=POINT"
        do i=1,2
           do j=1,6
-             write(fileID,13, advance='no') zero
+             write(fileID, sci6, advance='no') zero
           end do
 
           do j=1,nFields
-             write(fileID,13, advance='no') zero
+             write(fileID, sci6, advance='no') zero
           end do
 
           write(fileID,"(1x)")
        end do
-       write(fileID, 15) 1, 2
+       write(fileID, int5) 1, 2
     end if
   end subroutine writeSlice
 

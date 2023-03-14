@@ -71,7 +71,6 @@ class TestSolveIntegrationPlane(reg_test_classes.RegTest):
     ref_file = "solve_conic_mb.json"
 
     def setUp(self):
-
         super().setUp()
 
         self.ap = copy.copy(ap_conic_conv_nozzle)
@@ -125,7 +124,6 @@ class TestSolveIntegrationPlane(reg_test_classes.RegTest):
         self.CFDSolver.addFunction("aavgps", "viscous_plane", name="aavgps_plane")
 
     def test_solve(self):
-
         # do the solve
         self.CFDSolver(self.ap)
         # check if the solution has failed
@@ -232,7 +230,6 @@ class TestSolveOverset(reg_test_classes.RegTest):
         self.CFDSolver.addFunction("aavgps", "upstream", name="aavgps_up")
 
     def test_solve(self):
-
         # do the solve
         self.CFDSolver(self.ap)
         # check if the solution has failed

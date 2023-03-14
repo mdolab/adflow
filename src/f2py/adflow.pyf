@@ -155,19 +155,19 @@ python module libadflow
          end subroutine setdefaultvalues
 
          subroutine monitorvariables(variables) ! in :test:monitorVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine monitorvariables
 
          subroutine surfacevariables(variables) ! in :test:surfaceVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine surfacevariables
 
          subroutine volumevariables(variables) ! in :test:volumeVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine volumevariables
 
          subroutine isovariables(variables) ! in :test:volumeVariables.f90
-           character*(*) intent(inout) :: variables
+           character*(*) intent(in) :: variables
          end subroutine isovariables
 
          subroutine initializeisosurfacevariables(values,nvalues) ! in :test:setIsoSurfaceValues.F90
@@ -1013,6 +1013,16 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
          integer(kind=inttype) parameter,optional :: costfuncaavgps=88
          integer(kind=inttype) parameter,optional :: costfunccpmin=89
+         integer(kind=inttype) parameter,optional :: costfunccoforcexx=90
+         integer(kind=inttype) parameter,optional :: costfunccoforcexy=91
+         integer(kind=inttype) parameter,optional :: costfunccoforcexz=92
+         integer(kind=inttype) parameter,optional :: costfunccoforceyx=93
+         integer(kind=inttype) parameter,optional :: costfunccoforceyy=94
+         integer(kind=inttype) parameter,optional :: costfunccoforceyz=95
+         integer(kind=inttype) parameter,optional :: costfunccoforcezx=96
+         integer(kind=inttype) parameter,optional :: costfunccoforcezy=97
+         integer(kind=inttype) parameter,optional :: costfunccoforcezz=98
+         integer(kind=inttype) parameter,optional :: costfuncmavgvi=99
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90

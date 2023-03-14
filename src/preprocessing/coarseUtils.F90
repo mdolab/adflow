@@ -1370,6 +1370,7 @@ contains
     use inputTimeSpectral
     use coarseningInfo
     use utils, only : terminate
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -1523,10 +1524,9 @@ contains
 
              flowDoms(nn,level,1)%n1to1 = flowDoms(nn,level,1)%n1to1 - 1
 
-101          format("Non-matching block-to-block face on zone ",a, &
-                  "...Support not implemented yet.")
              ll = flowDoms(nn,1,1)%cgnsBlockID
-             write(errorMessage,101) cgnsDoms(ll)%zoneName
+             write(errorMessage, strings) "Non-matching block-to-block face on zone ", cgnsDoms(ll)%zoneName, &
+               "...Support not implemented yet."
              call terminate("checkCoarse1to1", errorMessage)
 
           endif is1to1

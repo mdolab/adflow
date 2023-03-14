@@ -148,6 +148,9 @@ contains
     use communication, only : myid
     use inputPhysics, only : cpModel, gammaConstant,rGasDim
     use flowVarRefState, only : PinfDim
+#ifndef USE_TAPENADE
+    use commonFormats, only : stringSci5
+#endif
     implicit none
     !
     !      Subroutine arguments.
@@ -189,12 +192,11 @@ contains
           if(myId == 0) then
              print "(a)", "#"
              print "(a)", "#                    Warning"
-             print 100, tt, cpTrange(0)
+             print stringSci5, "# Prescribed total temperature ", tt, &
+             " is less than smallest curve fit value, ", cpTrange(0), "."
              print "(a)", "# Extrapolation with constant cp is used."
              print "(a)", "#"
-100          format("# Prescribed total temperature ",es12.5,          &
-                  " is less than smallest curve fit value, ",es12.5, &
-                  ".")
+
           endif
 
           ht = RGasDim*(cpEint(0) + tt + cv0*(tt - cpTrange(0)))
@@ -208,16 +210,13 @@ contains
           if(myId == 0) then
              print "(a)", "#"
              print "(a)", "#                    Warning"
-             print 101, tt, cpTrange(cpNparts)
+             print stringSci5, "# Prescribed total temperature ", tt, &
+             " is larger than largest curve fit value, ", cpTrange(cpNparts), "."
              print "(a)", "# Extrapolation with constant cp is used."
              print "(a)", "#"
-101          format("# Prescribed total temperature ",es12.5,     &
-                  " is larger than largest curve fit value, ", &
-                  es12.5, ".")
           endif
 
-          ht = RGasDim*(cpEint(cpNparts) + tt &
-               +           cvn*(tt - cpTrange(cpNparts)))
+          ht = RGasDim*(cpEint(cpNparts) + tt + cvn*(tt - cpTrange(cpNparts)))
 
        else
 
@@ -423,6 +422,9 @@ contains
     use blockPointers, only : BCFaceID, BCData, nBKGlobal
     use utils, only : terminate, siTemperature
     use flowVarRefState, only : Tref
+#ifndef USE_TAPENADE
+    use commonFormats, only : strings
+#endif
     implicit none
     !
     !      Subroutine arguments.
@@ -444,17 +446,17 @@ contains
     ! Write an error message and terminate if it was not
     ! possible to determine the temperature.
 
+#ifndef USE_TAPENADE
     if(.not. bcVarPresent(1)) then
 
-       write(errorMessage,100)                    &
-            trim(cgnsDoms(nbkGlobal)%zonename), &
-            trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-100    format("Zone ",a,", boundary subface ",a, &
-            ": Wall temperature not specified for isothermal wall")
+       write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename),", &
+         boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
+         ": Wall temperature not specified for isothermal wall"
 
        call terminate("BCDataIsothermalWall", errorMessage)
 
     endif
+#endif
 
     ! Convert to si-units and store the temperature in TNS_Wall.
 
@@ -485,6 +487,7 @@ contains
     use utils, only : siDensity, siVelocity, siPressure, siAngle, &
          siTemperature, terminate
 #ifndef USE_TAPENADE
+    use commonFormats, only : strings
     use utils, only: returnFail
 #endif
     implicit none
@@ -570,13 +573,13 @@ contains
        ! Not enough data is prescribed. Print an error message
        ! and exit.
 
-       write(errorMessage,100)                   &
-            trim(cgnsDoms(nbkGlobal)%zonename), &
-            trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-100    format("Zone ",a,", boundary subface ",a, &
-            ": Not enough data specified for subsonic inlet")
+#ifndef USE_TAPENADE
+       write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
+         ", boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
+         ": Not enough data specified for subsonic inlet"
 
        call terminate("BCDataSubsonicInflow", errorMessage)
+#endif
 
     endif
 
@@ -602,6 +605,7 @@ contains
       use inputPhysics, only : RGasDim
       use section, only : sections
 #ifndef USE_TAPENADE
+      use commonFormats, only : strings
       use utils, only: returnFail
 #endif
       implicit none
@@ -909,14 +913,11 @@ contains
       enddo
 #ifndef USE_TAPENADE
       if(nn > 0) then
-         write(errorMessage,200)                   &
-              trim(cgnsDoms(nbkGlobal)%zonename), &
-              trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-200      format("Zone ",a,", subsonic inlet boundary subface ",a, &
-              ": Flow direction points out of the domain for &
-              &some faces.")
+         write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
+           ", subsonic inlet boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
+           ": Flow direction points out of the domain for some faces."
 
-          ! Call returnFail if the flow direction is pointing out of a 
+          ! Call returnFail if the flow direction is pointing out of a
           ! BC domain.  This will be caught by an allreduce in the
           ! python layer.
           call returnFail("totalSubsonicInlet", errorMessage)
@@ -937,6 +938,9 @@ contains
     use blockPointers, only : BCData, nbkGlobal, BCFaceID
     use utils, only : terminate, siPressure
     use flowVarRefState, only : pRef
+#ifndef USE_TAPENADE
+    use commonFormats, only : strings
+#endif
     implicit none
     !
     !      Subroutine arguments.
@@ -958,17 +962,17 @@ contains
     ! Write an error message and terminate if it was not
     ! possible to determine the static pressure.
 
+#ifndef USE_TAPENADE
     if(.not. bcVarPresent(1)) then
 
-       write(errorMessage,100)            &
-            trim(cgnsDoms(nbkGlobal)%zonename), &
-            trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-100    format("Zone ",a,", boundary subface ",a, &
-            ": Static pressure not specified for subsonic outlet")
+       write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
+         ", boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
+         ": Static pressure not specified for subsonic outlet"
 
        call terminate("BCDataSubsonicOutflow", errorMessage)
 
     endif
+#endif
 
     ! Convert to SI-units and store the pressure in ps.
 
@@ -995,6 +999,7 @@ contains
     use inputPhysics, onlY : equations, flowType, velDirFreeStream
     use utils, only : siDensity, siPressure, siVelocity, siTemperature, terminate
 #ifndef USE_TAPENADE
+    use commonFormats, only : strings
     use utils, only: returnFail
 #endif
     implicit none
@@ -1059,13 +1064,13 @@ contains
           ! Internal flow. Data at the inlet must be specified;
           ! no free stream data can be taken.
 
-          write(errorMessage,100)               &
-               trim(cgnsDoms(nbkGlobal)%zonename), &
-               trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-100       format("Zone ",a,", boundary subface ",a, &
-               ": Not enough data specified for supersonic inlet")
+#ifndef USE_TAPENADE
+          write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
+            ", boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
+            ": Not enough data specified for supersonic inlet"
 
           call terminate("BCDataSupersonicInflow", errorMessage)
+#endif
 
           !=============================================================
 
@@ -1095,6 +1100,7 @@ contains
 
     endif testPresent
 
+#ifndef USE_TAPENADE
     ! Check if the prescribed velocity is an inflow. No halo's
     ! should be included here and therefore the nodal range
     ! (with an offset) must be used.
@@ -1112,13 +1118,10 @@ contains
        enddo
     enddo
 
-#ifndef USE_TAPENADE
     if(nn > 0) then
-       write(errorMessage,102)                   &
-            trim(cgnsDoms(nbkGlobal)%zonename), &
-            trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName)
-102    format("Zone ",a,", supersonic inlet boundary subface ",a, &
-            ": Velocity points out of the domain for some faces.")
+       write(errorMessage, strings) "Zone ", trim(cgnsDoms(nbkGlobal)%zonename), &
+         ", supersonic inlet boundary subface ", trim(cgnsDoms(nbkGlobal)%bocoInfo(cgnsBoco)%bocoName), &
+         ": Velocity points out of the domain for some faces."
 
        call returnFail("BCDataSupersonicInflow", errorMessage)
     endif
@@ -1789,18 +1792,6 @@ contains
                dataSet(k)%dirichletArrays(l)%dataArr(1)
        endif
     enddo
-
-    ! Format statements.
-
-100 format("Zone",1X,A,", subface",1X,A,": Number of dimensions &
-         &is larger than number of coordinates.")
-101 format("Zone",1X,A,", subface",1X,A,": No coordinates &
-         &are present for the interpolation.")
-200 format("Zone",1X,A,", subface",1X,A,", variable",1X,A, &
-         ": Number of dimensions is larger than number of &
-         &coordinates.")
-201 format("Zone",1X,A,", subface",1X,A,": No coordinates &
-         &are present for the interpolation of",1X,A,".")
 
   end subroutine extractFromDataSet
 
