@@ -1445,6 +1445,7 @@ contains
 
                     case (cgnsAxisMoment)
                         monLoc(mm) = monLoc(mm) + localValues(iaxisMoment)
+
                     end select
 
                 end do nMonitoringVar
