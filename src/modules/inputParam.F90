@@ -284,6 +284,8 @@ module inputIteration
     logical :: printIterations
     logical :: printWarnings
     real(kind=realType), dimension(4) :: turbResScale
+    logical :: useDissContinuation
+    real(kind=realType) :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
 end module inputIteration
 

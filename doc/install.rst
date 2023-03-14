@@ -19,11 +19,13 @@ Building
 ADflow follows the standard MDO Lab build procedure.
 To start, find a configuration file close to your current setup in::
 
-    $ config/defaults
+    config/defaults
 
-and copy it to ''config/config.mk''. For example::
+and copy it to ''config/config.mk''. For example:
 
-    $ cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk
+.. prompt:: bash
+
+    cp config/defaults/config.LINUX_GFORTRAN.mk config/config.mk
 
 If you are a beginner user installing the packages on a linux desktop, 
 you should use the ``config.LINUX_GFORTRAN`` versions of the configuration 
@@ -31,9 +33,11 @@ files. The ``config.LINUX_INTEL`` versions are usually used on clusters.
 ADflow has been successfully compiled on LINUX with either
 ``ifort`` or ``gfortran``.
 
-Once you have copied the config file, compile ADflow by running::
+Once you have copied the config file, compile ADflow by running:
 
-    $ make
+.. prompt:: bash
+
+    make
 
 If everything was successful, the following lines will be printed to
 the screen (near the end)::
@@ -67,7 +71,9 @@ After changes to the configuration file, run ``make clean`` before attempting a 
 
     We recommend to contact your local HPC team to get more information about hardware specific issues. 
 
-Lastly, to build and install the Python interface, type::
+Lastly, to build and install the Python interface, type:
+
+.. prompt:: bash
 
     pip install .
 
@@ -75,20 +81,26 @@ Lastly, to build and install the Python interface, type::
 Verification
 ------------
 ADflow contains a set of simple tests that can be run automatically to ensure ADflow reproduces the expected reference results.
-First, install `idwarp <https://github.com/mdolab/idwarp/>`__ following the instructions there.
-Next, install the testing dependencies by going to the root ADflow directory and typing::
+First, install `IDWarp <https://github.com/mdolab/idwarp/>`__ and `pyGeo <https://github.com/mdolab/pygeo/>`__.
+Next, install the other testing dependencies by going to the root ADflow directory and typing:
 
-    $ pip install .[testing]
+.. prompt:: bash
+
+    pip install .[testing]
 
 With all of these packages installed, you can fully verify your ADflow installation.
-First, run the script::
+First, run the script:
 
-    $ input_files/get-input-files.sh
+.. prompt:: bash
+
+    input_files/get-input-files.sh
 
 to download and extract the necessary files.
-Then in the root directory run::
+Then in the root directory run:
 
-    $ testflo .
+.. prompt:: bash
+
+    testflo .
 
 
 Complex Build
@@ -98,21 +110,27 @@ version of ADflow directly from the real version.
 
 ADflow_CS REQUIRES a complex build of petsc to build and run. The
 petsc configuration script must be re-run with the following
-options::
+options:
 
-    $ ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debugging=yes --with-scalar-type=complex --PETSC_ARCH=complex-debug
+.. prompt:: bash
+
+    ./configure --with-shared-libraries --download-superlu_dist=yes --download-parmetis=yes --download-metis=yes --with-fortran-interfaces=1 --with-debugging=yes --with-scalar-type=complex --PETSC_ARCH=complex-debug
 
 Follow instructions as before to complete complex build.
 
-Now, to build complex ADflow do::
+Now, to build complex ADflow do:
 
-    $ export PETSC_ARCH=complex-debug
-    $ make -f Makefile_CS
+.. prompt:: bash
+
+    export PETSC_ARCH=complex-debug
+    make -f Makefile_CS
 
 Note that the correct, complex PETSC_ARCH MUST be set before the code is
 compiled and also must be set when running in complex mode.
 
 To run the complex tests, first set the ``$PETSC_ARCH`` to the complex architecture.
-Then run::
+Then run:
 
-    $ testflo . -m "cmplx_test*"
+.. prompt:: bash
+
+    testflo . -m "cmplx_test*"

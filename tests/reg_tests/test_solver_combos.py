@@ -25,6 +25,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 # for both real and complex cases. These do not cover every possible combination, but
 # represent the most common use cases. Testing turbulence solver options with euler
 # and laminar NS makes sure the solver does not segfault etc.
+# We also test the dissipation-based continuation method with RANS.
 
 solver_combo_params = [
     # Euler Tests
@@ -70,6 +71,16 @@ solver_combo_params = [
         "options": {
             "equationtype": "RANS",
             "ankuseturbdadi": False,
+        },
+    },
+    # RANS DBC test
+    {
+        "name": "rans_smoother_ank_sank_csank_nk_turbdadi_dbc",
+        "options": {
+            "equationtype": "RANS",
+            "ankuseturbdadi": True,
+            "useDissContinuation": True,
+            "dissContMagnitude": 0.1,
         },
     },
 ]
