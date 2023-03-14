@@ -1,12 +1,11 @@
 
-       module precision
+module precision
 
-       implicit none
-       save
+    implicit none
+    save
 
+    integer, parameter :: intType = 4
+    integer, parameter :: porType = 1
+    integer, parameter :: realType = 8
 
-       integer, parameter :: intType      = 4
-       integer, parameter :: porType      = 1
-       integer, parameter :: realType     = 8
-
-       end module precision
+end module precision

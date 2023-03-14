@@ -1,51 +1,51 @@
-       module IOModule
+module IOModule
 !
 !       Constants and variables used in the IO routines.
 !
-       use constants, only : intType, realType, mpi_offset_kind
-       implicit none
-       save
+    use constants, only: intType, realType, mpi_offset_kind
+    implicit none
+    save
 !
 !       Definition of the parameters.
 !
-       ! The maximum amount of data a processor can read in one call
-       ! to su_file_read. This value is 2Gbyte.
+    ! The maximum amount of data a processor can read in one call
+    ! to su_file_read. This value is 2Gbyte.
 
-       integer(kind=mpi_offset_kind), parameter :: &
-                                  maxSizeIO = 2147483648_mpi_offset_kind
+    integer(kind=mpi_offset_kind), parameter :: &
+        maxSizeIO = 2147483648_mpi_offset_kind
 
-       ! Definition of the possibilities for storing data.
+    ! Definition of the possibilities for storing data.
 
-       integer(kind=intType), parameter :: nodeData          = 1
-       integer(kind=intType), parameter :: cellDataNoHalo    = 2
-       integer(kind=intType), parameter :: cellDataPlusHalo  = 3
+    integer(kind=intType), parameter :: nodeData = 1
+    integer(kind=intType), parameter :: cellDataNoHalo = 2
+    integer(kind=intType), parameter :: cellDataPlusHalo = 3
 
 !
 !       Definition of the derived datatype IOType, which is used to
 !       to make the IO as general as needed.
 !
-       type IOType
+    type IOType
 
-         ! pointerOffset: offset due to the usage of a pointer to a
-         !                subarray. The Fortran standard is such that
-         !                the starting indices of the pointer array
-         !                is 1, no matter what the original starting
-         !                index is. This can lead to a shift in the
-         !                indices.
-         ! w:             The variable(s) to be read/written.
+        ! pointerOffset: offset due to the usage of a pointer to a
+        !                subarray. The Fortran standard is such that
+        !                the starting indices of the pointer array
+        !                is 1, no matter what the original starting
+        !                index is. This can lead to a shift in the
+        !                indices.
+        ! w:             The variable(s) to be read/written.
 
-         integer(kind=intType) :: pointerOffset
+        integer(kind=intType) :: pointerOffset
 
-         real(kind=realType), dimension(:,:,:,:), pointer :: w
+        real(kind=realType), dimension(:, :, :, :), pointer :: w
 
-       end type IOType
+    end type IOType
 
 !
 !       Definition of the variables used for both CGNS
 !
-       ! IOVar(nDom,nIOFiles): Array of the derived datatype IOType to
-       !                       facilitate a general IO implementation.
+    ! IOVar(nDom,nIOFiles): Array of the derived datatype IOType to
+    !                       facilitate a general IO implementation.
 
-       type(IOType), dimension(:,:), allocatable :: IOVar
+    type(IOType), dimension(:, :), allocatable :: IOVar
 
-       end module IOModule
+end module IOModule
