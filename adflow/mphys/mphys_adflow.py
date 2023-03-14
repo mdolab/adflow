@@ -2,7 +2,6 @@ from pprint import pprint as pp
 from adflow import ADFLOW
 from idwarp import USMesh, MultiUSMesh
 
-from openmdao.api import Group, ImplicitComponent, ExplicitComponent, AnalysisError
 import numpy as np
 from mphys.builder import Builder
 from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
