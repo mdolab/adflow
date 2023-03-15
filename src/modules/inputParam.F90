@@ -287,6 +287,8 @@ module inputIteration
     logical :: printWarnings
     real(kind=realType), dimension(4) :: turbResScale
     real(kind=realType) :: meshMaxSkewness
+    logical :: useDissContinuation
+    real(kind=realType) :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
 end module inputIteration
 

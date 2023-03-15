@@ -4141,6 +4141,7 @@ class ADFLOW(AeroSolver):
         vector products. It is not generally called by the user by
         rather internally or from another solver. A DVGeo object and a
         mesh object must both be set for this routine.
+
         Parameters
         ----------
         xDvDot : dict
@@ -4166,6 +4167,7 @@ class ADFLOW(AeroSolver):
             Specifies how the jacobian vector products will be computed.
         h : float
             Step sized used when the mode is "FD" or "CS
+
         Returns
         -------
         dwdot, funcsdot, fDot : array, dict, array
@@ -5011,7 +5013,7 @@ class ADFLOW(AeroSolver):
 
         See Also
         --------
-        :func: setOption
+        :func:`setOption`
         """
         if reset:
             self.rootChangedOptions = {}
@@ -5274,6 +5276,10 @@ class ADFLOW(AeroSolver):
             "CFLLimit": [float, 1.5],
             "useBlockettes": [bool, True],
             "useLinResMonitor": [bool, False],
+            "useDissContinuation": [bool, False],
+            "dissContMagnitude": [float, 1.0],
+            "dissContMidpoint": [float, 3.0],
+            "dissContSharpness": [float, 3.0],
             # Overset Parameters
             "nearWallDist": [float, 0.1],
             "backgroundVolScale": [float, 1.0],
@@ -5642,6 +5648,10 @@ class ADFLOW(AeroSolver):
             "cfllimit": ["iter", "cfllimit"],
             "useblockettes": ["discr", "useblockettes"],
             "uselinresmonitor": ["iter", "uselinresmonitor"],
+            "usedisscontinuation": ["iter", "usedisscontinuation"],
+            "disscontmagnitude": ["iter", "disscontmagnitude"],
+            "disscontmidpoint": ["iter", "disscontmidpoint"],
+            "disscontsharpness": ["iter", "disscontsharpness"],
             # Overset Parameters
             "nearwalldist": ["overset", "nearwalldist"],
             "backgroundvolscale": ["overset", "backgroundvolscale"],

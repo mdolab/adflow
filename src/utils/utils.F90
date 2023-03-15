@@ -5710,7 +5710,7 @@ contains
         integer :: ierr
         character(len=maxStringLen) :: errorCodeFormat, errorLineFormat
 
-        errorCodeFormat = "(2(A, I2,)"
+        errorCodeFormat = "(2(A, I2))"
         errorLineFormat = "(A, I5, A, A)"
 
         if (errorcode == 0) then
