@@ -3348,7 +3348,6 @@ contains
                 ! list of the bad volumes and terminate executation.
 
                 call writeBadVolumes(checkVolDoms, 1)
-
                 call returnFail("metric", &
                                 "Negative volumes present in grid.")
                 call mpi_barrier(ADflow_comm_world, ierr)
@@ -3697,7 +3696,6 @@ contains
                                             print "(7(A), 3(ES10.3, A), 2(A), F6.3)", "# Indices (", trim(intString1), &
                                                 ",", trim(intString2), ",", trim(intString3), "), coordinates (", &
                                                 xc(1), ",", xc(2), ",", xc(3), "), ", trim(descString), ": ", quantity
-
                                         end if
                                     end do
                                 end do
