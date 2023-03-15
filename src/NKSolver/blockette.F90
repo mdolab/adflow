@@ -3102,8 +3102,9 @@ contains
         use constants
         use flowVarRefState, only: pInfCorr
         use inputDiscretization, only: vis2, vis4
+        use inputIteration, only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
         use inputPhysics, only: equations
-        use iteration, only: rFil
+        use iteration, only: rFil, totalR0, totalR
         use flowVarRefState, only: gammaInf, pInfCorr, rhoInf
         implicit none
 
@@ -3171,9 +3172,23 @@ contains
             end do
         end do
 
-        ! Set a couple of constants for the scheme.
+        ! Set the dissipation constants for the scheme.
+        ! rFil and sFil are fractions used by the Runge-Kutta solver to compute residuals at intermediate steps.
+        ! For the blockette code, rFil is always one, so sFil==0, fis2==vis2, and fis4==vis4.
 
-        fis2 = rFil * vis2
+        ! The sigmoid function used for dissipation-based continuation is described in Eq. 28 and Eq. 29 from the paper:
+        ! "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c).
+        ! The options documentation also has information on the parameters in this formulation.
+        if (useDissContinuation) then
+            if (totalR == zero .or. totalR0 == zero) then
+                fis2 = rFil * (vis2 + dissContMagnitude / (1 + exp(-dissContSharpness * dissContMidpoint)))
+            else
+                fis2 = rFil * (vis2 + dissContMagnitude / &
+                               (1 + exp(-dissContSharpness * (log10(totalR / totalR0) + dissContMidpoint))))
+            end if
+        else
+            fis2 = rFil * vis2
+        end if
         fis4 = rFil * vis4
         sfil = one - rFil
 
@@ -4413,8 +4428,9 @@ contains
         use constants
         use flowVarRefState, only: pInfCorr
         use inputDiscretization, only: vis2, vis4, sigma
+        use inputIteration, only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
         use inputPhysics, only: equations
-        use iteration, only: rFil
+        use iteration, only: rFil, totalR0, totalR
         use flowVarRefState, only: gammaInf, pInfCorr, rhoInf
         implicit none
 
@@ -4464,9 +4480,21 @@ contains
             end do
         end do
 
-        ! Set a couple of constants for the scheme.
-        fis2 = vis2
+        ! Set the dissipation constants for the scheme.
+        ! rFil and sFil are fractions used by the Runge-Kutta solver to compute residuals at intermediate steps.
+        ! For the blockette code, rFil is always one, so sFil==0, fis2==vis2, and fis4==vis4.
+
+        ! The sigmoid function used for dissipation-based continuation is described in Eq. 28 and Eq. 29 from the paper:
+        ! "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c).
+        ! The options documentation also has information on the parameters in this formulation.
+        if (useDissContinuation) then
+            fis2 = vis2 + dissContMagnitude / &
+                   (1 + exp(-dissContSharpness * (log10(totalR / totalR0) + dissContMidpoint)))
+        else
+            fis2 = vis2
+        end if
         fis4 = vis4
+
         !
         !       Dissipative fluxes in the i-direction.
         !
