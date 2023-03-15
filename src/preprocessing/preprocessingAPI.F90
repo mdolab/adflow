@@ -3606,8 +3606,8 @@ contains
     if(myID == 0) then
        print "(a)", "#"
        print "(a)", "#                      Error"
+ 90    format("#",1x,a,1x, "volumes found in the grid.")
        print 90, trim(modeString)
- 90    format("#",1x,a,1x"volumes found in the grid.")
        print "(a)", "# A list of the bad volumes is &
                     &printed below"
        print "(a)", "#"
