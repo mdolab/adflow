@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 # MACH classes
 from adflow import ADFLOW
 
-# import the testing utilities that live a few directories up
+# import the testing utilities
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_tutorial_wing
 import reg_test_classes

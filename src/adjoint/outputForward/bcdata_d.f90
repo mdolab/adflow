@@ -361,15 +361,9 @@ contains
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: mult, trans
     character(len=maxstringlen) :: errormessage
-    intrinsic trim
     integer :: ii1
 ! write an error message and terminate if it was not
 ! possible to determine the temperature.
-    if (.not.bcvarpresent(1)) then
-      write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdataisothermalwall', errormessage)
-    end if
 ! convert to si-units and store the temperature in tns_wall.
     call sitemperature(temp(1), mult, trans)
     do ii1=1,isize1ofdrfbcdata
@@ -383,8 +377,6 @@ contains
 &         tref
       end do
     end do
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': wall temperature not specified for isothermal wall')
   end subroutine bcdataisothermalwall_d
 ! ---------------------------------------------------------------
 ! routines that set the actual bcdata values from the cgns data set
@@ -417,14 +409,8 @@ contains
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: mult, trans
     character(len=maxstringlen) :: errormessage
-    intrinsic trim
 ! write an error message and terminate if it was not
 ! possible to determine the temperature.
-    if (.not.bcvarpresent(1)) then
-      write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdataisothermalwall', errormessage)
-    end if
 ! convert to si-units and store the temperature in tns_wall.
     call sitemperature(temp(1), mult, trans)
     do j=jbeg,jend
@@ -433,8 +419,6 @@ contains
 &         tref
       end do
     end do
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': wall temperature not specified for isothermal wall')
   end subroutine bcdataisothermalwall
   subroutine bcdatasubsonicinflow(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend, allturbpresent)
@@ -475,7 +459,6 @@ contains
     logical :: rhopresent, velrpresent, veltpresent
     logical :: totpresent, velpresent, dirpresent
     character(len=maxstringlen) :: errormessage
-    intrinsic trim
 ! store the logicals, which indicate succes or failure
 ! a bit more readable.
     ptpresent = bcvarpresent(1)
@@ -513,23 +496,15 @@ contains
     if (velxpresent .and. velypresent .and. velzpresent) velpresent = &
 &       .true.
 ! determine the situation we have here.
-    if (totpresent .and. dirpresent) then
+    if (totpresent .and. dirpresent) call totalsubsonicinlet()
 ! total conditions and velocity direction are prescribed.
 ! determine the values for the faces of the subface.
-      call totalsubsonicinlet()
-    else
 ! not enough data is prescribed. print an error message
 ! and exit.
-      write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasubsonicinflow', errormessage)
-    end if
 ! set the turbulence variables and check if all of them are
 ! prescribed. if not set allturbpresent to .false.
     allturbpresent = setbcvarturb(17_inttype, boco, bcvararray, ibeg, &
 &     iend, jbeg, jend, bcdata(boco)%turbinlet)
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': not enough data specified for subsonic inlet')
 
   contains
 !=================================================================
@@ -827,7 +802,6 @@ contains
     logical :: rhopresent, velrpresent, veltpresent
     logical :: totpresent, velpresent, dirpresent
     character(len=maxstringlen) :: errormessage
-    intrinsic trim
     integer :: ii1
 ! store the logicals, which indicate succes or failure
 ! a bit more readable.
@@ -871,11 +845,6 @@ contains
 ! determine the values for the faces of the subface.
       call totalsubsonicinlet_d()
     else
-! not enough data is prescribed. print an error message
-! and exit.
-      write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasubsonicinflow', errormessage)
       do ii1=1,isize1ofdrfbcdata
         bcdatad(ii1)%ptinlet = 0.0_8
       end do
@@ -886,6 +855,8 @@ contains
         bcdatad(ii1)%htinlet = 0.0_8
       end do
     end if
+! not enough data is prescribed. print an error message
+! and exit.
 ! set the turbulence variables and check if all of them are
 ! prescribed. if not set allturbpresent to .false.
     do ii1=1,isize1ofdrfbcdata
@@ -894,8 +865,6 @@ contains
     call setbcvarturb_d(17_inttype, boco, bcvararray, bcvararrayd, ibeg&
 &                 , iend, jbeg, jend, bcdata(boco)%turbinlet, bcdatad(&
 &                 boco)%turbinlet, allturbpresent)
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': not enough data specified for subsonic inlet')
 
   contains
 !  differentiation of totalsubsonicinlet in forward (tangent) mode (with options i4 dr8 r8):
@@ -1467,15 +1436,9 @@ contains
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: mult, trans
     character(len=maxstringlen) :: errormessage
-    intrinsic trim
     integer :: ii1
 ! write an error message and terminate if it was not
 ! possible to determine the static pressure.
-    if (.not.bcvarpresent(1)) then
-      write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasubsonicoutflow', errormessage)
-    end if
 ! convert to si-units and store the pressure in ps.
     call sipressure(mass(1), length(1), time(1), mult, trans)
     do ii1=1,isize1ofdrfbcdata
@@ -1488,8 +1451,6 @@ contains
         bcdata(boco)%ps(i, j) = (mult*bcvararray(i, j, 1)+trans)/pref
       end do
     end do
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': static pressure not specified for subsonic outlet')
   end subroutine bcdatasubsonicoutflow_d
   subroutine bcdatasubsonicoutflow(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend)
@@ -1518,14 +1479,8 @@ contains
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: mult, trans
     character(len=maxstringlen) :: errormessage
-    intrinsic trim
 ! write an error message and terminate if it was not
 ! possible to determine the static pressure.
-    if (.not.bcvarpresent(1)) then
-      write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasubsonicoutflow', errormessage)
-    end if
 ! convert to si-units and store the pressure in ps.
     call sipressure(mass(1), length(1), time(1), mult, trans)
     do j=jbeg,jend
@@ -1533,8 +1488,6 @@ contains
         bcdata(boco)%ps(i, j) = (mult*bcvararray(i, j, 1)+trans)/pref
       end do
     end do
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': static pressure not specified for subsonic outlet')
   end subroutine bcdatasubsonicoutflow
   subroutine bcdatasupersonicinflow(boco, bcvararray, ibeg, iend, jbeg, &
 &   jend, allflowpresent, allturbpresent)
@@ -1571,7 +1524,6 @@ contains
     logical :: rhopresent, ppresent, velpresent
     logical :: velxpresent, velypresent, velzpresent
     logical :: velrpresent, veltpresent
-    intrinsic trim
 ! store the logicals, which indicate success or failure
 ! a bit more readable.
     rhopresent = bcvarpresent(1)
@@ -1595,12 +1547,10 @@ contains
 ! is to be solved.
       select case  (flowtype) 
       case (internalflow) 
+
+      case (externalflow) 
 ! internal flow. data at the inlet must be specified;
 ! no free stream data can be taken.
-        write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), &
-&       trim(cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-        call terminate('bcdatasupersonicinflow', errormessage)
-      case (externalflow) 
 !=============================================================
 ! external flow. free stream data is used.
         do j=jbeg,jend
@@ -1619,27 +1569,6 @@ contains
         allflowpresent = .false.
       end select
     end if
-! check if the prescribed velocity is an inflow. no halo's
-! should be included here and therefore the nodal range
-! (with an offset) must be used.
-    nn = 0
-    do j=bcdata(boco)%jnbeg+1,bcdata(boco)%jnend
-      do i=bcdata(boco)%inbeg+1,bcdata(boco)%inend
-        var = bcdata(boco)%velx(i, j)*bcdata(boco)%norm(i, j, 1) + &
-&         bcdata(boco)%vely(i, j)*bcdata(boco)%norm(i, j, 2) + bcdata(&
-&         boco)%velz(i, j)*bcdata(boco)%norm(i, j, 3)
-        if (var .gt. zero) nn = nn + 1
-      end do
-    end do
-    if (nn .gt. 0) then
-      write(errormessage, 102) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasupersonicinflow', errormessage)
-    end if
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': not enough data specified for supersonic inlet')
- 102 format('zone ',a,', supersonic inlet boundary subface ',a, &
-&          ': velocity points out of the domain for some faces.')
 
   contains
     subroutine prescribedsupersonicinlet()
@@ -1823,7 +1752,6 @@ contains
     logical :: rhopresent, ppresent, velpresent
     logical :: velxpresent, velypresent, velzpresent
     logical :: velrpresent, veltpresent
-    intrinsic trim
     integer :: ii1
 ! store the logicals, which indicate success or failure
 ! a bit more readable.
@@ -1848,11 +1776,6 @@ contains
 ! is to be solved.
       select case  (flowtype) 
       case (internalflow) 
-! internal flow. data at the inlet must be specified;
-! no free stream data can be taken.
-        write(errormessage, 100) trim(cgnsdoms(nbkglobal)%zonename), &
-&       trim(cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-        call terminate('bcdatasupersonicinflow', errormessage)
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%turbinlet = 0.0_8
         end do
@@ -1887,6 +1810,8 @@ contains
         do ii1=1,isize1ofdrfbcdata
           bcdatad(ii1)%ps = 0.0_8
         end do
+! internal flow. data at the inlet must be specified;
+! no free stream data can be taken.
 !=============================================================
 ! external flow. free stream data is used.
         do j=jbeg,jend
@@ -1933,27 +1858,6 @@ contains
         end do
       end select
     end if
-! check if the prescribed velocity is an inflow. no halo's
-! should be included here and therefore the nodal range
-! (with an offset) must be used.
-    nn = 0
-    do j=bcdata(boco)%jnbeg+1,bcdata(boco)%jnend
-      do i=bcdata(boco)%inbeg+1,bcdata(boco)%inend
-        var = bcdata(boco)%velx(i, j)*bcdata(boco)%norm(i, j, 1) + &
-&         bcdata(boco)%vely(i, j)*bcdata(boco)%norm(i, j, 2) + bcdata(&
-&         boco)%velz(i, j)*bcdata(boco)%norm(i, j, 3)
-        if (var .gt. zero) nn = nn + 1
-      end do
-    end do
-    if (nn .gt. 0) then
-      write(errormessage, 102) trim(cgnsdoms(nbkglobal)%zonename), trim(&
-&     cgnsdoms(nbkglobal)%bocoinfo(cgnsboco)%boconame)
-      call terminate('bcdatasupersonicinflow', errormessage)
-    end if
- 100 format('zone ',a,', boundary subface ',a, &
-&          ': not enough data specified for supersonic inlet')
- 102 format('zone ',a,', supersonic inlet boundary subface ',a, &
-&          ': velocity points out of the domain for some faces.')
 
   contains
 !  differentiation of prescribedsupersonicinlet in forward (tangent) mode (with options i4 dr8 r8):

@@ -1344,14 +1344,10 @@ contains
     ! Write the residual norm to stdout every adjMonStep iterations.
 
     if(mod(n, adjMonStep) ==0 ) then
-       if( myid==0 ) write(*, 10) n, rnorm
+       if( myid==0 ) write(*, "(I4, 1X, A, 1X, ES16.10)") n, 'KSP Residual norm', rnorm
     end if
 
     ierr = 0
-
-    ! Output format.
-
-10  format(i4, 1x, 'KSP Residual norm', 1x, es16.10)
 
   end subroutine MyKSPMonitor
 
@@ -1614,6 +1610,7 @@ contains
     use constants
     use ADjointPETSc, only : dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
     use inputAdjoint, only : approxPC
+    use agmg, only : destroyAGMG
     use utils, only : EChk
     implicit none
 
@@ -1632,6 +1629,9 @@ contains
 
        call KSPDestroy(adjointKSP, ierr)
        call EChk(ierr,__FILE__,__LINE__)
+
+       call destroyAGMG()
+
        adjointPETScVarsAllocated = .False.
     end if
 

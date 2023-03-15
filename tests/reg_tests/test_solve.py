@@ -7,7 +7,7 @@ from parameterized import parameterized_class
 # MACH classes
 from adflow import ADFLOW
 
-# import the testing utilities that live a few directories up
+# import the testing utilities
 import reg_test_utils as utils
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_tutorial_wing
@@ -110,7 +110,6 @@ class TestSolve(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=False)
 
     def test_solve(self):
-
         # do the solve
         self.CFDSolver(self.ap)
 
@@ -124,7 +123,6 @@ class TestSolve(reg_test_classes.RegTest):
 
 
 class TestFailedMesh(unittest.TestCase):
-
     N_PROCS = 1
 
     def test_failed_mesh(self):

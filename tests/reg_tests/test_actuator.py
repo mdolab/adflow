@@ -11,7 +11,7 @@ from mpi4py import MPI
 from adflow import ADFLOW
 from adflow import ADFLOW_C
 
-# import the testing utilities that live a few directories up
+# import the testing utilities
 import reg_test_utils as utils
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_actuator_pipe
@@ -29,7 +29,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
     ref_file = "actuator_tests.json"
 
     def setUp(self):
-
         super().setUp()
 
         self.options = {
@@ -81,6 +80,9 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         CFDSolver.addFunction("forcexmomentum", "inlet", name="forcexmomentum_in")
         CFDSolver.addFunction("forcexmomentum", "outlet", name="forcexmomentum_out")
+
+        CFDSolver.addFunction("mavgvi", "inlet", name="mavgvi_in")
+        CFDSolver.addFunction("mavgvi", "outlet", name="mavgvi_out")
 
         self.CFDSolver = CFDSolver
 
@@ -401,8 +403,10 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         funcs = {}
         funcsSens = {}
         # self.CFDSolver.evalFunctions(self.ap, funcs)
-        self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power"])
-        self.CFDSolver.evalFunctionsSens(self.ap, funcsSens, evalFuncs=["my_force", "cfd_force", "my_power"])
+        self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"])
+        self.CFDSolver.evalFunctionsSens(
+            self.ap, funcsSens, evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"]
+        )
         # check if adjoint failed
         self.assert_adjoint_failure()
 
@@ -442,6 +446,10 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.handler.root_print("my_power sens")
         self.handler.root_add_dict("my_power sens", funcsSens["actuator_pipe_my_power"], rtol=1e-12, atol=1e-12)
 
+        # test mavgvi
+        self.handler.root_print("mavgvi sens")
+        self.handler.root_add_dict("mavgvi sens", funcsSens["actuator_pipe_mavgvi_out"], rtol=1e-12, atol=1e-12)
+
     def test_actuator_flowpower_adjoint(self):
         "we test this adjoint separately because we need to have a finite thrust for this to actually test"
 
@@ -468,7 +476,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         self.handler.root_add_dict("flowpower sens", funcsSens["actuator_pipe_flowpower_az"], rtol=1e-12, atol=1e-12)
 
     def test_actuator_partials(self):
-
         az_force = 600.0
         az_heat = 1e5
         # need to set all dvs because training may re-use leftover dvs from a previous test
@@ -536,7 +543,6 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
     h = 1e-40
 
     def setUp(self):
-
         super().setUp()
 
         self.options = {
@@ -585,6 +591,9 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
 
         CFDSolver.addFunction("mavgvx", "inlet", name="mavgvx_in")
         CFDSolver.addFunction("mavgvx", "outlet", name="mavgvx_out")
+
+        # we just test mavgvi on the outlet plane for derivatives
+        CFDSolver.addFunction("mavgvi", "outlet", name="mavgvi_out")
 
         CFDSolver.addFunction("forcexpressure", "inlet", name="forcexpressure_in")
         CFDSolver.addFunction("forcexpressure", "outlet", name="forcexpressure_out")
@@ -699,11 +708,10 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
 
         funcs = {}
         funcsSensCS = {}
-        self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power"])
+        self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"])
 
         funcs_plus = {}
         for dv in ["thrust", "heat"]:
-
             # save the old dv
             dvsave = aDV[dv]
 
@@ -723,11 +731,13 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
             funcs_plus[dv] = {}
 
             # eval functions
-            self.CFDSolver.evalFunctions(self.ap, funcs_plus[dv], evalFuncs=["my_force", "cfd_force", "my_power"])
+            self.CFDSolver.evalFunctions(
+                self.ap, funcs_plus[dv], evalFuncs=["my_force", "cfd_force", "my_power", "mavgvi_out"]
+            )
 
             # compute the sens
             funcsSensCS[dv] = {}
-            for f in ["my_force", "cfd_force", "my_power"]:
+            for f in ["my_force", "cfd_force", "my_power", "mavgvi_out"]:
                 fname = "actuator_pipe_" + f
                 funcsSensCS[dv][f] = np.imag(funcs_plus[dv][fname]) / self.h
 
@@ -772,6 +782,15 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
         ref_val = self.handler.db["my_power sens"]["heat"]
         np.testing.assert_allclose(funcsSensCS["heat"]["my_power"], ref_val, atol=1e-10, rtol=1e-10)
 
+        # mavgvi
+        # thrust
+        ref_val = self.handler.db["mavgvi sens"]["thrust"]
+        np.testing.assert_allclose(funcsSensCS["thrust"]["mavgvi_out"], ref_val, atol=1e-10, rtol=1e-10)
+
+        # heat
+        ref_val = self.handler.db["mavgvi sens"]["heat"]
+        np.testing.assert_allclose(funcsSensCS["heat"]["mavgvi_out"], ref_val, atol=1e-10, rtol=1e-10)
+
     def cmplx_test_actuator_flowpower_adjoint(self):
         "we test this adjoint separately because we need to have a finite thrust for this to actually test"
 
@@ -793,7 +812,6 @@ class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
 
         funcs_plus = {}
         for dv in ["thrust", "heat"]:
-
             # save the old dv
             dvsave = aDV[dv]
 

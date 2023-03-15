@@ -478,6 +478,7 @@ contains
     use constants
     use block
     use communication
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -516,9 +517,8 @@ contains
        int2String = adjustl(int2String)
 
        print "(a)", "#"
-       print 101, trim(int1String), trim(int2String)
+       print strings, "# Grid level: ", trim(int1String),", Total number of cells: ", trim(int2String)
        print "(a)", "#"
-101    format("# Grid level: ", a,", Total number of cells: ", a)
 
     endif
 
@@ -872,6 +872,7 @@ contains
     use cgnsGrid
     use inputTimeSpectral
     use utils, only : setPointers
+    use commonFormats, only : stringSpace, stringSci5
     implicit none
     !
     !      Subroutine arguments.
@@ -1011,15 +1012,10 @@ contains
 
                       print "(a)", "#"
                       print "(a)", "#                      Warning"
-                      print 100,                              &
-                           trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
-                           trim(cgnsDoms(i)%zonename)
-                      print 110, fact
+                      print stringSpace, "# Symmetry boundary face", trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
+                           "of zone", trim(cgnsDoms(i)%zonename), "is not planar."
+                      write(*, stringSci5) "# Maximum deviation from the mean normal: ", real(fact), " degrees"
                       print "(a)", "#"
-100                   format("# Symmetry boundary face",1X,A,1X,"of zone", &
-                           1x,a,1x, "is not planar.")
-110                   format("# Maximum deviation from the mean normal: ", &
-                           es12.5, " degrees")
 
                    endif
 
@@ -1363,10 +1359,6 @@ contains
     defaultFamName(BCWallViscousIsothermal) = 'wall'
     defaultFamName(UserDefined) = 'userDefined'
 
-101 format("CGNS Block ",I4,", boundary condition ",I4, ", of type ",a, &
-         " does not have a family. Based on the boundary condition type, &
-         &a name of: '", a, "' will be used.")
-
     nFam = 0
     do i=1, size(cgnsDoms)
        do j=1, size(cgnsDoms(i)%bocoInfo)
@@ -1374,8 +1366,10 @@ contains
              if (trim(cgnsDoms(i)%bocoInfo(j)%wallBCName) == "") then
                 if (myid == 0) then
                    ! Tell the user we are adding an automatic family name
-                   write(*, 101) i, j, trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
-                        trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
+                   write(*, "(2(A, I4), *(A))") "CGNS Block ", i, ", boundary condition ", j, ", of type ", &
+                   trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
+                   " does not have a family. Based on the boundary condition type,", &
+                   " a name of: '", trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), "' will be used."
                 end if
                 cgnsDoms(i)%bocoInfo(j)%wallBCName = trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
              end if
@@ -2748,6 +2742,7 @@ contains
     use checkVolBlock
     use inputIteration
     use utils, only : setPointers, terminate, returnFail
+    use commonFormats, only : stringSpace, stringInt1
     implicit none
     !
     !      Subroutine arguments.
@@ -3376,11 +3371,8 @@ contains
           if(myID == 0) then
              print "(a)", "#"
              print "(a)", "#                      Warning"
-             print 100, level
-100          format("#* Negative volumes present on coarse grid &
-                  &level",1x,i1,".")
-             print "(a)", "#* Computation continues, &
-                  &but be aware of this"
+             print stringInt1, "#* Negative volumes present on coarse grid level ", level, "."
+             print "(a)", "#* Computation continues, but be aware of this"
              print "(a)", "#"
           endif
 
@@ -3445,11 +3437,9 @@ contains
           integerString = trim(integerString)
           print "(a)", "#"
           print "(a)", "#                      Warning"
-          print 102, trim(integerString)
-          print 103
+          print stringSpace, "#", trim(integerString), "bad quality volumes found."
+          print "(a)", "# Computation will continue, but be aware of this."
           print "(a)", "#"
-102       format("# ",a," bad quality volumes found.")
-103       format("# Computation will continue, but be aware of this")
        endif
     endif
 
@@ -3567,6 +3557,7 @@ contains
     use inputTimeSpectral
     use checkVolBlock
     use utils, only : setPointers, terminate
+    use commonFormats, only : stringSpace
     implicit none
     !
     !      Subroutine arguments.
@@ -3578,9 +3569,7 @@ contains
     !      Local variables.
     !
     integer :: proc, ierr
-
     integer(kind=intType) :: nn, sps, i, j, k
-
     real(kind=realType), dimension(3) :: xc
     real(kind=realType) :: quantity
 
@@ -3606,10 +3595,8 @@ contains
     if(myID == 0) then
        print "(a)", "#"
        print "(a)", "#                      Error"
- 90    format("#",1x,a,1x, "volumes found in the grid.")
-       print 90, trim(modeString)
-       print "(a)", "# A list of the bad volumes is &
-                    &printed below"
+       print "(a)", "# ", trim(modeString), " volumes found in the grid."
+       print "(a)", "# A list of the negative volumes is printed below"
        print "(a)", "#"
     endif
 
@@ -3655,12 +3642,11 @@ contains
                    case (steady, unsteady)
 
                       print "(a)", "#"
-                      print 100, trim(cgnsDoms(nbkGlobal)%zoneName), &
-                                 trim(modeString)
-100                   format("# Block",1x,a,1x,"contains the following &
-                           &",a," volumes")
-                      print "(a)", "#=================================&
-                           &==================================="
+
+                      print stringSpace, "# Block", trim(cgnsDoms(nbkGlobal)%zoneName), &
+                        "contains the following ", trim(modeString), " volumes"
+                      print "(a)", "#================================&
+                      &===================================="
                       print "(a)", "#"
 
                       !====================================================
@@ -3671,14 +3657,11 @@ contains
                       intString1 = adjustl(intString1)
 
                       print "(a)", "#"
-                      print 101, trim(intString1), &
-                           trim(modeString), &
-                           trim(cgnsDoms(nbkGlobal)%zoneName)
-101                   format("# Spectral solution",1x,a, ":block", &
-                           1x,a,1x,"contains the following",1x,a,1x, &
-                           "volumes")
-                      print "(a)", "#=================================&
-                           &==================================="
+
+                      print stringSpace, "# Spectral solution", trim(intString1), "block", &
+                        trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following ", trim(modeString), " volumes"
+                      print "(a)", "#===================================&
+                      &================================="
                       print "(a)", "#"
 
                    end select
@@ -3727,14 +3710,9 @@ contains
                                     quantity = skew(i,j,k)
                               end select
 
-                               print 102, trim(intString1), &
-                                    trim(intString2), &
-                                    trim(intString3), &
-                                    xc(1), xc(2), xc(3), &
-                                    trim(descString), quantity
-102                            format("# Indices (",a,",",a,",",a,"), &
-                                    &coordinates (",es10.3,",",es10.3,",", &
-                                    es10.3,"), ",a,": ",es10.3)
+                               print "(7(A), 4(ES10.3, A))", "# Indices (", trim(intString1), &
+                                     ",", trim(intString2), ",", trim(intString3), "), coordinates (", &
+                                     xc(1), ",", xc(2), ",", xc(3), "), ", trim(descString), ": ", quantity
 
                             endif
                          enddo
