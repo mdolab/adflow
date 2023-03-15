@@ -57,7 +57,7 @@ contains
 
         if (myID == 0 .and. printIterations) then
             print "(a)", "#"
-            print "(a,a)", "# Writing surface solution file(s): ", trim(surfSolFileNames(1))
+            print "(a)", "# Writing surface solution file(s):"
         end if
 
         ! Allocate the memory for the fileIDs and the bases.
@@ -77,6 +77,9 @@ contains
             ! Loop over the number of surface solution files to write.
 
             solLoop: do nn = 1, nSurfSolToWrite
+
+                ! Print the filename to stdout
+                print "(a,4x,a)", "#", trim(surfSolFileNames(nn))
 
                 ! Open the cgns file for writing and check if it went okay.
                 ! Store the file index for later purposes.
