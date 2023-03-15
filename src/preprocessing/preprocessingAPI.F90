@@ -3408,11 +3408,8 @@ contains
           if(myID == 0) then
              print "(a)", "#"
              print "(a)", "#                      Warning"
-             print 101, level
-101          format("#* Badly skewed volumes present on coarse grid &
-                  &level",1x,i1,".")
-             print "(a)", "#* Computation continues, &
-                  &but be aware of this"
+             print stringInt1, "#* Badly skewed volumes present on coarse grid level ", level, "."
+             print "(a)", "#* Computation continues, but be aware of this"
              print "(a)", "#"
           endif
 
@@ -3595,8 +3592,8 @@ contains
     if(myID == 0) then
        print "(a)", "#"
        print "(a)", "#                      Error"
-       print "(a)", "# ", trim(modeString), " volumes found in the grid."
-       print "(a)", "# A list of the negative volumes is printed below"
+       print "(3(a))", "# ", trim(modeString), " volumes found in the grid."
+       print "(a)", "# A list of those volumes is printed below"
        print "(a)", "#"
     endif
 
@@ -3710,7 +3707,7 @@ contains
                                     quantity = skew(i,j,k)
                               end select
 
-                               print "(7(A), 4(ES10.3, A))", "# Indices (", trim(intString1), &
+                               print "(7(A), 3(ES10.3, A), 2(A), F6.3)", "# Indices (", trim(intString1), &
                                      ",", trim(intString2), ",", trim(intString3), "), coordinates (", &
                                      xc(1), ",", xc(2), ",", xc(3), "), ", trim(descString), ": ", quantity
 
