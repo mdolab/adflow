@@ -31,16 +31,13 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
     real(kind=realtype) :: qxx, qyy, qzz, qxy, qxz, qyz, sijsij
     real(kind=realtype) :: oxy, oxz, oyz, oijoij
     real(kind=realtype) :: fact, omegax, omegay, omegaz
     intrinsic mod
     intrinsic sqrt
-    integer*4 :: jsize
-    integer*4 :: isize
-    integer :: ksize
 ! determine the non-dimensional wheel speed of this block.
 ! the vorticity term, which appears in kato-launder is of course
 ! not frame invariant. to approximate frame invariance the wheel
@@ -149,13 +146,10 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
     real(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
     intrinsic mod
-    integer*4 :: jsize
-    integer*4 :: isize
-    integer :: ksize
 ! loop over the cell centers of the given block. it may be more
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for u, v and w must be stored.
@@ -694,14 +688,11 @@ nadvloopspectral:do ii=1,nadv
 !
 !      local variables.
 !
-    integer :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: uuy, uuz, vvx, vvz, wwx, wwy
     real(kind=realtype) :: fact, vortx, vorty, vortz
     real(kind=realtype) :: omegax, omegay, omegaz
     intrinsic mod
-    integer :: jsize
-    integer :: isize
-    integer :: ksize
 ! determine the non-dimensional wheel speed of this block.
     omegax = timeref*sections(sectionid)%rotrate(1)
     omegay = timeref*sections(sectionid)%rotrate(2)

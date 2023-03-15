@@ -31,7 +31,7 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
     real(kind=realtype) :: qxx, qyy, qzz, qxy, qxz, qyz, sijsij
     real(kind=realtype) :: oxy, oxz, oyz, oijoij
@@ -147,7 +147,7 @@ contains
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
     real(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
 ! loop over the cell centers of the given block. it may be more
@@ -819,7 +819,7 @@ nadvloopspectral:do ii=1,nadv
 !
 !      local variables.
 !
-    integer :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
     real(kind=realtype) :: uuy, uuz, vvx, vvz, wwx, wwy
     real(kind=realtype) :: fact, vortx, vorty, vortz
     real(kind=realtype) :: omegax, omegay, omegaz

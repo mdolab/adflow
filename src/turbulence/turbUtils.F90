@@ -21,7 +21,7 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, ii
+        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
 
         real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
         real(kind=realType) :: qxx, qyy, qzz, qxy, qxz, qyz, sijsij
@@ -158,7 +158,7 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, ii
+        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
         real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
         real(kind=realType) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
 
@@ -275,7 +275,7 @@ contains
         !
         !      Local variables.
         !
-        integer :: i, j, k, ii
+        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
 
         real(kind=realType) :: uuy, uuz, vvx, vvz, wwx, wwy
         real(kind=realType) :: fact, vortx, vorty, vortz
@@ -379,7 +379,7 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, ii
+        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
         real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
         real(kind=realType) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
 
