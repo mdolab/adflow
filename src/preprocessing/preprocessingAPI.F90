@@ -3371,37 +3371,39 @@ contains
         ! Determine the global number of badly skewed blocks. The result must be
         ! known on all processors and thus an allreduce is needed.
 
-        call mpi_allreduce(nBadSkew, nBadSkewGlobal, 1, adflow_integer, &
-                           mpi_sum, ADflow_comm_world, ierr)
+        if (meshMaxSkewness < 1.0) then
+            call mpi_allreduce(nBadSkew, nBadSkewGlobal, 1, adflow_integer, &
+                            mpi_sum, ADflow_comm_world, ierr)
 
-        ! Test if badly skewed cells are present in the grid. If so, the action
-        ! taken depends on the grid level.
+            ! Test if badly skewed cells are present in the grid. If so, the action
+            ! taken depends on the grid level.
 
-        if (nBadSkewGlobal > 0) then
-            if (level == 1) then
+            if (nBadSkewGlobal > 0) then
+                if (level == 1) then
 
-                ! Badly skewed volumes present on the fine grid level. Print a
-                ! list of the bad volumes and terminate executation.
+                    ! Badly skewed volumes present on the fine grid level. Print a
+                    ! list of the bad volumes and terminate executation.
 
-                call writeBadVolumes(checkVolDoms, 2)
+                    call writeBadVolumes(checkVolDoms, 2)
 
-                call returnFail("metric", &
-                                "Badly skewed volumes present in grid.")
-                call mpi_barrier(ADflow_comm_world, ierr)
+                    call returnFail("metric", &
+                                    "Badly skewed volumes present in grid.")
+                    call mpi_barrier(ADflow_comm_world, ierr)
 
-            else
+                else
 
-                ! Coarser grid level. The fine grid is okay, but due to the
-                ! coarsening badly skewed volumes are introduced. Print a warning.
+                    ! Coarser grid level. The fine grid is okay, but due to the
+                    ! coarsening badly skewed volumes are introduced. Print a warning.
 
-                if (myID == 0) then
-                    print "(a)", "#"
-                    print "(a)", "#                      Warning"
-                    print stringInt1, "#* Badly skewed volumes present on coarse grid level ", level, "."
-                    print "(a)", "#* Computation continues, but be aware of this"
-                    print "(a)", "#"
+                    if (myID == 0) then
+                        print "(a)", "#"
+                        print "(a)", "#                      Warning"
+                        print stringInt1, "#* Badly skewed volumes present on coarse grid level ", level, "."
+                        print "(a)", "#* Computation continues, but be aware of this"
+                        print "(a)", "#"
+                    end if
+
                 end if
-
             end if
         end if
 
@@ -3439,15 +3441,17 @@ contains
             end do
         end do
 
-        ! Release memomry for skewness again
-        do sps = 1, nTimeIntervalsSpectral
-            do nn = 1, nDom
-                deallocate (checkVolDoms(nn, sps)%volumeIsSkewed, stat=ierr)
-                if (ierr /= 0) &
-                    call terminate("metric", &
-                                   "Deallocation failure for volumeIsNeg")
+        ! Release memory for skewness again
+        if (meshMaxSkewness < 1.0) then
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+                    deallocate (checkVolDoms(nn, sps)%volumeIsSkewed, stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("metric", &
+                                    "Deallocation failure for volumeIsSkewed")
+                end do
             end do
-        end do
+        end if
 
     contains
 
