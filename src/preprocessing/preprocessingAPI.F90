@@ -3373,7 +3373,7 @@ contains
 
         if (meshMaxSkewness < 1.0) then
             call mpi_allreduce(nBadSkew, nBadSkewGlobal, 1, adflow_integer, &
-                            mpi_sum, ADflow_comm_world, ierr)
+                               mpi_sum, ADflow_comm_world, ierr)
 
             ! Test if badly skewed cells are present in the grid. If so, the action
             ! taken depends on the grid level.
@@ -3448,7 +3448,7 @@ contains
                     deallocate (checkVolDoms(nn, sps)%volumeIsSkewed, stat=ierr)
                     if (ierr /= 0) &
                         call terminate("metric", &
-                                    "Deallocation failure for volumeIsSkewed")
+                                       "Deallocation failure for volumeIsSkewed")
                 end do
             end do
         end if
