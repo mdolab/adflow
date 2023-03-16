@@ -3347,7 +3347,7 @@ contains
                 ! Negative volumes present on the fine grid level. Print a
                 ! list of the bad volumes and terminate executation.
 
-                call writeBadVolumes(checkVolDoms, 1)
+                call writeBadVolumes(checkVolDoms, MetricVolume)
                 call returnFail("metric", &
                                 "Negative volumes present in grid.")
                 call mpi_barrier(ADflow_comm_world, ierr)
@@ -3384,7 +3384,7 @@ contains
                     ! Badly skewed volumes present on the fine grid level. Print a
                     ! list of the bad volumes and terminate executation.
 
-                    call writeBadVolumes(checkVolDoms, 2)
+                    call writeBadVolumes(checkVolDoms, MetricSkewness)
 
                     call returnFail("metric", &
                                     "Badly skewed volumes present in grid.")
@@ -3568,10 +3568,10 @@ contains
 
         ! prepare the string to use according to the mode it is operating in
         select case (mode)
-        case (1)
+        case (MetricVolume)
             modeString = "Negative"
             descString = "Volume"
-        case (2)
+        case (MetricSkewness)
             modeString = "Badly skewed"
             descString = "Skewness"
         end select
@@ -3605,10 +3605,10 @@ contains
                         ! Test for a bad block.
                         blockIsBad = .false.
                         select case (mode)
-                        case (1)
+                        case (MetricVolume)
                             if (checkVolDoms(nn, sps)%blockHasNegVol) &
                                 blockIsBad = .true.
-                        case (2)
+                        case (MetricSkewness)
                             if (checkVolDoms(nn, sps)%blockHasSkewedVol) &
                                 blockIsBad = .true.
                         end select
@@ -3664,10 +3664,10 @@ contains
 
                                         volumeIsBad = .false.
                                         select case (mode)
-                                        case (1)
+                                        case (MetricVolume)
                                             if (checkVolDoms(nn, sps)%volumeIsNeg(i, j, k)) &
                                                 volumeIsBad = .true.
-                                        case (2)
+                                        case (MetricSkewness)
                                             if (checkVolDoms(nn, sps)%volumeIsSkewed(i, j, k)) &
                                                 volumeIsBad = .true.
                                         end select
@@ -3691,9 +3691,9 @@ contains
                                             intString3 = adjustl(intString3)
 
                                             select case (mode)
-                                            case (1)
+                                            case (MetricVolume)
                                                 quantity = -vol(i, j, k)
-                                            case (2)
+                                            case (MetricSkewness)
                                                 quantity = skew(i, j, k)
                                             end select
 
