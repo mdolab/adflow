@@ -6564,5 +6564,30 @@ contains
 
     end subroutine getCGNSZoneName
 
+    real(kind=realType) function norm2cplx(v)
+      ! if input is real:
+      !     returns the norm of the input array
+      !
+      ! if input is complex:
+      !     returns a complex number where the real part represents the norm of
+      !     all the real input parts and the complex part represents the norm of
+      !     all the complex input parts.
+
+      use constants
+
+      implicit none
+
+      real(kind=realType), dimension(:), intent(in) :: v
+
+
+#ifdef USE_COMPLEX
+      norm2cplx = cmplx(NORM2(real(v)), NORM2(aimag(v)))
+#else
+      norm2cplx = NORM2(v)
+#endif
+
+
+    end function norm2cplx
+
 #endif
 end module utils

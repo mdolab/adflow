@@ -3495,6 +3495,7 @@ contains
         ! Calculates the min and max angles inside a quadrilateral
         !
         use constants
+        use utils, only: norm2cplx
         implicit none
         !
         !      Subroutine arguments.
@@ -3516,7 +3517,7 @@ contains
         ! loop through vectors and calculate the first 3 angles
         do i = 1, 3
             angles(i) = acos(dot_product(-v(i, :), v(i + 1, :)) / &
-                             (norm2(-v(i, :)) * norm2(v(i + 1, :))))
+                             (norm2cplx(-v(i, :)) * norm2cplx(v(i + 1, :))))
         end do
 
         ! since it is a quadrilateral, the last angle must be:
@@ -3647,8 +3648,8 @@ contains
 
                                 print stringSpace, "# Spectral solution", trim(intString1), "block", &
                              trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following ", trim(modeString), " volumes"
-                                print "(a)", "#===================================&
-                                &================================="
+                                print "(a)", "#================================&
+                                &===================================="
                                 print "(a)", "#"
 
                             end select
