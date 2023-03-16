@@ -5185,6 +5185,10 @@ contains
             deallocate (flowDoms(nn, level, sps)%vol, stat=ierr)
         if (ierr /= 0) deallocationFailure = .true.
 
+        if (associated(flowDoms(nn, level, sps)%skew)) &
+            deallocate (flowDoms(nn, level, sps)%skew, stat=ierr)
+        if (ierr /= 0) deallocationFailure = .true.
+
         if (associated(flowDoms(nn, level, sps)%volRef)) &
             deallocate (flowDoms(nn, level, sps)%volRef, stat=ierr)
         if (ierr /= 0) deallocationFailure = .true.
