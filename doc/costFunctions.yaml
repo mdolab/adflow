@@ -367,7 +367,7 @@ area:
 axismoment:
   desc: >
     Moments about the axis given by ``momentAxis``.
-    Units: N-m
+    Units: Newton - meter
 
 flowpower:
   desc: >
