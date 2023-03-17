@@ -1,6 +1,7 @@
 lift:
   desc: >
-    Surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the direction of the ``liftIndex`` (i.e., dot product in this direction).
+    Surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the direction of the ``liftIndex`` but perpendicular to the streamwise direction (i.e., dot product in this direction).
+    To clarify, the angle of attack ``alpha`` does affect the direction of the force projection.
     Units: Newtons
 
 drag:
@@ -46,6 +47,51 @@ cdv:
 cdm:
   desc: >
     Momentum component of the drag coefficient ``cd`` that stems from time rate of change of velocity (unsteady simulation).
+    Units: None
+
+cofxx:
+  desc: >
+    Coefficient of component of normal forces on wall boundaries in ``x`` direction.
+    Units: None
+
+cofxy:
+  desc: >
+    Coefficient of component of shear forces on face of ``x`` in ``y`` direction.
+    Units: None
+
+cofxz:
+  desc: >
+    Coefficient of component of shear forces on face of ``x`` in ``z`` direction.
+    Units: None
+
+cofyx:
+  desc: >
+    Coefficient of component of shear forces on face of ``y`` in ``x`` direction.
+    Units: None
+
+cofyy:
+  desc: >
+    Coefficient of component of normal forces on wall boundaries in ``y`` direction.
+    Units: None
+
+cofyz:
+  desc: >
+    Coefficient of component of shear forces on face of ``y`` in ``z`` direction.
+    Units: None
+
+cofzx:
+  desc: >
+    Coefficient of component of shear forces on face of ``z`` in ``x`` direction.
+    Units: None
+
+cofzy:
+  desc: >
+    Coefficient of component of shear forces on face of ``z`` in ``y`` direction.
+    Units: None
+
+cofzz:
+  desc: >
+    Coefficient of component of normal forces on wall boundaries in ``z`` direction.
     Units: None
 
 fx:
@@ -286,7 +332,6 @@ mdot:
 mavgptot:
   desc: >
     Mass flow rate averaged total pressure 
-    # TODO: GN- I have no idea if this is right based on the source code --> surfaceIntegrations.F90 --> search for 'mass_Ptot'
     Units: Pascal
 
 aavgptot:
@@ -302,7 +347,6 @@ aavgps:
 mavgttot:
   desc: >
     Mass flow rate averaged total temperature 
-    # TODO: GN- I have no idea if this is right based on the source code --> surfaceIntegrations.F90 --> search for 'mass_Ttot'
     Units: Kelvin
 
 mavgps:
@@ -322,7 +366,8 @@ area:
 
 axismoment:
   desc: >
-    Moment of the geometry in the given axis.
+    Moments about the axis given by ``momentAxis``.
+    Units: N-m
 
 flowpower:
   desc: >
@@ -330,19 +375,21 @@ flowpower:
 
 forcexpressure:
   desc: >
-    Pressure component of force in x direction
+    Pressure component of force in x direction.
+    Dimensional ``cfxp``
 
 forceypressure:
   desc: >
-    Pressure component of force in y direction
+    Pressure component of force in y direction.
 
 forcezpressure:
   desc: >
-    Pressure component of force in z direction
+    Pressure component of force in z direction.
 
 forcexviscous:
   desc: >
-    Viscous component of force in x direction
+    Viscous component of force in x direction.
+    Dimensional ``cfxv``
 
 forceyviscous:
   desc: >
@@ -374,7 +421,8 @@ dragviscous:
 
 dragmomentum:
   desc: >
-    Momentum deficit drag?
+    Momentum drag from time rate of change of velocity (unsteady simulations).
+    Dimensional ``cdm``
 
 liftpressure:
   desc: >
@@ -386,8 +434,12 @@ liftviscous:
 
 liftmomentum:
   desc: >
-    Momentum lift (due to changing momentum of flow?)
+    Momentum lift (due to changing momentum of flow in unsteady simulation)
 
+mavgvi:
+  desc: >
+    Only Anil knows the secret.
+    
 mavgvx:
   desc: >
     Averaged mass flow in the x direction.
@@ -402,4 +454,5 @@ mavgvz:
 
 cperror2:
   desc: >
-    The square of the different betwween computed cp and target cp*.
+    The square of the difference between computed cp and target cp* for inverse design.
+    See ``setTargetCp()`` call.
