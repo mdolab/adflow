@@ -2484,8 +2484,10 @@ contains
     use flowvarrefstate, only : gammainf, pinfcorr, pinfcorrd, rhoinf,&
 &   rhoinfd
     use inputdiscretization, only : vis2, vis4
+    use inputiteration, only : usedisscontinuation, disscontmagnitude,&
+&   disscontmidpoint, disscontsharpness
     use inputphysics, only : equations
-    use iteration, only : rfil
+    use iteration, only : rfil, totalr0, totalr
     use utils_d, only : mydim, mydim_d
     implicit none
 !
@@ -2508,10 +2510,13 @@ contains
     real(kind=realtype), dimension(0:ib, 0:jb, 0:kb) :: ss
     real(kind=realtype), dimension(0:ib, 0:jb, 0:kb) :: ssd
     intrinsic abs
+    intrinsic exp
+    intrinsic log10
     intrinsic max
     intrinsic min
     real(kind=realtype) :: pwr1
     real(kind=realtype) :: pwr1d
+    real(kind=realtype) :: arg1
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
     real(kind=realtype) :: min1
@@ -2653,8 +2658,25 @@ contains
           end do
         end do
       end do
-! set a couple of constants for the scheme.
-      fis2 = rfil*vis2
+! set the dissipation constants for the scheme.
+! rfil and sfil are fractions used by the runge-kutta solver to compute residuals at intermediate steps.
+! this means that fis2 and fis4 will be some fraction of vis2 and vis4, respectively.
+! for other solvers, rfil==1, sfil==0, fis2==vis2, and fis4==vis4.
+! the sigmoid function used for dissipation-based continuation is described in eq. 28 and eq. 29 from the paper:
+! "improving the performance of a compressible rans solver for low and high mach number flows" (seraj2022c).
+! the options documentation also has information on the parameters in this formulation.
+      if (usedisscontinuation) then
+        if (totalr .eq. zero .or. totalr0 .eq. zero) then
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
+&           *disscontmidpoint))))
+        else
+          arg1 = -(disscontsharpness*(log10(totalr/totalr0)+&
+&           disscontmidpoint))
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(arg1)))
+        end if
+      else
+        fis2 = rfil*vis2
+      end if
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
@@ -3018,8 +3040,10 @@ contains
 &   jb, kb, w, p, pori, porj, pork, fw, radi, radj, radk, gamma
     use flowvarrefstate, only : gammainf, pinfcorr, rhoinf
     use inputdiscretization, only : vis2, vis4
+    use inputiteration, only : usedisscontinuation, disscontmagnitude,&
+&   disscontmidpoint, disscontsharpness
     use inputphysics, only : equations
-    use iteration, only : rfil
+    use iteration, only : rfil, totalr0, totalr
     use utils_d, only : mydim
     implicit none
 !
@@ -3037,9 +3061,12 @@ contains
     real(kind=realtype), dimension(ie, je, ke, 3) :: dss
     real(kind=realtype), dimension(0:ib, 0:jb, 0:kb) :: ss
     intrinsic abs
+    intrinsic exp
+    intrinsic log10
     intrinsic max
     intrinsic min
     real(kind=realtype) :: pwr1
+    real(kind=realtype) :: arg1
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
     real(kind=realtype) :: min1
@@ -3120,8 +3147,25 @@ contains
           end do
         end do
       end do
-! set a couple of constants for the scheme.
-      fis2 = rfil*vis2
+! set the dissipation constants for the scheme.
+! rfil and sfil are fractions used by the runge-kutta solver to compute residuals at intermediate steps.
+! this means that fis2 and fis4 will be some fraction of vis2 and vis4, respectively.
+! for other solvers, rfil==1, sfil==0, fis2==vis2, and fis4==vis4.
+! the sigmoid function used for dissipation-based continuation is described in eq. 28 and eq. 29 from the paper:
+! "improving the performance of a compressible rans solver for low and high mach number flows" (seraj2022c).
+! the options documentation also has information on the parameters in this formulation.
+      if (usedisscontinuation) then
+        if (totalr .eq. zero .or. totalr0 .eq. zero) then
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(-(disscontsharpness&
+&           *disscontmidpoint))))
+        else
+          arg1 = -(disscontsharpness*(log10(totalr/totalr0)+&
+&           disscontmidpoint))
+          fis2 = rfil*(vis2+disscontmagnitude/(1+exp(arg1)))
+        end if
+      else
+        fis2 = rfil*vis2
+      end if
       fis4 = rfil*vis4
       sfil = one - rfil
 ! initialize the dissipative residual to a certain times,
@@ -9249,6 +9293,8 @@ contains
     use constants
     use flowvarrefstate
     use inputdiscretization
+    use inputiteration, only : usedisscontinuation, disscontmagnitude,&
+&   disscontmidpoint, disscontsharpness
     use inputphysics
     use iteration
     implicit none
@@ -9268,10 +9314,13 @@ contains
     real(kind=realtype) :: dss1, dss2, ddw, fs
     real(kind=realtype) :: dss1d, dss2d, ddwd, fsd
     intrinsic abs
+    intrinsic log10
+    intrinsic exp
     intrinsic max
     intrinsic min
     real(kind=realtype) :: pwr1
     real(kind=realtype) :: pwr1d
+    real(kind=realtype) :: arg1
     real(kind=realtype) :: x6d
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
@@ -9339,8 +9388,20 @@ contains
       case default
         sslimd = 0.0_8
       end select
-! set a couple of constants for the scheme.
-      fis2 = rfil*vis2
+! set the dissipation constants for the scheme.
+! rfil and sfil are fractions used by the runge-kutta solver to compute residuals at intermediate steps.
+! this means that fis2 and fis4 will be some fraction of vis2 and vis4, respectively.
+! for other solvers, rfil==1, sfil==0, fis2==vis2, and fis4==vis4.
+! the sigmoid function used for dissipation-based continuation is described in eq. 28 and eq. 29 from the paper:
+! "improving the performance of a compressible rans solver for low and high mach number flows" (seraj2022c).
+! the options documentation also has information on the parameters in this formulation.
+      if (usedisscontinuation) then
+        arg1 = -(disscontsharpness*(log10(totalr/totalr0)+&
+&         disscontmidpoint))
+        fis2 = rfil*(vis2+disscontmagnitude/(1+exp(arg1)))
+      else
+        fis2 = rfil*vis2
+      end if
       fis4 = rfil*vis4
       sfil = one - rfil
 ! replace the total energy by rho times the total enthalpy.
@@ -9957,6 +10018,8 @@ contains
     use constants
     use flowvarrefstate
     use inputdiscretization
+    use inputiteration, only : usedisscontinuation, disscontmagnitude,&
+&   disscontmidpoint, disscontsharpness
     use inputphysics
     use iteration
     implicit none
@@ -9973,9 +10036,12 @@ contains
     real(kind=realtype) :: ppor, rrad, dis2
     real(kind=realtype) :: dss1, dss2, ddw, fs
     intrinsic abs
+    intrinsic log10
+    intrinsic exp
     intrinsic max
     intrinsic min
     real(kind=realtype) :: pwr1
+    real(kind=realtype) :: arg1
     real(kind=realtype) :: min3
     real(kind=realtype) :: min2
     real(kind=realtype) :: min1
@@ -10018,8 +10084,20 @@ contains
         pwr1 = rhoinf**gammainf
         sslim = 0.001_realtype*pinfcorr/pwr1
       end select
-! set a couple of constants for the scheme.
-      fis2 = rfil*vis2
+! set the dissipation constants for the scheme.
+! rfil and sfil are fractions used by the runge-kutta solver to compute residuals at intermediate steps.
+! this means that fis2 and fis4 will be some fraction of vis2 and vis4, respectively.
+! for other solvers, rfil==1, sfil==0, fis2==vis2, and fis4==vis4.
+! the sigmoid function used for dissipation-based continuation is described in eq. 28 and eq. 29 from the paper:
+! "improving the performance of a compressible rans solver for low and high mach number flows" (seraj2022c).
+! the options documentation also has information on the parameters in this formulation.
+      if (usedisscontinuation) then
+        arg1 = -(disscontsharpness*(log10(totalr/totalr0)+&
+&         disscontmidpoint))
+        fis2 = rfil*(vis2+disscontmagnitude/(1+exp(arg1)))
+      else
+        fis2 = rfil*vis2
+      end if
       fis4 = rfil*vis4
       sfil = one - rfil
 ! replace the total energy by rho times the total enthalpy.
