@@ -5396,7 +5396,7 @@ class ADFLOW(AeroSolver):
             "printAllOptions": [bool, True],
             "setMonitor": [bool, True],
             "printWarnings": [bool, True],
-            "printNegativeVolumes": [bool, True],
+            "printNegativeVolumes": [bool, False],
             "monitorVariables": [list, ["cpu", "resrho", "resturb", "cl", "cd"]],
             "surfaceVariables": [list, ["cp", "vx", "vy", "vz", "mach"]],
             "volumeVariables": [list, ["resrho"]],
