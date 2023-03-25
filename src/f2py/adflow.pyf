@@ -1137,6 +1137,7 @@ python module libadflow
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
+         logical :: printnegativevolumes
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
          logical :: usedisscontinuation
