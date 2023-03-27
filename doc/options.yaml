@@ -1160,6 +1160,10 @@ printWarnings:
   desc: >
     Flag to print warning messages like for bad quality volumes, etc.
 
+printNegativeVolumes:
+  desc: >
+    Flag to print the block indices, cell center coordinates, and volume for each negative volume cell in the mesh.
+
 monitorVariables:
   desc: >
     List of the variables whose convergence should be monitored.
