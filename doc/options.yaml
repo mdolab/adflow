@@ -340,8 +340,8 @@ infChangeCorrectionTol:
 infChangeCorrectionType:
   desc: >
     This option determines the method used for the correction update when the ``infChangeCorrection`` option is set to True.
-    The default ``"offset"`` option simply adds the delta free stream state to every cell's state.
-    The option ``"rotate"`` will rotate the cell velocities by the rotation in the free stream velocity, and add the delta in the free stream velocity to the cells' density and energy values.
+  offset: The default ``"offset"`` option simply adds the delta free stream state to every cell's state.
+  rotate: The option ``"rotate"`` will rotate the cell velocities by the rotation in the free stream velocity, and add the delta in the free stream velocity to the cells' density and energy values.
 
 cavitationNumber:
   desc: >
