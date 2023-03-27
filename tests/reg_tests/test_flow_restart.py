@@ -90,6 +90,7 @@ class TestRestart(reg_test_classes.RegTest):
 
         self.ap = copy.deepcopy(self.aero_prob)
         self.ap.addDV("alpha", value=0.0)
+        self.ap.addDV("mach", value=0.6)
 
         # Create the solver
         self.CFDSolver = ADFLOW(options=options, debug=False)
@@ -100,8 +101,9 @@ class TestRestart(reg_test_classes.RegTest):
         # do the solve
         self.CFDSolver(self.ap)
 
-        # change AoA
+        # change AoA and Mach number
         self.ap.setDesignVars({f"alpha_{self.ap.name}": 4.0})
+        self.ap.setDesignVars({f"mach_{self.ap.name}": 0.8})
 
         # check the changes in residual. the getRes method calls setAeroProblem,
         # which runs the correction update if requested.
