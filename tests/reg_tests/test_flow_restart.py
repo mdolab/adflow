@@ -12,10 +12,10 @@ import reg_test_utils as utils
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_naca0012_time_acc
 import reg_test_classes
-import numpy
 
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
+
 
 @parameterized_class(
     [
