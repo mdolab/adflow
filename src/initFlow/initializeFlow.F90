@@ -253,7 +253,8 @@ contains
             end do
 
         else if (correctionType .eq. "rotate") then
-            ! rotate the flow velocities by the rotation change in Winf. Maintains velocity magnitudes.
+            ! Rotate the flow velocities by the rotation change in Winf.
+            ! We also scale the velocity magnitudes based on the magnitude change.
             ! v1 is the old free stream velocity vector, v2 is the new one.
             v1 = oldWinf(ivx:ivz)
             v2 = Winf(ivx:ivz)
@@ -270,7 +271,7 @@ contains
             mag2 = sqrt(sum(v2**2))
 
             ! Compute the cosine of the angle between v1 and v2
-            cosine = dotProd / (mag1 * mag1)
+            cosine = dotProd / (mag1 * mag2)
 
             ! Compute the angle in radians
             theta = acos(cosine)
@@ -324,9 +325,11 @@ contains
                                 vCell = w(i, j, k, ivx:ivz)
                                 ! rotate and put back
                                 w(i, j, k, ivx:ivz) = matmul(rotMat, vCell)
+                                ! scale the magnitudes
+                                w(i, j, k, ivx:ivz) = w(i, j, k, ivx:ivz) * mag2 / mag1
                                 ! we also add the offset to the density and energy
-                                w(i, j, j, irho) = w(i, j, j, irho) + deltaWinf(irho)
-                                w(i, j, j, irhoE) = w(i, j, j, irhoE) + deltaWinf(irhoE)
+                                w(i, j, k, irho) = w(i, j, k, irho) + deltaWinf(irho)
+                                w(i, j, k, irhoE) = w(i, j, k, irhoE) + deltaWinf(irhoE)
                             end do
                         end do
                     end do
