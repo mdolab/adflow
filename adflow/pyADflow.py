@@ -1902,6 +1902,7 @@ class ADFLOW(AeroSolver):
         """This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
+
         Parameters
         ----------
         aeroProblem : pyAero_problem class
@@ -1927,9 +1928,11 @@ class ADFLOW(AeroSolver):
             value to this option, it will not use the delta value anymore
             to select the angle of attack of the second run. The value
             should be in 1/deg.
+
         Returns
         -------
         None, but the correct alpha is stored in the aeroProblem
+
         """
         self.setAeroProblem(aeroProblem)
         if alpha0 is not None:
@@ -3287,7 +3290,7 @@ class ADFLOW(AeroSolver):
         self.adflow.flowutils.adjustinflowangle()
 
         if self.getOption("printIterations") and self.comm.rank == 0:
-            print("-> Alpha... %.16f " % numpy.real(alpha))
+            print("-> Alpha... %f " % numpy.real(alpha))
 
         # 2. Reference Points:
         self.adflow.inputphysics.pointref = [xRef, yRef, zRef]
