@@ -2719,7 +2719,7 @@ contains
         use communication
         use inputTimeSpectral
         use checkVolBlock
-        use inputIteration
+        use inputIteration, only: printWarnings, printNegativeVolumes
         use utils, only: setPointers, terminate, returnFail
         use commonFormats, only: stringSpace, stringInt1
         implicit none
@@ -3266,7 +3266,9 @@ contains
                 ! Negative volumes present on the fine grid level. Print a
                 ! list of the bad volumes and terminate executation.
 
-                call writeNegVolumes(checkVolDoms)
+                if (printNegativeVolumes) then
+                    call writeNegVolumes(checkVolDoms)
+                end if
 
                 call returnFail("metric", &
                                 "Negative volumes present in grid.")

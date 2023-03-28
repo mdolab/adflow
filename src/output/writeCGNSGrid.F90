@@ -50,7 +50,7 @@ contains
 
         if (myID == 0 .and. printIterations) then
             print "(a)", "#"
-            print "(a,a)", "# Writing grid file(s): ", trim(gridFileNames(1))
+            print "(a)", "# Writing grid file(s):"
         end if
 
         ! All grid information is stored on all processors, with the
@@ -442,6 +442,9 @@ contains
         character(len=maxStringLen) :: errorMessage
 
         type(cgnsBcDatasetType), pointer, dimension(:) :: dataSet
+
+        ! Print the filename to stdout
+        print "(a,4x,a)", "#", trim(gridFileNames(ind))
 
         ! Open the CGNS file for writing and check if it went okay.
         ! Store the file index afterwards.

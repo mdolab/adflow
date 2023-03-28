@@ -1135,8 +1135,13 @@ python module libadflow
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
+         logical :: printnegativevolumes
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
+         logical :: usedisscontinuation
+         real(kind=realtype) :: disscontmagnitude
+         real(kind=realtype) :: disscontmidpoint
+         real(kind=realtype) :: disscontsharpness
        end module inputiteration
 
        module inputmotion ! in :adflow:../../modules/inputParam.f90
