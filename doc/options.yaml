@@ -953,6 +953,7 @@ ANKLinearSolveTol:
 
 ANKLinearSolveBuffer:
   desc: >
+    Do not modify this option unless you know what you are doing with petsc linear tolerances used for the ANK solver.
     The absolute linear solver convergence in PETSc needs to be set to a value lower than the final residual convergence norm.
     This is because the linear residual is the linearization of the nonlinear residual, and solving the linear system in a Newton solver to an absolute linear tolerance does not guarantee that the same reduction will be achieved in the nonlinear residual as well.
     Because of this, if we were to solve for an absolute tolerance that was based on the nonlinear absolute tolerance, the linear solver might exit right before the nonlinear system fully converges.
