@@ -3782,19 +3782,14 @@ contains
             ANK_iter = ANK_iter + 1
         end if
 
-        ! figure out if we want to scale the ANKPCUpdateTol
-        if (.not. ANK_coupled) then
-            rel_pcUpdateTol = ANK_pcUpdateTol
+        ! figure out if we want to change the ANKPCUpdateTol:
+        ! If we are converged below the L2 target specified by ANK_pcUpdateCutoff
+        ! we use a different tolerance for the relative PC update.
+        if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
+            rel_pcUpdateTol = ANK_pcUpdateTol2
         else
-            ! for coupled ANK, we dont want to update the PC as frequently,
-            ! so we use a different tolerance set from python,
-            ! *if* we are converged past pc update cutoff wrt free stream already
-            if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
-                rel_pcUpdateTol = ANK_pcUpdateTol2
-            else
-                ! if we are not that far down converged, use the option directly
-                rel_pcUpdateTol = ANK_pcUpdateTol
-            end if
+            ! if we are not that far down converged, use the option directly
+            rel_pcUpdateTol = ANK_pcUpdateTol
         end if
 
         ! Compute the norm of rVec, which is identical to the

@@ -2902,7 +2902,7 @@ class ADFLOW(AeroSolver):
 
     def resetANKCFL(self, aeroProblem):
         """
-        Resets the ANK CFL of the aeroProblemto the value set by "ANKCFL0" option.
+        Resets the ANK CFL of the aeroProblem to the value set by "ANKCFL0" option.
         During the first ANK iteration that follows, this will be overwritten
         by the ANK solver itself with the CFL Min logic based on relative
         convergence. This is useful if keeping a really high ANK CFL is not desired.
@@ -5405,7 +5405,7 @@ class ADFLOW(AeroSolver):
             "ANKTurbCFLScale": [float, 1.0],
             "ANKUseFullVisc": [bool, True],
             "ANKPCUpdateTol": [float, 0.5],
-            "ANKPCUpdateCutoff": [float, 1e-6],
+            "ANKPCUpdateCutoff": [float, 1e-16],
             "ANKPCUpdateTolAfterCutoff": [float, 1e-4],
             "ANKADPC": [bool, False],
             "ANKNSubiterTurb": [int, 1],

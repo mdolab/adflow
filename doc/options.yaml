@@ -1060,12 +1060,11 @@ ANKPCUpdateTol:
 
 ANKPCUpdateCutoff:
   desc: >
-    The cutoff tolerance below which we disable the PC update based on nonlinear convergence introduced in the option above.
-    E.g. the default value of 1e-6 will trigger PC updates with the ANK if the solver converges by a certain amount, but past a relative L2 convergence of 1e-6, this algorithm is disabled and the preconditioner is only updated with the mechanisms other than relative convergence.
+    The cutoff tolerance below which we adjust the tolerance for the PC update based on nonlinear convergence introduced with the option ``ANKPCUpdateTol``.
+    When the L2 convergence is above the value set in this option, the ANK PC updates are triggered if the relative convergence since the last PC update is below ``ANKPCUpdateTol``.
+    When the L2 convergence is below the value defined in this option, the code uses the tolerance set in ``ANKPCUpdateTolAfterCutoff`` to determine PC updates based on relative convergence.
     This is useful when CSANK is used, which can take steps that converge the L2 norm by multiple orders of magnitude in each iteration towards the end of the convergence.
-    Here, we do not need to update the PC at each solver iteration, so we disable it with this option.
-    This option only changes the PC update behavior with the coupled ANK variants.
-    Decoupled ANK variants don't get affected by this.
+    Here, we do not need to update the PC at each solver iteration, and may want to delay the PC updates based on relative convergence.
 
 ANKPCUpdateTolAfterCutoff:
   desc: >
