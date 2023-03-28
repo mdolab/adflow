@@ -5305,6 +5305,10 @@ class ADFLOW(AeroSolver):
             "CFLLimit": [float, 1.5],
             "useBlockettes": [bool, True],
             "useLinResMonitor": [bool, False],
+            "useDissContinuation": [bool, False],
+            "dissContMagnitude": [float, 1.0],
+            "dissContMidpoint": [float, 3.0],
+            "dissContSharpness": [float, 3.0],
             # Overset Parameters
             "nearWallDist": [float, 0.1],
             "backgroundVolScale": [float, 1.0],
@@ -5425,6 +5429,7 @@ class ADFLOW(AeroSolver):
             "printAllOptions": [bool, True],
             "setMonitor": [bool, True],
             "printWarnings": [bool, True],
+            "printNegativeVolumes": [bool, False],
             "monitorVariables": [list, ["cpu", "resrho", "resturb", "cl", "cd"]],
             "surfaceVariables": [list, ["cp", "vx", "vy", "vz", "mach"]],
             "volumeVariables": [list, ["resrho"]],
@@ -5675,6 +5680,10 @@ class ADFLOW(AeroSolver):
             "cfllimit": ["iter", "cfllimit"],
             "useblockettes": ["discr", "useblockettes"],
             "uselinresmonitor": ["iter", "uselinresmonitor"],
+            "usedisscontinuation": ["iter", "usedisscontinuation"],
+            "disscontmagnitude": ["iter", "disscontmagnitude"],
+            "disscontmidpoint": ["iter", "disscontmidpoint"],
+            "disscontsharpness": ["iter", "disscontsharpness"],
             # Overset Parameters
             "nearwalldist": ["overset", "nearwalldist"],
             "backgroundvolscale": ["overset", "backgroundvolscale"],
@@ -5799,6 +5808,7 @@ class ADFLOW(AeroSolver):
             # Misc Parameters
             "printiterations": ["iter", "printiterations"],
             "printwarnings": ["iter", "printwarnings"],
+            "printnegativevolumes": ["iter", "printnegativevolumes"],
             "printtiming": ["adjoint", "printtiming"],
             "setmonitor": ["adjoint", "setmonitor"],
             "storeconvhist": ["io", "storeconvinneriter"],

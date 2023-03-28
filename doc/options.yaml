@@ -432,6 +432,38 @@ useLinResMonitor:
     Enables the linear residual monitor for the NK and ANK solvers.
     The output should look like the linear residual output from the adjoint solver.
 
+useDissContinuation:
+  desc: >
+    Use dissipation-based continuation.
+    This only applies to the ``central plus scalar dissipation`` :py:data:`discretization`.
+    This adds second order dissipation near shocks at the initial stages of the solution.
+    The dissipation tapers off as a sigmoid function of the relative convergence.
+    The continuation helps converge supersonic flows and can also help with some transonic flows.
+    This will have no effect on purely subsonic flows.
+    The solution needs to be well converged to ensure that the additional dissipation is reduced to a value that does not affect the converged result.
+    For the default values of :py:data:`dissContMagnitude` and :py:data:`dissContMidpoint`, an L2 convergence of 1e-6 is sufficient.
+    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+
+dissContMagnitude:
+  desc: >
+    The magnitude of the additional dissipation for dissipation-based continuation.
+    For large enough :py:data:`dissContMidpoint` and :py:data:`dissContSharpness` (such as the defaults), the initial dissipation is equal to this value plus :py:data:`vis2`.
+    Values between a fifth and a half of the freestream Mach number typically work well.
+
+dissContMidpoint:
+  desc: >
+    The number of orders of relative convergence at which the additional dissipation is half of :py:data:`dissContMagnitude`.
+    For example, a ``dissContMidpoint`` of 1.0 means that the additional dissipation is cut in half by the time the solver has decreased the initial residual by one order of magnitude.
+    The default value typically works well.
+    This value should be at most 4.0 to ensure that the additional dissipation does not affect the converged result for an L2 convergence of 1e-8.
+
+dissContSharpness:
+  desc: >
+    The sharpness of the dissipation-based continuation sigmoid function.
+    Larger values will result in a steeper drop from the initial to final dissipation value.
+    The default value typically works well.
+    This value should be at least 2.0 to ensure that the additional dissipation does not affect the converged result for an L2 convergence of 1e-8.
+
 nearWallDist:
   desc: >
     Distance used to determine if a cell will be flagged as "nearWall".
@@ -1149,6 +1181,10 @@ setMonitor:
 printWarnings:
   desc: >
     Flag to print warning messages like for bad quality volumes, etc.
+
+printNegativeVolumes:
+  desc: >
+    Flag to print the block indices, cell center coordinates, and volume for each negative volume cell in the mesh.
 
 monitorVariables:
   desc: >
