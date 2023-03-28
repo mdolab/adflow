@@ -1,4 +1,5 @@
 module utils
+ implicit none
 
  contains
 
@@ -2552,32 +2553,6 @@ end subroutine cross_prod
 
   end function delta
 
-
-  logical function myIsNAN(val)
-    !
-    !       myIsNAN determines whether or not the given value is a NAN and
-    !       returns the according logical.
-    !
-    use constants
-    implicit none
-    !
-    !      Function arguments.
-    !
-    real(kind=realType), intent(in) :: val
-    !
-    !      Local variable.
-    !
-    integer(kind=intType) :: res
-
-    call myIsNaNC(val, res)
-    if(res == 1) then
-       myIsNAN = .true.
-    else
-       myIsNAN = .false.
-    endif
-
-  end function myIsNAN
-  !
   subroutine nullifyCGNSDomPointers(nn)
     !
     !       nullifyCGNSDomPointers nullifies all the pointers of the
@@ -4445,23 +4420,23 @@ end subroutine cross_prod
       end do
       deallocate(BCFamExchange)
     end if
-    
+
     if (allocated(nCellGlobal)) then
        deallocate(nCellGlobal)
     end if
 
-    
+
    ! Now deallocate the containers and communication objects.
     if (allocated(commPatternCell_1st)) then
       do l=1,nLevels
          call deallocateCommType(commPatternCell_1st(l))
-      end do 
+      end do
       deallocate(commPatternCell_1st)
     end if
     if (allocated(commPatternCell_2nd)) then
       do l=1,nLevels
          call deallocateCommType(commPatternCell_2nd(l))
-      end do 
+      end do
       deallocate(commPatternCell_2nd)
     end if
     if (allocated(commPatternNode_1st)) then
@@ -4762,6 +4737,7 @@ end subroutine cross_prod
     !
     use block
     use inputTimeSpectral
+    use inputPhysics, only : cpmin_family
     use ADjointPETSc
     use cgnsGrid
     implicit none
@@ -4784,10 +4760,14 @@ end subroutine cross_prod
       if(ierr /= 0)                          &
            call terminate("releaseMemoryPart2", &
            "Deallocation failure for flowDoms")
-    end if 
+    end if
 
     ! Some more memory should be deallocated if this code is to
     ! be used in combination with adaptation.
+
+    ! deallocate the cpmin_family array allocated in inputParamRoutines
+    if (allocated(cpmin_family)) &
+        deallocate(cpmin_family)
 
     ! Destroy variables allocated in preprocessingAdjoint
     if (adjointPETScPreProcVarsAllocated) then
@@ -5741,25 +5721,22 @@ end subroutine cross_prod
     implicit none
 
     integer(kind=intType),intent(in) :: errorcode
-    character*(*),intent(in) :: file
+    character(len=*),intent(in) :: file
     integer(kind=intType),intent(in) :: line
     integer::ierr
+    character(len=maxStringLen) :: errorCodeFormat, errorLineFormat
+
+    errorCodeFormat = "(2(A, I2,)"
+    errorLineFormat = "(A, I5, A, A)"
 
     if (errorcode == 0) then
        return ! No error, return immediately
     else
 #ifndef USE_TAPENADE
-#ifndef USE_COMPLEX
        print *,'---------------------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
-       write(*,901) "Error at line: ",line," in file: ",file
+       print errorCodeFormat, "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
+       print errorLineFormat, "Error at line: ",line," in file: ",file
        print *,'---------------------------------------------------------------------------'
-#else
-       print *,'-----------------------------------------------------------------'
-       write(*,900) "PETSc or MPI Error. Error Code ",errorcode,". Detected on Proc ",myid
-       write(*,901) "Error at line: ",line," in file: ",file
-       print *,'-----------------------------------------------------------------'
-#endif
        call MPI_Abort(adflow_comm_world,errorcode,ierr)
        stop ! Just in case
 #else
@@ -5767,8 +5744,6 @@ end subroutine cross_prod
 #endif
     end if
 
-900 format(A,I2,A,I2)
-901 format(A,I5,A,A)
   end subroutine EChk
 
   subroutine convertToLowerCase(string)
@@ -5869,7 +5844,7 @@ end subroutine cross_prod
     integer :: ierr
 
     integer(kind=intType):: nSolverMon ! number of solver monitor variables
-    
+
     ! Return immediately if the convergence history (of the inner
     ! iterations) does not need to be stored. This logical can
     ! only be .false. for an unsteady computation.
@@ -5884,8 +5859,8 @@ end subroutine cross_prod
     if (allocated(solverTypeArray)) then
        deallocate(solverTypeArray)
     end if
-    
-    if (showCPU) then 
+
+    if (showCPU) then
       nSolverMon = 5
     else
       nSolverMon = 4
@@ -5898,8 +5873,8 @@ end subroutine cross_prod
     ! Zero Array:
     convArray = zero
     solverDataArray = zero
-    
-    
+
+
 
   end subroutine allocConvArrays
 
@@ -5950,26 +5925,26 @@ end subroutine cross_prod
    use constants
    use monitor, only: nmon, monnames
    implicit none
-   
+
    ! save the monitor variable names into a new array
    integer(kind=intType), intent(in):: nvar
    character, dimension(nvar,maxCGNSNameLen), intent(out):: monitor_variables
-   
-   ! working variables 
+
+   ! working variables
    character(len=maxCGNSNameLen) :: var_name
    integer(kind=intType) :: c, idx_mon
-   
-   do idx_mon=1,nvar 
+
+   do idx_mon=1,nvar
       var_name =  monNames(idx_mon)
-      
+
       do c =1,len(monNames(idx_mon))
          monitor_variables(idx_mon, c) =var_name(c:c)
       end do
-   end do 
-   
-   
+   end do
+
+
   end subroutine getMonitorVariableNames
-   
+
   subroutine getSolverTypeArray(niter, nsps, type_array)
    !
    !  copy the names in sovlerTypeArray to another array so that is can be
@@ -5980,28 +5955,28 @@ end subroutine cross_prod
    use inputTimeSpectral, only : nTimeIntervalsSpectral
    use iteration, only: itertot
    implicit none
-   
+
    ! save the monitor variable names into a new array
    integer(kind=intType), intent(in):: niter, nsps
    character, dimension(0:niter, ntimeintervalsspectral, maxIterTypelen), intent(out):: type_array
-   
-   ! working variables 
+
+   ! working variables
    character(len=maxIterTypelen) :: type_name
    integer(kind=intType) :: c, idx_sps, idx_iter
-   
+
    do idx_sps=1,ntimeintervalsspectral
-      do idx_iter=0,itertot 
+      do idx_iter=0,itertot
          type_name =  solverTypeArray(idx_iter, idx_sps)
-         
+
          do c =1,len(solverTypeArray(idx_iter, idx_sps))
             type_array(idx_iter, idx_sps, c) = type_name(c:c)
          end do
-         
-      end do 
-   end do 
-   
+
+      end do
+   end do
+
    end subroutine getSolverTypeArray
-   
+
   subroutine convergenceHeader
     !
     !       convergenceHeader writes the convergence header to stdout.
@@ -6482,8 +6457,8 @@ end subroutine cross_prod
     !       is started.
     !
     use constants
-    use monitor, only : nTimeStepsRestart, timeUnsteadyRestart, &
-         timeUnsteady, timeStepUnsteady
+    use monitor, only : nTimeStepsRestart, timeUnsteadyRestart, timeUnsteady, timeStepUnsteady
+    use commonFormats, only : strings
     implicit none
     !
     !      Local variables
@@ -6494,10 +6469,8 @@ end subroutine cross_prod
     ! Write the time step number to the integer string and the
     ! physical time to the real string.
 
-    write(integerString,"(i7)") timeStepUnsteady + &
-         nTimeStepsRestart
-    write(realString,"(es12.5)") timeUnsteady + &
-         timeUnsteadyRestart
+    write(integerString,"(i7)") timeStepUnsteady + nTimeStepsRestart
+    write(realString,"(es12.5)") timeUnsteady + timeUnsteadyRestart
 
     integerString = adjustl(integerString)
     realString    = adjustl(realString)
@@ -6505,17 +6478,12 @@ end subroutine cross_prod
     ! Write the header to stdout.
 
     print "(a)", "#"
-    print 100
-    print 101
-    print 102, trim(integerString), trim(realString)
-    print 101
-    print 100
+    print "(a)", "#**************************************************************************"
     print "(a)", "#"
-
-100 format("#*************************************************&
-         &*************************")
-101 format("#")
-102 format("# Unsteady time step ",a,", physical time ",a, " seconds")
+    print strings, "# Unsteady time step ", trim(integerString),", physical time ", trim(realString), " seconds"
+    print "(a)", "#"
+    print "(a)", "#**************************************************************************"
+    print "(a)", "#"
 
   end subroutine unsteadyHeader
 
@@ -6593,7 +6561,6 @@ end subroutine cross_prod
        end do
     end do
   end subroutine getCellCGNSBlockIDs
-
 
   subroutine getNCGNSZones(nZones)
     use cgnsGrid

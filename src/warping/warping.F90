@@ -244,8 +244,8 @@ contains
     implicit none
 
     ! Input Parameters
-    real(kind=realType), intent(in), dimension(nRand) :: randVec
     integer(kind=intType), intent(in) :: nRand, nRandState
+    real(kind=realType), intent(in), dimension(nRand) :: randVec
 
     ! Ouput Parameters
     real(kind=realType), intent(out), dimension(nRandState) :: randState
@@ -314,9 +314,9 @@ contains
     implicit none
 
     ! Input Parameters
-    real(kind=realType), intent(in), dimension(nRand) :: xRand
     integer(kind=intType), intent(in) :: nRand, nRandSurface
-    integer(kind=intType), intent(in) :: famList(nFamList), nFamList, sps
+    real(kind=realType), intent(in), dimension(nRand) :: xRand
+    integer(kind=intType), intent(in) :: nFamList, famList(nFamList), sps
     ! Ouput Parameters
     real(kind=realType), intent(inout), dimension(3*nRandSurface) :: randSurface
 

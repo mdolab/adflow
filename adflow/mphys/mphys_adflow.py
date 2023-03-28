@@ -1,11 +1,11 @@
-import numpy as np
 from pprint import pprint as pp
 
-from adflow import ADFLOW
+import numpy as np
 from idwarp import USMesh
-
-from openmdao.api import Group, ImplicitComponent, ExplicitComponent, AnalysisError
 from mphys.builder import Builder
+from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
+
+from adflow import ADFLOW
 
 from .om_utils import get_dvs_and_cons
 
@@ -20,10 +20,11 @@ class ADflowMesh(ExplicitComponent):
         self.options.declare("aero_solver", recordable=False)
 
     def setup(self):
-
         self.aero_solver = self.options["aero_solver"]
 
-        self.x_a0 = self.aero_solver.getSurfaceCoordinates(includeZipper=False).flatten(order="C")
+        self.x_a0 = self.aero_solver.getSurfaceCoordinates(
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
+        ).flatten(order="C")
 
         coord_size = self.x_a0.size
         self.add_output(
@@ -49,7 +50,7 @@ class ADflowMesh(ExplicitComponent):
         # this is a list of lists of 3 points
         # p0, v1, v2
 
-        return self._getTriangulatedMeshSurface()
+        return self._getTriangulatedMeshSurface(groupName=groupName)
 
     def _getTriangulatedMeshSurface(self, groupName=None, **kwargs):
         """
@@ -81,7 +82,6 @@ class ADflowMesh(ExplicitComponent):
 
         # loop over the faces
         for iProc in range(len(faceSizes)):
-
             connCounter = 0
             for iFace in range(len(faceSizes[iProc])):
                 # Get the number of nodes on this face
@@ -158,16 +158,14 @@ class ADflowWarper(ExplicitComponent):
         # self.declare_partials(of='adflow_vol_coords', wrt='x_aero')
 
     def compute(self, inputs, outputs):
-
         solver = self.solver
 
         x_a = inputs["x_aero"].reshape((-1, 3))
-        solver.setSurfaceCoordinates(x_a)
+        solver.setSurfaceCoordinates(x_a, groupName=solver.meshFamilyGroup)
         solver.updateGeometryInfo()
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
-
         if mode == "fwd":
             if "adflow_vol_coords" in d_outputs:
                 if "x_aero" in d_inputs:
@@ -231,7 +229,7 @@ class ADflowSolver(ImplicitComponent):
 
     def _set_ap(self, inputs, print_dict=True):
         tmp = {}
-        for (args, _kwargs) in self.ap_vars:
+        for args, _kwargs in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -253,7 +251,7 @@ class ADflowSolver(ImplicitComponent):
         # parameter inputs
         if self.comm.rank == 0:
             print("adding ap var inputs")
-        for (args, kwargs) in self.ap_vars:
+        for args, kwargs in self.ap_vars:
             name = args[0]
             size = args[1]
             self.add_input(
@@ -266,7 +264,6 @@ class ADflowSolver(ImplicitComponent):
         self.solver.setStates(outputs["adflow_states"])
 
     def apply_nonlinear(self, inputs, outputs, residuals):
-
         solver = self.solver
 
         self._set_states(outputs)
@@ -286,7 +283,6 @@ class ADflowSolver(ImplicitComponent):
         solver = self.solver
         ap = self.ap
         if self._do_solve:
-
             # Set the warped mesh
             # solver.mesh.setSolverGrid(inputs['adflow_vol_coords'])
             # ^ This call does not exist. Assume the mesh hasn't changed since the last call to the warping comp for now
@@ -398,7 +394,6 @@ class ADflowSolver(ImplicitComponent):
             solver.getResidual(ap)
 
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
-
         solver = self.solver
         ap = self.ap
 
@@ -507,7 +502,7 @@ class ADflowForces(ExplicitComponent):
 
     def _set_ap(self, inputs, print_dict=True):
         tmp = {}
-        for (args, _kwargs) in self.ap_vars:
+        for args, _kwargs in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -524,7 +519,7 @@ class ADflowForces(ExplicitComponent):
         # parameter inputs
         # if self.comm.rank == 0:
         #     print('adding ap var inputs:')
-        for (args, kwargs) in self.ap_vars:
+        for args, kwargs in self.ap_vars:
             name = args[0]
             size = args[1]
             self.add_input(name, distributed=False, shape=size, units=kwargs["units"], tags=["mphys_input"])
@@ -535,7 +530,6 @@ class ADflowForces(ExplicitComponent):
         self.solver.setStates(inputs["adflow_states"])
 
     def compute(self, inputs, outputs):
-
         solver = self.solver
 
         self._set_ap(inputs)
@@ -549,7 +543,6 @@ class ADflowForces(ExplicitComponent):
         outputs["f_aero"] = solver.getForces().flatten(order="C")
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
-
         solver = self.solver
         ap = self.ap
 
@@ -631,7 +624,7 @@ class AdflowHeatTransfer(ExplicitComponent):
 
     def _set_ap(self, inputs):
         tmp = {}
-        for (args, _kwargs) in self.ap_vars:
+        for args, _kwargs in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -646,7 +639,7 @@ class AdflowHeatTransfer(ExplicitComponent):
         # parameter inputs
         if self.comm.rank == 0:
             print("adding ap var inputs")
-        for (args, kwargs) in self.ap_vars:
+        for args, kwargs in self.ap_vars:
             name = args[0]
             size = args[1]
             self.add_input(name, distributed=False, shape=size, units=kwargs["units"], tags=["mphys_input"])
@@ -657,7 +650,6 @@ class AdflowHeatTransfer(ExplicitComponent):
         self.solver.setStates(inputs["adflow_states"])
 
     def compute(self, inputs, outputs):
-
         solver = self.solver
 
         ## already done by solver
@@ -675,7 +667,6 @@ class AdflowHeatTransfer(ExplicitComponent):
         # print()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
-
         solver = self.solver
         ap = self.options["ap"]
 
@@ -783,7 +774,6 @@ class ADflowFunctions(ExplicitComponent):
         self.extra_funcs = None
 
     def setup(self):
-
         self.solver = self.options["aero_solver"]
         self.ap_funcs = self.options["ap_funcs"]
         self.write_solution = self.options["write_solution"]
@@ -797,7 +787,7 @@ class ADflowFunctions(ExplicitComponent):
 
     def _set_ap(self, inputs, print_dict=True):
         tmp = {}
-        for (args, _kwargs) in self.ap_vars:
+        for args, _kwargs in self.ap_vars:
             name = args[0]
             tmp[name] = inputs[name]
 
@@ -814,7 +804,7 @@ class ADflowFunctions(ExplicitComponent):
         # parameter inputs
         # if self.comm.rank == 0:
         # print('adding ap var inputs:')
-        for (args, kwargs) in self.ap_vars:
+        for args, kwargs in self.ap_vars:
             name = args[0]
             size = args[1]
             self.add_input(name, distributed=False, shape=size, units=kwargs["units"], tags=["mphys_input"])
@@ -852,7 +842,6 @@ class ADflowFunctions(ExplicitComponent):
     #     self.mphys_add_funcs(prop_funcs)
 
     def mphys_add_funcs(self, funcs):
-
         self.extra_funcs = funcs
 
         # loop over the functions here and create the output
@@ -1020,7 +1009,6 @@ class ADflowGroup(Group):
         self.options.declare("balance_group", default=None, recordable=False)
 
     def setup(self):
-
         self.aero_solver = self.options["solver"]
         self.struct_coupling = self.options["struct_coupling"]
         self.prop_coupling = self.options["prop_coupling"]
@@ -1095,7 +1083,7 @@ class ADflowGroup(Group):
         # promote the DVs for this ap
         ap_vars, _ = get_dvs_and_cons(ap=ap)
 
-        for (args, _kwargs) in ap_vars:
+        for args, _kwargs in ap_vars:
             name = args[0]
             self.promotes("solver", inputs=[name])
             # self.promotes('funcs', inputs=[name])
@@ -1147,10 +1135,20 @@ class ADflowBuilder(Builder):
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
+        user_family_groups=None,  # Dictonary of {group: surfs} to add
     ):
-
         # options dictionary for ADflow
         self.options = options
+
+        # Check the user family groups to see if anything was set
+        if user_family_groups is None:
+            self.user_family_groups = None
+        else:
+            # Throw a type error if the user family group is not a dictionary
+            if isinstance(user_family_groups, dict):
+                self.user_family_groups = user_family_groups
+            else:
+                raise TypeError("ADflowBuilder parameter 'user_family_groups' must be a dictionary or NoneType")
 
         # MACH tools require separate option dictionaries for solver and mesh
         # if user did not provide a separate mesh_options dictionary, we just use
@@ -1216,7 +1214,21 @@ class ADflowBuilder(Builder):
     # api level method for all builders
     def initialize(self, comm):
         self.solver = ADFLOW(options=self.options, comm=comm)
+
+        # We need to set the family groups here before we initialize the mesh.
+        # The user can't do this in the setup method because we set the mesh
+        # within the initialize method.  Allowing the user to set the
+        # 'user_family_group' variable gives them a way to specificy custom
+        # family groups within the setup when they create the builder.
+        if self.user_family_groups is not None:
+            # Loop over the surface family groups.  The keys are the
+            # new group names and the vals are the subsurface to add
+            # to the group.
+            for key, val in self.user_family_groups.items():
+                self.solver.addFamilyGroup(key, val)
+
         mesh = USMesh(options=self.mesh_options, comm=comm)
+
         self.solver.setMesh(mesh)
 
     def get_solver(self):
@@ -1237,7 +1249,6 @@ class ADflowBuilder(Builder):
         return adflow_group
 
     def get_mesh_coordinate_subsystem(self, scenario_name=None):
-
         # TODO modify this so that we can move the volume mesh warping to the top level
         # we need this to do mesh warping only once for all serial points.
         # for now, volume warping is duplicated on all scenarios, which is not efficient

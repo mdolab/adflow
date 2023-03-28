@@ -2094,6 +2094,7 @@ contains
          timeUnsteadyRestart, monNames, timeArray
     use sorting, only : qsortStrings, bsearchStrings
     use utils, only : setCGNSRealType, terminate, allocTimeArrays
+    use commonFormats, only : strings
     implicit none
     !
     !      Subroutine arguments.
@@ -2195,11 +2196,9 @@ contains
        if(nDim /= 1) then
           print "(a)", "#"
           print "(a)", "#                 Warning"
-          print 100, trim(convNames(i))
+          print strings, "# Dimension of time history for ", trim(convNames(i)), " is not 1."
           print "(a)", "# Information is ignored."
           print "(a)", "#"
-100       format("# Dimension of time history for",1X,A,1X, &
-               "is not 1.")
 
           ! Screw up the string such that it does not correspond to
           ! a legal name. It is appended, because it is important that
@@ -2211,10 +2210,9 @@ contains
        if(nSize(1) /= nTimeStepsRestart) then
           print "(a)", "#"
           print "(a)", "#                 Warning"
-          print 110, trim(convNames(i))
+          print strings, "# Inconsistent time history for ", trim(convNames(i)),"."
           print "(a)", "# Displayed information might be incorrect."
           print "(a)", "#"
-110       format("# Inconsistent time history for",1X,A,".")
        endif
 
        ! Copy the name in tmpNames for the sorting.

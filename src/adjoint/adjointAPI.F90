@@ -1,5 +1,11 @@
 module adjointAPI
 
+  use constants, only: realType, intType, alwaysRealType, adflow_real, mpi_max, mpi_sum, mpi_double_precision, &
+   mpi_integer, mpi_double_complex, mpi_wtime, maxStringLen, one, zero, NSEquations, RANSEquations
+
+  character(len=maxStringLen) :: timeFormat = "(A, 1X, F8.2)"
+  character(len=maxStringLen) :: exitFormat = "(1X, A, 1X, I5, 1X, A)"
+
 contains
 #ifndef USE_COMPLEX
   subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, bcDataValuesdot, useSpatial, &
@@ -7,7 +13,6 @@ contains
        costSize, fSize, nTime)
 
     ! This is the main matrix-free forward mode computation
-    use constants
     use adjointvars
     use blockPointers, only : nDom
     use communication, only : adflow_comm_world
@@ -91,7 +96,6 @@ contains
   subroutine computeMatrixFreeProductBwd(dwbar, funcsBar, fbar, useSpatial, useState, xvbar, &
        extrabar, wbar, spatialSize, extraSize, stateSize, famLists, &
        bcDataNames, bcDataValues, bcDataValuesbar, bcDataFamLists, BCVarsEmpty)
-    use constants
     use communication, only : adflow_comm_world
     use blockPointers, only : nDom, dwd, il, jl, kl
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -180,7 +184,6 @@ contains
     ! mode computation. It is intended to compute dRdw^T product
     ! ONLY. The main purpose is for fast matrix-vector products for the
     ! actual adjoint solve.
-    use constants
     use inputPhysics, only : equations
     use inputAdjoint, only : frozenTurbulence
     use flowVarRefState, only : nw, nwf
@@ -233,7 +236,7 @@ contains
     ! of the fact that only wbar needs to be zeroed since all other
     ! required seeds are zeroed in the individual fast routines. This is
     ! slightly unsafe, but it necessary for speed.
-    
+
     ! Allocate the memory for reverse
     if (.not. derivVarsAllocated) then
       call allocDerivativeValues(level)
@@ -267,7 +270,6 @@ contains
     use inputADjoint
     use adjointvars
     use killsignals
-    use constants
     use blockPointers
     use inputTimeSpectral
     use utils, only : EChk
@@ -275,10 +277,10 @@ contains
     implicit none
 
     ! Input Variables
+    integer(kind=intType), intent(in) :: nDOF
     real(kind=realType), dimension(ndof), intent(in) :: inVec
     real(kind=realType), dimension(ndof), intent(out) :: outVec
     real(kind=realType), intent(in) :: relativeTolerance
-    integer(kind=intType), intent(in) :: nDOF
     integer(kind=intTYpe) :: adjointConvergedReason
     ! Working variables
     integer(kind=intType) :: ierr, nn, sps
@@ -351,7 +353,6 @@ contains
     use ADJointPETSc
     use inputADjoint
     use adjointVars
-    use constants
     use killsignals
     use blockPointers
     use inputTimeSpectral
@@ -360,10 +361,10 @@ contains
     implicit none
 
     ! Input Variables
+    integer(kind=intType), intent(in) :: nDOF
     real(kind=realType), dimension(ndof), intent(in) :: inVec
     real(kind=realType), dimension(ndof), intent(out) :: outVec
     real(kind=realType), intent(in) :: relativeTolerance
-    integer(kind=intType), intent(in) :: nDOF
     integer(kind=intTYpe) :: adjointConvergedReason
     ! Working variables
     integer(kind=intType) :: ierr, nn, sps
@@ -431,7 +432,6 @@ contains
 
   subroutine saveADjointMatrix(fileName)
 
-    use constants
     use ADjointPETSc, only: drdwt
     use communication, only : adflow_comm_world
     use utils, only : EChk
@@ -440,7 +440,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
@@ -459,7 +459,6 @@ contains
 
   subroutine saveAdjointPC(fileName)
 
-    use constants
     use ADjointPETSc, only: drdwpret
     use communication, only : adflow_comm_world
     use utils, only : EChk
@@ -468,7 +467,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
@@ -487,7 +486,6 @@ contains
 
   subroutine saveAdjointRHS(RHS, fileName, nstate)
 
-    use constants
     use ADjointPETSc, only: psi_like1
     use communication, only : adflow_comm_world
     use utils, only : EChk
@@ -496,9 +494,9 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
-    real(kind=realType), dimension(nState) :: RHS
+    character(len=*), intent(in) :: fileName
     integer(kind=intType) :: nstate
+    real(kind=realType), dimension(nState) :: RHS
 
     ! Working parameters
     PetscViewer binViewer
@@ -525,7 +523,6 @@ contains
 
   subroutine spectralPrecscribedMotion(input, nin, dXv, nout)
 
-    use constants
     use blockPointers, only : il, jl, kl, nDom
     use section, only : sections, nSections
     use inputTimeSpectral, only : nTimeIntervalsSpectral
@@ -625,7 +622,6 @@ contains
 
   subroutine setupAllResidualMatricesfwd
 
-    use constants
     use ADjointPETSc, only : dRdwT
     use communication, only : adflow_comm_world, myid
     use inputADjoint, only : frozenTurbulence, useMatrixFreedRdw
@@ -647,7 +643,7 @@ contains
 
     if (.not. useMatrixFreedRdw) then
        if( myid ==0 ) then
-          write(*, 10) "Assembling State Residual Matrix in Forward mode..."
+          write(*, "(A)") "Assembling State Residual Matrix in Forward mode..."
        end if
        time(1) = mpi_wtime()
        call setupStateResidualMatrix(drdwT, useAD, usePC, useTranspose, &
@@ -660,13 +656,9 @@ contains
        call EChk(ierr,  __FILE__, __LINE__)
 
        if(myid ==0)  then
-          write(*, 20) "Assembling State Residaul Matrices Fwd time (s) = ", timeAdj
+          write(*, timeFormat) "Assembling State Residaul Matrices Fwd time (s) = ", timeAdj
        end if
     end if
-
-    ! Output formats.
-10  format(a)
-20  format(a, 1x, f8.2)
 
   end subroutine setupAllResidualMatricesfwd
 
@@ -678,8 +670,6 @@ contains
     !      are significant as they are used as the inital guess.
     !
 
-    use constants, only : realType, intType, alwaysRealType, one, adflow_real, &
-         mpi_max, mpi_sum, mpi_double_precision, mpi_integer, mpi_double_complex
     use ADjointPETSc, only : dRdwT, psi_like1, psi_like2, adjointKSP, &
          adjResInit, adjResStart, adjResFinal
 
@@ -697,8 +687,8 @@ contains
     implicit none
 
     ! Input Parameters
-    real(kind=realType), dimension(nState) :: RHS, psi
     integer(kind=intType) :: nState
+    real(kind=realType), dimension(nState) :: RHS, psi
     logical :: checkSolution
     !
     !     Local variables.
@@ -715,7 +705,7 @@ contains
     ! Send some feedback to screen.
 
     if(myid ==0 .and. printTiming)  &
-         write(*,10) "Solving ADjoint Transpose with PETSc..."
+         write(*, "(A)") "Solving ADjoint Transpose with PETSc..."
 
     call cpu_time(time(1))
 
@@ -834,15 +824,13 @@ contains
        ! the norm of error and the number of iterations
 
        if( myid ==0 .and. printTiming) then
-          write(*,20) "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
-          write(*,30) "Norm of error =",norm,"Iterations =",adjConvIts
+          write(*, timeFormat) "Solving ADjoint Transpose with PETSc time (s) =", timeAdj
+          write(*, "(1X, A, 1X, ES10.4, 4X, A, 1X, I4)") "Norm of error =",norm,"Iterations =",adjConvIts
           write(*,*) "------------------------------------------------"
           if( adjConvIts.lt.0 ) then
-             write(*,40) "PETSc solver diverged after", -adjConvIts, &
-                  "iterations..."
+             write(*, exitFormat) "PETSc solver diverged after", -adjConvIts, "iterations..."
           else
-             write(*,40) "PETSc solver converged after", adjConvIts, &
-                  "iterations."
+            write(*, exitFormat) "PETSc solver converged after", adjConvIts, "iterations."
           endif
           write(*,*) "------------------------------------------------"
        endif
@@ -873,13 +861,6 @@ contains
     else
        adjointFailed = .True.
     end if
-
-    ! Output formats.
-
-10  format(a)
-20  format(a,1x,f8.2)
-30  format(1x,a,1x,es10.4,4x,a,1x,i4)
-40  format(1x,a,1x,i5,1x,a)
 
 #endif
 
@@ -966,7 +947,7 @@ contains
     implicit none
 
     ! Input params
-    character*(*), intent(in) :: fileName
+    character(len=*), intent(in) :: fileName
 
     ! Working parameters
     PetscViewer binViewer
@@ -1031,7 +1012,6 @@ contains
     ! dRdwT with a vector. Here we just call the much more broadly
     ! useful routine computeMatrixFreeProductBwdFast()
 
-    use constants
     use communication
     use blockPointers
     use iteration
@@ -1076,7 +1056,6 @@ contains
     ! dRdw with a vector. Here we just call the much more broadly
     ! useful routine computeMatrixFreeProductFwd()
 
-    use constants
     use communication
     use blockPointers
     use iteration
@@ -1155,7 +1134,6 @@ contains
     !
     !      Create the matrices/vectors that are required for the adjoint
     !
-    use constants
     use ADjointPETSc, only: dRdwT, dRdwPreT, &
          adjointKSP, matfreectx, x_like, psi_like1, adjointPETScVarsAllocated
     use ADjointVars

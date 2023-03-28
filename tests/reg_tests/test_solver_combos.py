@@ -9,7 +9,7 @@ from parameterized import parameterized_class
 from adflow import ADFLOW
 from adflow import ADFLOW_C
 
-# import the testing utilities that live a few directories up
+# import the testing utilities
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_simple_cart_cube
 import reg_test_classes
@@ -152,7 +152,6 @@ class TestSolverCombos(reg_test_classes.RegTest):
 # we do the same tests as the previous one but with complex mode here
 @parameterized_class(solver_combo_params)
 class TestCmplxSolverCombos(reg_test_classes.CmplxRegTest):
-
     # TODO add a convergence test with a complex perturbed DV also
 
     N_PROCS = 2
