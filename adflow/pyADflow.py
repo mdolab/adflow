@@ -3011,8 +3011,6 @@ class ADFLOW(AeroSolver):
     def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
         """Set the supplied aeroProblem to be used in ADflow"""
 
-        ptSetName = "adflow_%s_coords" % aeroProblem.name
-
         newAP = False
         # Tell the user if we are switching aeroProblems
         if self.curAP != aeroProblem:
@@ -3026,8 +3024,23 @@ class ADFLOW(AeroSolver):
             aeroProblem.adflowData
         except AttributeError:
             aeroProblem.adflowData = adflowFlowCase()
-            aeroProblem.ptSetName = ptSetName
             aeroProblem.surfMesh = self.getSurfaceCoordinates(self.designFamilyGroup)
+
+            # dictionary that holds the ptsetname for each family
+            ptSetNames = {}
+            activeChildrenFam = self.getOption("activechilddvgeofamilies")
+            if activeChildrenFam is None:
+                # we dont have a custom child dvgeo mapping. the surface family will be only
+                # designFamilyGroup and we will have a single pointset
+                ptSetName = f"adflow_{self.designFamilyGroup}_{aeroProblem.name}_coords"
+                ptSetNames[self.designFamilyGroup] = ptSetName
+            else:
+                # we have a custom surface family to child dvgeo mapping.
+                for familyName in activeChildrenFam.keys():
+                    ptSetName = f"adflow_{familyName}_{aeroProblem.name}_coords"
+                    ptSetNames[familyName] = ptSetName
+
+            aeroProblem.ptSetNames = ptSetNames
 
         if self.curAP is not None:
             # If we have already solved something and are now
@@ -3056,14 +3069,75 @@ class ADFLOW(AeroSolver):
 
         # Now check if we have an DVGeo object to deal with:
         if self.DVGeo is not None:
-            # DVGeo appeared and we have not embedded points!
-            if ptSetName not in self.DVGeo.points:
-                coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
-                self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
+            # we have a DVGeo added. check if we have already added the points for this AP
+            activeChildrenFam = self.getOption("activechilddvgeofamilies")
+            if activeChildrenFam is None:
+                # we have a single pointset
+                ptSetName = aeroProblem.ptSetNames[self.designFamilyGroup]
+
+                if ptSetName not in self.DVGeo.points:
+                    coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
+                    self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
+            else:
+                # we have custom pointsets
+                for family in activeChildrenFam.keys():
+                    ptSetName = aeroProblem.ptSetNames[family]
+
+                    if ptSetName not in self.DVGeo.points:
+                        # coords0 is now the subset of this family
+                        coords0 = self.mapVector(self.coords0, self.allFamilies, family, includeZipper=False)
+                        # this pointset is added with a custom activeChildrenFamily
+                        self.DVGeo.addPointSet(
+                            coords0,
+                            ptSetName,
+                            activeChildren=activeChildrenFam[family],
+                            **self.pointSetKwargs
+                        )
 
             # Check if our point-set is up to date:
-            if not self.DVGeo.pointSetUpToDate(ptSetName) or aeroProblem.adflowData.disp is not None:
-                coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
+            updateSurface = False
+
+            # check for disp first. doing this check here is not the most efficient,
+            # but it results in simpler code
+            if aeroProblem.adflowData.disp is not None:
+                updateSurface = True
+
+            if activeChildrenFam is None:
+                # we have a single pointset
+                ptSetName = aeroProblem.ptSetNames[self.designFamilyGroup]
+
+                if not self.DVGeo.pointSetUpToDate(ptSetName):
+                    updateSurface = True
+
+                    coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
+
+            else:
+                # we have custom pointsets
+                # first figure out if we want to update the pointset; check each family we are tracking
+                for family in activeChildrenFam.keys():
+                    # return immediately if we are flagged for a surfafce update
+                    if updateSurface:
+                        break
+
+                    # check if any of the pointsets are out of date
+                    ptSetName = aeroProblem.ptSetNames[family]
+                    if not self.DVGeo.pointSetUpToDate(ptSetName):
+                        updateSurface = True
+
+                # if we have the updateSurface flag True, compute the coords array
+                if updateSurface:
+                    # get the current design surface family. we will overwrite this as we go through the families
+                    coords = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
+
+                    for family in activeChildrenFam.keys():
+                        ptSetName = aeroProblem.ptSetNames[family]
+                        familyCoords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
+                        # map this to the coords vector
+                        self.mapVector(familyCoords, family, self.designFamilyGroup, vec2=coords, includeZipper=False)
+
+            if updateSurface:
+                # the coords array is computed above. if we have the update surface flag enabled,
+                # run the surface update
 
                 # Potentially add a fixed set of displacements to it.
                 if aeroProblem.adflowData.disp is not None:
@@ -4239,6 +4313,7 @@ class ADFLOW(AeroSolver):
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
+            # TODO fix
             if xDvDot is not None and self.DVGeo is not None:
                 xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, config=self.curAP.name).reshape(
                     xsdot.shape
@@ -4560,6 +4635,7 @@ class ADFLOW(AeroSolver):
                 if self.mesh is not None:  # Include geometric
                     # derivatives if mesh is
                     # present
+                    # TODO fix
                     if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                         xdvbar.update(
                             self.DVGeo.totalSensitivity(xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name)
@@ -5198,6 +5274,7 @@ class ADFLOW(AeroSolver):
             "meshSurfaceFamily": [(str, type(None)), None],
             "designSurfaceFamily": [(str, type(None)), None],
             "closedSurfaceFamilies": [(list, type(None)), None],
+            "activeChildDVGeoFamilies": [(dict, type(None)), None],
             # Output Parameters
             "storeRindLayer": [bool, True],
             "outputDirectory": [str, "./"],
@@ -5478,6 +5555,7 @@ class ADFLOW(AeroSolver):
             "partitiononly",
             "meshsurfacefamily",
             "designsurfacefamily",
+            "activechilddvgeofamilies",
             "closedsurfacefamilies",
             "zippersurfacefamily",
             "cutcallback",
@@ -5859,6 +5937,7 @@ class ADFLOW(AeroSolver):
             "liftindex",
             "meshsurfacefamily",
             "designsurfacefamily",
+            "activechilddvgeofamilies",
             "closedsurfacefamilies",
             "zippersurfacefamily",
             "outputsurfacefamily",
