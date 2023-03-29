@@ -966,6 +966,19 @@ ANKLinearSolveTol:
   desc: >
     Linear solver tolerance for the ANK solver.
 
+ANKLinearSolveBuffer:
+  desc: >
+    Do not modify this option unless you know what you are doing with petsc linear tolerances used for the ANK solver.
+    The absolute linear solver convergence in PETSc needs to be set to a value lower than the final residual convergence norm.
+    This is because the linear residual is the linearization of the nonlinear residual, and solving the linear system in a Newton solver to an absolute linear tolerance does not guarantee that the same reduction will be achieved in the nonlinear residual as well.
+    Because of this, if we were to solve for an absolute tolerance that was based on the nonlinear absolute tolerance, the linear solver might exit right before the nonlinear system fully converges.
+    This can cause other problems where the linear system refuses to make any further progress due to the absolute tolerance, or simply, it would have been much more efficient to just do a handful more linear iterations to get some extra linear convergence that makes sure the nonlinear system would also converge.
+    The second scenario is what this option is useful for; this option is used to further offset the absolute linear solver tolerance in the ANK solver.
+    This option only really makes a difference very close to the final L2 convergence target.
+    For example, setting a value of 0.01 will force the linear solver to converge the linear system more tightly, in the cases where the absolute linear convergence is achieved before the relative target.
+    Reducing the value here to 1e-4 or 1e-6 may result in "extra" nonlinear convergence in the final iteration, at the cost of more linear solver effort.
+    Increasing the value here to 1e-1 will reduce this buffer and the solver is more likely to end closer to the final L2 convergence target, but a too large of a value might cause issues with the final iterations where several smaller additional Newton steps are required.
+
 ANKLinResMax:
   desc: >
     A parameter that is used to adaptively adjust the CFL number so that the linear residual with the ANK solver does not go above the prescribed value.
@@ -1025,6 +1038,12 @@ ANKCFLCutback:
   desc: >
     The cutback factor for the CFL number in the ANK solver.
     This is the factor used when the CFL is adaptively reduced.
+
+ANKCFLReset:
+  desc: >
+    Flag that determines if the ANK CFL is reset to :py:data:`ANKCFL0` at first ANK iterations.
+    Each aero problem saves the last ANK CFL, and if this flag is set to false, subsequent solutions with the same aero problem starts at the last ANK CFL.
+    If the flag is set to true, then ANK CFL is always reset to the initial value of :py:data:`ANKCFL0`.
 
 ANKStepFactor:
   desc: >
@@ -1089,12 +1108,16 @@ ANKPCUpdateTol:
 
 ANKPCUpdateCutoff:
   desc: >
-    The cutoff tolerance below which we disable the PC update based on nonlinear convergence introduced in the option above.
-    E.g. the default value of 1e-6 will trigger PC updates with the ANK if the solver converges by a certain amount, but past a relative L2 convergence of 1e-6, this algorithm is disabled and the preconditioner is only updated with the mechanisms other than relative convergence.
+    The cutoff tolerance below which we adjust the tolerance for the PC update based on nonlinear convergence introduced with the option ``ANKPCUpdateTol``.
+    When the L2 convergence is above the value set in this option, the ANK PC updates are triggered if the relative convergence since the last PC update is below ``ANKPCUpdateTol``.
+    When the L2 convergence is below the value defined in this option, the code uses the tolerance set in ``ANKPCUpdateTolAfterCutoff`` to determine PC updates based on relative convergence.
     This is useful when CSANK is used, which can take steps that converge the L2 norm by multiple orders of magnitude in each iteration towards the end of the convergence.
-    Here, we do not need to update the PC at each solver iteration, so we disable it with this option.
-    This option only changes the PC update behavior with the coupled ANK variants.
-    Decoupled ANK variants don't get affected by this.
+    Here, we do not need to update the PC at each solver iteration, and may want to delay the PC updates based on relative convergence.
+
+ANKPCUpdateTolAfterCutoff:
+  desc: >
+    The ANK PC update tolerance used after we reach the ``ANKPCUpdateCutoff`` convergence.
+    Before the cutoff, the regular ``ANKPCUpdateTol`` is used.
 
 ANKADPC:
   desc: >
