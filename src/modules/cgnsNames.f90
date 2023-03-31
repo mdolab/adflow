@@ -114,6 +114,8 @@ module cgnsNames
     character(len=maxCGNSNameLen), parameter :: &
         cgnsSkinFZ = "SkinFrictionZ"
     character(len=maxCGNSNameLen), parameter :: &
+        cgnsForceInDragDir = "ForceInDragDir"
+    character(len=maxCGNSNameLen), parameter :: &
         cgnsStanton = "StantonNumber"
     character(len=maxCGNSNameLen), parameter :: &
         cgnsYPlus = "YPlus"
