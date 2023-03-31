@@ -164,6 +164,7 @@ contains
         if (surfWriteCfy) nSolVar = nSolVar + 1
         if (surfWriteCfz) nSolVar = nSolVar + 1
         if (surfWriteForceInDragDir) nSolVar = nSolVar + 1
+        if (surfWriteForceInLiftDir) nSolVar = nSolVar + 1
         if (surfWriteBlank) nSolVar = nSolVar + 1
         if (surfWriteSepSensor) nSolVar = nSolVar + 1
         if (surfWriteCavitation) nsolVar = nsolVar + 1
@@ -693,6 +694,11 @@ contains
         if (surfWriteForceInDragDir) then
             nn = nn + 1
             solNames(nn) = cgnsForceInDragDir
+        end if
+
+        if (surfWriteForceInLiftDir) then
+            nn = nn + 1
+            solNames(nn) = cgnsForceInLiftDir
         end if
 
         if (surfWriteBlank) then
@@ -1479,7 +1485,7 @@ contains
             select case (solName)
 
             case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
-                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir)
+                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir, cgnsForceInLiftDir)
 
                 ! Update the counter and set this entry of buffer to 0.
 
@@ -1500,7 +1506,8 @@ contains
         end if
 
         ! Compute the square of (dimensional) inflow velocity from MachCoef for Cp computation
-        if (solName == cgnsCp .OR. solName == cgnsForceInDragDir) then
+        select case (solName)
+        case (cgnsCp, cgnsForceInDragDir, cgnsForceInLiftDir)
             ! Same formula used in referenceState (see initializeFlow.F90),
             ! multiplied by the square of the reference velocity (uRef).
             ! MachCoef is initialized in inputParamRoutines.F90 and can also be passed from the python layer
@@ -1508,7 +1515,7 @@ contains
             ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
             ! (see initializeFlow.F90).
             uInfDim2 = (MachCoef * MachCoef * gammaInf * pInf / rhoInf) * uRef * uRef
-        end if
+        end select
 
         !
         !       Determine the face on which the subface is located and set
@@ -1951,7 +1958,7 @@ contains
         !        ================================================================
 
         case (cgnsSkinFmag, cgnsYplus, &
-              cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir)
+              cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir, cgnsForceInLiftDir)
 
         ! To avoid a lot of code duplication these 5 variables are
         ! treated together.
@@ -2061,6 +2068,15 @@ contains
 
                     ! Add skin friction projected in the drag direction
                     buffer(nn) = buffer(nn) + fact * DOT_PRODUCT((/fx, fy, fz/), dragDirection)
+
+                case (cgnsForceInLiftDir)
+
+                    ! Compute pressure coefficient projected in the lift direction
+                    call computeCoeffPressure()
+                    buffer(nn) = coeffPressure * DOT_PRODUCT(norm, liftDirection)
+
+                    ! Add skin friction projected in the lift direction
+                    buffer(nn) = buffer(nn) + fact * DOT_PRODUCT((/fx, fy, fz/), liftDirection)
 
                 case (cgnsYplus)
                     rsurf = half * (ww1(ii, jj, irho) + ww2(ii, jj, irho))

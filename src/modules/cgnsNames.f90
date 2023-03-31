@@ -116,6 +116,8 @@ module cgnsNames
     character(len=maxCGNSNameLen), parameter :: &
         cgnsForceInDragDir = "ForceInDragDir"
     character(len=maxCGNSNameLen), parameter :: &
+        cgnsForceInLiftDir = "ForceInLiftDir"
+    character(len=maxCGNSNameLen), parameter :: &
         cgnsStanton = "StantonNumber"
     character(len=maxCGNSNameLen), parameter :: &
         cgnsYPlus = "YPlus"
