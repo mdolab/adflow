@@ -4680,7 +4680,7 @@ class ADFLOW(AeroSolver):
                                 ptSetName = self.curAP.ptSetNames[family]
 
                                 # get the mapped xsbar
-                                xsbarFamily = self.mapVector(xsbar, self.allFamilies, family, includeZipper=False)
+                                xsbarFamily = self.mapVector(xsbar, self.designFamilyGroup, family, includeZipper=False)
 
                                 familySens = self.DVGeo.totalSensitivity(xsbarFamily, ptSetName, self.comm, config=self.curAP.name)
 
