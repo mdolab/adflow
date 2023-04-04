@@ -4658,13 +4658,39 @@ class ADFLOW(AeroSolver):
             if xDvDeriv:
                 xdvbar = {}
                 if self.mesh is not None:  # Include geometric
-                    # derivatives if mesh is
-                    # present
-                    # TODO fix
+                    # derivatives if mesh is present
                     if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
-                        xdvbar.update(
-                            self.DVGeo.totalSensitivity(xsbar, self.curAP.ptSetName, self.comm, config=self.curAP.name)
-                        )
+                        # we have a DVGeo added. check if we have already added the points for this AP
+                        activeChildrenFam = self.getOption("activechilddvgeofamilies")
+
+                        if activeChildrenFam is None:
+                            # we have a single pointset
+                            ptSetName = self.curAP.ptSetNames[self.designFamilyGroup]
+
+                            xdvbar.update(
+                                self.DVGeo.totalSensitivity(xsbar, ptSetName, self.comm, config=self.curAP.name)
+                            )
+
+                        else:
+                            # we have custom pointsets
+                            # start with an empty dict, we set the entries in the first pass,
+                            # and add in the following passes
+                            dvgeoSens = {}
+                            for family in activeChildrenFam.keys():
+                                ptSetName = self.curAP.ptSetNames[family]
+
+                                # get the mapped xsbar
+                                xsbarFamily = self.mapVector(xsbar, self.allFamilies, family, includeZipper=False)
+
+                                familySens = self.DVGeo.totalSensitivity(xsbarFamily, ptSetName, self.comm, config=self.curAP.name)
+
+                                for key, val in familySens.items():
+                                    # not the best way to do this but should work...
+                                    if key in dvgeoSens:
+                                        dvgeoSens[key] += val
+                                    else:
+                                        dvgeoSens[key] = val
+
                     else:
                         if self.comm.rank == 0:
                             ADFLOWWarning(
