@@ -4675,7 +4675,6 @@ class ADFLOW(AeroSolver):
                             # we have custom pointsets
                             # start with an empty dict, we set the entries in the first pass,
                             # and add in the following passes
-                            dvgeoSens = {}
                             for family in activeChildrenFam.keys():
                                 ptSetName = self.curAP.ptSetNames[family]
 
@@ -4686,10 +4685,10 @@ class ADFLOW(AeroSolver):
 
                                 for key, val in familySens.items():
                                     # not the best way to do this but should work...
-                                    if key in dvgeoSens:
-                                        dvgeoSens[key] += val
+                                    if key in xdvbar:
+                                        xdvbar[key] += val
                                     else:
-                                        dvgeoSens[key] = val
+                                        xdvbar[key] = val
 
                     else:
                         if self.comm.rank == 0:
