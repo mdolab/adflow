@@ -268,15 +268,18 @@ python module libadflow
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
+         real(kind=realtype) :: ank_atol_buffer
          real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
+         real(kind=realtype) :: ank_cfl
          real(kind=realtype) :: ank_cfl0
          real(kind=realtype) :: ank_cflmin0
          real(kind=realtype) :: ank_cfllimit
          real(kind=realtype) :: ank_cflfactor
          real(kind=realtype) :: ank_cflexponent
          real(kind=realtype) :: ank_cflcutback
+         logical :: ank_cflreset
          real(kind=realtype) :: ank_stepfactor
          real(kind=realtype) :: ank_stepmin
          real(kind=realtype) :: ank_constcflstep
@@ -288,6 +291,7 @@ python module libadflow
          real(kind=realtype) :: ank_turbcflscale
          logical :: ank_usefullvisc
          real(kind=realtype) :: ank_pcupdatetol
+         real(kind=realtype) :: ank_pcupdatetol2
          real(kind=realtype) :: ank_pcupdatecutoff
          logical :: ank_adpc
          integer(kind=inttype) :: ank_nsubiterturb
@@ -1135,6 +1139,7 @@ python module libadflow
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
+         logical :: printnegativevolumes
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
          logical :: usedisscontinuation
@@ -1428,6 +1433,7 @@ python module libadflow
        module adjointvars ! in :test:ADjointVars.F90
          use constants
             integer(kind=inttype) dimension(20) :: ncellslocal
+            integer(kind=inttype) dimension(20) :: ncellsglobal
             integer(kind=inttype) dimension(20) :: nnodeslocal
             integer(kind=inttype), parameter,optional :: ialpha=1
             integer(kind=inttype), parameter,optional :: ibeta=2
