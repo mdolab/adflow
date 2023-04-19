@@ -1908,7 +1908,8 @@ class ADFLOW(AeroSolver):
         writeSolution=False,
         workUnitTime=None,
     ):
-        """This is a simple secant method search for solving for a
+        """
+        This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
         Parameters
@@ -1989,9 +1990,11 @@ class ADFLOW(AeroSolver):
         workUnitTime : float or None
             Optional parameter that will be passed to getConvergenceHistory
             after each adflow call.
+
         Returns
         -------
         None, but the correct alpha is stored in the aeroProblem
+
         """
 
         # time the CL solve
