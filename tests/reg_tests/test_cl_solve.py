@@ -6,7 +6,6 @@ import copy
 
 # MACH classes
 from adflow import ADFLOW
-from baseclasses.utils import Error
 
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_tutorial_wing
@@ -65,7 +64,6 @@ class TestSolve(reg_test_classes.RegTest):
         self.handler.root_add_val("cavitation", funcs["mdo_tutorial_cavitation"], rtol=1e-4, atol=1e-4)
 
     def test_optional_features(self):
-
         CLStar = 0.475
         tol = 1e-6
         clSolveRes = self.CFDSolver.solveCL(
@@ -85,7 +83,6 @@ class TestSolve(reg_test_classes.RegTest):
         np.testing.assert_equal(True, clSolveRes["converged"])
 
     def test_clsolve_l2_failure(self):
-
         CLStar = 0.475
         tol = 1e-6
         clSolveRes = self.CFDSolver.solveCL(
@@ -108,7 +105,6 @@ class TestSolve(reg_test_classes.RegTest):
         np.testing.assert_equal(False, clSolveRes["converged"])
 
     def test_clsolve_cl_failure(self):
-
         CLStar = 0.475
         tol = 1e-6
         clSolveRes = self.CFDSolver.solveCL(
