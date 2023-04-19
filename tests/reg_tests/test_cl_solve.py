@@ -134,19 +134,19 @@ class TestSolve(reg_test_classes.RegTest):
         CLStar = 0.475
         tol = 1e-6
 
-        # because errOnStall is set to True, the clsolve should raise an error
-        with np.testing.assert_raises(Error):
-            self.CFDSolver.solveCL(
-                self.ap,
-                CLStar,
-                maxIter=10,
-                alpha0=1.20,
-                CLalphaGuess=0.12,
-                tol=tol,
-                relaxCLa=0.9,
-                L2ConvRel=1e-4,
-                errOnStall=True,
-            )
+        # because errOnStall is set to True, the clsolve should return with a fail flag
+        clSolveRes = self.CFDSolver.solveCL(
+            self.ap,
+            CLStar,
+            maxIter=10,
+            alpha0=1.20,
+            CLalphaGuess=0.12,
+            tol=tol,
+            relaxCLa=0.9,
+            L2ConvRel=1e-4,
+            stopOnStall=True,
+        )
+        np.testing.assert_equal(False, clSolveRes["converged"])
 
 
 if __name__ == "__main__":

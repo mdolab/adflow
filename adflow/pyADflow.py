@@ -1904,7 +1904,7 @@ class ADFLOW(AeroSolver):
         relaxCLa=1.0,
         relaxAlpha=1.0,
         L2ConvRel=None,
-        errOnStall=False,
+        stopOnStall=False,
         writeSolution=False,
         workUnitTime=None,
     ):
@@ -1978,10 +1978,11 @@ class ADFLOW(AeroSolver):
             each iteration. If the list length is less than the maximum
             number of iterations we can perform, we keep using the last
             value of the list until we run out of iterations.
-        errOnStall : bool
-            Flag to determine if we want to throw an error if the solver
+        stopOnStall : bool
+            Flag to determine if we want to stop early if the solver
             fails to achieve the relative or total L2 convergence. This
-            is useful when the user wants to manually handle these exceptions.
+            is useful when the solver is expected to converge to the target
+            L2 tolerances at each call.
         writeSolution : bool
             Flag to enable a call to self.writeSolution as the CL solver
             is finished.
@@ -1995,6 +1996,9 @@ class ADFLOW(AeroSolver):
 
         # time the CL solve
         t1 = time.time()
+
+        # pointer to the iteration module for faster access
+        iterationModule = self.adflow.iteration
 
         # create the string template we want to print for each iteration
         iterString = (
@@ -2017,31 +2021,46 @@ class ADFLOW(AeroSolver):
             + "+--------------------------------------------------+\n"
         )
 
-        # function to check solver failure. we define it here to avoid code duplication
-        def checkSolverFailure(ap, modifiedOptions):
-            # check if the relative L2 target was achieved. if not, warn the user
-            # also, the user might just want us to throw an error flag on non-convergence
-            # so that they can catch it on the higher level.
-            # we do this after the iteration printout so that the latest data is printed.
-            if ap.solveFailed:
-                relL2Target = self.getOption("L2ConvergenceRel")
-                L2Target = self.getOption("L2Convergence")
-                if self.myid == 0:
-                    ADFLOWWarning(
-                        f"CFD solver failed to achieve a relative L2 convergence of {relL2Target:.1e} or total L2 convergence of {L2Target:.1e}."
-                    )
-                if errOnStall:
-                    # we want to raise an error on stall. Before we can do that, we need to
-                    # replace the options we temporarily modified...
-                    for option, value in modifiedOptions.items():
-                        self.setOption(option, value)
-                    # write solution before quitting if asked for
-                    if writeSolution:
-                        self.writeSolution()
-                    raise Error("CFD solver failed during CLSolve")
+        def checkConvergence(curError):
+            # check if L2 Convergence is achieved, if not, we cant quit yet
+            # this is not the same as checking if AP solve worked. Here, we
+            # explicitly want to check if the final L2 target is reached,
+            # i.e. the solution is a valid converged state.
+            L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
+            L2ConvTarget = self.getOption("L2Convergence")
 
-        # pointer to the iteration module for faster access
-        iterationModule = self.adflow.iteration
+            # we check if the current error is below tolerance, and if we have also reached the L2 target
+            if abs(curError) < tol and L2Conv <= L2ConvTarget:
+                converged = True
+            else:
+                converged = False
+
+            return converged
+
+        def finalizeSolver(resultsDict, modifiedOptions):
+            # exit the solver. we have a few housekeeping items:
+
+            # put back the modified options
+            for option, value in modifiedOptions.items():
+                self.setOption(option, value)
+
+            # write solution before returning if requested
+            if writeSolution:
+                self.writeSolution()
+
+            # final printout
+            if self.comm.rank == 0:
+                # print all results but the history
+                printDict = copy.deepcopy(resultsDict)
+                printDict.pop("history")
+                print("\n+--------------------------------------------------+")
+                print("| CLSolve Results:")
+                print("+--------------------------------------------------+")
+                # print all but convergence history from every call
+                self.pp(printDict)
+                print("+--------------------------------------------------+\n", flush=True)
+
+            return
 
         # list to keep track of convergence history
         convergenceHistory = []
@@ -2049,6 +2068,24 @@ class ADFLOW(AeroSolver):
         # Dictionary to keep track of all the options we have modified.
         # We keep the original values in this dictionary to be put back once we are done.
         modifiedOptions = {}
+
+        # Overwrite the RK options for the CL solver.
+        # We need to do this to avoid using NK right at the beggining
+        # of the new AoA iteration. When we change the AoA, we only change
+        # the residuals at the boundaries, and the Newton solver will not
+        # allow these residuals to change the rest of the solution.
+        # A few RK iterations allow the total residual to "go uphill",
+        # so that we can converge to a new solution.
+        modifiedOptions["nRKReset"] = self.getOption("nRKReset")
+        modifiedOptions["rkreset"] = self.getOption("rkreset")
+        self.setOption("nRKReset", nReset)
+        self.setOption("rkreset", useRKReset)
+        # also overwrite the free stream correction option. In general, this works
+        # better with the newton type solvers than RK. Keeping the RK switch
+        # for backwards compatability, but the default for this routine now uses
+        # the free stream correction.
+        modifiedOptions["infchangecorrection"] = self.getOption("infchangecorrection")
+        self.setOption("infchangecorrection", useCorrection)
 
         # check if we have a custom relative l2 convergence.
         if L2ConvRel is not None:
@@ -2069,18 +2106,12 @@ class ADFLOW(AeroSolver):
             # set the first rel conv value.
             self.setOption("L2ConvergenceRel", L2ConvRel[0])
 
+        # initialize the first alpha guess
         self.setAeroProblem(aeroProblem)
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
         else:
             alpha0 = aeroProblem.alpha
-
-        # We can stop here if we have failures in the mesh
-        if self.adflow.killsignals.fatalfail:
-            # TODO Fix the logic here. we dont want to return immediately. We first want to
-            # put back any of the modified options, and then quit.
-            print("Cannot run CLSolve due to mesh failures.")
-            return
 
         # Set the starting value
         anm2 = aeroProblem.alpha
@@ -2089,7 +2120,7 @@ class ADFLOW(AeroSolver):
         if resetANKCFL:
             self.resetANKCFL(aeroProblem)
 
-        # first analysis. We let the call counter get incremented here, but any of the following
+        # first analysis. We let the call counter get incremented here, but the following
         # calls do not increase adflow's call counter. As a result, the solution files will be
         # consistently named when multiple CL solutions are performed back to back.
         self.__call__(aeroProblem, writeSolution=False)
@@ -2111,24 +2142,16 @@ class ADFLOW(AeroSolver):
             # initialize the clalpha working variable
             clalpha = CLalphaGuess
 
-        # check if L2 Convergence is achieved, if not, we cant quit yet
+        # current L2 convergence is also needed for the print
         L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
-        L2ConvTarget = self.getOption("L2Convergence")
-
-        # Check for convergence if the starting point is already ok.
-        if abs(fnm2) < tol and L2Conv <= L2ConvTarget:
-            # TODO fix this logic. if this happens, we dont want to just return, but exit cleanly
-            # with a possible writeSolution call and put back any modified options. Disabling for now.
-            # return
-            pass
 
         # print iteration info
         if self.comm.rank == 0:
             print(
                 iterString.format(
-                    iIter=0,
+                    iIter=1,
                     curTime=time.time() - t1,
-                    L2Conv=iterationModule.totalrfinal / iterationModule.totalr0,
+                    L2Conv=L2Conv,
                     L2ConvRel=iterationModule.totalrfinal / iterationModule.totalrstart,
                     curAlpha=aeroProblem.alpha,
                     CL=sol["cl"],
@@ -2140,26 +2163,29 @@ class ADFLOW(AeroSolver):
                 )
             )
 
-        # check if the solver failed
-        checkSolverFailure(aeroProblem, modifiedOptions)
+        # Check for convergence if the starting point is already ok.
+        converged = checkConvergence(fnm2)
 
-        # Overwrite the RK options momentarily.
-        # We need to do this to avoid using NK right at the beggining
-        # of the new AoA iteration. When we change the AoA, we only change
-        # the residuals at the boundaries, and the Newton solver will not
-        # allow these residuals to change the rest of the solution.
-        # A few RK iterations allow the total residual to "go uphill",
-        # so that we can converge to a new solution.
-        modifiedOptions["nRKReset"] = self.getOption("nRKReset")
-        modifiedOptions["rkreset"] = self.getOption("rkreset")
-        self.setOption("nRKReset", nReset)
-        self.setOption("rkreset", useRKReset)
-        # also overwrite the free stream correction option. In general, this works
-        # better with the newton type solvers than RK. Keeping the RK switch
-        # for backwards compatability, but the default for this routine now uses
-        # the free stream correction.
-        modifiedOptions["infchangecorrection"] = self.getOption("infchangecorrection")
-        self.setOption("infchangecorrection", useCorrection)
+        # rest of the results
+        CL = sol["cl"]
+        err = sol["cl"] - CLStar
+        t2 = time.time()
+        resultsDict = {
+            "converged": converged,
+            "iterations": 1,
+            "l2convergence": L2Conv,
+            "alpha": aeroProblem.alpha,
+            "cl": CL,
+            "clstar": CLStar,
+            "error": err,
+            "clalpha": clalpha,
+            "time": t2 - t1,
+            "history": convergenceHistory,
+        }
+
+        if converged or (aeroProblem.solveFailed and stopOnStall) or aeroProblem.fatalFail:
+            finalizeSolver(resultsDict, modifiedOptions)
+            return resultsDict
 
         # Secant method iterations
         for _iIter in range(1, maxIter):
@@ -2186,14 +2212,6 @@ class ADFLOW(AeroSolver):
             sol = self.getSolution()
             fnm1 = sol["cl"] - CLStar
 
-            # check if L2 Convergence is achieved, if not, we cant quit yet
-            L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
-            L2ConvTarget = self.getOption("L2Convergence")
-
-            # Check for convergence
-            if abs(fnm1) < tol and L2Conv <= L2ConvTarget:
-                break
-
             # Secant Update
             if _iIter == 1 and CLalphaGuess is None:
                 # we first need to compute the estimate to clalpha
@@ -2206,11 +2224,14 @@ class ADFLOW(AeroSolver):
             # similarly, the user might want to relax the alpha update
             anew = anm1 - (fnm1 / clalpha) * relaxAlpha
 
+            # current L2 convergence is also needed for the print
+            L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
+
             # print iteration info
             if self.comm.rank == 0:
                 print(
                     iterString.format(
-                        iIter=_iIter,
+                        iIter=_iIter + 1,
                         curTime=time.time() - t1,
                         L2Conv=L2Conv,
                         L2ConvRel=iterationModule.totalrfinal / iterationModule.totalrstart,
@@ -2224,8 +2245,29 @@ class ADFLOW(AeroSolver):
                     )
                 )
 
-            # check if the solver failed
-            checkSolverFailure(aeroProblem, modifiedOptions)
+            # Check for convergence if the starting point is already ok.
+            converged = checkConvergence(fnm2)
+
+            # rest of the results
+            CL = sol["cl"]
+            err = sol["cl"] - CLStar
+            t2 = time.time()
+            resultsDict = {
+                "converged": converged,
+                "iterations": _iIter + 1,
+                "l2convergence": L2Conv,
+                "alpha": aeroProblem.alpha,
+                "cl": CL,
+                "clstar": CLStar,
+                "error": err,
+                "clalpha": clalpha,
+                "time": t2 - t1,
+                "history": convergenceHistory,
+            }
+
+            if converged or (aeroProblem.solveFailed and stopOnStall) or aeroProblem.fatalFail:
+                finalizeSolver(resultsDict, modifiedOptions)
+                return resultsDict
 
             # Shift n-1 values to n-2 values
             fnm2 = fnm1
@@ -2234,53 +2276,11 @@ class ADFLOW(AeroSolver):
             # Se the n-1 alpha value from update
             anm1 = anew
 
-        # Restore the options given initially by user
-        for option, value in modifiedOptions.items():
-            self.setOption(option, value)
-
-        t2 = time.time()
-
-        # check for adflow solution failure
-        fFailure = {}
-        self.checkSolutionFailure(aeroProblem, fFailure)
-        failFlag = fFailure["fail"]
-
-        # also check the L2 tolerance
+        # results
         L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
-        L2ConvTarget = self.getOption("L2Convergence")
-
-        # check for the CLSolve tolerance
         CL = sol["cl"]
         err = sol["cl"] - CLStar
-
-        if (err < tol) and (L2Conv < L2ConvTarget) and (not failFlag):
-            converged = True
-        else:
-            converged = False
-
-        if self.comm.rank == 0:
-            # create the string template we want to print for each iteration
-            final_string = (
-                "\n+--------------------------------------------------+\n|\n"
-                + f"| CLSolve Results:\n|\n| Converged?          {converged}\n"
-                + f"| Total Iterations    {_iIter + 1}\n"
-                + f"| L2 Convergence      {L2Conv}\n"
-                + f"| Alpha               {aeroProblem.alpha}\n"
-                + f"| CL                  {CL}\n"
-                + f"| CLStar              {CLStar}\n"
-                + f"| Error               {err}\n"
-                + f"| CLAlpha             {clalpha}\n"
-                + f"|\n"
-                + f"| Total Time          {t2 - t1:.3f} sec\n"
-                + f"+--------------------------------------------------+\n"
-            )
-            print(final_string)
-
-        if writeSolution:
-            self.writeSolution()
-
-        # we return everything we printed.
-        # Not all of it is useful, but better to include as much data as possible
+        t2 = time.time()
         resultsDict = {
             "converged": converged,
             "iterations": _iIter + 1,
@@ -2293,6 +2293,9 @@ class ADFLOW(AeroSolver):
             "time": t2 - t1,
             "history": convergenceHistory,
         }
+
+        # we ran out of iterations and did not exit yet. so this is a failed case
+        finalizeSolver(resultsDict, modifiedOptions)
         return resultsDict
 
     def solveTrimCL(
