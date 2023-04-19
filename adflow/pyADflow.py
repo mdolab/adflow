@@ -1993,7 +1993,8 @@ class ADFLOW(AeroSolver):
 
         Returns
         -------
-        None, but the correct alpha is stored in the aeroProblem
+        resultsDict : dictionary
+            Dictionary that contains various results from the cl solve. TODO add more detail here.
 
         """
 
