@@ -1665,6 +1665,7 @@ module ANKSolver
     integer(kind=intType) :: ANK_innerPreConIts
     integer(kind=intType) :: ANK_outerPreConIts
     real(kind=realType) :: ANK_rtol
+    real(kind=realType) :: ANK_atol_buffer
     real(kind=realType) :: ANK_linResMax
     real(kind=realType) :: ANK_switchTol
     real(kind=realType) :: ANK_divTol = 10
@@ -1683,10 +1684,11 @@ module ANKSolver
     real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
     real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
     real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
-    real(kind=realType) :: ANK_pcUpdateTol
+    real(kind=realType) :: ANK_pcUpdateTol, ANK_pcUpdateTol2
     real(kind=realType) :: ANK_pcUpdateCutoff
     real(kind=realType) :: lambda
     logical :: ANK_solverSetup = .False.
+    logical :: ANK_CFLReset
     integer(kind=intTYpe) :: ANK_iter
     integer(kind=intType) :: nState
     real(kind=alwaysRealType) :: totalR_old, totalR_pcUpdate ! for recording the previous residual
@@ -3764,7 +3766,12 @@ contains
                 ! Initialize some variables
                 totalR_old = totalR ! Record the old residual for the first iteration
                 rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
-                ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
+                if (ANK_CFLReset) then
+                    ! we are asked to reset the cfl to the initial value on every first ANK iteration.
+                    ! if this is set to false, the CFL must be set from the python layer using either the
+                    ! initial CFL or the last CFL for the aeroproblem
+                    ANK_CFL = ANK_CFL0
+                end if
                 ANK_CFLMinBase = ANK_CFLMin0
                 totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
                 linResOld = zero
@@ -3775,19 +3782,14 @@ contains
             ANK_iter = ANK_iter + 1
         end if
 
-        ! figure out if we want to scale the ANKPCUpdateTol
-        if (.not. ANK_coupled) then
-            rel_pcUpdateTol = ANK_pcUpdateTol
+        ! figure out if we want to change the ANKPCUpdateTol:
+        ! If we are converged below the L2 target specified by ANK_pcUpdateCutoff
+        ! we use a different tolerance for the relative PC update.
+        if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
+            rel_pcUpdateTol = ANK_pcUpdateTol2
         else
-            ! for coupled ANK, we dont want to update the PC as frequently,
-            ! so we reduce the relative tol by 4 orders of magnitude,
-            ! *if* we are converged past pc update cutoff wrt free stream already
-            if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
-                rel_pcUpdateTol = ANK_pcUpdateTol * 1e-4_realType
-            else
-                ! if we are not that far down converged, use the option directly
-                rel_pcUpdateTol = ANK_pcUpdateTol
-            end if
+            ! if we are not that far down converged, use the option directly
+            rel_pcUpdateTol = ANK_pcUpdateTol
         end if
 
         ! Compute the norm of rVec, which is identical to the
@@ -3923,7 +3925,7 @@ contains
 #ifndef USE_COMPLEX
         ! in the real mode, we set the atol slightly lower than the target L2 convergence
         ! the reasoning for this is detailed in the NKStep subroutine
-        atol = totalR0 * L2Conv * 0.01_realType
+        atol = totalR0 * L2Conv * ANK_atol_buffer
 #else
         ! in complex mode, we want to tightly solve the linear system every time
         ! again, see the NKStep subroutine for the explanation
