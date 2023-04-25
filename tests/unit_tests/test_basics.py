@@ -52,7 +52,7 @@ class BasicTests(unittest.TestCase):
                 fortranValue = str(np.array(fortranValue, dtype=str)).strip()
 
             elif optionName == "mgstartlevel" and (value == -1 or value == 0):
-                # mgstartlevel is set in fortran but the default value un python (-1) defaults to the coarsest MG level in fortran (based on the MG levels strategy)
+                # mgstartlevel is set in fortran but the default value in python (-1) defaults to the coarsest MG level in fortran (based on the MG levels strategy)
                 # Both -1 and 0 are checked as both default to coarsest level in fortran.
 
                 # Just overwrite value with what is set in fortran
