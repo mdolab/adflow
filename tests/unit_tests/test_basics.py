@@ -31,9 +31,8 @@ class BasicTests(unittest.TestCase):
 
             # Treat all other options
             if isinstance(CFDSolver.optionMap[optionName], dict):
-                # For values that are set in fortran using constant from fortran
-                # we just overwrite the python value. An example is "solutionprecision" which is
-                # a str value in python that corresponds to an integer in fortran, which sets a module variable precisionsol
+                # For values that are set in fortran using a constant from fortran we just overwrite the python value.
+                # An example is "solutionprecision" which is a str value in python that corresponds to an integer in fortran, which sets a module variable "precisionsol"
                 module = CFDSolver.moduleMap[CFDSolver.optionMap[optionName]["location"][0]]
                 variable = CFDSolver.optionMap[optionName]["location"][1]
                 value = CFDSolver.optionMap[optionName][value.lower()]
@@ -41,7 +40,7 @@ class BasicTests(unittest.TestCase):
                 module = CFDSolver.moduleMap[CFDSolver.optionMap[optionName][0]]
                 variable = CFDSolver.optionMap[optionName][1]
 
-            # Fetch the variable value form the module
+            # Fetch the variable value from the module
             fortranValue = getattr(module, variable)
 
             # Now check if the set parameter is correct in fortran
@@ -53,13 +52,14 @@ class BasicTests(unittest.TestCase):
                 fortranValue = str(np.array(fortranValue, dtype=str)).strip()
 
             elif optionName == "mgstartlevel" and (value == -1 or value == 0):
-                # mgstartlevel is set in Fortran but the default value (-1) defaults to the coarsest level
-                # value of -1 or 0 should default to coarsest level, which is extracted based on the number of MG levels strategy
+                # mgstartlevel is set in fortran but the default value un python (-1) defaults to the coarsest MG level in fortran (based on the MG levels strategy)
+                # Both -1 and 0 are checked as both default to coarsest level in fortran.
 
                 # Just overwrite value with what is set in fortran
                 value = CFDSolver.adflow.inputiteration.nmglevels
 
-            # Note/todo: When running in complex mode the real part is compared to the default value. Options should in most cases always be real, but are complex in fortran. This should be updated at some point.
+            # Note: When running in complex mode the parameters set from python are real, but are in most cases complex in fortran.
+            # There is no need to check the type as the assertion should pass (imag part is zero).
             self.assertEqual(value, fortranValue)
 
     def cmplx_test_options(self):
