@@ -1253,10 +1253,10 @@ python module libadflow
          character(len=maxstringlen) :: gmresorthogtype
          character(len=maxstringlen) :: localpctype
          character(len=maxstringlen) :: precondtype
-         real(kind=realtype) :: adjabstol
-         real(kind=realtype) :: adjdivtol
-         real(kind=realtype) :: adjreltol
-         real(kind=realtype) :: adjreltolrel
+         real(kind=alwaysrealtype) :: adjabstol
+         real(kind=alwaysrealtype) :: adjdivtol
+         real(kind=alwaysrealtype) :: adjreltol
+         real(kind=alwaysrealtype) :: adjreltolrel
          real(kind=realtype) :: adjmaxl2dev
          integer(kind=inttype) :: overlap
          integer(kind=inttype) :: adjmonstep
@@ -1461,7 +1461,7 @@ python module libadflow
           end module adjointvars
 
        module adjointpetsc
-         real(kind=realtype) :: adjresinit, adjresstart, adjresfinal
+         real(kind=alwaysrealtype) :: adjresinit, adjresstart, adjresfinal
        end module adjointpetsc
 
        module inputtsstabderiv ! in :test:inputParam.f90
