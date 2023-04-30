@@ -28,7 +28,7 @@ setup(
     packages=find_packages(include=["adflow*"]),
     package_data={"adflow": ["*.so"]},
     install_requires=[
-        "numpy>=1.16,<1.24",
+        "numpy>=1.16,!=1.24,!=1.24.1,!=1.24.2",
         "mdolab-baseclasses>=1.4",
         "mpi4py>=3.0",
         "scipy",
