@@ -317,7 +317,7 @@ cavitation:
 cpmin:
   desc: >
     Minimum coefficient of pressure (:math:`C_p`) over the given surface family.
-    This function is computed with Kreisselmeier-Steinhauser (KS) function aggregation resulting in a conservative constraint because the `cpmin` outputted will never be more negative than the true :math:`C_{p,min}`.
+    This function is computed with Kreisselmeier-Steinhauser (KS) function aggregation resulting in a conservative constraint because the ``cpmin`` outputted will never be more negative than the true :math:`C_{p,min}`.
     The ``computeCavitation`` flag must be set to ``True`` because this introduces additional computations involving global communications across processors;
     If ``False``, the returned value is zero.
     You probably will specify the surface family with ``cgnsutilities``.
