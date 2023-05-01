@@ -1,13 +1,13 @@
-lift:
+lift: Newtons
   desc: >
     Surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the direction of the ``liftIndex`` but perpendicular to the streamwise direction (i.e., dot product in this direction).
     To clarify, the angle of attack ``alpha`` does affect the direction of the force projection.
-    Units: Newtons
+    Units: ``Newton``
 
 drag:
   desc: >
     Surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the streamwise direction (i.e., dot product in this direction).
-    Units: Newtons
+    Units: ``Newton``
 
 cl:
   desc: >
@@ -99,21 +99,21 @@ fx:
     Force from surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the global :math:`x` direction.
     Note that if :math:`x` is the streamwise direction for a zero angle of attack wing, this is NOT the drag force when you apply a non-zero angle of attack.
     The same logic applies for ``fy`` and ``fz``.
-    Units: Newtons
+    Units: ``Newton``
 
 fy:
   desc: >
     Like ``fx`` but in the global :math:`y` direction
-    Units: Newtons
+    Units: ``Newton``
 
 fz:
   desc: >
     Like ``fx`` but in the global :math:`z` direction
-    Units: Newtons
+    Units: ``Newton``
 
 cfx:
   desc: >
-    fx force coefficient computed as ``fx`` over the product of dynamic pressure and ``refArea``
+    fx force coefficient computed as :math:`\frac{F_x}{qA}` where :math:`A` is ``refArea``. 
     Units: None
 
 cfxp:
@@ -165,18 +165,18 @@ cfzm:
 
 mx:
   desc: >
-    Moment about :math:`x` axis, origin if ``refAxis`` not specified.
-    Units: Newton-meter 
+    Moment about :math:`x` axis, computed at the location (``xRef``, ``yRef``, ``zRef``) as defined in ``AeroProblem``.
+    Units: ``Newton - meter`` 
 
 my:
   desc: >
     Moment about :math:`y` axis, origin if ``refAxis`` not specified.
-    Units: Newton-meter 
+    Units: ``Newton - meter`` 
 
 mz:
   desc: >
     Moment about :math:`z` axis, origin if ``refAxis`` not specified.
-    Units: Newton-meter 
+    Units: ``Newton - meter`` 
 
 cmx:
   desc: >
@@ -190,8 +190,8 @@ cmy:
 
 cmz:
   desc: >
-    Moment coefficient about :math:`z` axis computed :math:`\frac{M_z}{qAc_{MAC}}` where :math:`A` is ``refArea`` and :math:`c_{MAC}` is a reference length (usually the mean aerodynamic chord) # TODO GN: someone please check this reference length.
-    The :math:`z` axis is at the origin if ``refAxis`` not specified.
+    Moment coefficient about :math:`z` axis computed as :math:`\frac{M_z}{qAc_{MAC}}` where :math:`A` is ``refArea`` and :math:`c_{MAC}` is a reference length (``AeroProblem.chordRef``).
+    The :math:`z` axis is computed at the location (``xRef``, ``yRef``, ``zRef``) as defined in ``AeroProblem``.
     Units: None
 
 cm0:
@@ -237,7 +237,6 @@ cfyalpha:
   desc: >
     NOTE: Time spectral stability derivatives are broken as of 2022.
     TODO: Someone who knows aircraft stability should verify these
-    ??
 
 cfyalphddot:
   desc: >
@@ -280,7 +279,8 @@ clqdot:
 
 cbend:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
+    NOTE: Broken as of 2022.
+    Root bending moment coefficient.
     Bending coefficient defined as :math:`\sigma L^2/ (qA)`
     TODO: Someone who knows aircraft stability should verify these
 
@@ -309,8 +309,8 @@ cavitation:
   desc: >
     Cavitation sensor, not to be confused with the cavitation number.
     It is a modified Heaviside function accounting for how much :math:`-C_p` exceeds the cavitation number over the given surface family.
-    The `computeCavitation` flag must be set to `True` because this introduces additional computations.
-    You probably will specify the surface family with `cgnsutilities`.
+    The ``computeCavitation`` flag must be set to `True` because this introduces additional computations.
+    You probably will specify the surface family with ``cgnsutilities``.
     See :cite:t:`Liao2021a`.
     Units: None
 
@@ -318,41 +318,41 @@ cpmin:
   desc: >
     Minimum coefficient of pressure (:math:`C_p`) over the given surface family.
     This function is computed with Kreisselmeier-Steinhauser (KS) function aggregation resulting in a conservative constraint because the `cpmin` outputted will never be more negative than the true :math:`C_{p,min}`.
-    The `computeCavitation` flag must be set to `True` because this introduces additional computations involving global communications across processors;
-    If `False`, the returned value is zero.
-    You probably will specify the surface family with `cgnsutilities`.
-    Units: None 
+    The ``computeCavitation`` flag must be set to ``True`` because this introduces additional computations involving global communications across processors;
+    If ``False``, the returned value is zero.
+    You probably will specify the surface family with ``cgnsutilities``.
+    Units: None
 
 mdot:
   desc: >
     Mass flow rate in the freestream direction.
     This quantity is important for computing momentum forces.
-    Units: kg - s:math:`^{-1}`
+    Units: ``kg / s``
 
 mavgptot:
   desc: >
     Mass flow rate averaged total pressure 
-    Units: Pascal
+    Units: ``Pascal``
 
 aavgptot:
   desc: >
     Cell area averaged total pressure 
-    Units: Pascal
+    Units: ``Pascal``
 
 aavgps:
   desc: >
     Cell area averaged static pressure
-    Units: Pascal
+    Units: ``Pascal``
 
 mavgttot:
   desc: >
     Mass flow rate averaged total temperature 
-    Units: Kelvin
+    Units: ``Kelvin``
 
 mavgps:
   desc: >
     Mass flow rate averaged static pressure
-    Units: Pascal
+    Units: ``Pascal``
 
 mavgmn:
   desc: >
@@ -363,11 +363,12 @@ area:
   desc: >
     The area of the integrated surface. 
     This can be all wall surface or the interested surface defined in the runscript.
+    Units: ``meter^2``
 
 axismoment:
   desc: >
     Moments about the axis given by ``momentAxis``.
-    Units: Newton - meter
+    Units: ``Newton - meter``
 
 flowpower:
   desc: >
@@ -377,69 +378,84 @@ forcexpressure:
   desc: >
     Pressure component of force in x direction.
     Dimensional ``cfxp``
+    Units: ``Newton``
 
 forceypressure:
   desc: >
     Pressure component of force in y direction.
+    Units: ``Newton``
 
 forcezpressure:
   desc: >
     Pressure component of force in z direction.
+    Units: ``Newton``
 
 forcexviscous:
   desc: >
     Viscous component of force in x direction.
-    Dimensional ``cfxv``
+    Dimensional version of ``cfxv``.
+    Units: ``Newton``
 
 forceyviscous:
   desc: >
     Viscous component of force in y direction
+    Units: ``Newton``
 
 forcezviscous:
   desc: >
     Viscous component of force in z direction
+    Units: ``Newton``
 
 forcexmomentum:
   desc: >
     Momentum component of force in x direction
+    Units: ``Newton``
 
 forceymomentum:
   desc: >
     Momentum component of force in y direction
+    Units: ``Newton``
 
 forcezmomentum:
   desc: >
     Momentum component of force in z direction
+    Units: ``Newton``
 
 dragpressure:
   desc: >
     Pressure drag
+    Units: ``Newton``
 
 dragviscous:
   desc: >
     Viscous drag
+    Units: ``Newton``
 
 dragmomentum:
   desc: >
     Momentum drag from time rate of change of velocity (unsteady simulations).
     Dimensional ``cdm``
+    Units: ``Newton``
 
 liftpressure:
   desc: >
     Pressure component of lift
+    Units: ``Newton``
 
 liftviscous:
   desc: >
     Viscous lift
+    Units: ``Newton``
 
 liftmomentum:
   desc: >
     Momentum lift (due to changing momentum of flow in unsteady simulation)
+    Units: ``Newton``
 
 mavgvi:
   desc: >
-    Only Anil knows the secret.
-    
+    Derived velocity average (TODO:)
+
 mavgvx:
   desc: >
     Averaged mass flow in the x direction.
