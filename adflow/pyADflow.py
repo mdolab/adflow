@@ -2228,6 +2228,13 @@ class ADFLOW(AeroSolver):
             # similarly, the user might want to relax the alpha update
             anew = anm1 - (fnm1 / clalpha) * relaxAlpha
 
+            # Shift n-1 values to n-2 values
+            fnm2 = fnm1
+            anm2 = anm1
+
+            # Se the n-1 alpha value from update
+            anm1 = anew
+
             # current L2 convergence is also needed for the print
             L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
 
@@ -2250,7 +2257,7 @@ class ADFLOW(AeroSolver):
                 )
 
             # Check for convergence if the starting point is already ok.
-            converged = checkConvergence(fnm2)
+            converged = checkConvergence(fnm1)
 
             # rest of the results
             CL = sol["cl"]
@@ -2273,12 +2280,7 @@ class ADFLOW(AeroSolver):
                 finalizeSolver(resultsDict, modifiedOptions)
                 return resultsDict
 
-            # Shift n-1 values to n-2 values
-            fnm2 = fnm1
-            anm2 = anm1
 
-            # Se the n-1 alpha value from update
-            anm1 = anew
 
         # results
         L2Conv = iterationModule.totalrfinal / iterationModule.totalr0

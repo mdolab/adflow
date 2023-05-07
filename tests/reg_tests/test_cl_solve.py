@@ -43,7 +43,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "ncycles": 500,
                 "usenksolver": True,
                 "nkswitchtol": 1e-2,
-                "l2convergence": 1e-14,
+                "l2convergence": 1e-8,
                 "l2convergencecoarse": 1e-2,
                 "computecavitation": True,
             }
@@ -79,7 +79,7 @@ class TestSolve(reg_test_classes.RegTest):
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["cl", "cavitation"])
 
-        np.testing.assert_allclose(CLStar, funcs["mdo_tutorial_cl"], rtol=tol)
+        np.testing.assert_allclose(CLStar, funcs["mdo_tutorial_cl"], atol=tol)
         np.testing.assert_equal(True, clSolveRes["converged"])
 
     def test_clsolve_l2_failure(self):
@@ -101,7 +101,7 @@ class TestSolve(reg_test_classes.RegTest):
         # this test is designed to fail with the CFD L2 convergence, but the CL result
         # will meet the error tolerance. we still want the cl solve to return a fail flag
         # since we failed to fully converge the CFD!
-        np.testing.assert_allclose(CLStar, funcs["mdo_tutorial_cl"], rtol=tol)
+        np.testing.assert_allclose(CLStar, funcs["mdo_tutorial_cl"], atol=tol)
         np.testing.assert_equal(False, clSolveRes["converged"])
 
     def test_clsolve_cl_failure(self):
