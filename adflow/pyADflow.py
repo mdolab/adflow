@@ -1907,6 +1907,7 @@ class ADFLOW(AeroSolver):
         stopOnStall=False,
         writeSolution=False,
         workUnitTime=None,
+        updateCutoff=1e-16,
     ):
         """
         This is a simple secant method search for solving for a
@@ -2111,7 +2112,6 @@ class ADFLOW(AeroSolver):
             self.setOption("L2ConvergenceRel", L2ConvRel[0])
 
         # initialize the first alpha guess
-        self.setAeroProblem(aeroProblem)
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
         else:
@@ -2221,9 +2221,11 @@ class ADFLOW(AeroSolver):
                 # we first need to compute the estimate to clalpha
                 clalpha = (fnm1 - fnm2) / (anm1 - anm2)
             else:
-                # we update the clalpha using a relaxed update
-                claNew = (fnm1 - fnm2) / (anm1 - anm2)
-                clalpha += relaxCLa * (claNew - clalpha)
+                # only update clalpha if the change in alpha was greater than updateCutoff
+                if numpy.abs(anm1 - anm2) > updateCutoff:
+                    # we update the clalpha using a relaxed update
+                    claNew = (fnm1 - fnm2) / (anm1 - anm2)
+                    clalpha += relaxCLa * (claNew - clalpha)
 
             # similarly, the user might want to relax the alpha update
             anew = anm1 - (fnm1 / clalpha) * relaxAlpha
