@@ -43,7 +43,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "ncycles": 500,
                 "usenksolver": True,
                 "nkswitchtol": 1e-2,
-                "l2convergence": 1e-8,
+                "l2convergence": 1e-12,
                 "l2convergencecoarse": 1e-2,
                 "computecavitation": True,
             }
@@ -74,6 +74,7 @@ class TestSolve(reg_test_classes.RegTest):
             tol=tol,
             relaxCLa=0.9,
             L2ConvRel=[1e-4, 1e-3],
+            updateCutoff=0.01,
         )
         self.assert_solution_failure()
         funcs = {}
