@@ -1937,7 +1937,10 @@ class ADFLOW(AeroSolver):
             issues when only the alpha is changed (Martois effect we
             think). This will reset the flow after each solve which
             solves this problem. Not necessary (or desired) when using
-            the RK solver.
+            the RK solver. The useCorrection option is the preferred
+            way of addressing this issue with the NK/ANK methods.
+            If solver still struggles after restarts with the correction,
+            this option can be used.
         resetANKCFL : bool
             Flag to reset the ANK CFL between solves. Usually, keeping the
             previous CFL will result in faster convergence. However, this
@@ -1991,12 +1994,47 @@ class ADFLOW(AeroSolver):
         workUnitTime : float or None
             Optional parameter that will be passed to getConvergenceHistory
             after each adflow call.
-
+        updateCutoff : float
+            Required change in alpha to trigger the clalpha update with the
+            Secant method. If the change in alpha is smaller than this option
+            we don't even bother changing clalpha and keep using the clalpha
+            value from the last iteration. This prevents clalpha from getting
+            bad updates due to noisy cl outputs that result from small alpha
+            changes.
         Returns
         -------
         resultsDict : dictionary
-            Dictionary that contains various results from the cl solve. TODO add more detail here.
-
+            Dictionary that contains various results from the cl solve. The
+            dictionary contains the following data:
+            >>> {
+            >>>     converged : bool
+            >>>         Flag indicatin cl solver convergence. True means both the
+            >>>         CL solver target tolerance AND the overall target L2 convergence
+            >>>         is achieved. False meahs either one or both of the tolerances
+            >>>         are not reached.
+            >>>     iterations : int
+            >>>         Number of iterations ran.
+            >>>     l2convergence : float
+            >>>         Final relative L2 convergence of the solver w.r.t. free
+            >>>         stream residual. Useful to check overall CFD convergence.
+            >>>     alpha : float
+            >>>         Final angle of attack value
+            >>>     cl : float
+            >>>         Final CL value.
+            >>>     clstar : float
+            >>>         The original target CL. returned for convenience.
+            >>>     error : float
+            >>>         Error in cl value.
+            >>>     clalpha : float
+            >>>         Estimate to clalpha used in the last solver iteration
+            >>>     time : float
+            >>>         Total time the solver needed, in seconds
+            >>>     history : list
+            >>>         List of solver convergence histories. Each entry
+            >>>         in the list contains the convergence history of the
+            >>>         solver from each CL Solve iteration. The history
+            >>>         is returned using the "getConvergenceHistory" method.
+            >>> }
         """
 
         # time the CL solve
@@ -2281,8 +2319,6 @@ class ADFLOW(AeroSolver):
             if converged or (aeroProblem.solveFailed and stopOnStall) or aeroProblem.fatalFail:
                 finalizeSolver(resultsDict, modifiedOptions)
                 return resultsDict
-
-
 
         # results
         L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
