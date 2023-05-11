@@ -1913,6 +1913,7 @@ class ADFLOW(AeroSolver):
         This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
+
         Parameters
         ----------
         aeroProblem : pyAero_problem class
@@ -2001,6 +2002,7 @@ class ADFLOW(AeroSolver):
             value from the last iteration. This prevents clalpha from getting
             bad updates due to noisy cl outputs that result from small alpha
             changes.
+
         Returns
         -------
         resultsDict : dictionary
@@ -2035,6 +2037,7 @@ class ADFLOW(AeroSolver):
             >>>         solver from each CL Solve iteration. The history
             >>>         is returned using the "getConvergenceHistory" method.
             >>> }
+
         """
 
         # time the CL solve
