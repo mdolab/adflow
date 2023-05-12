@@ -80,7 +80,7 @@ class TestRestart(reg_test_classes.RegTest):
                 "mgcycle": "sg",
                 "anksecondordswitchtol": 1e-2,
                 "ankcoupledswitchtol": 1e-4,
-                "l2convergence": 1e-8,
+                "l2convergence": 1e-13,
                 "writeVolumeSolution": False,
                 "writeSurfaceSolution": False,
             }
@@ -94,7 +94,7 @@ class TestRestart(reg_test_classes.RegTest):
         # Create the solver
         self.CFDSolver = ADFLOW(options=options, debug=False)
 
-    def test_no_correction(self):
+    def test_restart_correction(self):
         # start at aoa=0
         self.ap.setDesignVars({f"alpha_{self.ap.name}": 0.0})
         # do the solve
