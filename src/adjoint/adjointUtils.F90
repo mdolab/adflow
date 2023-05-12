@@ -179,7 +179,10 @@ contains
 
             ! Very important to use only Second-Order dissipation for PC
             lumpedDiss = .True.
-            ! We also do not apply acoustic scaling because the dissipation stabilizes ILU
+            ! We also do not apply acoustic scaling because artificial dissipation stabilizes the ILU factorization.
+            ! This is mentioned in "Newton-Krylov-Schwarz Methods for Aerodynamics Problems: Compressible
+            ! and Incompressible Flows on Unstructured Grids" by D. K. Kaushik, D. E. Keyes, and B. F. Smith (1998).
+            ! The linear system will not converge if we reduce the artificial dissipation for the PC.
             acousticScaleSave = acousticScaleFactor
             acousticScaleFactor = one
             ! also use first order advection terms for turbulence
