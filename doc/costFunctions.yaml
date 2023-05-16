@@ -376,18 +376,21 @@ flowpower:
 
 forcexpressure:
   desc: >
-    Pressure component of force in x direction.
+    Pressure component of force in the global :math:`x` direction.
+    The pressure is calcualted as the difference of the pressure on the wall and the free stream pressure.
+    For closed surfaces, the free stream pressure delta will cancel and the resulting force calculation is correct.
+    However, integrating the force on open surfaces may result in unexpected values because the free stream pressure will not cancel.
     Dimensional ``cfxp``
     Units: ``Newton``
 
 forceypressure:
   desc: >
-    Pressure component of force in y direction.
+    Like ``forcexpressure`` but in the global :math:`y` direction.
     Units: ``Newton``
 
 forcezpressure:
   desc: >
-    Pressure component of force in z direction.
+    Like ``forcexpressure`` but in the global :math:`z` direction.
     Units: ``Newton``
 
 forcexviscous:
