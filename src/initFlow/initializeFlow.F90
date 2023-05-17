@@ -200,7 +200,7 @@ contains
         use iteration, only: currentLevel
         use turbbcRoutines, only: applyallTurbBCthisblock, bcTurbTreatment
         use BCRoutines, only: applyallBC_block
-        use utils, only: setPointers, mynorm2
+        use utils, only: setPointers, mynorm2, getRotMatrix
         use communication, only: myID
         implicit none
 
@@ -211,9 +211,9 @@ contains
         real(kind=realType) :: deltaWinf(nwf)
 
         ! variables for rotation update
-        real(kind=realType), dimension(3) :: v1, v2, v3, vCell
-        real(kind=realType), dimension(3, 3) :: rotMat, Wmat, Wmat2
-        real(kind=realType) :: theta, dotProd, mag1, mag2, cosine
+        real(kind=realType), dimension(3) :: vec1, vec2, vCell
+        real(kind=realType), dimension(3, 3) :: rotMat
+        real(kind=realType) :: mag1, mag2
 
         ! Make sure we have the updated wInf
         call adjustInflowAngle()
@@ -253,66 +253,19 @@ contains
             end do
 
         else if (correctionType .eq. "rotate") then
+
             ! Rotate the flow velocities by the rotation change in Winf.
             ! We also scale the velocity magnitudes based on the magnitude change.
-            ! v1 is the old free stream velocity vector, v2 is the new one.
-            v1 = oldWinf(ivx:ivz)
-            v2 = Winf(ivx:ivz)
+            ! vec1 is the old free stream velocity vector, vec2 is the new one.
+            vec1 = oldWinf(ivx:ivz)
+            vec2 = Winf(ivx:ivz)
 
-            ! first compute the angle between the two velocity vectors
-            ! Compute the dot product of v1 and v2
-            dotProd = zero
-            do i = 1, 3
-                dotProd = dotProd + v1(i) * v2(i)
-            end do
+            ! get the general rotation matrix
+            call getRotMatrix(vec1, vec2, rotMat)
 
-            ! Compute the magnitude of v1 and v2
-            mag1 = sqrt(sum(v1**2))
-            mag2 = sqrt(sum(v2**2))
-
-            ! Compute the cosine of the angle between v1 and v2
-            cosine = dotProd / (mag1 * mag2)
-
-            ! Compute the angle in radians
-            theta = acos(cosine)
-
-            ! then compute the normal vector of the rotation plane. This catches all changes in
-            ! alpha and beta, and we don't need to keep track of the individual rotations and apply
-            ! them in the same order.
-
-            ! Compute the cross product of v1 and v2 to get v3
-            v3(1) = v1(2) * v2(3) - v1(3) * v2(2)
-            v3(2) = v1(3) * v2(1) - v1(1) * v2(3)
-            v3(3) = v1(1) * v2(2) - v1(2) * v2(1)
-            ! normalize
-            v3 = v3 / sqrt(sum(v3**2))
-
-            ! compute the rotation matrix.
-            ! for this, we use the "Rodrigues' Rotation Formula" as described here:
-            ! https://mathworld.wolfram.com/RodriguesRotationFormula.html
-            Wmat = zero
-            Wmat2 = zero
-            rotMat = zero
-
-            ! compute Wmat and Wmat^2 first
-            ! W is the multiplication of a 3D levi-civita tensor with v3.
-            ! we could do this in a loop but it takes more lines of code
-            ! and is more difficult to understand. so just set the values
-            Wmat(1, 2) = -v3(3)
-            Wmat(1, 3) = v3(2)
-            Wmat(2, 1) = v3(3)
-            Wmat(2, 3) = -v3(1)
-            Wmat(3, 1) = -v3(2)
-            Wmat(3, 2) = v3(1)
-            Wmat2 = matmul(Wmat, Wmat)
-
-            ! start with identity
-            do i = 1, 3
-                rotMat(i, i) = one
-            end do
-
-            ! add the W terms
-            rotMat = rotMat + sin(theta) * Wmat + (1.0 - cos(theta)) * Wmat2
+            ! Compute the magnitude of vec1 and vec2 so that we can adjust the magnitude of the velocity
+            mag1 = myNorm2(vec1)
+            mag2 = myNorm2(vec2)
 
             ! Loop over all the blocks, rotate each cell's velocity
             do sps = 1, nTimeIntervalsSpectral
