@@ -1,5 +1,6 @@
 {
     "Norm of residual": 0.013097324599817002,
+    "Norm of state vector": 162.02226011347767,
     "metadata": {
         "ADPC": false,
         "AGMGLevels": 1,

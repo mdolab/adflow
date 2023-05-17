@@ -1,5 +1,5 @@
 {
-    "Norm of residual": 5.288485979945897e-05,
+    "Norm of residual": 5.39500518828645e-11,
     "Norm of state vector": 138.25475146276858,
     "metadata": {
         "ADPC": false,
@@ -118,9 +118,9 @@
         "gridFile": "input_files/naca0012_rans-L2.cgns",
         "gridPrecision": "double",
         "gridPrecisionSurface": "single",
-        "infChangeCorrection": false,
-        "infChangeCorrectionTol": 1e-12,
-        "infChangeCorrectionType": "offset",
+        "infChangeCorrection": true,
+        "infChangeCorrectionTol": 0.1,
+        "infChangeCorrectionType": "rotate",
         "innerPreconIts": 1,
         "isoVariables": [],
         "isosurface": {},

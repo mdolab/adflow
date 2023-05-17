@@ -24,6 +24,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "options": {
                 "infChangeCorrection": False,
             },
+            "alpha_new": 4.0,
+            "mach_new": 0.8,
             "ref_file": "flow_restart_correction_disabled.json",
             "aero_prob": ap_naca0012_time_acc,
         },
@@ -34,6 +36,8 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
                 "infChangeCorrection": True,
                 "infChangeCorrectionType": "offset",
             },
+            "alpha_new": 4.0,
+            "mach_new": 0.8,
             "ref_file": "flow_restart_correction_offset.json",
             "aero_prob": ap_naca0012_time_acc,
         },
@@ -44,7 +48,22 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
                 "infChangeCorrection": True,
                 "infChangeCorrectionType": "rotate",
             },
+            "alpha_new": 4.0,
+            "mach_new": 0.8,
             "ref_file": "flow_restart_correction_rotate.json",
+            "aero_prob": ap_naca0012_time_acc,
+        },
+        # small change that's below tolerance
+        {
+            "name": "small_change_no_correction",
+            "options": {
+                "infChangeCorrectionTol": 1e-1,
+                "infChangeCorrection": True,
+                "infChangeCorrectionType": "rotate",
+            },
+            "alpha_new": 0.01,
+            "mach_new": 0.6,
+            "ref_file": "small_change_no_correction.json",
             "aero_prob": ap_naca0012_time_acc,
         },
     ]
@@ -101,9 +120,10 @@ class TestRestart(reg_test_classes.RegTest):
         self.CFDSolver(self.ap)
 
         # change AoA and Mach number
-        self.ap.setDesignVars({f"alpha_{self.ap.name}": 4.0})
-        self.ap.setDesignVars({f"mach_{self.ap.name}": 0.8})
+        self.ap.setDesignVars({f"alpha_{self.ap.name}": self.alpha_new})
+        self.ap.setDesignVars({f"mach_{self.ap.name}": self.mach_new})
 
         # check the changes in residual. the getRes method calls setAeroProblem,
         # which runs the correction update if requested.
         utils.assert_residuals_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        utils.assert_states_allclose(self.handler, self.CFDSolver, tol=1e-10)
