@@ -1641,7 +1641,7 @@ module ANKSolver
     use petsc
     implicit none
 
-    Mat dRdw, dRdwPre, timeStepInv
+    Mat dRdw, dRdwPre, timeStepMat
     Vec wVec, rVec, deltaW, baseRes
     KSP ANK_KSP
 
@@ -1781,9 +1781,9 @@ contains
             call matSetOption(dRdwPre, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call myMatCreate(timeStepInv, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+            call myMatCreate(timeStepMat, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
                              __FILE__, __LINE__)
-            call matSetOption(timeStepInv, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+            call matSetOption(timeStepMat, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
             deallocate (nnzDiagonal, nnzOffDiag)
 
@@ -2007,8 +2007,8 @@ contains
         end if
 
         ! Add the contribution from the time step matrix
-        call computeTimeStepInv()
-        call MatAXPY(dRdwPre, one, timeStepInv, SUBSET_NONZERO_PATTERN, ierr)
+        call computeTimeStepMat()
+        call MatAXPY(dRdwPre, one, timeStepMat, SUBSET_NONZERO_PATTERN, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         if (PreCondType == 'asm') then
@@ -2032,8 +2032,9 @@ contains
 
     end subroutine FormJacobianANK
 
-    subroutine computeTimeStepInv()
-        ! Loops through all cells and constructs the full inverse time step matrix.
+    subroutine computeTimeStepMat()
+        ! Loops through all cells and computes the time step terms
+        ! The terms are stored in the PETSc matrix timeStepMat
 
         use constants
         use blockPointers, only: nDom, il, jl, kl, globalCell
@@ -2059,7 +2060,7 @@ contains
         end if
 
         ! Zero out the time step matrix before we start
-        call MatZeroEntries(timeStepInv, ierr)
+        call MatZeroEntries(timeStepMat, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         do nn = 1, nDom
@@ -2076,7 +2077,7 @@ contains
                             irow = globalCell(i, j, k)
 
                             ! Add the contribution to the PETSc matrix
-                            call MatSetValuesBlocked(timeStepInv, 1, irow, 1, irow, timeStepBlock, ADD_VALUES, ierr)
+                            call MatSetValuesBlocked(timeStepMat, 1, irow, 1, irow, timeStepBlock, ADD_VALUES, ierr)
                             call EChk(ierr, __FILE__, __LINE__)
 
                             ! Extension for setting coarse grids
@@ -2096,15 +2097,15 @@ contains
         end do
 
         ! PETSc Matrix Assembly
-        call MatAssemblyBegin(timeStepInv, MAT_FINAL_ASSEMBLY, ierr)
+        call MatAssemblyBegin(timeStepMat, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
-        call MatAssemblyEnd(timeStepInv, MAT_FINAL_ASSEMBLY, ierr)
+        call MatAssemblyEnd(timeStepMat, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-    end subroutine computeTimeStepInv
+    end subroutine computeTimeStepMat
 
     subroutine computeTimeStepBlock(i, j, k, timeStepBlock)
-        ! Computes the inverse time step block matrix for a given cell i, j, k.
+        ! Computes the time step block matrix for a given cell i, j, k.
 
         use constants
         use inputPhysics, only: machInf => mach
@@ -2510,7 +2511,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Multiply the perturbed state by the time step terms and add it to the residual
-        call MatMultAdd(timeStepInv, inVec, rVec, rVec, ierr)
+        call MatMultAdd(timeStepMat, inVec, rVec, rVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
@@ -2664,7 +2665,7 @@ contains
         ! dtl and volume can both have complex values in them
 
         ! Multiply the delta by the time step terms
-        call MatMult(timeStepInv, deltaW, unsteadyVec, ierr)
+        call MatMult(timeStepMat, deltaW, unsteadyVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Add unsteady term to the steady residual
@@ -2793,7 +2794,7 @@ contains
             call MatDestroy(dRdwPre, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call MatDestroy(timeStepInv, ierr)
+            call MatDestroy(timeStepMat, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecDestroy(wVec, ierr)
@@ -4086,8 +4087,8 @@ contains
             lambda = zero
         end if
 
-        ! Update the inverse time-step matrix
-        call computeTimeStepInv()
+        ! Update the time step matrix
+        call computeTimeStepMat()
 
         ! Update the approximate iteration counter. The +1 is for the
         ! residual evaluations.
