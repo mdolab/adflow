@@ -23,6 +23,7 @@ patt_module_start = re.compile("(\s*module\s)(\w*)(_b)\s*")
 patt_module_end = re.compile("(\s*end module\s)(\w*)(_b)\s*")
 patt_subroutine = re.compile(r"\s*subroutine\s\w*")
 patt_comment = re.compile(r"\s*!.*")
+patt_inttype = re.compile(r"\s*integer\*4\s\w*")
 
 print("Directory of input source files  :", DIR_ORI)
 print("Directory of output source files :", DIR_MOD)
@@ -98,6 +99,11 @@ for f in os.listdir(DIR_ORI):
                     line = line.replace("_b", "_b", 1)
                 else:
                     line = line.replace("_b", "")
+
+            # Tapenade is using nonstandard type declaration need to replace
+            m = patt_inttype.match(line)
+            if m:
+                line = line.replace("integer*4", "integer")
 
             # # See if we need to modify the line with changing the
             # # module names
