@@ -1997,6 +1997,11 @@ contains
         call MatAssemblyEnd(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
+        ! Add the contribution from the time step matrix
+        call computeTimeStepMat(usePC)
+        call MatAXPY(dRdwPre, one, timeStepMat, SUBSET_NONZERO_PATTERN, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
         if (useCoarseMats) then
             do lvl = 2, agmgLevels
                 call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
@@ -2005,11 +2010,6 @@ contains
                 call EChk(ierr, __FILE__, __LINE__)
             end do
         end if
-
-        ! Add the contribution from the time step matrix
-        call computeTimeStepMat()
-        call MatAXPY(dRdwPre, one, timeStepMat, SUBSET_NONZERO_PATTERN, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
 
         if (PreCondType == 'asm') then
             ! Run the super-dee-duper function to setup the ksp object:
@@ -2032,7 +2032,7 @@ contains
 
     end subroutine FormJacobianANK
 
-    subroutine computeTimeStepMat()
+    subroutine computeTimeStepMat(usePC)
         ! Loops through all cells and computes the time step terms
         ! The terms are stored in the PETSc matrix timeStepMat
 
@@ -2044,6 +2044,9 @@ contains
         use utils, only: EChk, setPointers
         use agmg, only: agmgLevels, coarseIndices, A
         implicit none
+
+        ! Input variables
+        logical, intent(in) :: usePC
 
         ! Local Variables
         character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
@@ -2081,7 +2084,8 @@ contains
                             call EChk(ierr, __FILE__, __LINE__)
 
                             ! Extension for setting coarse grids
-                            if (useCoarseMats) then
+                            ! We only do this when we are updating the ANK PC
+                            if (useCoarseMats .and. usePC) then
                                 do lvl = 2, agmgLevels
                                     coarseRows(lvl) = coarseIndices(nn, lvl - 1)%arr(i, j, k)
                                     call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
@@ -4088,7 +4092,7 @@ contains
         end if
 
         ! Update the time step matrix
-        call computeTimeStepMat()
+        call computeTimeStepMat(usePC=.False.)
 
         ! Update the approximate iteration counter. The +1 is for the
         ! residual evaluations.
