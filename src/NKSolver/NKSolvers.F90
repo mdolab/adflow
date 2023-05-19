@@ -1998,7 +1998,6 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Add the contribution from the time step matrix
-        call computeTimeStepMat(usePC)
         call MatAXPY(dRdwPre, one, timeStepMat, SUBSET_NONZERO_PATTERN, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -3774,9 +3773,13 @@ contains
             ! Record the total residuals when the PC is calculated.
             totalR_pcUpdate = totalR
 
-            ! Actually form the preconditioner and factorize it.
+            ! Update the time step terms before forming the PC because the states and CFL may have changed
+            ! This call also updates the time step terms for the AGMG PC if required
+            call computeTimeStepMat(usePC=.True.)
 
+            ! Actually form the preconditioner and factorize it.
             call FormJacobianANK()
+
             if (totalR .le. ANK_secondOrdSwitchTol * totalR0) then
                 if (ANK_coupled) then
                     iterType = "  *CSANK"
@@ -3795,6 +3798,10 @@ contains
             ! Also update the turb PC bec. the CFL has changed
             ANK_iterTurb = 0
         else
+            ! Update the time step terms because the states may have changed from the last step
+            ! This call does not update the time step terms for the AGMG PC
+            call computeTimeStepMat(usePC=.False.)
+
             if (totalR .le. ANK_secondOrdSwitchTol * totalR0) then
                 if (ANK_coupled) then
                     iterType = "   CSANK"
@@ -4090,9 +4097,6 @@ contains
             ANK_iter = -1
             lambda = zero
         end if
-
-        ! Update the time step matrix
-        call computeTimeStepMat(usePC=.False.)
 
         ! Update the approximate iteration counter. The +1 is for the
         ! residual evaluations.
