@@ -283,6 +283,7 @@ module inputIteration
     logical :: freezeTurbSource
     logical :: printIterations
     logical :: printWarnings
+    logical :: printNegativeVolumes
     real(kind=realType), dimension(4) :: turbResScale
     logical :: useDissContinuation
     real(kind=realType) :: dissContMagnitude, dissContMidpoint, dissContSharpness
