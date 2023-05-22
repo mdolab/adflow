@@ -372,7 +372,8 @@ axismoment:
 
 flowpower:
   desc: >
-    Added power by actuator zone to the flow (f.V).
+    Added power by actuator region to the flow volume computed from volume integration.
+    Units: ``Watt``
 
 forcexpressure:
   desc: >
