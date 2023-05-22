@@ -1423,7 +1423,10 @@ sepSensorModel:
   desc: >
     This option allows to pick separation sensor option. The 2 options are "heaviside" and "surfvec".
   heaviside: Based on (Kenway2017b)
-  surfvec: Surface vector projection
+  surfvec: Surface vector projection. The separation is based how much the local flow velocity deviates from the desired flow direction. 
+    We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``). 
+    Then we compute the deviation between the local flow velocity and this desired direction. We use a separation metric to integrate this computation over the desired surface.
+    ``0`` means no separation and ``1`` means the flow is fully separated.
 
 sepSensorOffset:
   desc: >
@@ -1435,10 +1438,12 @@ sepSensorSharpness:
     The sharpness parameter for the separation sensor.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
-sweepAngleCorrection:
+sepSweepAngleCorrection:
   desc: >
     The sweep angle of the wing (25% chord sweep angle is recommended).
-    The value should be in degrees.
+    The value should be in degrees. 
+    It represents the desired flow direction over the surface, which is normal to  quarter chord line.
+    This angle correction is considered to be the classic sweep angle correction for airfoils in ASO to compute the effcetive Mach number and lift.
 
 computeCavitation:
   desc: >

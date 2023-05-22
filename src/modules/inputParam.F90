@@ -293,7 +293,7 @@ module inputCostFunctions
     use constants
     integer(kind=inttype) :: sepmodel = heaviside
     real(kind=realtype) :: sepSensorOffset = zero
-    real(kind=realtype) :: sweepAngleCorrection = zero
+    real(kind=realtype) :: sepsweepAngleCorrection 
     real(kind=realtype) :: sepSensorSharpness = 10.0_realType
     real(kind=realtype) :: cavSensorOffset
     real(kind=realtype) :: cavSensorSharpness

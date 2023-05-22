@@ -2322,7 +2322,7 @@ class ADFLOW(AeroSolver):
             Desired tolerance for sepSensor
 
         sepName : str or None
-            User supplied function to use for sep sensor (default) or sep constraint. May be a
+            User supplied function to use for sep sensor. May be a
             user-added group function.
 
         Returns
@@ -5446,7 +5446,7 @@ class ADFLOW(AeroSolver):
             "sepSensorModel": [str, ["heaviside", "surfvec"]],
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
-            "sweepAngleCorrection": [float, 0.0],
+            "sepSweepAngleCorrection": [float, 0.0],
             "cavSensorOffset": [float, 0.0],
             "cavSensorSharpness": [float, 10.0],
             "cavExponent": [int, 0],
@@ -5839,7 +5839,7 @@ class ADFLOW(AeroSolver):
             },
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
-            "sweepanglecorrection": ["cost", "sweepanglecorrection"],
+            "sepsweepanglecorrection": ["cost", "sepsweepanglecorrection"],
             "cavsensoroffset": ["cost", "cavsensoroffset"],
             "cavsensorsharpness": ["cost", "cavsensorsharpness"],
             "cavexponent": ["cost", "cavexponent"],

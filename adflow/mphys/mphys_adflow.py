@@ -1173,11 +1173,9 @@ class ADflowBuilder(Builder):
 
         if multiUSmesh_optionsDict is not None:
             self.multiUSmesh = True
-            # self.MultiUSmeshGrid = options["gridfile"]
             self.multimesh_options = multiUSmesh_optionsDict
         else:
             self.multiUSmesh = False
-            # self.MultiUSmeshGrid = None
             self.multimesh_options = None
 
         # defaults:
