@@ -1351,6 +1351,9 @@ class ADFLOW(AeroSolver):
         # Save the winf vector. (just the flow part)
         self.curAP.adflowData.oldWinf = self.adflow.flowvarrefstate.winf[0:5].copy()
 
+        # Save the current ANK CFL in the ap data
+        self.curAP.adflowData.ank_cfl = self.adflow.anksolver.ank_cfl
+
         # Assign Fail Flags
         self.curAP.solveFailed = bool(self.adflow.killsignals.routinefailed)
         self.curAP.fatalFail = bool(self.adflow.killsignals.fatalfail)
@@ -2878,6 +2881,8 @@ class ADFLOW(AeroSolver):
 
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         self._resetFlow()
+        # also reset the ank cfl for this AP
+        self.resetANKCFL(aeroProblem)
 
     def _resetFlow(self):
         strLvl = self.getOption("MGStartLevel")
@@ -2894,6 +2899,20 @@ class ADFLOW(AeroSolver):
         self.adflow.killsignals.routinefailed = False
         self.adflow.killsignals.fatalfail = False
         self.adflow.nksolver.freestreamresset = False
+
+    def resetANKCFL(self, aeroProblem):
+        """
+        Resets the ANK CFL of the aeroProblem to the value set by "ANKCFL0" option.
+        During the first ANK iteration that follows, this will be overwritten
+        by the ANK solver itself with the CFL Min logic based on relative
+        convergence. This is useful if keeping a really high ANK CFL is not desired.
+
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem object
+            The aeroproblem whose ANK CFL will be reset.
+        """
+        aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
 
     def getSolution(self, groupName=None):
         """Retrieve the basic solution variables from the solver. This will
@@ -3104,6 +3123,8 @@ class ADFLOW(AeroSolver):
             else:
                 self._resetFlow()
 
+            aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
+
         if failedMesh:
             self.adflow.killsignals.fatalfail = True
 
@@ -3127,6 +3148,10 @@ class ADFLOW(AeroSolver):
             self.adflow.anksolver.destroyanksolver()
             if releaseAdjointMemory:
                 self.releaseAdjointMemory()
+
+        if not self.getOption("ANKCFLReset"):
+            # also set the ANK CFL to the last value if we are restarting
+            self.adflow.anksolver.ank_cfl = aeroProblem.adflowData.ank_cfl
 
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
@@ -4733,6 +4758,11 @@ class ADFLOW(AeroSolver):
 
         return 3 * nnodes * ntime
 
+    def getNCells(self):
+        """Return the total number of cells in the mesh"""
+
+        return self.adflow.adjointvars.ncellsglobal[0]
+
     def getStates(self):
         """Return the states on this processor. Used in aerostructural
         analysis"""
@@ -5354,6 +5384,7 @@ class ADFLOW(AeroSolver):
             "ANKSubspaceSize": [int, -1],
             "ANKMaxIter": [int, 40],
             "ANKLinearSolveTol": [float, 0.05],
+            "ANKLinearSolveBuffer": [float, 0.01],
             "ANKLinResMax": [float, 0.1],
             "ANKASMOverlap": [int, 1],
             "ANKPCILUFill": [int, 2],
@@ -5366,6 +5397,7 @@ class ADFLOW(AeroSolver):
             "ANKCFLFactor": [float, 10.0],
             "ANKCFLExponent": [float, 0.5],
             "ANKCFLCutback": [float, 0.5],
+            "ANKCFLReset": [bool, True],
             "ANKStepFactor": [float, 1.0],
             "ANKStepMin": [float, 0.01],
             "ANKConstCFLStep": [float, 0.4],
@@ -5377,7 +5409,8 @@ class ADFLOW(AeroSolver):
             "ANKTurbCFLScale": [float, 1.0],
             "ANKUseFullVisc": [bool, True],
             "ANKPCUpdateTol": [float, 0.5],
-            "ANKPCUpdateCutoff": [float, 1e-6],
+            "ANKPCUpdateCutoff": [float, 1e-16],
+            "ANKPCUpdateTolAfterCutoff": [float, 1e-4],
             "ANKADPC": [bool, False],
             "ANKNSubiterTurb": [int, 1],
             "ANKTurbKSPDebug": [bool, False],
@@ -5396,6 +5429,7 @@ class ADFLOW(AeroSolver):
             "printAllOptions": [bool, True],
             "setMonitor": [bool, True],
             "printWarnings": [bool, True],
+            "printNegativeVolumes": [bool, False],
             "monitorVariables": [list, ["cpu", "resrho", "resturb", "cl", "cd"]],
             "surfaceVariables": [list, ["cp", "vx", "vy", "vz", "mach"]],
             "volumeVariables": [list, ["resrho"]],
@@ -5737,6 +5771,7 @@ class ADFLOW(AeroSolver):
             "anksubspacesize": ["ank", "ank_subspace"],
             "ankmaxiter": ["ank", "ank_maxiter"],
             "anklinearsolvetol": ["ank", "ank_rtol"],
+            "anklinearsolvebuffer": ["ank", "ank_atol_buffer"],
             "anklinresmax": ["ank", "ank_linresmax"],
             "ankasmoverlap": ["ank", "ank_asmoverlap"],
             "ankpcilufill": ["ank", "ank_ilufill"],
@@ -5749,6 +5784,7 @@ class ADFLOW(AeroSolver):
             "ankcflfactor": ["ank", "ank_cflfactor"],
             "ankcflexponent": ["ank", "ank_cflexponent"],
             "ankcflcutback": ["ank", "ank_cflcutback"],
+            "ankcflreset": ["ank", "ank_cflreset"],
             "ankstepfactor": ["ank", "ank_stepfactor"],
             "ankstepmin": ["ank", "ank_stepmin"],
             "ankconstcflstep": ["ank", "ank_constcflstep"],
@@ -5761,6 +5797,7 @@ class ADFLOW(AeroSolver):
             "ankusefullvisc": ["ank", "ank_usefullvisc"],
             "ankpcupdatetol": ["ank", "ank_pcupdatetol"],
             "ankpcupdatecutoff": ["ank", "ank_pcupdatecutoff"],
+            "ankpcupdatetolaftercutoff": ["ank", "ank_pcupdatetol2"],
             "ankadpc": ["ank", "ank_adpc"],
             "anknsubiterturb": ["ank", "ank_nsubiterturb"],
             "ankturbkspdebug": ["ank", "ank_turbdebug"],
@@ -5773,6 +5810,7 @@ class ADFLOW(AeroSolver):
             # Misc Parameters
             "printiterations": ["iter", "printiterations"],
             "printwarnings": ["iter", "printwarnings"],
+            "printnegativevolumes": ["iter", "printnegativevolumes"],
             "printtiming": ["adjoint", "printtiming"],
             "setmonitor": ["adjoint", "setmonitor"],
             "storeconvhist": ["io", "storeconvinneriter"],
@@ -6272,6 +6310,7 @@ class adflowFlowCase(object):
         self.callCounter = -1
         self.disp = None
         self.oldWinf = None
+        self.ank_cfl = None
 
 
 class adflowUserFunc(object):
