@@ -1,4 +1,4 @@
-lift: Newtons
+lift:
   desc: >
     Surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the direction of the ``liftIndex`` but perpendicular to the streamwise direction (i.e., dot product in this direction).
     To clarify, the angle of attack ``alpha`` does affect the direction of the force projection.
