@@ -354,9 +354,9 @@ contains
 &   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
-    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), vectnorm(3&
-&   )
-    real(kind=realtype) :: vectnormprod
+    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
+&   vecttangential(3)
+    real(kind=realtype) :: vecttangentialnorm
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
@@ -407,10 +407,6 @@ contains
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
-!     vectcorrected = zero
-!     veccrossprod = zero
-!     vectnorm = zero
-!     vectnormprod = zero
     mpaxis = zero
     mvaxis = zero
     cperror2 = zero
@@ -533,38 +529,43 @@ contains
       v(3) = ww2(i, j, ivz)
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
       if (sepmodel .eq. surfvec) then
-        vectnormprod = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1) + &
-&         veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
+! freestream projection over the surface.
+        vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
+&         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-        vectnorm(1) = veldirfreestream(1) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 1)
-        vectnorm(2) = veldirfreestream(2) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 2)
-        vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 3)
-        vectnorm = vectnorm/(sqrt(vectnorm(1)**2+vectnorm(2)**2+vectnorm&
-&         (3)**2)+1e-16)
-! compute cross product of vectnorm to surface normal
-        veccrossprod(1) = vectnorm(2)*bcdata(mm)%norm(i, j, 3) - &
-&         vectnorm(3)*bcdata(mm)%norm(i, j, 2)
-        veccrossprod(2) = vectnorm(3)*bcdata(mm)%norm(i, j, 1) - &
-&         vectnorm(1)*bcdata(mm)%norm(i, j, 3)
-        veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - &
-&         vectnorm(2)*bcdata(mm)%norm(i, j, 1)
+! tangential vector on the surface, which is the freestream projected vector 
+        vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 1)
+        vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 2)
+        vecttangential(3) = veldirfreestream(3) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 3)
+        vecttangential = vecttangential/(sqrt(vecttangential(1)**2+&
+&         vecttangential(2)**2+vecttangential(3)**2)+1e-16)
+! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
+        veccrossprod(1) = vecttangential(2)*bcdata(mm)%norm(i, j, 3) - &
+&         vecttangential(3)*bcdata(mm)%norm(i, j, 2)
+        veccrossprod(2) = vecttangential(3)*bcdata(mm)%norm(i, j, 1) - &
+&         vecttangential(1)*bcdata(mm)%norm(i, j, 3)
+        veccrossprod(3) = vecttangential(1)*bcdata(mm)%norm(i, j, 2) - &
+&         vecttangential(2)*bcdata(mm)%norm(i, j, 1)
         veccrossprod = veccrossprod/(sqrt(veccrossprod(1)**2+&
 &         veccrossprod(2)**2+veccrossprod(3)**2)+1e-16)
 ! do the sweep angle correction
-        vectcorrected(1) = cos(degtorad*sweepanglecorrection)*vectnorm(1&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(1)
-        vectcorrected(2) = cos(degtorad*sweepanglecorrection)*vectnorm(2&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(2)
-        vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+        vectcorrected(1) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(1) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(1)
+        vectcorrected(2) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(2) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(2)
+        vectcorrected(3) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(3) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(3)
         vectcorrected = vectcorrected/(sqrt(vectcorrected(1)**2+&
 &         vectcorrected(2)**2+vectcorrected(3)**2)+1e-16)
         sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
 &         vectcorrected(3)
-        sensor = one/two*(one-sensor)
+        sensor = half*(one-sensor)
         sensor = sensor*cellarea*blk
         sepsensor = sepsensor + sensor
       else if (sepmodel .eq. heaviside) then

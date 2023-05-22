@@ -1003,12 +1003,12 @@ contains
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
-    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), vectnorm(3&
-&   )
+    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
+&   vecttangential(3)
     real(kind=realtype) :: vectcorrectedd(3), veccrossprodd(3), &
-&   vectnormd(3)
-    real(kind=realtype) :: vectnormprod
-    real(kind=realtype) :: vectnormprodd
+&   vecttangentiald(3)
+    real(kind=realtype) :: vecttangentialnorm
+    real(kind=realtype) :: vecttangentialnormd
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: xcd, xcod, ycd, ycod, zcd, zcod, rd(3)
@@ -1078,10 +1078,6 @@ contains
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
-!     vectcorrected = zero
-!     veccrossprod = zero
-!     vectnorm = zero
-!     vectnormprod = zero
     mpaxis = zero
     mvaxis = zero
     cperror2 = zero
@@ -1094,12 +1090,12 @@ contains
     cpmin_ks_sumd = 0.0_8
     vd = 0.0_8
     mpaxisd = 0.0_8
+    vecttangentiald = 0.0_8
     veccrossprodd = 0.0_8
     cperror2d = 0.0_8
     fpd = 0.0_8
     mpd = 0.0_8
     cavitationd = 0.0_8
-    vectnormd = 0.0_8
     sepsensord = 0.0_8
 !
 !         integrate the inviscid contribution over the solid walls,
@@ -1295,49 +1291,53 @@ contains
       vd = (vd*(result1+1e-16)-v*result1d)/(result1+1e-16)**2
       v = v/(result1+1e-16)
       if (sepmodel .eq. surfvec) then
-        vectnormprodd = bcdata(mm)%norm(i, j, 1)*veldirfreestreamd(1) + &
-&         bcdata(mm)%norm(i, j, 2)*veldirfreestreamd(2) + bcdata(mm)%&
-&         norm(i, j, 3)*veldirfreestreamd(3)
-        vectnormprod = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1) + &
-&         veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
+! freestream projection over the surface.
+        vecttangentialnormd = bcdata(mm)%norm(i, j, 1)*veldirfreestreamd&
+&         (1) + bcdata(mm)%norm(i, j, 2)*veldirfreestreamd(2) + bcdata(&
+&         mm)%norm(i, j, 3)*veldirfreestreamd(3)
+        vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
+&         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-        vectnormd(1) = veldirfreestreamd(1) - bcdata(mm)%norm(i, j, 1)*&
-&         vectnormprodd
-        vectnorm(1) = veldirfreestream(1) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 1)
-        vectnormd(2) = veldirfreestreamd(2) - bcdata(mm)%norm(i, j, 2)*&
-&         vectnormprodd
-        vectnorm(2) = veldirfreestream(2) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 2)
-        vectnormd(3) = veldirfreestreamd(3) - bcdata(mm)%norm(i, j, 3)*&
-&         vectnormprodd
-        vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 3)
-        arg1d = 2*vectnorm(1)*vectnormd(1) + 2*vectnorm(2)*vectnormd(2) &
-&         + 2*vectnorm(3)*vectnormd(3)
-        arg1 = vectnorm(1)**2 + vectnorm(2)**2 + vectnorm(3)**2
+! tangential vector on the surface, which is the freestream projected vector 
+        vecttangentiald(1) = veldirfreestreamd(1) - bcdata(mm)%norm(i, j&
+&         , 1)*vecttangentialnormd
+        vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 1)
+        vecttangentiald(2) = veldirfreestreamd(2) - bcdata(mm)%norm(i, j&
+&         , 2)*vecttangentialnormd
+        vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 2)
+        vecttangentiald(3) = veldirfreestreamd(3) - bcdata(mm)%norm(i, j&
+&         , 3)*vecttangentialnormd
+        vecttangential(3) = veldirfreestream(3) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 3)
+        arg1d = 2*vecttangential(1)*vecttangentiald(1) + 2*&
+&         vecttangential(2)*vecttangentiald(2) + 2*vecttangential(3)*&
+&         vecttangentiald(3)
+        arg1 = vecttangential(1)**2 + vecttangential(2)**2 + &
+&         vecttangential(3)**2
         if (arg1 .eq. 0.0_8) then
           result1d = 0.0_8
         else
           result1d = arg1d/(2.0*sqrt(arg1))
         end if
         result1 = sqrt(arg1)
-        vectnormd = (vectnormd*(result1+1e-16)-vectnorm*result1d)/(&
-&         result1+1e-16)**2
-        vectnorm = vectnorm/(result1+1e-16)
-! compute cross product of vectnorm to surface normal
-        veccrossprodd(1) = bcdata(mm)%norm(i, j, 3)*vectnormd(2) - &
-&         bcdata(mm)%norm(i, j, 2)*vectnormd(3)
-        veccrossprod(1) = vectnorm(2)*bcdata(mm)%norm(i, j, 3) - &
-&         vectnorm(3)*bcdata(mm)%norm(i, j, 2)
-        veccrossprodd(2) = bcdata(mm)%norm(i, j, 1)*vectnormd(3) - &
-&         bcdata(mm)%norm(i, j, 3)*vectnormd(1)
-        veccrossprod(2) = vectnorm(3)*bcdata(mm)%norm(i, j, 1) - &
-&         vectnorm(1)*bcdata(mm)%norm(i, j, 3)
-        veccrossprodd(3) = bcdata(mm)%norm(i, j, 2)*vectnormd(1) - &
-&         bcdata(mm)%norm(i, j, 1)*vectnormd(2)
-        veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - &
-&         vectnorm(2)*bcdata(mm)%norm(i, j, 1)
+        vecttangentiald = (vecttangentiald*(result1+1e-16)-&
+&         vecttangential*result1d)/(result1+1e-16)**2
+        vecttangential = vecttangential/(result1+1e-16)
+! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
+        veccrossprodd(1) = bcdata(mm)%norm(i, j, 3)*vecttangentiald(2) -&
+&         bcdata(mm)%norm(i, j, 2)*vecttangentiald(3)
+        veccrossprod(1) = vecttangential(2)*bcdata(mm)%norm(i, j, 3) - &
+&         vecttangential(3)*bcdata(mm)%norm(i, j, 2)
+        veccrossprodd(2) = bcdata(mm)%norm(i, j, 1)*vecttangentiald(3) -&
+&         bcdata(mm)%norm(i, j, 3)*vecttangentiald(1)
+        veccrossprod(2) = vecttangential(3)*bcdata(mm)%norm(i, j, 1) - &
+&         vecttangential(1)*bcdata(mm)%norm(i, j, 3)
+        veccrossprodd(3) = bcdata(mm)%norm(i, j, 2)*vecttangentiald(1) -&
+&         bcdata(mm)%norm(i, j, 1)*vecttangentiald(2)
+        veccrossprod(3) = vecttangential(1)*bcdata(mm)%norm(i, j, 2) - &
+&         vecttangential(2)*bcdata(mm)%norm(i, j, 1)
         arg1d = 2*veccrossprod(1)*veccrossprodd(1) + 2*veccrossprod(2)*&
 &         veccrossprodd(2) + 2*veccrossprod(3)*veccrossprodd(3)
         arg1 = veccrossprod(1)**2 + veccrossprod(2)**2 + veccrossprod(3)&
@@ -1352,18 +1352,24 @@ contains
 &         result1d)/(result1+1e-16)**2
         veccrossprod = veccrossprod/(result1+1e-16)
 ! do the sweep angle correction
-        vectcorrectedd(1) = cos(degtorad*sweepanglecorrection)*vectnormd&
-&         (1) + sin(degtorad*sweepanglecorrection)*veccrossprodd(1)
-        vectcorrected(1) = cos(degtorad*sweepanglecorrection)*vectnorm(1&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(1)
-        vectcorrectedd(2) = cos(degtorad*sweepanglecorrection)*vectnormd&
-&         (2) + sin(degtorad*sweepanglecorrection)*veccrossprodd(2)
-        vectcorrected(2) = cos(degtorad*sweepanglecorrection)*vectnorm(2&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(2)
-        vectcorrectedd(3) = cos(degtorad*sweepanglecorrection)*vectnormd&
-&         (3) + sin(degtorad*sweepanglecorrection)*veccrossprodd(3)
-        vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+        vectcorrectedd(1) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangentiald(1) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprodd(1)
+        vectcorrected(1) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(1) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(1)
+        vectcorrectedd(2) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangentiald(2) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprodd(2)
+        vectcorrected(2) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(2) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(2)
+        vectcorrectedd(3) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangentiald(3) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprodd(3)
+        vectcorrected(3) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(3) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(3)
         arg1d = 2*vectcorrected(1)*vectcorrectedd(1) + 2*vectcorrected(2&
 &         )*vectcorrectedd(2) + 2*vectcorrected(3)*vectcorrectedd(3)
         arg1 = vectcorrected(1)**2 + vectcorrected(2)**2 + vectcorrected&
@@ -1382,8 +1388,8 @@ contains
 &         vectcorrected(3) + v(3)*vectcorrectedd(3)
         sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
 &         vectcorrected(3)
-        sensord = -(one*sensord/two)
-        sensor = one/two*(one-sensor)
+        sensord = -(half*sensord)
+        sensor = half*(one-sensor)
         sensord = blk*(sensord*cellarea+sensor*cellaread)
         sensor = sensor*cellarea*blk
         sepsensord = sepsensord + sensord
@@ -1717,9 +1723,9 @@ contains
 &   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
-    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), vectnorm(3&
-&   )
-    real(kind=realtype) :: vectnormprod
+    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
+&   vecttangential(3)
+    real(kind=realtype) :: vecttangentialnorm
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
@@ -1773,10 +1779,6 @@ contains
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
-!     vectcorrected = zero
-!     veccrossprod = zero
-!     vectnorm = zero
-!     vectnormprod = zero
     mpaxis = zero
     mvaxis = zero
     cperror2 = zero
@@ -1902,43 +1904,49 @@ contains
       result1 = sqrt(arg1)
       v = v/(result1+1e-16)
       if (sepmodel .eq. surfvec) then
-        vectnormprod = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1) + &
-&         veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
+! freestream projection over the surface.
+        vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
+&         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-        vectnorm(1) = veldirfreestream(1) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 1)
-        vectnorm(2) = veldirfreestream(2) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 2)
-        vectnorm(3) = veldirfreestream(3) - vectnormprod*bcdata(mm)%norm&
-&         (i, j, 3)
-        arg1 = vectnorm(1)**2 + vectnorm(2)**2 + vectnorm(3)**2
+! tangential vector on the surface, which is the freestream projected vector 
+        vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 1)
+        vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 2)
+        vecttangential(3) = veldirfreestream(3) - vecttangentialnorm*&
+&         bcdata(mm)%norm(i, j, 3)
+        arg1 = vecttangential(1)**2 + vecttangential(2)**2 + &
+&         vecttangential(3)**2
         result1 = sqrt(arg1)
-        vectnorm = vectnorm/(result1+1e-16)
-! compute cross product of vectnorm to surface normal
-        veccrossprod(1) = vectnorm(2)*bcdata(mm)%norm(i, j, 3) - &
-&         vectnorm(3)*bcdata(mm)%norm(i, j, 2)
-        veccrossprod(2) = vectnorm(3)*bcdata(mm)%norm(i, j, 1) - &
-&         vectnorm(1)*bcdata(mm)%norm(i, j, 3)
-        veccrossprod(3) = vectnorm(1)*bcdata(mm)%norm(i, j, 2) - &
-&         vectnorm(2)*bcdata(mm)%norm(i, j, 1)
+        vecttangential = vecttangential/(result1+1e-16)
+! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
+        veccrossprod(1) = vecttangential(2)*bcdata(mm)%norm(i, j, 3) - &
+&         vecttangential(3)*bcdata(mm)%norm(i, j, 2)
+        veccrossprod(2) = vecttangential(3)*bcdata(mm)%norm(i, j, 1) - &
+&         vecttangential(1)*bcdata(mm)%norm(i, j, 3)
+        veccrossprod(3) = vecttangential(1)*bcdata(mm)%norm(i, j, 2) - &
+&         vecttangential(2)*bcdata(mm)%norm(i, j, 1)
         arg1 = veccrossprod(1)**2 + veccrossprod(2)**2 + veccrossprod(3)&
 &         **2
         result1 = sqrt(arg1)
         veccrossprod = veccrossprod/(result1+1e-16)
 ! do the sweep angle correction
-        vectcorrected(1) = cos(degtorad*sweepanglecorrection)*vectnorm(1&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(1)
-        vectcorrected(2) = cos(degtorad*sweepanglecorrection)*vectnorm(2&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(2)
-        vectcorrected(3) = cos(degtorad*sweepanglecorrection)*vectnorm(3&
-&         ) + sin(degtorad*sweepanglecorrection)*veccrossprod(3)
+        vectcorrected(1) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(1) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(1)
+        vectcorrected(2) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(2) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(2)
+        vectcorrected(3) = cos(degtorad*sepsweepanglecorrection)*&
+&         vecttangential(3) + sin(degtorad*sepsweepanglecorrection)*&
+&         veccrossprod(3)
         arg1 = vectcorrected(1)**2 + vectcorrected(2)**2 + vectcorrected&
 &         (3)**2
         result1 = sqrt(arg1)
         vectcorrected = vectcorrected/(result1+1e-16)
         sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
 &         vectcorrected(3)
-        sensor = one/two*(one-sensor)
+        sensor = half*(one-sensor)
         sensor = sensor*cellarea*blk
         sepsensor = sepsensor + sensor
       else if (sepmodel .eq. heaviside) then
