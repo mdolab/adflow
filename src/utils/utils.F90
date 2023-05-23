@@ -6558,5 +6558,81 @@ contains
 
     end subroutine getCGNSZoneName
 
+    subroutine getRotMatrix(vec1, vec2, rotMat)
+        !
+        !       getRotmatrix computes and returns a rotation matrix that rotates
+        !       the direction of vec1 to the direction of vec2. vec1 and vec2 are
+        !       arrays of size 3, and the routine returns the dense 3 by 3 rotMat
+        !       matrix. The vectors don't need to be normalized.
+        !
+        use constants
+
+        implicit none
+
+        real(kind=realType), dimension(3), intent(in) :: vec1, vec2
+        real(kind=realType), dimension(3, 3), intent(out) :: rotMat
+
+        integer(kind=intType) :: i
+        real(kind=realType), dimension(3) :: vec3
+        real(kind=realType), dimension(3, 3) :: Wmat, Wmat2
+        real(kind=realType) :: theta, dotProd, mag1, mag2, cosine
+
+        ! first compute the angle between the two velocity vectors
+        ! Compute the dot product of vec1 and vec2
+        dotProd = zero
+        do i = 1, 3
+            dotProd = dotProd + vec1(i) * vec2(i)
+        end do
+
+        ! Compute the magnitude of vec1 and vec2
+        mag1 = myNorm2(vec1)
+        mag2 = myNorm2(vec2)
+
+        ! Compute the cosine of the angle between vec1 and vec2
+        cosine = dotProd / (mag1 * mag2)
+
+        ! Compute the angle in radians
+        theta = acos(cosine)
+
+        ! then compute the normal vector of the rotation plane. This catches all changes in
+        ! alpha and beta, and we don't need to keep track of the individual rotations and apply
+        ! them in the same order.
+
+        ! Compute the cross product of vec1 and vec2 to get vec3
+        vec3(1) = vec1(2) * vec2(3) - vec1(3) * vec2(2)
+        vec3(2) = vec1(3) * vec2(1) - vec1(1) * vec2(3)
+        vec3(3) = vec1(1) * vec2(2) - vec1(2) * vec2(1)
+        ! normalize
+        vec3 = vec3 / sqrt(sum(vec3**2))
+
+        ! compute the rotation matrix.
+        ! for this, we use the "Rodrigues' Rotation Formula" as described here:
+        ! https://mathworld.wolfram.com/RodriguesRotationFormula.html
+        Wmat = zero
+        Wmat2 = zero
+        rotMat = zero
+
+        ! compute Wmat and Wmat^2 first
+        ! W is the multiplication of a 3D levi-civita tensor with vec3.
+        ! we could do this in a loop but it takes more lines of code
+        ! and is more difficult to understand. so just set the values
+        Wmat(1, 2) = -vec3(3)
+        Wmat(1, 3) = vec3(2)
+        Wmat(2, 1) = vec3(3)
+        Wmat(2, 3) = -vec3(1)
+        Wmat(3, 1) = -vec3(2)
+        Wmat(3, 2) = vec3(1)
+        Wmat2 = matmul(Wmat, Wmat)
+
+        ! start with identity
+        do i = 1, 3
+            rotMat(i, i) = one
+        end do
+
+        ! add the W terms
+        rotMat = rotMat + sin(theta) * Wmat + (1.0 - cos(theta)) * Wmat2
+
+    end subroutine getRotMatrix
+
 #endif
 end module utils
