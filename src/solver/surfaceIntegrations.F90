@@ -163,9 +163,9 @@ contains
             funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS * globalVals(iAxisMoment, sps)
             funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS * globalVals(iSepAvg, sps)
             funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + &
-                ovrNTS * globalVals(iSepAvg + 1, sps)
-            funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) +&
-                ovrNTS * globalVals(iSepAvg + 2, sps)
+                                                ovrNTS * globalVals(iSepAvg + 1, sps)
+            funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + &
+                                                ovrNTS * globalVals(iSepAvg + 2, sps)
             funcValues(costFuncArea) = funcValues(costFuncArea) + ovrNTS * globalVals(iArea, sps)
             funcValues(costFuncFlowPower) = funcValues(costFuncFlowPower) + ovrNTS * globalVals(iPower, sps)
 
@@ -210,9 +210,9 @@ contains
             if (gArea /= zero) then
                 ! area averaged pressure
                 funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + &
-                    ovrNTS * globalVals(iAreaPTot, sps) / gArea
+                                               ovrNTS * globalVals(iAreaPTot, sps) / gArea
                 funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + &
-                    ovrNTS * globalVals(iAreaPs, sps) / gArea
+                                             ovrNTS * globalVals(iAreaPs, sps) / gArea
             end if
 
             funcValues(costFuncMdot) = funcValues(costFuncMdot) + ovrNTS * mFlow
