@@ -187,7 +187,7 @@ contains
     ! ----------------------------------------------------------------------
 
 #ifndef  USE_TAPENADE
-    subroutine infChangeCorrection(oldWinf)
+    subroutine infChangeCorrection(oldWinf, correctionTol, correctionType)
         ! Adjust the flow states to a change in wInf
         use constants
         use blockPointers, only: il, jl, kl, w, nDom, d2wall
@@ -200,44 +200,97 @@ contains
         use iteration, only: currentLevel
         use turbbcRoutines, only: applyallTurbBCthisblock, bcTurbTreatment
         use BCRoutines, only: applyallBC_block
-        use utils, only: setPointers, mynorm2
+        use utils, only: setPointers, mynorm2, getRotMatrix
+        use communication, only: myID
         implicit none
 
         real(kind=realType), intent(in), dimension(nwf) :: oldWinf
+        real(kind=realType), intent(in) :: correctionTol
+        character*(*), intent(in) :: correctionType
         integer(kind=intType) :: sps, nn, i, j, k, l
         real(kind=realType) :: deltaWinf(nwf)
+
+        ! variables for rotation update
+        real(kind=realType), dimension(3) :: vec1, vec2, vCell
+        real(kind=realType), dimension(3, 3) :: rotMat
+        real(kind=realType) :: mag1, mag2
 
         ! Make sure we have the updated wInf
         call adjustInflowAngle()
         call referenceState
 
+        ! first check if the state changed enough to warrant a correction. This tolerance
+        ! can be adjusted from python. Default is 1e-12.
         deltaWinf = Winf(1:nwf) - oldWinf(1:nwf)
 
-        if (mynorm2(deltaWinf) < 1e-12) then
+        if (mynorm2(deltaWinf) < correctionTol) then
             ! The change deltaWinf is so small, (or zero) don't do the
             ! update and just return. This will save some time when the
             ! solver is called with the same AP conditions multiple times,
             ! such as during a GS AS solution
-
             return
         end if
 
-        ! Loop over all the blocks, adding the subtracting off the oldWinf
-        do sps = 1, nTimeIntervalsSpectral
-            do nn = 1, nDom
-                call setPointers(nn, 1_intType, sps)
-                do k = 2, kl
-                    do j = 2, jl
-                        do i = 2, il
-                            do l = 1, nwf
-                                w(i, j, k, l) = w(i, j, k, l) + deltaWinf(l)
+        ! The state changed enough so we will run a correction update.
+        ! Check which correction type we are using
+        if (correctionType .eq. "offset") then
+
+            ! Loop over all the blocks, adding the offset between the old and new Winf
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+                    call setPointers(nn, 1_intType, sps)
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
+                                do l = 1, nwf
+                                    w(i, j, k, l) = w(i, j, k, l) + deltaWinf(l)
+                                end do
                             end do
                         end do
                     end do
+                    call applyAllBC_block(.True.)
                 end do
-                call applyAllBC_block(.True.)
             end do
-        end do
+
+        else if (correctionType .eq. "rotate") then
+
+            ! Rotate the flow velocities by the rotation change in Winf.
+            ! We also scale the velocity magnitudes based on the magnitude change.
+            ! vec1 is the old free stream velocity vector, vec2 is the new one.
+            vec1 = oldWinf(ivx:ivz)
+            vec2 = Winf(ivx:ivz)
+
+            ! get the general rotation matrix
+            call getRotMatrix(vec1, vec2, rotMat)
+
+            ! Compute the magnitude of vec1 and vec2 so that we can adjust the magnitude of the velocity
+            mag1 = myNorm2(vec1)
+            mag2 = myNorm2(vec2)
+
+            ! Loop over all the blocks, rotate each cell's velocity
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+                    call setPointers(nn, 1_intType, sps)
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
+                                ! pick out the cell velocity
+                                vCell = w(i, j, k, ivx:ivz)
+                                ! rotate and put back
+                                w(i, j, k, ivx:ivz) = matmul(rotMat, vCell)
+                                ! scale the magnitudes
+                                w(i, j, k, ivx:ivz) = w(i, j, k, ivx:ivz) * mag2 / mag1
+                                ! we also add the offset to the density and energy
+                                w(i, j, k, irho) = w(i, j, k, irho) + deltaWinf(irho)
+                                w(i, j, k, irhoE) = w(i, j, k, irhoE) + deltaWinf(irhoE)
+                            end do
+                        end do
+                    end do
+                    call applyAllBC_block(.True.)
+                end do
+            end do
+
+        end if
 
         ! Exchange values
         call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)

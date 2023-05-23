@@ -108,8 +108,10 @@ python module libadflow
            integer(kind=inttype) :: i
          end subroutine setrestartfiles
 
-         subroutine infchangecorrection(oldwinf) ! in :test:solverUtils.F90:solverutils
-           real(kind=realtype) dimension(5),intent(in) :: oldwinf
+         subroutine infchangecorrection(oldwinf, correctiontol, correctiontype) ! in :test:solverUtils.F90:solverutils
+           real(kind=realtype), dimension(5),intent(in) :: oldwinf
+           real(kind=realtype), intent(in) :: correctiontol
+           character*(*), intent(in) :: correctiontype
          end subroutine infchangecorrection
 
        end module initializeflow
