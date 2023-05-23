@@ -1896,10 +1896,6 @@ class ADFLOW(AeroSolver):
         delta=0.5,
         tol=1e-3,
         autoReset=False,
-        resetANKCFL=False,
-        useRKReset=False,
-        nReset=25,
-        useCorrection=True,
         maxIter=20,
         relaxCLa=1.0,
         relaxAlpha=1.0,
@@ -1942,26 +1938,6 @@ class ADFLOW(AeroSolver):
             way of addressing this issue with the NK/ANK methods.
             If solver still struggles after restarts with the correction,
             this option can be used.
-        resetANKCFL : bool
-            Flag to reset the ANK CFL between solves. Usually, keeping the
-            previous CFL will result in faster convergence. However, this
-            feature might be turned off for additional robustness.
-        useRKReset : bool
-            Flag to use the RKReset startup strategy between solver restarts.
-            The nReset parameter controls the number of RK/DADI iterations
-            before ANK/NK solvers start. Using this option overwrites the
-            global adflow option only during this CL solve, and then the
-            original value is replaced.
-        nReset : int
-            Number of RK/DADI iterations to run if we are using the
-            RKReset startup strategy. Similar to the explanation above,
-            this option temporarily overwrites the ADflow option. The original
-            option value is replaced once the CL Solve is finished.
-        useCorrection : bool
-            Flag to determine if we use the angle of attack correction
-            to the flowfield between iterations. This results in a more
-            robust restart with ANK/NK solvers. Using this option
-            temporarily sets the "infChangeCorrection" to True.
         maxIter : int
             Maximum number of secant solver iterations.
         relaxCLa : float
@@ -2115,24 +2091,6 @@ class ADFLOW(AeroSolver):
         # We keep the original values in this dictionary to be put back once we are done.
         modifiedOptions = {}
 
-        # Overwrite the RK options for the CL solver.
-        # We need to do this to avoid using NK right at the beggining
-        # of the new AoA iteration. When we change the AoA, we only change
-        # the residuals at the boundaries, and the Newton solver will not
-        # allow these residuals to change the rest of the solution.
-        # A few RK iterations allow the total residual to "go uphill",
-        # so that we can converge to a new solution.
-        modifiedOptions["nRKReset"] = self.getOption("nRKReset")
-        modifiedOptions["rkreset"] = self.getOption("rkreset")
-        self.setOption("nRKReset", nReset)
-        self.setOption("rkreset", useRKReset)
-        # also overwrite the free stream correction option. In general, this works
-        # better with the newton type solvers than RK. Keeping the RK switch
-        # for backwards compatability, but the default for this routine now uses
-        # the free stream correction.
-        modifiedOptions["infchangecorrection"] = self.getOption("infchangecorrection")
-        self.setOption("infchangecorrection", useCorrection)
-
         # check if we have a custom relative l2 convergence.
         if L2ConvRel is not None:
             # save the original value
@@ -2160,10 +2118,6 @@ class ADFLOW(AeroSolver):
 
         # Set the starting value
         anm2 = aeroProblem.alpha
-
-        # reset ANK CFL before going into the solution
-        if resetANKCFL:
-            self.resetANKCFL(aeroProblem)
 
         # first analysis. We let the call counter get incremented here, but the following
         # calls do not increase adflow's call counter. As a result, the solution files will be
@@ -2245,10 +2199,6 @@ class ADFLOW(AeroSolver):
             # Set current alpha
             aeroProblem.alpha = anm1
 
-            # reset ANK CFL before going into the solution
-            if resetANKCFL:
-                self.resetANKCFL(aeroProblem)
-
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
             convergenceHistory.append(self.getConvergenceHistory(workUnitTime=workUnitTime))
@@ -2322,24 +2272,6 @@ class ADFLOW(AeroSolver):
             if converged or (aeroProblem.solveFailed and stopOnStall) or aeroProblem.fatalFail:
                 finalizeSolver(resultsDict, modifiedOptions)
                 return resultsDict
-
-        # results
-        L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
-        CL = sol["cl"]
-        err = sol["cl"] - CLStar
-        t2 = time.time()
-        resultsDict = {
-            "converged": converged,
-            "iterations": _iIter + 1,
-            "l2convergence": L2Conv,
-            "alpha": aeroProblem.alpha,
-            "cl": CL,
-            "clstar": CLStar,
-            "error": err,
-            "clalpha": clalpha,
-            "time": t2 - t1,
-            "history": convergenceHistory,
-        }
 
         # we ran out of iterations and did not exit yet. so this is a failed case
         finalizeSolver(resultsDict, modifiedOptions)

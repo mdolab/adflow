@@ -46,6 +46,7 @@ class TestSolve(reg_test_classes.RegTest):
                 "l2convergence": 1e-12,
                 "l2convergencecoarse": 1e-2,
                 "computecavitation": True,
+                "ANKCFLReset": False,
             }
         )
 
@@ -94,7 +95,11 @@ class TestSolve(reg_test_classes.RegTest):
             CLalphaGuess=0.12,
             tol=tol,
             relaxCLa=0.9,
-            L2ConvRel=[1e-4, 1e-2],  # the second value is high to force a failure in the CFD convergence
+            # The second entry in the L2ConvRel list is set to a high tolerance
+            # to force a failure in the CFD convergence.
+            # Converging 2 orders of mag. in the second iteration and onwards
+            # won't be enough to reach the total L2 target.
+            L2ConvRel=[1e-4, 1e-2],
         )
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=["cl", "cavitation"])
