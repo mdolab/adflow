@@ -3136,7 +3136,9 @@ class ADFLOW(AeroSolver):
         # Potentially correct the states based on the change in the alpha
         oldWinf = aeroProblem.adflowData.oldWinf
         if self.getOption("infChangeCorrection") and oldWinf is not None:
-            self.adflow.initializeflow.infchangecorrection(oldWinf)
+            correctionTol = self.getOption("infChangeCorrectionTol")
+            correctionType = self.getOption("infChangeCorrectionType")
+            self.adflow.initializeflow.infchangecorrection(oldWinf, correctionTol, correctionType)
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
@@ -5288,6 +5290,8 @@ class ADFLOW(AeroSolver):
             "lowSpeedPreconditioner": [bool, False],
             "wallDistCutoff": [float, 1e20],
             "infChangeCorrection": [bool, True],
+            "infChangeCorrectionTol": [float, 1e-12],
+            "infChangeCorrectionType": [str, ["offset", "rotate"]],
             "cavitationNumber": [float, 1.4],
             "cpMinRho": [float, 100.0],
             # Common Parameters
@@ -5901,6 +5905,8 @@ class ADFLOW(AeroSolver):
             "cutcallback",
             "explicitsurfacecallback",
             "infchangecorrection",
+            "infchangecorrectiontol",
+            "infchangecorrectiontype",
             "restartadjoint",
             "skipafterfailedadjoint",
             "useexternaldynamicmesh",

@@ -324,9 +324,26 @@ infChangeCorrection:
     Setting this to True will adjust the flowfield everywhere if the angle of attack changes between optimization iterations.
     The idea is that when the angle of attack is changed after a converged simulation, the residuals can stay low since this value only initially affects the residuals of the farfield boundary cells.
     As a result, the solver logic can do weird stuff because it is often based on the L2 norm of the residual.
-    If this option is set to True, we do a simple linear adjustment of every velocity vector in the solution with the same change in alpha.
+    If this option is set to True, we do a simple adjustment of the state vector with respect to the changes in the free stream conditions.
+    The method to compute the correction is determined by ``infChangeCorrectionType``.
+    The correction is only run if the norm of the free stream state change is greater than ``infChangeCorrectionTol``.
     As a result, the residuals jump up and the solver logic works as designed.
     This supersedes the :py:data:`RKReset` approach.
+
+infChangeCorrectionTol:
+  desc: >
+    The tolerance that determines if we will run a correction update when the ``infChangeCorrection`` option is set to True.
+    We first compute the change in the free stream state vector and compute its norm.
+    If this norm is greater than the tolerance set by this option, a correction update is performed.
+    If the norm of the change is smaller than the tolerance, we don't perform a correction update.
+    The default value is appropriate for the default ``"offset"`` type update.
+    When the ``"rotate"`` update type is used, users might want to select a higher tolerance because the vector rotation that determines the update might be ill conditioned with small state changes.
+
+infChangeCorrectionType:
+  desc: >
+    This option determines the method used for the correction update when the ``infChangeCorrection`` option is set to True.
+  offset: The default ``"offset"`` option simply adds the delta free stream state to every cell's state.
+  rotate: The option ``"rotate"`` will rotate the cell velocities by the rotation in the free stream velocity, and add the delta in the free stream velocity to the cells' density and energy values.
 
 cavitationNumber:
   desc: >
