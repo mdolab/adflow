@@ -23,7 +23,8 @@ contains
         ! Working
         real(kind=realType) :: fact, factMoment, ovrNTS
         real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceP, forceV, forceM, &
-                                                                     moment, cForce, cForceP, cForceV, cForceM, cMoment, coFx, coFy, coFz
+                                                                     moment, cForce, cForceP, cForceV, &
+                                                                     cForceM, cMoment, coFx, coFy, coFz
         real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
         real(kind=realType) :: mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                                mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi
@@ -161,8 +162,10 @@ contains
 
             funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS * globalVals(iAxisMoment, sps)
             funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS * globalVals(iSepAvg, sps)
-            funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS * globalVals(iSepAvg + 1, sps)
-            funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS * globalVals(iSepAvg + 2, sps)
+            funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + &
+                ovrNTS * globalVals(iSepAvg + 1, sps)
+            funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) +&
+                ovrNTS * globalVals(iSepAvg + 2, sps)
             funcValues(costFuncArea) = funcValues(costFuncArea) + ovrNTS * globalVals(iArea, sps)
             funcValues(costFuncFlowPower) = funcValues(costFuncFlowPower) + ovrNTS * globalVals(iPower, sps)
 
@@ -206,8 +209,10 @@ contains
             gArea = globalVals(iArea, sps)
             if (gArea /= zero) then
                 ! area averaged pressure
-               funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + ovrNTS * globalVals(iAreaPTot, sps) / gArea
-               funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + ovrNTS * globalVals(iAreaPs, sps) / gArea
+                funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + &
+                    ovrNTS * globalVals(iAreaPTot, sps) / gArea
+                funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + &
+                    ovrNTS * globalVals(iAreaPs, sps) / gArea
             end if
 
             funcValues(costFuncMdot) = funcValues(costFuncMdot) + ovrNTS * mFlow

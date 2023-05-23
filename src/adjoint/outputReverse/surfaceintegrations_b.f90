@@ -1527,7 +1527,7 @@ contains
         vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
 &         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-! tangential vector on the surface, which is the freestream projected vector 
+! tangential vector on the surface, which is the freestream projected vector
         vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
 &         bcdata(mm)%norm(i, j, 1)
         vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
@@ -1942,7 +1942,7 @@ contains
         vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
 &         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-! tangential vector on the surface, which is the freestream projected vector 
+! tangential vector on the surface, which is the freestream projected vector
         vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
 &         bcdata(mm)%norm(i, j, 1)
         vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
@@ -2528,7 +2528,7 @@ contains
         vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
 &         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-! tangential vector on the surface, which is the freestream projected vector 
+! tangential vector on the surface, which is the freestream projected vector
         vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
 &         bcdata(mm)%norm(i, j, 1)
         vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
