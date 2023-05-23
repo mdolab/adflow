@@ -47,6 +47,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
                 "l2convergence": 1e-15,
                 "adjointl2convergence": 1e-15,
                 "sepSensorModel": "surfvec",
+                "sepSweepAngleCorrection": 0.0,
             }
         )
 
