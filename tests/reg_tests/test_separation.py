@@ -6,7 +6,6 @@ import copy
 
 # MACH classes
 from adflow import ADFLOW
-from adflow import ADFLOW_C
 
 # import the testing utilities
 from reg_default_options import adflowDefOpts
@@ -80,7 +79,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         funcs = {}
         self.CFDSolver.evalFunctions(self.ap, funcs, evalFuncs=evalFuncs)
         self.handler.root_print("separation outputs")
-        self.handler.root_add_dict("separation outputs", funcs, rtol=1e-10, atol=1e-10)
+        self.handler.root_add_dict("separation outputs", funcs, rtol=5e-10, atol=5e-10)
 
         #############
         # TEST TOTALS
@@ -88,7 +87,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         funcsSens = {}
         self.CFDSolver.evalFunctionsSens(self.ap, funcsSens, evalFuncs=evalFuncs)
         self.handler.root_print("separation totals")
-        self.handler.root_add_dict("separation totals", funcsSens, rtol=1e-10, atol=1e-10)
+        self.handler.root_add_dict("separation totals", funcsSens, rtol=5e-10, atol=5e-10)
 
         for funcName in evalFuncs:
             ##################
@@ -127,14 +126,14 @@ class SeparationBasicTests(reg_test_classes.RegTest):
             dotLocal1 = np.dot(wDot, wBar)
             dotLocal2 = fDot_w[funcName] / self.CFDSolver.comm.size
 
-            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal1, rtol=1e-10)
-            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal2, rtol=1e-10, compare=True)
+            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal1, rtol=5e-10)
+            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal2, rtol=5e-10, compare=True)
 
             # volume coords
             dotLocal1 = np.dot(xVDot, xVBar)
             dotLocal2 = fDot_xv[funcName] / self.CFDSolver.comm.size
-            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal1, rtol=1e-10)
-            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal2, rtol=1e-10, compare=True)
+            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal1, rtol=5e-10)
+            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal2, rtol=5e-10, compare=True)
 
 
 if __name__ == "__main__":

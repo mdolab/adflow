@@ -23,7 +23,7 @@ contains
         ! Working
         real(kind=realType) :: fact, factMoment, ovrNTS
         real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceP, forceV, forceM, &
-                                                    moment, cForce, cForceP, cForceV, cForceM, cMoment, coFx, coFy, coFz
+                                                                     moment, cForce, cForceP, cForceV, cForceM, cMoment, coFx, coFy, coFz
         real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
         real(kind=realType) :: mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                                mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi
@@ -161,8 +161,8 @@ contains
 
             funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS * globalVals(iAxisMoment, sps)
             funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS * globalVals(iSepAvg, sps)
-           funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS * globalVals(iSepAvg + 1, sps)
-           funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS * globalVals(iSepAvg + 2, sps)
+            funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS * globalVals(iSepAvg + 1, sps)
+            funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS * globalVals(iSepAvg + 2, sps)
             funcValues(costFuncArea) = funcValues(costFuncArea) + ovrNTS * globalVals(iArea, sps)
             funcValues(costFuncFlowPower) = funcValues(costFuncFlowPower) + ovrNTS * globalVals(iPower, sps)
 
@@ -207,7 +207,7 @@ contains
             if (gArea /= zero) then
                 ! area averaged pressure
                funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + ovrNTS * globalVals(iAreaPTot, sps) / gArea
-                funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + ovrNTS * globalVals(iAreaPs, sps) / gArea
+               funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + ovrNTS * globalVals(iAreaPs, sps) / gArea
             end if
 
             funcValues(costFuncMdot) = funcValues(costFuncMdot) + ovrNTS * mFlow
@@ -573,15 +573,15 @@ contains
             if (sepmodel == surfvec) then
                 ! Freestream projection over the surface.
                 vectTangentialNorm = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
-                               velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
-                               velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
-                ! Tangential Vector on the surface, which is the freestream projected vector 
+                                     velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
+                                     velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
+                ! Tangential Vector on the surface, which is the freestream projected vector
                 vectTangential(1) = velDirFreeStream(1) - vectTangentialNorm * BCData(mm)%norm(i, j, 1)
                 vectTangential(2) = velDirFreeStream(2) - vectTangentialNorm * BCData(mm)%norm(i, j, 2)
                 vectTangential(3) = velDirFreeStream(3) - vectTangentialNorm * BCData(mm)%norm(i, j, 3)
 
                 vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
-                                            vectTangential(3)**2) + 1e-16)
+                                                        vectTangential(3)**2) + 1e-16)
 
                 ! compute cross product of vectTangential to surface normal, which will result in surface vector normal to the vectTangential
                 vecCrossProd(1) = vectTangential(2) * BCData(mm)%norm(i, j, 3) - &
