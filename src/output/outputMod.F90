@@ -1424,8 +1424,8 @@ contains
         real(kind=realType) :: tauxx, tauyy, tauzz
         real(kind=realType) :: tauxy, tauxz, tauyz
         real(kind=realType) :: pm1, a, sensor, plocal, sensor1
-        real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectNorm(3)
-        real(kind=realType) :: vectNormProd
+        real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectTangential(3)
+        real(kind=realType) :: vectDotProductFsNormal
         real(kind=realType), dimension(3) :: norm, V
 
         real(kind=realType), dimension(:, :, :), pointer :: ww1, ww2
@@ -2214,24 +2214,24 @@ contains
                     norm(2) = BCData(mm)%norm(ii, jj, 2)
                     norm(3) = BCData(mm)%norm(ii, jj, 3)
 
-                    vectNormProd = velDirFreeStream(1) * norm(1) + &
+                    vectDotProductFsNormal = velDirFreeStream(1) * norm(1) + &
                                    velDirFreeStream(2) * norm(2) + &
                                    velDirFreeStream(3) * norm(3)
 
-                    vectNorm(1) = velDirFreeStream(1) - vectNormProd * norm(1)
-                    vectNorm(2) = velDirFreeStream(2) - vectNormProd * norm(2)
-                    vectNorm(3) = velDirFreeStream(3) - vectNormProd * norm(3)
+                    vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * norm(1)
+                    vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * norm(2)
+                    vectTangential(3) = velDirFreeStream(3) - vectDotProductFsNormal * norm(3)
 
-                    vectNorm = vectNorm / (sqrt(vectNorm(1)**2 + vectNorm(2)**2 + &
-                                                vectNorm(3)**2) + 1e-16)
+                    vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
+                                                vectTangential(3)**2) + 1e-16)
 
                     ! compute cross product of vectnorm to surface normal
-                    vecCrossProd(1) = vectNorm(2) * norm(3) - &
-                                      vectNorm(3) * norm(2)
-                    vecCrossProd(2) = vectNorm(3) * norm(1) - &
-                                      vectNorm(1) * norm(3)
-                    vecCrossProd(3) = vectNorm(1) * norm(2) - &
-                                      vectNorm(2) * norm(1)
+                    vecCrossProd(1) = vectTangential(2) * norm(3) - &
+                                      vectTangential(3) * norm(2)
+                    vecCrossProd(2) = vectTangential(3) * norm(1) - &
+                                      vectTangential(1) * norm(3)
+                    vecCrossProd(3) = vectTangential(1) * norm(2) - &
+                                      vectTangential(2) * norm(1)
 
                     vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
                                                         + vecCrossProd(3)**2) + 1e-16)

@@ -1493,12 +1493,12 @@ verifyExtra:
 
 sepSensorModel:
   desc: >
-    This option allows to pick separation sensor option. The 2 options are "heaviside" and "surfvec".
+    This option allows to pick 2 separation sensor models.
   heaviside: Based on (Kenway2017b)
-  surfvec: Surface vector projection. The separation is based how much the local flow velocity deviates from the desired flow direction. 
-    We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``). 
+  surfvec: Surface vector projection. The separation is based on how much the local flow velocity deviates from the desired flow direction. 
+    We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``) in 3D cases (For airfoils, the desired direction would be the projected freestream vector over the airfoil surface). 
     Then we compute the deviation between the local flow velocity and this desired direction. We use a separation metric to integrate this computation over the desired surface.
-    ``0`` means no separation and ``1`` means the flow is fully separated.
+    ``0`` means no separation and ``1`` means that the flow is fully separated.
 
 sepSensorOffset:
   desc: >
@@ -1512,7 +1512,10 @@ sepSensorSharpness:
 
 sepSweepAngleCorrection:
   desc: >
-    The sweep angle of the wing (25% chord sweep angle is recommended).
+    This option is only for ``surfvec`` separation model in ``sepSensorModel``.
+    This angle is for 3D cases only when the wing has a sweep.
+    For airfoils, by default, this is ``0``.
+    For a 3D case, the sweep angle of the wing (25% chord sweep angle) is recommended.
     The value should be in degrees. 
     It represents the desired flow direction over the surface, which is normal to  quarter chord line.
     This angle correction is considered to be the classic sweep angle correction for airfoils in ASO to compute the effcetive Mach number and lift.

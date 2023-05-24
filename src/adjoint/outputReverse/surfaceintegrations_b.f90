@@ -1291,8 +1291,8 @@ contains
 &   vecttangential(3)
     real(kind=realtype) :: vectcorrectedd(3), veccrossprodd(3), &
 &   vecttangentiald(3)
-    real(kind=realtype) :: vecttangentialnorm
-    real(kind=realtype) :: vecttangentialnormd
+    real(kind=realtype) :: vectdotproductfsnormal
+    real(kind=realtype) :: vectdotproductfsnormald
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: xcd, xcod, ycd, ycod, zcd, zcod, rd(3)
@@ -1524,16 +1524,16 @@ contains
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
       if (sepmodel .eq. surfvec) then
 ! freestream projection over the surface.
-        vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
-&         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
+        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
+&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
 ! tangential vector on the surface, which is the freestream projected vector
-        vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 1)
-        vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 2)
-        vecttangential(3) = veldirfreestream(3) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 3)
+        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 1)
+        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 2)
+        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 3)
         vecttangential = vecttangential/(sqrt(vecttangential(1)**2+&
 &         vecttangential(2)**2+vecttangential(3)**2)+1e-16)
 ! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
@@ -1939,16 +1939,16 @@ contains
       v = tmp0
       if (sepmodel .eq. surfvec) then
 ! freestream projection over the surface.
-        vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
-&         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
+        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
+&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
 ! tangential vector on the surface, which is the freestream projected vector
-        vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 1)
-        vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 2)
-        vecttangential(3) = veldirfreestream(3) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 3)
+        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 1)
+        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 2)
+        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 3)
         tmp1 = vecttangential/(sqrt(vecttangential(1)**2+vecttangential(&
 &         2)**2+vecttangential(3)**2)+1e-16)
         call pushreal8array(vecttangential, 3)
@@ -2132,22 +2132,22 @@ contains
         vecttangentiald(3) = vecttangentiald(3) + 2*vecttangential(3)*&
 &         tempd20
         veldirfreestreamd(3) = veldirfreestreamd(3) + vecttangentiald(3)
-        vecttangentialnormd = -(bcdata(mm)%norm(i, j, 3)*vecttangentiald&
-&         (3))
+        vectdotproductfsnormald = -(bcdata(mm)%norm(i, j, 3)*&
+&         vecttangentiald(3))
         vecttangentiald(3) = 0.0_8
         veldirfreestreamd(2) = veldirfreestreamd(2) + vecttangentiald(2)
-        vecttangentialnormd = vecttangentialnormd - bcdata(mm)%norm(i, j&
-&         , 2)*vecttangentiald(2)
+        vectdotproductfsnormald = vectdotproductfsnormald - bcdata(mm)%&
+&         norm(i, j, 2)*vecttangentiald(2)
         vecttangentiald(2) = 0.0_8
-        vecttangentialnormd = vecttangentialnormd - bcdata(mm)%norm(i, j&
-&         , 1)*vecttangentiald(1)
+        vectdotproductfsnormald = vectdotproductfsnormald - bcdata(mm)%&
+&         norm(i, j, 1)*vecttangentiald(1)
         veldirfreestreamd(1) = veldirfreestreamd(1) + bcdata(mm)%norm(i&
-&         , j, 1)*vecttangentialnormd + vecttangentiald(1)
+&         , j, 1)*vectdotproductfsnormald + vecttangentiald(1)
         vecttangentiald(1) = 0.0_8
         veldirfreestreamd(2) = veldirfreestreamd(2) + bcdata(mm)%norm(i&
-&         , j, 2)*vecttangentialnormd
+&         , j, 2)*vectdotproductfsnormald
         veldirfreestreamd(3) = veldirfreestreamd(3) + bcdata(mm)%norm(i&
-&         , j, 3)*vecttangentialnormd
+&         , j, 3)*vectdotproductfsnormald
         xcod = 0.0_8
         zcod = 0.0_8
         ycod = 0.0_8
@@ -2351,7 +2351,7 @@ contains
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
 &   vecttangential(3)
-    real(kind=realtype) :: vecttangentialnorm
+    real(kind=realtype) :: vectdotproductfsnormal
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
@@ -2525,16 +2525,16 @@ contains
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
       if (sepmodel .eq. surfvec) then
 ! freestream projection over the surface.
-        vecttangentialnorm = veldirfreestream(1)*bcdata(mm)%norm(i, j, 1&
-&         ) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
+        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
+&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
 &         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
 ! tangential vector on the surface, which is the freestream projected vector
-        vecttangential(1) = veldirfreestream(1) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 1)
-        vecttangential(2) = veldirfreestream(2) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 2)
-        vecttangential(3) = veldirfreestream(3) - vecttangentialnorm*&
-&         bcdata(mm)%norm(i, j, 3)
+        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 1)
+        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 2)
+        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 3)
         vecttangential = vecttangential/(sqrt(vecttangential(1)**2+&
 &         vecttangential(2)**2+vecttangential(3)**2)+1e-16)
 ! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
