@@ -1984,33 +1984,34 @@ class ADFLOW(AeroSolver):
         resultsDict : dictionary
             Dictionary that contains various results from the cl solve. The
             dictionary contains the following data:
-            * converged : bool
-                Flag indicating cl solver convergence. True means both the
-                CL solver target tolerance AND the overall target L2 convergence
-                is achieved. False means either one or both of the tolerances
-                are not reached.
-            * iterations : int
-                Number of iterations ran.
-            * l2convergence : float
-                Final relative L2 convergence of the solver w.r.t. free
-                stream residual. Useful to check overall CFD convergence.
-            * alpha : float
-                Final angle of attack value
-            * cl : float
-                Final CL value.
-            * clstar : float
-                The original target CL. returned for convenience.
-            * error : float
-                Error in cl value.
-            * clalpha : float
-                Estimate to clalpha used in the last solver iteration
-            * time : float
-                Total time the solver needed, in seconds
-            * history : list
-                List of solver convergence histories. Each entry
-                in the list contains the convergence history of the
-                solver from each CL Solve iteration. The history
-                is returned using the "getConvergenceHistory" method.
+                converged : bool
+                    Flag indicating cl solver convergence. True means both the
+                    CL solver target tolerance AND the overall target L2 convergence
+                    is achieved. False means either one or both of the tolerances
+                    are not reached.
+                iterations : int
+                    Number of iterations ran.
+                l2convergence : float
+                    Final relative L2 convergence of the solver w.r.t. free
+                    stream residual. Useful to check overall CFD convergence.
+                alpha : float
+                    Final angle of attack value
+                cl : float
+                    Final CL value.
+                clstar : float
+                    The original target CL. returned for convenience.
+                error : float
+                    Error in cl value.
+                clalpha : float
+                    Estimate to clalpha used in the last solver iteration
+                time : float
+                    Total time the solver needed, in seconds
+                history : list
+                    List of solver convergence histories. Each entry
+                    in the list contains the convergence history of the
+                    solver from each CL Solve iteration. The history
+                    is returned using the "getConvergenceHistory" method.
+
         """
 
         # time the CL solve
