@@ -2237,13 +2237,13 @@ contains
                                                         + vecCrossProd(3)**2) + 1e-16)
 
                     ! do the sweep angle correction
-                    vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectNorm(1) + &
+                    vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectTangential(1) + &
                                        sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
 
-                    vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectNorm(2) + &
+                    vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectTangential(2) + &
                                        sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
 
-                    vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectNorm(3) + &
+                    vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectTangential(3) + &
                                        sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
 
                     vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
