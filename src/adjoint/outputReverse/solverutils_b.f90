@@ -41,7 +41,7 @@ contains
     use flowvarrefstate, only : timeref, timerefd, eddymodel, gammainf&
 &   , pinfcorr, pinfcorrd, viscous, rhoinf, rhoinfd
     use inputdiscretization, only : adis, dirscaling, &
-&   radiineededcoarse, radiineededfine, precond
+&   radiineededcoarse, radiineededfine, precond, acousticscalefactor
     use inputphysics, only : equationmode
     use iteration, only : groundlevel, currentlevel
     use section, only : sections
@@ -176,7 +176,8 @@ contains
           else
             abs0 = -qsi
           end if
-          ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          ri = half*(abs0+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in j-direction.
           if (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i, j&
 &             , k)
@@ -190,7 +191,8 @@ contains
           else
             abs1 = -qsj
           end if
-          rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rj = half*(abs1+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in k-direction.
           if (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i, j&
 &             , k)
@@ -204,7 +206,8 @@ contains
           else
             abs2 = -qsk
           end if
-          rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rk = half*(abs2+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! compute the inviscid contribution to the time step.
           if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
 !
@@ -604,7 +607,8 @@ contains
               abs0 = -qsi
               call pushcontrol1b(1)
             end if
-            ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+            ri = half*(abs0+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz&
+&             **2)))
 ! the grid velocity in j-direction.
             if (addgridvelocities) then
               sface = sfacej(i, j-1, k) + sfacej(i, j, k)
@@ -624,7 +628,8 @@ contains
               abs1 = -qsj
               call pushcontrol1b(1)
             end if
-            rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+            rj = half*(abs1+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz&
+&             **2)))
 ! the grid velocity in k-direction.
             if (addgridvelocities) then
               sface = sfacek(i, j, k-1) + sfacek(i, j, k)
@@ -644,7 +649,8 @@ contains
               abs2 = -qsk
               call pushcontrol1b(1)
             end if
-            rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+            rk = half*(abs2+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz&
+&             **2)))
 ! compute the inviscid contribution to the time step.
             if (.not.onlyradii) then
               call pushcontrol1b(0)
@@ -744,7 +750,8 @@ contains
             if (cc2*temp8 .eq. 0.0_8) then
               tempd15 = 0.0
             else
-              tempd15 = half*rkd/(2.0*sqrt(cc2*temp8))
+              tempd15 = acousticscalefactor*half*rkd/(2.0*sqrt(cc2*temp8&
+&               ))
             end if
             tempd16 = cc2*tempd15
             abs2d = half*rkd
@@ -784,7 +791,8 @@ contains
             if (cc2*temp7 .eq. 0.0_8) then
               tempd13 = 0.0
             else
-              tempd13 = half*rjd/(2.0*sqrt(cc2*temp7))
+              tempd13 = acousticscalefactor*half*rjd/(2.0*sqrt(cc2*temp7&
+&               ))
             end if
             tempd14 = cc2*tempd13
             abs1d = half*rjd
@@ -824,7 +832,8 @@ contains
             if (cc2*temp6 .eq. 0.0_8) then
               tempd11 = 0.0
             else
-              tempd11 = half*rid/(2.0*sqrt(cc2*temp6))
+              tempd11 = acousticscalefactor*half*rid/(2.0*sqrt(cc2*temp6&
+&               ))
             end if
             tempd12 = cc2*tempd11
             abs0d = half*rid
@@ -898,7 +907,7 @@ contains
     use flowvarrefstate, only : timeref, eddymodel, gammainf, pinfcorr&
 &   , viscous, rhoinf
     use inputdiscretization, only : adis, dirscaling, &
-&   radiineededcoarse, radiineededfine, precond
+&   radiineededcoarse, radiineededfine, precond, acousticscalefactor
     use inputphysics, only : equationmode
     use iteration, only : groundlevel, currentlevel
     use section, only : sections
@@ -991,7 +1000,8 @@ contains
           else
             abs0 = -qsi
           end if
-          ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          ri = half*(abs0+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in j-direction.
           if (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i, j&
 &             , k)
@@ -1005,7 +1015,8 @@ contains
           else
             abs1 = -qsj
           end if
-          rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rj = half*(abs1+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in k-direction.
           if (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i, j&
 &             , k)
@@ -1019,7 +1030,8 @@ contains
           else
             abs2 = -qsk
           end if
-          rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rk = half*(abs2+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! compute the inviscid contribution to the time step.
           if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
 !

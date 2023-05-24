@@ -108,8 +108,10 @@ python module libadflow
            integer(kind=inttype) :: i
          end subroutine setrestartfiles
 
-         subroutine infchangecorrection(oldwinf) ! in :test:solverUtils.F90:solverutils
-           real(kind=realtype) dimension(5),intent(in) :: oldwinf
+         subroutine infchangecorrection(oldwinf, correctiontol, correctiontype) ! in :test:solverUtils.F90:solverutils
+           real(kind=realtype), dimension(5),intent(in) :: oldwinf
+           real(kind=realtype), intent(in) :: correctiontol
+           character*(*), intent(in) :: correctiontype
          end subroutine infchangecorrection
 
        end module initializeflow
@@ -297,6 +299,7 @@ python module libadflow
          integer(kind=inttype) :: ank_nsubiterturb
          logical :: ank_turbdebug
          logical :: ank_usematrixfree
+         character(256) :: ank_chartimesteptype
          subroutine destroyanksolver
          end subroutine destroyanksolver
 
@@ -1052,6 +1055,7 @@ python module libadflow
          real(kind=realtype) :: vis4
          real(kind=realtype) :: vis2coarse
          real(kind=realtype) :: adis
+         real(kind=realtype) :: acousticscalefactor
          real(kind=realtype) :: kappacoef
          logical :: vortexcorr
          logical :: dirscaling

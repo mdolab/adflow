@@ -33,7 +33,7 @@ contains
     use flowvarrefstate, only : timeref, eddymodel, gammainf, pinfcorr&
 &   , viscous, rhoinf
     use inputdiscretization, only : adis, dirscaling, &
-&   radiineededcoarse, radiineededfine, precond
+&   radiineededcoarse, radiineededfine, precond, acousticscalefactor
     use inputphysics, only : equationmode
     use iteration, only : groundlevel, currentlevel
     use section, only : sections
@@ -142,7 +142,8 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
           end if
-          ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          ri = half*(abs0+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in j-direction.
           if (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i, j&
 &             , k)
@@ -160,7 +161,8 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
           end if
-          rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rj = half*(abs1+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in k-direction.
           if (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i, j&
 &             , k)
@@ -178,7 +180,8 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
           end if
-          rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rk = half*(abs2+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! compute the inviscid contribution to the time step.
 !
 !           adapt the spectral radii if directional scaling must be
@@ -276,7 +279,8 @@ branch = myIntStack(myIntPtr)
           if (temp2*cc2 .eq. 0.0_8) then
             cc2d = 0.0
           else
-            cc2d = half*temp2*rkd/(2.0*sqrt(temp2*cc2))
+            cc2d = acousticscalefactor*half*temp2*rkd/(2.0*sqrt(temp2*&
+&             cc2))
           end if
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
@@ -293,8 +297,8 @@ branch = myIntStack(myIntPtr)
           sz = sj(i, j-1, k, 3) + sj(i, j, k, 3)
           temp1 = sx**2 + sy**2 + sz**2
           abs1d = half*rjd
-          if (.not.temp1*cc2 .eq. 0.0_8) cc2d = cc2d + half*temp1*rjd/(&
-&             2.0*sqrt(temp1*cc2))
+          if (.not.temp1*cc2 .eq. 0.0_8) cc2d = cc2d + &
+&             acousticscalefactor*half*temp1*rjd/(2.0*sqrt(temp1*cc2))
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) then
@@ -310,8 +314,8 @@ branch = myIntStack(myIntPtr)
           sz = si(i-1, j, k, 3) + si(i, j, k, 3)
           temp0 = sx**2 + sy**2 + sz**2
           abs0d = half*rid
-          if (.not.temp0*cc2 .eq. 0.0_8) cc2d = cc2d + half*temp0*rid/(&
-&             2.0*sqrt(temp0*cc2))
+          if (.not.temp0*cc2 .eq. 0.0_8) cc2d = cc2d + &
+&             acousticscalefactor*half*temp0*rid/(2.0*sqrt(temp0*cc2))
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
           if (branch .eq. 0) then
@@ -352,7 +356,7 @@ branch = myIntStack(myIntPtr)
     use flowvarrefstate, only : timeref, eddymodel, gammainf, pinfcorr&
 &   , viscous, rhoinf
     use inputdiscretization, only : adis, dirscaling, &
-&   radiineededcoarse, radiineededfine, precond
+&   radiineededcoarse, radiineededfine, precond, acousticscalefactor
     use inputphysics, only : equationmode
     use iteration, only : groundlevel, currentlevel
     use section, only : sections
@@ -445,7 +449,8 @@ branch = myIntStack(myIntPtr)
           else
             abs0 = -qsi
           end if
-          ri = half*(abs0+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          ri = half*(abs0+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in j-direction.
           if (addgridvelocities) sface = sfacej(i, j-1, k) + sfacej(i, j&
 &             , k)
@@ -459,7 +464,8 @@ branch = myIntStack(myIntPtr)
           else
             abs1 = -qsj
           end if
-          rj = half*(abs1+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rj = half*(abs1+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! the grid velocity in k-direction.
           if (addgridvelocities) sface = sfacek(i, j, k-1) + sfacek(i, j&
 &             , k)
@@ -473,7 +479,8 @@ branch = myIntStack(myIntPtr)
           else
             abs2 = -qsk
           end if
-          rk = half*(abs2+sqrt(cc2*(sx**2+sy**2+sz**2)))
+          rk = half*(abs2+acousticscalefactor*sqrt(cc2*(sx**2+sy**2+sz**&
+&           2)))
 ! compute the inviscid contribution to the time step.
           if (.not.onlyradii) dtl(i, j, k) = ri + rj + rk
 !
