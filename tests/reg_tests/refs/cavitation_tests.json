@@ -1,18 +1,18 @@
 {
-    "Dot product test for w -> cavitation": -0.3915858868621817,
-    "Dot product test for w -> cpmin": 0.6673403415494966,
-    "Dot product test for xV -> cavitation": 0.04422042901525445,
+    "Dot product test for w -> cavitation": -0.392279232320065,
+    "Dot product test for w -> cpmin": 0.3808513535868652,
+    "Dot product test for xV -> cavitation": 0.04015837980059694,
     "Dot product test for xV -> cpmin": 0.0,
     "cavitation outputs": {
-        "naca0012_rans_2D_cavitation": 0.12991147313819204,
-        "naca0012_rans_2D_cpmin": -1.225479091815022
+        "naca0012_rans_2D_cavitation": 0.13316858630040265,
+        "naca0012_rans_2D_cpmin": -1.2303464530292623
     },
     "cavitation totals": {
         "naca0012_rans_2D_cavitation": {
-            "alpha": 0.09506523526898285
+            "alpha": 0.09486873950966476
         },
         "naca0012_rans_2D_cpmin": {
-            "alpha": -0.4081165983499211
+            "alpha": -0.3802792095426982
         }
     },
     "metadata": {
@@ -27,6 +27,7 @@
         "ANKCFLFactor": 10.0,
         "ANKCFLLimit": 100000.0,
         "ANKCFLMin": 1.0,
+        "ANKCharTimeStepType": "None",
         "ANKConstCFLStep": 0.4,
         "ANKCoupledSwitchTol": 1e-16,
         "ANKInnerPreconIts": 1,
@@ -79,6 +80,7 @@
         "NKViscPC": false,
         "RKReset": false,
         "TSStability": false,
+        "acousticScaleFactor": 0.6,
         "adjointDivTol": 100000.0,
         "adjointL2Convergence": 1e-15,
         "adjointL2ConvergenceAbs": 1e-16,
@@ -250,6 +252,6 @@
         "writeVolumeSolution": false,
         "zipperSurfaceFamily": null
     },
-    "total cavitation derivative wrt random volume perturbation": -2.0566154094703144,
-    "total cpmin derivative wrt random volume perturbation": -80.31134681285023
+    "total cavitation derivative wrt random volume perturbation": -2.967092089231871,
+    "total cpmin derivative wrt random volume perturbation": -89.34385491930246
 }

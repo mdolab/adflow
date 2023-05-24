@@ -62,7 +62,7 @@ contains
         integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave
         integer(kind=intType), dimension(:, :), pointer :: stencil
         real(kind=alwaysRealType) :: delta_x, one_over_dx
-        real(kind=realType) :: weights(8)
+        real(kind=realType) :: weights(8), acousticScaleSave
         real(kind=realType), dimension(:, :), allocatable :: blk
         integer(kind=intType), dimension(2:10) :: coarseRows
         integer(kind=intType), dimension(8, 2:10) :: coarseCols
@@ -179,6 +179,12 @@ contains
 
             ! Very important to use only Second-Order dissipation for PC
             lumpedDiss = .True.
+            ! We also do not apply acoustic scaling because artificial dissipation stabilizes the ILU factorization.
+            ! This is mentioned in "Newton-Krylov-Schwarz Methods for Aerodynamics Problems: Compressible
+            ! and Incompressible Flows on Unstructured Grids" by D. K. Kaushik, D. E. Keyes, and B. F. Smith (1998).
+            ! The linear system will not converge if we reduce the artificial dissipation for the PC.
+            acousticScaleSave = acousticScaleFactor
+            acousticScaleFactor = one
             ! also use first order advection terms for turbulence
             orderturbsave = orderturb
             orderturb = firstOrder
@@ -569,6 +575,7 @@ contains
         ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
         if (usePC) then
             lumpedDiss = .False.
+            acousticScaleFactor = acousticScaleSave
             ! also recover the turbulence advection order
             orderturb = orderturbsave
         end if
