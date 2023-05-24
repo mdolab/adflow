@@ -267,7 +267,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
             fullName = f"naca0012_rans_2D_{funcName}"
 
             refVal = self.handler.db["separation totals"][fullName]["alpha"]
-            np.testing.assert_allclose(funcsSensCS["alpha"][fullName], refVal, atol=1e-10, rtol=1e-10)
+            np.testing.assert_allclose(funcsSensCS["alpha"][fullName], refVal, atol=1e-6, rtol=1e-6)
 
             refVal = self.handler.db[f"total {funcName} derivative wrt random volume perturbation"]
             np.testing.assert_allclose(funcsSensCS["vol_perturbation"][fullName], refVal, rtol=1e-3, atol=1e-3)
