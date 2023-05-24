@@ -51,48 +51,42 @@ cdm:
 
 cofxx:
   desc: >
-    Coefficient of component of normal forces on wall boundaries in ``x`` direction.
-    Units: None
+    The following center of force cost functions first list the force component (e.g., Fx) and then the coordinate (e.g., x coordinate).
+    These cost functions look at the sum of all forces.
+    Center of ``x`` force, ``x`` coordinate.
+    Units: ``Meter``
 
 cofxy:
   desc: >
-    Coefficient of component of shear forces on face of ``x`` in ``y`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 cofxz:
   desc: >
-    Coefficient of component of shear forces on face of ``x`` in ``z`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 cofyx:
   desc: >
-    Coefficient of component of shear forces on face of ``y`` in ``x`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 cofyy:
   desc: >
-    Coefficient of component of normal forces on wall boundaries in ``y`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 cofyz:
   desc: >
-    Coefficient of component of shear forces on face of ``y`` in ``z`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 cofzx:
   desc: >
-    Coefficient of component of shear forces on face of ``z`` in ``x`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 cofzy:
   desc: >
-    Coefficient of component of shear forces on face of ``z`` in ``y`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 cofzz:
   desc: >
-    Coefficient of component of normal forces on wall boundaries in ``z`` direction.
-    Units: None
+    See ``cofxx`` description.
 
 fx:
   desc: >
@@ -462,15 +456,18 @@ mavgvi:
 
 mavgvx:
   desc: >
-    Averaged mass flow in the x direction.
+    Mass-averaged ``x`` velocity (i.e., :math:`\Sigma \dot{m}_x / \Sigma \dot{m}`).
+    Units: ``m / s``
 
 mavgvy:
   desc: >
-    Averaged mass flow in the y direction.
+    Mass-averaged ``y`` velocity.
+    Units: ``m / s``
 
 mavgvz:
   desc: >
-    Averaged mass flow in the z direction.
+    Mass-averaged ``z`` velocity.
+    Units: ``m / s``
 
 cperror2:
   desc: >
