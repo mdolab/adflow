@@ -4852,7 +4852,7 @@ class ADFLOW(AeroSolver):
 
         # Now Re-assemble the global CGNS vector.
         nDOFCGNS = numpy.max(cgnsIndices) + 1
-        CGNSVec = numpy.zeros(nDOFCGNS)
+        CGNSVec = numpy.zeros(nDOFCGNS, dtype=self.dtype)
         CGNSVec[cgnsIndices] = allPts
         CGNSVec = CGNSVec.reshape((len(CGNSVec) // 3, 3))
 
@@ -5282,6 +5282,7 @@ class ADFLOW(AeroSolver):
             ],
             "viscWallTreatment": [str, ["constant pressure extrapolation", "linear pressure extrapolation"]],
             "dissipationScalingExponent": [float, 0.67],
+            "acousticScaleFactor": [float, 1.0],
             "vis4": [float, 0.0156],
             "vis2": [float, 0.25],
             "vis2Coarse": [float, 0.5],
@@ -5419,6 +5420,7 @@ class ADFLOW(AeroSolver):
             "ANKNSubiterTurb": [int, 1],
             "ANKTurbKSPDebug": [bool, False],
             "ANKUseMatrixFree": [bool, True],
+            "ANKCharTimeStepType": [str, ["None", "Turkel", "VLR"]],
             # Load Balance/partitioning parameters
             "blockSplitting": [bool, True],
             "loadImbalance": [float, 0.1],
@@ -5656,6 +5658,7 @@ class ADFLOW(AeroSolver):
                 "location": ["discr", "viscwallbctreatment"],
             },
             "dissipationscalingexponent": ["discr", "adis"],
+            "acousticscalefactor": ["discr", "acousticscalefactor"],
             "vis4": ["discr", "vis4"],
             "vis2": ["discr", "vis2"],
             "vis2coarse": ["discr", "vis2coarse"],
@@ -5804,6 +5807,12 @@ class ADFLOW(AeroSolver):
             "anknsubiterturb": ["ank", "ank_nsubiterturb"],
             "ankturbkspdebug": ["ank", "ank_turbdebug"],
             "ankusematrixfree": ["ank", "ank_usematrixfree"],
+            "ankchartimesteptype": {
+                "none": "None",
+                "turkel": "Turkel",
+                "vlr": "VLR",
+                "location": ["ank", "ank_chartimesteptype"],
+            },
             # Load Balance Parameters
             "blocksplitting": ["parallel", "splitblocks"],
             "loadimbalance": ["parallel", "loadimbalance"],

@@ -1903,7 +1903,7 @@ contains
         use blockPointers, only: sectionID
         use flowvarRefState, only: pInfCorr, rhoInf, gammaInf, viscous, timeRef
         use inputPhysics, only: equationMode
-        use inputDiscretization, only: adis
+        use inputDiscretization, only: adis, acousticScaleFactor
         use section, only: sections
         use inputTimeSpectral, only: nTimeIntervalsSpectral
 
@@ -1978,7 +1978,7 @@ contains
                     qsi = uux * sx + uuy * sy + uuz * sz - sFace
 
                     ri = half * (abs(qsi) &
-                                 + sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
+                                 + acousticScaleFactor * sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
 
                     ! The grid velocity in j-direction.
                     sFace = sFaceJ(i, j - 1, k) + sFaceJ(i, j, k)
@@ -1992,7 +1992,7 @@ contains
                     qsj = uux * sx + uuy * sy + uuz * sz - sFace
 
                     rj = half * (abs(qsj) &
-                                 + sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
+                                 + acousticScaleFactor * sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
 
                     ! The grid velocity in k-direction.
                     sFace = sFaceK(i, j, k - 1) + sFaceK(i, j, k)
@@ -2006,7 +2006,7 @@ contains
                     qsk = uux * sx + uuy * sy + uuz * sz - sFace
 
                     rk = half * (abs(qsk) &
-                                 + sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
+                                 + acousticScaleFactor * sqrt(cc2 * (sx**2 + sy**2 + sz**2)))
 
                     ! Store in tdl if required
                     if (updateDt) then
