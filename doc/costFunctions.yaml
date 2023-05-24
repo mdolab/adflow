@@ -456,17 +456,17 @@ mavgvi:
 
 mavgvx:
   desc: >
-    Mass-averaged ``x`` velocity (i.e., :math:`\Sigma \dot{m}_x / \Sigma \dot{m}`).
+    Mass-averaged :math:`x` velocity (i.e., :math:`\Sigma \dot{m}_x / \Sigma \dot{m}`).
     Units: ``m / s``
 
 mavgvy:
   desc: >
-    Mass-averaged ``y`` velocity.
+    Mass-averaged :math:`y` velocity.
     Units: ``m / s``
 
 mavgvz:
   desc: >
-    Mass-averaged ``z`` velocity.
+    Mass-averaged :math:`z` velocity.
     Units: ``m / s``
 
 cperror2:
