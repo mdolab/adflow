@@ -2215,15 +2215,15 @@ contains
                     norm(3) = BCData(mm)%norm(ii, jj, 3)
 
                     vectDotProductFsNormal = velDirFreeStream(1) * norm(1) + &
-                                   velDirFreeStream(2) * norm(2) + &
-                                   velDirFreeStream(3) * norm(3)
+                                             velDirFreeStream(2) * norm(2) + &
+                                             velDirFreeStream(3) * norm(3)
 
                     vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * norm(1)
                     vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * norm(2)
                     vectTangential(3) = velDirFreeStream(3) - vectDotProductFsNormal * norm(3)
 
                     vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
-                                                vectTangential(3)**2) + 1e-16)
+                                                            vectTangential(3)**2) + 1e-16)
 
                     ! compute cross product of vectnorm to surface normal
                     vecCrossProd(1) = vectTangential(2) * norm(3) - &

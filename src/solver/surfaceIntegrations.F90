@@ -578,8 +578,8 @@ contains
             if (sepmodel == surfvec) then
                 ! Freestream projection over the surface.
                 vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
-                                     velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
-                                     velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
+                                         velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
+                                         velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
                 ! Tangential Vector on the surface, which is the freestream projected vector
                 vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
                 vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
