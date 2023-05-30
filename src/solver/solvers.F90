@@ -727,7 +727,7 @@ contains
                 ! called.
 
                 call whalo1(currentLevel, 1_intType, 0_intType, .true., &
-                            .false., .false., .false.)
+                            .false., .false.)
 
                 ! Apply the boundary conditions to all blocks.
 
@@ -739,7 +739,7 @@ contains
                 ! the second halo is needed.
 
                 call whalo2(currentLevel, 1_intType, nw, .true., &
-                            .true., .true.)
+                            .true., .true., .false.)
 
                 ! Determine the time and initialize the geometrical and
                 ! boundary info for next stage, if needed.

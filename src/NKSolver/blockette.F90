@@ -114,6 +114,7 @@ contains
         logical :: dissApprox, viscApprox, updateIntermed, flowRes, turbRes, spatial, storeWall
         integer(kind=intType) :: nn, sps, fSize, lstart, lend, iRegion
         real(kind=realType) :: pLocal
+        logical :: exchanged2wall
 
         ! Set the defaults. The default is to compute the full, exact,
         ! RANS residual without updating the spatial values or the local
@@ -265,14 +266,14 @@ contains
             lEnd = nt2
         end if
 
-        ! Exchange values: make sure all values, including halos, are up to date everywhere
-        call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
-
         ! Exchange d2wall if it was changed
+        exchanged2wall = .false.
         if (spatial .and. equations == RANSEquations .and. useApproxWallDistance) then
-            call whalo1(1_intType, 1_intType, 0_intType, &
-                        .false., .false., .false., .true.)
+            exchanged2wall = .true.
         end if
+
+        ! Exchange values: make sure all values, including halos, are up to date everywhere
+        call whalo2(1_intType, lStart, lEnd, .True., .True., .True., exchanged2wall)
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind

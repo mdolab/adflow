@@ -3,7 +3,7 @@ module haloExchange
 contains
 
     subroutine whalo1(level, start, end, commPressure, commGamma, &
-                      commViscous, commd2wall)
+                      commViscous)
         !
         !       whalo1 exchanges all the 1st level internal halo's for the
         !       cell centered variables.
@@ -22,7 +22,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
+        logical, intent(in) :: commPressure, commGamma, commViscous
         !
         !      Local variables.
         !
@@ -47,12 +47,12 @@ contains
         ! Exchange the 1 to 1 matching 1st level cell halo's.
 
         call whalo1to1(level, start, end, commPressure, commVarGamma, &
-                       commLamVis, commEddyVis, commd2wall, commPatternCell_1st, &
+                       commLamVis, commEddyVis, .false., commPatternCell_1st, &
                        internalCell_1st)
 
         ! Exchange the overset cells
         call wOverset(level, start, end, commPressure, commVarGamma, &
-                      commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
+                      commLamVis, commEddyVis, .false., commPatternOverset, internalOverset)
 
         ! Average any overset orphans.
 
@@ -107,7 +107,7 @@ contains
     end subroutine whalo1
 
     subroutine whalo2(level, start, end, commPressure, commGamma, &
-                      commViscous)
+                      commViscous, commd2wall)
         !
         !       whalo2 exchanges all the 2nd level internal halo's for the
         !       cell centered variables.
@@ -126,7 +126,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous
+        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
         !
         !      Local variables.
         !
@@ -152,12 +152,12 @@ contains
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
         call whalo1to1(level, start, end, commPressure, commVarGamma, &
-                       commLamVis, commEddyVis, .False., commPatternCell_2nd, &
+                       commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
                        internalCell_2nd)
 
         ! Exchange the overset cells
         call wOverset(level, start, end, commPressure, commVarGamma, &
-                      commLamVis, commEddyVis, .False., commPatternOverset, internalOverset)
+                      commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
 
         ! Average any overset orphans.
 
@@ -2066,7 +2066,7 @@ contains
 
 #ifndef USE_COMPLEX
     subroutine whalo2_b(level, start, end, commPressure, commGamma, &
-                        commViscous)
+                        commViscous, commd2wall)
         !
         !       whalo2_b exchanges all the 2nd level internal halo's for the
         !       cell centered variables IN REVERSE MODE
@@ -2085,7 +2085,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous
+        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
         !
         !      Local variables.
         !
@@ -2128,12 +2128,18 @@ contains
             end do domains
         end if bothPAndE
 
+        ! call wOverset_b(level, start, end, commPressure, commVarGamma, &
+        !                 commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
         call wOverset_b(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, .False., commPatternOverset, internalOverset)
+                        commLamVis, commEddyVis, .false., commPatternOverset, internalOverset)
+
 
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
+        ! call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
+        !                  commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
+        !                  internalCell_2nd)
         call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, .False., commPatternCell_2nd, &
+                         commLamVis, commEddyVis, .false., commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! NOTE: Only the 1to1 halo exchange and overset is done. whalosliding,
@@ -2143,7 +2149,7 @@ contains
     end subroutine whalo2_b
 
     subroutine whalo2_d(level, start, end, commPressure, commGamma, &
-                        commViscous)
+                        commViscous, commd2wall)
         !
         !       whalo2_b exchanges all the 2nd level internal halo's for the
         !       cell centered variables IN FORWARD MODE
@@ -2162,7 +2168,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous
+        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
         !
         !      Local variables.
         !
@@ -2187,13 +2193,18 @@ contains
 
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
+        ! call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
+        !                  commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
+        !                  internalCell_2nd)
         call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, .False., commPatternCell_2nd, &
+                         commLamVis, commEddyVis, .false., commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! Exchange the overset cells
+        ! call wOverset_d(level, start, end, commPressure, commVarGamma, &
+        !                 commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
         call wOverset_d(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, .False., commPatternOverset, internalOverset)
+                        commLamVis, commEddyVis, .false., commPatternOverset, internalOverset)
 
         ! NOTE: Only the 1to1 halo and wOverset exchange is done. whalosliding,
         ! whalomixing, orphanAverage and PandE corrections

@@ -833,7 +833,8 @@ contains
 
                 ! 2. on an exchange of vorticity in 1st halo region
 
-                call whalo1(currentLevel, 1_intType, 0_intType, .false., .false., .true., .False.)
+                call whalo1(currentLevel, 1_intType, 0_intType, .false., .false., .False.)
+                ! Not sure what this is doing?
                 ! QUESTION: should we use whalo2 instead so that we have it in 2nd halo cells as well?
 
             end if

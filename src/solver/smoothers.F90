@@ -362,7 +362,7 @@ contains
 
         if (exchangePressureEarly .and. currentLevel <= groundLevel) &
             call whalo1(currentLevel, 1_intType, 0_intType, .true., &
-                        .false., .false., .false.)
+                        .false., .false.)
 
         ! Apply all boundary conditions to all blocks on this level.
 
@@ -373,10 +373,10 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true.)
+                        .true., .true., .false.)
         else
             call whalo1(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true., .false.)
+                        .true., .true.)
         end if
 
     end subroutine executeRkStage
@@ -673,7 +673,7 @@ contains
 
         if (exchangePressureEarly .and. currentLevel <= groundLevel) &
             call whalo1(currentLevel, 1_intType, 0_intType, .true., &
-                        .false., .false., .false.)
+                        .false., .false.)
 
         ! Apply all boundary conditions to all blocks on this level.
 
@@ -684,10 +684,10 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true.)
+                        .true., .true., .false.)
         else
             call whalo1(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true., .false.)
+                        .true., .true.)
         end if
 
     end subroutine executeDADIStep

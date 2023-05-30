@@ -61,6 +61,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, fSize, iRegion
         real(kind=realType), dimension(nSections) :: time
         real(kind=realType) :: dummyReal
+        logical :: exchanged2wall
 
         if (useSpatial) then
             call adjustInflowAngle()
@@ -133,14 +134,14 @@ contains
             end do
         end do
 
-        ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
-
         ! Exhange d2wall if it was changed
+        exchanged2wall = .false.
         if (useSpatial .and. equations == RANSEquations .and. useApproxWallDistance) then
-            call whalo1(1, 1_intType, 0_intType, &
-                        .false., .false., .false., .true.)
+            exchanged2wall = .true.
         end if
+
+        ! Exchange values
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchanged2wall)
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -334,6 +335,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, iRegion
         real(kind=realType), dimension(nSections) :: time
         real(kind=realType) :: dummyReal, dummyReald
+        logical :: exchanged2wall
 
         logical :: useOldCoor ! for adjointextra_d() functions
         useOldCoor = .FALSE.
@@ -483,14 +485,14 @@ contains
             end do
         end do
 
-        ! Just exchange the derivative values.
-        call whalo2_d(1, 1, nw, .True., .True., .True.)
-
         ! Exhange d2wall if it was changed
-        ! if (equations == RANSEquations .and. useApproxWallDistance) then
-        !     call whalo1_d(1, 1_intType, 0_intType, &
-        !                 .false., .false., .false., .true.)
-        ! end if
+        exchanged2wall = .false.
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            exchanged2wall = .true.
+        end if
+
+        ! Just exchange the derivative values.
+        call whalo2_d(1, 1, nw, .True., .True., .True., exchanged2wall)
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -688,7 +690,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, level, iRegion
         real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
         real(kind=realType) :: dummyReal, dummyReald
-        logical :: resetToRans
+        logical :: resetToRans, exchanged2wall
         real(kind=realType), dimension(nSections) :: time
         logical :: useOldCoor ! for solverutils_b() functions
         useOldCoor = .FALSE.
@@ -822,10 +824,14 @@ contains
             end do
         end if
 
-        ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
+        ! exchange d2wall if necessairy
+        exchanged2wall = .false.
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            exchanged2wall = .true.
+        endif
 
-        ! TODO: exchange d2wall!
+        ! Exchange the adjoint values.
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., exchanged2wall)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
 
@@ -1155,7 +1161,7 @@ contains
         end if
 
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
             domainLoop2: do nn = 1, nDom

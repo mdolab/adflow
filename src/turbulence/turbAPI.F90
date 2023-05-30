@@ -88,7 +88,7 @@ contains
             ! Exchange the halo data. As it is guaranteed that we are on the
             ! finest mesh, exchange both layers of halo's.
 
-            call whalo2(groundLevel, nt1, nt2, .false., .false., .true.)
+            call whalo2(groundLevel, nt1, nt2, .false., .false., .true., .false.)
 
         end do
 

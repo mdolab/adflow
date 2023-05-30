@@ -230,7 +230,7 @@ contains
         ! layer of halo's is needed, whalo1 is called.
 
         call whalo1(currentLevel, 1_intType, nwf, .true., &
-                    .true., .true., .false.)
+                    .true., .true.)
 
         ! The second part of the residual forcing term is the residual
         ! of the just restricted solution.
@@ -601,7 +601,7 @@ contains
 
         if (exchangePressureEarly .and. currentLevel <= groundLevel) &
             call whalo1(currentLevel, 1_intType, 0_intType, &
-                        .true., .false., .false., .false.)
+                        .true., .false., .false.)
 
         ! Apply all boundary conditions to all blocks on this level.
         ! In case of a full mg mode, and a segegated turbulent solver,
@@ -627,10 +627,10 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-                        .true., .true.)
+                        .true., .true., .false.)
         else
             call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-                        .true., .true., .false.)
+                        .true., .true.)
         end if
 
         ! For full multigrid mode the bleeds must be determined, the
@@ -642,10 +642,10 @@ contains
 
             if (secondHalo) then
                 call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-                            .true., .true.)
+                            .true., .true., .false.)
             else
                 call whalo1(currentLevel, 1_intType, nVarInt, .true., &
-                            .true., .true., .false.)
+                            .true., .true.)
             end if
         end if
 
