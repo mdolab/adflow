@@ -86,7 +86,7 @@ contains
         use initializeFlow, only: referenceState
         use section, only: sections, nSections
         use iteration, only: rFil, currentLevel
-        use haloExchange, only: exchangeCoor, whalo2
+        use haloExchange, only: exchangeCoor, whalo2, whalo1
         use wallDistance, only: updateWallDistancesQuickly
         use utils, only: setPointers, EChk
         use turbUtils, only: computeEddyViscosity
@@ -267,6 +267,13 @@ contains
 
         ! Exchange values: make sure all values, including halos, are up to date everywhere
         call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
+
+        ! Exchange d2wall if it was changed
+        if (spatial .and. equations == RANSEquations .and. useApproxWallDistance) then
+            call whalo1(1_intType, 1_intType, 0_intType, &
+                        .false., .false., .false., .true.)
+        end if
+
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new

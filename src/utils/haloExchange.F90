@@ -3,7 +3,7 @@ module haloExchange
 contains
 
     subroutine whalo1(level, start, end, commPressure, commGamma, &
-                      commViscous)
+                      commViscous, commd2wall)
         !
         !       whalo1 exchanges all the 1st level internal halo's for the
         !       cell centered variables.
@@ -22,7 +22,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous
+        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
         !
         !      Local variables.
         !
@@ -47,12 +47,12 @@ contains
         ! Exchange the 1 to 1 matching 1st level cell halo's.
 
         call whalo1to1(level, start, end, commPressure, commVarGamma, &
-                       commLamVis, commEddyVis, commPatternCell_1st, &
+                       commLamVis, commEddyVis, commd2wall, commPatternCell_1st, &
                        internalCell_1st)
 
         ! Exchange the overset cells
         call wOverset(level, start, end, commPressure, commVarGamma, &
-                      commLamVis, commEddyVis, commPatternOverset, internalOverset)
+                      commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
 
         ! Average any overset orphans.
 
@@ -152,12 +152,12 @@ contains
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
         call whalo1to1(level, start, end, commPressure, commVarGamma, &
-                       commLamVis, commEddyVis, commPatternCell_2nd, &
+                       commLamVis, commEddyVis, .False., commPatternCell_2nd, &
                        internalCell_2nd)
 
         ! Exchange the overset cells
         call wOverset(level, start, end, commPressure, commVarGamma, &
-                      commLamVis, commEddyVis, commPatternOverset, internalOverset)
+                      commLamVis, commEddyVis, .False., commPatternOverset, internalOverset)
 
         ! Average any overset orphans.
 
@@ -347,14 +347,14 @@ contains
                 if (calcLamVis) rlv(oi, oj, ok) = muInf
                 if (calcEddyVis) rev(oi, oj, ok) = eddyVisInfRatio * muInf
 
-            end if checkNoNeighbors
+           end if checkNoNeighbors
 
         end do orphanLoop
 
     end subroutine orphanAverage
 
     subroutine setCommPointers(start, end, commPressure, commVarGamma, commLamVis, &
-                               commEddyVis, level, sps, derivPointers, nVar, varOffset)
+                               commEddyVis, commd2wall, level, sps, derivPointers, nVar, varOffset)
 
         ! Generic routine for setting pointers to the communication
         ! variables. Can also set pointers to derivatve values if derivPts is True.
@@ -365,7 +365,7 @@ contains
 
         ! Input
         integer(kind=intType), intent(in) :: start, end, level, sps
-        logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis
+        logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis, commd2wall
         logical, intent(in) :: derivPointers
         integer(kind=intType), intent(in) :: varOffset
 
@@ -414,13 +414,18 @@ contains
                 blk%realCommVars(nVar)%var => blkLevel%rev(:, :, :)
             end if
 
+            if (commd2wall) then
+                nVar = nVar + 1
+                blk%realCommVars(nVar)%var => blkLevel%d2wall(:, :, :)
+            end if
+
         end do domainLoop
         nVar = nVar - varOffset
     end subroutine setCommPointers
 
     subroutine whalo1to1(level, start, end, commPressure, &
                          commVarGamma, commLamVis, commEddyVis, &
-                         commPattern, internal)
+                         commd2wall, commPattern, internal)
         !
         !       whalo1to1 exchanges the 1 to 1 internal halo's for the cell
         !       centered variables for the given communication pattern. It
@@ -440,7 +445,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis
+        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
 
         type(commType), dimension(*), intent(in) :: commPattern
         type(internalCommType), dimension(*), intent(in) :: internal
@@ -459,7 +464,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .False., nVar, 0)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1253,7 +1258,7 @@ contains
 
     subroutine whalo1to1_d(level, start, end, commPressure, &
                            commVarGamma, commLamVis, commEddyVis, &
-                           commPattern, internal)
+                           commd2wall, commPattern, internal)
         !
         !       whalo1to1 exchanges the 1 to 1 internal halo's derivatives
         !
@@ -1266,7 +1271,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis
+        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
 
         type(commType), dimension(*), intent(in) :: commPattern
         type(internalCommType), dimension(*), intent(in) :: internal
@@ -1276,7 +1281,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1291,7 +1296,7 @@ contains
 
     subroutine whalo1to1_b(level, start, end, commPressure, &
                            commVarGamma, commLamVis, commEddyVis, &
-                           commPattern, internal)
+                           commd2wall, commPattern, internal)
         !
         !       whalo1to1 exchanges the 1 to 1 internal halo's derivatives
         !
@@ -1304,7 +1309,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis
+        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
 
         type(commType), dimension(*), intent(in) :: commPattern
         type(internalCommType), dimension(*), intent(in) :: internal
@@ -1314,7 +1319,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1329,7 +1334,7 @@ contains
 
     subroutine wOverset(level, start, end, commPressure, &
                         commVarGamma, commLamVis, commEddyVis, &
-                        commPattern, internal)
+                        commd2wall, commPattern, internal)
         !
         !       wOverset controls the communication between overset halos
         !       for the cell-centered variables by interpolating the solution
@@ -1350,7 +1355,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis
+        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
 
         type(commType), dimension(:, :), intent(in) :: commPattern
         type(internalCommType), dimension(:, :), intent(in) :: internal
@@ -1361,7 +1366,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .False., nVar, 0)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1375,7 +1380,7 @@ contains
 
     subroutine wOverset_d(level, start, end, commPressure, &
                           commVarGamma, commLamVis, commEddyVis, &
-                          commPattern, internal)
+                          commd2wall, commPattern, internal)
         !
         !       wOverset controls the communication between overset halos
         !       for the cell-centered variables by interpolating the solution
@@ -1396,7 +1401,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis
+        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
 
         type(commType), dimension(:, :), intent(in) :: commPattern
         type(internalCommType), dimension(:, :), intent(in) :: internal
@@ -1407,12 +1412,12 @@ contains
             ! this one is tricker: We have to set BOTH the real values and
             ! the the derivative values. Set the derivative values first:
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
 
             ! And then the original real values
             offset = nVar
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .False., nVar, offset)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, offset)
 
             if (nVar == 0) then
                 return
@@ -1425,7 +1430,7 @@ contains
 
     subroutine wOverset_b(level, start, end, commPressure, &
                           commVarGamma, commLamVis, commEddyVis, &
-                          commPattern, internal)
+                          commd2wall, commPattern, internal)
         !
         !       wOverset_b performs the *TRANSPOSE* operation of wOverset
         !       It is used for adjoint/reverse mode residual evaluations.
@@ -1440,7 +1445,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis
+        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
 
         type(commType), dimension(:, :), intent(in) :: commPattern
         type(internalCommType), dimension(:, :), intent(in) :: internal
@@ -1451,12 +1456,12 @@ contains
             ! this one is tricker: We have to set BOTH the real values and
             ! the the derivative values. Set the derivative values first:
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
 
             ! And then the original real values
             offset = nVar
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, level, sps, .False., nVar, offset)
+                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, offset)
 
             if (nVar == 0) then
                 return
@@ -2124,11 +2129,11 @@ contains
         end if bothPAndE
 
         call wOverset_b(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, commPatternOverset, internalOverset)
+                        commLamVis, commEddyVis, .False., commPatternOverset, internalOverset)
 
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
         call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, commPatternCell_2nd, &
+                         commLamVis, commEddyVis, .False., commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! NOTE: Only the 1to1 halo exchange and overset is done. whalosliding,
@@ -2183,12 +2188,12 @@ contains
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
         call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, commPatternCell_2nd, &
+                         commLamVis, commEddyVis, .False., commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! Exchange the overset cells
         call wOverset_d(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, commPatternOverset, internalOverset)
+                        commLamVis, commEddyVis, .False., commPatternOverset, internalOverset)
 
         ! NOTE: Only the 1to1 halo and wOverset exchange is done. whalosliding,
         ! whalomixing, orphanAverage and PandE corrections

@@ -305,6 +305,7 @@ contains
         use block, only: flowDoms
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use variableReading, only: halosRead
+        use haloExchange, only: whalo1
 
         implicit none
         !
@@ -351,6 +352,11 @@ contains
         ! Initialize the dependent flow variables and the halo values.
 
         call initDepvarAndHalos(halosRead)
+
+        ! Exchange d2wall on halo cells
+        call whalo1(1_intType, 1_intType, 0_intType, &
+                    .false., .false., .false., .true.)
+
 
     end subroutine initFlow
 

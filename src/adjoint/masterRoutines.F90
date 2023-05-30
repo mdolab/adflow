@@ -24,7 +24,7 @@ contains
         use kw, only: kwSolve
         use kt, only: ktSolve
         use vf, only: vfSolve, keSolve
-        use haloExchange, only: exchangeCoor, whalo2
+        use haloExchange, only: exchangeCoor, whalo2, whalo1
         use wallDistance, only: updateWallDistancesQuickly
         use solverUtils, only: timeStep_block
         use flowUtils, only: allNodalGradients, computeLamViscosity, computePressureSimple, &
@@ -135,6 +135,13 @@ contains
 
         ! Exchange values
         call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
+
+        ! Exhange d2wall if it was changed
+        if (useSpatial .and. equations == RANSEquations .and. useApproxWallDistance) then
+            call whalo1(1, 1_intType, 0_intType, &
+                        .false., .false., .false., .true.)
+        end if
+
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -479,6 +486,13 @@ contains
         ! Just exchange the derivative values.
         call whalo2_d(1, 1, nw, .True., .True., .True.)
 
+        ! Exhange d2wall if it was changed
+        ! if (equations == RANSEquations .and. useApproxWallDistance) then
+        !     call whalo1_d(1, 1_intType, 0_intType, &
+        !                 .false., .false., .false., .true.)
+        ! end if
+
+
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
         ! interpolated values from actual compute cells. Only needed for
@@ -810,6 +824,8 @@ contains
 
         ! Exchange the adjoint values.
         call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
+
+        ! TODO: exchange d2wall!
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
 

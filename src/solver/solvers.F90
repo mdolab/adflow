@@ -727,7 +727,7 @@ contains
                 ! called.
 
                 call whalo1(currentLevel, 1_intType, 0_intType, .true., &
-                            .false., .false.)
+                            .false., .false., .false.)
 
                 ! Apply the boundary conditions to all blocks.
 

@@ -833,7 +833,7 @@ contains
 
                 ! 2. on an exchange of vorticity in 1st halo region
 
-                call whalo1(currentLevel, 1_intType, 0_intType, .false., .false., .true.)
+                call whalo1(currentLevel, 1_intType, 0_intType, .false., .false., .true., .False.)
                 ! QUESTION: should we use whalo2 instead so that we have it in 2nd halo cells as well?
 
             end if
@@ -2288,9 +2288,9 @@ contains
         ! but in that case the gradients for k and omega must be stored.
         ! In the current approach no extra memory is needed.
 
-        do k = 2, kl
-            do j = 2, jl
-                do i = 2, il
+        do k = 1, ke
+            do j = 1, je
+                do i = 1, ie
 
                     ! Compute the gradient of k in the cell center. Use is made
                     ! of the fact that the surrounding normals sum up to zero,
