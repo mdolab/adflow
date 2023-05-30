@@ -323,12 +323,13 @@ ad_forward:
 	-tgtvarname %d \
 	-tgtfuncname %_d \
 	-tgtmodulename %_d \
+	-msglevel 30 \
 	$(TAPENADE_PRECISION) \
 	-outputdirectory $(TEMP_FWD_DIR) \
 	$(PP_RES_FWD_FILES)
 
 # Run the auto-edit file:
-	python autoEdit/autoEditForward.py $(TEMP_FWD_DIR) outputForward
+	make -f Makefile_tapenade autoedit_forward
 
 # Remove preprocessor files
 	make -f Makefile_tapenade clean_preprocess_forward
@@ -356,7 +357,7 @@ ad_reverse:
 	$(PP_RES_REV_FILES)
 
 # Run the auto-edit file:
-	python autoEdit/autoEditReverse.py $(TEMP_REV_DIR) outputReverse
+	make -f Makefile_tapenade autoedit_reverse
 
 # Remove preprocessor files
 	make -f Makefile_tapenade clean_preprocess_reverse
@@ -383,7 +384,7 @@ ad_reverse_fast:
 	$(PP_RES_REV_FILES)
 
 # Run the auto-edit file:
-	python autoEdit/autoEditReverseFast.py $(TEMP_REVFAST_DIR) outputReverseFast
+	make -f Makefile_tapenade autoedit_reverse_fast
 
 # Remove preprocessor files
 	make -f Makefile_tapenade clean_preprocess_reverse
@@ -403,6 +404,18 @@ preprocess_reverse:
 		echo Preprocessing $$file; \
 		cpp -DUSE_TAPENADE -DTAPENADE_REVERSE -traditional -P $$file $(PP_REV_DIR)/"$$(basename $$file)"; \
 	done
+
+autoedit_forward:
+	@echo "Running autoedit on forward mode AD files"
+	python autoEdit/autoEditForward.py $(TEMP_FWD_DIR) outputForward
+
+autoedit_reverse:
+	@echo "Running autoedit on reverse mode AD files"
+	python autoEdit/autoEditReverse.py $(TEMP_REV_DIR) outputReverse
+
+autoedit_reverse_fast:
+	@echo "Running autoedit on reverse mode fast AD files"
+	python autoEdit/autoEditReverseFast.py $(TEMP_REVFAST_DIR) outputReverseFast
 
 clean_preprocess_forward:
 	@echo "Deleting forward mode AD residual preprocessed files..."

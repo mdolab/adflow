@@ -16,7 +16,7 @@ EXT = "_fast_b.f90"
 DIR_ORI = sys.argv[1]
 DIR_MOD = sys.argv[2]
 
-# Specifiy the list of LINE ID's to find, what to replace and with what
+# Specify the list of LINE ID's to find, what to replace and with what
 patt_modules = re.compile(r"(\s*use\s*\w*)(_b)\s*")
 patt_module = re.compile(r"\s*module\s\w*")
 patt_module_start = re.compile("(\s*module\s)(\w*)(_b)\s*")
@@ -30,6 +30,7 @@ del_patterns = [
 patt_pushcontrol1b = re.compile(r"(\s*call pushcontrol1b\()(.*)\)")
 patt_popcontrol1b = re.compile(r"(\s*call popcontrol1b\()(.*)\)")
 patt_subroutine = re.compile(r"\s*subroutine\s\w*")
+patt_subend = re.compile(r"\s*end\s*subroutine")
 patt_comment = re.compile(r"\s*!.*")
 patt_inttype = re.compile(r"\s*integer\*4\s\w*")
 
@@ -92,6 +93,7 @@ for f in os.listdir(DIR_ORI):
 
         # Go back to the beginning
         file_object_ori.seek(0)
+        inSubroutine = False
 
         for line in file_object_ori:
             # Just deal with lower case string
@@ -145,6 +147,17 @@ for f in os.listdir(DIR_ORI):
                 for p in del_patterns:
                     if p.match(line):
                         line = ""
+
+            # Tapenade misses one function in inviscidupwindflux_fast_b and we need to add it manually
+            # We once we know we are withing the subroutine we just search for a very specific string append
+            if patt_subroutine.match(line) and "inviscidupwindflux_fast_b" in line:
+                inSubroutine = True
+
+            if inSubroutine and "use flowutils_fast_b, only : etot" in line:
+                line = line.strip("\n") + ", etot_fast_b\n"
+
+            if patt_subend.match(line):
+                inSubroutine = False
 
             # write the modified line to new file
             file_object_mod.write(line)

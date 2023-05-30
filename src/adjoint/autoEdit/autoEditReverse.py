@@ -22,6 +22,7 @@ patt_module = re.compile(r"\s*module\s\w*")
 patt_module_start = re.compile("(\s*module\s)(\w*)(_b)\s*")
 patt_module_end = re.compile("(\s*end module\s)(\w*)(_b)\s*")
 patt_subroutine = re.compile(r"\s*subroutine\s\w*")
+patt_subend = re.compile(r"\s*end\s*subroutine")
 patt_comment = re.compile(r"\s*!.*")
 patt_inttype = re.compile(r"\s*integer\*4\s\w*")
 
@@ -79,6 +80,8 @@ for f in os.listdir(DIR_ORI):
 
         # Go back to the beginning
         file_object_ori.seek(0)
+        inSubroutine = False
+
         for line in file_object_ori:
             # Just deal with lower case string
             line = line.lower()
@@ -114,6 +117,17 @@ for f in os.listdir(DIR_ORI):
             # m = patt_module_end.match(line)
             # if m:
             #     line = 'end module %s_b2\n'%m.group(2)
+
+            # Tapenade misses one function in inviscidupwindflux_b and we need to add it manually
+            # We once we know we are withing the subroutine we just search for a very specific string append
+            if patt_subroutine.match(line) and "inviscidupwindflux_b" in line:
+                inSubroutine = True
+
+            if inSubroutine and "use flowutils_b, only : etot" in line:
+                line = line.strip("\n") + ", etot_b\n"
+
+            if patt_subend.match(line):
+                inSubroutine = False
 
             # write the modified line to new file
             file_object_mod.write(line)
