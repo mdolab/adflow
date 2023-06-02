@@ -42,7 +42,7 @@ contains
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity
         use actuatorRegionData, only: nActuatorRegions
-        use wallDistanceData, only: xSurfVec, xSurf
+        use wallDistanceData, only: xSurfVec, xSurf, exchangeWallDistanceHalos
 
         implicit none
 
@@ -61,7 +61,6 @@ contains
         integer(kind=intType) :: ierr, nn, sps, fSize, iRegion
         real(kind=realType), dimension(nSections) :: time
         real(kind=realType) :: dummyReal
-        logical :: exchanged2wall
 
         if (useSpatial) then
             call adjustInflowAngle()
@@ -134,14 +133,11 @@ contains
             end do
         end do
 
-        ! Exhange d2wall if it was changed
-        exchanged2wall = .false.
-        if (useSpatial .and. equations == RANSEquations .and. useApproxWallDistance) then
-            exchanged2wall = .true.
-        end if
 
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchanged2wall)
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchangeWallDistanceHalos(currentLevel))
+
+        exchangeWallDistanceHalos(currentLevel) = .False.
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -299,7 +295,7 @@ contains
         use adjointPETSc, only: x_like
         use haloExchange, only: whalo2_d, exchangeCoor_d, exchangeCoor, whalo2
         use wallDistance_d, only: updateWallDistancesQuickly_d
-        use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
+        use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter, exchangeWallDistanceHalos
         use flowutils_d, only: computePressureSimple_d, computeLamViscosity_d, &
                                computeSpeedOfSoundSquared_d, allNodalGradients_d, adjustInflowAngle_d
         use solverutils_d, only: timeStep_Block_d, gridvelocitiesfinelevel_block_d, slipvelocitiesfinelevel_block_d, &
@@ -485,14 +481,9 @@ contains
             end do
         end do
 
-        ! Exhange d2wall if it was changed
-        exchanged2wall = .false.
-        if (equations == RANSEquations .and. useApproxWallDistance) then
-            exchanged2wall = .true.
-        end if
-
         ! Just exchange the derivative values.
-        call whalo2_d(1, 1, nw, .True., .True., .True., exchanged2wall)
+        call whalo2_d(1, 1, nw, .True., .True., .True., exchangeWallDistanceHalos(1))
+        exchangeWallDistanceHalos(1) = .False.
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -826,9 +817,9 @@ contains
 
         ! exchange d2wall if necessairy
         exchanged2wall = .false.
-        if (equations == RANSEquations .and. useApproxWallDistance) then
-            exchanged2wall = .true.
-        endif
+        ! if (equations == RANSEquations .and. useApproxWallDistance) then
+        !     exchanged2wall = .true.
+        ! endif
 
         ! Exchange the adjoint values.
         call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., exchanged2wall)

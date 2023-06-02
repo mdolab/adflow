@@ -359,6 +359,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use variableReading, only: halosRead
         use haloExchange, only: whalo2
+        use wallDistanceData, only: exchangeWallDistanceHalos
 
         implicit none
         !
@@ -407,8 +408,13 @@ contains
         call initDepvarAndHalos(halosRead)
 
         ! Exchange d2wall on halo cells
-        call whalo2(1_intType, 1_intType, 0_intType, &
-                    .false., .false., .false., .true.)
+        do level = 1, nLevels
+            if (exchangeWallDistanceHalos(level)) then
+                call whalo2(level, 1_intType, 0_intType, &
+                            .false., .false., .false., .true.)
+                exchangeWallDistanceHalos(level) = .False.
+            end if
+        end do
 
 
     end subroutine initFlow

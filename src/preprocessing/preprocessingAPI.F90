@@ -25,6 +25,7 @@ contains
         use wallDistance, only: xVolumeVec, xSurfVec, wallScatter, &
                                 wallDistanceDataAllocated, updateWallAssociation, &
                                 computeWallDistance
+        use wallDistanceData, only: exchangeWallDistanceHalos
         use oversetData, only: cumDomProc, nDomProc, wallFringes, nDomTotal, &
                                overlapMatrix, oversetPresent, localWallFringes
         use utils, only: setPointers, EChk, setBufferSizes, terminate
@@ -159,9 +160,11 @@ contains
 
         ! Allocate some data of size nLevels for the fast wall distance calc
         allocate (xVolumeVec(nLevels), xSurfVec(nLevels, mm), wallScatter(nLevels, mm), &
-                  wallDistanceDataAllocated(nLevels), updateWallAssociation(nLevels))
+                  wallDistanceDataAllocated(nLevels), updateWallAssociation(nLevels), &
+                  exchangeWallDistanceHalos(nLevels) )
         wallDistanceDataAllocated = .False.
         updateWallAssociation = .True.
+        exchangeWallDistanceHalos = .False. 
 
         ! Nullify the wallFringe poiter as initialization
         nullify (wallFringes, localWallFringes)
