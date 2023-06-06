@@ -4,8 +4,34 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 from parseSlice import *
 import plotly.graph_objects as go
+from scipy.interpolate import splrep, splev
 
-slice_dict = readSlices("adflow/slice.dat", nmax=-1)
+
+class Airfoil:
+    """
+    Create the Airfoil object.
+
+    Parameters
+    ----------
+    data : dict
+        dict output by the cut and reordered.
+    """
+
+    def __init__(self, data):
+        self.data = data
+        self.x = data["x"]
+        self.y = data["y"]
+        self.z = data["z"]
+        self.u = data["u"]
+        self.v = data["v"]
+        self.w = data["w"]
+        self.cp = data["cp"]
+
+    def detectTeAngle(self):
+        pass
+
+
+slice_dict = readSlices("input_files/slice.dat", nmax=-1)
 
 slice_data = slice_dict["slice_data"]
 slice_conn = slice_dict["slice_conn"]
@@ -79,10 +105,8 @@ for ii, islice in enumerate(range(len(slice_conn))):
     # which is the max distance node from the mid-TE point
     te = 0.5 * (coords_array[upper_te_ind, :] + coords_array[lower_te_ind, :])
     # get the vector from the TE to all of the other nodes
-    te_to_pt_vec = np.zeros_like(coords_array)
-
-    for idim in range(3):
-        te_to_pt_vec[:, idim] = np.subtract(coords_array[:, idim], mid_te[idim])
+    te_to_pt_vec1 = np.zeros_like(coords_array)
+    te_to_pt_vec = coords_array[:, :] - te[:]
 
     # now compute the distances
     distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
@@ -94,107 +118,77 @@ for ii, islice in enumerate(range(len(slice_conn))):
     # roll the values based on this
     for k, v in data.items():
         data[k] = np.roll(v, -max_dist_ind)
+    coords_array = np.roll(coords_array, -max_dist_ind, axis=0)
 
     # also adjust the upper and lower TE indices
     upper_te_ind = (upper_te_ind - max_dist_ind) % len(data["x"])
     lower_te_ind = (lower_te_ind - max_dist_ind) % len(data["x"])
 
     # save the original LE and TE coordinates for comparison
-    orig_le_z = data["z"][0]
-    orig_le_x = data["x"][0]
+    orig_le = coords_array[0, :]
 
-    # the LE node and the n-neighboring nodes are interpolated regions with a p_poly order polynomial
-    # TODO using more neighbors will probably be more accurate.
-    n_neigh = 1  # number of neighboring nodes to include in both directions
-    p_poly = 2  # order of the polynomial fit
-    pts = np.zeros((n_neigh * 2 + 1, 2))
+    # the LE node and the n-neighboring nodes are interpolated regions with a B-spline
+    n_neigh = 10  # number of neighboring nodes to include in both directions
+    pts = np.zeros((n_neigh * 2 + 1, 3))
 
     # center point is always the LE
-    pts[n_neigh, 0] = data["z"][0]
-    pts[n_neigh, 1] = data["x"][0]
+    pts[n_neigh, :] = coords_array[0, :]
 
     for jj in range(n_neigh):
         # add the nodes up from the LE
-        pts[n_neigh + jj + 1, 0] = data["z"][jj + 1]
-        pts[n_neigh + jj + 1, 1] = data["x"][jj + 1]
-
+        pts[n_neigh + jj + 1, :] = coords_array[jj + 1, :]
         # add the nodes down from the LE
-        pts[n_neigh - jj - 1, 0] = data["z"][-1 - jj]
-        pts[n_neigh - jj - 1, 1] = data["x"][-1 - jj]
+        pts[n_neigh - jj - 1, :] = coords_array[-1 - jj, :]
 
-    # fit a 2nd order polynomial
-    coefs = np.polyfit(pts[:, 0], pts[:, 1], p_poly)
+    # fit curve to it
+    t = np.linspace(0, 1, num=n_neigh * 2 + 1)
+    tckx = splrep(t, pts[:, 0])
+    tcky = splrep(t, pts[:, 1])
+    tckz = splrep(t, pts[:, 2])
 
-    def my_poly(z_loc):
-        val = 0.0
-        for kk in range(p_poly):
-            val += coefs[kk] * (z_loc ** (p_poly - kk))
-        val += coefs[-1]
-        return val
-
-    def min_dist_from_te(z_loc):
-        x_loc = my_poly(z_loc)
-        vec = np.array([z_loc - mid_te[2], x_loc - mid_te[0]])
+    def min_dist_from_te(t):
+        vec = np.array([splev(t, tckx) - te[0], splev(t, tcky) - te[1], splev(t, tckz) - te[2]])
         return -np.linalg.norm(vec)
 
-    # bounds are always the first neighbors. we dont want to search any further than them
-    bounds = [[pts[n_neigh - 1, 0], pts[n_neigh + 1, 0]]]
-
-    # TODO optimization can be improved by providing analytic or CS derivatives
-    opt_res = minimize(min_dist_from_te, pts[n_neigh, 0], bounds=bounds, options={"disp": False}, tol=1e-14)
+    # can be improved by providing analytic or CS derivatives
+    opt_res = minimize(min_dist_from_te, [0], bounds=[[0, 1]], options={"disp": False}, tol=1e-14)
 
     if not opt_res["success"]:
         print(f"Optimization failed to find the max distance pt at islice {islice}")
 
     # take the result
-    z_opt = opt_res["x"]
-    x_opt = my_poly(z_opt)
+    t_opt = opt_res["x"]
 
     # overwrite the current LE coordinates with the new result
-    data["z"][0] = z_opt
-    data["x"][0] = x_opt
-
-    # check if the new point is above or below the old one
-    if z_opt > orig_le_z:
-        # new point is above, so we use the old LE and the first point above it to interpolate
-        interp_ind = 1
-    else:
-        # new point is below the old LE, we use the old LE and the first point below to interpolate
-        interp_ind = -1
-
-    # compute the distances from the new LE to the old LE and the other interp point
+    data["x"][0] = splev(t_opt, tckx)
+    data["y"][0] = splev(t_opt, tcky)
+    data["z"][0] = splev(t_opt, tckz)
+    coords_array[0, :] = np.array([data["x"][0], data["y"][0], data["z"][0]])
 
     # distance from the old LE to the new LE
-    dist1 = np.linalg.norm(
-        np.array(
-            [
-                x_opt - orig_le_x,
-                z_opt - orig_le_z,
-            ]
-        )
-    )
+    distold = np.linalg.norm(coords_array[0, :] - orig_le)
+    # distance from the new LE to upper old LE
+    distup = np.linalg.norm(coords_array[0, :] - coords_array[1, :])
+    # distance from the old LE to the new LE
+    distdown = np.linalg.norm(coords_array[0, :] - coords_array[-1, :])
 
-    # distance from the new LE to the interp point
-    dist2 = np.linalg.norm(
-        np.array(
-            [
-                x_opt - data["x"][interp_ind],
-                z_opt - data["z"][interp_ind],
-            ]
-        )
-    )
+    if distup >= distdown:
+        dist1 = distdown
+        dist2 = distold
+        interp_ind = -1
+    else:
+        dist1 = distup
+        dist2 = distold
+        interp_ind = 1
 
-    # total distance
     dist_tot = dist1 + dist2
-
     # interpolate all data at the new LE point
     for k, v in data.items():
         # except for coordinates
         if k not in ["x", "y", "z"]:
             old_le_data = v[0]
             interp_pt_data = v[interp_ind]
-            # interpolate the new data linearly based on distances. crude but should work
-            # another option would be just interpolating by z-coordinate
+            # interpolate the new data linearly based on distances.
             data[k][0] = old_le_data * dist1 / dist_tot + interp_pt_data * dist2 / dist_tot
 
     # separate the data for upper and lower parts.
@@ -227,20 +221,13 @@ for ii, islice in enumerate(range(len(slice_conn))):
         data_dict["param"] = param
 
 
-class Airfoil:
-    def __init__(self):
-        pass
-
-
 def plot_wing():
     fig = go.Figure()
     X = data["x"]
     Y = data["y"]
     Z = data["z"]
     fig.add_trace(go.Scatter3d(x=X, y=Y, z=Z, mode="markers", marker=dict(color="black", size=2)))
-    fig.add_trace(
-        go.Scatter3d(x=[mid_te[0]], y=[mid_te[1]], z=[mid_te[2]], mode="markers", marker=dict(color="red", size=3))
-    )
+    fig.add_trace(go.Scatter3d(x=[te[0]], y=[te[1]], z=[te[2]], mode="markers", marker=dict(color="red", size=3)))
 
     fig.update_layout(
         scene=dict(
