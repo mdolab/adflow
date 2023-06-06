@@ -792,7 +792,7 @@ contains
 
         case (menterSST)
 
-            call SSTEddyViscosity(2, il, 2, jl, 2, kl)
+            call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
             ! Note:
             ! - if the above is called with 1,ie..., it will use 2nd halo values for the FD derivatives. These might be unassigned.
             !    Also, it may also try to use the vorticity and d2wall in the 1st halo cell. These are also unassigned/undefined.
@@ -800,44 +800,44 @@ contains
             ! - even when called with 2,il,... it will compute derivatives in the production term (vorticity or strain). So the values of velocity
             !    better be up to date.
 
-            if (includeHalos) then
-                ! In case Eddy Visc is required in the halo cells, we can rely
-                ! 1. on the BCs for the walls and boundaries:
+            ! if (includeHalos) then
+            !     ! In case Eddy Visc is required in the halo cells, we can rely
+            !     ! 1. on the BCs for the walls and boundaries:
 
-                call applyAllTurbBCThisBlock(.false.) !QUESTION: should we include second halo?
+            !     call applyAllTurbBCThisBlock(.false.) !QUESTION: should we include second halo?
 
-                !======================================================================
-                ! QUESTION: should we use only the portion on eddy viscosity?
-                ! (the following snippet could be factored out of applyAllTurbBCThisBlock )
-                !======================================================================
-                ! bocos: do nn=1,nBocos
+            !     !======================================================================
+            !     ! QUESTION: should we use only the portion on eddy viscosity?
+            !     ! (the following snippet could be factored out of applyAllTurbBCThisBlock )
+            !     !======================================================================
+            !     ! bocos: do nn=1,nBocos
 
-                !    if(BCType(nn) == NSWallAdiabatic .or. &
-                !          BCType(nn) == NSWallIsothermal) then
+            !     !    if(BCType(nn) == NSWallAdiabatic .or. &
+            !     !          BCType(nn) == NSWallIsothermal) then
 
-                !       ! Viscous wall boundary condition. Eddy viscosity is
-                !       ! zero at the wall.
+            !     !       ! Viscous wall boundary condition. Eddy viscosity is
+            !     !       ! zero at the wall.
 
-                !       call bcEddyWall(nn)
+            !     !       call bcEddyWall(nn)
 
-                !    else
+            !     !    else
 
-                !       ! Any boundary condition but viscous wall. A homogeneous
-                !       ! Neumann condition is applied to the eddy viscosity.
+            !     !       ! Any boundary condition but viscous wall. A homogeneous
+            !     !       ! Neumann condition is applied to the eddy viscosity.
 
-                !       call bcEddyNoWall(nn)
+            !     !       call bcEddyNoWall(nn)
 
-                !    endif
-                ! enddo bocos
-                !======================================================================
+            !     !    endif
+            !     ! enddo bocos
+            !     !======================================================================
 
-                ! 2. on an exchange of vorticity in 1st halo region
+            !     ! 2. on an exchange of vorticity in 1st halo region
 
-                call whalo1(currentLevel, 1_intType, 0_intType, .false., .false., .False.)
-                ! Not sure what this is doing?
-                ! QUESTION: should we use whalo2 instead so that we have it in 2nd halo cells as well?
+            !     ! call whalo1(currentLevel, 1_intType, 0_intType, .false., .false., .False.)
+            !     ! Not sure what this is doing?
+            !     ! QUESTION: should we use whalo2 instead so that we have it in 2nd halo cells as well?
 
-            end if
+            ! end if
 
         case (ktau)
             call ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
