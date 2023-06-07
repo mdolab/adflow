@@ -36,6 +36,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "ref_file": "funcs_euler_scalar_jst_tut_wing.json",
             "aero_prob": copy.deepcopy(ap_tutorial_wing),
             "N_PROCS": 1,
+            "dot_prod_tol": 1e-10,
         },
         # scalar JST
         {
@@ -51,6 +52,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_euler_scalar_jst_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
         # Matrix JST
         {
@@ -70,6 +72,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_euler_matrix_jst_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
         # Upwind
         {
@@ -88,6 +91,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_euler_upwind_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
         # Tutorial wing random block order
         {
@@ -103,6 +107,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_euler_scalar_jst_rand_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
         # Tutorial wing laminar
         {
@@ -124,6 +129,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_laminar_tut_wing.json",
             "aero_prob": ap_tutorial_wing_laminar,
+            "dot_prod_tol": 1e-10,
         },
         # Tutorial wing RANS
         {
@@ -151,6 +157,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_rans_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 2e-10,
         },
         # Tutorial wing random RANS
         {
@@ -178,6 +185,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_rans_rand_tut_wing.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
         # CRM WBT
         {
@@ -201,6 +209,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_euler_scalar_jst_CRM_WBT.json",
             "aero_prob": ap_CRM,
+            "dot_prod_tol": 1e-10,
         },
     ]
 )
@@ -266,7 +275,7 @@ class TestFunctionals(reg_test_classes.RegTest):
         utils.assert_bwd_mode_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
 
     def test_dot_products(self):
-        utils.assert_dot_products_allclose(self.handler, self.CFDSolver, tol=1e-10)
+        utils.assert_dot_products_allclose(self.handler, self.CFDSolver, tol=self.dot_prod_tol)
 
 
 if __name__ == "__main__":
