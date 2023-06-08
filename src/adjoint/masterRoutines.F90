@@ -19,7 +19,7 @@ contains
         use initializeFlow, only: referenceState
         use section, only: sections, nSections
         use monitor, only: timeUnsteadyRestart
-        use sa, only: saSource, saViscous, saResScale, qq
+        use sa, only: sa_block_residuals
         use SST, only: SSTSolve, f1SST
         use kw, only: kwSolve
         use kt, only: ktSolve
@@ -184,13 +184,7 @@ contains
                     select case (turbModel)
 
                     case (spalartAllmaras)
-                        allocate (qq(2:il, 2:jl, 2:kl))
-                        call saSource
-                        call turbAdvection(1_intType, 1_intType, itu1 - 1, qq)
-                        !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
-                        call saViscous
-                        call saResScale
-                        deallocate (qq)
+                        call sa_block_residuals(.True.)
 
                     case (komegaWilcox, komegaModified)
                         call kwSolve(.True.)
@@ -286,7 +280,7 @@ contains
         use section, only: sections, nSections
         use monitor, only: timeUnsteadyRestart
         use utils, only: isWallType, setPointers, setPointers_d, EChk
-        use sa_d, only: saSource_d, saViscous_d, saResScale_d, qq
+        use sa, only: sa_block_residuals_d
         use turbutils_d, only: turbAdvection_d, computeEddyViscosity_d
         use fluxes_d, only: inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
                             inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
@@ -525,11 +519,7 @@ contains
 
                     select case (turbModel)
                     case (spalartAllmaras)
-                        call saSource_d
-                        call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
-                !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-                        call saViscous_d
-                        call saResScale_d
+                        call sa_block_residuals_d
                     end select
                 end if
 
@@ -644,7 +634,7 @@ contains
         use turbbcroutines_b, only: applyAllTurbBCthisblock_b, bcTurbTreatment_b
         use initializeflow_b, only: referenceState_b
         use wallDistance_b, only: updateWallDistancesQuickly_b
-        use sa_b, only: saSource_b, saViscous_b, saResScale_b, qq
+        use sa, only: sa_block_residuals_b
         use turbutils_b, only: turbAdvection_b, computeEddyViscosity_b
         use residuals_b, only: sourceTerms_block_b, initRes_block_b
         use fluxes_b, only: inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
@@ -771,14 +761,7 @@ contains
                 if (equations == RANSEquations) then
                     select case (turbModel)
                     case (spalartAllmaras)
-                        call saResScale_b
-                        call saViscous_b
-                        !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-                        call turbAdvection_b(1_intType, 1_intType, itu1 - 1, qq)
-                        ! turbAdvection_b zeros the faceid. This should be ok since
-                        ! it presumably is the last call in master using faceid and
-                        ! therefore should be the first call in master_b to use faceid
-                        call saSource_b
+                        call sa_block_residuals_b
                     end select
 
                     !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
@@ -1032,8 +1015,7 @@ contains
         use turbUtils_b, only: computeEddyViscosity_b
         use BCExtra_b, only: applyAllBC_Block_b
 
-        use sa_fast_b, only: saresscale_fast_b, saviscous_fast_b, &
-                             sasource_fast_b, qq
+        use sa, only: sa_block_residuals_fast_b
         use turbutils_fast_b, only: turbAdvection_fast_b
         use fluxes_fast_b, only: inviscidUpwindFlux_fast_b, inviscidDissFluxScalar_fast_b, &
                                  inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
@@ -1113,11 +1095,7 @@ contains
                 if (equations == RANSEquations) then
                     select case (turbModel)
                     case (spalartAllmaras)
-                        call saResScale_fast_b
-                        call saViscous_fast_b
-                        !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-                        call turbAdvection_fast_b(1_intType, 1_intType, itu1 - 1, qq)
-                        call saSource_fast_b
+                        call sa_block_residuals_fast_b
                     end select
 
                     !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
@@ -1276,7 +1254,7 @@ contains
         use inputDiscretization, only: lowSpeedPreconditioner, lumpedDiss, spaceDiscr
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setPointers_d, EChk
-        use sa_d, only: saSource_d, saViscous_d, saResScale_d, qq
+        use sa, only: sa_block_residuals_d
         use turbutils_d, only: turbAdvection_d, computeEddyViscosity_d
         use fluxes_d, only: inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
                             inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
@@ -1325,11 +1303,7 @@ contains
 
             select case (turbModel)
             case (spalartAllmaras)
-                call saSource_d
-                call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
-          !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-                call saViscous_d
-                call saResScale_d
+                call sa_block_residuals_d
             end select
         end if
 

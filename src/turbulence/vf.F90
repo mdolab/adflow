@@ -12,7 +12,6 @@ contains
         use iteration
         use utils, only: setPointers
         use turbUtils, only: vfEddyViscosity, vfScale, unsteadyTurbTerm
-        use turbBCRoutines, only: bcTurbTreatment, applyAllTurbBCThisBlock
 
         implicit none
         !
@@ -20,9 +19,6 @@ contains
         !
         logical, intent(in) :: resOnly
 
-        ! Set the arrays for the boundary condition treatment.
-
-        call bcTurbTreatment
 
         ! Compute time and length scale
 
@@ -46,12 +42,6 @@ contains
             ! Compute the corresponding eddy viscosity.
 
             call vfEddyViscosity(2, il, 2, jl, 2, kl)
-
-            ! Set the halo values for the turbulent variables.
-            ! We are on the finest mesh, so the second layer of halo
-            ! cells must be computed as well.
-
-            call applyAllTurbBCThisBlock(.true.)
 
         end if
 

@@ -16,6 +16,7 @@ contains
         use iteration
         use turbMod
         use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use turbBCRoutines, only: bcTurbTreatment, applyAllTurbBCThisBlock
         use sa
         use kw
         use kt
@@ -62,11 +63,15 @@ contains
                     ! setPointers for this block:
                     call setPointers(nn, currentLevel, sps)
 
+                    ! Set the arrays for the boundary condition treatment.
+                    call bcTurbTreatment
+
                     ! Now call the selected turbulence model
                     select case (turbModel)
 
                     case (spalartAllmaras)
-                        call sa_block(.false.)
+                        call sa_block_residuals(.False.)
+                        call saSolve
 
                     case (komegaWilcox, komegaModified)
                         call kw_block(.false.)
@@ -81,6 +86,13 @@ contains
                         call vf_block(.false.)
 
                     end select
+
+                    ! Set the halo values for the turbulent variables.
+                    ! We are on the finest mesh, so the second layer of halo
+                    ! cells must be computed as well.
+
+                    call applyAllTurbBCThisBlock(.true.)
+
 
                 end do domains
             end do spectralLoop
@@ -138,7 +150,7 @@ contains
                 select case (turbModel)
 
                 case (spalartAllmaras)
-                    call sa_block(.True.)
+                    call sa_block_residuals(.True.)
 
                 case (komegaWilcox, komegaModified)
                     call kw_block(.True.)

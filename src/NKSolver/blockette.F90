@@ -817,7 +817,7 @@ contains
         use flowVarRefState, only: nwf, nw, viscous, nt1, nt2
         use inputPhysics, only: equationMode, equations, turbModel
         use residuals, only: initres_block
-        use sa, only: sa_block
+        use sa, only: sa_block_residuals
         use SST, only: sst_block
         use kt, only: kt_block
         use kw, only: kw_block
@@ -865,7 +865,7 @@ contains
             ! Now call the selected turbulence model
             select case (turbModel)
             case (spalartAllmaras)
-                call sa_block(.true.)
+                call sa_block_residuals(.true.)
 
             case (komegaWilcox, komegaModified)
                 call kw_block(.True.)

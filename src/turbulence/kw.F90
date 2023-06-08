@@ -14,16 +14,12 @@ contains
         use iteration
         use utils, only: setPointers
         use turbUtils, only: kwEddyViscosity
-        use turbBCRoutines, only: bcTurbTreatment, applyAllTurbBCThisBlock
         implicit none
         !
         !      Subroutine argument.
         !
         logical, intent(in) :: resOnly
 
-        ! Set the arrays for the boundary condition treatment.
-
-        call bcTurbTreatment
 
         ! Solve the transport equations for k and omega.
 
@@ -37,12 +33,6 @@ contains
             ! Compute the corresponding eddy viscosity.
 
             call kwEddyViscosity(2, il, 2, jl, 2, kl)
-
-            ! Set the halo values for the turbulent variables.
-            ! We are on the finest mesh, so the second layer of halo
-            ! cells must be computed as well.
-
-            call applyAllTurbBCThisBlock(.true.)
 
         end if
 
