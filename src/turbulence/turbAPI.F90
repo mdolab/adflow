@@ -35,13 +35,6 @@ contains
 
         do iter = 1, nSubIterTurb
 
-            ! Compute the quantities for certain turbulence models that
-            ! need to be communicated between blocks.
-
-            if (turbModel == menterSST) then
-                call f1SST
-            end if
-
             ! Compute the time derivative for the time spectral mode.
             select case (turbModel)
             case (spalartAllmaras)
@@ -77,7 +70,8 @@ contains
                         call kw_block(.false.)
 
                     case (menterSST)
-                        call SST_block(.false.)
+                        call SST_block_residuals(.false.)
+                        call SSTSolve
 
                     case (ktau)
                         call kt_block(.false.)
@@ -128,13 +122,6 @@ contains
 
         integer(kind=intType) :: nn, sps
 
-        ! Compute the quantities for certain turbulence models that
-        ! need to be communicated between blocks.
-
-        if (turbModel == menterSST) then
-            call f1SST
-        end if
-
         ! Loop over the number of spectral solutions.
 
         spectralLoop: do sps = 1, nTimeIntervalsSpectral
@@ -156,7 +143,7 @@ contains
                     call kw_block(.True.)
 
                 case (menterSST)
-                    call SST_block(.True.)
+                    call SST_block_residuals(.True.)
 
                 case (ktau)
                     call kt_block(.True.)

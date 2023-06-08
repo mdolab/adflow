@@ -91,7 +91,6 @@ contains
         use wallDistanceData, only: exchangeWallDistanceHalos
         use utils, only: setPointers, EChk
         use turbUtils, only: computeEddyViscosity
-        use SST, only: f1SST
         use residuals, only: sourceTerms_block
         use surfaceIntegrations, only: getSolution
         use adjointExtra, only: volume_block, metric_block, boundaryNormals, xhalo_block
@@ -286,11 +285,6 @@ contains
                     call applyAllBC_block(.True.)
                 end do
             end do
-        end if
-
-        ! Update the f1 blending function for Menter SST
-        if (turbRes .and. turbModel == menterSST) then
-            call f1SST
         end if
 
         ! Main loop for the residual...This is where the blockette magic happens.
@@ -818,7 +812,7 @@ contains
         use inputPhysics, only: equationMode, equations, turbModel
         use residuals, only: initres_block
         use sa, only: sa_block_residuals
-        use SST, only: sst_block
+        use SST, only: sst_block_residuals
         use kt, only: kt_block
         use kw, only: kw_block
         use vf, only: vf_block
@@ -871,8 +865,7 @@ contains
                 call kw_block(.True.)
 
             case (menterSST)
-                ! For this to work, f1sst must have been called prior to enter blockResCore
-                call SST_block(.True.)
+                call SST_block_residuals(.True.)
 
             case (ktau)
                 call kt_block(.True.)

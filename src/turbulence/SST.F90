@@ -4,54 +4,80 @@ module SST
     ! model. It is slightly more modularized than the original which makes
     ! performing reverse mode AD simplier.
 
+
+    use constants
+
+    real(kind=realType), dimension(:, :, :, :, :), allocatable :: qq
+
 contains
 
-    subroutine SST_block(resOnly)
-
+    subroutine SST_block_residuals(cleanUp)
+        !--------------------------------------------------------------
+        ! Manual Differentiation Warning: Modifying this routine requires
+        ! modifying the hand-written forward and reverse routines.
+        ! --------------------------------------------------------------
         use constants
         use blockPointers, only: il, jl, kl
         use inputTimeSpectral
+        use inputPhysics, only: turbProd
         use iteration
-        use turbUtils, only: SSTEddyViscosity
-        use turbBCRoutines, only: bcTurbTreatment, applyAllTurbBCThisBlock
+        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder
+        use turbUtils, only: turbAdvection, unsteadyTurbTerm
+
         implicit none
 
         !
         !      Subroutine argument.
         !
-        logical, intent(in) :: resOnly
+        logical, intent(in) :: cleanUp
         !
         !      Local variables.
         !
-        integer(kind=intType) :: nn, sps
+        integer(kind=intType) :: nn
 
-        ! Set the arrays for the boundary condition treatment.
+        ! Compute the blending function 
+        call f1SST
 
-        call bcTurbTreatment
+        ! Alloc central jacobian memory
+        allocate (qq(2:il, 2:jl, 2:kl, 2, 2))
 
-        ! Solve the transport equations for k and omega.
+        ! Production Term
+        select case (turbProd)
+        case (strain)
+            call prodSmag2(2, il, 2, jl, 2, kl)
 
-        call SSTSolve(resOnly)
+        case (vorticity)
+            call prodWmag2(2, il, 2, jl, 2, kl)
 
-        ! The eddy viscosity and the boundary conditions are only
-        ! applied if an actual update has been computed in SSTSolve.
+        case (katoLaunder)
+            call prodKatoLaunder(2, il, 2, jl, 2, kl)
 
-        if (.not. resOnly) then
+        end select
 
-            ! Compute the corresponding eddy viscosity.
+        ! Source Terms
+        call SSTSource
 
-            call SSTEddyViscosity(2, il, 2, jl, 2, kl)
+        ! Advection Term
+        nn = itu1 - 1
+        call turbAdvection(2_intType, 2_intType, nn, qq)
 
-            ! Set the halo values for the turbulent variables.
-            ! We are on the finest mesh, so the second layer of halo
-            ! cells must be computed as well.
+        ! Unsteady Term
+        call unsteadyTurbTerm(2_intType, 2_intType, nn, qq)
 
-            call applyAllTurbBCThisBlock(.true.)
+        ! Viscous Terms
+        call SSTViscous
+
+        ! Perform the residual scaling
+        call SSTResScale
+
+        ! clean up
+        if (cleanUp) then
+            deallocate (qq)
         end if
 
-    end subroutine SST_block
+    end subroutine SST_block_residuals
 
-    subroutine SSTSolve(resOnly)
+    subroutine SSTSource
         !
         !       SSTSolve solves the turbulent transport equations for
         !       menter's SST variant of the k-omega model in a decoupled
@@ -59,51 +85,27 @@ contains
         !
         use blockPointers
         use constants
-        use flowVarRefState
-        use inputIteration
         use inputPhysics
         use paramTurb
         use turbMod, only: dvt, vort, prod, kwCD, f1
-        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder, &
-                             turbAdvection, unsteadyTurbTerm, tdia3, kwCDterm
-        use turbCurveFits, only: curveTupYp
         implicit none
-        !
-        !      Subroutine arguments.
-        !
-        logical, intent(in) :: resOnly
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, nn
+        integer(kind=intType) :: i, j, k
 
         real(kind=realType) :: rSSTGam1, rSSTGam2, t1, t2
         real(kind=realType) :: rSSTGam, rSSTBeta
         real(kind=realType) :: rhoi, ss, spk, sdk
-        real(kind=realType) :: voli, volmi, volpi
         real(kind=realType) :: xm, ym, zm, xp, yp, zp, xa, ya, za
-        real(kind=realType) :: ttm, ttp, mulm, mulp, muem, muep
-        real(kind=realType) :: rSSTSigkp1, rSSTSigk, rSSTSigkm1
-        real(kind=realType) :: rSSTSigwp1, rSSTSigw, rSSTSigwm1
-        real(kind=realType) :: c1m, c1p, c10, c2m, c2p, c20
-        real(kind=realType) :: b1, b2, c1, c2, d1, d2
-        real(kind=realType) :: utau, qs, uu, um, up, factor, rblank
 
-        real(kind=realType), dimension(itu1:itu2) :: tup
-
-        real(kind=realType), dimension(2:il, 2:jl, 2:kl, 2, 2) :: qq
-        real(kind=realType), dimension(2, 2:max(il, jl, kl)) :: bb, dd, ff
-        real(kind=realType), dimension(2, 2, 2:max(il, jl, kl)) :: cc
-
-        real(kind=realType), dimension(:, :, :), pointer :: ddw, ww, ddvt
-        real(kind=realType), dimension(:, :), pointer :: rrlv
-        real(kind=realType), dimension(:, :), pointer :: dd2Wall
-
-        logical, dimension(2:jl, 2:kl), target :: flagI2, flagIl
-        logical, dimension(2:il, 2:kl), target :: flagJ2, flagJl
-        logical, dimension(2:il, 2:jl), target :: flagK2, flagKl
-
-        logical, dimension(:, :), pointer :: flag
+        ! Set a couple of pointers to the correct entries in dw to
+        ! make the code more readable.
+        dvt => scratch(1:, 1:, 1:, idvt:)
+        prod => scratch(1:, 1:, 1:, iprod)
+        vort => prod !only true if turbProd==vorticity
+        kwCD => scratch(1:, 1:, 1:, icd)
+        f1 => scratch(1:, 1:, 1:, if1SST)
 
         ! Set model constants
 
@@ -117,29 +119,7 @@ contains
                    - rSSTSigw2 * rSSTK * rSSTK / sqrt(rSSTBetas)
 #endif
 
-        ! Set a couple of pointers to the correct entries in dw to
-        ! make the code more readable.
 
-        dvt => scratch(1:, 1:, 1:, idvt:)
-        prod => scratch(1:, 1:, 1:, iprod)
-        vort => prod !only true if turbProd==vorticity
-        kwCD => scratch(1:, 1:, 1:, icd)
-        f1 => scratch(1:, 1:, 1:, if1SST)
-        !
-        !       Production term.
-        !
-        select case (turbProd)
-        case (strain)
-            call prodSmag2(2, il, 2, jl, 2, kl)
-
-        case (vorticity)
-            call prodWmag2(2, il, 2, jl, 2, kl)
-
-        case (katoLaunder)
-            call prodKatoLaunder(2, il, 2, jl, 2, kl)
-
-        end select
-        !
         !       Source terms.
         !       Determine the source term and its derivative w.r.t. k and
         !       omega for all internal cells of the block.
@@ -193,13 +173,40 @@ contains
                 end do
             end do
         end do
+
+    end subroutine SSTSource
+
+    subroutine SSTViscous
+        use blockPointers
+        use constants
+        use paramTurb
+        use turbMod, only: dvt, f1
+        implicit none
         !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k
+
+        real(kind=realType) :: t1, t2
+        real(kind=realType) :: rhoi
+        real(kind=realType) :: voli, volmi, volpi
+        real(kind=realType) :: xm, ym, zm, xp, yp, zp, xa, ya, za
+        real(kind=realType) :: mulm, mulp, muem, muep
+        real(kind=realType) :: ttm, ttp
+        real(kind=realType) :: rSSTSigkp1, rSSTSigk, rSSTSigkm1
+        real(kind=realType) :: rSSTSigwp1, rSSTSigw, rSSTSigwm1
+        real(kind=realType) :: c1m, c1p, c10, c2m, c2p, c20
+        real(kind=realType) :: b1, b2, c1, c2, d1, d2
+        real(kind=realType) :: rblank
+
+        ! Set a couple of pointers to the correct entries in dw to
+        ! make the code more readable.
+        dvt => scratch(1:, 1:, 1:, idvt:)
+        f1 => scratch(1:, 1:, 1:, if1SST)
+
+
         !       Advection and unsteady terms.
         !
-        nn = itu1 - 1
-        call turbAdvection(2_intType, 2_intType, nn, qq)
-
-        call unsteadyTurbTerm(2_intType, 2_intType, nn, qq)
         !
         !       Viscous terms in k-direction.
         !
@@ -562,12 +569,29 @@ contains
             end do
         end do
 
+    end subroutine SSTViscous
+
+    subroutine SSTResScale
+
+        use blockPointers
+        use turbMod, only: dvt
+
+        implicit none
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k
+
+        real(kind=realType) :: rblank
+
         ! Multiply the residual by the volume and store this in dw; this
         ! is done for monitoring reasons only. The multiplication with the
         ! volume is present to be consistent with the flow residuals; also
         ! the negative value is taken, again to be consistent with the
         ! flow equations. Also multiply by iblank so that no updates occur
         ! in holes or the overset boundary.
+
+        dvt => scratch(1:, 1:, 1:, idvt:)
 
         do k = 2, kl
             do j = 2, jl
@@ -578,6 +602,196 @@ contains
                 end do
             end do
         end do
+
+    end subroutine SSTResScale
+
+    subroutine f1SST
+        !
+        !       f1SST computes the blending function f1 in both the owned
+        !       cells and the first layer of halo's. The result is stored in
+        !       scratch(:,:,:,if1SST). For the computation of f1 also the cross
+        !       diffusion term is needed. This is stored in scratch(:,:,:,icd) such
+        !       that it can be used in SSTSolve later on.
+        !
+        use constants
+        use blockPointers
+        use inputTimeSpectral
+        use iteration
+        use turbMod
+        use utils, only: setPointers
+        use turbUtils, only: kwCDTerm
+        use paramTurb, only: rSSTSigw2
+        implicit none
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: sps, nn, mm, i, j, k
+
+        real(kind=realType) :: t1, t2, arg1, myeps
+
+        myeps = 1e-10_realType / two / rSSTSigw2
+
+
+        ! Set the pointers for f1 and kwCD to the correct entries
+        ! in scratch which are currently not used.
+
+        f1 => scratch(1:, 1:, 1:, if1SST)
+        kwCD => scratch(1:, 1:, 1:, icd)
+
+        ! Compute the cross diffusion term.
+
+        call kwCDterm
+
+        ! Compute the blending function f1 for all owned cells.
+
+        do k = 1, ke
+            do j = 1, je
+                do i = 1, ie
+
+                    t1 = sqrt(w(i, j, k, itu1)) &
+                         / (0.09_realType * w(i, j, k, itu2) * d2Wall(i, j, k))
+                    t2 = 500.0_realType * rlv(i, j, k) &
+                         / (w(i, j, k, irho) * w(i, j, k, itu2) * d2Wall(i, j, k)**2)
+                    t1 = max(t1, t2)
+#ifdef SST_2003
+                    t2 = two * w(i, j, k, itu1) &
+                         / (max(myeps / w(i, j, k, irho), kwCD(i, j, k)) * d2Wall(i, j, k)**2)
+#else
+                    t2 = two * w(i, j, k, itu1) &
+                         / (max(eps, kwCD(i, j, k)) * d2Wall(i, j, k)**2)
+#endif
+
+                    arg1 = min(t1, t2)
+                    f1(i, j, k) = tanh(arg1**4)
+
+                end do
+            end do
+        end do
+
+        ! Loop over the boundary conditions to set f1 in the boundary
+        ! halo's. A Neumann boundary condition is used for all BC's.
+
+        bocos: do nn = 1, nBocos
+
+            ! Determine the face on which this subface is located, loop
+            ! over its range and copy f1. Although the range may include
+            ! indirect halo's which are not computed, this is no problem,
+            ! because in SSTSolve only direct halo's are used.
+
+            select case (BCFaceID(nn))
+
+            case (iMin)
+                do k = kcBeg(nn), kcEnd(nn)
+                    do j = jcBeg(nn), jcEnd(nn)
+                        f1(1, j, k) = f1(2, j, k)
+                    end do
+                end do
+
+                !              ==========================================================
+
+            case (iMax)
+
+                do k = kcBeg(nn), kcEnd(nn)
+                    do j = jcBeg(nn), jcEnd(nn)
+                        f1(ie, j, k) = f1(il, j, k)
+                    end do
+                end do
+
+                !              ==========================================================
+
+            case (jMin)
+
+                do k = kcBeg(nn), kcEnd(nn)
+                    do i = icBeg(nn), icEnd(nn)
+                        f1(i, 1, k) = f1(i, 2, k)
+                    end do
+                end do
+
+                !              ==========================================================
+
+            case (jMax)
+
+                do k = kcBeg(nn), kcEnd(nn)
+                    do i = icBeg(nn), icEnd(nn)
+                        f1(i, je, k) = f1(i, jl, k)
+                    end do
+                end do
+
+                !              ==========================================================
+
+            case (kMin)
+
+                do j = jcBeg(nn), jcEnd(nn)
+                    do i = icBeg(nn), icEnd(nn)
+                        f1(i, j, 1) = f1(i, j, 2)
+
+                    end do
+                end do
+
+                !              ==========================================================
+
+            case (kMax)
+
+                do j = jcBeg(nn), jcEnd(nn)
+                    do i = icBeg(nn), icEnd(nn)
+                        f1(i, j, ke) = f1(i, j, kl)
+                    end do
+                end do
+
+            end select
+
+        end do bocos
+
+    end subroutine f1SST
+
+    subroutine SSTSolve
+        use blockPointers
+        use constants
+        use flowVarRefState
+        use inputIteration
+        use inputPhysics
+        use paramTurb
+        use turbMod, only: dvt, f1
+        use turbUtils, only: tdia3
+        use turbCurveFits, only: curveTupYp
+        use turbUtils, only: SSTEddyViscosity
+        implicit none
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k, nn
+
+        real(kind=realType) :: t1, t2
+        real(kind=realType) :: rhoi
+        real(kind=realType) :: ss, spk, sdk
+        real(kind=realType) :: voli, volmi, volpi
+        real(kind=realType) :: xm, ym, zm, xp, yp, zp, xa, ya, za
+        real(kind=realType) :: ttm, ttp, mulm, mulp, muem, muep
+        real(kind=realType) :: rSSTSigkp1, rSSTSigk, rSSTSigkm1
+        real(kind=realType) :: rSSTSigwp1, rSSTSigw, rSSTSigwm1
+        real(kind=realType) :: c1m, c1p, c2m, c2p, c20
+        real(kind=realType) :: utau, qs, uu, um, up, factor, rblank
+
+        real(kind=realType), dimension(itu1:itu2) :: tup
+
+        real(kind=realType), dimension(2, 2:max(il, jl, kl)) :: bb, dd, ff
+        real(kind=realType), dimension(2, 2, 2:max(il, jl, kl)) :: cc
+
+        real(kind=realType), dimension(:, :, :), pointer :: ddw, ww, ddvt
+        real(kind=realType), dimension(:, :), pointer :: rrlv
+        real(kind=realType), dimension(:, :), pointer :: dd2Wall
+
+        logical, dimension(2:jl, 2:kl), target :: flagI2, flagIl
+        logical, dimension(2:il, 2:kl), target :: flagJ2, flagJl
+        logical, dimension(2:il, 2:jl), target :: flagK2, flagKl
+
+        logical, dimension(:, :), pointer :: flag
+
+        ! Set a couple of pointers to the correct entries in dw to
+        ! make the code more readable.
+        dvt => scratch(1:, 1:, 1:, idvt:)
+        f1 => scratch(1:, 1:, 1:, if1SST)
+
 
         ! Initialize the wall function flags to .false.
 
@@ -678,10 +892,6 @@ contains
 
             end do bocos
         end if testWallFunctions
-
-        ! Return if only the residual must be computed.
-
-        if (resOnly) return
 
         ! For implicit relaxation take the local time step into account,
         ! where dt is the inverse of the central jacobian times the cfl
@@ -1159,157 +1369,14 @@ contains
             end do
         end do
 
+        ! Compute the corresponding eddy viscosity.
+
+        call SSTEddyViscosity(2, il, 2, jl, 2, kl)
+
+        ! Clean up
+
+        deallocate (qq)
+
     end subroutine SSTSolve
-
-    subroutine f1SST
-        !
-        !       f1SST computes the blending function f1 in both the owned
-        !       cells and the first layer of halo's. The result is stored in
-        !       scratch(:,:,:,if1SST). For the computation of f1 also the cross
-        !       diffusion term is needed. This is stored in scratch(:,:,:,icd) such
-        !       that it can be used in SSTSolve later on.
-        !
-        use constants
-        use blockPointers
-        use inputTimeSpectral
-        use iteration
-        use turbMod
-        use utils, only: setPointers
-        use turbUtils, only: kwCDTerm
-        use paramTurb, only: rSSTSigw2
-        implicit none
-        !
-        !      Local variables.
-        !
-        integer(kind=intType) :: sps, nn, mm, i, j, k
-
-        real(kind=realType) :: t1, t2, arg1, myeps
-
-        myeps = 1e-10_realType / two / rSSTSigw2
-
-        ! First part. Compute the values of the blending function f1
-        ! for each block and spectral solution.
-
-        spectralLoop: do sps = 1, nTimeIntervalsSpectral
-            domains: do mm = 1, nDom
-
-                ! Set the pointers to this block.
-
-                call setPointers(mm, currentLevel, sps)
-
-                ! Set the pointers for f1 and kwCD to the correct entries
-                ! in scratch which are currently not used.
-
-                f1 => scratch(1:, 1:, 1:, if1SST)
-                kwCD => scratch(1:, 1:, 1:, icd)
-
-                ! Compute the cross diffusion term.
-
-                call kwCDterm
-
-                ! Compute the blending function f1 for all owned cells.
-
-                do k = 1, ke
-                    do j = 1, je
-                        do i = 1, ie
-
-                            t1 = sqrt(w(i, j, k, itu1)) &
-                                 / (0.09_realType * w(i, j, k, itu2) * d2Wall(i, j, k))
-                            t2 = 500.0_realType * rlv(i, j, k) &
-                                 / (w(i, j, k, irho) * w(i, j, k, itu2) * d2Wall(i, j, k)**2)
-                            t1 = max(t1, t2)
-#ifdef SST_2003
-                            t2 = two * w(i, j, k, itu1) &
-                                 / (max(myeps / w(i, j, k, irho), kwCD(i, j, k)) * d2Wall(i, j, k)**2)
-#else
-                            t2 = two * w(i, j, k, itu1) &
-                                 / (max(eps, kwCD(i, j, k)) * d2Wall(i, j, k)**2)
-#endif
-
-                            arg1 = min(t1, t2)
-                            f1(i, j, k) = tanh(arg1**4)
-
-                        end do
-                    end do
-                end do
-
-                ! Loop over the boundary conditions to set f1 in the boundary
-                ! halo's. A Neumann boundary condition is used for all BC's.
-
-                bocos: do nn = 1, nBocos
-
-                    ! Determine the face on which this subface is located, loop
-                    ! over its range and copy f1. Although the range may include
-                    ! indirect halo's which are not computed, this is no problem,
-                    ! because in SSTSolve only direct halo's are used.
-
-                    select case (BCFaceID(nn))
-
-                    case (iMin)
-                        do k = kcBeg(nn), kcEnd(nn)
-                            do j = jcBeg(nn), jcEnd(nn)
-                                f1(1, j, k) = f1(2, j, k)
-                            end do
-                        end do
-
-                        !              ==========================================================
-
-                    case (iMax)
-
-                        do k = kcBeg(nn), kcEnd(nn)
-                            do j = jcBeg(nn), jcEnd(nn)
-                                f1(ie, j, k) = f1(il, j, k)
-                            end do
-                        end do
-
-                        !              ==========================================================
-
-                    case (jMin)
-
-                        do k = kcBeg(nn), kcEnd(nn)
-                            do i = icBeg(nn), icEnd(nn)
-                                f1(i, 1, k) = f1(i, 2, k)
-                            end do
-                        end do
-
-                        !              ==========================================================
-
-                    case (jMax)
-
-                        do k = kcBeg(nn), kcEnd(nn)
-                            do i = icBeg(nn), icEnd(nn)
-                                f1(i, je, k) = f1(i, jl, k)
-                            end do
-                        end do
-
-                        !              ==========================================================
-
-                    case (kMin)
-
-                        do j = jcBeg(nn), jcEnd(nn)
-                            do i = icBeg(nn), icEnd(nn)
-                                f1(i, j, 1) = f1(i, j, 2)
-
-                            end do
-                        end do
-
-                        !              ==========================================================
-
-                    case (kMax)
-
-                        do j = jcBeg(nn), jcEnd(nn)
-                            do i = icBeg(nn), icEnd(nn)
-                                f1(i, j, ke) = f1(i, j, kl)
-                            end do
-                        end do
-
-                    end select
-
-                end do bocos
-
-            end do domains
-        end do spectralLoop
-
-    end subroutine f1SST
 
 end module SST

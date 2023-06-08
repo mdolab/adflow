@@ -20,7 +20,7 @@ contains
         use section, only: sections, nSections
         use monitor, only: timeUnsteadyRestart
         use sa, only: sa_block_residuals
-        use SST, only: SSTSolve, f1SST
+        use SST, only: SST_block_residuals
         use kw, only: kwSolve
         use kt, only: ktSolve
         use vf, only: vfSolve, keSolve
@@ -157,11 +157,6 @@ contains
             end do
         end if
 
-        ! Updating working variables for MenterSST model
-        if (equations == RANSequations .and. turbModel == menterSST) then
-            call f1SST
-        end if
-
         ! Main loop for the residual
         do sps = 1, nTimeIntervalsSpectral
             do nn = 1, nDom
@@ -190,7 +185,7 @@ contains
                         call kwSolve(.True.)
 
                     case (menterSST)
-                        call SSTSolve(.True.)
+                        call SST_block_residuals(.True.)
 
                     case (ktau)
                         call ktSolve(.True.)
