@@ -184,8 +184,4 @@ cFiles = 	metis-4.0/metis.c\
 		utils/connect_signals.c\
 		adjoint/initPETScWrap.c\
 		partitioning/metisInterface.c\
-		adjoint/ADFirstAidKit/adStack.c\
-		adjoint/ADFirstAidKit/dpStack.c\
-
-f77Files = 	adjoint/ADFirstAidKit/adBuffer.f\
-		adjoint/ADFirstAidKit/debugAD.f\
+		adjoint/ADFirstAidKit/adStack.c
