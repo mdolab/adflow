@@ -14,6 +14,10 @@ module sa
 contains
 #ifndef USE_TAPENADE
     subroutine sa_block_residuals(cleanUp)
+        !--------------------------------------------------------------
+        ! Manual Differentiation Warning: Modifying this routine requires
+        ! modifying the hand-written forward and reverse routines.
+        ! --------------------------------------------------------------
         !
         !       sa solves the transport equation for the Spalart-Allmaras
         !       turbulence model in a decoupled manner using a diagonal
@@ -38,7 +42,7 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: nn, sps
+        integer(kind=intType) :: nn
 
 
         ! Alloc central jacobian memory
