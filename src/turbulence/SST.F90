@@ -21,8 +21,8 @@ contains
         use inputTimeSpectral
         use inputPhysics, only: turbProd
         use iteration
-        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder
-        use turbUtils, only: turbAdvection, unsteadyTurbTerm
+        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder, &
+                             turbAdvection, unsteadyTurbTerm, kwCDTerm
 
         implicit none
 
@@ -34,6 +34,9 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: nn
+
+        ! Compute the cross diffusion term.
+        call kwCDterm
 
         ! Compute the blending function 
         call f1SST
@@ -600,7 +603,6 @@ contains
         use inputTimeSpectral
         use iteration
         use utils, only: setPointers
-        use turbUtils, only: kwCDTerm
         use paramTurb, only: rSSTSigw2
         implicit none
         !
@@ -611,11 +613,6 @@ contains
         real(kind=realType) :: t1, t2, arg1, myeps
 
         myeps = 1e-10_realType / two / rSSTSigw2
-
-
-        ! Compute the cross diffusion term.
-
-        call kwCDterm
 
         ! Compute the blending function f1 for all owned cells.
 
