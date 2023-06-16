@@ -87,7 +87,6 @@ contains
         use constants
         use inputPhysics
         use paramTurb
-        use turbMod, only: dvt, vort, prod, kwCD, f1
         implicit none
         !
         !      Local variables.
@@ -99,13 +98,6 @@ contains
         real(kind=realType) :: rhoi, ss, spk, sdk
         real(kind=realType) :: xm, ym, zm, xp, yp, zp, xa, ya, za
 
-        ! Set a couple of pointers to the correct entries in dw to
-        ! make the code more readable.
-        dvt => scratch(1:, 1:, 1:, idvt:)
-        prod => scratch(1:, 1:, 1:, iprod)
-        vort => prod !only true if turbProd==vorticity
-        kwCD => scratch(1:, 1:, 1:, icd)
-        f1 => scratch(1:, 1:, 1:, if1SST)
 
         ! Set model constants
 
@@ -133,7 +125,7 @@ contains
                     ! Compute the blended value of rSSTGam and rSSTBeta,
                     ! which occur in the production terms of k and omega.
 
-                    t1 = f1(i, j, k); t2 = one - t1
+                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
                     rSSTGam = t1 * rSSTGam1 + t2 * rSSTGam2
                     rSSTBeta = t1 * rSSTBeta1 + t2 * rSSTBeta2
 
@@ -146,17 +138,17 @@ contains
                     ! except that everything is divided by rho here
 
                     rhoi = one / w(i, j, k, irho)
-                    ss = prod(i, j, k)
+                    ss = scratch(i, j, k, iprod)
                     spk = rev(i, j, k) * ss * rhoi
                     sdk = rSSTBetas * w(i, j, k, itu1) * w(i, j, k, itu2)
                     spk = min(spk, pklim * sdk)
 
-                    dvt(i, j, k, 1) = spk - sdk
+                    scratch(i, j, k, idvt + 0) = spk - sdk
 #ifdef SST_2003
-                    dvt(i, j, k, 2) = rSSTGam * spk / rev(i, j, k) + two * t2 * rSSTSigw2 * kwCD(i, j, k) &
+                    scratch(i, j, k, idvt + 1) = rSSTGam * spk / rev(i, j, k) + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
                                       - rSSTBeta * w(i, j, k, itu2)**2
 #else
-                    dvt(i, j, k, 2) = rSSTGam * ss + two * t2 * rSSTSigw2 * kwCD(i, j, k) &
+                    scratch(i, j, k, idvt + 1) = rSSTGam * ss + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
                                       - rSSTBeta * w(i, j, k, itu2)**2
 #endif
 
@@ -180,7 +172,6 @@ contains
         use blockPointers
         use constants
         use paramTurb
-        use turbMod, only: dvt, f1
         implicit none
         !
         !      Local variables.
@@ -198,12 +189,6 @@ contains
         real(kind=realType) :: c1m, c1p, c10, c2m, c2p, c20
         real(kind=realType) :: b1, b2, c1, c2, d1, d2
         real(kind=realType) :: rblank
-
-        ! Set a couple of pointers to the correct entries in dw to
-        ! make the code more readable.
-        dvt => scratch(1:, 1:, 1:, idvt:)
-        f1 => scratch(1:, 1:, 1:, if1SST)
-
 
         !       Advection and unsteady terms.
         !
@@ -238,15 +223,15 @@ contains
                     ! k and k+1.
                     ! CAUTION: f1 must be known in neighbouring cells (including halos!)
 
-                    t1 = f1(i, j, k + 1); t2 = one - t1
+                    t1 = scratch(i, j, k + 1, if1SST); t2 = one - t1
                     rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = f1(i, j, k); t2 = one - t1
+                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
                     rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = f1(i, j, k - 1); t2 = one - t1
+                    t1 = scratch(i, j, k - 1, if1SST); t2 = one - t1
                     rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
@@ -285,9 +270,9 @@ contains
                     ! Update the residual for this cell and store the possible
                     ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    dvt(i, j, k, 1) = dvt(i, j, k, 1) + c1m * w(i, j, k - 1, itu1) &
+                    scratch(i, j, k, idvt + 0) = scratch(i, j, k, idvt + 0) + c1m * w(i, j, k - 1, itu1) &
                                       - c10 * w(i, j, k, itu1) + c1p * w(i, j, k + 1, itu1)
-                    dvt(i, j, k, 2) = dvt(i, j, k, 2) + c2m * w(i, j, k - 1, itu2) &
+                    scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j, k - 1, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i, j, k + 1, itu2)
 
                     b1 = -c1m
@@ -358,15 +343,15 @@ contains
                     ! Compute the blended diffusion coefficients for j-1,
                     ! j and j+1.
 
-                    t1 = f1(i, j + 1, k); t2 = one - t1
+                    t1 = scratch(i, j + 1, k, if1SST); t2 = one - t1
                     rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = f1(i, j, k); t2 = one - t1
+                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
                     rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = f1(i, j - 1, k); t2 = one - t1
+                    t1 = scratch(i, j - 1, k, if1SST); t2 = one - t1
                     rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
@@ -405,9 +390,9 @@ contains
                     ! Update the residual for this cell and store the possible
                     ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    dvt(i, j, k, 1) = dvt(i, j, k, 1) + c1m * w(i, j - 1, k, itu1) &
+                    scratch(i, j, k, idvt + 0) = scratch(i, j, k, idvt + 0) + c1m * w(i, j - 1, k, itu1) &
                                       - c10 * w(i, j, k, itu1) + c1p * w(i, j + 1, k, itu1)
-                    dvt(i, j, k, 2) = dvt(i, j, k, 2) + c2m * w(i, j - 1, k, itu2) &
+                    scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j - 1, k, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i, j + 1, k, itu2)
 
                     b1 = -c1m
@@ -478,15 +463,15 @@ contains
                     ! Compute the blended diffusion coefficients for i-1,
                     ! i and i+1.
 
-                    t1 = f1(i + 1, j, k); t2 = one - t1
+                    t1 = scratch(i + 1, j, k, if1SST); t2 = one - t1
                     rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = f1(i, j, k); t2 = one - t1
+                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
                     rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = f1(i - 1, j, k); t2 = one - t1
+                    t1 = scratch(i - 1, j, k, if1SST); t2 = one - t1
                     rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
                     rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
@@ -525,9 +510,9 @@ contains
                     ! Update the residual for this cell and store the possible
                     ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    dvt(i, j, k, 1) = dvt(i, j, k, 1) + c1m * w(i - 1, j, k, itu1) &
+                    scratch(i, j, k, idvt + 0) = scratch(i, j, k, idvt + 0) + c1m * w(i - 1, j, k, itu1) &
                                       - c10 * w(i, j, k, itu1) + c1p * w(i + 1, j, k, itu1)
-                    dvt(i, j, k, 2) = dvt(i, j, k, 2) + c2m * w(i - 1, j, k, itu2) &
+                    scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i - 1, j, k, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i + 1, j, k, itu2)
 
                     b1 = -c1m
@@ -574,7 +559,6 @@ contains
     subroutine SSTResScale
 
         use blockPointers
-        use turbMod, only: dvt
 
         implicit none
         !
@@ -591,14 +575,12 @@ contains
         ! flow equations. Also multiply by iblank so that no updates occur
         ! in holes or the overset boundary.
 
-        dvt => scratch(1:, 1:, 1:, idvt:)
-
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
                     rblank = real(iblank(i, j, k), realType)
-                    dw(i, j, k, itu1) = -volRef(i, j, k) * dvt(i, j, k, 1) * rblank
-                    dw(i, j, k, itu2) = -volRef(i, j, k) * dvt(i, j, k, 2) * rblank
+                    dw(i, j, k, itu1) = -volRef(i, j, k) * scratch(i, j, k, idvt + 0) * rblank
+                    dw(i, j, k, itu2) = -volRef(i, j, k) * scratch(i, j, k, idvt + 1) * rblank
                 end do
             end do
         end do
@@ -617,7 +599,6 @@ contains
         use blockPointers
         use inputTimeSpectral
         use iteration
-        use turbMod
         use utils, only: setPointers
         use turbUtils, only: kwCDTerm
         use paramTurb, only: rSSTSigw2
@@ -631,12 +612,6 @@ contains
 
         myeps = 1e-10_realType / two / rSSTSigw2
 
-
-        ! Set the pointers for f1 and kwCD to the correct entries
-        ! in scratch which are currently not used.
-
-        f1 => scratch(1:, 1:, 1:, if1SST)
-        kwCD => scratch(1:, 1:, 1:, icd)
 
         ! Compute the cross diffusion term.
 
@@ -655,14 +630,14 @@ contains
                     t1 = max(t1, t2)
 #ifdef SST_2003
                     t2 = two * w(i, j, k, itu1) &
-                         / (max(myeps / w(i, j, k, irho), kwCD(i, j, k)) * d2Wall(i, j, k)**2)
+                         / (max(myeps / w(i, j, k, irho), scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
 #else
                     t2 = two * w(i, j, k, itu1) &
-                         / (max(eps, kwCD(i, j, k)) * d2Wall(i, j, k)**2)
+                         / (max(eps, scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
 #endif
 
                     arg1 = min(t1, t2)
-                    f1(i, j, k) = tanh(arg1**4)
+                    scratch(i, j, k, if1SST) = tanh(arg1**4)
 
                 end do
             end do
@@ -683,7 +658,7 @@ contains
             case (iMin)
                 do k = kcBeg(nn), kcEnd(nn)
                     do j = jcBeg(nn), jcEnd(nn)
-                        f1(1, j, k) = f1(2, j, k)
+                    scratch(1, j, k, if1SST) = scratch(2, j, k, if1SST)
                     end do
                 end do
 
@@ -693,7 +668,7 @@ contains
 
                 do k = kcBeg(nn), kcEnd(nn)
                     do j = jcBeg(nn), jcEnd(nn)
-                        f1(ie, j, k) = f1(il, j, k)
+                        scratch(ie, j, k, if1SST) = scratch(il, j, k, if1SST)
                     end do
                 end do
 
@@ -703,7 +678,7 @@ contains
 
                 do k = kcBeg(nn), kcEnd(nn)
                     do i = icBeg(nn), icEnd(nn)
-                        f1(i, 1, k) = f1(i, 2, k)
+                        scratch(i, 1, k, if1SST) = scratch(i, 2, k, if1SST)
                     end do
                 end do
 
@@ -713,7 +688,7 @@ contains
 
                 do k = kcBeg(nn), kcEnd(nn)
                     do i = icBeg(nn), icEnd(nn)
-                        f1(i, je, k) = f1(i, jl, k)
+                        scratch(i, je, k, if1SST) = scratch(i, jl, k, if1SST)
                     end do
                 end do
 
@@ -723,7 +698,7 @@ contains
 
                 do j = jcBeg(nn), jcEnd(nn)
                     do i = icBeg(nn), icEnd(nn)
-                        f1(i, j, 1) = f1(i, j, 2)
+                        scratch(i, j, 1, if1SST) = scratch(i, j, 2, if1SST)
 
                     end do
                 end do
@@ -734,7 +709,7 @@ contains
 
                 do j = jcBeg(nn), jcEnd(nn)
                     do i = icBeg(nn), icEnd(nn)
-                        f1(i, j, ke) = f1(i, j, kl)
+                        scratch(i, j, ke, if1SST) = scratch(i, j, kl, if1SST)
                     end do
                 end do
 
