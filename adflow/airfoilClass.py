@@ -4,6 +4,13 @@ import matplotlib.pyplot as plt
 from scipy.optimize import minimize
 import plotly.graph_objects as go
 from scipy.interpolate import splrep, splev
+import argparse
+
+parser = argparse.ArgumentParser()
+# 1 is x, 2 is y, 3 is z, -1 is -x, -2 is -y, -3 is -z.
+parser.add_argument("--chordIndex", type=int, default=1)
+parser.add_argument("--spanIndex", type=int, default=3)
+args = parser.parse_args()
 
 
 def readSlices(filename, nmax=-1):
@@ -36,19 +43,25 @@ def readSlices(filename, nmax=-1):
     # list to hold the data and conn arrays for each slice
     slice_data = []
     slice_conn = []
+    normals = []
 
     # beginning line index for the current slice
     slice_begin = 2
 
     # loop over slices
     for islice in range(nmax):
-        slice_header = lines[slice_begin].replace('"', "").replace("(", "").replace(")", "").split()
+        slice_header = lines[slice_begin].replace('"', "").replace("(", "").replace(")", "").replace(",", "").split()
         y_loc = float(slice_header[-1])
-
+        try:
+            normal = [float(slice_header[-3]), float(slice_header[-2]), float(slice_header[-1])]
+        except Exception:
+            normal = [0, 0, 0]
+            normal[args.spanIndex - 1] = 1
+        normals.append(normal)
         slice_counts = lines[slice_begin + 1].replace("=", "").split()
         n_node = int(slice_counts[1])
         n_elem = int(slice_counts[3])
-        print(f"reading slice {islice} at y = {y_loc} with {n_node} nodes and {n_elem} elements")
+        # print(f"reading slice {islice} at y = {y_loc} with {n_node} nodes and {n_elem} elements")
 
         # indices where the node data and conn starts
         data_beg = slice_begin + 3
@@ -65,7 +78,7 @@ def readSlices(filename, nmax=-1):
             max_rows=n_node,
         )
         slice_data.append(tmp)
-        print(var_list)
+        # print(var_list)
         # load the connectivity
         conn1, conn2 = np.genfromtxt(
             filename,
@@ -88,10 +101,8 @@ def readSlices(filename, nmax=-1):
 
         # the line segments in newConn is likely unordered, we need to re-order them
         slice_conn.append(conn)
-    return slice_data, slice_conn
-
-
-slice_data, slice_conn = readSlices("input_files/slice.dat")
+        slice_begin += 1 + n_node + n_elem + 2
+    return slice_data, slice_conn, normals
 
 
 class Airfoil:
@@ -100,35 +111,46 @@ class Airfoil:
 
     Parameters
     ----------
+    name : str
+        name of the slice
     data : dict
         dict output by the cut
     conn : list Nx2
         describe connectivity between points
+    normal : array size 3
+        normal of the cut
     """
 
-    def __init__(self, data, conn):
+    def __init__(self, name, data, conn, normal):
+        self.name = name
         self.data = data
         self.conn = conn
-        self.coords = np.zeros((len(data["CoordinateX"]), 3))
-        self.coords[:, 0] = data["CoordinateX"]
-        self.coords[:, 1] = data["CoordinateY"]
-        self.coords[:, 2] = data["CoordinateZ"]
-        self.val = {} 
-        self.val["cp"] = data["CoefPressure"]
-        self.val["u"] = data['VelocityX']
-        self.val["v"] = data['VelocityY']
-        self.val["w"] = data['VelocityZ']
+        self.normal = normal
+        self.sortConn()
+        self.reorderData()
+        self.coords = np.zeros((len(self.data["x"]), 3))
+        self.coords[:, 0] = self.data["x"]
+        self.coords[:, 1] = self.data["y"]
+        self.coords[:, 2] = self.data["z"]
+        self.n = self.coords.shape[0]
+        self.te = np.zeros(1)
+        self.le = np.zeros(1)
+        self.detectTeAngle()
+        self.detectLe()
+        self.getTwist()
+        self.getChord()
 
-    def sortConn(self):
+    def FEsort(self):
         """
         This function can be used to sort connectivities coming from the CGNS file
+
         barsConn should be a list of integers [[2,3],[5,6],[3,4],[5,4],...]
+
         newConn will be set to None if the sorting algorithm fails.
         """
-        barsConn = self.conn
         # We will solve this in an iterative process until the connectivities do not change
         # anymore
-
+        barsConn = self.conn.tolist()
         # Initialize the newest connectivities as our current input.
         newConn = barsConn
 
@@ -320,8 +342,128 @@ class Airfoil:
                 curveID = curveID + 1
 
         # Return the sorted array and the mapping
-        self.newConn = newConnFE
-        self.newMap = newMap
+        return newConnFE, newMap
+
+    def sortConn(self):
+        newConn, newMap = self.FEsort()
+
+        # the line segments in newConn is likely unordered, we need to re-order them
+        x = self.data["CoordinateX"]
+        y = self.data["CoordinateY"]
+        z = self.data["CoordinateZ"]
+
+        line_beg = np.zeros((len(newConn), 3))
+        line_end = np.zeros((len(newConn), 3))
+
+        for ii, line in enumerate(newConn):
+            line_beg[ii, 0] = x[line[0, 0]]
+            line_beg[ii, 1] = y[line[0, 0]]
+            line_beg[ii, 2] = z[line[0, 0]]
+            line_end[ii, 0] = x[line[-1, 1]]
+            line_end[ii, 1] = y[line[-1, 1]]
+            line_end[ii, 2] = z[line[-1, 1]]
+
+        # now we need to match which line beg node matches which line end node
+        # we can just do an np search, since this split should not be that many
+        # we start with the first line and match its end node with another line's begin node until we are back at the beginning
+        keep_searching = True
+        cur_line_ind = 0
+        conn_order_map = [0]  # start with the first line so we have the first zero
+        while keep_searching:
+            cur_line_end = line_end[cur_line_ind]
+
+            # find the closest begin node for the next line (should be an identical node)
+            delta = np.linalg.norm(cur_line_end - line_beg, axis=1)
+            new_line_ind = np.argmin(delta)
+
+            # check if we have a match. if not, either a line needs to be flipped or this is an open curve
+            if np.min(delta) > 1e-12:
+                # the next line might need to be flipped. check the line_end array if we get any matches here
+                arr = np.linalg.norm(cur_line_end - line_end, axis=1)
+                # this should get 2 matches
+                matched_inds = np.array(np.where(arr < 1e-12)).squeeze()
+
+                # only keep going if we had 2 matches; one is the current line, the other is the next one
+                # TODO check this, was a bug?
+                if len(matched_inds) == 2:
+                    # this is the index of the next line, but it needs to be flipped
+                    new_line_ind = matched_inds[matched_inds != cur_line_ind][0]
+
+                    # flip the beginning and end points
+                    tmp = line_end[new_line_ind, :].copy()
+                    line_end[new_line_ind, :] = line_beg[new_line_ind, :].copy()
+                    line_beg[new_line_ind, :] = tmp
+
+                    # also flip the connectivity array
+                    conn_to_flip = np.array(newConn[new_line_ind])
+
+                    # this should flip on all axes
+                    flipped_conn = np.flip(conn_to_flip)
+
+                    # put it back
+                    newConn[new_line_ind] = flipped_conn
+
+                else:
+                    raise Exception(
+                        "The distance between the end of the current line and beginning of the next line is larger than 1e-12. I also could not find any line that ends at the same location, so the curve might be open?"
+                    )
+
+            # get the new line's end
+            new_end = line_end[new_line_ind]
+
+            # append this line to the list
+            conn_order_map.append(new_line_ind)
+
+            if np.linalg.norm(new_end - line_beg[0]) < 1e-12:
+                # the current line's end is the beginning of the original, so we are done!
+                keep_searching = False
+
+            # switch indices
+            cur_line_ind = new_line_ind
+
+        # remove the duplicate lines and get an order of nodes. the first and last nodes will be duplicated
+
+        # now append the elements back to back
+        final_conn = []
+        for ii in range(len(conn_order_map)):
+            # extend with the current connectivity
+            final_conn.extend(newConn[conn_order_map[ii]].tolist())
+        self.sortConn = np.array(final_conn)
+
+    def reorderData(self):
+        """Sort data in self.data based on the new connectivity"""
+        conn = self.sortConn
+
+        # get the node list
+        node_list = conn[:, 0].tolist()
+
+        newdata = {
+            "x": self.data["CoordinateX"][node_list],
+            "y": self.data["CoordinateY"][node_list],
+            "z": self.data["CoordinateZ"][node_list],
+            # "u": self.data["VelocityX"][node_list],
+            # "v": self.data["VelocityY"][node_list],
+            # "w": self.data["VelocityZ"][node_list],
+            "cp": self.data["CoefPressure"][node_list],
+        }
+        self.data = newdata
+        # find the LE x index
+        print(self.data["y"])
+        ind_x_min = np.argmin(self.data["x"])
+
+        # roll all arrays to have LE be the first entry
+        for k, v in self.data.items():
+            self.data[k] = np.roll(v, -ind_x_min)
+
+        # check if the orientation is right, we want the upper skin first (just an arbitrary convention)
+        # TODO Careful this doesn't work if dihedral over 90 degree
+        if self.data["z"][1] - self.data["z"][0] > 0:
+            # we are going up in the LE, this is what we want
+            pass
+        else:
+            for k, v in self.data.items():
+                # flip and roll by 1
+                self.data[k] = np.roll(np.flip(v), 1)
 
     def detectTeAngle(self):
         v1 = self.coords[1:-1, :] - self.coords[:-2, :]
@@ -329,21 +471,23 @@ class Airfoil:
         v1n = np.linalg.norm(v1, axis=1)
         v2n = np.linalg.norm(v2, axis=1)
         # find the angles between adjacent vectors
-        thetas = np.arccos(np.minimum(np.ones(len(self.x) - 2), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
+        thetas = np.arccos(np.minimum(np.ones(self.n - 2), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
         ids = np.argwhere(thetas > 40.0 * np.pi / 180.0)
         if len(ids) == 0:
             print("WARNING, no sharp corner detected")
+            self.lower_te_ind = 0
+            self.upper_te_ind = 10
         elif len(ids) == 1:
-            self.lower_te_ind = ids[0][0]
-            self.upper_te_ind = ids[0][0]
+            self.lower_te_ind = ids[0][0] + 1
+            self.upper_te_ind = ids[0][0] + 1
         elif len(ids) == 2:
-            self.lower_te_ind = ids[1][0]
-            self.upper_te_ind = ids[0][0]
+            self.lower_te_ind = ids[1][0] + 1
+            self.upper_te_ind = ids[0][0] + 1
         else:
             print("WARNING, there are more than 2 sharp corners on slice")
         self.te = 0.5 * (self.coords[self.upper_te_ind, :] + self.coords[self.lower_te_ind, :])
 
-    def detectLE(self):
+    def detectLe(self):
         te_to_pt_vec = self.coords[:, :] - self.te[:]
         # now compute the distances
         distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
@@ -352,278 +496,156 @@ class Airfoil:
         max_dist_ind = np.argmax(distanmces_to_te)
 
         # roll the values based on this
-        for k, v in data.items():
+        for k, v in self.data.items():
             self.data[k] = np.roll(v, -max_dist_ind)
-        coords_array = np.roll(coords_array, -max_dist_ind, axis=0)
+        self.coords = np.roll(self.coords, -max_dist_ind, axis=0)
 
         # also adjust the upper and lower TE indices
-        upper_te_ind = (upper_te_ind - max_dist_ind) % len(self.data)
-        lower_te_ind = (lower_te_ind - max_dist_ind) % len(self.data)
+        self.upper_te_ind = (self.upper_te_ind - max_dist_ind) % len(self.data)
+        self.lower_te_ind = (self.lower_te_ind - max_dist_ind) % len(self.data)
 
         # save the original LE and TE coordinates for comparison
-        orig_le = coords_array[0, :]
-
+        orig_le = self.coords[0, :]
         # the LE node and the n-neighboring nodes are interpolated regions with a B-spline
-        n_neigh = 10  # number of neighboring nodes to include in both directions
+        n_neigh = 30  # number of neighboring nodes to include in both directions
         pts = np.zeros((n_neigh * 2 + 1, 3))
 
         # center point is always the LE
-        pts[n_neigh, :] = coords_array[0, :]
+        pts[n_neigh, :] = self.coords[0, :]
 
         for jj in range(n_neigh):
             # add the nodes up from the LE
-            pts[n_neigh + jj + 1, :] = coords_array[jj + 1, :]
+            pts[n_neigh + jj + 1, :] = self.coords[jj + 1, :]
             # add the nodes down from the LE
-            pts[n_neigh - jj - 1, :] = coords_array[-1 - jj, :]
+            pts[n_neigh - jj - 1, :] = self.coords[-1 - jj, :]
 
         # fit curve to it
         t = np.linspace(0, 1, num=n_neigh * 2 + 1)
-        tckx = splrep(t, pts[:, 0])
-        tcky = splrep(t, pts[:, 1])
-        tckz = splrep(t, pts[:, 2])
+        # construct spline for all data
+        tcks = {}
+        for k, v in self.data.items():
+            tcks[k] = splrep(t, np.concatenate((self.data[k][-n_neigh:], self.data[k][: n_neigh + 1])))
 
         def min_dist_from_te(t):
-            vec = np.array([splev(t, tckx) - te[0], splev(t, tcky) - te[1], splev(t, tckz) - te[2]])
+            vec = np.array(
+                [splev(t, tcks["x"]) - self.te[0], splev(t, tcks["y"]) - self.te[1], splev(t, tcks["z"]) - self.te[2]]
+            )
             return -np.linalg.norm(vec)
 
         # can be improved by providing analytic or CS derivatives
-        opt_res = minimize(min_dist_from_te, [0], bounds=[[0, 1]], options={"disp": False}, tol=1e-14)
+        opt_res = minimize(min_dist_from_te, [0], bounds=[[0, 1]], options={"disp": False}, tol=1e-10)
 
         if not opt_res["success"]:
-            print(f"Optimization failed to find the max distance pt at islice {islice}")
+            print("WARNING, Optimization failed to find the max distance pt")
 
         # take the result
         t_opt = opt_res["x"]
 
         # overwrite the current LE coordinates with the new result
-        data["x"][0] = splev(t_opt, tckx)
-        data["y"][0] = splev(t_opt, tcky)
-        data["z"][0] = splev(t_opt, tckz)
-        coords_array[0, :] = np.array([data["x"][0], data["y"][0], data["z"][0]])
+        for k, v in self.data.items():
+            self.data[k][0] = splev(t_opt, tcks[k])
+        self.coords[0, :] = np.array([self.data["x"][0], self.data["y"][0], self.data["z"][0]])
+        self.le = self.coords[0, :]
 
-        # distance from the old LE to the new LE
-        distold = np.linalg.norm(coords_array[0, :] - orig_le)
-        # distance from the new LE to upper old LE
-        distup = np.linalg.norm(coords_array[0, :] - coords_array[1, :])
-        # distance from the old LE to the new LE
-        distdown = np.linalg.norm(coords_array[0, :] - coords_array[-1, :])
+    def getTwist(self):
+        untwisted = np.array([0, 0, 0])
+        untwisted[int(abs(args.chordIndex)) - 1] = np.sign(args.chordIndex) * 1
+        normal = self.normal / np.linalg.norm(self.normal)
+        twisted = self.te - self.le
+        twisted = twisted / np.linalg.norm(twisted)
+        twist = np.arcsin(np.dot(np.cross(twisted, untwisted), normal))
+        self.twist = twist * 180 / np.pi
 
-        if distup >= distdown:
-            dist1 = distdown
-            dist2 = distold
-            interp_ind = -1
+    def getDihedral(self):
+        pass
+
+    def getChord(self):
+        if len(self.te) == 3:
+            self.chord = np.linalg.norm(self.le - self.te)
+            return self.chord
         else:
-            dist1 = distup
-            dist2 = distold
-            interp_ind = 1
-
-        dist_tot = dist1 + dist2
-        # interpolate all data at the new LE point
-        for k, v in data.items():
-            # except for coordinates
-            if k not in ["x", "y", "z"]:
-                old_le_data = v[0]
-                interp_pt_data = v[interp_ind]
-                # interpolate the new data linearly based on distances.
-                data[k][0] = old_le_data * dist1 / dist_tot + interp_pt_data * dist2 / dist_tot
+            print("WARNING, no le and te detected")
+            return 1
 
     def plotAirfoil(self):
         fig = go.Figure()
-        fig.add_trace(go.Scatter3d(x=self.x, y=self.y, z=self.z, mode="markers", marker=dict(color="black", size=2)))
+        fig.add_trace(
+            go.Scatter3d(
+                x=self.coords[:, 0],
+                y=self.coords[:, 1],
+                z=self.coords[:, 2],
+                mode="markers",
+                marker=dict(color="black", size=4),
+            )
+        )
         if len(self.te) == 3:
             fig.add_trace(
                 go.Scatter3d(
-                    x=[self.te[0]], y=[self.te[1]], z=[self.te[2]], mode="markers", marker=dict(color="blue", size=4)
+                    x=[self.te[0]], y=[self.te[1]], z=[self.te[2]], mode="markers", marker=dict(color="blue", size=6)
                 )
             )
-        fig.update_layout(
-            scene=dict(
-                xaxis=dict(color="rgba(0, 0, 0,0)", backgroundcolor="rgba(0, 0, 0,0)"),
-                yaxis=dict(color="rgba(0, 0, 0,0)", backgroundcolor="rgba(0, 0, 0,0)"),
-                zaxis=dict(color="rgba(0, 0, 0,0)", backgroundcolor="rgba(0, 0, 0,0)"),
+        if len(self.le) == 3:
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[self.le[0]], y=[self.le[1]], z=[self.le[2]], mode="markers", marker=dict(color="red", size=6)
+                )
             )
-        )
         fig.update_scenes(aspectmode="data")
         fig.show()
 
 
-air = Airfoil(slice_data[0], slice_conn[0])
-air.detectTeAngle()
+class Wing:
+    def __init__(self, list_data, list_conn, list_normal):
+        self.datas = list_data
+        self.conns = list_conn
+        self.normals = list_normal
+        self.airfoils = []
+        for k in range(len(list_data)):
+            airfoil = Airfoil(str(k), list_data[k], list_conn[k], list_normal[k])
+            self.airfoils.append(airfoil)
+
+    def getTwistDistribution(self):
+        span, twist = [], []
+        for air in self.airfoils:
+            span.append(air.le[1])
+            twist.append(air.twist)
+        return span, twist
+
+    def plotWing(self):
+        fig = go.Figure()
+        for air in self.airfoils:
+            fig.add_trace(
+                go.Scatter3d(
+                    x=air.coords[:, 0],
+                    y=air.coords[:, 1],
+                    z=air.coords[:, 2],
+                    mode="markers",
+                    marker=dict(color="black", size=4),
+                )
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[air.te[0]], y=[air.te[1]], z=[air.te[2]], mode="markers", marker=dict(color="blue", size=6)
+                )
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[air.le[0]], y=[air.le[1]], z=[air.le[2]], mode="markers", marker=dict(color="red", size=6)
+                )
+            )
+        fig.update_scenes(aspectmode="data")
+        fig.show()
+
+
+slice_data, slice_conn, normals = readSlices("input_files/slice.dat")
+air = Airfoil("1", slice_data[0], slice_conn[0], normals[0])
 air.plotAirfoil()
+"""
+# slice_data, slice_conn, normals = readSlices("input_files/marco.dat")
+wing = Wing(slice_data, slice_conn, normals)
+span1, twist1 = wing.getTwistDistribution()
+wing.plotWing()
 
-
-# now we are ready to loop over each slice!
-for ii, islice in enumerate(range(len(slice_conn))):
-    # find the LE x index
-    ind_x_min = np.argmin(data["x"])
-
-    # roll all arrays to have LE be the first entry
-    for k, v in data.items():
-        data[k] = np.roll(v, -ind_x_min)
-
-    # check if the orientation is right, we want the upper skin first (just an arbitrary convention)
-    if data["z"][1] - data["z"][0] > 0:
-        # we are going up in the LE, this is what we want
-        pass
-    else:
-        for k, v in data.items():
-            # flip and roll by 1
-            data[k] = np.roll(np.flip(v), 1)
-
-    v1 = coords_array[1:-1, :] - coords_array[:-2, :]
-    v2 = coords_array[2:, :] - coords_array[1:-1, :]
-    v1n = np.linalg.norm(v1, axis=1)
-    v2n = np.linalg.norm(v2, axis=1)
-    # find the angles between adjacent vectors
-    thetas = np.arccos(np.minimum(np.ones(len(data["x"]) - 2), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
-    ids = np.argwhere(thetas > 40.0 * np.pi / 180.0)
-    if len(ids) == 0:
-        print("WARNING, no sharp corner detected")
-    elif len(ids) == 1:
-        lower_te_ind = ids[0][0] + 1
-        upper_te_ind = ids[0][0] + 1
-    elif len(ids) == 2:
-        lower_te_ind = ids[1][0] + 1
-        upper_te_ind = ids[0][0] + 1
-    else:
-        print("WARNING, there are more than 2 sharp corners on slice")
-    # now that we have the TE coordinates, we can find the _true_ LE location,
-    # which is the max distance node from the mid-TE point
-    te = 0.5 * (coords_array[upper_te_ind, :] + coords_array[lower_te_ind, :])
-    # get the vector from the TE to all of the other nodes
-    te_to_pt_vec1 = np.zeros_like(coords_array)
-    te_to_pt_vec = coords_array[:, :] - te[:]
-
-    # now compute the distances
-    distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
-
-    # get the max-distance location
-    max_dist_ind = np.argmax(distanmces_to_te)
-    # print(max_dist_ind, len(data["x"]))
-
-    # roll the values based on this
-    for k, v in data.items():
-        data[k] = np.roll(v, -max_dist_ind)
-    coords_array = np.roll(coords_array, -max_dist_ind, axis=0)
-
-    # also adjust the upper and lower TE indices
-    upper_te_ind = (upper_te_ind - max_dist_ind) % len(data["x"])
-    lower_te_ind = (lower_te_ind - max_dist_ind) % len(data["x"])
-
-    # save the original LE and TE coordinates for comparison
-    orig_le = coords_array[0, :]
-
-    # the LE node and the n-neighboring nodes are interpolated regions with a B-spline
-    n_neigh = 10  # number of neighboring nodes to include in both directions
-    pts = np.zeros((n_neigh * 2 + 1, 3))
-
-    # center point is always the LE
-    pts[n_neigh, :] = coords_array[0, :]
-
-    for jj in range(n_neigh):
-        # add the nodes up from the LE
-        pts[n_neigh + jj + 1, :] = coords_array[jj + 1, :]
-        # add the nodes down from the LE
-        pts[n_neigh - jj - 1, :] = coords_array[-1 - jj, :]
-
-    # fit curve to it
-    t = np.linspace(0, 1, num=n_neigh * 2 + 1)
-    tckx = splrep(t, pts[:, 0])
-    tcky = splrep(t, pts[:, 1])
-    tckz = splrep(t, pts[:, 2])
-
-    def min_dist_from_te(t):
-        vec = np.array([splev(t, tckx) - te[0], splev(t, tcky) - te[1], splev(t, tckz) - te[2]])
-        return -np.linalg.norm(vec)
-
-    # can be improved by providing analytic or CS derivatives
-    opt_res = minimize(min_dist_from_te, [0], bounds=[[0, 1]], options={"disp": False}, tol=1e-14)
-
-    if not opt_res["success"]:
-        print(f"Optimization failed to find the max distance pt at islice {islice}")
-
-    # take the result
-    t_opt = opt_res["x"]
-
-    # overwrite the current LE coordinates with the new result
-    data["x"][0] = splev(t_opt, tckx)
-    data["y"][0] = splev(t_opt, tcky)
-    data["z"][0] = splev(t_opt, tckz)
-    coords_array[0, :] = np.array([data["x"][0], data["y"][0], data["z"][0]])
-
-    # distance from the old LE to the new LE
-    distold = np.linalg.norm(coords_array[0, :] - orig_le)
-    # distance from the new LE to upper old LE
-    distup = np.linalg.norm(coords_array[0, :] - coords_array[1, :])
-    # distance from the old LE to the new LE
-    distdown = np.linalg.norm(coords_array[0, :] - coords_array[-1, :])
-
-    if distup >= distdown:
-        dist1 = distdown
-        dist2 = distold
-        interp_ind = -1
-    else:
-        dist1 = distup
-        dist2 = distold
-        interp_ind = 1
-
-    dist_tot = dist1 + dist2
-    # interpolate all data at the new LE point
-    for k, v in data.items():
-        # except for coordinates
-        if k not in ["x", "y", "z"]:
-            old_le_data = v[0]
-            interp_pt_data = v[interp_ind]
-            # interpolate the new data linearly based on distances.
-            data[k][0] = old_le_data * dist1 / dist_tot + interp_pt_data * dist2 / dist_tot
-
-    # separate the data for upper and lower parts.
-    upper_data = {}
-    lower_data = {}
-    for k, v in data.items():
-        upper_data[k] = v[: upper_te_ind + 1].copy()
-        tmp = v[lower_te_ind:].copy()
-        # add the LE node to the lower data
-        tmp = np.concatenate([tmp, np.array([v[0]])])
-        lower_data[k] = tmp
-    # now the upper data has all of the nodal data from the LE to the upper TE in an ordered way. the lower data has the same data from the lower TE to the LE.
-
-    # compute the parametric coordinates for both upper and lower data
-    for data_dict in [upper_data, lower_data]:
-        # vector between nodes on this surface
-        vec = np.zeros((len(data_dict["x"]) - 1, 3))
-        vec[:, 0] = np.subtract(data_dict["x"][1:], data_dict["x"][:-1])
-        vec[:, 1] = np.subtract(data_dict["y"][1:], data_dict["y"][:-1])
-        vec[:, 2] = np.subtract(data_dict["z"][1:], data_dict["z"][:-1])
-        # distances between all nodes on this surface
-        dists = np.linalg.norm(vec, axis=1)
-        # initialize the param array to 1 larger to have zero in the beginning
-        param = np.zeros(len(dists) + 1)
-        # compute the cumulative distance, we put 0 on the first node
-        param[1:] = np.cumsum(dists)
-        # normalize by total length
-        param /= param[-1]
-        # save to the original dictionary
-        data_dict["param"] = param
-
-
-def plot_wing():
-    fig = go.Figure()
-    X = data["x"]
-    Y = data["y"]
-    Z = data["z"]
-    fig.add_trace(go.Scatter3d(x=X, y=Y, z=Z, mode="markers", marker=dict(color="black", size=2)))
-    fig.add_trace(go.Scatter3d(x=[te[0]], y=[te[1]], z=[te[2]], mode="markers", marker=dict(color="red", size=3)))
-
-    fig.update_layout(
-        scene=dict(
-            xaxis=dict(color="rgba(0, 0, 0,0)", backgroundcolor="rgba(0, 0, 0,0)"),
-            yaxis=dict(color="rgba(0, 0, 0,0)", backgroundcolor="rgba(0, 0, 0,0)"),
-            zaxis=dict(color="rgba(0, 0, 0,0)", backgroundcolor="rgba(0, 0, 0,0)"),
-        )
-    )
-    fig.update_scenes(aspectmode="data")
-    fig.show()
-
-
-plot_wing()
+plt.plot(span1, twist1)
+plt.show()
+"""
