@@ -137,7 +137,7 @@ class Airfoil:
         self.le = np.zeros(1)
         self.detectTEAngle()
         #self.detectTeAngleData()
-        #self.detectLe()
+        self.detectLe()
         #self.getTwist()
         #self.getChord()
 
@@ -430,7 +430,6 @@ class Airfoil:
             # extend with the current connectivity
             final_conn.extend(newConn[conn_order_map[ii]].tolist())
         self.sortConn = np.array(final_conn)
-        self.sortNodes = self.sortConn[:, 0].tolist()+ [self.conn[-1, 1]] + [self.conn[0, 1]]
 
     def detectTEAngle(self):
         c = self.sortConn
@@ -458,6 +457,23 @@ class Airfoil:
         else:
             print("WARNING, there are more than 2 sharp corners on slice")
         self.te = 0.5 * (self.coords[self.upper_te_ind, :] + self.coords[self.lower_te_ind, :])
+    
+    def detectLe(self):
+        c = self.sortConn[:, 0].tolist()
+        te_to_pt_vec = self.coords[c, :] - self.te[:]
+        # now compute the distances
+        distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
+        # get the max-distance location
+        max_dist_ind = np.argmax(distanmces_to_te)
+        ind_max = c[max_dist_ind]
+        # save le 
+        self.le_ind = ind_max
+        self.le = self.coords[ind_max, :]
+        #indices of nodes from LE to upper blunt Trailing edge 
+        #indices of nodes from LE to lower blunt Trailing edge 
+        self.upper_skin_nodes =  []
+        self.lower_skin_nodes = [] 
+
 
     def reorderData(self):
         """Sort data in self.data based on the new connectivity"""
@@ -494,30 +510,8 @@ class Airfoil:
                 # flip and roll by 1
                 self.data[k] = np.roll(np.flip(v), 1)
 
-    def detectTeAngleData(self):
-        self.reorderData()
-        v1 = self.coords[1:-1, :] - self.coords[:-2, :]
-        v2 = self.coords[2:, :] - self.coords[1:-1, :]
-        v1n = np.linalg.norm(v1, axis=1)
-        v2n = np.linalg.norm(v2, axis=1)
-        # find the angles between adjacent vectors
-        thetas = np.arccos(np.minimum(np.ones(self.n - 2), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
-        ids = np.argwhere(thetas > 40.0 * np.pi / 180.0)
-        if len(ids) == 0:
-            print("WARNING, no sharp corner detected")
-            self.lower_te_ind = 0
-            self.upper_te_ind = 10
-        elif len(ids) == 1:
-            self.lower_te_ind = ids[0][0] + 1
-            self.upper_te_ind = ids[0][0] + 1
-        elif len(ids) == 2:
-            self.lower_te_ind = ids[1][0] + 1
-            self.upper_te_ind = ids[0][0] + 1
-        else:
-            print("WARNING, there are more than 2 sharp corners on slice")
-        self.te = 0.5 * (self.coords[self.upper_te_ind, :] + self.coords[self.lower_te_ind, :])
 
-    def detectLe(self):
+    def computeLe(self):
         te_to_pt_vec = self.coords[:, :] - self.te[:]
         # now compute the distances
         distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
