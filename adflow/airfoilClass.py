@@ -127,18 +127,19 @@ class Airfoil:
         self.conn = conn
         self.normal = normal
         self.sortConn()
-        self.reorderData()
-        self.coords = np.zeros((len(self.data["x"]), 3))
-        self.coords[:, 0] = self.data["x"]
-        self.coords[:, 1] = self.data["y"]
-        self.coords[:, 2] = self.data["z"]
+        #self.reorderData()
+        self.coords = np.zeros((len(self.data["CoordinateX"]), 3))
+        self.coords[:, 0] = self.data["CoordinateX"]
+        self.coords[:, 1] = self.data["CoordinateY"]
+        self.coords[:, 2] = self.data["CoordinateZ"]
         self.n = self.coords.shape[0]
         self.te = np.zeros(1)
         self.le = np.zeros(1)
-        self.detectTeAngle()
-        self.detectLe()
-        self.getTwist()
-        self.getChord()
+        self.detectTEAngle()
+        #self.detectTeAngleData()
+        #self.detectLe()
+        #self.getTwist()
+        #self.getChord()
 
     def FEsort(self):
         """
@@ -429,6 +430,34 @@ class Airfoil:
             # extend with the current connectivity
             final_conn.extend(newConn[conn_order_map[ii]].tolist())
         self.sortConn = np.array(final_conn)
+        self.sortNodes = self.sortConn[:, 0].tolist()+ [self.conn[-1, 1]] + [self.conn[0, 1]]
+
+    def detectTEAngle(self):
+        c = self.sortConn
+        v1 = self.coords[c[:, 0], :] - self.coords[c[:,1], :]
+        v1n = np.linalg.norm(v1, axis=1)
+        v2 = np.roll(v1,1,  axis = 0)
+        v2n = np.roll(v1n,1)
+        # find the angles between adjacent vectors
+        thetas = np.arccos(np.minimum(np.ones(self.n - 3), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
+        ids = np.argwhere(thetas > 40.0 * np.pi / 180.0)
+        if len(ids) == 0:
+            print("WARNING, no sharp corner detected")
+        elif len(ids) == 1:
+            ind0 = ids[0][0]
+            node0 = c[ind0, 0]
+            self.lower_te_ind = node0
+            self.upper_te_ind = node0
+        elif len(ids) == 2:
+            ind0 = ids[0][0]
+            ind1 = ids[1][0]
+            node0 = c[ind0, 0]
+            node1 = c[ind1, 0]
+            self.lower_te_ind = node0
+            self.upper_te_ind = node1
+        else:
+            print("WARNING, there are more than 2 sharp corners on slice")
+        self.te = 0.5 * (self.coords[self.upper_te_ind, :] + self.coords[self.lower_te_ind, :])
 
     def reorderData(self):
         """Sort data in self.data based on the new connectivity"""
@@ -465,7 +494,8 @@ class Airfoil:
                 # flip and roll by 1
                 self.data[k] = np.roll(np.flip(v), 1)
 
-    def detectTeAngle(self):
+    def detectTeAngleData(self):
+        self.reorderData()
         v1 = self.coords[1:-1, :] - self.coords[:-2, :]
         v2 = self.coords[2:, :] - self.coords[1:-1, :]
         v1n = np.linalg.norm(v1, axis=1)
@@ -491,7 +521,7 @@ class Airfoil:
         te_to_pt_vec = self.coords[:, :] - self.te[:]
         # now compute the distances
         distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
-
+        print(self.sortConn)
         # get the max-distance location
         max_dist_ind = np.argmax(distanmces_to_te)
 
@@ -578,6 +608,16 @@ class Airfoil:
                 marker=dict(color="black", size=4),
             )
         )
+        fig.add_trace(
+            go.Scatter3d(
+                x=[self.coords[self.lower_te_ind,0]], y=[self.coords[self.lower_te_ind,1]], z=[self.coords[self.lower_te_ind,2]], mode="markers", marker=dict(color="green", size=6)
+            )
+        )
+        fig.add_trace(
+            go.Scatter3d(
+                x=[self.coords[self.upper_te_ind,0]], y=[self.coords[self.upper_te_ind,1]], z=[self.coords[self.upper_te_ind,2]], mode="markers", marker=dict(color="green", size=6)
+            )
+        )
         if len(self.te) == 3:
             fig.add_trace(
                 go.Scatter3d(
@@ -640,6 +680,7 @@ class Wing:
 slice_data, slice_conn, normals = readSlices("input_files/slice.dat")
 air = Airfoil("1", slice_data[0], slice_conn[0], normals[0])
 air.plotAirfoil()
+
 """
 # slice_data, slice_conn, normals = readSlices("input_files/marco.dat")
 wing = Wing(slice_data, slice_conn, normals)
