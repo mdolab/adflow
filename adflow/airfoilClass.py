@@ -480,11 +480,10 @@ class Airfoil:
         distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
         # get the max-distance location
         max_dist_ind = np.argmax(distanmces_to_te)
-        ind_max = c[max_dist_ind]
         # save le
-        self.le_ind = max_dist_ind
-        self.le_conn_ind = ind_max
-        self.le = self.coords[ind_max, :]
+        self.le_conn_ind = max_dist_ind
+        self.le_ind = c[max_dist_ind]
+        self.le = self.coords[self.le_ind, :]
         # indices of nodes from LE to upper blunt Trailing edge
         # indices of nodes from LE to lower blunt Trailing edge
         self.upper_skin_nodes = []
@@ -513,7 +512,7 @@ class Airfoil:
 
         # roll all arrays to have LE be the first entry
         for k, v in self.order_data.items():
-            self.order_data[k] = np.roll(v, -self.le_ind)
+            self.order_data[k] = np.roll(v, -self.le_conn_ind)
 
         # check if the orientation is right, we want the upper skin first (just an arbitrary convention)
         # TODO Careful this doesn't work if dihedral over 90 degree
@@ -615,7 +614,7 @@ class Airfoil:
                 y=[self.accurate_le[1]],
                 z=[self.accurate_le[2]],
                 mode="markers",
-                marker=dict(color="grey", size=6),
+                marker=dict(color="grey", size=8),
             )
         )
         if len(self.te) == 3:
