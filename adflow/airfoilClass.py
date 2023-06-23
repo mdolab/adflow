@@ -1,19 +1,23 @@
 import numpy as np
-import warnings
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-import plotly.graph_objects as go
 from scipy.interpolate import splrep, splev
 import argparse
 
 parser = argparse.ArgumentParser()
 # 1 is x, 2 is y, 3 is z, -1 is -x, -2 is -y, -3 is -z.
 parser.add_argument("--chordIndex", type=int, default=1)
+parser.add_argument("--liftIndex", type=int, default=2)
 parser.add_argument("--spanIndex", type=int, default=3)
+parser.add_argument("--sliceFile", type=str, default="input_files/slices.dat")
+parser.add_argument("--plotly", type=bool, default=True)
 args = parser.parse_args()
 
 
 def readSlices(filename, nmax=-1):
+    """
+    Reads slice file output by ADflow and return data and connectivity
+    """
     # get all lines
     with open(filename, "r") as f:
         lines = f.readlines()
@@ -51,10 +55,12 @@ def readSlices(filename, nmax=-1):
     # loop over slices
     for islice in range(nmax):
         slice_header = lines[slice_begin].replace('"', "").replace("(", "").replace(")", "").replace(",", "").split()
-        y_loc = float(slice_header[-1])
+        # y_loc = float(slice_header[-1])
         try:
+            # if slice is arbitrary, gets the normal
             normal = [float(slice_header[-3]), float(slice_header[-2]), float(slice_header[-1])]
         except Exception:
+            # if slice is not arbitrary, normal of slice is spanwise axis
             normal = [0, 0, 0]
             normal[args.spanIndex - 1] = 1
         normals.append(normal)
@@ -115,7 +121,7 @@ class Airfoil:
         name of the slice
     data : dict
         dict output by the cut
-    conn : list Nx2
+    conn : array Nx2
         describe connectivity between points
     normal : array size 3
         normal of the cut
@@ -126,20 +132,16 @@ class Airfoil:
         self.data = data
         self.conn = conn
         self.normal = normal
-        self.sortConn()
-        #self.reorderData()
         self.coords = np.zeros((len(self.data["CoordinateX"]), 3))
         self.coords[:, 0] = self.data["CoordinateX"]
         self.coords[:, 1] = self.data["CoordinateY"]
         self.coords[:, 2] = self.data["CoordinateZ"]
-        self.n = self.coords.shape[0]
         self.te = np.zeros(1)
         self.le = np.zeros(1)
+        self.sortConn()
         self.detectTEAngle()
-        #self.detectTeAngleData()
         self.detectLe()
-        #self.getTwist()
-        #self.getChord()
+        self.computeLe()
 
     def FEsort(self):
         """
@@ -429,16 +431,20 @@ class Airfoil:
         for ii in range(len(conn_order_map)):
             # extend with the current connectivity
             final_conn.extend(newConn[conn_order_map[ii]].tolist())
-        self.sortConn = np.array(final_conn)
+        self.sortedConn = np.array(final_conn)
 
     def detectTEAngle(self):
-        c = self.sortConn
-        v1 = self.coords[c[:, 0], :] - self.coords[c[:,1], :]
+        """
+        Detect the upper, lower trailing edge of the point cloud
+        Compute the true Trailing edge as the middle point of the upper, lower TE
+        """
+        c = self.sortedConn
+        v1 = self.coords[c[:, 0], :] - self.coords[c[:, 1], :]
         v1n = np.linalg.norm(v1, axis=1)
-        v2 = np.roll(v1,1,  axis = 0)
-        v2n = np.roll(v1n,1)
+        v2 = np.roll(v1, 1, axis=0)
+        v2n = np.roll(v1n, 1)
         # find the angles between adjacent vectors
-        thetas = np.arccos(np.minimum(np.ones(self.n - 3), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
+        thetas = np.arccos(np.minimum(np.ones(len(v1n)), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
         ids = np.argwhere(thetas > 40.0 * np.pi / 180.0)
         if len(ids) == 0:
             print("WARNING, no sharp corner detected")
@@ -452,37 +458,48 @@ class Airfoil:
             ind1 = ids[1][0]
             node0 = c[ind0, 0]
             node1 = c[ind1, 0]
-            self.lower_te_ind = node0
-            self.upper_te_ind = node1
+            if self.coords[node0, args.liftIndex - 1] > self.coords[node1, args.liftIndex - 1]:
+                self.upper_te_ind = node0
+                self.lower_te_ind = node1
+            else:
+                self.lower_te_ind = node0
+                self.upper_te_ind = node1
         else:
             print("WARNING, there are more than 2 sharp corners on slice")
-        self.te = 0.5 * (self.coords[self.upper_te_ind, :] + self.coords[self.lower_te_ind, :])
-    
+        self.upperTe = self.coords[self.upper_te_ind, :]
+        self.lowerTe = self.coords[self.lower_te_ind, :]
+        self.te = 0.5 * (self.upperTe + self.lowerTe)
+
     def detectLe(self):
-        c = self.sortConn[:, 0].tolist()
+        """
+        Detect the leading edge of the existing point cloud as the max distance from the true TE
+        """
+        c = self.sortedConn[:, 0].tolist()
         te_to_pt_vec = self.coords[c, :] - self.te[:]
         # now compute the distances
         distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
         # get the max-distance location
         max_dist_ind = np.argmax(distanmces_to_te)
         ind_max = c[max_dist_ind]
-        # save le 
-        self.le_ind = ind_max
+        # save le
+        self.le_ind = max_dist_ind
+        self.le_conn_ind = ind_max
         self.le = self.coords[ind_max, :]
-        #indices of nodes from LE to upper blunt Trailing edge 
-        #indices of nodes from LE to lower blunt Trailing edge 
-        self.upper_skin_nodes =  []
-        self.lower_skin_nodes = [] 
-
+        # indices of nodes from LE to upper blunt Trailing edge
+        # indices of nodes from LE to lower blunt Trailing edge
+        self.upper_skin_nodes = []
+        self.lower_skin_nodes = []
 
     def reorderData(self):
-        """Sort data in self.data based on the new connectivity"""
-        conn = self.sortConn
+        """
+        Sort data in self.data based on the new connectivity
+        """
+        conn = self.sortedConn
 
         # get the node list
         node_list = conn[:, 0].tolist()
 
-        newdata = {
+        orderdata = {
             "x": self.data["CoordinateX"][node_list],
             "y": self.data["CoordinateY"][node_list],
             "z": self.data["CoordinateZ"][node_list],
@@ -491,64 +508,38 @@ class Airfoil:
             # "w": self.data["VelocityZ"][node_list],
             "cp": self.data["CoefPressure"][node_list],
         }
-        self.data = newdata
+        self.order_data = orderdata
         # find the LE x index
-        print(self.data["y"])
-        ind_x_min = np.argmin(self.data["x"])
 
         # roll all arrays to have LE be the first entry
-        for k, v in self.data.items():
-            self.data[k] = np.roll(v, -ind_x_min)
+        for k, v in self.order_data.items():
+            self.order_data[k] = np.roll(v, -self.le_ind)
 
         # check if the orientation is right, we want the upper skin first (just an arbitrary convention)
         # TODO Careful this doesn't work if dihedral over 90 degree
-        if self.data["z"][1] - self.data["z"][0] > 0:
+        direction = ["x", "y", "z"]
+        if self.order_data[direction[args.liftIndex - 1]][1] - self.order_data[direction[args.liftIndex - 1]][0] > 0:
             # we are going up in the LE, this is what we want
             pass
         else:
-            for k, v in self.data.items():
+            for k, v in self.order_data.items():
                 # flip and roll by 1
-                self.data[k] = np.roll(np.flip(v), 1)
-
+                self.order_data[k] = np.roll(np.flip(v), 1)
 
     def computeLe(self):
-        te_to_pt_vec = self.coords[:, :] - self.te[:]
-        # now compute the distances
-        distanmces_to_te = np.linalg.norm(te_to_pt_vec, axis=1)
-        print(self.sortConn)
-        # get the max-distance location
-        max_dist_ind = np.argmax(distanmces_to_te)
-
-        # roll the values based on this
-        for k, v in self.data.items():
-            self.data[k] = np.roll(v, -max_dist_ind)
-        self.coords = np.roll(self.coords, -max_dist_ind, axis=0)
-
-        # also adjust the upper and lower TE indices
-        self.upper_te_ind = (self.upper_te_ind - max_dist_ind) % len(self.data)
-        self.lower_te_ind = (self.lower_te_ind - max_dist_ind) % len(self.data)
-
-        # save the original LE and TE coordinates for comparison
-        orig_le = self.coords[0, :]
+        """
+        For postprocessing twist, chord, etc, compute accurate true LE
+        """
+        self.reorderData()
         # the LE node and the n-neighboring nodes are interpolated regions with a B-spline
-        n_neigh = 30  # number of neighboring nodes to include in both directions
-        pts = np.zeros((n_neigh * 2 + 1, 3))
-
-        # center point is always the LE
-        pts[n_neigh, :] = self.coords[0, :]
-
-        for jj in range(n_neigh):
-            # add the nodes up from the LE
-            pts[n_neigh + jj + 1, :] = self.coords[jj + 1, :]
-            # add the nodes down from the LE
-            pts[n_neigh - jj - 1, :] = self.coords[-1 - jj, :]
+        n_neigh = 10  # number of neighboring nodes to include in both directions
 
         # fit curve to it
         t = np.linspace(0, 1, num=n_neigh * 2 + 1)
         # construct spline for all data
         tcks = {}
-        for k, v in self.data.items():
-            tcks[k] = splrep(t, np.concatenate((self.data[k][-n_neigh:], self.data[k][: n_neigh + 1])))
+        for k, v in self.order_data.items():
+            tcks[k] = splrep(t, np.concatenate((self.order_data[k][-n_neigh:], self.order_data[k][: n_neigh + 1])))
 
         def min_dist_from_te(t):
             vec = np.array(
@@ -561,21 +552,19 @@ class Airfoil:
 
         if not opt_res["success"]:
             print("WARNING, Optimization failed to find the max distance pt")
-
         # take the result
         t_opt = opt_res["x"]
 
         # overwrite the current LE coordinates with the new result
-        for k, v in self.data.items():
-            self.data[k][0] = splev(t_opt, tcks[k])
-        self.coords[0, :] = np.array([self.data["x"][0], self.data["y"][0], self.data["z"][0]])
-        self.le = self.coords[0, :]
+        for k, v in self.order_data.items():
+            self.order_data[k][0] = splev(t_opt, tcks[k])
+        self.accurate_le = np.array([self.order_data["x"][0], self.order_data["y"][0], self.order_data["z"][0]])
 
     def getTwist(self):
         untwisted = np.array([0, 0, 0])
         untwisted[int(abs(args.chordIndex)) - 1] = np.sign(args.chordIndex) * 1
         normal = self.normal / np.linalg.norm(self.normal)
-        twisted = self.te - self.le
+        twisted = self.te - self.accurate_le
         twisted = twisted / np.linalg.norm(twisted)
         twist = np.arcsin(np.dot(np.cross(twisted, untwisted), normal))
         self.twist = twist * 180 / np.pi
@@ -585,7 +574,7 @@ class Airfoil:
 
     def getChord(self):
         if len(self.te) == 3:
-            self.chord = np.linalg.norm(self.le - self.te)
+            self.chord = np.linalg.norm(self.accurate_le - self.te)
             return self.chord
         else:
             print("WARNING, no le and te detected")
@@ -604,12 +593,29 @@ class Airfoil:
         )
         fig.add_trace(
             go.Scatter3d(
-                x=[self.coords[self.lower_te_ind,0]], y=[self.coords[self.lower_te_ind,1]], z=[self.coords[self.lower_te_ind,2]], mode="markers", marker=dict(color="green", size=6)
+                x=[self.lowerTe[0]],
+                y=[self.lowerTe[1]],
+                z=[self.lowerTe[2]],
+                mode="markers",
+                marker=dict(color="cyan", size=6),
             )
         )
         fig.add_trace(
             go.Scatter3d(
-                x=[self.coords[self.upper_te_ind,0]], y=[self.coords[self.upper_te_ind,1]], z=[self.coords[self.upper_te_ind,2]], mode="markers", marker=dict(color="green", size=6)
+                x=[self.upperTe[0]],
+                y=[self.upperTe[1]],
+                z=[self.upperTe[2]],
+                mode="markers",
+                marker=dict(color="orange", size=6),
+            )
+        )
+        fig.add_trace(
+            go.Scatter3d(
+                x=[self.accurate_le[0]],
+                y=[self.accurate_le[1]],
+                z=[self.accurate_le[2]],
+                mode="markers",
+                marker=dict(color="grey", size=6),
             )
         )
         if len(self.te) == 3:
@@ -641,9 +647,34 @@ class Wing:
     def getTwistDistribution(self):
         span, twist = [], []
         for air in self.airfoils:
-            span.append(air.le[1])
+            air.getTwist()
+            span.append(air.accurate_le[args.spanIndex - 1])
             twist.append(air.twist)
-        return span, twist
+        self.span = span
+        self.twist = twist
+
+    def getChordDistribution(self):
+        span, chord = [], []
+        for air in self.airfoils:
+            air.getChord()
+            span.append(air.accurate_le[args.spanIndex - 1])
+            chord.append(air.chord)
+        self.span = span
+        self.chord = chord
+
+    def plotTwistDsitribution(self):
+        self.getTwistDistribution()
+        plt.plot(self.span, self.twist)
+        plt.xlabel("Span (m)")
+        plt.ylabel("Twist")
+        plt.show()
+
+    def plotChordDsitribution(self):
+        wing.getChordDistribution()
+        plt.plot(self.span, self.chord)
+        plt.xlabel("Span (m)")
+        plt.ylabel("Chord (m)")
+        plt.show()
 
     def plotWing(self):
         fig = go.Figure()
@@ -655,6 +686,24 @@ class Wing:
                     z=air.coords[:, 2],
                     mode="markers",
                     marker=dict(color="black", size=4),
+                )
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[air.lowerTe[0]],
+                    y=[air.lowerTe[1]],
+                    z=[air.lowerTe[2]],
+                    mode="markers",
+                    marker=dict(color="cyan", size=6),
+                )
+            )
+            fig.add_trace(
+                go.Scatter3d(
+                    x=[air.upperTe[0]],
+                    y=[air.upperTe[1]],
+                    z=[air.upperTe[2]],
+                    mode="markers",
+                    marker=dict(color="orange", size=6),
                 )
             )
             fig.add_trace(
@@ -671,16 +720,15 @@ class Wing:
         fig.show()
 
 
-slice_data, slice_conn, normals = readSlices("input_files/slice.dat")
+slice_data, slice_conn, normals = readSlices(args.sliceFile)
 air = Airfoil("1", slice_data[0], slice_conn[0], normals[0])
-air.plotAirfoil()
 
-"""
-# slice_data, slice_conn, normals = readSlices("input_files/marco.dat")
 wing = Wing(slice_data, slice_conn, normals)
-span1, twist1 = wing.getTwistDistribution()
-wing.plotWing()
+wing.plotTwistDsitribution()
+wing.plotChordDsitribution()
 
-plt.plot(span1, twist1)
-plt.show()
-"""
+if args.plotly:
+    import plotly.graph_objects as go
+
+    air.plotAirfoil()
+    wing.plotWing()
