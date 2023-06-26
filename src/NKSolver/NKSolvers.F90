@@ -2114,7 +2114,7 @@ contains
         use constants
         use inputPhysics, only: machInf => mach
         use blockPointers, only: volRef, w, dtl, gamma, p, aa
-        use flowVarRefState, only: viscous, nt1
+        use flowVarRefState, only: viscous, nt1, nt2
         use inputIteration, only: turbResScale
         use communication
         implicit none
@@ -2130,6 +2130,8 @@ contains
         real(kind=realType) :: speed, speedOfSound, mach, machSqr, machSqrTrunc, alpha, beta, tau, gammaMinusOne
         real(kind=realType) :: speedXY, sinTheta, cosTheta, sinAlpha, cosAlpha
         real(kind=realType), dimension(nState, nState) :: streamToCart, symmToCons, consToSymm, stateToCons
+
+        integer(kind=intType) :: l
 
         ! Zero the block matrices
         timeStepBlock = zero
@@ -2166,7 +2168,10 @@ contains
         if (ANK_coupled) then
             ! The turbulence variable can get a different CFL number, so we scale it by ANK_turbCFLScale.
             ! In addition, turbResScale is required because the turbulent residuals are scaled with it.
-            stateToCons(nt1, nt1) = turbResScale(1) / ANK_turbCFLScale
+
+            do l = nt1, nt2
+                stateToCons(l, l) = turbResScale(l - nt1 + 1) / ANK_turbCFLScale
+            end do
         end if
 
         if (ANK_charTimeStepType == 'None') then
@@ -2182,8 +2187,8 @@ contains
             if (ANK_coupled) then
                 timeStepBlock(6, 6) = one
                 streamToCart(6, 6) = one
-                symmToCons(nt1, 6) = one
-                consToSymm(6, nt1) = one
+                symmToCons(nt1:nt2, 6) = one
+                consToSymm(6, nt1:nt2) = one
             end if
 
             ! Compute the speed of sound squared for inviscid flow
@@ -3249,46 +3254,42 @@ contains
                 do k = 2, kl
                     do j = 2, jl
                         do i = 2, il
-                            ! multiply the ratios by 10 to check if the change in a
-                            ! variable is greater than 10% of the variable itself.
+                            do l=nt1, nt2
+                                ! multiply the ratios by 10 to check if the change in a
+                                ! variable is greater than 10% of the variable itself.
 
-                            ! needs to be modified
-                            ! if coupled ank is used, nstate = nw and this loop is executed
-                            ! if no turbulence variables, this loop will be automatically skipped
-                            ! check turbulence variable
+                                ! needs to be modified
+                                ! if coupled ank is used, nstate = nw and this loop is executed
+                                ! if no turbulence variables, this loop will be automatically skipped
+                                ! check turbulence variable
 #ifndef USE_COMPLEX
-                            ratio = (wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
+                                ratio = (wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
+                                ! ratio = abs(wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
 #else
-                            ratio = (real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
+                                ratio = (real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
 #endif
-                            ! if the ratio is less than min step, the update is either
-                            ! in the positive direction, therefore we do not clip it,
-                            ! or the update is very limiting, so we just clip the
-                            ! individual update for this cell.
-                            if (ratio .lt. ANK_stepFactor * ANK_stepMin) then
-                                ! The update was very limiting, so just clip this
-                                ! individual update and dont change the overall
-                                ! step size. To select the new update, instead of
-                                ! clipping to zero, we clip to 1 percent of the original.
-                                if (ratio .gt. zero) &
-                                    dvec_pointer(ii) = wvec_pointer(ii) * ANK_physLSTolTurb
+                                ! if the ratio is less than min step, the update is either
+                                ! in the positive direction, therefore we do not clip it,
+                                ! or the update is very limiting, so we just clip the
+                                ! individual update for this cell.
+                                if (ratio .lt. ANK_stepFactor * ANK_stepMin) then
+                                    ! The update was very limiting, so just clip this
+                                    ! individual update and dont change the overall
+                                    ! step size. To select the new update, instead of
+                                    ! clipping to zero, we clip to 1 percent of the original.
+                                    if (ratio .gt. zero) then
+                                        dvec_pointer(ii) = wvec_pointer(ii) * ANK_physLSTolTurb
+                                    end if
 
-                                ! Either case, set the ratio to one. Positive updates
-                                ! do not limit the step, negative updates below minimum
-                                ! step were already clipped.
-                                ratio = one
-                            end if
-                            lambdaL = min(lambdaL, ratio)
-                            ii = ii + 1
+                                    ! Either case, set the ratio to one. Positive updates
+                                    ! do not limit the step, negative updates below minimum
+                                    ! step were already clipped.
+                                    ratio = one
+                                end if
+                                lambdaL = min(lambdaL, ratio)
+                                ii = ii + 1
 
-                            ! TODO: Do we need physicality checks for the additional turbulence model variables?
-                            !  do l=nt1+1, nt2
-                            !     ii = ii + 1
-                            !  end do
-                            ! do this instead of the above loop for now...
-                            ! Will need to modify this if we want physicality check
-                            ! for the new turb model variables.
-                            ii = ii + (nt2 - nt1)
+                            end do
                         end do
                     end do
                 end do
