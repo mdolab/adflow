@@ -70,6 +70,8 @@ contains
         end if
     end subroutine sa_block_residuals
 
+
+#ifndef USE_COMPLEX
     subroutine sa_block_residuals_d
 
         use constants
@@ -124,7 +126,7 @@ contains
 
     end subroutine sa_block_residuals_fast_b
 
-
+#endif
 #endif
 
     subroutine saSource

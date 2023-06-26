@@ -80,6 +80,8 @@ contains
 
     end subroutine SST_block_residuals
 
+
+#ifndef USE_COMPLEX
     subroutine SST_block_residuals_d
         use constants
         use blockPointers, only: il, jl, kl
@@ -148,6 +150,7 @@ contains
         implicit none
         call SST_block_residuals_b
     end subroutine SST_block_residuals_fast_b
+#endif
 #endif
 
     subroutine SSTSource
