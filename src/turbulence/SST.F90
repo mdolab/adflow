@@ -10,7 +10,7 @@ module SST
     real(kind=realType), dimension(:, :, :, :, :), allocatable :: qq
 
 contains
-
+#ifndef USE_TAPENADE
     subroutine SST_block_residuals(cleanUp)
         !--------------------------------------------------------------
         ! Manual Differentiation Warning: Modifying this routine requires
@@ -80,6 +80,76 @@ contains
 
     end subroutine SST_block_residuals
 
+    subroutine SST_block_residuals_d
+        use constants
+        use blockPointers, only: il, jl, kl
+        use inputPhysics, only: turbProd
+        use turbutils_d, only: turbAdvection_d, kwCDterm_d, prodSmag2_d, &
+                               prodWmag2_d, prodKatolaunder_d
+        use sst_d, only: SSTSource_d, SSTViscous_d, SSTResScale_d, f1SST_d, qq
+
+        implicit none
+
+        call kwCDterm_d
+        call f1SST_d
+
+        select case (turbProd)
+        case (strain)
+            call prodSmag2_d(2, il, 2, jl, 2, kl)
+
+        case (vorticity)
+            call prodWmag2_d(2, il, 2, jl, 2, kl)
+
+        case (katoLaunder)
+            call prodKatoLaunder_d(2, il, 2, jl, 2, kl)
+        end select
+
+        call SSTSource_d
+        call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
+        !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
+        call SSTViscous_d
+        call SSTResScale_d
+    end subroutine SST_block_residuals_d
+
+    subroutine SST_block_residuals_b
+        use constants
+        use blockPointers, only: il, jl, kl
+        use inputPhysics, only: turbProd
+        use turbutils_b, only: turbAdvection_b, kwCDterm_b, prodSmag2_b, &
+                               prodWmag2_b, prodKatolaunder_b
+        use sst_b, only: SSTSource_b, SSTViscous_b, SSTResScale_b, f1SST_b, qq
+
+        implicit none
+
+        call SSTResScale_b
+        call SSTViscous_b
+        !!call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
+        call turbAdvection_b(1_intType, 1_intType, itu1 - 1, qq)
+        call SSTSource_b
+
+        select case (turbProd)
+        case (strain)
+            call prodSmag2_b(2, il, 2, jl, 2, kl)
+
+        case (vorticity)
+            call prodWmag2_b(2, il, 2, jl, 2, kl)
+
+        case (katoLaunder)
+            call prodKatoLaunder_b(2, il, 2, jl, 2, kl)
+        end select
+
+        call f1SST_b
+        call kwCDterm_b
+
+    end subroutine SST_block_residuals_b
+
+
+    subroutine SST_block_residuals_fast_b
+        implicit none
+        call SST_block_residuals_b
+    end subroutine SST_block_residuals_fast_b
+#endif
+
     subroutine SSTSource
         !
         !       SSTSolve solves the turbulent transport equations for
@@ -121,9 +191,18 @@ contains
         !       Note that the blending function f1 and the cross diffusion
         !       were computed earlier in f1SST.
         !
+
+#ifdef TAPENADE_REVERSE
+        !$AD II-LOOP
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
+#else
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
+#endif
 
                     ! Compute the blended value of rSSTGam and rSSTBeta,
                     ! which occur in the production terms of k and omega.
@@ -160,14 +239,19 @@ contains
                     ! dominance of the matrix. Furthermore minus the source
                     ! term jacobian is stored.
 
+#ifndef USE_TAPENADE
                     qq(i, j, k, 1, 1) = rSSTBetas * w(i, j, k, itu2)
                     qq(i, j, k, 1, 2) = zero
                     qq(i, j, k, 2, 1) = zero
                     qq(i, j, k, 2, 2) = two * rSSTBeta * w(i, j, k, itu2)
-
+#endif
+#ifdef TAPENADE_REVERSE
+                    end do
+#else
                 end do
             end do
         end do
+#endif
 
     end subroutine SSTSource
 
@@ -179,7 +263,7 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k
+        integer(kind=intType) :: i, j, k, ii
 
         real(kind=realType) :: t1, t2
         real(kind=realType) :: rhoi
@@ -198,9 +282,17 @@ contains
         !
         !       Viscous terms in k-direction.
         !
+#ifdef TAPENADE_REVERSE
+        !$AD II-LOOP
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
+#else
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
+#endif
 
                     ! Compute the metrics in zeta-direction, i.e. along the
                     ! line k = constant.
@@ -277,7 +369,7 @@ contains
                                       - c10 * w(i, j, k, itu1) + c1p * w(i, j, k + 1, itu1)
                     scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j, k - 1, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i, j, k + 1, itu2)
-
+#ifndef USE_TAPENADE
                     b1 = -c1m
                     c1 = c10
                     d1 = -c1p
@@ -312,16 +404,28 @@ contains
                         qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
                         qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
                     end if
-
+#endif
+#ifdef TAPENADE_REVERSE
+                    end do
+#else
                 end do
             end do
         end do
+#endif
         !
         !       Viscous terms in j-direction.
         !
+#ifdef TAPENADE_REVERSE
+        !$AD II-LOOP
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
+#else
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
+#endif
 
                     ! Compute the metrics in eta-direction, i.e. along the
                     ! line j = constant.
@@ -398,6 +502,7 @@ contains
                     scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j - 1, k, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i, j + 1, k, itu2)
 
+#ifndef USE_TAPENADE
                     b1 = -c1m
                     c1 = c10
                     d1 = -c1p
@@ -433,16 +538,28 @@ contains
                         qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
                     end if
 
+#endif
+#ifdef TAPENADE_REVERSE
+                    end do
+#else
                 end do
             end do
         end do
+#endif
         !
         !       Viscous terms in i-direction.
         !
+#ifdef TAPENADE_REVERSE
+        !$AD II-LOOP
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
+#else
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
-
+#endif
                     ! Compute the metrics in xi-direction, i.e. along the
                     ! line i = constant.
 
@@ -518,6 +635,7 @@ contains
                     scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i - 1, j, k, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i + 1, j, k, itu2)
 
+#ifndef USE_TAPENADE
                     b1 = -c1m
                     c1 = c10
                     d1 = -c1p
@@ -552,10 +670,14 @@ contains
                         qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
                         qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
                     end if
-
+#endif
+#ifdef TAPENADE_REVERSE
+                    end do
+#else
                 end do
             end do
         end do
+#endif
 
     end subroutine SSTViscous
 
@@ -567,7 +689,7 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k
+        integer(kind=intType) :: i, j, k, ii
 
         real(kind=realType) :: rblank
 
@@ -578,15 +700,27 @@ contains
         ! flow equations. Also multiply by iblank so that no updates occur
         ! in holes or the overset boundary.
 
+#ifdef TAPENADE_REVERSE
+        !$AD II-LOOP
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
+#else
         do k = 2, kl
             do j = 2, jl
                 do i = 2, il
+#endif
                     rblank = real(iblank(i, j, k), realType)
                     dw(i, j, k, itu1) = -volRef(i, j, k) * scratch(i, j, k, idvt + 0) * rblank
                     dw(i, j, k, itu2) = -volRef(i, j, k) * scratch(i, j, k, idvt + 1) * rblank
+#ifdef TAPENADE_REVERSE
+                    end do
+#else
                 end do
             end do
         end do
+#endif
 
     end subroutine SSTResScale
 
@@ -602,13 +736,12 @@ contains
         use blockPointers
         use inputTimeSpectral
         use iteration
-        use utils, only: setPointers
         use paramTurb, only: rSSTSigw2
         implicit none
         !
         !      Local variables.
         !
-        integer(kind=intType) :: sps, nn, mm, i, j, k
+        integer(kind=intType) :: sps, nn, mm, i, j, k, ii
 
         real(kind=realType) :: t1, t2, arg1, myeps
 
@@ -616,9 +749,17 @@ contains
 
         ! Compute the blending function f1 for all owned cells.
 
+#ifdef TAPENADE_REVERSE
+        !$AD II-LOOP
+        do ii = 0, ie * je * ke - 1
+            i = mod(ii, ie) + 1
+            j = mod(ii / ie, je) + 1
+            k = ii / ((ie * je)) + 1
+#else
         do k = 1, ke
             do j = 1, je
                 do i = 1, ie
+#endif
 
                     t1 = sqrt(w(i, j, k, itu1)) &
                          / (0.09_realType * w(i, j, k, itu2) * d2Wall(i, j, k))
@@ -636,13 +777,19 @@ contains
                     arg1 = min(t1, t2)
                     scratch(i, j, k, if1SST) = tanh(arg1**4)
 
+#ifdef TAPENADE_REVERSE
+                    end do
+#else
                 end do
             end do
         end do
+#endif
 
         ! Loop over the boundary conditions to set f1 in the boundary
         ! halo's. A Neumann boundary condition is used for all BC's.
 
+
+        !$AD II-LOOP
         bocos: do nn = 1, nBocos
 
             ! Determine the face on which this subface is located, loop
@@ -713,9 +860,9 @@ contains
             end select
 
         end do bocos
-
     end subroutine f1SST
 
+#ifndef USE_TAPENADE
     subroutine SSTSolve
         use blockPointers
         use constants
@@ -763,7 +910,6 @@ contains
         ! make the code more readable.
         dvt => scratch(1:, 1:, 1:, idvt:)
         f1 => scratch(1:, 1:, 1:, if1SST)
-
 
         ! Initialize the wall function flags to .false.
 
@@ -1350,5 +1496,5 @@ contains
         deallocate (qq)
 
     end subroutine SSTSolve
-
+#endif
 end module SST
