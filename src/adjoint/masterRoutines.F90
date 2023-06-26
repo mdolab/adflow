@@ -276,6 +276,7 @@ contains
         use monitor, only: timeUnsteadyRestart
         use utils, only: isWallType, setPointers, setPointers_d, EChk
         use sa, only: sa_block_residuals_d
+        use sst, only: sst_block_residuals_d
         use turbutils_d, only: turbAdvection_d, computeEddyViscosity_d
         use fluxes_d, only: inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
                             inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
@@ -515,6 +516,8 @@ contains
                     select case (turbModel)
                     case (spalartAllmaras)
                         call sa_block_residuals_d
+                    case (menterSST)
+                        call sst_block_residuals_d
                     end select
                 end if
 
@@ -630,6 +633,7 @@ contains
         use initializeflow_b, only: referenceState_b
         use wallDistance_b, only: updateWallDistancesQuickly_b
         use sa, only: sa_block_residuals_b
+        use sst, only: sst_block_residuals_b
         use turbutils_b, only: turbAdvection_b, computeEddyViscosity_b
         use residuals_b, only: sourceTerms_block_b, initRes_block_b
         use fluxes_b, only: inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
@@ -757,6 +761,8 @@ contains
                     select case (turbModel)
                     case (spalartAllmaras)
                         call sa_block_residuals_b
+                    case (menterSST)
+                        call sst_block_residuals_b
                     end select
 
                     !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
@@ -1011,6 +1017,7 @@ contains
         use BCExtra_b, only: applyAllBC_Block_b
 
         use sa, only: sa_block_residuals_fast_b
+        use sst, only: sst_block_residuals_fast_b
         use turbutils_fast_b, only: turbAdvection_fast_b
         use fluxes_fast_b, only: inviscidUpwindFlux_fast_b, inviscidDissFluxScalar_fast_b, &
                                  inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
@@ -1091,6 +1098,8 @@ contains
                     select case (turbModel)
                     case (spalartAllmaras)
                         call sa_block_residuals_fast_b
+                    case (menterSST)
+                        call sst_block_residuals_fast_b
                     end select
 
                     !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
@@ -1250,6 +1259,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setPointers_d, EChk
         use sa, only: sa_block_residuals_d
+        use sst, only: sst_block_residuals_d
         use turbutils_d, only: turbAdvection_d, computeEddyViscosity_d
         use fluxes_d, only: inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
                             inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
@@ -1299,6 +1309,8 @@ contains
             select case (turbModel)
             case (spalartAllmaras)
                 call sa_block_residuals_d
+            case (menterSST)
+                call sst_block_residuals_d
             end select
         end if
 

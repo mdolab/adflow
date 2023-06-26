@@ -10,6 +10,283 @@ module turbutils_b
 ! ----------------------------------------------------------------------
 
 contains
+!  differentiation of prodkatolaunder in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
+!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
+!                *si:incr *sj:incr *sk:incr
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
+!                sk:in
+  subroutine prodkatolaunder_b(ibeg, iend, jbeg, jend, kbeg, kend)
+!
+!       prodkatolaunder computes the turbulent production term using
+!       the kato-launder formulation.
+!       should always be called with beg>1 and <end!
+!
+    use constants
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, sid, &
+&   sj, sjd, sk, skd, vol, vold, sectionid, scratch, scratchd
+    use flowvarrefstate, only : timeref, timerefd
+    use section, only : sections
+    use turbmod, only : prod
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: ibeg, iend, jbeg, jend, kbeg, &
+&   kend
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
+    real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
+    real(kind=realtype) :: uuxd, uuyd, uuzd, vvxd, vvyd, vvzd, wwxd, &
+&   wwyd, wwzd
+    real(kind=realtype) :: qxx, qyy, qzz, qxy, qxz, qyz, sijsij
+    real(kind=realtype) :: qxxd, qyyd, qzzd, qxyd, qxzd, qyzd, sijsijd
+    real(kind=realtype) :: oxy, oxz, oyz, oijoij
+    real(kind=realtype) :: oxyd, oxzd, oyzd, oijoijd
+    real(kind=realtype) :: fact, omegax, omegay, omegaz
+    real(kind=realtype) :: factd
+    intrinsic mod
+    intrinsic sqrt
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd7
+    real(kind=realtype) :: tempd6
+    real(kind=realtype) :: tempd5
+    real(kind=realtype) :: tempd4
+    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+! determine the non-dimensional wheel speed of this block.
+! the vorticity term, which appears in kato-launder is of course
+! not frame invariant. to approximate frame invariance the wheel
+! speed should be substracted from oxy, oxz and oyz, which results
+! in the vorticity in the rotating frame. however some people
+! claim that the absolute vorticity should be used to obtain the
+! best results. in that omega should be set to zero.
+    omegax = timeref*sections(sectionid)%rotrate(1)
+    omegay = timeref*sections(sectionid)%rotrate(2)
+    omegaz = timeref*sections(sectionid)%rotrate(3)
+! loop over the cell centers of the given block. it may be more
+! efficient to loop over the faces and to scatter the gradient,
+! but in that case the gradients for u, v and w must be stored.
+! in the current approach no extra memory is needed.
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
+! compute the gradient of u in the cell center. use is made
+! of the fact that the surrounding normals sum up to zero,
+! such that the cell i,j,k does not give a contribution.
+! the gradient is scaled by a factor 2*vol.
+      uux = w(i+1, j, k, ivx)*si(i, j, k, 1) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivx)*sj(i, j, k, 1) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivx)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 1)
+      uuy = w(i+1, j, k, ivx)*si(i, j, k, 2) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivx)*sj(i, j, k, 2) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivx)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 2)
+      uuz = w(i+1, j, k, ivx)*si(i, j, k, 3) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivx)*sj(i, j, k, 3) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivx)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 3)
+! idem for the gradient of v.
+      vvx = w(i+1, j, k, ivy)*si(i, j, k, 1) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivy)*sj(i, j, k, 1) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivy)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 1)
+      vvy = w(i+1, j, k, ivy)*si(i, j, k, 2) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivy)*sj(i, j, k, 2) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivy)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 2)
+      vvz = w(i+1, j, k, ivy)*si(i, j, k, 3) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivy)*sj(i, j, k, 3) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivy)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 3)
+! and for the gradient of w.
+      wwx = w(i+1, j, k, ivz)*si(i, j, k, 1) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivz)*sj(i, j, k, 1) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivz)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 1)
+      wwy = w(i+1, j, k, ivz)*si(i, j, k, 2) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 2) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivz)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 2)
+      wwz = w(i+1, j, k, ivz)*si(i, j, k, 3) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivz)*sj(i, j, k, 3) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivz)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 3)
+! compute the strain and vorticity terms. the multiplication
+! is present to obtain the correct gradients. note that
+! the wheel speed is substracted from the vorticity terms.
+      fact = half/vol(i, j, k)
+      qxx = fact*uux
+      qyy = fact*vvy
+      qzz = fact*wwz
+      qxy = fact*half*(uuy+vvx)
+      qxz = fact*half*(uuz+wwx)
+      qyz = fact*half*(vvz+wwy)
+      oxy = fact*half*(vvx-uuy) - omegaz
+      oxz = fact*half*(uuz-wwx) - omegay
+      oyz = fact*half*(wwy-vvz) - omegax
+! compute the summation of the strain and vorticity tensors.
+      sijsij = two*(qxy**2+qxz**2+qyz**2) + qxx**2 + qyy**2 + qzz**2
+      oijoij = two*(oxy**2+oxz**2+oyz**2)
+! compute the production term.
+      if (sijsij*oijoij .eq. 0.0_8) then
+        tempd = 0.0
+      else
+        tempd = two*scratchd(i, j, k, iprod)/(2.0*sqrt(sijsij*oijoij))
+      end if
+      sijsijd = oijoij*tempd
+      oijoijd = sijsij*tempd
+      scratchd(i, j, k, iprod) = 0.0_8
+      tempd0 = two*oijoijd
+      oxyd = 2*oxy*tempd0
+      oxzd = 2*oxz*tempd0
+      oyzd = 2*oyz*tempd0
+      tempd1 = two*sijsijd
+      qxyd = 2*qxy*tempd1
+      qxzd = 2*qxz*tempd1
+      qyzd = 2*qyz*tempd1
+      qxxd = 2*qxx*sijsijd
+      qyyd = 2*qyy*sijsijd
+      qzzd = 2*qzz*sijsijd
+      tempd2 = half*oyzd
+      tempd3 = half*oxzd
+      tempd7 = half*oxyd
+      tempd4 = half*qyzd
+      wwyd = fact*tempd4 + fact*tempd2
+      vvzd = fact*tempd4 - fact*tempd2
+      tempd6 = half*qxzd
+      uuzd = fact*tempd6 + fact*tempd3
+      wwxd = fact*tempd6 - fact*tempd3
+      tempd5 = half*qxyd
+      factd = (uuz-wwx)*tempd3 + (vvz+wwy)*tempd4 + (uuy+vvx)*tempd5 + &
+&       vvy*qyyd + uux*qxxd + wwz*qzzd + (uuz+wwx)*tempd6 + (vvx-uuy)*&
+&       tempd7 + (wwy-vvz)*tempd2
+      vvxd = fact*tempd5 + fact*tempd7
+      uuyd = fact*tempd5 - fact*tempd7
+      wwzd = fact*qzzd
+      vvyd = fact*qyyd
+      uuxd = fact*qxxd
+      vold(i, j, k) = vold(i, j, k) - half*factd/vol(i, j, k)**2
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 3)*wwzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivz)*wwzd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 3)*wwzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivz)*wwzd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 3)*wwzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivz)*wwzd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 3)*wwzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivz)*wwzd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 3)*wwzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivz)*wwzd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 3)*wwzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivz)*wwzd
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 2)*wwyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivz)*wwyd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 2)*wwyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivz)*wwyd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 2)*wwyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivz)*wwyd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 2)*wwyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivz)*wwyd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 2)*wwyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivz)*wwyd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 2)*wwyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivz)*wwyd
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 1)*wwxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivz)*wwxd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 1)*wwxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivz)*wwxd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 1)*wwxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivz)*wwxd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 1)*wwxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivz)*wwxd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 1)*wwxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivz)*wwxd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 1)*wwxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivz)*wwxd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 3)*vvzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivy)*vvzd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 3)*vvzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivy)*vvzd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 3)*vvzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivy)*vvzd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 3)*vvzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivy)*vvzd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 3)*vvzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivy)*vvzd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 3)*vvzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivy)*vvzd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 2)*vvyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivy)*vvyd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 2)*vvyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivy)*vvyd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 2)*vvyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivy)*vvyd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 2)*vvyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivy)*vvyd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 2)*vvyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivy)*vvyd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 2)*vvyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivy)*vvyd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 1)*vvxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivy)*vvxd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 1)*vvxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivy)*vvxd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 1)*vvxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivy)*vvxd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 1)*vvxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivy)*vvxd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 1)*vvxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivy)*vvxd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 1)*vvxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivy)*vvxd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 3)*uuzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivx)*uuzd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 3)*uuzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivx)*uuzd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 3)*uuzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivx)*uuzd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 3)*uuzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivx)*uuzd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 3)*uuzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivx)*uuzd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 3)*uuzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivx)*uuzd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 2)*uuyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivx)*uuyd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 2)*uuyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivx)*uuyd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 2)*uuyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivx)*uuyd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 2)*uuyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivx)*uuyd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 2)*uuyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivx)*uuyd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 2)*uuyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivx)*uuyd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 1)*uuxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivx)*uuxd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 1)*uuxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivx)*uuxd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 1)*uuxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivx)*uuxd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 1)*uuxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivx)*uuxd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 1)*uuxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivx)*uuxd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 1)*uuxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivx)*uuxd
+    end do
+  end subroutine prodkatolaunder_b
   subroutine prodkatolaunder(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       prodkatolaunder computes the turbulent production term using
@@ -121,6 +398,248 @@ contains
       scratch(i, j, k, iprod) = two*sqrt(sijsij*oijoij)
     end do
   end subroutine prodkatolaunder
+!  differentiation of prodsmag2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
+!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
+!                *si:incr *sj:incr *sk:incr
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
+!                sk:in
+  subroutine prodsmag2_b(ibeg, iend, jbeg, jend, kbeg, kend)
+!
+!       prodsmag2 computes the term:
+!              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi)
+!       which is used for the turbulence equations.
+!       it is assumed that the pointer prod, stored in turbmod, is
+!       already set to the correct entry.
+!       should always be called with beg>1 and <end!
+!
+    use constants
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, sid, &
+&   sj, sjd, sk, skd, vol, vold, sectionid, scratch, scratchd
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: ibeg, iend, jbeg, jend, kbeg, &
+&   kend
+!
+!      local parameter
+!
+    real(kind=realtype), parameter :: f23=two*third
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
+    real(kind=realtype) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
+    real(kind=realtype) :: uuxd, uuyd, uuzd, vvxd, vvyd, vvzd, wwxd, &
+&   wwyd, wwzd
+    real(kind=realtype) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
+    real(kind=realtype) :: div2d, factd, sxxd, syyd, szzd, sxyd, sxzd, &
+&   syzd
+    intrinsic mod
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd1
+    real(kind=realtype) :: tempd0
+! loop over the cell centers of the given block. it may be more
+! efficient to loop over the faces and to scatter the gradient,
+! but in that case the gradients for u, v and w must be stored.
+! in the current approach no extra memory is needed.
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
+! compute the gradient of u in the cell center. use is made
+! of the fact that the surrounding normals sum up to zero,
+! such that the cell i,j,k does not give a contribution.
+! the gradient is scaled by the factor 2*vol.
+      uux = w(i+1, j, k, ivx)*si(i, j, k, 1) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivx)*sj(i, j, k, 1) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivx)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 1)
+      uuy = w(i+1, j, k, ivx)*si(i, j, k, 2) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivx)*sj(i, j, k, 2) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivx)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 2)
+      uuz = w(i+1, j, k, ivx)*si(i, j, k, 3) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivx)*sj(i, j, k, 3) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivx)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 3)
+! idem for the gradient of v.
+      vvx = w(i+1, j, k, ivy)*si(i, j, k, 1) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivy)*sj(i, j, k, 1) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivy)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 1)
+      vvy = w(i+1, j, k, ivy)*si(i, j, k, 2) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivy)*sj(i, j, k, 2) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivy)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 2)
+      vvz = w(i+1, j, k, ivy)*si(i, j, k, 3) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivy)*sj(i, j, k, 3) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivy)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 3)
+! and for the gradient of w.
+      wwx = w(i+1, j, k, ivz)*si(i, j, k, 1) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivz)*sj(i, j, k, 1) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivz)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 1)
+      wwy = w(i+1, j, k, ivz)*si(i, j, k, 2) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 2) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivz)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 2)
+      wwz = w(i+1, j, k, ivz)*si(i, j, k, 3) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivz)*sj(i, j, k, 3) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivz)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 3)
+! compute the components of the stress tensor.
+! the combination of the current scaling of the velocity
+! gradients (2*vol) and the definition of the stress tensor,
+! leads to the factor 1/(4*vol).
+      fact = fourth/vol(i, j, k)
+      sxx = two*fact*uux
+      syy = two*fact*vvy
+      szz = two*fact*wwz
+      sxy = fact*(uuy+vvx)
+      sxz = fact*(uuz+wwx)
+      syz = fact*(vvz+wwy)
+! compute 2/3 * divergence of velocity squared
+! store the square of strain as the production term.
+      div2d = -scratchd(i, j, k, iprod)
+      tempd1 = f23*2*(sxx+syy+szz)*div2d
+      tempd = two*scratchd(i, j, k, iprod)
+      tempd0 = two*tempd
+      sxyd = 2*sxy*tempd0
+      sxzd = 2*sxz*tempd0
+      syzd = 2*syz*tempd0
+      sxxd = tempd1 + 2*sxx*tempd
+      syyd = tempd1 + 2*syy*tempd
+      szzd = tempd1 + 2*szz*tempd
+      scratchd(i, j, k, iprod) = 0.0_8
+      factd = (uuz+wwx)*sxzd + two*wwz*szzd + two*uux*sxxd + two*vvy*&
+&       syyd + (uuy+vvx)*sxyd + (vvz+wwy)*syzd
+      vvzd = fact*syzd
+      wwyd = fact*syzd
+      uuzd = fact*sxzd
+      wwxd = fact*sxzd
+      uuyd = fact*sxyd
+      vvxd = fact*sxyd
+      wwzd = two*fact*szzd
+      vvyd = two*fact*syyd
+      uuxd = two*fact*sxxd
+      vold(i, j, k) = vold(i, j, k) - fourth*factd/vol(i, j, k)**2
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 3)*wwzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivz)*wwzd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 3)*wwzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivz)*wwzd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 3)*wwzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivz)*wwzd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 3)*wwzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivz)*wwzd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 3)*wwzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivz)*wwzd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 3)*wwzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivz)*wwzd
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 2)*wwyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivz)*wwyd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 2)*wwyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivz)*wwyd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 2)*wwyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivz)*wwyd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 2)*wwyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivz)*wwyd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 2)*wwyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivz)*wwyd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 2)*wwyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivz)*wwyd
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 1)*wwxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivz)*wwxd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 1)*wwxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivz)*wwxd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 1)*wwxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivz)*wwxd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 1)*wwxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivz)*wwxd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 1)*wwxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivz)*wwxd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 1)*wwxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivz)*wwxd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 3)*vvzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivy)*vvzd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 3)*vvzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivy)*vvzd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 3)*vvzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivy)*vvzd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 3)*vvzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivy)*vvzd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 3)*vvzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivy)*vvzd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 3)*vvzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivy)*vvzd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 2)*vvyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivy)*vvyd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 2)*vvyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivy)*vvyd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 2)*vvyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivy)*vvyd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 2)*vvyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivy)*vvyd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 2)*vvyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivy)*vvyd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 2)*vvyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivy)*vvyd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 1)*vvxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivy)*vvxd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 1)*vvxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivy)*vvxd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 1)*vvxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivy)*vvxd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 1)*vvxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivy)*vvxd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 1)*vvxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivy)*vvxd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 1)*vvxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivy)*vvxd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 3)*uuzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivx)*uuzd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 3)*uuzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivx)*uuzd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 3)*uuzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivx)*uuzd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 3)*uuzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivx)*uuzd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 3)*uuzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivx)*uuzd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 3)*uuzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivx)*uuzd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 2)*uuyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivx)*uuyd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 2)*uuyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivx)*uuyd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 2)*uuyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivx)*uuyd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 2)*uuyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivx)*uuyd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 2)*uuyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivx)*uuyd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 2)*uuyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivx)*uuyd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 1)*uuxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivx)*uuxd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 1)*uuxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivx)*uuxd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 1)*uuxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivx)*uuxd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 1)*uuxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivx)*uuxd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 1)*uuxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivx)*uuxd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 1)*uuxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivx)*uuxd
+    end do
+  end subroutine prodsmag2_b
   subroutine prodsmag2(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       prodsmag2 computes the term:
@@ -221,6 +740,182 @@ contains
 &       syy**2+szz**2) - div2
     end do
   end subroutine prodsmag2
+!  differentiation of prodwmag2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
+!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
+!                *si:incr *sj:incr *sk:incr
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
+!                sk:in
+  subroutine prodwmag2_b(ibeg, iend, jbeg, jend, kbeg, kend)
+!
+!       prodwmag2 computes the term:
+!          2*oij*oij  with oij=0.5*(duidxj - dujdxi).
+!       this is equal to the magnitude squared of the vorticity.
+!       it is assumed that the pointer vort, stored in turbmod, is
+!       already set to the correct entry.
+!       should always be called with beg>1 and <end!
+!
+    use constants
+    use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, sid, &
+&   sj, sjd, sk, skd, vol, vold, sectionid, scratch, scratchd
+    use flowvarrefstate, only : timeref, timerefd
+    use section, only : sections
+    implicit none
+! update of iprod to be consistent. ivort seems to be never used, and ivort = iprod anyway.
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: ibeg, iend, jbeg, jend, kbeg, &
+&   kend
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii, isize, jsize, ksize
+    real(kind=realtype) :: uuy, uuz, vvx, vvz, wwx, wwy
+    real(kind=realtype) :: uuyd, uuzd, vvxd, vvzd, wwxd, wwyd
+    real(kind=realtype) :: fact, vortx, vorty, vortz
+    real(kind=realtype) :: factd, vortxd, vortyd, vortzd
+    real(kind=realtype) :: omegax, omegay, omegaz
+    intrinsic mod
+! determine the non-dimensional wheel speed of this block.
+    omegax = timeref*sections(sectionid)%rotrate(1)
+    omegay = timeref*sections(sectionid)%rotrate(2)
+    omegaz = timeref*sections(sectionid)%rotrate(3)
+! loop over the cell centers of the given block. it may be more
+! efficient to loop over the faces and to scatter the gradient,
+! but in that case the gradients for u, v and w must be stored.
+! in the current approach no extra memory is needed.
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
+! compute the necessary derivatives of u in the cell center.
+! use is made of the fact that the surrounding normals sum up
+! to zero, such that the cell i,j,k does not give a
+! contribution. the gradient is scaled by a factor 2*vol.
+      uuy = w(i+1, j, k, ivx)*si(i, j, k, 2) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivx)*sj(i, j, k, 2) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivx)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 2)
+      uuz = w(i+1, j, k, ivx)*si(i, j, k, 3) - w(i-1, j, k, ivx)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivx)*sj(i, j, k, 3) - w(i, j-1, k, ivx&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivx)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivx)*sk(i, j, k-1, 3)
+! idem for the gradient of v.
+      vvx = w(i+1, j, k, ivy)*si(i, j, k, 1) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivy)*sj(i, j, k, 1) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivy)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 1)
+      vvz = w(i+1, j, k, ivy)*si(i, j, k, 3) - w(i-1, j, k, ivy)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, ivy)*sj(i, j, k, 3) - w(i, j-1, k, ivy&
+&       )*sj(i, j-1, k, 3) + w(i, j, k+1, ivy)*sk(i, j, k, 3) - w(i, j, &
+&       k-1, ivy)*sk(i, j, k-1, 3)
+! and for the gradient of w.
+      wwx = w(i+1, j, k, ivz)*si(i, j, k, 1) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, ivz)*sj(i, j, k, 1) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 1) + w(i, j, k+1, ivz)*sk(i, j, k, 1) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 1)
+      wwy = w(i+1, j, k, ivz)*si(i, j, k, 2) - w(i-1, j, k, ivz)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, ivz)*sj(i, j, k, 2) - w(i, j-1, k, ivz&
+&       )*sj(i, j-1, k, 2) + w(i, j, k+1, ivz)*sk(i, j, k, 2) - w(i, j, &
+&       k-1, ivz)*sk(i, j, k-1, 2)
+! compute the three components of the vorticity vector.
+! substract the part coming from the rotating frame.
+      fact = half/vol(i, j, k)
+      vortx = fact*(wwy-vvz) - two*omegax
+      vorty = fact*(uuz-wwx) - two*omegay
+      vortz = fact*(vvx-uuy) - two*omegaz
+! compute the magnitude squared of the vorticity.
+      vortxd = 2*vortx*scratchd(i, j, k, iprod)
+      vortyd = 2*vorty*scratchd(i, j, k, iprod)
+      vortzd = 2*vortz*scratchd(i, j, k, iprod)
+      scratchd(i, j, k, iprod) = 0.0_8
+      factd = (uuz-wwx)*vortyd + (wwy-vvz)*vortxd + (vvx-uuy)*vortzd
+      vvxd = fact*vortzd
+      uuyd = -(fact*vortzd)
+      uuzd = fact*vortyd
+      wwxd = -(fact*vortyd)
+      wwyd = fact*vortxd
+      vvzd = -(fact*vortxd)
+      vold(i, j, k) = vold(i, j, k) - half*factd/vol(i, j, k)**2
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 2)*wwyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivz)*wwyd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 2)*wwyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivz)*wwyd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 2)*wwyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivz)*wwyd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 2)*wwyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivz)*wwyd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 2)*wwyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivz)*wwyd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 2)*wwyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivz)*wwyd
+      wd(i+1, j, k, ivz) = wd(i+1, j, k, ivz) + si(i, j, k, 1)*wwxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivz)*wwxd
+      wd(i-1, j, k, ivz) = wd(i-1, j, k, ivz) - si(i-1, j, k, 1)*wwxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivz)*wwxd
+      wd(i, j+1, k, ivz) = wd(i, j+1, k, ivz) + sj(i, j, k, 1)*wwxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivz)*wwxd
+      wd(i, j, k+1, ivz) = wd(i, j, k+1, ivz) + sk(i, j, k, 1)*wwxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivz)*wwxd
+      wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 1)*wwxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivz)*wwxd
+      wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 1)*wwxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivz)*wwxd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 3)*vvzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivy)*vvzd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 3)*vvzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivy)*vvzd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 3)*vvzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivy)*vvzd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 3)*vvzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivy)*vvzd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 3)*vvzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivy)*vvzd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 3)*vvzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivy)*vvzd
+      wd(i+1, j, k, ivy) = wd(i+1, j, k, ivy) + si(i, j, k, 1)*vvxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, ivy)*vvxd
+      wd(i-1, j, k, ivy) = wd(i-1, j, k, ivy) - si(i-1, j, k, 1)*vvxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, ivy)*vvxd
+      wd(i, j+1, k, ivy) = wd(i, j+1, k, ivy) + sj(i, j, k, 1)*vvxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, ivy)*vvxd
+      wd(i, j, k+1, ivy) = wd(i, j, k+1, ivy) + sk(i, j, k, 1)*vvxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, ivy)*vvxd
+      wd(i, j-1, k, ivy) = wd(i, j-1, k, ivy) - sj(i, j-1, k, 1)*vvxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, ivy)*vvxd
+      wd(i, j, k-1, ivy) = wd(i, j, k-1, ivy) - sk(i, j, k-1, 1)*vvxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivy)*vvxd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 3)*uuzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, ivx)*uuzd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 3)*uuzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, ivx)*uuzd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 3)*uuzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, ivx)*uuzd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 3)*uuzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, ivx)*uuzd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 3)*uuzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, ivx)*uuzd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 3)*uuzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, ivx)*uuzd
+      wd(i+1, j, k, ivx) = wd(i+1, j, k, ivx) + si(i, j, k, 2)*uuyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, ivx)*uuyd
+      wd(i-1, j, k, ivx) = wd(i-1, j, k, ivx) - si(i-1, j, k, 2)*uuyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, ivx)*uuyd
+      wd(i, j+1, k, ivx) = wd(i, j+1, k, ivx) + sj(i, j, k, 2)*uuyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, ivx)*uuyd
+      wd(i, j, k+1, ivx) = wd(i, j, k+1, ivx) + sk(i, j, k, 2)*uuyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, ivx)*uuyd
+      wd(i, j-1, k, ivx) = wd(i, j-1, k, ivx) - sj(i, j-1, k, 2)*uuyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, ivx)*uuyd
+      wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 2)*uuyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, ivx)*uuyd
+    end do
+  end subroutine prodwmag2_b
 !  differentiation of sanuknowneddyratio in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
 !   gradient     of useful results: sanuknowneddyratio
 !   with respect to varying inputs: nulam
@@ -2293,4 +2988,358 @@ nadvloopspectral:do ii=1,nadv
 ! always present, i.e. -uu.
     continue
   end subroutine turbadvection
+!  differentiation of kwcdterm in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
+!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
+!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
+!                *si:incr *sj:incr *sk:incr
+!   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
+!                sk:in
+  subroutine kwcdterm_b()
+!
+!       kwcdterm computes the cross-diffusion term in the omega-eqn
+!       for the sst version as well as the modified k-omega turbulence
+!       model. it is assumed that the pointers in blockpointers and
+!       turbmod are already set.
+!
+    use constants
+    use blockpointers
+    implicit none
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii
+    real(kind=realtype) :: kx, ky, kz, wwx, wwy, wwz
+    real(kind=realtype) :: kxd, kyd, kzd, wwxd, wwyd, wwzd
+    real(kind=realtype) :: lnwip1, lnwim1, lnwjp1, lnwjm1
+    real(kind=realtype) :: lnwip1d, lnwim1d, lnwjp1d, lnwjm1d
+    real(kind=realtype) :: lnwkp1, lnwkm1
+    real(kind=realtype) :: lnwkp1d, lnwkm1d
+    intrinsic mod
+    intrinsic abs
+    intrinsic log
+    integer :: branch
+    real(kind=realtype) :: abs1d
+    real(kind=realtype) :: abs4d
+    real(kind=realtype) :: abs0d
+    real(kind=realtype) :: abs3d
+    real(kind=realtype) :: tempd
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
+    real(kind=realtype) :: abs2
+    real(kind=realtype) :: abs2d
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
+    real(kind=realtype) :: abs5d
+    real(kind=realtype) :: temp
+    do ii=0,ie*je*ke-1
+      i = mod(ii, ie) + 1
+      j = mod(ii/ie, je) + 1
+      k = ii/(ie*je) + 1
+! compute the gradient of k in the cell center. use is made
+! of the fact that the surrounding normals sum up to zero,
+! such that the cell i,j,k does not give a contribution.
+! the gradient is scaled by a factor 1/2vol.
+      kx = w(i+1, j, k, itu1)*si(i, j, k, 1) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, itu1)*sj(i, j, k, 1) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 1) + w(i, j, k+1, itu1)*sk(i, j, k, 1) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 1)
+      ky = w(i+1, j, k, itu1)*si(i, j, k, 2) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, itu1)*sj(i, j, k, 2) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 2) + w(i, j, k+1, itu1)*sk(i, j, k, 2) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 2)
+      kz = w(i+1, j, k, itu1)*si(i, j, k, 3) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, itu1)*sj(i, j, k, 3) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 3) + w(i, j, k+1, itu1)*sk(i, j, k, 3) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 3)
+      if (w(i+1, j, k, itu2) .ge. 0.) then
+        abs0 = w(i+1, j, k, itu2)
+        call pushcontrol1b(0)
+      else
+        abs0 = -w(i+1, j, k, itu2)
+        call pushcontrol1b(1)
+      end if
+! compute the logarithm of omega in the points that
+! contribute to the gradient in this cell.
+! because: 1/omega*d/dx_j(omega) = d/dx_j( log(omega) )
+      lnwip1 = log(abs0)
+      if (w(i-1, j, k, itu2) .ge. 0.) then
+        abs1 = w(i-1, j, k, itu2)
+        call pushcontrol1b(0)
+      else
+        abs1 = -w(i-1, j, k, itu2)
+        call pushcontrol1b(1)
+      end if
+      lnwim1 = log(abs1)
+      if (w(i, j+1, k, itu2) .ge. 0.) then
+        abs2 = w(i, j+1, k, itu2)
+        call pushcontrol1b(0)
+      else
+        abs2 = -w(i, j+1, k, itu2)
+        call pushcontrol1b(1)
+      end if
+      lnwjp1 = log(abs2)
+      if (w(i, j-1, k, itu2) .ge. 0.) then
+        abs3 = w(i, j-1, k, itu2)
+        call pushcontrol1b(0)
+      else
+        abs3 = -w(i, j-1, k, itu2)
+        call pushcontrol1b(1)
+      end if
+      lnwjm1 = log(abs3)
+      if (w(i, j, k+1, itu2) .ge. 0.) then
+        abs4 = w(i, j, k+1, itu2)
+        call pushcontrol1b(0)
+      else
+        abs4 = -w(i, j, k+1, itu2)
+        call pushcontrol1b(1)
+      end if
+      lnwkp1 = log(abs4)
+      if (w(i, j, k-1, itu2) .ge. 0.) then
+        abs5 = w(i, j, k-1, itu2)
+        call pushcontrol1b(0)
+      else
+        abs5 = -w(i, j, k-1, itu2)
+        call pushcontrol1b(1)
+      end if
+      lnwkm1 = log(abs5)
+! compute the scaled gradient of ln omega.
+      wwx = lnwip1*si(i, j, k, 1) - lnwim1*si(i-1, j, k, 1) + lnwjp1*sj(&
+&       i, j, k, 1) - lnwjm1*sj(i, j-1, k, 1) + lnwkp1*sk(i, j, k, 1) - &
+&       lnwkm1*sk(i, j, k-1, 1)
+      wwy = lnwip1*si(i, j, k, 2) - lnwim1*si(i-1, j, k, 2) + lnwjp1*sj(&
+&       i, j, k, 2) - lnwjm1*sj(i, j-1, k, 2) + lnwkp1*sk(i, j, k, 2) - &
+&       lnwkm1*sk(i, j, k-1, 2)
+      wwz = lnwip1*si(i, j, k, 3) - lnwim1*si(i-1, j, k, 3) + lnwjp1*sj(&
+&       i, j, k, 3) - lnwjm1*sj(i, j-1, k, 3) + lnwkp1*sk(i, j, k, 3) - &
+&       lnwkm1*sk(i, j, k-1, 3)
+! compute the dot product grad k grad ln omega.
+! multiply it by the correct scaling factor and store it.
+      temp = vol(i, j, k)
+      tempd = fourth*scratchd(i, j, k, icd)/temp**2
+      kxd = wwx*tempd
+      wwxd = kx*tempd
+      kyd = wwy*tempd
+      wwyd = ky*tempd
+      kzd = wwz*tempd
+      wwzd = kz*tempd
+      vold(i, j, k) = vold(i, j, k) - (kx*wwx+ky*wwy+kz*wwz)*2*tempd/&
+&       temp
+      scratchd(i, j, k, icd) = 0.0_8
+      lnwip1d = si(i, j, k, 2)*wwyd + si(i, j, k, 1)*wwxd + si(i, j, k, &
+&       3)*wwzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + lnwip1*wwzd
+      lnwim1d = -(si(i-1, j, k, 2)*wwyd) - si(i-1, j, k, 1)*wwxd - si(i-&
+&       1, j, k, 3)*wwzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - lnwim1*wwzd
+      lnwjp1d = sj(i, j, k, 2)*wwyd + sj(i, j, k, 1)*wwxd + sj(i, j, k, &
+&       3)*wwzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + lnwjp1*wwzd
+      lnwkp1d = sk(i, j, k, 2)*wwyd + sk(i, j, k, 1)*wwxd + sk(i, j, k, &
+&       3)*wwzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + lnwkp1*wwzd
+      lnwjm1d = -(sj(i, j-1, k, 2)*wwyd) - sj(i, j-1, k, 1)*wwxd - sj(i&
+&       , j-1, k, 3)*wwzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - lnwjm1*wwzd
+      lnwkm1d = -(sk(i, j, k-1, 2)*wwyd) - sk(i, j, k-1, 1)*wwxd - sk(i&
+&       , j, k-1, 3)*wwzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - lnwkm1*wwzd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + lnwip1*wwyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - lnwim1*wwyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + lnwjp1*wwyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + lnwkp1*wwyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - lnwjm1*wwyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - lnwkm1*wwyd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + lnwip1*wwxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - lnwim1*wwxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + lnwjp1*wwxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + lnwkp1*wwxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - lnwjm1*wwxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - lnwkm1*wwxd
+      abs5d = lnwkm1d/abs5
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        wd(i, j, k-1, itu2) = wd(i, j, k-1, itu2) + abs5d
+      else
+        wd(i, j, k-1, itu2) = wd(i, j, k-1, itu2) - abs5d
+      end if
+      abs4d = lnwkp1d/abs4
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        wd(i, j, k+1, itu2) = wd(i, j, k+1, itu2) + abs4d
+      else
+        wd(i, j, k+1, itu2) = wd(i, j, k+1, itu2) - abs4d
+      end if
+      abs3d = lnwjm1d/abs3
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        wd(i, j-1, k, itu2) = wd(i, j-1, k, itu2) + abs3d
+      else
+        wd(i, j-1, k, itu2) = wd(i, j-1, k, itu2) - abs3d
+      end if
+      abs2d = lnwjp1d/abs2
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        wd(i, j+1, k, itu2) = wd(i, j+1, k, itu2) + abs2d
+      else
+        wd(i, j+1, k, itu2) = wd(i, j+1, k, itu2) - abs2d
+      end if
+      abs1d = lnwim1d/abs1
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        wd(i-1, j, k, itu2) = wd(i-1, j, k, itu2) + abs1d
+      else
+        wd(i-1, j, k, itu2) = wd(i-1, j, k, itu2) - abs1d
+      end if
+      abs0d = lnwip1d/abs0
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        wd(i+1, j, k, itu2) = wd(i+1, j, k, itu2) + abs0d
+      else
+        wd(i+1, j, k, itu2) = wd(i+1, j, k, itu2) - abs0d
+      end if
+      wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + si(i, j, k, 3)*kzd
+      sid(i, j, k, 3) = sid(i, j, k, 3) + w(i+1, j, k, itu1)*kzd
+      wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) - si(i-1, j, k, 3)*kzd
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) - w(i-1, j, k, itu1)*kzd
+      wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + sj(i, j, k, 3)*kzd
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + w(i, j+1, k, itu1)*kzd
+      wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + sk(i, j, k, 3)*kzd
+      skd(i, j, k, 3) = skd(i, j, k, 3) + w(i, j, k+1, itu1)*kzd
+      wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - sj(i, j-1, k, 3)*kzd
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) - w(i, j-1, k, itu1)*kzd
+      wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - sk(i, j, k-1, 3)*kzd
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) - w(i, j, k-1, itu1)*kzd
+      wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + si(i, j, k, 2)*kyd
+      sid(i, j, k, 2) = sid(i, j, k, 2) + w(i+1, j, k, itu1)*kyd
+      wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) - si(i-1, j, k, 2)*kyd
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) - w(i-1, j, k, itu1)*kyd
+      wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + sj(i, j, k, 2)*kyd
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + w(i, j+1, k, itu1)*kyd
+      wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + sk(i, j, k, 2)*kyd
+      skd(i, j, k, 2) = skd(i, j, k, 2) + w(i, j, k+1, itu1)*kyd
+      wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - sj(i, j-1, k, 2)*kyd
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) - w(i, j-1, k, itu1)*kyd
+      wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - sk(i, j, k-1, 2)*kyd
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) - w(i, j, k-1, itu1)*kyd
+      wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + si(i, j, k, 1)*kxd
+      sid(i, j, k, 1) = sid(i, j, k, 1) + w(i+1, j, k, itu1)*kxd
+      wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) - si(i-1, j, k, 1)*kxd
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) - w(i-1, j, k, itu1)*kxd
+      wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + sj(i, j, k, 1)*kxd
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + w(i, j+1, k, itu1)*kxd
+      wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + sk(i, j, k, 1)*kxd
+      skd(i, j, k, 1) = skd(i, j, k, 1) + w(i, j, k+1, itu1)*kxd
+      wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) - sj(i, j-1, k, 1)*kxd
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) - w(i, j-1, k, itu1)*kxd
+      wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) - sk(i, j, k-1, 1)*kxd
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, itu1)*kxd
+    end do
+  end subroutine kwcdterm_b
+  subroutine kwcdterm()
+!
+!       kwcdterm computes the cross-diffusion term in the omega-eqn
+!       for the sst version as well as the modified k-omega turbulence
+!       model. it is assumed that the pointers in blockpointers and
+!       turbmod are already set.
+!
+    use constants
+    use blockpointers
+    implicit none
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii
+    real(kind=realtype) :: kx, ky, kz, wwx, wwy, wwz
+    real(kind=realtype) :: lnwip1, lnwim1, lnwjp1, lnwjm1
+    real(kind=realtype) :: lnwkp1, lnwkm1
+    intrinsic mod
+    intrinsic abs
+    intrinsic log
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
+    real(kind=realtype) :: abs2
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
+! loop over the cell centers of the given block. it may be more
+! efficient to loop over the faces and to scatter the gradient,
+! but in that case the gradients for k and omega must be stored.
+! in the current approach no extra memory is needed.
+    do ii=0,ie*je*ke-1
+      i = mod(ii, ie) + 1
+      j = mod(ii/ie, je) + 1
+      k = ii/(ie*je) + 1
+! compute the gradient of k in the cell center. use is made
+! of the fact that the surrounding normals sum up to zero,
+! such that the cell i,j,k does not give a contribution.
+! the gradient is scaled by a factor 1/2vol.
+      kx = w(i+1, j, k, itu1)*si(i, j, k, 1) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, itu1)*sj(i, j, k, 1) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 1) + w(i, j, k+1, itu1)*sk(i, j, k, 1) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 1)
+      ky = w(i+1, j, k, itu1)*si(i, j, k, 2) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, itu1)*sj(i, j, k, 2) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 2) + w(i, j, k+1, itu1)*sk(i, j, k, 2) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 2)
+      kz = w(i+1, j, k, itu1)*si(i, j, k, 3) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, itu1)*sj(i, j, k, 3) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 3) + w(i, j, k+1, itu1)*sk(i, j, k, 3) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 3)
+      if (w(i+1, j, k, itu2) .ge. 0.) then
+        abs0 = w(i+1, j, k, itu2)
+      else
+        abs0 = -w(i+1, j, k, itu2)
+      end if
+! compute the logarithm of omega in the points that
+! contribute to the gradient in this cell.
+! because: 1/omega*d/dx_j(omega) = d/dx_j( log(omega) )
+      lnwip1 = log(abs0)
+      if (w(i-1, j, k, itu2) .ge. 0.) then
+        abs1 = w(i-1, j, k, itu2)
+      else
+        abs1 = -w(i-1, j, k, itu2)
+      end if
+      lnwim1 = log(abs1)
+      if (w(i, j+1, k, itu2) .ge. 0.) then
+        abs2 = w(i, j+1, k, itu2)
+      else
+        abs2 = -w(i, j+1, k, itu2)
+      end if
+      lnwjp1 = log(abs2)
+      if (w(i, j-1, k, itu2) .ge. 0.) then
+        abs3 = w(i, j-1, k, itu2)
+      else
+        abs3 = -w(i, j-1, k, itu2)
+      end if
+      lnwjm1 = log(abs3)
+      if (w(i, j, k+1, itu2) .ge. 0.) then
+        abs4 = w(i, j, k+1, itu2)
+      else
+        abs4 = -w(i, j, k+1, itu2)
+      end if
+      lnwkp1 = log(abs4)
+      if (w(i, j, k-1, itu2) .ge. 0.) then
+        abs5 = w(i, j, k-1, itu2)
+      else
+        abs5 = -w(i, j, k-1, itu2)
+      end if
+      lnwkm1 = log(abs5)
+! compute the scaled gradient of ln omega.
+      wwx = lnwip1*si(i, j, k, 1) - lnwim1*si(i-1, j, k, 1) + lnwjp1*sj(&
+&       i, j, k, 1) - lnwjm1*sj(i, j-1, k, 1) + lnwkp1*sk(i, j, k, 1) - &
+&       lnwkm1*sk(i, j, k-1, 1)
+      wwy = lnwip1*si(i, j, k, 2) - lnwim1*si(i-1, j, k, 2) + lnwjp1*sj(&
+&       i, j, k, 2) - lnwjm1*sj(i, j-1, k, 2) + lnwkp1*sk(i, j, k, 2) - &
+&       lnwkm1*sk(i, j, k-1, 2)
+      wwz = lnwip1*si(i, j, k, 3) - lnwim1*si(i-1, j, k, 3) + lnwjp1*sj(&
+&       i, j, k, 3) - lnwjm1*sj(i, j-1, k, 3) + lnwkp1*sk(i, j, k, 3) - &
+&       lnwkm1*sk(i, j, k-1, 3)
+! compute the dot product grad k grad ln omega.
+! multiply it by the correct scaling factor and store it.
+      scratch(i, j, k, icd) = fourth*(kx*wwx+ky*wwy+kz*wwz)/vol(i, j, k)&
+&       **2
+    end do
+  end subroutine kwcdterm
 end module turbutils_b

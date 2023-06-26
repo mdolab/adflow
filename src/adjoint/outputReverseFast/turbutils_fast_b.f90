@@ -2062,4 +2062,109 @@ nadvloopspectral:do ii=1,nadv
 ! always present, i.e. -uu.
     continue
   end subroutine turbadvection
+  subroutine kwcdterm()
+!
+!       kwcdterm computes the cross-diffusion term in the omega-eqn
+!       for the sst version as well as the modified k-omega turbulence
+!       model. it is assumed that the pointers in blockpointers and
+!       turbmod are already set.
+!
+    use constants
+    use blockpointers
+    implicit none
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, k, ii
+    real(kind=realtype) :: kx, ky, kz, wwx, wwy, wwz
+    real(kind=realtype) :: lnwip1, lnwim1, lnwjp1, lnwjm1
+    real(kind=realtype) :: lnwkp1, lnwkm1
+    intrinsic mod
+    intrinsic abs
+    intrinsic log
+    real(kind=realtype) :: abs5
+    real(kind=realtype) :: abs4
+    real(kind=realtype) :: abs3
+    real(kind=realtype) :: abs2
+    real(kind=realtype) :: abs1
+    real(kind=realtype) :: abs0
+! loop over the cell centers of the given block. it may be more
+! efficient to loop over the faces and to scatter the gradient,
+! but in that case the gradients for k and omega must be stored.
+! in the current approach no extra memory is needed.
+    do ii=0,ie*je*ke-1
+      i = mod(ii, ie) + 1
+      j = mod(ii/ie, je) + 1
+      k = ii/(ie*je) + 1
+! compute the gradient of k in the cell center. use is made
+! of the fact that the surrounding normals sum up to zero,
+! such that the cell i,j,k does not give a contribution.
+! the gradient is scaled by a factor 1/2vol.
+      kx = w(i+1, j, k, itu1)*si(i, j, k, 1) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 1) + w(i, j+1, k, itu1)*sj(i, j, k, 1) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 1) + w(i, j, k+1, itu1)*sk(i, j, k, 1) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 1)
+      ky = w(i+1, j, k, itu1)*si(i, j, k, 2) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 2) + w(i, j+1, k, itu1)*sj(i, j, k, 2) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 2) + w(i, j, k+1, itu1)*sk(i, j, k, 2) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 2)
+      kz = w(i+1, j, k, itu1)*si(i, j, k, 3) - w(i-1, j, k, itu1)*si(i-1&
+&       , j, k, 3) + w(i, j+1, k, itu1)*sj(i, j, k, 3) - w(i, j-1, k, &
+&       itu1)*sj(i, j-1, k, 3) + w(i, j, k+1, itu1)*sk(i, j, k, 3) - w(i&
+&       , j, k-1, itu1)*sk(i, j, k-1, 3)
+      if (w(i+1, j, k, itu2) .ge. 0.) then
+        abs0 = w(i+1, j, k, itu2)
+      else
+        abs0 = -w(i+1, j, k, itu2)
+      end if
+! compute the logarithm of omega in the points that
+! contribute to the gradient in this cell.
+! because: 1/omega*d/dx_j(omega) = d/dx_j( log(omega) )
+      lnwip1 = log(abs0)
+      if (w(i-1, j, k, itu2) .ge. 0.) then
+        abs1 = w(i-1, j, k, itu2)
+      else
+        abs1 = -w(i-1, j, k, itu2)
+      end if
+      lnwim1 = log(abs1)
+      if (w(i, j+1, k, itu2) .ge. 0.) then
+        abs2 = w(i, j+1, k, itu2)
+      else
+        abs2 = -w(i, j+1, k, itu2)
+      end if
+      lnwjp1 = log(abs2)
+      if (w(i, j-1, k, itu2) .ge. 0.) then
+        abs3 = w(i, j-1, k, itu2)
+      else
+        abs3 = -w(i, j-1, k, itu2)
+      end if
+      lnwjm1 = log(abs3)
+      if (w(i, j, k+1, itu2) .ge. 0.) then
+        abs4 = w(i, j, k+1, itu2)
+      else
+        abs4 = -w(i, j, k+1, itu2)
+      end if
+      lnwkp1 = log(abs4)
+      if (w(i, j, k-1, itu2) .ge. 0.) then
+        abs5 = w(i, j, k-1, itu2)
+      else
+        abs5 = -w(i, j, k-1, itu2)
+      end if
+      lnwkm1 = log(abs5)
+! compute the scaled gradient of ln omega.
+      wwx = lnwip1*si(i, j, k, 1) - lnwim1*si(i-1, j, k, 1) + lnwjp1*sj(&
+&       i, j, k, 1) - lnwjm1*sj(i, j-1, k, 1) + lnwkp1*sk(i, j, k, 1) - &
+&       lnwkm1*sk(i, j, k-1, 1)
+      wwy = lnwip1*si(i, j, k, 2) - lnwim1*si(i-1, j, k, 2) + lnwjp1*sj(&
+&       i, j, k, 2) - lnwjm1*sj(i, j-1, k, 2) + lnwkp1*sk(i, j, k, 2) - &
+&       lnwkm1*sk(i, j, k-1, 2)
+      wwz = lnwip1*si(i, j, k, 3) - lnwim1*si(i-1, j, k, 3) + lnwjp1*sj(&
+&       i, j, k, 3) - lnwjm1*sj(i, j-1, k, 3) + lnwkp1*sk(i, j, k, 3) - &
+&       lnwkm1*sk(i, j, k-1, 3)
+! compute the dot product grad k grad ln omega.
+! multiply it by the correct scaling factor and store it.
+      scratch(i, j, k, icd) = fourth*(kx*wwx+ky*wwy+kz*wwz)/vol(i, j, k)&
+&       **2
+    end do
+  end subroutine kwcdterm
 end module turbutils_fast_b
