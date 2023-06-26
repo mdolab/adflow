@@ -48,6 +48,7 @@ def readSlices(filename, nmax=-1):
     slice_data = []
     slice_conn = []
     normals = []
+    points = []
 
     # beginning line index for the current slice
     slice_begin = 2
@@ -55,14 +56,17 @@ def readSlices(filename, nmax=-1):
     # loop over slices
     for islice in range(nmax):
         slice_header = lines[slice_begin].replace('"', "").replace("(", "").replace(")", "").replace(",", "").split()
-        # y_loc = float(slice_header[-1])
         try:
             # if slice is arbitrary, gets the normal
             normal = [float(slice_header[-3]), float(slice_header[-2]), float(slice_header[-1])]
+            point = [float(slice_header[-8]), float(slice_header[-7]), float(slice_header[-6])]
         except Exception:
             # if slice is not arbitrary, normal of slice is spanwise axis
             normal = [0, 0, 0]
             normal[args.spanIndex - 1] = 1
+            point = [0, 0, 0]
+            point[args.spanIndex - 1] = float(slice_header[-1])
+        points.append(point)
         normals.append(normal)
         slice_counts = lines[slice_begin + 1].replace("=", "").split()
         n_node = int(slice_counts[1])
@@ -108,7 +112,7 @@ def readSlices(filename, nmax=-1):
         # the line segments in newConn is likely unordered, we need to re-order them
         slice_conn.append(conn)
         slice_begin += 1 + n_node + n_elem + 2
-    return slice_data, slice_conn, normals
+    return slice_data, slice_conn, normals, points
 
 
 class Airfoil:
@@ -125,13 +129,19 @@ class Airfoil:
         describe connectivity between points
     normal : array size 3
         normal of the cut
+    point : array size 3
+        position of the cut
+    min_te_angle : float
+        minimum angle between neighboor egdes above which a TE is detected
     """
 
-    def __init__(self, name, data, conn, normal):
+    def __init__(self, name, data, conn, normal, point, min_te_angle=40):
         self.name = name
         self.data = data
         self.conn = conn
         self.normal = normal
+        self.point = point
+        self.min_te_angle = min_te_angle
         self.coords = np.zeros((len(self.data["CoordinateX"]), 3))
         self.coords[:, 0] = self.data["CoordinateX"]
         self.coords[:, 1] = self.data["CoordinateY"]
@@ -140,8 +150,8 @@ class Airfoil:
         self.le = np.zeros(1)
         self.sortConn()
         self.detectTEAngle()
-        self.detectLe()
-        self.computeLe()
+        self.detectLE()
+        self.computeLE()
 
     def FEsort(self):
         """
@@ -445,7 +455,7 @@ class Airfoil:
         v2n = np.roll(v1n, 1)
         # find the angles between adjacent vectors
         thetas = np.arccos(np.minimum(np.ones(len(v1n)), np.einsum("ij,ij->i", v1, v2) / (v1n[:] * v2n[:])))
-        ids = np.argwhere(thetas > 40.0 * np.pi / 180.0)
+        ids = np.argwhere(thetas > self.min_te_angle * np.pi / 180.0)
         if len(ids) == 0:
             print("WARNING, no sharp corner detected")
         elif len(ids) == 1:
@@ -466,11 +476,11 @@ class Airfoil:
                 self.upper_te_ind = node1
         else:
             print("WARNING, there are more than 2 sharp corners on slice")
-        self.upperTe = self.coords[self.upper_te_ind, :]
-        self.lowerTe = self.coords[self.lower_te_ind, :]
-        self.te = 0.5 * (self.upperTe + self.lowerTe)
+        self.upperTE = self.coords[self.upper_te_ind, :]
+        self.lowerTE = self.coords[self.lower_te_ind, :]
+        self.te = 0.5 * (self.upperTE + self.lowerTE)
 
-    def detectLe(self):
+    def detectLE(self):
         """
         Detect the leading edge of the existing point cloud as the max distance from the true TE
         """
@@ -525,7 +535,7 @@ class Airfoil:
                 # flip and roll by 1
                 self.order_data[k] = np.roll(np.flip(v), 1)
 
-    def computeLe(self):
+    def computeLE(self):
         """
         For postprocessing twist, chord, etc, compute accurate true LE
         """
@@ -592,18 +602,18 @@ class Airfoil:
         )
         fig.add_trace(
             go.Scatter3d(
-                x=[self.lowerTe[0]],
-                y=[self.lowerTe[1]],
-                z=[self.lowerTe[2]],
+                x=[self.lowerTE[0]],
+                y=[self.lowerTE[1]],
+                z=[self.lowerTE[2]],
                 mode="markers",
                 marker=dict(color="cyan", size=6),
             )
         )
         fig.add_trace(
             go.Scatter3d(
-                x=[self.upperTe[0]],
-                y=[self.upperTe[1]],
-                z=[self.upperTe[2]],
+                x=[self.upperTE[0]],
+                y=[self.upperTE[1]],
+                z=[self.upperTE[2]],
                 mode="markers",
                 marker=dict(color="orange", size=6),
             )
@@ -634,13 +644,14 @@ class Airfoil:
 
 
 class Wing:
-    def __init__(self, list_data, list_conn, list_normal):
+    def __init__(self, list_data, list_conn, list_normal, list_points):
         self.datas = list_data
         self.conns = list_conn
         self.normals = list_normal
+        self.points = points
         self.airfoils = []
         for k in range(len(list_data)):
-            airfoil = Airfoil(str(k), list_data[k], list_conn[k], list_normal[k])
+            airfoil = Airfoil(str(k), list_data[k], list_conn[k], list_normal[k], list_points[k])
             self.airfoils.append(airfoil)
 
     def getTwistDistribution(self):
@@ -689,18 +700,18 @@ class Wing:
             )
             fig.add_trace(
                 go.Scatter3d(
-                    x=[air.lowerTe[0]],
-                    y=[air.lowerTe[1]],
-                    z=[air.lowerTe[2]],
+                    x=[air.lowerTE[0]],
+                    y=[air.lowerTE[1]],
+                    z=[air.lowerTE[2]],
                     mode="markers",
                     marker=dict(color="cyan", size=6),
                 )
             )
             fig.add_trace(
                 go.Scatter3d(
-                    x=[air.upperTe[0]],
-                    y=[air.upperTe[1]],
-                    z=[air.upperTe[2]],
+                    x=[air.upperTE[0]],
+                    y=[air.upperTE[1]],
+                    z=[air.upperTE[2]],
                     mode="markers",
                     marker=dict(color="orange", size=6),
                 )
@@ -719,10 +730,10 @@ class Wing:
         fig.show()
 
 
-slice_data, slice_conn, normals = readSlices(args.sliceFile)
-air = Airfoil("1", slice_data[0], slice_conn[0], normals[0])
+slice_data, slice_conn, normals, points = readSlices(args.sliceFile)
+air = Airfoil("1", slice_data[0], slice_conn[0], normals[0], points[0])
 
-wing = Wing(slice_data, slice_conn, normals)
+wing = Wing(slice_data, slice_conn, normals, points)
 wing.plotTwistDsitribution()
 wing.plotChordDsitribution()
 
