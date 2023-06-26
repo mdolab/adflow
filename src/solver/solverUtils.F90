@@ -446,20 +446,32 @@ contains
                 do j = 1, je_l
                     do i = 1, ie_l
 
-            x_vc = eighth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k - 1, 1) + flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 1) &
-                                   + flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 1) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 1) &
-                                   + flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 1) + flowDoms(nn, 1, mm)%x(i, j - 1, k, 1) &
-                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 1) + flowDoms(nn, 1, mm)%x(i, j, k, 1))
+                        x_vc = eighth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k - 1, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 1) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 1) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j - 1, k, 1) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 1))
 
-            y_vc = eighth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k - 1, 2) + flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 2) &
-                                   + flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 2) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 2) &
-                                   + flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 2) + flowDoms(nn, 1, mm)%x(i, j - 1, k, 2) &
-                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 2) + flowDoms(nn, 1, mm)%x(i, j, k, 2))
+                        y_vc = eighth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k - 1, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 2) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 2) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j - 1, k, 2) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 2))
 
-            z_vc = eighth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k - 1, 3) + flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 3) &
-                                   + flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 3) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 3) &
-                                   + flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 3) + flowDoms(nn, 1, mm)%x(i, j - 1, k, 3) &
-                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 3) + flowDoms(nn, 1, mm)%x(i, j, k, 3))
+                        z_vc = eighth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k - 1, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 3) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 3) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j - 1, k, 3) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 3))
 
                         s(i, j, k, 1) = s(i, j, k, 1) + dscalar(1, sps, mm) * x_vc
                         s(i, j, k, 2) = s(i, j, k, 2) + dscalar(1, sps, mm) * y_vc
@@ -533,12 +545,18 @@ contains
                 do j = 1, je_l
                     do i = 0, ie_l
 
-                        x_fc = fourth * (flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 1) + flowDoms(nn, 1, mm)%x(i, j, k, 1) &
-                                        + flowDoms(nn, 1, mm)%x(i, j - 1, k, 1) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 1))
-                        y_fc = fourth * (flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 2) + flowDoms(nn, 1, mm)%x(i, j, k, 2) &
-                                        + flowDoms(nn, 1, mm)%x(i, j - 1, k, 2) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 2))
-                        z_fc = fourth * (flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 3) + flowDoms(nn, 1, mm)%x(i, j, k, 3) &
-                                        + flowDoms(nn, 1, mm)%x(i, j - 1, k, 3) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 3))
+                        x_fc = fourth * (flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 1) &
+                                         + flowDoms(nn, 1, mm)%x(i, j - 1, k, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 1))
+                        y_fc = fourth * (flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 2) &
+                                         + flowDoms(nn, 1, mm)%x(i, j - 1, k, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 2))
+                        z_fc = fourth * (flowDoms(nn, 1, mm)%x(i, j - 1, k - 1, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 3) &
+                                         + flowDoms(nn, 1, mm)%x(i, j - 1, k, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 3))
 
                         sFaceI(i, j, k) = sFaceI(i, j, k) &
                                           + dscalar(1, sps, mm) * x_fc * sI(i, j, k, 1) &
@@ -554,12 +572,18 @@ contains
                 do j = 0, je_l
                     do i = 1, ie_l
 
-                        x_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 1) + flowDoms(nn, 1, mm)%x(i, j, k, 1) &
-                                        + flowDoms(nn, 1, mm)%x(i - 1, j, k, 1) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 1))
-                        y_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 2) + flowDoms(nn, 1, mm)%x(i, j, k, 2) &
-                                        + flowDoms(nn, 1, mm)%x(i - 1, j, k, 2) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 2))
-                        z_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 3) + flowDoms(nn, 1, mm)%x(i, j, k, 3) &
-                                        + flowDoms(nn, 1, mm)%x(i - 1, j, k, 3) + flowDoms(nn, 1, mm)%x(i, j, k - 1, 3))
+                        x_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 1) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 1))
+                        y_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 2) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 2))
+                        z_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j, k - 1, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 3) &
+                                         + flowDoms(nn, 1, mm)%x(i - 1, j, k, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k - 1, 3))
 
                         sFaceJ(i, j, k) = sFaceJ(i, j, k) &
                                           + dscalar(1, sps, mm) * x_fc * sJ(i, j, k, 1) &
@@ -575,12 +599,18 @@ contains
                 do j = 1, je_l
                     do i = 1, ie_l
 
-                        x_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 1) + flowDoms(nn, 1, mm)%x(i, j, k, 1) &
-                                        + flowDoms(nn, 1, mm)%x(i, j - 1, k, 1) + flowDoms(nn, 1, mm)%x(i - 1, j, k, 1))
-                        y_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 2) + flowDoms(nn, 1, mm)%x(i, j, k, 2) &
-                                        + flowDoms(nn, 1, mm)%x(i, j - 1, k, 2) + flowDoms(nn, 1, mm)%x(i - 1, j, k, 2))
-                        z_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 3) + flowDoms(nn, 1, mm)%x(i, j, k, 3) &
-                                        + flowDoms(nn, 1, mm)%x(i, j - 1, k, 3) + flowDoms(nn, 1, mm)%x(i - 1, j, k, 3))
+                        x_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 1) &
+                                         + flowDoms(nn, 1, mm)%x(i, j - 1, k, 1) + &
+                                         flowDoms(nn, 1, mm)%x(i - 1, j, k, 1))
+                        y_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 2) &
+                                         + flowDoms(nn, 1, mm)%x(i, j - 1, k, 2) + &
+                                         flowDoms(nn, 1, mm)%x(i - 1, j, k, 2))
+                        z_fc = fourth * (flowDoms(nn, 1, mm)%x(i - 1, j - 1, k, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i, j, k, 3) &
+                                         + flowDoms(nn, 1, mm)%x(i, j - 1, k, 3) + &
+                                         flowDoms(nn, 1, mm)%x(i - 1, j, k, 3))
 
                         sFaceK(i, j, k) = sFaceK(i, j, k) &
                                           + dscalar(1, sps, mm) * x_fc * sK(i, j, k, 1) &
@@ -1066,14 +1096,21 @@ contains
                             ! Determine the coordinates of the face center,
                             ! which are stored in xc.
 
-           xc(1) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,j-1,k-1,1) + flowDoms(nn, groundLevel, sps)%x(i,j,k-1,1) &
-                      + flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 1) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 1))
-           xc(2) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,j-1,k-1,2) + flowDoms(nn, groundLevel, sps)%x(i,j,k-1,2) &
-                      + flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 2) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 2))
-           xc(3) = fourth*(flowDoms(nn, groundLevel, sps)%x(i,j-1,k-1,3) + flowDoms(nn, groundLevel, sps)%x(i,j,k-1,3) &
-                      + flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 3) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 3))
+                            xc(1) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k - 1, 1) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 1) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 1) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 1))
+                            xc(2) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k - 1, 2) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 2) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 2) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 2))
+                            xc(3) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k - 1, 3) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 3) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 3) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 3))
 
-                  call cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
+                            call cellFaceVelocities(xc, rotCenter, rotRate, &
+                                                    velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
 
                             ! Store the dot product of grid velocity sc and
                             ! the normal ss in sFace.
@@ -1092,14 +1129,21 @@ contains
                             ! Determine the coordinates of the face center,
                             ! which are stored in xc.
 
- xc(1) = fourth * (flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 1) + flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 1) &
-                  + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k - 1, 1) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 1))
- xc(2) = fourth * (flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 2) + flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 2) &
-                  + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k - 1, 2) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 2))
- xc(3) = fourth * (flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 3) + flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 3) &
-                  + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k - 1, 3) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 3))
+                            xc(1) = fourth * (flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 1) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 1) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k - 1, 1) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 1))
+                            xc(2) = fourth * (flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 2) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 2) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k - 1, 2) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 2))
+                            xc(3) = fourth * (flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 3) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k - 1, 3) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k - 1, 3) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 3))
 
-                  call cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
+                            call cellFaceVelocities(xc, rotCenter, rotRate, &
+                                                    velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
 
                             ! Store the dot product of grid velocity sc and
                             ! the normal ss in sFace.
@@ -1118,14 +1162,21 @@ contains
                             ! Determine the coordinates of the face center,
                             ! which are stored in xc.
 
- xc(1) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 1) + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 1) &
-                  + flowDoms(nn, groundLevel, sps)%x(i - 1, j - 1, k, 1) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 1))
- xc(2) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 2) + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 2) &
-                  + flowDoms(nn, groundLevel, sps)%x(i - 1, j - 1, k, 2) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 2))
- xc(3) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 3) + flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 3) &
-                  + flowDoms(nn, groundLevel, sps)%x(i - 1, j - 1, k, 3) + flowDoms(nn, groundLevel, sps)%x(i, j, k, 3))
+                            xc(1) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 1) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 1) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i - 1, j - 1, k, 1) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 1))
+                            xc(2) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 2) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 2) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i - 1, j - 1, k, 2) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 2))
+                            xc(3) = fourth * (flowDoms(nn, groundLevel, sps)%x(i, j - 1, k, 3) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i - 1, j, k, 3) &
+                                              + flowDoms(nn, groundLevel, sps)%x(i - 1, j - 1, k, 3) + &
+                                              flowDoms(nn, groundLevel, sps)%x(i, j, k, 3))
 
-                  call cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
+                            call cellFaceVelocities(xc, rotCenter, rotRate, &
+                                                    velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)
 
                             ! Store the dot product of grid velocity sc and
                             ! the normal ss in sFace.
