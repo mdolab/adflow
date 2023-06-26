@@ -354,9 +354,6 @@ contains
 &   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
-    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
-&   vecttangential(3)
-    real(kind=realtype) :: vectdotproductfsnormal
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
@@ -372,8 +369,6 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic sqrt
-    intrinsic cos
-    intrinsic sin
     intrinsic exp
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
@@ -528,62 +523,20 @@ contains
       v(2) = ww2(i, j, ivy)
       v(3) = ww2(i, j, ivz)
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
-      if (sepmodel .eq. surfvec) then
-! freestream projection over the surface.
-        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
-&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
-&         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-! tangential vector on the surface, which is the freestream projected vector
-        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 1)
-        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 2)
-        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 3)
-        vecttangential = vecttangential/(sqrt(vecttangential(1)**2+&
-&         vecttangential(2)**2+vecttangential(3)**2)+1e-16)
-! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
-        veccrossprod(1) = vecttangential(2)*bcdata(mm)%norm(i, j, 3) - &
-&         vecttangential(3)*bcdata(mm)%norm(i, j, 2)
-        veccrossprod(2) = vecttangential(3)*bcdata(mm)%norm(i, j, 1) - &
-&         vecttangential(1)*bcdata(mm)%norm(i, j, 3)
-        veccrossprod(3) = vecttangential(1)*bcdata(mm)%norm(i, j, 2) - &
-&         vecttangential(2)*bcdata(mm)%norm(i, j, 1)
-        veccrossprod = veccrossprod/(sqrt(veccrossprod(1)**2+&
-&         veccrossprod(2)**2+veccrossprod(3)**2)+1e-16)
-! do the sweep angle correction
-        vectcorrected(1) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(1) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(1)
-        vectcorrected(2) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(2) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(2)
-        vectcorrected(3) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(3) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(3)
-        vectcorrected = vectcorrected/(sqrt(vectcorrected(1)**2+&
-&         vectcorrected(2)**2+vectcorrected(3)**2)+1e-16)
-        sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
-&         vectcorrected(3)
-        sensor = half*(one-sensor)
-        sensor = sensor*cellarea*blk
-        sepsensor = sepsensor + sensor
-      else if (sepmodel .eq. heaviside) then
 ! dot product with free stream
-        sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
-&         )*veldirfreestream(3))
+      sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
+&       veldirfreestream(3))
 !now run through a smooth heaviside function:
-        sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
-&         sepsensoroffset))))
+      sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
+&       sepsensoroffset))))
 ! and integrate over the area of this cell and save, blanking as we go.
-        sensor = sensor*cellarea*blk
-        sepsensor = sepsensor + sensor
+      sensor = sensor*cellarea*blk
+      sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
 ! x-y-zco are computed above for center of force computations
-        sepsensoravg(1) = sepsensoravg(1) + sensor*xco
-        sepsensoravg(2) = sepsensoravg(2) + sensor*yco
-        sepsensoravg(3) = sepsensoravg(3) + sensor*zco
-      end if
+      sepsensoravg(1) = sepsensoravg(1) + sensor*xco
+      sepsensoravg(2) = sepsensoravg(2) + sensor*yco
+      sepsensoravg(3) = sepsensoravg(3) + sensor*zco
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)

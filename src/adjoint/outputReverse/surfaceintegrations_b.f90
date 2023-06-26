@@ -1287,12 +1287,6 @@ contains
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
-    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
-&   vecttangential(3)
-    real(kind=realtype) :: vectcorrectedd(3), veccrossprodd(3), &
-&   vecttangentiald(3)
-    real(kind=realtype) :: vectdotproductfsnormal
-    real(kind=realtype) :: vectdotproductfsnormald
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: xcd, xcod, ycd, ycod, zcd, zcod, rd(3)
@@ -1317,30 +1311,18 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic sqrt
-    intrinsic cos
-    intrinsic sin
     intrinsic exp
     real(kind=realtype), dimension(3) :: tmp0
-    real(kind=realtype), dimension(3) :: tmp1
-    real(kind=realtype), dimension(3) :: tmp2
-    real(kind=realtype), dimension(3) :: tmp3
     integer :: branch
-    real(kind=realtype) :: tempd14
     real(kind=realtype) :: temp3
-    real(kind=realtype) :: tempd13
+    real(kind=realtype) :: tempd14
     real(kind=realtype) :: temp2
+    real(kind=realtype) :: tempd13
     real(kind=realtype) :: temp1
     real(kind=realtype) :: tempd12
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
-    real(kind=realtype) :: temp12
-    real(kind=realtype) :: temp11
-    real(kind=realtype) :: tempd33
-    real(kind=realtype) :: temp10
-    real(kind=realtype) :: tempd32
-    real(kind=realtype) :: tempd31
-    real(kind=realtype) :: tempd30
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
@@ -1352,12 +1334,7 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
-    real(kind=realtype) :: tmpd3(3)
-    real(kind=realtype) :: tmpd2(3)
-    real(kind=realtype) :: tmpd1(3)
     real(kind=realtype) :: tmpd0(3)
-    real(kind=realtype) :: tempd29
-    real(kind=realtype) :: tempd28
     real(kind=realtype) :: tempd27
     real(kind=realtype) :: tempd26
     real(kind=realtype) :: tempd25
@@ -1367,17 +1344,14 @@ contains
     real(kind=realtype) :: tempd21
     real(kind=realtype) :: tempd20
     real(kind=realtype) :: temp
-    real(kind=realtype) :: temp9
-    real(kind=realtype) :: tempd19(3)
-    real(kind=realtype) :: temp8
-    real(kind=realtype) :: temp7
+    real(kind=realtype) :: tempd19
     real(kind=realtype) :: tempd18
     real(kind=realtype) :: temp6
-    real(kind=realtype) :: tempd17(3)
+    real(kind=realtype) :: tempd17
     real(kind=realtype) :: temp5
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: temp4
-    real(kind=realtype) :: tempd15(3)
+    real(kind=realtype) :: tempd15
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -1398,12 +1372,9 @@ contains
     axispoints(3, 2) = lref*momentaxis(3, 2)
 ! initialize the force and moment coefficients to 0 as well as
 ! yplusmax.
-    call pushreal8array(vectcorrected, 3)
     call pushreal8array(n, 3)
     call pushreal8array(r, 3)
     call pushreal8array(v, 3)
-    call pushreal8array(vecttangential, 3)
-    call pushreal8array(veccrossprod, 3)
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -1522,62 +1493,20 @@ contains
       v(2) = ww2(i, j, ivy)
       v(3) = ww2(i, j, ivz)
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
-      if (sepmodel .eq. surfvec) then
-! freestream projection over the surface.
-        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
-&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
-&         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-! tangential vector on the surface, which is the freestream projected vector
-        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 1)
-        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 2)
-        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 3)
-        vecttangential = vecttangential/(sqrt(vecttangential(1)**2+&
-&         vecttangential(2)**2+vecttangential(3)**2)+1e-16)
-! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
-        veccrossprod(1) = vecttangential(2)*bcdata(mm)%norm(i, j, 3) - &
-&         vecttangential(3)*bcdata(mm)%norm(i, j, 2)
-        veccrossprod(2) = vecttangential(3)*bcdata(mm)%norm(i, j, 1) - &
-&         vecttangential(1)*bcdata(mm)%norm(i, j, 3)
-        veccrossprod(3) = vecttangential(1)*bcdata(mm)%norm(i, j, 2) - &
-&         vecttangential(2)*bcdata(mm)%norm(i, j, 1)
-        veccrossprod = veccrossprod/(sqrt(veccrossprod(1)**2+&
-&         veccrossprod(2)**2+veccrossprod(3)**2)+1e-16)
-! do the sweep angle correction
-        vectcorrected(1) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(1) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(1)
-        vectcorrected(2) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(2) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(2)
-        vectcorrected(3) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(3) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(3)
-        vectcorrected = vectcorrected/(sqrt(vectcorrected(1)**2+&
-&         vectcorrected(2)**2+vectcorrected(3)**2)+1e-16)
-        sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
-&         vectcorrected(3)
-        sensor = half*(one-sensor)
-        sensor = sensor*cellarea*blk
-        sepsensor = sepsensor + sensor
-      else if (sepmodel .eq. heaviside) then
 ! dot product with free stream
-        sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
-&         )*veldirfreestream(3))
+      sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
+&       veldirfreestream(3))
 !now run through a smooth heaviside function:
-        sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
-&         sepsensoroffset))))
+      sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
+&       sepsensoroffset))))
 ! and integrate over the area of this cell and save, blanking as we go.
-        sensor = sensor*cellarea*blk
-        sepsensor = sepsensor + sensor
+      sensor = sensor*cellarea*blk
+      sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
 ! x-y-zco are computed above for center of force computations
-        sepsensoravg(1) = sepsensoravg(1) + sensor*xco
-        sepsensoravg(2) = sepsensoravg(2) + sensor*yco
-        sepsensoravg(3) = sepsensoravg(3) + sensor*zco
-      end if
+      sepsensoravg(1) = sepsensoravg(1) + sensor*xco
+      sepsensoravg(2) = sepsensoravg(2) + sensor*yco
+      sepsensoravg(3) = sepsensoravg(3) + sensor*zco
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
@@ -1716,10 +1645,10 @@ contains
         mxd = blk*mvd(1)
         myd = blk*mvd(2)
         mzd = blk*mvd(3)
-        tempd21 = blk*mvaxisd
-        m0xd = n(1)*tempd21
-        m0yd = n(2)*tempd21
-        m0zd = n(3)*tempd21
+        tempd15 = blk*mvaxisd
+        m0xd = n(1)*tempd15
+        m0yd = n(2)*tempd15
+        m0zd = n(3)*tempd15
         fzd = blk*zco*cofsumfzd(3) - r(1)*m0yd + blk*xco*cofsumfzd(1) + &
 &         yc*mxd + blk*fvd(3) - xc*myd + blk*yco*cofsumfzd(2) + r(2)*&
 &         m0xd + bcdatad(mm)%fv(i, j, 3)
@@ -1738,23 +1667,23 @@ contains
         rd(1) = rd(1) - fz*m0yd
         rd(2) = rd(2) + fz*m0xd
         rd(3) = rd(3) - fy*m0xd
-        tempd22 = fourth*rd(3)
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd22
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd22
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd22
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd22
+        tempd16 = fourth*rd(3)
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd16
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd16
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd16
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd16
         rd(3) = 0.0_8
-        tempd23 = fourth*rd(2)
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd23
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd23
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd23
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd23
+        tempd17 = fourth*rd(2)
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd17
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd17
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd17
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd17
         rd(2) = 0.0_8
-        tempd24 = fourth*rd(1)
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd24
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd24
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd24
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd24
+        tempd18 = fourth*rd(1)
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd18
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd18
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd18
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd18
         rd(1) = 0.0_8
         zcod = blk*fy*cofsumfyd(3) + blk*fx*cofsumfxd(3) + blk*fz*&
 &         cofsumfzd(3)
@@ -1762,64 +1691,64 @@ contains
 &         cofsumfzd(2)
         xcod = blk*fy*cofsumfyd(1) + blk*fx*cofsumfxd(1) + blk*fz*&
 &         cofsumfzd(1)
-        tempd25 = fourth*zcod
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd25
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd25
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd25
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd25
-        tempd26 = fourth*ycod
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd26
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd26
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd26
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd26
-        tempd27 = fourth*xcod
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd27
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd27
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd27
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd27
+        tempd19 = fourth*zcod
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd19
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd19
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd19
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd19
+        tempd20 = fourth*ycod
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd20
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd20
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd20
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd20
+        tempd21 = fourth*xcod
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd21
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd21
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd21
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd21
         xcd = fy*mzd - fz*myd
         ycd = fz*mxd - fx*mzd
         zcd = fx*myd - fy*mxd
-        tempd28 = fourth*zcd
-        xxd(i, j, 3) = xxd(i, j, 3) + tempd28
-        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd28
-        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd28
-        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd28
+        tempd22 = fourth*zcd
+        xxd(i, j, 3) = xxd(i, j, 3) + tempd22
+        xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd22
+        xxd(i, j+1, 3) = xxd(i, j+1, 3) + tempd22
+        xxd(i+1, j+1, 3) = xxd(i+1, j+1, 3) + tempd22
         refpointd(3) = refpointd(3) - zcd
-        tempd29 = fourth*ycd
-        xxd(i, j, 2) = xxd(i, j, 2) + tempd29
-        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd29
-        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd29
-        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd29
+        tempd23 = fourth*ycd
+        xxd(i, j, 2) = xxd(i, j, 2) + tempd23
+        xxd(i+1, j, 2) = xxd(i+1, j, 2) + tempd23
+        xxd(i, j+1, 2) = xxd(i, j+1, 2) + tempd23
+        xxd(i+1, j+1, 2) = xxd(i+1, j+1, 2) + tempd23
         refpointd(2) = refpointd(2) - ycd
-        tempd30 = fourth*xcd
-        xxd(i, j, 1) = xxd(i, j, 1) + tempd30
-        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd30
-        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd30
-        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd30
+        tempd24 = fourth*xcd
+        xxd(i, j, 1) = xxd(i, j, 1) + tempd24
+        xxd(i+1, j, 1) = xxd(i+1, j, 1) + tempd24
+        xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd24
+        xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd24
         refpointd(1) = refpointd(1) - xcd
-        tempd31 = -(fact*pref*fzd)
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd31
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd31
-        tauzzd = ssi(i, j, 3)*tempd31
-        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd31
+        tempd25 = -(fact*pref*fzd)
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxz*tempd25
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyz*tempd25
+        tauzzd = ssi(i, j, 3)*tempd25
+        ssid(i, j, 3) = ssid(i, j, 3) + tauzz*tempd25
         prefd = prefd - fact*(tauxz*ssi(i, j, 1)+tauyz*ssi(i, j, 2)+&
 &         tauzz*ssi(i, j, 3))*fzd
-        tempd33 = -(fact*pref*fyd)
-        tauyzd = ssi(i, j, 3)*tempd33 + ssi(i, j, 2)*tempd31
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd33
-        tauyyd = ssi(i, j, 2)*tempd33
-        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd33
-        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd33
+        tempd27 = -(fact*pref*fyd)
+        tauyzd = ssi(i, j, 3)*tempd27 + ssi(i, j, 2)*tempd25
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxy*tempd27
+        tauyyd = ssi(i, j, 2)*tempd27
+        ssid(i, j, 2) = ssid(i, j, 2) + tauyy*tempd27
+        ssid(i, j, 3) = ssid(i, j, 3) + tauyz*tempd27
         prefd = prefd - fact*(tauxy*ssi(i, j, 1)+tauyy*ssi(i, j, 2)+&
 &         tauyz*ssi(i, j, 3))*fyd
-        tempd32 = -(fact*pref*fxd)
-        tauxzd = ssi(i, j, 3)*tempd32 + ssi(i, j, 1)*tempd31
-        tauxyd = ssi(i, j, 2)*tempd32 + ssi(i, j, 1)*tempd33
-        tauxxd = ssi(i, j, 1)*tempd32
-        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd32
-        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd32
-        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd32
+        tempd26 = -(fact*pref*fxd)
+        tauxzd = ssi(i, j, 3)*tempd26 + ssi(i, j, 1)*tempd25
+        tauxyd = ssi(i, j, 2)*tempd26 + ssi(i, j, 1)*tempd27
+        tauxxd = ssi(i, j, 1)*tempd26
+        ssid(i, j, 1) = ssid(i, j, 1) + tauxx*tempd26
+        ssid(i, j, 2) = ssid(i, j, 2) + tauxy*tempd26
+        ssid(i, j, 3) = ssid(i, j, 3) + tauxz*tempd26
         prefd = prefd - fact*(tauxx*ssi(i, j, 1)+tauxy*ssi(i, j, 2)+&
 &         tauxz*ssi(i, j, 3))*fxd
         viscsubfaced(mm)%tau(i, j, 6) = viscsubfaced(mm)%tau(i, j, 6) + &
@@ -1851,16 +1780,10 @@ contains
       rd = 0.0_8
       refpointd = 0.0_8
     end if
-    vectcorrectedd = 0.0_8
     vd = 0.0_8
-    vecttangentiald = 0.0_8
-    veccrossprodd = 0.0_8
-    call popreal8array(veccrossprod, 3)
-    call popreal8array(vecttangential, 3)
     call popreal8array(v, 3)
     call popreal8array(r, 3)
     call popreal8array(n, 3)
-    call popreal8array(vectcorrected, 3)
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -1937,68 +1860,18 @@ contains
       tmp0 = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
       call pushreal8array(v, 3)
       v = tmp0
-      if (sepmodel .eq. surfvec) then
-! freestream projection over the surface.
-        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
-&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
-&         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-! tangential vector on the surface, which is the freestream projected vector
-        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 1)
-        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 2)
-        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 3)
-        tmp1 = vecttangential/(sqrt(vecttangential(1)**2+vecttangential(&
-&         2)**2+vecttangential(3)**2)+1e-16)
-        call pushreal8array(vecttangential, 3)
-        vecttangential = tmp1
-! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
-        veccrossprod(1) = vecttangential(2)*bcdata(mm)%norm(i, j, 3) - &
-&         vecttangential(3)*bcdata(mm)%norm(i, j, 2)
-        veccrossprod(2) = vecttangential(3)*bcdata(mm)%norm(i, j, 1) - &
-&         vecttangential(1)*bcdata(mm)%norm(i, j, 3)
-        veccrossprod(3) = vecttangential(1)*bcdata(mm)%norm(i, j, 2) - &
-&         vecttangential(2)*bcdata(mm)%norm(i, j, 1)
-        tmp2 = veccrossprod/(sqrt(veccrossprod(1)**2+veccrossprod(2)**2+&
-&         veccrossprod(3)**2)+1e-16)
-        call pushreal8array(veccrossprod, 3)
-        veccrossprod = tmp2
-! do the sweep angle correction
-        vectcorrected(1) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(1) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(1)
-        vectcorrected(2) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(2) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(2)
-        vectcorrected(3) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(3) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(3)
-        tmp3 = vectcorrected/(sqrt(vectcorrected(1)**2+vectcorrected(2)&
-&         **2+vectcorrected(3)**2)+1e-16)
-        call pushreal8array(vectcorrected, 3)
-        vectcorrected = tmp3
-        sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
-&         vectcorrected(3)
-        sensor = half*(one-sensor)
-        call pushcontrol2b(0)
-      else if (sepmodel .eq. heaviside) then
 ! dot product with free stream
-        sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
-&         )*veldirfreestream(3))
+      sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
+&       veldirfreestream(3))
 !now run through a smooth heaviside function:
-        call pushreal8(sensor)
-        sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
-&         sepsensoroffset))))
+      call pushreal8(sensor)
+      sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
+&       sepsensoroffset))))
 ! and integrate over the area of this cell and save, blanking as we go.
-        call pushreal8(sensor)
-        sensor = sensor*cellarea*blk
+      call pushreal8(sensor)
+      sensor = sensor*cellarea*blk
 ! also accumulate into the sepsensoravg
 ! x-y-zco are computed above for center of force computations
-        call pushcontrol2b(1)
-      else
-        call pushcontrol2b(2)
-      end if
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
@@ -2012,16 +1885,16 @@ contains
         cellaread = blk*sensor1*sensor1d
         sensor1d = blk*cellarea*sensor1d
         call popreal8(sensor1)
-        temp12 = 2*cavsensorsharpness*(cavsensoroffset-sensor1)
-        temp11 = one + exp(temp12)
+        temp6 = 2*cavsensorsharpness*(cavsensoroffset-sensor1)
+        temp5 = one + exp(temp6)
         if (sensor1 .le. 0.0_8 .and. (cavexponent .eq. 0.0_8 .or. &
 &           cavexponent .ne. int(cavexponent))) then
-          sensor1d = cavsensorsharpness*2*exp(temp12)*sensor1**&
-&           cavexponent*sensor1d/temp11**2
+          sensor1d = cavsensorsharpness*2*exp(temp6)*sensor1**&
+&           cavexponent*sensor1d/temp5**2
         else
-          sensor1d = (cavsensorsharpness*2*exp(temp12)*sensor1**&
-&           cavexponent/temp11**2+cavexponent*sensor1**(cavexponent-1)/&
-&           temp11)*sensor1d
+          sensor1d = (cavsensorsharpness*2*exp(temp6)*sensor1**&
+&           cavexponent/temp5**2+cavexponent*sensor1**(cavexponent-1)/&
+&           temp5)*sensor1d
         end if
         ks_exponentd = blk*cpmin_ks_sumd
         cpd = -sensor1d - cpmin_rho*exp(cpmin_rho*(cpmin_family(&
@@ -2029,151 +1902,12 @@ contains
         tmpd = (plocal-pinf)*cpd
         plocald = tmp*cpd
         pinfd = pinfd - tmp*cpd
-        temp10 = gammainf*machcoef**2
-        machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp10**2
+        temp4 = gammainf*machcoef**2
+        machcoefd = machcoefd - gammainf*two*2*machcoef*tmpd/temp4**2
         tmp = two/(gammainf*pinf*machcoef*machcoef)
         pp2d(i, j) = pp2d(i, j) + plocald
       else
         cellaread = 0.0_8
-      end if
-      call popcontrol2b(branch)
-      if (branch .eq. 0) then
-        sensord = sepsensord
-        cellaread = cellaread + blk*sensor*sensord
-        sensord = blk*cellarea*sensord
-        sensord = -(half*sensord)
-        vd(1) = vd(1) + vectcorrected(1)*sensord
-        vectcorrectedd(1) = vectcorrectedd(1) + v(1)*sensord
-        vd(2) = vd(2) + vectcorrected(2)*sensord
-        vectcorrectedd(2) = vectcorrectedd(2) + v(2)*sensord
-        vd(3) = vd(3) + vectcorrected(3)*sensord
-        vectcorrectedd(3) = vectcorrectedd(3) + v(3)*sensord
-        call popreal8array(vectcorrected, 3)
-        tmpd1 = vectcorrectedd
-        temp6 = vectcorrected(1)**2 + vectcorrected(2)**2 + &
-&         vectcorrected(3)**2
-        temp7 = sqrt(temp6)
-        tempd15 = tmpd1/(temp7+1e-16)
-        vectcorrectedd = tempd15
-        if (temp6 .eq. 0.0_8) then
-          tempd16 = 0.0
-        else
-          tempd16 = sum(-(vectcorrected*tempd15/(temp7+1e-16)))/(2.0*&
-&           temp7)
-        end if
-        vectcorrectedd(1) = vectcorrectedd(1) + 2*vectcorrected(1)*&
-&         tempd16
-        vectcorrectedd(2) = vectcorrectedd(2) + 2*vectcorrected(2)*&
-&         tempd16
-        vectcorrectedd(3) = vectcorrectedd(3) + 2*vectcorrected(3)*&
-&         tempd16
-        vecttangentiald(3) = vecttangentiald(3) + cos(degtorad*&
-&         sepsweepanglecorrection)*vectcorrectedd(3)
-        veccrossprodd(3) = veccrossprodd(3) + sin(degtorad*&
-&         sepsweepanglecorrection)*vectcorrectedd(3)
-        vectcorrectedd(3) = 0.0_8
-        vecttangentiald(2) = vecttangentiald(2) + cos(degtorad*&
-&         sepsweepanglecorrection)*vectcorrectedd(2)
-        veccrossprodd(2) = veccrossprodd(2) + sin(degtorad*&
-&         sepsweepanglecorrection)*vectcorrectedd(2)
-        vectcorrectedd(2) = 0.0_8
-        veccrossprodd(1) = veccrossprodd(1) + sin(degtorad*&
-&         sepsweepanglecorrection)*vectcorrectedd(1)
-        call popreal8array(veccrossprod, 3)
-        tmpd2 = veccrossprodd
-        temp4 = veccrossprod(1)**2 + veccrossprod(2)**2 + veccrossprod(3&
-&         )**2
-        temp5 = sqrt(temp4)
-        tempd17 = tmpd2/(temp5+1e-16)
-        veccrossprodd = tempd17
-        if (temp4 .eq. 0.0_8) then
-          tempd18 = 0.0
-        else
-          tempd18 = sum(-(veccrossprod*tempd17/(temp5+1e-16)))/(2.0*&
-&           temp5)
-        end if
-        veccrossprodd(1) = veccrossprodd(1) + 2*veccrossprod(1)*tempd18
-        veccrossprodd(2) = veccrossprodd(2) + 2*veccrossprod(2)*tempd18
-        veccrossprodd(3) = veccrossprodd(3) + 2*veccrossprod(3)*tempd18
-        vecttangentiald(1) = vecttangentiald(1) + bcdata(mm)%norm(i, j, &
-&         2)*veccrossprodd(3) + cos(degtorad*sepsweepanglecorrection)*&
-&         vectcorrectedd(1)
-        vectcorrectedd(1) = 0.0_8
-        vecttangentiald(2) = vecttangentiald(2) - bcdata(mm)%norm(i, j, &
-&         1)*veccrossprodd(3)
-        veccrossprodd(3) = 0.0_8
-        vecttangentiald(3) = vecttangentiald(3) + bcdata(mm)%norm(i, j, &
-&         1)*veccrossprodd(2)
-        vecttangentiald(1) = vecttangentiald(1) - bcdata(mm)%norm(i, j, &
-&         3)*veccrossprodd(2)
-        veccrossprodd(2) = 0.0_8
-        vecttangentiald(2) = vecttangentiald(2) + bcdata(mm)%norm(i, j, &
-&         3)*veccrossprodd(1)
-        vecttangentiald(3) = vecttangentiald(3) - bcdata(mm)%norm(i, j, &
-&         2)*veccrossprodd(1)
-        veccrossprodd(1) = 0.0_8
-        call popreal8array(vecttangential, 3)
-        tmpd3 = vecttangentiald
-        temp2 = vecttangential(1)**2 + vecttangential(2)**2 + &
-&         vecttangential(3)**2
-        temp3 = sqrt(temp2)
-        tempd19 = tmpd3/(temp3+1e-16)
-        vecttangentiald = tempd19
-        if (temp2 .eq. 0.0_8) then
-          tempd20 = 0.0
-        else
-          tempd20 = sum(-(vecttangential*tempd19/(temp3+1e-16)))/(2.0*&
-&           temp3)
-        end if
-        vecttangentiald(1) = vecttangentiald(1) + 2*vecttangential(1)*&
-&         tempd20
-        vecttangentiald(2) = vecttangentiald(2) + 2*vecttangential(2)*&
-&         tempd20
-        vecttangentiald(3) = vecttangentiald(3) + 2*vecttangential(3)*&
-&         tempd20
-        veldirfreestreamd(3) = veldirfreestreamd(3) + vecttangentiald(3)
-        vectdotproductfsnormald = -(bcdata(mm)%norm(i, j, 3)*&
-&         vecttangentiald(3))
-        vecttangentiald(3) = 0.0_8
-        veldirfreestreamd(2) = veldirfreestreamd(2) + vecttangentiald(2)
-        vectdotproductfsnormald = vectdotproductfsnormald - bcdata(mm)%&
-&         norm(i, j, 2)*vecttangentiald(2)
-        vecttangentiald(2) = 0.0_8
-        vectdotproductfsnormald = vectdotproductfsnormald - bcdata(mm)%&
-&         norm(i, j, 1)*vecttangentiald(1)
-        veldirfreestreamd(1) = veldirfreestreamd(1) + bcdata(mm)%norm(i&
-&         , j, 1)*vectdotproductfsnormald + vecttangentiald(1)
-        vecttangentiald(1) = 0.0_8
-        veldirfreestreamd(2) = veldirfreestreamd(2) + bcdata(mm)%norm(i&
-&         , j, 2)*vectdotproductfsnormald
-        veldirfreestreamd(3) = veldirfreestreamd(3) + bcdata(mm)%norm(i&
-&         , j, 3)*vectdotproductfsnormald
-        xcod = 0.0_8
-        zcod = 0.0_8
-        ycod = 0.0_8
-      else if (branch .eq. 1) then
-        sensord = yco*sepsensoravgd(2) + sepsensord + xco*sepsensoravgd(&
-&         1) + zco*sepsensoravgd(3)
-        zcod = sensor*sepsensoravgd(3)
-        ycod = sensor*sepsensoravgd(2)
-        xcod = sensor*sepsensoravgd(1)
-        call popreal8(sensor)
-        cellaread = cellaread + blk*sensor*sensord
-        sensord = blk*cellarea*sensord
-        call popreal8(sensor)
-        temp9 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
-        temp8 = one + exp(temp9)
-        sensord = exp(temp9)*one*sepsensorsharpness*2*sensord/temp8**2
-        vd(1) = vd(1) - veldirfreestream(1)*sensord
-        veldirfreestreamd(1) = veldirfreestreamd(1) - v(1)*sensord
-        vd(2) = vd(2) - veldirfreestream(2)*sensord
-        veldirfreestreamd(2) = veldirfreestreamd(2) - v(2)*sensord
-        vd(3) = vd(3) - veldirfreestream(3)*sensord
-        veldirfreestreamd(3) = veldirfreestreamd(3) - v(3)*sensord
-      else
-        xcod = 0.0_8
-        zcod = 0.0_8
-        ycod = 0.0_8
       end if
       mxd = blk*mpd(1)
       myd = blk*mpd(2)
@@ -2182,6 +1916,27 @@ contains
       m0xd = n(1)*tempd8
       m0yd = n(2)*tempd8
       m0zd = n(3)*tempd8
+      sensord = yco*sepsensoravgd(2) + sepsensord + xco*sepsensoravgd(1)&
+&       + zco*sepsensoravgd(3)
+      zcod = blk*fz*cofsumfzd(3) + blk*fx*cofsumfxd(3) + blk*fy*&
+&       cofsumfyd(3) + sensor*sepsensoravgd(3)
+      ycod = blk*fz*cofsumfzd(2) + blk*fx*cofsumfxd(2) + blk*fy*&
+&       cofsumfyd(2) + sensor*sepsensoravgd(2)
+      xcod = blk*fz*cofsumfzd(1) + blk*fx*cofsumfxd(1) + blk*fy*&
+&       cofsumfyd(1) + sensor*sepsensoravgd(1)
+      call popreal8(sensor)
+      cellaread = cellaread + blk*sensor*sensord
+      sensord = blk*cellarea*sensord
+      call popreal8(sensor)
+      temp3 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
+      temp2 = one + exp(temp3)
+      sensord = exp(temp3)*one*sepsensorsharpness*2*sensord/temp2**2
+      vd(1) = vd(1) - veldirfreestream(1)*sensord
+      veldirfreestreamd(1) = veldirfreestreamd(1) - v(1)*sensord
+      vd(2) = vd(2) - veldirfreestream(2)*sensord
+      veldirfreestreamd(2) = veldirfreestreamd(2) - v(2)*sensord
+      vd(3) = vd(3) - veldirfreestream(3)*sensord
+      veldirfreestreamd(3) = veldirfreestreamd(3) - v(3)*sensord
       call popreal8array(v, 3)
       tmpd0 = vd
       temp0 = v(1)**2 + v(2)**2 + v(3)**2
@@ -2250,12 +2005,6 @@ contains
       xxd(i, j+1, 1) = xxd(i, j+1, 1) + tempd11
       xxd(i+1, j+1, 1) = xxd(i+1, j+1, 1) + tempd11
       rd(1) = 0.0_8
-      zcod = zcod + blk*fy*cofsumfyd(3) + blk*fx*cofsumfxd(3) + blk*fz*&
-&       cofsumfzd(3)
-      ycod = ycod + blk*fy*cofsumfyd(2) + blk*fx*cofsumfxd(2) + blk*fz*&
-&       cofsumfzd(2)
-      xcod = xcod + blk*fy*cofsumfyd(1) + blk*fx*cofsumfxd(1) + blk*fz*&
-&       cofsumfzd(1)
       tempd12 = fourth*zcod
       xxd(i, j, 3) = xxd(i, j, 3) + tempd12
       xxd(i+1, j, 3) = xxd(i+1, j, 3) + tempd12
@@ -2349,9 +2098,6 @@ contains
 &   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
-    real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
-&   vecttangential(3)
-    real(kind=realtype) :: vectdotproductfsnormal
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
@@ -2367,8 +2113,6 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic sqrt
-    intrinsic cos
-    intrinsic sin
     intrinsic exp
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
@@ -2523,62 +2267,20 @@ contains
       v(2) = ww2(i, j, ivy)
       v(3) = ww2(i, j, ivz)
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
-      if (sepmodel .eq. surfvec) then
-! freestream projection over the surface.
-        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
-&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
-&         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
-! tangential vector on the surface, which is the freestream projected vector
-        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 1)
-        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 2)
-        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
-&         *bcdata(mm)%norm(i, j, 3)
-        vecttangential = vecttangential/(sqrt(vecttangential(1)**2+&
-&         vecttangential(2)**2+vecttangential(3)**2)+1e-16)
-! compute cross product of vecttangential to surface normal, which will result in surface vector normal to the vecttangential
-        veccrossprod(1) = vecttangential(2)*bcdata(mm)%norm(i, j, 3) - &
-&         vecttangential(3)*bcdata(mm)%norm(i, j, 2)
-        veccrossprod(2) = vecttangential(3)*bcdata(mm)%norm(i, j, 1) - &
-&         vecttangential(1)*bcdata(mm)%norm(i, j, 3)
-        veccrossprod(3) = vecttangential(1)*bcdata(mm)%norm(i, j, 2) - &
-&         vecttangential(2)*bcdata(mm)%norm(i, j, 1)
-        veccrossprod = veccrossprod/(sqrt(veccrossprod(1)**2+&
-&         veccrossprod(2)**2+veccrossprod(3)**2)+1e-16)
-! do the sweep angle correction
-        vectcorrected(1) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(1) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(1)
-        vectcorrected(2) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(2) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(2)
-        vectcorrected(3) = cos(degtorad*sepsweepanglecorrection)*&
-&         vecttangential(3) + sin(degtorad*sepsweepanglecorrection)*&
-&         veccrossprod(3)
-        vectcorrected = vectcorrected/(sqrt(vectcorrected(1)**2+&
-&         vectcorrected(2)**2+vectcorrected(3)**2)+1e-16)
-        sensor = v(1)*vectcorrected(1) + v(2)*vectcorrected(2) + v(3)*&
-&         vectcorrected(3)
-        sensor = half*(one-sensor)
-        sensor = sensor*cellarea*blk
-        sepsensor = sepsensor + sensor
-      else if (sepmodel .eq. heaviside) then
 ! dot product with free stream
-        sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3&
-&         )*veldirfreestream(3))
+      sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
+&       veldirfreestream(3))
 !now run through a smooth heaviside function:
-        sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
-&         sepsensoroffset))))
+      sensor = one/(one+exp(-(2*sepsensorsharpness*(sensor-&
+&       sepsensoroffset))))
 ! and integrate over the area of this cell and save, blanking as we go.
-        sensor = sensor*cellarea*blk
-        sepsensor = sepsensor + sensor
+      sensor = sensor*cellarea*blk
+      sepsensor = sepsensor + sensor
 ! also accumulate into the sepsensoravg
 ! x-y-zco are computed above for center of force computations
-        sepsensoravg(1) = sepsensoravg(1) + sensor*xco
-        sepsensoravg(2) = sepsensoravg(2) + sensor*yco
-        sepsensoravg(3) = sepsensoravg(3) + sensor*zco
-      end if
+      sepsensoravg(1) = sepsensoravg(1) + sensor*xco
+      sepsensoravg(2) = sepsensoravg(2) + sensor*yco
+      sepsensoravg(3) = sepsensoravg(3) + sensor*zco
       if (computecavitation) then
         plocal = pp2(i, j)
         tmp = two/(gammainf*machcoef*machcoef)
