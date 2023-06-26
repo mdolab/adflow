@@ -165,8 +165,8 @@ contains
         if (surfWriteCfz) nSolVar = nSolVar + 1
         if (surfWriteBlank) nSolVar = nSolVar + 1
         if (surfWriteSepSensor) nSolVar = nSolVar + 1
-        if (surfWriteCavitation) nSolVar = nSolVar + 1
-        if (surfWriteGC) nSolVar = nSolVar + 1
+        if (surfWriteCavitation) nsolVar = nsolVar + 1
+        if (surfWriteGC) nsolVar = nsolVar + 1
 
     end subroutine numberOfSurfSolVariables
 
@@ -1424,8 +1424,6 @@ contains
         real(kind=realType) :: tauxx, tauyy, tauzz
         real(kind=realType) :: tauxy, tauxz, tauyz
         real(kind=realType) :: pm1, a, sensor, plocal, sensor1
-        real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectTangential(3)
-        real(kind=realType) :: vectDotProductFsNormal
         real(kind=realType), dimension(3) :: norm, V
 
         real(kind=realType), dimension(:, :, :), pointer :: ww1, ww2
@@ -1474,7 +1472,7 @@ contains
             select case (solName)
 
             case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
-                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsSepSensor)
+                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz)
 
                 ! Update the counter and set this entry of buffer to 0.
 
@@ -2168,118 +2166,27 @@ contains
         end do
 
         case (cgnsSepSensor)
-        if (sepmodel == surfvec) then
-            do j = rangeFace(2, 1), rangeFace(2, 2)
-                if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
-                    jor = j + jBegOr - 1
-                    if (jor == jBeg) then
-                        jj = j + 1
-                    else if (jor == jEnd + 1) then
-                        jj = j - 1
-                    else
-                        jj = j
-                    end if
-                else
-                    jj = j
 
-                end if
+        do j = rangeFace(2, 1), rangeFace(2, 2)
+            do i = rangeFace(1, 1), rangeFace(1, 2)
+                nn = nn + 1
 
-                do i = rangeFace(1, 1), rangeFace(1, 2)
+                ! Get normalized surface velocity:
+                v(1) = ww2(i, j, ivx)
+                v(2) = ww2(i, j, ivy)
+                v(3) = ww2(i, j, ivz)
 
-                    if (present(iBeg) .and. present(iEnd) .and. (useRindLayer)) then
-                        ior = i + iBegor - 1
-                        if (ior == iBeg) then
-                            ii = i + 1
-                        else if (ior == iEnd + 1) then
-                            ii = i - 1
-                        else
-                            ii = i
-                        end if
-                    else
-                        ii = i
-                    end if
+                ! Normalize
+                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-                    nn = nn + 1
+                ! Dot product with free stream
+                sensor = -dot_product(v, velDirFreeStream)
 
-                    ! Get normalized surface velocity:
-                    v(1) = ww2(ii, jj, ivx)
-                    v(2) = ww2(ii, jj, ivy)
-                    v(3) = ww2(ii, jj, ivz)
-
-                    ! Normalize
-                    v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
-                    mm = viscPointer(ii, jj)
-
-                    norm(1) = BCData(mm)%norm(ii, jj, 1)
-                    norm(2) = BCData(mm)%norm(ii, jj, 2)
-                    norm(3) = BCData(mm)%norm(ii, jj, 3)
-
-                    vectDotProductFsNormal = velDirFreeStream(1) * norm(1) + &
-                                             velDirFreeStream(2) * norm(2) + &
-                                             velDirFreeStream(3) * norm(3)
-
-                    vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * norm(1)
-                    vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * norm(2)
-                    vectTangential(3) = velDirFreeStream(3) - vectDotProductFsNormal * norm(3)
-
-                    vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
-                                                            vectTangential(3)**2) + 1e-16)
-
-                    ! compute cross product of vectnorm to surface normal
-                    vecCrossProd(1) = vectTangential(2) * norm(3) - &
-                                      vectTangential(3) * norm(2)
-                    vecCrossProd(2) = vectTangential(3) * norm(1) - &
-                                      vectTangential(1) * norm(3)
-                    vecCrossProd(3) = vectTangential(1) * norm(2) - &
-                                      vectTangential(2) * norm(1)
-
-                    vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
-                                                        + vecCrossProd(3)**2) + 1e-16)
-
-                    ! do the sweep angle correction
-                    vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectTangential(1) + &
-                                       sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
-
-                    vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectTangential(2) + &
-                                       sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
-
-                    vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectTangential(3) + &
-                                       sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
-
-                    vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
-                                                          + vectCorrected(3)**2) + 1e-16)
-
-                    sensor = (v(1) * vectCorrected(1) + v(2) * vectCorrected(2) + &
-                              v(3) * vectCorrected(3))
-
-                    sensor = one / two * (one - sensor)
-                    buffer(nn) = sensor
-                end do
+                !Now run through a smooth heaviside function:
+                sensor = one / (one + exp(-2 * sepSensorSharpness * (sensor - sepSensorOffset)))
+                buffer(nn) = sensor
             end do
-        else if (sepmodel == heaviside) then
-            do j = rangeFace(2, 1), rangeFace(2, 2)
-                do i = rangeFace(1, 1), rangeFace(1, 2)
-                    nn = nn + 1
-                    ! Get normalized surface velocity:
-                    v(1) = ww2(i, j, ivx)
-                    v(2) = ww2(i, j, ivy)
-                    v(3) = ww2(i, j, ivz)
-                    ! Get normalized surface velocity:
-                    ! v(1) = ww2(ii, jj, ivx)
-                    ! v(2) = ww2(ii, jj, ivy)
-                    ! v(3) = ww2(ii, jj, ivz)
-                    ! Normalize
-                    v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
-
-                    ! Dot product with free stream
-                    sensor = -dot_product(v, velDirFreeStream)
-
-                    !Now run through a smooth heaviside function:
-                    sensor = one / (one + exp(-2 * sepSensorSharpness * (sensor - sepSensorOffset)))
-                    buffer(nn) = sensor
-                end do
-            end do
-        end if
+        end do
 
         case (cgnsCavitation)
         fact = two / (gammaInf * pInf * MachCoef * MachCoef)
@@ -2402,8 +2309,7 @@ contains
 
         if (spaceDiscr == dissScalar) then
             if (dirScaling) then
-                write (string, "(2(A, 1X), ES12.5, A)") trim(string), &
-                    "Directional scaling of dissipation with exponent", adis, "."
+     write (string, "(2(A, 1X), ES12.5, A)") trim(string), "Directional scaling of dissipation with exponent", adis, "."
             else
                 write (string, stringSpace) trim(string), "No directional scaling of dissipation."
             end if
@@ -2424,8 +2330,7 @@ contains
                 write (string, stringSpace) trim(string), "Quadratic extrapolation of normal pressure gradIent", &
                     "for inviscid wall boundary conditions."
             case (normalMomentum)
-                write (string, stringSpace) trim(string), &
-                    "Normal momentum equation used to determine pressure gradient", &
+             write (string, stringSpace) trim(string), "Normal momentum equation used to determine pressure gradient", &
                     "for inviscid wall boundary conditions."
             end select
         end if

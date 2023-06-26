@@ -23,8 +23,7 @@ contains
         ! Working
         real(kind=realType) :: fact, factMoment, ovrNTS
         real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceP, forceV, forceM, &
-                                                                     moment, cForce, cForceP, cForceV, &
-                                                                     cForceM, cMoment, coFx, coFy, coFz
+                                                    moment, cForce, cForceP, cForceV, cForceM, cMoment, coFx, coFy, coFz
         real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
         real(kind=realType) :: mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                                mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi
@@ -162,10 +161,8 @@ contains
 
             funcValues(costFuncAxisMoment) = funcValues(costFuncAxisMoment) + ovrNTS * globalVals(iAxisMoment, sps)
             funcValues(costFuncSepSensorAvgX) = funcValues(costFuncSepSensorAvgX) + ovrNTS * globalVals(iSepAvg, sps)
-            funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + &
-                                                ovrNTS * globalVals(iSepAvg + 1, sps)
-            funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + &
-                                                ovrNTS * globalVals(iSepAvg + 2, sps)
+           funcValues(costFuncSepSensorAvgY) = funcValues(costFuncSepSensorAvgY) + ovrNTS * globalVals(iSepAvg + 1, sps)
+           funcValues(costFuncSepSensorAvgZ) = funcValues(costFuncSepSensorAvgZ) + ovrNTS * globalVals(iSepAvg + 2, sps)
             funcValues(costFuncArea) = funcValues(costFuncArea) + ovrNTS * globalVals(iArea, sps)
             funcValues(costFuncFlowPower) = funcValues(costFuncFlowPower) + ovrNTS * globalVals(iPower, sps)
 
@@ -209,10 +206,8 @@ contains
             gArea = globalVals(iArea, sps)
             if (gArea /= zero) then
                 ! area averaged pressure
-                funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + &
-                                               ovrNTS * globalVals(iAreaPTot, sps) / gArea
-                funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + &
-                                             ovrNTS * globalVals(iAreaPs, sps) / gArea
+               funcValues(costFuncAAvgPTot) = funcValues(costFuncAAvgPTot) + ovrNTS * globalVals(iAreaPTot, sps) / gArea
+                funcValues(costFuncAAvgPs) = funcValues(costFuncAAvgPs) + ovrNTS * globalVals(iAreaPs, sps) / gArea
             end if
 
             funcValues(costFuncMdot) = funcValues(costFuncMdot) + ovrNTS * mFlow
@@ -389,8 +384,6 @@ contains
         integer(kind=intType) :: i, j, ii, blk
 
         real(kind=realType) :: pm1, fx, fy, fz, fn
-        real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectTangential(3)
-        real(kind=realType) :: vectDotProductFsNormal
         real(kind=realType) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3), L
         real(kind=realType) :: fact, rho, mul, yplus, dwall
         real(kind=realType) :: V(3), sensor, sensor1, Cp, tmp, plocal, ks_exponent
@@ -575,69 +568,22 @@ contains
             v(3) = ww2(i, j, ivz)
             v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-            if (sepmodel == surfvec) then
-                ! Freestream projection over the surface.
-                vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
-                                         velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
-                                         velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
-                ! Tangential Vector on the surface, which is the freestream projected vector
-                vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
-                vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
-                vectTangential(3) = velDirFreeStream(3) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 3)
+            ! Dot product with free stream
+            sensor = -(v(1) * velDirFreeStream(1) + v(2) * velDirFreeStream(2) + &
+                       v(3) * velDirFreeStream(3))
 
-                vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
-                                                        vectTangential(3)**2) + 1e-16)
+            !Now run through a smooth heaviside function:
+            sensor = one / (one + exp(-2 * sepSensorSharpness * (sensor - sepSensorOffset)))
 
-                ! compute cross product of vectTangential to surface normal, which will result in surface vector normal to the vectTangential
-                vecCrossProd(1) = vectTangential(2) * BCData(mm)%norm(i, j, 3) - &
-                                  vectTangential(3) * BCData(mm)%norm(i, j, 2)
-                vecCrossProd(2) = vectTangential(3) * BCData(mm)%norm(i, j, 1) - &
-                                  vectTangential(1) * BCData(mm)%norm(i, j, 3)
-                vecCrossProd(3) = vectTangential(1) * BCData(mm)%norm(i, j, 2) - &
-                                  vectTangential(2) * BCData(mm)%norm(i, j, 1)
+            ! And integrate over the area of this cell and save, blanking as we go.
+            sensor = sensor * cellArea * blk
+            sepSensor = sepSensor + sensor
 
-                vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
-                                                    + vecCrossProd(3)**2) + 1e-16)
-
-                ! do the sweep angle correction
-                vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectTangential(1) + &
-                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
-
-                vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectTangential(2) + &
-                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
-
-                vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectTangential(3) + &
-                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
-
-                vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
-                                                      + vectCorrected(3)**2) + 1e-16)
-
-                sensor = (v(1) * vectCorrected(1) + v(2) * vectCorrected(2) + &
-                          v(3) * vectCorrected(3))
-
-                sensor = half * (one - sensor)
-                sensor = sensor * cellArea * blk
-                sepSensor = sepSensor + sensor
-
-            else if (sepmodel == heaviside) then
-
-                ! Dot product with free stream
-                sensor = -(v(1) * velDirFreeStream(1) + v(2) * velDirFreeStream(2) + &
-                           v(3) * velDirFreeStream(3))
-
-                !Now run through a smooth heaviside function:
-                sensor = one / (one + exp(-2 * sepSensorSharpness * (sensor - sepSensorOffset)))
-
-                ! And integrate over the area of this cell and save, blanking as we go.
-                sensor = sensor * cellArea * blk
-                sepSensor = sepSensor + sensor
-
-                ! Also accumulate into the sepSensorAvg
-                ! x-y-zco are computed above for center of force computations
-                sepSensorAvg(1) = sepSensorAvg(1) + sensor * xco
-                sepSensorAvg(2) = sepSensorAvg(2) + sensor * yco
-                sepSensorAvg(3) = sepSensorAvg(3) + sensor * zco
-            end if
+            ! Also accumulate into the sepSensorAvg
+            ! x-y-zco are computed above for center of force computations
+            sepSensorAvg(1) = sepSensorAvg(1) + sensor * xco
+            sepSensorAvg(2) = sepSensorAvg(2) + sensor * yco
+            sepSensorAvg(3) = sepSensorAvg(3) + sensor * zco
 
             if (computeCavitation) then
                 plocal = pp2(i, j)

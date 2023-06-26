@@ -85,13 +85,6 @@ module constants
     real(kind=realType), parameter :: threefourth = 0.75_realType
     real(kind=realType), parameter :: sqrtthree = 1.7320508075688772_realType
 
-    ! radian to degree conversion
-    real(kind=realType), parameter :: degtorad = pi / 180.0_realType
-
-    ! sepsensor selection
-    integer(kind=intType), parameter :: &
-        surfvec = 1, &
-        heaviside = 2
     ! String constants
     CHARACTER(*), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
     CHARACTER(*), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'

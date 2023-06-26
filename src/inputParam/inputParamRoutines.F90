@@ -4043,6 +4043,8 @@ contains
         adjointPETScVarsAllocated = .False.
         adjointPETScPreProcVarsAllocated = .False.
         usematrixfreedrdw = .False.
+        sepSensorOffset = zero
+        sepSensorSharpness = 10_realType
     end subroutine setDefaultValues
 
     subroutine initializeIsoSurfaceVariables(values, nValues)
