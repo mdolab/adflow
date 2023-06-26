@@ -1,11 +1,11 @@
 from pprint import pprint as pp
-from adflow import ADFLOW
-from idwarp import USMesh, MultiUSMesh
 
 import numpy as np
+from idwarp import USMesh
 from mphys.builder import Builder
 from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
 
+from adflow import ADFLOW
 
 from .om_utils import get_dvs_and_cons
 
@@ -1131,7 +1131,6 @@ class ADflowBuilder(Builder):
         self,
         options,  # adflow options
         mesh_options=None,  # idwarp options
-        multiUSmesh_optionsDict=None,  # dict for multi US mesh
         scenario="aerodynamic",  # scenario type to configure the groups
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
@@ -1159,24 +1158,12 @@ class ADflowBuilder(Builder):
                 self.mesh_options = {
                     "gridFile": options["gridFile"],
                 }
-                self.multiUSmeshGrid = options["gridFile"]
             elif "gridfile" in options:
                 self.mesh_options = {
                     "gridFile": options["gridfile"],
                 }
-
-                self.multiUSmeshGrid = options["gridfile"]
-
         else:
             self.mesh_options = mesh_options
-            self.multiUSmeshGrid = mesh_options["gridFile"]
-
-        if multiUSmesh_optionsDict is not None:
-            self.multiUSmesh = True
-            self.multimesh_options = multiUSmesh_optionsDict
-        else:
-            self.multiUSmesh = False
-            self.multimesh_options = None
 
         # defaults:
 
@@ -1240,10 +1227,7 @@ class ADflowBuilder(Builder):
             for key, val in self.user_family_groups.items():
                 self.solver.addFamilyGroup(key, val)
 
-        if self.multiUSmesh:
-            mesh = MultiUSMesh(self.multiUSmeshGrid, self.multimesh_options, comm=comm)
-        else:
-            mesh = USMesh(options=self.mesh_options, comm=comm)
+        mesh = USMesh(options=self.mesh_options, comm=comm)
 
         self.solver.setMesh(mesh)
 
