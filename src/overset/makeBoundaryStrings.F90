@@ -437,11 +437,13 @@ contains
                         iSize = iEnd - iStart + 1
 
                         ! ----------- Node sized arrays -------------
-                       call MPI_Recv(globalStrings(c)%nodeData(:, iStart:iEnd), iSize * 10, adflow_real, iProc, iProc, &
+                        call MPI_Recv(globalStrings(c)%nodeData(:, iStart:iEnd), iSize * 10, &
+                                      adflow_real, iProc, iProc, &
                                       adflow_comm_world, mpiStatus, ierr)
                         call ECHK(ierr, __FILE__, __LINE__)
 
-                  call MPI_Recv(globalStrings(c)%intNodeData(:, iStart:iEnd), iSize * 3, adflow_integer, iProc, iProc, &
+                        call MPI_Recv(globalStrings(c)%intNodeData(:, iStart:iEnd), iSize * 3, &
+                                      adflow_integer, iProc, iProc, &
                                       adflow_comm_world, mpiStatus, ierr)
                         call ECHK(ierr, __FILE__, __LINE__)
 

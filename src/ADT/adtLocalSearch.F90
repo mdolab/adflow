@@ -2327,11 +2327,14 @@ contains
         hess(3, 3) = 2.0_realType * ((dxdzeta * dxdzeta) + (dydzeta * dydzeta) + (dzdzeta * dzdzeta))
 
         hess(1, 2) = 2.0_realType * ((dxdksi * dxdeta) + (dydksi * dydeta) + (dzdksi * dzdeta) &
-                           - ((xP(1) - x0) * d2xdksideta) - ((xP(2) - y0) * d2ydksideta) - ((xP(3) - z0) * d2zdksideta))
+                                     - ((xP(1) - x0) * d2xdksideta) - &
+                                     ((xP(2) - y0) * d2ydksideta) - ((xP(3) - z0) * d2zdksideta))
         hess(1, 3) = 2.0_realType * ((dxdksi * dxdzeta) + (dydksi * dydzeta) + (dzdksi * dzdzeta) &
-                        - ((xP(1) - x0) * d2xdksidzeta) - ((xP(2) - y0) * d2ydksidzeta) - ((xP(3) - z0) * d2zdksidzeta))
+                                     - ((xP(1) - x0) * d2xdksidzeta) - &
+                                     ((xP(2) - y0) * d2ydksidzeta) - ((xP(3) - z0) * d2zdksidzeta))
         hess(2, 3) = 2.0_realType * ((dxdeta * dxdzeta) + (dydeta * dydzeta) + (dzdeta * dzdzeta) &
-                        - ((xP(1) - x0) * d2xdetadzeta) - ((xP(2) - y0) * d2ydetadzeta) - ((xP(3) - z0) * d2zdetadzeta))
+                                     - ((xP(1) - x0) * d2xdetadzeta) - &
+                                     ((xP(2) - y0) * d2ydetadzeta) - ((xP(3) - z0) * d2zdetadzeta))
 
         hess(2, 1) = hess(1, 2)
         hess(3, 1) = hess(1, 3)

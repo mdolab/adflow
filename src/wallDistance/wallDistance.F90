@@ -1860,7 +1860,8 @@ contains
 
                                 coor(4) = large
                                 call minDistancetreeSearchSinglePoint(walls(c)%ADT, coor, &
-                                                              intInfo2, uvw2, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                                                                      intInfo2, uvw2, dummy, 0, BB, &
+                                                                      frontLeaves, frontLeavesNew)
                                 cellID2 = intInfo2(3)
 
                                 if (uvw2(4) < nearWallDist**2) then

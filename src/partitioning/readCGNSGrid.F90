@@ -1200,7 +1200,8 @@ contains
             cgnsDoms(nZone)%conn1to1(i)%translation = zero
 
             call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, nZone, i, &
-                           real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), real(tlation, cgnsPerType), ierr)
+                                         real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), &
+                                         real(tlation, cgnsPerType), ierr)
             if (ierr == CG_OK) then
                 call readPeriodicSubface1to1(cgnsInd, cgnsBase, nZone, i, &
                                              cgnsDoms(nZone)%conn1to1(i)%connectName, &
@@ -2127,7 +2128,8 @@ contains
                     if (cgnsDoms(nZone)%bocoInfo(i)%BCType == bcNull) then
                         write (errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), &
                             ", boundary face ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
-                         ": Unknown user-defined boundary condition ", trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
+                            ": Unknown user-defined boundary condition ", &
+                            trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
                         if (myID == 0) call terminate("readBocos", errorMessage)
                         call mpi_barrier(ADflow_comm_world, ierr)
                     end if
@@ -2520,7 +2522,8 @@ contains
                         print "(a)", "#                      Warning"
                         print strings, "# Zone ", trim(cgnsDoms(nZone)%zoneName), &
                             ", boundary subface ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
-                      print strings, "# BC data set ", trim(arr(k)%arrayName), ": No units specified, assuming SI units"
+                        print strings, "# BC data set ", &
+                            trim(arr(k)%arrayName), ": No units specified, assuming SI units"
                         print "(a)", "#"
                     end if
                 end if
@@ -2785,7 +2788,8 @@ contains
         ! Check if this is a periodic boundary.
 
         call cg_conn_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-                           real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), real(tlation, cgnsPerType), ierr)
+                                     real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), &
+                                     real(tlation, cgnsPerType), ierr)
 
         testPeriodic: if (ierr == CG_OK) then
 
@@ -2926,7 +2930,8 @@ contains
 
         ! Check if this is a periodic boundary.
         call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-                           real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), real(tlation, cgnsPerType), ierr)
+                                     real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), &
+                                     real(tlation, cgnsPerType), ierr)
 
         testPeriodic: if (ierr == CG_OK) then
 
@@ -2964,7 +2969,8 @@ contains
 
                     print "(a)", "#"
                     print "(a)", "#                      Warning"
-                   print strings, "# Zone ", trim(cgnsDoms(zone)%zonename), ", 1to1 connectivity ", trim(connectName), &
+                    print strings, "# Zone ", &
+                        trim(cgnsDoms(zone)%zonename), ", 1to1 connectivity ", trim(connectName), &
                         ": No unit specified for periodic angles, assuming radians."
                     print "(a)", "#"
 
