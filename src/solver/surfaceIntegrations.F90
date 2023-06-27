@@ -23,8 +23,8 @@ contains
         ! Working
         real(kind=realType) :: fact, factMoment, ovrNTS
         real(kind=realType), dimension(3, nTimeIntervalsSpectral) :: force, forceP, forceV, forceM, &
-                                                                     moment, cForce, cForceP, cForceV, &
-                                                                     cForceM, cMoment, coFx, coFy, coFz
+                                                                     moment, cForce, cForceP, cForceV, cForceM, &
+                                                                     cMoment, coFx, coFy, coFz
         real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
         real(kind=realType) :: mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                                mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi
