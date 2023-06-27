@@ -183,7 +183,8 @@ contains
             flowDoms(nn, 1, sps)%realCommVars(iVy + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iVy)
             flowDoms(nn, 1, sps)%realCommVars(iVz + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iVz)
             flowDoms(nn, 1, sps)%realCommVars(iZippFlowP + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%P(:, :, :)
-           flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%gamma(:, :, :)
+            flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma + nZippFlowComm)%var => &
+                flowDomsd(nn, 1, sps)%gamma(:, :, :)
             ! flowDoms(nn, 1, sps)%realCommVars(iZippFlowSface+nZippFlowComm)%var => Not Implemented
 
             flowDoms(nn, 1, sps)%realCommVars(iZippFlowX + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%x(:, :, :, 1)
@@ -266,7 +267,8 @@ contains
                     fams = surf%famID
 
                     ! Perform the actual integration
-                  call flowIntegrationZipper_d(surf%isInflow, surf%conn, fams, vars, varsd, localValues, localValuesd, &
+                    call flowIntegrationZipper_d(surf%isInflow, surf%conn, fams, vars, &
+                                                 varsd, localValues, localValuesd, &
                                                  famList, sps, ptValid)
                     deallocate (ptValid, vars, varsd, fams)
                 end if
@@ -333,7 +335,8 @@ contains
             flowDoms(nn, 1, sps)%realCommVars(iVy + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iVy)
             flowDoms(nn, 1, sps)%realCommVars(iVz + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%w(:, :, :, iVz)
             flowDoms(nn, 1, sps)%realCommVars(iZippFlowP + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%P(:, :, :)
-           flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%gamma(:, :, :)
+            flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma + nZippFlowComm)%var => &
+                flowDomsd(nn, 1, sps)%gamma(:, :, :)
             ! flowDoms(nn, 1, sps)%realCommVars(iZippFlowSface+nZippFlowComm)%var => Not Implemented
 
             flowDoms(nn, 1, sps)%realCommVars(iZippFlowX + nZippFlowComm)%var => flowDomsd(nn, 1, sps)%x(:, :, :, 1)
@@ -413,7 +416,8 @@ contains
                     fams = surf%famID
 
                     ! Perform the actual (reverse) integration
-                  call flowIntegrationZipper_b(surf%isInflow, surf%conn, fams, vars, varsd, localValues, localValuesd, &
+                    call flowIntegrationZipper_b(surf%isInflow, surf%conn, fams, vars, &
+                                                 varsd, localValues, localValuesd, &
                                                  famList, sps, ptValid)
 
                     ! Accumulate into the receive buffers
@@ -765,7 +769,8 @@ contains
 
                 ! Call the standard tree search
                 call containmentTreeSearchSinglePoint(oBlock%ADT, xc, intInfo, uvw, &
-                                                   oBlock%qualDonor, nInterpol, BB, frontLeaves, frontLeavesNew, failed)
+                                                      oBlock%qualDonor, nInterpol, BB, &
+                                                      frontLeaves, frontLeavesNew, failed)
 
                 ! Make sure this point is not garbage.
                 if (intInfo(1) >= 0) then
@@ -1375,28 +1380,36 @@ contains
 
                     ! Accumulate back onto the derivative variables.
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1, k1) = &
-                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1, k1) + weight(1) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1, k1) + &
+                        weight(1) * sendBufferd(jj)
 
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1, k1) = &
-                    flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1, k1) + weight(2) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1, k1) + &
+                        weight(2) * sendBufferd(jj)
 
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1 + 1, k1) = &
-                    flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1 + 1, k1) + weight(3) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1 + 1, k1) + &
+                        weight(3) * sendBufferd(jj)
 
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1 + 1, k1) = &
-                flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1 + 1, k1) + weight(4) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1 + 1, k1) + &
+                        weight(4) * sendBufferd(jj)
 
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1, k1 + 1) = &
-                    flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1, k1 + 1) + weight(5) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1, k1 + 1) + &
+                        weight(5) * sendBufferd(jj)
 
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1, k1 + 1) = &
-                flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1, k1 + 1) + weight(6) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1, k1 + 1) + &
+                        weight(6) * sendBufferd(jj)
 
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1 + 1, k1 + 1) = &
-                flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1 + 1, k1 + 1) + weight(7) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1, j1 + 1, k1 + 1) + &
+                        weight(7) * sendBufferd(jj)
 
                     flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1 + 1, k1 + 1) = &
-            flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1 + 1, k1 + 1) + weight(8) * sendBufferd(jj)
+                        flowDoms(d1, 1, 1)%realCommVars(k + nZippFlowComm)%var(i1 + 1, j1 + 1, k1 + 1) + &
+                        weight(8) * sendBufferd(jj)
                 end if
             end do
         end do donorLoop

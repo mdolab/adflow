@@ -62,7 +62,7 @@ contains
         integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave
         integer(kind=intType), dimension(:, :), pointer :: stencil
         real(kind=alwaysRealType) :: delta_x, one_over_dx
-        real(kind=realType) :: weights(8)
+        real(kind=realType) :: weights(8), acousticScaleSave
         real(kind=realType), dimension(:, :), allocatable :: blk
         integer(kind=intType), dimension(2:10) :: coarseRows
         integer(kind=intType), dimension(8, 2:10) :: coarseCols
@@ -179,6 +179,12 @@ contains
 
             ! Very important to use only Second-Order dissipation for PC
             lumpedDiss = .True.
+            ! We also do not apply acoustic scaling because artificial dissipation stabilizes the ILU factorization.
+            ! This is mentioned in "Newton-Krylov-Schwarz Methods for Aerodynamics Problems: Compressible
+            ! and Incompressible Flows on Unstructured Grids" by D. K. Kaushik, D. E. Keyes, and B. F. Smith (1998).
+            ! The linear system will not converge if we reduce the artificial dissipation for the PC.
+            acousticScaleSave = acousticScaleFactor
+            acousticScaleFactor = one
             ! also use first order advection terms for turbulence
             orderturbsave = orderturb
             orderturb = firstOrder
@@ -325,7 +331,8 @@ contains
                                     do k = 0, kb
                                         do j = 0, jb
                                             do i = 0, ib
-                                      flowDoms(nn, level, sps2)%w(i, j, k, ll) = flowDoms(nn, 1, sps2)%wtmp(i, j, k, ll)
+                                                flowDoms(nn, level, sps2)%w(i, j, k, ll) = &
+                                                    flowDoms(nn, 1, sps2)%wtmp(i, j, k, ll)
                                             end do
                                         end do
                                     end do
@@ -446,7 +453,8 @@ contains
 
                                             if (buildCoarseMats) then
                                                 do lvl = 1, agmgLevels - 1
-                                                  coarseCols(m, lvl + 1) = coarseOversetIndices(nn, lvl)%arr(m, i, j, k)
+                                                    coarseCols(m, lvl + 1) = &
+                                                        coarseOversetIndices(nn, lvl)%arr(m, i, j, k)
                                                 end do
                                             end if
                                         end do
@@ -482,28 +490,35 @@ contains
 
                                                 if (buildCoarseMats) then
                                                     do lvl = 1, agmgLevels - 1
-                                                coarseRows(lvl + 1) = coarseIndices(nn, lvl)%arr(i + ii, j + jj, k + kk)
+                                                        coarseRows(lvl + 1) = &
+                                                            coarseIndices(nn, lvl)%arr(i + ii, j + jj, k + kk)
                                                     end do
                                                 end if
 
-                                        rowBlank: if (flowDoms(nn, level, sps)%iBlank(i + ii, j + jj, k + kk) == 1) then
+                                                rowBlank: if (flowDoms(nn, level, sps)% &
+                                                              iBlank(i + ii, j + jj, k + kk) == 1) then
 
                                                     centerCell: if (ii == 0 .and. jj == 0 .and. kk == 0) then
                                                         useDiagPC: if (usePC .and. useDiagTSPC) then
                                                             ! If we're doing the PC and we want
                                                             ! to use TS diagonal form, only set
                                                             ! values for on-time insintance
-                                                           blk = flowDoms(nn, 1, sps)%dw_deriv(i + ii, j + jj, k + kk, &
-                                                                                               lStart:lEnd, lStart:lEnd)
+                                                            blk = flowDoms(nn, 1, sps)%dw_deriv(i + ii, &
+                                                                                                j + jj, k + kk, &
+                                                                                                lStart:lEnd, &
+                                                                                                lStart:lEnd)
                                                             call setBlock(blk)
                                                         else
                                                             ! Otherwise loop over spectral
                                                             ! instances and set all.
                                                             do sps2 = 1, nTimeIntervalsSpectral
                                                                 irow = flowDoms(nn, level, sps2)% &
-                                                                       globalCell(i + ii, j + jj, k + kk)
-                                                          blk = flowDoms(nn, 1, sps2)%dw_deriv(i + ii, j + jj, k + kk, &
-                                                                                               lStart:lEnd, lStart:lEnd)
+                                                                       globalCell(i + ii, &
+                                                                                  j + jj, k + kk)
+                                                                blk = flowDoms(nn, 1, sps2)% &
+                                                                      dw_deriv(i + ii, &
+                                                                               j + jj, k + kk, &
+                                                                               lStart:lEnd, lStart:lEnd)
                                                                 call setBlock(blk)
                                                             end do
                                                         end if useDiagPC
@@ -560,6 +575,7 @@ contains
         ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
         if (usePC) then
             lumpedDiss = .False.
+            acousticScaleFactor = acousticScaleSave
             ! also recover the turbulence advection order
             orderturb = orderturbsave
         end if
@@ -885,9 +901,12 @@ contains
                             allocate (cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(nDirichlet))
 
                             do iDirichlet = 1, nDirichlet
-                          nArray = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr)
-                     allocate (cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray))
-                         cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray) = zero
+                                nArray = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData) &
+                                              %dirichletArrays(iDirichlet)%dataArr)
+                                allocate (cgnsDomsd(nn)%bocoInfo(iBoco)% &
+                                          dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray))
+                                cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)% &
+                                    dirichletArrays(iDirichlet)%dataArr(nArray) = zero
                             end do
                         end if
                     end do
@@ -1042,8 +1061,10 @@ contains
                 if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)) then
                     do iData = 1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)
                         if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then
-                            do iDirichlet = 1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
-                            cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(:) = zero
+                            do iDirichlet = 1, &
+                                size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
+                                cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(:) &
+                                    = zero
                             end do
                         end if
                     end do
