@@ -165,7 +165,8 @@ contains
                         case (kMax)
                             print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": kMax block face not fully described"
                         case default
-                       print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": Multiple block faces not fully described"
+                            print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), &
+                                ": Multiple block faces not fully described"
                         end select
 
                     else
@@ -184,7 +185,8 @@ contains
                         case (kMax)
                             print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": kMax block face multiple described"
                         case default
-                        print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), ": Multiple block faces multiple described"
+                            print strings, "Zone ", trim(cgnsDoms(nn)%zoneName), &
+                                ": Multiple block faces multiple described"
                         end select
 
                     end if
@@ -932,12 +934,14 @@ contains
                 if (nTimeIntervalsSpectral > 1) then
 
                     if (badGlobal(4, nn) == 1) then
-                  print spectralDevFormat, "# Spectral grid ", trim(intString), ", zone ", trim(cgnsDoms(i)%zoneName), &
+                        print spectralDevFormat, "# Spectral grid ", trim(intString), &
+                            ", zone ", trim(cgnsDoms(i)%zoneName), &
                             ", periodic subface ", trim(cgnsDoms(i)%conn1to1(j)%connectName), &
                             " does not match donor ", trim(cgnsDoms(i)%conn1to1(j)%donorName), &
                             ". Maximum deviation: ", badDistGlobal(nn)
                     else
-                  print spectralDevFormat, "# Spectral grid ", trim(intString), ", zone ", trim(cgnsDoms(i)%zoneName), &
+                        print spectralDevFormat, "# Spectral grid ", trim(intString), &
+                            ", zone ", trim(cgnsDoms(i)%zoneName), &
                             ", subface ", trim(cgnsDoms(i)%conn1to1(j)%connectName), &
                             " does not match donor ", trim(cgnsDoms(i)%conn1to1(j)%donorName), &
                             ". Maximum deviation: ", badDistGlobal(nn)
