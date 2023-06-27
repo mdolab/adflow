@@ -1726,11 +1726,13 @@ contains
 
                     call cg_coord_partial_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
                                                   'CoordinateY', cumNodes + 1, cumNodes + nPtsProc(iProc + 1), &
-                                                 buffer(nPtsProc(iProc + 1) + 1:2 * nPtsProc(iProc + 1)), coordID, ierr)
+                                                  buffer(nPtsProc(iProc + 1) + &
+                                                         1:2 * nPtsProc(iProc + 1)), coordID, ierr)
 
                     call cg_coord_partial_write_f(cgnsInd, cgnsBase, cgnsZone, realDouble, &
                                                   'CoordinateZ', cumNodes + 1, cumNodes + nPtsProc(iProc + 1), &
-                                             buffer(2 * nPtsProc(iProc + 1) + 1:3 * nPtsProc(iProc + 1)), coordID, ierr)
+                                                  buffer(2 * nPtsProc(iProc + 1) + &
+                                                         1:3 * nPtsProc(iProc + 1)), coordID, ierr)
 
                     if (ierr /= CG_OK) &
                         call terminate("writeIsoSurface", &
@@ -1894,7 +1896,8 @@ contains
                     ! received from iProc
                     if (nPtsProc(iProc + 1) > 0) Then
                         call cg_field_partial_write_f(cgnsInd, cgnsBase, cgnsZone, solID, realDouble, &
-                                                  isoSurfSolNames(iVar), cumNodes + 1, cumNodes + nPtsProc(iProc + 1), &
+                                                      isoSurfSolNames(iVar), cumNodes + 1, &
+                                                      cumNodes + nPtsProc(iProc + 1), &
                                                       buffer, fieldID, ierr)
 
                         if (ierr /= CG_OK) &

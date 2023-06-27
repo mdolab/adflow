@@ -259,7 +259,8 @@ contains
                         A55 = one * ((-(resM**2)) / 2)
 
                         B11 = A11 * (gamma(i, j, k) - 1) * q / 2 + A12 * (-velXrho) &
-                        / w(i, j, k, irho) + A13 * (-velYrho) / w(i, j, k, irho) + A14 * (-velZrho) / w(i, j, k, irho) &
+                              / w(i, j, k, irho) + A13 * (-velYrho) / w(i, j, k, irho) + &
+                              A14 * (-velZrho) / w(i, j, k, irho) &
                               + A15 * (((gamma(i, j, k) - 1) * q / 2) - SoS**2)
                         B12 = A11 * (1 - gamma(i, j, k)) * velXrho + A12 * 1 / w(i, j, k, irho) &
                               + A15 * (1 - gamma(i, j, k)) * velXrho
@@ -281,7 +282,8 @@ contains
                         B25 = A21 * (gamma(i, j, k) - 1) + A25 * (gamma(i, j, k) - 1)
 
                         B31 = A31 * (gamma(i, j, k) - 1) * q / 2 + A32 * (-velXrho) &
-                        / w(i, j, k, irho) + A33 * (-velYrho) / w(i, j, k, irho) + A34 * (-velZrho) / w(i, j, k, irho) &
+                              / w(i, j, k, irho) + A33 * (-velYrho) / w(i, j, k, irho) + &
+                              A34 * (-velZrho) / w(i, j, k, irho) &
                               + A35 * (((gamma(i, j, k) - 1) * q / 2) - SoS**2)
                         B32 = A31 * (1 - gamma(i, j, k)) * velXrho + A32 &
                               / w(i, j, k, irho) + A35 * (1 - gamma(i, j, k)) * velXrho
@@ -1094,7 +1096,8 @@ contains
                                viscTermI, viscTermJ, viscTermK
 
         real(kind=realType), dimension(:, :, :), pointer :: qq_i, qq_j, qq_k, &
-                                                           cc_i, cc_j, cc_k, spectral_i, spectral_j, spectral_k, dual_dt
+                                                            cc_i, cc_j, cc_k, spectral_i, &
+                                                            spectral_j, spectral_k, dual_dt
         real(kind=realType), dimension(ie, 5) :: bbi, cci, ddi, ffi
         real(kind=realType), dimension(je, 5) :: bbj, ccj, ddj, ffj
         real(kind=realType), dimension(ke, 5) :: bbk, cck, ddk, ffk
@@ -1380,7 +1383,9 @@ contains
                         do j = 2, jl
                             bbj(j, n) = bbj(j, n) * dual_dt(i, j, k) * max(real(iblank(i, j, k), realType), zero)
                             ddj(j, n) = ddj(j, n) * dual_dt(i, j, k) * max(real(iblank(i, j, k), realType), zero)
-         ccj(j,n)=one+ccj(j,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)+spectral_i(i,j,k)+spectral_k(i,j,k)
+                            ccj(j, n) = one + ccj(j, n) * dual_dt(i, j, k) * &
+                                        max(real(iblank(i, j, k), realType), zero) + &
+                                        spectral_i(i, j, k) + spectral_k(i, j, k)
                             ffj(j, n) = dw(i, j, k, n)
                         end do
                     end do
@@ -1514,7 +1519,9 @@ contains
                         do i = 2, il
                             bbi(i, n) = bbi(i, n) * dual_dt(i, j, k) * max(real(iblank(i, j, k), realType), zero)
                             ddi(i, n) = ddi(i, n) * dual_dt(i, j, k) * max(real(iblank(i, j, k), realType), zero)
-         cci(i,n)=one+cci(i,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)+spectral_j(i,j,k)+spectral_k(i,j,k)
+                            cci(i, n) = one + cci(i, n) * dual_dt(i, j, k) * &
+                                        max(real(iblank(i, j, k), realType), zero) + &
+                                        spectral_j(i, j, k) + spectral_k(i, j, k)
                             ffi(i, n) = dw(i, j, k, n)
                         end do
                     end do
@@ -1648,7 +1655,9 @@ contains
                         do k = 2, kl
                             bbk(k, n) = bbk(k, n) * dual_dt(i, j, k) * max(real(iblank(i, j, k), realType), zero)
                             ddk(k, n) = ddk(k, n) * dual_dt(i, j, k) * max(real(iblank(i, j, k), realType), zero)
-         cck(k,n)=one+cck(k,n)*dual_dt(i,j,k)*max(real(iblank(i,j,k),realType),zero)+spectral_i(i,j,k)+spectral_j(i,j,k)
+                            cck(k, n) = one + cck(k, n) * dual_dt(i, j, k) * &
+                                        max(real(iblank(i, j, k), realType), zero) + &
+                                        spectral_i(i, j, k) + spectral_j(i, j, k)
                             ffk(k, n) = dw(i, j, k, n)
                         end do
                     end do
