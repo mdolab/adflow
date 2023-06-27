@@ -2355,7 +2355,8 @@ contains
 
         if (spaceDiscr == dissScalar) then
             if (dirScaling) then
-     write (string, "(2(A, 1X), ES12.5, A)") trim(string), "Directional scaling of dissipation with exponent", adis, "."
+                write (string, "(2(A, 1X), ES12.5, A)") trim(string), &
+                    "Directional scaling of dissipation with exponent", adis, "."
             else
                 write (string, stringSpace) trim(string), "No directional scaling of dissipation."
             end if
@@ -2376,7 +2377,8 @@ contains
                 write (string, stringSpace) trim(string), "Quadratic extrapolation of normal pressure gradIent", &
                     "for inviscid wall boundary conditions."
             case (normalMomentum)
-             write (string, stringSpace) trim(string), "Normal momentum equation used to determine pressure gradient", &
+                write (string, stringSpace) trim(string), &
+                    "Normal momentum equation used to determine pressure gradient", &
                     "for inviscid wall boundary conditions."
             end select
         end if
