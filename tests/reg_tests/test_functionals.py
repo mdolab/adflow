@@ -202,6 +202,27 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "ref_file": "funcs_euler_scalar_jst_CRM_WBT.json",
             "aero_prob": ap_CRM,
         },
+        # SST test
+        {
+            "name": "rans_tut_wing_SST",
+            "options": {
+                "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
+                "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
+                'equationType':'RANS',
+                'useblockettes': False,
+                'turbulenceModel': 'Menter SST',
+                "turbResScale": [1e3, 1e-8],
+                # "nsubiter": 3,
+                # "nsubiterturb": 20,
+                "useANKSolver": True,
+                # "ANKUseTurbDADI": True,
+                "monitorVariables": ["resrho", "totalr", "cl", "cd"],
+                "L2Convergence": 1e-14,
+                "adjointl2convergence": 1e-14,
+            },
+            "ref_file": "funcs_rans_SST.json",
+            "aero_prob": ap_tutorial_wing,
+        },
     ]
 )
 class TestFunctionals(reg_test_classes.RegTest):

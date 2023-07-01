@@ -6,8 +6,11 @@ module SST
 
 
     use constants
-
     real(kind=realType), dimension(:, :, :, :, :), allocatable :: qq
+    real(kind=realType), dimension(:, :, :), pointer :: ddw, ww, ddvt
+    real(kind=realType), dimension(:, :), pointer :: rrlv
+    real(kind=realType), dimension(:, :), pointer :: dd2Wall
+
 
 contains
 #ifndef USE_TAPENADE
@@ -17,7 +20,8 @@ contains
         ! modifying the hand-written forward and reverse routines.
         ! --------------------------------------------------------------
         use constants
-        use blockPointers, only: il, jl, kl
+        use blockPointers, only: nDom, il, jl, kl, scratch, bmtj1, bmtj2, &
+                                 bmti1, bmti2, bmtk1, bmtk2
         use inputTimeSpectral
         use inputPhysics, only: turbProd
         use iteration
@@ -54,7 +58,6 @@ contains
 
         case (katoLaunder)
             call prodKatoLaunder(2, il, 2, jl, 2, kl)
-
         end select
 
         ! Source Terms
@@ -106,11 +109,12 @@ contains
             call prodKatoLaunder_d(2, il, 2, jl, 2, kl)
         end select
 
-        call SSTSource_d
-        call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
-        !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-        call SSTViscous_d
-        call SSTResScale_d
+       call SSTSource_d
+       call turbAdvection_d(2_intType, 2_intType, itu1 - 1, qq)
+       !call unsteadyTurbTerm_d(2_intType, 2_intType, itu1-1, qq)
+       call SSTViscous_d
+       call SSTResScale_d
+
     end subroutine SST_block_residuals_d
 
     subroutine SST_block_residuals_b
@@ -125,8 +129,8 @@ contains
 
         call SSTResScale_b
         call SSTViscous_b
-        !!call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-        call turbAdvection_b(1_intType, 1_intType, itu1 - 1, qq)
+        !call unsteadyTurbTerm_b(2_intType, 2_intType, itu1-1, qq)
+        call turbAdvection_b(2_intType, 2_intType, itu1 - 1, qq)
         call SSTSource_b
 
         select case (turbProd)
@@ -147,8 +151,35 @@ contains
 
 
     subroutine SST_block_residuals_fast_b
+        use constants
+        use blockPointers, only: il, jl, kl
+        use inputPhysics, only: turbProd
+        use turbutils_fast_b, only: turbAdvection_fast_b, kwCDterm_fast_b, prodSmag2_fast_b, &
+                               prodWmag2_fast_b, prodKatolaunder_fast_b
+        use sst_fast_b, only: SSTSource_fast_b, SSTViscous_fast_b, SSTResScale_fast_b, f1SST_fast_b, qq
+
         implicit none
-        call SST_block_residuals_b
+
+        call SSTResScale_fast_b
+        call SSTViscous_fast_b
+        !call unsteadyTurbTerm_fast_b(2_intType, 2_intType, itu1-1, qq)
+        call turbAdvection_fast_b(2_intType, 2_intType, itu1 - 1, qq)
+        call SSTSource_fast_b
+  
+        select case (turbProd)
+        case (strain)
+            call prodSmag2_fast_b(2, il, 2, jl, 2, kl)
+  
+        case (vorticity)
+            call prodWmag2_fast_b(2, il, 2, jl, 2, kl)
+  
+        case (katoLaunder)
+            call prodKatoLaunder_fast_b(2, il, 2, jl, 2, kl)
+        end select
+
+         call f1SST_fast_b
+         call kwCDterm_fast_b
+
     end subroutine SST_block_residuals_fast_b
 #endif
 #endif
@@ -228,7 +259,7 @@ contains
                     sdk = rSSTBetas * w(i, j, k, itu1) * w(i, j, k, itu2)
                     spk = min(spk, pklim * sdk)
 
-                    scratch(i, j, k, idvt + 0) = spk - sdk
+                    scratch(i, j, k, idvt) = spk - sdk
 #ifdef SST_2003
                     scratch(i, j, k, idvt + 1) = rSSTGam * spk / rev(i, j, k) + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
                                       - rSSTBeta * w(i, j, k, itu2)**2
@@ -368,7 +399,7 @@ contains
                     ! Update the residual for this cell and store the possible
                     ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    scratch(i, j, k, idvt + 0) = scratch(i, j, k, idvt + 0) + c1m * w(i, j, k - 1, itu1) &
+                    scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j, k - 1, itu1) &
                                       - c10 * w(i, j, k, itu1) + c1p * w(i, j, k + 1, itu1)
                     scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j, k - 1, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i, j, k + 1, itu2)
@@ -500,7 +531,7 @@ contains
                     ! Update the residual for this cell and store the possible
                     ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    scratch(i, j, k, idvt + 0) = scratch(i, j, k, idvt + 0) + c1m * w(i, j - 1, k, itu1) &
+                    scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j - 1, k, itu1) &
                                       - c10 * w(i, j, k, itu1) + c1p * w(i, j + 1, k, itu1)
                     scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j - 1, k, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i, j + 1, k, itu2)
@@ -633,7 +664,7 @@ contains
                     ! Update the residual for this cell and store the possible
                     ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    scratch(i, j, k, idvt + 0) = scratch(i, j, k, idvt + 0) + c1m * w(i - 1, j, k, itu1) &
+                    scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i - 1, j, k, itu1) &
                                       - c10 * w(i, j, k, itu1) + c1p * w(i + 1, j, k, itu1)
                     scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i - 1, j, k, itu2) &
                                       - c20 * w(i, j, k, itu2) + c2p * w(i + 1, j, k, itu2)
@@ -715,7 +746,7 @@ contains
                 do i = 2, il
 #endif
                     rblank = real(iblank(i, j, k), realType)
-                    dw(i, j, k, itu1) = -volRef(i, j, k) * scratch(i, j, k, idvt + 0) * rblank
+                    dw(i, j, k, itu1) = -volRef(i, j, k) * scratch(i, j, k, idvt) * rblank
                     dw(i, j, k, itu2) = -volRef(i, j, k) * scratch(i, j, k, idvt + 1) * rblank
 #ifdef TAPENADE_REVERSE
                     end do
@@ -745,23 +776,62 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: sps, nn, mm, i, j, k, ii
+        integer(kind=intType) :: iSize, iBeg, iEnd
+        integer(kind=intType) :: jSize, jBeg, jEnd
+        integer(kind=intType) :: kSize, kBeg, kEnd
 
         real(kind=realType) :: t1, t2, arg1, myeps
 
         myeps = 1e-10_realType / two / rSSTSigw2
 
-        ! Compute the blending function f1 for all owned cells.
+        iBeg = 1
+        jBeg = 1
+        kBeg = 1
+        iEnd = ie
+        jEnd = je
+        kEnd = ke
 
+        do nn = 1, nBocos
+
+            select case (BCFaceID(nn))
+
+            case (iMin)
+                iBeg = 2
+
+            case (iMax)
+                iEnd = iEnd - 1
+
+            case (jMin)
+                jBeg = 2
+
+            case (jMax)
+                jEnd = jEnd - 1
+
+            case (kMin)
+                kBeg = 2
+
+            case (kMax)
+                kEnd = kEnd - 1
+
+            end select
+        end do
+
+
+        ! Compute the blending function f1 for all owned cells.
 #ifdef TAPENADE_REVERSE
+        iSize = (iEnd - iBeg) + 1
+        jSize = (jEnd - jBeg) + 1
+        kSize = (kEnd - kBeg) + 1
+
         !$AD II-LOOP
-        do ii = 0, ie * je * ke - 1
-            i = mod(ii, ie) + 1
-            j = mod(ii / ie, je) + 1
-            k = ii / ((ie * je)) + 1
+        do ii = 0, iSize * jSize * kSize - 1
+            i = mod(ii, iSize) + iBeg
+            j = mod(ii / iSize, jSize) + jBeg
+            k = ii / ((iSize * jSize)) + kBeg
 #else
-        do k = 1, ke
-            do j = 1, je
-                do i = 1, ie
+        do k = kBeg, kEnd
+            do j = jBeg, jEnd
+                do i = iBeg, iEnd
 #endif
 
                     t1 = sqrt(w(i, j, k, itu1)) &
@@ -791,8 +861,6 @@ contains
         ! Loop over the boundary conditions to set f1 in the boundary
         ! halo's. A Neumann boundary condition is used for all BC's.
 
-
-        !$AD II-LOOP
         bocos: do nn = 1, nBocos
 
             ! Determine the face on which this subface is located, loop
@@ -805,7 +873,7 @@ contains
             case (iMin)
                 do k = kcBeg(nn), kcEnd(nn)
                     do j = jcBeg(nn), jcEnd(nn)
-                    scratch(1, j, k, if1SST) = scratch(2, j, k, if1SST)
+                        scratch(1, j, k, if1SST) = scratch(2, j, k, if1SST)
                     end do
                 end do
 
@@ -899,9 +967,6 @@ contains
         real(kind=realType), dimension(2, 2:max(il, jl, kl)) :: bb, dd, ff
         real(kind=realType), dimension(2, 2, 2:max(il, jl, kl)) :: cc
 
-        real(kind=realType), dimension(:, :, :), pointer :: ddw, ww, ddvt
-        real(kind=realType), dimension(:, :), pointer :: rrlv
-        real(kind=realType), dimension(:, :), pointer :: dd2Wall
 
         logical, dimension(2:jl, 2:kl), target :: flagI2, flagIl
         logical, dimension(2:il, 2:kl), target :: flagJ2, flagJl

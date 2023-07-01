@@ -8,13 +8,16 @@ module sst_d
   use constants
   implicit none
   real(kind=realtype), dimension(:, :, :, :, :), allocatable :: qq
+  real(kind=realtype), dimension(:, :, :), pointer :: ddw, ww, ddvt
+  real(kind=realtype), dimension(:, :), pointer :: rrlv
+  real(kind=realtype), dimension(:, :), pointer :: dd2wall
 
 contains
 !  differentiation of sstsource in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: *w *scratch
-!   rw status of diff variables: *w:in *scratch:in-out
-!   plus diff mem management of: w:in scratch:in
+!   with respect to varying inputs: *rev *w *scratch
+!   rw status of diff variables: *rev:in *w:in *scratch:in-out
+!   plus diff mem management of: rev:in w:in scratch:in
   subroutine sstsource_d()
 !
 !       sstsolve solves the turbulent transport equations for
@@ -78,7 +81,8 @@ contains
           rhoi = one/w(i, j, k, irho)
           ssd = scratchd(i, j, k, iprod)
           ss = scratch(i, j, k, iprod)
-          spkd = rev(i, j, k)*(ssd*rhoi+ss*rhoid)
+          spkd = revd(i, j, k)*ss*rhoi + rev(i, j, k)*(ssd*rhoi+ss*rhoid&
+&           )
           spk = rev(i, j, k)*ss*rhoi
           sdkd = rsstbetas*(wd(i, j, k, itu1)*w(i, j, k, itu2)+w(i, j, k&
 &           , itu1)*wd(i, j, k, itu2))
@@ -89,8 +93,8 @@ contains
           else
             spk = spk
           end if
-          scratchd(i, j, k, idvt+0) = spkd - sdkd
-          scratch(i, j, k, idvt+0) = spk - sdk
+          scratchd(i, j, k, idvt) = spkd - sdkd
+          scratch(i, j, k, idvt) = spk - sdk
           scratchd(i, j, k, idvt+1) = rsstgamd*ss + rsstgam*ssd + two*&
 &           rsstsigw2*(t2d*scratch(i, j, k, icd)+t2*scratchd(i, j, k, &
 &           icd)) - rsstbetad*w(i, j, k, itu2)**2 - rsstbeta*2*w(i, j, k&
@@ -162,7 +166,7 @@ contains
           else
             spk = spk
           end if
-          scratch(i, j, k, idvt+0) = spk - sdk
+          scratch(i, j, k, idvt) = spk - sdk
           scratch(i, j, k, idvt+1) = rsstgam*ss + two*t2*rsstsigw2*&
 &           scratch(i, j, k, icd) - rsstbeta*w(i, j, k, itu2)**2
         end do
@@ -171,12 +175,12 @@ contains
   end subroutine sstsource
 !  differentiation of sstviscous in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: *w *rlv *scratch *vol *si *sj
-!                *sk
-!   rw status of diff variables: *w:in *rlv:in *scratch:in-out
+!   with respect to varying inputs: *rev *w *rlv *scratch *vol
+!                *si *sj *sk
+!   rw status of diff variables: *rev:in *w:in *rlv:in *scratch:in-out
 !                *vol:in *si:in *sj:in *sk:in
-!   plus diff mem management of: w:in rlv:in scratch:in vol:in
-!                si:in sj:in sk:in
+!   plus diff mem management of: rev:in w:in rlv:in scratch:in
+!                vol:in si:in sj:in sk:in
   subroutine sstviscous_d()
     use blockpointers
     use constants
@@ -293,11 +297,11 @@ contains
           mulm = half*(rlv(i, j, k-1)+rlv(i, j, k))
           mulpd = half*(rlvd(i, j, k+1)+rlvd(i, j, k))
           mulp = half*(rlv(i, j, k+1)+rlv(i, j, k))
-          muemd = half*(rev(i, j, k-1)*rsstsigkm1d+rev(i, j, k)*&
-&           rsstsigkd)
+          muemd = half*(rsstsigkm1d*rev(i, j, k-1)+rsstsigkm1*revd(i, j&
+&           , k-1)+rsstsigkd*rev(i, j, k)+rsstsigk*revd(i, j, k))
           muem = half*(rsstsigkm1*rev(i, j, k-1)+rsstsigk*rev(i, j, k))
-          muepd = half*(rev(i, j, k+1)*rsstsigkp1d+rev(i, j, k)*&
-&           rsstsigkd)
+          muepd = half*(rsstsigkp1d*rev(i, j, k+1)+rsstsigkp1*revd(i, j&
+&           , k+1)+rsstsigkd*rev(i, j, k)+rsstsigk*revd(i, j, k))
           muep = half*(rsstsigkp1*rev(i, j, k+1)+rsstsigk*rev(i, j, k))
           c1md = (ttmd*rhoi+ttm*rhoid)*(mulm+muem) + ttm*rhoi*(mulmd+&
 &           muemd)
@@ -308,11 +312,11 @@ contains
           c10d = c1md + c1pd
           c10 = c1m + c1p
 ! and the omega term.
-          muemd = half*(rev(i, j, k-1)*rsstsigwm1d+rev(i, j, k)*&
-&           rsstsigwd)
+          muemd = half*(rsstsigwm1d*rev(i, j, k-1)+rsstsigwm1*revd(i, j&
+&           , k-1)+rsstsigwd*rev(i, j, k)+rsstsigw*revd(i, j, k))
           muem = half*(rsstsigwm1*rev(i, j, k-1)+rsstsigw*rev(i, j, k))
-          muepd = half*(rev(i, j, k+1)*rsstsigwp1d+rev(i, j, k)*&
-&           rsstsigwd)
+          muepd = half*(rsstsigwp1d*rev(i, j, k+1)+rsstsigwp1*revd(i, j&
+&           , k+1)+rsstsigwd*rev(i, j, k)+rsstsigw*revd(i, j, k))
           muep = half*(rsstsigwp1*rev(i, j, k+1)+rsstsigw*rev(i, j, k))
           c2md = (ttmd*rhoi+ttm*rhoid)*(mulm+muem) + ttm*rhoi*(mulmd+&
 &           muemd)
@@ -324,13 +328,12 @@ contains
           c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-          scratchd(i, j, k, idvt+0) = scratchd(i, j, k, idvt+0) + c1md*w&
-&           (i, j, k-1, itu1) + c1m*wd(i, j, k-1, itu1) - c10d*w(i, j, k&
-&           , itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i, j, k+1, itu1) + &
+          scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) + c1md*w(i, &
+&           j, k-1, itu1) + c1m*wd(i, j, k-1, itu1) - c10d*w(i, j, k, &
+&           itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i, j, k+1, itu1) + &
 &           c1p*wd(i, j, k+1, itu1)
-          scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i&
-&           , j, k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, &
-&           itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, &
+&           k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
           scratchd(i, j, k, idvt+1) = scratchd(i, j, k, idvt+1) + c2md*w&
 &           (i, j, k-1, itu2) + c2m*wd(i, j, k-1, itu2) - c20d*w(i, j, k&
 &           , itu2) - c20*wd(i, j, k, itu2) + c2pd*w(i, j, k+1, itu2) + &
@@ -425,11 +428,11 @@ contains
           mulm = half*(rlv(i, j-1, k)+rlv(i, j, k))
           mulpd = half*(rlvd(i, j+1, k)+rlvd(i, j, k))
           mulp = half*(rlv(i, j+1, k)+rlv(i, j, k))
-          muemd = half*(rev(i, j-1, k)*rsstsigkm1d+rev(i, j, k)*&
-&           rsstsigkd)
+          muemd = half*(rsstsigkm1d*rev(i, j-1, k)+rsstsigkm1*revd(i, j-&
+&           1, k)+rsstsigkd*rev(i, j, k)+rsstsigk*revd(i, j, k))
           muem = half*(rsstsigkm1*rev(i, j-1, k)+rsstsigk*rev(i, j, k))
-          muepd = half*(rev(i, j+1, k)*rsstsigkp1d+rev(i, j, k)*&
-&           rsstsigkd)
+          muepd = half*(rsstsigkp1d*rev(i, j+1, k)+rsstsigkp1*revd(i, j+&
+&           1, k)+rsstsigkd*rev(i, j, k)+rsstsigk*revd(i, j, k))
           muep = half*(rsstsigkp1*rev(i, j+1, k)+rsstsigk*rev(i, j, k))
           c1md = (ttmd*rhoi+ttm*rhoid)*(mulm+muem) + ttm*rhoi*(mulmd+&
 &           muemd)
@@ -440,11 +443,11 @@ contains
           c10d = c1md + c1pd
           c10 = c1m + c1p
 ! and the omega term.
-          muemd = half*(rev(i, j-1, k)*rsstsigwm1d+rev(i, j, k)*&
-&           rsstsigwd)
+          muemd = half*(rsstsigwm1d*rev(i, j-1, k)+rsstsigwm1*revd(i, j-&
+&           1, k)+rsstsigwd*rev(i, j, k)+rsstsigw*revd(i, j, k))
           muem = half*(rsstsigwm1*rev(i, j-1, k)+rsstsigw*rev(i, j, k))
-          muepd = half*(rev(i, j+1, k)*rsstsigwp1d+rev(i, j, k)*&
-&           rsstsigwd)
+          muepd = half*(rsstsigwp1d*rev(i, j+1, k)+rsstsigwp1*revd(i, j+&
+&           1, k)+rsstsigwd*rev(i, j, k)+rsstsigw*revd(i, j, k))
           muep = half*(rsstsigwp1*rev(i, j+1, k)+rsstsigw*rev(i, j, k))
           c2md = (ttmd*rhoi+ttm*rhoid)*(mulm+muem) + ttm*rhoi*(mulmd+&
 &           muemd)
@@ -456,13 +459,12 @@ contains
           c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-          scratchd(i, j, k, idvt+0) = scratchd(i, j, k, idvt+0) + c1md*w&
-&           (i, j-1, k, itu1) + c1m*wd(i, j-1, k, itu1) - c10d*w(i, j, k&
-&           , itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i, j+1, k, itu1) + &
+          scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) + c1md*w(i, &
+&           j-1, k, itu1) + c1m*wd(i, j-1, k, itu1) - c10d*w(i, j, k, &
+&           itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i, j+1, k, itu1) + &
 &           c1p*wd(i, j+1, k, itu1)
-          scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i&
-&           , j-1, k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, &
-&           itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j-1&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
           scratchd(i, j, k, idvt+1) = scratchd(i, j, k, idvt+1) + c2md*w&
 &           (i, j-1, k, itu2) + c2m*wd(i, j-1, k, itu2) - c20d*w(i, j, k&
 &           , itu2) - c20*wd(i, j, k, itu2) + c2pd*w(i, j+1, k, itu2) + &
@@ -557,11 +559,11 @@ contains
           mulm = half*(rlv(i-1, j, k)+rlv(i, j, k))
           mulpd = half*(rlvd(i+1, j, k)+rlvd(i, j, k))
           mulp = half*(rlv(i+1, j, k)+rlv(i, j, k))
-          muemd = half*(rev(i-1, j, k)*rsstsigkm1d+rev(i, j, k)*&
-&           rsstsigkd)
+          muemd = half*(rsstsigkm1d*rev(i-1, j, k)+rsstsigkm1*revd(i-1, &
+&           j, k)+rsstsigkd*rev(i, j, k)+rsstsigk*revd(i, j, k))
           muem = half*(rsstsigkm1*rev(i-1, j, k)+rsstsigk*rev(i, j, k))
-          muepd = half*(rev(i+1, j, k)*rsstsigkp1d+rev(i, j, k)*&
-&           rsstsigkd)
+          muepd = half*(rsstsigkp1d*rev(i+1, j, k)+rsstsigkp1*revd(i+1, &
+&           j, k)+rsstsigkd*rev(i, j, k)+rsstsigk*revd(i, j, k))
           muep = half*(rsstsigkp1*rev(i+1, j, k)+rsstsigk*rev(i, j, k))
           c1md = (ttmd*rhoi+ttm*rhoid)*(mulm+muem) + ttm*rhoi*(mulmd+&
 &           muemd)
@@ -572,11 +574,11 @@ contains
           c10d = c1md + c1pd
           c10 = c1m + c1p
 ! and the omega term.
-          muemd = half*(rev(i-1, j, k)*rsstsigwm1d+rev(i, j, k)*&
-&           rsstsigwd)
+          muemd = half*(rsstsigwm1d*rev(i-1, j, k)+rsstsigwm1*revd(i-1, &
+&           j, k)+rsstsigwd*rev(i, j, k)+rsstsigw*revd(i, j, k))
           muem = half*(rsstsigwm1*rev(i-1, j, k)+rsstsigw*rev(i, j, k))
-          muepd = half*(rev(i+1, j, k)*rsstsigwp1d+rev(i, j, k)*&
-&           rsstsigwd)
+          muepd = half*(rsstsigwp1d*rev(i+1, j, k)+rsstsigwp1*revd(i+1, &
+&           j, k)+rsstsigwd*rev(i, j, k)+rsstsigw*revd(i, j, k))
           muep = half*(rsstsigwp1*rev(i+1, j, k)+rsstsigw*rev(i, j, k))
           c2md = (ttmd*rhoi+ttm*rhoid)*(mulm+muem) + ttm*rhoi*(mulmd+&
 &           muemd)
@@ -588,13 +590,12 @@ contains
           c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-          scratchd(i, j, k, idvt+0) = scratchd(i, j, k, idvt+0) + c1md*w&
-&           (i-1, j, k, itu1) + c1m*wd(i-1, j, k, itu1) - c10d*w(i, j, k&
-&           , itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i+1, j, k, itu1) + &
+          scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) + c1md*w(i-1&
+&           , j, k, itu1) + c1m*wd(i-1, j, k, itu1) - c10d*w(i, j, k, &
+&           itu1) - c10*wd(i, j, k, itu1) + c1pd*w(i+1, j, k, itu1) + &
 &           c1p*wd(i+1, j, k, itu1)
-          scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i-&
-&           1, j, k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, &
-&           itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i-1, j&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
           scratchd(i, j, k, idvt+1) = scratchd(i, j, k, idvt+1) + c2md*w&
 &           (i-1, j, k, itu2) + c2m*wd(i-1, j, k, itu2) - c20d*w(i, j, k&
 &           , itu2) - c20*wd(i, j, k, itu2) + c2pd*w(i+1, j, k, itu2) + &
@@ -692,9 +693,8 @@ contains
           c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-          scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i&
-&           , j, k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, &
-&           itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, &
+&           k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
           scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i&
 &           , j, k-1, itu2) - c20*w(i, j, k, itu2) + c2p*w(i, j, k+1, &
 &           itu2)
@@ -764,9 +764,8 @@ contains
           c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-          scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i&
-&           , j-1, k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, &
-&           itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j-1&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
           scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i&
 &           , j-1, k, itu2) - c20*w(i, j, k, itu2) + c2p*w(i, j+1, k, &
 &           itu2)
@@ -836,9 +835,8 @@ contains
           c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-          scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i-&
-&           1, j, k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, &
-&           itu1)
+          scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i-1, j&
+&           , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
           scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i-&
 &           1, j, k, itu2) - c20*w(i, j, k, itu2) + c2p*w(i+1, j, k, &
 &           itu2)
@@ -871,9 +869,9 @@ contains
         do i=2,il
           rblank = real(iblank(i, j, k), realtype)
           dwd(i, j, k, itu1) = -(volref(i, j, k)*rblank*scratchd(i, j, k&
-&           , idvt+0))
-          dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt+0)&
-&           *rblank)
+&           , idvt))
+          dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt)*&
+&           rblank)
           dwd(i, j, k, itu2) = -(volref(i, j, k)*rblank*scratchd(i, j, k&
 &           , idvt+1))
           dw(i, j, k, itu2) = -(volref(i, j, k)*scratch(i, j, k, idvt+1)&
@@ -901,8 +899,8 @@ contains
       do j=2,jl
         do i=2,il
           rblank = real(iblank(i, j, k), realtype)
-          dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt+0)&
-&           *rblank)
+          dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt)*&
+&           rblank)
           dw(i, j, k, itu2) = -(volref(i, j, k)*scratch(i, j, k, idvt+1)&
 &           *rblank)
         end do
@@ -911,9 +909,10 @@ contains
   end subroutine sstresscale
 !  differentiation of f1sst in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: *w *scratch *d2wall
-!   rw status of diff variables: *w:in *scratch:in-out *d2wall:in
-!   plus diff mem management of: w:in scratch:in d2wall:in
+!   with respect to varying inputs: *w *rlv *scratch *d2wall
+!   rw status of diff variables: *w:in *rlv:in *scratch:in-out
+!                *d2wall:in
+!   plus diff mem management of: w:in rlv:in scratch:in d2wall:in
   subroutine f1sst_d()
 !
 !       f1sst computes the blending function f1 in both the owned
@@ -932,6 +931,9 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: sps, nn, mm, i, j, k, ii
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: t1, t2, arg1, myeps
     real(kind=realtype) :: t1d, t2d, arg1d
     intrinsic sqrt
@@ -945,10 +947,32 @@ contains
     real(kind=realtype) :: max1d
     real(kind=realtype) :: max1
     myeps = 1e-10_realtype/two/rsstsigw2
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
+    do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ibeg = 2
+      case (imax) 
+        iend = iend - 1
+      case (jmin) 
+        jbeg = 2
+      case (jmax) 
+        jend = jend - 1
+      case (kmin) 
+        kbeg = 2
+      case (kmax) 
+        kend = kend - 1
+      end select
+    end do
 ! compute the blending function f1 for all owned cells.
-    do k=1,ke
-      do j=1,je
-        do i=1,ie
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
           if (w(i, j, k, itu1) .eq. 0.0_8) then
             result1d = 0.0_8
           else
@@ -960,11 +984,12 @@ contains
 &           i, j, k, itu2)*d2walld(i, j, k)))/(0.09_realtype*w(i, j, k, &
 &           itu2)*d2wall(i, j, k))**2
           t1 = result1/(0.09_realtype*w(i, j, k, itu2)*d2wall(i, j, k))
-          t2d = -(500.0_realtype*rlv(i, j, k)*((wd(i, j, k, irho)*w(i, j&
-&           , k, itu2)+w(i, j, k, irho)*wd(i, j, k, itu2))*d2wall(i, j, &
-&           k)**2+w(i, j, k, irho)*w(i, j, k, itu2)*2*d2wall(i, j, k)*&
-&           d2walld(i, j, k))/(w(i, j, k, irho)*w(i, j, k, itu2)*d2wall(&
-&           i, j, k)**2)**2)
+          t2d = (500.0_realtype*rlvd(i, j, k)*w(i, j, k, irho)*w(i, j, k&
+&           , itu2)*d2wall(i, j, k)**2-500.0_realtype*rlv(i, j, k)*((wd(&
+&           i, j, k, irho)*w(i, j, k, itu2)+w(i, j, k, irho)*wd(i, j, k&
+&           , itu2))*d2wall(i, j, k)**2+w(i, j, k, irho)*w(i, j, k, itu2&
+&           )*2*d2wall(i, j, k)*d2walld(i, j, k)))/(w(i, j, k, irho)*w(i&
+&           , j, k, itu2)*d2wall(i, j, k)**2)**2
           t2 = 500.0_realtype*rlv(i, j, k)/(w(i, j, k, irho)*w(i, j, k, &
 &           itu2)*d2wall(i, j, k)**2)
           if (t1 .lt. t2) then
@@ -1074,6 +1099,9 @@ bocos:do nn=1,nbocos
 !      local variables.
 !
     integer(kind=inttype) :: sps, nn, mm, i, j, k, ii
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: t1, t2, arg1, myeps
     intrinsic sqrt
     intrinsic max
@@ -1083,10 +1111,32 @@ bocos:do nn=1,nbocos
     real(kind=realtype) :: arg10
     real(kind=realtype) :: max1
     myeps = 1e-10_realtype/two/rsstsigw2
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
+    do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ibeg = 2
+      case (imax) 
+        iend = iend - 1
+      case (jmin) 
+        jbeg = 2
+      case (jmax) 
+        jend = jend - 1
+      case (kmin) 
+        kbeg = 2
+      case (kmax) 
+        kend = kend - 1
+      end select
+    end do
 ! compute the blending function f1 for all owned cells.
-    do k=1,ke
-      do j=1,je
-        do i=1,ie
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
           result1 = sqrt(w(i, j, k, itu1))
           t1 = result1/(0.09_realtype*w(i, j, k, itu2)*d2wall(i, j, k))
           t2 = 500.0_realtype*rlv(i, j, k)/(w(i, j, k, irho)*w(i, j, k, &

@@ -8,13 +8,16 @@ module sst_b
   use constants
   implicit none
   real(kind=realtype), dimension(:, :, :, :, :), allocatable :: qq
+  real(kind=realtype), dimension(:, :, :), pointer :: ddw, ww, ddvt
+  real(kind=realtype), dimension(:, :), pointer :: rrlv
+  real(kind=realtype), dimension(:, :), pointer :: dd2wall
 
 contains
 !  differentiation of sstsource in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *scratch
-!   with respect to varying inputs: *w *scratch
-!   rw status of diff variables: *w:incr *scratch:in-out
-!   plus diff mem management of: w:in scratch:in
+!   gradient     of useful results: *rev *w *scratch
+!   with respect to varying inputs: *rev *w *scratch
+!   rw status of diff variables: *rev:incr *w:incr *scratch:in-out
+!   plus diff mem management of: rev:in w:in scratch:in
   subroutine sstsource_b()
 !
 !       sstsolve solves the turbulent transport equations for
@@ -84,7 +87,7 @@ contains
         call pushcontrol1b(1)
         spk = spk
       end if
-      scratch(i, j, k, idvt+0) = spk - sdk
+      scratch(i, j, k, idvt) = spk - sdk
       tmpd = scratchd(i, j, k, idvt+1)
       scratchd(i, j, k, idvt+1) = 0.0_8
       tempd0 = two*rsstsigw2*tmpd
@@ -95,9 +98,9 @@ contains
       scratchd(i, j, k, icd) = scratchd(i, j, k, icd) + t2*tempd0
       rsstbetad = -(temp0**2*tmpd)
       wd(i, j, k, itu2) = wd(i, j, k, itu2) - rsstbeta*2*temp0*tmpd
-      spkd = scratchd(i, j, k, idvt+0)
-      sdkd = -scratchd(i, j, k, idvt+0)
-      scratchd(i, j, k, idvt+0) = 0.0_8
+      spkd = scratchd(i, j, k, idvt)
+      sdkd = -scratchd(i, j, k, idvt)
+      scratchd(i, j, k, idvt) = 0.0_8
       call popcontrol1b(branch)
       if (branch .eq. 0) then
         sdkd = sdkd + pklim*spkd
@@ -109,6 +112,7 @@ contains
       wd(i, j, k, itu2) = wd(i, j, k, itu2) + rsstbetas*w(i, j, k, itu1)&
 &       *sdkd
       tempd = rev(i, j, k)*spkd
+      revd(i, j, k) = revd(i, j, k) + ss*rhoi*spkd
       ssd = ssd + rhoi*tempd
       rhoid = ss*tempd
       scratchd(i, j, k, iprod) = scratchd(i, j, k, iprod) + ssd
@@ -181,20 +185,20 @@ contains
       else
         spk = spk
       end if
-      scratch(i, j, k, idvt+0) = spk - sdk
+      scratch(i, j, k, idvt) = spk - sdk
       scratch(i, j, k, idvt+1) = rsstgam*ss + two*t2*rsstsigw2*scratch(i&
 &       , j, k, icd) - rsstbeta*w(i, j, k, itu2)**2
     end do
   end subroutine sstsource
 !  differentiation of sstviscous in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *rlv *scratch *vol *si *sj
-!                *sk
-!   with respect to varying inputs: *w *rlv *scratch *vol *si *sj
-!                *sk
-!   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
+!   gradient     of useful results: *rev *w *rlv *scratch *vol
+!                *si *sj *sk
+!   with respect to varying inputs: *rev *w *rlv *scratch *vol
+!                *si *sj *sk
+!   rw status of diff variables: *rev:incr *w:incr *rlv:incr *scratch:in-out
 !                *vol:incr *si:incr *sj:incr *sk:incr
-!   plus diff mem management of: w:in rlv:in scratch:in vol:in
-!                si:in sj:in sk:in
+!   plus diff mem management of: rev:in w:in rlv:in scratch:in
+!                vol:in si:in sj:in sk:in
   subroutine sstviscous_b()
     use blockpointers
     use constants
@@ -234,6 +238,14 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd11
     real(kind=realtype) :: tempd10
+    real(kind=realtype) :: tempd37
+    real(kind=realtype) :: tempd36
+    real(kind=realtype) :: tempd35
+    real(kind=realtype) :: tempd34
+    real(kind=realtype) :: tempd33
+    real(kind=realtype) :: tempd32
+    real(kind=realtype) :: tempd31
+    real(kind=realtype) :: tempd30
     real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
     real(kind=realtype) :: tempd8
@@ -245,6 +257,10 @@ contains
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
+    real(kind=realtype) :: tempd29
+    real(kind=realtype) :: tempd28
+    real(kind=realtype) :: tempd27
+    real(kind=realtype) :: tempd26
     real(kind=realtype) :: tempd25
     real(kind=realtype) :: tempd24
     real(kind=realtype) :: tempd23
@@ -253,10 +269,10 @@ contains
     real(kind=realtype) :: tempd20
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd19
-    real(kind=realtype) :: temp7
     real(kind=realtype) :: tempd18
-    real(kind=realtype) :: temp6
+    real(kind=realtype) :: temp7
     real(kind=realtype) :: tempd17
+    real(kind=realtype) :: temp6
     real(kind=realtype) :: tempd16
     real(kind=realtype) :: temp5
     real(kind=realtype) :: temp4
@@ -330,16 +346,22 @@ contains
       c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-      scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i, j, &
-&       k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, k-1&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
       scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i, j, &
 &       k-1, itu2) - c20*w(i, j, k, itu2) + c2p*w(i, j, k+1, itu2)
     end do
+    call pushreal8(rsstsigwp1)
     call pushinteger4(i)
     call pushreal8(c10)
     call pushinteger4(j)
+    call pushreal8(rsstsigwm1)
+    call pushreal8(rsstsigk)
     call pushreal8(c1m)
+    call pushreal8(rsstsigkp1)
     call pushreal8(c1p)
+    call pushreal8(rsstsigw)
+    call pushreal8(rsstsigkm1)
     call pushreal8(muem)
     call pushreal8(muep)
     call pushreal8array(scratch, size(scratch, 1)*size(scratch, 2)*size(&
@@ -408,16 +430,22 @@ contains
       c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-      scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i, j-1&
-&       , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j-1, k&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
       scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i, j-1&
 &       , k, itu2) - c20*w(i, j, k, itu2) + c2p*w(i, j+1, k, itu2)
     end do
+    call pushreal8(rsstsigwp1)
     call pushinteger4(i)
     call pushreal8(c10)
     call pushinteger4(j)
+    call pushreal8(rsstsigwm1)
+    call pushreal8(rsstsigk)
     call pushreal8(c1m)
+    call pushreal8(rsstsigkp1)
     call pushreal8(c1p)
+    call pushreal8(rsstsigw)
+    call pushreal8(rsstsigkm1)
     call pushreal8(muem)
     call pushreal8(muep)
     do ii=0,nx*ny*nz-1
@@ -492,43 +520,55 @@ contains
       c20d = -(w(i, j, k, itu2)*scratchd(i, j, k, idvt+1))
       wd(i, j, k, itu2) = wd(i, j, k, itu2) - c20*scratchd(i, j, k, idvt&
 &       +1)
-      c1md = w(i-1, j, k, itu1)*scratchd(i, j, k, idvt+0)
+      c1md = w(i-1, j, k, itu1)*scratchd(i, j, k, idvt)
       wd(i-1, j, k, itu1) = wd(i-1, j, k, itu1) + c1m*scratchd(i, j, k, &
-&       idvt+0)
-      c1pd = w(i+1, j, k, itu1)*scratchd(i, j, k, idvt+0)
+&       idvt)
+      c1pd = w(i+1, j, k, itu1)*scratchd(i, j, k, idvt)
       wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + c1p*scratchd(i, j, k, &
-&       idvt+0)
-      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt+0))
+&       idvt)
+      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt))
       wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*scratchd(i, j, k, idvt&
-&       +0)
+&       )
       c2md = c2md + c20d
       c2pd = c2pd + c20d
-      tempd17 = ttp*rhoi*c2pd
-      muepd = tempd17
+      tempd25 = ttp*rhoi*c2pd
+      muepd = tempd25
       ttpd = (mulp+muep)*rhoi*c2pd
       rhoid = (mulm+muem)*ttm*c2md + (mulp+muep)*ttp*c2pd
-      tempd19 = ttm*rhoi*c2md
-      muemd = tempd19
+      tempd27 = ttm*rhoi*c2md
+      muemd = tempd27
       ttmd = (mulm+muem)*rhoi*c2md
       call popreal8(muep)
-      rsstsigwp1d = half*rev(i+1, j, k)*muepd
-      rsstsigwd = half*rev(i, j, k)*muemd + half*rev(i, j, k)*muepd
+      tempd29 = half*muepd
+      rsstsigwp1d = rev(i+1, j, k)*tempd29
+      revd(i+1, j, k) = revd(i+1, j, k) + rsstsigwp1*tempd29
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd29
       call popreal8(muem)
-      rsstsigwm1d = half*rev(i-1, j, k)*muemd
+      tempd30 = half*muemd
+      rsstsigwd = rev(i, j, k)*tempd30 + rev(i, j, k)*tempd29
+      rsstsigwm1d = rev(i-1, j, k)*tempd30
+      revd(i-1, j, k) = revd(i-1, j, k) + rsstsigwm1*tempd30
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd30
       c1md = c1md + c10d
       c1pd = c1pd + c10d
-      tempd18 = ttp*rhoi*c1pd
-      mulpd = tempd18 + tempd17
-      muepd = tempd18
+      tempd26 = ttp*rhoi*c1pd
+      mulpd = tempd26 + tempd25
+      muepd = tempd26
       ttpd = ttpd + (mulp+muep)*rhoi*c1pd
       rhoid = rhoid + (mulm+muem)*ttm*c1md + (mulp+muep)*ttp*c1pd
-      tempd20 = ttm*rhoi*c1md
-      mulmd = tempd20 + tempd19
-      muemd = tempd20
+      tempd28 = ttm*rhoi*c1md
+      mulmd = tempd28 + tempd27
+      muemd = tempd28
       ttmd = ttmd + (mulm+muem)*rhoi*c1md
-      rsstsigkp1d = half*rev(i+1, j, k)*muepd
-      rsstsigkd = half*rev(i, j, k)*muemd + half*rev(i, j, k)*muepd
-      rsstsigkm1d = half*rev(i-1, j, k)*muemd
+      tempd31 = half*muepd
+      rsstsigkp1d = rev(i+1, j, k)*tempd31
+      revd(i+1, j, k) = revd(i+1, j, k) + rsstsigkp1*tempd31
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd31
+      tempd32 = half*muemd
+      rsstsigkd = rev(i, j, k)*tempd32 + rev(i, j, k)*tempd31
+      rsstsigkm1d = rev(i-1, j, k)*tempd32
+      revd(i-1, j, k) = revd(i-1, j, k) + rsstsigkm1*tempd32
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd32
       rlvd(i+1, j, k) = rlvd(i+1, j, k) + half*mulpd
       rlvd(i, j, k) = rlvd(i, j, k) + half*mulpd
       rlvd(i-1, j, k) = rlvd(i-1, j, k) + half*mulmd
@@ -553,18 +593,18 @@ contains
       xmd = xa*ttmd
       ymd = ya*ttmd
       zmd = za*ttmd
-      tempd21 = half*zad
-      sid(i, j, k, 3) = sid(i, j, k, 3) + voli*tempd21
-      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + voli*tempd21
-      tempd22 = half*yad
-      sid(i, j, k, 2) = sid(i, j, k, 2) + voli*tempd22
-      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + voli*tempd22
-      tempd23 = half*xad
-      volid = (si(i, j, k, 2)+si(i-1, j, k, 2))*tempd22 + (si(i, j, k, 1&
-&       )+si(i-1, j, k, 1))*tempd23 + (si(i, j, k, 3)+si(i-1, j, k, 3))*&
-&       tempd21
-      sid(i, j, k, 1) = sid(i, j, k, 1) + voli*tempd23
-      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + voli*tempd23
+      tempd33 = half*zad
+      sid(i, j, k, 3) = sid(i, j, k, 3) + voli*tempd33
+      sid(i-1, j, k, 3) = sid(i-1, j, k, 3) + voli*tempd33
+      tempd34 = half*yad
+      sid(i, j, k, 2) = sid(i, j, k, 2) + voli*tempd34
+      sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + voli*tempd34
+      tempd35 = half*xad
+      volid = (si(i, j, k, 2)+si(i-1, j, k, 2))*tempd34 + (si(i, j, k, 1&
+&       )+si(i-1, j, k, 1))*tempd35 + (si(i, j, k, 3)+si(i-1, j, k, 3))*&
+&       tempd33
+      sid(i, j, k, 1) = sid(i, j, k, 1) + voli*tempd35
+      sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + voli*tempd35
       sid(i, j, k, 3) = sid(i, j, k, 3) + volpi*zpd
       volpid = si(i, j, k, 2)*ypd + si(i, j, k, 1)*xpd + si(i, j, k, 3)*&
 &       zpd
@@ -576,22 +616,28 @@ contains
       sid(i-1, j, k, 2) = sid(i-1, j, k, 2) + volmi*ymd
       sid(i-1, j, k, 1) = sid(i-1, j, k, 1) + volmi*xmd
       temp6 = vol(i, j, k) + vol(i+1, j, k)
-      tempd24 = -(two*volpid/temp6**2)
-      vold(i, j, k) = vold(i, j, k) + tempd24
-      vold(i+1, j, k) = vold(i+1, j, k) + tempd24
+      tempd36 = -(two*volpid/temp6**2)
+      vold(i, j, k) = vold(i, j, k) + tempd36
+      vold(i+1, j, k) = vold(i+1, j, k) + tempd36
       temp5 = vol(i, j, k) + vol(i-1, j, k)
-      tempd25 = -(two*volmid/temp5**2)
-      vold(i, j, k) = vold(i, j, k) + tempd25
-      vold(i-1, j, k) = vold(i-1, j, k) + tempd25
+      tempd37 = -(two*volmid/temp5**2)
+      vold(i, j, k) = vold(i, j, k) + tempd37
+      vold(i-1, j, k) = vold(i-1, j, k) + tempd37
       vold(i, j, k) = vold(i, j, k) - one*volid/vol(i, j, k)**2
     end do
     call popreal8(muep)
     call popreal8(muem)
+    call popreal8(rsstsigkm1)
+    call popreal8(rsstsigw)
     call popreal8(c1p)
+    call popreal8(rsstsigkp1)
     call popreal8(c1m)
+    call popreal8(rsstsigk)
+    call popreal8(rsstsigwm1)
     call popinteger4(j)
     call popreal8(c10)
     call popinteger4(i)
+    call popreal8(rsstsigwp1)
     call popreal8array(scratch, size(scratch, 1)*size(scratch, 2)*size(&
 &                scratch, 3)*size(scratch, 4))
     do ii=0,nx*ny*nz-1
@@ -666,43 +712,55 @@ contains
       c20d = -(w(i, j, k, itu2)*scratchd(i, j, k, idvt+1))
       wd(i, j, k, itu2) = wd(i, j, k, itu2) - c20*scratchd(i, j, k, idvt&
 &       +1)
-      c1md = w(i, j-1, k, itu1)*scratchd(i, j, k, idvt+0)
+      c1md = w(i, j-1, k, itu1)*scratchd(i, j, k, idvt)
       wd(i, j-1, k, itu1) = wd(i, j-1, k, itu1) + c1m*scratchd(i, j, k, &
-&       idvt+0)
-      c1pd = w(i, j+1, k, itu1)*scratchd(i, j, k, idvt+0)
+&       idvt)
+      c1pd = w(i, j+1, k, itu1)*scratchd(i, j, k, idvt)
       wd(i, j+1, k, itu1) = wd(i, j+1, k, itu1) + c1p*scratchd(i, j, k, &
-&       idvt+0)
-      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt+0))
+&       idvt)
+      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt))
       wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*scratchd(i, j, k, idvt&
-&       +0)
+&       )
       c2md = c2md + c20d
       c2pd = c2pd + c20d
-      tempd8 = ttp*rhoi*c2pd
-      muepd = tempd8
+      tempd12 = ttp*rhoi*c2pd
+      muepd = tempd12
       ttpd = (mulp+muep)*rhoi*c2pd
       rhoid = (mulm+muem)*ttm*c2md + (mulp+muep)*ttp*c2pd
-      tempd10 = ttm*rhoi*c2md
-      muemd = tempd10
+      tempd14 = ttm*rhoi*c2md
+      muemd = tempd14
       ttmd = (mulm+muem)*rhoi*c2md
       call popreal8(muep)
-      rsstsigwp1d = half*rev(i, j+1, k)*muepd
-      rsstsigwd = half*rev(i, j, k)*muemd + half*rev(i, j, k)*muepd
+      tempd16 = half*muepd
+      rsstsigwp1d = rev(i, j+1, k)*tempd16
+      revd(i, j+1, k) = revd(i, j+1, k) + rsstsigwp1*tempd16
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd16
       call popreal8(muem)
-      rsstsigwm1d = half*rev(i, j-1, k)*muemd
+      tempd17 = half*muemd
+      rsstsigwd = rev(i, j, k)*tempd17 + rev(i, j, k)*tempd16
+      rsstsigwm1d = rev(i, j-1, k)*tempd17
+      revd(i, j-1, k) = revd(i, j-1, k) + rsstsigwm1*tempd17
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd17
       c1md = c1md + c10d
       c1pd = c1pd + c10d
-      tempd9 = ttp*rhoi*c1pd
-      mulpd = tempd9 + tempd8
-      muepd = tempd9
+      tempd13 = ttp*rhoi*c1pd
+      mulpd = tempd13 + tempd12
+      muepd = tempd13
       ttpd = ttpd + (mulp+muep)*rhoi*c1pd
       rhoid = rhoid + (mulm+muem)*ttm*c1md + (mulp+muep)*ttp*c1pd
-      tempd11 = ttm*rhoi*c1md
-      mulmd = tempd11 + tempd10
-      muemd = tempd11
+      tempd15 = ttm*rhoi*c1md
+      mulmd = tempd15 + tempd14
+      muemd = tempd15
       ttmd = ttmd + (mulm+muem)*rhoi*c1md
-      rsstsigkp1d = half*rev(i, j+1, k)*muepd
-      rsstsigkd = half*rev(i, j, k)*muemd + half*rev(i, j, k)*muepd
-      rsstsigkm1d = half*rev(i, j-1, k)*muemd
+      tempd18 = half*muepd
+      rsstsigkp1d = rev(i, j+1, k)*tempd18
+      revd(i, j+1, k) = revd(i, j+1, k) + rsstsigkp1*tempd18
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd18
+      tempd19 = half*muemd
+      rsstsigkd = rev(i, j, k)*tempd19 + rev(i, j, k)*tempd18
+      rsstsigkm1d = rev(i, j-1, k)*tempd19
+      revd(i, j-1, k) = revd(i, j-1, k) + rsstsigkm1*tempd19
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd19
       rlvd(i, j+1, k) = rlvd(i, j+1, k) + half*mulpd
       rlvd(i, j, k) = rlvd(i, j, k) + half*mulpd
       rlvd(i, j-1, k) = rlvd(i, j-1, k) + half*mulmd
@@ -727,18 +785,18 @@ contains
       xmd = xa*ttmd
       ymd = ya*ttmd
       zmd = za*ttmd
-      tempd12 = half*zad
-      sjd(i, j, k, 3) = sjd(i, j, k, 3) + voli*tempd12
-      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + voli*tempd12
-      tempd13 = half*yad
-      sjd(i, j, k, 2) = sjd(i, j, k, 2) + voli*tempd13
-      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + voli*tempd13
-      tempd14 = half*xad
-      volid = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*tempd13 + (sj(i, j, k, 1&
-&       )+sj(i, j-1, k, 1))*tempd14 + (sj(i, j, k, 3)+sj(i, j-1, k, 3))*&
-&       tempd12
-      sjd(i, j, k, 1) = sjd(i, j, k, 1) + voli*tempd14
-      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + voli*tempd14
+      tempd20 = half*zad
+      sjd(i, j, k, 3) = sjd(i, j, k, 3) + voli*tempd20
+      sjd(i, j-1, k, 3) = sjd(i, j-1, k, 3) + voli*tempd20
+      tempd21 = half*yad
+      sjd(i, j, k, 2) = sjd(i, j, k, 2) + voli*tempd21
+      sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + voli*tempd21
+      tempd22 = half*xad
+      volid = (sj(i, j, k, 2)+sj(i, j-1, k, 2))*tempd21 + (sj(i, j, k, 1&
+&       )+sj(i, j-1, k, 1))*tempd22 + (sj(i, j, k, 3)+sj(i, j-1, k, 3))*&
+&       tempd20
+      sjd(i, j, k, 1) = sjd(i, j, k, 1) + voli*tempd22
+      sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + voli*tempd22
       sjd(i, j, k, 3) = sjd(i, j, k, 3) + volpi*zpd
       volpid = sj(i, j, k, 2)*ypd + sj(i, j, k, 1)*xpd + sj(i, j, k, 3)*&
 &       zpd
@@ -750,22 +808,28 @@ contains
       sjd(i, j-1, k, 2) = sjd(i, j-1, k, 2) + volmi*ymd
       sjd(i, j-1, k, 1) = sjd(i, j-1, k, 1) + volmi*xmd
       temp3 = vol(i, j, k) + vol(i, j+1, k)
-      tempd15 = -(two*volpid/temp3**2)
-      vold(i, j, k) = vold(i, j, k) + tempd15
-      vold(i, j+1, k) = vold(i, j+1, k) + tempd15
+      tempd23 = -(two*volpid/temp3**2)
+      vold(i, j, k) = vold(i, j, k) + tempd23
+      vold(i, j+1, k) = vold(i, j+1, k) + tempd23
       temp2 = vol(i, j, k) + vol(i, j-1, k)
-      tempd16 = -(two*volmid/temp2**2)
-      vold(i, j, k) = vold(i, j, k) + tempd16
-      vold(i, j-1, k) = vold(i, j-1, k) + tempd16
+      tempd24 = -(two*volmid/temp2**2)
+      vold(i, j, k) = vold(i, j, k) + tempd24
+      vold(i, j-1, k) = vold(i, j-1, k) + tempd24
       vold(i, j, k) = vold(i, j, k) - one*volid/vol(i, j, k)**2
     end do
     call popreal8(muep)
     call popreal8(muem)
+    call popreal8(rsstsigkm1)
+    call popreal8(rsstsigw)
     call popreal8(c1p)
+    call popreal8(rsstsigkp1)
     call popreal8(c1m)
+    call popreal8(rsstsigk)
+    call popreal8(rsstsigwm1)
     call popinteger4(j)
     call popreal8(c10)
     call popinteger4(i)
+    call popreal8(rsstsigwp1)
     call popreal8array(scratch, size(scratch, 1)*size(scratch, 2)*size(&
 &                scratch, 3)*size(scratch, 4))
     do ii=0,nx*ny*nz-1
@@ -841,15 +905,15 @@ contains
       c20d = -(w(i, j, k, itu2)*scratchd(i, j, k, idvt+1))
       wd(i, j, k, itu2) = wd(i, j, k, itu2) - c20*scratchd(i, j, k, idvt&
 &       +1)
-      c1md = w(i, j, k-1, itu1)*scratchd(i, j, k, idvt+0)
+      c1md = w(i, j, k-1, itu1)*scratchd(i, j, k, idvt)
       wd(i, j, k-1, itu1) = wd(i, j, k-1, itu1) + c1m*scratchd(i, j, k, &
-&       idvt+0)
-      c1pd = w(i, j, k+1, itu1)*scratchd(i, j, k, idvt+0)
+&       idvt)
+      c1pd = w(i, j, k+1, itu1)*scratchd(i, j, k, idvt)
       wd(i, j, k+1, itu1) = wd(i, j, k+1, itu1) + c1p*scratchd(i, j, k, &
-&       idvt+0)
-      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt+0))
+&       idvt)
+      c10d = -(w(i, j, k, itu1)*scratchd(i, j, k, idvt))
       wd(i, j, k, itu1) = wd(i, j, k, itu1) - c10*scratchd(i, j, k, idvt&
-&       +0)
+&       )
       c2md = c2md + c20d
       c2pd = c2pd + c20d
       tempd = ttp*rhoi*c2pd
@@ -860,10 +924,16 @@ contains
       muemd = tempd1
       ttmd = (mulm+muem)*rhoi*c2md
       call popreal8(muep)
-      rsstsigwp1d = half*rev(i, j, k+1)*muepd
-      rsstsigwd = half*rev(i, j, k)*muemd + half*rev(i, j, k)*muepd
+      tempd3 = half*muepd
+      rsstsigwp1d = rev(i, j, k+1)*tempd3
+      revd(i, j, k+1) = revd(i, j, k+1) + rsstsigwp1*tempd3
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd3
       call popreal8(muem)
-      rsstsigwm1d = half*rev(i, j, k-1)*muemd
+      tempd4 = half*muemd
+      rsstsigwd = rev(i, j, k)*tempd4 + rev(i, j, k)*tempd3
+      rsstsigwm1d = rev(i, j, k-1)*tempd4
+      revd(i, j, k-1) = revd(i, j, k-1) + rsstsigwm1*tempd4
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd4
       c1md = c1md + c10d
       c1pd = c1pd + c10d
       tempd0 = ttp*rhoi*c1pd
@@ -875,9 +945,15 @@ contains
       mulmd = tempd2 + tempd1
       muemd = tempd2
       ttmd = ttmd + (mulm+muem)*rhoi*c1md
-      rsstsigkp1d = half*rev(i, j, k+1)*muepd
-      rsstsigkd = half*rev(i, j, k)*muemd + half*rev(i, j, k)*muepd
-      rsstsigkm1d = half*rev(i, j, k-1)*muemd
+      tempd5 = half*muepd
+      rsstsigkp1d = rev(i, j, k+1)*tempd5
+      revd(i, j, k+1) = revd(i, j, k+1) + rsstsigkp1*tempd5
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd5
+      tempd6 = half*muemd
+      rsstsigkd = rev(i, j, k)*tempd6 + rev(i, j, k)*tempd5
+      rsstsigkm1d = rev(i, j, k-1)*tempd6
+      revd(i, j, k-1) = revd(i, j, k-1) + rsstsigkm1*tempd6
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd6
       rlvd(i, j, k+1) = rlvd(i, j, k+1) + half*mulpd
       rlvd(i, j, k) = rlvd(i, j, k) + half*mulpd
       rlvd(i, j, k-1) = rlvd(i, j, k-1) + half*mulmd
@@ -902,18 +978,18 @@ contains
       xmd = xa*ttmd
       ymd = ya*ttmd
       zmd = za*ttmd
-      tempd3 = half*zad
-      skd(i, j, k, 3) = skd(i, j, k, 3) + voli*tempd3
-      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + voli*tempd3
-      tempd4 = half*yad
-      skd(i, j, k, 2) = skd(i, j, k, 2) + voli*tempd4
-      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + voli*tempd4
-      tempd5 = half*xad
-      volid = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*tempd4 + (sk(i, j, k, 1)&
-&       +sk(i, j, k-1, 1))*tempd5 + (sk(i, j, k, 3)+sk(i, j, k-1, 3))*&
-&       tempd3
-      skd(i, j, k, 1) = skd(i, j, k, 1) + voli*tempd5
-      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + voli*tempd5
+      tempd7 = half*zad
+      skd(i, j, k, 3) = skd(i, j, k, 3) + voli*tempd7
+      skd(i, j, k-1, 3) = skd(i, j, k-1, 3) + voli*tempd7
+      tempd8 = half*yad
+      skd(i, j, k, 2) = skd(i, j, k, 2) + voli*tempd8
+      skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + voli*tempd8
+      tempd9 = half*xad
+      volid = (sk(i, j, k, 2)+sk(i, j, k-1, 2))*tempd8 + (sk(i, j, k, 1)&
+&       +sk(i, j, k-1, 1))*tempd9 + (sk(i, j, k, 3)+sk(i, j, k-1, 3))*&
+&       tempd7
+      skd(i, j, k, 1) = skd(i, j, k, 1) + voli*tempd9
+      skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + voli*tempd9
       skd(i, j, k, 3) = skd(i, j, k, 3) + volpi*zpd
       volpid = sk(i, j, k, 2)*ypd + sk(i, j, k, 1)*xpd + sk(i, j, k, 3)*&
 &       zpd
@@ -925,13 +1001,13 @@ contains
       skd(i, j, k-1, 2) = skd(i, j, k-1, 2) + volmi*ymd
       skd(i, j, k-1, 1) = skd(i, j, k-1, 1) + volmi*xmd
       temp0 = vol(i, j, k) + vol(i, j, k+1)
-      tempd6 = -(two*volpid/temp0**2)
-      vold(i, j, k) = vold(i, j, k) + tempd6
-      vold(i, j, k+1) = vold(i, j, k+1) + tempd6
+      tempd10 = -(two*volpid/temp0**2)
+      vold(i, j, k) = vold(i, j, k) + tempd10
+      vold(i, j, k+1) = vold(i, j, k+1) + tempd10
       temp = vol(i, j, k) + vol(i, j, k-1)
-      tempd7 = -(two*volmid/temp**2)
-      vold(i, j, k) = vold(i, j, k) + tempd7
-      vold(i, j, k-1) = vold(i, j, k-1) + tempd7
+      tempd11 = -(two*volmid/temp**2)
+      vold(i, j, k) = vold(i, j, k) + tempd11
+      vold(i, j, k-1) = vold(i, j, k-1) + tempd11
       vold(i, j, k) = vold(i, j, k) - one*volid/vol(i, j, k)**2
     end do
   end subroutine sstviscous_b
@@ -1023,8 +1099,8 @@ contains
       c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-      scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i, j, &
-&       k-1, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j, k-1&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j, k+1, itu1)
       scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i, j, &
 &       k-1, itu2) - c20*w(i, j, k, itu2) + c2p*w(i, j, k+1, itu2)
     end do
@@ -1092,8 +1168,8 @@ contains
       c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-      scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i, j-1&
-&       , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i, j-1, k&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i, j+1, k, itu1)
       scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i, j-1&
 &       , k, itu2) - c20*w(i, j, k, itu2) + c2p*w(i, j+1, k, itu2)
     end do
@@ -1161,16 +1237,16 @@ contains
       c20 = c2m + c2p
 ! update the residual for this cell and store the possible
 ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
-      scratch(i, j, k, idvt+0) = scratch(i, j, k, idvt+0) + c1m*w(i-1, j&
-&       , k, itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
+      scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m*w(i-1, j, k&
+&       , itu1) - c10*w(i, j, k, itu1) + c1p*w(i+1, j, k, itu1)
       scratch(i, j, k, idvt+1) = scratch(i, j, k, idvt+1) + c2m*w(i-1, j&
 &       , k, itu2) - c20*w(i, j, k, itu2) + c2p*w(i+1, j, k, itu2)
     end do
   end subroutine sstviscous
 !  differentiation of sstresscale in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw
+!   gradient     of useful results: *dw *scratch
 !   with respect to varying inputs: *dw *scratch
-!   rw status of diff variables: *dw:in-out *scratch:out
+!   rw status of diff variables: *dw:in-out *scratch:incr
 !   plus diff mem management of: dw:in scratch:in
   subroutine sstresscale_b()
     use blockpointers
@@ -1182,7 +1258,6 @@ contains
     real(kind=realtype) :: rblank
     intrinsic mod
     intrinsic real
-    scratchd = 0.0_8
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2
@@ -1191,8 +1266,8 @@ contains
       scratchd(i, j, k, idvt+1) = scratchd(i, j, k, idvt+1) - volref(i, &
 &       j, k)*rblank*dwd(i, j, k, itu2)
       dwd(i, j, k, itu2) = 0.0_8
-      scratchd(i, j, k, idvt+0) = scratchd(i, j, k, idvt+0) - volref(i, &
-&       j, k)*rblank*dwd(i, j, k, itu1)
+      scratchd(i, j, k, idvt) = scratchd(i, j, k, idvt) - volref(i, j, k&
+&       )*rblank*dwd(i, j, k, itu1)
       dwd(i, j, k, itu1) = 0.0_8
     end do
   end subroutine sstresscale_b
@@ -1217,17 +1292,18 @@ contains
       j = mod(ii/nx, ny) + 2
       k = ii/(nx*ny) + 2
       rblank = real(iblank(i, j, k), realtype)
-      dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt+0)*&
+      dw(i, j, k, itu1) = -(volref(i, j, k)*scratch(i, j, k, idvt)*&
 &       rblank)
       dw(i, j, k, itu2) = -(volref(i, j, k)*scratch(i, j, k, idvt+1)*&
 &       rblank)
     end do
   end subroutine sstresscale
 !  differentiation of f1sst in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *scratch *d2wall
-!   with respect to varying inputs: *w *scratch *d2wall
-!   rw status of diff variables: *w:incr *scratch:in-out *d2wall:incr
-!   plus diff mem management of: w:in scratch:in d2wall:in
+!   gradient     of useful results: *w *rlv *scratch
+!   with respect to varying inputs: *w *rlv *scratch *d2wall
+!   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
+!                *d2wall:out
+!   plus diff mem management of: w:in rlv:in scratch:in d2wall:in
   subroutine f1sst_b()
 !
 !       f1sst computes the blending function f1 in both the owned
@@ -1246,6 +1322,9 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: sps, nn, mm, i, j, k, ii
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: t1, t2, arg1, myeps
     real(kind=realtype) :: t1d, t2d, arg1d
     intrinsic mod
@@ -1253,10 +1332,34 @@ contains
     intrinsic max
     intrinsic min
     intrinsic tanh
-    integer :: branch
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmp0
     real(kind=realtype) :: tmp1
+    integer :: branch
+    integer :: ad_from
+    integer :: ad_to
+    integer :: ad_from0
+    integer :: ad_to0
+    integer :: ad_from1
+    integer :: ad_to1
+    integer :: ad_from2
+    integer :: ad_to2
+    integer :: ad_from3
+    integer :: ad_to3
+    integer :: ad_from4
+    integer :: ad_to4
+    integer :: ad_from5
+    integer :: ad_to5
+    integer :: ad_from6
+    integer :: ad_to6
+    integer :: ad_from7
+    integer :: ad_to7
+    integer :: ad_from8
+    integer :: ad_to8
+    integer :: ad_from9
+    integer :: ad_to9
+    integer :: ad_from10
+    integer :: ad_to10
     real(realtype) :: temp3
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp1
@@ -1264,6 +1367,7 @@ contains
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: max1d
     real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd3
     real(kind=realtype) :: tempd2
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
@@ -1271,26 +1375,219 @@ contains
     real(kind=realtype) :: tmpd0
     real(kind=realtype) :: temp
     real(kind=realtype) :: max1
+    real(kind=realtype) :: temp9
     real(kind=realtype) :: temp8
     real(kind=realtype) :: temp7
     real(kind=realtype) :: temp6
     real(kind=realtype) :: temp5
     real(kind=realtype) :: temp4
-    call pushinteger4(i)
-    call pushinteger4(j)
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
     do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ibeg = 2
+      case (imax) 
+        iend = iend - 1
+      case (jmin) 
+        jbeg = 2
+      case (jmax) 
+        jend = jend - 1
+      case (kmin) 
+        kbeg = 2
+      case (kmax) 
+        kend = kend - 1
+      end select
+    end do
+! compute the blending function f1 for all owned cells.
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+! loop over the boundary conditions to set f1 in the boundary
+! halo's. a neumann boundary condition is used for all bc's.
+bocos:do nn=1,nbocos
 ! determine the face on which this subface is located, loop
 ! over its range and copy f1. although the range may include
 ! indirect halo's which are not computed, this is no problem,
 ! because in sstsolve only direct halo's are used.
       select case  (bcfaceid(nn)) 
       case (imin) 
+        ad_from0 = kcbeg(nn)
         call pushinteger4(k)
-        do k=kcbeg(nn),kcend(nn)
+        do k=ad_from0,kcend(nn)
+          ad_from = jcbeg(nn)
           call pushinteger4(j)
+          j = jcend(nn) + 1
+          call pushinteger4(j - 1)
+          call pushinteger4(ad_from)
         end do
-        do k=kcend(nn),kcbeg(nn),-1
-          do j=jcend(nn),jcbeg(nn),-1
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from0)
+        call pushcontrol3b(5)
+      case (imax) 
+        ad_from2 = kcbeg(nn)
+        call pushinteger4(k)
+!              ==========================================================
+        do k=ad_from2,kcend(nn)
+          ad_from1 = jcbeg(nn)
+          call pushinteger4(j)
+          j = jcend(nn) + 1
+          call pushinteger4(j - 1)
+          call pushinteger4(ad_from1)
+        end do
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from2)
+        call pushcontrol3b(4)
+      case (jmin) 
+        ad_from4 = kcbeg(nn)
+        call pushinteger4(k)
+!              ==========================================================
+        do k=ad_from4,kcend(nn)
+          ad_from3 = icbeg(nn)
+          call pushinteger4(i)
+          i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from3)
+        end do
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from4)
+        call pushcontrol3b(3)
+      case (jmax) 
+        ad_from6 = kcbeg(nn)
+        call pushinteger4(k)
+!              ==========================================================
+        do k=ad_from6,kcend(nn)
+          ad_from5 = icbeg(nn)
+          call pushinteger4(i)
+          i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from5)
+        end do
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from6)
+        call pushcontrol3b(2)
+      case (kmin) 
+        ad_from8 = jcbeg(nn)
+        call pushinteger4(j)
+!              ==========================================================
+        do j=ad_from8,jcend(nn)
+          ad_from7 = icbeg(nn)
+          call pushinteger4(i)
+          i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from7)
+        end do
+        call pushinteger4(j - 1)
+        call pushinteger4(ad_from8)
+        call pushcontrol3b(1)
+      case (kmax) 
+        ad_from10 = jcbeg(nn)
+        call pushinteger4(j)
+!              ==========================================================
+        do j=ad_from10,jcend(nn)
+          ad_from9 = icbeg(nn)
+          call pushinteger4(i)
+          i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from9)
+        end do
+        call pushinteger4(j - 1)
+        call pushinteger4(ad_from10)
+        call pushcontrol3b(0)
+      case default
+        call pushcontrol3b(6)
+      end select
+    end do bocos
+    do nn=nbocos,1,-1
+      call popcontrol3b(branch)
+      if (branch .lt. 3) then
+        if (branch .eq. 0) then
+          call popinteger4(ad_from10)
+          call popinteger4(ad_to10)
+          do j=ad_to10,ad_from10,-1
+            call popinteger4(ad_from9)
+            call popinteger4(ad_to9)
+            do i=ad_to9,ad_from9,-1
+              tmpd1 = scratchd(i, j, ke, if1sst)
+              scratchd(i, j, ke, if1sst) = 0.0_8
+              scratchd(i, j, kl, if1sst) = scratchd(i, j, kl, if1sst) + &
+&               tmpd1
+            end do
+            call popinteger4(i)
+          end do
+          call popinteger4(j)
+        else if (branch .eq. 1) then
+          call popinteger4(ad_from8)
+          call popinteger4(ad_to8)
+          do j=ad_to8,ad_from8,-1
+            call popinteger4(ad_from7)
+            call popinteger4(ad_to7)
+            do i=ad_to7,ad_from7,-1
+              scratchd(i, j, 2, if1sst) = scratchd(i, j, 2, if1sst) + &
+&               scratchd(i, j, 1, if1sst)
+              scratchd(i, j, 1, if1sst) = 0.0_8
+            end do
+            call popinteger4(i)
+          end do
+          call popinteger4(j)
+        else
+          call popinteger4(ad_from6)
+          call popinteger4(ad_to6)
+          do k=ad_to6,ad_from6,-1
+            call popinteger4(ad_from5)
+            call popinteger4(ad_to5)
+            do i=ad_to5,ad_from5,-1
+              tmpd0 = scratchd(i, je, k, if1sst)
+              scratchd(i, je, k, if1sst) = 0.0_8
+              scratchd(i, jl, k, if1sst) = scratchd(i, jl, k, if1sst) + &
+&               tmpd0
+            end do
+            call popinteger4(i)
+          end do
+          call popinteger4(k)
+        end if
+      else if (branch .lt. 5) then
+        if (branch .eq. 3) then
+          call popinteger4(ad_from4)
+          call popinteger4(ad_to4)
+          do k=ad_to4,ad_from4,-1
+            call popinteger4(ad_from3)
+            call popinteger4(ad_to3)
+            do i=ad_to3,ad_from3,-1
+              scratchd(i, 2, k, if1sst) = scratchd(i, 2, k, if1sst) + &
+&               scratchd(i, 1, k, if1sst)
+              scratchd(i, 1, k, if1sst) = 0.0_8
+            end do
+            call popinteger4(i)
+          end do
+          call popinteger4(k)
+        else
+          call popinteger4(ad_from2)
+          call popinteger4(ad_to2)
+          do k=ad_to2,ad_from2,-1
+            call popinteger4(ad_from1)
+            call popinteger4(ad_to1)
+            do j=ad_to1,ad_from1,-1
+              tmpd = scratchd(ie, j, k, if1sst)
+              scratchd(ie, j, k, if1sst) = 0.0_8
+              scratchd(il, j, k, if1sst) = scratchd(il, j, k, if1sst) + &
+&               tmpd
+            end do
+            call popinteger4(j)
+          end do
+          call popinteger4(k)
+        end if
+      else if (branch .eq. 5) then
+        call popinteger4(ad_from0)
+        call popinteger4(ad_to0)
+        do k=ad_to0,ad_from0,-1
+          call popinteger4(ad_from)
+          call popinteger4(ad_to)
+          do j=ad_to,ad_from,-1
             scratchd(2, j, k, if1sst) = scratchd(2, j, k, if1sst) + &
 &             scratchd(1, j, k, if1sst)
             scratchd(1, j, k, if1sst) = 0.0_8
@@ -1298,92 +1595,13 @@ contains
           call popinteger4(j)
         end do
         call popinteger4(k)
-      case (imax) 
-        call pushinteger4(k)
-!              ==========================================================
-        do k=kcbeg(nn),kcend(nn)
-          call pushinteger4(j)
-        end do
-        do k=kcend(nn),kcbeg(nn),-1
-          do j=jcend(nn),jcbeg(nn),-1
-            tmpd = scratchd(ie, j, k, if1sst)
-            scratchd(ie, j, k, if1sst) = 0.0_8
-            scratchd(il, j, k, if1sst) = scratchd(il, j, k, if1sst) + &
-&             tmpd
-          end do
-          call popinteger4(j)
-        end do
-        call popinteger4(k)
-      case (jmin) 
-        call pushinteger4(k)
-!              ==========================================================
-        do k=kcbeg(nn),kcend(nn)
-          call pushinteger4(i)
-        end do
-        do k=kcend(nn),kcbeg(nn),-1
-          do i=icend(nn),icbeg(nn),-1
-            scratchd(i, 2, k, if1sst) = scratchd(i, 2, k, if1sst) + &
-&             scratchd(i, 1, k, if1sst)
-            scratchd(i, 1, k, if1sst) = 0.0_8
-          end do
-          call popinteger4(i)
-        end do
-        call popinteger4(k)
-      case (jmax) 
-        call pushinteger4(k)
-!              ==========================================================
-        do k=kcbeg(nn),kcend(nn)
-          call pushinteger4(i)
-        end do
-        do k=kcend(nn),kcbeg(nn),-1
-          do i=icend(nn),icbeg(nn),-1
-            tmpd0 = scratchd(i, je, k, if1sst)
-            scratchd(i, je, k, if1sst) = 0.0_8
-            scratchd(i, jl, k, if1sst) = scratchd(i, jl, k, if1sst) + &
-&             tmpd0
-          end do
-          call popinteger4(i)
-        end do
-        call popinteger4(k)
-      case (kmin) 
-        call pushinteger4(j)
-!              ==========================================================
-        do j=jcbeg(nn),jcend(nn)
-          call pushinteger4(i)
-        end do
-        do j=jcend(nn),jcbeg(nn),-1
-          do i=icend(nn),icbeg(nn),-1
-            scratchd(i, j, 2, if1sst) = scratchd(i, j, 2, if1sst) + &
-&             scratchd(i, j, 1, if1sst)
-            scratchd(i, j, 1, if1sst) = 0.0_8
-          end do
-          call popinteger4(i)
-        end do
-        call popinteger4(j)
-      case (kmax) 
-        call pushinteger4(j)
-!              ==========================================================
-        do j=jcbeg(nn),jcend(nn)
-          call pushinteger4(i)
-        end do
-        do j=jcend(nn),jcbeg(nn),-1
-          do i=icend(nn),icbeg(nn),-1
-            tmpd1 = scratchd(i, j, ke, if1sst)
-            scratchd(i, j, ke, if1sst) = 0.0_8
-            scratchd(i, j, kl, if1sst) = scratchd(i, j, kl, if1sst) + &
-&             tmpd1
-          end do
-          call popinteger4(i)
-        end do
-        call popinteger4(j)
-      end select
+      end if
     end do
-    call popinteger4(j)
-    call popinteger4(i)
-    do ii=0,ie*je*ke-1
-      i = mod(ii, ie) + 1
-      j = mod(ii/ie, je) + 1
-      k = ii/(ie*je) + 1
+    d2walld = 0.0_8
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
       t1 = sqrt(w(i, j, k, itu1))/(0.09_realtype*w(i, j, k, itu2)*d2wall&
 &       (i, j, k))
       t2 = 500.0_realtype*rlv(i, j, k)/(w(i, j, k, irho)*w(i, j, k, itu2&
@@ -1420,13 +1638,13 @@ contains
         t1d = arg1d
         t2d = 0.0_8
       end if
-      temp8 = d2wall(i, j, k)**2
-      tempd1 = two*t2d/(max1*temp8)
-      tempd2 = -(w(i, j, k, itu1)*tempd1/(max1*temp8))
-      wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd1
-      max1d = temp8*tempd2
+      temp9 = d2wall(i, j, k)**2
+      tempd2 = two*t2d/(max1*temp9)
+      tempd3 = -(w(i, j, k, itu1)*tempd2/(max1*temp9))
+      wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd2
+      max1d = temp9*tempd3
       d2walld(i, j, k) = d2walld(i, j, k) + max1*2*d2wall(i, j, k)*&
-&       tempd2
+&       tempd3
       call popcontrol1b(branch)
       if (branch .eq. 0) scratchd(i, j, k, icd) = scratchd(i, j, k, icd)&
 &         + max1d
@@ -1437,25 +1655,28 @@ contains
       else
         t2d = 0.0_8
       end if
-      temp7 = d2wall(i, j, k)**2
-      temp6 = w(i, j, k, itu2)
-      temp5 = w(i, j, k, irho)
-      temp4 = temp5*temp6
-      tempd = -(rlv(i, j, k)*500.0_realtype*t2d/(temp4**2*temp7**2))
-      wd(i, j, k, irho) = wd(i, j, k, irho) + temp7*temp6*tempd
-      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp7*temp5*tempd
-      d2walld(i, j, k) = d2walld(i, j, k) + temp4*2*d2wall(i, j, k)*&
-&       tempd
+      temp8 = d2wall(i, j, k)**2
+      temp7 = w(i, j, k, itu2)
+      temp6 = w(i, j, k, irho)
+      temp5 = temp6*temp7
+      temp4 = temp5*temp8
+      tempd = 500.0_realtype*t2d/temp4
+      tempd0 = -(rlv(i, j, k)*tempd/temp4)
+      rlvd(i, j, k) = rlvd(i, j, k) + tempd
+      wd(i, j, k, irho) = wd(i, j, k, irho) + temp8*temp7*tempd0
+      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp8*temp6*tempd0
+      d2walld(i, j, k) = d2walld(i, j, k) + temp5*2*d2wall(i, j, k)*&
+&       tempd0
       temp3 = 0.09_realtype*d2wall(i, j, k)
       temp2 = w(i, j, k, itu2)
       temp = temp2*temp3
       temp1 = w(i, j, k, itu1)
       temp0 = sqrt(temp1)
-      tempd0 = -(temp0*t1d/temp**2)
+      tempd1 = -(temp0*t1d/temp**2)
       if (.not.temp1 .eq. 0.0_8) wd(i, j, k, itu1) = wd(i, j, k, itu1) +&
 &         t1d/(temp*2.0*temp0)
-      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp3*tempd0
-      d2walld(i, j, k) = d2walld(i, j, k) + temp2*0.09_realtype*tempd0
+      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp3*tempd1
+      d2walld(i, j, k) = d2walld(i, j, k) + temp2*0.09_realtype*tempd1
     end do
   end subroutine f1sst_b
   subroutine f1sst()
@@ -1476,6 +1697,9 @@ contains
 !      local variables.
 !
     integer(kind=inttype) :: sps, nn, mm, i, j, k, ii
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: t1, t2, arg1, myeps
     intrinsic mod
     intrinsic sqrt
@@ -1484,11 +1708,36 @@ contains
     intrinsic tanh
     real(kind=realtype) :: max1
     myeps = 1e-10_realtype/two/rsstsigw2
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
+    do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ibeg = 2
+      case (imax) 
+        iend = iend - 1
+      case (jmin) 
+        jbeg = 2
+      case (jmax) 
+        jend = jend - 1
+      case (kmin) 
+        kbeg = 2
+      case (kmax) 
+        kend = kend - 1
+      end select
+    end do
 ! compute the blending function f1 for all owned cells.
-    do ii=0,ie*je*ke-1
-      i = mod(ii, ie) + 1
-      j = mod(ii/ie, je) + 1
-      k = ii/(ie*je) + 1
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
       t1 = sqrt(w(i, j, k, itu1))/(0.09_realtype*w(i, j, k, itu2)*d2wall&
 &       (i, j, k))
       t2 = 500.0_realtype*rlv(i, j, k)/(w(i, j, k, irho)*w(i, j, k, itu2&

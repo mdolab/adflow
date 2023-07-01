@@ -782,6 +782,9 @@ contains
 
         case (spalartAllmaras, spalartAllmarasEdwards)
             call saEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
+        case (menterSST)
+            call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 #ifndef USE_TAPENADE
 
         case (v2f)
@@ -789,10 +792,6 @@ contains
 
         case (komegaWilcox, komegaModified)
             call kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-
-        case (menterSST)
-            call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-
         case (ktau)
             call ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 #endif
