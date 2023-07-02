@@ -268,7 +268,8 @@ contains
                                     do k = 0, kb
                                         do j = 0, jb
                                             do i = 0, ib
-                                      flowDoms(nn, level, sps2)%w(i, j, k, ll) = flowDoms(nn, 1, sps2)%wtmp(i, j, k, ll)
+                                                flowDoms(nn, level, sps2)%w(i, j, k, ll) = &
+                                                    flowDoms(nn, 1, sps2)%wtmp(i, j, k, ll)
                                             end do
                                         end do
                                     end do
@@ -370,31 +371,38 @@ contains
 
                                     ! Diagonal block is easy.
                                     if (onBlock(i, j, k)) then
-                                    PCMat(:, 1:nw, i, j, k) = flowDoms(nn, 1, sps)%dw_deriv(i, j, k, 1:nstate, 1:nstate)
+                                        PCMat(:, 1:nw, i, j, k) = &
+                                            flowDoms(nn, 1, sps)%dw_deriv(i, j, k, 1:nstate, 1:nstate)
                                     end if
 
                                     if (onBlock(i - 1, j, k)) then
-               PCMat(:, 2 * nw + 1:3 * nw, i - 1, j, k) = flowDoms(nn, 1, sps)%dw_deriv(i - 1, j, k, 1:nstate, 1:nstate)
+                                        PCMat(:, 2 * nw + 1:3 * nw, i - 1, j, k) = &
+                                            flowDoms(nn, 1, sps)%dw_deriv(i - 1, j, k, 1:nstate, 1:nstate)
                                     end if
 
                                     if (onBlock(i + 1, j, k)) then
-               PCMat(:, 1 * nw + 1:2 * nw, i + 1, j, k) = flowDoms(nn, 1, sps)%dw_deriv(i + 1, j, k, 1:nstate, 1:nstate)
+                                        PCMat(:, 1 * nw + 1:2 * nw, i + 1, j, k) = &
+                                            flowDoms(nn, 1, sps)%dw_deriv(i + 1, j, k, 1:nstate, 1:nstate)
                                     end if
 
                                     if (onBlock(i, j - 1, k)) then
-               PCMat(:, 4 * nw + 1:5 * nw, i, j - 1, k) = flowDoms(nn, 1, sps)%dw_deriv(i, j - 1, k, 1:nstate, 1:nstate)
+                                        PCMat(:, 4 * nw + 1:5 * nw, i, j - 1, k) = &
+                                            flowDoms(nn, 1, sps)%dw_deriv(i, j - 1, k, 1:nstate, 1:nstate)
                                     end if
 
                                     if (onBlock(i, j + 1, k)) then
-               PCMat(:, 3 * nw + 1:4 * nw, i, j + 1, k) = flowDoms(nn, 1, sps)%dw_deriv(i, j + 1, k, 1:nstate, 1:nstate)
+                                        PCMat(:, 3 * nw + 1:4 * nw, i, j + 1, k) = &
+                                            flowDoms(nn, 1, sps)%dw_deriv(i, j + 1, k, 1:nstate, 1:nstate)
                                     end if
 
                                     if (onBlock(i, j, k - 1)) then
-               PCMat(:, 6 * nw + 1:7 * nw, i, j, k - 1) = flowDoms(nn, 1, sps)%dw_deriv(i, j, k - 1, 1:nstate, 1:nstate)
+                                        PCMat(:, 6 * nw + 1:7 * nw, i, j, k - 1) = &
+                                            flowDoms(nn, 1, sps)%dw_deriv(i, j, k - 1, 1:nstate, 1:nstate)
                                     end if
 
                                     if (onBlock(i, j, k + 1)) then
-               PCMat(:, 5 * nw + 1:6 * nw, i, j, k + 1) = flowDoms(nn, 1, sps)%dw_deriv(i, j, k + 1, 1:nstate, 1:nstate)
+                                        PCMat(:, 5 * nw + 1:6 * nw, i, j, k + 1) = &
+                                            flowDoms(nn, 1, sps)%dw_deriv(i, j, k + 1, 1:nstate, 1:nstate)
                                     end if
                                 end if
                             end do iLoop

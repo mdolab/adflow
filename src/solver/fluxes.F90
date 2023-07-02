@@ -1229,7 +1229,8 @@ contains
 
                         ddw2 = w(i + 1, j, k, ivx) * w(i + 1, j, k, irho) - w(i, j, k, ivx) * w(i, j, k, irho)
                         fs = dis2 * ddw2 &
-       - dis4 * (w(i + 2, j, k, ivx) * w(i + 2, j, k, irho) - w(i - 1, j, k, ivx) * w(i - 1, j, k, irho) - three * ddw2)
+                             - dis4 * (w(i + 2, j, k, ivx) * w(i + 2, j, k, irho) - &
+                                       w(i - 1, j, k, ivx) * w(i - 1, j, k, irho) - three * ddw2)
 
                         fw(i + 1, j, k, imx) = fw(i + 1, j, k, imx) + fs
                         fw(i, j, k, imx) = fw(i, j, k, imx) - fs
@@ -1238,7 +1239,8 @@ contains
 
                         ddw3 = w(i + 1, j, k, ivy) * w(i + 1, j, k, irho) - w(i, j, k, ivy) * w(i, j, k, irho)
                         fs = dis2 * ddw3 &
-       - dis4 * (w(i + 2, j, k, ivy) * w(i + 2, j, k, irho) - w(i - 1, j, k, ivy) * w(i - 1, j, k, irho) - three * ddw3)
+                             - dis4 * (w(i + 2, j, k, ivy) * w(i + 2, j, k, irho) - &
+                                       w(i - 1, j, k, ivy) * w(i - 1, j, k, irho) - three * ddw3)
 
                         fw(i + 1, j, k, imy) = fw(i + 1, j, k, imy) + fs
                         fw(i, j, k, imy) = fw(i, j, k, imy) - fs
@@ -1247,7 +1249,8 @@ contains
 
                         ddw4 = w(i + 1, j, k, ivz) * w(i + 1, j, k, irho) - w(i, j, k, ivz) * w(i, j, k, irho)
                         fs = dis2 * ddw4 &
-       - dis4 * (w(i + 2, j, k, ivz) * w(i + 2, j, k, irho) - w(i - 1, j, k, ivz) * w(i - 1, j, k, irho) - three * ddw4)
+                             - dis4 * (w(i + 2, j, k, ivz) * w(i + 2, j, k, irho) - &
+                                       w(i - 1, j, k, ivz) * w(i - 1, j, k, irho) - three * ddw4)
 
                         fw(i + 1, j, k, imz) = fw(i + 1, j, k, imz) + fs
                         fw(i, j, k, imz) = fw(i, j, k, imz) - fs
@@ -1256,7 +1259,8 @@ contains
 
                         ddw5 = (w(i + 1, j, k, irhoE) + P(i + 1, j, K)) - (w(i, j, k, irhoE) + P(i, j, k))
                         fs = dis2 * ddw5 &
-           - dis4 * ((w(i + 2, j, k, irhoE) + P(i + 2, j, k)) - (w(i - 1, j, k, irhoE) + P(i - 1, j, k)) - three * ddw5)
+                             - dis4 * ((w(i + 2, j, k, irhoE) + P(i + 2, j, k)) - &
+                                       (w(i - 1, j, k, irhoE) + P(i - 1, j, k)) - three * ddw5)
 
                         fw(i + 1, j, k, irhoE) = fw(i + 1, j, k, irhoE) + fs
                         fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
@@ -1306,7 +1310,8 @@ contains
 
                         ddw2 = w(i, j + 1, k, ivx) * w(i, j + 1, k, irho) - w(i, j, k, ivx) * w(i, j, k, irho)
                         fs = dis2 * ddw2 &
-       - dis4 * (w(i, j + 2, k, ivx) * w(i, j + 2, k, irho) - w(i, j - 1, k, ivx) * w(i, j - 1, k, irho) - three * ddw2)
+                             - dis4 * (w(i, j + 2, k, ivx) * w(i, j + 2, k, irho) - &
+                                       w(i, j - 1, k, ivx) * w(i, j - 1, k, irho) - three * ddw2)
 
                         fw(i, j + 1, k, imx) = fw(i, j + 1, k, imx) + fs
                         fw(i, j, k, imx) = fw(i, j, k, imx) - fs
@@ -1315,7 +1320,8 @@ contains
 
                         ddw3 = w(i, j + 1, k, ivy) * w(i, j + 1, k, irho) - w(i, j, k, ivy) * w(i, j, k, irho)
                         fs = dis2 * ddw3 &
-       - dis4 * (w(i, j + 2, k, ivy) * w(i, j + 2, k, irho) - w(i, j - 1, k, ivy) * w(i, j - 1, k, irho) - three * ddw3)
+                             - dis4 * (w(i, j + 2, k, ivy) * w(i, j + 2, k, irho) - &
+                                       w(i, j - 1, k, ivy) * w(i, j - 1, k, irho) - three * ddw3)
 
                         fw(i, j + 1, k, imy) = fw(i, j + 1, k, imy) + fs
                         fw(i, j, k, imy) = fw(i, j, k, imy) - fs
@@ -1324,7 +1330,8 @@ contains
 
                         ddw4 = w(i, j + 1, k, ivz) * w(i, j + 1, k, irho) - w(i, j, k, ivz) * w(i, j, k, irho)
                         fs = dis2 * ddw4 &
-       - dis4 * (w(i, j + 2, k, ivz) * w(i, j + 2, k, irho) - w(i, j - 1, k, ivz) * w(i, j - 1, k, irho) - three * ddw4)
+                             - dis4 * (w(i, j + 2, k, ivz) * w(i, j + 2, k, irho) - &
+                                       w(i, j - 1, k, ivz) * w(i, j - 1, k, irho) - three * ddw4)
 
                         fw(i, j + 1, k, imz) = fw(i, j + 1, k, imz) + fs
                         fw(i, j, k, imz) = fw(i, j, k, imz) - fs
@@ -1333,7 +1340,8 @@ contains
 
                         ddw5 = (w(i, j + 1, k, irhoE) + P(i, j + 1, k)) - (w(i, j, k, irhoE) + P(i, j, k))
                         fs = dis2 * ddw5 &
-           - dis4 * ((w(i, j + 2, k, irhoE) + P(i, j + 2, k)) - (w(i, j - 1, k, irhoE) + P(i, j - 1, k)) - three * ddw5)
+                             - dis4 * ((w(i, j + 2, k, irhoE) + P(i, j + 2, k)) - &
+                                       (w(i, j - 1, k, irhoE) + P(i, j - 1, k)) - three * ddw5)
 
                         fw(i, j + 1, k, irhoE) = fw(i, j + 1, k, irhoE) + fs
                         fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
@@ -1382,7 +1390,8 @@ contains
 
                         ddw2 = w(i, j, k + 1, ivx) * w(i, j, k + 1, irho) - w(i, j, k, ivx) * w(i, j, k, irho)
                         fs = dis2 * ddw2 &
-       - dis4 * (w(i, j, k + 2, ivx) * w(i, j, k + 2, irho) - w(i, j, k - 1, ivx) * w(i, j, k - 1, irho) - three * ddw2)
+                             - dis4 * (w(i, j, k + 2, ivx) * w(i, j, k + 2, irho) - &
+                                       w(i, j, k - 1, ivx) * w(i, j, k - 1, irho) - three * ddw2)
 
                         fw(i, j, k + 1, imx) = fw(i, j, k + 1, imx) + fs
                         fw(i, j, k, imx) = fw(i, j, k, imx) - fs
@@ -1391,7 +1400,8 @@ contains
 
                         ddw3 = w(i, j, k + 1, ivy) * w(i, j, k + 1, irho) - w(i, j, k, ivy) * w(i, j, k, irho)
                         fs = dis2 * ddw3 &
-       - dis4 * (w(i, j, k + 2, ivy) * w(i, j, k + 2, irho) - w(i, j, k - 1, ivy) * w(i, j, k - 1, irho) - three * ddw3)
+                             - dis4 * (w(i, j, k + 2, ivy) * w(i, j, k + 2, irho) - &
+                                       w(i, j, k - 1, ivy) * w(i, j, k - 1, irho) - three * ddw3)
 
                         fw(i, j, k + 1, imy) = fw(i, j, k + 1, imy) + fs
                         fw(i, j, k, imy) = fw(i, j, k, imy) - fs
@@ -1400,7 +1410,8 @@ contains
 
                         ddw4 = w(i, j, k + 1, ivz) * w(i, j, k + 1, irho) - w(i, j, k, ivz) * w(i, j, k, irho)
                         fs = dis2 * ddw4 &
-       - dis4 * (w(i, j, k + 2, ivz) * w(i, j, k + 2, irho) - w(i, j, k - 1, ivz) * w(i, j, k - 1, irho) - three * ddw4)
+                             - dis4 * (w(i, j, k + 2, ivz) * w(i, j, k + 2, irho) - &
+                                       w(i, j, k - 1, ivz) * w(i, j, k - 1, irho) - three * ddw4)
 
                         fw(i, j, k + 1, imz) = fw(i, j, k + 1, imz) + fs
                         fw(i, j, k, imz) = fw(i, j, k, imz) - fs
@@ -1409,7 +1420,8 @@ contains
 
                         ddw5 = (w(i, j, k + 1, irhoE) + P(i, j, k + 1)) - (w(i, j, k, irhoE) + P(i, j, k))
                         fs = dis2 * ddw5 &
-           - dis4 * ((w(i, j, k + 2, irhoE) + P(i, j, k + 2)) - (w(i, j, k - 1, irhoE) + P(i, j, k - 1)) - three * ddw5)
+                             - dis4 * ((w(i, j, k + 2, irhoE) + P(i, j, k + 2)) - &
+                                       (w(i, j, k - 1, irhoE) + P(i, j, k - 1)) - three * ddw5)
 
                         fw(i, j, k + 1, irhoE) = fw(i, j, k + 1, irhoE) + fs
                         fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
@@ -4025,7 +4037,8 @@ contains
                     ! of the face.
 
                     dss2 = abs((shockSensor(i + 2, j, k) - two * shockSensor(i + 1, j, k) + shockSensor(i, j, k)) &
-                           / (shockSensor(i + 2, j, k) + two * shockSensor(i + 1, j, k) + shockSensor(i, j, k) + sslim))
+                               / (shockSensor(i + 2, j, k) + two * shockSensor(i + 1, j, k) + &
+                                  shockSensor(i, j, k) + sslim))
 
                     ! Compute the dissipation coefficients for this face.
 
@@ -4110,7 +4123,8 @@ contains
                     ! of the face.
 
                     dss2 = abs((shockSensor(i, j + 2, k) - two * shockSensor(i, j + 1, k) + shockSensor(i, j, k)) &
-                           / (shockSensor(i, j + 2, k) + two * shockSensor(i, j + 1, k) + shockSensor(i, j, k) + sslim))
+                               / (shockSensor(i, j + 2, k) + two * shockSensor(i, j + 1, k) + &
+                                  shockSensor(i, j, k) + sslim))
 
                     ! Compute the dissipation coefficients for this face.
 
@@ -4190,7 +4204,8 @@ contains
                     ! of the face.
 
                     dss2 = abs((shockSensor(i, j, k + 2) - two * shockSensor(i, j, k + 1) + shockSensor(i, j, k)) &
-                           / (shockSensor(i, j, k + 2) + two * shockSensor(i, j, k + 1) + shockSensor(i, j, k) + sslim))
+                               / (shockSensor(i, j, k + 2) + two * shockSensor(i, j, k + 1) + &
+                                  shockSensor(i, j, k) + sslim))
 
                     ! Compute the dissipation coefficients for this face.
 
@@ -4434,7 +4449,8 @@ contains
                     ! of the face.
 
                     dp2 = abs((shockSensor(i + 2, j, k) - two * shockSensor(i + 1, j, k) + shockSensor(i, j, k)) &
-                         / (omega * (shockSensor(i + 2, j, k) + two * shockSensor(i + 1, j, k) + shockSensor(i, j, k)) &
+                              / (omega * (shockSensor(i + 2, j, k) + &
+                                          two * shockSensor(i + 1, j, k) + shockSensor(i, j, k)) &
                                  + oneMinOmega * (abs(shockSensor(i + 2, j, k) - shockSensor(i + 1, j, k)) &
                                                   + abs(shockSensor(i + 1, j, k) - shockSensor(i, j, k))) + plim))
 
@@ -4612,7 +4628,8 @@ contains
                     ! of the face.
 
                     dp2 = abs((shockSensor(i, j + 2, k) - two * shockSensor(i, j + 1, k) + shockSensor(i, j, k)) &
-                         / (omega * (shockSensor(i, j + 2, k) + two * shockSensor(i, j + 1, k) + shockSensor(i, j, k)) &
+                              / (omega * (shockSensor(i, j + 2, k) + &
+                                          two * shockSensor(i, j + 1, k) + shockSensor(i, j, k)) &
                                  + oneMinOmega * (abs(shockSensor(i, j + 2, k) - shockSensor(i, j + 1, k)) &
                                                   + abs(shockSensor(i, j + 1, k) - shockSensor(i, j, k))) + plim))
 
@@ -4790,7 +4807,8 @@ contains
                     ! of the face.
 
                     dp2 = abs((shockSensor(i, j, k + 2) - two * shockSensor(i, j, k + 1) + shockSensor(i, j, k)) &
-                         / (omega * (shockSensor(i, j, k + 2) + two * shockSensor(i, j, k + 1) + shockSensor(i, j, k)) &
+                              / (omega * (shockSensor(i, j, k + 2) + &
+                                          two * shockSensor(i, j, k + 1) + shockSensor(i, j, k)) &
                                  + oneMinOmega * (abs(shockSensor(i, j, k + 2) - shockSensor(i, j, k + 1)) &
                                                   + abs(shockSensor(i, j, k + 1) - shockSensor(i, j, k))) + plim))
 
