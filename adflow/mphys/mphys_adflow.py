@@ -1131,8 +1131,9 @@ class ADflowBuilder(Builder):
         self,
         options,  # adflow options
         mesh_options=None,  # idwarp options
-        multiUSmesh_optionsDict=None,  # dict for multi US mesh
         scenario="aerodynamic",  # scenario type to configure the groups
+        mesh_type="USMesh",  # mesh type option. USMesh or  MultiUSMesh
+        multi_us_mesh_instancesdict=None,  # dict for multiple IDWarp instances in MultiUSMesh
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
@@ -1159,24 +1160,30 @@ class ADflowBuilder(Builder):
                 self.mesh_options = {
                     "gridFile": options["gridFile"],
                 }
-                self.multiUSmeshGrid = options["gridFile"]
             elif "gridfile" in options:
                 self.mesh_options = {
                     "gridFile": options["gridfile"],
                 }
-
-                self.multiUSmeshGrid = options["gridfile"]
-
         else:
             self.mesh_options = mesh_options
-            self.multiUSmeshGrid = mesh_options["gridFile"]
 
-        if multiUSmesh_optionsDict is not None:
-            self.multiUSmesh = True
-            self.multimesh_options = multiUSmesh_optionsDict
+        if mesh_type == "USMesh":
+            self.multi_us_mesh = False
+
+            if multi_us_mesh_instancesdict is not None:
+                raise TypeError(
+                    "multi_us_mesh_instancesdict option is only for 'MultiUSMesh' mesh_type . Please set 'None' for 'USMesh' mesh_type."
+                )
+
+        elif mesh_type == "MultiUSMesh":
+            if multi_us_mesh_instancesdict is None:
+                raise TypeError("multi_us_mesh_instancesdict option must be provided for 'MultiUSMesh' mesh_type.")
+
+            self.multi_us_mesh = True
+            self.multi_us_mesh_instances = multi_us_mesh_instancesdict
+
         else:
-            self.multiUSmesh = False
-            self.multimesh_options = None
+            raise TypeError("Avialble options: 'USMesh' and 'MultiUSMesh'")
 
         # defaults:
 
@@ -1240,8 +1247,8 @@ class ADflowBuilder(Builder):
             for key, val in self.user_family_groups.items():
                 self.solver.addFamilyGroup(key, val)
 
-        if self.multiUSmesh:
-            mesh = MultiUSMesh(self.multiUSmeshGrid, self.multimesh_options, comm=comm)
+        if self.multi_us_mesh:
+            mesh = MultiUSMesh(self.mesh_options["gridFile"], self.multi_us_mesh_instances, comm=comm)
         else:
             mesh = USMesh(options=self.mesh_options, comm=comm)
 
