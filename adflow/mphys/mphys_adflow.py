@@ -1133,7 +1133,6 @@ class ADflowBuilder(Builder):
         mesh_options=None,  # idwarp options
         scenario="aerodynamic",  # scenario type to configure the groups
         mesh_type="USMesh",  # mesh type option. USMesh or  MultiUSMesh
-        multi_us_mesh_instancesdict=None,  # dict for multiple IDWarp instances in MultiUSMesh
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
@@ -1170,17 +1169,20 @@ class ADflowBuilder(Builder):
         if mesh_type == "USMesh":
             self.multi_us_mesh = False
 
-            if multi_us_mesh_instancesdict is not None:
+            if "multi_us_mesh_components" in self.mesh_options.keys():
                 raise TypeError(
-                    "multi_us_mesh_instancesdict option is only for 'MultiUSMesh' mesh_type . Please set 'None' for 'USMesh' mesh_type."
+                    "'multi_us_mesh_components' is only for 'MultiUSMesh' mesh_type . Please don't provide any multi_us_mesh_components dictionary for 'USMesh' mesh_type."
                 )
 
         elif mesh_type == "MultiUSMesh":
-            if multi_us_mesh_instancesdict is None:
-                raise TypeError("multi_us_mesh_instancesdict option must be provided for 'MultiUSMesh' mesh_type.")
+            if "multi_us_mesh_components" not in self.mesh_options.keys():
+                raise TypeError(
+                    "The 'multi_us_mesh_components' keyword argument is *NOT* "
+                    "optional. A multi_us_mesh_components dictionary must be passed for 'MultiUSMesh' mesh_type. "
+                )
 
             self.multi_us_mesh = True
-            self.multi_us_mesh_instances = multi_us_mesh_instancesdict
+            # self.multi_us_mesh_instances = multi_us_mesh_instancesdict
 
         else:
             raise TypeError("Avialble options: 'USMesh' and 'MultiUSMesh'")
@@ -1248,7 +1250,7 @@ class ADflowBuilder(Builder):
                 self.solver.addFamilyGroup(key, val)
 
         if self.multi_us_mesh:
-            mesh = MultiUSMesh(self.mesh_options["gridFile"], self.multi_us_mesh_instances, comm=comm)
+            mesh = MultiUSMesh(self.mesh_options["gridFile"], self.mesh_options["multi_us_mesh_components"], comm=comm)
         else:
             mesh = USMesh(options=self.mesh_options, comm=comm)
 
