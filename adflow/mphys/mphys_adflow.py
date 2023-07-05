@@ -337,10 +337,7 @@ class ADflowWarper(ExplicitComponent):
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
-        print_func_call(self)
-
         solver = self.solver
-
         set_surf_coords(solver, inputs)
 
         if mode == "fwd":
