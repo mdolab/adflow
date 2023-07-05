@@ -967,7 +967,12 @@ class ADflowFunctions(ExplicitComponent):
         ap = self.ap
         # actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve:
-            setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
+            updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+
+            # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+            # all intermediate variables up to date.
+            if updatesMade:
+                solver.getResidual(ap)
 
         if self.write_solution:
             # write the solution files. Internally, this checks the
