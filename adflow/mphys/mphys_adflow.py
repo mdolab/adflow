@@ -530,7 +530,7 @@ class ADflowSolver(ImplicitComponent):
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
-        # If we changed the earoProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
         if updatesMade:
             solver.getResidual(ap)
@@ -540,7 +540,7 @@ class ADflowSolver(ImplicitComponent):
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
-        # If we changed the earoProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
         if updatesMade:
             solver.getResidual(ap)
@@ -665,7 +665,7 @@ class ADflowForces(ExplicitComponent):
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
 
-        # If we changed the earoProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
         if updatesMade:
             solver.getResidual(ap)
@@ -757,7 +757,7 @@ class AdflowHeatTransfer(ExplicitComponent):
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
 
-        # If we changed the earoProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
         if updatesMade:
             solver.getResidual(ap)
@@ -770,7 +770,7 @@ class AdflowHeatTransfer(ExplicitComponent):
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
 
-        # If we changed the earoProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
         if updatesMade:
             solver.getResidual(ap)
@@ -1001,7 +1001,7 @@ class ADflowFunctions(ExplicitComponent):
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
 
-        # If we changed the earoProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
         if updatesMade:
             solver.getResidual(ap)
