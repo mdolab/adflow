@@ -2128,18 +2128,13 @@ contains
             end do domains
         end if bothPAndE
 
-        ! call wOverset_b(level, start, end, commPressure, commVarGamma, &
-        !                 commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
         call wOverset_b(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, .false., commPatternOverset, internalOverset)
+                        commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
 
 
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
-        ! call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
-        !                  commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
-        !                  internalCell_2nd)
         call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, .false., commPatternCell_2nd, &
+                         commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! NOTE: Only the 1to1 halo exchange and overset is done. whalosliding,
@@ -2193,18 +2188,13 @@ contains
 
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
-        ! call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
-        !                  commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
-        !                  internalCell_2nd)
         call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, .false., commPatternCell_2nd, &
+                         commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! Exchange the overset cells
-        ! call wOverset_d(level, start, end, commPressure, commVarGamma, &
-        !                 commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
         call wOverset_d(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, .false., commPatternOverset, internalOverset)
+                        commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
 
         ! NOTE: Only the 1to1 halo and wOverset exchange is done. whalosliding,
         ! whalomixing, orphanAverage and PandE corrections
