@@ -42,7 +42,7 @@ contains
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity
         use actuatorRegionData, only: nActuatorRegions
-        use wallDistanceData, only: xSurfVec, xSurf, exchangeWallDistanceHalos
+        use wallDistanceData, only: xSurfVec, xSurf
 
         implicit none
 
@@ -93,11 +93,11 @@ contains
             end do
         end if
 
-        do sps = 1, nTimeIntervalsSpectral
-            do nn = 1, nDom
-                call setPointers(nn, 1, sps)
 
-                if (useSpatial) then
+        if (useSpatial) then
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+                    call setPointers(nn, 1, sps)
 
                     call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
@@ -114,7 +114,15 @@ contains
                     call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
-                end if
+                end do
+            end do
+
+            call whalo2(1, 1_intType, 0_intType, .false., .false., .false., .True.)
+        end if
+
+        do sps = 1, nTimeIntervalsSpectral
+            do nn = 1, nDom
+                call setPointers(nn, 1, sps)
 
                 ! Compute the pressures/viscositites
                 call computePressureSimple(.False.)
@@ -135,9 +143,8 @@ contains
 
 
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchangeWallDistanceHalos(currentLevel))
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
 
-        exchangeWallDistanceHalos(currentLevel) = .False.
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -285,7 +292,7 @@ contains
         use adjointPETSc, only: x_like
         use haloExchange, only: whalo2_d, exchangeCoor_d, exchangeCoor, whalo2
         use wallDistance_d, only: updateWallDistancesQuickly_d
-        use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter, exchangeWallDistanceHalos
+        use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
         use flowutils_d, only: computePressureSimple_d, computeLamViscosity_d, &
                                computeSpeedOfSoundSquared_d, allNodalGradients_d, adjustInflowAngle_d
         use solverutils_d, only: timeStep_Block_d, gridvelocitiesfinelevel_block_d, slipvelocitiesfinelevel_block_d, &
@@ -444,9 +451,29 @@ contains
                 ! required for ts
                 call slipvelocitiesfinelevel_block_d(useoldcoor, time, sps, nn)
 
-                if (equations == RANSEquations .and. useApproxWallDistance) then
+            end do
+        end do
+
+
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+
+                    call setPointers_d(nn, 1, sps)
+
                     call updateWallDistancesQuickly_d(nn, 1, sps)
-                end if
+                end do
+            end do
+
+            call whalo2_d(1, 1_intType, 0_intType, .false., .false., .false., .True.)
+        end if
+
+        do sps = 1, nTimeIntervalsSpectral
+            do nn = 1, nDom
+
+                call setPointers_d(nn, 1, sps)
+                ISIZE1OFDrfbcdata = nBocos
+                ISIZE1OFDrfviscsubface = nViscBocos
 
                 call computePressureSimple_d(.False.)
                 call computeLamViscosity_d(.False.)
@@ -472,8 +499,7 @@ contains
         end do
 
         ! Just exchange the derivative values.
-        call whalo2_d(1, 1, nw, .True., .True., .True., exchangeWallDistanceHalos(1))
-        exchangeWallDistanceHalos(1) = .False.
+        call whalo2_d(1, 1, nw, .True., .True., .True., .False.)
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -799,14 +825,8 @@ contains
             end do
         end if
 
-        ! exchange d2wall if necessairy
-        exchanged2wall = .false.
-        ! if (equations == RANSEquations .and. useApproxWallDistance) then
-        !     exchanged2wall = .true.
-        ! endif
-
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., exchanged2wall)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
 
@@ -843,9 +863,26 @@ contains
                 call computeLamViscosity_b(.false.)
                 call computePressureSimple_b(.false.)
 
-                if (equations == RANSEquations .and. useApproxWallDistance) then
+            end do domainLoop2
+        end do spsLoop2
+
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            call whalo2_b(1, 1_intType, 0_intType, .False., .False., .False., .True.)
+
+            spsLoop3: do sps = 1, nTimeIntervalsSpectral
+                domainLoop3: do nn = 1, nDom
+                    call setPointers_b(nn, 1, sps)
+
                     call updateWallDistancesQuickly_b(nn, 1, sps)
-                end if
+                
+                end do domainLoop3
+            end do spsLoop3
+        end if
+
+
+        spsLoop4: do sps = 1, nTimeIntervalsSpectral
+            domainLoop4: do nn = 1, nDom
+                call setPointers_b(nn, 1, sps)
 
                 ! Here we insert the functions related to
                 ! rotational (mesh movement) setup
@@ -865,7 +902,7 @@ contains
                 call metric_block_b
                 call volume_block_b
 
-            end do domainLoop2
+            end do domainLoop4
 
             ! Restore the petsc pointers.
             call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
@@ -885,7 +922,7 @@ contains
                 call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end if
-        end do spsLoop2
+        end do spsLoop4
 
         if (present(bcDataNames)) then
             allocate (bcDataValuesdLocal(size(bcDataValuesd)))

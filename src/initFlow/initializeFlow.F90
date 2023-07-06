@@ -359,7 +359,6 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use variableReading, only: halosRead
         use haloExchange, only: whalo2
-        use wallDistanceData, only: exchangeWallDistanceHalos
 
         implicit none
         !
@@ -409,11 +408,8 @@ contains
 
         ! Exchange d2wall on halo cells
         do level = 1, nLevels
-            if (exchangeWallDistanceHalos(level)) then
-                call whalo2(level, 1_intType, 0_intType, &
-                            .false., .false., .false., .true.)
-                exchangeWallDistanceHalos(level) = .False.
-            end if
+            call whalo2(level, 1_intType, 0_intType, .false., .false., .false., .true.)
+
         end do
 
 
