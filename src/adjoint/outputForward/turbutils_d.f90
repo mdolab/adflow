@@ -12,9 +12,10 @@ module turbutils_d
 contains
 !  differentiation of prodkatolaunder in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *scratch
-!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
-!   rw status of diff variables: *w:in *scratch:in-out *vol:in
-!                *si:in *sj:in *sk:in
+!   with respect to varying inputs: timeref *w *scratch *vol *si
+!                *sj *sk
+!   rw status of diff variables: timeref:in *w:in *scratch:in-out
+!                *vol:in *si:in *sj:in *sk:in
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine prodkatolaunder_d(ibeg, iend, jbeg, jend, kbeg, kend)
@@ -47,7 +48,7 @@ contains
     real(kind=realtype) :: oxy, oxz, oyz, oijoij
     real(kind=realtype) :: oxyd, oxzd, oyzd, oijoijd
     real(kind=realtype) :: fact, omegax, omegay, omegaz
-    real(kind=realtype) :: factd
+    real(kind=realtype) :: factd, omegaxd, omegayd, omegazd
     intrinsic sqrt
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
@@ -60,8 +61,11 @@ contains
 ! in the vorticity in the rotating frame. however some people
 ! claim that the absolute vorticity should be used to obtain the
 ! best results. in that omega should be set to zero.
+    omegaxd = sections(sectionid)%rotrate(1)*timerefd
     omegax = timeref*sections(sectionid)%rotrate(1)
+    omegayd = sections(sectionid)%rotrate(2)*timerefd
     omegay = timeref*sections(sectionid)%rotrate(2)
+    omegazd = sections(sectionid)%rotrate(3)*timerefd
     omegaz = timeref*sections(sectionid)%rotrate(3)
 ! loop over the cell centers of the given block. it may be more
 ! efficient to loop over the faces and to scatter the gradient,
@@ -201,11 +205,11 @@ contains
           qxz = fact*half*(uuz+wwx)
           qyzd = half*(factd*(vvz+wwy)+fact*(vvzd+wwyd))
           qyz = fact*half*(vvz+wwy)
-          oxyd = half*(factd*(vvx-uuy)+fact*(vvxd-uuyd))
+          oxyd = half*(factd*(vvx-uuy)+fact*(vvxd-uuyd)) - omegazd
           oxy = fact*half*(vvx-uuy) - omegaz
-          oxzd = half*(factd*(uuz-wwx)+fact*(uuzd-wwxd))
+          oxzd = half*(factd*(uuz-wwx)+fact*(uuzd-wwxd)) - omegayd
           oxz = fact*half*(uuz-wwx) - omegay
-          oyzd = half*(factd*(wwy-vvz)+fact*(wwyd-vvzd))
+          oyzd = half*(factd*(wwy-vvz)+fact*(wwyd-vvzd)) - omegaxd
           oyz = fact*half*(wwy-vvz) - omegax
 ! compute the summation of the strain and vorticity tensors.
           sijsijd = two*(2*qxy*qxyd+2*qxz*qxzd+2*qyz*qyzd) + 2*qxx*qxxd &
@@ -1146,10 +1150,11 @@ nadvloopspectral:do ii=1,nadv
   end subroutine kweddyviscosity
 !  differentiation of ssteddyviscosity in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev *scratch
-!   with respect to varying inputs: *rev *w *rlv *scratch *vol
-!                *d2wall *si *sj *sk (global)timeref
-!   rw status of diff variables: *rev:in-out *w:in *rlv:in *scratch:in-out
-!                *vol:in *d2wall:in *si:in *sj:in *sk:in (global)timeref:in
+!   with respect to varying inputs: timeref *rev *w *rlv *scratch
+!                *vol *d2wall *si *sj *sk
+!   rw status of diff variables: timeref:in *rev:in-out *w:in *rlv:in
+!                *scratch:in-out *vol:in *d2wall:in *si:in *sj:in
+!                *sk:in
 !   plus diff mem management of: rev:in w:in rlv:in scratch:in
 !                vol:in d2wall:in si:in sj:in sk:in
   subroutine ssteddyviscosity_d(ibeg, iend, jbeg, jend, kbeg, kend)
@@ -1163,6 +1168,7 @@ nadvloopspectral:do ii=1,nadv
     use blockpointers
     use paramturb
     use turbmod
+    use flowvarrefstate, only : timeref, timerefd
     implicit none
 ! input variables
     integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
@@ -1409,6 +1415,7 @@ nadvloopspectral:do ii=1,nadv
     use blockpointers
     use paramturb
     use turbmod
+    use flowvarrefstate, only : timeref
     implicit none
 ! input variables
     integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend

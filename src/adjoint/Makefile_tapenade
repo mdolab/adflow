@@ -156,10 +156,10 @@ BCRoutines%bcSubsonicOutflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev
                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) \
 \
 turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > \
-                                      (rev, w) \
+                                      (rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
 \
-turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > \
-                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
+turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet) > \
+                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet) \
 \
 solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > \
               (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) \
@@ -168,13 +168,13 @@ turbutils%turbAdvection(w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) > \
                        (w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) \
 \
 turbutils%kwCDterm(w, vol, si, sj, sk, scratch) > \
-                  (w, scratch) \
+                  (w, vol, si, sj, sk, scratch) \
 \
-turbutils%prodKatoLaunder(w, vol, si, sj, sk, scratch) > \
-                  		 (w, scratch) \
+turbutils%prodKatoLaunder(w, vol, si, sj, sk, scratch, timeref) > \
+                  		 (w, vol, si, sj, sk, scratch, timeref) \
 \
 turbutils%prodSmag2(w, vol, si, sj, sk, scratch) > \
-                   (w, scratch) \
+                   (w, vol, si, sj, sk, scratch) \
 \
 turbutils%prodWmag2(w, vol, si, sj, sk, scratch, timeref) > \
                    (w, vol, si, sj, sk, scratch, timeref) \

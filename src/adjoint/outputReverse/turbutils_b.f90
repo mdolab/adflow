@@ -11,10 +11,12 @@ module turbutils_b
 
 contains
 !  differentiation of prodkatolaunder in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *scratch
-!   with respect to varying inputs: *w *scratch *vol *si *sj *sk
-!   rw status of diff variables: *w:incr *scratch:in-out *vol:out
-!                *si:out *sj:out *sk:out
+!   gradient     of useful results: timeref *w *scratch *vol *si
+!                *sj *sk
+!   with respect to varying inputs: timeref *w *scratch *vol *si
+!                *sj *sk
+!   rw status of diff variables: timeref:incr *w:incr *scratch:in-out
+!                *vol:incr *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine prodkatolaunder_b(ibeg, iend, jbeg, jend, kbeg, kend)
@@ -47,7 +49,7 @@ contains
     real(kind=realtype) :: oxy, oxz, oyz, oijoij
     real(kind=realtype) :: oxyd, oxzd, oyzd, oijoijd
     real(kind=realtype) :: fact, omegax, omegay, omegaz
-    real(kind=realtype) :: factd
+    real(kind=realtype) :: factd, omegaxd, omegayd, omegazd
     intrinsic mod
     intrinsic sqrt
     real(kind=realtype) :: tempd
@@ -76,10 +78,9 @@ contains
     isize = iend - ibeg + 1
     jsize = jend - jbeg + 1
     ksize = kend - kbeg + 1
-    vold = 0.0_8
-    sid = 0.0_8
-    sjd = 0.0_8
-    skd = 0.0_8
+    omegaxd = 0.0_8
+    omegayd = 0.0_8
+    omegazd = 0.0_8
     do ii=0,isize*jsize*ksize-1
       i = mod(ii, isize) + ibeg
       j = mod(ii/isize, jsize) + jbeg
@@ -163,8 +164,11 @@ contains
       qyyd = 2*qyy*sijsijd
       qzzd = 2*qzz*sijsijd
       tempd2 = half*oyzd
+      omegaxd = omegaxd - oyzd
       tempd3 = half*oxzd
+      omegayd = omegayd - oxzd
       tempd7 = half*oxyd
+      omegazd = omegazd - oxyd
       tempd4 = half*qyzd
       wwyd = fact*tempd4 + fact*tempd2
       vvzd = fact*tempd4 - fact*tempd2
@@ -290,6 +294,9 @@ contains
       wd(i, j, k-1, ivx) = wd(i, j, k-1, ivx) - sk(i, j, k-1, 1)*uuxd
       skd(i, j, k-1, 1) = skd(i, j, k-1, 1) - w(i, j, k-1, ivx)*uuxd
     end do
+    timerefd = timerefd + sections(sectionid)%rotrate(2)*omegayd + &
+&     sections(sectionid)%rotrate(1)*omegaxd + sections(sectionid)%&
+&     rotrate(3)*omegazd
   end subroutine prodkatolaunder_b
   subroutine prodkatolaunder(ibeg, iend, jbeg, jend, kbeg, kend)
 !
@@ -403,10 +410,10 @@ contains
     end do
   end subroutine prodkatolaunder
 !  differentiation of prodsmag2 in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *scratch
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
 !   with respect to varying inputs: *w *scratch *vol *si *sj *sk
-!   rw status of diff variables: *w:incr *scratch:in-out *vol:out
-!                *si:out *sj:out *sk:out
+!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
+!                *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine prodsmag2_b(ibeg, iend, jbeg, jend, kbeg, kend)
@@ -452,10 +459,6 @@ contains
     isize = iend - ibeg + 1
     jsize = jend - jbeg + 1
     ksize = kend - kbeg + 1
-    vold = 0.0_8
-    sid = 0.0_8
-    sjd = 0.0_8
-    skd = 0.0_8
     do ii=0,isize*jsize*ksize-1
       i = mod(ii, isize) + ibeg
       j = mod(ii/isize, jsize) + jbeg
@@ -1269,13 +1272,13 @@ nadvloopspectral:do ii=1,nadv
     end do
   end subroutine kweddyviscosity
 !  differentiation of ssteddyviscosity in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev *w *rlv *scratch *vol
-!                *d2wall *si *sj *sk (global)timeref
-!   with respect to varying inputs: *rev *w *rlv *scratch *vol
-!                *d2wall *si *sj *sk (global)timeref
-!   rw status of diff variables: *rev:in-out *w:incr *rlv:incr
-!                *scratch:in-out *vol:incr *d2wall:incr *si:incr
-!                *sj:incr *sk:incr (global)timeref:incr
+!   gradient     of useful results: timeref *rev *w *rlv *scratch
+!                *vol *d2wall *si *sj *sk
+!   with respect to varying inputs: timeref *rev *w *rlv *scratch
+!                *vol *d2wall *si *sj *sk
+!   rw status of diff variables: timeref:incr *rev:in-out *w:incr
+!                *rlv:incr *scratch:in-out *vol:incr *d2wall:incr
+!                *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: rev:in w:in rlv:in scratch:in
 !                vol:in d2wall:in si:in sj:in sk:in
   subroutine ssteddyviscosity_b(ibeg, iend, jbeg, jend, kbeg, kend)
@@ -1289,6 +1292,7 @@ nadvloopspectral:do ii=1,nadv
     use blockpointers
     use paramturb
     use turbmod
+    use flowvarrefstate, only : timeref, timerefd
     implicit none
 ! input variables
     integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
@@ -1614,6 +1618,7 @@ nadvloopspectral:do ii=1,nadv
     use blockpointers
     use paramturb
     use turbmod
+    use flowvarrefstate, only : timeref
     implicit none
 ! input variables
     integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
@@ -3165,10 +3170,10 @@ nadvloopspectral:do ii=1,nadv
     continue
   end subroutine turbadvection
 !  differentiation of kwcdterm in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *w *scratch
+!   gradient     of useful results: *w *scratch *vol *si *sj *sk
 !   with respect to varying inputs: *w *scratch *vol *si *sj *sk
-!   rw status of diff variables: *w:incr *scratch:in-out *vol:out
-!                *si:out *sj:out *sk:out
+!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
+!                *si:incr *sj:incr *sk:incr
 !   plus diff mem management of: w:in scratch:in vol:in si:in sj:in
 !                sk:in
   subroutine kwcdterm_b()
@@ -3209,10 +3214,6 @@ nadvloopspectral:do ii=1,nadv
     real(kind=realtype) :: abs0
     real(kind=realtype) :: abs5d
     real(kind=realtype) :: temp
-    vold = 0.0_8
-    sid = 0.0_8
-    sjd = 0.0_8
-    skd = 0.0_8
     do ii=0,ie*je*ke-1
       i = mod(ii, ie) + 1
       j = mod(ii/ie, je) + 1

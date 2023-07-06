@@ -1569,9 +1569,9 @@ contains
     end do
   end subroutine saviscous
 !  differentiation of saresscale in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *dw
+!   gradient     of useful results: *dw *scratch
 !   with respect to varying inputs: *dw *scratch
-!   rw status of diff variables: *dw:in-out *scratch:out
+!   rw status of diff variables: *dw:in-out *scratch:incr
 !   plus diff mem management of: dw:in scratch:in
   subroutine saresscale_b()
 !
@@ -1590,7 +1590,6 @@ contains
     intrinsic real
     intrinsic max
     real(kind=realtype) :: x1
-    scratchd = 0.0_8
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
       j = mod(ii/nx, ny) + 2

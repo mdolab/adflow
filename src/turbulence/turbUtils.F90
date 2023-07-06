@@ -910,6 +910,7 @@ contains
         use blockPointers
         use paramTurb
         use turbMod
+        use flowVarRefState, only: timeRef
         implicit none
         ! Input variables
         integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
