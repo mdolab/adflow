@@ -1,8 +1,7 @@
 from pprint import pprint as pp
+import numpy as np
 from adflow import ADFLOW
 from idwarp import USMesh, MultiUSMesh
-
-import numpy as np
 from mphys.builder import Builder
 from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
 
@@ -1185,7 +1184,9 @@ class ADflowBuilder(Builder):
             # self.multi_us_mesh_instances = multi_us_mesh_instancesdict
 
         else:
-            raise TypeError("Avialble options: 'USMesh' and 'MultiUSMesh'")
+            raise TypeError(
+                "Available options for mesh_type: 'USMesh' and 'MultiUSMesh'. By default, 'USMesh' is used. Choose 'MultiUSMesh' When several mesh components are considered for independent deformation of multiple overset component meshes."
+            )
 
         # defaults:
 
