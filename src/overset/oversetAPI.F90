@@ -34,10 +34,14 @@ contains
                                         exchangeFringes, sendOFringe, sendOBlock, setupFringeGlobalInd, &
                                         getFringeReturnSizes
         use oversetUtilities, only: isCompute, checkOverset, irregularCellCorrection, &
-                             fringeReduction, transposeOverlap, setIBlankArray, deallocateOFringes, deallocateoBlocks, &
-                                    deallocateOSurfs, deallocateCSRMatrix, setIsCompute, getWorkArray, flagForcedRecv, &
-                                    qsortFringeType, isReceiver, setIsReceiver, addToFringeList, printOverlapMatrix, &
-                                    tic, toc, unwindIndex, windIndex, isFloodSeed, isFlooded, wallsOnBlock
+                                    fringeReduction, transposeOverlap, setIBlankArray, &
+                                    deallocateOFringes, deallocateoBlocks, &
+                                    deallocateOSurfs, deallocateCSRMatrix, &
+                                    setIsCompute, getWorkArray, flagForcedRecv, &
+                                    qsortFringeType, isReceiver, setIsReceiver, &
+                                    addToFringeList, printOverlapMatrix, &
+                                    tic, toc, unwindIndex, windIndex, isFloodSeed, &
+                                    isFlooded, wallsOnBlock
         use oversetPackingRoutines, only: packOFringe, packOBlock, unpackOFringe, unpackOBlock, &
                                           getOFringeBufferSizes, getOBlockBufferSizes, getOSurfBufferSizes
         implicit none
@@ -847,11 +851,14 @@ contains
                                     aspect = one
                                     if (useOversetWallScaling) then
                                         if (CGNSDoms(nbkGlobal)%viscousDir(1)) &
-                             aspect(1) = (half * (mynorm2(si(i - 1, j, k, :)) + mynorm2(si(i, j, k, :)))) / vol(i, j, k)
+                                            aspect(1) = (half * (mynorm2(si(i - 1, j, k, :)) + &
+                                                                 mynorm2(si(i, j, k, :)))) / vol(i, j, k)
                                         if (CGNSDoms(nbkGlobal)%viscousDir(2)) &
-                             aspect(2) = (half * (mynorm2(sj(i, j - 1, k, :)) + mynorm2(sj(i, j, k, :)))) / vol(i, j, k)
+                                            aspect(2) = (half * (mynorm2(sj(i, j - 1, k, :)) + &
+                                                                 mynorm2(sj(i, j, k, :)))) / vol(i, j, k)
                                         if (CGNSDoms(nbkGlobal)%viscousDir(3)) &
-                             aspect(3) = (half * (mynorm2(sk(i, j, k - 1, :)) + mynorm2(sk(i, j, k, :)))) / vol(i, j, k)
+                                            aspect(3) = (half * (mynorm2(sk(i, j, k - 1, :)) + &
+                                                                 mynorm2(sk(i, j, k, :)))) / vol(i, j, k)
                                     end if
                                     fact = min(aspect(1) * aspect(2) * aspect(3), 100.0_realType)
 
@@ -2255,7 +2262,8 @@ contains
                                     coor(4) = dStar
                                     intInfo(3) = 0
                                     call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
-                                                                         uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                                                                          uvw, dummy, 0, BB, &
+                                                                          frontLeaves, frontLeavesNew)
                                     cellID = intInfo(3)
                                     if (cellID > 0) then
                                         ! Now check if this was successful or not:

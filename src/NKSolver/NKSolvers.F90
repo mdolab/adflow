@@ -3136,7 +3136,8 @@ contains
 #ifndef USE_COMPLEX
                                 ratio = (wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
 #else
-                               ratio = (real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
+                                ratio = (real(wvec_pointer(ii)) &
+                                         / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
 #endif
                                 ! if the ratio is less than min step, the update is either
                                 ! in the positive direction, therefore we do not clip it,
