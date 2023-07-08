@@ -177,6 +177,9 @@ class ADFLOW(AeroSolver):
         self.updateTime = 0.0
         self.nSlice = 0
         self.nLiftDist = 0
+        self.nActiveSlice = 0
+        # dictionary to hold the active slice name mapping to the fortran level slice data
+        self.activeSliceDict = OrderedDict()
 
         # Set default values
         self.adflow.inputio.autoparameterupdate = False
@@ -802,6 +805,85 @@ class ADFLOW(AeroSolver):
 
         self.nSlice += nSlice
 
+    def addActiveSlice(self, normal, point, sliceType="relative", groupName=None, sliceDir=None, name=None):
+        """
+        Add active slices that can be used during optimization
+
+        Parameters
+        ----------
+        normal : 3-d array
+            The normals of the slice directions. If an array of size 3 is passed,
+            we use the same normal for all slices. if an array of multiple normals
+            are passed, we use the individual normals for each point. in this case,
+            the numbers of points and normals must match.
+        point : 3-d array
+            Point coordinates that define a slicing plane along with the normals
+        sliceDir : 3d array
+            If this is provided, only the intersections that is in this direction
+            starting from the normal is kept. This is useful if you are slicing a
+            closed geometry and only want to keep one side of it. It is similar to
+            the functionality provided in :meth:`addCylindricalSlices <.addCylindricalSlices>`.
+        sliceType : str {'relative', 'absolute'}
+            Relative slices are 'sliced' at the beginning and then parametrically
+            move as the geometry deforms. As a result, the slice through the
+            geometry may not remain planar. An absolute slice is re-sliced for
+            every output so is always exactly planar and always at the initial
+            position the user indicated.
+        groupName : str
+             The family to use for the slices. Default is None corresponding to all
+             wall groups.
+        """
+
+        # call the preprocessing routine that avoids some code duplication across 3 types of slices
+        sliceType, famList = self._preprocessSliceInput(sliceType, groupName)
+
+        # check if a custom name is provided, if not, we name the slices sequentially
+        if name is None:
+            sliceName = f"active_slice_{self.nActiveSlice:03d}"
+        else:
+            # make sure this slice name is not already taken
+            if name in self.activeSliceDict:
+                raise Error(f"Active slice name {name} is already taken. Use another name for this slice.")
+            else:
+                sliceName = name
+
+        if sliceDir is None:
+            # if we dont have a direction vector to pick a projection direction, we can just set this
+            # array to an arbitrary direction. Because the useDir flag is false, the code won't actually
+            # use this array
+            dummySliceDir = [1.0, 0.0, 0.0]
+            useDir = False
+        else:
+            useDir = True
+
+        if useDir:
+            direction = sliceDir
+        else:
+            direction = dummySliceDir
+
+        sliceTitle = (
+            f"Slice_{self.nSlice + 1:04d} {sliceName} {groupName} {sliceType.capitalize()} Arbitrary "
+            f"Point = ({point[0]:.8f}, {point[1]:.8f}, {point[2]:.8f}) "
+            f"Normal = ({normal[0]:.8f}, {normal[1]:.8f}, {normal[2]:.8f})"
+        )
+        if sliceType == "relative":
+            sliceIndex = self.adflow.tecplotio.addparaslice(sliceTitle, point, normal, direction, useDir, famList)
+        else:
+            sliceIndex = self.adflow.tecplotio.addabsslice(sliceTitle, point, normal, direction, useDir, famList)
+
+        # save the fortran level data. specifically, we need the slice index and if this slice is parametric or absolute. Also, save the point and normal for convenience
+        self.activeSliceDict[sliceName] = {
+            "index": sliceIndex,
+            "type": sliceType,
+            "point": point,
+            "normal": normal,
+            "groupName": groupName,
+            "sliceDir": sliceDir,
+        }
+
+        self.nActiveSlice += 1
+        self.nSlice += 1
+
     def _preprocessSliceInput(self, sliceType, groupName):
         """
         Preprocessing routine that holds some of the duplicated code required for 3 types of slice methods.
@@ -820,6 +902,75 @@ class ADFLOW(AeroSolver):
             raise Error("'sliceType' must be 'relative' or 'absolute'.")
 
         return sliceType, famList
+
+    def getActiveSliceData(self):
+        # returns a dictionary where the keys are the active slice names.
+        # values of the top level dictionary are dictionaries that hold the data
+        # for the slice itself. "conn" is the 0-based connectivity array
+        # each nodel data type is provided with its own key, i.e. keying CoordinateX returns
+        # the array of x coordinates of the nodes
+
+        # get the list of solution names
+        # TODO this can be done once and saved
+        # TODO the f2py wrapper here can be greatly improved...
+        nSolVar = self.adflow.outputmod.numberofsurfsolvariables()
+        surfSolNames = self.adflow.outputmod.surfsolnameswrap(nSolVar)
+        # convert to numpy array for easier processing
+        surfSolNames = numpy.array(surfSolNames).T
+
+        # save the values. We initialize the list with the coordinates, and the 6 tractions
+        surfSolNameList = [
+            "CoordinateX",
+            "CoordinateY",
+            "CoordinateZ",
+            "PressureTractionX",
+            "PressureTractionY",
+            "PressureTractionZ",
+            "ViscousTractionX",
+            "ViscousTractionY",
+            "ViscousTractionZ",
+        ]
+        for ii in range(nSolVar):
+            surfSolNameList.append(surfSolNames[ii, :].tostring().decode().strip())
+
+        # compute nodal values
+        # famList = self._getFamilyList(self.allWallsGroup)
+        self.adflow.tecplotio.computetempnodaldata()
+
+        # loop over each slice and call the fortran routine
+        sliceDataDict = OrderedDict()
+
+        for sliceName, sliceInfo in self.activeSliceDict.items():
+            sliceIndex = sliceInfo["index"]
+            sliceType = sliceInfo["type"]
+
+            # TODO also account for multiple time spectral instances
+            if sliceType == "relative":
+                nNode, nElem, nData = self.adflow.tecplotio.getparaslicedatasize(sliceIndex)
+
+                # allocate the numpy array to hold the data
+                sliceNodalData = numpy.zeros((nNode, nData), self.dtype)
+                sliceConn = numpy.zeros((nElem, 2), numpy.intc)
+
+                # the fortran layer broadcasts the global data. each proc gets the same data back in python
+                self.adflow.tecplotio.getparaslicedata(sliceIndex, sliceNodalData.T, sliceConn.T)
+
+            # convert conn to zero based
+            sliceConn -= 1
+
+            # initialize the data in the dict with conn array
+            sliceDataDict[sliceName] = {
+                "conn": sliceConn,
+            }
+
+            # loop over the nodal data and save one by one using the keys
+            for ii, dataName in enumerate(surfSolNameList):
+                sliceDataDict[sliceName][dataName] = sliceNodalData[:, ii]
+
+        # deallocate nodal values
+        self.adflow.tecplotio.deallocatetempnodaldata()
+
+        return sliceDataDict
 
     def addIntegrationSurface(self, fileName, familyName, isInflow=True, coordXfer=None):
         """Add a specific integration surface for performing massflow-like
@@ -2780,7 +2931,7 @@ class ADFLOW(AeroSolver):
         # Flag to write the tecplot surface solution or not
         writeSurf = self.getOption("writeTecplotSurfaceSolution")
 
-        # # Call fully compbined fortran routine.
+        # Call fully compbined fortran routine.
         self.adflow.tecplotio.writetecplot(sliceName, writeSlices, liftName, writeLift, surfName, writeSurf, famList)
 
     def writeMeshFile(self, fileName):

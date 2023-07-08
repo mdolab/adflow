@@ -423,7 +423,7 @@ python module libadflow
        end module surfaceutils
 
        module tecplotio
-         subroutine addparaslice(slicename,pt,normal,dir_vec,use_dir,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addparaslice(slicename,pt,normal,dir_vec,use_dir,famlist,n,sliceindex) ! in :test:liftDistribution.F90
            character*(*) intent(in) :: slicename
            real(kind=realtype) dimension(3),intent(in) :: pt
            real(kind=realtype) dimension(3),intent(in) :: normal
@@ -431,9 +431,10 @@ python module libadflow
            logical, intent(in) :: use_dir
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+           integer(kind=inttype), intent(out) :: sliceindex
          end subroutine addparaslice
 
-         subroutine addabsslice(slicename,pt,normal,dir_vec,use_dir,famlist,n) ! in :test:liftDistribution.F90
+         subroutine addabsslice(slicename,pt,normal,dir_vec,use_dir,famlist,n,sliceindex) ! in :test:liftDistribution.F90
            character*(*) intent(in) :: slicename
            real(kind=realtype) dimension(3),intent(in) :: pt
            real(kind=realtype) dimension(3),intent(in) :: normal
@@ -441,6 +442,7 @@ python module libadflow
            logical, intent(in) :: use_dir
            integer(kind=inttype) dimension(n),intent(in) :: famlist
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=n),depend(famlist) :: n=len(famlist)
+           integer(kind=inttype), intent(out) :: sliceindex
          end subroutine addabsslice
 
          subroutine addliftdistribution(nsegments,normal,normal_ind, distname,famlist,n) ! in :test:liftDistribution.F90
@@ -465,7 +467,38 @@ python module libadflow
 
          subroutine initializeliftdistributiondata
          end subroutine initializeliftdistributiondata
+
+         subroutine computetempnodaldata
+         end subroutine computetempnodaldata
+
+         subroutine getparaslicedatasize(sliceindex,nnode,nelem,ndata)
+            integer(kind=inttype) intent(in) :: sliceindex
+            integer(kind=inttype) intent(out) :: nnode, nelem, ndata
+         end subroutine getparaslicedatasize
+
+         subroutine getparaslicedata(sliceindex,slicenodaldata,nnode,ndata,sliceconn,nelem)
+            integer(kind=inttype) intent(in) :: sliceindex
+            real(kind=realtype), dimension(ndata, nnode),intent(inout) :: slicenodaldata
+            integer(kind=inttype), optional,intent(in),check(shape(slicenodaldata,1)==nnode),depend(slicenodaldata) :: nnode=shape(slicenodaldata,1)
+            integer(kind=inttype), optional,intent(in),check(shape(slicenodaldata,0)==ndata),depend(slicenodaldata) :: ndata=shape(slicenodaldata,0)
+            integer(kind=inttype), dimension(2, nelem),intent(inout) :: sliceconn
+            integer(kind=inttype), optional,intent(in),check(shape(sliceconn,1)==nelem),depend(sliceconn) :: nelem=shape(sliceconn,1)
+         end subroutine getparaslicedata
+
+         subroutine deallocatetempnodaldata
+         end subroutine deallocatetempnodaldata
        end subroutine tecplotio
+
+       module outputmod
+        subroutine numberofsurfsolvariables(nsolvar)
+          integer(kind=inttype), intent(out) :: nsolvar
+        end subroutine numberofsurfsolvariables
+
+        subroutine surfsolnameswrap(nsolvar, solnamesstring)
+          ! TODO fix the max stringlength parameter. hard coded to 256 for now.
+          character*maxstringlen, dimension(256, nsolvar), intent(out) :: solnamesstring
+        end subroutine surfsolnameswrap
+       end module outputmod
 
        module surfaceintegrations
          subroutine getsolutionwrap(famlists,funcvalues,ncost,ngroups,nfammax) ! in :test:surfaceIntegrations.F90:surfaceintegrations

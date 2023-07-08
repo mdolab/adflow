@@ -73,8 +73,11 @@ module tecplotIO
     character(len=maxCGNSNameLen), dimension(:), allocatable :: liftDistName
     integer(kind=intType), parameter :: nLiftDistVar = 26
 
+    ! temp array to hold nodal values while we pass back slice data to python
+    real(kind=realType), dimension(:, :, :), allocatable :: tempNodalValues
+
 contains
-    subroutine addParaSlice(sliceName, pt, normal, dir_vec, use_dir, famList, n)
+    subroutine addParaSlice(sliceName, pt, normal, dir_vec, use_dir, famList, n, sliceIndex)
         !
         !       This subroutine is intended to be called from python.
         !       This routine will add a parametric slice to the list of user
@@ -92,6 +95,9 @@ contains
         logical, intent(in) :: use_dir
         integer(kind=intType), intent(in) :: n, famList(n)
 
+        ! Output parameters
+        integer(kind=intType), intent(out) :: sliceIndex
+
         ! Working
         integer(kind=intType) :: sps, sizeNode, sizeCell
         integer(kind=intType), dimension(:), pointer :: wallList
@@ -103,9 +109,12 @@ contains
             allocate (paraSlices(nSliceMax, nTimeIntervalsSpectral))
         end if
 
+        ! increment the slice counter. this also becomes the slice index
+        nParaSlices = nParaSlices + 1
+        sliceIndex = nParaSlices
+
         ! We have to add a slice for each spectral instance.
         do sps = 1, nTimeIntervalsSpectral
-            nParaSlices = nParaSlices + 1
 
             if (nParaSlices > nSliceMax) then
                 print *, 'Error: Exceeded the maximum number of slices. Increase nSliceMax'
@@ -122,7 +131,7 @@ contains
             call getSurfaceFamily(elemFam, sizeCell, wallList, size(wallList), .True.)
 
             ! Create actual slice
-            call createSlice(pts, conn, elemFam, paraSlices(nParaSlices, sps), pt, normal, dir_vec, &
+            call createSlice(pts, conn, elemFam, paraSlices(sliceIndex, sps), pt, normal, dir_vec, &
                              use_dir, sliceName, famList)
 
             ! Clean up memory.
@@ -131,7 +140,7 @@ contains
 
     end subroutine addParaSlice
 
-    subroutine addAbsSlice(sliceName, pt, normal, dir_vec, use_dir, famList, n)
+    subroutine addAbsSlice(sliceName, pt, normal, dir_vec, use_dir, famList, n, sliceIndex)
         !
         !       This subroutine is intended to be called from python.
         !       This routine will add an absolute slice to the list of user
@@ -149,6 +158,9 @@ contains
         logical, intent(in) :: use_dir
         integer(kind=intType), intent(in) :: n, famList(n)
 
+        ! Output parameters
+        integer(kind=intType), intent(out) :: sliceIndex
+
         ! Working
         integer(kind=intType) :: sps, sizeNode, sizeCell
         integer(kind=intType), dimension(:), pointer :: wallList
@@ -160,8 +172,11 @@ contains
             allocate (absSlices(nSliceMax, nTimeIntervalsSpectral))
         end if
 
+        ! increment the slice counter. this also becomes the slice index
+        nAbsSlices = nAbsSlices + 1
+        sliceIndex = nAbsSlices
+
         do sps = 1, nTimeIntervalsSpectral
-            nAbsSlices = nAbsSlices + 1
 
             if (nAbsSlices > nSliceMax) then
                 print *, 'Error: Exceeded the maximum number of slices. Increase nSliceMax'
@@ -216,6 +231,133 @@ contains
         liftDists(nLiftDists)%famList(:) = famList
 
     end subroutine addLiftDistribution
+
+    subroutine computeTempNodalData()
+
+        use constants
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use surfaceFamilies, only: BCFamGroups, BCFamExchange
+        use surfaceUtils, only: getSurfaceSize
+        use oversetData, only: zipperMeshes
+        use outputMod, only: numberOfSurfSolVariables
+        implicit none
+
+        ! Working
+        integer(kind=intType) :: sps, nSolVar, sizeNOde, sizeCell
+        integer(kind=intType), dimension(:), pointer :: wallLIST
+
+        ! Determine the number of surface variables we have
+        call numberOfSurfSolVariables(nSolVar)
+        wallList => BCFamGroups(iBCGroupWalls)%famList
+        call getSurfaceSize(sizeNode, sizeCell, wallList, size(wallList), .True.)
+
+        ! Allocate and compute the wall-based surface data for hte slices
+        ! and lift distributions.
+        allocate (tempNodalValues(max(sizeNode, 1), nSolVar + 6 + 3, nTimeIntervalsSpectral))
+
+        ! TODO modify this so we keep each sps instance separately
+        sps = 1
+        call computeSurfaceOutputNodalData(BCFamExchange(iBCGroupWalls, sps), &
+                                            zipperMeshes(iBCGroupWalls), .True., tempNodalValues(:, :, sps))
+
+
+    end subroutine computeTempNodalData
+
+    subroutine deallocateTempNodalData()
+        implicit none
+        ! just deallocate the data we already computed
+        deallocate(tempNodalValues)
+    end subroutine deallocateTempNodalData
+
+    subroutine getParaSliceDataSize(sliceIndex, nNode, nElem, nData)
+        use constants
+        use communication, only: adflow_comm_world
+        use outputMod, only: numberOfSurfSolVariables
+        use utils, only: EChk
+        implicit none
+
+        integer(kind=intType), intent(in) :: sliceIndex
+        integer(kind=intType), intent(out) :: nNode, nElem, nData
+
+        integer(kind=intType) :: sps, ierr, nElemLocal, nNodeLocal, nSolVar
+
+        ! return slice node count and data count back to python so we can allocate the numpy array there
+
+        sps = 1
+
+        ! sum up the number of nodes from all procs
+        nNodeLocal = paraSlices(sliceIndex, sps)%nNodes
+        call mpi_allreduce(nNodeLocal, nNode, 1, adflow_integer, MPI_SUM, adflow_comm_world, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! add up the number of elements
+        nElemLocal = size(paraSlices(sliceIndex, sps)%conn, 2)
+        call mpi_allreduce(nElemLocal, nElem, 1, adflow_integer, MPI_SUM, adflow_comm_world, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Determine the number of surface variables we have
+        call numberOfSurfSolVariables(nSolVar)
+        ! add 3 + 6 because 3 coordinates, 6 tractions (3 pressure and 3 viscous)
+        ! TODO we may want to change this; only pass a subset back
+        nData = nSolVar + 3 + 6
+
+    end subroutine
+
+    subroutine getParaSliceData(sliceIndex, sliceNodalData, nNode, nData, sliceConn, nElem)
+
+        use constants
+        ! use inputTimeSpectral, only: nTimeIntervalsSpectral
+        ! use surfaceFamilies, only: BCFamGroups, BCFamExchange
+        ! use surfaceUtils, only: getSurfaceSize
+        ! use oversetData, only: zipperMeshes
+        use communication, only: myid, adflow_comm_world
+        use outputMod, only: numberOfSurfSolVariables
+        use utils, only: EChk
+        implicit none
+
+        ! Input/Output Params
+        integer(kind=intType), intent(in) :: sliceIndex
+        integer(kind=inttype), intent(in):: nNode, nData, nElem
+        real(kind=realtype) ,intent(inout), dimension(ndata, nnode) :: sliceNodalData
+        integer(kind=inttype) ,intent(inout), dimension(2, nElem) :: sliceConn
+
+        ! Working
+        integer(kind=intType) :: sps, nSolVar, ii, jj, ierr
+        type(slice) :: globalSlice
+
+        sps = 1
+        call numberOfSurfSolVariables(nSolVar)
+
+        ! assume the nodal data is already computed.
+        ! run the regular integration call
+        call integrateSlice(paraSlices(sliceIndex, sps), globalSlice, &
+                                        tempNodalValues(:, :, sps), nSolVar, .True.)
+
+        ! copy the data we want
+        if (myid == 0) then
+            do ii = 1, nNode
+                do jj = 1, nData
+                    sliceNodalData(jj, ii) = globalSlice%vars(jj, ii)
+                end do
+            end do
+        end if
+
+        ! broadcast the nodal data
+        call mpi_bcast(sliceNodalData, nNode*nData, adflow_real, 0, adflow_comm_world, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! do the same for the conn
+        if (myid == 0) then
+            do ii = 1, nElem
+                sliceConn(:, ii) = globalSlice%conn(:, ii)
+            end do
+        end if
+
+        ! broadcast the nodal data
+        call mpi_bcast(sliceConn, nElem*2, adflow_integer, 0, adflow_comm_world, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine getParaSliceData
 
     subroutine writeTecplot(sliceFile, writeSlices, liftFile, writeLift, &
                             surfFile, writeSurf, famList, nFamList)
@@ -1001,7 +1143,8 @@ contains
                 ! Gather values to the root proc.
                 do i = 1, iSize
                     call mpi_gatherv(nodalValues(:, i), sizeNode, &
-                                 adflow_real, vars(:, i), nodeSizes, nodeDisps, adflow_real, 0, adflow_comm_world, ierr)
+                                     adflow_real, vars(:, i), nodeSizes, nodeDisps, &
+                                     adflow_real, 0, adflow_comm_world, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
                 end do
                 deallocate (nodalValues)
@@ -2207,19 +2350,19 @@ contains
             end if
 
             if (normal_ind == 1) then
-                M(1, 1) = one; M(1, 2) = zero; M(1, 3) = zero; 
-                M(2, 1) = zero; M(2, 2) = one; M(2, 3) = zero; 
-                M(3, 1) = zero; M(3, 2) = zero; M(3, 3) = one; 
+                M(1, 1) = one; M(1, 2) = zero; M(1, 3) = zero;
+                M(2, 1) = zero; M(2, 2) = one; M(2, 3) = zero;
+                M(3, 1) = zero; M(3, 2) = zero; M(3, 3) = one;
             else if (normal_ind == 2) then
                 ! Y-rotation matrix
-                M(1, 1) = cos(-theta); M(1, 2) = zero; M(1, 3) = sin(-theta); 
-                M(2, 1) = zero; M(2, 2) = one; M(2, 3) = zero; 
-                M(3, 1) = -sin(-theta); M(3, 2) = zero; M(3, 3) = cos(-theta); 
+                M(1, 1) = cos(-theta); M(1, 2) = zero; M(1, 3) = sin(-theta);
+                M(2, 1) = zero; M(2, 2) = one; M(2, 3) = zero;
+                M(3, 1) = -sin(-theta); M(3, 2) = zero; M(3, 3) = cos(-theta);
             else
                 ! Z rotation Matrix
-                M(1, 1) = cos(theta); M(1, 2) = -sin(theta); M(1, 3) = zero; 
-                M(2, 1) = sin(theta); M(2, 2) = cos(theta); M(2, 3) = zero; 
-                M(3, 1) = zero; M(3, 2) = zero; M(3, 3) = one; 
+                M(1, 1) = cos(theta); M(1, 2) = -sin(theta); M(1, 3) = zero;
+                M(2, 1) = sin(theta); M(2, 2) = cos(theta); M(2, 3) = zero;
+                M(3, 1) = zero; M(3, 2) = zero; M(3, 3) = one;
             end if
 
             allocate (tempCoords(3, size(gSlc%vars, 2)))

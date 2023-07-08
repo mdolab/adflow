@@ -642,6 +642,31 @@ class Airfoil:
         fig.update_scenes(aspectmode="data")
         fig.show()
 
+    def addFunction(self, funcName, callBack):
+
+    def getNodeFiltering(self, begFrac, endFrac, surface="upper"):
+
+        return mask_array
+
+    def evalFuncs(self, )
+
+
+
+
+if __name__ == "__main__":
+    mask_array = airfoil_Instance.getNodeFiltering()
+
+    def callback(nodeData, func, mask_array=mask_array):
+        cp = nodeData["cp"]
+        x = nodeData["x"]
+
+        cp_local = cp[mask_array]
+        x_local = x[mask_array]
+
+    airfoil_instance.addFunc("fname", callback, active_data=["x", "cp"])
+
+
+
 
 class Wing:
     def __init__(self, list_data, list_conn, list_normal, list_points):

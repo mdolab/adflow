@@ -9,7 +9,8 @@ module adjointAPI
 contains
 #ifndef USE_COMPLEX
     subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, bcDataValuesdot, useSpatial, &
-                    useState, famLists, bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty, dwdot, funcsDot, fDot, &
+                                           useState, famLists, bcDataNames, bcDataValues, &
+                                           bcDataFamLists, bcVarsEmpty, dwdot, funcsDot, fDot, &
                                            costSize, fSize, nTime)
 
         ! This is the main matrix-free forward mode computation
@@ -901,7 +902,8 @@ contains
             ! linear system also serves as the preconditioning matrix. This
             ! is only valid if useMatrixFree is flase.
             if (useMatrixfreedRdw) then
-            call terminate("setupPETScKSP", "useMatrixFreedRdW option cannot be true when the approxPC option is False")
+                call terminate("setupPETScKSP", &
+                               "useMatrixFreedRdW option cannot be true when the approxPC option is False")
             end if
             call KSPSetOperators(adjointKSP, dRdWt, dRdWT, ierr)
             call EChk(ierr, __FILE__, __LINE__)
