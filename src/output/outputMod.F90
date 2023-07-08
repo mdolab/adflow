@@ -716,6 +716,25 @@ contains
 
     end subroutine surfSolNames
 
+    subroutine surfSolNamesWrap(nSolVar, surfSolNamesString)
+        use precision
+        use cgnsNames
+        use extraOutput
+        implicit none
+        !
+        !      Subroutine argument.
+        !
+        integer(kind=inttype), intent(in) ::nSolVar
+        character(len=maxStringLen), dimension(nSolVar), intent(out) :: surfSolNamesString
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: nn, solNameLength
+
+        call surfSolNames(surfSolNamesString)
+
+    end subroutine surfSolNamesWrap
+
     subroutine storeSolInBuffer(buffer, copyInBuffer, solName, &
                                 iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
         !
