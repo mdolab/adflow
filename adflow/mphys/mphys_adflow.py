@@ -2,12 +2,12 @@ from pprint import pprint as pp
 import inspect
 
 import numpy as np
-from idwarp import USMesh
+from adflow import ADFLOW
+from idwarp import USMesh, MultiUSMesh
 from mphys.builder import Builder
 from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
 from mpi4py import MPI
 
-from adflow import ADFLOW
 
 from .om_utils import get_dvs_and_cons
 
@@ -1211,6 +1211,7 @@ class ADflowBuilder(Builder):
         options,  # adflow options
         mesh_options=None,  # idwarp options
         scenario="aerodynamic",  # scenario type to configure the groups
+        mesh_type="USMesh",  # mesh type option. USMesh or  MultiUSMesh
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
@@ -1243,6 +1244,28 @@ class ADflowBuilder(Builder):
                 }
         else:
             self.mesh_options = mesh_options
+
+        if mesh_type == "USMesh":
+            self.multi_us_mesh = False
+
+            if "multi_us_mesh_components" in self.mesh_options.keys():
+                raise TypeError(
+                    "'multi_us_mesh_components' is only for 'MultiUSMesh' mesh_type . Please don't provide any multi_us_mesh_components dictionary for 'USMesh' mesh_type."
+                )
+
+        elif mesh_type == "MultiUSMesh":
+            if "multi_us_mesh_components" not in self.mesh_options.keys():
+                raise TypeError(
+                    "The 'multi_us_mesh_components' keyword argument is *NOT* "
+                    "optional. A multi_us_mesh_components dictionary must be passed for 'MultiUSMesh' mesh_type. "
+                )
+
+            self.multi_us_mesh = True
+
+        else:
+            raise ValueError(
+                "Available options for mesh_type: 'USMesh' and 'MultiUSMesh'. By default, 'USMesh' is used. Choose 'MultiUSMesh' When several mesh components are considered for independent deformation of multiple overset component meshes."
+            )
 
         # defaults:
 
@@ -1306,7 +1329,10 @@ class ADflowBuilder(Builder):
             for key, val in self.user_family_groups.items():
                 self.solver.addFamilyGroup(key, val)
 
-        mesh = USMesh(options=self.mesh_options, comm=comm)
+        if self.multi_us_mesh:
+            mesh = MultiUSMesh(self.mesh_options["gridFile"], self.mesh_options["multi_us_mesh_components"], comm=comm)
+        else:
+            mesh = USMesh(options=self.mesh_options, comm=comm)
 
         self.solver.setMesh(mesh)
 
