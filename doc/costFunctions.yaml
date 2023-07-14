@@ -204,93 +204,88 @@ cmz:
 
 cm0:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Moment coefficient about the :math:`z` axis at the zero value of the time spectral motion perturbation.
 
 cmzalpha:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    Stability derivative, moment slope
-    TODO
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the moment coefficient about the :math:`z` axis with respect to angle of attack.
 
 cmzalphadot:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    Stability derivative? Pitch rate coef moment?
-    TODO
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the moment coefficient about the :math:`z` axis with respect to the time derivative of angle of attack.
 
 cl0:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Lift coefficient at the zero value of the time spectral motion perturbation.
 
 clalpha:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    Lift slope dcl/dalpha
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the lift coefficient with respect to angle of attack.
 
 clalphadot:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    Lift stability pitch derivative
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the lift coefficient with respect to the time derivative of angle of attack.
 
 cfy0:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Force coefficient in the :math:`y` axis direction at the zero value of the time spectral motion perturbation.
 
 cfyalpha:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the force coefficient in the :math:`y` axis direction with respect to angle of attack.
 
-cfyalphddot:
+cfyalphadot:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the force coefficient in the :math:`y` axis direction with respect to the time derivative of angle of attack.
 
 cd0:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Drag coefficient at the zero value of the time spectral motion perturbation.
 
 cdalpha:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the drag coefficient with respect to angle of attack.
 
 cdalphadot:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the drag coefficient with respect to the time derivative of angle of attack.
 
 cmzq:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the moment coefficient about the :math:`z` axis with respect to pitch rate.
 
 cmzqdot:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the moment coefficient about the :math:`z` axis with respect to the time derivative of pitch rate.
 
 clq:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the lift coefficient with respect to pitch rate.
 
 clqdot:
   desc: >
-    NOTE: Time spectral stability derivatives are broken as of 2022.
-    TODO: Someone who knows aircraft stability should verify these
+    NOTE: Time spectral stability derivatives are broken as of 2023.
+    Derivative of the lift coefficient with respect to the time derivative of pitch rate.
 
 cbend:
   desc: >
-    NOTE: Broken as of 2022.
+    NOTE: Broken as of 2023.
     Root bending moment coefficient.
-    Bending coefficient defined as :math:`\sigma L^2/ (qA)`
-    TODO: Someone who knows aircraft stability should verify these
 
 sepsensor:
   desc: >

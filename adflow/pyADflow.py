@@ -6270,7 +6270,7 @@ class ADFLOW(AeroSolver):
             "clalphadot": self.adflow.constants.costfuncclalphadot,
             "cfy0": self.adflow.constants.costfunccfy0,
             "cfyalpha": self.adflow.constants.costfunccfyalpha,
-            "cfyalphddot": self.adflow.constants.costfunccfyalphadot,
+            "cfyalphadot": self.adflow.constants.costfunccfyalphadot,
             "cd0": self.adflow.constants.costfunccd0,
             "cdalpha": self.adflow.constants.costfunccdalpha,
             "cdalphadot": self.adflow.constants.costfunccdalphadot,
