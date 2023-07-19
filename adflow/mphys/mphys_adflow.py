@@ -97,7 +97,7 @@ def set_surf_coords(solver, inputs):
         if not coordsAreEqual:
             if solver.comm.rank == 0:
                 print("Updating surface coords", flush=True)
-            solver.setSurfaceCoordinates(newSurfCoord, groupName=solver.meshFamilyGroup, includeZipper=False)
+            solver.setSurfaceCoordinates(newSurfCoord, groupName=solver.meshFamilyGroup)
             solver.updateGeometryInfo()
             coordsUpdated = True
     return coordsUpdated
@@ -1372,3 +1372,9 @@ class ADflowBuilder(Builder):
         grid_ids : list[int]
             list of grid IDs that correspond to given body/boundary tags
         """
+        numNodes = self.get_nnodes()
+        if tags == -1 or tags == [-1]:
+            return list(range(numNodes))
+
+        vecin = np.zeros((numNodes, 3), dtype=np.intc)
+        vecin[:, 0] = np.arange(numNodes)
