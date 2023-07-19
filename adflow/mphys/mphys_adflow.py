@@ -1358,23 +1358,3 @@ class ADflowBuilder(Builder):
 
     def get_number_of_nodes(self, groupName=None):
         return int(self.solver.getSurfaceCoordinates(groupName=groupName).size / 3)
-
-    def get_tagged_indices(self, tags):
-        """
-        Method that returns grid IDs for a list of body/boundary tags.
-
-        Parameters
-        ----------
-        tags : list[str]
-
-        Returns
-        -------
-        grid_ids : list[int]
-            list of grid IDs that correspond to given body/boundary tags
-        """
-        numNodes = self.get_nnodes()
-        if tags == -1 or tags == [-1]:
-            return list(range(numNodes))
-
-        vecin = np.zeros((numNodes, 3), dtype=np.intc)
-        vecin[:, 0] = np.arange(numNodes)
