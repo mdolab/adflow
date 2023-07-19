@@ -1304,3 +1304,37 @@ class ADflowBuilder(Builder):
 
     def get_number_of_nodes(self, groupName=None):
         return int(self.solver.getSurfaceCoordinates(groupName=groupName).size / 3)
+
+    def get_tagged_indices(self, tags):
+        """
+        Method that returns grid IDs for a list of body/boundary tags.
+
+        Parameters
+        ----------
+        tags : list[str]
+
+        Returns
+        -------
+        grid_ids : list[int]
+            list of grid IDs that correspond to given body/boundary tags
+        """
+        numNodes = self.get_nnodes()
+        if tags == -1 or tags == [-1]:
+            return list(range(numNodes))
+
+        # Create a dummy input vector that represents the indices of all the nodes
+        vecin = np.zeros((numNodes, 3), dtype=np.intc)
+        vecin[:, 0] = np.arange(numNodes)
+
+        # --- Now loop through each tag and get the local node IDs of that surface ---
+        # Since there is no method for directly getting the node IDs of a given surface, we're going to use the
+        # mapVector function to map the vector of all node IDs to the surface of interest. This will give us the local
+        # node IDs of the surface of interest.
+        nodeInds = []
+        for tag in tags:
+            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag)
+            nodeInds.append(vecout[:, 0].astype(int))
+
+        # --- Now return the combined list of all node IDs for the tags, with duplicates removed ---
+        grid_ids = np.hstack(nodeInds)
+        return list(np.unique(grid_ids))
