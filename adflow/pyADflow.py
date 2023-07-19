@@ -315,34 +315,41 @@ class ADFLOW(AeroSolver):
             # first, call the callback function with cgns zone name IDs.
             # this need to return us a dictionary with the surface mesh information,
             # as well as which blocks in the cgns mesh to include in the search
-            surfDict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
+            self.blankingSurfDict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
 
             # loop over the surfaces
-            for surf in surfDict:
+            for surf in self.blankingSurfDict:
                 if self.comm.rank == 0:
                     print(f"Explicitly blanking surface: {surf}")
 
                 # this is the plot3d surface that defines the closed volume
-                surfFile = surfDict[surf]["surfFile"]
+                surfFile = self.blankingSurfDict[surf]["surfFile"]
                 # the indices of cgns blocks that we want to consider when blanking inside the surface
-                blockIDs = surfDict[surf]["blockIDs"]
+                blockIDs = self.blankingSurfDict[surf]["blockIDs"]
                 # the fortran lookup expects this list in increasing order
                 blockIDs.sort()
 
                 # check if there is a kMin provided
-                if "kMin" in surfDict[surf]:
-                    kMin = surfDict[surf]["kMin"]
+                if "kMin" in self.blankingSurfDict[surf]:
+                    kMin = self.blankingSurfDict[surf]["kMin"]
                 else:
                     kMin = -1
 
                 # optional coordinate transformation to do general manipulation of the coordinates
-                if "coordXfer" in surfDict[surf]:
-                    coordXfer = surfDict[surf]["coordXfer"]
+                if "coordXfer" in self.blankingSurfDict[surf]:
+                    coordXfer = self.blankingSurfDict[surf]["coordXfer"]
                 else:
                     coordXfer = None
 
                 # read the plot3d surface
                 pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
+
+                # save the points and conn if we are doing full overset updates.
+                # we will add the points to the potential DVGeo and re-use the conn info
+                # during hole cutting update
+                if self.getOption("oversetUpdateMode") == "full":
+                    self.blankingSurfDict[surf]["pts"] = pts
+                    self.blankingSurfDict[surf]["conn"] = conn
 
                 # get a new flag array
                 surfFlag = numpy.zeros(n, "intc")
@@ -355,6 +362,8 @@ class ADFLOW(AeroSolver):
                 flag = numpy.any([flag, surfFlag], axis=0)
 
         explicitSurfaceCutTime = time.time()
+
+        self.explicit_surf_flag = flag.copy()
 
         # Need to reset the oversetPriority option since the CGNSGrid
         # structure wasn't available before;
@@ -371,6 +380,7 @@ class ADFLOW(AeroSolver):
 
         famList = self._getFamilyList(self.closedFamilyGroup)
         self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
+        print("first preprocess done")
 
         oversetPreTime = time.time()
 
@@ -3335,6 +3345,36 @@ class ADFLOW(AeroSolver):
                 coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
                 self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
 
+            # also check if we need to embed blanking surface points
+            if self.getOption("oversetUpdateMode") == "full" and self.getOption("explicitSurfaceCallback") is not None:
+                for surf in self.blankingSurfDict:
+                    # the name of the pointset will be based on the surface filename.
+                    # this saves duplicate pointsets where the same file might be
+                    # used in the explicit hole cutting multiple times in different
+                    # configurations.
+                    surfPtSetName = f"points_{self.blankingSurfDict[surf]['surfFile']}"
+                    if surfPtSetName not in self.DVGeo.points:
+                        # we need to add the pointset to dvgeo. do it in parallel
+                        surfPts = self.blankingSurfDict[surf]["pts"]
+                        npts = surfPts.shape[0]
+
+                        # compute proc displacements
+                        sizes = numpy.zeros(self.comm.size, dtype="intc")
+                        sizes[:] = npts // self.comm.size
+                        sizes[:npts % self.comm.size] += 1
+
+                        disp = numpy.zeros(self.comm.size + 1, dtype="intc")
+                        disp[1:] = numpy.cumsum(sizes)
+
+                        # save this info in the dict
+                        self.blankingSurfDict[surf]["sizes"] = sizes
+                        self.blankingSurfDict[surf]["disp"] = disp
+
+                        # we already communicated the points when loading the file,
+                        # so just add them to dvgeo now
+                        procPts = surfPts[disp[self.comm.rank]:disp[self.comm.rank + 1]]
+                        self.DVGeo.addPointSet(procPts, surfPtSetName, **self.pointSetKwargs)
+
             # Check if our point-set is up to date:
             if not self.DVGeo.pointSetUpToDate(ptSetName) or aeroProblem.adflowData.disp is not None:
                 coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
@@ -3344,6 +3384,34 @@ class ADFLOW(AeroSolver):
                     coords += self.curAP.adflowData.disp
 
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
+
+                # also update the blanking surface coordinates
+                if self.getOption("oversetUpdateMode") == "full" and self.getOption("explicitSurfaceCallback") is not None:
+                    # loop over each surf and update points
+                    for surf in self.blankingSurfDict:
+                        surfPtSetName = f"points_{self.blankingSurfDict[surf]['surfFile']}"
+                        sizes = self.blankingSurfDict[surf]["sizes"]
+                        disp = self.blankingSurfDict[surf]["disp"]
+                        nptsg = self.blankingSurfDict[surf]["pts"].shape[0]
+
+                        # get the updated local points
+                        newPtsLocal = self.DVGeo.update(surfPtSetName, config=aeroProblem.name)
+
+                        # we need to gather all points on all procs. use the vectorized allgatherv for this
+
+                        # sendbuf
+                        newPtsLocal = newPtsLocal.flatten()
+                        sendbuf = [newPtsLocal, sizes[self.comm.rank] * 3]
+
+                        # recvbuf
+                        newPtsGlobal = numpy.zeros(nptsg * 3, dtype=self.dtype)
+                        recvbuf = [newPtsGlobal, sizes * 3, disp[1:] * 3, MPI.DOUBLE]
+
+                        # do an allgatherv
+                        self.comm.Allgatherv(sendbuf, recvbuf)
+
+                        # reshape into a nptsg,3 array
+                        self.blankingSurfDict[surf]["pts"] = newPtsGlobal.reshape((nptsg, 3))
 
         self._setAeroProblemData(aeroProblem)
 
@@ -4304,6 +4372,42 @@ class ADFLOW(AeroSolver):
                         xCen = self.adflow.utils.getcellcenters(1, n).T
                         cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
                         cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
+
+                    # exclude the cells inside closed surfaces if we are provided with them
+                    explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
+                    if explicitSurfaceCallback is not None:
+                        # we saved all the necessary info during initialization,
+                        # so no need to call the callback function again
+
+                        # loop over the surfaces
+                        for surf in self.blankingSurfDict:
+                            if self.comm.rank == 0:
+                                print(f"Explicitly blanking surface: {surf}")
+
+                            # the indices of cgns blocks that we want to consider when blanking inside the surface
+                            blockIDs = self.blankingSurfDict[surf]["blockIDs"]
+                            # the fortran lookup expects this list in increasing order
+                            blockIDs.sort()
+
+                            # check if there is a kMin provided
+                            if "kMin" in self.blankingSurfDict[surf]:
+                                kMin = self.blankingSurfDict[surf]["kMin"]
+                            else:
+                                kMin = -1
+
+                            # load the updated surface
+                            pts = self.blankingSurfDict[surf]["pts"]
+                            conn = self.blankingSurfDict[surf]["conn"]
+
+                            # get a new flag array
+                            surfFlag = numpy.zeros(n, "intc")
+
+                            # call the fortran routine to determine if the cells are inside or outside.
+                            # this code is very similar to the actuator zone creation.
+                            self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surfFlag, blockIDs, kMin)
+
+                            # update the flag array with the new info
+                            flag = numpy.any([flag, surfFlag], axis=0)
 
                     # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = self.comm.allreduce(
