@@ -471,7 +471,6 @@ class ADflowSolver(ImplicitComponent):
             d_outputs["adflow_states"] = solver.solveDirectForRHS(d_residuals["adflow_states"])
         elif mode == "rev":
             phi = np.zeros_like(d_residuals["adflow_states"])
-            # d_residuals['adflow_states'] = solver.solveAdjointForRHS(d_outputs['adflow_states'])
             solver.adflow.adjointapi.solveadjoint(d_outputs["adflow_states"], phi, True)
             d_residuals["adflow_states"] = phi
 
