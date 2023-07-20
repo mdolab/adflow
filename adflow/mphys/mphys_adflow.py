@@ -1322,7 +1322,7 @@ class ADflowBuilder(Builder):
         if tags == -1 or tags == [-1]:
             return list(range(numNodes))
 
-        # Create a dummy input vector that represents the indices of all the nodes
+        # Create a dummy input vector that represents the indices of all the surface nodes
         vecin = np.zeros((numNodes, 3), dtype=np.intc)
         vecin[:, 0] = np.arange(numNodes)
 
@@ -1332,7 +1332,7 @@ class ADflowBuilder(Builder):
         # node IDs of the surface of interest.
         nodeInds = []
         for tag in tags:
-            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag)
+            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=False)
             nodeInds.append(vecout[:, 0].astype(int))
 
         # --- Now return the combined list of all node IDs for the tags, with duplicates removed ---
