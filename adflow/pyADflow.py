@@ -3302,15 +3302,14 @@ class ADFLOW(AeroSolver):
 
             # dictionary that holds the ptsetname for each family
             ptSetNames = {}
-            activeChildrenFam = self.getOption("activechilddvgeofamilies")
-            if activeChildrenFam is None:
+            if self.customPointSetFamilies is None:
                 # we dont have a custom child dvgeo mapping. the surface family will be only
                 # designFamilyGroup and we will have a single pointset
                 ptSetName = f"adflow_{self.designFamilyGroup}_{aeroProblem.name}_coords"
                 ptSetNames[self.designFamilyGroup] = ptSetName
             else:
                 # we have a custom surface family to child dvgeo mapping.
-                for familyName in activeChildrenFam.keys():
+                for familyName in self.customPointSetFamilies.keys():
                     ptSetName = f"adflow_{familyName}_{aeroProblem.name}_coords"
                     ptSetNames[familyName] = ptSetName
 
@@ -3344,8 +3343,7 @@ class ADFLOW(AeroSolver):
         # Now check if we have an DVGeo object to deal with:
         if self.DVGeo is not None:
             # we have a DVGeo added. check if we have already added the points for this AP
-            activeChildrenFam = self.getOption("activechilddvgeofamilies")
-            if activeChildrenFam is None:
+            if self.customPointSetFamilies is None:
                 # we have a single pointset
                 ptSetName = aeroProblem.ptSetNames[self.designFamilyGroup]
 
@@ -3354,18 +3352,18 @@ class ADFLOW(AeroSolver):
                     self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
             else:
                 # we have custom pointsets
-                for family in activeChildrenFam.keys():
+                for family, familyKwargs in self.customPointSetFamilies.items():
                     ptSetName = aeroProblem.ptSetNames[family]
 
                     if ptSetName not in self.DVGeo.points:
                         # coords0 is now the subset of this family
                         coords0 = self.mapVector(self.coords0, self.allFamilies, family, includeZipper=False)
-                        # this pointset is added with a custom activeChildrenFamily
+                        # this pointset is added with a custom familyKwargs
                         self.DVGeo.addPointSet(
                             coords0,
                             ptSetName,
-                            activeChildren=activeChildrenFam[family],
-                            **self.pointSetKwargs
+                            **self.pointSetKwargs,
+                            **familyKwargs,
                         )
 
             # Check if our point-set is up to date:
@@ -3376,7 +3374,7 @@ class ADFLOW(AeroSolver):
             if aeroProblem.adflowData.disp is not None:
                 updateSurface = True
 
-            if activeChildrenFam is None:
+            if self.customPointSetFamilies is None:
                 # we have a single pointset
                 ptSetName = aeroProblem.ptSetNames[self.designFamilyGroup]
 
@@ -3388,7 +3386,7 @@ class ADFLOW(AeroSolver):
             else:
                 # we have custom pointsets
                 # first figure out if we want to update the pointset; check each family we are tracking
-                for family in activeChildrenFam.keys():
+                for family in self.customPointSetFamilies.keys():
                     # return immediately if we are flagged for a surfafce update
                     if updateSurface:
                         break
@@ -3403,7 +3401,7 @@ class ADFLOW(AeroSolver):
                     # get the current design surface family. we will overwrite this as we go through the families
                     coords = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
 
-                    for family in activeChildrenFam.keys():
+                    for family in self.customPointSetFamilies.keys():
                         ptSetName = aeroProblem.ptSetNames[family]
                         familyCoords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
                         # map this to the coords vector
@@ -4918,9 +4916,7 @@ class ADFLOW(AeroSolver):
                     # derivatives if mesh is present
                     if self.DVGeo is not None and self.DVGeo.getNDV() > 0:
                         # we have a DVGeo added. check if we have already added the points for this AP
-                        activeChildrenFam = self.getOption("activechilddvgeofamilies")
-
-                        if activeChildrenFam is None:
+                        if self.customPointSetFamilies is None:
                             # we have a single pointset
                             ptSetName = self.curAP.ptSetNames[self.designFamilyGroup]
 
@@ -4932,7 +4928,7 @@ class ADFLOW(AeroSolver):
                             # we have custom pointsets
                             # start with an empty dict, we set the entries in the first pass,
                             # and add in the following passes
-                            for family in activeChildrenFam.keys():
+                            for family in self.customPointSetFamilies.keys():
                                 ptSetName = self.curAP.ptSetNames[family]
 
                                 # get the mapped xsbar
@@ -5586,7 +5582,6 @@ class ADFLOW(AeroSolver):
             "meshSurfaceFamily": [(str, type(None)), None],
             "designSurfaceFamily": [(str, type(None)), None],
             "closedSurfaceFamilies": [(list, type(None)), None],
-            "activeChildDVGeoFamilies": [(dict, type(None)), None],
             # Output Parameters
             "storeRindLayer": [bool, True],
             "outputDirectory": [str, "./"],
@@ -5874,7 +5869,6 @@ class ADFLOW(AeroSolver):
             "partitiononly",
             "meshsurfacefamily",
             "designsurfacefamily",
-            "activechilddvgeofamilies",
             "closedsurfacefamilies",
             "zippersurfacefamily",
             "cutcallback",
@@ -6266,7 +6260,6 @@ class ADFLOW(AeroSolver):
             "liftindex",
             "meshsurfacefamily",
             "designsurfacefamily",
-            "activechilddvgeofamilies",
             "closedsurfacefamilies",
             "zippersurfacefamily",
             "outputsurfacefamily",
