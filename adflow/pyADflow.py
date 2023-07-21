@@ -3395,7 +3395,7 @@ class ADFLOW(AeroSolver):
                         surfPtSetName = f"points_{surfFile}"
                         sizes = self.blankingSurfData[surfFile]["sizes"]
                         disp = self.blankingSurfData[surfFile]["disp"]
-                        nptsg = self.blankingSurfData[surfFile]["pts"].shape[0]
+                        nptsg = disp[-1]
 
                         # get the updated local points
                         print("updating surf ptset", surfPtSetName)
