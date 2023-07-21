@@ -363,8 +363,6 @@ class ADFLOW(AeroSolver):
 
         explicitSurfaceCutTime = time.time()
 
-        self.explicit_surf_flag = flag.copy()
-
         # Need to reset the oversetPriority option since the CGNSGrid
         # structure wasn't available before;
         self.setOption("oversetPriority", self.getOption("oversetPriority"))
@@ -380,7 +378,6 @@ class ADFLOW(AeroSolver):
 
         famList = self._getFamilyList(self.closedFamilyGroup)
         self.adflow.preprocessingapi.preprocessingoverset(flag, famList)
-        print("first preprocess done")
 
         oversetPreTime = time.time()
 
