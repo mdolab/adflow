@@ -3398,7 +3398,6 @@ class ADFLOW(AeroSolver):
                         nptsg = disp[-1]
 
                         # get the updated local points
-                        print("updating surf ptset", surfPtSetName)
                         newPtsLocal = self.DVGeo.update(surfPtSetName, config=aeroProblem.name)
 
                         # we need to gather all points on all procs. use the vectorized allgatherv for this
@@ -3412,7 +3411,6 @@ class ADFLOW(AeroSolver):
                         recvbuf = [newPtsGlobal, sizes * 3, disp[0:-1] * 3, MPI.DOUBLE]
 
                         # do an allgatherv
-                        print("allgatherv", surfPtSetName)
                         self.comm.Allgatherv(sendbuf, recvbuf)
 
                         # reshape into a nptsg,3 array
