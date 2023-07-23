@@ -42,7 +42,7 @@ contains
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity
         use actuatorRegionData, only: nActuatorRegions
-        use wallDistanceData, only: xSurfVec, xSurf
+        use wallDistanceData, only: xSurfVec, xSurf, exchangeWallDistanceHalos
 
         implicit none
 
@@ -143,8 +143,8 @@ contains
 
 
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
-
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchangeWallDistanceHalos(currentLevel))
+        exchangeWallDistanceHalos(currentLevel) = .False.
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind

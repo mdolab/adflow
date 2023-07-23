@@ -87,7 +87,7 @@ contains
         use section, only: sections, nSections
         use iteration, only: rFil, currentLevel
         use haloExchange, only: exchangeCoor, whalo2
-        use wallDistance, only: updateWallDistancesQuickly
+        use wallDistance, only: updateWallDistancesQuickly, exchangeWallDistanceHalos
         use utils, only: setPointers, EChk
         use turbUtils, only: computeEddyViscosity
         use residuals, only: sourceTerms_block
@@ -265,7 +265,8 @@ contains
         end if
 
         ! Exchange values: make sure all values, including halos, are up to date everywhere
-        call whalo2(1_intType, lStart, lEnd, .True., .True., .True., .True.)
+        call whalo2(1_intType, lStart, lEnd, .True., .True., .True., exchangeWallDistanceHalos(1))
+        exchangeWallDistanceHalos(1) = .False.
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind

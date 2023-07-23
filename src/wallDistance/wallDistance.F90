@@ -44,6 +44,7 @@ contains
 
         use constants
         use blockPointers, only: nx, ny, nz, il, jl, kl, x, flowDoms, d2wall
+        use wallDistanceData, only: exchangeWallDistanceHalos
         implicit none
 
         ! Subroutine arguments
@@ -117,6 +118,10 @@ contains
         end do
 #endif
 
+
+#ifndef USE_TAPENADE
+    exchangeWallDistanceHalos(level) = .True.
+#endif
 
     end subroutine updateWallDistancesQuickly
 
