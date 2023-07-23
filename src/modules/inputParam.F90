@@ -873,5 +873,6 @@ module inputOverset
     integer(kind=intType) :: nFloodIter
     logical :: useZipperMesh
     logical :: useOversetWallScaling
+    logical :: recomputeOverlapMatrix
     logical :: oversetDebugPrint
 end module inputOverset

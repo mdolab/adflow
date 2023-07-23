@@ -1310,6 +1310,7 @@ python module libadflow
          logical :: debugzipper
          logical :: usezippermesh
          logical :: useoversetwallscaling
+         logical :: recomputeoverlapmatrix
          logical :: oversetdebugprint
          real(kind=realtype) :: selfzipcutoff
        end module inputoverset

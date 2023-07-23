@@ -2426,7 +2426,7 @@ contains
         ! oversetComm routine.
 
         use constants
-        use inputOverset, only: oversetUpdateMode
+        use inputOverset, only: oversetUpdateMode, recomputeOverlapMatrix
         use block, only: flowDOms
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use oversetCommUtilities, onlY: updateOversetConnectivity
@@ -2482,7 +2482,7 @@ contains
             do level = 1, nLevels
                 if (level == 1) then
                     call setExplicitHoleCut(flag)
-                    call oversetComm(level, .False., .false., closedFamList)
+                    call oversetComm(level, recomputeOverlapMatrix, .false., closedFamList)
                 else
                     call oversetComm(level, .False., .True., closedFamList)
                 end if
