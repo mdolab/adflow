@@ -297,75 +297,16 @@ class ADFLOW(AeroSolver):
             name = getPy3SafeString(self.adflow.utils.getcgnszonename(i + 1).strip())
             self.CGNSZoneNameIDs[name] = i + 1
 
-        # Call the user supplied callback if necessary
-        cutCallBack = self.getOption("cutCallBack")
+        # Allocate the flag array we will use for the explicit hole cutting.
+        # This is modified in place as we go through each callback routine.
         flag = numpy.zeros(n)
-        if cutCallBack is not None:
-            xCen = self.adflow.utils.getcellcenters(1, n).T
-            cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
-            cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
+        # Call the user supplied callback if necessary
+        self.oversetCutCallback(flag)
         cutCallBackTime = time.time()
 
-        # exclude the cells inside closed surfaces if we are provided with them
-        explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
-        if explicitSurfaceCallback is not None:
-            # the user wants to exclude cells that lie within a list of surfaces.
-
-            # first, call the callback function with cgns zone name IDs.
-            # this need to return us a dictionary with the surface mesh information,
-            # as well as which blocks in the cgns mesh to include in the search
-            self.blankingSurfDict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
-
-            # also keep track of a second dictionary that saves the surface info. We do this
-            # separately because the surface files can be shared across different blanking calls.
-            # in this case, we dont want to process the surfaces multiple times.
-            self.blankingSurfData = {}
-
-            # loop over the surfaces
-            for surf in self.blankingSurfDict:
-                if self.comm.rank == 0:
-                    print(f"Explicitly blanking surface: {surf}")
-
-                # this is the plot3d surface that defines the closed volume
-                surfFile = self.blankingSurfDict[surf]["surfFile"]
-                # the indices of cgns blocks that we want to consider when blanking inside the surface
-                blockIDs = self.blankingSurfDict[surf]["blockIDs"]
-                # the fortran lookup expects this list in increasing order
-                blockIDs.sort()
-
-                # check if there is a kMin provided
-                if "kMin" in self.blankingSurfDict[surf]:
-                    kMin = self.blankingSurfDict[surf]["kMin"]
-                else:
-                    kMin = -1
-
-                # optional coordinate transformation to do general manipulation of the coordinates
-                if "coordXfer" in self.blankingSurfDict[surf]:
-                    coordXfer = self.blankingSurfDict[surf]["coordXfer"]
-                else:
-                    coordXfer = None
-
-                # read the plot3d surface
-                pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
-
-                # save the points and conn if we are doing full overset updates.
-                # we will add the points to the potential DVGeo and re-use the conn info
-                # during hole cutting update
-                if self.getOption("oversetUpdateMode") == "full":
-                    if surfFile not in self.blankingSurfData:
-                        self.blankingSurfData[surfFile] = {"pts": pts, "conn": conn}
-
-                # get a new flag array
-                surfFlag = numpy.zeros(n, "intc")
-
-                # call the fortran routine to determine if the cells are inside or outside.
-                # this code is very similar to the actuator zone creation.
-                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surfFlag, blockIDs, kMin)
-
-                # update the flag array with the new info
-                flag = numpy.any([flag, surfFlag], axis=0)
-
+        # also run through the surface callback routine
+        self.oversetExplicitSurfaceCallback(flag, firstCall=True)
         explicitSurfaceCutTime = time.time()
 
         # Need to reset the oversetPriority option since the CGNSGrid
@@ -4365,53 +4306,18 @@ class ADFLOW(AeroSolver):
                 ncells = self.adflow.adjointvars.ncellslocal[0]
                 ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
                 n = ncells * ntime
+
+                # Allocate the flag array we will use for the explicit hole cutting.
+                # This is modified in place as we go through each callback routine.
                 flag = numpy.zeros(n)
 
                 # Only need to call the cutCallBack and regenerate the zipper mesh
                 # if we're doing a full update.
                 if self.getOption("oversetUpdateMode") == "full":
-                    cutCallBack = self.getOption("cutCallBack")
-                    if cutCallBack is not None:
-                        xCen = self.adflow.utils.getcellcenters(1, n).T
-                        cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
-                        cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
+                    self.oversetCutCallback(flag)
 
-                    # exclude the cells inside closed surfaces if we are provided with them
-                    explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
-                    if explicitSurfaceCallback is not None:
-                        # we saved all the necessary info during initialization,
-                        # so no need to call the callback function again
-
-                        # loop over the surfaces
-                        for surf in self.blankingSurfDict:
-                            if self.comm.rank == 0:
-                                print(f"Explicitly blanking surface: {surf}")
-
-                            # the indices of cgns blocks that we want to consider when blanking inside the surface
-                            blockIDs = self.blankingSurfDict[surf]["blockIDs"]
-                            # the fortran lookup expects this list in increasing order
-                            blockIDs.sort()
-
-                            # check if there is a kMin provided
-                            if "kMin" in self.blankingSurfDict[surf]:
-                                kMin = self.blankingSurfDict[surf]["kMin"]
-                            else:
-                                kMin = -1
-
-                            # load the updated surface
-                            surfFile = self.blankingSurfDict[surf]["surfFile"]
-                            pts = self.blankingSurfData[surfFile]["pts"]
-                            conn = self.blankingSurfData[surfFile]["conn"]
-
-                            # get a new flag array
-                            surfFlag = numpy.zeros(n, "intc")
-
-                            # call the fortran routine to determine if the cells are inside or outside.
-                            # this code is very similar to the actuator zone creation.
-                            self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surfFlag, blockIDs, kMin)
-
-                            # update the flag array with the new info
-                            flag = numpy.any([flag, surfFlag], axis=0)
+                    # also run the explicit surface blanking
+                    self.oversetExplicitSurfaceCallback(flag, firstCall=False)
 
                     # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = self.comm.allreduce(
@@ -4438,6 +4344,99 @@ class ADFLOW(AeroSolver):
                 bool(self.adflow.killsignals.routinefailed), op=MPI.LOR
             )
             self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
+
+    def oversetCutCallback(self, flag):
+        # this routine goes through the explicit callback routine provided by the user and
+        # modifies the flag array in place
+        cutCallBack = self.getOption("cutCallBack")
+        if cutCallBack is not None:
+            n = len(flag)
+            xCen = self.adflow.utils.getcellcenters(1, n).T
+            cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
+            cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
+
+    def oversetExplicitSurfaceCallback(self, flag, firstCall=True):
+        # exclude the cells inside closed surfaces if we are provided with them
+        explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
+        if explicitSurfaceCallback is not None:
+            # the user wants to exclude cells that lie within a list of surfaces.
+
+            # get the number of cells
+            n = len(flag)
+
+            if firstCall:
+                # first, call the callback function with cgns zone name IDs.
+                # this need to return us a dictionary with the surface mesh information,
+                # as well as which blocks in the cgns mesh to include in the search.
+                # we dont need to update this dictionary on subsequent calls.
+                self.blankingSurfDict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
+                blankingSurfData = {}
+
+            # also keep track of a second dictionary that saves the surface info. We do this
+            # separately because the surface files can be shared across different blanking calls.
+            # in this case, we dont want to process the surfaces multiple times.
+            blankingSurfData = {}
+
+            # loop over the surfaces
+            for surf in self.blankingSurfDict:
+                if self.comm.rank == 0:
+                    print(f"Explicitly blanking surface: {surf}", flush=True)
+
+                # this is the plot3d surface that defines the closed volume
+                surfFile = self.blankingSurfDict[surf]["surfFile"]
+                # the indices of cgns blocks that we want to consider when blanking inside the surface
+                blockIDs = self.blankingSurfDict[surf]["blockIDs"]
+                # the fortran lookup expects this list in increasing order
+                blockIDs.sort()
+
+                # check if there is a kMin provided
+                if "kMin" in self.blankingSurfDict[surf]:
+                    kMin = self.blankingSurfDict[surf]["kMin"]
+                else:
+                    kMin = -1
+
+                # if this is the first call, we need to load the surface meshes.
+                # we might have duplicate mesh files, so no need to load them again
+                # if we have already loadded one copy
+                if firstCall:
+                    if surfFile not in blankingSurfData:
+                        # optional coordinate transformation to do general manipulation of the coordinates
+                        if "coordXfer" in self.blankingSurfDict[surf]:
+                            coordXfer = self.blankingSurfDict[surf]["coordXfer"]
+                        else:
+                            coordXfer = None
+
+                        # read the plot3d surface
+                        pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
+
+                        blankingSurfData[surfFile] = {"pts": pts, "conn": conn}
+                    else:
+                        # just load from the local dict
+                        pts = blankingSurfData[surfFile]["pts"]
+                        conn = blankingSurfData[surfFile]["conn"]
+
+                else:
+                    # we can just load the pts and conn from the dictionary
+                    # these are only saved if we have a DVGeo, a Mesh, and we are doing a full overset update.
+                    pts = self.blankingSurfData[surfFile]["pts"]
+                    conn = self.blankingSurfData[surfFile]["conn"]
+
+                # get a new flag array
+                surfFlag = numpy.zeros(n, "intc")
+
+                # call the fortran routine to determine if the cells are inside or outside.
+                # this code is very similar to the actuator zone creation.
+                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surfFlag, blockIDs, kMin)
+
+                # update the flag array with the new info
+                flag[:] = numpy.any([flag, surfFlag], axis=0)
+
+            # finally before we quit, check if we need to save the blanking surface data
+            if firstCall and (self.getOption("oversetUpdateMode") == "full"):
+                # save the points and conn if we are doing full overset updates.
+                # we will add the points to the potential DVGeo and re-use the conn info
+                # during hole cutting update
+                self.blankingSurfData = blankingSurfData
 
     def getAdjointResNorms(self):
         """
