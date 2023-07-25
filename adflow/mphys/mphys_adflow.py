@@ -95,8 +95,12 @@ def set_surf_coords(solver, inputs):
     """
     coordsUpdated = False
     if "x_aero" in inputs:
+        # This is the only place in the code we don't want the zipper nodes. This is because `setSurfaceCoordinates`
+        # doesn't take the zipper nodes. The surface coordinates in the input vector do include the input nodes but they
+        # are easy to exclude because they're just tacked on to the end of the array.
         currentSurfCoord = solver.getSurfaceCoordinates(groupName=solver.meshFamilyGroup, includeZipper=False)
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
+        newSurfCoord = newSurfCoord[:currentSurfCoord.shape[0]]
         coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
@@ -203,8 +207,10 @@ class ADflowMesh(ExplicitComponent):
     def setup(self):
         self.aero_solver = self.options["aero_solver"]
 
+        # We want to include the zipper nodes in the surface mesh coordinates because the forces array ADflow returns
+        # includes them and we need the surface coordinates array to be consistent with that.
         self.x_a0 = self.aero_solver.getSurfaceCoordinates(
-            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=True
         ).flatten(order="C")
 
         coord_size = self.x_a0.size
@@ -369,10 +375,7 @@ class ADflowWarper(ExplicitComponent):
                     self.solver.mesh.warpDeriv(dxV)
                     dxS = self.solver.mesh.getdXs()
                     dxS = self.solver.mapVector(
-                        dxS,
-                        self.solver.meshFamilyGroup,
-                        self.solver.designFamilyGroup,
-                        includeZipper=False,
+                        dxS, self.solver.meshFamilyGroup, self.solver.designFamilyGroup, includeZipper=True
                     )
                     d_inputs["x_aero"] += dxS.flatten()
 
@@ -1452,7 +1455,7 @@ class ADflowBuilder(Builder):
         # node IDs of the surface of interest.
         nodeInds = []
         for tag in tags:
-            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=False)
+            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=True)
             nodeInds.append(vecout[:, 0].astype(int))
 
         # --- Now return the combined list of all node IDs for the tags, with duplicates removed ---
