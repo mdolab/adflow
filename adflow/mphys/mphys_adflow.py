@@ -608,7 +608,7 @@ class ADflowSolver(ImplicitComponent):
         if mode == "fwd":
             d_outputs["adflow_states"] = solver.solveDirectForRHS(d_residuals["adflow_states"])
         elif mode == "rev":
-            phi = d_residuals["adflow_states"]
+            phi = d_residuals["adflow_states"].copy()
             solver.adflow.adjointapi.solveadjoint(d_outputs["adflow_states"], phi, True)
             d_residuals["adflow_states"] = phi
 
