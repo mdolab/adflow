@@ -610,7 +610,7 @@ class ADflowSolver(ImplicitComponent):
         elif mode == "rev":
             phi = d_residuals["adflow_states"].copy()
             solver.adflow.adjointapi.solveadjoint(d_outputs["adflow_states"], phi, True)
-            d_residuals["adflow_states"] = phi.copy()
+            d_residuals["adflow_states"] = phi
 
         return True, 0, 0
 
