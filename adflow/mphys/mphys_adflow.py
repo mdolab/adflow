@@ -1386,10 +1386,10 @@ class ADflowBuilder(Builder):
 
     # TODO the get_nnodes is deprecated. will remove
     def get_nnodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName).size / 3)
+        return int(self.solver.getSurfaceCoordinates(groupName=groupName).shape[0])
 
     def get_number_of_nodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName).size / 3)
+        return int(self.solver.getSurfaceCoordinates(groupName=groupName).shape[0])
 
     def get_tagged_indices(self, tags):
         """
