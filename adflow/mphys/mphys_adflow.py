@@ -91,8 +91,8 @@ def set_surf_coords(solver, inputs):
     coordsUpdated = False
     if "x_aero" in inputs:
         # This is the only place in the code we don't want the zipper nodes. This is because `setSurfaceCoordinates`
-        # doesn't take the zipper nodes. The surface coordinates in the input vector do include the input nodes but they
-        # are easy to exclude because they're just tacked on to the end of the array.
+        # doesn't take the zipper nodes. The surface coordinates in the input vector do include the zipper nodes but
+        # they are easy to exclude because they're just tacked on to the end of the array.
         currentSurfCoord = solver.getSurfaceCoordinates(groupName=solver.meshFamilyGroup, includeZipper=False)
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
         newSurfCoord = newSurfCoord[:currentSurfCoord.shape[0]]
