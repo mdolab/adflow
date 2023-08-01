@@ -11,6 +11,8 @@ from mpi4py import MPI
 
 from .om_utils import get_dvs_and_cons
 
+# Set this to true to print out the name of the function being called and the class it's being called from.
+LOG_FUNC_CALLS=True
 
 def print_func_call(component):
     """Prints the name of the class and function being. Useful for debugging when you want to see what order OpenMDAO
@@ -296,12 +298,16 @@ class ADflowMesh(ExplicitComponent):
         return [p0, v1, v2]
 
     def compute(self, inputs, outputs):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         if "x_aero0_points" in inputs:
             outputs["x_aero0"] = inputs["x_aero0_points"]
         else:
             outputs["x_aero0"] = self.x_a0
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         if mode == "fwd":
             if "x_aero0_points" in d_inputs:
                 d_outputs["x_aero0"] += d_inputs["x_aero0_points"]
@@ -338,11 +344,15 @@ class ADflowWarper(ExplicitComponent):
         # self.declare_partials(of='adflow_vol_coords', wrt='x_aero')
 
     def compute(self, inputs, outputs):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         set_surf_coords(solver, inputs)
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         set_surf_coords(solver, inputs)
 
@@ -437,6 +447,8 @@ class ADflowSolver(ImplicitComponent):
         residuals["adflow_states"] = solver.getResidual(ap)
 
     def solve_nonlinear(self, inputs, outputs):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         if self._do_solve:
@@ -532,6 +544,8 @@ class ADflowSolver(ImplicitComponent):
         outputs["adflow_states"] = solver.getStates()
 
     def linearize(self, inputs, outputs, residuals):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
@@ -542,6 +556,8 @@ class ADflowSolver(ImplicitComponent):
             solver.getResidual(ap)
 
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
@@ -589,6 +605,8 @@ class ADflowSolver(ImplicitComponent):
                         d_inputs[dv_name] += dv_bar.flatten()
 
     def solve_linear(self, d_outputs, d_residuals, mode):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
 
@@ -660,6 +678,8 @@ class ADflowForces(ExplicitComponent):
             #     print('%s (%s)'%(name, kwargs['units']))
 
     def compute(self, inputs, outputs):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
@@ -667,6 +687,8 @@ class ADflowForces(ExplicitComponent):
         outputs["f_aero"] = solver.getForces().flatten(order="C")
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
@@ -759,6 +781,8 @@ class AdflowHeatTransfer(ExplicitComponent):
                 print(name)
 
     def compute(self, inputs, outputs):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
@@ -772,6 +796,8 @@ class AdflowHeatTransfer(ExplicitComponent):
         # print()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
@@ -969,6 +995,8 @@ class ADflowFunctions(ExplicitComponent):
         self.solution_counter += 1
 
     def compute(self, inputs, outputs):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         # actually setting things here triggers some kind of reset, so we only do it if you're actually solving
@@ -1008,6 +1036,8 @@ class ADflowFunctions(ExplicitComponent):
                     outputs[name.lower()] = funcs[f_name]
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if LOG_FUNC_CALLS:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
