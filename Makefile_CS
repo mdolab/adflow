@@ -1,4 +1,4 @@
-# Master makefilefor complex ADflow. The actual makefile you want is
+# Master makefile for complex ADflow. The actual makefile you want is
 # src/build/Makefile_CS
 default:
 # Check if the config.mk file is in the config dir.
