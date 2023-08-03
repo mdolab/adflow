@@ -23,7 +23,7 @@ To start, find a configuration file close to your current setup in::
 
     config/defaults
 
-and copy it to ''config/config.mk''. For example:
+and copy it to ``config/config.mk``. For example:
 
 .. prompt:: bash
 
@@ -49,8 +49,7 @@ the screen (near the end)::
 
 If you don't see this, it will be necessary to configure the build manually.
 To configure manually, open ``config/config.mk`` and modify options as necessary.
-
-It is most likely that you need to modify the ``CGNS_INCLUDE_FLAGS`` and the ``CGNS_LINKER_FLAGS`` variables.
+Common issues are often that dependency variable paths, such as ``CGNS_INCLUDE_FLAGS`` and ``CGNS_LINKER_FLAGS``, point to an incorrect location and need to be updated.
 After changes to the configuration file, run ``make clean`` before attempting a new build.
 
 .. NOTE::
