@@ -870,7 +870,7 @@ contains
         use adjointUtils, only: mykspmonitor
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
         use communication
-        use agmg, only: setupShellPC, destroyShellPC, applyShellPC
+        use amg, only: setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -1141,7 +1141,7 @@ contains
                             visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
         use utils, only: EChk, setPointers
         use adjointUtils, only: myMatCreate, destroyPETScVars, statePreAllocation
-        use agmg, only: setupAGMG
+        use amg, only: setupAMG
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -1239,7 +1239,7 @@ contains
             deallocate (nnzDiagonal, nnzOffDiag)
         end if
 
-        call setupAGMG(drdwpret, nDimW / nState, nState)
+        call setupAMG(drdwpret, nDimW / nState, nState)
 
         ! Create the KSP Object
         call KSPCreate(ADFLOW_COMM_WORLD, adjointKSP, ierr)

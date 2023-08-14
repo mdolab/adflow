@@ -129,17 +129,17 @@ python module libadflow
        end module bcdata
 
 
-       module agmg
-         integer(kind=inttype) :: agmglevels
-         integer(kind=inttype) :: agmgnsmooth
+       module amg
+         integer(kind=inttype) :: amglevels
+         integer(kind=inttype) :: amgnsmooth
 
-         subroutine setupagmg
-         end subroutine setupagmg
+         subroutine setupamg
+         end subroutine setupamg
 
-         subroutine destroyagmg
-         end subroutine destroyagmg
+         subroutine destroyamg
+         end subroutine destroyamg
 
-       end module agmg
+       end module amg
 
        module flowutils
 

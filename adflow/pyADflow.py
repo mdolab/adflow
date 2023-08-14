@@ -5634,8 +5634,8 @@ class ADFLOW(AeroSolver):
             "RKReset": [bool, False],
             "nRKReset": [int, 5],
             # MG PC
-            "AGMGLevels": [int, 1],
-            "AGMGNSmooth": [int, 3],
+            "AMGLevels": [int, 1],
+            "AMGNSmooth": [int, 3],
             # Approximate Newton-Krylov Parameters
             "useANKSolver": [bool, True],
             "ANKUseTurbDADI": [bool, True],
@@ -5789,7 +5789,7 @@ class ADFLOW(AeroSolver):
             "stab": self.adflow.inputtsstabderiv,
             "nk": self.adflow.nksolver,
             "ank": self.adflow.anksolver,
-            "agmg": self.adflow.agmg,
+            "amg": self.adflow.amg,
             "adjoint": self.adflow.inputadjoint,
             "cost": self.adflow.inputcostfunctions,
             "unsteady": self.adflow.inputunsteady,
@@ -6021,8 +6021,8 @@ class ADFLOW(AeroSolver):
             "rkreset": ["iter", "rkreset"],
             "nrkreset": ["iter", "miniternum"],
             # MG PC
-            "agmglevels": ["agmg", "agmglevels"],
-            "agmgnsmooth": ["agmg", "agmgnsmooth"],
+            "amglevels": ["amg", "amglevels"],
+            "amgnsmooth": ["amg", "amgnsmooth"],
             # Approximate Newton-Krylov Parameters
             "useanksolver": ["ank", "useanksolver"],
             "ankuseturbdadi": ["ank", "ank_useturbdadi"],

@@ -39,7 +39,7 @@ contains
         use utils, only: EChk, setPointers, getDirAngle, setPointers_d
         use haloExchange, only: whalo2
         use masterRoutines, only: block_res_state, master
-        use agmg, only: agmgLevels, A, coarseIndices, coarseOversetIndices
+        use amg, only: amgLevels, A, coarseIndices, coarseOversetIndices
 #ifndef USE_COMPLEX
         use masterRoutines, only: block_res_state_d
 #endif
@@ -151,7 +151,7 @@ contains
                                 nCol = 1
 
                                 if (buildCoarseMats) then
-                                    do lvl = 1, agmgLevels - 1
+                                    do lvl = 1, amgLevels - 1
                                         coarseRows(lvl + 1) = coarseIndices(nn, lvl)%arr(i, j, k)
                                         coarseCols(1, lvl + 1) = coarseRows(lvl + 1)
                                     end do
@@ -442,7 +442,7 @@ contains
                                         nCol = 1
 
                                         if (buildCoarseMats) then
-                                            do lvl = 1, agmgLevels - 1
+                                            do lvl = 1, amgLevels - 1
                                                 coarseCols(1, lvl + 1) = coarseIndices(nn, lvl)%arr(i, j, k)
                                             end do
                                         end if
@@ -452,7 +452,7 @@ contains
                                             cols(m) = flowDoms(nn, level, sps)%gInd(m, i, j, k)
 
                                             if (buildCoarseMats) then
-                                                do lvl = 1, agmgLevels - 1
+                                                do lvl = 1, amgLevels - 1
                                                     coarseCols(m, lvl + 1) = &
                                                         coarseOversetIndices(nn, lvl)%arr(m, i, j, k)
                                                 end do
@@ -489,7 +489,7 @@ contains
                                                        i + ii, j + jj, k + kk)
 
                                                 if (buildCoarseMats) then
-                                                    do lvl = 1, agmgLevels - 1
+                                                    do lvl = 1, amgLevels - 1
                                                         coarseRows(lvl + 1) = &
                                                             coarseIndices(nn, lvl)%arr(i + ii, j + jj, k + kk)
                                                     end do
@@ -545,7 +545,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         if (buildCoarseMats) then
-            do lvl = 2, agmgLevels
+            do lvl = 2, amgLevels
                 call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end do
@@ -593,7 +593,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         if (buildCoarseMats) then
-            do lvl = 2, agmgLevels
+            do lvl = 2, amgLevels
                 call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end do
@@ -683,7 +683,7 @@ contains
                 ! Extension for setting coarse grids:
                 if (buildCoarseMats) then
                     if (nCol == 1) then
-                        do lvl = 2, agmgLevels
+                        do lvl = 2, amgLevels
                             if (useTranspose) then
                                 ! Loop over the coarser levels
                                 call MatSetValuesBlocked(A(lvl), 1, coarseCols(1, lvl), 1, coarseRows(lvl), &
@@ -695,7 +695,7 @@ contains
                         end do
                     else
                         do m = 1, nCol
-                            do lvl = 2, agmgLevels
+                            do lvl = 2, amgLevels
                                 if (coarseCols(m, lvl) >= 0) then
                                     if (useTranspose) then
                                         ! Loop over the coarser levels
@@ -1570,7 +1570,7 @@ contains
         ! and if localPreConIts=1 then subKSP is set to preOnly.
         use constants
         use utils, only: ECHk
-        use agmg, only: agmgOuterIts, agmgASMOverlap, agmgFillLevel, agmgMatrixOrdering, &
+        use amg, only: amgOuterIts, amgASMOverlap, amgFillLevel, amgMatrixOrdering, &
                         setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
         use petsc
@@ -1616,11 +1616,11 @@ contains
         call PCShellSetApply(shellPC, applyShellPC, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Just save the remaining pieces ofinformation in the agmg module.
-        agmgOuterIts = outerPreConIts
-        agmgASMOverlap = asmOverlap
-        agmgFillLevel = fillLevel
-        agmgMatrixOrdering = localMatrixOrdering
+        ! Just save the remaining pieces ofinformation in the amg module.
+        amgOuterIts = outerPreConIts
+        amgASMOverlap = asmOverlap
+        amgFillLevel = fillLevel
+        amgMatrixOrdering = localMatrixOrdering
     end subroutine setupStandardMultigrid
 
     subroutine destroyPETScVars
@@ -1628,7 +1628,7 @@ contains
         use constants
         use ADjointPETSc, only: dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
         use inputAdjoint, only: approxPC
-        use agmg, only: destroyAGMG
+        use amg, only: destroyAMG
         use utils, only: EChk
         implicit none
 
@@ -1648,7 +1648,7 @@ contains
             call KSPDestroy(adjointKSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAGMG()
+            call destroyAMG()
 
             adjointPETScVarsAllocated = .False.
         end if

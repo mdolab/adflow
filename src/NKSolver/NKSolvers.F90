@@ -90,7 +90,7 @@ contains
         use ADjointVars, only: nCellsLocal
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
-        use agmg, only: setupAGMG
+        use amg, only: setupAMG
         implicit none
 
         ! Working Variables
@@ -183,7 +183,7 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (preCondType == 'mg') then
-                call setupAGMG(drdwpre, nDimW / nw, nw)
+                call setupAMG(drdwpre, nDimW / nw, nw)
             end if
 
             !  Create the linear solver context
@@ -460,7 +460,7 @@ contains
 
         use constants
         use utils, only: EChk
-        use agmg, only: destroyAGMG
+        use amg, only: destroyAMG
         implicit none
         integer(kind=intType) :: ierr
 
@@ -496,7 +496,7 @@ contains
             call KSPDestroy(NK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAGMG()
+            call destroyAMG()
 
             NK_solverSetup = .False.
         end if
@@ -1719,7 +1719,7 @@ contains
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
         use inputadjoint, only: precondtype
-        use agmg, only: setupAGMG
+        use amg, only: setupAMG
         implicit none
 
         ! Working Variables
@@ -1804,7 +1804,7 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (preCondType == 'mg') then
-                call setupAGMG(drdwpre, nDimW / nState, nState)
+                call setupAMG(drdwpre, nDimW / nState, nState)
             end if
 
             !  Create the linear solver context
@@ -1934,7 +1934,7 @@ contains
         use utils, only: EChk, setPointers
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
         use communication
-        use agmg, only: setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
+        use amg, only: setupShellPC, destroyShellPC, applyShellPC, amgLevels, coarseIndices, A
         implicit none
 
         ! Local Variables
@@ -2002,7 +2002,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         if (useCoarseMats) then
-            do lvl = 2, agmgLevels
+            do lvl = 2, amgLevels
                 call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
                 call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
@@ -2041,7 +2041,7 @@ contains
         use inputIteration, only: turbResScale
         use inputADjoint, only: precondtype
         use utils, only: EChk, setPointers
-        use agmg, only: agmgLevels, coarseIndices, A
+        use amg, only: amgLevels, coarseIndices, A
         implicit none
 
         ! Input variables
@@ -2085,7 +2085,7 @@ contains
                             ! Extension for setting coarse grids
                             ! We only do this when we are updating the ANK PC
                             if (useCoarseMats .and. usePC) then
-                                do lvl = 2, agmgLevels
+                                do lvl = 2, amgLevels
                                     coarseRows(lvl) = coarseIndices(nn, lvl - 1)%arr(i, j, k)
                                     call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
                                                              timeStepBlock, ADD_VALUES, ierr)
@@ -2785,7 +2785,7 @@ contains
 
         use constants
         use utils, only: EChk
-        use agmg, only: destroyAGMG
+        use amg, only: destroyAMG
         implicit none
         integer(kind=intType) :: ierr
 
@@ -2815,7 +2815,7 @@ contains
             call KSPDestroy(ANK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAGMG()
+            call destroyAMG()
 
             ANK_SolverSetup = .False.
 
@@ -3775,7 +3775,7 @@ contains
             totalR_pcUpdate = totalR
 
             ! Update the time step terms before forming the PC because the states and CFL may have changed
-            ! This call also updates the time step terms for the AGMG PC if required
+            ! This call also updates the time step terms for the AMG PC if required
             call computeTimeStepMat(usePC=.True.)
 
             ! Actually form the preconditioner and factorize it.
@@ -3800,7 +3800,7 @@ contains
             ANK_iterTurb = 0
         else
             ! Update the time step terms because the states may have changed from the last step
-            ! This call does not update the time step terms for the AGMG PC
+            ! This call does not update the time step terms for the AMG PC
             call computeTimeStepMat(usePC=.False.)
 
             if (totalR .le. ANK_secondOrdSwitchTol * totalR0) then

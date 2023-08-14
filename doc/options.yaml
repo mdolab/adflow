@@ -935,14 +935,14 @@ nRKReset:
   desc: >
     The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
 
-AGMGLevels:
+AMGLevels:
   desc: >
-    Agglomerated multigrid preconditioner levels.
+    Algebraic multigrid preconditioner levels.
     Experimental; should not be modified.
 
-AGMGNSmooth:
+AMGNSmooth:
   desc: >
-    Agglomerated multigrid preconditioner parameter.
+    Algebraic multigrid preconditioner parameter.
     Experimental; should not be modified.
 
 useANKSolver:
@@ -1408,7 +1408,7 @@ matrixOrdering:
 globalPreconditioner:
   desc: The type of (global) preconditioner to use for the adjoint system.
   additive Schwarz: Restricted additive Schwarz method (ASM)
-  multigrid: Agglomerated multigrid (AGMG)
+  multigrid: Algebraic multigrid (AMG)
 
 localPreconditioner:
   desc: The type of preconditioner to use for the local preconditioning iteration in the adjoint solution.
