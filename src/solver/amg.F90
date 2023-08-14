@@ -27,7 +27,7 @@ module amg
     ! The number of outer iterations
     integer(kind=intType) amgOuterIts
 
-    ! The number of smoothign iteratinso
+    ! The number of smoothing iterations
     integer(kind=intType) amgNSmooth
 
     ! ASM overlap for levels
@@ -157,7 +157,7 @@ contains
 
         end do
 
-        ! Now setup the interp and the coarse-grid indices. Note that this
+        ! Now set up the interp and the coarse-grid indices. Note that this
         ! loop is the number of levels MINUS 1 since we are generating the
         ! interpolations between levels and we already have the 1st level
         ! of the  coarseIndices
@@ -177,7 +177,7 @@ contains
             end do
 
             ! Allocate the linear algebra interpolation array for this
-            ! level (first count the nuber of nodes to be restricted on
+            ! level (first count the number of nodes to be restricted on
             ! level lvl)
             n = 0
             do nn = 1, nDom
@@ -292,7 +292,7 @@ contains
             end do
 
             ! Now create the scatter to retrieve the "indicesToGet" from
-            ! the indexVec. Petsc is always annonying for this.
+            ! the indexVec. Petsc is always annoying for this.
 
             call ISCreateGeneral(adflow_comm_world, ii, indicesToGet(1:ii), PETSC_COPY_VALUES, &
                                  IS1, ierr)
@@ -608,14 +608,14 @@ contains
         ! Number of block nodes
         n = size(interp)
 
-        ! Convience block-based pointers
+        ! Convenience block-based pointers
         xPtrBlk(1:bs, 1:size(xPtr) / bs) => xPtr
         yPtrBlk(1:bs, 1:size(yPtr) / bs) => yPtr
 
         ! Zero the output array
         yPtr = zero
 
-        ! Loop over the interpolation array, summing into the coarse arary
+        ! Loop over the interpolation array, summing into the coarse array
         do i = 1, n
             j = interp(i)
             yPtrBlk(:, j) = yPtrBlk(:, j) + xPtrBlk(:, i)
@@ -651,11 +651,11 @@ contains
         ! Number of block nodes
         n = size(interp)
 
-        ! Convience pointers
+        ! Convenience pointers
         yPtrBlk(1:bs, 1:size(yPtr) / bs) => yPtr
         xPtrBlk(1:bs, 1:size(xPtr) / bs) => xPtr
 
-        ! Loop over the interpoaltion array, injecting into the fine array
+        ! Loop over the interpolation array, injecting into the fine array
         do i = 1, n
             j = interp(i)
             yPtrBlk(:, i) = xPtrBlk(:, j)
@@ -680,7 +680,7 @@ contains
         ! Working
         integer(kind=intType) :: ierr, i
 
-        ! Setp 3: Restrict the residual
+        ! Step 3: Restrict the residual
         call restrictVec(r, rhs(k + 1), interps(k)%arr)
 
         if (k == amglevels - 1) then
