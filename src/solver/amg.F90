@@ -462,15 +462,17 @@ contains
 
         if (amgLevels > 1) then
 
+            ! Copy the input vector x into rhs because x is read-only
+            call VecCopy(x, rhs(1), ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Zero the output vector y
+            call VecSet(y, zero, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
             if (amgOuterIts == 1) then
-                call MGPreCon(x, y, 1) ! y is the new approximate sol
+                call MGPreCon(rhs(1), y, 1) ! y is the new approximate sol
             else
-
-                call VecCopy(x, rhs(1), ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                call VecSet(y, zero, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
 
                 do i = 1, amgOuterIts
 
