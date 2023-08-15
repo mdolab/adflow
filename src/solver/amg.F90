@@ -50,7 +50,7 @@ module amg
     ! The interpolation arrays
     type(arr1int4), dimension(:), allocatable :: interps
 
-    ! The coarse grid indices
+    ! The coarse level indices
     type(arr3int4), dimension(:, :), allocatable, target :: coarseIndices
     type(arr4int4), dimension(:, :), allocatable, target :: coarseOversetIndices
 
@@ -84,11 +84,11 @@ contains
             return
         end if
 
+        ! Block size here refers to the number of states in each cell
         bs = blockSize
-        ! Set the pointer to the fine grid the AMG will be working on.
-        fineMat => inputMat
 
-        ! The setup procedure for the algebraic multigrid.
+        ! Set the pointer to the fine level the AMG will be working on
+        fineMat => inputMat
 
         ! Allocate the list of the mats/vects/ksp
         allocate ( &
@@ -99,7 +99,7 @@ contains
             sol(1:amgLevels), &
             sol2(1:amgLevels))
 
-        ! First allocate the coarse grid indices.
+        ! First allocate the coarse level indices.
         allocate (coarseIndices(nDom, 1:amgLevels - 1))
         allocate (coarseOversetIndices(nDom, 1:amgLevels - 1))
         allocate (sizes(3, nDom, 1:amgLevels))
@@ -157,7 +157,7 @@ contains
 
         end do
 
-        ! Now set up the interp and the coarse-grid indices. Note that this
+        ! Now set up the interp and the coarse-level indices. Note that this
         ! loop is the number of levels MINUS 1 since we are generating the
         ! interpolations between levels and we already have the 1st level
         ! of the  coarseIndices
@@ -219,8 +219,7 @@ contains
 
             ! We are not done yet; We need to fill in the block-based
             ! coarse indices and then do a halo-exchange on it so procs
-            ! know where to put their off-proc entries on the coarser
-            ! grids.
+            ! know where to put their off-proc entries on the coarser levels.
 
             ! Loop over the blocks.
             n = 0
@@ -240,17 +239,17 @@ contains
                             n = n + 1
 
                             ! Coarse Index: This is the first coarse index for
-                            ! the current finest grid element.
+                            ! the current finest level element.
                             coarseIndex = interps(1)%arr(n)
 
                             ! For levels higher than 2, we need to trace
                             ! through the subsequent levels to find what the
-                            ! coarse grid index is for level lvl.
+                            ! coarse index is for level lvl.
                             do nextLvl = 2, lvl
                                 coarseIndex = interps(nextLvl)%arr(coarseIndex)
                             end do
 
-                            ! Now we set the lvl coarse grid index into the
+                            ! Now we set the coarse level index into the
                             ! coarseIndices array. Note that we make the index
                             ! global here by adding procStarts. We also
                             ! subtract 1 to make it zero-based for petsc.
@@ -347,7 +346,7 @@ contains
             call ISDestroy(IS1, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Now we need to exchange the coarse grid indices. Set
+            ! Now we need to exchange the coarse level indices. Set
             ! pointers to the coarseIndices arrays and then call the
             ! generic integer halo exchange.
             level = 1
@@ -372,7 +371,7 @@ contains
             call KSPCreate(adflow_comm_world, kspLevels(lvl), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Create the coarse grid.
+            ! Create the coarse levels
             if (lvl >= 2) then
                 ncoarse = maxval(interps(lvl - 1)%arr)
 
@@ -491,7 +490,7 @@ contains
                 end do
             end if
         else
-            ! Solve the fine problem
+            ! Solve the fine level
             ! This is equivalent to not using multigrid
             call KSPSolve(kspLevels(1), x, y, ierr)
             call EChk(ierr, __FILE__, __LINE__)
@@ -681,7 +680,7 @@ contains
         ! Step 1: Restrict the residual
         call restrictVec(r, rhs(k + 1), interps(k)%arr)
 
-        ! Step 2: Solve the coarse problem directly or recursively
+        ! Step 2: Solve the coarse level directly or recursively
         if (k == amglevels - 1) then
             ! The next level down is the bottom
             ! Break the recursion by solving
