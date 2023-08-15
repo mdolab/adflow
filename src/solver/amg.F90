@@ -21,7 +21,7 @@ module amg
         integer, dimension(:, :, :, :), allocatable :: arr
     end type arr4int4
 
-    ! The number of amg levels
+    ! The number of levels
     integer(kind=intType) amgLevels
 
     ! The number of outer iterations
@@ -30,10 +30,10 @@ module amg
     ! The number of smoothing iterations
     integer(kind=intType) amgNSmooth
 
-    ! ASM overlap for levels
+    ! ASM overlap for the solver/smoother
     integer(kind=intType) :: amgASMOverlap
 
-    ! Fill
+    ! ILU fill for the solver/smoother
     integer(kind=intType) :: amgFillLevel
 
     ! Ordering
@@ -111,8 +111,8 @@ contains
                 call setPointers(nn, 1, 1)
                 if (lvl == 1) then
 
-                    ! Set the sizes for the finest level. This is the number of
-                    ! owned cells.
+                    ! Set the sizes for the finest level.
+                    ! This is the number of owned cells.
                     sizes(1, nn, 1) = nx
                     sizes(2, nn, 1) = ny
                     sizes(3, nn, 1) = nz
@@ -176,9 +176,8 @@ contains
                 coarseOversetIndices(nn, lvl)%arr = -1
             end do
 
-            ! Allocate the linear algebra interpolation array for this
-            ! level (first count the number of nodes to be restricted on
-            ! level lvl)
+            ! Allocate the linear algebra interpolation array for this level
+            ! (first count the number of nodes to be restricted on level lvl)
             n = 0
             do nn = 1, nDom
                 n = n + sizes(1, nn, lvl) * sizes(2, nn, lvl) * sizes(3, nn, lvl)
@@ -212,7 +211,6 @@ contains
                             n = n + 1
                             interps(lvl)%arr(n) = coarseIndex
 
-                            ! Block-basd info,
                         end do
                     end do
                 end do
@@ -276,8 +274,7 @@ contains
                 do k = 0, kb
                     do j = 0, jb
                         do i = 0, ib
-                            ! If this cell is is an interpolated cell, record
-                            ! the indices we need to get
+                            ! If this cell is is an interpolated cell, record the indices we need to get
                             if (iblank(i, j, k) == -1) then
                                 do m = 1, 8
                                     if (flowDoms(nn, 1, 1)%gInd(m, i, j, k) >= 0) then
@@ -368,7 +365,7 @@ contains
         call VecDestroy(indexVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Next we need to setup the matrices and vectors
+        ! Next we need to set up the matrices and vectors
 
         do lvl = 1, amgLevels
 
@@ -471,31 +468,31 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (amgOuterIts == 1) then
-                call MGPreCon(rhs(1), y, 1) ! y is the new approximate sol
+                call MGPreCon(rhs(1), y, 1) ! y is the new approximate solution
             else
 
                 do i = 1, amgOuterIts
 
-                    call MGPreCon(rhs(1), sol(1), 1) ! y is the new approximate sol
+                    call MGPreCon(rhs(1), sol(1), 1) ! The solution update is stored in sol(1)
 
                     ! Update the solution
-                    call VecAYPX(y, one, sol(1), ierr)
+                    call VecAYPX(y, one, sol(1), ierr) ! y = y + sol(1)
                     call EChk(ierr, __FILE__, __LINE__)
 
                     if (i < amgOuterIts) then
-
                         ! Compute new residual
                         call matMult(fineMat, y, rhs(1), ierr)
                         call EChk(ierr, __FILE__, __LINE__)
 
                         call VecAYPX(rhs(1), -one, x, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
-
                     end if
+
                 end do
             end if
         else
-
+            ! Solve the fine problem
+            ! This is equivalent to not using multigrid
             call KSPSolve(kspLevels(1), x, y, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
@@ -506,6 +503,7 @@ contains
 
         use communication, only: adflow_comm_world
         use inputAdjoint
+
         ! Input/Output
         PC pc
         integer(kind=intTYpe) :: ierr
@@ -516,10 +514,7 @@ contains
         integer(kind=intType) :: lvl
         integer(kind=intType) :: nlocal, first
 
-        ! Note that this has to be updated to work in parallel!
-
         do lvl = 1, amgLevels
-
             if (lvl == 1) then
                 call KSPSetOperators(kspLevels(lvl), fineMat, fineMat, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
@@ -548,7 +543,7 @@ contains
             call PCASMSetOverlap(globalPC, amgASMOverlap, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            !Setup the main ksp context before extracting the subdomains
+            ! Set up the main ksp context before extracting the subdomains
             call KSPSetUp(kspLevels(lvl), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -559,15 +554,15 @@ contains
             call KSPSetType(subksp, 'preonly', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Extract the preconditioner for subksp object.
+            ! Extract the preconditioner for subksp object
             call KSPGetPC(subksp, subpc, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! The subpc type will almost always be ILU
+            ! The subpc type is always ILU
             call PCSetType(subpc, 'ilu', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! ! ! Setup the matrix ordering for the subpc object:
+            ! Set up the matrix ordering for the subpc object
             call PCFactorSetMatOrderingtype(subpc, amgMatrixOrdering, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -674,6 +669,7 @@ contains
     recursive subroutine MGPreCon(r, y, k)
 
         ! r is the residual and y is the approximate solution
+        ! k is the level
 
         ! Input/Output
         Vec y, r
@@ -682,23 +678,24 @@ contains
         ! Working
         integer(kind=intType) :: ierr, i
 
-        ! Step 3: Restrict the residual
+        ! Step 1: Restrict the residual
         call restrictVec(r, rhs(k + 1), interps(k)%arr)
 
+        ! Step 2: Solve the coarse problem directly or recursively
         if (k == amglevels - 1) then
-            ! The next level down is the bottom...break the recursion by solving:
+            ! The next level down is the bottom
+            ! Break the recursion by solving
             call kspSolve(KSPLevels(k + 1), rhs(k + 1), sol(k + 1), ierr)
             call EChk(ierr, __FILE__, __LINE__)
-
         else
-
-            ! Step 4: Call the next level down recursively
+            ! Call the next level down recursively
             call MGPreCon(rhs(k + 1), sol(k + 1), k + 1)
         end if
 
+        ! Step 3: Prolongate the solution
         call prolongVec(sol(k + 1), y, interps(k)%arr)
 
-        ! ! Step 6: Compute the new residual:
+        ! Step 4: Compute the new residual
         if (k == 1) then
             call matMult(fineMat, y, res(k), ierr)  ! res = A(i) * z1(k)
         else
@@ -709,7 +706,7 @@ contains
         call VecAYPX(res(k), -one, r, ierr)    ! res = -res + r
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Step 7: Relax using the smoother
+        ! Step 5: Relax using the smoother
         call kspSolve(KSPLevels(k), res(k), sol2(k), ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
