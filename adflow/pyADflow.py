@@ -5635,8 +5635,8 @@ class ADFLOW(AeroSolver):
             "RKReset": [bool, False],
             "nRKReset": [int, 5],
             # MG PC
-            "AMGLevels": [int, 1],
-            "AMGNSmooth": [int, 3],
+            "AMGLevels": [int, 2],
+            "AMGNSmooth": [int, 1],
             # Approximate Newton-Krylov Parameters
             "useANKSolver": [bool, True],
             "ANKUseTurbDADI": [bool, True],
