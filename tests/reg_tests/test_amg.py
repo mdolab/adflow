@@ -23,20 +23,29 @@ commonTestOptions = {
     "useANKSolver": True,
     "useNKSolver": True,
     # Switch tolerances to test ANK, SANK, CSANK, NK
-    "ANKSwitchTol": 0.5,
-    "ANKSecondOrdSwitchTol": 1e-1,
-    "ANKCoupledSwitchTol": 1e-3,
-    "NKSwitchTol": 1e-5,
+    "ANKSwitchTol": 10.0,
+    "ANKSecondOrdSwitchTol": 1e-3,
+    "ANKCoupledSwitchTol": 1e-6,
+    "NKSwitchTol": 1e-8,
 }
 
 test_params = [
+    {
+        "name": "two_levels_one_iteration",
+        "options": {
+            "globalPreconditioner": "multigrid",
+            "AMGLevels": 2,
+            "ANKOuterPreconIts": 1,
+            "NKOuterPreconIts": 1,
+        },
+    },
     {
         "name": "two_levels_two_iterations",
         "options": {
             "globalPreconditioner": "multigrid",
             "AMGLevels": 2,
-            "ANKOuterPreconIts": 2,  # AMG will crash with the default value of 1
-            "NKOuterPreconIts": 2,  # AMG will crash with the default value of 1
+            "ANKOuterPreconIts": 2,
+            "NKOuterPreconIts": 2,
         },
     },
 ]
