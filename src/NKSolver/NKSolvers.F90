@@ -37,6 +37,7 @@ module NKSolver
     integer(kind=intType) :: NK_innerPreConIts
     integer(kind=intType) :: NK_outerPreConIts
     integer(kind=intType) :: NK_LS
+    character(len=maxStringLen) :: NK_precondType
     logical :: NK_useEW
     logical :: NK_ADPC
     logical :: NK_viscPC
@@ -86,7 +87,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: useLinResMonitor
         use flowVarRefState, only: nw, viscous
-        use InputAdjoint, only: viscPC, precondtype
+        use InputAdjoint, only: viscPC
         use ADjointVars, only: nCellsLocal
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
@@ -182,7 +183,7 @@ contains
             call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            if (preCondType == 'mg') then
+            if (NK_precondType == 'mg') then
                 call setupAMG(drdwpre, nDimW / nw, nw)
             end if
 
@@ -366,7 +367,7 @@ contains
     subroutine FormJacobianNK
 
         use constants
-        use inputADjoint, only: viscPC, precondType
+        use inputADjoint, only: viscPC
         use utils, only: EChk
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
         implicit none
@@ -392,7 +393,7 @@ contains
         tmp = viscPC ! Save what is in viscPC and set to the NKvarible
         viscPC = NK_viscPC
 
-        if (preCondType == 'mg') then
+        if (NK_precondType == 'mg') then
             useCoarseMats = .True.
         else
             useCoarseMats = .False.
@@ -411,7 +412,7 @@ contains
         localOrdering = 'rcm'
 
         ! Setup the KSP using the same code as used for the adjoint
-        if (PreCondType == 'asm') then
+        if (NK_precondType == 'asm') then
             call setupStandardKSP(NK_KSP, kspObjectType, NK_subSpace, &
                                   preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
                                   localOrdering, NK_iluFill, NK_innerPreConIts)
@@ -1661,6 +1662,7 @@ module ANKSolver
     integer(kind=intType) :: ANK_iluFill
     integer(kind=intType) :: ANK_innerPreConIts
     integer(kind=intType) :: ANK_outerPreConIts
+    character(len=maxStringLen) :: ANK_precondType
     real(kind=realType) :: ANK_rtol
     real(kind=realType) :: ANK_atol_buffer
     real(kind=realType) :: ANK_linResMax
@@ -1718,7 +1720,6 @@ contains
         use NKSolver, only: destroyNKSolver, linearResidualMonitor
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
-        use inputadjoint, only: precondtype
         use amg, only: setupAMG
         implicit none
 
@@ -1803,7 +1804,7 @@ contains
             call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            if (preCondType == 'mg') then
+            if (ANK_precondType == 'mg') then
                 call setupAMG(drdwpre, nDimW / nState, nState)
             end if
 
@@ -1928,7 +1929,7 @@ contains
         use blockPointers, only: nDom, volRef, il, jl, kl, w, dw, dtl, globalCell, iblank
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: turbResScale
-        use inputADjoint, only: viscPC, precondtype
+        use inputADjoint, only: viscPC
         use inputDiscretization, only: approxSA
         use iteration, only: totalR0, totalR
         use utils, only: EChk, setPointers
@@ -1948,7 +1949,7 @@ contains
         logical :: useCoarseMats
         PC shellPC
 
-        if (preCondType == 'mg') then
+        if (ANK_precondType == 'mg') then
             useCoarseMats = .True.
         else
             useCoarseMats = .False.
@@ -2010,13 +2011,13 @@ contains
             end do
         end if
 
-        if (PreCondType == 'asm') then
+        if (ANK_precondType == 'asm') then
             ! Run the super-dee-duper function to setup the ksp object:
 
             call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
                                   preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                                   localOrdering, ANK_iluFill, ANK_innerPreConIts)
-        else if (PreCondType == 'mg') then
+        else if (ANK_precondType == 'mg') then
 
             ! Setup the MG preconditioner!
             call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
@@ -2039,7 +2040,6 @@ contains
         use blockPointers, only: nDom, il, jl, kl, globalCell
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: turbResScale
-        use inputADjoint, only: precondtype
         use utils, only: EChk, setPointers
         use amg, only: amgLevels, coarseIndices, A
         implicit none
@@ -2055,7 +2055,7 @@ contains
         real(kind=realType), dimension(nState, nState) :: timeStepBlock
         logical :: useCoarseMats
 
-        if (preCondType == 'mg') then
+        if (ANK_precondType == 'mg') then
             useCoarseMats = .True.
         else
             useCoarseMats = .False.

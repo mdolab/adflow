@@ -362,7 +362,9 @@ python module libadflow
        end module inputparamroutines
 
        module nksolver
+         use constants
 
+         character(len=maxstringlen) :: nk_precondtype
          integer(kind=inttype) :: nk_innerpreconits
          integer(kind=inttype) :: nk_outerpreconits
          integer(kind=inttype) :: nk_jacobianlag
@@ -434,6 +436,8 @@ python module libadflow
 
        module anksolver
          use constants
+
+         character(len=maxstringlen) :: ank_precondtype
          integer(kind=inttype) :: ank_innerpreconits
          integer(kind=inttype) :: ank_outerpreconits
          integer(kind=inttype) :: ank_jacobianlag
