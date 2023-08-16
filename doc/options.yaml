@@ -878,6 +878,11 @@ NKViscPC:
     This will have a memory and cost penalty, but the resulting preconditioner will be more accurate.
     Users should experiment with other linear solver options as a smaller stencil preconditioner is usually good enough.
 
+NKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the NK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
+
 NKASMOverlap:
   desc: >
     The number of overlap levels in the additive Schwarz preconditioner for the NK solver.
@@ -915,6 +920,14 @@ NKOuterPreconIts:
     More iterations may help converge the linear system faster.
     Typical values are from 1 to 3.
 
+NKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the NK solver.
+
+NKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the NK solver.
+
 NKLS:
   desc: >
     The type of line search used with the NK solver.
@@ -934,16 +947,6 @@ RKReset:
 nRKReset:
   desc: >
     The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
-
-AMGLevels:
-  desc: >
-    Algebraic multigrid preconditioner levels.
-    Experimental; should not be modified.
-
-AMGNSmooth:
-  desc: >
-    Algebraic multigrid preconditioner parameter.
-    Experimental; should not be modified.
 
 useANKSolver:
   desc: >
@@ -999,6 +1002,11 @@ ANKLinResMax:
     However, we want to manage the CFL number so that the linear residual after we run out of linear iterations is still below this target value.
     This can be seen as the maximum allowed linear residual at each iteration.
 
+ANKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the ANK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
+
 ANKASMOverlap:
   desc: >
     Similar to the :py:data:`NKASMOverlap` option but for the ANK solver.
@@ -1021,6 +1029,14 @@ ANKInnerPreconIts:
 ANKOuterPreconIts:
   desc: >
     Similar to the :py:data:`NKOuterPreconIts` option but for the ANK solver.
+
+ANKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the ANK solver.
+
+ANKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the ANK solver.
 
 ANKCFL0:
   desc: >
@@ -1408,7 +1424,10 @@ matrixOrdering:
 globalPreconditioner:
   desc: The type of (global) preconditioner to use for the adjoint system.
   additive Schwarz: Restricted additive Schwarz method (ASM)
-  multigrid: Algebraic multigrid (AMG)
+  multigrid: >
+    Algebraic multigrid (AMG).
+    This method can be much faster than ASM for large meshes.
+    The smoothing iterations and coarse level solutions are done with the standard ASM and ILU combination.
 
 localPreconditioner:
   desc: The type of preconditioner to use for the local preconditioning iteration in the adjoint solution.
@@ -1440,6 +1459,14 @@ outerPreconIts:
     Increasing this number may help with difficult problems.
     However, each iteration will take more time.
     The default should be sufficient for most problems.
+
+adjointAMGLevels:
+  desc: >
+    The number of levels to use for the adjoint solver's algebraic multigrid preconditioner.
+
+adjointAMGNSmooth:
+  desc: >
+    The number of smoothing iterations at each level for the adjoint solver's algebraic multigrid preconditioner.
 
 applyAdjointPCSubspaceSize:
   desc: >
