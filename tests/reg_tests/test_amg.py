@@ -38,9 +38,11 @@ test_params = [
     {
         "name": "two_levels_one_iteration",
         "options": {
+            # AMG levels
             "ANKAMGLevels": 2,
             "NKAMGLevels": 2,
             "adjointAMGLevels": 2,
+            # Outer iterations
             "ANKOuterPreconIts": 1,
             "NKOuterPreconIts": 1,
             "outerPreconIts": 1,
@@ -49,12 +51,35 @@ test_params = [
     {
         "name": "two_levels_two_iterations",
         "options": {
+            # AMG levels
             "ANKAMGLevels": 2,
             "NKAMGLevels": 2,
             "adjointAMGLevels": 2,
+            # Outer iterations
             "ANKOuterPreconIts": 2,
             "NKOuterPreconIts": 2,
             "outerPreconIts": 2,
+        },
+    },
+    {
+        "name": "different_levels_and_iterations",
+        "options": {
+            # AMG levels
+            "ANKAMGLevels": 3,
+            "NKAMGLevels": 2,
+            "adjointAMGLevels": 1,
+            # Outer iterations
+            "ANKOuterPreconIts": 1,
+            "NKOuterPreconIts": 3,
+            "outerPreconIts": 2,
+            # Smoothing iterations
+            "ANKAMGNSmooth": 2,
+            "NKAMGNSmooth": 3,
+            "adjointAMGNSmooth": 4,
+            # Inner iterations
+            "ANKInnerPreconIts": 2,
+            "NKInnerPreconIts": 1,
+            "innerPreconIts": 3,
         },
     },
 ]
@@ -139,6 +164,9 @@ class TestAMGComplex(unittest.TestCase):
             # This is required for running complex tests with ``testflo -m 'cmplx*'`` but will hopefully be
             # fixed down the line.
             return
+
+        # Add an imaginary perturbation to the angle of attack
+        self.ap.alpha += 1e-100 * 1j
 
         # Solve the flow
         self.CFDSolver(self.ap)
