@@ -1,3 +1,8 @@
+! This module implements an aggregation-based algebraic multigrid method.
+! See Sec. 6.1 in the following paper for a theoretical overview of similar methods:
+!   K. Stuben. "A review of algebraic multigrid."
+!   Journal of Computational and Applied Mathematics (2001)
+!   https://doi.org/10.1016/S0377-0427(00)00516-1
 module amg
 
     use constants
