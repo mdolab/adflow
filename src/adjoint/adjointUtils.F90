@@ -1505,8 +1505,8 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
         end if
 
-        ! Set the type of 'globalPC'. This will almost always be additive Schwarz
-        call PCSetType(globalPC, 'asm', ierr)!globalPCType, ierr)
+        ! Set the 'globalPC' to additive Schwarz
+        call PCSetType(globalPC, 'asm', ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the overlap required
@@ -1524,22 +1524,20 @@ contains
         ! Since there is an extra matMult required when using the Richardson preconditioner
         ! with only 1 iteration, only use it when we need to do more than 1 iteration.
         if (localPreConIts > 1) then
-            ! This 'subksp' object will ALSO be of type richardson so we can do
-            ! multiple iterations on the sub-domains
+            ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
             call KSPSetType(subksp, 'richardson', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the number of iterations to do on local blocks. Tolerances are ignored.
-
-            call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, &
-                                  PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+            call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
                                   localPreConIts, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Again, norm_type is NONE since we don't want to check error
+            ! normtype is NONE because we don't want to check error
             call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         else
+            ! Set the subksp object to preonly because we are only doing one iteration
             call KSPSetType(subksp, 'preonly', ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
@@ -1548,7 +1546,7 @@ contains
         call KSPGetPC(subksp, subpc, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! The subpc type will almost always be ILU
+        ! Set the subpc type; only ILU is currently supported
         call PCSetType(subpc, localPCType, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -1562,12 +1560,12 @@ contains
 
     end subroutine setupStandardKSP
 
-    subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, &
-                                      preConSide, ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel)
+    subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, preConSide, &
+                                      ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel, localPreConIts)
 
         use constants
         use utils, only: ECHk
-        use amg, only: amgOuterIts, amgASMOverlap, amgFillLevel, amgMatrixOrdering, &
+        use amg, only: amgOuterIts, amgASMOverlap, amgFillLevel, amgMatrixOrdering, amgLocalPreConIts, &
                        setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
         use petsc
@@ -1576,7 +1574,7 @@ contains
         ! Inputs
         KSP kspObject
         character(len=*), intent(in) :: kspObjectType, preConSide, localMatrixOrdering
-        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, outerPreconIts
+        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, outerPreconIts, localPreConIts
 
         ! Working Variables
         PC shellPC
@@ -1616,6 +1614,7 @@ contains
         amgASMOverlap = asmOverlap
         amgFillLevel = fillLevel
         amgMatrixOrdering = localMatrixOrdering
+        amgLocalPreConIts = localPreConIts
 
     end subroutine setupStandardMultigrid
 

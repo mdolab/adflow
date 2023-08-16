@@ -917,8 +917,8 @@ contains
                                   matrixOrdering, FillLevel, innerPreConIts)
         else if (PreCondType == 'mg') then
 
-            call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, &
-                                        adjointPCSide, overlap, outerPreconIts, matrixOrdering, fillLevel)
+            call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, adjointPCSide, &
+                                        overlap, outerPreconIts, matrixOrdering, fillLevel, innerPreConIts)
         end if
 
         ! Setup monitor if necessary:

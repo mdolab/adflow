@@ -421,7 +421,7 @@ contains
         else
             call setupStandardMultigrid(NK_KSP, kspObjectType, NK_subSpace, &
                                         preConSide, NK_asmOverlap, NK_outerPreConIts, &
-                                        localOrdering, NK_iluFill)
+                                        localOrdering, NK_iluFill, NK_innerPreConIts)
         end if
 
         ! Don't do iterative refinement
@@ -2021,7 +2021,7 @@ contains
         else if (ANK_precondType == 'mg') then
             call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
                                         preConSide, ANK_asmOverlap, outerPreConIts, &
-                                        localOrdering, ANK_iluFill)
+                                        localOrdering, ANK_iluFill, ANK_innerPreConIts)
         end if
 
         ! Don't do iterative refinement

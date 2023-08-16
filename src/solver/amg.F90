@@ -30,6 +30,9 @@ module amg
     ! The number of smoothing iterations
     integer(kind=intType) amgNSmooth
 
+    ! The number of local ILU iterations
+    integer(kind=intType) amgLocalPreConIts
+
     ! ASM overlap for the solver/smoother
     integer(kind=intType) :: amgASMOverlap
 
@@ -554,14 +557,32 @@ contains
             call PCASMGetSubKSP(globalPC, nlocal, first, subksp, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call KSPSetType(subksp, 'preonly', ierr)
-            call EChk(ierr, __FILE__, __LINE__)
+            ! Since there is an extra matMult required when using the Richardson preconditioner
+            ! with only 1 iteration, only use it when we need to do more than 1 iteration.
+            if (amgLocalPreConIts > 1) then
+                ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
+                call KSPSetType(subksp, 'richardson', ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Set the number of iterations to do on local blocks. Tolerances are ignored.
+                call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+                                      amgLocalPreConIts, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! normtype is NONE because we don't want to check error
+                call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            else
+                ! Set the subksp object to preonly because we are only doing one iteration
+                call KSPSetType(subksp, 'preonly', ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
 
             ! Extract the preconditioner for subksp object
             call KSPGetPC(subksp, subpc, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! The subpc type is always ILU
+            ! Set the subpc type to ILU
             call PCSetType(subpc, 'ilu', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
