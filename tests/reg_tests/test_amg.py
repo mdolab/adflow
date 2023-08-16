@@ -38,7 +38,9 @@ test_params = [
     {
         "name": "two_levels_one_iteration",
         "options": {
-            "AMGLevels": 2,
+            "ANKAMGLevels": 2,
+            "NKAMGLevels": 2,
+            "adjointAMGLevels": 2,
             "ANKOuterPreconIts": 1,
             "NKOuterPreconIts": 1,
             "outerPreconIts": 1,
@@ -47,7 +49,9 @@ test_params = [
     {
         "name": "two_levels_two_iterations",
         "options": {
-            "AMGLevels": 2,
+            "ANKAMGLevels": 2,
+            "NKAMGLevels": 2,
+            "adjointAMGLevels": 2,
             "ANKOuterPreconIts": 2,
             "NKOuterPreconIts": 2,
             "outerPreconIts": 2,

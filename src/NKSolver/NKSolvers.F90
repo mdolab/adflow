@@ -36,6 +36,8 @@ module NKSolver
     integer(kind=intType) :: NK_iluFill
     integer(kind=intType) :: NK_innerPreConIts
     integer(kind=intType) :: NK_outerPreConIts
+    integer(kind=intType) :: NK_AMGLevels
+    integer(kind=intType) :: NK_AMGNSmooth
     integer(kind=intType) :: NK_LS
     character(len=maxStringLen) :: NK_precondType
     logical :: NK_useEW
@@ -184,7 +186,7 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (NK_precondType == 'mg') then
-                call setupAMG(drdwpre, nDimW / nw, nw)
+                call setupAMG(drdwpre, nDimW / nw, nw, NK_AMGLevels, NK_AMGNSmooth)
             end if
 
             !  Create the linear solver context
@@ -385,12 +387,12 @@ contains
         call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Assemble the approximate PC (fine leve, level 1)
+        ! Assemble the approximate PC (fine level, level 1)
         useAD = NK_ADPC
         usePC = .True.
         useTranspose = .False.
         useObjective = .False.
-        tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+        tmp = viscPC ! Save what is in viscPC and set to the NK variable
         viscPC = NK_viscPC
 
         if (NK_precondType == 'mg') then
@@ -404,14 +406,14 @@ contains
         ! Reset saved value
         viscPC = tmp
 
-        ! Setup KSP Options
+        ! Set up KSP Options
         preConSide = 'right'
         localPCType = 'ilu'
         kspObjectType = 'gmres'
         globalPCType = 'asm'
         localOrdering = 'rcm'
 
-        ! Setup the KSP using the same code as used for the adjoint
+        ! Set up the KSP using the same code as used for the adjoint
         if (NK_precondType == 'asm') then
             call setupStandardKSP(NK_KSP, kspObjectType, NK_subSpace, &
                                   preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
@@ -422,9 +424,8 @@ contains
                                         localOrdering, NK_iluFill)
         end if
 
-        ! Don't do iterative refinement for the NKSolver.
-        call KSPGMRESSetCGSRefinementType(NK_KSP, &
-                                          KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        ! Don't do iterative refinement
+        call KSPGMRESSetCGSRefinementType(NK_KSP, KSP_GMRES_CGS_REFINE_NEVER, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine FormJacobianNK
@@ -1662,6 +1663,8 @@ module ANKSolver
     integer(kind=intType) :: ANK_iluFill
     integer(kind=intType) :: ANK_innerPreConIts
     integer(kind=intType) :: ANK_outerPreConIts
+    integer(kind=intType) :: ANK_AMGLevels
+    integer(kind=intType) :: ANK_AMGNSmooth
     character(len=maxStringLen) :: ANK_precondType
     real(kind=realType) :: ANK_rtol
     real(kind=realType) :: ANK_atol_buffer
@@ -1805,7 +1808,7 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             if (ANK_precondType == 'mg') then
-                call setupAMG(drdwpre, nDimW / nState, nState)
+                call setupAMG(drdwpre, nDimW / nState, nState, ANK_AMGLevels, ANK_AMGNSmooth)
             end if
 
             !  Create the linear solver context
@@ -1935,7 +1938,7 @@ contains
         use utils, only: EChk, setPointers
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
         use communication
-        use amg, only: setupShellPC, destroyShellPC, applyShellPC, amgLevels, coarseIndices, A
+        use amg, only: setupShellPC, destroyShellPC, applyShellPC, coarseIndices, A
         implicit none
 
         ! Local Variables
@@ -1955,13 +1958,13 @@ contains
             useCoarseMats = .False.
         end if
 
-        ! Assemble the approximate PC (fine leve, level 1)
+        ! Assemble the approximate PC (fine level, level 1)
         useAD = ANK_ADPC
         frozenTurb = (.not. ANK_coupled)
         usePC = .True.
         useTranspose = .False.
         useObjective = .False.
-        tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+        tmp = viscPC ! Save what is in viscPC and set to False
         viscPC = .False.
 
         if (totalR > ANK_secondOrdSwitchTol * totalR0) &
@@ -1975,26 +1978,11 @@ contains
         viscPC = tmp
         approxSA = .False.
 
-        ! PETSc Matrix Assembly begin
+        ! Begin PETSc matrix assembly
         call MatAssemblyBegin(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Setup KSP Options
-        preConSide = 'right'
-        localPCType = 'ilu'
-        kspObjectType = 'gmres'
-        globalPCType = 'asm'
-        localOrdering = 'rcm'
-        outerPreConIts = ank_outerPreconIts
-
-        ! Setup the KSP using the same code as used for the adjoint
-        if (ank_subspace < 0) then
-            subspace = ANK_maxIter
-        else
-            subspace = ANK_subspace
-        end if
-
-        ! Complete the matrix assembly.
+        ! Complete the matrix assembly
         call MatAssemblyEnd(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -2003,7 +1991,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         if (useCoarseMats) then
-            do lvl = 2, amgLevels
+            do lvl = 2, ANK_AMGLevels
                 call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
                 call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
@@ -2011,23 +1999,33 @@ contains
             end do
         end if
 
-        if (ANK_precondType == 'asm') then
-            ! Run the super-dee-duper function to setup the ksp object:
+        ! Set up KSP options
+        preConSide = 'right'
+        localPCType = 'ilu'
+        kspObjectType = 'gmres'
+        globalPCType = 'asm'
+        localOrdering = 'rcm'
+        outerPreConIts = ank_outerPreconIts
 
+        if (ANK_subspace < 0) then
+            subspace = ANK_maxIter
+        else
+            subspace = ANK_subspace
+        end if
+
+        ! Set up the KSP using the same code as used for the adjoint
+        if (ANK_precondType == 'asm') then
             call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
                                   preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                                   localOrdering, ANK_iluFill, ANK_innerPreConIts)
         else if (ANK_precondType == 'mg') then
-
-            ! Setup the MG preconditioner!
             call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
                                         preConSide, ANK_asmOverlap, outerPreConIts, &
                                         localOrdering, ANK_iluFill)
         end if
 
-        ! Don't do iterative refinement for the NKSolver.
-        call KSPGMRESSetCGSRefinementType(ANK_KSP, &
-                                          KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        ! Don't do iterative refinement
+        call KSPGMRESSetCGSRefinementType(ANK_KSP, KSP_GMRES_CGS_REFINE_NEVER, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine FormJacobianANK
@@ -2041,7 +2039,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: turbResScale
         use utils, only: EChk, setPointers
-        use amg, only: amgLevels, coarseIndices, A
+        use amg, only: coarseIndices, A
         implicit none
 
         ! Input variables
@@ -2085,7 +2083,7 @@ contains
                             ! Extension for setting coarse grids
                             ! We only do this when we are updating the ANK PC
                             if (useCoarseMats .and. usePC) then
-                                do lvl = 2, amgLevels
+                                do lvl = 2, ANK_AMGLevels
                                     coarseRows(lvl) = coarseIndices(nn, lvl - 1)%arr(i, j, k)
                                     call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
                                                              timeStepBlock, ADD_VALUES, ierr)
@@ -2345,13 +2343,13 @@ contains
         integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace
         real(kind=realType), dimension(:, :), allocatable :: blk
 
-        ! Assemble the approximate PC (fine leve, level 1)
+        ! Assemble the approximate PC (fine level, level 1)
         useAD = ANK_ADPC
         frozenTurb = .False.
         usePC = .True.
         useTranspose = .False.
         useObjective = .False.
-        tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+        tmp = viscPC ! Save what is in viscPC and set to False
         viscPC = .False.
 
         if (totalR > ANK_secondOrdSwitchTol * totalR0) &
@@ -2411,38 +2409,38 @@ contains
             end do
         end do
 
-        ! PETSc Matrix Assembly begin
+        ! De-allocate the generic block
+        deallocate (blk)
+
+        ! Being PETSc matrix assembly
         call MatAssemblyBegin(dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Setup KSP Options
+        ! Complete the matrix assembly
+        call MatAssemblyEnd(dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Set up KSP options
         preConSide = 'right'
         localPCType = 'ilu'
         kspObjectType = 'gmres'
         globalPCType = 'asm'
         localOrdering = 'rcm'
         outerPreConIts = 1
-        ! Setup the KSP using the same code as used for the adjoint
+
+        ! Set up the KSP using the same code as used for the adjoint
         if (ank_subspace < 0) then
             subspace = ANK_maxIter
         else
             subspace = ANK_subspace
         end if
 
-        ! de-allocate the generic block
-        deallocate (blk)
-
-        ! Complete the matrix assembly.
-        call MatAssemblyEnd(dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
         call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
                               preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                               localOrdering, ANK_iluFill, ANK_innerPreConIts)
 
-        ! Don't do iterative refinement for the NKSolver.
-        call KSPGMRESSetCGSRefinementType(ANK_KSPTurb, &
-                                          KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        ! Don't do iterative refinement
+        call KSPGMRESSetCGSRefinementType(ANK_KSPTurb, KSP_GMRES_CGS_REFINE_NEVER, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     contains

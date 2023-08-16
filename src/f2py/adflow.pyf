@@ -304,8 +304,6 @@ python module libadflow
 
 
        module amg
-         integer(kind=inttype) :: amglevels
-         integer(kind=inttype) :: amgnsmooth
 
          subroutine setupamg
          end subroutine setupamg
@@ -367,6 +365,8 @@ python module libadflow
          character(len=maxstringlen) :: nk_precondtype
          integer(kind=inttype) :: nk_innerpreconits
          integer(kind=inttype) :: nk_outerpreconits
+         integer(kind=inttype) :: nk_amglevels
+         integer(kind=inttype) :: nk_amgnsmooth
          integer(kind=inttype) :: nk_jacobianlag
          logical :: usenksolver
          logical :: nk_adpc
@@ -440,6 +440,8 @@ python module libadflow
          character(len=maxstringlen) :: ank_precondtype
          integer(kind=inttype) :: ank_innerpreconits
          integer(kind=inttype) :: ank_outerpreconits
+         integer(kind=inttype) :: ank_amglevels
+         integer(kind=inttype) :: ank_amgnsmooth
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
          logical :: ank_useturbdadi
@@ -1209,6 +1211,8 @@ python module libadflow
          integer(kind=inttype) :: adjrestart
          integer(kind=inttype) :: innerpreconits
          integer(kind=inttype) :: outerpreconits
+         integer(kind=inttype) :: adjamglevels
+         integer(kind=inttype) :: adjamgnsmooth
          logical :: approxpc
          logical :: adpc
          logical :: viscpc

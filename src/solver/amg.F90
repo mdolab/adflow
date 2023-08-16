@@ -58,14 +58,14 @@ module amg
     integer :: bs
 contains
 
-    subroutine setupAMG(inputMat, nCell, blockSize)
+    subroutine setupAMG(inputMat, nCell, blockSize, levels, nSmooth)
 
         use blockPointers
         use communication
         use utils, only: setPointers
         use haloExchange, only: whalo1to1intgeneric
         use adjointVars, only: nCellsLocal
-        integer(kind=intType), intent(in) :: nCell, blockSize
+        integer(kind=intType), intent(in) :: nCell, blockSize, levels, nSmooth
         Mat, target :: inputMat
 
         VecScatter :: scat
@@ -83,6 +83,10 @@ contains
         if (amgSetup) then
             return
         end if
+
+        ! Set some module variables
+        amgLevels = levels
+        amgNSmooth = nSmooth
 
         ! Block size here refers to the number of states in each cell
         bs = blockSize

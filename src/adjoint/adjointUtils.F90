@@ -1374,12 +1374,12 @@ contains
                                 globalPCType, ASMOverlap, globalPreConIts, localPCType, &
                                 localMatrixOrdering, localFillLevel, localPreConIts)
 
-        ! This function sets up the supplied kspObject in the followin
+        ! This function sets up the supplied kspObject in the following
         ! specific fashion. The reason this setup is in
         ! its own function is that it is used in the following places:
-        ! 1. Setting up the preconditioner to use for the NKsolver
+        ! 1. Setting up the preconditioner to use for the ANK and NK solvers
         ! 2. Setting up the preconditioner to use for the adjoint solver
-        ! 3. Setting up the smoothers on the coarse multigrid levels.
+        ! 3. Setting up the smoothers on the coarse levels for algebraic multigrid
         !
         ! The hierarchy of the setup is:
         !  kspObject --> Supplied KSP object
@@ -1462,9 +1462,8 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
         end if
 
-        ! Since there is an extraneous matMult required when using the
-        ! richardson precondtiter with only 1 iteration, only use it we need
-        ! to do more than 1 iteration.
+        ! Since there is an extra matMult required when using the Richardson preconditioner
+        ! with only 1 iteration, only use it when we need to do more than 1 iteration.
         if (globalPreConIts > 1) then
             ! Extract preconditioning context for main KSP solver: (master_PC)
             call KSPGetPC(kspObject, master_PC, ierr)
@@ -1522,9 +1521,8 @@ contains
         call PCASMGetSubKSP(globalPC, nlocal, first, subksp, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Since there is an extraneous matMult required when using the
-        ! richardson precondtiter with only 1 iteration, only use it we need
-        ! to do more than 1 iteration.
+        ! Since there is an extra matMult required when using the Richardson preconditioner
+        ! with only 1 iteration, only use it when we need to do more than 1 iteration.
         if (localPreConIts > 1) then
             ! This 'subksp' object will ALSO be of type richardson so we can do
             ! multiple iterations on the sub-domains
@@ -1567,21 +1565,18 @@ contains
     subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, &
                                       preConSide, ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel)
 
-        ! and if localPreConIts=1 then subKSP is set to preOnly.
         use constants
         use utils, only: ECHk
         use amg, only: amgOuterIts, amgASMOverlap, amgFillLevel, amgMatrixOrdering, &
-                        setupShellPC, destroyShellPC, applyShellPC
+                       setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
 
-        ! Input Params
+        ! Inputs
         KSP kspObject
-        character(len=*), intent(in) :: kspObjectType, preConSide
-        character(len=*), intent(in) :: localMatrixOrdering
-        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart
-        integer(kind=intType), intent(in) :: outerPreconIts
+        character(len=*), intent(in) :: kspObjectType, preConSide, localMatrixOrdering
+        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, outerPreconIts
 
         ! Working Variables
         PC shellPC
@@ -1616,11 +1611,12 @@ contains
         call PCShellSetApply(shellPC, applyShellPC, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Just save the remaining pieces ofinformation in the amg module.
+        ! Save the remaining variables in the AMG module
         amgOuterIts = outerPreConIts
         amgASMOverlap = asmOverlap
         amgFillLevel = fillLevel
         amgMatrixOrdering = localMatrixOrdering
+
     end subroutine setupStandardMultigrid
 
     subroutine destroyPETScVars

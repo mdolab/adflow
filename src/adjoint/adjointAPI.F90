@@ -1095,7 +1095,7 @@ contains
             call allocDerivativeValues(1)
         end if
 
-        ! Zero all AD seesd.
+        ! Zero all AD seeds
         do nn = 1, nDom
             do sps = 1, nTimeIntervalsSpectral
                 call zeroADSeeds(nn, 1, sps)
@@ -1136,7 +1136,7 @@ contains
         use communication, only: adflow_comm_world, myid
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use flowVarRefState, only: nwf, nw, viscous
-        use inputADjoint, only: approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
+        use inputADjoint, only: approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC, adjAMGLevels, adjAMGNSmooth
         use stencils, only: N_visc_drdw, n_euler_drdw, visc_drdw_stencil, euler_drdw_stencil, &
                             visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
         use utils, only: EChk, setPointers
@@ -1239,7 +1239,7 @@ contains
             deallocate (nnzDiagonal, nnzOffDiag)
         end if
 
-        call setupAMG(drdwpret, nDimW / nState, nState)
+        call setupAMG(drdwpret, nDimW / nState, nState, adjAMGLevels, adjAMGNSmooth)
 
         ! Create the KSP Object
         call KSPCreate(ADFLOW_COMM_WORLD, adjointKSP, ierr)
