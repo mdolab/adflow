@@ -15,9 +15,6 @@ from .om_utils import get_dvs_and_cons
 # printing messages when node coordinates and states are updated from OpenMDAO inputs and outputs.
 DEBUG_LOGGING = False
 
-# Set this to true to include the zipper nodes in the surface coordinates.
-INCLUDE_ZIPPER_NODES = True
-
 
 def print_func_call(component):
     """Prints the name of the class and function being. Useful for debugging when you want to see what order OpenMDAO
@@ -98,13 +95,8 @@ def set_surf_coords(solver, inputs):
     """
     coordsUpdated = False
     if "x_aero" in inputs:
-        # This is the only place in the code we don't want the zipper nodes. This is because `setSurfaceCoordinates`
-        # doesn't take the zipper nodes. The surface coordinates in the input vector do include the zipper nodes but
-        # they are easy to exclude because they're just tacked on to the end of the array.
         currentSurfCoord = solver.getSurfaceCoordinates(groupName=solver.meshFamilyGroup, includeZipper=False)
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
-        if INCLUDE_ZIPPER_NODES:
-            newSurfCoord = newSurfCoord[: currentSurfCoord.shape[0]]
         coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
@@ -214,7 +206,7 @@ class ADflowMesh(ExplicitComponent):
         # We want to include the zipper nodes in the surface mesh coordinates because the forces array ADflow returns
         # includes them and we need the surface coordinates array to be consistent with that.
         self.x_a0 = self.aero_solver.getSurfaceCoordinates(
-            groupName=self.aero_solver.meshFamilyGroup, includeZipper=INCLUDE_ZIPPER_NODES
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
         ).flatten(order="C")
 
         coord_size = self.x_a0.size
@@ -382,7 +374,7 @@ class ADflowWarper(ExplicitComponent):
                         dxS,
                         self.solver.meshFamilyGroup,
                         self.solver.designFamilyGroup,
-                        includeZipper=INCLUDE_ZIPPER_NODES,
+                        includeZipper=False,
                     )
                     d_inputs["x_aero"] += dxS.flatten()
 
@@ -669,7 +661,7 @@ class ADflowForces(ExplicitComponent):
         self.add_input("adflow_vol_coords", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
         self.add_input("adflow_states", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
 
-        local_surface_coord_size = solver.getSurfaceCoordinates(includeZipper=INCLUDE_ZIPPER_NODES).size
+        local_surface_coord_size = solver.getSurfaceCoordinates(includeZipper=False).size
         self.add_output("f_aero", distributed=True, shape=local_surface_coord_size, tags=["mphys_coupling"])
 
         # self.declare_partials(of='f_aero', wrt='*')
@@ -698,11 +690,6 @@ class ADflowForces(ExplicitComponent):
         setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
         f_aero = solver.getForces()
-        if not INCLUDE_ZIPPER_NODES:
-            f_aero = solver.mapVector(
-                f_aero, self.solver.meshFamilyGroup, self.solver.meshFamilyGroup, includeZipper=False
-            )
-
         outputs["f_aero"] = f_aero.flatten(order="C")
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
@@ -732,19 +719,11 @@ class ADflowForces(ExplicitComponent):
                     xVDot = None
                 if not (xVDot is None and wDot is None):
                     dfdot = solver.computeJacobianVectorProductFwd(xDvDot=xDvDot, xVDot=xVDot, wDot=wDot, fDeriv=True)
-                    if not INCLUDE_ZIPPER_NODES:
-                        dfdot = solver.mapVector(
-                            dfdot, self.solver.meshFamilyGroup, self.solver.meshFamilyGroup, includeZipper=False
-                        )
                     d_outputs["f_aero"] += dfdot.flatten()
 
         elif mode == "rev":
             if "f_aero" in d_outputs:
                 fBar = d_outputs["f_aero"].reshape((-1, 3))
-                if not INCLUDE_ZIPPER_NODES:
-                    fBar = solver.mapVector(
-                        fBar, self.solver.meshFamilyGroup, self.solver.meshFamilyGroup, includeZipper=True
-                    )
 
                 wBar, xVBar, xDVBar = solver.computeJacobianVectorProductBwd(
                     fBar=fBar, wDeriv=True, xVDeriv=True, xDvDeriv=False, xDvDerivAero=True
@@ -1443,10 +1422,10 @@ class ADflowBuilder(Builder):
 
     # TODO the get_nnodes is deprecated. will remove
     def get_nnodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=INCLUDE_ZIPPER_NODES).shape[0])
+        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=False).shape[0])
 
     def get_number_of_nodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=INCLUDE_ZIPPER_NODES).shape[0])
+        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=False).shape[0])
 
     def get_tagged_indices(self, tags):
         """
@@ -1475,7 +1454,7 @@ class ADflowBuilder(Builder):
         # node IDs of the surface of interest.
         nodeInds = []
         for tag in tags:
-            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=INCLUDE_ZIPPER_NODES)
+            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=False)
             nodeInds.append(vecout[:, 0].astype(int))
 
         # --- Now return the combined list of all node IDs for the tags, with duplicates removed ---
