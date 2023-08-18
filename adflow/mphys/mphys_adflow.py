@@ -203,8 +203,6 @@ class ADflowMesh(ExplicitComponent):
     def setup(self):
         self.aero_solver = self.options["aero_solver"]
 
-        # We want to include the zipper nodes in the surface mesh coordinates because the forces array ADflow returns
-        # includes them and we need the surface coordinates array to be consistent with that.
         self.x_a0 = self.aero_solver.getSurfaceCoordinates(
             groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
         ).flatten(order="C")
