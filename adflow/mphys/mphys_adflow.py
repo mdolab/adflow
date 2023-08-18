@@ -721,7 +721,7 @@ class ADflowForces(ExplicitComponent):
 
         elif mode == "rev":
             if "f_aero" in d_outputs:
-                fBar = d_outputs["f_aero"].reshape((-1, 3))
+                fBar = d_outputs["f_aero"]
 
                 wBar, xVBar, xDVBar = solver.computeJacobianVectorProductBwd(
                     fBar=fBar, wDeriv=True, xVDeriv=True, xDvDeriv=False, xDvDerivAero=True
