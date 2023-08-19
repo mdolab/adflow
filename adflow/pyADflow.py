@@ -375,7 +375,7 @@ class ADFLOW(AeroSolver):
         oversetPreTime = time.time()
 
         self.adflow.tecplotio.initializeliftdistributiondata()
-        self.adflow.initializeflow.updatebcdataalllevels()
+        self.adflow.initializeflow.updatebcdataalllevels(True)
         self.adflow.initializeflow.initflow()
 
         initFlowTime = time.time()
@@ -3282,8 +3282,18 @@ class ADFLOW(AeroSolver):
         )
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
-    def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
-        """Set the supplied aeroProblem to be used in ADflow"""
+    def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True, printInfo=True):
+        """Set the supplied aeroProblem to be used in ADflow.
+
+        Parameters
+        ----------
+        aeroProblem : AeroProblem
+            The supplied aeroproblem to be set.
+        releaseAdjointMemory : bool, optional
+            Flag to release the adjoint memory when setting a new aeroproblem, by default True
+        printInfo : bool, optional
+            Flag to turn on info printing when setting a new aeroproblem, by default True
+        """
 
         ptSetName = "adflow_%s_coords" % aeroProblem.name
 
@@ -3345,7 +3355,7 @@ class ADFLOW(AeroSolver):
 
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
 
-        self._setAeroProblemData(aeroProblem)
+        self._setAeroProblemData(aeroProblem, printInfo=printInfo)
 
         # Remind the user of the modified options when switching AP
         if newAP and self.getOption("printIterations"):
@@ -3410,10 +3420,19 @@ class ADFLOW(AeroSolver):
             # also set the ANK CFL to the last value if we are restarting
             self.adflow.anksolver.ank_cfl = aeroProblem.adflowData.ank_cfl
 
-    def _setAeroProblemData(self, aeroProblem, firstCall=False):
+    def _setAeroProblemData(self, aeroProblem, firstCall=False, printInfo=True):
+        """After an aeroProblem has been associated with self.curAP, set
+        all the updated information in ADflow.
+
+        Parameters
+        ----------
+        aeroProblem : AeroProblem
+            The current aeroProblem object.
+        firstCall : bool, optional
+            Flag that signifies this is being called for the first time, by default False
+        printInfo : bool, optional
+            Flag that specifies whether or not to print info about the aeroproblem data, by default True
         """
-        After an aeroProblem has been associated with self.curAP, set
-        all the updated information in ADflow."""
 
         # Set any additional adflow options that may be defined in the
         # aeroproblem. While we do it we save the options that we've
@@ -3546,7 +3565,7 @@ class ADFLOW(AeroSolver):
         self.adflow.inputphysics.liftindex = liftIndex
         self.adflow.flowutils.adjustinflowangle()
 
-        if self.getOption("printIterations") and self.comm.rank == 0:
+        if self.getOption("printIterations") and printInfo and self.comm.rank == 0:
             print("-> Alpha... %f " % numpy.real(alpha))
 
         # 2. Reference Points:
@@ -3658,7 +3677,7 @@ class ADFLOW(AeroSolver):
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
 
         if not firstCall:
-            self.adflow.initializeflow.updatebcdataalllevels()
+            self.adflow.initializeflow.updatebcdataalllevels(printInfo)
 
             # We need to do an all reduce here in case there's a BC failure
             # on any of the procs after we update the bc data.

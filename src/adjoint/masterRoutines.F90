@@ -68,7 +68,7 @@ contains
                     call setBCData(bcDataNames, bcDataValues, bcDataFamLists, sps, &
                                    size(bcDataValues), size(bcDataFamLIsts, 2))
                 end do
-                call setBCDataFineGrid(.true.)
+                call setBCDataFineGrid(.true., .true.)
             end if
 
             do sps = 1, nTimeIntervalsSpectral

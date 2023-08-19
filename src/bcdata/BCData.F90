@@ -2671,7 +2671,7 @@ contains
     !             Update routines
     ! ------------------------------------------
 
-    subroutine setBCDataFineGrid(initializationPart)
+    subroutine setBCDataFineGrid(initializationPart, printWarnings)
         !--------------------------------------------------------------
         ! Manual Differentiation Warning: Modifying this routine requires
         ! modifying the hand-written forward and reverse routines.
@@ -2691,7 +2691,7 @@ contains
         !
         !      Subroutine arguments.
         !
-        logical, intent(in) :: initializationPart
+        logical, intent(in) :: initializationPart, printWarnings
         !
         !      Local variables.
         !
@@ -2803,7 +2803,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2827,7 +2827,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2850,7 +2850,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2874,7 +2874,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2898,7 +2898,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2921,7 +2921,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
