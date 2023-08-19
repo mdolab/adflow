@@ -1,13 +1,13 @@
-from pprint import pprint as pp
 import inspect
+from pprint import pprint as pp
 
 import numpy as np
-from adflow import ADFLOW
-from idwarp import USMesh, MultiUSMesh
+from idwarp import MultiUSMesh, USMesh
 from mphys.builder import Builder
-from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
 from mpi4py import MPI
+from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
 
+from adflow import ADFLOW
 
 from .om_utils import get_dvs_and_cons
 
@@ -132,7 +132,7 @@ def set_states(solver, outputs):
     return statesUpdated
 
 
-def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=True):
+def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=True, print_info=True):
     """Generic function to update the data in an ADflow solver object using the data passed in by OpenMDAO.
 
     This function should be called at the start of any method that computes something using ADflow. It will update the
@@ -164,7 +164,7 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
 
     updatesMade = ap != solver.curAP
 
-    solver.setAeroProblem(ap)
+    solver.setAeroProblem(ap, printInfo=print_info)
 
     if inputs is not None:
         tmp = {}
@@ -178,7 +178,10 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
 
         updatesMade = set_vol_coords(solver, inputs)
 
-    if outputs is not None:
+    # We need to make sure this isn't the first optimization iteration
+    # because OM will overwrite the ADflow state vector with all ones
+    # before the first iteration.
+    if outputs is not None and ap.adflowData.callCounter != -1:
         updatesMade = set_states(solver, outputs)
 
     return solver.comm.allreduce(updatesMade, op=MPI.LOR)
@@ -425,7 +428,7 @@ class ADflowSolver(ImplicitComponent):
     def apply_nonlinear(self, inputs, outputs, residuals):
         solver = self.solver
         ap = self.ap
-        setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+        setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False)
 
         # flow residuals
         residuals["adflow_states"] = solver.getResidual(ap)
@@ -434,7 +437,7 @@ class ADflowSolver(ImplicitComponent):
         solver = self.solver
         ap = self.ap
         if self._do_solve:
-            setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+            setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
 
@@ -528,7 +531,9 @@ class ADflowSolver(ImplicitComponent):
     def linearize(self, inputs, outputs, residuals):
         solver = self.solver
         ap = self.ap
-        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+        updatesMade = setAeroProblem(
+            solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False
+        )
 
         # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
@@ -538,7 +543,9 @@ class ADflowSolver(ImplicitComponent):
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
         solver = self.solver
         ap = self.ap
-        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+        updatesMade = setAeroProblem(
+            solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False
+        )
 
         # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
@@ -657,14 +664,14 @@ class ADflowForces(ExplicitComponent):
     def compute(self, inputs, outputs):
         solver = self.solver
         ap = self.ap
-        setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+        setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False)
 
         outputs["f_aero"] = solver.getForces().flatten(order="C")
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.solver
         ap = self.ap
-        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False, print_info=False)
 
         # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
@@ -756,7 +763,7 @@ class AdflowHeatTransfer(ExplicitComponent):
     def compute(self, inputs, outputs):
         solver = self.solver
         ap = self.ap
-        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False, print_info=False)
 
         # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
@@ -769,7 +776,7 @@ class AdflowHeatTransfer(ExplicitComponent):
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.solver
         ap = self.ap
-        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False, print_info=False)
 
         # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
@@ -955,7 +962,7 @@ class ADflowFunctions(ExplicitComponent):
         ap = self.ap
 
         # re-set the AP so that we are sure state is updated
-        solver.setAeroProblem(ap)
+        solver.setAeroProblem(ap, printInfo=False)
 
         # write the solution files. Internally, this checks the
         # types of solution files specified in the options and
@@ -968,7 +975,9 @@ class ADflowFunctions(ExplicitComponent):
         ap = self.ap
         # actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve:
-            updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+            updatesMade = setAeroProblem(
+                solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False
+            )
 
             # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
             # all intermediate variables up to date.
@@ -1005,7 +1014,7 @@ class ADflowFunctions(ExplicitComponent):
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.solver
         ap = self.ap
-        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False, print_info=False)
 
         # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
         # all intermediate variables up to date.
