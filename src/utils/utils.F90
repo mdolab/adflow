@@ -1195,13 +1195,21 @@ contains
         bendingMoment = zero
         if (liftIndex == 2) then
             !z out wing sum momentx,momentz
-        elasticMomentx = cm(1) + cf(2)*(pointRefEC(3)-pointRef(3))/lengthref-cf(3)*(pointRefEC(2)-pointRef(2))/lengthref
-        elasticMomentz = cm(3) - cf(2)*(pointRefEC(1)-pointref(1))/lengthref+cf(1)*(pointRefEC(2)-pointRef(2))/lengthref
+            elasticMomentx = cm(1) + cf(2) * (pointRefEC(3) - &
+                                              pointRef(3)) / lengthref - cf(3) * &
+                             (pointRefEC(2) - pointRef(2)) / lengthref
+            elasticMomentz = cm(3) - cf(2) * (pointRefEC(1) - &
+                                              pointref(1)) / lengthref + cf(1) * &
+                             (pointRefEC(2) - pointRef(2)) / lengthref
             bendingMoment = sqrt(elasticMomentx**2 + elasticMomentz**2)
         elseif (liftIndex == 3) then
             !y out wing sum momentx,momenty
-        elasticMomentx = cm(1) + cf(3)*(pointrefEC(2)-pointRef(2))/lengthref+cf(3)*(pointrefEC(3)-pointref(3))/lengthref
-        elasticMomenty = cm(2) + cf(3)*(pointRefEC(1)-pointRef(1))/lengthref+cf(1)*(pointrefEC(3)-pointRef(3))/lengthref
+            elasticMomentx = cm(1) + cf(3) * (pointrefEC(2) - &
+                                              pointRef(2)) / lengthref + &
+                             cf(3) * (pointrefEC(3) - pointref(3)) / lengthref
+            elasticMomenty = cm(2) + cf(3) * (pointRefEC(1) - &
+                                              pointRef(1)) / lengthref + &
+                             cf(1) * (pointrefEC(3) - pointRef(3)) / lengthref
             bendingMoment = sqrt(elasticMomentx**2 + elasticMomenty**2)
         end if
 
@@ -1388,7 +1396,8 @@ contains
 
             !now compute dCl/dalpha
             do i = 1, 8
-        call computeLeastSquaresRegression(BaseCoef(:, i), intervalAlpha, nTimeIntervalsSpectral, dcdAlpha(i), coef0(i))
+                call computeLeastSquaresRegression(BaseCoef(:, i), &
+                                                   intervalAlpha, nTimeIntervalsSpectral, dcdAlpha(i), coef0(i))
             end do
 
             ! now subtract off estimated cl,cmz and use remainder to compute
@@ -1401,7 +1410,9 @@ contains
 
             !now compute dCi/dalphadot
             do i = 1, 8
- call computeLeastSquaresRegression(ResBaseCoef(:,i),intervalAlphadot,nTimeIntervalsSpectral,dcdalphadot(i),Coef0dot(i))
+                call computeLeastSquaresRegression(ResBaseCoef(:, i), &
+                                                   intervalAlphadot, nTimeIntervalsSpectral, &
+                                                   dcdalphadot(i), Coef0dot(i))
             end do
 
             a = sqrt(gammaInf * pInfDim / rhoInfDim)

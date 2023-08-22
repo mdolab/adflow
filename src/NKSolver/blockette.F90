@@ -578,7 +578,7 @@ contains
                         do k = 1, ke
                             do j = 1, je
                                 do i = 0, ie
-                                    sFaceI(i, j, k) = bsFaceI(ii + ii - 2, j + jj - 2, k + kk - 2)
+                                    sFaceI(i, j, k) = bsFaceI(i + ii - 2, j + jj - 2, k + kk - 2)
                                 end do
                             end do
                         end do
@@ -586,7 +586,7 @@ contains
                         do k = 1, ke
                             do j = 0, je
                                 do i = 1, ie
-                                    sFaceJ(i, j, k) = bsFaceJ(ii + ii - 2, j + jj - 2, k + kk - 2)
+                                    sFaceJ(i, j, k) = bsFaceJ(i + ii - 2, j + jj - 2, k + kk - 2)
                                 end do
                             end do
                         end do
@@ -594,7 +594,7 @@ contains
                         do k = 0, ke
                             do j = 1, je
                                 do i = 1, ie
-                                    sFaceK(i, j, k) = bsFaceK(ii + ii - 2, j + jj - 2, k + kk - 2)
+                                    sFaceK(i, j, k) = bsFaceK(i + ii - 2, j + jj - 2, k + kk - 2)
                                 end do
                             end do
                         end do
@@ -3158,7 +3158,8 @@ contains
 
                     ddw2 = w(i + 1, j, k, ivx) * w(i + 1, j, k, irho) - w(i, j, k, ivx) * w(i, j, k, irho)
                     fs = dis2 * ddw2 &
-       - dis4 * (w(i + 2, j, k, ivx) * w(i + 2, j, k, irho) - w(i - 1, j, k, ivx) * w(i - 1, j, k, irho) - three * ddw2)
+                         - dis4 * (w(i + 2, j, k, ivx) * w(i + 2, j, k, irho) - &
+                                   w(i - 1, j, k, ivx) * w(i - 1, j, k, irho) - three * ddw2)
 
                     fw(i + 1, j, k, imx) = fw(i + 1, j, k, imx) + fs
                     fw(i, j, k, imx) = fw(i, j, k, imx) - fs
@@ -3167,7 +3168,8 @@ contains
 
                     ddw3 = w(i + 1, j, k, ivy) * w(i + 1, j, k, irho) - w(i, j, k, ivy) * w(i, j, k, irho)
                     fs = dis2 * ddw3 &
-       - dis4 * (w(i + 2, j, k, ivy) * w(i + 2, j, k, irho) - w(i - 1, j, k, ivy) * w(i - 1, j, k, irho) - three * ddw3)
+                         - dis4 * (w(i + 2, j, k, ivy) * w(i + 2, j, k, irho) - &
+                                   w(i - 1, j, k, ivy) * w(i - 1, j, k, irho) - three * ddw3)
 
                     fw(i + 1, j, k, imy) = fw(i + 1, j, k, imy) + fs
                     fw(i, j, k, imy) = fw(i, j, k, imy) - fs
@@ -3176,7 +3178,8 @@ contains
 
                     ddw4 = w(i + 1, j, k, ivz) * w(i + 1, j, k, irho) - w(i, j, k, ivz) * w(i, j, k, irho)
                     fs = dis2 * ddw4 &
-       - dis4 * (w(i + 2, j, k, ivz) * w(i + 2, j, k, irho) - w(i - 1, j, k, ivz) * w(i - 1, j, k, irho) - three * ddw4)
+                         - dis4 * (w(i + 2, j, k, ivz) * w(i + 2, j, k, irho) - &
+                                   w(i - 1, j, k, ivz) * w(i - 1, j, k, irho) - three * ddw4)
 
                     fw(i + 1, j, k, imz) = fw(i + 1, j, k, imz) + fs
                     fw(i, j, k, imz) = fw(i, j, k, imz) - fs
@@ -3185,7 +3188,8 @@ contains
 
                     ddw5 = (w(i + 1, j, k, irhoE) + P(i + 1, j, K)) - (w(i, j, k, irhoE) + P(i, j, k))
                     fs = dis2 * ddw5 &
-           - dis4 * ((w(i + 2, j, k, irhoE) + P(i + 2, j, k)) - (w(i - 1, j, k, irhoE) + P(i - 1, j, k)) - three * ddw5)
+                         - dis4 * ((w(i + 2, j, k, irhoE) + P(i + 2, j, k)) - &
+                                   (w(i - 1, j, k, irhoE) + P(i - 1, j, k)) - three * ddw5)
 
                     fw(i + 1, j, k, irhoE) = fw(i + 1, j, k, irhoE) + fs
                     fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
@@ -3223,7 +3227,8 @@ contains
 
                     ddw2 = w(i, j + 1, k, ivx) * w(i, j + 1, k, irho) - w(i, j, k, ivx) * w(i, j, k, irho)
                     fs = dis2 * ddw2 &
-       - dis4 * (w(i, j + 2, k, ivx) * w(i, j + 2, k, irho) - w(i, j - 1, k, ivx) * w(i, j - 1, k, irho) - three * ddw2)
+                         - dis4 * (w(i, j + 2, k, ivx) * w(i, j + 2, k, irho) - &
+                                   w(i, j - 1, k, ivx) * w(i, j - 1, k, irho) - three * ddw2)
 
                     fw(i, j + 1, k, imx) = fw(i, j + 1, k, imx) + fs
                     fw(i, j, k, imx) = fw(i, j, k, imx) - fs
@@ -3232,7 +3237,8 @@ contains
 
                     ddw3 = w(i, j + 1, k, ivy) * w(i, j + 1, k, irho) - w(i, j, k, ivy) * w(i, j, k, irho)
                     fs = dis2 * ddw3 &
-       - dis4 * (w(i, j + 2, k, ivy) * w(i, j + 2, k, irho) - w(i, j - 1, k, ivy) * w(i, j - 1, k, irho) - three * ddw3)
+                         - dis4 * (w(i, j + 2, k, ivy) * w(i, j + 2, k, irho) - &
+                                   w(i, j - 1, k, ivy) * w(i, j - 1, k, irho) - three * ddw3)
 
                     fw(i, j + 1, k, imy) = fw(i, j + 1, k, imy) + fs
                     fw(i, j, k, imy) = fw(i, j, k, imy) - fs
@@ -3241,7 +3247,8 @@ contains
 
                     ddw4 = w(i, j + 1, k, ivz) * w(i, j + 1, k, irho) - w(i, j, k, ivz) * w(i, j, k, irho)
                     fs = dis2 * ddw4 &
-       - dis4 * (w(i, j + 2, k, ivz) * w(i, j + 2, k, irho) - w(i, j - 1, k, ivz) * w(i, j - 1, k, irho) - three * ddw4)
+                         - dis4 * (w(i, j + 2, k, ivz) * w(i, j + 2, k, irho) - &
+                                   w(i, j - 1, k, ivz) * w(i, j - 1, k, irho) - three * ddw4)
 
                     fw(i, j + 1, k, imz) = fw(i, j + 1, k, imz) + fs
                     fw(i, j, k, imz) = fw(i, j, k, imz) - fs
@@ -3250,7 +3257,8 @@ contains
 
                     ddw5 = (w(i, j + 1, k, irhoE) + P(i, j + 1, k)) - (w(i, j, k, irhoE) + P(i, j, k))
                     fs = dis2 * ddw5 &
-           - dis4 * ((w(i, j + 2, k, irhoE) + P(i, j + 2, k)) - (w(i, j - 1, k, irhoE) + P(i, j - 1, k)) - three * ddw5)
+                         - dis4 * ((w(i, j + 2, k, irhoE) + P(i, j + 2, k)) - &
+                                   (w(i, j - 1, k, irhoE) + P(i, j - 1, k)) - three * ddw5)
 
                     fw(i, j + 1, k, irhoE) = fw(i, j + 1, k, irhoE) + fs
                     fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
@@ -3288,7 +3296,8 @@ contains
 
                     ddw2 = w(i, j, k + 1, ivx) * w(i, j, k + 1, irho) - w(i, j, k, ivx) * w(i, j, k, irho)
                     fs = dis2 * ddw2 &
-       - dis4 * (w(i, j, k + 2, ivx) * w(i, j, k + 2, irho) - w(i, j, k - 1, ivx) * w(i, j, k - 1, irho) - three * ddw2)
+                         - dis4 * (w(i, j, k + 2, ivx) * w(i, j, k + 2, irho) - &
+                                   w(i, j, k - 1, ivx) * w(i, j, k - 1, irho) - three * ddw2)
 
                     fw(i, j, k + 1, imx) = fw(i, j, k + 1, imx) + fs
                     fw(i, j, k, imx) = fw(i, j, k, imx) - fs
@@ -3297,7 +3306,8 @@ contains
 
                     ddw3 = w(i, j, k + 1, ivy) * w(i, j, k + 1, irho) - w(i, j, k, ivy) * w(i, j, k, irho)
                     fs = dis2 * ddw3 &
-       - dis4 * (w(i, j, k + 2, ivy) * w(i, j, k + 2, irho) - w(i, j, k - 1, ivy) * w(i, j, k - 1, irho) - three * ddw3)
+                         - dis4 * (w(i, j, k + 2, ivy) * w(i, j, k + 2, irho) - &
+                                   w(i, j, k - 1, ivy) * w(i, j, k - 1, irho) - three * ddw3)
 
                     fw(i, j, k + 1, imy) = fw(i, j, k + 1, imy) + fs
                     fw(i, j, k, imy) = fw(i, j, k, imy) - fs
@@ -3306,7 +3316,8 @@ contains
 
                     ddw4 = w(i, j, k + 1, ivz) * w(i, j, k + 1, irho) - w(i, j, k, ivz) * w(i, j, k, irho)
                     fs = dis2 * ddw4 &
-       - dis4 * (w(i, j, k + 2, ivz) * w(i, j, k + 2, irho) - w(i, j, k - 1, ivz) * w(i, j, k - 1, irho) - three * ddw4)
+                         - dis4 * (w(i, j, k + 2, ivz) * w(i, j, k + 2, irho) - &
+                                   w(i, j, k - 1, ivz) * w(i, j, k - 1, irho) - three * ddw4)
 
                     fw(i, j, k + 1, imz) = fw(i, j, k + 1, imz) + fs
                     fw(i, j, k, imz) = fw(i, j, k, imz) - fs
@@ -3315,7 +3326,8 @@ contains
 
                     ddw5 = (w(i, j, k + 1, irhoE) + P(i, j, k + 1)) - (w(i, j, k, irhoE) + P(i, j, k))
                     fs = dis2 * ddw5 &
-           - dis4 * ((w(i, j, k + 2, irhoE) + P(i, j, k + 2)) - (w(i, j, k - 1, irhoE) + P(i, j, k - 1)) - three * ddw5)
+                         - dis4 * ((w(i, j, k + 2, irhoE) + P(i, j, k + 2)) - &
+                                   (w(i, j, k - 1, irhoE) + P(i, j, k - 1)) - three * ddw5)
 
                     fw(i, j, k + 1, irhoE) = fw(i, j, k + 1, irhoE) + fs
                     fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs

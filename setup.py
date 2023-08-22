@@ -37,6 +37,7 @@ setup(
         "docs": docs_require,
         "testing": ["parameterized", "testflo", "idwarp", "pygeo", "pyspline"],
         "mphys": ["openmdao", "mphys", "idwarp"],
+        "complex": ["complexify"],
     },
     classifiers=["Operating System :: Linux", "Programming Language :: Python, Fortran"],
 )
