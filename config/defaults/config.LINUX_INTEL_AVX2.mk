@@ -6,7 +6,7 @@
 PMAKE = make -j 4
 
 # ------- Define the MPI Compilers--------------------------------------
-ifdef ($(I_MPI_ROOT)) # Using Intel MPI
+ifdef I_MPI_ROOT # Using Intel MPI
   FF90 = mpiifort
   CC   = mpiicc
 else # Using HPE MPI
