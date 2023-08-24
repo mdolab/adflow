@@ -437,7 +437,7 @@ class ADflowSolver(ImplicitComponent):
         solver = self.solver
         ap = self.ap
         if self._do_solve:
-            setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False)
+            setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=True)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
 
@@ -544,7 +544,7 @@ class ADflowSolver(ImplicitComponent):
         solver = self.solver
         ap = self.ap
         updatesMade = setAeroProblem(
-            solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=False
+            solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False, print_info=True
         )
 
         # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
