@@ -103,7 +103,9 @@ for f in os.listdir(DIR_ORI):
                 else:
                     line = line.replace("_b", "")
 
-            # Tapenade is using nonstandard type declaration need to replace
+            # Tapenade is using nonstandard type declaration incompatible with f2008
+            # Remove for now and depend on compiler kind default, which should be in
+            # almost all cases 4-bytes
             m = patt_inttype.match(line)
             if m:
                 line = line.replace("integer*4", "integer")
