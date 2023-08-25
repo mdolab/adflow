@@ -62,10 +62,10 @@ static unsigned int adbitbuf = 0 ;
 static int adbitibuf = 0 ;
 
 /** Accumulates the number of bytes pushed and popped */
-static unsigned long long int pushPopTraffic = 0 ;
+static u_int64_t pushPopTraffic = 0 ;
 
 /** Remembers the maximum number of stack Blocks used */
-static long int maxBlocks = 0 ;
+static u_int64_t maxBlocks = 0 ;
 
 //[llh] Don't know how to manage pushPopTraffic and maxBlocks in the OpenMP case ?
 
@@ -124,20 +124,26 @@ void setCurrentLocationToFreePush(RepetitionLevel *repetitionLevel) {
 
 //TODO: try inline this function for efficiency:
 int currentLocationStrictBelowFreePush(RepetitionLevel *repetitionLevel) {
-  //[llh] I'd prefer to test directly on curStack->rank and tappos directly,
-  // but it's hard because N;BLOCK_SIZE <=> N+1;0 and both happen due to initial NULL curStack...
-  long int curL = (curStack->rank -1)*BLOCK_SIZE + tappos ;
-  long int fpL = (repetitionLevel->freePushBlock->rank -1)*BLOCK_SIZE + repetitionLevel->freePush ;
-  return (curL<fpL) ;
+  // Not as simple as it could be, because N;BLOCK_SIZE <=> N+1;0 and both happen due to initial NULL curStack...
+  int curL1 = curStack->rank ;
+  int curL2 = tappos ;
+  int fpL1 = repetitionLevel->freePushBlock->rank ;
+  int fpL2 = repetitionLevel->freePush ;
+  if (curL2==BLOCK_SIZE) {++curL1 ; curL2=0 ;}
+  if (fpL2==BLOCK_SIZE) {++fpL1 ; fpL2=0 ;}
+  return (curL1<fpL1 || (curL1==fpL1 && curL2<fpL2)) ;
 }
 
 //TODO: try inline this function for efficiency:
 int currentLocationEqualsFreePush(RepetitionLevel *repetitionLevel) {
-  //[llh] I'd prefer to test directly on curStack->rank and tappos directly,
-  // but it's hard because N;BLOCK_SIZE <=> N+1;0 and both happen due to initial NULL curStack...
-  long int curL = (curStack->rank -1)*BLOCK_SIZE + tappos ;
-  long int fpL = (repetitionLevel->freePushBlock->rank -1)*BLOCK_SIZE + repetitionLevel->freePush ;
-  return (curL==fpL) ;
+  // Not as simple as it could be, because N;BLOCK_SIZE <=> N+1;0 and both happen due to initial NULL curStack...
+  int curL1 = curStack->rank ;
+  int curL2 = tappos ;
+  int fpL1 = repetitionLevel->freePushBlock->rank ;
+  int fpL2 = repetitionLevel->freePush ;
+  if (curL2==BLOCK_SIZE) {++curL1 ; curL2=0 ;}
+  if (fpL2==BLOCK_SIZE) {++fpL1 ; fpL2=0 ;}
+  return (curL1==fpL1 && curL2==fpL2) ;
 }
 
 void showLocation(DoubleChainedBlock *locBlock, int loc) {
@@ -147,10 +153,15 @@ void showLocation(DoubleChainedBlock *locBlock, int loc) {
 void showRepetitionLevels() {
   RepetitionLevel *repetitionPoint = topRepetitionPoint ;
   while (repetitionPoint) {
-    printf("  REPETITION LEVEL ACTIVE:%i BP?%i", repetitionPoint->active, repetitionPoint->hasBackPop) ;
-    printf(" BP:") ; showLocation(repetitionPoint->backPopBlock, repetitionPoint->backPop) ;
-    printf(" RP:") ; showLocation(repetitionPoint->resumePointBlock, repetitionPoint->resumePoint) ;
-    printf(" FP:") ; showLocation(repetitionPoint->freePushBlock, repetitionPoint->freePush) ;
+    printf("  REPETITION LEVEL ACTIVE:%s BP:%s",
+           (repetitionPoint->active?"yes":"no"),
+           (repetitionPoint->hasBackPop?"yes":"no")) ;
+    if (repetitionPoint->hasBackPop)
+      {printf(" BP:") ; showLocation(repetitionPoint->backPopBlock, repetitionPoint->backPop) ;}
+    if (repetitionPoint->resumePointBlock)
+      {printf(" RP:") ; showLocation(repetitionPoint->resumePointBlock, repetitionPoint->resumePoint) ;}
+    if (repetitionPoint->freePushBlock)
+      {printf(" FP:") ; showLocation(repetitionPoint->freePushBlock, repetitionPoint->freePush) ;}
     printf("\n") ;
     repetitionPoint = repetitionPoint->previous ;
     if (repetitionPoint) printf("  ...in") ;
@@ -233,6 +244,12 @@ void adStack_startRepeat() {
   newRepetitionLevel->previous = topRepetitionPoint ;
   newRepetitionLevel->hasBackPop = 0 ;
   newRepetitionLevel->active = 1 ;
+  newRepetitionLevel->backPopBlock = NULL ;
+  newRepetitionLevel->backPop = 0 ;
+  newRepetitionLevel->resumePointBlock = NULL ;
+  newRepetitionLevel->resumePoint = 0 ;
+  newRepetitionLevel->freePushBlock = NULL ;
+  newRepetitionLevel->freePush = 0 ;
   // Copy the bits buffer:
   newRepetitionLevel->storedadbitbuf = adbitbuf ;
   newRepetitionLevel->storedadbitibuf = adbitibuf ;
@@ -466,6 +483,22 @@ void popReal8Array(double *x, int n) {
 #endif
 }
 
+void pushReal16Array(long double *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*16)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*16) ;
+#endif
+}
+
+void popReal16Array(long double *x, int n) {
+  popNArray((char *)x,(int)(n*16)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*16) ;
+#endif
+}
+
 void pushComplex8Array(ccmplx *x, int n) {
   if (topRepetitionPoint) checkPushInReadOnly() ;
   pushNArray((char *)x,(int)(n*8)) ;
@@ -597,6 +630,34 @@ void popReal8(double * val) {
   if (topRepetitionPoint) checkPopToReadOnly() ;
 #ifdef _ADSTACKPROFILE
   pushPopTraffic += 8 ;
+#endif
+}
+
+void pushReal16(long double *val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 16 > BLOCK_SIZE) {
+    pushNArray((char*)val, 16) ;
+  }
+  else {
+    memcpy(tapblock+tappos, (void *)val, 16);
+    tappos = tappos + 16 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 16 ;
+#endif
+}
+
+void popReal16(long double *val) {
+  if(tappos - 16 < 0) {
+    popNArray((char*)val, 16) ;
+  }
+  else {
+    tappos = tappos - 16 ;
+    memcpy((void *)val, tapblock+tappos, 16) ;
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 16 ;
 #endif
 }
 
@@ -1002,11 +1063,11 @@ void popControl8b(int *cc) {
 
 void adStack_showPeakSize() {
   printf("Peak stack size (%1li blocks): %1llu bytes\n",
-         maxBlocks, maxBlocks*((long long int)BLOCK_SIZE)) ;
+         maxBlocks, maxBlocks*((long int)BLOCK_SIZE)) ;
 }
 
 void adStack_showTotalTraffic() {
-  printf("Total push/pop traffic %1llu bytes\n", pushPopTraffic) ;
+  printf("Total push/pop traffic %1lu bytes\n", pushPopTraffic) ;
 }
 
 void adStack_showStackSize(int label) {
@@ -1107,6 +1168,14 @@ void popreal8array_(double *ii, int *ll) {
   popReal8Array(ii, *ll) ;
 }
 
+void pushreal16array_(long double *ii, int *ll) {
+  pushReal16Array(ii, *ll) ;
+}
+
+void popreal16array_(long double *ii, int *ll) {
+  popReal16Array(ii, *ll) ;
+}
+
 void pushcomplex8array_(ccmplx *ii, int *ll) {
   pushComplex8Array(ii, *ll) ;
 }
@@ -1169,6 +1238,14 @@ void pushreal8_(double* val) {
 
 void popreal8_(double* val) {
   popReal8(val) ;
+}
+
+void pushreal16_(long double *val) {
+  pushReal16(val) ;
+}
+
+void popreal16_(long double *val) {
+  popReal16(val) ;
 }
 
 void pushinteger4_(int* val) {
