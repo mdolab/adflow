@@ -20,4 +20,5 @@ extends:
     INTEL_CONFIG: config/defaults/config.LINUX_INTEL.mk
     COVERAGE: true
     TAPENADE: true
+    TAPENADE_VERSION: "3.16"
     FPRETTIFY: true
