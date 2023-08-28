@@ -53,7 +53,12 @@ useful_modules = [
     "walldistance_fast_b",
 ]
 
-FILE_IGNORE = ["adjointExtra_fast_b.f90", "BCData_fast_b.f90", "oversetUtilities_fast_b.f90", "zipperIntegrations_fast_b.f90"]
+FILE_IGNORE = [
+    "adjointExtra_fast_b.f90",
+    "BCData_fast_b.f90",
+    "oversetUtilities_fast_b.f90",
+    "zipperIntegrations_fast_b.f90",
+]
 
 for f in os.listdir(DIR_ORI):
     if f not in FILE_IGNORE and f.endswith(EXT):
@@ -151,10 +156,10 @@ for f in os.listdir(DIR_ORI):
                         line = ""
 
             # Tapenade misses one function in inviscidupwindflux_fast_b and we need to add it manually
-            # We once we know we are withing the subroutine we just search for a very specific string append
             if patt_subroutine.match(line) and "inviscidupwindflux_fast_b" in line:
                 inSubroutine = True
 
+            # If within the subroutine we just search for a very specific string append
             if inSubroutine and "use flowutils_fast_b, only : etot" in line:
                 line = line.strip("\n") + ", etot_fast_b\n"
 

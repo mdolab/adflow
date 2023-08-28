@@ -118,10 +118,10 @@ for f in os.listdir(DIR_ORI):
             #     line = 'end module %s_d2\n'%m.group(2)
 
             # Tapenade misses one function in inviscidupwindflux_d and we need to add it manually
-            # We once we know we are withing the subroutine we just search for a very specific string append
             if patt_subroutine.match(line) and "inviscidupwindflux_d" in line:
                 inSubroutine = True
 
+            # If within the subroutine we just search for a very specific string append
             if inSubroutine and "use flowutils_d, only : etot" in line:
                 line = line.strip("\n") + ", etot_d\n"
 
