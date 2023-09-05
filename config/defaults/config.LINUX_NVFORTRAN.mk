@@ -12,7 +12,7 @@ CC   = mpicc
 
 # ------- GPU compilers ---
 CUFC = nvfortran
-CUFFLAGS = 
+CUFFLAGS = -cuda
 FF90 = $(CUFC) # Force this as the compiler
 
 # ------- Define Precision Flags ---------------------------------------
@@ -37,8 +37,8 @@ COMPLEXIFY_INCLUDE_FLAGS=-I$(COMPLEXIFY_DIR)/include
 COMPLEXIFY_LINKER_FLAGS=-L$(COMPLEXIFY_DIR)/lib -lcomplexify
 
 # ------- Define Compiler Flags ----------------------------------------
-FF77_FLAGS = -fPIC -fdefault-real-8 -fdefault-double-8 -march=native
-FF90_FLAGS = $(FF77_FLAGS) -std=f2008
+FF77_FLAGS = -fPIC -fdefault-real-8 -fdefault-double-8 -march=native $(CUFFLAGS)
+FF90_FLAGS = $(FF77_FLAGS) -std=f2008 $(CUFFLAGS)
 FFXX_OPT_FLAGS = -O3 -ffast-math
 C_FLAGS   = -fPIC -O
 
@@ -47,8 +47,8 @@ AR       = ar
 AR_FLAGS = -rvs
 
 # ------- Define Linker Flags ------------------------------------------
-LINKER       = $(CUFC) # $(FF90)
-LINKER_FLAGS =
+LINKER       = $(FF90)
+LINKER_FLAGS = $(CUFFLAGS)
 
 # ------- Define Petsc Info --- Should not need to modify this -----
 include ${PETSC_DIR}/lib/petsc/conf/variables # PETSc 3.6
