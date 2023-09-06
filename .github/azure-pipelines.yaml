@@ -21,4 +21,5 @@ extends:
     COVERAGE: true
     TAPENADE: true
     TAPENADE_VERSION: "3.16"
+    TIMEOUT_TAPENADE: 20
     FPRETTIFY: true
