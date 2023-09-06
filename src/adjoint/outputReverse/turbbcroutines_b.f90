@@ -6,11 +6,13 @@ module turbbcroutines_b
 
 contains
 !  differentiation of applyallturbbcthisblock in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: *rev *w
+!   gradient     of useful results: *rev *bvtj1 *bvtj2 *w *bvtk1
+!                *bvtk2 *bvti1 *bvti2
 !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
 !                *bvtk2 *bvti1 *bvti2
-!   rw status of diff variables: *rev:in-out *bvtj1:out *bvtj2:out
-!                *w:in-out *bvtk1:out *bvtk2:out *bvti1:out *bvti2:out
+!   rw status of diff variables: *rev:in-out *bvtj1:incr *bvtj2:incr
+!                *w:in-out *bvtk1:incr *bvtk2:incr *bvti1:incr
+!                *bvti2:incr
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
 !                bvtk1:in bvtk2:in bvti1:in bvti2:in
 !      ==================================================================
@@ -165,12 +167,6 @@ bocos:do nn=1,nbocos
         call pushcontrol1b(0)
       end if
     end do bocos
-    bvtj1d = 0.0_8
-    bvtj2d = 0.0_8
-    bvtk1d = 0.0_8
-    bvtk2d = 0.0_8
-    bvti1d = 0.0_8
-    bvti2d = 0.0_8
     do nn=nbocos,1,-1
       call popcontrol1b(branch)
       if (branch .ne. 0) call turb2ndhalo_b(nn)
@@ -1475,6 +1471,12 @@ bocos:do nn=1,nbocos
           end if
         end do
       case (imax) 
+! this is consistent with the guideline for sst in https://turbmodels.larc.nasa.gov/sst.html
+! note: the factor two comes from the fact that we impose that the mean of the 1st halo cell and
+!       the first domain cell is equal to the target value.
+!     omega_halo = - bmt_onega * omega + bvt_omega
+!  => omega_halo = - one * omega_1 + two*60.0_realtype*nu*tmpd
+!  => (omega_halo + omega_1)/2 = 60.0_realtype*nu*tmpd
         iimax = jl
         jjmax = kl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
@@ -2335,6 +2337,12 @@ bocos:do nn=1,nviscbocos
           end do
         end do
       case (imax) 
+! this is consistent with the guideline for sst in https://turbmodels.larc.nasa.gov/sst.html
+! note: the factor two comes from the fact that we impose that the mean of the 1st halo cell and
+!       the first domain cell is equal to the target value.
+!     omega_halo = - bmt_onega * omega + bvt_omega
+!  => omega_halo = - one * omega_1 + two*60.0_realtype*nu*tmpd
+!  => (omega_halo + omega_1)/2 = 60.0_realtype*nu*tmpd
         iimax = jl
         jjmax = kl
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend

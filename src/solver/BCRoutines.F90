@@ -578,7 +578,7 @@ contains
 
     subroutine bcNSWallIsoThermal(nn, secondHalo, correctForK)
 
-        ! bcNSWallAdiabatic applies the viscous isothermal wall boundary
+        ! bcNSWallIsoThermal applies the viscous isothermal wall boundary
         ! condition to a block. It is assumed that the BCPointers are
         ! already set
 

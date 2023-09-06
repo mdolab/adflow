@@ -382,18 +382,20 @@ contains
     use blockpointers
     use flowvarrefstate
     use inputphysics
+    use utils_fast_b, only : getcorrectfork
     implicit none
 ! input parameter
     logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: gm1, v2
+    real(kind=realtype) :: gm1, v2, factk
     integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
 &   , kend, ksize
     intrinsic mod
     intrinsic max
 ! compute the pressures
     gm1 = gammaconstant - one
+    factk = five*third - gammaconstant
     if (includehalos) then
       ibeg = 0
       jbeg = 0
@@ -424,6 +426,19 @@ contains
         p(i, j, k) = p(i, j, k)
       end if
     end do
+! apply correction for k in a separate loop
+    if (getcorrectfork()) then
+      isize = iend - ibeg + 1
+      jsize = jend - jbeg + 1
+      ksize = kend - kbeg + 1
+      do ii=0,isize*jsize*ksize-1
+        i = mod(ii, isize) + ibeg
+        j = mod(ii/isize, jsize) + jbeg
+        k = ii/(isize*jsize) + kbeg
+        p(i, j, k) = p(i, j, k) + factk*w(i, j, k, irho)*w(i, j, k, itu1&
+&         )
+      end do
+    end if
   end subroutine computepressuresimple
   subroutine computepressure(ibeg, iend, jbeg, jend, kbeg, kend, &
 &   pointeroffset)

@@ -626,18 +626,20 @@ contains
     use blockpointers
     use flowvarrefstate
     use inputphysics
+    use utils_d, only : getcorrectfork
     implicit none
 ! input parameter
     logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: gm1, v2
+    real(kind=realtype) :: gm1, v2, factk
     real(kind=realtype) :: v2d
     integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
 &   , kend, ksize
     intrinsic max
 ! compute the pressures
     gm1 = gammaconstant - one
+    factk = five*third - gammaconstant
     if (includehalos) then
       ibeg = 0
       jbeg = 0
@@ -674,6 +676,19 @@ contains
         end do
       end do
     end do
+! apply correction for k in a separate loop
+    if (getcorrectfork()) then
+      do k=kbeg,kend
+        do j=jbeg,jend
+          do i=ibeg,iend
+            pd(i, j, k) = pd(i, j, k) + factk*(wd(i, j, k, irho)*w(i, j&
+&             , k, itu1)+w(i, j, k, irho)*wd(i, j, k, itu1))
+            p(i, j, k) = p(i, j, k) + factk*w(i, j, k, irho)*w(i, j, k, &
+&             itu1)
+          end do
+        end do
+      end do
+    end if
   end subroutine computepressuresimple_d
   subroutine computepressuresimple(includehalos)
 ! compute the pressure on a block with the pointers already set. this
@@ -682,17 +697,19 @@ contains
     use blockpointers
     use flowvarrefstate
     use inputphysics
+    use utils_d, only : getcorrectfork
     implicit none
 ! input parameter
     logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: gm1, v2
+    real(kind=realtype) :: gm1, v2, factk
     integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
 &   , kend, ksize
     intrinsic max
 ! compute the pressures
     gm1 = gammaconstant - one
+    factk = five*third - gammaconstant
     if (includehalos) then
       ibeg = 0
       jbeg = 0
@@ -722,6 +739,17 @@ contains
         end do
       end do
     end do
+! apply correction for k in a separate loop
+    if (getcorrectfork()) then
+      do k=kbeg,kend
+        do j=jbeg,jend
+          do i=ibeg,iend
+            p(i, j, k) = p(i, j, k) + factk*w(i, j, k, irho)*w(i, j, k, &
+&             itu1)
+          end do
+        end do
+      end do
+    end if
   end subroutine computepressuresimple
   subroutine computepressure(ibeg, iend, jbeg, jend, kbeg, kend, &
 &   pointeroffset)

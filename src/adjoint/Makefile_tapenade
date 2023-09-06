@@ -61,6 +61,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/turbulence/turbBCRoutines.F90\
 		$(SRC)/turbulence/turbMod.F90\
 		$(SRC)/turbulence/sa.F90\
+		$(SRC)/turbulence/SST.F90\
 		$(SRC)/utils/flowUtils.F90\
 		$(SRC)/utils/utils.F90\
 		$(SRC)/utils/sorting.F90\
@@ -118,7 +119,11 @@ flowUtils%computeLamViscosity(w, p, Tref, muRef, rGas) > \
 flowUtils%computeEtotBlock(w, p) > \
                           (w, p) \
 \
-turbUtils%computeEddyViscosity(w,rlv)>(w,rlv,rev) \
+turbUtils%computeEddyViscosity(w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref) > \
+							  (w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref) \
+\
+turbutils%sstEddyViscosity(w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref) > \
+						  (w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref) \
 \
 BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) > \
                         (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) \
@@ -151,25 +156,48 @@ BCRoutines%bcSubsonicOutflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev
                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) \
 \
 turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > \
-                                      (rev, w) \
+                                      (rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
 \
-turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > \
-                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
+turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet) > \
+                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet) \
 \
 solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > \
               (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) \
 \
-sa%saSource(w, rlv, vol, si, sj, sk, timeRef, d2wall) > \
-           (w, rlv, vol, si, sj, sk, timeREf, scratch) \
-\
 turbutils%turbAdvection(w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) > \
                        (w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) \
+\
+turbutils%kwCDterm(w, vol, si, sj, sk, scratch) > \
+                  (w, vol, si, sj, sk, scratch) \
+\
+turbutils%prodKatoLaunder(w, vol, si, sj, sk, scratch, timeref) > \
+                  		 (w, vol, si, sj, sk, scratch, timeref) \
+\
+turbutils%prodSmag2(w, vol, si, sj, sk, scratch) > \
+                   (w, vol, si, sj, sk, scratch) \
+\
+turbutils%prodWmag2(w, vol, si, sj, sk, scratch, timeref) > \
+                   (w, vol, si, sj, sk, scratch, timeref) \
+\
+sa%saSource(w, rlv, vol, si, sj, sk, timeRef, d2wall) > \
+           (w, rlv, vol, si, sj, sk, timeREf, scratch) \
 \
 sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
             (w, vol, si, sj, sk, rlv, scratch) \
 \
 sa%saResScale(scratch, dw) > \
-             (dw) \
+             (scratch, dw) \
+SST%SSTSource(w, scratch, rev) > \
+             (w, scratch, rev) \
+\
+SST%SSTViscous(w, vol, si, sj, sk, rlv, rev, scratch) > \
+              (w, vol, si, sj, sk, rlv, rev, scratch) \
+\
+SST%SSTResScale(scratch, dw) > \
+               (scratch, dw) \
+\
+SST%f1SST(w, scratch, d2wall, rlv) > \
+         (w, scratch, rlv) \
 \
 residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) > \
                            (w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) \
@@ -288,6 +316,18 @@ sa%saViscous(w, rlv, scratch) > \
             (w, rlv, scratch) \
 \
 sa%saResScale(scratch) > (dw) \
+\
+SST%SSTSource(w, scratch) > \
+             (w, scratch) \
+\
+SST%SSTViscous(w, rlv, scratch) > \
+              (w, rlv, scratch) \
+\
+SST%SSTResScale(scratch) > \
+               (dw) \
+\
+SST%f1SST(w, scratch, d2wall) > \
+         (w, scratch) \
 \
 turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev) \
 \

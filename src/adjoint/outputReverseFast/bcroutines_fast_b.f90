@@ -424,7 +424,7 @@ contains
     if (secondhalo) call extrapolate2ndhalo(correctfork)
   end subroutine bcnswalladiabatic
   subroutine bcnswallisothermal(nn, secondhalo, correctfork)
-! bcnswalladiabatic applies the viscous isothermal wall boundary
+! bcnswallisothermal applies the viscous isothermal wall boundary
 ! condition to a block. it is assumed that the bcpointers are
 ! already set
     use constants

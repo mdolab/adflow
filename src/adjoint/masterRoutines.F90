@@ -19,8 +19,12 @@ contains
         use initializeFlow, only: referenceState
         use section, only: sections, nSections
         use monitor, only: timeUnsteadyRestart
-        use sa, only: saSource, saViscous, saResScale, qq
-        use haloExchange, only: exchangeCoor, whalo2
+        use sa, only: sa_block_residuals
+        use SST, only: SST_block_residuals
+        use kw, only: kwSolve
+        use kt, only: ktSolve
+        use vf, only: vfSolve, keSolve
+        use haloExchange, only: exchangeCoor, whalo2, whalo1
         use wallDistance, only: updateWallDistancesQuickly
         use solverUtils, only: timeStep_block
         use flowUtils, only: allNodalGradients, computeLamViscosity, computePressureSimple, &
@@ -29,7 +33,7 @@ contains
                           inviscidUpwindFlux, inviscidDissFluxScalar, inviscidDissFluxMatrix, &
                           viscousFlux, viscousFluxApprox, inviscidCentralFlux
         use utils, only: setPointers, EChk
-        use turbUtils, only: turbAdvection, computeEddyViscosity
+        use turbUtils, only: turbAdvection, computeEddyViscosity, vfScale
         use residuals, only: initRes_block, sourceTerms_block
         use surfaceIntegrations, only: getSolution
         use adjointExtra, only: volume_block, metric_block, boundaryNormals, &
@@ -38,7 +42,7 @@ contains
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity
         use actuatorRegionData, only: nActuatorRegions
-        use wallDistanceData, only: xSurfVec, xSurf
+        use wallDistanceData, only: xSurfVec, xSurf, exchangeWallDistanceHalos
 
         implicit none
 
@@ -89,11 +93,11 @@ contains
             end do
         end if
 
-        do sps = 1, nTimeIntervalsSpectral
-            do nn = 1, nDom
-                call setPointers(nn, 1, sps)
 
-                if (useSpatial) then
+        if (useSpatial) then
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+                    call setPointers(nn, 1, sps)
 
                     call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
@@ -110,7 +114,15 @@ contains
                     call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
-                end if
+                end do
+            end do
+
+            call whalo2(1, 1_intType, 0_intType, .false., .false., .false., .True.)
+        end if
+
+        do sps = 1, nTimeIntervalsSpectral
+            do nn = 1, nDom
+                call setPointers(nn, 1, sps)
 
                 ! Compute the pressures/viscositites
                 call computePressureSimple(.False.)
@@ -129,8 +141,11 @@ contains
             end do
         end do
 
+
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchangeWallDistanceHalos(currentLevel))
+        exchangeWallDistanceHalos(currentLevel) = .False.
+
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -166,16 +181,32 @@ contains
                     ! Initialize only the Turblent Variables
                     !call unsteadyTurbSpectral_block(itu1, itu1, nn, sps)
 
+                    !we do not need bcTurbTreatment... we just did it before
+
                     select case (turbModel)
 
                     case (spalartAllmaras)
-                        allocate (qq(2:il, 2:jl, 2:kl))
-                        call saSource
-                        call turbAdvection(1_intType, 1_intType, itu1 - 1, qq)
-                        !call unsteadyTurbTerm(1_intType, 1_intType, itu1-1, qq)
-                        call saViscous
-                        call saResScale
-                        deallocate (qq)
+                        call sa_block_residuals(.True.)
+
+                    case (komegaWilcox, komegaModified)
+                        call kwSolve(.True.)
+
+                    case (menterSST)
+                        call SST_block_residuals(.True.)
+
+                    case (ktau)
+                        call ktSolve(.True.)
+
+                    case (v2f)
+                        !see vf_block for comments
+                        call vfScale
+                        call keSolve(.True.)
+                        call vfSolve(.True.)
+
+                    case DEFAULT
+                        print *, 'ERROR: requested turbulence model not implemented'
+                        call EChk(1, __FILE__, __LINE__)
+
                     end select
                 end if
 
@@ -251,7 +282,8 @@ contains
         use section, only: sections, nSections
         use monitor, only: timeUnsteadyRestart
         use utils, only: isWallType, setPointers, setPointers_d, EChk
-        use sa_d, only: saSource_d, saViscous_d, saResScale_d, qq
+        use sa, only: sa_block_residuals_d
+        use sst, only: sst_block_residuals_d
         use turbutils_d, only: turbAdvection_d, computeEddyViscosity_d
         use fluxes_d, only: inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
                             inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
@@ -296,6 +328,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, iRegion
         real(kind=realType), dimension(nSections) :: time
         real(kind=realType) :: dummyReal, dummyReald
+        logical :: exchanged2wall
 
         logical :: useOldCoor ! for adjointextra_d() functions
         useOldCoor = .FALSE.
@@ -418,9 +451,29 @@ contains
                 ! required for ts
                 call slipvelocitiesfinelevel_block_d(useoldcoor, time, sps, nn)
 
-                if (equations == RANSEquations .and. useApproxWallDistance) then
+            end do
+        end do
+
+
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+
+                    call setPointers_d(nn, 1, sps)
+
                     call updateWallDistancesQuickly_d(nn, 1, sps)
-                end if
+                end do
+            end do
+
+            call whalo2_d(1, 1_intType, 0_intType, .false., .false., .false., .True.)
+        end if
+
+        do sps = 1, nTimeIntervalsSpectral
+            do nn = 1, nDom
+
+                call setPointers_d(nn, 1, sps)
+                ISIZE1OFDrfbcdata = nBocos
+                ISIZE1OFDrfviscsubface = nViscBocos
 
                 call computePressureSimple_d(.False.)
                 call computeLamViscosity_d(.False.)
@@ -446,7 +499,8 @@ contains
         end do
 
         ! Just exchange the derivative values.
-        call whalo2_d(1, 1, nw, .True., .True., .True.)
+        call whalo2_d(1, 1, nw, .True., .True., .True., .False.)
+
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -487,11 +541,9 @@ contains
 
                     select case (turbModel)
                     case (spalartAllmaras)
-                        call saSource_d
-                        call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
-                !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-                        call saViscous_d
-                        call saResScale_d
+                        call sa_block_residuals_d
+                    case (menterSST)
+                        call sst_block_residuals_d
                     end select
                 end if
 
@@ -606,7 +658,8 @@ contains
         use turbbcroutines_b, only: applyAllTurbBCthisblock_b, bcTurbTreatment_b
         use initializeflow_b, only: referenceState_b
         use wallDistance_b, only: updateWallDistancesQuickly_b
-        use sa_b, only: saSource_b, saViscous_b, saResScale_b, qq
+        use sa, only: sa_block_residuals_b
+        use sst, only: sst_block_residuals_b
         use turbutils_b, only: turbAdvection_b, computeEddyViscosity_b
         use residuals_b, only: sourceTerms_block_b, initRes_block_b
         use fluxes_b, only: inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
@@ -643,7 +696,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, level, iRegion
         real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
         real(kind=realType) :: dummyReal, dummyReald
-        logical :: resetToRans
+        logical :: resetToRans, exchanged2wall
         real(kind=realType), dimension(nSections) :: time
         logical :: useOldCoor ! for solverutils_b() functions
         useOldCoor = .FALSE.
@@ -733,14 +786,9 @@ contains
                 if (equations == RANSEquations) then
                     select case (turbModel)
                     case (spalartAllmaras)
-                        call saResScale_b
-                        call saViscous_b
-                        !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-                        call turbAdvection_b(1_intType, 1_intType, itu1 - 1, qq)
-                        ! turbAdvection_b zeros the faceid. This should be ok since
-                        ! it presumably is the last call in master using faceid and
-                        ! therefore should be the first call in master_b to use faceid
-                        call saSource_b
+                        call sa_block_residuals_b
+                    case (menterSST)
+                        call sst_block_residuals_b
                     end select
 
                     !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
@@ -778,7 +826,7 @@ contains
         end if
 
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
 
@@ -815,9 +863,26 @@ contains
                 call computeLamViscosity_b(.false.)
                 call computePressureSimple_b(.false.)
 
-                if (equations == RANSEquations .and. useApproxWallDistance) then
+            end do domainLoop2
+        end do spsLoop2
+
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            call whalo2_b(1, 1_intType, 0_intType, .False., .False., .False., .True.)
+
+            spsLoop3: do sps = 1, nTimeIntervalsSpectral
+                domainLoop3: do nn = 1, nDom
+                    call setPointers_b(nn, 1, sps)
+
                     call updateWallDistancesQuickly_b(nn, 1, sps)
-                end if
+                
+                end do domainLoop3
+            end do spsLoop3
+        end if
+
+
+        spsLoop4: do sps = 1, nTimeIntervalsSpectral
+            domainLoop4: do nn = 1, nDom
+                call setPointers_b(nn, 1, sps)
 
                 ! Here we insert the functions related to
                 ! rotational (mesh movement) setup
@@ -837,7 +902,7 @@ contains
                 call metric_block_b
                 call volume_block_b
 
-            end do domainLoop2
+            end do domainLoop4
 
             ! Restore the petsc pointers.
             call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
@@ -857,7 +922,7 @@ contains
                 call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end if
-        end do spsLoop2
+        end do spsLoop4
 
         if (present(bcDataNames)) then
             allocate (bcDataValuesdLocal(size(bcDataValuesd)))
@@ -988,8 +1053,8 @@ contains
         use turbUtils_b, only: computeEddyViscosity_b
         use BCExtra_b, only: applyAllBC_Block_b
 
-        use sa_fast_b, only: saresscale_fast_b, saviscous_fast_b, &
-                             sasource_fast_b, qq
+        use sa, only: sa_block_residuals_fast_b
+        use sst, only: sst_block_residuals_fast_b
         use turbutils_fast_b, only: turbAdvection_fast_b
         use fluxes_fast_b, only: inviscidUpwindFlux_fast_b, inviscidDissFluxScalar_fast_b, &
                                  inviscidDissFluxMatrix_fast_b, viscousFlux_fast_b, inviscidCentralFlux_fast_b
@@ -1069,11 +1134,9 @@ contains
                 if (equations == RANSEquations) then
                     select case (turbModel)
                     case (spalartAllmaras)
-                        call saResScale_fast_b
-                        call saViscous_fast_b
-                        !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-                        call turbAdvection_fast_b(1_intType, 1_intType, itu1 - 1, qq)
-                        call saSource_fast_b
+                        call sa_block_residuals_fast_b
+                    case (menterSST)
+                        call sst_block_residuals_fast_b
                     end select
 
                     !call unsteadyTurbSpectral_block_b(itu1, itu1, nn, sps)
@@ -1108,7 +1171,7 @@ contains
         end if
 
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
             domainLoop2: do nn = 1, nDom
@@ -1191,7 +1254,7 @@ contains
 
         call computePressureSimple(.True.)
         call computeLamViscosity(.True.)
-        call computeEddyViscosity(.True.)
+        call computeEddyViscosity(.True.) !This is the tricky call for SST: it involves come communication because there are derivatives involved. Should be good.
 
         ! Make sure to call the turb BC's first incase we need to
         ! correct for K
@@ -1232,7 +1295,8 @@ contains
         use inputDiscretization, only: lowSpeedPreconditioner, lumpedDiss, spaceDiscr
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setPointers_d, EChk
-        use sa_d, only: saSource_d, saViscous_d, saResScale_d, qq
+        use sa, only: sa_block_residuals_d
+        use sst, only: sst_block_residuals_d
         use turbutils_d, only: turbAdvection_d, computeEddyViscosity_d
         use fluxes_d, only: inviscidDissFluxScalarApprox_d, inviscidDissFluxMatrixApprox_d, &
                             inviscidUpwindFlux_d, inviscidDissFluxScalar_d, inviscidDissFluxMatrix_d, &
@@ -1281,11 +1345,9 @@ contains
 
             select case (turbModel)
             case (spalartAllmaras)
-                call saSource_d
-                call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
-          !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-                call saViscous_d
-                call saResScale_d
+                call sa_block_residuals_d
+            case (menterSST)
+                call sst_block_residuals_d
             end select
         end if
 

@@ -148,6 +148,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputForward/zipperintegrations_d.f90\
 		adjoint/outputForward/residuals_d.f90\
 		adjoint/outputForward/sa_d.f90\
+		adjoint/outputForward/sst_d.f90\
 		adjoint/outputForward/walldistance_d.f90\
 		adjoint/outputForward/initializeflow_d.f90\
 		adjoint/outputForward/adjointextra_d.f90\
@@ -171,6 +172,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputReverse/surfaceintegrations_b.f90\
 		adjoint/outputReverse/zipperintegrations_b.f90\
 		adjoint/outputReverse/sa_b.f90\
+		adjoint/outputReverse/sst_b.f90\
 		adjoint/outputReverse/fluxes_b.f90\
 		adjoint/outputReverse/walldistance_b.f90\
 		adjoint/outputReverse/initializeflow_b.f90\

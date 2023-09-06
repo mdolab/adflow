@@ -703,7 +703,7 @@ contains
                     ! Compute the laminar and eddy viscosities.
 
                     call computeLamViscosity(.False.)
-                    call computeEddyViscosity(.False.)
+                    call computeEddyViscosity(.False.) !for SST, the velocity in 1st halo MUST be up to date before this call. Does not seem like it is.
 
                     ! Step 4. Store dw in dwOldRK if this is not the last
                     !         RK stage.
@@ -733,12 +733,13 @@ contains
 
                 call applyAllBC(.true.)
                 if (equations == RANSEquations) call applyAllTurbBC(.true.)
+                !QUESTION: the order of the calls to BC and turbBC was permuted everywhere else in the code. Fist applyTurb then applyBC to allow correctForK. Recommend permuting here too.
 
                 ! Exchange the halo data. As we are on the fine grid
                 ! the second halo is needed.
 
                 call whalo2(currentLevel, 1_intType, nw, .true., &
-                            .true., .true.)
+                            .true., .true., .false.)
 
                 ! Determine the time and initialize the geometrical and
                 ! boundary info for next stage, if needed.
