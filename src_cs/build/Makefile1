@@ -27,11 +27,10 @@ complexify:
 	@for file in $(filesToComplexify); do \
 		realFile=$(addprefix ../../src/,$$file); \
 		cmplxFile=$(addprefix ../,$$file); \
-		echo Checking $$file $$realFile $$cmplxFile; \
+		echo Checking $$realFile $$cmplxFile; \
 		if [ $$realFile -nt $$cmplxFile -o ! -e $$cmplxFile ];  then \
-			python complexify.py $$realFile; \
-			echo Complexifying $$file $$realFile $$cmplxFile; \
-			mv newFile $$cmplxFile; \
+			echo Complexifying $$realFile $$cmplxFile; \
+			complexify $$realFile --outFileName $$cmplxFile; \
 		fi;\
 	done
 
