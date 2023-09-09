@@ -5,7 +5,7 @@ Introduction
 
 ADflow is a multi-block structured flow solver initially developed in 
 the Stanford University under the sponsorship of the Department of
-Energy Advanced Strategic Computing (ASC) Initiative . It solves the 
+Energy Advanced Strategic Computing (ASC) Initiative. It solves the 
 compressible Euler, laminar Navier-Stokes and Reynolds-Averaged Navier-Stokes 
 equations. Although its primary objective in this program was to compute the
 flows in the rotating components of jet engines, ADflow has been developed as 
