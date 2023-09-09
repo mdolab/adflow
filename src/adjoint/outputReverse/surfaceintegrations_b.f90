@@ -48,9 +48,11 @@ contains
 &   cforcemd, cmomentd, cofxd, cofyd, cofzd
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi, fxlift, fylift&
+&   , fzlift
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgrhod, mavgpsd, &
-&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead, mavgvid
+&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead, mavgvid&
+&   , fxliftd, fyliftd, fzliftd
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -74,25 +76,37 @@ contains
     real(kind=realtype) :: tmp12
     real(kind=realtype) :: tmp13
     real(kind=realtype) :: tmp14
+    real(kind=realtype) :: tmp15
+    real(kind=realtype) :: tmp16
+    real(kind=realtype) :: tmp17
     integer :: branch
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd10
     real(kind=realtype) :: tmpd
+    real(kind=realtype) :: tmpd17
+    real(kind=realtype) :: tmpd16
+    real(kind=realtype) :: tmpd15
     real(kind=realtype) :: tmpd14
     real(kind=realtype) :: tmpd13
     real(kind=realtype) :: tmpd12
     real(kind=realtype) :: tmpd11
     real(kind=realtype) :: tmpd10
+    real(kind=realtype) :: tempd9
     real(kind=realtype) :: tempd
+    real(kind=realtype) :: tempd8(3)
+    real(kind=realtype) :: tempd7(3)
+    real(kind=realtype) :: tempd6(3)
+    real(kind=realtype) :: tempd5
     real(kind=realtype) :: tmpd9
     real(kind=realtype) :: tempd4
     real(kind=realtype) :: tmpd8
     real(kind=realtype) :: tempd3
     real(kind=realtype) :: tmpd7
-    real(kind=realtype) :: tempd2(3)
+    real(kind=realtype) :: tempd2
     real(kind=realtype) :: tmpd6
-    real(kind=realtype) :: tempd1(3)
+    real(kind=realtype) :: tempd1
     real(kind=realtype) :: tmpd5
-    real(kind=realtype) :: tempd0(3)
+    real(kind=realtype) :: tempd0
     real(kind=realtype) :: tmpd4
     real(kind=realtype) :: tmpd3
     real(kind=realtype) :: tmpd2
@@ -395,10 +409,113 @@ contains
 &     funcvalues(costfuncforcezcoefviscous)*dragdirection(3)
     call pushreal8(funcvalues(costfuncdragcoefviscous))
     funcvalues(costfuncdragcoefviscous) = tmp13
+    tmp14 = funcvalues(costfuncforcexcoefmomentum)*dragdirection(1) + &
+&     funcvalues(costfuncforceycoefmomentum)*dragdirection(2) + &
+&     funcvalues(costfuncforcezcoefmomentum)*dragdirection(3)
+    call pushreal8(funcvalues(costfuncdragcoefmomentum))
+    funcvalues(costfuncdragcoefmomentum) = tmp14
+! ----- center of lift
+! dot product the 3 forces with the lift direction separately
+    fxlift = funcvalues(costfuncforcex)*liftdirection(1)
+    fylift = funcvalues(costfuncforcey)*liftdirection(2)
+    fzlift = funcvalues(costfuncforcez)*liftdirection(3)
+! run the weighed average for the 3 components of center of lift
+! protect against division by zero
+    if (fxlift + fylift + fzlift .ne. zero) then
+      tmp15 = (fxlift*funcvalues(costfunccoforcexx)+fylift*funcvalues(&
+&       costfunccoforceyx)+fzlift*funcvalues(costfunccoforcezx))/(fxlift&
+&       +fylift+fzlift)
+      call pushreal8(funcvalues(costfunccofliftx))
+      funcvalues(costfunccofliftx) = tmp15
+      tmp16 = (fxlift*funcvalues(costfunccoforcexy)+fylift*funcvalues(&
+&       costfunccoforceyy)+fzlift*funcvalues(costfunccoforcezy))/(fxlift&
+&       +fylift+fzlift)
+      call pushreal8(funcvalues(costfunccoflifty))
+      funcvalues(costfunccoflifty) = tmp16
+      call pushcontrol1b(0)
+    else
+      call pushcontrol1b(1)
+    end if
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       stop
     else
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        tmpd15 = funcvaluesd(costfunccofliftz)
+        funcvaluesd(costfunccofliftz) = 0.0_8
+        tempd0 = tmpd15/(fxlift+fylift+fzlift)
+        tempd1 = -((fxlift*funcvalues(costfunccoforcexz)+fylift*&
+&         funcvalues(costfunccoforceyz)+fzlift*funcvalues(&
+&         costfunccoforcezz))*tempd0/(fxlift+fylift+fzlift))
+        fxliftd = tempd1 + funcvalues(costfunccoforcexz)*tempd0
+        funcvaluesd(costfunccoforcexz) = funcvaluesd(costfunccoforcexz) &
+&         + fxlift*tempd0
+        fyliftd = tempd1 + funcvalues(costfunccoforceyz)*tempd0
+        funcvaluesd(costfunccoforceyz) = funcvaluesd(costfunccoforceyz) &
+&         + fylift*tempd0
+        fzliftd = tempd1 + funcvalues(costfunccoforcezz)*tempd0
+        funcvaluesd(costfunccoforcezz) = funcvaluesd(costfunccoforcezz) &
+&         + fzlift*tempd0
+        call popreal8(funcvalues(costfunccoflifty))
+        tmpd16 = funcvaluesd(costfunccoflifty)
+        funcvaluesd(costfunccoflifty) = 0.0_8
+        tempd2 = tmpd16/(fxlift+fylift+fzlift)
+        tempd3 = -((fxlift*funcvalues(costfunccoforcexy)+fylift*&
+&         funcvalues(costfunccoforceyy)+fzlift*funcvalues(&
+&         costfunccoforcezy))*tempd2/(fxlift+fylift+fzlift))
+        fxliftd = fxliftd + tempd3 + funcvalues(costfunccoforcexy)*&
+&         tempd2
+        funcvaluesd(costfunccoforcexy) = funcvaluesd(costfunccoforcexy) &
+&         + fxlift*tempd2
+        fyliftd = fyliftd + tempd3 + funcvalues(costfunccoforceyy)*&
+&         tempd2
+        funcvaluesd(costfunccoforceyy) = funcvaluesd(costfunccoforceyy) &
+&         + fylift*tempd2
+        fzliftd = fzliftd + tempd3 + funcvalues(costfunccoforcezy)*&
+&         tempd2
+        funcvaluesd(costfunccoforcezy) = funcvaluesd(costfunccoforcezy) &
+&         + fzlift*tempd2
+        call popreal8(funcvalues(costfunccofliftx))
+        tmpd17 = funcvaluesd(costfunccofliftx)
+        funcvaluesd(costfunccofliftx) = 0.0_8
+        tempd4 = tmpd17/(fxlift+fylift+fzlift)
+        tempd5 = -((fxlift*funcvalues(costfunccoforcexx)+fylift*&
+&         funcvalues(costfunccoforceyx)+fzlift*funcvalues(&
+&         costfunccoforcezx))*tempd4/(fxlift+fylift+fzlift))
+        fxliftd = fxliftd + tempd5 + funcvalues(costfunccoforcexx)*&
+&         tempd4
+        funcvaluesd(costfunccoforcexx) = funcvaluesd(costfunccoforcexx) &
+&         + fxlift*tempd4
+        fyliftd = fyliftd + tempd5 + funcvalues(costfunccoforceyx)*&
+&         tempd4
+        funcvaluesd(costfunccoforceyx) = funcvaluesd(costfunccoforceyx) &
+&         + fylift*tempd4
+        fzliftd = fzliftd + tempd5 + funcvalues(costfunccoforcezx)*&
+&         tempd4
+        funcvaluesd(costfunccoforcezx) = funcvaluesd(costfunccoforcezx) &
+&         + fzlift*tempd4
+      else
+        funcvaluesd(costfunccofliftz) = 0.0_8
+        funcvaluesd(costfunccoflifty) = 0.0_8
+        funcvaluesd(costfunccofliftx) = 0.0_8
+        fxliftd = 0.0_8
+        fyliftd = 0.0_8
+        fzliftd = 0.0_8
+      end if
+      funcvaluesd(costfuncforcez) = funcvaluesd(costfuncforcez) + &
+&       liftdirection(3)*fzliftd
+      liftdirectiond(3) = liftdirectiond(3) + funcvalues(costfuncforcez)&
+&       *fzliftd
+      funcvaluesd(costfuncforcey) = funcvaluesd(costfuncforcey) + &
+&       liftdirection(2)*fyliftd
+      liftdirectiond(2) = liftdirectiond(2) + funcvalues(costfuncforcey)&
+&       *fyliftd
+      funcvaluesd(costfuncforcex) = funcvaluesd(costfuncforcex) + &
+&       liftdirection(1)*fxliftd
+      liftdirectiond(1) = liftdirectiond(1) + funcvalues(costfuncforcex)&
+&       *fxliftd
+      call popreal8(funcvalues(costfuncdragcoefmomentum))
       tmpd = funcvaluesd(costfuncdragcoefmomentum)
       funcvaluesd(costfuncdragcoefmomentum) = 0.0_8
       funcvaluesd(costfuncforcexcoefmomentum) = funcvaluesd(&
@@ -713,13 +830,13 @@ contains
         mflowd = ovrnts*funcvaluesd(costfuncmdot)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          tempd4 = ovrnts*funcvaluesd(costfuncaavgptot)/garea
-          tempd3 = ovrnts*funcvaluesd(costfuncaavgps)/garea
-          globalvalsd(iareaps, sps) = globalvalsd(iareaps, sps) + tempd3
-          garead = -(globalvals(iareaptot, sps)*tempd4/garea) - &
-&           globalvals(iareaps, sps)*tempd3/garea
+          tempd10 = ovrnts*funcvaluesd(costfuncaavgptot)/garea
+          tempd9 = ovrnts*funcvaluesd(costfuncaavgps)/garea
+          globalvalsd(iareaps, sps) = globalvalsd(iareaps, sps) + tempd9
+          garead = -(globalvals(iareaptot, sps)*tempd10/garea) - &
+&           globalvals(iareaps, sps)*tempd9/garea
           globalvalsd(iareaptot, sps) = globalvalsd(iareaptot, sps) + &
-&           tempd4
+&           tempd10
         else
           garead = 0.0_8
         end if
@@ -811,28 +928,28 @@ contains
 &         costfunccoforcexx)
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          tempd2 = cofzd(:, sps)/force(3, sps)
-          forced(3, sps) = forced(3, sps) + sum(-(cofz(:, sps)*tempd2/&
+          tempd8 = cofzd(:, sps)/force(3, sps)
+          forced(3, sps) = forced(3, sps) + sum(-(cofz(:, sps)*tempd8/&
 &           force(3, sps)))
-          cofzd(:, sps) = tempd2
+          cofzd(:, sps) = tempd8
         else
           cofzd(:, sps) = 0.0_8
         end if
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          tempd1 = cofyd(:, sps)/force(2, sps)
-          forced(2, sps) = forced(2, sps) + sum(-(cofy(:, sps)*tempd1/&
+          tempd7 = cofyd(:, sps)/force(2, sps)
+          forced(2, sps) = forced(2, sps) + sum(-(cofy(:, sps)*tempd7/&
 &           force(2, sps)))
-          cofyd(:, sps) = tempd1
+          cofyd(:, sps) = tempd7
         else
           cofyd(:, sps) = 0.0_8
         end if
         call popcontrol1b(branch)
         if (branch .eq. 0) then
-          tempd0 = cofxd(:, sps)/force(1, sps)
-          forced(1, sps) = forced(1, sps) + sum(-(cofx(:, sps)*tempd0/&
+          tempd6 = cofxd(:, sps)/force(1, sps)
+          forced(1, sps) = forced(1, sps) + sum(-(cofx(:, sps)*tempd6/&
 &           force(1, sps)))
-          cofxd(:, sps) = tempd0
+          cofxd(:, sps) = tempd6
         else
           cofxd(:, sps) = 0.0_8
         end if
@@ -942,7 +1059,8 @@ contains
 &   cmoment, cofx, cofy, cofz
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi, fxlift, fylift&
+&   , fzlift
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -1225,6 +1343,28 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! ----- center of lift
+! dot product the 3 forces with the lift direction separately
+    fxlift = funcvalues(costfuncforcex)*liftdirection(1)
+    fylift = funcvalues(costfuncforcey)*liftdirection(2)
+    fzlift = funcvalues(costfuncforcez)*liftdirection(3)
+! run the weighed average for the 3 components of center of lift
+! protect against division by zero
+    if (fxlift + fylift + fzlift .ne. zero) then
+      funcvalues(costfunccofliftx) = (fxlift*funcvalues(&
+&       costfunccoforcexx)+fylift*funcvalues(costfunccoforceyx)+fzlift*&
+&       funcvalues(costfunccoforcezx))/(fxlift+fylift+fzlift)
+      funcvalues(costfunccoflifty) = (fxlift*funcvalues(&
+&       costfunccoforcexy)+fylift*funcvalues(costfunccoforceyy)+fzlift*&
+&       funcvalues(costfunccoforcezy))/(fxlift+fylift+fzlift)
+      funcvalues(costfunccofliftz) = (fxlift*funcvalues(&
+&       costfunccoforcexz)+fylift*funcvalues(costfunccoforceyz)+fzlift*&
+&       funcvalues(costfunccoforcezz))/(fxlift+fylift+fzlift)
+    else
+      funcvalues(costfunccofliftx) = zero
+      funcvalues(costfunccoflifty) = zero
+      funcvalues(costfunccofliftz) = zero
+    end if
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &

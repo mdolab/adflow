@@ -6326,6 +6326,9 @@ class ADFLOW(AeroSolver):
             "cofzx": self.adflow.constants.costfunccoforcezx,
             "cofzy": self.adflow.constants.costfunccoforcezy,
             "cofzz": self.adflow.constants.costfunccoforcezz,
+            "colx": self.adflow.constants.costfunccofliftx,
+            "coly": self.adflow.constants.costfunccoflifty,
+            "colz": self.adflow.constants.costfunccofliftz,
         }
 
         return iDV, BCDV, adflowCostFunctions

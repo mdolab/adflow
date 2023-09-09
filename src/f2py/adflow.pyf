@@ -1027,7 +1027,10 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccoforcezx=96
          integer(kind=inttype) parameter,optional :: costfunccoforcezy=97
          integer(kind=inttype) parameter,optional :: costfunccoforcezz=98
-         integer(kind=inttype) parameter,optional :: costfuncmavgvi=99
+         integer(kind=inttype) parameter,optional :: costfunccofliftx=99
+         integer(kind=inttype) parameter,optional :: costfunccoflifty=100
+         integer(kind=inttype) parameter,optional :: costfunccofliftz=101
+         integer(kind=inttype) parameter,optional :: costfuncmavgvi=102
         end module constants
 
        module communication ! in :adflow:../../modules/communication.f90

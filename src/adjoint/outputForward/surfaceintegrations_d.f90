@@ -47,9 +47,11 @@ contains
 &   cforcemd, cmomentd, cofxd, cofyd, cofzd
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi, fxlift, fylift&
+&   , fzlift
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgrhod, mavgpsd, &
-&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead, mavgvid
+&   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead, mavgvid&
+&   , fxliftd, fyliftd, fzliftd
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -628,6 +630,61 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! ----- center of lift
+! dot product the 3 forces with the lift direction separately
+    fxliftd = funcvaluesd(costfuncforcex)*liftdirection(1) + funcvalues(&
+&     costfuncforcex)*liftdirectiond(1)
+    fxlift = funcvalues(costfuncforcex)*liftdirection(1)
+    fyliftd = funcvaluesd(costfuncforcey)*liftdirection(2) + funcvalues(&
+&     costfuncforcey)*liftdirectiond(2)
+    fylift = funcvalues(costfuncforcey)*liftdirection(2)
+    fzliftd = funcvaluesd(costfuncforcez)*liftdirection(3) + funcvalues(&
+&     costfuncforcez)*liftdirectiond(3)
+    fzlift = funcvalues(costfuncforcez)*liftdirection(3)
+! run the weighed average for the 3 components of center of lift
+! protect against division by zero
+    if (fxlift + fylift + fzlift .ne. zero) then
+      funcvaluesd(costfunccofliftx) = ((fxliftd*funcvalues(&
+&       costfunccoforcexx)+fxlift*funcvaluesd(costfunccoforcexx)+fyliftd&
+&       *funcvalues(costfunccoforceyx)+fylift*funcvaluesd(&
+&       costfunccoforceyx)+fzliftd*funcvalues(costfunccoforcezx)+fzlift*&
+&       funcvaluesd(costfunccoforcezx))*(fxlift+fylift+fzlift)-(fxlift*&
+&       funcvalues(costfunccoforcexx)+fylift*funcvalues(&
+&       costfunccoforceyx)+fzlift*funcvalues(costfunccoforcezx))*(&
+&       fxliftd+fyliftd+fzliftd))/(fxlift+fylift+fzlift)**2
+      funcvalues(costfunccofliftx) = (fxlift*funcvalues(&
+&       costfunccoforcexx)+fylift*funcvalues(costfunccoforceyx)+fzlift*&
+&       funcvalues(costfunccoforcezx))/(fxlift+fylift+fzlift)
+      funcvaluesd(costfunccoflifty) = ((fxliftd*funcvalues(&
+&       costfunccoforcexy)+fxlift*funcvaluesd(costfunccoforcexy)+fyliftd&
+&       *funcvalues(costfunccoforceyy)+fylift*funcvaluesd(&
+&       costfunccoforceyy)+fzliftd*funcvalues(costfunccoforcezy)+fzlift*&
+&       funcvaluesd(costfunccoforcezy))*(fxlift+fylift+fzlift)-(fxlift*&
+&       funcvalues(costfunccoforcexy)+fylift*funcvalues(&
+&       costfunccoforceyy)+fzlift*funcvalues(costfunccoforcezy))*(&
+&       fxliftd+fyliftd+fzliftd))/(fxlift+fylift+fzlift)**2
+      funcvalues(costfunccoflifty) = (fxlift*funcvalues(&
+&       costfunccoforcexy)+fylift*funcvalues(costfunccoforceyy)+fzlift*&
+&       funcvalues(costfunccoforcezy))/(fxlift+fylift+fzlift)
+      funcvaluesd(costfunccofliftz) = ((fxliftd*funcvalues(&
+&       costfunccoforcexz)+fxlift*funcvaluesd(costfunccoforcexz)+fyliftd&
+&       *funcvalues(costfunccoforceyz)+fylift*funcvaluesd(&
+&       costfunccoforceyz)+fzliftd*funcvalues(costfunccoforcezz)+fzlift*&
+&       funcvaluesd(costfunccoforcezz))*(fxlift+fylift+fzlift)-(fxlift*&
+&       funcvalues(costfunccoforcexz)+fylift*funcvalues(&
+&       costfunccoforceyz)+fzlift*funcvalues(costfunccoforcezz))*(&
+&       fxliftd+fyliftd+fzliftd))/(fxlift+fylift+fzlift)**2
+      funcvalues(costfunccofliftz) = (fxlift*funcvalues(&
+&       costfunccoforcexz)+fylift*funcvalues(costfunccoforceyz)+fzlift*&
+&       funcvalues(costfunccoforcezz))/(fxlift+fylift+fzlift)
+    else
+      funcvaluesd(costfunccofliftx) = 0.0_8
+      funcvalues(costfunccofliftx) = zero
+      funcvaluesd(costfunccoflifty) = 0.0_8
+      funcvalues(costfunccoflifty) = zero
+      funcvaluesd(costfunccofliftz) = 0.0_8
+      funcvalues(costfunccofliftz) = zero
+    end if
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
@@ -658,7 +715,8 @@ contains
 &   cmoment, cofx, cofy, cofz
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi, fxlift, fylift&
+&   , fzlift
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -943,6 +1001,28 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! ----- center of lift
+! dot product the 3 forces with the lift direction separately
+    fxlift = funcvalues(costfuncforcex)*liftdirection(1)
+    fylift = funcvalues(costfuncforcey)*liftdirection(2)
+    fzlift = funcvalues(costfuncforcez)*liftdirection(3)
+! run the weighed average for the 3 components of center of lift
+! protect against division by zero
+    if (fxlift + fylift + fzlift .ne. zero) then
+      funcvalues(costfunccofliftx) = (fxlift*funcvalues(&
+&       costfunccoforcexx)+fylift*funcvalues(costfunccoforceyx)+fzlift*&
+&       funcvalues(costfunccoforcezx))/(fxlift+fylift+fzlift)
+      funcvalues(costfunccoflifty) = (fxlift*funcvalues(&
+&       costfunccoforcexy)+fylift*funcvalues(costfunccoforceyy)+fzlift*&
+&       funcvalues(costfunccoforcezy))/(fxlift+fylift+fzlift)
+      funcvalues(costfunccofliftz) = (fxlift*funcvalues(&
+&       costfunccoforcexz)+fylift*funcvalues(costfunccoforceyz)+fzlift*&
+&       funcvalues(costfunccoforcezz))/(fxlift+fylift+fzlift)
+    else
+      funcvalues(costfunccofliftx) = zero
+      funcvalues(costfunccoflifty) = zero
+      funcvalues(costfunccofliftz) = zero
+    end if
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &

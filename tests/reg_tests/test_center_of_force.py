@@ -13,6 +13,33 @@ from reg_aeroproblems import ap_tutorial_wing
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
+def get_rot_mat(vx, vy, vz, theta):
+    # function to get the rotation matrix
+    # this is copied over from cgnsutils
+    # Normalize the components of the rotation vector
+    normV = np.sqrt(vx**2 + vy**2 + vz**2)
+    uu = vx / normV
+    vv = vy / normV
+    ww = vz / normV
+
+    # Compute sines and cosines of the rotation angle
+    ss = np.sin(theta * np.pi / 180.0)
+    cc = np.cos(theta * np.pi / 180.0)
+
+    # Build rotation matrix
+    rotMat = np.zeros((3, 3))
+    rotMat[0, 0] = uu * uu + (1.0 - uu * uu) * cc
+    rotMat[0, 1] = uu * vv * (1.0 - cc) - ww * ss
+    rotMat[0, 2] = uu * ww * (1.0 - cc) + vv * ss
+    rotMat[1, 0] = uu * vv * (1.0 - cc) + ww * ss
+    rotMat[1, 1] = vv * vv + (1.0 - vv * vv) * cc
+    rotMat[1, 2] = vv * ww * (1.0 - cc) - uu * ss
+    rotMat[2, 0] = uu * ww * (1.0 - cc) - vv * ss
+    rotMat[2, 1] = vv * ww * (1.0 - cc) + uu * ss
+    rotMat[2, 2] = ww * ww + (1.0 - ww * ww) * cc
+
+    return rotMat
+
 
 class TestCenterOfForce(unittest.TestCase):
     """
@@ -79,16 +106,22 @@ class TestCenterOfForce(unittest.TestCase):
         mz = funcs[f"{self.ap.name}_mz"]
 
         # center of x-force
+        cofxx = funcs[f"{self.ap.name}_cofxx"]
         cofxy = funcs[f"{self.ap.name}_cofxy"]
         cofxz = funcs[f"{self.ap.name}_cofxz"]
+        cof_fx = np.array([cofxx, cofxy, cofxz])
 
         # center of y-force
         cofyx = funcs[f"{self.ap.name}_cofyx"]
+        cofyy = funcs[f"{self.ap.name}_cofyy"]
         cofyz = funcs[f"{self.ap.name}_cofyz"]
+        cof_fy = np.array([cofyx, cofyy, cofyz])
 
         # center of z-force
         cofzx = funcs[f"{self.ap.name}_cofzx"]
         cofzy = funcs[f"{self.ap.name}_cofzy"]
+        cofzz = funcs[f"{self.ap.name}_cofzz"]
+        cof_fz = np.array([cofzx, cofzy, cofzz])
 
         # reference point for the AP
         xref = self.ap.xRef
@@ -102,6 +135,27 @@ class TestCenterOfForce(unittest.TestCase):
         np.testing.assert_allclose(mx, mymx, rtol=1e-9)
         np.testing.assert_allclose(my, mymy, rtol=1e-9)
         np.testing.assert_allclose(mz, mymz, rtol=1e-9)
+
+        # compute the center of lift based on centers of force and check
+        alpha = self.ap.alpha * np.pi / 180.0
+        lift_dir = np.array([-np.sin(alpha), np.cos(alpha), 0.])
+
+        fx_vec = np.array([fx, 0., 0.])
+        fy_vec = np.array([0., fy, 0.])
+        fz_vec = np.array([0., 0., fz])
+
+        fxlift = fx_vec.dot(lift_dir)
+        fylift = fy_vec.dot(lift_dir)
+        fzlift = fz_vec.dot(lift_dir)
+        col_computed = (cof_fx * fxlift + cof_fy * fylift + cof_fz * fzlift) / (fxlift + fylift + fzlift)
+        col_adflow = np.array(
+            [
+                funcs[f"{self.ap.name}_colx"],
+                funcs[f"{self.ap.name}_coly"],
+                funcs[f"{self.ap.name}_colz"],
+            ]
+        )
+        np.testing.assert_allclose(col_computed, col_adflow, rtol=1e-9)
 
 
 if __name__ == "__main__":

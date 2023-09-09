@@ -32,7 +32,8 @@ contains
 &   cmoment, cofx, cofy, cofz
     real(kind=realtype), dimension(3) :: vcoordref, vfreestreamref
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
-&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi
+&   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi, fxlift, fylift&
+&   , fzlift
     real(kind=realtype) :: vdotn, mag, u, v, w
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
@@ -315,6 +316,28 @@ contains
 &     costfuncforcexcoefmomentum)*dragdirection(1) + funcvalues(&
 &     costfuncforceycoefmomentum)*dragdirection(2) + funcvalues(&
 &     costfuncforcezcoefmomentum)*dragdirection(3)
+! ----- center of lift
+! dot product the 3 forces with the lift direction separately
+    fxlift = funcvalues(costfuncforcex)*liftdirection(1)
+    fylift = funcvalues(costfuncforcey)*liftdirection(2)
+    fzlift = funcvalues(costfuncforcez)*liftdirection(3)
+! run the weighed average for the 3 components of center of lift
+! protect against division by zero
+    if (fxlift + fylift + fzlift .ne. zero) then
+      funcvalues(costfunccofliftx) = (fxlift*funcvalues(&
+&       costfunccoforcexx)+fylift*funcvalues(costfunccoforceyx)+fzlift*&
+&       funcvalues(costfunccoforcezx))/(fxlift+fylift+fzlift)
+      funcvalues(costfunccoflifty) = (fxlift*funcvalues(&
+&       costfunccoforcexy)+fylift*funcvalues(costfunccoforceyy)+fzlift*&
+&       funcvalues(costfunccoforcezy))/(fxlift+fylift+fzlift)
+      funcvalues(costfunccofliftz) = (fxlift*funcvalues(&
+&       costfunccoforcexz)+fylift*funcvalues(costfunccoforceyz)+fzlift*&
+&       funcvalues(costfunccoforcezz))/(fxlift+fylift+fzlift)
+    else
+      funcvalues(costfunccofliftx) = zero
+      funcvalues(costfunccoflifty) = zero
+      funcvalues(costfunccofliftz) = zero
+    end if
 ! -------------------- time spectral objectives ------------------
     if (tsstability) then
       print*, &
