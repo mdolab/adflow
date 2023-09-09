@@ -888,17 +888,19 @@ class ADFLOW(AeroSolver):
         coordXfer=None,
     ):
         """
-        Add an actuator disk zone defined by the supplied closed
-        surface in the plot3d file "fileName". This surface defines the
-        physical extent of the region over which to apply the source terms.
-        Internally, we find all of the CFD volume cells that are inside
-        this closed surface and apply the source terms over these cells.
-        This surface is only used with the original mesh coordinates to
-        mark the internal CFD cells, and we keep using these cells even
-        if the geometric design and the mesh coordinates change. For
-        example, the marked cells can lie outside of the original
-        closed surface after a large design change, but we will still
-        use the cells that were inside the surface with the baseline design.
+        Add an actuator disk zone defined by the supplied closed surface in the
+        plot3d file "fileName". This surface defines the physical extent of the
+        region over which to apply the source terms. The plot3d file may be
+        multi-block but all the surface normals must point outside and no
+        additional surfaces can be inside. Internally, we find all of the CFD
+        volume cells that have their center inside this closed surface and
+        apply the source terms over these cells. This surface is only used with
+        the original mesh coordinates to mark the internal CFD cells, and we
+        keep using these cells even if the geometric design and the mesh
+        coordinates change. For example, the marked cells can lie outside of
+        the original closed surface after a large design change, but we will
+        still use the cells that were inside the surface with the baseline
+        design.
 
         axis1 and axis2 define the vector that we use to determine the
         direction of the thrust addition. Internally, we compute a
@@ -6323,7 +6325,7 @@ class ADFLOW(AeroSolver):
         for key in iDV:
             iDV[key] = iDV[key] - 1
 
-            # Extra DVs for the Boundary condition variables
+        # Extra DVs for the boundary condition variables
         BCDV = ["pressure", "pressurestagnation", "temperaturestagnation", "thrust", "heat"]
 
         # This is ADflow's internal mapping for cost functions
@@ -6367,7 +6369,7 @@ class ADFLOW(AeroSolver):
             "clalphadot": self.adflow.constants.costfuncclalphadot,
             "cfy0": self.adflow.constants.costfunccfy0,
             "cfyalpha": self.adflow.constants.costfunccfyalpha,
-            "cfyalphddot": self.adflow.constants.costfunccfyalphadot,
+            "cfyalphadot": self.adflow.constants.costfunccfyalphadot,
             "cd0": self.adflow.constants.costfunccd0,
             "cdalpha": self.adflow.constants.costfunccdalpha,
             "cdalphadot": self.adflow.constants.costfunccdalphadot,
