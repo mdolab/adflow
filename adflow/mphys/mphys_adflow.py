@@ -100,7 +100,7 @@ def set_surf_coords(solver, inputs):
         # are easy to exclude because they're just tacked on to the end of the array.
         currentSurfCoord = solver.getSurfaceCoordinates(groupName=solver.meshFamilyGroup, includeZipper=False)
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
-        newSurfCoord = newSurfCoord[:currentSurfCoord.shape[0]]
+        newSurfCoord = newSurfCoord[: currentSurfCoord.shape[0]]
         coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
