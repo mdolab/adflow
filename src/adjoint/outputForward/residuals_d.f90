@@ -343,18 +343,18 @@ contains
   end subroutine residual_block
 !  differentiation of sourceterms_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw plocal
-!   with respect to varying inputs: uref pref *dw *w actuatorregions.force
-!                actuatorregions.heat plocal
+!   with respect to varying inputs: uref pref *dw *w *vol actuatorregions.force
+!                actuatorregions.heat actuatorregions.volume plocal
 !   rw status of diff variables: uref:in pref:in *dw:in-out *w:in
-!                actuatorregions.force:in actuatorregions.heat:in
-!                plocal:in-out
-!   plus diff mem management of: dw:in w:in
+!                *vol:in actuatorregions.force:in actuatorregions.heat:in
+!                actuatorregions.volume:in plocal:in-out
+!   plus diff mem management of: dw:in w:in vol:in
   subroutine sourceterms_block_d(nn, res, iregion, plocal, plocald)
 ! apply the source terms for the given block. assume that the
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, dwd, w, wd
+    use blockpointers, only : vol, vold, dw, dwd, w, wd
     use flowvarrefstate, only : pref, prefd, uref, urefd, lref
     use communication
     use iteration, only : ordersconverged
@@ -386,15 +386,19 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! compute the constant force factor
-    f_factd = (factor*actuatorregionsd(iregion)%force*pref/&
-&     actuatorregions(iregion)%volume-factor*actuatorregions(iregion)%&
-&     force*prefd/actuatorregions(iregion)%volume)/pref**2
+    f_factd = ((factor*actuatorregionsd(iregion)%force*actuatorregions(&
+&     iregion)%volume-factor*actuatorregions(iregion)%force*&
+&     actuatorregionsd(iregion)%volume)*pref/actuatorregions(iregion)%&
+&     volume**2-factor*actuatorregions(iregion)%force*prefd/&
+&     actuatorregions(iregion)%volume)/pref**2
     f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
 &     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
-    q_factd = (factor*actuatorregionsd(iregion)%heat*pref*uref*lref**2/&
-&     actuatorregions(iregion)%volume-factor*actuatorregions(iregion)%&
-&     heat*lref**2*(prefd*uref+pref*urefd)/actuatorregions(iregion)%&
+    q_factd = ((factor*actuatorregionsd(iregion)%heat*actuatorregions(&
+&     iregion)%volume-factor*actuatorregions(iregion)%heat*&
+&     actuatorregionsd(iregion)%volume)*pref*uref*lref**2/&
+&     actuatorregions(iregion)%volume**2-factor*actuatorregions(iregion)&
+&     %heat*lref**2*(prefd*uref+pref*urefd)/actuatorregions(iregion)%&
 &     volume)/(pref*uref*lref*lref)**2
     q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
 &     iregion)%volume/(pref*uref*lref*lref)
@@ -407,8 +411,8 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmpd = volref(i, j, k)*f_factd
-      ftmp = volref(i, j, k)*f_fact
+      ftmpd = vold(i, j, k)*f_fact + vol(i, j, k)*f_factd
+      ftmp = vol(i, j, k)*f_fact
       vxd = wd(i, j, k, ivx)
       vx = w(i, j, k, ivx)
       vyd = wd(i, j, k, ivy)
@@ -416,8 +420,8 @@ contains
       vzd = wd(i, j, k, ivz)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmpd = volref(i, j, k)*q_factd
-      qtmp = volref(i, j, k)*q_fact
+      qtmpd = vold(i, j, k)*q_fact + vol(i, j, k)*q_factd
+      qtmp = vol(i, j, k)*q_fact
       if (res) then
 ! momentum residuals
         dwd(i, j, k, imx:imz) = dwd(i, j, k, imx:imz) - ftmpd
@@ -442,7 +446,7 @@ contains
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, w
+    use blockpointers, only : vol, dw, w
     use flowvarrefstate, only : pref, uref, lref
     use communication
     use iteration, only : ordersconverged
@@ -484,12 +488,12 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = volref(i, j, k)*f_fact
+      ftmp = vol(i, j, k)*f_fact
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmp = volref(i, j, k)*q_fact
+      qtmp = vol(i, j, k)*q_fact
       if (res) then
 ! momentum residuals
         dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp

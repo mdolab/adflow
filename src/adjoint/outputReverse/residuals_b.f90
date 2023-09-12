@@ -338,20 +338,20 @@ contains
     end if
   end subroutine residual_block
 !  differentiation of sourceterms_block in reverse (adjoint) mode (with options i4 dr8 r8 noisize):
-!   gradient     of useful results: uref pref *dw *w actuatorregions.force
-!                actuatorregions.heat plocal
-!   with respect to varying inputs: uref pref *dw *w actuatorregions.force
-!                actuatorregions.heat plocal
+!   gradient     of useful results: uref pref *dw *w *vol actuatorregions.force
+!                actuatorregions.heat actuatorregions.volume plocal
+!   with respect to varying inputs: uref pref *dw *w *vol actuatorregions.force
+!                actuatorregions.heat actuatorregions.volume plocal
 !   rw status of diff variables: uref:incr pref:incr *dw:in-out
-!                *w:incr actuatorregions.force:incr actuatorregions.heat:incr
-!                plocal:in-out
-!   plus diff mem management of: dw:in w:in
+!                *w:incr *vol:incr actuatorregions.force:incr actuatorregions.heat:incr
+!                actuatorregions.volume:incr plocal:in-out
+!   plus diff mem management of: dw:in w:in vol:in
   subroutine sourceterms_block_b(nn, res, iregion, plocal, plocald)
 ! apply the source terms for the given block. assume that the
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, dwd, w, wd
+    use blockpointers, only : vol, vold, dw, dwd, w, wd
     use flowvarrefstate, only : pref, prefd, uref, urefd, lref
     use communication
     use iteration, only : ordersconverged
@@ -369,8 +369,9 @@ contains
 &   , qtmpd, redimd
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: tempd2
-    real(kind=realtype) :: tempd1(3)
+    real(kind=realtype) :: tempd3
+    real(kind=realtype) :: tempd2(3)
+    real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp
     redim = pref*uref
@@ -391,6 +392,8 @@ contains
     f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
 &     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
+    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
+&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
@@ -403,7 +406,7 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = volref(i, j, k)*f_fact
+      ftmp = vol(i, j, k)*f_fact
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
@@ -420,35 +423,40 @@ contains
         ftmpd = ftmpd - dwd(i, j, k, imx:imz)
       else
         ftmpd = 0.0_8
-        tempd2 = redim*plocald
-        vxd = ftmp(1)*tempd2
-        ftmpd(1) = ftmpd(1) + vx*tempd2
-        vyd = ftmp(2)*tempd2
-        ftmpd(2) = ftmpd(2) + vy*tempd2
-        vzd = ftmp(3)*tempd2
-        ftmpd(3) = ftmpd(3) + vz*tempd2
+        tempd3 = redim*plocald
+        vxd = ftmp(1)*tempd3
+        ftmpd(1) = ftmpd(1) + vx*tempd3
+        vyd = ftmp(2)*tempd3
+        ftmpd(2) = ftmpd(2) + vy*tempd3
+        vzd = ftmp(3)*tempd3
+        ftmpd(3) = ftmpd(3) + vz*tempd3
         redimd = redimd + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*plocald
         qtmpd = 0.0_8
       end if
-      q_factd = q_factd + volref(i, j, k)*qtmpd
+      vold(i, j, k) = vold(i, j, k) + q_fact*qtmpd
+      q_factd = q_factd + vol(i, j, k)*qtmpd
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + vzd
       wd(i, j, k, ivy) = wd(i, j, k, ivy) + vyd
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
-      f_factd = f_factd + volref(i, j, k)*ftmpd
+      vold(i, j, k) = vold(i, j, k) + sum(f_fact*ftmpd)
+      f_factd = f_factd + vol(i, j, k)*ftmpd
     end do
-    tempd1 = factor*f_factd/(actuatorregions(iregion)%volume*pref)
-    temp0 = actuatorregions(iregion)%volume*lref**2
+    tempd2 = factor*f_factd/(actuatorregions(iregion)%volume*pref)
+    tempd1 = sum(-(actuatorregions(iregion)%force*tempd2/(&
+&     actuatorregions(iregion)%volume*pref)))
+    temp0 = lref**2*actuatorregions(iregion)%volume
     temp = temp0*pref*uref
     tempd = factor*q_factd/temp
-    tempd0 = -(actuatorregions(iregion)%heat*temp0*tempd/temp)
+    tempd0 = -(actuatorregions(iregion)%heat*tempd/temp)
     actuatorregionsd(iregion)%heat = actuatorregionsd(iregion)%heat + &
 &     tempd
-    prefd = prefd + actuatorregions(iregion)%volume*sum(-(&
-&     actuatorregions(iregion)%force*tempd1/(actuatorregions(iregion)%&
-&     volume*pref))) + uref*tempd0
-    urefd = urefd + pref*tempd0
+    actuatorregionsd(iregion)%volume = actuatorregionsd(iregion)%volume &
+&     + pref*tempd1 + pref*uref*lref**2*tempd0
+    prefd = prefd + actuatorregions(iregion)%volume*tempd1 + temp0*uref*&
+&     tempd0
+    urefd = urefd + temp0*pref*tempd0
     actuatorregionsd(iregion)%force = actuatorregionsd(iregion)%force + &
-&     tempd1
+&     tempd2
     prefd = prefd + uref*redimd
     urefd = urefd + pref*redimd
   end subroutine sourceterms_block_b
@@ -457,7 +465,7 @@ contains
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, w
+    use blockpointers, only : vol, dw, w
     use flowvarrefstate, only : pref, uref, lref
     use communication
     use iteration, only : ordersconverged
@@ -499,12 +507,12 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = volref(i, j, k)*f_fact
+      ftmp = vol(i, j, k)*f_fact
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmp = volref(i, j, k)*q_fact
+      qtmp = vol(i, j, k)*q_fact
       if (res) then
 ! momentum residuals
         dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
