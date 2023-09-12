@@ -7,8 +7,8 @@ G. Kenway
 
 # Import modules
 import os
-import sys
 import re
+import sys
 
 # Specify file extension
 EXT = "_b.f90"
@@ -50,7 +50,13 @@ useful_modules = [
     "walldistance_b",
 ]
 
-FILE_IGNORE = ["adjointextra_b.f90", "bcdata_b.f90", "oversetutilities_b.f90", "zipperintegrations_b.f90"]
+FILE_IGNORE = [
+    "adjointextra_b.f90",
+    "bcdata_b.f90",
+    "oversetutilities_b.f90",
+    "zipperintegrations_b.f90",
+    "actuatorregion_b.f90",
+]
 
 for f in os.listdir(DIR_ORI):
     if f not in FILE_IGNORE and f.endswith(EXT):
