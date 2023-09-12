@@ -792,6 +792,15 @@ python module libadflow
          real(kind=realtype) dimension(16) :: oversettimes
        end module oversetdata
 
+       module matmult
+         subroutine my_matmult_api(a,b,n,c)
+             use cudafor
+             real(kind=8) dimension(:,:),intent(in) :: a
+             real(kind=8) dimension(:,:),intent(in) :: b
+             integer intent(in) :: n
+             real(kind=8) dimension(n,n),intent(out),depend(n) :: c
+         end subroutine my_matmult_api
+       end module matmult
 ! ================ bare subroutines =============
 
         subroutine writesol(famlist,nfamlist) ! in :test:writeSol.F90

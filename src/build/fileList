@@ -197,3 +197,5 @@ cFiles = 	metis-4.0/metis.c\
 
 f77Files = 	adjoint/ADFirstAidKit/adBuffer.f\
 		adjoint/ADFirstAidKit/debugAD.f\
+
+cudafortranFiles = modules/matmult.cuf

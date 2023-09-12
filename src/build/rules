@@ -22,3 +22,10 @@
 	@echo
 	@echo "        --- Compiled $*.f successfully ---"
 	@echo
+
+# --- New rule for CUDA code ---
+%.o: %.cuf
+	$(CUFC) $(FF90_ALL_FLAGS) $(CUFFLAGS) -c $< -o $*.o
+	@echo
+	@echo "        --- Compiled $*.cuf successfully ---"
+	@echo
