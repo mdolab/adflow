@@ -1,706 +1,1389 @@
-static char adSid[]="$Id: adStack.c 3988 2011-07-04 11:29:23Z llh $";
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "adStack.h"
 
-#define ONE_BLOCK_SIZE 16384
-#ifndef STACK_SIZE_TRACING
-#define STACK_SIZE_TRACING 1
-#endif
+#include "adComplex.h"
+
+// Set to 0 to hide trace.
+static int traceOn = 0 ;
+static int freeemptyblocks = 1 ;
+
+char* pushBlock() ;
+char* popBlock() ;
+
+/**************** block sizes for all data types *************/
+
+/* The size of a BLOCK in bytes. */
+#define BLOCK_SIZE 65536
+// #define BLOCK_SIZE 17 // A very small BLOCK_SIZE allows for stronger testing!
+
+/**************** data structures for stack ******************/
+
 /* The main stack is a double-chain of DoubleChainedBlock objects.
- * Each DoubleChainedBlock holds an array[ONE_BLOCK_SIZE] of char. */
-typedef struct _doubleChainedBlock{
-  struct _doubleChainedBlock *prev ;
-  char                       *contents ;
-  struct _doubleChainedBlock *next ;
+ * Each DoubleChainedBlock holds an array[BLOCK_SIZE] of char. */
+typedef struct _DoubleChainedBlock{
+  unsigned int rank ;
+  struct _DoubleChainedBlock *prev ;
+  struct _DoubleChainedBlock *next ;
+  char contents[BLOCK_SIZE] ;
 } DoubleChainedBlock ;
 
-/* Globals that define the current position in the stack: */
+/** Structure keeping the needed info for ONE repetition level.
+ * As we can have "nested" repetition levels, these structures can be stacked. */
+typedef struct _RepetitionLevel {
+  int hasBackPop ;
+  int active ;
+  DoubleChainedBlock* backPopBlock ;
+  int backPop ;
+  DoubleChainedBlock* resumePointBlock ;
+  int resumePoint ;
+  DoubleChainedBlock* freePushBlock ;
+  int freePush ;
+  unsigned int storedadbitbuf ;
+  int storedadbitibuf ;
+  struct _RepetitionLevel *previous ;
+} RepetitionLevel ;
+
+/* A block and an integer to keep the current top in the block. When the block
+   is full, it is added to the double-chain list and a fresh block is used for
+   pushing. During popping, empty blocks are replenished with data from the
+   double-chain list. */
+static int tappos  = BLOCK_SIZE ;
+static char* tapblock = NULL ;
 static DoubleChainedBlock *curStack = NULL ;
-static char               *curStackTop    = NULL ;
-/* Globals that define the current LOOKing position in the stack: */
-static DoubleChainedBlock *lookStack = NULL ;
-static char               *lookStackTop    = NULL ;
 
-static long int mmctraffic = 0 ;
-static long int mmctrafficM = 0 ;
-#ifdef STACK_SIZE_TRACING
-long int bigStackSize = 0;
+/** The current stack of repetition levels. Initially empty */
+RepetitionLevel *topRepetitionPoint = NULL ;
+
+/* Pushing single bits is different from the rest: we collect
+   32 bits in the integer below, before pushing that to the stack. */
+static unsigned int adbitbuf = 0 ;
+static int adbitibuf = 0 ;
+
+/** Accumulates the number of bytes pushed and popped */
+static u_int64_t pushPopTraffic = 0 ;
+
+/** Remembers the maximum number of stack Blocks used */
+static u_int64_t maxBlocks = 0 ;
+
+//[llh] Don't know how to manage pushPopTraffic and maxBlocks in the OpenMP case ?
+
+/* All data structures must be threadprivate, so that each OpenMP thread has
+   its own stack. If the stack is compiled with OpenMP support and then used
+   in a program with no OpenMP parallel regions, the stack will work as
+   expected without using any extra resources. */
+#pragma omp threadprivate(tappos, tapblock, curStack, adbitbuf, adbitibuf, topRepetitionPoint)
+
+/***************** repeated access mechanism *************/
+
+// Possible improvements:
+//  - replace tappos with tapblock+tappos, saving a few "+" ?
+//  - find a faster currentLocationStrictBelowFreePush and currentLocationEqualsFreePush
+
+// Notice: Algorithm for "nested" repetition level seems wrong (should be corrected)
+//  when the deeper repetition level is started after new pushes.
+
+// We call "current location" the pair of
+// (DoubleChainedBlock *) curStack // the current top stack block.
+// (int) tappos                    // the offset of the current top in the current top stack block.
+
+void setBackPopToCurrentLocation(RepetitionLevel *repetitionLevel) {
+  repetitionLevel->hasBackPop = 1 ;
+  repetitionLevel->backPopBlock = curStack ;
+  repetitionLevel->backPop = tappos ;
+}
+
+void setCurrentLocationToBackPop(RepetitionLevel *repetitionLevel) {
+  curStack = repetitionLevel->backPopBlock ;
+  tapblock = curStack->contents ;
+  tappos = repetitionLevel->backPop ;
+}
+
+void setResumePointToCurrentLocation(RepetitionLevel *repetitionLevel) {
+  repetitionLevel->resumePointBlock = curStack ;
+  repetitionLevel->resumePoint = tappos ;
+}
+
+void setCurrentLocationToResumePoint(RepetitionLevel *repetitionLevel) {
+  curStack = repetitionLevel->resumePointBlock ;
+  tapblock = curStack->contents ;
+  tappos = repetitionLevel->resumePoint ;
+} 
+
+void setFreePushToCurrentLocation(RepetitionLevel *repetitionLevel) {
+  repetitionLevel->freePushBlock = curStack ;
+  repetitionLevel->freePush = tappos ;
+}
+
+void setCurrentLocationToFreePush(RepetitionLevel *repetitionLevel) {
+  curStack = repetitionLevel->freePushBlock ;
+  tapblock = curStack->contents ;
+  tappos = repetitionLevel->freePush ;
+} 
+
+//TODO: try inline this function for efficiency:
+int currentLocationStrictBelowFreePush(RepetitionLevel *repetitionLevel) {
+  // Not as simple as it could be, because N;BLOCK_SIZE <=> N+1;0 and both happen due to initial NULL curStack...
+  int curL1 = curStack->rank ;
+  int curL2 = tappos ;
+  int fpL1 = repetitionLevel->freePushBlock->rank ;
+  int fpL2 = repetitionLevel->freePush ;
+  if (curL2==BLOCK_SIZE) {++curL1 ; curL2=0 ;}
+  if (fpL2==BLOCK_SIZE) {++fpL1 ; fpL2=0 ;}
+  return (curL1<fpL1 || (curL1==fpL1 && curL2<fpL2)) ;
+}
+
+//TODO: try inline this function for efficiency:
+int currentLocationEqualsFreePush(RepetitionLevel *repetitionLevel) {
+  // Not as simple as it could be, because N;BLOCK_SIZE <=> N+1;0 and both happen due to initial NULL curStack...
+  int curL1 = curStack->rank ;
+  int curL2 = tappos ;
+  int fpL1 = repetitionLevel->freePushBlock->rank ;
+  int fpL2 = repetitionLevel->freePush ;
+  if (curL2==BLOCK_SIZE) {++curL1 ; curL2=0 ;}
+  if (fpL2==BLOCK_SIZE) {++fpL1 ; fpL2=0 ;}
+  return (curL1==fpL1 && curL2==fpL2) ;
+}
+
+void showLocation(DoubleChainedBlock *locBlock, int loc) {
+  printf("%1i.%05i", (locBlock ? locBlock->rank : 0), loc) ;
+}
+
+void showRepetitionLevels() {
+  RepetitionLevel *repetitionPoint = topRepetitionPoint ;
+  while (repetitionPoint) {
+    printf("  REPETITION LEVEL ACTIVE:%s BP:%s",
+           (repetitionPoint->active?"yes":"no"),
+           (repetitionPoint->hasBackPop?"yes":"no")) ;
+    if (repetitionPoint->hasBackPop)
+      {printf(" BP:") ; showLocation(repetitionPoint->backPopBlock, repetitionPoint->backPop) ;}
+    if (repetitionPoint->resumePointBlock)
+      {printf(" RP:") ; showLocation(repetitionPoint->resumePointBlock, repetitionPoint->resumePoint) ;}
+    if (repetitionPoint->freePushBlock)
+      {printf(" FP:") ; showLocation(repetitionPoint->freePushBlock, repetitionPoint->freePush) ;}
+    printf("\n") ;
+    repetitionPoint = repetitionPoint->previous ;
+    if (repetitionPoint) printf("  ...in") ;
+  }
+}
+
+int locstrb_() {return (curStack ? curStack->rank : 0) ;}
+int locstro_() {return tappos;}
+
+/** If we are in a protected, read-only section,
+ * memorize current location as "backPop" and go to the "freePush" location */
+void checkPushInReadOnly() {
+  RepetitionLevel *topActive = topRepetitionPoint ;
+  while (topActive && !topActive->active) {
+    topActive = topActive->previous ;
+  }
+  if (topActive && currentLocationStrictBelowFreePush(topActive)) {
+    setBackPopToCurrentLocation(topActive) ;
+    setCurrentLocationToFreePush(topActive) ;
+    if (traceOn) {
+      printf("BEFORE PUSH AT ") ;
+      showLocation(topRepetitionPoint->backPopBlock, topRepetitionPoint->backPop) ;
+      printf("  WITH REPETITION LEVELS:\n") ;
+      showRepetitionLevels() ;
+      printf("  MOVE TO FREE PUSH LOCATION ") ;
+      showLocation(topRepetitionPoint->freePushBlock, topRepetitionPoint->freePush) ;
+      printf("\n") ;
+    }
+  }
+}
+
+/** If current location is some "freePush" location,
+ * go back to its "backPop" location, which is in a protected, read-only section */
+void checkPopToReadOnly() {
+  RepetitionLevel *repetitionPoint = topRepetitionPoint ;
+  int moves = (repetitionPoint->hasBackPop && currentLocationEqualsFreePush(repetitionPoint)) ;
+  if (traceOn && moves) {
+    printf("AFTER POP, LOCATION WAS ") ;
+    showLocation(curStack, tappos) ;
+    printf("  WITH REPETITION LEVELS:\n") ;
+    showRepetitionLevels() ;
+  }
+  int canEraseInactive = 1 ;
+  int canRemoveBackPop = 1 ;
+  do {
+    RepetitionLevel *oldCell = repetitionPoint ;
+    if (oldCell->hasBackPop && oldCell->active && currentLocationEqualsFreePush(oldCell)) {
+      setCurrentLocationToBackPop(oldCell) ;
+      if (canRemoveBackPop) oldCell->hasBackPop = 0 ;
+    }
+    repetitionPoint = oldCell->previous ;
+    if (!oldCell->active && canEraseInactive) {
+      free(oldCell) ;
+      topRepetitionPoint = repetitionPoint ;
+    } else {
+      canEraseInactive = 0 ;
+      canRemoveBackPop = 0 ;
+    }
+  } while (repetitionPoint) ;
+  if (traceOn && moves) {
+    printf("  MOVED TO BACK POP LOCATION:") ;
+    showLocation(curStack, tappos) ;
+    printf("\n") ;
+  }
+}
+
+/** From now on, and until the matching closing adStack_endRepeat(),
+ * the current contents of the push-pop stack are preserved:
+ * Even if they are popped, any subsequent adStack_resetRepeat()
+ * will reset the push-pop stack to its current contents of now. */
+void adStack_startRepeat() {
+  if (traceOn) {
+    printf("BEFORE START REPEAT AT ") ;
+    showLocation(curStack, tappos) ;
+    printf("\n") ;
+    showRepetitionLevels() ;
+  }
+  // Create a new repetition level and push it onto topRepetitionPoint
+  RepetitionLevel *newRepetitionLevel = (RepetitionLevel *)malloc(sizeof(RepetitionLevel)) ;
+  newRepetitionLevel->previous = topRepetitionPoint ;
+  newRepetitionLevel->hasBackPop = 0 ;
+  newRepetitionLevel->active = 1 ;
+  newRepetitionLevel->backPopBlock = NULL ;
+  newRepetitionLevel->backPop = 0 ;
+  newRepetitionLevel->resumePointBlock = NULL ;
+  newRepetitionLevel->resumePoint = 0 ;
+  newRepetitionLevel->freePushBlock = NULL ;
+  newRepetitionLevel->freePush = 0 ;
+  // Copy the bits buffer:
+  newRepetitionLevel->storedadbitbuf = adbitbuf ;
+  newRepetitionLevel->storedadbitibuf = adbitibuf ;
+  // In the very weird case where current stack is empty, make it explicit:
+  if (curStack==NULL) {
+    tapblock = pushBlock() ;
+    tappos = 0 ;
+  }
+  // Store current location as the "resumePoint" location:
+  setResumePointToCurrentLocation(newRepetitionLevel) ;
+  // Set the "freePush" location to current location OR to
+  // the "freePush" of the "enclosing" repetition level,
+  // (if there is one and it is higher)
+  if (topRepetitionPoint && currentLocationStrictBelowFreePush(topRepetitionPoint)) {
+    newRepetitionLevel->freePushBlock = topRepetitionPoint->freePushBlock ;
+    newRepetitionLevel->freePush = topRepetitionPoint->freePush ;
+  } else {
+    setFreePushToCurrentLocation(newRepetitionLevel) ;
+  }
+  // Make this new repetition level the current repetition level:
+  topRepetitionPoint = newRepetitionLevel ;
+  if (traceOn) {
+    printf(">AFTER START REPEAT AT:") ;
+    showLocation(curStack, tappos) ;
+    printf("\n") ;
+    showRepetitionLevels() ;
+  }
+}
+
+/** Reset the push-pop stack contents to its contents at
+ * the time of the latest adStack_startRepeat() that has not been
+ * closed by a subsequent adStack_endRepeat() */
+void adStack_resetRepeat() {
+  if (traceOn) {
+    printf("BEFORE RESET REPEAT AT ") ;
+    showLocation(curStack, tappos) ;
+    printf("\n") ;
+    showRepetitionLevels() ;
+  }
+  // Remove (pop) all passive deeper repetition levels:
+  while (topRepetitionPoint && !topRepetitionPoint->active) {
+    RepetitionLevel *oldTop = topRepetitionPoint ;
+    topRepetitionPoint = topRepetitionPoint->previous ;
+    free(oldTop) ;
+  }
+  // Reset current location to "resumePoint" location:
+  setCurrentLocationToResumePoint(topRepetitionPoint) ;
+  // Reset the bits buffer:
+  adbitbuf = topRepetitionPoint->storedadbitbuf ;
+  adbitibuf = topRepetitionPoint->storedadbitibuf ;
+  if (traceOn) {
+    printf(">AFTER RESET REPEAT AT ") ;
+    showLocation(curStack, tappos) ;
+    printf("\n") ;
+    showRepetitionLevels() ;
+  }
+}
+
+/** Close (i.e. remove) the repetition level created by the latest adStack_startRepeat(). */
+void adStack_endRepeat() {
+  if (traceOn) {
+    printf("BEFORE END REPEAT AT ") ;
+    showLocation(curStack, tappos) ;
+    printf("\n") ;
+    showRepetitionLevels() ;
+  }
+  // Set to inactive the topmost active repetition level:
+  RepetitionLevel *topActive = topRepetitionPoint ;
+  while (!topActive->active) {
+    topActive = topActive->previous ;
+  }
+  topActive->active = 0 ;
+  // current location may have moved back ; check if we must move further back:
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+  if (traceOn) {
+    printf(">AFTER END REPEAT AT ") ;
+    showLocation(curStack, tappos) ;
+    printf("\n") ;
+    showRepetitionLevels() ;
+  }
+}
+
+/***************** double-linked list management *************/
+
+/** add a data block to the double-linked list */
+char* pushBlock() {
+  if (curStack && curStack->next) {
+    curStack = curStack->next ;
+  } else {
+    DoubleChainedBlock *newStack = (DoubleChainedBlock*)malloc(sizeof(DoubleChainedBlock)) ;
+    if (newStack == NULL) {
+      /* We ran out of memory, print an error message and give up. */
+      printf("Out of memory in AD Stack.\n") ;
+      exit(0) ;
+    }
+    if(curStack != NULL) {
+      curStack->next = newStack ;
+      newStack->rank = curStack->rank + 1 ;
+    } else {
+      newStack->rank = 1 ;
+    }
+
+    newStack->prev = curStack ;
+    newStack->next = NULL ;
+    curStack = newStack ;
+  }
+#ifdef _ADSTACKPROFILE
+  if (curStack->rank > maxBlocks) maxBlocks = curStack->rank ;
 #endif
+  return curStack->contents ;
+}
 
-/* PUSHes "nbChars" consecutive chars from a location starting at address "x".
- * Resets the LOOKing position if it was active.
- * Checks that there is enough space left to hold "nbChars" chars.
- * Otherwise, allocates the necessary space. */
-void pushNarray(char *x, unsigned int nbChars) {
-  unsigned int nbmax = (curStack)?ONE_BLOCK_SIZE-(curStackTop-(curStack->contents)):0 ;
-#ifdef STACK_SIZE_TRACING
-  bigStackSize += nbChars;
+/** retrieve a data block from the double-linked list */
+char* popBlock() {
+  DoubleChainedBlock *oldTopStack = curStack ;
+  curStack = curStack->prev ;
+  if (freeemptyblocks) {
+    // Not necessary. Only needed if we want to free when the stack goes down:
+    // We must not free if we are in a repetition level and below its freePush point.
+    if (!(topRepetitionPoint && oldTopStack->rank <= topRepetitionPoint->freePushBlock->rank)) {
+      free(oldTopStack) ;
+      if (curStack) curStack->next = NULL ;
+    }
+    // end "Not necessary"
+  }
+  return (curStack ? curStack->contents : NULL) ;
+}
+
+/********************* push/pop arrays ***********************/
+
+/* pushNArray/popNArray are used not only to store arrays of various data
+   types. These functions are also the only ones that interact with the dynamic
+   memory management, e.g. requesting new blocks. If one of the scalar push/pop
+   functions (e.g. pushReal4) encounters the end of a block, it will ask
+   pushNArray to do all the work, i.e. start a new block and push the real4
+   value to it. */
+void pushNArray(char *x, int nbChars) {
+  do {
+    int wsize = tappos+nbChars<BLOCK_SIZE?nbChars:BLOCK_SIZE-tappos ;
+    if(wsize > 0) {
+      memcpy(tapblock+tappos,x,wsize) ;
+      nbChars -= wsize ;
+      x += wsize ;
+      tappos += wsize ;
+    }
+    else if (nbChars > 0) {
+      tapblock = pushBlock() ;
+      tappos = 0 ;
+    }
+  } while(nbChars > 0) ; //=> lazy push: if finishes at the top of block contents, does not push a new block.
+}
+
+void popNArray(char *x, int nbChars) {
+  x += nbChars ;
+  do {
+    int wsize = (nbChars<tappos)?nbChars:tappos ;
+    if(wsize > 0) {
+      memcpy(x-wsize,tapblock+tappos-wsize,wsize) ;
+      nbChars -= wsize ;
+      x -= wsize ;
+      tappos -= wsize ;
+    }
+    else if (nbChars > 0) {
+      tapblock = popBlock() ;
+      tappos = BLOCK_SIZE ;
+    }
+  } while(nbChars > 0) ; //=> lazy pop: if finishes at the bottom of block contents, does not pop block.
+}
+
+void pushInteger4Array(int *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*4)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*4) ;
 #endif
-
-  mmctraffic += nbChars ;
-  while (mmctraffic >= 1000000) {
-     mmctraffic -= 1000000 ;
-     mmctrafficM++ ;
-  }
-
-  lookStack = NULL ;
-  if (nbChars <= nbmax) {
-    memcpy(curStackTop,x,nbChars) ;
-    curStackTop+=nbChars ;
-  } else {
-    char *inx = x+(nbChars-nbmax) ;
-    if (nbmax>0) memcpy(curStackTop,inx,nbmax) ;
-    while (inx>x) {
-      if ((curStack == NULL) || (curStack->next == NULL)) {
-        /* Create new block: */
-	DoubleChainedBlock *newStack ;
-	char *contents = (char*)malloc(ONE_BLOCK_SIZE*sizeof(char)) ;
-	newStack = (DoubleChainedBlock*)malloc(sizeof(DoubleChainedBlock)) ;
-	if ((contents == NULL) || (newStack == NULL)) {
-	  DoubleChainedBlock *stack = curStack ;
-	  int nbBlocks = (stack?-1:0) ;
-	  while(stack) {
-	      stack = stack->prev ;
-	      nbBlocks++ ;
-	  }
-	  printf("Out of memory (allocated %i blocks of %i bytes)\n",
-		 nbBlocks, ONE_BLOCK_SIZE) ;
-          exit(0);
-	}
-	if (curStack != NULL) curStack->next = newStack ;
-	newStack->prev = curStack ;
-	newStack->next = NULL ;
-	newStack->contents = contents ;
-	curStack = newStack ;
-        /* new block created! */
-      } else
-	curStack = curStack->next ;
-      inx -= ONE_BLOCK_SIZE ;
-      if(inx>x)
-	memcpy(curStack->contents,inx,ONE_BLOCK_SIZE) ;
-      else {
-	unsigned int nbhead = (inx-x)+ONE_BLOCK_SIZE ;
-	curStackTop = curStack->contents ;
-	memcpy(curStackTop,x,nbhead) ;
-	curStackTop += nbhead ;
-      }
-    }
-  }
 }
 
-/* POPs "nbChars" consecutive chars to a location starting at address "x".
- * Resets the LOOKing position if it was active.
- * Checks that there is enough data to fill "nbChars" chars.
- * Otherwise, pops as many blocks as necessary. */
-void popNarray(char *x, unsigned int nbChars) {
-  unsigned int nbmax = curStackTop-(curStack->contents) ;
-#ifdef STACK_SIZE_TRACING
-  bigStackSize -= nbChars;
+void popInteger4Array(int *x, int n) {
+  popNArray((char *)x,(int)(n*4)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*4) ;
 #endif
-  lookStack = NULL ;
-  if (nbChars <= nbmax) {
-    curStackTop-=nbChars ;
-    memcpy(x,curStackTop,nbChars);
+}
+
+void pushInteger8Array(long *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*8)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*8) ;
+#endif
+}
+
+void popInteger8Array(long *x, int n) {
+  popNArray((char *)x,(int)(n*8)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*8) ;
+#endif
+}
+
+void pushReal4Array(float *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*4)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*4) ;
+#endif
+}
+
+void popReal4Array(float *x, int n) {
+  popNArray((char *)x,(int)(n*4)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*4) ;
+#endif
+}
+
+void pushReal8Array(double *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*8)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*8) ;
+#endif
+}
+
+void popReal8Array(double *x, int n) {
+  popNArray((char *)x,(int)(n*8)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*8) ;
+#endif
+}
+
+void pushReal16Array(long double *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*16)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*16) ;
+#endif
+}
+
+void popReal16Array(long double *x, int n) {
+  popNArray((char *)x,(int)(n*16)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*16) ;
+#endif
+}
+
+void pushComplex8Array(ccmplx *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*8)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*8) ;
+#endif
+}
+
+void popComplex8Array(ccmplx *x, int n) {
+  popNArray((char *)x,(int)(n*8)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*8) ;
+#endif
+}
+
+void pushComplex16Array(double complex *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray((char *)x,(int)(n*16)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*16) ;
+#endif
+}
+
+void popComplex16Array(double complex *x, int n) {
+  popNArray((char *)x,(int)(n*16)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)(n*16) ;
+#endif
+}
+
+void pushCharacterArray(char *x, int n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray(x,(int)n) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)n ;
+#endif
+}
+
+void popCharacterArray(char *x, int n) {
+  popNArray(x,(int)n) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += (int)n ;
+#endif
+}
+
+/***************** scalar push/pop functions *****************/
+
+void pushCharacter(char val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 1 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 1) ;
+  }
+  else {
+    *(char*)(tapblock+tappos) = val;
+    tappos = tappos + 1 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 1 ;
+#endif
+}
+
+void popCharacter(char * val) {
+  if(tappos - 1 < 0) {
+    popNArray((char*)val, 1) ;
+  }
+  else {
+    tappos = tappos - 1 ;
+    *val = *(char*)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 1 ;
+#endif
+}
+
+void pushReal4(float val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 4 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 4) ;
+  }
+  else {
+    *(float*)(tapblock+tappos) = val;
+    tappos = tappos + 4 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 4 ;
+#endif
+}
+
+void popReal4(float * val) {
+  if(tappos - 4 < 0) {
+    popNArray((char*)val, 4) ;
+  }
+  else {
+    tappos = tappos - 4 ;
+    *val = *(float*)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 4 ;
+#endif
+}
+
+void pushReal8(double val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 8 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 8) ;
+  }
+  else {
+    *(double*)(tapblock+tappos) = val;
+    tappos = tappos + 8 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+void popReal8(double * val) {
+  if(tappos - 8 < 0) {
+    popNArray((char*)val, 8) ;
+  }
+  else {
+    tappos = tappos - 8 ;
+    *val = *(double*)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+void pushReal16(long double *val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 16 > BLOCK_SIZE) {
+    pushNArray((char*)val, 16) ;
+  }
+  else {
+    memcpy(tapblock+tappos, (void *)val, 16);
+    tappos = tappos + 16 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 16 ;
+#endif
+}
+
+void popReal16(long double *val) {
+  if(tappos - 16 < 0) {
+    popNArray((char*)val, 16) ;
+  }
+  else {
+    tappos = tappos - 16 ;
+    memcpy((void *)val, tapblock+tappos, 16) ;
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 16 ;
+#endif
+}
+
+void pushInteger4(int val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 4 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 4) ;
+  }
+  else {
+    *(int*)(tapblock+tappos) = val;
+    tappos = tappos + 4 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 4 ;
+#endif
+}
+
+void popInteger4(int * val) {
+  if(tappos - 4 < 0) {
+    popNArray((char*)val, 4) ;
+  }
+  else {
+    tappos = tappos - 4 ;
+    *val = *(int*)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 4 ;
+#endif
+}
+
+void pushInteger8(long val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 8 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 8) ;
+  }
+  else {
+    *(long*)(tapblock+tappos) = val;
+    tappos = tappos + 8 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+void popInteger8(long * val) {
+  if(tappos - 8 < 0) {
+    popNArray((char*)val, 8) ;
+  }
+  else {
+    tappos = tappos - 8 ;
+    *val = *(long*)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+void pushComplex8(ccmplx val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 8 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 8) ;
+  }
+  else {
+    *(ccmplx*)(tapblock+tappos) = val;
+    tappos = tappos + 8 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+void popComplex8(ccmplx * val) {
+  if(tappos - 8 < 0) {
+    popNArray((char*)val, 8) ;
+  }
+  else {
+    tappos = tappos - 8 ;
+    *val = *(ccmplx*)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+void pushComplex16(double complex val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 16 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 16) ;
+  }
+  else {
+    *(double complex *)(tapblock+tappos) = val;
+    tappos = tappos + 16 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 16 ;
+#endif
+}
+
+void popComplex16(double complex *val) {
+  if(tappos - 16 < 0) {
+    popNArray((char*)val, 16) ;
+  }
+  else {
+    tappos = tappos - 16 ;
+    *val = *(double complex *)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 16 ;
+#endif
+}
+
+void pushPointer4(void * val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 4 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 4) ;
+  }
+  else {
+    *(void**)(tapblock+tappos) = val;
+    tappos = tappos + 4 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 4 ;
+#endif
+}
+
+void popPointer4(void ** val) {
+  if(tappos - 4 < 0) {
+    popNArray((char*)val, 4) ;
+  }
+  else {
+    tappos = tappos - 4 ;
+    *val = *(void**)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 4 ;
+#endif
+}
+
+void pushPointer8(void * val) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  if(tappos + 8 > BLOCK_SIZE) {
+    pushNArray((char*)&val, 8) ;
+  }
+  else {
+    *(void**)(tapblock+tappos) = val;
+    tappos = tappos + 8 ;
+  }
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+void popPointer8(void ** val) {
+  if(tappos - 8 < 0) {
+    popNArray((char*)val, 8) ;
+  }
+  else {
+    tappos = tappos - 8 ;
+    *val = *(void**)(tapblock+tappos);
+  }
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += 8 ;
+#endif
+}
+
+/******************* bit (hidden primitives) ***************/
+
+void pushBit(int x) {
+  adbitbuf<<=1 ;
+  if (x) ++adbitbuf ;
+  if (adbitibuf>=31) {
+    pushNArray((char *)&adbitbuf, 4) ;
+    adbitbuf = 0 ;
+    adbitibuf = 0 ;
+#ifdef _ADSTACKPROFILE
+    pushPopTraffic += 4 ;
+#endif
+  } else
+    ++adbitibuf ;
+}
+
+int popBit() {
+  if (adbitibuf<=0) {
+    popNArray((char *)&adbitbuf, 4) ;
+    adbitibuf = 31 ;
+#ifdef _ADSTACKPROFILE
+    pushPopTraffic += 4 ;
+#endif
+  } else
+    --adbitibuf ;
+  int result = adbitbuf%2 ;
+  adbitbuf>>=1 ;
+  return result ;
+}
+
+/*************************** boolean *************************/
+
+void pushBoolean(int x) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(x) ;
+}
+
+//[llh] I have a bug here: the boolean returned to Fortran is bizarre!
+void popBoolean(int *x) {
+  *x = popBit() ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+/************************* control ***********************/
+
+void pushControl1b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc) ;
+}
+
+void popControl1b(int *cc) {
+  *cc = popBit() ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+void pushControl2b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc) ;
+}
+
+void popControl2b(int *cc) {
+  *cc = (popBit()?2:0) ;
+  if (popBit()) (*cc)++ ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+void pushControl3b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc) ;
+}
+
+void popControl3b(int *cc) {
+  *cc = (popBit()?2:0) ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+void pushControl4b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc) ;
+}
+
+void popControl4b(int *cc) {
+  *cc = (popBit()?2:0) ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+void pushControl5b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc) ;
+}
+
+void popControl5b(int *cc) {
+  *cc = (popBit()?2:0) ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+void pushControl6b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc) ;
+}
+
+void popControl6b(int *cc) {
+  *cc = (popBit()?2:0) ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+void pushControl7b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc) ;
+}
+
+void popControl7b(int *cc) {
+  *cc = (popBit()?2:0) ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+void pushControl8b(int cc) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc%2) ;
+  cc>>=1 ;
+  pushBit(cc) ;
+}
+
+void popControl8b(int *cc) {
+  *cc = (popBit()?2:0) ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  (*cc) <<= 1 ;
+  if (popBit()) (*cc)++ ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+}
+
+/****************** Profiling and debugging *******************/
+
+void adStack_showPeakSize() {
+  printf("Peak stack size (%1li blocks): %1llu bytes\n",
+         maxBlocks, maxBlocks*((long int)BLOCK_SIZE)) ;
+}
+
+void adStack_showTotalTraffic() {
+  printf("Total push/pop traffic %1lu bytes\n", pushPopTraffic) ;
+}
+
+void adStack_showStackSize(int label) {
+  printf(" %i--> <",label) ;
+  showLocation(curStack, tappos) ;
+  printf(">") ;
+}
+
+void adStack_showStack(char *locationName) {
+  if (!curStack || (tappos==0 && !curStack->prev)) {
+    printf ("Stack at %s is empty\n", locationName) ;
   } else {
-    char *tlx = x+nbChars ;
-    if (nbmax>0) memcpy(x,curStack->contents,nbmax) ;
-    x+=nbmax ;
-    while (x<tlx) {
-      curStack = curStack->prev ;
-      if (curStack==NULL) printf("Popping from an empty stack!!!") ;
-      if (x+ONE_BLOCK_SIZE<tlx) {
-	memcpy(x,curStack->contents,ONE_BLOCK_SIZE) ;
-	x += ONE_BLOCK_SIZE ;
-      } else {
-	unsigned int nbtail = tlx-x ;
-	curStackTop=(curStack->contents)+ONE_BLOCK_SIZE-nbtail ;
-	memcpy(x,curStackTop,nbtail) ;
-	x = tlx ;
+    printf ("Stack top at %s is %1i.%05i :\n", locationName, curStack->rank, tappos) ;
+    int bytesToShow = 20 ;
+    int blocksToShow = 3 ;
+    DoubleChainedBlock *inStack = curStack ;
+    int inPos = tappos ;
+    while (blocksToShow>0 && inStack) {
+      printf("  Block %d:", inStack->rank) ;
+      while (bytesToShow>0 && inPos>0) {
+        printf(" %02x", (unsigned char)inStack->contents[--inPos]) ;
+        --bytesToShow ;
       }
+      if (inPos>0)
+        printf(" ...<%d more bytes>...", inPos) ;
+      printf(" |\n") ;
+      --blocksToShow ;
+      inStack = inStack->prev ;
+      inPos = BLOCK_SIZE ;
     }
+    if (inStack)
+      printf("  %d more blocks below\n", inStack->rank) ;
   }
-}
-
-/* LOOKs "nbChars" consecutive chars to a location starting at address "x".
- * Activates the LOOKing position if it was reset.
- * LOOKing is just like POPping, except that the main pointer
- * remains in place, so that the value is not POPped.
- * Further PUSHs or POPs will start from the same place as if
- * no LOOK had been made. */
-void lookNarray(char *x, unsigned int nbChars) {
-  unsigned int nbmax ;
-  if (lookStack == NULL) {
-    lookStack = curStack ;
-    lookStackTop = curStackTop ;
-  }
-  nbmax = lookStackTop-(lookStack->contents) ;
-  if (nbChars <= nbmax) {
-    lookStackTop-=nbChars ;
-    memcpy(x,lookStackTop,nbChars);
+  if (adbitibuf==0) {
+    printf("Bit buffer is empty\n") ;
   } else {
-    char *tlx = x+nbChars ;
-    if (nbmax>0) memcpy(x,lookStack->contents,nbmax) ;
-    x+=nbmax ;
-    while (x<tlx) {
-      lookStack = lookStack->prev ;
-      if (lookStack==NULL) printf("Looking into an empty stack!!!") ;
-      if (x+ONE_BLOCK_SIZE<tlx) {
-	memcpy(x,lookStack->contents,ONE_BLOCK_SIZE) ;
-	x += ONE_BLOCK_SIZE ;
-      } else {
-	unsigned int nbtail = tlx-x ;
-	lookStackTop=(lookStack->contents)+ONE_BLOCK_SIZE-nbtail ;
-	memcpy(x,lookStackTop,nbtail) ;
-	x = tlx ;
-      }
-    }
+    printf("Bit buffer:%1i in %08x\n", adbitibuf, adbitbuf) ;
   }
-}
-
-void resetadlookstack_() {
-  lookStack=NULL ;
-}
-
-/****** Exported PUSH/POP/LOOK functions for ARRAYS: ******/
-/*   --> Called from FORTRAN:                             */
-
-void pushcharacterarray_(char *x, unsigned int *n) {
-  pushNarray(x,*n) ;
-}
-void popcharacterarray_(char *x, unsigned int *n) {
-  popNarray(x,*n) ;
-}
-void lookcharacterarray_(char *x, unsigned int *n) {
-  lookNarray(x,*n) ;
-}
-
-void pushbooleanarray_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*4)) ;
-}
-void popbooleanarray_(char *x, unsigned int *n) {
-  popNarray(x,(*n*4)) ;
-}
-void lookbooleanarray_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*4)) ;
-}
-
-void pushinteger4array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*4)) ;
-}
-void popinteger4array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*4)) ;
-}
-void lookinteger4array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*4)) ;
-}
-
-void pushinteger8array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*8)) ;
-}
-void popinteger8array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*8)) ;
-}
-void lookinteger8array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*8)) ;
-}
-
-void pushinteger16array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*16)) ;
-}
-void popinteger16array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*16)) ;
-}
-void lookinteger16array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*16)) ;
-}
-
-void pushreal4array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*4)) ;
-}
-void popreal4array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*4)) ;
-}
-void lookreal4array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*4)) ;
-}
-
-void pushreal8array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*8)) ;
-}
-void popreal8array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*8)) ;
-}
-void lookreal8array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*8)) ;
-}
-
-void pushreal16array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*16)) ;
-}
-void popreal16array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*16)) ;
-}
-void lookreal16array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*16)) ;
-}
-
-void pushreal32array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*32)) ;
-}
-void popreal32array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*32)) ;
-}
-void lookreal32array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*32)) ;
-}
-
-void pushcomplex4array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*4)) ;
-}
-void popcomplex4array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*4)) ;
-}
-void lookcomplex4array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*4)) ;
-}
-
-void pushcomplex8array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*8)) ;
-}
-void popcomplex8array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*8)) ;
-}
-void lookcomplex8array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*8)) ;
-}
-
-void pushcomplex16array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*16)) ;
-}
-void popcomplex16array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*16)) ;
-}
-void lookcomplex16array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*16)) ;
-}
-
-void pushcomplex32array_(char *x, unsigned int *n) {
-  pushNarray(x,(*n*32)) ;
-}
-void popcomplex32array_(char *x, unsigned int *n) {
-  popNarray(x,(*n*32)) ;
-}
-void lookcomplex32array_(char *x, unsigned int *n) {
-  lookNarray(x,(*n*32)) ;
-}
-
-/****** Exported PUSH/POP/LOOK functions for F95 POINTERS: ******/
-
-void pushpointer4_(char *ppp) {
-  pushNarray(ppp, 4) ;
-}
-
-void lookpointer4_(char *ppp) {
-  lookNarray(ppp, 4) ;
-}
-
-void poppointer4_(char *ppp) {
-  popNarray(ppp, 4) ;
-}
-
-void pushpointer8_(char *ppp) {
-  pushNarray(ppp, 8) ;
-}
-
-void lookpointer8_(char *ppp) {
-  lookNarray(ppp, 8) ;
-}
-
-void poppointer8_(char *ppp) {
-  popNarray(ppp, 8) ;
-}
-
-/*   --> Called from C:                                   */
-
-void pushcharacterarray(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)n) ;
-}
-void popcharacterarray(char *x, int n) {
-  popNarray((char*)x,(unsigned int)n) ;
-}
-void lookcharacterarray(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)n) ;
-}
-
-void pushbooleanarray(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*4)) ;
-}
-void popbooleanarray(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*4)) ;
-}
-void lookbooleanarray(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*4)) ;
-}
-
-void pushinteger4array(int *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*4)) ;
-}
-void popinteger4array(int *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*4)) ;
-}
-void lookinteger4array(int *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*4)) ;
-}
-
-void pushinteger8array(long int *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void popinteger8array(long int *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void lookinteger8array(long int *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*8)) ;
-}
-
-void pushinteger16array(long long int *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*16)) ;
-}
-void popinteger16array(long long int *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*16)) ;
-}
-void lookinteger16array(long long int *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*16)) ;
-}
-
-void pushreal4array(float *x, int n) {
-  pushNarray((char*)x, (unsigned int)(n*4)) ;
-}
-void popreal4array(float *x, int n) {
-  popNarray((char*)x, (unsigned int)(n*4)) ;
-}
-void lookreal4array(float *x, int n) {
-  lookNarray((char*)x, (unsigned int)(n*4)) ;
-}
-
-void pushreal8array(double *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void popreal8array(double *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void lookreal8array(double *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*8)) ;
-}
-
-void pushreal16array(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*16)) ;
-}
-void popreal16array(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*16)) ;
-}
-void lookreal16array(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*16)) ;
-}
-
-void pushreal32array(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*32)) ;
-}
-void popreal32array(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*32)) ;
-}
-void lookreal32array(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*32)) ;
-}
-
-void pushcomplex4array(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*4)) ;
-}
-void popcomplex4array(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*4)) ;
-}
-void lookcomplex4array(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*4)) ;
-}
-
-void pushcomplex8array(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void popcomplex8array(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void lookcomplex8array(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*8)) ;
-}
-
-void pushcomplex16array(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*16)) ;
-}
-void popcomplex16array(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*16)) ;
-}
-void lookcomplex16array(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*16)) ;
-}
-
-void pushcomplex32array(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*32)) ;
-}
-void popcomplex32array(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*32)) ;
-}
-void lookcomplex32array(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*32)) ;
-}
-
-void pushpointer4array(char *x, int n) {
-  pushNarray((char*)x, (unsigned int)(n*4)) ;
-}
-void poppointer4array(char *x, int n) {
-  popNarray((char*)x, (unsigned int)(n*4)) ;
-}
-void lookpointer4array(char *x, int n) {
-  lookNarray((char*)x, (unsigned int)(n*4)) ;
-}
-
-void pushpointer8array(char *x, int n) {
-  pushNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void poppointer8array(char *x, int n) {
-  popNarray((char*)x,(unsigned int)(n*8)) ;
-}
-void lookpointer8array(char *x, int n) {
-  lookNarray((char*)x,(unsigned int)(n*8)) ;
-}
-
-/************* Debug displays of the state of the stack: ***********/
-
-void printbigbytes(long int nbblocks, long int blocksz, long int nbunits) {
-  long int a3, b3, res3, res6, res9, res12 ;
-  int a0, b0, res0 ;
-  int printzeros = 0 ;
-  a0 = (int)nbblocks%1000 ;
-  a3 = nbblocks/1000 ;
-  b0 = (int)blocksz%1000 ;
-  b3 = blocksz/1000 ;
-  res0 = ((int)(nbunits%1000)) + a0*b0 ;
-  res3 = nbunits/1000 + a3*b0 + a0*b3 ;
-  res6 = a3*b3 ;
-  res3 += ((long int)(res0/1000)) ;
-  res0 = res0%1000 ;
-  res6 += res3/1000 ;
-  res3 = res3%1000 ;
-  res9 = res6/1000 ;
-  res6 = res6%1000 ;
-  res12 = res9/1000 ;
-  res9 = res9%1000 ;
-  if (res12>0) {
-    printf("%li ", res12) ;
-    printzeros = 1 ;
+  if (topRepetitionPoint) {
+    printf("Repetition levels:\n  ") ;
+    showRepetitionLevels() ;
   }
-  if ((res9/100)>0 || printzeros) {
-    printf("%li",res9/100) ;
-    printzeros = 1 ;
-    res9 = res9%100 ;
-  }
-  if ((res9/10)>0 || printzeros) {
-    printf("%li",res9/10) ;
-    printzeros = 1 ;
-    res9 = res9%10 ;
-  }
-  if (res9>0 || printzeros) {
-    printf("%li ",res9) ;
-    printzeros = 1 ;
-  }
-  if ((res6/100)>0 || printzeros) {
-    printf("%li",res6/100) ;
-    printzeros = 1 ;
-    res6 = res6%100 ;
-  }
-  if ((res6/10)>0 || printzeros) {
-    printf("%li",res6/10) ;
-    printzeros = 1 ;
-    res6 = res6%10 ;
-  }
-  if (res6>0 || printzeros) {
-    printf("%li ",res6) ;
-    printzeros = 1 ;
-  }
-  if ((res3/100)>0 || printzeros) {
-    printf("%li",res3/100) ;
-    printzeros = 1 ;
-    res3 = res3%100 ;
-  }
-  if ((res3/10)>0 || printzeros) {
-    printf("%li",res3/10) ;
-    printzeros = 1 ;
-    res3 = res3%10 ;
-  }
-  if (res3>0 || printzeros) {
-    printf("%li ",res3) ;
-    printzeros = 1 ;
-  }
-  if ((res0/100)>0 || printzeros) {
-    printf("%i",res0/100) ;
-    printzeros = 1 ;
-    res0 = res0%100 ;
-  }
-  if ((res0/10)>0 || printzeros) {
-    printf("%i",res0/10) ;
-    printzeros = 1 ;
-    res0 = res0%10 ;
-  }
-  printf("%i",res0) ;
+  printf("----------------\n") ;
 }
 
-void printctraffic_() {
-  printf(" C Traffic: ") ;
-  printbigbytes(mmctrafficM, 1000000, mmctraffic) ;
-  printf(" bytes\n") ;
+/******* query if this stack was compiled with OpenMP ******/
+int stackIsThreadSafe() {
+  #ifdef _OPENMP
+    return 1 ;
+  #else
+    return 0 ;
+  #endif
 }
 
-void printftrafficinc_(long int *mmfM, int *mmfsz, int *mmf) {
-  printf(" F Traffic: ") ;
-  printbigbytes(*mmfM, (long int)*mmfsz, (long int)*mmf) ;
-  printf(" bytes\n") ;
+/****************** INTERFACE CALLED FROM FORTRAN *******************/
+
+void adstack_startrepeat_() {
+  adStack_startRepeat() ;
 }
 
-void printtopplace_() {
-    DoubleChainedBlock *stack = curStack ;
-    int nbBlocks = (stack?-1:0) ;
-    int remainder = 0;
-    while(stack) {
-	stack = stack->prev ;
-	nbBlocks++ ;
-    }
-    if (curStack && curStackTop) remainder = curStackTop-(curStack->contents) ;
-    printf(" Stack size: ") ;
-    printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE, (long int)remainder) ;
-    printf(" bytes\n") ;
+void adstack_resetrepeat_() {
+  adStack_resetRepeat() ;
 }
 
-void printtopplacenum_(int *n) {
-    DoubleChainedBlock *stack = curStack ;
-    int nbBlocks = (stack?-1:0) ;
-    int remainder = 0;
-    while(stack) {
-	stack = stack->prev ;
-	nbBlocks++ ;
-    }
-    if (curStack && curStackTop) remainder = curStackTop-(curStack->contents) ;
-    printf(" Stack size at location %i : ", *n) ;
-    printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE, (long int)remainder) ;
-    printf(" bytes\n") ;
+void adstack_endrepeat_() {
+  adStack_endRepeat() ;
 }
 
-void printstackmax_() {
-    DoubleChainedBlock *stack = curStack ;
-    int nbBlocks = (stack?-2:0) ;
-    int remainder = 0;
-    long int totalsz ;
-    while(stack) {
-	stack = stack->prev ;
-	nbBlocks++ ;
-    }
-    stack = curStack ;
-    while(stack) {
-	stack = stack->next ;
-	nbBlocks++ ;
-    }
-
-    printf(" Max Stack size (%i blocks): ", nbBlocks) ;
-    printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE, (long int)0) ;
-    printf(" bytes\n") ;
+void pushinteger4array_(int *ii, int *ll) {
+  pushInteger4Array(ii, *ll) ;
 }
 
-void printlookingplace_() {
-    if (lookStack == NULL)
-	printtopplace_() ;
-    else {
-	DoubleChainedBlock *stack = lookStack ;
-	int nbBlocks = (stack?-1:0) ;
-	while(stack) {
-	    stack = stack->prev ;
-	    nbBlocks++ ;
-	}
-        printf(" Stack look at: ") ;
-        printbigbytes((long int)nbBlocks, ONE_BLOCK_SIZE,
-                      ((long int)(lookStackTop-(lookStack->contents)))) ;
-        printf(" bytes\n") ;
-    }
+void popinteger4array_(int *ii, int *ll) {
+  popInteger4Array(ii, *ll) ;
 }
 
-void showrecentcstack_() {
-  if (curStack && curStackTop) {
-    int totalNumChars = 30 ;
-    DoubleChainedBlock *stack = curStack ;
-    char *stackTop = curStackTop ;
-    unsigned short int *st1 ;
-    printf("TOP OF C STACK  : ") ;
-    while (totalNumChars>0 && stackTop>(stack->contents)) {
-      stackTop-- ;
-      st1 = (unsigned short int *)stackTop ;
-      printf("%02X,",*st1%256) ;
-      totalNumChars-- ;
-    }
-    while (totalNumChars>0 && stack->prev) {
-      printf(" || ") ;
-      stack = stack->prev ;
-      stackTop = (stack->contents)+ONE_BLOCK_SIZE ;
-      while (totalNumChars>0 && stackTop>(stack->contents)) {
-        stackTop-- ;
-        st1 = (unsigned short int *)stackTop ;
-        printf("%02X,",*st1%256) ;
-        totalNumChars-- ;
-      }
-    }
-    if (stack->prev || stackTop>(stack->contents))
-      printf(" ...\n") ;
-    else
-      printf(" || BOTTOM\n") ;
-  } else {
-    printf("NOTHING IN C STACK.\n") ;
-  }
+void pushinteger8array_(long *ii, int *ll) {
+  pushInteger8Array(ii, *ll) ;
 }
 
-void getnbblocksinstack_(int *nbblocks) {
-  DoubleChainedBlock *stack = curStack ;
-  *nbblocks = 0 ;
-  while(stack) {
-    stack = stack->prev ;
-    (*nbblocks)++ ;
-  }
+void popinteger8array_(long *ii, int *ll) {
+  popInteger8Array(ii, *ll) ;
 }
 
-/* Computes (and returns into its args) the number of blocks below the current
- * stack top (resp. look) position, and the number of bytes below
- * the current top (resp. look) position in the topmost block of the current
- * top (resp. look) position. */
-void getbigcsizes_(int *nbblocks, int *remainder, int *nbblockslook, int *lookremainder) {
-  DoubleChainedBlock *stack ;
+void pushreal4array_(float *ii, int *ll) {
+  pushReal4Array(ii, *ll) ;
+}
 
-  stack = curStack ;
-  *nbblocks = (stack?-1:0) ;
-  while(stack) {
-    stack = stack->prev ;
-    (*nbblocks)++ ;
-  }
-  if (curStack && curStackTop)
-    *remainder = curStackTop-(curStack->contents) ;
-  else
-    *remainder = 0 ;
+void popreal4array_(float *ii, int *ll) {
+  popReal4Array(ii, *ll) ;
+}
 
-  if (lookStack == NULL) {
-    *nbblockslook = -999 ;
-    *lookremainder = -999 ;
-  } else {
-    stack = lookStack ;
-    *nbblockslook = (stack?-1:0) ;
-    while(stack) {
-      stack = stack->prev ;
-      (*nbblockslook)++ ;
-    }
-    *lookremainder = lookStackTop-(lookStack->contents) ;
-  }
+void pushreal8array_(double *ii, int *ll) {
+  pushReal8Array(ii, *ll) ;
+}
+
+void popreal8array_(double *ii, int *ll) {
+  popReal8Array(ii, *ll) ;
+}
+
+void pushreal16array_(long double *ii, int *ll) {
+  pushReal16Array(ii, *ll) ;
+}
+
+void popreal16array_(long double *ii, int *ll) {
+  popReal16Array(ii, *ll) ;
+}
+
+void pushcomplex8array_(ccmplx *ii, int *ll) {
+  pushComplex8Array(ii, *ll) ;
+}
+
+void popcomplex8array_(ccmplx *ii, int *ll) {
+  popComplex8Array(ii, *ll) ;
+}
+
+void pushcomplex16array_(cdcmplx *ii, int *ll) {
+  pushComplex16Array((double complex *)ii, *ll) ;
+}
+
+void popcomplex16array_(cdcmplx *ii, int *ll) {
+  popComplex16Array((double complex *)ii, *ll) ;
+}
+
+void pushcharacterarray_(char *ii, int *ll) {
+  pushCharacterArray(ii, *ll) ;
+}
+
+void popcharacterarray_(char *ii, int *ll) {
+  popCharacterArray(ii, *ll) ;
+}
+
+void pushbooleanarray_(char *x, int *n) {
+  if (topRepetitionPoint) checkPushInReadOnly() ;
+  pushNArray(x,(*n*4)) ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += *n*4 ;
+#endif
+}
+
+void popbooleanarray_(char *x, int *n) {
+  popNArray(x,(*n*4)) ;
+  if (topRepetitionPoint) checkPopToReadOnly() ;
+#ifdef _ADSTACKPROFILE
+  pushPopTraffic += *n*4 ;
+#endif
+}
+
+void pushcharacter_(char* val) {
+  pushCharacter(*val) ;
+}
+
+void popcharacter_(char* val) {
+  popCharacter(val) ;
+}
+
+void pushreal4_(float* val) {
+  pushReal4(*val) ;
+}
+
+void popreal4_(float* val) {
+  popReal4(val) ;
+}
+
+void pushreal8_(double* val) {
+  pushReal8(*val) ;
+}
+
+void popreal8_(double* val) {
+  popReal8(val) ;
+}
+
+void pushreal16_(long double *val) {
+  pushReal16(val) ;
+}
+
+void popreal16_(long double *val) {
+  popReal16(val) ;
+}
+
+void pushinteger4_(int* val) {
+  pushInteger4(*val) ;
+}
+
+void popinteger4_(int* val) {
+  popInteger4(val) ;
+}
+
+void pushinteger8_(long* val) {
+  pushInteger8(*val) ;
+}
+
+void popinteger8_(long* val) {
+  popInteger8(val) ;
+}
+
+void pushcomplex8_(ccmplx* val) {
+  pushComplex8(*val) ;
+}
+
+void popcomplex8_(ccmplx* val) {
+  popComplex8(val) ;
+}
+
+void pushcomplex16_(cdcmplx *val) {
+  pushComplex16(*((double complex *)val)) ;
+}
+
+void popcomplex16_(cdcmplx* val) {
+  popComplex16((double complex *)val) ;
+}
+
+void pushpointer4_(void** val) {
+  pushPointer4(*val) ;
+}
+
+void poppointer4_(void** val) {
+  popPointer4(val) ;
+}
+
+void pushpointer8_(void** val) {
+  pushPointer8(*val) ;
+}
+
+void poppointer8_(void** val) {
+  popPointer8(val) ;
+}
+
+void pushcontrol1b_(int* cc) {
+  pushControl1b(*cc) ;
+}
+
+void popcontrol1b_(int *cc) {
+  popControl1b(cc) ;
+}
+
+void pushcontrol2b_(int *cc) {
+  pushControl2b(*cc) ;
+}
+
+void popcontrol2b_(int *cc) {
+  popControl2b(cc) ;
+}
+
+void pushcontrol3b_(int *cc) {
+  pushControl3b(*cc) ;
+}
+
+void popcontrol3b_(int *cc) {
+  popControl3b(cc) ;
+}
+
+void pushcontrol4b_(int *cc) {
+  pushControl4b(*cc) ;
+}
+
+void popcontrol4b_(int *cc) {
+  popControl4b(cc) ;
+}
+
+void pushcontrol5b_(int *cc) {
+  pushControl5b(*cc) ;
+}
+
+void popcontrol5b_(int *cc) {
+  popControl5b(cc) ;
+}
+
+void pushcontrol6b_(int *cc) {
+  pushControl6b(*cc) ;
+}
+
+void popcontrol6b_(int *cc) {
+  popControl6b(cc) ;
+}
+
+void pushcontrol7b_(int *cc) {
+  pushControl7b(*cc) ;
+}
+
+void popcontrol7b_(int *cc) {
+  popControl7b(cc) ;
+}
+
+void pushcontrol8b_(int *cc) {
+  pushControl8b(*cc) ;
+}
+
+void popcontrol8b_(int *cc) {
+  popControl8b(cc) ;
+}
+
+void adstack_showpeaksize_() {
+  adStack_showPeakSize() ;
+}
+
+void adstack_showtotaltraffic_() {
+  adStack_showTotalTraffic() ;
+}
+
+void adstack_showstacksize_(int *label) {
+  adStack_showStackSize(*label) ;
+}
+
+void adstack_showstack_(char *locationName) {
+  adStack_showStack(locationName) ;
+}
+
+void pushboolean_(int *x) {
+  pushBoolean(*x) ;
+}
+
+void popboolean_(int *x) {
+  popBoolean(x) ;
+}
+
+int stackisthreadsafe_() {
+  return stackIsThreadSafe() ;
 }
