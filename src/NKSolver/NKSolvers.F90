@@ -1641,8 +1641,8 @@ module ANKSolver
     use petsc
     implicit none
 
-    Mat dRdw, dRdwPre, timeStepMat
-    Vec wVec, rVec, deltaW, baseRes
+    Mat dRdw, dRdwPre, dRdwPre_d, timeStepMat
+    Vec wVec, rVec, rVec_d, deltaW, deltaW_d, baseRes
     KSP ANK_KSP
 
     ! Turb KSP related PETSc objects
@@ -1717,11 +1717,12 @@ contains
         use ADjointVars, only: nCellsLocal
         use NKSolver, only: destroyNKSolver, linearResidualMonitor
         use utils, only: EChk
-        use adjointUtils, only: myMatCreate, statePreAllocation
+        use adjointUtils, only: myMatCreate, myGPUMatCreate, statePreAllocation
         use inputadjoint, only: precondtype
         use agmg, only: setupAGMG
         implicit none
 
+        PC cudaPC
         ! Working Variables
         integer(kind=intType) :: ierr, nDimw, nDimWTurb
         integer(kind=intType), dimension(:), allocatable :: nnzDiagonal, nnzOffDiag
@@ -1756,6 +1757,12 @@ contains
             call VecSetType(wVec, VECMPI, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
+            call VecCreateMPICUDA(ADFLOW_COMM_WORLD , nDimW, PETSC_DECIDE,deltaW_d, ierr);
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call VecCreateMPICUDA(ADFLOW_COMM_WORLD , nDimW, PETSC_DECIDE,rVec_d, ierr);
+            call EChk(ierr, __FILE__, __LINE__)
+
             !  Create duplicates for residual and delta
             call VecDuplicate(wVec, rVec, ierr)
             call EChk(ierr, __FILE__, __LINE__)
@@ -1764,6 +1771,12 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecDuplicate(wVec, baseRes, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call VecDuplicate(wVec, deltaW_d, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call VecDuplicate(wVec, rVec_d, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Create Pre-Conditioning Matrix
@@ -1781,10 +1794,16 @@ contains
             call matSetOption(dRdwPre, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call myMatCreate(timeStepMat, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+            call myMatCreate(timeStepMat,nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
                              __FILE__, __LINE__)
             call matSetOption(timeStepMat, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
+
+            call myGPUMatCreate(dRdwPre_d,  nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+                             __FILE__, __LINE__)
+            call matSetOption(dRdwPre_d, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
             deallocate (nnzDiagonal, nnzOffDiag)
 
             ! Set the mat_row_oriented option to false so that dense
@@ -1795,9 +1814,9 @@ contains
             ! Setup Matrix-Free dRdw matrix and its function
             call MatCreateMFFD(ADFLOW_COMM_WORLD, nDimW, nDimW, &
                                PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
 
             call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx, ierr)
+            
             call EChk(ierr, __FILE__, __LINE__)
 
             call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
@@ -1811,13 +1830,15 @@ contains
             call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
+            call KSPGetPC(ANK_KSP, cudaPC, ierr)
+            call PCHYPRESetType(cudaPC, "boomeramg")
             ! Set operators for the solver
             if (ANK_useMatrixFree) then
                 ! Matrix free drdw
                 call KSPSetOperators(ANK_KSP, dRdw, dRdwPre, ierr)
             else
                 ! Matrix based drdw = drdwpre
-                call KSPSetOperators(ANK_KSP, dRdwPre, dRdwPre, ierr)
+                call KSPSetOperators(ANK_KSP, dRdwPre_d, dRdwPre_d, ierr)
             end if
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -3903,8 +3924,11 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Actually do the Linear Krylov Solve
-        call KSPSolve(ANK_KSP, rVec, deltaW, ierr)
-
+        call VecDuplicate(rVec, rVec_d, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call KSPSolve(ANK_KSP, rVec_d, deltaW_d, ierr)
+        call VecDuplicate(deltaW_d, deltaW, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
         ! DON'T just check the error. We want to catch error code 72
         ! which is a floating point error. This is ok, we just reset and
         ! keep going

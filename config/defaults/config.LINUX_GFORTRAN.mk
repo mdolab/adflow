@@ -31,9 +31,9 @@ COMPLEXIFY_INCLUDE_FLAGS=-I$(COMPLEXIFY_DIR)/include
 COMPLEXIFY_LINKER_FLAGS=-L$(COMPLEXIFY_DIR)/lib -lcomplexify
 
 # ------- Define Compiler Flags ----------------------------------------
-FF77_FLAGS = -fPIC -fdefault-real-8 -fdefault-double-8 -march=native
-FF90_FLAGS = $(FF77_FLAGS) -std=f2008
-FFXX_OPT_FLAGS = -O3 -ffast-math
+FF77_FLAGS = -fPIC -cuda -Mr8 -march=native
+FF90_FLAGS = $(FF77_FLAGS) 
+FFXX_OPT_FLAGS = -O3 
 C_FLAGS   = -fPIC -O
 
 # ------- Define Archiver  and Flags -----------------------------------

@@ -1336,6 +1336,52 @@ contains
 
     end subroutine myMatCreate
 
+    subroutine myGPUMatCreate(matrix,  m, n, nnzDiagonal, nnzOffDiag, &
+                           file, line)
+        ! Function to create petsc matrix to make stuff a little cleaner in
+        ! the code above. Also, PETSc always thinks is a good idea to
+        ! RANDOMLY change syntax between versions so this way there is only
+        ! one place to make a change based on petsc version.
+
+        use constants
+        use communication, only: adflow_comm_world
+        use utils, only: EChk, setPointers
+#include <petsc/finclude/petsc.h>
+        use petsc
+        implicit none
+
+        Mat matrix
+        integer(kind=intType), intent(in) ::  m, n
+        integer(kind=intType), intent(in), dimension(*) :: nnzDiagonal, nnzOffDiag
+        character(len=*) :: file
+        integer(kind=intType) :: ierr, line
+        ! if (blockSize > 1) then
+        call MatCreateAIJCUSPARSE(ADFLOW_COMM_WORLD,  &
+                           m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+                           0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+        ! else
+        ! call MatCreateAIJ(ADFLOW_COMM_WORLD,&
+        ! m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
+        ! 0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
+        call EChk(ierr, file, line)
+        ! end if
+
+        ! Warning: The array values is logically two-dimensional,
+        ! containing the values that are to be inserted. By default the
+        ! values are given in row major order, which is the opposite of
+        ! the Fortran convention, meaning that the value to be put in row
+        ! idxm[i] and column idxn[j] is located in values[i*n+j]. To allow
+        ! the insertion of values in column major order, one can call the
+        ! command MatSetOption(Mat A, MAT COLUMN ORIENTED);
+
+        call MatSetOption(matrix, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call MatSetOption(matrix, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine myGPUMatCreate
+
     subroutine MyKSPMonitor(myKsp, n, rnorm, dummy, ierr)
         !
         !      This is a user-defined routine for monitoring the KSP
