@@ -1353,7 +1353,7 @@ contains
         defaultFamName(BCWallViscous) = 'wall'
         defaultFamName(BCWallViscousHeatFlux) = 'wall'
         defaultFamName(BCWallViscousIsothermal) = 'wall'
-        defaultFamName(UserDefined) = 'userDefined'
+        defaultFamName(CG_UserDefined) = 'userDefined'
 
         nFam = 0
         do i = 1, size(cgnsDoms)
@@ -3602,7 +3602,7 @@ contains
                 ! The rotation matrices for the i-faces.
 
                 do mm = 1, il
-                    xFace => x(mm, 1:, 1:, :); 
+                    xFace => x(mm, 1:, 1:, :)
                     rotFace => rotMatrixI(mm, :, :, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, jl, kl)
@@ -3611,7 +3611,7 @@ contains
                 ! The rotation matrices for the j-faces.
 
                 do mm = 1, jl
-                    xFace => x(1:, mm, 1:, :); 
+                    xFace => x(1:, mm, 1:, :)
                     rotFace => rotMatrixJ(:, mm, :, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, il, kl)
@@ -3620,7 +3620,7 @@ contains
                 ! The rotation matrices for the k-faces.
 
                 do mm = 1, kl
-                    xFace => x(1:, 1:, mm, :); 
+                    xFace => x(1:, 1:, mm, :)
                     rotFace => rotMatrixK(:, :, mm, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, il, jl)
