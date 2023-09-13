@@ -132,70 +132,56 @@ fortranFiles=	ADT/adtUtils.F90\
 		warping/getAreas.f90\
 		warping/setCpTarget.f90\
 		\
-		adjoint/outputForward/utils_d.f90\
-		adjoint/outputForward/flowutils_d.f90\
-		adjoint/outputForward/bcroutines_d.f90\
-		adjoint/outputForward/turbutils_d.f90\
-		adjoint/outputForward/solverutils_d.f90\
-		adjoint/outputForward/aleutils_d.f90\
-		adjoint/outputForward/flowutils_d.f90\
-		adjoint/outputForward/bcroutines_d.f90\
-		adjoint/outputForward/turbutils_d.f90\
-		adjoint/outputForward/solverutils_d.f90\
+		adjoint/outputForward/ALEUtils_d.f90\
+		adjoint/outputForward/BCData_d.f90\
+		adjoint/outputForward/BCExtra_d.F90\
+		adjoint/outputForward/BCRoutines_d.f90\
+		adjoint/outputForward/adjointExtra_d.f90\
+		adjoint/outputForward/flowUtils_d.f90\
 		adjoint/outputForward/fluxes_d.f90\
-		adjoint/outputForward/turbbcroutines_d.f90\
-		adjoint/outputForward/surfaceintegrations_d.f90\
-		adjoint/outputForward/zipperintegrations_d.f90\
+		adjoint/outputForward/initializeFlow_d.f90\
+		adjoint/outputForward/oversetUtilities_d.f90\
 		adjoint/outputForward/residuals_d.f90\
 		adjoint/outputForward/sa_d.f90\
-		adjoint/outputForward/walldistance_d.f90\
-		adjoint/outputForward/initializeflow_d.f90\
-		adjoint/outputForward/adjointextra_d.f90\
-		adjoint/outputForward/oversetutilities_d.f90\
-		adjoint/outputForward/bcdata_d.f90\
-		adjoint/outputForward/BCExtra_d.F90\
-		adjoint/outputForward/actuatorregion_d.f90\
+		adjoint/outputForward/solverUtils_d.f90\
+		adjoint/outputForward/surfaceIntegrations_d.f90\
+		adjoint/outputForward/turbBCRoutines_d.f90\
+		adjoint/outputForward/turbUtils_d.f90\
+		adjoint/outputForward/utils_d.f90\
+		adjoint/outputForward/wallDistance_d.f90\
+		adjoint/outputForward/zipperIntegrations_d.f90\
 		\
-		adjoint/outputReverse/adjointextra_b.f90\
-		adjoint/outputReverse/utils_b.f90\
-		adjoint/outputReverse/flowutils_b.f90\
-		adjoint/outputReverse/bcroutines_b.f90\
-		adjoint/outputReverse/turbutils_b.f90\
-		adjoint/outputReverse/solverutils_b.f90\
-		adjoint/outputReverse/aleutils_b.f90\
-		adjoint/outputReverse/flowutils_b.f90\
-		adjoint/outputReverse/bcroutines_b.f90\
-		adjoint/outputReverse/turbutils_b.f90\
-		adjoint/outputReverse/solverutils_b.f90\
-		adjoint/outputReverse/turbbcroutines_b.f90\
-		adjoint/outputReverse/residuals_b.f90\
-		adjoint/outputReverse/surfaceintegrations_b.f90\
-		adjoint/outputReverse/zipperintegrations_b.f90\
-		adjoint/outputReverse/sa_b.f90\
-		adjoint/outputReverse/fluxes_b.f90\
-		adjoint/outputReverse/walldistance_b.f90\
-		adjoint/outputReverse/initializeflow_b.f90\
-		adjoint/outputReverse/oversetutilities_b.f90\
-		adjoint/outputReverse/bcdata_b.f90\
+		adjoint/outputReverse/ALEUtils_b.f90\
+		adjoint/outputReverse/BCData_b.f90\
 		adjoint/outputReverse/BCExtra_b.F90\
-		adjoint/outputReverse/actuatorregion_b.f90\
+		adjoint/outputReverse/BCRoutines_b.f90\
+		adjoint/outputReverse/adjointExtra_b.f90\
+		adjoint/outputReverse/flowUtils_b.f90\
+		adjoint/outputReverse/fluxes_b.f90\
+		adjoint/outputReverse/initializeFlow_b.f90\
+		adjoint/outputReverse/oversetUtilities_b.f90\
+		adjoint/outputReverse/residuals_b.f90\
+		adjoint/outputReverse/sa_b.f90\
+		adjoint/outputReverse/solverUtils_b.f90\
+		adjoint/outputReverse/surfaceIntegrations_b.f90\
+		adjoint/outputReverse/turbBCRoutines_b.f90\
+		adjoint/outputReverse/turbUtils_b.f90\
+		adjoint/outputReverse/utils_b.f90\
+		adjoint/outputReverse/wallDistance_b.f90\
+		adjoint/outputReverse/zipperIntegrations_b.f90\
 		\
-		adjoint/outputReverseFast/utils_fast_b.f90\
-		adjoint/outputReverseFast/flowutils_fast_b.f90\
-		adjoint/outputReverseFast/turbutils_fast_b.f90\
-		adjoint/outputReverseFast/solverutils_fast_b.f90\
+		adjoint/outputReverseFast/flowUtils_fast_b.f90\
 		adjoint/outputReverseFast/fluxes_fast_b.f90\
 		adjoint/outputReverseFast/residuals_fast_b.f90\
-		adjoint/outputReverseFast/turbbcroutines_fast_b.f90\
 		adjoint/outputReverseFast/sa_fast_b.f90\
+		adjoint/outputReverseFast/solverUtils_fast_b.f90\
+		adjoint/outputReverseFast/turbBCRoutines_fast_b.f90\
+		adjoint/outputReverseFast/turbUtils_fast_b.f90\
+		adjoint/outputReverseFast/utils_fast_b.f90\
 
 
 cFiles = 	metis-4.0/metis.c\
 		utils/connect_signals.c\
 		adjoint/initPETScWrap.c\
 		partitioning/metisInterface.c\
-		adjoint/ADFirstAidKit/adStack.c\
-		adjoint/ADFirstAidKit/dpStack.c\
-
-f77Files = 	adjoint/ADFirstAidKit/adBuffer.f\
-		adjoint/ADFirstAidKit/debugAD.f\
+		adjoint/ADFirstAidKit/adStack.c
