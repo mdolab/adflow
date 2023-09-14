@@ -93,6 +93,12 @@ class ADFLOW(AeroSolver):
             curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
             self.adflow = MExt.MExt("libadflow", curDir, debug=debug)._module
 
+        # This is a flag not exposed to the user as an option that controls
+        # printing the boundary condition warnings.  This should only
+        # be used in the MPhys layer when we make multiple calls to
+        # updateBCAllLevels.
+        self.adflow.inputiteration.printbcwarnings = True
+
         libLoadTime = time.time()
 
         # Information for base class:
@@ -3284,7 +3290,7 @@ class ADFLOW(AeroSolver):
         )
         self.mesh.setSurfaceCoordinates(meshSurfCoords)
 
-    def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True, printInfo=True):
+    def setAeroProblem(self, aeroProblem, releaseAdjointMemory=True):
         """Set the supplied aeroProblem to be used in ADflow.
 
         Parameters
@@ -3293,8 +3299,6 @@ class ADFLOW(AeroSolver):
             The supplied aeroproblem to be set.
         releaseAdjointMemory : bool, optional
             Flag to release the adjoint memory when setting a new aeroproblem, by default True
-        printInfo : bool, optional
-            Flag to turn on info printing when setting a new aeroproblem, by default True
         """
 
         ptSetName = "adflow_%s_coords" % aeroProblem.name
@@ -3357,7 +3361,7 @@ class ADFLOW(AeroSolver):
 
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
 
-        self._setAeroProblemData(aeroProblem, printInfo=printInfo)
+        self._setAeroProblemData(aeroProblem)
 
         # Remind the user of the modified options when switching AP
         if newAP and self.getOption("printIterations"):
@@ -3422,7 +3426,7 @@ class ADFLOW(AeroSolver):
             # also set the ANK CFL to the last value if we are restarting
             self.adflow.anksolver.ank_cfl = aeroProblem.adflowData.ank_cfl
 
-    def _setAeroProblemData(self, aeroProblem, firstCall=False, printInfo=True):
+    def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """After an aeroProblem has been associated with self.curAP, set
         all the updated information in ADflow.
 
@@ -3432,8 +3436,6 @@ class ADFLOW(AeroSolver):
             The current aeroProblem object.
         firstCall : bool, optional
             Flag that signifies this is being called for the first time, by default False
-        printInfo : bool, optional
-            Flag that specifies whether or not to print info about the aeroproblem data, by default True
         """
 
         # Set any additional adflow options that may be defined in the
@@ -3567,7 +3569,7 @@ class ADFLOW(AeroSolver):
         self.adflow.inputphysics.liftindex = liftIndex
         self.adflow.flowutils.adjustinflowangle()
 
-        if self.getOption("printIterations") and printInfo and self.comm.rank == 0:
+        if self.getOption("printIterations") and self.comm.rank == 0:
             print("-> Alpha... %f " % numpy.real(alpha))
 
         # 2. Reference Points:
@@ -3679,7 +3681,7 @@ class ADFLOW(AeroSolver):
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
 
         if not firstCall:
-            self.adflow.initializeflow.updatebcdataalllevels(printInfo)
+            self.adflow.initializeflow.updatebcdataalllevels
 
             # We need to do an all reduce here in case there's a BC failure
             # on any of the procs after we update the bc data.

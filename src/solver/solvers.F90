@@ -307,7 +307,7 @@ contains
             ! boundary subfaces. First for the (currently) finest grid
             ! and then iteratively for the coarser grid levels.
 
-            call setBCDataFineGrid(.false., .true.)
+            call setBCDataFineGrid(.false.)
             call setBCDataCoarseGrid
 
         end if testChanging
@@ -882,7 +882,7 @@ contains
         ! Determine the prescribed boundary condition data for the
         ! boundary subfaces for the (currently) finest grid.
 
-        call setBCDataFineGrid(.false., .true.)
+        call setBCDataFineGrid(.false.)
 
     end subroutine initStageRK
 
