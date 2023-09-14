@@ -164,6 +164,7 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
 
     updatesMade = ap != solver.curAP
 
+    printInfo = updatesMade
     if not updatesMade and hasattr(ap, "adflowData"):
         if ap.adflowData.callCounter != 0:
             # Don't do anything on the 0th iteration
@@ -171,7 +172,7 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
                 # We want to print if the solver iteration count changes
                 # but the AP is the same.  Otherwise we don't want to
                 # print anything.
-                updatesMade = True
+                printInfo = True
 
         # Set the previous call counter
         callCounterPrev = ap.adflowData.callCounter
@@ -179,8 +180,8 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
     # These flags control printing alpha and boundary condition warnings
     # when we update the aeroproblem.  We only want these to print when
     # we actually switch the aeroproblem.
-    solver.setOption("printIterations", updatesMade)
-    solver.adflow.inputiteration.printbcwarnings = updatesMade
+    solver.setOption("printIterations", printInfo)
+    solver.adflow.inputiteration.printbcwarnings = printInfo
     solver.setAeroProblem(ap)
 
     if inputs is not None:
