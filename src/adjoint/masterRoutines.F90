@@ -148,7 +148,7 @@ contains
         if (useSpatial) then
             do iRegion = 1, nActuatorRegions
                 call mpi_allreduce(actuatorRegions(iRegion)%volLocal, actuatorRegions(iRegion)%volume, 1, &
-                                adflow_real, MPI_SUM, adflow_comm_world, ierr)
+                                   adflow_real, MPI_SUM, adflow_comm_world, ierr)
                 call ECHK(ierr, __FILE__, __LINE__)
             end do
         end if
