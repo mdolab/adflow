@@ -315,15 +315,13 @@ contains
     end subroutine infChangeCorrection
 
     ! Section out the BCdata setup so that it can by called from python when needed
-    subroutine updateBCDataAllLevels(printWarnings)
+    subroutine updateBCDataAllLevels()
         ! sets the prescribed boundary data from the CGNS arrays
 
         use constants
         use iteration, only: groundLevel
         use bcdata, only: setbcdataFineGrid, setBCDataCoarseGrid
         implicit none
-
-        logical, intent(in) :: printWarnings
 
         ! Allocate the memory for the prescribed boundary data at the
         ! boundary faces and determine the data for both the fine grid.
@@ -333,7 +331,7 @@ contains
         ! Determine the reference state.
         call referenceState
 
-        call setBCDataFineGrid(.true., printWarnings)
+        call setBCDataFineGrid(.true.)
 
         ! Determine the prescribed data on the coarse grid levels
         ! by interpolation.
