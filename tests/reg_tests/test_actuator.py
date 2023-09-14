@@ -533,7 +533,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
             # compare the final products
             np.testing.assert_array_almost_equal(first, second, decimal=14)
-    
+
     def test_actuator_partials_warp(self):
         az_force = 600.0
         az_heat = 1e5
@@ -549,7 +549,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
         dv_keys = ["xdir", "ydir", "zdir"]
 
-        grid_file =  os.path.join(baseDir, "../../input_files/actuator_test_pipe.cgns")
+        grid_file = os.path.join(baseDir, "../../input_files/actuator_test_pipe.cgns")
         mesh = USMesh({"gridFile": grid_file})
         self.CFDSolver.setMesh(mesh)
 
@@ -603,7 +603,6 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
 
             # compare the final products
             np.testing.assert_array_almost_equal(first, second, decimal=11)
-
 
 
 class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
