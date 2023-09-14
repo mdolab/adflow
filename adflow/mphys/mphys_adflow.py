@@ -172,7 +172,7 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
                 # but the AP is the same.  Otherwise we don't want to
                 # print anything.
                 updatesMade = True
-    
+
         # Set the previous call counter
         callCounterPrev = ap.adflowData.callCounter
 
