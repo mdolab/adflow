@@ -1610,6 +1610,203 @@ contains
 
     end subroutine setupStandardKSP
 
+    subroutine setupGPUStandardKSP(kspObject, kspObjectType, gmresRestart, preConSide, &
+                                globalPCType, ASMOverlap, globalPreConIts, localPCType, &
+                                localMatrixOrdering, localFillLevel, localPreConIts)
+
+        ! This function sets up the supplied kspObject in the followin
+        ! specific fashion. The reason this setup is in
+        ! its own function is that it is used in the following places:
+        ! 1. Setting up the preconditioner to use for the NKsolver
+        ! 2. Setting up the preconditioner to use for the adjoint solver
+        ! 3. Setting up the smoothers on the coarse multigrid levels.
+        !
+        ! The hierarchy of the setup is:
+        !  kspObject --> Supplied KSP object
+        !  |
+        !  --> master_PC --> Preconditioner type set to KSP
+        !      |
+        !      --> master_PC_KSP --> KSP type set to Richardson with 'globalPreConIts'
+        !          |
+        !           --> globalPC --> PC type set to 'globalPCType'
+        !               |            Usually Additive Schwarz and overlap is set
+        !               |            with 'ASMOverlap'. Use 0 to get BlockJacobi
+        !               |
+        !               --> subKSP --> KSP type set to Richardon with 'LocalPreConIts'
+        !                   |
+        !                   --> subPC -->  PC type set to 'loclaPCType'.
+        !                                  Usually ILU. 'localFillLevel' is
+        !                                  set and 'localMatrixOrder' is used.
+        !
+        ! Note that if globalPreConIts=1 then maser_PC_KSP is NOT created and master_PC=globalPC
+        ! and if localPreConIts=1 then subKSP is set to preOnly.
+        use constants
+        use utils, only: ECHk
+        use inputADjoint, only: GMRESOrthogType
+#include <petsc/finclude/petsc.h>
+        use petsc
+        implicit none
+
+        ! Input Params
+        KSP kspObject
+        character(len=*), intent(in) :: kspObjectType, preConSide
+        character(len=*), intent(in) :: globalPCType, localPCType
+        character(len=*), intent(in) :: localMatrixOrdering
+        integer(kind=intType), intent(in) :: ASMOverlap, localFillLevel, gmresRestart
+        integer(kind=intType), intent(in) :: globalPreConIts, localPreConIts
+
+        ! Working Variables
+        PC master_PC, globalPC, subpc
+        KSP master_PC_KSP, subksp
+        integer(kind=intType) :: nlocal, first, ierr
+
+        ! First, KSPSetFromOptions MUST be called
+        call KSPSetFromOptions(kspObject, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Set the type of solver to use:
+        call KSPSetType(kspObject, kspObjectType, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! If we're using GMRES set the possible gmres restart
+        call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Set the orthogonalization method for GMRES
+        ! select case (GMRESOrthogType)
+        ! case ('modified_gram_schmidt')
+        !     ! Use modified Gram-Schmidt
+        !     call KSPGMRESSetOrthogonalization(kspObject, KSPGMRESModifiedGramSchmidtOrthogonalization, ierr)
+        ! case ('cgs_never_refine')
+        !     ! Use classical Gram-Schmidt with no refinement
+        !     call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        ! case ('cgs_refine_if_needed')
+        !     ! Use classical Gram-Schmidt with refinement if needed
+        !     call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)
+        ! case ('cgs_always_refine')
+        !     ! Use classical Gram-Schmidt with refinement at every iteration
+        !     call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_ALWAYS, ierr)
+        ! end select
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+        ! Set the preconditioner side from option:
+        ! if (trim(preConSide) == 'right') then
+        !     call KSPSetPCSide(kspObject, PC_RIGHT, ierr)
+        ! else
+        !     call KSPSetPCSide(kspObject, PC_LEFT, ierr)
+        ! end if
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+        ! if (trim(kspObjectType) == 'richardson') then
+        !     call KSPSetPCSide(kspObject, PC_LEFT, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+        ! end if
+
+        ! Since there is an extraneous matMult required when using the
+        ! richardson precondtiter with only 1 iteration, only use it we need
+        ! to do more than 1 iteration.
+        ! if (globalPreConIts > 1) then
+        !     ! Extract preconditioning context for main KSP solver: (master_PC)
+        !     call KSPGetPC(kspObject, master_PC, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! Set the type of master_PC to ksp. This lets us do multiple
+        !     ! iterations of preconditioner application
+        !     call PCSetType(master_PC, 'ksp', ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! Get the ksp context from master_PC which is the actual preconditioner:
+        !     call PCKSPGetKSP(master_PC, master_PC_KSP, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! master_PC_KSP type will always be of type richardson. If the
+        !     ! number  of iterations is set to 1, this ksp object is transparent.
+
+        !     call KSPSetType(master_PC_KSP, 'richardson', ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! Important to set the norm-type to None for efficiency.
+        !     call kspsetnormtype(master_PC_KSP, KSP_NORM_NONE, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! Do one iteration of the outer ksp preconditioners. Note the
+        !     ! tolerances are unsued since we have set KSP_NORM_NON
+        !     call KSPSetTolerances(master_PC_KSP, PETSC_DEFAULT_REAL, &
+        !                           PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+        !                           globalPreConIts, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! Get the 'preconditioner for master_PC_KSP, called 'globalPC'. This
+        !     ! preconditioner is potentially run multiple times.
+        !     call KSPgetPC(master_PC_KSP, globalPC, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+        ! else
+        !     ! Just pull out the pc-object if we are not using kspRichardson
+        call KSPGetPC(kspObject, globalPC, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        ! end if
+
+        ! Set the type of 'globalPC'. This will almost always be additive Schwarz
+        call PCSetType(globalPC, 'hypre', ierr)!globalPCType, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        call KSPGetPC(kspObject, cudaPC, ierr)
+        call PCHYPRESetType(cudaPC, "boomeramg")
+
+        ! Set the overlap required
+        ! call PCASMSetOverlap(globalPC, ASMOverlap, ierr)
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+        !Setup the main ksp context before extracting the subdomains
+        call KSPSetUp(kspObject, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Extract the ksp objects for each subdomain
+        ! call PCASMGetSubKSP(globalPC, nlocal, first, subksp, ierr)
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+        ! Since there is an extraneous matMult required when using the
+        ! richardson precondtiter with only 1 iteration, only use it we need
+        ! to do more than 1 iteration.
+        ! if (localPreConIts > 1) then
+        !     ! This 'subksp' object will ALSO be of type richardson so we can do
+        !     ! multiple iterations on the sub-domains
+        !     call KSPSetType(subksp, 'richardson', ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! Set the number of iterations to do on local blocks. Tolerances are ignored.
+
+        !     call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, &
+        !                           PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+        !                           localPreConIts, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+
+        !     ! Again, norm_type is NONE since we don't want to check error
+        !     call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+        ! else
+        !     call KSPSetType(subksp, 'preonly', ierr)
+        !     call EChk(ierr, __FILE__, __LINE__)
+        ! end if
+
+        ! Extract the preconditioner for subksp object.
+        ! call KSPGetPC(subksp, subpc, ierr)
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+        ! The subpc type will almost always be ILU
+        ! call PCSetType(subpc, localPCType, ierr)
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+        ! Setup the matrix ordering for the subpc object:
+        ! call PCFactorSetMatOrderingtype(subpc, localMatrixOrdering, ierr)
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+        ! Set the ILU parameters
+        ! call PCFactorSetLevels(subpc, localFillLevel, ierr)
+        ! call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine setupGPUStandardKSP
+
     subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, &
                                       preConSide, ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel)
 

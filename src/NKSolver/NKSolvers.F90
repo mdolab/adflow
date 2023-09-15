@@ -1830,8 +1830,8 @@ contains
             call KSPCreate(ADFLOW_COMM_WORLD, ANK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call KSPGetPC(ANK_KSP, cudaPC, ierr)
-            call PCHYPRESetType(cudaPC, "boomeramg")
+            ! call KSPGetPC(ANK_KSP, cudaPC, ierr)
+            ! call PCHYPRESetType(cudaPC, "boomeramg")
             ! Set operators for the solver
             if (ANK_useMatrixFree) then
                 ! Matrix free drdw
@@ -1990,7 +1990,7 @@ contains
         ! Create the preconditoner matrix
         call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
                                       useObjective, frozenTurb, 1_intType, useCoarseMats=useCoarseMats)
-
+        ! dRdwPre this mtx has to be passed into GPU
         ! Reset saved value
         viscPC = tmp
         approxSA = .False.
@@ -2051,6 +2051,119 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine FormJacobianANK
+
+    subroutine FormJacobianGPUANK
+
+        use constants
+        use flowVarRefState, only: nw, nwf, nt1, nt2
+        use blockPointers, only: nDom, volRef, il, jl, kl, w, dw, dtl, globalCell, iblank
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputIteration, only: turbResScale
+        use inputADjoint, only: viscPC, precondtype
+        use inputDiscretization, only: approxSA
+        use iteration, only: totalR0, totalR
+        use utils, only: EChk, setPointers
+        use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
+        use communication
+        use agmg, only: setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
+        implicit none
+
+        ! Local Variables
+        character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
+        integer(kind=intType) :: ierr
+        logical :: useAD, usePC, useTranspose, useObjective, tmp, frozenTurb
+        real(kind=realType) :: dtinv, rho
+        integer(kind=intType) :: i, j, k, l, ii, irow, nn, sps, outerPreConIts, subspace, lvl
+        integer(kind=intType), dimension(2:10) :: coarseRows
+        real(kind=realType), dimension(:, :), allocatable :: blk
+        logical :: useCoarseMats
+        PC shellPC
+
+        if (preCondType == 'mg') then
+            useCoarseMats = .True.
+        else
+            useCoarseMats = .False.
+        end if
+
+        ! Assemble the approximate PC (fine leve, level 1)
+        useAD = ANK_ADPC
+        frozenTurb = (.not. ANK_coupled)
+        usePC = .True.
+        useTranspose = .False.
+        useObjective = .False.
+        tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+        viscPC = .False.
+
+        if (totalR > ANK_secondOrdSwitchTol * totalR0) &
+            approxSA = .True.
+
+        ! Create the preconditoner matrix
+        call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
+                                      useObjective, frozenTurb, 1_intType, useCoarseMats=useCoarseMats)
+        ! dRdwPre this mtx has to be passed into GPU
+        ! Reset saved value
+        viscPC = tmp
+        approxSA = .False.
+
+        ! PETSc Matrix Assembly begin
+        call MatAssemblyBegin(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Setup KSP Options
+        preConSide = 'right'
+        localPCType = 'ilu'
+        kspObjectType = 'gmres'
+        globalPCType = 'asm'
+        localOrdering = 'rcm'
+        outerPreConIts = ank_outerPreconIts
+
+        ! Setup the KSP using the same code as used for the adjoint
+        if (ank_subspace < 0) then
+            subspace = ANK_maxIter
+        else
+            subspace = ANK_subspace
+        end if
+
+        ! Complete the matrix assembly.
+        call MatAssemblyEnd(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Add the contribution from the time step matrix
+        call MatAXPY(dRdwPre, one, timeStepMat, SUBSET_NONZERO_PATTERN, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        if (useCoarseMats) then
+            do lvl = 2, agmgLevels
+                call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+                call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end do
+        end if
+
+        ! if (PreCondType == 'asm') then
+        !     ! Run the super-dee-duper function to setup the ksp object:
+
+        !     call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
+        !                           preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+        !                           localOrdering, ANK_iluFill, ANK_innerPreConIts)
+        ! else if (PreCondType == 'mg') then
+
+        !     ! Setup the MG preconditioner!
+        !     call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
+        !                                 preConSide, ANK_asmOverlap, outerPreConIts, &
+        !                                 localOrdering, ANK_iluFill)
+        ! end if
+        call MatCopy(dRdwPre, dRdwPre_d, DIFFERENT_NONZERO_PATTERN)
+        call setupGPUStandardKSP(ANK_KSP, kspObjectType, subSpace, &
+                                  preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
+                                  localOrdering, ANK_iluFill, ANK_innerPreConIts)
+        ! Don't do iterative refinement for the NKSolver.
+        call KSPGMRESSetCGSRefinementType(ANK_KSP, &
+                                          KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine FormJacobianGPUANK
 
     subroutine computeTimeStepMat(usePC)
         ! Loops through all cells and computes the time step terms
