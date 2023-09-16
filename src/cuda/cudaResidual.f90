@@ -7,6 +7,7 @@ module cudaResidual
     use constants
     ! --- CUDA FORTRAN module ---
     use cudafor
+    implicit none
 
     ! Actual dimensions to execute
     !  nx, ny, nz - Block integer dimensions for no halo cell based
@@ -17,10 +18,10 @@ module cudaResidual
     !               cell-centered quantities.
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
-    integer(kind=intType) :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
+    integer(kind=intType) :: h_nx, hny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
+    integer(kind=intType),device :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
 
-    ! Variables to track transferring variables between blockettes
-    integer(kind=intType) :: singleHaloStart, doubleHaloStart, nodeStart
+    logical, device :: rightHanded
 
     ! Current indices into the original block
     integer(kind=intType) :: ii, jj, kk
@@ -31,9 +32,9 @@ module cudaResidual
 
     ! Single halos
     real(kind=realType), dimension(:,:,:,:), allocatable,device :: x
-    real(kind=realType), dimension(:,:,:),device :: rlv, rev, vol, aa
-    real(kind=realType), dimension(:,:,:),device :: radI, radJ, radK, dtl
-    real(kind=realType), dimension(:,:,:, :),device :: dss ! Shock sensor
+    real(kind=realType), dimension(:,:,:),device,allocatable :: rlv, rev, vol, aa
+    real(kind=realType), dimension(:,:,:),device,allocatable :: radI, radJ, radK, dtl
+    real(kind=realType), dimension(:,:,:, :),device,allocatable :: dss ! Shock sensor
 
     ! No halos
     real(kind=realType), dimension(:,:,:),allocatable,device :: volRef, d2wall
@@ -64,11 +65,10 @@ module cudaResidual
     real(kind=realType), dimension(:,:,:),allocatable,device :: wx, wy, wz
     real(kind=realType), dimension(:,:,:),allocatable,device :: qx, qy, qz
 
-    !rotation matrix 
-contains
+     
+    contains
 
     subroutine copydata()
-        implicit none
         use constants, only: zero
         use blockPointers, only: &
             bnx => nx, bny => ny, bnz => nz, &
@@ -87,14 +87,21 @@ contains
             bsi => si, bsj => sj, bsk => sk, &
             bsFaceI => sFaceI, bsFaceJ => sFaceJ, bsFaceK => sFaceK, &
             bdtl => dtl, baa => aa, &
-            addGridVelocities
+            addGridVelocities, brightHanded => rightHanded
         use flowVarRefState, only: nw,nwf,nwt
+        implicit none
 
-            ! Copy block pointers
+            ! Copy block pointers dimensions
+            h_nx = bnx; h_ny = bny; h_nz = bnz
+            h_il = bil; h_jl = bjl; h_kl = bkl
+            h_ie = bie; h_je = bje; h_ke = bke
+            h_ib = bib; h_jb = bjb; h_kb = bkb
+
             nx = bnx; ny = bny; nz = bnz
             il = bil; jl = bjl; kl = bkl
             ie = bie; je = bje; ke = bke
             ib = bib; jb = bjb; kb = bkb
+            rightHanded = brightHanded
 
             !allocate double halos
             allocate(w(0:ib,0:jb,0:kb,1:nw))
@@ -135,7 +142,7 @@ contains
             !no halos
             allocate(volRef(2:il,2:jl,2:kl))
             allocate(d2wall(2:il,2:jl,2:kl))
-            allocate(iblank)
+            allocate(iblank(2:il,2:jl,2:kl))
             volRef = bvolRef
             d2wall = bd2wall
             iblank  = biblank
@@ -168,7 +175,7 @@ contains
             if (addGridVelocities) then
                 sFaceI = bsFaceI
                 sFaceJ = bsFaceJ
-                bFaceK = bsFaceK
+                sFaceK = bsFaceK
             else
                 sFaceI = zero
                 sFaceJ = zero
@@ -199,8 +206,8 @@ contains
 
     !all non flux subroutines 
     attributes(global) subroutine computeSpeedOfSoundSquared
-        implicit none
         use constants, only: two, third,irho,itu1
+        implicit none
         integer :: i,j,k
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y
@@ -217,10 +224,10 @@ contains
 
     !alex
     attributes(global) subroutine allNodalGradients
-        implicit none
         use constants, only: zero,fourth,ivx,ivy,ivz
         use precision, only: realType
-        
+        implicit none
+
         real(kind=realType) :: a2, oVol, uBar,vBar,wBar,sx,sy,sz
 
         integer(kind=intType) :: i, j, k
@@ -411,7 +418,7 @@ contains
             ! j-1 and substract it from the node j. For the heat flux it
             ! is reversed, because the negative of the gradient of the
             ! speed of sound must be computed.
-            if (i > nodeStart) then
+            if (i > 1) then
                 ux(i - 1, j, k) = ux(i - 1, j, k) + ubar * sx
                 uy(i - 1, j, k) = uy(i - 1, j, k) + ubar * sy
                 uz(i - 1, j, k) = uz(i - 1, j, k) + ubar * sz
@@ -477,7 +484,6 @@ contains
     !sabet
     attributes(global) subroutine metrics
         use constants, only: half
-        use blockPointers, only: rightHanded
         implicit none
 
         integer(kind=intType) :: i, j, k, l, m, n
@@ -589,13 +595,12 @@ contains
     attributes(global) subroutine timeStep(updateDtl)
 
         use constants, only: eps, irho, ivx, ivy, ivz, irhoE, one, half, zero
-        use flowvarRefState, only: pInfCorr, rhoInf, gammaInf, viscous
-        use inputDiscretization, only: adis, acousticScaleFactor
+        use cudaFlowVarRefState, only: pInfCorr, rhoInf, gammaInf, viscous
+        use cudaInputDiscretization, only: adis, acousticScaleFactor
 
         implicit none
 
-        ! Input
-        logical, intent(in), optional :: updateDtl
+        logical,value,intent(in) :: updateDtl
 
         ! Local parameters.
         real(kind=realType), parameter :: b = 2.0_realType
@@ -609,10 +614,9 @@ contains
         logical :: doScaling, updateDt
         integer(kind=intType) :: i, j, k
 
-        updateDt = .False.
-        if (present(updateDtl)) then
-            updateDt = .True.
-        end if
+        !no nonger optional argument must be passed in
+        updateDt = updateDtl
+
 
         ! Set the value of plim. To be fully consistent this must have
         ! the dimension of a pressure. Therefore a fraction of pInfCorr
@@ -786,7 +790,7 @@ contains
 
                 end if
             end if viscousTerm
-
+        end if
         ! Skipping time spectral
 
         ! Currently the inverse of dt/vol is stored in dtl. Invert
@@ -815,7 +819,7 @@ contains
     attributes(global) subroutine sumDwandFw
 
       use constants,       only: zero
-      use flowVarRefState, only: nwf, nt1, nt2
+      use cudaFlowVarRefState, only: nwf, nt1, nt2
       use precision,       only: intType, realType
 
       implicit none
@@ -832,8 +836,8 @@ contains
         nTurb = nt2 - nt1 + 1
 
         do l = 1, nwf
-            rblank = max(real(iblank(i, j, k), realType), zero)
-            dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l)) * rBlank
+          rblank = max(real(iblank(i, j, k), realType), zero)
+          dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l)) * rBlank
         end do
 
       end if
@@ -844,8 +848,8 @@ contains
     attributes(global) subroutine resScale()
         ! This is the CUDAFOR equivalent of 'subroutine resScale()'
         use constants
-        use flowVarRefState, only: nwf, nt1, nt2
-        use inputIteration, only: turbResScale
+        use cudaFlowVarRefState, only: nwf, nt1, nt2
+        use cudaInputIteration, only: turbResScale
         implicit none
 
         ! Local Variables
@@ -872,13 +876,13 @@ contains
         !               Inviscid central flux
         ! ---------------------------------------------
         use precision, only: realType, intType
-        use constants, only, zero, one, two, third, fourth, eigth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
+        use constants, only: zero, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
         use blockPointers, only: blockIsMoving, nBkGlobal
-        use flowVarRefState, only: timeRef
+        use cudaFlowVarRefState, only: timeRef
         use cgnsGrid, only: cgnsDoms
-        use inputPhysics, only: equationMode
+        use cudaInputPhysics, only: equationMode
         implicit none
-        real(kind=realType), intent(in),optional :: wwx,wwy,wwz
+        !real(kind=realType), intent(in),optional :: wwx,wwy,wwz
         ! Variables for inviscid central flux
         real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
         real(kind=realType) :: pa, vnp, vnm, fs, sFace
@@ -1138,16 +1142,15 @@ contains
 
     end subroutine inviscidCentralFlux
 
-    attribute(global) subroutine inviscidDissFluxScalar
+    attributes(global) subroutine inviscidDissFluxScalar
     
-      use constants,           only: zero, two, half
+      use constants,           only: zero, two, half,EulerEquations
       use precision,           only: intType, realType
-      use flowVarRefState,     only: pInfCorr
-      use inputDiscretization, only: vis2, vis4
-      use inputIteration,      only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
-      use inputPhysics,        only: equations
-      use iteration,           only: rFil, totalR0, totalR
-      use flowVarRefState,     only: gammaInf, pInfCorr, rhoInf
+      use cudaInputDiscretization, only: vis2, vis4
+      use cudaInputIteration,      only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
+      use cudaInputPhysics,        only: equations
+      use cudaIteration,           only: rFil, totalR0, totalR
+      use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf
     
       implicit none
     
@@ -1157,8 +1160,7 @@ contains
       real(kind=realType)            :: sfil, fis2, fis4
       real(kind=realType)            :: ppor, rrad, dis2, dis4, fs
       real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
-      integer(kind=intType)          :: i, j, k
-    
+      integer(kind=intType) :: i, j, k    
       i = (blockIdx%x - 1) * blockDim%x + threadIdx%x - 1  ! starting at 0
       j = (blockIdx%y - 1) * blockDim%y + threadIdx%y - 1  ! for entropy part
       k = (blockIdx%z - 1) * blockDim%z + threadIdx%z - 1
@@ -1168,8 +1170,7 @@ contains
       ! For the inviscid case this is the pressure; for the viscous
       ! case it is the entropy.
     
-      select case (equations)
-      case (EulerEquations)
+      if(equations == EulerEquations) then
     
         ! Inviscid case. Pressure switch is based on the pressure.
         ! Also set the value of sslim. To be fully consistent this
@@ -1181,11 +1182,14 @@ contains
         ! Copy the pressure in ss. Only need the entries used in the
         ! discretization, i.e. not including the corner halo's, but we'll
         ! just copy all anyway.
-    
-        ss = P
+        
+        !this was a copy as ss=P 
+        !on gpu each thread needs to copy its own value
+        !need to check we copied enough values this was temporary
+        ss(i,j,k) = P(i,j,k)
         !===============================================================
     
-      case (NSEquations, RANSEquations)
+      else if (equations == NSEquations .or. equations == RANSEquations) then
     
         ! Viscous case. Pressure switch is based on the entropy.
         ! Also set the value of sslim. To be fully consistent this
@@ -1196,19 +1200,19 @@ contains
     
         ! Store the entropy in ss. See above.
     
-        if (((i >= doubleHaloStart) .AND. (i <= ib)) .AND. &
+        if (((i >=               0) .AND. (i <= ib)) .AND. &
             ((j >=               0) .AND. (j <= jb)) .AND. &
             ((k >=               0) .AND. (k <= kb))) then 
     
           ss(i, j, k) = p(i, j, k) / (w(i, j, k, irho)**gamma(i, j, k))
     
         end if 
-      end select
+      end if
     
     
       ! Compute the pressure sensor for each cell, in each direction:
     
-      if (((i >= singleHaloStart) .AND. (i <= ie)) .AND. &
+      if (((i >=               1) .AND. (i <= ie)) .AND. &
           ((j >=               1) .AND. (j <= je)) .AND. &
           ((k >=               1) .AND. (k <= ke))) then 
     
@@ -1453,10 +1457,10 @@ contains
     !alex
     attributes(global) subroutine viscousFlux
         use precision, only: realType, intType
-        use constants, only: two, third,fourth,eigth,ivx,ivy,ivz,irhoE,irho,itu1,imx,imy,imz
-        use inputPhysics, only: useQCR, prandtl, prandtlturb
-        use flowvarRefState, only: eddyModel
-        use iteration, only: rFil
+        use constants, only: two, third,fourth,eighth,ivx,ivy,ivz,irhoE,irho,itu1,imx,imy,imz
+        use cudaInputPhysics, only: useQCR, prandtl, prandtlturb
+        use cudaFlowvarRefState, only: eddyModel
+        use cudaIteration, only: rFil
         implicit none
 
         ! Variables for viscous flux
@@ -2200,11 +2204,11 @@ contains
     ! (hannah)
     attributes(global) subroutine saSource
         use constants, only: fourth, two, one, zero, sixth
-        use paramTurb, only: rsaCv1, rsaCw3, rsaK, rsaCb3, rsaCw2, rsaCb1, rsaCw1
-        use inputPhysics, only: useft2SA, turbProd, equations
-        use inputDiscretization, only: approxSA
-        use sa, only: cv13, kar2Inv, cw36, cb3Inv
-        use flowvarRefState, only: timeRef
+        use paramTurb, only: rsaCv1, rsaCw3, rsaK, rsaCb3, rsaCw2, rsaCb1, rsaCw1, rsact3,rsact4
+        use cudaInputPhysics, only: useft2SA, turbProd, equations
+        use cudaInputDiscretization, only: approxSA
+        !use sa, only: cv13, kar2Inv, cw36, cb3Inv
+        use cudaFlowvarRefState, only: timeRef
 
         implicit none
 
@@ -2221,6 +2225,10 @@ contains
         real(kind=realType), parameter :: f23 = two * third
         integer(kind=intType) :: i, j, k
         real(kind=realType) :: term1Fact
+
+        !this is new no longer read these from sa module
+        !since they are just computed here anyways
+        real(kind=realType) :: cv13, kar2Inv, cw36, cb3Inv
 
         ! Set model constants
         cv13 = rsaCv1**3
@@ -2383,9 +2391,9 @@ contains
     ! (HANNAH)
     attributes(global) subroutine saAdvection
         use constants, only: zero, half
-        use inputDiscretization, only: orderTurb
-        use iteration, only: groundlevel
-        use turbMod, only: secondOrd
+        use cudaInputDiscretization, only: orderTurb
+        use cudaiteration, only: groundlevel
+        use cudaTurbMod, only: secondOrd
         implicit none
 
         ! Variables for sa Advection
@@ -2867,8 +2875,8 @@ contains
 
     attributes(global) subroutine saViscous
         use constants, only: one, itu1, irho
-        use sa, only: cv13, kar2Inv, cw36, cb3Inv
-        use paramTurb, only: rsaCv1, rsaCw3, rsaCb3
+        ! use sa, only: kar2Inv, cw36, cb3Inv
+        use paramTurb, only: rsaCv1, rsaCw3, rsaCb3, rsaK, rsacb2
         implicit none
 
         ! Variables for sa Viscous
@@ -2877,6 +2885,10 @@ contains
         real(kind=realType) :: nutm, nutp, num, nup, cdm, cdp
         real(kind=realType) :: c1m, c1p, c10, b1, c1, d1, qs, nu
         integer(Kind=intType) :: i, j, k
+
+        !this is new no longer read these from sa module
+        !since they are just computed here anyways
+        real(kind=realType) :: cv13, kar2Inv,cw36, cb3Inv
 
         ! Set model constants
         cv13 = rsaCv1**3
@@ -3098,5 +3110,73 @@ contains
         end if    
     end subroutine saResScale
 
+
+    subroutine calculateCudaResidual(updateIntermed, varStart, varEnd)
+      use constants, only: zero
+      use cudafor,   only: dim3
+      use precision, only: intType
+
+      implicit none
+
+      logical, intent(in)               :: updateIntermed
+      integer(kind=intType), intent(in) :: varStart, varEnd
+      type(dim3)                        :: grid_size, block_size
+
+      ! zeroing
+
+      fw                           = zero
+      dw(:, :, :, varStart:varEnd) = zero
+
+      ! metrics
+
+      block_size = dim3(8, 8, 8)
+      grid_size  = dim3(ceiling(real(h_ie) / block_size%x), ceiling(real(h_je) / block_size%y), ceiling(real(h_ke) / block_size%z))
+      call metrics<<<grid_size, block_size>>>
+
+      ! call SA routines
+
+      block_size = dim3(8, 8, 8)
+      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
+      call saSource<<<grid_size, block_size>>>
+      call saAdvection<<<grid_size, block_size>>>
+      call saViscous<<<grid_size, block_size>>>
+      call saResScale<<<grid_size, block_size>>>
+
+      ! call time step routine
+
+      block_size = dim3(8, 8, 8)
+      grid_size  = dim3(ceiling(real(h_ie) / block_size%x), ceiling(real(h_je) / block_size%y), ceiling(real(h_ke) / block_size%z))
+      call timeStep<<<grid_size, block_size>>>(updateIntermed)
+      
+      ! inviscid central flux
+
+      block_size = dim3(8, 8, 8)
+      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
+      call inviscidCentralFlux<<<grid_size, block_size>>>
+
+      ! inviscid diss flux scalar
+
+      block_size = dim3(8, 8, 8)
+      grid_size  = dim3(ceiling(real(h_ib) / block_size%x), ceiling(real(h_jb) / block_size%y), ceiling(real(h_kb) / block_size%z))
+      call inviscidDissFluxScalar<<<grid_size, block_size>>>
+
+      ! viscousFlux
+
+      block_size = dim3(8, 8, 8)
+      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
+      call viscousFlux<<<grid_size, block_size>>>
+
+    !   sumDwAndFw
+
+      block_size = dim3(8, 8, 8)
+      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
+      call sumDwandFw<<<grid_size, block_size>>>
+
+      ! TODO: update residual?
+
+    end subroutine calculateCudaResidual
+
     
 end module cudaResidual
+
+
