@@ -75,6 +75,55 @@ module cudaFlowVarRefState
     !            viscosity model.
     logical,constant :: kPresent, eddyModel, viscous
 
+    subroutine cudaCopyFlowVarRefState
+        use flowVarRefState, only: h_nw=> nw, h_nwf=> nwf, h_nwt=> nwt, h_nt1=> nt1, h_nt2=> nt2, &
+                                 h_pRef=> pRef, h_rhoRef=> rhoRef, h_TRef=> TRef, h_muRef=> muRef, &
+                                    h_timeRef=> timeRef, h_uRef=> uRef, h_href=> href, &
+                                    h_LRef=> LRef, h_LRefSpecified=> LRefSpecified, &
+                                    h_pInfDim=> pInfDim, h_rhoInfDim=> rhoInfDim, h_muDim=> muDim, &
+                                    h_TinfDim=> TinfDim, h_muInfDim=> muInfDim, &
+                                    h_wInf=> wInf, h_pInf=> pInf, h_pInfCorr=> pInfCorr, &
+                                    h_rhoInf=> rhoInf, h_uInf=> uInf, h_muInf=> muInf, &
+                                    h_RGas=> RGas, h_gammaInf=> gammaInf, &
+                                    h_viscous=> viscous, h_kPresent=> kPresent, h_eddyModel=> eddyModel
+        
+        
+        implicit none
+        !copy data to gpu
+        nw = h_nw
+        nwf = h_nwf
+        nwt = h_nwt
+        nt1 = h_nt1
+        nt2 = h_nt2
+        pRef = h_pRef
+        rhoRef = h_rhoRef
+        TRef = h_TRef
+        muRef = h_muRef
+        timeRef = h_timeRef
+        uRef = h_uRef
+        href = h_href
+        LRef = h_LRef
+        LRefSpecified = h_LRefSpecified
+        pInfDim = h_pInfDim
+        rhoInfDim = h_rhoInfDim
+        muDim = h_muDim
+        TinfDim = h_TinfDim
+        muInfDim = h_muInfDim
+        wInf(1:nw) = h_wInf(1:nw)
+        pInf = h_pInf
+        pInfCorr = h_pInfCorr
+        rhoInf = h_rhoInf
+        uInf = h_uInf
+        muInf = h_muInf
+        RGas = h_RGas
+        gammaInf = h_gammaInf
+        viscous = h_viscous
+        kPresent = h_kPresent
+        eddyModel = h_eddyModel
+
+
+    end subroutine cudaCopyFlowVarRefState
+
 end module cudaFlowVarRefState
 
 module cudaInputDiscretization
@@ -139,13 +188,6 @@ module cudaInputDiscretization
     !                         computations. Typically only used for
     !                         repeated calls when the wall distance would
     !                         not have changed significantly
-    ! updateWallAssociation : Logical to determine if the full wall distance
-    !                         assocation is to be performed on the next
-    !                         wall distance calculation. This is only
-    !                         significant when useApproxWallDistance is
-    !                         set to True. This allows the user to
-    !                         reassociate the face a cell is associated
-    !                         with.
     ! lowspeedpreconditoner:  Whether or not to use low-speed precondioner
 
     integer(kind=intType),constant :: spaceDiscr, spaceDiscrCoarse
@@ -168,6 +210,51 @@ module cudaInputDiscretization
 
     logical,constant :: useApproxWallDistance
     logical,constant :: lowSpeedPreconditioner
+    subroutine cudaCopyInputDiscretization
+        use inputDiscretization, only: h_spaceDiscr=>spaceDiscr, h_spaceDiscrCoarse=>spaceDiscrCoarse, &
+                                        h_orderTurb=>orderTurb, h_riemann=>riemann, &
+                                        h_riemannCoarse=>riemannCoarse, h_limiter=>limiter, &
+                                        h_precond=>precond, h_eulerWallBCTreatment=>eulerWallBCTreatment, &
+                                        h_viscWallBCTreatment=>viscWallBCTreatment, h_outflowTreatment=>outflowTreatment, &
+                                        h_nonMatchTreatment=>nonMatchTreatment, h_vis2=>vis2, &
+                                        h_vis4=>vis4, h_vis2Coarse=>vis2Coarse, h_adis=>adis, &
+                                        h_kappaCoef=>kappaCoef, h_vortexCorr=>vortexCorr, &
+                                        h_dirScaling=>dirScaling, h_hScalingInlet=>hScalingInlet, &
+                                        h_radiiNeededFine=>radiiNeededFine, h_radiiNeededCoarse=>radiiNeededCoarse, &
+                                        h_lumpedDiss=>lumpedDiss, h_approxSA=>approxSA, h_sigma=>sigma, &
+                                        h_useApproxWallDistance=>useApproxWallDistance, &
+                                        h_lowSpeedPreconditioner=>lowSpeedPreconditioner, &
+                                        h_acousticScaleFactor=>acousticScaleFactor
+        implicit none
+        spaceDiscr = h_spaceDiscr
+        spaceDiscrCoarse = h_spaceDiscrCoarse
+        orderTurb = h_orderTurb
+        riemann = h_riemann
+        riemannCoarse = h_riemannCoarse
+        limiter = h_limiter
+        precond = h_precond
+        eulerWallBCTreatment = h_eulerWallBCTreatment
+        viscWallBCTreatment = h_viscWallBCTreatment
+        outflowTreatment = h_outflowTreatment
+        nonMatchTreatment = h_nonMatchTreatment
+        vis2 = h_vis2
+        vis4 = h_vis4
+        vis2Coarse = h_vis2Coarse
+        adis = h_adis
+        kappaCoef = h_kappaCoef
+        vortexCorr = h_vortexCorr
+        dirScaling = h_dirScaling
+        hScalingInlet = h_hScalingInlet
+        radiiNeededFine = h_radiiNeededFine
+        radiiNeededCoarse = h_radiiNeededCoarse
+        lumpedDiss = h_lumpedDiss
+        approxSA = h_approxSA
+        sigma = h_sigma
+        useApproxWallDistance = h_useApproxWallDistance
+        lowSpeedPreconditioner = h_lowSpeedPreconditioner
+        acousticScaleFactor = h_acousticScaleFactor
+    end subroutine cudaCopyInputDiscretization
+
 end module cudaInputDiscretization
 
 module cudaInputIteration
@@ -241,8 +328,6 @@ module cudaInputIteration
     ! printIterations: If True, iterations are printed to stdout
     ! turbresscale: Scaling factor for turbulent residual. Necessary for
     !            NKsolver with RANS. Only tested on SA.
-    ! iterType : String used for specifying which type of iteration was taken
-    !
     ! Definition of the string, which stores the multigrid cycling
     ! strategy.
     !
@@ -280,6 +365,79 @@ module cudaInputIteration
     logical,constant :: useDissContinuation
     real(kind=realType),constant :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
+
+    subroutine cudaCopyInputDiscretization
+        use inputIteration, only: h_nCycles=>nCycles, h_nCyclesCoarse=>nCyclesCoarse, h_nSaveVolume=>nSaveVolume, h_nSaveSurface=>nSaveSurface,&
+                                 h_nsgStartup=>nsgStartup, h_smoother=>smoother, h_nRKStages=>nRKStages, h_nSubiterations=>nSubiterations, &
+                                    h_nSubIterTurb=>nSubIterTurb, h_nUpdateBleeds=>nUpdateBleeds, h_resAveraging=>resAveraging,  h_CFLLimit=>CFLLimit &
+                                    h_turbTreatment=>turbTreatment, h_turbSmoother=>turbSmoother, h_turbRelax=>turbRelax, &
+                                    h_mgBoundCorr=>mgBoundCorr, h_mgStartlevel=>mgStartlevel, h_nMGSteps=>nMGSteps, &
+                                    h_nMGLevels=>nMGLevels, h_timelimit=>timeLimit,h_cycleStrategy=>cycleStrategy, h_miniterNum=>miniterNum, &
+                                    h_cfl=>cfl, h_cflCoarse=>cflCoarse, h_fcoll=>fcoll, &
+                                    h_smoop=>smoop, h_alfaTurb=>alfaTurb, h_betaTurb=>betaTurb, h_L2Conv=>L2Conv, &
+                                    h_L2ConvCoarse=>L2ConvCoarse, h_L2ConvRel=>L2ConvRel, h_maxL2DeviationFactor=>maxL2DeviationFactor, &
+
+                                    h_relaxBleeds=>relaxBleeds, h_epscoefconv=>epscoefconv, h_convcheckwindowsize=>convcheckwindowsize, &
+                                    h_etaRK=>etaRK, h_cdisRK=>cdisRK, h_mgDescription=>mgDescription, h_rkReset=>rkReset, &
+                                    h_useLinResMonitor=>useLinResMonitor, h_freezeTurbSource=>freezeTurbSource, &
+
+                                    h_printIterations=>printIterations, h_printWarnings=>printWarnings, &
+                                    h_printNegativeVolumes=>printNegativeVolumes, h_turbResScale=>turbResScale, &
+                                    h_useDissContinuation=>useDissContinuation, h_dissContMagnitude=>dissContMagnitude, &
+                                    h_dissContMidpoint=>dissContMidpoint, h_dissContSharpness=>dissContSharpness
+
+        implicit none
+        nCycles = h_nCycles
+        nCyclesCoarse = h_nCyclesCoarse
+        nSaveVolume = h_nSaveVolume
+        nSaveSurface = h_nSaveSurface
+        nsgStartup = h_nsgStartup
+        smoother = h_smoother
+        nRKStages = h_nRKStages
+        nSubiterations = h_nSubiterations
+        nSubIterTurb = h_nSubIterTurb
+        nUpdateBleeds = h_nUpdateBleeds
+        resAveraging = h_resAveraging
+        CFLLimit = h_CFLLimit
+        turbTreatment = h_turbTreatment
+        turbSmoother = h_turbSmoother
+        turbRelax = h_turbRelax
+        mgBoundCorr = h_mgBoundCorr
+        mgStartlevel = h_mgStartlevel
+        nMGSteps = h_nMGSteps
+        nMGLevels = h_nMGLevels
+        timeLimit = h_timelimit
+        cycleStrategy(1:nMGSteps) = h_cycleStrategy(1:nMGSteps)
+        miniterNum = h_miniterNum
+        cfl = h_cfl
+        cflCoarse = h_cflCoarse
+        fcoll = h_fcoll
+        smoop = h_smoop
+        alfaTurb = h_alfaTurb
+        betaTurb = h_betaTurb
+        L2Conv = h_L2Conv
+        L2ConvCoarse = h_L2ConvCoarse
+        L2ConvRel = h_L2ConvRel
+        maxL2DeviationFactor = h_maxL2DeviationFactor
+        relaxBleeds = h_relaxBleeds
+        epscoefconv = h_epscoefconv
+        convcheckwindowsize = h_convcheckwindowsize
+        !TO DO ALLOCATE THIS DATA
+        etaRK(1:nRKStages) = h_etaRK(1:nRKStages)
+        cdisRK(1:nRKStages) = h_cdisRK(1:nRKStages)
+        mgDescription = h_mgDescription
+        rkReset = h_rkReset
+        useLinResMonitor = h_useLinResMonitor
+        freezeTurbSource = h_freezeTurbSource
+        printIterations = h_printIterations
+        printWarnings = h_printWarnings
+        printNegativeVolumes = h_printNegativeVolumes
+        turbResScale(1:4) = h_turbResScale(1:4)
+        useDissContinuation = h_useDissContinuation
+        dissContMagnitude = h_dissContMagnitude
+        dissContMidpoint = h_dissContMidpoint
+        dissContSharpness = h_dissContSharpness
+    end subroutine cudaCopyInputDiscretization
 end module cudaInputIteration
 
 module cudaInputPhysics
@@ -386,6 +544,72 @@ module cudaInputPhysics
     ! Return forces as tractions instead of forces:
     logical,constant:: forcesAsTractions
 
+    subroutine copyCudaInputPhysics
+        use inputPhysics, only: h_equations=>equations, h_equationMode=>equationMode, h_flowType=>flowType, &
+                                h_turbModel=>turbModel, h_cpModel=>cpModel, h_turbProd=>turbProd, &
+                                h_rvfN=>rvfN, h_rvfB=>rvfB, h_useQCR=>useQCR, h_useRotationSA=>useRotationSA, &
+                                h_useft2SA=>useft2SA, h_wallFunctions=>wallFunctions, h_wallDistanceNeeded=>wallDistanceNeeded, &
+                                h_alpha=>alpha, h_beta=>beta, h_liftIndex=>liftIndex, h_Mach=>Mach, &
+                                h_MachCoef=>MachCoef, h_MachGrid=>MachGrid, h_Reynolds=>Reynolds, &
+                                h_ReynoldsLength=>ReynoldsLength, h_gammaConstant=>gammaConstant, &
+                                h_RGasDim=>RGasDim, h_Prandtl=>Prandtl, h_PrandtlTurb=>PrandtlTurb, &
+                                h_pklim=>pklim, h_wallOffset=>wallOffset, h_wallDistCutoff=>wallDistCutoff, &
+                                h_eddyVisInfRatio=>eddyVisInfRatio, h_turbIntensityInf=>turbIntensityInf, &
+                                h_surfaceRef=>surfaceRef, h_lengthRef=>lengthRef, h_velDirFreestream=>velDirFreestream, &
+                                h_liftDirection=>liftDirection, h_dragDirection=>dragDirection, h_pointRef=>pointRef, &
+                                h_momentAxis=>momentAxis, h_SSuthDim=>SSuthDim, h_muSuthDim=>muSuthDim, &
+                                h_TSuthDim=>TSuthDim, h_cavitationnumber=>cavitationnumber, h_cpmin_rho=>cpmin_rho, &
+                                h_cpmin_family=>cpmin_family, h_pointRefEC=>pointRefEC, h_forcesAsTractions=>forcesAsTractions
+
+        implicit none
+        equations = h_equations
+        equationMode = h_equationMode
+        flowType = h_flowType
+        turbModel = h_turbModel
+        cpModel = h_cpModel
+        turbProd = h_turbProd
+        rvfN = h_rvfN
+        rvfB = h_rvfB
+        useQCR = h_useQCR
+        useRotationSA = h_useRotationSA
+        useft2SA = h_useft2SA
+        wallFunctions = h_wallFunctions
+        wallDistanceNeeded = h_wallDistanceNeeded
+        alpha = h_alpha
+        beta = h_beta
+        liftIndex = h_liftIndex
+        Mach = h_Mach
+        MachCoef = h_MachCoef
+        MachGrid = h_MachGrid
+        Reynolds = h_Reynolds
+        ReynoldsLength = h_ReynoldsLength
+        gammaConstant = h_gammaConstant
+        RGasDim = h_RGasDim
+        Prandtl = h_Prandtl
+        PrandtlTurb = h_PrandtlTurb
+        pklim = h_pklim
+        wallOffset = h_wallOffset
+        wallDistCutoff = h_wallDistCutoff
+        eddyVisInfRatio = h_eddyVisInfRatio
+        turbIntensityInf = h_turbIntensityInf
+        surfaceRef = h_surfaceRef
+        lengthRef = h_lengthRef
+        velDirFreestream(1:3) = h_velDirFreestream(1:3)
+        liftDirection(1:3) = h_liftDirection(1:3)
+        dragDirection(1:3) = h_dragDirection(1:3)
+        pointRef(1:3) = h_pointRef(1:3)
+        momentAxis(1:3, 1:2) = h_momentAxis(1:3, 1:2)
+        SSuthDim = h_SSuthDim
+        muSuthDim = h_muSuthDim
+        TSuthDim = h_TSuthDim
+        cavitationnumber = h_cavitationnumber
+        cpmin_rho = h_cpmin_rho
+        !TODO allocate this data
+        cpmin_family(1:size(h_cpmin_family)) = h_cpmin_family(1:size(h_cpmin_family))
+        pointRefEC(1:3) = h_pointRefEC(1:3)
+        forcesAsTractions = h_forcesAsTractions
+    end subroutine copyCudaInputPhysics
+
 end module cudaInputPhysics
 
 module cudaParamTurb
@@ -431,7 +655,33 @@ module cudaParamTurb
     
     real(kind=realType), dimension(:, :), allocatable,device :: tup0, tup1
     real(kind=realType), dimension(:, :), allocatable,device :: tup2, tup3
+    logical, dimension(:), allocatable,device :: tuLogFit
 
+    subroutine copyCudaParamTurb
+        use paramTurb, only: h_rvfLimitK=>rvflimitK, h_rvfLimitE=>rvfLimitE, h_rvfCl=>rvfCl, &
+                            h_rvfCmu=>rvfCmu, h_nFit=>nFit, h_ypT=>ypT, h_reT=>reT, &
+                            h_up0=>up0, h_up1=>up1, h_up2=>up2, h_tup0=>tup0, &
+                            h_tup1=>tup1, h_tup2=>tup2, h_tup3=>tup3, h_tuLogFit=>tuLogFit
+        
+        use flowVarRefState, only: nt1, nt2
+        implicit none
+        h_rvfLimitK = rvfLimitK
+        h_rvfLimitE = rvfLimitE
+        h_rvfCl = rvfCl
+        h_rvfCmu = rvfCmu
+        h_nFit = nFit
+        !TOOD allocate these and fix copy for proper dimensions
+        ypT(0:nFit) = h_ypT(0:nFit)
+        reT(0:nFit) = h_reT(0:nFit)
+        up0(1:nFit) = h_up0(1:nFit)
+        up1(1:nFit) = h_up1(1:nFit)
+        up2(1:nFit) = h_up2(1:nFit)
+        tup0(1:nFit, nt1:nt2) = h_tup0(1:nFit, nt1:nt2)
+        tup1(1:nFit, nt1:nt2) = h_tup1(1:nFit, nt1:nt2)
+        tup2(1:nFit, nt1:nt2) = h_tup2(1:nFit, nt1:nt2)
+        tup3(1:nFit, nt1:nt2) = h_tup3(1:nFit, nt1:nt2)
+        tuLogFit(1:nt2) = h_tuLogFit(1:nt2)
+    end subroutine copyCudaParamTurb
 end module cudaParamTurb
 
 
@@ -451,6 +701,17 @@ module cudaIteration
     real(kind=realType), device :: rFil
     ! Variables for monitoring the residuals
     real(kind=realType),device :: totalR0, totalR
+    subroutine copyCudaIteration
+        use iteration, only: h_groundLevel=>groundLevel, h_currentLevel=>currentLevel, &
+                             h_rFil=>rFil, h_totalR0=>totalR0, h_totalR=>totalR
+        implicit none
+        groundLevel = h_groundLevel
+        currentLevel = h_currentLevel
+        rFil = h_rFil
+        totalR0 = h_totalR0
+        totalR = h_totalR
+    end subroutine copyCudaIteration
+
 end module cudaIteration
 
 module cudaTurbMod
@@ -459,4 +720,9 @@ module cudaTurbMod
     ! secondOrd:  whether or not a second order discretization for
     !             the advective terms must be used.
     logical,device :: secondOrd
+    subroutine copyCudaTurbMod
+        use turbMod, only: h_secondOrd=>secondOrd
+        implicit none
+        secondOrd = h_secondOrd
+    end subroutine copyCudaTurbMod
 end module cudaTurbMod
