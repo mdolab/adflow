@@ -224,7 +224,7 @@ module cudaResidual
 
     !alex
     attributes(global) subroutine allNodalGradients
-        use constants, only: zero,fourth,ivx,ivy,ivz
+        use constants, only: zero,one,fourth,ivx,ivy,ivz
         use precision, only: realType
         implicit none
 
@@ -454,7 +454,44 @@ module cudaResidual
                 qz(i, j, k) = qz(i, j, k) + a2 * sz
             end if
         end if 
-        ! Divide by 8 times the volume to obtain the correct gradients.
+        ! ! Divide by 8 times the volume to obtain the correct gradients.
+        ! if (i <= il .AND. j <= jl .AND. k <= kl) then
+        !     ! Compute the inverse of 8 times the volume for this node.
+        !     oVol = one / (vol(i, j, k) + vol(i, j, k + 1) &
+        !                           + vol(i + 1, j, k) + vol(i + 1, j, k + 1) &
+        !                           + vol(i, j + 1, k) + vol(i, j + 1, k + 1) &
+        !                           + vol(i + 1, j + 1, k) + vol(i + 1, j + 1, k + 1))
+        !     ! Compute the correct velocity gradients and "unit" heat
+        !     ! fluxes. The velocity gradients are stored in ux, etc.
+        !     ux(i, j, k) = ux(i, j, k) * oVol
+        !     uy(i, j, k) = uy(i, j, k) * oVol
+        !     uz(i, j, k) = uz(i, j, k) * oVol
+
+        !     vx(i, j, k) = vx(i, j, k) * oVol
+        !     vy(i, j, k) = vy(i, j, k) * oVol
+        !     vz(i, j, k) = vz(i, j, k) * oVol
+
+        !     wx(i, j, k) = wx(i, j, k) * oVol
+        !     wy(i, j, k) = wy(i, j, k) * oVol
+        !     wz(i, j, k) = wz(i, j, k) * oVol
+
+        !     qx(i, j, k) = qx(i, j, k) * oVol
+        !     qy(i, j, k) = qy(i, j, k) * oVol
+        !     qz(i, j, k) = qz(i, j, k) * oVol
+        ! end if 
+    end subroutine allNodalGradients
+
+    subroutine scaleNodalGradients
+        use constants, only: zero,fourth,ivx,ivy,ivz,one
+        use precision, only: realType
+        implicit none
+
+        real(kind=realType) :: a2, oVol, uBar,vBar,wBar,sx,sy,sz
+
+        integer(kind=intType) :: i, j, k
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y
+        k = (blockIdx%z-1)*blockDim%z + threadIdx%z
         if (i <= il .AND. j <= jl .AND. k <= kl) then
             ! Compute the inverse of 8 times the volume for this node.
             oVol = one / (vol(i, j, k) + vol(i, j, k + 1) &
@@ -479,8 +516,8 @@ module cudaResidual
             qy(i, j, k) = qy(i, j, k) * oVol
             qz(i, j, k) = qz(i, j, k) * oVol
         end if 
-    end subroutine allNodalGradients
 
+    end subroutine scaleNodalGradients
     !sabet
     attributes(global) subroutine metrics
         use constants, only: half
@@ -504,7 +541,7 @@ module cudaResidual
 
         n = k - 1
         m = j - 1   
-
+        ! Divide by 8 times the volume to obtain the correct gradients.
         if (i <= ie .and. j <= je .and. k <= ke) then
 
             ! Determine the two diagonal vectors of the face.
@@ -3115,6 +3152,13 @@ module cudaResidual
       use constants, only: zero
       use cudafor,   only: dim3
       use precision, only: intType
+      use cudaCopyFlowVarRefState, only: cudaCopyFlowVarRefState
+      use cudaInputDiscretization, only: cudaCopyInputDiscretization
+      use cudaInputIteration,      only: cudaCopyInputIteration
+      use cudaInputPhysics,        only: cudaCopyInputPhysics
+      use cudaParamTurb,           only: cudaCopyParamTurb
+      use cudaIteration,           only: cudaCopyIteration
+      use cudaTurbMod,             only: cudaCopyTurbMod
 
       implicit none
 
@@ -3122,7 +3166,18 @@ module cudaResidual
       integer(kind=intType), intent(in) :: varStart, varEnd
       type(dim3)                        :: grid_size, block_size
 
-      ! zeroing
+
+      ! copy constants
+      call cudaCopyFlowVarRefState
+      call cudaCopyInputDiscretization
+      call cudaCopyInputIteration
+      call cudaCopyInputPhysics
+      call cudaCopyParamTurb
+      call cudaCopyIteration
+      call cudaCopyTurbMod
+
+
+    ! zeroing
 
       fw                           = zero
       dw(:, :, :, varStart:varEnd) = zero
@@ -3130,46 +3185,30 @@ module cudaResidual
       ! metrics
 
       block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_ie) / block_size%x), ceiling(real(h_je) / block_size%y), ceiling(real(h_ke) / block_size%z))
+      grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
       call metrics<<<grid_size, block_size>>>
 
       ! call SA routines
-
-      block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
       call saSource<<<grid_size, block_size>>>
       call saAdvection<<<grid_size, block_size>>>
       call saViscous<<<grid_size, block_size>>>
       call saResScale<<<grid_size, block_size>>>
 
       ! call time step routine
-
-      block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_ie) / block_size%x), ceiling(real(h_je) / block_size%y), ceiling(real(h_ke) / block_size%z))
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       
       ! inviscid central flux
-
-      block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
       call inviscidCentralFlux<<<grid_size, block_size>>>
 
       ! inviscid diss flux scalar
-
-      block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_ib) / block_size%x), ceiling(real(h_jb) / block_size%y), ceiling(real(h_kb) / block_size%z))
       call inviscidDissFluxScalar<<<grid_size, block_size>>>
 
       ! viscousFlux
-
-      block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
+      call allNodalGradients<<<grid_size, block_size>>>
+      call scaleNodalGradients<<<grid_size, block_size>>>
       call viscousFlux<<<grid_size, block_size>>>
 
     !   sumDwAndFw
-
-      block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_il) / block_size%x), ceiling(real(h_jl) / block_size%y), ceiling(real(h_kl) / block_size%z))
       call sumDwandFw<<<grid_size, block_size>>>
 
       ! TODO: update residual?
