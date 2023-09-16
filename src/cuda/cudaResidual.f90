@@ -18,7 +18,7 @@ module cudaResidual
     !               cell-centered quantities.
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
-    integer(kind=intType) :: h_nx, hny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
+    integer(kind=intType) :: h_nx, h_ny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
     integer(kind=intType),device :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
 
     logical, device :: rightHanded

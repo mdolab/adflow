@@ -407,6 +407,10 @@ module cudaInputIteration
         nMGSteps = h_nMGSteps
         nMGLevels = h_nMGLevels
         timeLimit = h_timelimit
+        !TODO allocate this
+        if (.not. allocated(cycleStrategy)) then
+            allocate(cycleStrategy(nMGSteps))
+        end if
         cycleStrategy(1:nMGSteps) = h_cycleStrategy(1:nMGSteps)
         miniterNum = h_miniterNum
         cfl = h_cfl
@@ -423,7 +427,13 @@ module cudaInputIteration
         epscoefconv = h_epscoefconv
         convcheckwindowsize = h_convcheckwindowsize
         !TO DO ALLOCATE THIS DATA
+        if (.not. allocated(etaRk)) then
+            allocate(etaRk(nRKStages))
+        end if
         etaRK(1:nRKStages) = h_etaRK(1:nRKStages)
+        if (.not. allocated(cdisRK)) then
+            allocate(cdisRK(nRKStages))
+        end if
         cdisRK(1:nRKStages) = h_cdisRK(1:nRKStages)
         mgDescription = h_mgDescription
         rkReset = h_rkReset
@@ -605,6 +615,9 @@ module cudaInputPhysics
         cavitationnumber = h_cavitationnumber
         cpmin_rho = h_cpmin_rho
         !TODO allocate this data
+        if (.not. allocated(cpmin_family)) then
+            allocate(cpmin_family(1:size(h_cpmin_family)))
+        end if
         cpmin_family(1:size(h_cpmin_family)) = h_cpmin_family(1:size(h_cpmin_family))
         pointRefEC(1:3) = h_pointRefEC(1:3)
         forcesAsTractions = h_forcesAsTractions
@@ -671,16 +684,55 @@ module cudaParamTurb
         h_rvfCmu = rvfCmu
         h_nFit = nFit
         !TOOD allocate these and fix copy for proper dimensions
+        if (.not. allocated(ypT)) then
+            allocate(ypT(0:nFit))
+        end if
         ypT(0:nFit) = h_ypT(0:nFit)
+        
+        if (.not. allocated(reT)) then
+            allocate(reT(0:nFit))
+        end if
         reT(0:nFit) = h_reT(0:nFit)
+
+        if(.not. allocated(up0)) then
+            allocate(up0(nFit))
+        end if
         up0(1:nFit) = h_up0(1:nFit)
+
+        if(.not. allocated(up1)) then
+            allocate(up1(nFit))
+        end if
         up1(1:nFit) = h_up1(1:nFit)
+        
+        if(.not. allocated(up2)) then
+            allocate(up2(nFit))
+        end if
         up2(1:nFit) = h_up2(1:nFit)
+
+        if (.not. allocated(tup0)) then
+            allocate(tup0(1:nFit, nt1:nt2))
+        end if
         tup0(1:nFit, nt1:nt2) = h_tup0(1:nFit, nt1:nt2)
+
+        if (.not. allocated(tup1)) then
+            allocate(tup1(1:nFit, nt1:nt2))
+        end if
         tup1(1:nFit, nt1:nt2) = h_tup1(1:nFit, nt1:nt2)
+
+        if (.not. allocated(tup2)) then
+            allocate(tup2(1:nFit, nt1:nt2))
+        end if
         tup2(1:nFit, nt1:nt2) = h_tup2(1:nFit, nt1:nt2)
+
+        if (.not. allocated(tup3)) then
+            allocate(tup3(1:nFit, nt1:nt2))
+        end if
         tup3(1:nFit, nt1:nt2) = h_tup3(1:nFit, nt1:nt2)
-        tuLogFit(1:nt2) = h_tuLogFit(1:nt2)
+        
+        if (.not. allocated(tuLogFit)) then
+            allocate(tuLogFit(nt1:nt2))
+        end if
+        tuLogFit(nt1:nt2) = h_tuLogFit(nt1:nt2)
     end subroutine copyCudaParamTurb
 end module cudaParamTurb
 
