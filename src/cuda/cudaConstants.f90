@@ -74,7 +74,7 @@ module cudaFlowVarRefState
     ! eddyModel: whether or not the turbulence model is an eddy
     !            viscosity model.
     logical,constant :: kPresent, eddyModel, viscous
-
+    contains
     subroutine cudaCopyFlowVarRefState
         use flowVarRefState, only: h_nw=> nw, h_nwf=> nwf, h_nwt=> nwt, h_nt1=> nt1, h_nt2=> nt2, &
                                  h_pRef=> pRef, h_rhoRef=> rhoRef, h_TRef=> TRef, h_muRef=> muRef, &
@@ -109,7 +109,7 @@ module cudaFlowVarRefState
         muDim = h_muDim
         TinfDim = h_TinfDim
         muInfDim = h_muInfDim
-        wInf(1:nw) = h_wInf(1:nw)
+        wInf(1:h_nw) = h_wInf(1:h_nw)
         pInf = h_pInf
         pInfCorr = h_pInfCorr
         rhoInf = h_rhoInf
@@ -210,6 +210,7 @@ module cudaInputDiscretization
 
     logical,constant :: useApproxWallDistance
     logical,constant :: lowSpeedPreconditioner
+    contains
     subroutine cudaCopyInputDiscretization
         use inputDiscretization, only: h_spaceDiscr=>spaceDiscr, h_spaceDiscrCoarse=>spaceDiscrCoarse, &
                                         h_orderTurb=>orderTurb, h_riemann=>riemann, &
@@ -365,11 +366,11 @@ module cudaInputIteration
     logical,constant :: useDissContinuation
     real(kind=realType),constant :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
-
-    subroutine cudaCopyInputDiscretization
+    contains
+    subroutine cudaCopyInputIteration
         use inputIteration, only: h_nCycles=>nCycles, h_nCyclesCoarse=>nCyclesCoarse, h_nSaveVolume=>nSaveVolume, h_nSaveSurface=>nSaveSurface,&
                                  h_nsgStartup=>nsgStartup, h_smoother=>smoother, h_nRKStages=>nRKStages, h_nSubiterations=>nSubiterations, &
-                                    h_nSubIterTurb=>nSubIterTurb, h_nUpdateBleeds=>nUpdateBleeds, h_resAveraging=>resAveraging,  h_CFLLimit=>CFLLimit &
+                                    h_nSubIterTurb=>nSubIterTurb, h_nUpdateBleeds=>nUpdateBleeds, h_resAveraging=>resAveraging,  h_CFLLimit=>CFLLimit, &
                                     h_turbTreatment=>turbTreatment, h_turbSmoother=>turbSmoother, h_turbRelax=>turbRelax, &
                                     h_mgBoundCorr=>mgBoundCorr, h_mgStartlevel=>mgStartlevel, h_nMGSteps=>nMGSteps, &
                                     h_nMGLevels=>nMGLevels, h_timelimit=>timeLimit,h_cycleStrategy=>cycleStrategy, h_miniterNum=>miniterNum, &
@@ -447,7 +448,7 @@ module cudaInputIteration
         dissContMagnitude = h_dissContMagnitude
         dissContMidpoint = h_dissContMidpoint
         dissContSharpness = h_dissContSharpness
-    end subroutine cudaCopyInputDiscretization
+    end subroutine cudaCopyInputIteration
 end module cudaInputIteration
 
 module cudaInputPhysics
@@ -553,8 +554,8 @@ module cudaInputPhysics
 
     ! Return forces as tractions instead of forces:
     logical,constant:: forcesAsTractions
-
-    subroutine copyCudaInputPhysics
+    contains
+    subroutine cudaCopyInputPhysics
         use inputPhysics, only: h_equations=>equations, h_equationMode=>equationMode, h_flowType=>flowType, &
                                 h_turbModel=>turbModel, h_cpModel=>cpModel, h_turbProd=>turbProd, &
                                 h_rvfN=>rvfN, h_rvfB=>rvfB, h_useQCR=>useQCR, h_useRotationSA=>useRotationSA, &
@@ -621,7 +622,7 @@ module cudaInputPhysics
         cpmin_family(1:size(h_cpmin_family)) = h_cpmin_family(1:size(h_cpmin_family))
         pointRefEC(1:3) = h_pointRefEC(1:3)
         forcesAsTractions = h_forcesAsTractions
-    end subroutine copyCudaInputPhysics
+    end subroutine cudaCopyInputPhysics
 
 end module cudaInputPhysics
 
@@ -669,8 +670,8 @@ module cudaParamTurb
     real(kind=realType), dimension(:, :), allocatable,device :: tup0, tup1
     real(kind=realType), dimension(:, :), allocatable,device :: tup2, tup3
     logical, dimension(:), allocatable,device :: tuLogFit
-
-    subroutine copyCudaParamTurb
+    contains
+    subroutine cudaCopyParamTurb
         use paramTurb, only: h_rvfLimitK=>rvflimitK, h_rvfLimitE=>rvfLimitE, h_rvfCl=>rvfCl, &
                             h_rvfCmu=>rvfCmu, h_nFit=>nFit, h_ypT=>ypT, h_reT=>reT, &
                             h_up0=>up0, h_up1=>up1, h_up2=>up2, h_tup0=>tup0, &
@@ -685,55 +686,55 @@ module cudaParamTurb
         h_nFit = nFit
         !TOOD allocate these and fix copy for proper dimensions
         if (.not. allocated(ypT)) then
-            allocate(ypT(0:nFit))
+            allocate(ypT(0:h_nFit))
         end if
-        ypT(0:nFit) = h_ypT(0:nFit)
+        ypT(0:h_nFit) = h_ypT(0:h_nFit)
         
         if (.not. allocated(reT)) then
-            allocate(reT(0:nFit))
+            allocate(reT(0:h_nFit))
         end if
-        reT(0:nFit) = h_reT(0:nFit)
+        reT(0:h_nFit) = h_reT(0:h_nFit)
 
         if(.not. allocated(up0)) then
-            allocate(up0(nFit))
+            allocate(up0(h_nFit))
         end if
-        up0(1:nFit) = h_up0(1:nFit)
+        up0(1:h_nFit) = h_up0(1:h_nFit)
 
         if(.not. allocated(up1)) then
-            allocate(up1(nFit))
+            allocate(up1(h_nFit))
         end if
-        up1(1:nFit) = h_up1(1:nFit)
+        up1(1:h_nFit) = h_up1(1:h_nFit)
         
         if(.not. allocated(up2)) then
-            allocate(up2(nFit))
+            allocate(up2(h_nFit))
         end if
-        up2(1:nFit) = h_up2(1:nFit)
+        up2(1:h_nFit) = h_up2(1:h_nFit)
 
         if (.not. allocated(tup0)) then
-            allocate(tup0(1:nFit, nt1:nt2))
+            allocate(tup0(1:h_nFit, nt1:nt2))
         end if
-        tup0(1:nFit, nt1:nt2) = h_tup0(1:nFit, nt1:nt2)
+        tup0(1:h_nFit, nt1:nt2) = h_tup0(1:h_nFit, nt1:nt2)
 
         if (.not. allocated(tup1)) then
-            allocate(tup1(1:nFit, nt1:nt2))
+            allocate(tup1(1:h_nFit, nt1:nt2))
         end if
-        tup1(1:nFit, nt1:nt2) = h_tup1(1:nFit, nt1:nt2)
+        tup1(1:h_nFit, nt1:nt2) = h_tup1(1:h_nFit, nt1:nt2)
 
         if (.not. allocated(tup2)) then
-            allocate(tup2(1:nFit, nt1:nt2))
+            allocate(tup2(1:h_nFit, nt1:nt2))
         end if
-        tup2(1:nFit, nt1:nt2) = h_tup2(1:nFit, nt1:nt2)
+        tup2(1:h_nFit, nt1:nt2) = h_tup2(1:h_nFit, nt1:nt2)
 
         if (.not. allocated(tup3)) then
-            allocate(tup3(1:nFit, nt1:nt2))
+            allocate(tup3(1:h_nFit, nt1:nt2))
         end if
-        tup3(1:nFit, nt1:nt2) = h_tup3(1:nFit, nt1:nt2)
+        tup3(1:h_nFit, nt1:nt2) = h_tup3(1:h_nFit, nt1:nt2)
         
         if (.not. allocated(tuLogFit)) then
             allocate(tuLogFit(nt1:nt2))
         end if
         tuLogFit(nt1:nt2) = h_tuLogFit(nt1:nt2)
-    end subroutine copyCudaParamTurb
+    end subroutine cudaCopyParamTurb
 end module cudaParamTurb
 
 
@@ -753,7 +754,8 @@ module cudaIteration
     real(kind=realType), device :: rFil
     ! Variables for monitoring the residuals
     real(kind=realType),device :: totalR0, totalR
-    subroutine copyCudaIteration
+    contains
+    subroutine cudaCopyIteration
         use iteration, only: h_groundLevel=>groundLevel, h_currentLevel=>currentLevel, &
                              h_rFil=>rFil, h_totalR0=>totalR0, h_totalR=>totalR
         implicit none
@@ -762,7 +764,7 @@ module cudaIteration
         rFil = h_rFil
         totalR0 = h_totalR0
         totalR = h_totalR
-    end subroutine copyCudaIteration
+    end subroutine cudaCopyIteration
 
 end module cudaIteration
 
@@ -772,9 +774,10 @@ module cudaTurbMod
     ! secondOrd:  whether or not a second order discretization for
     !             the advective terms must be used.
     logical,device :: secondOrd
-    subroutine copyCudaTurbMod
+    contains
+    subroutine cudaCopyTurbMod
         use turbMod, only: h_secondOrd=>secondOrd
         implicit none
         secondOrd = h_secondOrd
-    end subroutine copyCudaTurbMod
+    end subroutine cudaCopyTurbMod
 end module cudaTurbMod

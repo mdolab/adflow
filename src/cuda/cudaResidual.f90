@@ -229,6 +229,7 @@ module cudaResidual
         implicit none
 
         real(kind=realType) :: a2, oVol, uBar,vBar,wBar,sx,sy,sz
+        real(kind=realType) :: tmp
 
         integer(kind=intType) :: i, j, k
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
@@ -273,38 +274,75 @@ module cudaResidual
             ! is reversed, because the negative of the gradient of the
             ! speed of sound must be computed.
             if (k > 1) then
-                ux(i, j, k - 1) = ux(i, j, k - 1) + ubar * sx
-                uy(i, j, k - 1) = uy(i, j, k - 1) + ubar * sy
-                uz(i, j, k - 1) = uz(i, j, k - 1) + ubar * sz
 
-                vx(i, j, k - 1) = vx(i, j, k - 1) + vbar * sx
-                vy(i, j, k - 1) = vy(i, j, k - 1) + vbar * sy
-                vz(i, j, k - 1) = vz(i, j, k - 1) + vbar * sz
+                tmp = atomicadd(ux(i, j, k - 1), ubar * sx)
+                tmp = atomicadd(uy(i, j, k - 1), ubar * sy)
+                tmp = atomicadd(uz(i, j, k - 1), ubar * sz)
 
-                wx(i, j, k - 1) = wx(i, j, k - 1) + wbar * sx
-                wy(i, j, k - 1) = wy(i, j, k - 1) + wbar * sy
-                wz(i, j, k - 1) = wz(i, j, k - 1) + wbar * sz
+                tmp = atomicadd(vx(i, j, k - 1), vbar * sx)
+                tmp = atomicadd(vy(i, j, k - 1), vbar * sy)
+                tmp = atomicadd(vz(i, j, k - 1), vbar * sz)
 
-                qx(i, j, k - 1) = qx(i, j, k - 1) - a2 * sx
-                qy(i, j, k - 1) = qy(i, j, k - 1) - a2 * sy
-                qz(i, j, k - 1) = qz(i, j, k - 1) - a2 * sz
+                tmp = atomicadd(wx(i, j, k - 1), wbar * sx)
+                tmp = atomicadd(wy(i, j, k - 1), wbar * sy)
+                tmp = atomicadd(wz(i, j, k - 1), wbar * sz)
+                
+                tmp = atomicsub(qx(i, j, k - 1), a2 * sx)
+                tmp = atomicsub(qy(i, j, k - 1), a2 * sy)
+                tmp = atomicsub(qz(i, j, k - 1), a2 * sz)
+
+                ! ux(i, j, k - 1) = ux(i, j, k - 1) + ubar * sx
+                ! uy(i, j, k - 1) = uy(i, j, k - 1) + ubar * sy
+                ! uz(i, j, k - 1) = uz(i, j, k - 1) + ubar * sz
+
+                ! vx(i, j, k - 1) = vx(i, j, k - 1) + vbar * sx
+                ! vy(i, j, k - 1) = vy(i, j, k - 1) + vbar * sy
+                ! vz(i, j, k - 1) = vz(i, j, k - 1) + vbar * sz
+
+                ! wx(i, j, k - 1) = wx(i, j, k - 1) + wbar * sx
+                ! wy(i, j, k - 1) = wy(i, j, k - 1) + wbar * sy
+                ! wz(i, j, k - 1) = wz(i, j, k - 1) + wbar * sz
+
+                ! qx(i, j, k - 1) = qx(i, j, k - 1) - a2 * sx
+                ! qy(i, j, k - 1) = qy(i, j, k - 1) - a2 * sy
+                ! qz(i, j, k - 1) = qz(i, j, k - 1) - a2 * sz
+
             end if 
+
             if (k < ke) then
-                ux(i, j, k) = ux(i, j, k) - ubar * sx
-                uy(i, j, k) = uy(i, j, k) - ubar * sy
-                uz(i, j, k) = uz(i, j, k) - ubar * sz
 
-                vx(i, j, k) = vx(i, j, k) - vbar * sx
-                vy(i, j, k) = vy(i, j, k) - vbar * sy
-                vz(i, j, k) = vz(i, j, k) - vbar * sz
+                tmp = atomicsub(ux(i, j, k), ubar * sx)
+                tmp = atomicsub(uy(i, j, k), ubar * sy)
+                tmp = atomicsub(uz(i, j, k), ubar * sz)
 
-                wx(i, j, k) = wx(i, j, k) - wbar * sx
-                wy(i, j, k) = wy(i, j, k) - wbar * sy
-                wz(i, j, k) = wz(i, j, k) - wbar * sz
+                tmp = atomicsub(vx(i, j, k), vbar * sx)
+                tmp = atomicsub(vy(i, j, k), vbar * sy)
+                tmp = atomicsub(vz(i, j, k), vbar * sz)
 
-                qx(i, j, k) = qx(i, j, k) + a2 * sx
-                qy(i, j, k) = qy(i, j, k) + a2 * sy
-                qz(i, j, k) = qz(i, j, k) + a2 * sz
+                tmp = atomicsub(wx(i, j, k), wbar * sx)
+                tmp = atomicsub(wy(i, j, k), wbar * sy)
+                tmp = atomicsub(wz(i, j, k), wbar * sz)
+                
+                tmp = atomicadd(qx(i, j, k), a2 * sx) 
+                tmp = atomicadd(qy(i, j, k), a2 * sy)
+                tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+                ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+                ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+                ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+                ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+                ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+                ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+                ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+                ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+                ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+                ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+                ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+                ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
             end if 
         end if
 
@@ -347,39 +385,75 @@ module cudaResidual
             ! speed of sound must be computed.
     
             if (j > 1) then
-                ux(i, j - 1, k) = ux(i, j - 1, k) + ubar * sx
-                uy(i, j - 1, k) = uy(i, j - 1, k) + ubar * sy
-                uz(i, j - 1, k) = uz(i, j - 1, k) + ubar * sz
 
-                vx(i, j - 1, k) = vx(i, j - 1, k) + vbar * sx
-                vy(i, j - 1, k) = vy(i, j - 1, k) + vbar * sy
-                vz(i, j - 1, k) = vz(i, j - 1, k) + vbar * sz
+                tmp = atomicadd(ux(i, j - 1, k), ubar * sx)
+                tmp = atomicadd(uy(i, j - 1, k), ubar * sy)
+                tmp = atomicadd(uz(i, j - 1, k), ubar * sz)
 
-                wx(i, j - 1, k) = wx(i, j - 1, k) + wbar * sx
-                wy(i, j - 1, k) = wy(i, j - 1, k) + wbar * sy
-                wz(i, j - 1, k) = wz(i, j - 1, k) + wbar * sz
+                tmp = atomicadd(vx(i, j - 1, k), vbar * sx)
+                tmp = atomicadd(vy(i, j - 1, k), vbar * sy)
+                tmp = atomicadd(vz(i, j - 1, k), vbar * sz)
 
-                qx(i, j - 1, k) = qx(i, j - 1, k) - a2 * sx
-                qy(i, j - 1, k) = qy(i, j - 1, k) - a2 * sy
-                qz(i, j - 1, k) = qz(i, j - 1, k) - a2 * sz
+                tmp = atomicadd(wx(i, j - 1, k), wbar * sx)
+                tmp = atomicadd(wy(i, j - 1, k), wbar * sy)
+                tmp = atomicadd(wz(i, j - 1, k), wbar * sz)
+                
+                tmp = atomicsub(qx(i, j - 1, k), a2 * sx)
+                tmp = atomicsub(qy(i, j - 1, k), a2 * sy)
+                tmp = atomicsub(qz(i, j - 1, k), a2 * sz)
+
+                ! ux(i, j - 1, k) = ux(i, j - 1, k) + ubar * sx
+                ! uy(i, j - 1, k) = uy(i, j - 1, k) + ubar * sy
+                ! uz(i, j - 1, k) = uz(i, j - 1, k) + ubar * sz
+
+                ! vx(i, j - 1, k) = vx(i, j - 1, k) + vbar * sx
+                ! vy(i, j - 1, k) = vy(i, j - 1, k) + vbar * sy
+                ! vz(i, j - 1, k) = vz(i, j - 1, k) + vbar * sz
+
+                ! wx(i, j - 1, k) = wx(i, j - 1, k) + wbar * sx
+                ! wy(i, j - 1, k) = wy(i, j - 1, k) + wbar * sy
+                ! wz(i, j - 1, k) = wz(i, j - 1, k) + wbar * sz
+
+                ! qx(i, j - 1, k) = qx(i, j - 1, k) - a2 * sx
+                ! qy(i, j - 1, k) = qy(i, j - 1, k) - a2 * sy
+                ! qz(i, j - 1, k) = qz(i, j - 1, k) - a2 * sz
+
             end if
 
             if (j < je) then
-                ux(i, j, k) = ux(i, j, k) - ubar * sx
-                uy(i, j, k) = uy(i, j, k) - ubar * sy
-                uz(i, j, k) = uz(i, j, k) - ubar * sz
 
-                vx(i, j, k) = vx(i, j, k) - vbar * sx
-                vy(i, j, k) = vy(i, j, k) - vbar * sy
-                vz(i, j, k) = vz(i, j, k) - vbar * sz
+                tmp = atomicsub(ux(i, j, k), ubar * sx) 
+                tmp = atomicsub(uy(i, j, k), ubar * sy)
+                tmp = atomicsub(uz(i, j, k), ubar * sz)
 
-                wx(i, j, k) = wx(i, j, k) - wbar * sx
-                wy(i, j, k) = wy(i, j, k) - wbar * sy
-                wz(i, j, k) = wz(i, j, k) - wbar * sz
+                tmp = atomicsub(vx(i, j, k), vbar * sx)
+                tmp = atomicsub(vy(i, j, k), vbar * sy)
+                tmp = atomicsub(vz(i, j, k), vbar * sz)
 
-                qx(i, j, k) = qx(i, j, k) + a2 * sx
-                qy(i, j, k) = qy(i, j, k) + a2 * sy
-                qz(i, j, k) = qz(i, j, k) + a2 * sz
+                tmp = atomicsub(wx(i, j, k), wbar * sx)
+                tmp = atomicsub(wy(i, j, k), wbar * sy)
+                tmp = atomicsub(wz(i, j, k), wbar * sz)
+                
+                tmp = atomicadd(qx(i, j, k), a2 * sx)
+                tmp = atomicadd(qy(i, j, k), a2 * sy)
+                tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+                ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+                ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+                ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+                ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+                ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+                ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+                ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+                ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+                ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+                ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+                ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+                ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
             end if 
         end if
         !
@@ -419,39 +493,75 @@ module cudaResidual
             ! is reversed, because the negative of the gradient of the
             ! speed of sound must be computed.
             if (i > 1) then
-                ux(i - 1, j, k) = ux(i - 1, j, k) + ubar * sx
-                uy(i - 1, j, k) = uy(i - 1, j, k) + ubar * sy
-                uz(i - 1, j, k) = uz(i - 1, j, k) + ubar * sz
 
-                vx(i - 1, j, k) = vx(i - 1, j, k) + vbar * sx
-                vy(i - 1, j, k) = vy(i - 1, j, k) + vbar * sy
-                vz(i - 1, j, k) = vz(i - 1, j, k) + vbar * sz
+                tmp = atomicadd(ux(i - 1, j, k), ubar * sx) 
+                tmp = atomicadd(uy(i - 1, j, k), ubar * sy)
+                tmp = atomicadd(uz(i - 1, j, k), ubar * sz)
 
-                wx(i - 1, j, k) = wx(i - 1, j, k) + wbar * sx
-                wy(i - 1, j, k) = wy(i - 1, j, k) + wbar * sy
-                wz(i - 1, j, k) = wz(i - 1, j, k) + wbar * sz
+                tmp = atomicadd(vx(i - 1, j, k), vbar * sx)
+                tmp = atomicadd(vy(i - 1, j, k), vbar * sy)
+                tmp = atomicadd(vz(i - 1, j, k), vbar * sz)
 
-                qx(i - 1, j, k) = qx(i - 1, j, k) - a2 * sx
-                qy(i - 1, j, k) = qy(i - 1, j, k) - a2 * sy
-                qz(i - 1, j, k) = qz(i - 1, j, k) - a2 * sz
+                tmp = atomicadd(wx(i - 1, j, k), wbar * sx)
+                tmp = atomicadd(wy(i - 1, j, k), wbar * sy)
+                tmp = atomicadd(wz(i - 1, j, k), wbar * sz)
+                
+                tmp = atomicsub(qx(i - 1, j, k), a2 * sx)
+                tmp = atomicsub(qy(i - 1, j, k), a2 * sy)
+                tmp = atomicsub(qz(i - 1, j, k), a2 * sz)
+
+                ! ux(i - 1, j, k) = ux(i - 1, j, k) + ubar * sx
+                ! uy(i - 1, j, k) = uy(i - 1, j, k) + ubar * sy
+                ! uz(i - 1, j, k) = uz(i - 1, j, k) + ubar * sz
+
+                ! vx(i - 1, j, k) = vx(i - 1, j, k) + vbar * sx
+                ! vy(i - 1, j, k) = vy(i - 1, j, k) + vbar * sy
+                ! vz(i - 1, j, k) = vz(i - 1, j, k) + vbar * sz
+
+                ! wx(i - 1, j, k) = wx(i - 1, j, k) + wbar * sx
+                ! wy(i - 1, j, k) = wy(i - 1, j, k) + wbar * sy
+                ! wz(i - 1, j, k) = wz(i - 1, j, k) + wbar * sz
+
+                ! qx(i - 1, j, k) = qx(i - 1, j, k) - a2 * sx
+                ! qy(i - 1, j, k) = qy(i - 1, j, k) - a2 * sy
+                ! qz(i - 1, j, k) = qz(i - 1, j, k) - a2 * sz
+
             end if
 
             if (i < ie) then
-                ux(i, j, k) = ux(i, j, k) - ubar * sx
-                uy(i, j, k) = uy(i, j, k) - ubar * sy
-                uz(i, j, k) = uz(i, j, k) - ubar * sz
 
-                vx(i, j, k) = vx(i, j, k) - vbar * sx
-                vy(i, j, k) = vy(i, j, k) - vbar * sy
-                vz(i, j, k) = vz(i, j, k) - vbar * sz
+                tmp = atomicsub(ux(i, j, k), ubar * sx)
+                tmp = atomicsub(uy(i, j, k), ubar * sy)
+                tmp = atomicsub(uz(i, j, k), ubar * sz)
 
-                wx(i, j, k) = wx(i, j, k) - wbar * sx
-                wy(i, j, k) = wy(i, j, k) - wbar * sy
-                wz(i, j, k) = wz(i, j, k) - wbar * sz
+                tmp = atomicsub(vx(i, j, k), vbar * sx)
+                tmp = atomicsub(vy(i, j, k), vbar * sy)
+                tmp = atomicsub(vz(i, j, k), vbar * sz)
 
-                qx(i, j, k) = qx(i, j, k) + a2 * sx
-                qy(i, j, k) = qy(i, j, k) + a2 * sy
-                qz(i, j, k) = qz(i, j, k) + a2 * sz
+                tmp = atomicsub(wx(i, j, k), wbar * sx)
+                tmp = atomicsub(wy(i, j, k), wbar * sy)
+                tmp = atomicsub(wz(i, j, k), wbar * sz)
+                
+                tmp = atomicadd(qx(i, j, k), a2 * sx)
+                tmp = atomicadd(qy(i, j, k), a2 * sy)
+                tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+                ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+                ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+                ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+                ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+                ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+                ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+                ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+                ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+                ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+                ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+                ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+                ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
             end if
         end if 
         ! ! Divide by 8 times the volume to obtain the correct gradients.
@@ -481,7 +591,7 @@ module cudaResidual
         ! end if 
     end subroutine allNodalGradients
 
-    subroutine scaleNodalGradients
+    attributes(global) subroutine scaleNodalGradients
         use constants, only: zero,fourth,ivx,ivy,ivz,one
         use precision, only: realType
         implicit none
@@ -680,7 +790,7 @@ module cudaResidual
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z
-
+        !loop 1 to ie
         if (i <= ie .and. j <= je .and. k <= ke) then
 
             ! Compute the velocities and speed of sound squared.
@@ -772,11 +882,11 @@ module cudaResidual
             viscousTerm: if (viscous) then
 
                 ! Loop over the owned cell centers.
-
+                !loop starts at 2
                 i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
                 j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
                 k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
-
+                !loop at 2 to il
                 if (i <= il .and. j <= jl .and. k <= kl) then
 
                     ! Compute the effective viscosity coefficient. The
@@ -837,7 +947,7 @@ module cudaResidual
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
-
+        !loop 2 to il (cell centers)
         if (i <= il .and. j <= jl .and. k <= kl) then
             dpi = abs(p(i + 1, j, k) - two * p(i, j, k) + p(i - 1, j, k)) &
                     / (p(i + 1, j, k) + two * p(i, j, k) + p(i - 1, j, k) + plim)
@@ -867,7 +977,7 @@ module cudaResidual
       i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + 1  ! starting at 2
       j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
       k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
-
+      !loop 2 to il for cell centers
       if (i <= il .AND. j <= jl .AND. k <= kl) then
 
         nTurb = nt2 - nt1 + 1
@@ -924,6 +1034,7 @@ module cudaResidual
         real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
         real(kind=realType) :: pa, vnp, vnm, fs, sFace
         integer(kind=intType) :: i, j, k
+        real(kind=realtype) :: tmp  
         ! real(kind=realType) :: wwx, wwy, wwz, rvol
 
         !thread indices start at 1
@@ -931,6 +1042,8 @@ module cudaResidual
         j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
         k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
 
+        !ifaces flux
+        !loop k 2 to kl, j 2 to jl, i1 to il
         if (k <= kl .and. j <= jl .and. i <= il .and. j>=2 .and. k>=2) then
             ! Set the dot product of the grid velocity and the
             ! normal in i-direction for a moving face.
@@ -986,30 +1099,42 @@ module cudaResidual
             ! mass flow of the appropriate sliding mesh interface.
 
             fs = rqsp + rqsm
-            dw(i + 1, j, k, irho) = dw(i + 1, j, k, irho) - fs
-            dw(i, j, k, irho) = dw(i, j, k, irho) + fs
+            tmp = atomicsub(dw(i + 1, j, k, irho), fs)
+            tmp = atomicadd(dw(i, j, k, irho), fs)
+            ! dw(i + 1, j, k, irho) = dw(i + 1, j, k, irho) - fs
+            ! dw(i, j, k, irho) = dw(i, j, k, irho) + fs
 
             fs = rqsp * w(i + 1, j, k, ivx) + rqsm * w(i, j, k, ivx) &
                 + pa * sI(i, j, k, 1)
-            dw(i + 1, j, k, imx) = dw(i + 1, j, k, imx) - fs
-            dw(i, j, k, imx) = dw(i, j, k, imx) + fs
+            tmp = atomicsub(dw(i + 1, j, k, imx), fs)
+            tmp = atomicadd(dw(i, j, k, imx), fs)
+            ! dw(i + 1, j, k, imx) = dw(i + 1, j, k, imx) - fs
+            ! dw(i, j, k, imx) = dw(i, j, k, imx) + fs
 
             fs = rqsp * w(i + 1, j, k, ivy) + rqsm * w(i, j, k, ivy) &
                 + pa * sI(i, j, k, 2)
-            dw(i + 1, j, k, imy) = dw(i + 1, j, k, imy) - fs
-            dw(i, j, k, imy) = dw(i, j, k, imy) + fs
+            tmp = atomicsub(dw(i + 1, j, k, imy), fs)
+            tmp = atomicadd(dw(i, j, k, imy), fs)
+            ! dw(i + 1, j, k, imy) = dw(i + 1, j, k, imy) - fs
+            ! dw(i, j, k, imy) = dw(i, j, k, imy) + fs
 
             fs = rqsp * w(i + 1, j, k, ivz) + rqsm * w(i, j, k, ivz) &
                 + pa * sI(i, j, k, 3)
-            dw(i + 1, j, k, imz) = dw(i + 1, j, k, imz) - fs
-            dw(i, j, k, imz) = dw(i, j, k, imz) + fs
+            tmp = atomicsub(dw(i + 1, j, k, imz), fs)
+            tmp = atomicadd(dw(i, j, k, imz), fs)
+            ! dw(i + 1, j, k, imz) = dw(i + 1, j, k, imz) - fs
+            ! dw(i, j, k, imz) = dw(i, j, k, imz) + fs
 
             fs = qsp * w(i + 1, j, k, irhoE) + qsm * w(i, j, k, irhoE) &
                 + porFlux * (vnp * p(i + 1, j, k) + vnm * p(i, j, k))
+            tmp = atomicsub(dw(i + 1, j, k, irhoE), fs)
+            tmp = atomicadd(dw(i, j, k, irhoE), fs)
             dw(i + 1, j, k, irhoE) = dw(i + 1, j, k, irhoE) - fs
             dw(i, j, k, irhoE) = dw(i, j, k, irhoE) + fs
         end if
-
+        
+        !loop k 2 to kl, j 1 to jl, i 2 to il
+        !j faces flux
         if (k <= kl .and. j <= jl .and. i <= il .and. i>=2 .and. k>=2) then
             ! Set the dot product of the grid velocity and the
             ! normal in j-direction for a moving face.
@@ -1067,30 +1192,42 @@ module cudaResidual
             ! mass flow of the appropriate sliding mesh interface.
 
             fs = rqsp + rqsm
-            dw(i, j + 1, k, irho) = dw(i, j + 1, k, irho) - fs
-            dw(i, j, k, irho) = dw(i, j, k, irho) + fs
+            tmp = atomicsub(dw(i, j + 1, k, irho), fs)
+            tmp = atomicadd(dw(i, j, k, irho), fs)
+            ! dw(i, j + 1, k, irho) = dw(i, j + 1, k, irho) - fs
+            ! dw(i, j, k, irho) = dw(i, j, k, irho) + fs
 
             fs = rqsp * w(i, j + 1, k, ivx) + rqsm * w(i, j, k, ivx) &
                 + pa * sJ(i, j, k, 1)
-            dw(i, j + 1, k, imx) = dw(i, j + 1, k, imx) - fs
-            dw(i, j, k, imx) = dw(i, j, k, imx) + fs
+            tmp = atomicsub(dw(i, j + 1, k, imx), fs)
+            tmp = atomicadd(dw(i, j, k, imx), fs)
+            ! dw(i, j + 1, k, imx) = dw(i, j + 1, k, imx) - fs
+            ! dw(i, j, k, imx) = dw(i, j, k, imx) + fs
 
             fs = rqsp * w(i, j + 1, k, ivy) + rqsm * w(i, j, k, ivy) &
                 + pa * sJ(i, j, k, 2)
-            dw(i, j + 1, k, imy) = dw(i, j + 1, k, imy) - fs
-            dw(i, j, k, imy) = dw(i, j, k, imy) + fs
+            tmp = atomicsub(dw(i, j + 1, k, imy), fs)
+            tmp = atomicadd(dw(i, j, k, imy), fs)
+            ! dw(i, j + 1, k, imy) = dw(i, j + 1, k, imy) - fs
+            ! dw(i, j, k, imy) = dw(i, j, k, imy) + fs
 
             fs = rqsp * w(i, j + 1, k, ivz) + rqsm * w(i, j, k, ivz) &
                 + pa * sJ(i, j, k, 3)
-            dw(i, j + 1, k, imz) = dw(i, j + 1, k, imz) - fs
-            dw(i, j, k, imz) = dw(i, j, k, imz) + fs
+            tmp = atomicsub(dw(i, j + 1, k, imz), fs)
+            tmp = atomicadd(dw(i, j, k, imz), fs)
+            ! dw(i, j + 1, k, imz) = dw(i, j + 1, k, imz) - fs
+            ! dw(i, j, k, imz) = dw(i, j, k, imz) + fs
 
             fs = qsp * w(i, j + 1, k, irhoE) + qsm * w(i, j, k, irhoE) &
                 + porFlux * (vnp * p(i, j + 1, k) + vnm * p(i, j, k))
-            dw(i, j + 1, k, irhoE) = dw(i, j + 1, k, irhoE) - fs
-            dw(i, j, k, irhoE) = dw(i, j, k, irhoE) + fs
+            tmp = atomicsub(dw(i, j + 1, k, irhoE), fs)
+            tmp = atomicadd(dw(i, j, k, irhoE), fs)
+            ! dw(i, j + 1, k, irhoE) = dw(i, j + 1, k, irhoE) - fs
+            ! dw(i, j, k, irhoE) = dw(i, j, k, irhoE) + fs
         end if
 
+        !k face flux
+        !loop k 1 to kl, j 2 to jl, i 2 to il
         if (k <= kl .and. j <= jl .and. i <= il .and. i>=2 .and. j>=2) then
             ! Set the dot product of the grid velocity and the
                     ! normal in k-direction for a moving face.
@@ -1150,28 +1287,38 @@ module cudaResidual
             ! mass flow of the appropriate sliding mesh interface.
 
             fs = rqsp + rqsm
-            dw(i, j, k + 1, irho) = dw(i, j, k + 1, irho) - fs
-            dw(i, j, k, irho) = dw(i, j, k, irho) + fs
+            tmp = atomicsub(dw(i, j, k + 1, irho), fs)
+            tmp = atomicadd(dw(i, j, k, irho), fs)
+            ! dw(i, j, k + 1, irho) = dw(i, j, k + 1, irho) - fs
+            ! dw(i, j, k, irho) = dw(i, j, k, irho) + fs
 
             fs = rqsp * w(i, j, k + 1, ivx) + rqsm * w(i, j, k, ivx) &
                  + pa * sK(i, j, k, 1)
-            dw(i, j, k + 1, imx) = dw(i, j, k + 1, imx) - fs
-            dw(i, j, k, imx) = dw(i, j, k, imx) + fs
+            tmp = atomicsub(dw(i, j, k + 1, imx), fs)
+            tmp = atomicadd(dw(i, j, k, imx), fs)
+            ! dw(i, j, k + 1, imx) = dw(i, j, k + 1, imx) - fs
+            ! dw(i, j, k, imx) = dw(i, j, k, imx) + fs
 
             fs = rqsp * w(i, j, k + 1, ivy) + rqsm * w(i, j, k, ivy) &
                  + pa * sK(i, j, k, 2)
-            dw(i, j, k + 1, imy) = dw(i, j, k + 1, imy) - fs
-            dw(i, j, k, imy) = dw(i, j, k, imy) + fs
+            tmp = atomicsub(dw(i, j, k + 1, imy), fs)
+            tmp = atomicadd(dw(i, j, k, imy), fs)
+            ! dw(i, j, k + 1, imy) = dw(i, j, k + 1, imy) - fs
+            ! dw(i, j, k, imy) = dw(i, j, k, imy) + fs
 
             fs = rqsp * w(i, j, k + 1, ivz) + rqsm * w(i, j, k, ivz) &
                  + pa * sK(i, j, k, 3)
-            dw(i, j, k + 1, imz) = dw(i, j, k + 1, imz) - fs
-            dw(i, j, k, imz) = dw(i, j, k, imz) + fs
+            tmp = atomicsub(dw(i, j, k + 1, imz), fs)
+            tmp = atomicadd(dw(i, j, k, imz), fs)
+            ! dw(i, j, k + 1, imz) = dw(i, j, k + 1, imz) - fs
+            ! dw(i, j, k, imz) = dw(i, j, k, imz) + fs
 
             fs = qsp * w(i, j, k + 1, irhoE) + qsm * w(i, j, k, irhoE) &
                  + porFlux * (vnp * p(i, j, k + 1) + vnm * p(i, j, k))
-            dw(i, j, k + 1, irhoE) = dw(i, j, k + 1, irhoE) - fs
-            dw(i, j, k, irhoE) = dw(i, j, k, irhoE) + fs
+            tmp = atomicsub(dw(i, j, k + 1, irhoE), fs)
+            tmp = atomicadd(dw(i, j, k, irhoE), fs)
+            ! dw(i, j, k + 1, irhoE) = dw(i, j, k + 1, irhoE) - fs
+            ! dw(i, j, k, irhoE) = dw(i, j, k, irhoE) + fs
         end if 
         
         !we left out the rotationof the block
@@ -1197,6 +1344,7 @@ module cudaResidual
       real(kind=realType)            :: sfil, fis2, fis4
       real(kind=realType)            :: ppor, rrad, dis2, dis4, fs
       real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
+      real(kind=realType)            :: tmp
       integer(kind=intType) :: i, j, k    
       i = (blockIdx%x - 1) * blockDim%x + threadIdx%x - 1  ! starting at 0
       j = (blockIdx%y - 1) * blockDim%y + threadIdx%y - 1  ! for entropy part
@@ -1220,7 +1368,7 @@ module cudaResidual
         ! discretization, i.e. not including the corner halo's, but we'll
         ! just copy all anyway.
         
-        !this was a copy as ss=P 
+        !TODO this was a copy as ss=P 
         !on gpu each thread needs to copy its own value
         !need to check we copied enough values this was temporary
         ss(i,j,k) = P(i,j,k)
@@ -1236,7 +1384,7 @@ module cudaResidual
         sslim = 0.001_realType * pInfCorr / (rhoInf**gammaInf)
     
         ! Store the entropy in ss. See above.
-    
+        !loop k 0 to kb, j 0 to jb, i 0 to ib
         if (((i >=               0) .AND. (i <= ib)) .AND. &
             ((j >=               0) .AND. (j <= jb)) .AND. &
             ((k >=               0) .AND. (k <= kb))) then 
@@ -1248,7 +1396,7 @@ module cudaResidual
     
     
       ! Compute the pressure sensor for each cell, in each direction:
-    
+      !loop k 1 to ke, j 1 to je, i 1 to ie
       if (((i >=               1) .AND. (i <= ie)) .AND. &
           ((j >=               1) .AND. (j <= je)) .AND. &
           ((k >=               1) .AND. (k <= ke))) then 
@@ -1288,7 +1436,10 @@ module cudaResidual
       ! only, because the halo values do not matter.
     
       fw = sfil * fw
-    
+      !
+      !       Dissipative fluxes in the i-direction.
+      !
+      !loop k 2 to kl, j 2 to jl, i 1 to il
       if (((i >= 1) .AND. (i <= il)) .AND. &
           ((j >= 2) .AND. (j <= jl)) .AND. &
           ((k >= 2) .AND. (k <= kl))) then 
@@ -1310,8 +1461,11 @@ module cudaResidual
         fs = dis2 * ddw1 &
              - dis4 * (w(i + 2, j, k, irho) - w(i - 1, j, k, irho) - three * ddw1)
     
-        fw(i + 1, j, k, irho) = fw(i + 1, j, k, irho) + fs
-        fw(i, j, k, irho) = fw(i, j, k, irho) - fs
+        tmp = atomicadd(fw(i + 1, j, k, irho), fs)
+        tmp = atomicsub(fw(    i, j, k, irho), fs)
+
+        ! fw(i + 1, j, k, irho) = fw(i + 1, j, k, irho) + fs
+        ! fw(i, j, k, irho) = fw(i, j, k, irho) - fs
     
         ! X-momentum.
     
@@ -1320,8 +1474,11 @@ module cudaResidual
              - dis4 * (w(i + 2, j, k, ivx) * w(i + 2, j, k, irho) - &
                        w(i - 1, j, k, ivx) * w(i - 1, j, k, irho) - three * ddw2)
     
-        fw(i + 1, j, k, imx) = fw(i + 1, j, k, imx) + fs
-        fw(i, j, k, imx) = fw(i, j, k, imx) - fs
+        tmp = atomicadd(fw(i + 1, j, k, imx), fs)
+        tmp = atomicsub(fw(    i, j, k, imx), fs)
+
+        ! fw(i + 1, j, k, imx) = fw(i + 1, j, k, imx) + fs
+        ! fw(i, j, k, imx) = fw(i, j, k, imx) - fs
     
         ! Y-momentum.
     
@@ -1330,8 +1487,11 @@ module cudaResidual
              - dis4 * (w(i + 2, j, k, ivy) * w(i + 2, j, k, irho) - &
                        w(i - 1, j, k, ivy) * w(i - 1, j, k, irho) - three * ddw3)
     
-        fw(i + 1, j, k, imy) = fw(i + 1, j, k, imy) + fs
-        fw(i, j, k, imy) = fw(i, j, k, imy) - fs
+        tmp = atomicadd(fw(i + 1, j, k, imy), fs)
+        tmp = atomicsub(fw(    i, j, k, imy), fs)
+
+        ! fw(i + 1, j, k, imy) = fw(i + 1, j, k, imy) + fs
+        ! fw(i, j, k, imy) = fw(i, j, k, imy) - fs
     
         ! Z-momentum.
     
@@ -1340,9 +1500,12 @@ module cudaResidual
              - dis4 * (w(i + 2, j, k, ivz) * w(i + 2, j, k, irho) - &
                        w(i - 1, j, k, ivz) * w(i - 1, j, k, irho) - three * ddw4)
     
-        fw(i + 1, j, k, imz) = fw(i + 1, j, k, imz) + fs
-        fw(i, j, k, imz) = fw(i, j, k, imz) - fs
+        tmp = atomicadd(fw(i + 1, j, k, imz), fs)
+        tmp = atomicsub(fw(    i, j, k, imz), fs)
     
+        ! fw(i + 1, j, k, imz) = fw(i + 1, j, k, imz) + fs
+        ! fw(i, j, k, imz) = fw(i, j, k, imz) - fs
+
         ! Energy.
     
         ddw5 = (w(i + 1, j, k, irhoE) + P(i + 1, j, K)) - (w(i, j, k, irhoE) + P(i, j, k))
@@ -1350,12 +1513,18 @@ module cudaResidual
              - dis4 * ((w(i + 2, j, k, irhoE) + P(i + 2, j, k)) - &
                        (w(i - 1, j, k, irhoE) + P(i - 1, j, k)) - three * ddw5)
     
-        fw(i + 1, j, k, irhoE) = fw(i + 1, j, k, irhoE) + fs
-        fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
+        tmp = atomicadd(fw(i + 1, j, k, irhoE), fs)
+        tmp = atomicsub(fw(    i, j, k, irhoE), fs)
+
+        ! fw(i + 1, j, k, irhoE) = fw(i + 1, j, k, irhoE) + fs
+        ! fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
     
       end if
     
-    
+      !
+      !       Dissipative fluxes in the j-direction.
+      !
+      !loop k 2 to kl, j 1 to jl, i 2 to il
       if (((i >= 2) .AND. (i <= il)) .AND. &
           ((j >= 1) .AND. (j <= jl)) .AND. &
           ((k >= 2) .AND. (k <= kl))) then 
@@ -1377,8 +1546,11 @@ module cudaResidual
         fs = dis2 * ddw1 &
              - dis4 * (w(i, j + 2, k, irho) - w(i, j - 1, k, irho) - three * ddw1)
     
-        fw(i, j + 1, k, irho) = fw(i, j + 1, k, irho) + fs
-        fw(i, j, k, irho) = fw(i, j, k, irho) - fs
+        tmp = atomicadd(fw(i, j + 1, k, irho), fs)
+        tmp = atomicsub(fw(i,     j, k, irho), fs)
+
+        ! fw(i, j + 1, k, irho) = fw(i, j + 1, k, irho) + fs
+        ! fw(i, j, k, irho) = fw(i, j, k, irho) - fs
     
         ! X-momentum.
     
@@ -1387,8 +1559,11 @@ module cudaResidual
              - dis4 * (w(i, j + 2, k, ivx) * w(i, j + 2, k, irho) - &
                        w(i, j - 1, k, ivx) * w(i, j - 1, k, irho) - three * ddw2)
     
-        fw(i, j + 1, k, imx) = fw(i, j + 1, k, imx) + fs
-        fw(i, j, k, imx) = fw(i, j, k, imx) - fs
+        tmp = atomicadd(fw(i, j + 1, k, imx), fs)
+        tmp = atomicsub(fw(i,     j, k, imx), fs)
+
+        ! fw(i, j + 1, k, imx) = fw(i, j + 1, k, imx) + fs
+        ! fw(i, j, k, imx) = fw(i, j, k, imx) - fs
     
         ! Y-momentum.
     
@@ -1397,8 +1572,11 @@ module cudaResidual
              - dis4 * (w(i, j + 2, k, ivy) * w(i, j + 2, k, irho) - &
                        w(i, j - 1, k, ivy) * w(i, j - 1, k, irho) - three * ddw3)
     
-        fw(i, j + 1, k, imy) = fw(i, j + 1, k, imy) + fs
-        fw(i, j, k, imy) = fw(i, j, k, imy) - fs
+        tmp = atomicadd(fw(i, j + 1, k, imy), fs)
+        tmp = atomicsub(fw(i,     j, k, imy), fs)
+
+        ! fw(i, j + 1, k, imy) = fw(i, j + 1, k, imy) + fs
+        ! fw(i, j, k, imy) = fw(i, j, k, imy) - fs
     
         ! Z-momentum.
     
@@ -1406,9 +1584,12 @@ module cudaResidual
         fs = dis2 * ddw4 &
              - dis4 * (w(i, j + 2, k, ivz) * w(i, j + 2, k, irho) - &
                        w(i, j - 1, k, ivz) * w(i, j - 1, k, irho) - three * ddw4)
-    
-        fw(i, j + 1, k, imz) = fw(i, j + 1, k, imz) + fs
-        fw(i, j, k, imz) = fw(i, j, k, imz) - fs
+
+        tmp = atomicadd(fw(i, j + 1, k, imz), fs)
+        tmp = atomicsub(fw(i,     j, k, imz), fs)
+
+        ! fw(i, j + 1, k, imz) = fw(i, j + 1, k, imz) + fs
+        ! fw(i, j, k, imz) = fw(i, j, k, imz) - fs
     
         ! Energy.
     
@@ -1417,12 +1598,17 @@ module cudaResidual
              - dis4 * ((w(i, j + 2, k, irhoE) + P(i, j + 2, k)) - &
                        (w(i, j - 1, k, irhoE) + P(i, j - 1, k)) - three * ddw5)
     
-        fw(i, j + 1, k, irhoE) = fw(i, j + 1, k, irhoE) + fs
-        fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
+        tmp = atomicadd(fw(i, j + 1, k, irhoE), fs)
+        tmp = atomicsub(fw(i,     j, k, irhoE), fs)
+
+        ! fw(i, j + 1, k, irhoE) = fw(i, j + 1, k, irhoE) + fs
+        ! fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
     
       end if
-    
-    
+      !
+      !       Dissipative fluxes in the k-direction.
+      !
+      !loop k 1 to kl, j 2 to jl, i 2 to il
       if (((i >= 2) .AND. (i <= il)) .AND. &
           ((j >= 2) .AND. (j <= jl)) .AND. &
           ((k >= 1) .AND. (k <= kl))) then 
@@ -1444,8 +1630,11 @@ module cudaResidual
         fs = dis2 * ddw1 &
              - dis4 * (w(i, j, k + 2, irho) - w(i, j, k - 1, irho) - three * ddw1)
     
-        fw(i, j, k + 1, irho) = fw(i, j, k + 1, irho) + fs
-        fw(i, j, k, irho) = fw(i, j, k, irho) - fs
+        tmp = atomicadd(fw(i, j, k + 1, irho), fs)
+        tmp = atomicsub(fw(i, j,     k, irho), fs)
+
+        ! fw(i, j, k + 1, irho) = fw(i, j, k + 1, irho) + fs
+        ! fw(i, j, k, irho) = fw(i, j, k, irho) - fs
     
         ! X-momentum.
     
@@ -1454,8 +1643,11 @@ module cudaResidual
              - dis4 * (w(i, j, k + 2, ivx) * w(i, j, k + 2, irho) - &
                        w(i, j, k - 1, ivx) * w(i, j, k - 1, irho) - three * ddw2)
     
-        fw(i, j, k + 1, imx) = fw(i, j, k + 1, imx) + fs
-        fw(i, j, k, imx) = fw(i, j, k, imx) - fs
+        tmp = atomicadd(fw(i, j, k + 1, imx), fs)
+        tmp = atomicsub(fw(i, j,     k, imx), fs)
+
+        ! fw(i, j, k + 1, imx) = fw(i, j, k + 1, imx) + fs
+        ! fw(i, j, k, imx) = fw(i, j, k, imx) - fs
     
         ! Y-momentum.
     
@@ -1464,8 +1656,11 @@ module cudaResidual
              - dis4 * (w(i, j, k + 2, ivy) * w(i, j, k + 2, irho) - &
                        w(i, j, k - 1, ivy) * w(i, j, k - 1, irho) - three * ddw3)
     
-        fw(i, j, k + 1, imy) = fw(i, j, k + 1, imy) + fs
-        fw(i, j, k, imy) = fw(i, j, k, imy) - fs
+        tmp = atomicadd(fw(i, j, k + 1, imy), fs)
+        tmp = atomicsub(fw(i, j,     k, imy), fs)
+
+        ! fw(i, j, k + 1, imy) = fw(i, j, k + 1, imy) + fs
+        ! fw(i, j, k, imy) = fw(i, j, k, imy) - fs
     
         ! Z-momentum.
     
@@ -1474,8 +1669,11 @@ module cudaResidual
              - dis4 * (w(i, j, k + 2, ivz) * w(i, j, k + 2, irho) - &
                        w(i, j, k - 1, ivz) * w(i, j, k - 1, irho) - three * ddw4)
     
-        fw(i, j, k + 1, imz) = fw(i, j, k + 1, imz) + fs
-        fw(i, j, k, imz) = fw(i, j, k, imz) - fs
+        tmp = atomicadd(fw(i, j, k + 1, imz), fs)
+        tmp = atomicsub(fw(i, j,     k, imz), fs)
+
+        ! fw(i, j, k + 1, imz) = fw(i, j, k + 1, imz) + fs
+        ! fw(i, j, k, imz) = fw(i, j, k, imz) - fs
     
         ! Energy.
     
@@ -1484,8 +1682,11 @@ module cudaResidual
              - dis4 * ((w(i, j, k + 2, irhoE) + P(i, j, k + 2)) - &
                        (w(i, j, k - 1, irhoE) + P(i, j, k - 1)) - three * ddw5)
     
-        fw(i, j, k + 1, irhoE) = fw(i, j, k + 1, irhoE) + fs
-        fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
+        tmp = atomicadd(fw(i, j, k + 1, irhoE), fs)
+        tmp = atomicsub(fw(i, j,     k, irhoE), fs)
+
+        ! fw(i, j, k + 1, irhoE) = fw(i, j, k + 1, irhoE) + fs
+        ! fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - fs
     
       end if
     
@@ -1520,7 +1721,7 @@ module cudaResidual
         integer(kind=intType) :: i, j, k, io, jo, ko
         real(kind=realType), parameter :: xminn = 1.e-10_realType
         real(kind=realType), parameter :: twoThird = two * third
-
+        real(kind=realType) :: tmp
         !thread indices start at 1
         i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
         j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
@@ -1539,7 +1740,7 @@ module cudaResidual
         !         viscous fluxes in the k-direction.
         !
         mue = zero
-
+        !loop k 1 to kl, j 2 to jl, i 2 to il
         if (k <= kl .and. j <= jl .and. i <= il .and. j>=2 .and. i>=2) then
             ! Set the value of the porosity. If not zero, it is set
             ! to average the eddy-viscosity and to take the factor
@@ -1599,7 +1800,7 @@ module cudaResidual
                         + x(i - 1, j, k + 1, 1) - x(i - 1, j, k - 1, 1) &
                         + x(i, j - 1, k + 1, 1) - x(i, j - 1, k - 1, 1) &
                         + x(i, j, k + 1, 1) - x(i, j, k - 1, 1))
-             ssy = eighth * (x(i - 1, j - 1, k + 1, 2) - x(i - 1, j - 1, k - 1, 2) &
+            ssy = eighth * (x(i - 1, j - 1, k + 1, 2) - x(i - 1, j - 1, k - 1, 2) &
                         + x(i - 1, j, k + 1, 2) - x(i - 1, j, k - 1, 2) &
                         + x(i, j - 1, k + 1, 2) - x(i, j - 1, k - 1, 2) &
                         + x(i, j, k + 1, 2) - x(i, j, k - 1, 2))
@@ -1753,16 +1954,24 @@ module cudaResidual
             frhoE = frhoE - q_x * sk(i, j, k, 1) - q_y * sk(i, j, k, 2) - q_z * sk(i, j, k, 3)
 
             ! Update the residuals of cell k and k+1.
+            
+            tmp = atomicsub(fw(i, j, k, imx), fmx)
+            tmp = atomicsub(fw(i, j, k, imy), fmy)
+            tmp = atomicsub(fw(i, j, k, imz), fmz)
+            tmp = atomicsub(fw(i, j, k, irhoE), frhoE)
+            ! fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
+            ! fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
+            ! fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
+            ! fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - frhoE
 
-            fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-            fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-            fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-            fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - frhoE
-
-            fw(i, j, k + 1, imx) = fw(i, j, k + 1, imx) + fmx
-            fw(i, j, k + 1, imy) = fw(i, j, k + 1, imy) + fmy
-            fw(i, j, k + 1, imz) = fw(i, j, k + 1, imz) + fmz
-            fw(i, j, k + 1, irhoE) = fw(i, j, k + 1, irhoE) + frhoE
+            tmp = atomicadd(fw(i, j, k + 1, imx), fmx)
+            tmp = atomicadd(fw(i, j, k + 1, imy), fmy)
+            tmp = atomicadd(fw(i, j, k + 1, imz), fmz)
+            tmp = atomicadd(fw(i, j, k + 1, irhoE), frhoE)
+            ! fw(i, j, k + 1, imx) = fw(i, j, k + 1, imx) + fmx
+            ! fw(i, j, k + 1, imy) = fw(i, j, k + 1, imy) + fmy
+            ! fw(i, j, k + 1, imz) = fw(i, j, k + 1, imz) + fmz
+            ! fw(i, j, k + 1, irhoE) = fw(i, j, k + 1, irhoE) + frhoE
 
             ! Temporarily store the shear stress and heat flux, even
             ! if we won't need it. This can still vectorize
@@ -1771,6 +1980,7 @@ module cudaResidual
         !
         !         Viscous fluxes in the j-direction.
         !
+        !loop k 2 to kl, j 1 to jl, i 2 to il
         if (k <= kl .and. j <= jl .and. i <= il .and. k>=2 .and. i>=2) then
             ! Set the value of the porosity. If not zero, it is set
                     ! to average the eddy-viscosity and to take the factor
@@ -1992,20 +2202,28 @@ module cudaResidual
 
             ! Update the residuals of cell j and j+1.
 
-            fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-            fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-            fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-            fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - frhoE
+            tmp = atomicsub(fw(i, j, k, imx), fmx)
+            tmp = atomicsub(fw(i, j, k, imy), fmy)
+            tmp = atomicsub(fw(i, j, k, imz), fmz)
+            tmp = atomicsub(fw(i, j, k, irhoE), frhoE)
+            ! fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
+            ! fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
+            ! fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
+            ! fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - frhoE
 
-            fw(i, j + 1, k, imx) = fw(i, j + 1, k, imx) + fmx
-            fw(i, j + 1, k, imy) = fw(i, j + 1, k, imy) + fmy
-            fw(i, j + 1, k, imz) = fw(i, j + 1, k, imz) + fmz
-            fw(i, j + 1, k, irhoE) = fw(i, j + 1, k, irhoE) + frhoE
+            tmp = atomicadd(fw(i, j + 1, k, imx), fmx)
+            tmp = atomicadd(fw(i, j + 1, k, imy), fmy)
+            tmp = atomicadd(fw(i, j + 1, k, imz), fmz)
+            tmp = atomicadd(fw(i, j + 1, k, irhoE), frhoE)
+            ! fw(i, j + 1, k, imx) = fw(i, j + 1, k, imx) + fmx
+            ! fw(i, j + 1, k, imy) = fw(i, j + 1, k, imy) + fmy
+            ! fw(i, j + 1, k, imz) = fw(i, j + 1, k, imz) + fmz
+            ! fw(i, j + 1, k, irhoE) = fw(i, j + 1, k, irhoE) + frhoE
         end if  
         !
         !         Viscous fluxes in the i-direction.
         !
-    
+        !loop k 2 to kl, j 2 to jl, i 1 to il
         if (k <= kl .and. j <= jl .and. i <= il .and. k>=2 .and. j>=2) then
             ! Set the value of the porosity. If not zero, it is set
             ! to average the eddy-viscosity and to take the factor
@@ -2226,15 +2444,24 @@ module cudaResidual
                     - q_x * si(i, j, k, 1) - q_y * si(i, j, k, 2) - q_z * si(i, j, k, 3)
 
             ! Update the residuals of cell i and i+1.
-            fw(i + 1, j, k, imx) = fw(i + 1, j, k, imx) + fmx
-            fw(i + 1, j, k, imy) = fw(i + 1, j, k, imy) + fmy
-            fw(i + 1, j, k, imz) = fw(i + 1, j, k, imz) + fmz
-            fw(i + 1, j, k, irhoE) = fw(i + 1, j, k, irhoE) + frhoE
+            tmp = atomicsub(fw(i, j, k, imx), fmx)
+            tmp = atomicsub(fw(i, j, k, imy), fmy)
+            tmp = atomicsub(fw(i, j, k, imz), fmz)
+            tmp = atomicsub(fw(i, j, k, irhoE), frhoE)
+            ! fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
+            ! fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
+            ! fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
+            ! fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - frhoE
+            
+            tmp = atomicadd(fw(i + 1, j, k, imx), fmx)
+            tmp = atomicadd(fw(i + 1, j, k, imy), fmy)
+            tmp = atomicadd(fw(i + 1, j, k, imz), fmz)
+            tmp = atomicadd(fw(i + 1, j, k, irhoE), frhoE)
+            ! fw(i + 1, j, k, imx) = fw(i + 1, j, k, imx) + fmx
+            ! fw(i + 1, j, k, imy) = fw(i + 1, j, k, imy) + fmy
+            ! fw(i + 1, j, k, imz) = fw(i + 1, j, k, imz) + fmz
+            ! fw(i + 1, j, k, irhoE) = fw(i + 1, j, k, irhoE) + frhoE
 
-            fw(i, j, k, imx) = fw(i, j, k, imx) - fmx
-            fw(i, j, k, imy) = fw(i, j, k, imy) - fmy
-            fw(i, j, k, imz) = fw(i, j, k, imz) - fmz
-            fw(i, j, k, irhoE) = fw(i, j, k, irhoE) - frhoE
         end if
     end subroutine viscousFlux
 
@@ -2283,7 +2510,7 @@ module cudaResidual
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
 
-
+        !loop k 2 to kl, j 2 to jl, i 2 to il
         if (i <= il .and. j <= jl .and. k <= kl) then
 
             ! Compute the gradient of u in the cell center. Use is made
@@ -2446,11 +2673,11 @@ module cudaResidual
             orderTurb == secondOrder) secondOrd = .true.
 
         offset = itu1 - 1
-
+        !+1 loop sart at 2
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
-
+        !loop k 2 to kl, j 2 to jl, i 2 to il
         if (i <= il .and. j <= jl .and. k <= kl) then
 
             ! Compute the grid velocity if present.
@@ -2532,7 +2759,7 @@ module cudaResidual
                     dw(i, j, k, itu1 + ii - 1) = dw(i, j, k, itu1 + ii - 1) - uu * dwtk
                 end do
 
-                else velKdir
+            else velKdir
 
                 ! Velocity has a component in negative k-direction.
                 ! Loop over the number of advection equations
@@ -2602,10 +2829,11 @@ module cudaResidual
         !       The possible grid velocity must be taken into account.
         !
         
+        !these start at 2
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
-
+        !loop k 2 to kl, j 2 to jl, i 2 to il
         if (i <= il .and. j <= jl .and. k <= kl) then
 
             ! Compute the grid velocity if present.
@@ -2686,7 +2914,7 @@ module cudaResidual
                     dw(i, j, k, itu1 + ii - 1) = dw(i, j, k, itu1 + ii - 1) - uu * dwtj
                 end do
 
-                else velJdir
+            else velJdir
 
                 ! Velocity has a component in negative j-direction.
                 ! Loop over the number of advection equations.
@@ -2757,10 +2985,11 @@ module cudaResidual
         !
         qs = zero
 
+        !loop starts at 2
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
-
+        !loop k 2 to kl, j 2 to jl, i 2 to il
         if (i <= il .and. j <= jl .and. k <= kl) then
         
             ! Compute the grid velocity if present.
@@ -2841,7 +3070,7 @@ module cudaResidual
                     dw(i, j, k, itu1 + ii - 1) = dw(i, j, k, itu1 + ii - 1) - uu * dwti
                 end do
 
-                else velIdir
+            else velIdir
 
                 ! Velocity has a component in negative i-direction.
                 ! Loop over the number of advection equations.
@@ -2932,11 +3161,12 @@ module cudaResidual
         kar2Inv = one / (rsaK**2)
         cw36 = rsaCw3**6
         cb3Inv = one / rsaCb3
-
+        !loops start at 2
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x + 1
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + 1
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z + 1
 
+        !loop k 2 to kl, j 2 to jl, i 2 to il
         if (i <= il .and. j <= jl .and. k <= kl) then
 
             !
@@ -3119,6 +3349,7 @@ module cudaResidual
             dw(i, j, k, itu1) = dw(i, j, k, itu1) + c1m * w(i - 1, j, k, itu1) &
                                 - c10 * w(i, j, k, itu1) + c1p * w(i + 1, j, k, itu1)
         end if
+        !TODO finish copying i and j directions
     end subroutine saViscous
 
 
@@ -3152,7 +3383,7 @@ module cudaResidual
       use constants, only: zero
       use cudafor,   only: dim3
       use precision, only: intType
-      use cudaCopyFlowVarRefState, only: cudaCopyFlowVarRefState
+      use cudaFlowVarRefState, only: cudaCopyFlowVarRefState
       use cudaInputDiscretization, only: cudaCopyInputDiscretization
       use cudaInputIteration,      only: cudaCopyInputIteration
       use cudaInputPhysics,        only: cudaCopyInputPhysics
