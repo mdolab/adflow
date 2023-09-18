@@ -85,8 +85,8 @@ include $(DEP_FILE)
 # The 'lib' target builds the static archive. It depends on "sources".
 lib: sourcesNoOpt sources
 
-	mpifort -fPIC -Mr8 -r8 -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaConstants.f90 cudaConstants.o -cuda
-	mpifort -fPIC -Mr8 -r8 -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaResidual.f90 cudaResidual.o -cuda
+	mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaConstants.f90 cudaConstants.o -cuda
+	mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaResidual.f90 cudaResidual.o -cuda
 
 	$(AR) $(AR_FLAGS) libadflow.a $(OFILES_NO_OPT) $(OFILES) cudaResidual.o cudaConstants.o
 

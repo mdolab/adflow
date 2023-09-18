@@ -69,7 +69,7 @@ module cudaResidual
     contains
 
     subroutine copydata
-        use constants, only: zero
+        use constants, only: zero, RANSEquations, EulerEquations
         use blockPointers, only: &
             bnx => nx, bny => ny, bnz => nz, &
             bil => il, bjl => jl, bkl => kl, &
@@ -89,6 +89,7 @@ module cudaResidual
             bdtl => dtl, baa => aa, &
             addGridVelocities, brightHanded => rightHanded
         use flowVarRefState, only: nw,nwf,nwt
+        use inputPhysics, only: equations
         implicit none
 
             ! Copy block pointers dimensions
@@ -110,7 +111,6 @@ module cudaResidual
             allocate(ss(0:h_ib,0:h_jb,0:h_kb))
 
             w = bw; p = bp; gamma = bgamma; ss = bShockSensor
-
 
             !allocate single halos
             allocate(x(0:h_ie,0:h_je,0:h_ke,1:3))
@@ -141,10 +141,12 @@ module cudaResidual
 
             !no halos
             allocate(volRef(2:h_il,2:h_jl,2:h_kl))
-            allocate(d2wall(2:h_il,2:h_jl,2:h_kl))
+            if (equations == RANSEquations) then 
+                allocate(d2wall(2:h_il,2:h_jl,2:h_kl))
+                d2wall = bd2wall
+            end if 
             allocate(iblank(2:h_il,2:h_jl,2:h_kl))
             volRef = bvolRef
-            d2wall = bd2wall
             iblank  = biblank
 
             !face porosities
@@ -188,18 +190,18 @@ module cudaResidual
             allocate(uz(1:h_il, 1:h_jl, 1:h_kl))
             ux = zero; uy = zero; uz = zero
 
-            allocate(vz(1:h_il, 1:h_jl, 1:h_kl))
-            allocate(vz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(vx(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(vy(1:h_il, 1:h_jl, 1:h_kl))
             allocate(vz(1:h_il, 1:h_jl, 1:h_kl))
             vx = zero; vy = zero; vz = zero
 
-            allocate(wz(1:h_il, 1:h_jl, 1:h_kl))
-            allocate(wz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(wx(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(wy(1:h_il, 1:h_jl, 1:h_kl))
             allocate(wz(1:h_il, 1:h_jl, 1:h_kl))
             wx = zero; wy = zero; wz = zero
 
-            allocate(qz(1:h_il, 1:h_jl, 1:h_kl))
-            allocate(qz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(qx(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(qy(1:h_il, 1:h_jl, 1:h_kl))
             allocate(qz(1:h_il, 1:h_jl, 1:h_kl))
             qx = zero; qy = zero; qz = zero
     end subroutine copydata
@@ -240,6 +242,7 @@ module cudaResidual
         ! The contribution is scattered to both the left and right node
         ! in k-direction.
         
+        !loop k 1 to ke, j 1 to jl and i 1 to il
         if (i <= il .AND. j <= jl .AND. k <= ke) then
             ! Compute 8 times the average normal for this part of
             ! the control volume. The factor 8 is taken care of later
@@ -278,7 +281,6 @@ module cudaResidual
                 tmp = atomicadd(ux(i, j, k - 1), ubar * sx)
                 tmp = atomicadd(uy(i, j, k - 1), ubar * sy)
                 tmp = atomicadd(uz(i, j, k - 1), ubar * sz)
-
                 tmp = atomicadd(vx(i, j, k - 1), vbar * sx)
                 tmp = atomicadd(vy(i, j, k - 1), vbar * sy)
                 tmp = atomicadd(vz(i, j, k - 1), vbar * sz)
@@ -350,7 +352,7 @@ module cudaResidual
         ! Second part. Contribution in the j-direction.
         ! The contribution is scattered to both the left and right node
         ! in j-direction.
-
+        !loop k 1 to kl j 1 to je and i 1 to il
         if (i <= il .AND. j <= je .AND. k <= kl) then
             ! Compute 8 times the average normal for this part of
             ! the control volume. The factor 8 is taken care of later
@@ -456,11 +458,12 @@ module cudaResidual
 
             end if 
         end if
-        !
+        
         ! Third part. Contribution in the i-direction.
         ! The contribution is scattered to both the left and right node
         ! in i-direction.
-        !
+        
+        ! loop k 1 to kl j 1 to jl and i 1 to ie
         if (i <= ie .AND. j <= jl .AND. k <= kl) then
             ! Compute 8 times the average normal for this part of
             ! the control volume. The factor 8 is taken care of later
@@ -564,6 +567,13 @@ module cudaResidual
 
             end if
         end if 
+
+        !need to get rid of this to avoid race condition
+        !each cell only scales one node 
+        !however need to wait for each nodes accumulation to be done
+        !if thread on edge of boundary need to wait for another block to be done
+        !therefore split this part into a separate kernel
+
         ! ! Divide by 8 times the volume to obtain the correct gradients.
         ! if (i <= il .AND. j <= jl .AND. k <= kl) then
         !     ! Compute the inverse of 8 times the volume for this node.
@@ -978,12 +988,12 @@ module cudaResidual
       j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + 1
       k = (blockIdx%z - 1) * blockDim%z + threadIdx%z + 1
       !loop 2 to il for cell centers
-      if (i <= il .AND. j <= jl .AND. k <= kl) then
+      if (i>=2 .AND. i <= il .AND. j>=2 .AND. j <= jl .AND. k>=2 .AND. k <= kl) then
 
         nTurb = nt2 - nt1 + 1
 
         do l = 1, nwf
-          rblank = max(real(iblank(i, j, k), realType), zero)
+          rblank = max(real(iblank(i, j, k), kind=realType), zero)
           dw(i, j, k, l) = (dw(i, j, k, l) + fw(i, j, k, l)) * rBlank
         end do
 
@@ -1129,8 +1139,8 @@ module cudaResidual
                 + porFlux * (vnp * p(i + 1, j, k) + vnm * p(i, j, k))
             tmp = atomicsub(dw(i + 1, j, k, irhoE), fs)
             tmp = atomicadd(dw(i, j, k, irhoE), fs)
-            dw(i + 1, j, k, irhoE) = dw(i + 1, j, k, irhoE) - fs
-            dw(i, j, k, irhoE) = dw(i, j, k, irhoE) + fs
+            ! dw(i + 1, j, k, irhoE) = dw(i + 1, j, k, irhoE) - fs
+            ! dw(i, j, k, irhoE) = dw(i, j, k, irhoE) + fs
         end if
         
         !loop k 2 to kl, j 1 to jl, i 2 to il
@@ -1326,32 +1336,32 @@ module cudaResidual
 
     end subroutine inviscidCentralFlux
 
-    attributes(global) subroutine inviscidDissFluxScalar
+    attributes(global) subroutine computeSS
+        use constants,           only: zero, two, half,EulerEquations
+        use precision,           only: intType, realType
+        use cudaInputDiscretization, only: vis2, vis4
+        use cudaInputIteration,      only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
+        use cudaInputPhysics,        only: equations
+        use cudaIteration,           only: rFil, totalR0, totalR
+        use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf, nwf
+
+        implicit none
     
-      use constants,           only: zero, two, half,EulerEquations
-      use precision,           only: intType, realType
-      use cudaInputDiscretization, only: vis2, vis4
-      use cudaInputIteration,      only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
-      use cudaInputPhysics,        only: equations
-      use cudaIteration,           only: rFil, totalR0, totalR
-      use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf
-    
-      implicit none
-    
-      ! Variables for inviscid diss flux scalar
-      real(kind=realType), parameter :: dssMax = 0.25_realType
-      real(kind=realType)            :: sslim, rhoi
-      real(kind=realType)            :: sfil, fis2, fis4
-      real(kind=realType)            :: ppor, rrad, dis2, dis4, fs
-      real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
-      real(kind=realType)            :: tmp
-      integer(kind=intType) :: i, j, k    
-      i = (blockIdx%x - 1) * blockDim%x + threadIdx%x - 1  ! starting at 0
-      j = (blockIdx%y - 1) * blockDim%y + threadIdx%y - 1  ! for entropy part
-      k = (blockIdx%z - 1) * blockDim%z + threadIdx%z - 1
-    
-    
-      ! Determine the variables used to compute the switch.
+        ! Variables for inviscid diss flux scalar
+        real(kind=realType), parameter :: dssMax = 0.25_realType
+        real(kind=realType)            :: sslim, rhoi
+        real(kind=realType)            :: sfil, fis2, fis4
+        real(kind=realType)            :: ppor, rrad, dis2, dis4, fs
+        real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
+        real(kind=realType)            :: tmp
+        integer(kind=intType)          :: l
+        integer(kind=intType) :: i, j, k 
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x - 1  ! starting at 0
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y - 1  ! for entropy part
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z - 1
+
+
+        ! Determine the variables used to compute the switch.
       ! For the inviscid case this is the pressure; for the viscous
       ! case it is the entropy.
     
@@ -1393,7 +1403,42 @@ module cudaResidual
     
         end if 
       end if
+        
+    end subroutine computeSS
+
+
+    attributes(global) subroutine inviscidDissFluxScalar
     
+      use constants,           only: zero, two, half,EulerEquations
+      use precision,           only: intType, realType
+      use cudaInputDiscretization, only: vis2, vis4
+      use cudaInputIteration,      only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
+      use cudaInputPhysics,        only: equations
+      use cudaIteration,           only: rFil, totalR0, totalR
+      use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf, nwf
+    
+      implicit none
+    
+      ! Variables for inviscid diss flux scalar
+      real(kind=realType), parameter :: dssMax = 0.25_realType
+      real(kind=realType)            :: sslim, rhoi
+      real(kind=realType)            :: sfil, fis2, fis4
+      real(kind=realType)            :: ppor, rrad, dis2, dis4, fs
+      real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
+      real(kind=realType)            :: tmp
+      integer(kind=intType)          :: l
+      integer(kind=intType) :: i, j, k 
+      i = (blockIdx%x - 1) * blockDim%x + threadIdx%x - 1  ! starting at 0
+      j = (blockIdx%y - 1) * blockDim%y + threadIdx%y - 1  ! for entropy part
+      k = (blockIdx%z - 1) * blockDim%z + threadIdx%z - 1
+    
+    
+      
+        if(equations == EulerEquations) then
+            sslim = 0.001_realType * pInfCorr
+        else if (equations == NSEquations .or. equations == RANSEquations) then
+            sslim = 0.001_realType * pInfCorr / (rhoInf**gammaInf)
+        end if
     
       ! Compute the pressure sensor for each cell, in each direction:
       !loop k 1 to ke, j 1 to je, i 1 to ie
@@ -1434,8 +1479,14 @@ module cudaResidual
       ! Initialize the dissipative residual to a certain times,
       ! possibly zero, the previously stored value. Owned cells
       ! only, because the halo values do not matter.
-    
-      fw = sfil * fw
+     
+     if (((i >= 1) .AND. (i <= ie)) .AND. &
+          ((j >= 1) .AND. (j <= je)) .AND. &
+          ((k >= 1) .AND. (k <= ke))) then 
+        do l = 1, nwf
+            fw(i,j,k,l)  = sfil * fw(i,j,k,l)
+        end do
+     end if
       !
       !       Dissipative fluxes in the i-direction.
       !
@@ -1695,7 +1746,7 @@ module cudaResidual
     !alex
     attributes(global) subroutine viscousFlux
         use precision, only: realType, intType
-        use constants, only: two, third,fourth,eighth,ivx,ivy,ivz,irhoE,irho,itu1,imx,imy,imz
+        use constants, only: half, zero,one,two, third,fourth,eighth,ivx,ivy,ivz,irhoE,irho,itu1,imx,imy,imz,noFlux
         use cudaInputPhysics, only: useQCR, prandtl, prandtlturb
         use cudaFlowvarRefState, only: eddyModel
         use cudaIteration, only: rFil
@@ -1741,7 +1792,7 @@ module cudaResidual
         !
         mue = zero
         !loop k 1 to kl, j 2 to jl, i 2 to il
-        if (k <= kl .and. j <= jl .and. i <= il .and. j>=2 .and. i>=2) then
+        if (k <= kl .and. j <= jl .and. i <= il .and. j>=2 .and. i>=2 .and. k>=1) then
             ! Set the value of the porosity. If not zero, it is set
             ! to average the eddy-viscosity and to take the factor
             ! rFilv into account.
@@ -1981,7 +2032,7 @@ module cudaResidual
         !         Viscous fluxes in the j-direction.
         !
         !loop k 2 to kl, j 1 to jl, i 2 to il
-        if (k <= kl .and. j <= jl .and. i <= il .and. k>=2 .and. i>=2) then
+        if (k <= kl .and. j <= jl .and. i <= il .and. k>=2 .and. i>=2 .and. j>=1) then
             ! Set the value of the porosity. If not zero, it is set
                     ! to average the eddy-viscosity and to take the factor
                     ! rFilv into account.
@@ -2224,7 +2275,7 @@ module cudaResidual
         !         Viscous fluxes in the i-direction.
         !
         !loop k 2 to kl, j 2 to jl, i 1 to il
-        if (k <= kl .and. j <= jl .and. i <= il .and. k>=2 .and. j>=2) then
+        if (k <= kl .and. j <= jl .and. i <= il .and. k>=2 .and. j>=2 .and. i>=1) then
             ! Set the value of the porosity. If not zero, it is set
             ! to average the eddy-viscosity and to take the factor
             ! rFilv into account.
@@ -3380,7 +3431,7 @@ module cudaResidual
 
 
     subroutine calculateCudaResidual(updateIntermed, varStart, varEnd)
-      use constants, only: zero
+      use constants, only: zero, spalartAllmaras
       use cudafor,   only: dim3
       use precision, only: intType
       use cudaFlowVarRefState, only: cudaCopyFlowVarRefState
@@ -3390,6 +3441,9 @@ module cudaResidual
       use cudaParamTurb,           only: cudaCopyParamTurb
       use cudaIteration,           only: cudaCopyIteration
       use cudaTurbMod,             only: cudaCopyTurbMod
+      use inputPhysics, only: equationMode, equations, turbModel
+      use inputDiscretization, only: spaceDiscr
+      use flowvarRefState, only: viscous
 
       implicit none
 
@@ -3397,7 +3451,8 @@ module cudaResidual
       integer(kind=intType), intent(in) :: varStart, varEnd
       type(dim3)                        :: grid_size, block_size
       integer(kind=intType) :: istat
-
+      integer(kind=intType) :: start, finish,count_rate
+      real(kind=realType) :: totalTime
 
       ! copy constants
       call cudaCopyFlowVarRefState
@@ -3423,27 +3478,34 @@ module cudaResidual
       block_size = dim3(8, 8, 8)
       grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
       
+
+      call system_clock(start,count_rate)
       call metrics<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
       ! call SA routines
-      call saSource<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
+      if (equations == RANSEquations .and. turbModel == spalartAllmaras) then
+        call saSource<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
 
-      call saAdvection<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
+        call saAdvection<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
 
-      call saViscous<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
+        call saViscous<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
 
-      call saResScale<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
-
+        call saResScale<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
+      end if
+      
       ! call time step routine
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
       
       ! inviscid central flux
+      call computeSS<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
+
       call inviscidCentralFlux<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
@@ -3452,19 +3514,27 @@ module cudaResidual
       istat = cudaDeviceSynchronize()
 
       ! viscousFlux
-      call allNodalGradients<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
+      if (viscous) then
+        call computeSpeedOfSoundSquared<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
 
-      call scaleNodalGradients<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
+        call allNodalGradients<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
 
-      call viscousFlux<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
+        call scaleNodalGradients<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
+        block_size = dim3(4, 4, 2)
+        grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
+        call viscousFlux<<<grid_size, block_size>>>
+        istat = cudaDeviceSynchronize()
+      end if 
+      
 
     !   sumDwAndFw
       call sumDwandFw<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-
+      call system_clock(finish)
+        print *, "CUDA RESIDUAL TIME:", real(finish-start,kind=realType)/real(count_rate,kind=realType)
       ! TODO: update residual?
 
     end subroutine calculateCudaResidual
@@ -3472,9 +3542,17 @@ module cudaResidual
     subroutine cudaResAPI(res,ndimw)
 
         use constants
-        use blockPointers, only: bvolRef=>volRef,bie=>ie, bje=>je, bke=>ke
+        use blockPointers, only: bvolRef=>volRef,bie=>ie, bje=>je, bke=>ke, &
+                                    bil=>il, bjl=>jl, bkl=>kl, &
+                                
+                                    bux=>ux, buy=>uy, buz=>uz, &
+                                    bvx=>vx, bvy=>vy, bvz=>vz, &
+                                    bwx=>wx, bwy=>wy, bwz=>wz, &
+                                    bqx=>qx, bqy=>qy, bqz=>qz, &
+                                    bfw=>fw
+
         use inputTimeSpectral, only: nTimeIntervalsSpectral
-        use flowvarrefstate, only: nw
+        use flowvarrefstate, only: nw,nwf,nt1,nt2
         use utils, only: setPointers
 
         implicit none
@@ -3485,34 +3563,33 @@ module cudaResidual
         integer(kind=intType) :: nn, i, j, k, l, counter, sps
         real(kind=realType) :: ovv
         real(kind=realType), dimension(:,:,:,:), allocatable :: h_dw
-        real(kind=realType) :: tmp
+         
+        call setPointers(1, 1, 1)
+        call calculateCudaResidual(.True.,1,nw)
+
         ! allocate memory for dw
         allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
-        
-        call setPointers(1, 1, 1)
 
-        call calculateCudaResidual(.True.,1,nw)
+
+        
         !copy from gpu to cpu
-        print*, h_ie,h_je,h_ke
-        print*, bie,bje,bke
-        print *, allocated(dw),allocated(h_dw)
         h_dw(1:bie,1:bje,1:bke,1:nw) = dw(1:bie,1:bje,1:bke,1:nw)
 
-        ! counter = 0
-        ! !copy dw to res
-        ! do k = 2, kl
-        !     do j = 2, jl
-        !         do i = 2, il
-        !             ovv = one / bvolRef(i, j, k)
-        !             do l = 1, nw
-        !                 counter = counter + 1
-        !                 res(counter) = h_dw(i, j, k, l) * ovv
-        !             end do
-        !         end do
-        !     end do
-        ! end do
+        counter = 0
+        !copy dw to res
+        do k = 2, kl
+            do j = 2, jl
+                do i = 2, il
+                    ovv = one / bvolRef(i, j, k)
+                    do l = 1, nw
+                        counter = counter + 1
+                        res(counter) = h_dw(i, j, k, l) * ovv
+                    end do
+                end do
+            end do
+        end do
 
-        ! deallocate(h_dw)
+        deallocate(h_dw)
     end subroutine cudaResAPI
     
 end module cudaResidual
