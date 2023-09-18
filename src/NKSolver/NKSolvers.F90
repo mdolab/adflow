@@ -3913,7 +3913,8 @@ contains
             call computeTimeStepMat(usePC=.True.)
 
             ! Actually form the preconditioner and factorize it.
-            call FormJacobianANK()
+            ! call FormJacobianANK()
+            call FormJacobianGPUANK()
 
             if (totalR .le. ANK_secondOrdSwitchTol * totalR0) then
                 if (ANK_coupled) then
