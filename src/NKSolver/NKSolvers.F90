@@ -2063,7 +2063,7 @@ contains
         use inputDiscretization, only: approxSA
         use iteration, only: totalR0, totalR
         use utils, only: EChk, setPointers
-        use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
+        use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid,setupGPUStandardKSP
         use communication
         use agmg, only: setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
         implicit none
@@ -2154,7 +2154,7 @@ contains
         !                                 preConSide, ANK_asmOverlap, outerPreConIts, &
         !                                 localOrdering, ANK_iluFill)
         ! end if
-        call MatCopy(dRdwPre, dRdwPre_d, DIFFERENT_NONZERO_PATTERN)
+        call MatCopy(dRdwPre, dRdwPre_d, DIFFERENT_NONZERO_PATTERN,ierr)
         call setupGPUStandardKSP(ANK_KSP, kspObjectType, subSpace, &
                                   preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                                   localOrdering, ANK_iluFill, ANK_innerPreConIts)

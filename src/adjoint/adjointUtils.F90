@@ -1656,7 +1656,7 @@ contains
         integer(kind=intType), intent(in) :: globalPreConIts, localPreConIts
 
         ! Working Variables
-        PC master_PC, globalPC, subpc
+        PC master_PC, globalPC, subpc, cudaPC
         KSP master_PC_KSP, subksp
         integer(kind=intType) :: nlocal, first, ierr
 
