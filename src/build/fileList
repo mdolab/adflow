@@ -197,3 +197,9 @@ cFiles = 	metis-4.0/metis.c\
 
 f77Files = 	adjoint/ADFirstAidKit/adBuffer.f\
 		adjoint/ADFirstAidKit/debugAD.f\
+
+cudaFiles = cuda/cudaConstants.f90\
+		cuda/cudaResidual.f90\
+
+		  
+		

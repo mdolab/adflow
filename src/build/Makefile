@@ -40,6 +40,7 @@ fortranFilesNoOpt:=$(addprefix ../,$(fortranFilesNoOpt))
 fortranFiles:=$(addprefix ../,$(fortranFiles))
 cFiles:=$(addprefix ../,$(cFiles))
 f77Files:=$(addprefix ../,$(f77Files))
+cudaFiles:=$(addprefix ../,$(cudaFiles))
 
 # Now strip off the directory part. This is because fort_depend gives
 # us targets that are like <filename.o>.
@@ -47,16 +48,18 @@ fortranFilesNoOptNoDir=$(notdir $(fortranFilesNoOpt))
 fortranFilesNoDir=$(notdir $(fortranFiles))
 cFilesNoDir=$(notdir $(cFiles))
 f77FilesNoDir=$(notdir $(f77Files))
+cudaFilesNoDir=$(notdir $(cudaFiles))
 
 # Generate two separate list of .F90 and .f90 files using the filter command
 f90FilesNoOpt=$(filter %.f90,$(fortranFilesNoOptNoDir))
 F90FilesNoOpt=$(filter %.F90,$(fortranFilesNoOptNoDir))
 f90Files=$(filter %.f90,$(fortranFilesNoDir))
 F90Files=$(filter %.F90,$(fortranFilesNoDir))
+CuFiles=$(filter %.f90,$(cudaFilesNoDir))
 
 # Finally convert all source files to .o
 OFILES_NO_OPT=$(f90FilesNoOpt:%.f90=%.o) $(F90FilesNoOpt:%.F90=%.o)
-OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o)
+OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o) $(CuFiles:%.f90=%.o)
 
 # Define the file name for the auto-generated dependency file.
 DEP_FILE=adflow_project.dep
@@ -75,9 +78,9 @@ sources: $(OFILES) $(DEP_FILE)
 
 # The .dep file depends on the source files, so it automatically gets updated
 # when you change your source
-$(DEP_FILE): $(fortranFilesNoOpt) $(fortranFiles)
+$(DEP_FILE): $(fortranFilesNoOpt) $(fortranFiles) $(cudaFiles)
 	@echo "Making dependencies!\n"
-	$(PYTHON) fort_depend.py -w -o $(DEP_FILE) -f $(fortranFilesNoOpt) $(fortranFiles)
+	$(PYTHON) fort_depend.py -w -o $(DEP_FILE) -f $(fortranFilesNoOpt) $(fortranFiles) $(cudaFiles)
 
 # Include the automatically generated file.
 include $(DEP_FILE)
@@ -85,10 +88,10 @@ include $(DEP_FILE)
 # The 'lib' target builds the static archive. It depends on "sources".
 lib: sourcesNoOpt sources
 
-	mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaConstants.f90 cudaConstants.o -cuda
-	mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaResidual.f90 cudaResidual.o -cuda
+# mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/#include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaConstants.#f90 cudaConstants.o -cuda
+# mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/#include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaResidual.#f90 cudaResidual.o -cuda
 
-	$(AR) $(AR_FLAGS) libadflow.a $(OFILES_NO_OPT) $(OFILES) cudaResidual.o cudaConstants.o
+	$(AR) $(AR_FLAGS) libadflow.a $(OFILES_NO_OPT) $(OFILES) 
 
 # These are the extra python objects for the python library
 PYTHON_OBJECTS = fortranobject.o\
