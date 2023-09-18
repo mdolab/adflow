@@ -410,9 +410,9 @@ module cudaInputIteration
         timeLimit = h_timelimit
         !TODO allocate this
         if (.not. allocated(cycleStrategy)) then
-            allocate(cycleStrategy(nMGSteps))
+            allocate(cycleStrategy(h_nMGSteps))
         end if
-        cycleStrategy(1:nMGSteps) = h_cycleStrategy(1:nMGSteps)
+        cycleStrategy(1:h_nMGSteps) = h_cycleStrategy(1:h_nMGSteps)
         miniterNum = h_miniterNum
         cfl = h_cfl
         cflCoarse = h_cflCoarse
@@ -427,15 +427,15 @@ module cudaInputIteration
         relaxBleeds = h_relaxBleeds
         epscoefconv = h_epscoefconv
         convcheckwindowsize = h_convcheckwindowsize
-        !TO DO ALLOCATE THIS DATA
+        !TODO ALLOCATE THIS DATA
         if (.not. allocated(etaRk)) then
-            allocate(etaRk(nRKStages))
+            allocate(etaRk(h_nRKStages))
         end if
-        etaRK(1:nRKStages) = h_etaRK(1:nRKStages)
+        etaRK(1:h_nRKStages) = h_etaRK(1:h_nRKStages)
         if (.not. allocated(cdisRK)) then
-            allocate(cdisRK(nRKStages))
+            allocate(cdisRK(h_nRKStages))
         end if
-        cdisRK(1:nRKStages) = h_cdisRK(1:nRKStages)
+        cdisRK(1:h_nRKStages) = h_cdisRK(1:h_nRKStages)
         mgDescription = h_mgDescription
         rkReset = h_rkReset
         useLinResMonitor = h_useLinResMonitor
@@ -679,61 +679,68 @@ module cudaParamTurb
         
         use flowVarRefState, only: nt1, nt2
         implicit none
-        h_rvfLimitK = rvfLimitK
-        h_rvfLimitE = rvfLimitE
-        h_rvfCl = rvfCl
-        h_rvfCmu = rvfCmu
-        h_nFit = nFit
-        !TOOD allocate these and fix copy for proper dimensions
-        if (.not. allocated(ypT)) then
-            allocate(ypT(0:h_nFit))
-        end if
-        ypT(0:h_nFit) = h_ypT(0:h_nFit)
+        rvfLimitK = h_rvfLimitK
+        rvfLimitE = h_rvfLimitE
+        rvfCl = h_rvfCl
+        rvfCmu = h_rvfCmu
+        nFit = h_nFit
+
+        ! TOOD allocate these and fix copy for proper dimensions
+        if (allocated(h_ypt))then 
+            if (.not. allocated(ypT)) then
+                allocate(ypT(0:h_nFit))
+            end if
+            ypT(0:h_nFit) = h_ypT(0:h_nFit)
+
+        end if 
         
-        if (.not. allocated(reT)) then
-            allocate(reT(0:h_nFit))
-        end if
-        reT(0:h_nFit) = h_reT(0:h_nFit)
+        if(allocated(h_reT)) then
+            if (.not. allocated(reT)) then
+                allocate(reT(0:h_nFit))
+            end if
+            reT(0:h_nFit) = h_reT(0:h_nFit)
+        end if 
 
-        if(.not. allocated(up0)) then
-            allocate(up0(h_nFit))
-        end if
-        up0(1:h_nFit) = h_up0(1:h_nFit)
-
-        if(.not. allocated(up1)) then
-            allocate(up1(h_nFit))
-        end if
-        up1(1:h_nFit) = h_up1(1:h_nFit)
         
-        if(.not. allocated(up2)) then
-            allocate(up2(h_nFit))
-        end if
-        up2(1:h_nFit) = h_up2(1:h_nFit)
+        ! if(.not. allocated(up0)) then
+        !     allocate(up0(h_nFit))
+        ! end if
+        ! up0(1:h_nFit) = h_up0(1:h_nFit)
 
-        if (.not. allocated(tup0)) then
-            allocate(tup0(1:h_nFit, nt1:nt2))
-        end if
-        tup0(1:h_nFit, nt1:nt2) = h_tup0(1:h_nFit, nt1:nt2)
-
-        if (.not. allocated(tup1)) then
-            allocate(tup1(1:h_nFit, nt1:nt2))
-        end if
-        tup1(1:h_nFit, nt1:nt2) = h_tup1(1:h_nFit, nt1:nt2)
-
-        if (.not. allocated(tup2)) then
-            allocate(tup2(1:h_nFit, nt1:nt2))
-        end if
-        tup2(1:h_nFit, nt1:nt2) = h_tup2(1:h_nFit, nt1:nt2)
-
-        if (.not. allocated(tup3)) then
-            allocate(tup3(1:h_nFit, nt1:nt2))
-        end if
-        tup3(1:h_nFit, nt1:nt2) = h_tup3(1:h_nFit, nt1:nt2)
+        ! if(.not. allocated(up1)) then
+        !     allocate(up1(h_nFit))
+        ! end if
+        ! up1(1:h_nFit) = h_up1(1:h_nFit)
         
-        if (.not. allocated(tuLogFit)) then
-            allocate(tuLogFit(nt1:nt2))
-        end if
-        tuLogFit(nt1:nt2) = h_tuLogFit(nt1:nt2)
+        ! if(.not. allocated(up2)) then
+        !     allocate(up2(h_nFit))
+        ! end if
+        ! up2(1:h_nFit) = h_up2(1:h_nFit)
+
+        ! if (.not. allocated(tup0)) then
+        !     allocate(tup0(1:h_nFit, nt1:nt2))
+        ! end if
+        ! tup0(1:h_nFit, nt1:nt2) = h_tup0(1:h_nFit, nt1:nt2)
+
+        ! if (.not. allocated(tup1)) then
+        !     allocate(tup1(1:h_nFit, nt1:nt2))
+        ! end if
+        ! tup1(1:h_nFit, nt1:nt2) = h_tup1(1:h_nFit, nt1:nt2)
+
+        ! if (.not. allocated(tup2)) then
+        !     allocate(tup2(1:h_nFit, nt1:nt2))
+        ! end if
+        ! tup2(1:h_nFit, nt1:nt2) = h_tup2(1:h_nFit, nt1:nt2)
+
+        ! if (.not. allocated(tup3)) then
+        !     allocate(tup3(1:h_nFit, nt1:nt2))
+        ! end if
+        ! tup3(1:h_nFit, nt1:nt2) = h_tup3(1:h_nFit, nt1:nt2)
+        
+        ! if (.not. allocated(tuLogFit)) then
+        !     allocate(tuLogFit(nt1:nt2))
+        ! end if
+        ! tuLogFit(nt1:nt2) = h_tuLogFit(nt1:nt2)
     end subroutine cudaCopyParamTurb
 end module cudaParamTurb
 

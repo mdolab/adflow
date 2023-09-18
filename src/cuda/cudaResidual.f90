@@ -19,7 +19,7 @@ module cudaResidual
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
     integer(kind=intType) :: h_nx, h_ny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
-    integer(kind=intType),device :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
+    integer(kind=intType),constant :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
 
     logical, device :: rightHanded
 
@@ -68,7 +68,7 @@ module cudaResidual
      
     contains
 
-    subroutine copydata()
+    subroutine copydata
         use constants, only: zero
         use blockPointers, only: &
             bnx => nx, bny => ny, bnz => nz, &
@@ -104,25 +104,25 @@ module cudaResidual
             rightHanded = brightHanded
 
             !allocate double halos
-            allocate(w(0:ib,0:jb,0:kb,1:nw))
-            allocate(p(0:ib,0:jb,0:kb))
-            allocate(gamma(0:ib,0:jb,0:kb))
-            allocate(ss(0:ib,0:jb,0:kb))
+            allocate(w(0:h_ib,0:h_jb,0:h_kb,1:nw))
+            allocate(p(0:h_ib,0:h_jb,0:h_kb))
+            allocate(gamma(0:h_ib,0:h_jb,0:h_kb))
+            allocate(ss(0:h_ib,0:h_jb,0:h_kb))
 
             w = bw; p = bp; gamma = bgamma; ss = bShockSensor
 
 
             !allocate single halos
-            allocate(x(0:ie,0:je,0:ke,1:3))
-            allocate(rlv(1:ie,1:je,1:ke))
-            allocate(rev(1:ie,1:je,1:ke))
-            allocate(vol(1:ie,1:je,1:ke))
-            allocate(aa(1:ie,1:je,1:ke))
-            allocate(radI(1:ie,1:je,1:ke))
-            allocate(radJ(1:ie,1:je,1:ke))
-            allocate(radK(1:ie,1:je,1:ke))
-            allocate(dtl(1:ie,1:je,1:ke))
-            allocate(dss(1:ie,1:je,1:ke,1:3))
+            allocate(x(0:h_ie,0:h_je,0:h_ke,1:3))
+            allocate(rlv(1:h_ie,1:h_je,1:h_ke))
+            allocate(rev(1:h_ie,1:h_je,1:h_ke))
+            allocate(vol(1:h_ie,1:h_je,1:h_ke))
+            allocate(aa(1:h_ie,1:h_je,1:h_ke))
+            allocate(radI(1:h_ie,1:h_je,1:h_ke))
+            allocate(radJ(1:h_ie,1:h_je,1:h_ke))
+            allocate(radK(1:h_ie,1:h_je,1:h_ke))
+            allocate(dtl(1:h_ie,1:h_je,1:h_ke))
+            allocate(dss(1:h_ie,1:h_je,1:h_ke,1:3))
 
             x = bx
             rlv = brlv
@@ -140,38 +140,38 @@ module cudaResidual
             dss = zero
 
             !no halos
-            allocate(volRef(2:il,2:jl,2:kl))
-            allocate(d2wall(2:il,2:jl,2:kl))
-            allocate(iblank(2:il,2:jl,2:kl))
+            allocate(volRef(2:h_il,2:h_jl,2:h_kl))
+            allocate(d2wall(2:h_il,2:h_jl,2:h_kl))
+            allocate(iblank(2:h_il,2:h_jl,2:h_kl))
             volRef = bvolRef
             d2wall = bd2wall
             iblank  = biblank
 
             !face porosities
-            allocate(porI(1:il,2:jl,2:kl))
-            allocate(porJ(2:il,1:jl,2:kl))
-            allocate(porK(2:il,2:jl,1:kl))
+            allocate(porI(1:h_il,2:h_jl,2:h_kl))
+            allocate(porJ(2:h_il,1:h_jl,2:h_kl))
+            allocate(porK(2:h_il,2:h_jl,1:h_kl))
             porI = bPorI
             porJ = bPorJ
             porK = bPorK
 
             !single halos (only owned cells significant)
-            allocate(fw(1:ie,1:je,1:ke,1:nwf))
-            allocate(dw(1:ie,1:je,1:ke,1:nw))
+            allocate(fw(1:h_ie,1:h_je,1:h_ke,1:nwf))
+            allocate(dw(1:h_ie,1:h_je,1:h_ke,1:nw))
             fw = zero
             dw = zero
 
             !face projected areas
-            allocate(sI(0:ie, 1:je, 1:ke,3))
-            allocate(sJ(1:ie, 0:je, 1:ke,3))
-            allocate(sK(1:ie, 1:je, 0:ke,3))
+            allocate(sI(0:h_ie, 1:h_je, 1:h_ke,3))
+            allocate(sJ(1:h_ie, 0:h_je, 1:h_ke,3))
+            allocate(sK(1:h_ie, 1:h_je, 0:h_ke,3))
             sI = bsi
             sJ = bsj
             sK = bsk
             ! Face velocities
-            allocate(sFaceI(0:ie, 1:je, 1:ke))
-            allocate(sFaceJ(1:ie, 0:je, 1:ke))
-            allocate(sFaceK(1:ie, 1:je, 0:ke))
+            allocate(sFaceI(0:h_ie, 1:h_je, 1:h_ke))
+            allocate(sFaceJ(1:h_ie, 0:h_je, 1:h_ke))
+            allocate(sFaceK(1:h_ie, 1:h_je, 0:h_ke))
             if (addGridVelocities) then
                 sFaceI = bsFaceI
                 sFaceJ = bsFaceJ
@@ -183,24 +183,24 @@ module cudaResidual
 
             end if
             ! Nodal gradients
-            allocate(ux(1:il, 1:jl, 1:kl))
-            allocate(uy(1:il, 1:jl, 1:kl))
-            allocate(uz(1:il, 1:jl, 1:kl))
+            allocate(ux(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(uy(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(uz(1:h_il, 1:h_jl, 1:h_kl))
             ux = zero; uy = zero; uz = zero
 
-            allocate(vz(1:il, 1:jl, 1:kl))
-            allocate(vz(1:il, 1:jl, 1:kl))
-            allocate(vz(1:il, 1:jl, 1:kl))
+            allocate(vz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(vz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(vz(1:h_il, 1:h_jl, 1:h_kl))
             vx = zero; vy = zero; vz = zero
 
-            allocate(wz(1:il, 1:jl, 1:kl))
-            allocate(wz(1:il, 1:jl, 1:kl))
-            allocate(wz(1:il, 1:jl, 1:kl))
+            allocate(wz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(wz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(wz(1:h_il, 1:h_jl, 1:h_kl))
             wx = zero; wy = zero; wz = zero
 
-            allocate(qz(1:il, 1:jl, 1:kl))
-            allocate(qz(1:il, 1:jl, 1:kl))
-            allocate(qz(1:il, 1:jl, 1:kl))
+            allocate(qz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(qz(1:h_il, 1:h_jl, 1:h_kl))
+            allocate(qz(1:h_il, 1:h_jl, 1:h_kl))
             qx = zero; qy = zero; qz = zero
     end subroutine copydata
 
@@ -3396,6 +3396,7 @@ module cudaResidual
       logical, intent(in)               :: updateIntermed
       integer(kind=intType), intent(in) :: varStart, varEnd
       type(dim3)                        :: grid_size, block_size
+      integer(kind=intType) :: istat
 
 
       ! copy constants
@@ -3407,45 +3408,112 @@ module cudaResidual
       call cudaCopyIteration
       call cudaCopyTurbMod
 
+      !copy data from cpu to gpu
+      call copydata
+
 
     ! zeroing
 
       fw                           = zero
       dw(:, :, :, varStart:varEnd) = zero
+      istat = cudaDeviceSynchronize()
 
       ! metrics
 
       block_size = dim3(8, 8, 8)
       grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
+      
       call metrics<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
 
       ! call SA routines
       call saSource<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
+
       call saAdvection<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
+
       call saViscous<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
+
       call saResScale<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
 
       ! call time step routine
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
+      istat = cudaDeviceSynchronize()
       
       ! inviscid central flux
       call inviscidCentralFlux<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
 
       ! inviscid diss flux scalar
       call inviscidDissFluxScalar<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
 
       ! viscousFlux
       call allNodalGradients<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
+
       call scaleNodalGradients<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
+
       call viscousFlux<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
 
     !   sumDwAndFw
       call sumDwandFw<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
 
       ! TODO: update residual?
 
     end subroutine calculateCudaResidual
 
+    subroutine cudaResAPI(res,ndimw)
+
+        use constants
+        use blockPointers, only: bvolRef=>volRef,bie=>ie, bje=>je, bke=>ke
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use flowvarrefstate, only: nw
+        use utils, only: setPointers
+
+        implicit none
+        integer(kind=intType), intent(in) :: ndimw
+        real(kind=realType), dimension(ndimw), intent(inout) :: res(ndimw)
+        
+        ! Local Variables
+        integer(kind=intType) :: nn, i, j, k, l, counter, sps
+        real(kind=realType) :: ovv
+        real(kind=realType), dimension(:,:,:,:), allocatable :: h_dw
+        real(kind=realType) :: tmp
+        ! allocate memory for dw
+        allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
+        
+        call setPointers(1, 1, 1)
+
+        call calculateCudaResidual(.True.,1,nw)
+        !copy from gpu to cpu
+        print*, h_ie,h_je,h_ke
+        print*, bie,bje,bke
+        print *, allocated(dw),allocated(h_dw)
+        h_dw(1:bie,1:bje,1:bke,1:nw) = dw(1:bie,1:bje,1:bke,1:nw)
+
+        ! counter = 0
+        ! !copy dw to res
+        ! do k = 2, kl
+        !     do j = 2, jl
+        !         do i = 2, il
+        !             ovv = one / bvolRef(i, j, k)
+        !             do l = 1, nw
+        !                 counter = counter + 1
+        !                 res(counter) = h_dw(i, j, k, l) * ovv
+        !             end do
+        !         end do
+        !     end do
+        ! end do
+
+        ! deallocate(h_dw)
+    end subroutine cudaResAPI
     
 end module cudaResidual
 

@@ -186,7 +186,16 @@ python module libadflow
          end subroutine dummyreadparamfile
 
        end module inputparamroutines
+       
 
+       module cudaresidual
+        subroutine cudaresapi(res,ndimw)
+           real(kind=realtype) dimension(ndimw),intent(out),depend(ndimw) :: res
+           integer(kind=inttype) intent(in) :: ndimw
+        end subroutine cudaresapi
+
+       end module cudresidual
+       
        module nksolver
 
          integer(kind=inttype) :: nk_innerpreconits

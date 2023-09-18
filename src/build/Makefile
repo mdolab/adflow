@@ -1,6 +1,7 @@
 # Include the user supplied makefile
 include ../../config/config.mk
 
+
 # Check compiler and version and add flags if needed
 EXTRA_FF90_FLAGS = $(shell bash ../../config/compilerCheck.sh $(FF90))
 
@@ -83,7 +84,11 @@ include $(DEP_FILE)
 
 # The 'lib' target builds the static archive. It depends on "sources".
 lib: sourcesNoOpt sources
-	$(AR) $(AR_FLAGS) libadflow.a $(OFILES_NO_OPT) $(OFILES)
+
+	mpifort -fPIC -Mr8 -r8 -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaConstants.f90 cudaConstants.o -cuda
+	mpifort -fPIC -Mr8 -r8 -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaResidual.f90 cudaResidual.o -cuda
+
+	$(AR) $(AR_FLAGS) libadflow.a $(OFILES_NO_OPT) $(OFILES) cudaResidual.o cudaConstants.o
 
 # These are the extra python objects for the python library
 PYTHON_OBJECTS = fortranobject.o\
@@ -136,6 +141,6 @@ python: lib ../f2py/adflow.pyf
 	$(FF90) $(FF90_ALL_FLAGS) -I./ -c libadflow-f2pywrappers2.f90
 
 # Final Link:
-	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so
+	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so -cuda
 	$(PYTHON) importTest.py libadflow.so
 	mv libadflow.so ../../adflow
