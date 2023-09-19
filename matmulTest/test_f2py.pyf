@@ -1,0 +1,21 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module test_f2py ! in 
+    module f2py_api ! in :test_f2py
+        use matrixtype
+        integer, public :: my_matmult_api
+        subroutine my_matmult_api(a,b,n,c) ! in :test_f2py:f2py_api.f90
+            use cudafor
+            use test_f2py
+            real(kind=8) dimension(:,:),intent(in) :: a
+            real(kind=8) dimension(:,:),intent(in) :: b
+            integer intent(in) :: n
+            real(kind=8) dimension(n,n),intent(out),depend(n) :: c
+        end subroutine my_matmult_api
+    end module f2py_api
+end python module test_f2py
+
+! This file was auto-generated with f2py (version:1.24.4).
+! See:
+! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e

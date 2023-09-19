@@ -1,0 +1,10 @@
+# List all Fortran 90+ source files that need to be compiled
+fortranFiles=	matrixType.f90\
+                test_f2py.f90\
+                f2py_api.f90\
+
+# List all C source files that need to be compiled
+# cFiles=         primes/myfile.c\
+
+# List all Fortran 77 files that need to be compiled
+# f77Files=       primes/myfile.f\
