@@ -3475,7 +3475,7 @@ module cudaResidual
       ! metrics
 
       block_size = dim3(8, 8, 8)
-      grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
+      grid_size  = dim3(ceiling(real(h_ib+2) / block_size%x), ceiling(real(h_jb+2) / block_size%y), ceiling(real(h_kb+2) / block_size%z))
       
 
       call CPU_TIME(start)
@@ -3534,7 +3534,7 @@ module cudaResidual
         call scaleNodalGradients<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
         block_size = dim3(4, 4, 2)
-        grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
+        grid_size  = dim3(ceiling(real(h_ib+2) / block_size%x), ceiling(real(h_jb+2) / block_size%y), ceiling(real(h_kb+2) / block_size%z))
         call viscousFlux<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
         call CPU_TIME(finishVisc)
