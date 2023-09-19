@@ -13,12 +13,13 @@ ADflow -- Automatic Differentation Flow Solver -- is a structured
 multi-block and overset 3D CFD solver.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    introduction
    install
    tutorial
    options
+   costFunctions
    API
    solvers
    performance

@@ -1724,10 +1724,12 @@ contains
                         ! accordingly.
 
                         if (flowType == internalFlow) then
-                          write (errorMessage, strings) "Zone ", trim(zoneName), ", boundary subface ", trim(subName), &
+                            write (errorMessage, strings) "Zone ", trim(zoneName), &
+                                ", boundary subface ", trim(subName), &
                                 ": Not a valid boundary condition for internal flow"
                         else
-                          write (errorMessage, strings) "Zone ", trim(zoneName), ", boundary subface ", trim(subName), &
+                            write (errorMessage, strings) "Zone ", trim(zoneName), &
+                                ", boundary subface ", trim(subName), &
                                 ": Not a valid boundary condition for external flow"
                         end if
 
@@ -1872,7 +1874,8 @@ contains
                     if (myID == 0) then
                         zoneName = cgnsDoms(cgnsID)%zoneName
                         subName = cgnsDoms(cgnsID)%bocoInfo(j)%bocoName
-                 write (errorMessage, strings) "Zone ", trim(zoneName), ", 1 to 1 block connectivity ", trim(subName), &
+                        write (errorMessage, strings) "Zone ", trim(zoneName), &
+                            ", 1 to 1 block connectivity ", trim(subName), &
                             ": No constant index found for subface"
                         call terminate("externalFacesSubblock", errorMessage)
                     end if

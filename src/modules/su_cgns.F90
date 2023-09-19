@@ -17,8 +17,8 @@ module su_cgns
     implicit none
     save
 
-    integer, parameter :: Null = 0
-    integer, parameter :: UserDefined = 1
+    integer, parameter :: CG_Null = 0
+    integer, parameter :: CG_UserDefined = 1
 
     integer, parameter :: Kilogram = 2
     integer, parameter :: Gram = 3

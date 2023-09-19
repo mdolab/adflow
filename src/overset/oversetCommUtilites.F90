@@ -150,7 +150,8 @@ contains
                 procsForThisRow(1:nnRow) = oMat%assignedProc(oMat%rowPtr(iDom):oMat%rowPtr(iDom + 1) - 1)
 
                 nnRowT = oMatT%rowPtr(iDom + 1) - oMatT%rowPtr(iDom)
-           procsForThisRow(nnRow + 1:nnRow + nnRowT) = oMatT%assignedProc(oMatT%rowPtr(iDom):oMatT%rowPtr(iDom + 1) - 1)
+                procsForThisRow(nnRow + 1:nnRow + nnRowT) = &
+                    oMatT%assignedProc(oMatT%rowPtr(iDom):oMatT%rowPtr(iDom + 1) - 1)
 
                 call unique(procsForThisRow, nnRow + nnRowT, nUniqueProc, inverse)
 
@@ -1948,7 +1949,8 @@ contains
                 ! Compute new fraction
                 frac0 = (/half, half, half/)
                 call newtonUpdate(xCen, &
-                                flowDoms(d2, level, sps)%x(i2 - 1:i2 + 1, j2 - 1:j2 + 1, k2 - 1:k2 + 1, :), frac0, frac)
+                                  flowDoms(d2, level, sps)%x(i2 - 1:i2 + 1, j2 - 1:j2 + 1, k2 - 1:k2 + 1, :), &
+                                  frac0, frac)
 
                 ! Check if the fractions are between zero and one
                 if (MAXVAL(frac) > one + fracTol .or. MINVAL(frac) < zero - fracTol) then
@@ -2279,7 +2281,8 @@ contains
                 ! Do newton update
                 frac0 = (/half, half, half/)
                 call newtonUpdate(xCen, &
-                                flowDoms(d1, level, sps)%x(i1 - 1:i1 + 1, j1 - 1:j1 + 1, k1 - 1:k1 + 1, :), frac0, frac)
+                                  flowDoms(d1, level, sps)%x(i1 - 1:i1 + 1, j1 - 1:j1 + 1, k1 - 1:k1 + 1, :), &
+                                  frac0, frac)
 
                 ! Set the new weights
                 call fracToWeights(frac, weight)

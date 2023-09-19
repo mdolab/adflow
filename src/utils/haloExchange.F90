@@ -3448,7 +3448,8 @@ contains
                                         localPtr(ii) = zero
                                     end if
                                 case (iZippFlowX, iZippFlowY, iZippFlowZ)
-                      xxd(i + 1, j + 1, iVar - iZippFlowX + 1) = xxd(i + 1, j + 1, iVar - iZippFlowX + 1) + localPtr(ii)
+                                    xxd(i + 1, j + 1, iVar - iZippFlowX + 1) = &
+                                        xxd(i + 1, j + 1, iVar - iZippFlowX + 1) + localPtr(ii)
                                 end select
                             end do
                         end do
@@ -3734,7 +3735,8 @@ contains
                                 case (iZippWallX, iZippWallY, iZippWallZ)
 
                                     ! The +1 is due to pointer offset
-                      xxd(i + 1, j + 1, iVar - iZippWallX + 1) = xxd(i + 1, j + 1, iVar - iZippWallX + 1) + localPtr(ii)
+                                    xxd(i + 1, j + 1, iVar - iZippWallX + 1) = &
+                                        xxd(i + 1, j + 1, iVar - iZippWallX + 1) + localPtr(ii)
 
                                 end select
                             end do
