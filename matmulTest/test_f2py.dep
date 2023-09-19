@@ -6,5 +6,5 @@ test_f2py.o :  \
 	matrixType.o
 
 f2py_api.o :  \
-	matrixType.o \
-	test_f2py.o
+	test_f2py.o \
+	matrixType.o

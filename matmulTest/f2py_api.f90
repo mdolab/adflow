@@ -4,12 +4,12 @@
 ! @Desc    :   Simple tests for GPU development
 
 module f2py_api
-    use matrixType
+    use matrixType, only: matType
 
     public :: my_matmult_api
 
     contains
-    
+
     subroutine my_matmult_api(a, b, n, c)
         ! This is the public interface to the GPU matmult that
         ! we call from python
@@ -39,9 +39,10 @@ module f2py_api
         h_mat%b = b
         h_mat%c = 0
 
-        mat(1)%a = h_mat%a
-        mat(1)%b = h_mat%b
-        mat(1)%c = h_mat%c
+        mat(1) = h_mat
+        ! mat(1)%a = h_mat%a
+        ! mat(1)%b = h_mat%b
+        ! mat(1)%c = h_mat%c
 
 
 
@@ -66,7 +67,9 @@ module f2py_api
         !call cuda
         call my_matmult_gpu<<<grid, tBlock>>>
         ! copy memory back
-        c = mat(1)%c
+        h_mat = mat(1)
+        c = h_mat%c
+        ! c = mat(1)%c
         ! print *, "c(1,1) = ", c(1, 1)
         ! convert time to seconds and print
         call system_clock(finish) ! get finish time

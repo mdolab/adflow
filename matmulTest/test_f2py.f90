@@ -6,6 +6,7 @@
 module constants
     integer, parameter :: ConstN = 32
 end module constants
+
 module test_f2py
 
     ! private :: my_matmult_gpu
@@ -28,14 +29,14 @@ module test_f2py
         ! real(8), shared :: aTile(32, 32), bTile(32, 32)
         integer :: ll, mm ! loop indices for tiling
         integer :: rowGlob, colGlob
-        n = size(a, dim=1)
+        
+        n = size(mat(1)%a, dim=1)
         
 
         ! At a bare minimum, any thread that can do work has at minimum two identifying numbers:
         ! block index
         ! thread index
         ! There is also blockDim which is how many threads are in a block
-        print *, ConstN
         ! Convenience
         tx = threadIdx%x
         ty = threadIdx%y
