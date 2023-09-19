@@ -1641,8 +1641,8 @@ module ANKSolver
     use petsc
     implicit none
 
-    Mat dRdw, dRdwPre, dRdwPre_d, timeStepMat
-    Vec wVec, rVec, rVec_d, deltaW, deltaW_d, baseRes
+    Mat dRdw, dRdwPre, g_dRdwPre, timeStepMat
+    Vec wVec, rVec, g_rVec, deltaW, g_deltaW, baseRes
     KSP ANK_KSP
 
     ! Turb KSP related PETSc objects
@@ -1757,10 +1757,10 @@ contains
             call VecSetType(wVec, VECMPI, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call VecCreateMPICUDA(ADFLOW_COMM_WORLD , nDimW, PETSC_DECIDE,deltaW_d, ierr);
+            call VecCreateMPICUDA(ADFLOW_COMM_WORLD, nDimW, PETSC_DECIDE, g_deltaW, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call VecCreateMPICUDA(ADFLOW_COMM_WORLD , nDimW, PETSC_DECIDE,rVec_d, ierr);
+            call VecCreateMPICUDA(ADFLOW_COMM_WORLD, nDimW, PETSC_DECIDE, g_rVec, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             !  Create duplicates for residual and delta
@@ -1773,10 +1773,10 @@ contains
             call VecDuplicate(wVec, baseRes, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call VecDuplicate(wVec, deltaW_d, ierr)
+            call VecDuplicate(wVec, g_rVec, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call VecDuplicate(wVec, rVec_d, ierr)
+            call VecDuplicate(wVec, g_deltaW, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Create Pre-Conditioning Matrix
@@ -1799,9 +1799,10 @@ contains
             call matSetOption(timeStepMat, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call myGPUMatCreate(dRdwPre_d,  nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+            !print *, "nDimW, nDimW, nnzDiagonal, nnzOffDiag", nDimW, nDimW, nnzDiagonal, nnzOffDiag
+            call myGPUMatCreate(g_dRdwPre, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
                              __FILE__, __LINE__)
-            call matSetOption(dRdwPre_d, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+            call matSetOption(g_dRdwPre, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             deallocate (nnzDiagonal, nnzOffDiag)
@@ -1816,7 +1817,7 @@ contains
                                PETSC_DETERMINE, PETSC_DETERMINE, dRdw, ierr)
 
             call MatMFFDSetFunction(dRdw, FormFunction_mf, ctx, ierr)
-            
+
             call EChk(ierr, __FILE__, __LINE__)
 
             call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
@@ -1838,7 +1839,7 @@ contains
                 call KSPSetOperators(ANK_KSP, dRdw, dRdwPre, ierr)
             else
                 ! Matrix based drdw = drdwpre
-                call KSPSetOperators(ANK_KSP, dRdwPre_d, dRdwPre_d, ierr)
+                call KSPSetOperators(ANK_KSP, g_dRdwPre, g_dRdwPre, ierr)
             end if
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -2063,7 +2064,7 @@ contains
         use inputDiscretization, only: approxSA
         use iteration, only: totalR0, totalR
         use utils, only: EChk, setPointers
-        use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid,setupGPUStandardKSP
+        use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid, setupGPUStandardKSP
         use communication
         use agmg, only: setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
         implicit none
@@ -2154,7 +2155,7 @@ contains
         !                                 preConSide, ANK_asmOverlap, outerPreConIts, &
         !                                 localOrdering, ANK_iluFill)
         ! end if
-        call MatCopy(dRdwPre, dRdwPre_d, DIFFERENT_NONZERO_PATTERN,ierr)
+        call MatCopy(dRdwPre, g_dRdwPre, DIFFERENT_NONZERO_PATTERN,ierr)
         call setupGPUStandardKSP(ANK_KSP, kspObjectType, subSpace, &
                                   preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                                   localOrdering, ANK_iluFill, ANK_innerPreConIts)
@@ -4038,10 +4039,10 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Actually do the Linear Krylov Solve
-        call VecDuplicate(rVec, rVec_d, ierr)
+        call VecCopy(rVec, g_rVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
-        call KSPSolve(ANK_KSP, rVec_d, deltaW_d, ierr)
-        call VecDuplicate(deltaW_d, deltaW, ierr)
+        call KSPSolve(ANK_KSP, g_rVec, g_deltaW, ierr)
+        call VecCopy(g_deltaW, deltaW, ierr)
         call EChk(ierr, __FILE__, __LINE__)
         ! DON'T just check the error. We want to catch error code 72
         ! which is a floating point error. This is ok, we just reset and

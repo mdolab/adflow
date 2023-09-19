@@ -1356,6 +1356,10 @@ contains
         character(len=*) :: file
         integer(kind=intType) :: ierr, line
         ! if (blockSize > 1) then
+        ! TODO: The following fails with:
+        !   [0]PETSC ERROR: Argument out of range
+        !   [0]PETSC ERROR: 1833961030934 is too big for PetscInt, you may need to ./configure using --with-64-bit-indices
+        !   With the value being random large int. None of the values have any value close this this.
         call MatCreateAIJCUSPARSE(ADFLOW_COMM_WORLD,  &
                            m, n, PETSC_DETERMINE, PETSC_DETERMINE, &
                            0, nnzDiagonal, 0, nnzOffDiag, matrix, ierr)
