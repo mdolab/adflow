@@ -238,7 +238,7 @@ class Main:
         self.postprocess_files()
 
         if not self.args.no_cleanup:
-            self.delete_temp_dirs()
+            self.delete_tmp_dirs()
 
     def parse_args(self):
         parser = argparse.ArgumentParser()
@@ -274,7 +274,7 @@ class Main:
         self.routines["reverse"] = self.drop_older_files("reverse")
         self.routines["reverse_fast"] = self.drop_older_files("reverse_fast")
 
-    def delete_temp_dirs(self):
+    def delete_tmp_dirs(self):
         for dir in self.tmpdirs:
             try:
                 shutil.rmtree(dir)
@@ -282,7 +282,7 @@ class Main:
                 pass
 
     def create_tmp_dirs(self):
-        self.delete_temp_dirs()
+        self.delete_tmp_dirs()
         for dir in self.tmpdirs:
             os.mkdir(dir)
 
