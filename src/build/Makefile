@@ -88,9 +88,6 @@ include $(DEP_FILE)
 # The 'lib' target builds the static archive. It depends on "sources".
 lib: sourcesNoOpt sources
 
-# mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/#include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaConstants.#f90 cudaConstants.o -cuda
-# mpifort -fPIC -Mr8 -r8 -lineinfo -march=native   -I/home/awccopp/packages/CGNS-4.2.0.2/opt-gfortran/include -I. -I/home/awccopp/packages/petsc/#include -I/home/awccopp/packages/petsc/real-cuda/include -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/comm_libs/mpi/include  -O3 -c ../cuda/cudaResidual.#f90 cudaResidual.o -cuda
-
 	$(AR) $(AR_FLAGS) libadflow.a $(OFILES_NO_OPT) $(OFILES) 
 
 # These are the extra python objects for the python library
@@ -124,10 +121,10 @@ python: lib ../f2py/adflow.pyf
 	@echo "#------------------------------------------------------#"
 
 # Check the consistency of the pyf file. All carachters (except comments and preprocessor tags) need to be lower case!!!
-	python ../f2py/checkPyfForUpperCase.py
+	$(PYTHON) ../f2py/checkPyfForUpperCase.py
 
 # Run the preprocessor on the pyf file:
-	python ../f2py/pyf_preprocessor.py real ../f2py/adflow.pyf
+	$(PYTHON) ../f2py/pyf_preprocessor.py real ../f2py/adflow.pyf
 
 # Run f2py to get adflowmodule.c and adflow-f2pywrapper2.f90
 	$(F2PY) ../f2py/adflow.pyf.autogen

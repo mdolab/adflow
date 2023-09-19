@@ -3451,8 +3451,7 @@ module cudaResidual
       integer(kind=intType), intent(in) :: varStart, varEnd
       type(dim3)                        :: grid_size, block_size
       integer(kind=intType) :: istat
-      integer(kind=intType) :: start, finish,count_rate
-      real(kind=realType) :: totalTime
+      real(kind=realType) :: start, finish, startInv, finishInv, startVisc,finishVisc,startSA,finishSA
 
       ! copy constants
       call cudaCopyFlowVarRefState
@@ -3479,12 +3478,14 @@ module cudaResidual
       grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
       
 
-      call system_clock(start,count_rate)
+      call CPU_TIME(start)
       call metrics<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
       ! call SA routines
       if (equations == RANSEquations .and. turbModel == spalartAllmaras) then
+        call CPU_TIME(startSA)
+
         call saSource<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
 
@@ -3496,9 +3497,14 @@ module cudaResidual
 
         call saResScale<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
+        call CPU_TIME(finishSA)
+                print  '("CUDA SA = ",E22.16," seconds.")', finishSA-startSA
+
+
       end if
       
       ! call time step routine
+        call CPU_TIME(startInv)
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
       
@@ -3512,9 +3518,13 @@ module cudaResidual
       ! inviscid diss flux scalar
       call inviscidDissFluxScalar<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
+      call CPU_TIME(finishInv)
+
+        print  '("CUDA Inviscid Time = ",E22.16," seconds.")', finishInv-startInv
 
       ! viscousFlux
       if (viscous) then
+      call CPU_TIME(startVisc)
         call computeSpeedOfSoundSquared<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
 
@@ -3527,14 +3537,19 @@ module cudaResidual
         grid_size  = dim3(ceiling(real(h_ib+1) / block_size%x), ceiling(real(h_jb+1) / block_size%y), ceiling(real(h_kb+1) / block_size%z))
         call viscousFlux<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
+        call CPU_TIME(finishVisc)
+        print  '("CUDA Visc = ",E22.16," seconds.")', finishVisc-startVisc
+
       end if 
       
 
     !   sumDwAndFw
       call sumDwandFw<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-      call system_clock(finish)
-        print *, "CUDA RESIDUAL TIME:", real(finish-start,kind=realType)/real(count_rate,kind=realType)
+      call CPU_TIME(finish)
+
+
+        print  '("CUDA Time = ",E22.16," seconds.")', finish-start
       ! TODO: update residual?
 
     end subroutine calculateCudaResidual
