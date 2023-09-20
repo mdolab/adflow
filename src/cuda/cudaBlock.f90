@@ -146,9 +146,9 @@ module cudaBlock
                 h_cudaDoms(nn, sps)%x = bx
                 h_cudaDoms(nn, sps)%rlv = brlv
                 h_cudaDoms(nn, sps)%rev = brev
-                h_cudaDoms(nn, sps)%vol = bvol
+                h_cudaDoms(nn, sps)%vol = bvol(1:bie, 1:bje, 1:bke)
                 ! initialize to zero
-                h_cudaDoms(nn, sps)%aa = baa
+                h_cudaDoms(nn, sps)%aa = zero
                 h_cudaDoms(nn, sps)%radI = zero
                 h_cudaDoms(nn, sps)%radJ = zero
                 h_cudaDoms(nn, sps)%radK = zero
@@ -168,8 +168,8 @@ module cudaBlock
 
                 ! face porosities
                 allocate(h_cudaDoms(nn, sps)%porI(1:bil,2:bjl,2:bkl))
-                allocate(h_cudaDoms(nn, sps)%porJ(2:bil, 1:bjl,2:bkl))
-                allocate(h_cudaDoms(nn, sps)%porK(2:bil,2:bjl, 1:bkl))
+                allocate(h_cudaDoms(nn, sps)%porJ(2:bil,1:bjl,2:bkl))
+                allocate(h_cudaDoms(nn, sps)%porK(2:bil,2:bjl,1:bkl))
                 h_cudaDoms(nn,sps)%porI = bPorI
                 h_cudaDoms(nn,sps)%porJ = bPorJ
                 h_cudaDoms(nn,sps)%porK = bPorK
