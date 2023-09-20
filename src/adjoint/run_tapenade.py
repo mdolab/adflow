@@ -45,8 +45,13 @@ full_routines = {
         "wallDistance%updateWallDistancesQuickly(x, xSurf, d2wall) > (x, xSurf, d2wall)",
     ],
     osp.join(SRC_PATH, "turbulence", "turbUtils.F90"): [
-        "turbUtils%computeEddyViscosity(w,rlv)>(w,rlv,rev)",
+        "turbUtils%computeEddyViscosity(w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref) > (w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref)",
+        "turbutils%sstEddyViscosity(w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref) > (w,rlv,rev,scratch,d2wall, vol, si, sj, sk, scratch, timeref)",
         "turbutils%turbAdvection(w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) > (w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek)",
+        "turbutils%kwCDterm(w, vol, si, sj, sk, scratch) > (w, vol, si, sj, sk, scratch)",
+        "turbutils%prodKatoLaunder(w, vol, si, sj, sk, scratch, timeref) > (w, vol, si, sj, sk, scratch, timeref)",
+        "turbutils%prodSmag2(w, vol, si, sj, sk, scratch) > (w, vol, si, sj, sk, scratch)",
+        "turbutils%prodWmag2(w, vol, si, sj, sk, scratch, timeref) > (w, vol, si, sj, sk, scratch, timeref)",
     ],
     osp.join(SRC_PATH, "solver", "BCRoutines.F90"): [
         "BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) > (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm)",
@@ -61,8 +66,8 @@ full_routines = {
         "BCRoutines%bcSubsonicOutflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps)",
     ],
     osp.join(SRC_PATH, "turbulence", "turbBCRoutines.F90"): [
-        "turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > (rev, w)",
-        "turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2)",
+        "turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > (rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2)",
+        "turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet) > (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet)",
     ],
     osp.join(SRC_PATH, "solver", "solverUtils.F90"): [
         "solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol)",
@@ -97,8 +102,14 @@ full_routines = {
     osp.join(SRC_PATH, "turbulence", "sa.F90"): [
         "sa%saSource(w, rlv, vol, si, sj, sk, timeRef, d2wall) > (w, rlv, vol, si, sj, sk, timeREf, scratch)",
         "sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > (w, vol, si, sj, sk, rlv, scratch)",
-        "sa%saResScale(scratch, dw) > (dw)",
+        "sa%saResScale(scratch, dw) > (scratch, dw)",
     ],
+    osp.join(SRC_PATH, "turbulence", "SST.F90"):[
+        "SST%SSTSource(w, scratch, rev) > (w, scratch, rev)",
+        "SST%SSTViscous(w, vol, si, sj, sk, rlv, rev, scratch) > (w, vol, si, sj, sk, rlv, rev, scratch)",
+        "SST%SSTResScale(scratch, dw) > (scratch, dw)",
+        "SST%f1SST(w, scratch, d2wall, rlv) > (w, scratch, rlv)",
+            ],
     osp.join(SRC_PATH, "overset", "oversetUtilities.F90"): [
         "oversetUtilities%newtonUpdate(xCen, blk, frac) > (blk, frac)",
         "oversetUtilities%fracToWeights(frac) > (weights)",
@@ -112,6 +123,10 @@ state_only_routines = {
     osp.join(SRC_PATH, "turbulence", "turbUtils.F90"): [
         "turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev)",
         "turbutils%turbAdvection(w,scratch)>(w,scratch)",
+        "turbutils%kwCDterm(w, scratch) > (w, scratch)",
+        "turbutils%prodKatoLaunder(w, scratch) > (w, scratch)",
+        "turbutils%prodSmag2(w, scratch) > (w, scratch)",
+        "turbutils%prodWmag2(w, scratch) > (w, scratch)",
     ],
     osp.join(SRC_PATH, "solver", "solverUtils.F90"): [
         "solverutils%timeStep_block(w, p) > (w, p, radi, radj, radk)",
@@ -132,6 +147,12 @@ state_only_routines = {
         "sa%saViscous(w, rlv, scratch) > (w, rlv, scratch)",
         "sa%saResScale(scratch) > (dw)",
     ],
+    osp.join(SRC_PATH, "turbulence", "SST.F90"):[
+        "SST%SSTSource(w, scratch) > (w, scratch)",
+        "SST%SSTViscous(w, rlv, scratch) > (w, rlv, scratch)",
+        "SST%SSTResScale(scratch) > (dw)",
+        "SST%f1SST(w, scratch, d2wall) > (w, scratch)",
+        ],
 }
 
 dependencies = [

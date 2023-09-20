@@ -351,7 +351,7 @@ contains
                 call computeEtotBlock(2_intType, il, 2_intType, jl, &
                                       2_intType, kl, correctForK)
                 call computeLamViscosity(.False.)
-                call computeEddyViscosity(.False.)
+                call computeEddyViscosity(.False.)  !for SST, the velocity in 1st halo MUST be up to date before this call. Does not seem like it is.
 
             end do domainsState
         end do spectralLoop
@@ -373,7 +373,7 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true.)
+                        .true., .true., .false.)
         else
             call whalo1(currentLevel, 1_intType, nwf, .true., &
                         .true., .true.)
@@ -662,7 +662,7 @@ contains
                 call computeEtotBlock(2_intType, il, 2_intType, jl, &
                                       2_intType, kl, correctForK)
                 call computeLamViscosity(.False.)
-                call computeEddyViscosity(.False.)
+                call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. Does not seem like it is.
 
             end do domainsState
         end do spectralLoop
@@ -684,7 +684,7 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true.)
+                        .true., .true., .false.)
         else
             call whalo1(currentLevel, 1_intType, nwf, .true., &
                         .true., .true.)

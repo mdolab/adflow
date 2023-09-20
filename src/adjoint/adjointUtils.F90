@@ -110,7 +110,7 @@ contains
 
         ! Exchange data and call the residual to make sure its up to date
         ! withe current w
-        call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
+        call whalo2(1_intType, 1_intType, nw, .True., .True., .True., .False.)
 
         ! This routine will not use the extra variables to block_res or the
         ! extra outputs, so we must zero them here
@@ -772,7 +772,7 @@ contains
 
                 ! Allocate d2wall if not already done so
                 if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then
-                    allocate (flowDoms(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
+                    allocate (flowDoms(nn, 1, sps)%d2wall(0:ib, 0:jb, 0:kb))
                     call EChk(ierr, __FILE__, __LINE__)
                 end if
 
@@ -829,7 +829,7 @@ contains
                     flowDomsd(nn, level, sps)%bvtj2(ie, ke, nt1:nt2), &
                     flowDomsd(nn, level, sps)%bvtk1(ie, je, nt1:nt2), &
                     flowDomsd(nn, level, sps)%bvtk2(ie, je, nt1:nt2), &
-                    flowDomsd(nn, level, sps)%d2Wall(2:il, 2:jl, 2:kl), &
+                    flowDomsd(nn, level, sps)%d2Wall(0:ib, 0:jb, 0:kb), &
                     stat=ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 

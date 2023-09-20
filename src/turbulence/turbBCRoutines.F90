@@ -907,6 +907,12 @@ contains
                         bmti1(i, j, itu2, itu2) = one
 
                         bvti1(i, j, itu2) = two * 60.0_realType * nu * tmpd
+                        ! This is consistent with the guideline for SST in https://turbmodels.larc.nasa.gov/sst.html
+                        ! Note: the factor two comes from the fact that we impose that the mean of the 1st halo cell and
+                        !       the first domain cell is equal to the target value.
+                        !     omega_halo = - bmt_onega * omega + bvt_omega
+                        !  => omega_halo = - one * omega_1 + two*60.0_realType*nu*tmpd
+                        !  => (omega_halo + omega_1)/2 = 60.0_realType*nu*tmpd
                     end do
                 end do
 

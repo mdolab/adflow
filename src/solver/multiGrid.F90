@@ -209,7 +209,7 @@ contains
                 call computeEtotBlock(2_intType, il, 2_intType, jl, &
                                       2_intType, kl, correctForK)
                 call computeLamViscosity(.False.)
-                call computeEddyViscosity(.False.)
+                call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. Does not seem like it is.
 
                 ! Set the values of the 1st layer of corner row halo's to avoid
                 ! divisions by zero and uninitialized variables.
@@ -589,7 +589,7 @@ contains
                 ! interpolated, extrapolate the viscosities in the halo's.
 
                 call computeLamViscosity(.False.)
-                call computeEddyViscosity(.False.)
+                call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. Does not seem like it is.
                 if (.not. corrections) call extrapolateViscosities
 
             end do domains
@@ -627,7 +627,7 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-                        .true., .true.)
+                        .true., .true., .false.)
         else
             call whalo1(currentLevel, 1_intType, nVarInt, .true., &
                         .true., .true.)
@@ -642,7 +642,7 @@ contains
 
             if (secondHalo) then
                 call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-                            .true., .true.)
+                            .true., .true., .false.)
             else
                 call whalo1(currentLevel, 1_intType, nVarInt, .true., &
                             .true., .true.)

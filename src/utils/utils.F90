@@ -3153,7 +3153,9 @@ contains
         nVarComm = nw + 1
         if (cpModel == cpTempCurveFits) nVarComm = nVarComm + 1
         if (viscous) nVarComm = nVarComm + 1
-        if (eddyModel) nVarComm = nVarComm + 1
+
+        ! We are now also exchanging d2wall. Thus two variables need to be communicated
+        if (eddyModel) nVarComm = nVarComm + 2
 
         ! Check if the 1 to 1 communication must be considered.
 
