@@ -1,4 +1,9 @@
-module agmg
+! This module implements an aggregation-based algebraic multigrid method.
+! See Sec. 6.1 in the following paper for a theoretical overview of similar methods:
+!   K. Stuben. "A review of algebraic multigrid."
+!   Journal of Computational and Applied Mathematics (2001)
+!   https://doi.org/10.1016/S0377-0427(00)00516-1
+module amg
 
     use constants
     use utils, only: EChk
@@ -21,23 +26,26 @@ module agmg
         integer, dimension(:, :, :, :), allocatable :: arr
     end type arr4int4
 
-    ! The number of agmg levels
-    integer(kind=intType) agmgLevels
+    ! The number of levels
+    integer(kind=intType) amgLevels
 
     ! The number of outer iterations
-    integer(kind=intType) agmgOuterIts
+    integer(kind=intType) amgOuterIts
 
-    ! The number of smoothign iteratinso
-    integer(kind=intType) agmgNSmooth
+    ! The number of smoothing iterations
+    integer(kind=intType) amgNSmooth
 
-    ! ASM overlap for levels
-    integer(kind=intType) :: agmgASMOverlap
+    ! The number of local ILU iterations
+    integer(kind=intType) amgLocalPreConIts
 
-    ! Fill
-    integer(kind=intType) :: agmgFillLevel
+    ! ASM overlap for the solver/smoother
+    integer(kind=intType) :: amgASMOverlap
+
+    ! ILU fill for the solver/smoother
+    integer(kind=intType) :: amgFillLevel
 
     ! Ordering
-    character(len=maxStringLen) :: agmgMatrixOrdering
+    character(len=maxStringLen) :: amgMatrixOrdering
 
     ! Arrays for matrices/vectors/solvers on each level.
     Mat, dimension(:), allocatable :: A
@@ -50,22 +58,22 @@ module agmg
     ! The interpolation arrays
     type(arr1int4), dimension(:), allocatable :: interps
 
-    ! The coarse grid indices
+    ! The coarse level indices
     type(arr3int4), dimension(:, :), allocatable, target :: coarseIndices
     type(arr4int4), dimension(:, :), allocatable, target :: coarseOversetIndices
 
-    logical :: agmgSetup = .False.
+    logical :: amgSetup = .False.
     integer :: bs
 contains
 
-    subroutine setupAGMG(inputMat, nCell, blockSize)
+    subroutine setupAMG(inputMat, nCell, blockSize, levels, nSmooth)
 
         use blockPointers
         use communication
         use utils, only: setPointers
         use haloExchange, only: whalo1to1intgeneric
         use adjointVars, only: nCellsLocal
-        integer(kind=intType), intent(in) :: nCell, blockSize
+        integer(kind=intType), intent(in) :: nCell, blockSize, levels, nSmooth
         Mat, target :: inputMat
 
         VecScatter :: scat
@@ -80,39 +88,43 @@ contains
         real(kind=realType), dimension(:), pointer :: indPtr
         integer(kind=intType), dimension(:), allocatable :: indicesToGet
 
-        if (agmgSetup) then
+        if (amgSetup) then
             return
         end if
 
-        bs = blockSize
-        ! Set the pointer to the fine grid the AMG will be working on.
-        fineMat => inputMat
+        ! Set some module variables
+        amgLevels = levels
+        amgNSmooth = nSmooth
 
-        ! The setup procedure for the agglomeration multigrid.
+        ! Block size here refers to the number of states in each cell
+        bs = blockSize
+
+        ! Set the pointer to the fine level the AMG will be working on
+        fineMat => inputMat
 
         ! Allocate the list of the mats/vects/ksp
         allocate ( &
-            A(2:agmgLevels), &
-            kspLevels(1:agmgLevels), &
-            res(1:agmgLevels), &
-            rhs(1:agmgLevels), &
-            sol(1:agmgLevels), &
-            sol2(1:agmgLevels))
+            A(2:amgLevels), &
+            kspLevels(1:amgLevels), &
+            res(1:amgLevels), &
+            rhs(1:amgLevels), &
+            sol(1:amgLevels), &
+            sol2(1:amgLevels))
 
-        ! First allocate the coarse grid indices.
-        allocate (coarseIndices(nDom, 1:agmgLevels - 1))
-        allocate (coarseOversetIndices(nDom, 1:agmgLevels - 1))
-        allocate (sizes(3, nDom, 1:agmgLevels))
-        allocate (offsets(0:nProc), procStarts(1:agmgLevels))
-        allocate (interps(1:agmgLevels - 1))
-        do lvl = 1, agmgLevels
+        ! First allocate the coarse level indices.
+        allocate (coarseIndices(nDom, 1:amgLevels - 1))
+        allocate (coarseOversetIndices(nDom, 1:amgLevels - 1))
+        allocate (sizes(3, nDom, 1:amgLevels))
+        allocate (offsets(0:nProc), procStarts(1:amgLevels))
+        allocate (interps(1:amgLevels - 1))
+        do lvl = 1, amgLevels
 
             do nn = 1, nDom
                 call setPointers(nn, 1, 1)
                 if (lvl == 1) then
 
-                    ! Set the sizes for the finest level. This is the number of
-                    ! owned cells.
+                    ! Set the sizes for the finest level.
+                    ! This is the number of owned cells.
                     sizes(1, nn, 1) = nx
                     sizes(2, nn, 1) = ny
                     sizes(3, nn, 1) = nz
@@ -157,7 +169,7 @@ contains
 
         end do
 
-        ! Now setup the interp and the coarse-grid indices. Note that this
+        ! Now set up the interp and the coarse-level indices. Note that this
         ! loop is the number of levels MINUS 1 since we are generating the
         ! interpolations between levels and we already have the 1st level
         ! of the  coarseIndices
@@ -166,7 +178,7 @@ contains
                           PETSC_DETERMINE, indexVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        do lvl = 1, agmgLevels - 1
+        do lvl = 1, amgLevels - 1
 
             do nn = 1, nDom
                 call setPointers(nn, 1, 1)
@@ -176,9 +188,8 @@ contains
                 coarseOversetIndices(nn, lvl)%arr = -1
             end do
 
-            ! Allocate the linear algebra interpolation array for this
-            ! level (first count the nuber of nodes to be restricted on
-            ! level lvl)
+            ! Allocate the linear algebra interpolation array for this level
+            ! (first count the number of nodes to be restricted on level lvl)
             n = 0
             do nn = 1, nDom
                 n = n + sizes(1, nn, lvl) * sizes(2, nn, lvl) * sizes(3, nn, lvl)
@@ -212,7 +223,6 @@ contains
                             n = n + 1
                             interps(lvl)%arr(n) = coarseIndex
 
-                            ! Block-basd info,
                         end do
                     end do
                 end do
@@ -221,8 +231,7 @@ contains
 
             ! We are not done yet; We need to fill in the block-based
             ! coarse indices and then do a halo-exchange on it so procs
-            ! know where to put their off-proc entries on the coarser
-            ! grids.
+            ! know where to put their off-proc entries on the coarser levels.
 
             ! Loop over the blocks.
             n = 0
@@ -242,17 +251,17 @@ contains
                             n = n + 1
 
                             ! Coarse Index: This is the first coarse index for
-                            ! the current finest grid element.
+                            ! the current finest level element.
                             coarseIndex = interps(1)%arr(n)
 
                             ! For levels higher than 2, we need to trace
                             ! through the subsequent levels to find what the
-                            ! coarse grid index is for level lvl.
+                            ! coarse index is for level lvl.
                             do nextLvl = 2, lvl
                                 coarseIndex = interps(nextLvl)%arr(coarseIndex)
                             end do
 
-                            ! Now we set the lvl coarse grid index into the
+                            ! Now we set the coarse level index into the
                             ! coarseIndices array. Note that we make the index
                             ! global here by adding procStarts. We also
                             ! subtract 1 to make it zero-based for petsc.
@@ -276,8 +285,7 @@ contains
                 do k = 0, kb
                     do j = 0, jb
                         do i = 0, ib
-                            ! If this cell is is an interpolated cell, record
-                            ! the indices we need to get
+                            ! If this cell is is an interpolated cell, record the indices we need to get
                             if (iblank(i, j, k) == -1) then
                                 do m = 1, 8
                                     if (flowDoms(nn, 1, 1)%gInd(m, i, j, k) >= 0) then
@@ -292,7 +300,7 @@ contains
             end do
 
             ! Now create the scatter to retrieve the "indicesToGet" from
-            ! the indexVec. Petsc is always annonying for this.
+            ! the indexVec. Petsc is always annoying for this.
 
             call ISCreateGeneral(adflow_comm_world, ii, indicesToGet(1:ii), PETSC_COPY_VALUES, &
                                  IS1, ierr)
@@ -350,7 +358,7 @@ contains
             call ISDestroy(IS1, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Now we need to exchange the coarse grid indices. Set
+            ! Now we need to exchange the coarse level indices. Set
             ! pointers to the coarseIndices arrays and then call the
             ! generic integer halo exchange.
             level = 1
@@ -368,14 +376,14 @@ contains
         call VecDestroy(indexVec, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Next we need to setup the matrices and vectors
+        ! Next we need to set up the matrices and vectors
 
-        do lvl = 1, agmgLevels
+        do lvl = 1, amgLevels
 
             call KSPCreate(adflow_comm_world, kspLevels(lvl), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Create the coarse grid.
+            ! Create the coarse levels
             if (lvl >= 2) then
                 ncoarse = maxval(interps(lvl - 1)%arr)
 
@@ -412,15 +420,15 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
         end do
-        agmgSetup = .True.
+        amgSetup = .True.
 
-    end subroutine setupAGMG
+    end subroutine setupAMG
 
-    subroutine destroyAGMG
+    subroutine destroyAMG
 
         integer(kind=intType) :: lvl, ierr, i, j
-        if (agmgSetup) then
-            do lvl = 1, agmgLevels
+        if (amgSetup) then
+            do lvl = 1, amgLevels
                 ! Destroy all of our vectors/matrices
                 if (lvl > 1) then
                     call MatDestroy(A(lvl), ierr)
@@ -445,10 +453,10 @@ contains
 
             deallocate (A, res, rhs, sol, sol2, kspLevels)
             deallocate (coarseIndices, coarseOversetIndices, interps)
-            agmgSetup = .False.
+            amgSetup = .False.
 
         end if
-    end subroutine destroyAGMG
+    end subroutine destroyAMG
 
     subroutine applyShellPC(pc, x, y, ierr)
         use communication
@@ -460,40 +468,42 @@ contains
         ! Working
         integer(kind=intType) :: i
 
-        if (agmgLevels > 1) then
+        if (amgLevels > 1) then
 
-            if (agmgOuterIts == 1) then
-                call MGPreCon(x, y, 1) ! y is the new approximate sol
+            ! Copy the input vector x into rhs because x is read-only
+            call VecCopy(x, rhs(1), ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Zero the output vector y
+            call VecSet(y, zero, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            if (amgOuterIts == 1) then
+                call MGPreCon(rhs(1), y, 1) ! y is the new approximate solution
             else
 
-                call VecCopy(x, rhs(1), ierr)
-                call EChk(ierr, __FILE__, __LINE__)
+                do i = 1, amgOuterIts
 
-                call VecSet(y, zero, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                do i = 1, agmgOuterIts
-
-                    call MGPreCon(rhs(1), sol(1), 1) ! y is the new approximate sol
+                    call MGPreCon(rhs(1), sol(1), 1) ! The solution update is stored in sol(1)
 
                     ! Update the solution
-                    call VecAYPX(y, one, sol(1), ierr)
+                    call VecAYPX(y, one, sol(1), ierr) ! y = y + sol(1)
                     call EChk(ierr, __FILE__, __LINE__)
 
-                    if (i < agmgOuterIts) then
-
+                    if (i < amgOuterIts) then
                         ! Compute new residual
                         call matMult(fineMat, y, rhs(1), ierr)
                         call EChk(ierr, __FILE__, __LINE__)
 
                         call VecAYPX(rhs(1), -one, x, ierr)
                         call EChk(ierr, __FILE__, __LINE__)
-
                     end if
+
                 end do
             end if
         else
-
+            ! Solve the fine level
+            ! This is equivalent to not using multigrid
             call KSPSolve(kspLevels(1), x, y, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
@@ -504,6 +514,7 @@ contains
 
         use communication, only: adflow_comm_world
         use inputAdjoint
+
         ! Input/Output
         PC pc
         integer(kind=intTYpe) :: ierr
@@ -514,10 +525,7 @@ contains
         integer(kind=intType) :: lvl
         integer(kind=intType) :: nlocal, first
 
-        ! Note that this has to be updated to work in parallel!
-
-        do lvl = 1, agmgLevels
-
+        do lvl = 1, amgLevels
             if (lvl == 1) then
                 call KSPSetOperators(kspLevels(lvl), fineMat, fineMat, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
@@ -534,7 +542,7 @@ contains
 
             call KSPSetTolerances(kspLevels(lvl), PETSC_DEFAULT_REAL, &
                                   PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
-                                  agmgNSmooth, ierr)
+                                  amgNSmooth, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call KSPgetPC(kspLevels(lvl), globalPC, ierr)
@@ -543,10 +551,10 @@ contains
             call PCSetType(globalPC, 'asm', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call PCASMSetOverlap(globalPC, agmgASMOverlap, ierr)
+            call PCASMSetOverlap(globalPC, amgASMOverlap, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            !Setup the main ksp context before extracting the subdomains
+            ! Set up the main ksp context before extracting the subdomains
             call KSPSetUp(kspLevels(lvl), ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
@@ -554,23 +562,41 @@ contains
             call PCASMGetSubKSP(globalPC, nlocal, first, subksp, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call KSPSetType(subksp, 'preonly', ierr)
-            call EChk(ierr, __FILE__, __LINE__)
+            ! Since there is an extra matMult required when using the Richardson preconditioner
+            ! with only 1 iteration, only use it when we need to do more than 1 iteration.
+            if (amgLocalPreConIts > 1) then
+                ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
+                call KSPSetType(subksp, 'richardson', ierr)
+                call EChk(ierr, __FILE__, __LINE__)
 
-            ! Extract the preconditioner for subksp object.
+                ! Set the number of iterations to do on local blocks. Tolerances are ignored.
+                call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+                                      amgLocalPreConIts, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! normtype is NONE because we don't want to check error
+                call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            else
+                ! Set the subksp object to preonly because we are only doing one iteration
+                call KSPSetType(subksp, 'preonly', ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            ! Extract the preconditioner for subksp object
             call KSPGetPC(subksp, subpc, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! The subpc type will almost always be ILU
+            ! Set the subpc type to ILU
             call PCSetType(subpc, 'ilu', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! ! ! Setup the matrix ordering for the subpc object:
-            call PCFactorSetMatOrderingtype(subpc, agmgMatrixOrdering, ierr)
+            ! Set up the matrix ordering for the subpc object
+            call PCFactorSetMatOrderingtype(subpc, amgMatrixOrdering, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the ILU parameters
-            call PCFactorSetLevels(subpc, agmgFillLevel, ierr)
+            call PCFactorSetLevels(subpc, amgFillLevel, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end do
 
@@ -608,14 +634,14 @@ contains
         ! Number of block nodes
         n = size(interp)
 
-        ! Convience block-based pointers
+        ! Convenience block-based pointers
         xPtrBlk(1:bs, 1:size(xPtr) / bs) => xPtr
         yPtrBlk(1:bs, 1:size(yPtr) / bs) => yPtr
 
         ! Zero the output array
         yPtr = zero
 
-        ! Loop over the interpolation array, summing into the coarse arary
+        ! Loop over the interpolation array, summing into the coarse array
         do i = 1, n
             j = interp(i)
             yPtrBlk(:, j) = yPtrBlk(:, j) + xPtrBlk(:, i)
@@ -651,11 +677,11 @@ contains
         ! Number of block nodes
         n = size(interp)
 
-        ! Convience pointers
+        ! Convenience pointers
         yPtrBlk(1:bs, 1:size(yPtr) / bs) => yPtr
         xPtrBlk(1:bs, 1:size(xPtr) / bs) => xPtr
 
-        ! Loop over the interpoaltion array, injecting into the fine array
+        ! Loop over the interpolation array, injecting into the fine array
         do i = 1, n
             j = interp(i)
             yPtrBlk(:, i) = xPtrBlk(:, j)
@@ -672,6 +698,7 @@ contains
     recursive subroutine MGPreCon(r, y, k)
 
         ! r is the residual and y is the approximate solution
+        ! k is the level
 
         ! Input/Output
         Vec y, r
@@ -680,23 +707,24 @@ contains
         ! Working
         integer(kind=intType) :: ierr, i
 
-        ! Setp 3: Restrict the residual
+        ! Step 1: Restrict the residual
         call restrictVec(r, rhs(k + 1), interps(k)%arr)
 
-        if (k == agmglevels - 1) then
-            ! The next level down is the bottom...break the recursion by solving:
+        ! Step 2: Solve the coarse level directly or recursively
+        if (k == amglevels - 1) then
+            ! The next level down is the bottom
+            ! Break the recursion by solving
             call kspSolve(KSPLevels(k + 1), rhs(k + 1), sol(k + 1), ierr)
             call EChk(ierr, __FILE__, __LINE__)
-
         else
-
-            ! Step 4: Call the next level down recursively
+            ! Call the next level down recursively
             call MGPreCon(rhs(k + 1), sol(k + 1), k + 1)
         end if
 
+        ! Step 3: Prolongate the solution
         call prolongVec(sol(k + 1), y, interps(k)%arr)
 
-        ! ! Step 6: Compute the new residual:
+        ! Step 4: Compute the new residual
         if (k == 1) then
             call matMult(fineMat, y, res(k), ierr)  ! res = A(i) * z1(k)
         else
@@ -707,7 +735,7 @@ contains
         call VecAYPX(res(k), -one, r, ierr)    ! res = -res + r
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Step 7: Relax using the smoother
+        ! Step 5: Relax using the smoother
         call kspSolve(KSPLevels(k), res(k), sol2(k), ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -716,4 +744,4 @@ contains
 
     end subroutine MGPreCon
 
-end module agmg
+end module amg

@@ -812,6 +812,7 @@ module inputADjoint
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
     integer(kind=intType) :: innerPreConIts
+    integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
 
     logical :: printTiming
     integer(kind=intType) :: subKSPSubspaceSize
