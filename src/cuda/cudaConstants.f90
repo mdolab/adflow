@@ -1,3 +1,6 @@
+! @File    :   cudaConstants.f90
+! @Desc    :   This is a bunch of modules for the cuda residual code. These aren't really 'constants'
+
 module cudaFlowVarRefState
     use cudafor
     use precision, only: realType, intType

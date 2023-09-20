@@ -3,9 +3,58 @@
 !              For variable names, follow the same convention as 'block.F90'
 
 module cudaBlock
-    use constants, only: realType, intType,porType
+    use constants, only: realType, intType, porType, maxCGNSNameLen
     implicit none
     save
+    ! =========================================================
+    !           Types
+    ! =========================================================
+    type cudaBCDataType
+        integer(kind=intType), pointer, device :: inBeg, inEnd, jnBeg, jnEnd
+        integer(kind=intType), pointer, device :: icBeg, icEnd, jcBeg, jcEnd
+
+        real(kind=realType), dimension(:, :, :), pointer, device :: norm
+        real(kind=realType), dimension(:, :), pointer, device :: rface
+        real(kind=realType), dimension(:, :, :), pointer, device :: F, Fv, Fp
+        real(kind=realType), dimension(:, :, :), pointer, device :: T, Tv, Tp
+        real(kind=realType), dimension(:, :), pointer, device :: area
+        real(kind=realType), dimension(:, :), pointer, device :: CpTarget
+        integer(kind=intType), dimension(:, :), pointer, device :: surfIndex
+
+        real(kind=realType), dimension(:, :), pointer, device :: nodeVal
+        real(kind=realType), dimension(:, :), pointer, device :: cellVal
+        real(kind=realType), dimension(:), pointer, device :: symNorm
+
+        logical :: symNormSet
+
+        integer(kind=intType), pointer, device :: subsonicInletTreatment
+
+        real(kind=realType), dimension(:, :, :), pointer, device :: uSlip
+        real(kind=realType), dimension(:, :), pointer, device :: TNS_Wall
+
+        character(maxCGNSNameLen), pointer, device :: family
+        integer(kind=intType), pointer, device :: famID
+
+        real(kind=realType), dimension(:, :, :, :), pointer, device :: normALE
+        real(kind=realType), dimension(:, :, :), pointer, device :: rFaceALE
+        real(kind=realType), dimension(:, :, :, :), pointer, device :: uSlipALE
+        real(kind=realType), dimension(:, :), pointer, device :: nodeHeatFlux
+        real(kind=realType), dimension(:, :), pointer, device :: cellHeatFlux
+
+        real(kind=realType), dimension(:, :), pointer, device :: ptInlet, ttInlet, htInlet
+        real(kind=realType), dimension(:, :), pointer, device :: flowXDirInlet, flowYDirInlet, flowZDirInlet
+
+        real(kind=realType), dimension(:, :, :), pointer, device :: turbInlet
+
+        real(kind=realType), dimension(:, :), pointer, device :: rho
+        real(kind=realType), dimension(:, :), pointer, device :: velX, velY, velZ
+        real(kind=realType), dimension(:, :), pointer, device :: ps
+
+        integer(kind=intType), dimension(:, :), pointer, device :: iblank
+
+        real(Kind=realType), dimension(:, :), pointer, device :: delta
+        real(Kind=realType), dimension(:, :), pointer, device :: deltaNode
+    end type cudaBCDataType
 
     type cudablockType
         integer(kind=intType) :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
@@ -53,6 +102,34 @@ module cudaBlock
         real(kind=realType), dimension(:,:,:),pointer,device :: vx, vy, vz
         real(kind=realType), dimension(:,:,:),pointer,device :: wx, wy, wz
         real(kind=realType), dimension(:,:,:),pointer,device :: qx, qy, qz
+
+        ! --- BCData ---
+        integer(kind=intType), pointer, device :: nSubface, n1to1, nBocos, nViscBocos
+
+        integer(kind=intType), dimension(:), pointer, device :: BCType
+        integer(kind=intType), dimension(:), pointer, device :: BCFaceID
+
+        integer(kind=intType), dimension(:), pointer, device :: cgnsSubface
+
+        integer(kind=intType), dimension(:), pointer, device :: inBeg, inEnd
+        integer(kind=intType), dimension(:), pointer, device :: jnBeg, jnEnd
+        integer(kind=intType), dimension(:), pointer, device :: knBeg, knEnd
+
+        integer(kind=intType), dimension(:), pointer, device :: dinBeg, dinEnd
+        integer(kind=intType), dimension(:), pointer, device :: djnBeg, djnEnd
+        integer(kind=intType), dimension(:), pointer, device :: dknBeg, dknEnd
+
+        integer(kind=intType), dimension(:), pointer, device :: icBeg, icEnd
+        integer(kind=intType), dimension(:), pointer, device :: jcBeg, jcEnd
+        integer(kind=intType), dimension(:), pointer, device :: kcBeg, kcEnd
+
+        integer(kind=intType), dimension(:), pointer, device :: neighBlock
+        integer(kind=intType), dimension(:), pointer, device :: neighProc
+        integer(kind=intType), dimension(:), pointer, device :: l1, l2, l3
+        integer(kind=intType), dimension(:), pointer, device :: groupNum
+
+        type(cudaBCDataType), dimension(:), pointer, device :: BCData
+
     end type cudaBlockType
 
     ! Device (GPU) and host (CPU) domains
@@ -83,7 +160,9 @@ module cudaBlock
             bsi => si, bsj => sj, bsk => sk, &
             bsFaceI => sFaceI, bsFaceJ => sFaceJ, bsFaceK => sFaceK, &
             bdtl => dtl, baa => aa, &
-            addGridVelocities, brightHanded => rightHanded
+            addGridVelocities, brightHanded => rightHanded, &
+            ! BC
+            bBCData => BCData
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use flowVarRefState, only: nw,nwf,nwt
         use inputPhysics, only: equations
@@ -101,7 +180,7 @@ module cudaBlock
         do nn = 1, nDom ! loop over domains
             do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
                 
-                call setPointers(nn,1, sps)
+                call setPointers(nn, 1, sps)
                 
                 ! Indices
                 h_cudaDoms(nn, sps)%nx = bnx
@@ -222,6 +301,19 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%qy(1:bil, 1:bjl, 1:bkl))
                 allocate(h_cudaDoms(nn, sps)%qz(1:bil, 1:bjl, 1:bkl))
                 h_cudaDoms(nn, sps)%qx = zero; h_cudaDoms(nn, sps)%qy = zero; h_cudaDoms(nn, sps)%qz = zero
+
+                ! --- BCData allocation within host ---
+                allocate(h_cudaDoms(nn, sps)%BCData%norm(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%rface(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%F(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%Fv(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%Fp(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%T(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%Tv(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%Tp(3))
+                allocate(h_cudaDoms(nn, sps)%BCData%area(2,2))
+                ! TODO GN: pickup here with debugging and allocating and setting vars btwn cpu and gpu
+
 
 
             end do

@@ -1,6 +1,6 @@
 module BCDataMod
     !
-    !       This local module contains the variables and subroutine to
+    !       This local module contains the variables to
     !       handle the prescribed boundary data.
     !
     use cgnsGrid

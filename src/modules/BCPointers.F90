@@ -1,7 +1,7 @@
 
 module BCPointers
 
-! Thiss module contains data structures used to apply BCs.
+! This module contains data structures used to apply BCs.
 
     use constants, only: intType, realType
     implicit none

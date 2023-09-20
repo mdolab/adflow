@@ -201,6 +201,6 @@ f77Files = 	adjoint/ADFirstAidKit/adBuffer.f\
 cudaFiles = cuda/cudaConstants.f90\
 		cuda/cudaResidual.f90\
 		cuda/cudaBlock.f90\
-
-		  
-		
+		cuda/cudaBCDataMod.f90\
+		cuda/cudaBCPointers.f90\
+		cuda/cudaBCRoutines.f90\
