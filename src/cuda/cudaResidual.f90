@@ -20,6 +20,8 @@ module cudaResidual
     !               cell-centered quantities.
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
+    integer(kind=intType), parameter :: inviscidCentralBS = 4
+
     integer(kind=intType) :: h_nx, h_ny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
     integer(kind=intType),constant :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
 
@@ -2319,15 +2321,199 @@ module cudaResidual
         end if
     end subroutine resScale
 
+    attributes(global) subroutine inviscidCentralFluxCellCentered
+        use precision, only: realType, intType
+        use constants, only: zero, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
+        use cudaInputPhysics, only: equationMode
+        use cudaFlowVarRefState, only: nwf
+        implicit none
+        integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz,dom, sps
+        real (kind = realType) , shared :: F_s(inviscidCentralBS,inviscidCentralBS,inviscidCentralBS,5,3)
+        real(kind = realType) :: flux
+        real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P
+        real(kind=realType) :: sx, sy, sz
+        real(kind = realType) :: tmp
+    
+
+        dom = 1
+        sps = 1
+
+        !cell centered indices
+        i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
+        j = (blockIdx%y - 1) * (blockDim%y-1) + threadIdx%y 
+        k = (blockIdx%z - 1) * (blockDim%z-1) + threadIdx%z 
+        
+        tidx = threadIdx%x
+        tidy = threadIdx%y
+        tidz = threadIdx%z
+
+        if (i <= ie .and. j <= je .and. k <= ke) then
+            wrho = cudaDoms(dom,sps)%w(i,j,k,irho)
+            wvx = cudaDoms(dom,sps)%w(i,j,k,ivx)
+            wvy = cudaDoms(dom,sps)%w(i,j,k,ivy)
+            wvz = cudaDoms(dom,sps)%w(i,j,k,ivz)
+            wrhoE = cudaDoms(dom,sps)%w(i,j,k,irhoE)
+            P = cudaDoms(dom,sps)%P(i,j,k)
+
+            !compute euler flux
+            F_s(tidx,tidy,tidz,irho,1) = wrho * wvx 
+            F_s(tidx,tidy,tidz,irho,2) = wrho * wvy
+            F_s(tidx,tidy,tidz,irho,3) = wrho * wvz
+
+            F_s(tidx,tidy,tidz,imx,1) = wrho * wvx * wvx + P
+            F_s(tidx,tidy,tidz,imx,2) = wrho * wvx * wvy
+            F_s(tidx,tidy,tidz,imx,3) = wrho * wvx * wvz
+
+            F_s(tidx,tidy,tidz,imy,1) = wrho * wvy * wvx
+            F_s(tidx,tidy,tidz,imy,2) = wrho * wvy * wvy + P
+            F_s(tidx,tidy,tidz,imy,3) = wrho * wvy * wvz
+            
+            F_s(tidx,tidy,tidz,imz,1) = wrho * wvz * wvx
+            F_s(tidx,tidy,tidz,imz,2) = wrho * wvz * wvy
+            F_s(tidx,tidy,tidz,imz,3) = wrho * wvz * wvz + P
+
+            F_s(tidx,tidy,tidz,irhoE,1) = (wrhoE + P) * wvx
+            F_s(tidx,tidy,tidz,irhoE,2) = (wrhoE + P) * wvy
+            F_s(tidx,tidy,tidz,irhoE,3) = (wrhoE + P) * wvz
+        end if 
+
+        !sync threads now
+        call syncthreads()
+        if (i <= il .and. j <= jl .and. k  <= kl) then
+        if (tidx < blockdim%x .and. tidy < blockdim%y .and. tidz < blockdim%z) then
+            !each thread here computes i face
+            sx = cudaDoms(dom,sps)%sI(i,j,k,1)
+            sy = cudaDoms(dom,sps)%sI(i,j,k,2)
+            sz = cudaDoms(dom,sps)%sI(i,j,k,3)
+
+            !compute fluxes
+            flux = (f_s(tidx,tidy,tidz,irho,1) + f_s(tidx+1,tidy,tidz,irho,1) ) * sx
+            flux = flux + (f_s(tidx,tidy,tidz,irho,2) + f_s(tidx+1,tidy,tidz,irho,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,irho,3) + f_s(tidx+1,tidy,tidz,irho,3) ) * sz) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, irho), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imx,1) + f_s(tidx+1,tidy,tidz,imx,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,imx,2) + f_s(tidx+1,tidy,tidz,imx,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,imx,3) + f_s(tidx+1,tidy,tidz,imx,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imx), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imy,1) + f_s(tidx+1,tidy,tidz,imy,1) ) * sx
+            flux =flux +  (f_s(tidx,tidy,tidz,imy,2) + f_s(tidx+1,tidy,tidz,imy,2) ) *flux
+            flux = (flux + (f_s(tidx,tidy,tidz,imy,3) + f_s(tidx+1,tidy,tidz,imy,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imy), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imz,1) + f_s(tidx+1,tidy,tidz,imz,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,imz,2) + f_s(tidx+1,tidy,tidz,imz,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,imz,3) + f_s(tidx+1,tidy,tidz,imz,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imz), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), flux)
+
+            flux = (f_s(tidz,tidy,tidz,irhoE,1) + f_s(tidx+1,tidy,tidz,irhoE,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,irhoE,2) + f_s(tidx+1,tidy,tidz,irhoE,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,irhoE,3) + f_s(tidx+1,tidy,tidz,irhoE,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, irhoE), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), flux)
+
+
+            !each thread here computes j face
+            sx = cudaDoms(dom,sps)%sJ(i,j,k,1)
+            sy = cudaDoms(dom,sps)%sJ(i,j,k,2)
+            sz = cudaDoms(dom,sps)%sJ(i,j,k,3)
+
+            !compute fluxes
+            flux = (f_s(tidx,tidy,tidz,irho,1) + f_s(tidx,tidy+1,tidz,irho,1) ) * sx
+            flux = flux + (f_s(tidx,tidy,tidz,irho,2) + f_s(tidx,tidy+1,tidz,irho,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,irho,3) + f_s(tidx,tidy+1,tidz,irho,3) ) * sz) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j+1, k, irho), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imx,1) + f_s(tidx,tidy+1,tidz,imx,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,imx,2) + f_s(tidx,tidy+1,tidz,imx,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,imx,3) + f_s(tidx,tidy+1,tidz,imx,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j+1, k, imx), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imy,1) + f_s(tidx,tidy+1,tidz,imy,1) ) * sx
+            flux =flux +  (f_s(tidx,tidy,tidz,imy,2) + f_s(tidx,tidy+1,tidz,imy,2) ) *flux
+            flux = (flux + (f_s(tidx,tidy,tidz,imy,3) + f_s(tidx,tidy+1,tidz,imy,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j+1, k, imy), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imz,1) + f_s(tidx,tidy+1,tidz,imz,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,imz,2) + f_s(tidx,tidy+1,tidz,imz,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,imz,3) + f_s(tidx,tidy+1,tidz,imz,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j+1, k, imz), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), flux)
+
+            flux = (f_s(tidz,tidy,tidz,irhoE,1) + f_s(tidx,tidy+1,tidz,irhoE,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,irhoE,2) + f_s(tidx,tidy+1,tidz,irhoE,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,irhoE,3) + f_s(tidx,tidy+1,tidz,irhoE,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j+1, k, irhoE), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), flux)
+            
+
+            !each thread here computes k face
+            sx = cudaDoms(dom,sps)%sk(i,j,k,1)
+            sy = cudaDoms(dom,sps)%sk(i,j,k,2)
+            sz = cudaDoms(dom,sps)%sk(i,j,k,3)
+
+            !compute fluxes
+            flux = (f_s(tidx,tidy,tidz,irho,1) + f_s(tidx,tidy,tidz+1,irho,1) ) * sx
+            flux = flux + (f_s(tidx,tidy,tidz,irho,2) + f_s(tidx,tidy,tidz+1,irho,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,irho,3) + f_s(tidx,tidy,tidz+1,irho,3) ) * sz) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j, k+1, irho), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imx,1) + f_s(tidx,tidy,tidz+1,imx,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,imx,2) + f_s(tidx,tidy,tidz+1,imx,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,imx,3) + f_s(tidx,tidy,tidz+1,imx,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j, k+1, imx), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imy,1) + f_s(tidx,tidy,tidz+1,imy,1) ) * sx
+            flux =flux +  (f_s(tidx,tidy,tidz,imy,2) + f_s(tidx,tidy,tidz+1,imy,2) ) *flux
+            flux = (flux + (f_s(tidx,tidy,tidz,imy,3) + f_s(tidx,tidy,tidz+1,imy,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j, k+1, imy), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), flux)
+
+            flux = (f_s(tidx,tidy,tidz,imz,1) + f_s(tidx,tidy,tidz+1,imz,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,imz,2) + f_s(tidx,tidy,tidz+1,imz,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,imz,3) + f_s(tidx,tidy,tidz+1,imz,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j, k+1, imz), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), flux)
+
+            flux = (f_s(tidz,tidy,tidz,irhoE,1) + f_s(tidx,tidy,tidz+1,irhoE,1) ) * sx
+            flux = flux +  (f_s(tidx,tidy,tidz,irhoE,2) + f_s(tidx,tidy,tidz+1,irhoE,2) ) * sy
+            flux = (flux + (f_s(tidx,tidy,tidz,irhoE,3) + f_s(tidx,tidy,tidz+1,irhoE,3) ) * sz ) * half
+            tmp = atomicsub(cudaDoms(dom,sps)%dw(i , j, k+1, irhoE), flux)
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), flux)
+            
+            
+           
+
+        end if 
+
+
+        end if 
+
+        
+
+
+        
+
+
+    end subroutine inviscidCentralFluxCellCentered
+
+
     attributes(global) subroutine inviscidCentralFlux
         ! ---------------------------------------------
         !               Inviscid central flux
         ! ---------------------------------------------
         use precision, only: realType, intType
         use constants, only: zero, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
-        use blockPointers, only: blockIsMoving, nBkGlobal
-        use cudaFlowVarRefState, only: timeRef
-        use cgnsGrid, only: cgnsDoms
         use cudaInputPhysics, only: equationMode
         implicit none
         !real(kind=realType), intent(in),optional :: wwx,wwy,wwz
@@ -4817,7 +5003,7 @@ module cudaResidual
       use inputPhysics, only: equationMode, equations, turbModel
       use inputDiscretization, only: spaceDiscr
       use flowvarRefState, only: viscous
-      use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb
+      use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie
       use inputTimeSpectral, only: nTimeIntervalsSpectral
       use cudaBlock, only: copyCudaBlock
       use utils, only: setPointers
@@ -4828,7 +5014,7 @@ module cudaResidual
 
       logical, intent(in)               :: updateIntermed
       integer(kind=intType), intent(in) :: varStart, varEnd
-      type(dim3)                        :: grid_size, block_size
+      type(dim3)                        :: grid_size, block_size, grid_inv, block_inv
       integer(kind=intType) :: istat
       real(kind=realType) :: start, finish, startInv, finishInv, startVisc,finishVisc,startSA,finishSA
       integer(kind = intType) :: dom, sps
@@ -4900,11 +5086,13 @@ module cudaResidual
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
       
+      block_inv = dim3(inviscidCentralBS,inviscidCentralBS,inviscidCentralBS)
+      grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / block_size%y), ceiling(real(bke) / block_size%z))
       ! inviscid central flux
       call computeSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-
-      call inviscidCentralFlux<<<grid_size, block_size>>>
+      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
+      !call inviscidCentralFlux<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
       ! inviscid diss flux scalar
