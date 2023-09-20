@@ -54,10 +54,11 @@ f90FilesNoOpt=$(filter %.f90,$(fortranFilesNoOptNoDir))
 F90FilesNoOpt=$(filter %.F90,$(fortranFilesNoOptNoDir))
 f90Files=$(filter %.f90,$(fortranFilesNoDir))
 F90Files=$(filter %.F90,$(fortranFilesNoDir))
+CUFFiles=$(filter %.cuf,$(cudafortranFilesNoDir))
 
 # Finally convert all source files to .o
 OFILES_NO_OPT=$(f90FilesNoOpt:%.f90=%.o) $(F90FilesNoOpt:%.F90=%.o)
-OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o) $(cudafortranFiles:%.cuf=%.o)
+OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o) $(CUFFiles:%.cuf=%.o)
 
 # Define the file name for the auto-generated dependency file.
 DEP_FILE=adflow_project.dep
@@ -76,9 +77,9 @@ sources: $(OFILES) $(DEP_FILE)
 
 # The .dep file depends on the source files, so it automatically gets updated
 # when you change your source
-$(DEP_FILE): $(fortranFilesNoOpt) $(fortranFiles)
+$(DEP_FILE): $(fortranFilesNoOpt) $(fortranFiles) $(cudafortranFiles)
 	@echo "Making dependencies!\n"
-	$(PYTHON) fort_depend.py -w -o $(DEP_FILE) -f $(fortranFilesNoOpt) $(fortranFiles)
+	$(PYTHON) fort_depend.py -w -o $(DEP_FILE) -f $(fortranFilesNoOpt) $(fortranFiles) $(cudafortranFiles)
 
 # Include the automatically generated file.
 include $(DEP_FILE)
@@ -138,6 +139,6 @@ python: lib ../f2py/adflow.pyf
 	$(FF90) $(FF90_ALL_FLAGS) -I./ -c libadflow-f2pywrappers2.f90
 
 # Final Link:
-	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so $(CUFFLAGS)
+	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so 
 	$(PYTHON) importTest.py libadflow.so
 	mv libadflow.so ../../adflow

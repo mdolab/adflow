@@ -3,15 +3,14 @@
 # ----------------------------------------------------------------------
 
 # ------- Define a possible parallel make (use PMAKE = make otherwise)--
-PMAKE = make -j 4
+PMAKE = make -j 
 
 # ------- Define the MPI Compilers--------------------------------------
 FF90 = mpifort
 CC   = mpicc
 
 
-# ------- GPU compilers ---
-CUFC = nvfortran
+# ------- GPU flags ---
 CUFFLAGS = -cuda
 
 # ------- Define Precision Flags ---------------------------------------
@@ -37,7 +36,7 @@ COMPLEXIFY_LINKER_FLAGS=-L$(COMPLEXIFY_DIR)/lib -lcomplexify
 
 # ------- Define Compiler Flags ----------------------------------------
 FF77_FLAGS = -fPIC -r8 -march=native $(CUFFLAGS)
-FF90_FLAGS = $(FF77_FLAGS) $(CUFFLAGS)
+FF90_FLAGS = $(FF77_FLAGS) 
 FFXX_OPT_FLAGS = -O3
 C_FLAGS   = -fPIC -O
 
