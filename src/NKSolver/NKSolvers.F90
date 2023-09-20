@@ -1421,15 +1421,15 @@ contains
         ! Local Variables
         integer(kind=intType) :: nn, i, j, k, l, counter, sps
         real(kind=realType) :: ovv
-        integer(kind=intType) :: start, finish,count_rate
+        real(kind=8) :: start, finish
         real(kind=realType) :: totalTime
         
-        call system_clock(start,count_rate)
+        call CPU_TIME(start)
 
         call computeResidualNK(useUpdateIntermed=.True.)
 
-        call system_clock(finish)
-        print *, "CPU RESIDUAL TIME:", real(finish-start,kind=realType)/real(count_rate,kind=realType)
+        call CPU_TIME(finish)
+        print '("CPU Time = ",E22.16," seconds.")', finish-start
 
 
         counter = 0
