@@ -2349,12 +2349,13 @@ module cudaResidual
         sFace = cudaDoms(1,1)%sFaceI(i, j, k)
         ! Compute the normal velocities of the left and right state.
     
-        vnp = cudaDoms(1,1)%w(i + 1, j, k, 2) * cudaDoms(1,1)%sI(i, j, k, 1) &
-                + cudaDoms(1,1)%w(i + 1, j, k, 3) * cudaDoms(1,1)%sI(i, j, k, 2) &
-                + cudaDoms(1,1)%w(i + 1, j, k, 4) * cudaDoms(1,1)%sI(i, j, k, 3)
-        vnm = cudaDoms(1,1)%w(i, j, k, 2) * cudaDoms(1,1)%sI(i, j, k, 1) &
-                + cudaDoms(1,1)%w(i, j, k, 3) * cudaDoms(1,1)%sI(i, j, k, 2) &
-                + cudaDoms(1,1)%w(i, j, k, 4) * cudaDoms(1,1)%sI(i, j, k, 3)
+        vnp = cudaDoms(1,1)%w(i + 1, j, k, 2) * cudaDoms(1,1)%sI(i, j, k, 1) 
+        vnp = vnp + cudaDoms(1,1)%w(i + 1, j, k, 3) * cudaDoms(1,1)%sI(i, j, k, 2) 
+        vnp = vnp + cudaDoms(1,1)%w(i + 1, j, k, 4) * cudaDoms(1,1)%sI(i, j, k, 3)
+
+        vnm = cudaDoms(1,1)%w(i, j, k, 2) * cudaDoms(1,1)%sI(i, j, k, 1) 
+        vnm = vnm + cudaDoms(1,1)%w(i, j, k, 3) * cudaDoms(1,1)%sI(i, j, k, 2) 
+        vnm = vnm + cudaDoms(1,1)%w(i, j, k, 4) * cudaDoms(1,1)%sI(i, j, k, 3)
         ! Set the values of the porosities for this face.
         ! porVel defines the porosity w.r.t. velocity;
         ! porFlux defines the porosity w.r.t. the entire flux.
