@@ -2336,6 +2336,7 @@ module cudaResidual
         real(kind=realType) :: pa, vnp, vnm, fs, sFace
         integer(kind=intType) :: i, j, k, dom, sps
         real(kind=realtype) :: tmp  
+        real(kind=realType) :: sx, sy, sz
         ! real(kind=realType) :: wwx, wwy, wwz, rvol
 
         dom = 1
@@ -2352,13 +2353,15 @@ module cudaResidual
             ! normal in i-direction for a moving face.
             sFace = cudaDoms(dom,sps)%sFaceI(i, j, k)
             ! Compute the normal velocities of the left and right state.
-
-            vnp = cudaDoms(dom,sps)%w(i + 1, j, k, ivx) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivy) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivz) * cudaDoms(dom,sps)%sI(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sI(i, j, k, 3)
+            sx = cudaDoms(dom,sps)%sI(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sI(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sI(i, j, k, 3)
+            vnp = cudaDoms(dom,sps)%w(i + 1, j, k, ivx) * sx &
+                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivz) * sz
+            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * sx&
+                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * sz
             ! Set the values of the porosities for this face.
             ! porVel defines the porosity w.r.t. velocity;
             ! porFlux defines the porosity w.r.t. the entire flux.
@@ -2408,21 +2411,21 @@ module cudaResidual
             ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 1)
+                + pa * sx
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imx), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
             ! cudaDoms(dom,sps)%dw(i + 1, j, k, imx) = cudaDoms(dom,sps)%dw(i + 1, j, k, imx) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 2)
+                + pa * sy
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imy), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
             ! cudaDoms(dom,sps)%dw(i + 1, j, k, imy) = cudaDoms(dom,sps)%dw(i + 1, j, k, imy) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 3)
+                + pa * sz
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imz), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
             ! cudaDoms(dom,sps)%dw(i + 1, j, k, imz) = cudaDoms(dom,sps)%dw(i + 1, j, k, imz) - fs
@@ -2443,14 +2446,19 @@ module cudaResidual
             ! normal in j-direction for a moving face.
 
             sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
+            sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sJ(i, j, k, 3)
+
+
             ! Compute the normal velocities of the left and right state.
 
-            vnp = cudaDoms(dom,sps)%w(i, j + 1, k, ivx) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivy) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivz) * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+            vnp = cudaDoms(dom,sps)%w(i, j + 1, k, ivx) * sx &
+                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivz) * sz
+            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * sx &
+                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * sz
 
             ! Set the values of the porosities for this face.
             ! porVel defines the porosity w.r.t. velocity;
@@ -2501,21 +2509,21 @@ module cudaResidual
             ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 1)
+                + pa * sx
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imx), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
             ! cudaDoms(dom,sps)%dw(i, j + 1, k, imx) = cudaDoms(dom,sps)%dw(i, j + 1, k, imx) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 2)
+                + pa * sy
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imy), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
             ! cudaDoms(dom,sps)%dw(i, j + 1, k, imy) = cudaDoms(dom,sps)%dw(i, j + 1, k, imy) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+                + pa * sz
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imz), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
             ! cudaDoms(dom,sps)%dw(i, j + 1, k, imz) = cudaDoms(dom,sps)%dw(i, j + 1, k, imz) - fs
@@ -2536,15 +2544,18 @@ module cudaResidual
                     ! normal in k-direction for a moving face.
 
             sFace = cudaDoms(dom,sps)%sFaceK(i, j, k)
+            sx = cudaDoms(dom,sps)%sK(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sK(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sK(i, j, k, 3)
 
             ! Compute the normal velocities of the left and right state.
 
-            vnp = cudaDoms(dom,sps)%w(i, j, k + 1, ivx) * cudaDoms(dom,sps)%sK(i, j, k, 1) &
-                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivy) * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sK(i, j, k, 1) &
-                  + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-                  + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
+            vnp = cudaDoms(dom,sps)%w(i, j, k + 1, ivx) * sx &
+                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivy) * sy &
+                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivz) * sz
+            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * sx &
+                  + cudaDoms(dom,sps)%w(i, j, k, ivy) * sy &
+                  + cudaDoms(dom,sps)%w(i, j, k, ivz) * sz
 
             ! Set the values of the porosities for this face.
             ! porVel defines the porosity w.r.t. velocity;
@@ -2596,21 +2607,21 @@ module cudaResidual
             ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 1)
+                 + pa * sx
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imx), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
             ! cudaDoms(dom,sps)%dw(i, j, k + 1, imx) = cudaDoms(dom,sps)%dw(i, j, k + 1, imx) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 2)
+                 + pa * sy
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imy), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
             ! cudaDoms(dom,sps)%dw(i, j, k + 1, imy) = cudaDoms(dom,sps)%dw(i, j, k + 1, imy) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 3)
+                 + pa * sz
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imz), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
             ! cudaDoms(dom,sps)%dw(i, j, k + 1, imz) = cudaDoms(dom,sps)%dw(i, j, k + 1, imz) - fs
