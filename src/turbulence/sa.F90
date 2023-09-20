@@ -13,11 +13,7 @@ module sa
 
 contains
 #ifndef USE_TAPENADE
-    subroutine sa_block_residuals(cleanUp)
-        !--------------------------------------------------------------
-        ! Manual Differentiation Warning: Modifying this routine requires
-        ! modifying the hand-written forward and reverse routines.
-        ! --------------------------------------------------------------
+    subroutine sa_block(resOnly)
         !
         !       sa solves the transport equation for the Spalart-Allmaras
         !       turbulence model in a decoupled manner using a diagonal
@@ -38,12 +34,14 @@ contains
         !
         !      Subroutine argument.
         !
-        logical, intent(in) :: cleanUp
+        logical, intent(in) :: resOnly
         !
         !      Local variables.
         !
-        integer(kind=intType) :: nn
+        integer(kind=intType) :: nn, sps
 
+        ! Set the arrays for the boundary condition treatment.
+        call bcTurbTreatment
 
         ! Alloc central jacobian memory
         allocate (qq(2:il, 2:jl, 2:kl))
@@ -64,69 +62,27 @@ contains
         ! Perform the residual scaling
         call saResScale
 
-        ! cleanUp 
-        if (cleanUp) then
-            deallocate (qq)
+        ! We need to do an acutal solve. Solve and update the eddy
+        ! viscosity and the boundary conditions
+
+        if (.not. resOnly) then
+
+            ! Do solve
+            call saSolve
+
+            ! Compute the corresponding eddy viscosity.
+
+            call saEddyViscosity(2, il, 2, jl, 2, kl)
+
+            ! Set the halo values for the turbulent variables.
+            ! We are on the finest mesh, so the second layer of halo
+            ! cells must be computed as well.
+
+            call applyAllTurbBCThisBlock(.true.)
         end if
-    end subroutine sa_block_residuals
 
-
-#ifndef USE_COMPLEX
-    subroutine sa_block_residuals_d
-
-        use constants
-        use turbutils_d, only: turbAdvection_d
-        use sa_d, only: saSource_d, saViscous_d, saResScale_d, qq
-
-        implicit none
-
-        call saSource_d
-        call turbAdvection_d(1_intType, 1_intType, itu1 - 1, qq)
-        !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
-        call saViscous_d
-        call saResScale_d
-
-
-    end subroutine sa_block_residuals_d
-
-    subroutine sa_block_residuals_b
-
-        use constants
-        use turbutils_b, only: turbAdvection_b
-        use sa_b, only: saSource_b, saViscous_b, saResScale_b, qq
-
-        implicit none
-
-        call saResScale_b
-        call saViscous_b
-        !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-        call turbAdvection_b(1_intType, 1_intType, itu1 - 1, qq)
-        ! turbAdvection_b zeros the faceid. This should be ok since
-        ! it presumably is the last call in master using faceid and
-        ! therefore should be the first call in master_b to use faceid
-        call saSource_b
-
-    end subroutine sa_block_residuals_b
-
-    subroutine sa_block_residuals_fast_b
-
-        use constants
-        use turbutils_fast_b, only: turbAdvection_fast_b
-        use sa_fast_b, only: saresscale_fast_b, saviscous_fast_b, &
-                             sasource_fast_b, qq
-
-
-        implicit none
-
-        call saResScale_fast_b
-        call saViscous_fast_b
-        !call unsteadyTurbTerm_b(1_intType, 1_intType, itu1-1, qq)
-        call turbAdvection_fast_b(1_intType, 1_intType, itu1 - 1, qq)
-        call saSource_fast_b
-
-    end subroutine sa_block_residuals_fast_b
-
-#endif
+        deallocate (qq)
+    end subroutine sa_block
 #endif
 
     subroutine saSource
@@ -1303,15 +1259,6 @@ contains
                 end do
             end do
         end do
-
-
-        ! Compute the EddyViscosity
-
-        call saEddyViscosity(2, il, 2, jl, 2, kl)
-
-        ! clean up
-
-        deallocate (qq)
 
     end subroutine saSolve
 #endif

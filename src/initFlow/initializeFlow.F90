@@ -141,12 +141,6 @@ contains
 
                 wInf(itu1) = 1.5_realType * uInf2 * turbIntensityInf**2
                 wInf(itu2) = wInf(itu1) / (eddyVisInfRatio * nuInf)
-                !both are consistent with https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions,
-                ! NASA https://turbmodels.larc.nasa.gov/sst.html has slightly different values
-                !The NASA ref specify that the freestream turbulent viscosity should be between 10-5 and 10-2 times freestream laminar viscosity.
-                ! Not clear why eddyVisInfRatio default to 0.009
-                !This ref suggests similar things: k determined so that nuTInf = nuInf * 0.009
-                ! https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.901.7078&rep=rep1&type=pdf
 
                 !=============================================================
 
@@ -299,7 +293,7 @@ contains
         end if
 
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -358,8 +352,6 @@ contains
         use block, only: flowDoms
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use variableReading, only: halosRead
-        use haloExchange, only: whalo2
-        use wallDistanceData, only: exchangeWallDistanceHalos
 
         implicit none
         !
@@ -406,16 +398,6 @@ contains
         ! Initialize the dependent flow variables and the halo values.
 
         call initDepvarAndHalos(halosRead)
-
-        ! Exchange d2wall on halo cells
-        do level = 1, nLevels
-           if (exchangeWallDistanceHalos(level)) then
-                call whalo2(level, 1_intType, 0_intType, &
-                            .false., .false., .false., .true.)
-                exchangeWallDistanceHalos(level) = .False.
-            end if
-        end do
-
 
     end subroutine initFlow
 
@@ -1341,10 +1323,10 @@ contains
 
         ! Exchange the solution on the multigrid start level.
         ! It is possible that the halo values are needed for the boundary
-        ! conditions and eddy viscosity. Viscosities are not exchanged.
+        ! conditions. Viscosities are not exchanged.
 
         call whalo2(mgStartlevel, 1_intType, nw, .true., .true., &
-                    .false., .false.)
+                    .false.)
 
         ! Apply all flow boundary conditions to be sure that the halo's
         ! contain the correct values. These might be needed to compute
@@ -1369,7 +1351,7 @@ contains
                 ! Compute the eddy viscosity for rans computations using
                 ! an eddy viscosity model.
 
-                call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. It should be ok here.
+                call computeEddyViscosity(.False.)
 
                 ! In case of a rans computation and no restart, initialize
                 ! the turbulent variables a bit better for some turbulence
@@ -1393,7 +1375,7 @@ contains
         ! Exchange the laminar and eddy viscosities.
 
         call whalo2(mgStartlevel, 1_intType, 0_intType, .false., &
-                    .false., .true., .false.)
+                    .false., .true.)
 
         if (equations == RANSEquations) then
             call applyAllTurbBC(.true.)
@@ -1405,7 +1387,7 @@ contains
         ! phase, this is not critical.
 
         call whalo2(mgStartlevel, 1_intType, nw, .true., .true., &
-                    .true., .false.)
+                    .true.)
 
     end subroutine initDepvarAndHalos
 

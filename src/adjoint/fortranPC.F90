@@ -122,7 +122,7 @@ contains
 
         ! Exchange data and call the residual to make sure its up to date
         ! withe current w
-        call whalo2(1_intType, 1_intType, nw, .True., .True., .True., .False.)
+        call whalo2(1_intType, 1_intType, nw, .True., .True., .True.)
 
         ! This routine will not use the extra variables to block_res or the
         ! extra outputs, so we must zero them here

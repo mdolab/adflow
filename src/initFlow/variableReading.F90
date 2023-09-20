@@ -1264,11 +1264,6 @@ contains
 
             ! !===============================================================
 
-            case (menterSST)
-              call readTurbKwType(nTypeMismatch)
-
-            ! !===============================================================
-
             ! case (komegaWilcox, komegaModified, menterSST, ktau)
             !   call readTurbKwType(nTypeMismatch)
 

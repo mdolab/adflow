@@ -44,7 +44,6 @@ contains
 
         use constants
         use blockPointers, only: nx, ny, nz, il, jl, kl, x, flowDoms, d2wall
-        use wallDistanceData, only: exchangeWallDistanceHalos
         implicit none
 
         ! Subroutine arguments
@@ -116,11 +115,6 @@ contains
                 end do
             end do
         end do
-#endif
-
-
-#ifndef USE_TAPENADE
-    exchangeWallDistanceHalos(level) = .True.
 #endif
 
     end subroutine updateWallDistancesQuickly
@@ -488,7 +482,7 @@ contains
         !
         integer :: ierr
 
-        integer(kind=intType) :: nn, ib, jb, kb
+        integer(kind=intType) :: nn, il, jl, kl
 
         ! Loop over the domains.
 
@@ -498,11 +492,11 @@ contains
 
             if (allocMem) then
 
-                ib = flowDoms(nn, level, sps)%ib
-                jb = flowDoms(nn, level, sps)%jb
-                kb = flowDoms(nn, level, sps)%kb
+                il = flowDoms(nn, level, sps)%il
+                jl = flowDoms(nn, level, sps)%jl
+                kl = flowDoms(nn, level, sps)%kl
 
-                allocate (flowDoms(nn, level, sps)%d2Wall(0:ib, 0:jb, 0:kb), &
+                allocate (flowDoms(nn, level, sps)%d2Wall(2:il, 2:jl, 2:kl), &
                           stat=ierr)
                 if (ierr /= 0) &
                     call terminate("initWallDistance", &
@@ -2100,7 +2094,6 @@ contains
 
             wallDistanceDataAllocated(level) = .False.
         end if
-
     end subroutine destroyWallDistanceDataLevel
 
 #endif

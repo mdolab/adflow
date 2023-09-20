@@ -143,7 +143,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputForward/oversetUtilities_d.f90\
 		adjoint/outputForward/residuals_d.f90\
 		adjoint/outputForward/sa_d.f90\
-		adjoint/outputForward/sst_d.f90\
 		adjoint/outputForward/solverUtils_d.f90\
 		adjoint/outputForward/surfaceIntegrations_d.f90\
 		adjoint/outputForward/turbBCRoutines_d.f90\
@@ -163,7 +162,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputReverse/oversetUtilities_b.f90\
 		adjoint/outputReverse/residuals_b.f90\
 		adjoint/outputReverse/sa_b.f90\
-		adjoint/outputReverse/sst_b.f90\
 		adjoint/outputReverse/solverUtils_b.f90\
 		adjoint/outputReverse/surfaceIntegrations_b.f90\
 		adjoint/outputReverse/turbBCRoutines_b.f90\
@@ -176,7 +174,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputReverseFast/fluxes_fast_b.f90\
 		adjoint/outputReverseFast/residuals_fast_b.f90\
 		adjoint/outputReverseFast/sa_fast_b.f90\
-		adjoint/outputReverseFast/SST_fast_b.f90\
 		adjoint/outputReverseFast/solverUtils_fast_b.f90\
 		adjoint/outputReverseFast/turbBCRoutines_fast_b.f90\
 		adjoint/outputReverseFast/turbUtils_fast_b.f90\

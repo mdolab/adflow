@@ -654,7 +654,7 @@ module block
         !
         !         Turbulence model variables.
         !
-        ! d2Wall(0:ib,0:jb,0:kb) - Distance from the center of the cell
+        ! d2Wall(2:il,2:jl,2:kl) - Distance from the center of the cell
         !                          to the nearest viscous wall.
         ! intermittency( )       - Function defining the transition location
 

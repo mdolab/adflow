@@ -2,11 +2,10 @@ module turbUtils
 
 contains
 
-    subroutine prodKatoLaunder(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+    subroutine prodKatoLaunder
         !
         !       prodKatoLaunder computes the turbulent production term using
         !       the Kato-Launder formulation.
-        !       Should ALWAYS be called with Beg>1 and <End!
         !
         use constants
         use blockPointers, only: nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -15,13 +14,9 @@ contains
         use turbMod, only: prod
         implicit none
         !
-        !      Subroutine arguments.
-        !
-        integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-        !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
+        integer(kind=intType) :: i, j, k, ii
 
         real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
         real(kind=realType) :: qxx, qyy, qzz, qxy, qxz, qyz, sijsij
@@ -45,19 +40,15 @@ contains
         ! but in that case the gradients for u, v and w must be stored.
         ! In the current approach no extra memory is needed.
 #ifdef TAPENADE_REVERSE
-        iSize = (iEnd - iBeg) + 1
-        jSize = (jEnd - jBeg) + 1
-        kSize = (kEnd - kBeg) + 1
-
         !$AD II-LOOP
-        do ii = 0, iSize * jSize * kSize - 1
-            i = mod(ii, iSize) + iBeg
-            j = mod(ii / iSize, jSize) + jBeg
-            k = ii / ((iSize * jSize)) + kBeg
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
-            do k = kBeg, kEnd
-                do j = jBeg, jEnd
-                    do i = iBeg, iEnd
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
 
                         ! Compute the gradient of u in the cell center. Use is made
@@ -135,22 +126,17 @@ contains
 #endif
     end subroutine prodKatoLaunder
 
-    subroutine prodSmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+    subroutine prodSmag2
         !
         !       prodSmag2 computes the term:
         !              2*sij*sij - 2/3 div(u)**2 with  sij=0.5*(duidxj+dujdxi)
         !       which is used for the turbulence equations.
         !       It is assumed that the pointer prod, stored in turbMod, is
         !       already set to the correct entry.
-        !       Should ALWAYS be called with Beg>1 and <End!
         !
         use constants
         use blockPointers, only: nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
         implicit none
-        !
-        !      Subroutine arguments.
-        !
-        integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
         !
         !      Local parameter
         !
@@ -158,7 +144,7 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
+        integer(kind=intType) :: i, j, k, ii
         real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
         real(kind=realType) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
 
@@ -168,19 +154,15 @@ contains
         ! In the current approach no extra memory is needed.
 
 #ifdef TAPENADE_REVERSE
-        iSize = (iEnd - iBeg) + 1
-        jSize = (jEnd - jBeg) + 1
-        kSize = (kEnd - kBeg) + 1
-
         !$AD II-LOOP
-        do ii = 0, iSize * jSize * kSize - 1
-            i = mod(ii, iSize) + iBeg
-            j = mod(ii / iSize, jSize) + jBeg
-            k = ii / ((iSize * jSize)) + kBeg
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
-            do k = kBeg, kEnd
-                do j = jBeg, jEnd
-                    do i = iBeg, iEnd
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
 
                         ! Compute the gradient of u in the cell center. Use is made
@@ -254,14 +236,13 @@ contains
 #endif
     end subroutine prodSmag2
 
-    subroutine prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+    subroutine prodWmag2
         !
         !       prodWmag2 computes the term:
         !          2*oij*oij  with oij=0.5*(duidxj - dujdxi).
         !       This is equal to the magnitude squared of the vorticity.
         !       It is assumed that the pointer vort, stored in turbMod, is
         !       already set to the correct entry.
-        !       Should ALWAYS be called with Beg>1 and <End!
         !
         use constants
         use blockPointers, only: nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
@@ -269,13 +250,9 @@ contains
         use section, only: sections
         implicit none
         !
-        !      Subroutine arguments.
-        !
-        integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-        !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
+        integer :: i, j, k, ii
 
         real(kind=realType) :: uuy, uuz, vvx, vvz, wwx, wwy
         real(kind=realType) :: fact, vortx, vorty, vortz
@@ -292,19 +269,15 @@ contains
         ! but in that case the gradients for u, v and w must be stored.
         ! In the current approach no extra memory is needed.
 #ifdef TAPENADE_REVERSE
-        iSize = (iEnd - iBeg) + 1
-        jSize = (jEnd - jBeg) + 1
-        kSize = (kEnd - kBeg) + 1
-
         !$AD II-LOOP
-        do ii = 0, iSize * jSize * kSize - 1
-            i = mod(ii, iSize) + iBeg
-            j = mod(ii / iSize, jSize) + jBeg
-            k = ii / ((iSize * jSize)) + kBeg
+        do ii = 0, nx * ny * nz - 1
+            i = mod(ii, nx) + 2
+            j = mod(ii / nx, ny) + 2
+            k = ii / (nx * ny) + 2
 #else
-            do k = kBeg, kEnd
-                do j = jBeg, jEnd
-                    do i = iBeg, iEnd
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
 
                         ! Compute the necessary derivatives of u in the cell center.
@@ -348,8 +321,7 @@ contains
 
                         ! Compute the magnitude squared of the vorticity.
 
-                        scratch(i, j, k, iprod) = vortx**2 + vorty**2 + vortz**2
-                        ! update of iProd to be consistent. iVort seems to be never used, and ivort = iprod anyway.
+                        scratch(i, j, k, ivort) = vortx**2 + vorty**2 + vortz**2
 #ifdef TAPENADE_REVERSE
                     end do
 #else
@@ -358,120 +330,6 @@ contains
         end do
 #endif
     end subroutine prodWmag2
-
-#ifdef SST_2003
-    subroutine strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-        !
-        !       strainNorm computes the term:
-        !              sqrt(2*sij*sij)  with  sij=0.5*(duidxj+dujdxi)
-        !       which is used for the eddy viscosity.
-        !       It is assumed that the pointer prod, stored in turbMod, is
-        !       already set to the correct entry.
-        !       Should ALWAYS be called with Beg>1 and <End!
-        !
-        use constants
-        use blockPointers, only: nx, ny, nz, il, jl, kl, w, si, sj, sk, vol, sectionID, scratch
-        implicit none
-        !
-        !      Subroutine arguments.
-        !
-        integer(kind=intType), intent(in) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
-        !
-        !      Local variables.
-        !
-        integer(kind=intType) :: i, j, k, ii, iSize, jSize, kSize
-        real(kind=realType) :: uux, uuy, uuz, vvx, vvy, vvz, wwx, wwy, wwz
-        real(kind=realType) :: div2, fact, sxx, syy, szz, sxy, sxz, syz
-
-        ! Loop over the cell centers of the given block. It may be more
-        ! efficient to loop over the faces and to scatter the gradient,
-        ! but in that case the gradients for u, v and w must be stored.
-        ! In the current approach no extra memory is needed.
-
-#ifdef TAPENADE_REVERSE
-        iSize = (iEnd - iBeg) + 1
-        jSize = (jEnd - jBeg) + 1
-        kSize = (kEnd - kBeg) + 1
-
-        !$AD II-LOOP
-        do ii = 0, iSize * jSize * kSize - 1
-            i = mod(ii, iSize) + iBeg
-            j = mod(ii / iSize, jSize) + jBeg
-            k = ii / ((iSize * jSize)) + kBeg
-#else
-            do k = kBeg, kEnd
-                do j = jBeg, jEnd
-                    do i = iBeg, iEnd
-#endif
-
-                        ! Compute the gradient of u in the cell center. Use is made
-                        ! of the fact that the surrounding normals sum up to zero,
-                        ! such that the cell i,j,k does not give a contribution.
-                        ! The gradient is scaled by the factor 2*vol.
-
-                        uux = w(i + 1, j, k, ivx) * si(i, j, k, 1) - w(i - 1, j, k, ivx) * si(i - 1, j, k, 1) &
-                              + w(i, j + 1, k, ivx) * sj(i, j, k, 1) - w(i, j - 1, k, ivx) * sj(i, j - 1, k, 1) &
-                              + w(i, j, k + 1, ivx) * sk(i, j, k, 1) - w(i, j, k - 1, ivx) * sk(i, j, k - 1, 1)
-                        uuy = w(i + 1, j, k, ivx) * si(i, j, k, 2) - w(i - 1, j, k, ivx) * si(i - 1, j, k, 2) &
-                              + w(i, j + 1, k, ivx) * sj(i, j, k, 2) - w(i, j - 1, k, ivx) * sj(i, j - 1, k, 2) &
-                              + w(i, j, k + 1, ivx) * sk(i, j, k, 2) - w(i, j, k - 1, ivx) * sk(i, j, k - 1, 2)
-                        uuz = w(i + 1, j, k, ivx) * si(i, j, k, 3) - w(i - 1, j, k, ivx) * si(i - 1, j, k, 3) &
-                              + w(i, j + 1, k, ivx) * sj(i, j, k, 3) - w(i, j - 1, k, ivx) * sj(i, j - 1, k, 3) &
-                              + w(i, j, k + 1, ivx) * sk(i, j, k, 3) - w(i, j, k - 1, ivx) * sk(i, j, k - 1, 3)
-
-                        ! Idem for the gradient of v.
-
-                        vvx = w(i + 1, j, k, ivy) * si(i, j, k, 1) - w(i - 1, j, k, ivy) * si(i - 1, j, k, 1) &
-                              + w(i, j + 1, k, ivy) * sj(i, j, k, 1) - w(i, j - 1, k, ivy) * sj(i, j - 1, k, 1) &
-                              + w(i, j, k + 1, ivy) * sk(i, j, k, 1) - w(i, j, k - 1, ivy) * sk(i, j, k - 1, 1)
-                        vvy = w(i + 1, j, k, ivy) * si(i, j, k, 2) - w(i - 1, j, k, ivy) * si(i - 1, j, k, 2) &
-                              + w(i, j + 1, k, ivy) * sj(i, j, k, 2) - w(i, j - 1, k, ivy) * sj(i, j - 1, k, 2) &
-                              + w(i, j, k + 1, ivy) * sk(i, j, k, 2) - w(i, j, k - 1, ivy) * sk(i, j, k - 1, 2)
-                        vvz = w(i + 1, j, k, ivy) * si(i, j, k, 3) - w(i - 1, j, k, ivy) * si(i - 1, j, k, 3) &
-                              + w(i, j + 1, k, ivy) * sj(i, j, k, 3) - w(i, j - 1, k, ivy) * sj(i, j - 1, k, 3) &
-                              + w(i, j, k + 1, ivy) * sk(i, j, k, 3) - w(i, j, k - 1, ivy) * sk(i, j, k - 1, 3)
-
-                        ! And for the gradient of w.
-
-                        wwx = w(i + 1, j, k, ivz) * si(i, j, k, 1) - w(i - 1, j, k, ivz) * si(i - 1, j, k, 1) &
-                              + w(i, j + 1, k, ivz) * sj(i, j, k, 1) - w(i, j - 1, k, ivz) * sj(i, j - 1, k, 1) &
-                              + w(i, j, k + 1, ivz) * sk(i, j, k, 1) - w(i, j, k - 1, ivz) * sk(i, j, k - 1, 1)
-                        wwy = w(i + 1, j, k, ivz) * si(i, j, k, 2) - w(i - 1, j, k, ivz) * si(i - 1, j, k, 2) &
-                              + w(i, j + 1, k, ivz) * sj(i, j, k, 2) - w(i, j - 1, k, ivz) * sj(i, j - 1, k, 2) &
-                              + w(i, j, k + 1, ivz) * sk(i, j, k, 2) - w(i, j, k - 1, ivz) * sk(i, j, k - 1, 2)
-                        wwz = w(i + 1, j, k, ivz) * si(i, j, k, 3) - w(i - 1, j, k, ivz) * si(i - 1, j, k, 3) &
-                              + w(i, j + 1, k, ivz) * sj(i, j, k, 3) - w(i, j - 1, k, ivz) * sj(i, j - 1, k, 3) &
-                              + w(i, j, k + 1, ivz) * sk(i, j, k, 3) - w(i, j, k - 1, ivz) * sk(i, j, k - 1, 3)
-
-                        ! Compute the components of the stress tensor.
-                        ! The combination of the current scaling of the velocity
-                        ! gradients (2*vol) and the definition of the stress tensor,
-                        ! leads to the factor 1/(4*vol).
-
-                        fact = fourth / vol(i, j, k)
-
-                        sxx = two * fact * uux
-                        syy = two * fact * vvy
-                        szz = two * fact * wwz
-
-                        sxy = fact * (uuy + vvx)
-                        sxz = fact * (uuz + wwx)
-                        syz = fact * (vvz + wwy)
-
-                        ! Store the square of strain as the production term.
-
-                        scratch(i, j, k, iprod) = SQRT(two * (two * (sxy**2 + sxz**2 + syz**2) &
-                                                              + sxx**2 + syy**2 + szz**2))
-#ifdef TAPENADE_REVERSE
-                    end do
-#else
-                end do
-            end do
-        end do
-#endif
-    end subroutine strainNorm
-#endif
-
     function saNuKnownEddyRatio(eddyRatio, nuLam)
         !
         !       saNuKnownEddyRatio computes the Spalart-Allmaras transport
@@ -731,8 +589,6 @@ contains
         use inputPhysics
         use iteration
         use blockPointers
-        use turbBCRoutines, only: applyAllTurbBCThisBlock
-        use haloExchange, only: whalo1
         implicit none
 
         ! Input Parameter
@@ -761,8 +617,6 @@ contains
         ! Determine the turbulence model and call the appropriate
         ! routine to compute the eddy viscosity.
         if (includeHalos) then
-            !  CAUTION: even though the following calls were made consistent to accept iBeg, iEnd, etc. care must be taken when the evaluation of EddyVisc
-            !    involves derivatives. They can't be obtained by FD in the halo cells! This is why the SST call is different from the others.
             iBeg = 1
             iEnd = ie
             jBeg = 1
@@ -782,16 +636,16 @@ contains
 
         case (spalartAllmaras, spalartAllmarasEdwards)
             call saEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-
-        case (menterSST)
-            call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 #ifndef USE_TAPENADE
 
         case (v2f)
             call vfEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-
         case (komegaWilcox, komegaModified)
             call kwEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
+        case (menterSST)
+            call SSTEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+
         case (ktau)
             call ktEddyViscosity(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 #endif
@@ -904,13 +758,11 @@ contains
         !       SSTEddyViscosity computes the eddy viscosity according to
         !       menter's SST variant of the k-omega turbulence model for the
         !       block given in blockPointers.
-        !       Should ALWAYS be called with Beg>1 and <End! d2wall is not defined otherwise.
         !
         use constants
         use blockPointers
         use paramTurb
         use turbMod
-        use flowVarRefState, only: timeRef
         implicit none
         ! Input variables
         integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
@@ -925,14 +777,10 @@ contains
         ! for it; for the actual eddy viscosity computation the vorticity
         ! itself is needed.
 
-#ifdef SST_2003
-        call strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-#else
-        call prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-#endif
+        call prodWmag2
 
         ! Loop over the cells of this block and compute the eddy viscosity.
-        ! Most of the time, do not include halo's (iBeg=2...il,...)
+        ! Do not include halo's.
 #ifdef TAPENADE_REVERSE
         iSize = (iEnd - iBeg) + 1
         jSize = (jEnd - jBeg) + 1
@@ -960,8 +808,6 @@ contains
                         f2 = tanh(arg2**2)
 
                         ! And compute the eddy viscosity.
-                        ! Same definition as in
-                        ! Note that https://www.cfd-online.com/Wiki/SST_k-omega_model utilizes the strain and not the vorticity
 
                         vortMag = sqrt(scratch(i, j, k, iprod))
                         rev(i, j, k) = w(i, j, k, irho) * rSSTA1 * w(i, j, k, itu1) &
@@ -1703,96 +1549,6 @@ contains
         continue
     end subroutine turbAdvection
 
-    subroutine kwCDterm
-        !
-        !       kwCDterm computes the cross-diffusion term in the omega-eqn
-        !       for the SST version as well as the modified k-omega turbulence
-        !       model. It is assumed that the pointers in blockPointers and
-        !       turbMod are already set.
-        !
-        use constants
-        use blockPointers
-        implicit none
-        !
-        !      Local variables.
-        !
-        integer(kind=intType) :: i, j, k, ii 
-        real(kind=realType) :: kx, ky, kz, wwx, wwy, wwz
-        real(kind=realType) :: lnwip1, lnwim1, lnwjp1, lnwjm1
-        real(kind=realType) :: lnwkp1, lnwkm1
-
-        ! Loop over the cell centers of the given block. It may be more
-        ! efficient to loop over the faces and to scatter the gradient,
-        ! but in that case the gradients for k and omega must be stored.
-        ! In the current approach no extra memory is needed.
-
-
-#ifdef TAPENADE_REVERSE
-        !$AD II-LOOP
-        do ii = 0, ie * je * ke - 1
-            i = mod(ii, ie) + 1
-            j = mod(ii / ie, je) + 1
-            k = ii / ((ie * je)) + 1
-#else
-        do k = 1, ke
-            do j = 1, je
-                do i = 1, ie
-#endif
-
-                    ! Compute the gradient of k in the cell center. Use is made
-                    ! of the fact that the surrounding normals sum up to zero,
-                    ! such that the cell i,j,k does not give a contribution.
-                    ! The gradient is scaled by a factor 1/2vol.
-
-                    kx = w(i + 1, j, k, itu1) * si(i, j, k, 1) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 1) &
-                         + w(i, j + 1, k, itu1) * sj(i, j, k, 1) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 1) &
-                         + w(i, j, k + 1, itu1) * sk(i, j, k, 1) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 1)
-                    ky = w(i + 1, j, k, itu1) * si(i, j, k, 2) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 2) &
-                         + w(i, j + 1, k, itu1) * sj(i, j, k, 2) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 2) &
-                         + w(i, j, k + 1, itu1) * sk(i, j, k, 2) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 2)
-                    kz = w(i + 1, j, k, itu1) * si(i, j, k, 3) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 3) &
-                         + w(i, j + 1, k, itu1) * sj(i, j, k, 3) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 3) &
-                         + w(i, j, k + 1, itu1) * sk(i, j, k, 3) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 3)
-
-                    ! Compute the logarithm of omega in the points that
-                    ! contribute to the gradient in this cell.
-                    ! Because: 1/omega*d/dx_j(omega) = d/dx_j( log(omega) )
-
-                    lnwip1 = log(abs(w(i + 1, j, k, itu2)))
-                    lnwim1 = log(abs(w(i - 1, j, k, itu2)))
-                    lnwjp1 = log(abs(w(i, j + 1, k, itu2)))
-                    lnwjm1 = log(abs(w(i, j - 1, k, itu2)))
-                    lnwkp1 = log(abs(w(i, j, k + 1, itu2)))
-                    lnwkm1 = log(abs(w(i, j, k - 1, itu2)))
-
-                    ! Compute the scaled gradient of ln omega.
-
-                    wwx = lnwip1 * si(i, j, k, 1) - lnwim1 * si(i - 1, j, k, 1) &
-                          + lnwjp1 * sj(i, j, k, 1) - lnwjm1 * sj(i, j - 1, k, 1) &
-                          + lnwkp1 * sk(i, j, k, 1) - lnwkm1 * sk(i, j, k - 1, 1)
-                    wwy = lnwip1 * si(i, j, k, 2) - lnwim1 * si(i - 1, j, k, 2) &
-                          + lnwjp1 * sj(i, j, k, 2) - lnwjm1 * sj(i, j - 1, k, 2) &
-                          + lnwkp1 * sk(i, j, k, 2) - lnwkm1 * sk(i, j, k - 1, 2)
-                    wwz = lnwip1 * si(i, j, k, 3) - lnwim1 * si(i - 1, j, k, 3) &
-                          + lnwjp1 * sj(i, j, k, 3) - lnwjm1 * sj(i, j - 1, k, 3) &
-                          + lnwkp1 * sk(i, j, k, 3) - lnwkm1 * sk(i, j, k - 1, 3)
-
-                    ! Compute the dot product grad k grad ln omega.
-                    ! Multiply it by the correct scaling factor and store it.
-
-                    scratch(i, j, k, icd) = fourth * (kx * wwx + ky * wwy + kz * wwz) / (vol(i, j, k)**2)
-
-#ifdef TAPENADE_REVERSE
-                    end do
-#else
-                end do
-            end do
-        end do
-#endif
-
-    end subroutine kwCDterm
-
-
     ! ----------------------------------------------------------------------
     !                                                                      |
     !                    No Tapenade Routine below this line               |
@@ -2047,13 +1803,13 @@ contains
         !
         select case (turbProd)
         case (strain)
-            call prodSmag2(2, il, 2, jl, 2, kl)
+            call prodSmag2
 
         case (vorticity)
-            call prodWmag2(2, il, 2, jl, 2, kl)
+            call prodWmag2
 
         case (katoLaunder)
-            call prodKatoLaunder(2, il, 2, jl, 2, kl)
+            call prodKatoLaunder
 
         end select
         !
@@ -2309,5 +2065,80 @@ contains
 
     end subroutine initKOmega
 
+    subroutine kwCDterm
+        !
+        !       kwCDterm computes the cross-diffusion term in the omega-eqn
+        !       for the SST version as well as the modified k-omega turbulence
+        !       model. It is assumed that the pointers in blockPointers and
+        !       turbMod are already set.
+        !
+        use constants
+        use blockPointers
+        use turbMod
+        implicit none
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i, j, k
+        real(kind=realType) :: kx, ky, kz, wwx, wwy, wwz
+        real(kind=realType) :: lnwip1, lnwim1, lnwjp1, lnwjm1
+        real(kind=realType) :: lnwkp1, lnwkm1
+
+        ! Loop over the cell centers of the given block. It may be more
+        ! efficient to loop over the faces and to scatter the gradient,
+        ! but in that case the gradients for k and omega must be stored.
+        ! In the current approach no extra memory is needed.
+
+        do k = 2, kl
+            do j = 2, jl
+                do i = 2, il
+
+                    ! Compute the gradient of k in the cell center. Use is made
+                    ! of the fact that the surrounding normals sum up to zero,
+                    ! such that the cell i,j,k does not give a contribution.
+                    ! The gradient is scaled by a factor 1/2vol.
+
+                    kx = w(i + 1, j, k, itu1) * si(i, j, k, 1) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 1) &
+                         + w(i, j + 1, k, itu1) * sj(i, j, k, 1) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 1) &
+                         + w(i, j, k + 1, itu1) * sk(i, j, k, 1) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 1)
+                    ky = w(i + 1, j, k, itu1) * si(i, j, k, 2) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 2) &
+                         + w(i, j + 1, k, itu1) * sj(i, j, k, 2) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 2) &
+                         + w(i, j, k + 1, itu1) * sk(i, j, k, 2) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 2)
+                    kz = w(i + 1, j, k, itu1) * si(i, j, k, 3) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 3) &
+                         + w(i, j + 1, k, itu1) * sj(i, j, k, 3) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 3) &
+                         + w(i, j, k + 1, itu1) * sk(i, j, k, 3) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 3)
+
+                    ! Compute the logarithm of omega in the points that
+                    ! contribute to the gradient in this cell.
+
+                    lnwip1 = log(abs(w(i + 1, j, k, itu2)))
+                    lnwim1 = log(abs(w(i - 1, j, k, itu2)))
+                    lnwjp1 = log(abs(w(i, j + 1, k, itu2)))
+                    lnwjm1 = log(abs(w(i, j - 1, k, itu2)))
+                    lnwkp1 = log(abs(w(i, j, k + 1, itu2)))
+                    lnwkm1 = log(abs(w(i, j, k - 1, itu2)))
+
+                    ! Compute the scaled gradient of ln omega.
+
+                    wwx = lnwip1 * si(i, j, k, 1) - lnwim1 * si(i - 1, j, k, 1) &
+                          + lnwjp1 * sj(i, j, k, 1) - lnwjm1 * sj(i, j - 1, k, 1) &
+                          + lnwkp1 * sk(i, j, k, 1) - lnwkm1 * sk(i, j, k - 1, 1)
+                    wwy = lnwip1 * si(i, j, k, 2) - lnwim1 * si(i - 1, j, k, 2) &
+                          + lnwjp1 * sj(i, j, k, 2) - lnwjm1 * sj(i, j - 1, k, 2) &
+                          + lnwkp1 * sk(i, j, k, 2) - lnwkm1 * sk(i, j, k - 1, 2)
+                    wwz = lnwip1 * si(i, j, k, 3) - lnwim1 * si(i - 1, j, k, 3) &
+                          + lnwjp1 * sj(i, j, k, 3) - lnwjm1 * sj(i, j - 1, k, 3) &
+                          + lnwkp1 * sk(i, j, k, 3) - lnwkm1 * sk(i, j, k - 1, 3)
+
+                    ! Compute the dot product grad k grad ln omega.
+                    ! Multiply it by the correct scaling factor and store it.
+
+                    kwCD(i, j, k) = fourth * (kx * wwx + ky * wwy + kz * wwz) / (vol(i, j, k)**2)
+
+                end do
+            end do
+        end do
+
+    end subroutine kwCDterm
 #endif
 end module turbUtils

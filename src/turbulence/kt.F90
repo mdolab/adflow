@@ -14,12 +14,17 @@ contains
         use iteration
         use utils, only: setPointers
         use turbUtils, only: ktEddyViscosity
+        use turbBCRoutines, only: bcTurbTreatment, applyAllTurbBCThisBlock
         implicit none
         !
         !      Subroutine argument.
         !
         logical, intent(in) :: resOnly
         !
+
+        ! Set the arrays for the boundary condition treatment.
+
+        call bcTurbTreatment
 
         ! Solve the transport equations for k and tau.
 
@@ -37,6 +42,8 @@ contains
             ! Set the halo values for the turbulent variables.
             ! We are on the finest mesh, so the second layer of halo
             ! cells must be computed as well.
+
+            call applyAllTurbBCThisBlock(.true.)
 
         end if
     end subroutine kt_block
@@ -179,13 +186,13 @@ contains
         !
         select case (turbProd)
         case (strain)
-            call prodSmag2(2, il, 2, jl, 2, kl)
+            call prodSmag2
 
         case (vorticity)
-            call prodWmag2(2, il, 2, jl, 2, kl)
+            call prodWmag2
 
         case (katoLaunder)
-            call prodKatoLaunder(2, il, 2, jl, 2, kl)
+            call prodKatoLaunder
 
         end select
         !

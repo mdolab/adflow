@@ -26,7 +26,6 @@ del_patterns = [
     re.compile(r"(\s*call popreal8)"),
     re.compile(r"(\s*call pushinteger4)"),
     re.compile(r"(\s*call popinteger4)"),
-    re.compile(r"&\s*size\(scratch, 3\)\*size\(scratch, 4\)\)"),
 ]
 patt_pushcontrol1b = re.compile(r"(\s*call pushcontrol1b\()(.*)\)")
 patt_popcontrol1b = re.compile(r"(\s*call popcontrol1b\()(.*)\)")
@@ -46,7 +45,6 @@ useful_modules = [
     "initializeflow_fast_b",
     "residuals_fast_b",
     "sa_fast_b",
-    "sst_fast_b",
     "solverutils_fast_b",
     "surfaceintegrations_fast_b",
     "turbbcroutines_fast_b",

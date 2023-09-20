@@ -208,54 +208,6 @@ test_params = [
         "evalFuncs": ["fy", "my"],
         "N_PROCS": 2,
     },
-
-    # Tutorial wing RANS SST
-    {
-        "name": "rans_tut_wing_SST",
-        "options": {
-            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
-            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
-
-
-            'equationType':'RANS',
-            'useblockettes': False,
-
-            'turbulenceModel': 'Menter SST',
-            "turbResScale": [1e3, 1e-6],
-
-            "nsubiterturb": 20,
-            "useMatrixFreedrdw": False,
-
-
-            # ANK
-            "useANKSolver": True,
-            "ANKUseTurbDADI": True,
-            # "ANKADPC": True,
-
-
-            "ANKSecondOrdSwitchTol": 1e-4,
-            # "ANKCoupledSwitchTol": 1e-6,
-
-            "monitorVariables": ["resrho", "totalr", "cl", "cd"],
-            "L2Convergence": 1e-14,
-            "adjointL2Convergence": 1e-14,
-
-            "solutionPrecision": "double",
-            "outputSurfaceFamily": "wall",
-
-
-            "nCycles": 20000,
-
-
-            "adjointMaxIter": 1000,
-            "adjointSubspaceSize": 500,
-        },
-        "ref_file": "adjoint_rans_tut_wing_SST.json",
-        "aero_prob": ap_tutorial_wing,
-        # "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag"],
-        "evalFuncs": ["cl"],
-    },
-
 ]
 
 
@@ -433,8 +385,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
             rtol = 5e-9
         atol = 5e-9
 
-        # for dv in ["span", "twist", "shape"]:
-        for dv in ["twist", "shape"]:
+        for dv in ["span", "twist", "shape"]:
             xRef[dv][0] += self.h * 1j
 
             self.CFDSolver.resetFlow(self.ap)

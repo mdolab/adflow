@@ -873,7 +873,6 @@ contains
         use blockPointers
         use flowVarRefState
         use inputPhysics
-        use utils, only: getCorrectForK
         implicit none
 
         ! Input parameter
@@ -881,11 +880,10 @@ contains
 
         ! Local Variables
         integer(kind=intType) :: i, j, k, ii
-        real(kind=realType) :: gm1, v2, factK
+        real(kind=realType) :: gm1, v2
         integer(kind=intType) :: iBeg, iEnd, iSize, jBeg, jEnd, jSize, kBeg, kEnd, kSize
         ! Compute the pressures
         gm1 = gammaConstant - one
-        factK = five * third - gammaConstant
 
         if (includeHalos) then
             iBeg = 0
@@ -929,33 +927,6 @@ contains
             end do
         end do
 #endif
-
-        ! Apply correction for K in a separate loop
-        if (getCorrectForK()) then
-#ifdef TAPENADE_REVERSE
-            iSize = (iEnd - iBeg) + 1
-            jSize = (jEnd - jBeg) + 1
-            kSize = (kEnd - kBeg) + 1
-
-            !$AD II-LOOP
-            do ii = 0, iSize * jSize * kSize - 1
-                i = mod(ii, iSize) + iBeg
-                j = mod(ii / (iSize), jSize) + jBeg
-                k = ii / ((iSize * jSize)) + kBeg
-#else
-                do k = kBeg, kEnd
-                    do j = jBeg, jEnd
-                        do i = iBeg, iEnd
-#endif
-                            p(i, j, k) = p(i, j, k) + factK * w(i, j, k, irho) * w(i, j, k, itu1)
-#ifdef TAPENADE_REVERSE
-                        end do
-#else
-                    end do
-                end do
-            end do
-#endif
-        end if
     end subroutine computePressureSimple
 
     subroutine computePressure(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, &
@@ -1023,7 +994,7 @@ contains
                         w(i, j, k, irhoE) = gm1 * (w(ip, jp, kp, irhoE) &
                                                    - half * w(ip, jp, kp, irho) * v2)
                         w(i, j, k, irhoE) = max(w(i, j, k, irhoE), &
-                                                1.e-5_realType * pInf) !QUESTION: why is this clipping different than in computePressureSimple: 1e-4?
+                                                1.e-5_realType * pInf)
                     end do
                 end do
             end do
