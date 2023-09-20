@@ -2337,6 +2337,7 @@ module cudaResidual
         real(kind=realType) :: pa, vnp, vnm, fs, sFace
         integer(kind=intType) :: i, j, k, dom, sps
         real(kind=realtype) :: tmp  
+        real(kind=realType) :: sx, sy, sz
         ! real(kind=realType) :: wwx, wwy, wwz, rvol
 
         dom = 1
@@ -2353,13 +2354,15 @@ module cudaResidual
             ! normal in i-direction for a moving face.
             sFace = cudaDoms(dom,sps)%sFaceI(i, j, k)
             ! Compute the normal velocities of the left and right state.
-
-            vnp = cudaDoms(dom,sps)%w(i + 1, j, k, ivx) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivy) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivz) * cudaDoms(dom,sps)%sI(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sI(i, j, k, 3)
+            sx = cudaDoms(dom,sps)%sI(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sI(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sI(i, j, k, 3)
+            vnp = cudaDoms(dom,sps)%w(i + 1, j, k, ivx) * sx &
+                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivz) * sz
+            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * sx&
+                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * sz
             ! Set the values of the porosities for this face.
             ! porVel defines the porosity w.r.t. velocity;
             ! porFlux defines the porosity w.r.t. the entire flux.
@@ -2409,21 +2412,21 @@ module cudaResidual
             ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 1)
+                + pa * sx
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imx), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
             ! cudaDoms(dom,sps)%dw(i + 1, j, k, imx) = cudaDoms(dom,sps)%dw(i + 1, j, k, imx) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 2)
+                + pa * sy
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imy), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
             ! cudaDoms(dom,sps)%dw(i + 1, j, k, imy) = cudaDoms(dom,sps)%dw(i + 1, j, k, imy) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 3)
+                + pa * sz
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imz), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
             ! cudaDoms(dom,sps)%dw(i + 1, j, k, imz) = cudaDoms(dom,sps)%dw(i + 1, j, k, imz) - fs
@@ -2444,14 +2447,19 @@ module cudaResidual
             ! normal in j-direction for a moving face.
 
             sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
+            sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sJ(i, j, k, 3)
+
+
             ! Compute the normal velocities of the left and right state.
 
-            vnp = cudaDoms(dom,sps)%w(i, j + 1, k, ivx) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivy) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivz) * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+            vnp = cudaDoms(dom,sps)%w(i, j + 1, k, ivx) * sx &
+                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivz) * sz
+            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * sx &
+                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * sy &
+                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * sz
 
             ! Set the values of the porosities for this face.
             ! porVel defines the porosity w.r.t. velocity;
@@ -2502,21 +2510,21 @@ module cudaResidual
             ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 1)
+                + pa * sx
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imx), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
             ! cudaDoms(dom,sps)%dw(i, j + 1, k, imx) = cudaDoms(dom,sps)%dw(i, j + 1, k, imx) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 2)
+                + pa * sy
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imy), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
             ! cudaDoms(dom,sps)%dw(i, j + 1, k, imy) = cudaDoms(dom,sps)%dw(i, j + 1, k, imy) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+                + pa * sz
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imz), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
             ! cudaDoms(dom,sps)%dw(i, j + 1, k, imz) = cudaDoms(dom,sps)%dw(i, j + 1, k, imz) - fs
@@ -2537,15 +2545,18 @@ module cudaResidual
                     ! normal in k-direction for a moving face.
 
             sFace = cudaDoms(dom,sps)%sFaceK(i, j, k)
+            sx = cudaDoms(dom,sps)%sK(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sK(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sK(i, j, k, 3)
 
             ! Compute the normal velocities of the left and right state.
 
-            vnp = cudaDoms(dom,sps)%w(i, j, k + 1, ivx) * cudaDoms(dom,sps)%sK(i, j, k, 1) &
-                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivy) * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sK(i, j, k, 1) &
-                  + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-                  + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
+            vnp = cudaDoms(dom,sps)%w(i, j, k + 1, ivx) * sx &
+                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivy) * sy &
+                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivz) * sz
+            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * sx &
+                  + cudaDoms(dom,sps)%w(i, j, k, ivy) * sy &
+                  + cudaDoms(dom,sps)%w(i, j, k, ivz) * sz
 
             ! Set the values of the porosities for this face.
             ! porVel defines the porosity w.r.t. velocity;
@@ -2597,21 +2608,21 @@ module cudaResidual
             ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 1)
+                 + pa * sx
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imx), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
             ! cudaDoms(dom,sps)%dw(i, j, k + 1, imx) = cudaDoms(dom,sps)%dw(i, j, k + 1, imx) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 2)
+                 + pa * sy
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imy), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
             ! cudaDoms(dom,sps)%dw(i, j, k + 1, imy) = cudaDoms(dom,sps)%dw(i, j, k + 1, imy) - fs
             ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
 
             fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 3)
+                 + pa * sz
             tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imz), fs)
             tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
             ! cudaDoms(dom,sps)%dw(i, j, k + 1, imz) = cudaDoms(dom,sps)%dw(i, j, k + 1, imz) - fs
@@ -4980,7 +4991,7 @@ module cudaResidual
         real(kind=realType), dimension(:, :, :), allocatable :: wx_v1, wy_v1, wz_v1
         real(kind=realType), dimension(:, :, :), allocatable :: qx_v1, qy_v1, qz_v1
 
-        real(kind=realType), dimension(:,:,:,:), allocatable :: h_w
+        real(kind=realType), dimension(:,:,:,:), allocatable :: h_w, h_fw
         real(kind=realType), dimension(:,:,:,:), allocatable :: h_sI, h_sJ, h_sK
         real(kind=realType), dimension(:,:,:), allocatable :: h_vol, h_aa,h_p,h_gamma, h_aa_v1,h_vol_v1
         integer(kind=intType) :: h_ie,h_je,h_ke
@@ -5035,6 +5046,7 @@ module cudaResidual
         ! allocate memory for cudaDoms(dom,sps)%dw
         allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
         allocate(h_dw2(1:bie,1:bje,1:bke,1:nw))
+        allocate(h_fw(1:bie,1:bje,1:bke,1:nwf))
 
         allocate(h_w(0:bib,0:bjb,0:bkb,1:nw))
 
@@ -5044,103 +5056,112 @@ module cudaResidual
         h_dw(1:bie,1:bje,1:bke,1:nw) = h_cudaDoms(dom,sps)%dw(1:bie,1:bje,1:bke,1:nw)
         ! h_dw2 = dw
 
-        ! h_dw = h_dw + h_dw2
-        print *, bie,bje,bke
-        h_ie = h_cudaDoms(1,1)%ie
-        h_je =  h_cudaDoms(1,1)%je
-        h_ke = h_cudaDoms(1,1)%ke
-        print *, h_ie,h_je,h_ke
-        baa = zero
-        call bcomputeSpeedOfSoundSquared
-        call ballNodalGradients
+        ! ! h_dw = h_dw + h_dw2
+        ! print *, bie,bje,bke
+        ! h_ie = h_cudaDoms(1,1)%ie
+        ! h_je =  h_cudaDoms(1,1)%je
+        ! h_ke = h_cudaDoms(1,1)%ke
+        ! print *, h_ie,h_je,h_ke
+        ! baa = zero
+        ! call bcomputeSpeedOfSoundSquared
+        ! call ballNodalGradients
 
 
-        ux_v2 = h_cudaDoms(dom,sps)%ux
-        uy_v2 = h_cudaDoms(dom,sps)%uy
-        uz_v2 = h_cudaDoms(dom,sps)%uz
+        ! ux_v2 = h_cudaDoms(dom,sps)%ux
+        ! uy_v2 = h_cudaDoms(dom,sps)%uy
+        ! uz_v2 = h_cudaDoms(dom,sps)%uz
         
-        ux_v1 = ux
-        uy_v1 = uy
-        uz_v1 = uz
+        ! ux_v1 = ux
+        ! uy_v1 = uy
+        ! uz_v1 = uz
         
-        print *,ux_v1(:,:,1)
-        print *,"=================="
-        print *, ux_v2(:,:,1)
-        print *,"=================="
-        print *, ux_v1(:,:,1)-ux_v2(:,:,1)
+        ! ! print *,ux_v1(:,:,1)
+        ! ! print *,"=================="
+        ! ! print *, ux_v2(:,:,1)
+        ! ! print *,"=================="
+        ! ! print *, ux_v1(:,:,1)-ux_v2(:,:,1)
 
-        print  '("Max DIFF UX = ",E22.16," seconds.")', maxval(abs(ux_v2-ux_v1))
-        print  '("Max DIFF UY = ",E22.16," seconds.")', maxval(abs(uy_v2-uy_v1))
-        print  '("Max DIFF UZ = ",E22.16," seconds.")', maxval(abs(uz_v2-uz_v1))
+        ! print  '("Max DIFF UX = ",E22.16," seconds.")', maxval(abs(ux_v2-bux))
+        ! print  '("Max DIFF UY = ",E22.16," seconds.")', maxval(abs(uy_v2-buy))
+        ! print  '("Max DIFF UZ = ",E22.16," seconds.")', maxval(abs(uz_v2-buz))
 
-        vx_v2 = h_cudaDoms(dom,sps)%vx
-        vy_v2 = h_cudaDoms(dom,sps)%vy
-        vz_v2 = h_cudaDoms(dom,sps)%vz
-        vx_v1 = vx
-        vy_v1 = vy
-        vz_v1 = vz
-        print  '("Max DIFF VX = ",E22.16," seconds.")', maxval(abs(vx_v2-vx_v1))
-        print  '("Max DIFF Vy = ",E22.16," seconds.")', maxval(abs(vy_v2-vy_v1))
-        print  '("Max DIFF vz = ",E22.16," seconds.")', maxval(abs(vz_v2-vz_v1))
+        ! vx_v2 = h_cudaDoms(dom,sps)%vx
+        ! vy_v2 = h_cudaDoms(dom,sps)%vy
+        ! vz_v2 = h_cudaDoms(dom,sps)%vz
+        ! vx_v1 = vx
+        ! vy_v1 = vy
+        ! vz_v1 = vz
+        ! print  '("Max DIFF VX = ",E22.16," seconds.")', maxval(abs(vx_v2-bvx))
+        ! print  '("Max DIFF Vy = ",E22.16," seconds.")', maxval(abs(vy_v2-bvy))
+        ! print  '("Max DIFF vz = ",E22.16," seconds.")', maxval(abs(vz_v2-bvz))
 
-        wx_v2 = h_cudaDoms(dom,sps)%wx
-        wy_v2 = h_cudaDoms(dom,sps)%wy
-        wz_v2 = h_cudaDoms(dom,sps)%wz
-        wx_v1 = wx
-        wy_v1 = wy
-        wz_v1 = wz
-        print  '("Max DIFF wX = ",E22.16," seconds.")', maxval(abs(wx_v2-wx_v1))
-        print  '("Max DIFF wy = ",E22.16," seconds.")', maxval(abs(wy_v2-wy_v1))
-        print  '("Max DIFF wz = ",E22.16," seconds.")', maxval(abs(wz_v2-wz_v1))
+        ! wx_v2 = h_cudaDoms(dom,sps)%wx
+        ! wy_v2 = h_cudaDoms(dom,sps)%wy
+        ! wz_v2 = h_cudaDoms(dom,sps)%wz
+        ! wx_v1 = wx
+        ! wy_v1 = wy
+        ! wz_v1 = wz
+        ! print  '("Max DIFF wX = ",E22.16," seconds.")', maxval(abs(wx_v2-bwx))
+        ! print  '("Max DIFF wy = ",E22.16," seconds.")', maxval(abs(wy_v2-bwy))
+        ! print  '("Max DIFF wz = ",E22.16," seconds.")', maxval(abs(wz_v2-bwz))
 
-        qx_v2 = h_cudaDoms(dom,sps)%qx
-        qy_v2 = h_cudaDoms(dom,sps)%qy
-        qz_v2 = h_cudaDoms(dom,sps)%qz
-        qx_v1 = qx
-        qy_v1 = qy
-        qz_v1 = qz
-        print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-qx_v1))
-        print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-qy_v1))
-        print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-qz_v1))
-
-
-        h_w = h_cudaDoms(dom,sps)%w
-        print  '("Max DIFF w = ",E22.16," seconds.")', maxval(abs(h_w-bw))
+        ! qx_v2 = h_cudaDoms(dom,sps)%qx
+        ! qy_v2 = h_cudaDoms(dom,sps)%qy
+        ! qz_v2 = h_cudaDoms(dom,sps)%qz
+        ! qx_v1 = qx
+        ! qy_v1 = qy
+        ! qz_v1 = qz
+        ! print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-bqx))
+        ! print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-bqy))
+        ! print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-bqz))
 
 
-        ! Surface normals are good
-        h_sI = h_cudaDoms(dom,sps)%sI
-        h_sJ = h_cudaDoms(dom,sps)%sJ
-        h_sK = h_cudaDoms(dom,sps)%sK
-        print  '("Max DIFF sI = ",E22.16," seconds.")', maxval(abs(h_SI-bsI))
-        print  '("Max DIFF sJ = ",E22.16," seconds.")', maxval(abs(h_SJ-bsJ))
-        print  '("Max DIFF sK = ",E22.16," seconds.")', maxval(abs(h_SK-bsK))
+        ! h_w = h_cudaDoms(dom,sps)%w
+        ! print  '("Max DIFF w = ",E22.16," seconds.")', maxval(abs(h_w-bw))
 
-        h_vol = h_cudaDoms(dom,sps)%vol
-        print  '("Max DIFF vol = ",E22.16," seconds.")', maxval(abs(h_vol-bvol))
 
-        ! print *, "volumes:"
-        ! print *,"========"
-        ! print *, h_vol
-        ! print *, "========"
-        ! print *, bvol
-        ! print *,"========"
-        ! print *, size(h_vol), size(bvol)
-        ! counter = 0
+        ! ! Surface normals are good
+        ! h_sI = h_cudaDoms(dom,sps)%sI
+        ! h_sJ = h_cudaDoms(dom,sps)%sJ
+        ! h_sK = h_cudaDoms(dom,sps)%sK
+        ! print  '("Max DIFF sI = ",E22.16," seconds.")', maxval(abs(h_SI-bsI))
+        ! print  '("Max DIFF sJ = ",E22.16," seconds.")', maxval(abs(h_SJ-bsJ))
+        ! print  '("Max DIFF sK = ",E22.16," seconds.")', maxval(abs(h_SK-bsK))
+
+        ! h_vol = h_cudaDoms(dom,sps)%vol
+        ! print  '("Max DIFF vol = ",E22.16," seconds.")', maxval(abs(h_vol-bvol(1:bie, 1:bje, 1:bke)))
+
+
+        ! h_fw = h_cudaDoms(dom,sps)%fw(1:bie,1:bje,1:bke,1:nwf)
+        ! print *,size(h_fw(2:bil,2:bjl,2:bkl,1:nwf)),size(bfw(2:bil,2:bjl,2:bkl,1:nwf))
+        ! print *,"====="
+        ! print *, h_fw(2:bil,2:bjl,2:bkl,ivx)
+        ! print *,"====="
+        ! print *, bfw(2:bil,2:bjl,2:bkl,ivx)
+        ! print  '("Max DIFF fw = ",E22.16," seconds.")', maxval(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf) ))
+
+        ! ! print *, "volumes:"
+        ! ! print *,"========"
+        ! ! print *, h_vol
+        ! ! print *, "========"
+        ! ! print *, bvol
+        ! ! print *,"========"
+        ! ! print *, size(h_vol), size(bvol)
+        ! ! counter = 0
         
-        ! Speed of sound 
-        h_aa = h_cudaDoms(dom,sps)%aa
-        h_aa_v1 = aa
-        print  '("Max DIFF aa = ",E22.16," seconds.")', maxval(abs(h_aa-h_aa_v1))
-        print  '("Max DIFF aa cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_aa_v1-baa))
+        ! ! Speed of sound 
+        ! h_aa = h_cudaDoms(dom,sps)%aa
+        ! h_aa_v1 = aa
+        ! print  '("Max DIFF aa = ",E22.16," seconds.")', maxval(abs(h_aa-h_aa_v1))
+        ! print  '("Max DIFF aa cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_aa_v1-baa(1:bie, 1:bje, 1:bke)))
 
-        print *, maxval(h_aa), maxval(baa),minval(h_aa),minval(baa)
+        ! print *, maxval(h_aa), maxval(baa),minval(h_aa),minval(baa)
 
-        h_p = h_cudaDoms(dom,sps)%p
-        print  '("Max DIFF p = ",E22.16," seconds.")', maxval(abs(h_p-bp))
+        ! h_p = h_cudaDoms(dom,sps)%p
+        ! print  '("Max DIFF p = ",E22.16," seconds.")', maxval(abs(h_p-bp))
 
-        h_gamma = h_cudaDoms(dom,sps)%gamma
-        print  '("Max DIFF gamma = ",E22.16," seconds.")', maxval(abs(h_gamma-bgamma))
+        ! h_gamma = h_cudaDoms(dom,sps)%gamma
+        ! print  '("Max DIFF gamma = ",E22.16," seconds.")', maxval(abs(h_gamma-bgamma))
         counter = 0
         !copy cudaDoms(dom,sps)%dw to res
         do k = 2,bkl
