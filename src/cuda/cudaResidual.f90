@@ -1535,7 +1535,7 @@ module cudaResidual
             a2 = fourth * (cudaDoms(dom,sps)%aa(i, j, k) + cudaDoms(dom,sps)%aa(i + 1, j, k) + &
                          cudaDoms(dom,sps)%aa(i, j + 1, k) + cudaDoms(dom,sps)%aa(i + 1, j + 1, k))
 
-            print *,"k:", i,j,k, a2
+            ! print *,"k:", i,j,k, a2
             
             ! Add the contributions to the surface integral to the node
             ! j-1 and substract it from the node j. For the heat flux it
@@ -1647,7 +1647,7 @@ module cudaResidual
 
             a2 = fourth * (cudaDoms(dom,sps)%aa(i, j, k) + cudaDoms(dom,sps)%aa(i + 1, j, k) + &
                             cudaDoms(dom,sps)%aa(i, j, k + 1) + cudaDoms(dom,sps)%aa(i + 1, j, k + 1))
-            print *,"j:", i,j,k, a2
+            ! print *,"j:", i,j,k, a2
             ! Add the contributions to the surface integral to the node
             ! j-1 and substract it from the node j. For the heat flux it
             ! is reversed, because the negative of the gradient of the
@@ -1759,7 +1759,7 @@ module cudaResidual
 
             a2 = fourth * (cudaDoms(dom,sps)%aa(i, j, k) + cudaDoms(dom,sps)%aa(i, j + 1, k) + &
                         cudaDoms(dom,sps)%aa(i, j, k + 1) + cudaDoms(dom,sps)%aa(i, j + 1, k + 1))
-            print *,"i:", i,j,k, a2
+            ! print *,"i:", i,j,k, a2
             ! Add the contributions to the surface integral to the node
             ! j-1 and substract it from the node j. For the heat flux it
             ! is reversed, because the negative of the gradient of the
@@ -3058,781 +3058,781 @@ module cudaResidual
     end subroutine inviscidDissFluxScalar
 
     ! !alex
-    ! attributes(global) subroutine viscousFlux
-    !     use precision, only: realType, intType
-    !     use constants, only: half, zero,one,two, third,fourth,eighth,ivx,ivy,ivz,irhoE,irho,itu1,imx,imy,imz,noFlux
-    !     use cudaInputPhysics, only: useQCR, prandtl, prandtlturb
-    !     use cudaFlowvarRefState, only: eddyModel
-    !     use cudaIteration, only: rFil
-    !     implicit none
+    attributes(global) subroutine viscousFlux
+        use precision, only: realType, intType
+        use constants, only: half, zero,one,two, third,fourth,eighth,ivx,ivy,ivz,irhoE,irho,itu1,imx,imy,imz,noFlux
+        use cudaInputPhysics, only: useQCR, prandtl, prandtlturb
+        use cudaFlowvarRefState, only: eddyModel
+        use cudaIteration, only: rFil
+        implicit none
 
-    !     ! Variables for viscous flux
-    !     real(kind=realType) :: rFilv, por, mul, mue, mut, heatCoef
-    !     real(kind=realType) :: gm1, factLamHeat, factTurbHeat
-    !     real(kind=realType) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
-    !     real(kind=realType) :: q_x, q_y, q_z
-    !     real(kind=realType) :: corr, ssx, ssy, ssz, fracDiv, snrm
-    !     real(kind=realType) :: tauxx, tauyy, tauzz
-    !     real(kind=realType) :: tauxy, tauxz, tauyz
-    !     real(kind=realType) :: tauxxS, tauyyS, tauzzS
-    !     real(kind=realType) :: tauxyS, tauxzS, tauyzS
-    !     real(kind=realType) :: ubar, vbar, wbar
-    !     real(kind=realType) :: exx, eyy, ezz
-    !     real(kind=realType) :: exy, exz, eyz
-    !     real(kind=realType) :: Wxx, Wyy, Wzz
-    !     real(kind=realType) :: Wxy, Wxz, Wyz, Wyx, Wzx, Wzy
-    !     real(kind=realType) :: den, Ccr1
-    !     real(kind=realType) :: fmx, fmy, fmz, frhoE, fact
-    !     integer(kind=intType) :: i, j, k, io, jo, ko, dom, sps
-    !     real(kind=realType), parameter :: xminn = 1.e-10_realType
-    !     real(kind=realType), parameter :: twoThird = two * third
-    !     real(kind=realType) :: tmp
+        ! Variables for viscous flux
+        real(kind=realType) :: rFilv, por, mul, mue, mut, heatCoef
+        real(kind=realType) :: gm1, factLamHeat, factTurbHeat
+        real(kind=realType) :: u_x, u_y, u_z, v_x, v_y, v_z, w_x, w_y, w_z
+        real(kind=realType) :: q_x, q_y, q_z
+        real(kind=realType) :: corr, ssx, ssy, ssz, fracDiv, snrm
+        real(kind=realType) :: tauxx, tauyy, tauzz
+        real(kind=realType) :: tauxy, tauxz, tauyz
+        real(kind=realType) :: tauxxS, tauyyS, tauzzS
+        real(kind=realType) :: tauxyS, tauxzS, tauyzS
+        real(kind=realType) :: ubar, vbar, wbar
+        real(kind=realType) :: exx, eyy, ezz
+        real(kind=realType) :: exy, exz, eyz
+        real(kind=realType) :: Wxx, Wyy, Wzz
+        real(kind=realType) :: Wxy, Wxz, Wyz, Wyx, Wzx, Wzy
+        real(kind=realType) :: den, Ccr1
+        real(kind=realType) :: fmx, fmy, fmz, frhoE, fact
+        integer(kind=intType) :: i, j, k, io, jo, ko, dom, sps
+        real(kind=realType), parameter :: xminn = 1.e-10_realType
+        real(kind=realType), parameter :: twoThird = two * third
+        real(kind=realType) :: tmp
 
-    !     dom = 1
-    !     sps = 1
-    !     !thread indices start at 1
-    !     i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
-    !     j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
-    !     k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
+        dom = 1
+        sps = 1
+        !thread indices start at 1
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
+        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
 
-    !     ! Set QCR parameters
-    !     Ccr1 = 0.3_realType
-    !     rFilv = rFil
+        ! Set QCR parameters
+        Ccr1 = 0.3_realType
+        rFilv = rFil
 
-    !     ! The diagonals of the vorticity tensor components are always zero
-    !     Wxx = zero
-    !     Wyy = zero
-    !     Wzz = zero
+        ! The diagonals of the vorticity tensor components are always zero
+        Wxx = zero
+        Wyy = zero
+        Wzz = zero
 
-    !     !
-    !     !         viscous fluxes in the k-direction.
-    !     !
-    !     mue = zero
-    !     !loop k 1 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
-    !     if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl &
-                ! .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. i>=2 .and. k>=1) then
-    !         ! Set the value of the porosity. If not zero, it is set
-    !         ! to average the eddy-viscosity and to take the factor
-    !         ! rFilv into account.
-    !         por = half * rFilv
-    !         if (cudaDoms(dom,sps)%porK(i, j, k) == noFlux) por = zero
+        !
+        !         viscous fluxes in the k-direction.
+        !
+        mue = zero
+        !loop k 1 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
+        if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl &
+                .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. i>=2 .and. k>=1) then
+            ! Set the value of the porosity. If not zero, it is set
+            ! to average the eddy-viscosity and to take the factor
+            ! rFilv into account.
+            por = half * rFilv
+            if (cudaDoms(dom,sps)%porK(i, j, k) == noFlux) por = zero
 
-    !         ! Compute the laminar and (if present) the eddy viscosities
-    !         ! multiplied by the porosity. Compute the factor in front of
-    !         ! the gradients of the speed of sound squared for the heat
-    !         ! flux.
-    !         mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i, j, k + 1))
-    !         mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j, k + 1))
-    !         mut = mul + mue
+            ! Compute the laminar and (if present) the eddy viscosities
+            ! multiplied by the porosity. Compute the factor in front of
+            ! the gradients of the speed of sound squared for the heat
+            ! flux.
+            mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i, j, k + 1))
+            mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j, k + 1))
+            mut = mul + mue
 
-    !         gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i, j, k + 1)) - one
-    !         factLamHeat = one / (prandtl * gm1)
-    !         factTurbHeat = one / (prandtlTurb * gm1)
+            gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i, j, k + 1)) - one
+            factLamHeat = one / (prandtl * gm1)
+            factTurbHeat = one / (prandtlTurb * gm1)
 
-    !         heatCoef = mul * factLamHeat + mue * factTurbHeat
-    !         ! Compute the gradients at the face by averaging the four
-    !                 ! nodal values.
+            heatCoef = mul * factLamHeat + mue * factTurbHeat
+            ! Compute the gradients at the face by averaging the four
+                    ! nodal values.
 
-    !         u_x = fourth * (cudaDoms(dom,sps)%ux(i - 1, j - 1, k) + cudaDoms(dom,sps)%ux(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%ux(i - 1, j, k) + cudaDoms(dom,sps)%ux(i, j, k))
-    !         u_y = fourth * (cudaDoms(dom,sps)%uy(i - 1, j - 1, k) + cudaDoms(dom,sps)%uy(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%uy(i - 1, j, k) + cudaDoms(dom,sps)%uy(i, j, k))
-    !         u_z = fourth * (cudaDoms(dom,sps)%uz(i - 1, j - 1, k) + cudaDoms(dom,sps)%uz(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%uz(i - 1, j, k) + cudaDoms(dom,sps)%uz(i, j, k))
+            u_x = fourth * (cudaDoms(dom,sps)%ux(i - 1, j - 1, k) + cudaDoms(dom,sps)%ux(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%ux(i - 1, j, k) + cudaDoms(dom,sps)%ux(i, j, k))
+            u_y = fourth * (cudaDoms(dom,sps)%uy(i - 1, j - 1, k) + cudaDoms(dom,sps)%uy(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%uy(i - 1, j, k) + cudaDoms(dom,sps)%uy(i, j, k))
+            u_z = fourth * (cudaDoms(dom,sps)%uz(i - 1, j - 1, k) + cudaDoms(dom,sps)%uz(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%uz(i - 1, j, k) + cudaDoms(dom,sps)%uz(i, j, k))
 
-    !         v_x = fourth * (cudaDoms(dom,sps)%vx(i - 1, j - 1, k) + cudaDoms(dom,sps)%vx(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%vx(i - 1, j, k) + cudaDoms(dom,sps)%vx(i, j, k))
-    !         v_y = fourth * (cudaDoms(dom,sps)%vy(i - 1, j - 1, k) + cudaDoms(dom,sps)%vy(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%vy(i - 1, j, k) + cudaDoms(dom,sps)%vy(i, j, k))
-    !         v_z = fourth * (cudaDoms(dom,sps)%vz(i - 1, j - 1, k) + cudaDoms(dom,sps)%vz(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%vz(i - 1, j, k) + cudaDoms(dom,sps)%vz(i, j, k))
+            v_x = fourth * (cudaDoms(dom,sps)%vx(i - 1, j - 1, k) + cudaDoms(dom,sps)%vx(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%vx(i - 1, j, k) + cudaDoms(dom,sps)%vx(i, j, k))
+            v_y = fourth * (cudaDoms(dom,sps)%vy(i - 1, j - 1, k) + cudaDoms(dom,sps)%vy(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%vy(i - 1, j, k) + cudaDoms(dom,sps)%vy(i, j, k))
+            v_z = fourth * (cudaDoms(dom,sps)%vz(i - 1, j - 1, k) + cudaDoms(dom,sps)%vz(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%vz(i - 1, j, k) + cudaDoms(dom,sps)%vz(i, j, k))
 
-    !         w_x = fourth * (cudaDoms(dom,sps)%wx(i - 1, j - 1, k) + cudaDoms(dom,sps)%wx(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%wx(i - 1, j, k) + cudaDoms(dom,sps)%wx(i, j, k))
-    !         w_y = fourth * (cudaDoms(dom,sps)%wy(i - 1, j - 1, k) + cudaDoms(dom,sps)%wy(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%wy(i - 1, j, k) + cudaDoms(dom,sps)%wy(i, j, k))
-    !         w_z = fourth * (cudaDoms(dom,sps)%wz(i - 1, j - 1, k) + cudaDoms(dom,sps)%wz(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%wz(i - 1, j, k) + cudaDoms(dom,sps)%wz(i, j, k))
+            w_x = fourth * (cudaDoms(dom,sps)%wx(i - 1, j - 1, k) + cudaDoms(dom,sps)%wx(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%wx(i - 1, j, k) + cudaDoms(dom,sps)%wx(i, j, k))
+            w_y = fourth * (cudaDoms(dom,sps)%wy(i - 1, j - 1, k) + cudaDoms(dom,sps)%wy(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%wy(i - 1, j, k) + cudaDoms(dom,sps)%wy(i, j, k))
+            w_z = fourth * (cudaDoms(dom,sps)%wz(i - 1, j - 1, k) + cudaDoms(dom,sps)%wz(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%wz(i - 1, j, k) + cudaDoms(dom,sps)%wz(i, j, k))
 
-    !         q_x = fourth * (cudaDoms(dom,sps)%qx(i - 1, j - 1, k) + cudaDoms(dom,sps)%qx(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%qx(i - 1, j, k) + cudaDoms(dom,sps)%qx(i, j, k))
-    !         q_y = fourth * (cudaDoms(dom,sps)%qy(i - 1, j - 1, k) + cudaDoms(dom,sps)%qy(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%qy(i - 1, j, k) + cudaDoms(dom,sps)%qy(i, j, k))
-    !         q_z = fourth * (cudaDoms(dom,sps)%qz(i - 1, j - 1, k) + cudaDoms(dom,sps)%qz(i, j - 1, k) &
-    !                     + cudaDoms(dom,sps)%qz(i - 1, j, k) + cudaDoms(dom,sps)%qz(i, j, k))
-    !         ! The gradients in the normal direction are corrected, such
-    !         ! that no averaging takes places here.
-    !         ! First determine the vector in the direction from the
-    !         ! cell center k to cell center k+1.
+            q_x = fourth * (cudaDoms(dom,sps)%qx(i - 1, j - 1, k) + cudaDoms(dom,sps)%qx(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%qx(i - 1, j, k) + cudaDoms(dom,sps)%qx(i, j, k))
+            q_y = fourth * (cudaDoms(dom,sps)%qy(i - 1, j - 1, k) + cudaDoms(dom,sps)%qy(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%qy(i - 1, j, k) + cudaDoms(dom,sps)%qy(i, j, k))
+            q_z = fourth * (cudaDoms(dom,sps)%qz(i - 1, j - 1, k) + cudaDoms(dom,sps)%qz(i, j - 1, k) &
+                        + cudaDoms(dom,sps)%qz(i - 1, j, k) + cudaDoms(dom,sps)%qz(i, j, k))
+            ! The gradients in the normal direction are corrected, such
+            ! that no averaging takes places here.
+            ! First determine the vector in the direction from the
+            ! cell center k to cell center k+1.
 
-    !         ssx = eighth * (cudaDoms(dom,sps)%x(i - 1, j - 1, k + 1, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 1) &
-    !                     + cudaDoms(dom,sps)%x(i - 1, j, k + 1, 1) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 1) &
-    !                     + cudaDoms(dom,sps)%x(i, j - 1, k + 1, 1) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 1) &
-    !                     + cudaDoms(dom,sps)%x(i, j, k + 1, 1) - cudaDoms(dom,sps)%x(i, j, k - 1, 1))
-    !         ssy = eighth * (cudaDoms(dom,sps)%x(i - 1, j - 1, k + 1, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 2) &
-    !                     + cudaDoms(dom,sps)%x(i - 1, j, k + 1, 2) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 2) &
-    !                     + cudaDoms(dom,sps)%x(i, j - 1, k + 1, 2) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 2) &
-    !                     + cudaDoms(dom,sps)%x(i, j, k + 1, 2) - cudaDoms(dom,sps)%x(i, j, k - 1, 2))
-    !         ssz = eighth * (cudaDoms(dom,sps)%x(i - 1, j - 1, k + 1, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 3) &
-    !                     + cudaDoms(dom,sps)%x(i - 1, j, k + 1, 3) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 3) &
-    !                     + cudaDoms(dom,sps)%x(i, j - 1, k + 1, 3) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 3) &
-    !                     + cudaDoms(dom,sps)%x(i, j, k + 1, 3) - cudaDoms(dom,sps)%x(i, j, k - 1, 3))
+            ssx = eighth * (cudaDoms(dom,sps)%x(i - 1, j - 1, k + 1, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 1) &
+                        + cudaDoms(dom,sps)%x(i - 1, j, k + 1, 1) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 1) &
+                        + cudaDoms(dom,sps)%x(i, j - 1, k + 1, 1) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 1) &
+                        + cudaDoms(dom,sps)%x(i, j, k + 1, 1) - cudaDoms(dom,sps)%x(i, j, k - 1, 1))
+            ssy = eighth * (cudaDoms(dom,sps)%x(i - 1, j - 1, k + 1, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 2) &
+                        + cudaDoms(dom,sps)%x(i - 1, j, k + 1, 2) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 2) &
+                        + cudaDoms(dom,sps)%x(i, j - 1, k + 1, 2) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 2) &
+                        + cudaDoms(dom,sps)%x(i, j, k + 1, 2) - cudaDoms(dom,sps)%x(i, j, k - 1, 2))
+            ssz = eighth * (cudaDoms(dom,sps)%x(i - 1, j - 1, k + 1, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 3) &
+                        + cudaDoms(dom,sps)%x(i - 1, j, k + 1, 3) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 3) &
+                        + cudaDoms(dom,sps)%x(i, j - 1, k + 1, 3) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 3) &
+                        + cudaDoms(dom,sps)%x(i, j, k + 1, 3) - cudaDoms(dom,sps)%x(i, j, k - 1, 3))
 
-    !         ! Determine the length of this vector and create the
-    !         ! unit normal.
+            ! Determine the length of this vector and create the
+            ! unit normal.
 
-    !         snrm = one / sqrt(ssx * ssx + ssy * ssy + ssz * ssz)
-    !         ssx = snrm * ssx
-    !         ssy = snrm * ssy
-    !         ssz = snrm * ssz
+            snrm = one / sqrt(ssx * ssx + ssy * ssy + ssz * ssz)
+            ssx = snrm * ssx
+            ssy = snrm * ssy
+            ssz = snrm * ssz
     
-    !         ! Correct the gradients.
+            ! Correct the gradients.
 
-    !         corr = u_x * ssx + u_y * ssy + u_z * ssz &
-    !                 - (cudaDoms(dom,sps)%w(i, j, k + 1, ivx) - cudaDoms(dom,sps)%w(i, j, k, ivx)) * snrm
-    !         u_x = u_x - corr * ssx
-    !         u_y = u_y - corr * ssy
-    !         u_z = u_z - corr * ssz
+            corr = u_x * ssx + u_y * ssy + u_z * ssz &
+                    - (cudaDoms(dom,sps)%w(i, j, k + 1, ivx) - cudaDoms(dom,sps)%w(i, j, k, ivx)) * snrm
+            u_x = u_x - corr * ssx
+            u_y = u_y - corr * ssy
+            u_z = u_z - corr * ssz
 
-    !         corr = v_x * ssx + v_y * ssy + v_z * ssz &
-    !                 - (cudaDoms(dom,sps)%w(i, j, k + 1, ivy) - cudaDoms(dom,sps)%w(i, j, k, ivy)) * snrm
-    !         v_x = v_x - corr * ssx
-    !         v_y = v_y - corr * ssy
-    !         v_z = v_z - corr * ssz
+            corr = v_x * ssx + v_y * ssy + v_z * ssz &
+                    - (cudaDoms(dom,sps)%w(i, j, k + 1, ivy) - cudaDoms(dom,sps)%w(i, j, k, ivy)) * snrm
+            v_x = v_x - corr * ssx
+            v_y = v_y - corr * ssy
+            v_z = v_z - corr * ssz
 
-    !         corr = w_x * ssx + w_y * ssy + w_z * ssz &
-    !                 - (cudaDoms(dom,sps)%w(i, j, k + 1, ivz) - cudaDoms(dom,sps)%w(i, j, k, ivz)) * snrm
-    !         w_x = w_x - corr * ssx
-    !         w_y = w_y - corr * ssy
-    !         w_z = w_z - corr * ssz
+            corr = w_x * ssx + w_y * ssy + w_z * ssz &
+                    - (cudaDoms(dom,sps)%w(i, j, k + 1, ivz) - cudaDoms(dom,sps)%w(i, j, k, ivz)) * snrm
+            w_x = w_x - corr * ssx
+            w_y = w_y - corr * ssy
+            w_z = w_z - corr * ssz
 
-    !         corr = q_x * ssx + q_y * ssy + q_z * ssz &
-    !                 + (cudaDoms(dom,sps)%aa(i, j, k + 1) - cudaDoms(dom,sps)%aa(i, j, k)) * snrm
-    !         q_x = q_x - corr * ssx
-    !         q_y = q_y - corr * ssy
-    !         q_z = q_z - corr * ssz
+            corr = q_x * ssx + q_y * ssy + q_z * ssz &
+                    + (cudaDoms(dom,sps)%aa(i, j, k + 1) - cudaDoms(dom,sps)%aa(i, j, k)) * snrm
+            q_x = q_x - corr * ssx
+            q_y = q_y - corr * ssy
+            q_z = q_z - corr * ssz
             
-    !         ! Compute the stress tensor and the heat flux vector.
-    !         ! We remove the viscosity from the stress tensor (tau)
-    !         ! to define tauS since we still need to separate between
-    !         ! laminar and turbulent stress for QCR.
-    !         ! Therefore, laminar tau = mue*tauS, turbulent
-    !         ! tau = mue*tauS, and total tau = mut*tauS.
+            ! Compute the stress tensor and the heat flux vector.
+            ! We remove the viscosity from the stress tensor (tau)
+            ! to define tauS since we still need to separate between
+            ! laminar and turbulent stress for QCR.
+            ! Therefore, laminar tau = mue*tauS, turbulent
+            ! tau = mue*tauS, and total tau = mut*tauS.
 
-    !         fracDiv = twoThird * (u_x + v_y + w_z)
-    !         tauxxS = two * u_x - fracDiv
-    !         tauyyS = two * v_y - fracDiv
-    !         tauzzS = two * w_z - fracDiv
+            fracDiv = twoThird * (u_x + v_y + w_z)
+            tauxxS = two * u_x - fracDiv
+            tauyyS = two * v_y - fracDiv
+            tauzzS = two * w_z - fracDiv
 
-    !         tauxyS = u_y + v_x
-    !         tauxzS = u_z + w_x
-    !         tauyzS = v_z + w_y
+            tauxyS = u_y + v_x
+            tauxzS = u_z + w_x
+            tauyzS = v_z + w_y
 
-    !         q_x = heatCoef * q_x
-    !         q_y = heatCoef * q_y
-    !         q_z = heatCoef * q_z
+            q_x = heatCoef * q_x
+            q_y = heatCoef * q_y
+            q_z = heatCoef * q_z
             
-    !         ! Add QCR corrections if necessary
-    !         if (useQCR) then
+            ! Add QCR corrections if necessary
+            if (useQCR) then
 
-    !             ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
-    !             !
-    !             ! tau_ij,QCR = tau_ij - e_ij
-    !             !
-    !             ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
-    !             !
-    !             ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
-    !             !
-    !             ! We are computing O_ik as follows:
-    !             !
-    !             ! O_ik = 2*W_ik/den
-    !             !
-    !             ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
+                ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
+                !
+                ! tau_ij,QCR = tau_ij - e_ij
+                !
+                ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
+                !
+                ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
+                !
+                ! We are computing O_ik as follows:
+                !
+                ! O_ik = 2*W_ik/den
+                !
+                ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
 
-    !             ! Compute denominator
-    !             den = sqrt(u_x * u_x + u_y * u_y + u_z * u_z + &
-    !                        v_x * v_x + v_y * v_y + v_z * v_z + &
-    !                        w_x * w_x + w_y * w_y + w_z * w_z)
+                ! Compute denominator
+                den = sqrt(u_x * u_x + u_y * u_y + u_z * u_z + &
+                           v_x * v_x + v_y * v_y + v_z * v_z + &
+                           w_x * w_x + w_y * w_y + w_z * w_z)
 
-    !             ! Denominator should be limited to avoid division by zero in regions with
-    !             ! no gradients
-    !             den = max(den, xminn)
+                ! Denominator should be limited to avoid division by zero in regions with
+                ! no gradients
+                den = max(den, xminn)
 
-    !             ! Compute factor that will multiply all tensor components.
-    !             ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
-    !             ! components as well.
-    !             fact = mue * Ccr1 / den
+                ! Compute factor that will multiply all tensor components.
+                ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
+                ! components as well.
+                fact = mue * Ccr1 / den
 
-    !             ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
-    !             ! The diagonals of the vorticity tensor components are always zero
-    !             Wxy = u_y - v_x
-    !             Wxz = u_z - w_x
-    !             Wyz = v_z - w_y
-    !             Wyx = -Wxy
-    !             Wzx = -Wxz
-    !             Wzy = -Wyz
+                ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+                ! The diagonals of the vorticity tensor components are always zero
+                Wxy = u_y - v_x
+                Wxz = u_z - w_x
+                Wyz = v_z - w_y
+                Wyx = -Wxy
+                Wzx = -Wxz
+                Wzy = -Wyz
 
-    !             ! Compute the extra terms of the Boussinesq relation
-    !             exx = fact * (Wxy * tauxyS + Wxz * tauxzS) * two
-    !             eyy = fact * (Wyx * tauxyS + Wyz * tauyzS) * two
-    !             ezz = fact * (Wzx * tauxzS + Wzy * tauyzS) * two
+                ! Compute the extra terms of the Boussinesq relation
+                exx = fact * (Wxy * tauxyS + Wxz * tauxzS) * two
+                eyy = fact * (Wyx * tauxyS + Wyz * tauyzS) * two
+                ezz = fact * (Wzx * tauxzS + Wzy * tauyzS) * two
 
-    !             exy = fact * (Wxy * tauyyS + Wxz * tauyzS + &
-    !                           Wyx * tauxxS + Wyz * tauxzS)
-    !             exz = fact * (Wxy * tauyzS + Wxz * tauzzS + &
-    !                           Wzx * tauxxS + Wzy * tauxyS)
-    !             eyz = fact * (Wyx * tauxzS + Wyz * tauzzS + &
-    !                           Wzx * tauxyS + Wzy * tauyyS)
+                exy = fact * (Wxy * tauyyS + Wxz * tauyzS + &
+                              Wyx * tauxxS + Wyz * tauxzS)
+                exz = fact * (Wxy * tauyzS + Wxz * tauzzS + &
+                              Wzx * tauxxS + Wzy * tauxyS)
+                eyz = fact * (Wyx * tauxzS + Wyz * tauzzS + &
+                              Wzx * tauxyS + Wzy * tauyyS)
 
-    !             ! Apply the total viscosity to the stress tensor and add extra terms
-    !             tauxx = mut * tauxxS - exx
-    !             tauyy = mut * tauyyS - eyy
-    !             tauzz = mut * tauzzS - ezz
-    !             tauxy = mut * tauxyS - exy
-    !             tauxz = mut * tauxzS - exz
-    !             tauyz = mut * tauyzS - eyz
+                ! Apply the total viscosity to the stress tensor and add extra terms
+                tauxx = mut * tauxxS - exx
+                tauyy = mut * tauyyS - eyy
+                tauzz = mut * tauzzS - ezz
+                tauxy = mut * tauxyS - exy
+                tauxz = mut * tauxzS - exz
+                tauyz = mut * tauyzS - eyz
 
-    !         else
+            else
 
-    !             ! Just apply the total viscosity to the stress tensor
-    !             tauxx = mut * tauxxS
-    !             tauyy = mut * tauyyS
-    !             tauzz = mut * tauzzS
-    !             tauxy = mut * tauxyS
-    !             tauxz = mut * tauxzS
-    !             tauyz = mut * tauyzS
+                ! Just apply the total viscosity to the stress tensor
+                tauxx = mut * tauxxS
+                tauyy = mut * tauyyS
+                tauzz = mut * tauzzS
+                tauxy = mut * tauxyS
+                tauxz = mut * tauxzS
+                tauyz = mut * tauyzS
 
-    !         end if
+            end if
 
-    !         ! Compute the average velocities for the face. Remember that
-    !         ! the velocities are stored and not the momentum.
-    !         ubar = half * (cudaDoms(dom,sps)%w(i, j, k, ivx) + cudaDoms(dom,sps)%w(i, j, k + 1, ivx))
-    !         vbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivy) + cudaDoms(dom,sps)%w(i, j, k + 1, ivy))
-    !         wbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivz) + cudaDoms(dom,sps)%w(i, j, k + 1, ivz))
+            ! Compute the average velocities for the face. Remember that
+            ! the velocities are stored and not the momentum.
+            ubar = half * (cudaDoms(dom,sps)%w(i, j, k, ivx) + cudaDoms(dom,sps)%w(i, j, k + 1, ivx))
+            vbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivy) + cudaDoms(dom,sps)%w(i, j, k + 1, ivy))
+            wbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivz) + cudaDoms(dom,sps)%w(i, j, k + 1, ivz))
 
-    !         ! Compute the viscous fluxes for this k-face.
-    !         fmx = tauxx * cudaDoms(dom,sps)%sK(i, j, k, 1) + tauxy * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-    !                 + tauxz * cudaDoms(dom,sps)%sK(i, j, k, 3)
-    !         fmy = tauxy * cudaDoms(dom,sps)%sK(i, j, k, 1) + tauyy * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-    !                 + tauyz * cudaDoms(dom,sps)%sK(i, j, k, 3)
-    !         fmz = tauxz * cudaDoms(dom,sps)%sK(i, j, k, 1) + tauyz * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-    !                 + tauzz * cudaDoms(dom,sps)%sK(i, j, k, 3)
-    !         frhoE = (ubar * tauxx + vbar * tauxy + wbar * tauxz) * cudaDoms(dom,sps)%sK(i, j, k, 1)
-    !         frhoE = frhoE + (ubar * tauxy + vbar * tauyy + wbar * tauyz) * cudaDoms(dom,sps)%sK(i, j, k, 2)
-    !         frhoE = frhoE + (ubar * tauxz + vbar * tauyz + wbar * tauzz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
-    !         frhoE = frhoE - q_x * cudaDoms(dom,sps)%sK(i, j, k, 1) - q_y * cudaDoms(dom,sps)%sK(i, j, k, 2) - q_z * cudaDoms(dom,sps)%sK(i, j, k, 3)
+            ! Compute the viscous fluxes for this k-face.
+            fmx = tauxx * cudaDoms(dom,sps)%sK(i, j, k, 1) + tauxy * cudaDoms(dom,sps)%sK(i, j, k, 2) &
+                    + tauxz * cudaDoms(dom,sps)%sK(i, j, k, 3)
+            fmy = tauxy * cudaDoms(dom,sps)%sK(i, j, k, 1) + tauyy * cudaDoms(dom,sps)%sK(i, j, k, 2) &
+                    + tauyz * cudaDoms(dom,sps)%sK(i, j, k, 3)
+            fmz = tauxz * cudaDoms(dom,sps)%sK(i, j, k, 1) + tauyz * cudaDoms(dom,sps)%sK(i, j, k, 2) &
+                    + tauzz * cudaDoms(dom,sps)%sK(i, j, k, 3)
+            frhoE = (ubar * tauxx + vbar * tauxy + wbar * tauxz) * cudaDoms(dom,sps)%sK(i, j, k, 1)
+            frhoE = frhoE + (ubar * tauxy + vbar * tauyy + wbar * tauyz) * cudaDoms(dom,sps)%sK(i, j, k, 2)
+            frhoE = frhoE + (ubar * tauxz + vbar * tauyz + wbar * tauzz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
+            frhoE = frhoE - q_x * cudaDoms(dom,sps)%sK(i, j, k, 1) - q_y * cudaDoms(dom,sps)%sK(i, j, k, 2) - q_z * cudaDoms(dom,sps)%sK(i, j, k, 3)
 
-    !         ! Update the residuals of cell k and k+1.
+            ! Update the residuals of cell k and k+1.
             
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imx), fmx)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imy), fmy)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imz), fmz)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, irhoE), frhoE)
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fmx
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fmy
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fmz
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - frhoE
-
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imx), fmx)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imy), fmy)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imz), fmz)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE), frhoE)
-    !         ! cudaDoms(dom,sps)%fw(i, j, k + 1, imx) = cudaDoms(dom,sps)%fw(i, j, k + 1, imx) + fmx
-    !         ! cudaDoms(dom,sps)%fw(i, j, k + 1, imy) = cudaDoms(dom,sps)%fw(i, j, k + 1, imy) + fmy
-    !         ! cudaDoms(dom,sps)%fw(i, j, k + 1, imz) = cudaDoms(dom,sps)%fw(i, j, k + 1, imz) + fmz
-    !         ! cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE) = cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE) + frhoE
-
-    !         ! Temporarily store the shear stress and heat flux, even
-    !         ! if we won't need it. This can still vectorize
-    !     end if
-
-    !     !
-    !     !         Viscous fluxes in the j-direction.
-    !     !
-    !     !loop k 2 to cudaDoms(dom,sps)%kl, j 1 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
-    !     if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. k>=2 .and. i>=2 .and. j>=1) then
-    !         ! Set the value of the porosity. If not zero, it is set
-    !                 ! to average the eddy-viscosity and to take the factor
-    !                 ! rFilv into account.
-
-    !         por = half * rFilv
-    !         if (cudaDoms(dom,sps)%porJ(i, j, k) == noFlux) por = zero
-
-    !         ! Compute the laminar and (if present) the eddy viscosities
-    !         ! multiplied by the porosity. Compute the factor in front of
-    !         ! the gradients of the speed of sound squared for the heat
-    !         ! flux.
-
-    !         mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i, j + 1, k))
-    !         mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j + 1, k))
-    !         mut = mul + mue
-
-    !         gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i, j + 1, k)) - one
-    !         factLamHeat = one / (prandtl * gm1)
-    !         factTurbHeat = one / (prandtlTurb * gm1)
-
-    !         heatCoef = mul * factLamHeat + mue * factTurbHeat
-
-    !         ! Compute the gradients at the face by averaging the four
-    !         ! nodal values.
-
-    !         u_x = fourth * (cudaDoms(dom,sps)%ux(i - 1, j, k - 1) + cudaDoms(dom,sps)%ux(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%ux(i - 1, j, k) + cudaDoms(dom,sps)%ux(i, j, k))
-    !         u_y = fourth * (cudaDoms(dom,sps)%uy(i - 1, j, k - 1) + cudaDoms(dom,sps)%uy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%uy(i - 1, j, k) + cudaDoms(dom,sps)%uy(i, j, k))
-    !         u_z = fourth * (cudaDoms(dom,sps)%uz(i - 1, j, k - 1) + cudaDoms(dom,sps)%uz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%uz(i - 1, j, k) + cudaDoms(dom,sps)%uz(i, j, k))
-
-    !         v_x = fourth * (cudaDoms(dom,sps)%vx(i - 1, j, k - 1) + cudaDoms(dom,sps)%vx(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%vx(i - 1, j, k) + cudaDoms(dom,sps)%vx(i, j, k))
-    !         v_y = fourth * (cudaDoms(dom,sps)%vy(i - 1, j, k - 1) + cudaDoms(dom,sps)%vy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%vy(i - 1, j, k) + cudaDoms(dom,sps)%vy(i, j, k))
-    !         v_z = fourth * (cudaDoms(dom,sps)%vz(i - 1, j, k - 1) + cudaDoms(dom,sps)%vz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%vz(i - 1, j, k) + cudaDoms(dom,sps)%vz(i, j, k))
-
-    !         w_x = fourth * (cudaDoms(dom,sps)%wx(i - 1, j, k - 1) + cudaDoms(dom,sps)%wx(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%wx(i - 1, j, k) + cudaDoms(dom,sps)%wx(i, j, k))
-    !         w_y = fourth * (cudaDoms(dom,sps)%wy(i - 1, j, k - 1) + cudaDoms(dom,sps)%wy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%wy(i - 1, j, k) + cudaDoms(dom,sps)%wy(i, j, k))
-    !         w_z = fourth * (cudaDoms(dom,sps)%wz(i - 1, j, k - 1) + cudaDoms(dom,sps)%wz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%wz(i - 1, j, k) + cudaDoms(dom,sps)%wz(i, j, k))
-
-    !         q_x = fourth * (cudaDoms(dom,sps)%qx(i - 1, j, k - 1) + cudaDoms(dom,sps)%qx(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%qx(i - 1, j, k) + cudaDoms(dom,sps)%qx(i, j, k))
-    !         q_y = fourth * (cudaDoms(dom,sps)%qy(i - 1, j, k - 1) + cudaDoms(dom,sps)%qy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%qy(i - 1, j, k) + cudaDoms(dom,sps)%qy(i, j, k))
-    !         q_z = fourth * (cudaDoms(dom,sps)%qz(i - 1, j, k - 1) + cudaDoms(dom,sps)%qz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%qz(i - 1, j, k) + cudaDoms(dom,sps)%qz(i, j, k))
-
-    !         ! The gradients in the normal direction are corrected, such
-    !         ! that no averaging takes places here.
-    !         ! First determine the vector in the direction from the
-    !         ! cell center j to cell center j+1.
-
-    !         ssx = eighth * (cudaDoms(dom,sps)%x(i - 1, j + 1, k - 1, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 1) &
-    !                         + cudaDoms(dom,sps)%x(i - 1, j + 1, k, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 1) &
-    !                         + cudaDoms(dom,sps)%x(i, j + 1, k - 1, 1) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 1) &
-    !                         + cudaDoms(dom,sps)%x(i, j + 1, k, 1) - cudaDoms(dom,sps)%x(i, j - 1, k, 1))
-    !         ssy = eighth * (cudaDoms(dom,sps)%x(i - 1, j + 1, k - 1, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 2) &
-    !                         + cudaDoms(dom,sps)%x(i - 1, j + 1, k, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 2) &
-    !                         + cudaDoms(dom,sps)%x(i, j + 1, k - 1, 2) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 2) &
-    !                         + cudaDoms(dom,sps)%x(i, j + 1, k, 2) - cudaDoms(dom,sps)%x(i, j - 1, k, 2))
-    !         ssz = eighth * (cudaDoms(dom,sps)%x(i - 1, j + 1, k - 1, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 3) &
-    !                         + cudaDoms(dom,sps)%x(i - 1, j + 1, k, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 3) &
-    !                         + cudaDoms(dom,sps)%x(i, j + 1, k - 1, 3) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 3) &
-    !                         + cudaDoms(dom,sps)%x(i, j + 1, k, 3) - cudaDoms(dom,sps)%x(i, j - 1, k, 3))
-
-    !         ! Determine the length of this vector and create the
-    !         ! unit normal.
-
-    !         snrm = one / sqrt(ssx * ssx + ssy * ssy + ssz * ssz)
-    !         ssx = snrm * ssx
-    !         ssy = snrm * ssy
-    !         ssz = snrm * ssz
-
-    !         ! Correct the gradients.
-
-    !         corr = u_x * ssx + u_y * ssy + u_z * ssz &
-    !                 - (cudaDoms(dom,sps)%w(i, j + 1, k, ivx) - cudaDoms(dom,sps)%w(i, j, k, ivx)) * snrm
-    !         u_x = u_x - corr * ssx
-    !         u_y = u_y - corr * ssy
-    !         u_z = u_z - corr * ssz
-
-    !         corr = v_x * ssx + v_y * ssy + v_z * ssz &
-    !                 - (cudaDoms(dom,sps)%w(i, j + 1, k, ivy) - cudaDoms(dom,sps)%w(i, j, k, ivy)) * snrm
-    !         v_x = v_x - corr * ssx
-    !         v_y = v_y - corr * ssy
-    !         v_z = v_z - corr * ssz
-
-    !         corr = w_x * ssx + w_y * ssy + w_z * ssz &
-    !                 - (cudaDoms(dom,sps)%w(i, j + 1, k, ivz) - cudaDoms(dom,sps)%w(i, j, k, ivz)) * snrm
-    !         w_x = w_x - corr * ssx
-    !         w_y = w_y - corr * ssy
-    !         w_z = w_z - corr * ssz
-
-    !         corr = q_x * ssx + q_y * ssy + q_z * ssz &
-    !                 + (cudaDoms(dom,sps)%aa(i, j + 1, k) - cudaDoms(dom,sps)%aa(i, j, k)) * snrm
-    !         q_x = q_x - corr * ssx
-    !         q_y = q_y - corr * ssy
-    !         q_z = q_z - corr * ssz
-
-    !         ! Compute the stress tensor and the heat flux vector.
-    !         ! We remove the viscosity from the stress tensor (tau)
-    !         ! to define tauS since we still need to separate between
-    !         ! laminar and turbulent stress for QCR.
-    !         ! Therefore, laminar tau = mue*tauS, turbulent
-    !         ! tau = mue*tauS, and total tau = mut*tauS.
-
-    !         fracDiv = twoThird * (u_x + v_y + w_z)
-
-    !         tauxxS = two * u_x - fracDiv
-    !         tauyyS = two * v_y - fracDiv
-    !         tauzzS = two * w_z - fracDiv
-
-    !         tauxyS = u_y + v_x
-    !         tauxzS = u_z + w_x
-    !         tauyzS = v_z + w_y
-
-    !         q_x = heatCoef * q_x
-    !         q_y = heatCoef * q_y
-    !         q_z = heatCoef * q_z
-
-    !         ! Add QCR corrections if necessary
-    !         if (useQCR) then
-
-    !             ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
-    !             !
-    !             ! tau_ij,QCR = tau_ij - e_ij
-    !             !
-    !             ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
-    !             !
-    !             ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
-    !             !
-    !             ! We are computing O_ik as follows:
-    !             !
-    !             ! O_ik = 2*W_ik/den
-    !             !
-    !             ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
-
-    !             ! Compute denominator
-    !             den = sqrt(u_x * u_x + u_y * u_y + u_z * u_z + &
-    !                         v_x * v_x + v_y * v_y + v_z * v_z + &
-    !                         w_x * w_x + w_y * w_y + w_z * w_z)
-
-    !             ! Denominator should be limited to avoid division by zero in regions with
-    !             ! no gradients
-    !             den = max(den, xminn)
-
-    !             ! Compute factor that will multiply all tensor components.
-    !             ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
-    !             ! components as well.
-    !             fact = mue * Ccr1 / den
-
-    !             ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
-    !             ! The diagonals of the vorticity tensor components are always zero
-    !             Wxy = u_y - v_x
-    !             Wxz = u_z - w_x
-    !             Wyz = v_z - w_y
-    !             Wyx = -Wxy
-    !             Wzx = -Wxz
-    !             Wzy = -Wyz
-
-    !             ! Compute the extra terms of the Boussinesq relation
-    !             exx = fact * (Wxy * tauxyS + Wxz * tauxzS) * two
-    !             eyy = fact * (Wyx * tauxyS + Wyz * tauyzS) * two
-    !             ezz = fact * (Wzx * tauxzS + Wzy * tauyzS) * two
-
-    !             exy = fact * (Wxy * tauyyS + Wxz * tauyzS + &
-    !                             Wyx * tauxxS + Wyz * tauxzS)
-    !             exz = fact * (Wxy * tauyzS + Wxz * tauzzS + &
-    !                             Wzx * tauxxS + Wzy * tauxyS)
-    !             eyz = fact * (Wyx * tauxzS + Wyz * tauzzS + &
-    !                             Wzx * tauxyS + Wzy * tauyyS)
-
-    !             ! Apply the total viscosity to the stress tensor and add extra terms
-    !             tauxx = mut * tauxxS - exx
-    !             tauyy = mut * tauyyS - eyy
-    !             tauzz = mut * tauzzS - ezz
-    !             tauxy = mut * tauxyS - exy
-    !             tauxz = mut * tauxzS - exz
-    !             tauyz = mut * tauyzS - eyz
-
-    !         else
-
-    !             ! Just apply the total viscosity to the stress tensor
-    !             tauxx = mut * tauxxS
-    !             tauyy = mut * tauyyS
-    !             tauzz = mut * tauzzS
-    !             tauxy = mut * tauxyS
-    !             tauxz = mut * tauxzS
-    !             tauyz = mut * tauyzS
-
-    !         end if
-
-    !         ! Compute the average velocities for the face. Remember that
-    !         ! the velocities are stored and not the momentum.
-
-    !         ubar = half * (cudaDoms(dom,sps)%w(i, j, k, ivx) + cudaDoms(dom,sps)%w(i, j + 1, k, ivx))
-    !         vbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivy) + cudaDoms(dom,sps)%w(i, j + 1, k, ivy))
-    !         wbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivz) + cudaDoms(dom,sps)%w(i, j + 1, k, ivz))
-
-    !         ! Compute the viscous fluxes for this j-face.
-
-    !         fmx = tauxx * cudaDoms(dom,sps)%sJ(i, j, k, 1) + tauxy * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-    !                 + tauxz * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-    !         fmy = tauxy * cudaDoms(dom,sps)%sJ(i, j, k, 1) + tauyy * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-    !                 + tauyz * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-    !         fmz = tauxz * cudaDoms(dom,sps)%sJ(i, j, k, 1) + tauyz * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-    !                 + tauzz * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-    !         frhoE = (ubar * tauxx + vbar * tauxy + wbar * tauxz) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
-    !                 + (ubar * tauxy + vbar * tauyy + wbar * tauyz) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-    !                 + (ubar * tauxz + vbar * tauyz + wbar * tauzz) * cudaDoms(dom,sps)%sJ(i, j, k, 3) &
-    !                 - q_x * cudaDoms(dom,sps)%sJ(i, j, k, 1) - q_y * cudaDoms(dom,sps)%sJ(i, j, k, 2) - q_z * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-
-    !         ! Update the residuals of cell j and j+1.
-
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imx), fmx)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imy), fmy)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imz), fmz)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, irhoE), frhoE)
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fmx
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fmy
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fmz
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - frhoE
-
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imx), fmx)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imy), fmy)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imz), fmz)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE), frhoE)
-    !         ! cudaDoms(dom,sps)%fw(i, j + 1, k, imx) = cudaDoms(dom,sps)%fw(i, j + 1, k, imx) + fmx
-    !         ! cudaDoms(dom,sps)%fw(i, j + 1, k, imy) = cudaDoms(dom,sps)%fw(i, j + 1, k, imy) + fmy
-    !         ! cudaDoms(dom,sps)%fw(i, j + 1, k, imz) = cudaDoms(dom,sps)%fw(i, j + 1, k, imz) + fmz
-    !         ! cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) = cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) + frhoE
-    !     end if  
-    !     !
-    !     !         Viscous fluxes in the i-direction.
-    !     !
-    !     !loop k 2 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 1 to cudaDoms(dom,sps)%il
-    !     if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. k>=2 .and. j>=2 .and. i>=1) then
-    !         ! Set the value of the porosity. If not zero, it is set
-    !         ! to average the eddy-viscosity and to take the factor
-    !         ! rFilv into account.
-
-    !         por = half * rFilv
-    !         if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) por = zero
-
-    !         ! Compute the laminar and (if present) the eddy viscosities
-    !         ! multiplied the porosity. Compute the factor in front of
-    !         ! the gradients of the speed of sound squared for the heat
-    !         ! flux.
-
-    !         mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i + 1, j, k))
-    !         mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i + 1, j, k))
-    !         mut = mul + mue
-
-    !         gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i + 1, j, k)) - one
-    !         factLamHeat = one / (prandtl * gm1)
-    !         factTurbHeat = one / (prandtlTurb * gm1)
-
-    !         heatCoef = mul * factLamHeat + mue * factTurbHeat
-
-    !         ! Compute the gradients at the face by averaging the four
-    !         ! nodal values.
-
-    !         u_x = fourth * (cudaDoms(dom,sps)%ux(i, j - 1, k - 1) + cudaDoms(dom,sps)%ux(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%ux(i, j - 1, k) + cudaDoms(dom,sps)%ux(i, j, k))
-    !         u_y = fourth * (cudaDoms(dom,sps)%uy(i, j - 1, k - 1) + cudaDoms(dom,sps)%uy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%uy(i, j - 1, k) + cudaDoms(dom,sps)%uy(i, j, k))
-    !         u_z = fourth * (cudaDoms(dom,sps)%uz(i, j - 1, k - 1) + cudaDoms(dom,sps)%uz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%uz(i, j - 1, k) + cudaDoms(dom,sps)%uz(i, j, k))
-
-    !         v_x = fourth * (cudaDoms(dom,sps)%vx(i, j - 1, k - 1) + cudaDoms(dom,sps)%vx(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%vx(i, j - 1, k) + cudaDoms(dom,sps)%vx(i, j, k))
-    !         v_y = fourth * (cudaDoms(dom,sps)%vy(i, j - 1, k - 1) + cudaDoms(dom,sps)%vy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%vy(i, j - 1, k) + cudaDoms(dom,sps)%vy(i, j, k))
-    !         v_z = fourth * (cudaDoms(dom,sps)%vz(i, j - 1, k - 1) + cudaDoms(dom,sps)%vz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%vz(i, j - 1, k) + cudaDoms(dom,sps)%vz(i, j, k))
-
-    !         w_x = fourth * (cudaDoms(dom,sps)%wx(i, j - 1, k - 1) + cudaDoms(dom,sps)%wx(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%wx(i, j - 1, k) + cudaDoms(dom,sps)%wx(i, j, k))
-    !         w_y = fourth * (cudaDoms(dom,sps)%wy(i, j - 1, k - 1) + cudaDoms(dom,sps)%wy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%wy(i, j - 1, k) + cudaDoms(dom,sps)%wy(i, j, k))
-    !         w_z = fourth * (cudaDoms(dom,sps)%wz(i, j - 1, k - 1) + cudaDoms(dom,sps)%wz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%wz(i, j - 1, k) + cudaDoms(dom,sps)%wz(i, j, k))
-
-    !         q_x = fourth * (cudaDoms(dom,sps)%qx(i, j - 1, k - 1) + cudaDoms(dom,sps)%qx(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%qx(i, j - 1, k) + cudaDoms(dom,sps)%qx(i, j, k))
-    !         q_y = fourth * (cudaDoms(dom,sps)%qy(i, j - 1, k - 1) + cudaDoms(dom,sps)%qy(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%qy(i, j - 1, k) + cudaDoms(dom,sps)%qy(i, j, k))
-    !         q_z = fourth * (cudaDoms(dom,sps)%qz(i, j - 1, k - 1) + cudaDoms(dom,sps)%qz(i, j, k - 1) &
-    !                         + cudaDoms(dom,sps)%qz(i, j - 1, k) + cudaDoms(dom,sps)%qz(i, j, k))
-
-    !         ! The gradients in the normal direction are corrected, such
-    !         ! that no averaging takes places here.
-    !         ! First determine the vector in the direction from the
-    !         ! cell center i to cell center i+1.
-
-    !         ssx = eighth * (cudaDoms(dom,sps)%x(i + 1, j - 1, k - 1, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 1) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j - 1, k, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 1) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j, k - 1, 1) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 1) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j, k, 1) - cudaDoms(dom,sps)%x(i - 1, j, k, 1))
-    !         ssy = eighth * (cudaDoms(dom,sps)%x(i + 1, j - 1, k - 1, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 2) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j - 1, k, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 2) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j, k - 1, 2) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 2) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j, k, 2) - cudaDoms(dom,sps)%x(i - 1, j, k, 2))
-    !         ssz = eighth * (cudaDoms(dom,sps)%x(i + 1, j - 1, k - 1, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 3) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j - 1, k, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 3) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j, k - 1, 3) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 3) &
-    !                         + cudaDoms(dom,sps)%x(i + 1, j, k, 3) - cudaDoms(dom,sps)%x(i - 1, j, k, 3))
-
-    !         ! Determine the length of this vector and create the
-    !         ! unit normal.
-
-    !         snrm = one / sqrt(ssx * ssx + ssy * ssy + ssz * ssz)
-    !         ssx = snrm * ssx
-    !         ssy = snrm * ssy
-    !         ssz = snrm * ssz
-
-    !         ! Correct the gradients.
-
-    !         corr = u_x * ssx + u_y * ssy + u_z * ssz &
-    !                - (cudaDoms(dom,sps)%w(i + 1, j, k, ivx) - cudaDoms(dom,sps)%w(i, j, k, ivx)) * snrm
-    !         u_x = u_x - corr * ssx
-    !         u_y = u_y - corr * ssy
-    !         u_z = u_z - corr * ssz
-
-    !         corr = v_x * ssx + v_y * ssy + v_z * ssz &
-    !                - (cudaDoms(dom,sps)%w(i + 1, j, k, ivy) - cudaDoms(dom,sps)%w(i, j, k, ivy)) * snrm
-    !         v_x = v_x - corr * ssx
-    !         v_y = v_y - corr * ssy
-    !         v_z = v_z - corr * ssz
-
-    !         corr = w_x * ssx + w_y * ssy + w_z * ssz &
-    !                - (cudaDoms(dom,sps)%w(i + 1, j, k, ivz) - cudaDoms(dom,sps)%w(i, j, k, ivz)) * snrm
-    !         w_x = w_x - corr * ssx
-    !         w_y = w_y - corr * ssy
-    !         w_z = w_z - corr * ssz
-
-    !         corr = q_x * ssx + q_y * ssy + q_z * ssz &
-    !                + (cudaDoms(dom,sps)%aa(i + 1, j, k) - cudaDoms(dom,sps)%aa(i, j, k)) * snrm
-    !         q_x = q_x - corr * ssx
-    !         q_y = q_y - corr * ssy
-    !         q_z = q_z - corr * ssz
-
-    !         ! Compute the stress tensor and the heat flux vector.
-    !         ! We remove the viscosity from the stress tensor (tau)
-    !         ! to define tauS since we still need to separate between
-    !         ! laminar and turbulent stress for QCR.
-    !         ! Therefore, laminar tau = mue*tauS, turbulent
-    !         ! tau = mue*tauS, and total tau = mut*tauS.
-
-    !         fracDiv = twoThird * (u_x + v_y + w_z)
-
-    !         tauxxS = two * u_x - fracDiv
-    !         tauyyS = two * v_y - fracDiv
-    !         tauzzS = two * w_z - fracDiv
-
-    !         tauxyS = u_y + v_x
-    !         tauxzS = u_z + w_x
-    !         tauyzS = v_z + w_y
-
-    !         q_x = heatCoef * q_x
-    !         q_y = heatCoef * q_y
-    !         q_z = heatCoef * q_z
-
-    !         ! Add QCR corrections if necessary
-    !         if (useQCR) then
-
-    !             ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
-    !             !
-    !             ! tau_ij,QCR = tau_ij - e_ij
-    !             !
-    !             ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
-    !             !
-    !             ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
-    !             !
-    !             ! We are computing O_ik as follows:
-    !             !
-    !             ! O_ik = 2*W_ik/den
-    !             !
-    !             ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
-
-    !             ! Compute denominator
-    !             den = sqrt(u_x * u_x + u_y * u_y + u_z * u_z + &
-    !                        v_x * v_x + v_y * v_y + v_z * v_z + &
-    !                        w_x * w_x + w_y * w_y + w_z * w_z)
-
-    !             ! Denominator should be limited to avoid division by zero in regions with
-    !             ! no gradients
-    !             den = max(den, xminn)
-
-    !             ! Compute factor that will multiply all tensor components.
-    !             ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
-    !             ! components as well.
-    !             fact = mue * Ccr1 / den
-
-    !             ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
-    !             ! The diagonals of the vorticity tensor components are always zero
-    !             Wxy = u_y - v_x
-    !             Wxz = u_z - w_x
-    !             Wyz = v_z - w_y
-    !             Wyx = -Wxy
-    !             Wzx = -Wxz
-    !             Wzy = -Wyz
-
-    !             ! Compute the extra terms of the Boussinesq relation
-    !             exx = fact * (Wxy * tauxyS + Wxz * tauxzS) * two
-    !             eyy = fact * (Wyx * tauxyS + Wyz * tauyzS) * two
-    !             ezz = fact * (Wzx * tauxzS + Wzy * tauyzS) * two
-
-    !             exy = fact * (Wxy * tauyyS + Wxz * tauyzS + &
-    !                           Wyx * tauxxS + Wyz * tauxzS)
-    !             exz = fact * (Wxy * tauyzS + Wxz * tauzzS + &
-    !                           Wzx * tauxxS + Wzy * tauxyS)
-    !             eyz = fact * (Wyx * tauxzS + Wyz * tauzzS + &
-    !                           Wzx * tauxyS + Wzy * tauyyS)
-
-    !             ! Apply the total viscosity to the stress tensor and add extra terms
-    !             tauxx = mut * tauxxS - exx
-    !             tauyy = mut * tauyyS - eyy
-    !             tauzz = mut * tauzzS - ezz
-    !             tauxy = mut * tauxyS - exy
-    !             tauxz = mut * tauxzS - exz
-    !             tauyz = mut * tauyzS - eyz
-
-    !         else
-
-    !             ! Just apply the total viscosity to the stress tensor
-    !             tauxx = mut * tauxxS
-    !             tauyy = mut * tauyyS
-    !             tauzz = mut * tauzzS
-    !             tauxy = mut * tauxyS
-    !             tauxz = mut * tauxzS
-    !             tauyz = mut * tauyzS
-
-    !         end if
-
-    !         ! Compute the average velocities for the face. Remember that
-    !         ! the velocities are stored and not the momentum.
-
-    !         ubar = half * (cudaDoms(dom,sps)%w(i, j, k, ivx) + cudaDoms(dom,sps)%w(i + 1, j, k, ivx))
-    !         vbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivy) + cudaDoms(dom,sps)%w(i + 1, j, k, ivy))
-    !         wbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivz) + cudaDoms(dom,sps)%w(i + 1, j, k, ivz))
-
-    !         ! Compute the viscous fluxes for this i-face.
-
-    !         fmx = tauxx * cudaDoms(dom,sps)%sI(i, j, k, 1) + tauxy * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-    !               + tauxz * cudaDoms(dom,sps)%sI(i, j, k, 3)
-    !         fmy = tauxy * cudaDoms(dom,sps)%sI(i, j, k, 1) + tauyy * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-    !               + tauyz * cudaDoms(dom,sps)%sI(i, j, k, 3)
-    !         fmz = tauxz * cudaDoms(dom,sps)%sI(i, j, k, 1) + tauyz * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-    !               + tauzz * cudaDoms(dom,sps)%sI(i, j, k, 3)
-    !         frhoE = (ubar * tauxx + vbar * tauxy + wbar * tauxz) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
-    !                 + (ubar * tauxy + vbar * tauyy + wbar * tauyz) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-    !                 + (ubar * tauxz + vbar * tauyz + wbar * tauzz) * cudaDoms(dom,sps)%sI(i, j, k, 3) &
-    !                 - q_x * cudaDoms(dom,sps)%sI(i, j, k, 1) - q_y * cudaDoms(dom,sps)%sI(i, j, k, 2) - q_z * cudaDoms(dom,sps)%sI(i, j, k, 3)
-
-    !         ! Update the residuals of cell i and i+1.
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imx), fmx)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imy), fmy)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imz), fmz)
-    !         tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, irhoE), frhoE)
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fmx
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fmy
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fmz
-    !         ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - frhoE
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imx), fmx)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imy), fmy)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imz), fmz)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, irhoE), frhoE)
+            ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fmx
+            ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fmy
+            ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fmz
+            ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - frhoE
+
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imx), fmx)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imy), fmy)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, imz), fmz)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE), frhoE)
+            ! cudaDoms(dom,sps)%fw(i, j, k + 1, imx) = cudaDoms(dom,sps)%fw(i, j, k + 1, imx) + fmx
+            ! cudaDoms(dom,sps)%fw(i, j, k + 1, imy) = cudaDoms(dom,sps)%fw(i, j, k + 1, imy) + fmy
+            ! cudaDoms(dom,sps)%fw(i, j, k + 1, imz) = cudaDoms(dom,sps)%fw(i, j, k + 1, imz) + fmz
+            ! cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE) = cudaDoms(dom,sps)%fw(i, j, k + 1, irhoE) + frhoE
+
+            ! Temporarily store the shear stress and heat flux, even
+            ! if we won't need it. This can still vectorize
+        end if
+
+        !
+        !         Viscous fluxes in the j-direction.
+        !
+        !loop k 2 to cudaDoms(dom,sps)%kl, j 1 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
+        if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. k>=2 .and. i>=2 .and. j>=1) then
+            ! Set the value of the porosity. If not zero, it is set
+                    ! to average the eddy-viscosity and to take the factor
+                    ! rFilv into account.
+
+            por = half * rFilv
+            if (cudaDoms(dom,sps)%porJ(i, j, k) == noFlux) por = zero
+
+            ! Compute the laminar and (if present) the eddy viscosities
+            ! multiplied by the porosity. Compute the factor in front of
+            ! the gradients of the speed of sound squared for the heat
+            ! flux.
+
+            mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i, j + 1, k))
+            mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j + 1, k))
+            mut = mul + mue
+
+            gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i, j + 1, k)) - one
+            factLamHeat = one / (prandtl * gm1)
+            factTurbHeat = one / (prandtlTurb * gm1)
+
+            heatCoef = mul * factLamHeat + mue * factTurbHeat
+
+            ! Compute the gradients at the face by averaging the four
+            ! nodal values.
+
+            u_x = fourth * (cudaDoms(dom,sps)%ux(i - 1, j, k - 1) + cudaDoms(dom,sps)%ux(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%ux(i - 1, j, k) + cudaDoms(dom,sps)%ux(i, j, k))
+            u_y = fourth * (cudaDoms(dom,sps)%uy(i - 1, j, k - 1) + cudaDoms(dom,sps)%uy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%uy(i - 1, j, k) + cudaDoms(dom,sps)%uy(i, j, k))
+            u_z = fourth * (cudaDoms(dom,sps)%uz(i - 1, j, k - 1) + cudaDoms(dom,sps)%uz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%uz(i - 1, j, k) + cudaDoms(dom,sps)%uz(i, j, k))
+
+            v_x = fourth * (cudaDoms(dom,sps)%vx(i - 1, j, k - 1) + cudaDoms(dom,sps)%vx(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%vx(i - 1, j, k) + cudaDoms(dom,sps)%vx(i, j, k))
+            v_y = fourth * (cudaDoms(dom,sps)%vy(i - 1, j, k - 1) + cudaDoms(dom,sps)%vy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%vy(i - 1, j, k) + cudaDoms(dom,sps)%vy(i, j, k))
+            v_z = fourth * (cudaDoms(dom,sps)%vz(i - 1, j, k - 1) + cudaDoms(dom,sps)%vz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%vz(i - 1, j, k) + cudaDoms(dom,sps)%vz(i, j, k))
+
+            w_x = fourth * (cudaDoms(dom,sps)%wx(i - 1, j, k - 1) + cudaDoms(dom,sps)%wx(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%wx(i - 1, j, k) + cudaDoms(dom,sps)%wx(i, j, k))
+            w_y = fourth * (cudaDoms(dom,sps)%wy(i - 1, j, k - 1) + cudaDoms(dom,sps)%wy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%wy(i - 1, j, k) + cudaDoms(dom,sps)%wy(i, j, k))
+            w_z = fourth * (cudaDoms(dom,sps)%wz(i - 1, j, k - 1) + cudaDoms(dom,sps)%wz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%wz(i - 1, j, k) + cudaDoms(dom,sps)%wz(i, j, k))
+
+            q_x = fourth * (cudaDoms(dom,sps)%qx(i - 1, j, k - 1) + cudaDoms(dom,sps)%qx(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%qx(i - 1, j, k) + cudaDoms(dom,sps)%qx(i, j, k))
+            q_y = fourth * (cudaDoms(dom,sps)%qy(i - 1, j, k - 1) + cudaDoms(dom,sps)%qy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%qy(i - 1, j, k) + cudaDoms(dom,sps)%qy(i, j, k))
+            q_z = fourth * (cudaDoms(dom,sps)%qz(i - 1, j, k - 1) + cudaDoms(dom,sps)%qz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%qz(i - 1, j, k) + cudaDoms(dom,sps)%qz(i, j, k))
+
+            ! The gradients in the normal direction are corrected, such
+            ! that no averaging takes places here.
+            ! First determine the vector in the direction from the
+            ! cell center j to cell center j+1.
+
+            ssx = eighth * (cudaDoms(dom,sps)%x(i - 1, j + 1, k - 1, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 1) &
+                            + cudaDoms(dom,sps)%x(i - 1, j + 1, k, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 1) &
+                            + cudaDoms(dom,sps)%x(i, j + 1, k - 1, 1) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 1) &
+                            + cudaDoms(dom,sps)%x(i, j + 1, k, 1) - cudaDoms(dom,sps)%x(i, j - 1, k, 1))
+            ssy = eighth * (cudaDoms(dom,sps)%x(i - 1, j + 1, k - 1, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 2) &
+                            + cudaDoms(dom,sps)%x(i - 1, j + 1, k, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 2) &
+                            + cudaDoms(dom,sps)%x(i, j + 1, k - 1, 2) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 2) &
+                            + cudaDoms(dom,sps)%x(i, j + 1, k, 2) - cudaDoms(dom,sps)%x(i, j - 1, k, 2))
+            ssz = eighth * (cudaDoms(dom,sps)%x(i - 1, j + 1, k - 1, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 3) &
+                            + cudaDoms(dom,sps)%x(i - 1, j + 1, k, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 3) &
+                            + cudaDoms(dom,sps)%x(i, j + 1, k - 1, 3) - cudaDoms(dom,sps)%x(i, j - 1, k - 1, 3) &
+                            + cudaDoms(dom,sps)%x(i, j + 1, k, 3) - cudaDoms(dom,sps)%x(i, j - 1, k, 3))
+
+            ! Determine the length of this vector and create the
+            ! unit normal.
+
+            snrm = one / sqrt(ssx * ssx + ssy * ssy + ssz * ssz)
+            ssx = snrm * ssx
+            ssy = snrm * ssy
+            ssz = snrm * ssz
+
+            ! Correct the gradients.
+
+            corr = u_x * ssx + u_y * ssy + u_z * ssz &
+                    - (cudaDoms(dom,sps)%w(i, j + 1, k, ivx) - cudaDoms(dom,sps)%w(i, j, k, ivx)) * snrm
+            u_x = u_x - corr * ssx
+            u_y = u_y - corr * ssy
+            u_z = u_z - corr * ssz
+
+            corr = v_x * ssx + v_y * ssy + v_z * ssz &
+                    - (cudaDoms(dom,sps)%w(i, j + 1, k, ivy) - cudaDoms(dom,sps)%w(i, j, k, ivy)) * snrm
+            v_x = v_x - corr * ssx
+            v_y = v_y - corr * ssy
+            v_z = v_z - corr * ssz
+
+            corr = w_x * ssx + w_y * ssy + w_z * ssz &
+                    - (cudaDoms(dom,sps)%w(i, j + 1, k, ivz) - cudaDoms(dom,sps)%w(i, j, k, ivz)) * snrm
+            w_x = w_x - corr * ssx
+            w_y = w_y - corr * ssy
+            w_z = w_z - corr * ssz
+
+            corr = q_x * ssx + q_y * ssy + q_z * ssz &
+                    + (cudaDoms(dom,sps)%aa(i, j + 1, k) - cudaDoms(dom,sps)%aa(i, j, k)) * snrm
+            q_x = q_x - corr * ssx
+            q_y = q_y - corr * ssy
+            q_z = q_z - corr * ssz
+
+            ! Compute the stress tensor and the heat flux vector.
+            ! We remove the viscosity from the stress tensor (tau)
+            ! to define tauS since we still need to separate between
+            ! laminar and turbulent stress for QCR.
+            ! Therefore, laminar tau = mue*tauS, turbulent
+            ! tau = mue*tauS, and total tau = mut*tauS.
+
+            fracDiv = twoThird * (u_x + v_y + w_z)
+
+            tauxxS = two * u_x - fracDiv
+            tauyyS = two * v_y - fracDiv
+            tauzzS = two * w_z - fracDiv
+
+            tauxyS = u_y + v_x
+            tauxzS = u_z + w_x
+            tauyzS = v_z + w_y
+
+            q_x = heatCoef * q_x
+            q_y = heatCoef * q_y
+            q_z = heatCoef * q_z
+
+            ! Add QCR corrections if necessary
+            if (useQCR) then
+
+                ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
+                !
+                ! tau_ij,QCR = tau_ij - e_ij
+                !
+                ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
+                !
+                ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
+                !
+                ! We are computing O_ik as follows:
+                !
+                ! O_ik = 2*W_ik/den
+                !
+                ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
+
+                ! Compute denominator
+                den = sqrt(u_x * u_x + u_y * u_y + u_z * u_z + &
+                            v_x * v_x + v_y * v_y + v_z * v_z + &
+                            w_x * w_x + w_y * w_y + w_z * w_z)
+
+                ! Denominator should be limited to avoid division by zero in regions with
+                ! no gradients
+                den = max(den, xminn)
+
+                ! Compute factor that will multiply all tensor components.
+                ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
+                ! components as well.
+                fact = mue * Ccr1 / den
+
+                ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+                ! The diagonals of the vorticity tensor components are always zero
+                Wxy = u_y - v_x
+                Wxz = u_z - w_x
+                Wyz = v_z - w_y
+                Wyx = -Wxy
+                Wzx = -Wxz
+                Wzy = -Wyz
+
+                ! Compute the extra terms of the Boussinesq relation
+                exx = fact * (Wxy * tauxyS + Wxz * tauxzS) * two
+                eyy = fact * (Wyx * tauxyS + Wyz * tauyzS) * two
+                ezz = fact * (Wzx * tauxzS + Wzy * tauyzS) * two
+
+                exy = fact * (Wxy * tauyyS + Wxz * tauyzS + &
+                                Wyx * tauxxS + Wyz * tauxzS)
+                exz = fact * (Wxy * tauyzS + Wxz * tauzzS + &
+                                Wzx * tauxxS + Wzy * tauxyS)
+                eyz = fact * (Wyx * tauxzS + Wyz * tauzzS + &
+                                Wzx * tauxyS + Wzy * tauyyS)
+
+                ! Apply the total viscosity to the stress tensor and add extra terms
+                tauxx = mut * tauxxS - exx
+                tauyy = mut * tauyyS - eyy
+                tauzz = mut * tauzzS - ezz
+                tauxy = mut * tauxyS - exy
+                tauxz = mut * tauxzS - exz
+                tauyz = mut * tauyzS - eyz
+
+            else
+
+                ! Just apply the total viscosity to the stress tensor
+                tauxx = mut * tauxxS
+                tauyy = mut * tauyyS
+                tauzz = mut * tauzzS
+                tauxy = mut * tauxyS
+                tauxz = mut * tauxzS
+                tauyz = mut * tauyzS
+
+            end if
+
+            ! Compute the average velocities for the face. Remember that
+            ! the velocities are stored and not the momentum.
+
+            ubar = half * (cudaDoms(dom,sps)%w(i, j, k, ivx) + cudaDoms(dom,sps)%w(i, j + 1, k, ivx))
+            vbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivy) + cudaDoms(dom,sps)%w(i, j + 1, k, ivy))
+            wbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivz) + cudaDoms(dom,sps)%w(i, j + 1, k, ivz))
+
+            ! Compute the viscous fluxes for this j-face.
+
+            fmx = tauxx * cudaDoms(dom,sps)%sJ(i, j, k, 1) + tauxy * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
+                    + tauxz * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+            fmy = tauxy * cudaDoms(dom,sps)%sJ(i, j, k, 1) + tauyy * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
+                    + tauyz * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+            fmz = tauxz * cudaDoms(dom,sps)%sJ(i, j, k, 1) + tauyz * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
+                    + tauzz * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+            frhoE = (ubar * tauxx + vbar * tauxy + wbar * tauxz) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
+                    + (ubar * tauxy + vbar * tauyy + wbar * tauyz) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
+                    + (ubar * tauxz + vbar * tauyz + wbar * tauzz) * cudaDoms(dom,sps)%sJ(i, j, k, 3) &
+                    - q_x * cudaDoms(dom,sps)%sJ(i, j, k, 1) - q_y * cudaDoms(dom,sps)%sJ(i, j, k, 2) - q_z * cudaDoms(dom,sps)%sJ(i, j, k, 3)
+
+            ! Update the residuals of cell j and j+1.
+
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imx), fmx)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imy), fmy)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imz), fmz)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, irhoE), frhoE)
+            ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fmx
+            ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fmy
+            ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fmz
+            ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - frhoE
+
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imx), fmx)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imy), fmy)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imz), fmz)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE), frhoE)
+            ! cudaDoms(dom,sps)%fw(i, j + 1, k, imx) = cudaDoms(dom,sps)%fw(i, j + 1, k, imx) + fmx
+            ! cudaDoms(dom,sps)%fw(i, j + 1, k, imy) = cudaDoms(dom,sps)%fw(i, j + 1, k, imy) + fmy
+            ! cudaDoms(dom,sps)%fw(i, j + 1, k, imz) = cudaDoms(dom,sps)%fw(i, j + 1, k, imz) + fmz
+            ! cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) = cudaDoms(dom,sps)%fw(i, j + 1, k, irhoE) + frhoE
+        end if  
+        !
+        !         Viscous fluxes in the i-direction.
+        !
+        !loop k 2 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 1 to cudaDoms(dom,sps)%il
+        if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. k>=2 .and. j>=2 .and. i>=1) then
+            ! Set the value of the porosity. If not zero, it is set
+            ! to average the eddy-viscosity and to take the factor
+            ! rFilv into account.
+
+            por = half * rFilv
+            if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) por = zero
+
+            ! Compute the laminar and (if present) the eddy viscosities
+            ! multiplied the porosity. Compute the factor in front of
+            ! the gradients of the speed of sound squared for the heat
+            ! flux.
+
+            mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i + 1, j, k))
+            mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i + 1, j, k))
+            mut = mul + mue
+
+            gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i + 1, j, k)) - one
+            factLamHeat = one / (prandtl * gm1)
+            factTurbHeat = one / (prandtlTurb * gm1)
+
+            heatCoef = mul * factLamHeat + mue * factTurbHeat
+
+            ! Compute the gradients at the face by averaging the four
+            ! nodal values.
+
+            u_x = fourth * (cudaDoms(dom,sps)%ux(i, j - 1, k - 1) + cudaDoms(dom,sps)%ux(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%ux(i, j - 1, k) + cudaDoms(dom,sps)%ux(i, j, k))
+            u_y = fourth * (cudaDoms(dom,sps)%uy(i, j - 1, k - 1) + cudaDoms(dom,sps)%uy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%uy(i, j - 1, k) + cudaDoms(dom,sps)%uy(i, j, k))
+            u_z = fourth * (cudaDoms(dom,sps)%uz(i, j - 1, k - 1) + cudaDoms(dom,sps)%uz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%uz(i, j - 1, k) + cudaDoms(dom,sps)%uz(i, j, k))
+
+            v_x = fourth * (cudaDoms(dom,sps)%vx(i, j - 1, k - 1) + cudaDoms(dom,sps)%vx(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%vx(i, j - 1, k) + cudaDoms(dom,sps)%vx(i, j, k))
+            v_y = fourth * (cudaDoms(dom,sps)%vy(i, j - 1, k - 1) + cudaDoms(dom,sps)%vy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%vy(i, j - 1, k) + cudaDoms(dom,sps)%vy(i, j, k))
+            v_z = fourth * (cudaDoms(dom,sps)%vz(i, j - 1, k - 1) + cudaDoms(dom,sps)%vz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%vz(i, j - 1, k) + cudaDoms(dom,sps)%vz(i, j, k))
+
+            w_x = fourth * (cudaDoms(dom,sps)%wx(i, j - 1, k - 1) + cudaDoms(dom,sps)%wx(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%wx(i, j - 1, k) + cudaDoms(dom,sps)%wx(i, j, k))
+            w_y = fourth * (cudaDoms(dom,sps)%wy(i, j - 1, k - 1) + cudaDoms(dom,sps)%wy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%wy(i, j - 1, k) + cudaDoms(dom,sps)%wy(i, j, k))
+            w_z = fourth * (cudaDoms(dom,sps)%wz(i, j - 1, k - 1) + cudaDoms(dom,sps)%wz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%wz(i, j - 1, k) + cudaDoms(dom,sps)%wz(i, j, k))
+
+            q_x = fourth * (cudaDoms(dom,sps)%qx(i, j - 1, k - 1) + cudaDoms(dom,sps)%qx(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%qx(i, j - 1, k) + cudaDoms(dom,sps)%qx(i, j, k))
+            q_y = fourth * (cudaDoms(dom,sps)%qy(i, j - 1, k - 1) + cudaDoms(dom,sps)%qy(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%qy(i, j - 1, k) + cudaDoms(dom,sps)%qy(i, j, k))
+            q_z = fourth * (cudaDoms(dom,sps)%qz(i, j - 1, k - 1) + cudaDoms(dom,sps)%qz(i, j, k - 1) &
+                            + cudaDoms(dom,sps)%qz(i, j - 1, k) + cudaDoms(dom,sps)%qz(i, j, k))
+
+            ! The gradients in the normal direction are corrected, such
+            ! that no averaging takes places here.
+            ! First determine the vector in the direction from the
+            ! cell center i to cell center i+1.
+
+            ssx = eighth * (cudaDoms(dom,sps)%x(i + 1, j - 1, k - 1, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 1) &
+                            + cudaDoms(dom,sps)%x(i + 1, j - 1, k, 1) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 1) &
+                            + cudaDoms(dom,sps)%x(i + 1, j, k - 1, 1) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 1) &
+                            + cudaDoms(dom,sps)%x(i + 1, j, k, 1) - cudaDoms(dom,sps)%x(i - 1, j, k, 1))
+            ssy = eighth * (cudaDoms(dom,sps)%x(i + 1, j - 1, k - 1, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 2) &
+                            + cudaDoms(dom,sps)%x(i + 1, j - 1, k, 2) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 2) &
+                            + cudaDoms(dom,sps)%x(i + 1, j, k - 1, 2) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 2) &
+                            + cudaDoms(dom,sps)%x(i + 1, j, k, 2) - cudaDoms(dom,sps)%x(i - 1, j, k, 2))
+            ssz = eighth * (cudaDoms(dom,sps)%x(i + 1, j - 1, k - 1, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k - 1, 3) &
+                            + cudaDoms(dom,sps)%x(i + 1, j - 1, k, 3) - cudaDoms(dom,sps)%x(i - 1, j - 1, k, 3) &
+                            + cudaDoms(dom,sps)%x(i + 1, j, k - 1, 3) - cudaDoms(dom,sps)%x(i - 1, j, k - 1, 3) &
+                            + cudaDoms(dom,sps)%x(i + 1, j, k, 3) - cudaDoms(dom,sps)%x(i - 1, j, k, 3))
+
+            ! Determine the length of this vector and create the
+            ! unit normal.
+
+            snrm = one / sqrt(ssx * ssx + ssy * ssy + ssz * ssz)
+            ssx = snrm * ssx
+            ssy = snrm * ssy
+            ssz = snrm * ssz
+
+            ! Correct the gradients.
+
+            corr = u_x * ssx + u_y * ssy + u_z * ssz &
+                   - (cudaDoms(dom,sps)%w(i + 1, j, k, ivx) - cudaDoms(dom,sps)%w(i, j, k, ivx)) * snrm
+            u_x = u_x - corr * ssx
+            u_y = u_y - corr * ssy
+            u_z = u_z - corr * ssz
+
+            corr = v_x * ssx + v_y * ssy + v_z * ssz &
+                   - (cudaDoms(dom,sps)%w(i + 1, j, k, ivy) - cudaDoms(dom,sps)%w(i, j, k, ivy)) * snrm
+            v_x = v_x - corr * ssx
+            v_y = v_y - corr * ssy
+            v_z = v_z - corr * ssz
+
+            corr = w_x * ssx + w_y * ssy + w_z * ssz &
+                   - (cudaDoms(dom,sps)%w(i + 1, j, k, ivz) - cudaDoms(dom,sps)%w(i, j, k, ivz)) * snrm
+            w_x = w_x - corr * ssx
+            w_y = w_y - corr * ssy
+            w_z = w_z - corr * ssz
+
+            corr = q_x * ssx + q_y * ssy + q_z * ssz &
+                   + (cudaDoms(dom,sps)%aa(i + 1, j, k) - cudaDoms(dom,sps)%aa(i, j, k)) * snrm
+            q_x = q_x - corr * ssx
+            q_y = q_y - corr * ssy
+            q_z = q_z - corr * ssz
+
+            ! Compute the stress tensor and the heat flux vector.
+            ! We remove the viscosity from the stress tensor (tau)
+            ! to define tauS since we still need to separate between
+            ! laminar and turbulent stress for QCR.
+            ! Therefore, laminar tau = mue*tauS, turbulent
+            ! tau = mue*tauS, and total tau = mut*tauS.
+
+            fracDiv = twoThird * (u_x + v_y + w_z)
+
+            tauxxS = two * u_x - fracDiv
+            tauyyS = two * v_y - fracDiv
+            tauzzS = two * w_z - fracDiv
+
+            tauxyS = u_y + v_x
+            tauxzS = u_z + w_x
+            tauyzS = v_z + w_y
+
+            q_x = heatCoef * q_x
+            q_y = heatCoef * q_y
+            q_z = heatCoef * q_z
+
+            ! Add QCR corrections if necessary
+            if (useQCR) then
+
+                ! In the QCR formulation, we add an extra term to the turbulent stress tensor:
+                !
+                ! tau_ij,QCR = tau_ij - e_ij
+                !
+                ! where, according to TMR website (http://turbmodels.larc.nasa.gov/spalart.html):
+                !
+                ! e_ij = Ccr1*(O_ik*tau_jk + O_jk*tau_ik)
+                !
+                ! We are computing O_ik as follows:
+                !
+                ! O_ik = 2*W_ik/den
+                !
+                ! Remember that the tau_ij in e_ij should use only the eddy viscosity!
+
+                ! Compute denominator
+                den = sqrt(u_x * u_x + u_y * u_y + u_z * u_z + &
+                           v_x * v_x + v_y * v_y + v_z * v_z + &
+                           w_x * w_x + w_y * w_y + w_z * w_z)
+
+                ! Denominator should be limited to avoid division by zero in regions with
+                ! no gradients
+                den = max(den, xminn)
+
+                ! Compute factor that will multiply all tensor components.
+                ! Here we add the eddy viscosity that should multiply the stress tensor (tau)
+                ! components as well.
+                fact = mue * Ccr1 / den
+
+                ! Compute off-diagonal terms of vorticity tensor (we will ommit the 1/2)
+                ! The diagonals of the vorticity tensor components are always zero
+                Wxy = u_y - v_x
+                Wxz = u_z - w_x
+                Wyz = v_z - w_y
+                Wyx = -Wxy
+                Wzx = -Wxz
+                Wzy = -Wyz
+
+                ! Compute the extra terms of the Boussinesq relation
+                exx = fact * (Wxy * tauxyS + Wxz * tauxzS) * two
+                eyy = fact * (Wyx * tauxyS + Wyz * tauyzS) * two
+                ezz = fact * (Wzx * tauxzS + Wzy * tauyzS) * two
+
+                exy = fact * (Wxy * tauyyS + Wxz * tauyzS + &
+                              Wyx * tauxxS + Wyz * tauxzS)
+                exz = fact * (Wxy * tauyzS + Wxz * tauzzS + &
+                              Wzx * tauxxS + Wzy * tauxyS)
+                eyz = fact * (Wyx * tauxzS + Wyz * tauzzS + &
+                              Wzx * tauxyS + Wzy * tauyyS)
+
+                ! Apply the total viscosity to the stress tensor and add extra terms
+                tauxx = mut * tauxxS - exx
+                tauyy = mut * tauyyS - eyy
+                tauzz = mut * tauzzS - ezz
+                tauxy = mut * tauxyS - exy
+                tauxz = mut * tauxzS - exz
+                tauyz = mut * tauyzS - eyz
+
+            else
+
+                ! Just apply the total viscosity to the stress tensor
+                tauxx = mut * tauxxS
+                tauyy = mut * tauyyS
+                tauzz = mut * tauzzS
+                tauxy = mut * tauxyS
+                tauxz = mut * tauxzS
+                tauyz = mut * tauyzS
+
+            end if
+
+            ! Compute the average velocities for the face. Remember that
+            ! the velocities are stored and not the momentum.
+
+            ubar = half * (cudaDoms(dom,sps)%w(i, j, k, ivx) + cudaDoms(dom,sps)%w(i + 1, j, k, ivx))
+            vbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivy) + cudaDoms(dom,sps)%w(i + 1, j, k, ivy))
+            wbar = half * (cudaDoms(dom,sps)%w(i, j, k, ivz) + cudaDoms(dom,sps)%w(i + 1, j, k, ivz))
+
+            ! Compute the viscous fluxes for this i-face.
+
+            fmx = tauxx * cudaDoms(dom,sps)%sI(i, j, k, 1) + tauxy * cudaDoms(dom,sps)%sI(i, j, k, 2) &
+                  + tauxz * cudaDoms(dom,sps)%sI(i, j, k, 3)
+            fmy = tauxy * cudaDoms(dom,sps)%sI(i, j, k, 1) + tauyy * cudaDoms(dom,sps)%sI(i, j, k, 2) &
+                  + tauyz * cudaDoms(dom,sps)%sI(i, j, k, 3)
+            fmz = tauxz * cudaDoms(dom,sps)%sI(i, j, k, 1) + tauyz * cudaDoms(dom,sps)%sI(i, j, k, 2) &
+                  + tauzz * cudaDoms(dom,sps)%sI(i, j, k, 3)
+            frhoE = (ubar * tauxx + vbar * tauxy + wbar * tauxz) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
+                    + (ubar * tauxy + vbar * tauyy + wbar * tauyz) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
+                    + (ubar * tauxz + vbar * tauyz + wbar * tauzz) * cudaDoms(dom,sps)%sI(i, j, k, 3) &
+                    - q_x * cudaDoms(dom,sps)%sI(i, j, k, 1) - q_y * cudaDoms(dom,sps)%sI(i, j, k, 2) - q_z * cudaDoms(dom,sps)%sI(i, j, k, 3)
+
+            ! Update the residuals of cell i and i+1.
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imx), fmx)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imy), fmy)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, imz), fmz)
+            tmp = atomicsub(cudaDoms(dom,sps)%fw(i, j, k, irhoE), frhoE)
+            ! cudaDoms(dom,sps)%fw(i, j, k, imx) = cudaDoms(dom,sps)%fw(i, j, k, imx) - fmx
+            ! cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fmy
+            ! cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fmz
+            ! cudaDoms(dom,sps)%fw(i, j, k, irhoE) = cudaDoms(dom,sps)%fw(i, j, k, irhoE) - frhoE
             
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imx), fmx)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imy), fmy)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imz), fmz)
-    !         tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE), frhoE)
-    !         ! cudaDoms(dom,sps)%fw(i + 1, j, k, imx) = cudaDoms(dom,sps)%fw(i + 1, j, k, imx) + fmx
-    !         ! cudaDoms(dom,sps)%fw(i + 1, j, k, imy) = cudaDoms(dom,sps)%fw(i + 1, j, k, imy) + fmy
-    !         ! cudaDoms(dom,sps)%fw(i + 1, j, k, imz) = cudaDoms(dom,sps)%fw(i + 1, j, k, imz) + fmz
-    !         ! cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE) = cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE) + frhoE
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imx), fmx)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imy), fmy)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, imz), fmz)
+            tmp = atomicadd(cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE), frhoE)
+            ! cudaDoms(dom,sps)%fw(i + 1, j, k, imx) = cudaDoms(dom,sps)%fw(i + 1, j, k, imx) + fmx
+            ! cudaDoms(dom,sps)%fw(i + 1, j, k, imy) = cudaDoms(dom,sps)%fw(i + 1, j, k, imy) + fmy
+            ! cudaDoms(dom,sps)%fw(i + 1, j, k, imz) = cudaDoms(dom,sps)%fw(i + 1, j, k, imz) + fmz
+            ! cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE) = cudaDoms(dom,sps)%fw(i + 1, j, k, irhoE) + frhoE
 
-    !     end if
-    ! end subroutine viscousFlux
+        end if
+    end subroutine viscousFlux
 
     ! (hannah)
     attributes(global) subroutine saSource
@@ -4919,7 +4919,7 @@ module cudaResidual
         istat = cudaDeviceSynchronize()
         block_size = dim3(4, 4, 2)
         grid_size  = dim3(ceiling(real(ibmax+2) / block_size%x), ceiling(real(jbmax+2) / block_size%y), ceiling(real(kbmax+2) / block_size%z))
-        call viscousFlux_v1<<<grid_size, block_size>>>
+        call viscousFlux<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
         call CPU_TIME(finishVisc)
         print  '("CUDA Visc = ",E22.16," seconds.")', finishVisc-startVisc
@@ -4928,7 +4928,7 @@ module cudaResidual
       
 
     !   sumDwAndFw
-      call sumDwandFw_v1<<<grid_size, block_size>>>
+    !   call sumDwandFw_v1<<<grid_size, block_size>>>
       call sumDwandFw_v2<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
       call CPU_TIME(finish)
@@ -5041,9 +5041,9 @@ module cudaResidual
         !copy from gpu to cpu
         h_cudaDoms(1,1) = cudaDoms(1,1)
         h_dw(1:bie,1:bje,1:bke,1:nw) = h_cudaDoms(dom,sps)%dw(1:bie,1:bje,1:bke,1:nw)
-        h_dw2 = dw
+        ! h_dw2 = dw
 
-        h_dw = h_dw + h_dw2
+        ! h_dw = h_dw + h_dw2
         print *, bie,bje,bke
         h_ie = h_cudaDoms(1,1)%ie
         h_je =  h_cudaDoms(1,1)%je
@@ -5101,12 +5101,6 @@ module cudaResidual
         print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-qx_v1))
         print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-qy_v1))
         print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-qz_v1))
-        print *, qx_v1
-        print *, "========="
-        print *, qx_v2
-        print *, "========="
-        print *, qx_v1-qx_v2
-
 
 
         h_w = h_cudaDoms(dom,sps)%w
@@ -5146,6 +5140,7 @@ module cudaResidual
 
         h_gamma = h_cudaDoms(dom,sps)%gamma
         print  '("Max DIFF gamma = ",E22.16," seconds.")', maxval(abs(h_gamma-bgamma))
+        counter = 0
         !copy cudaDoms(dom,sps)%dw to res
         do k = 2,bkl
             do j = 2, bjl
