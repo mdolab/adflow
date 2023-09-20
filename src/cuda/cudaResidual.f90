@@ -5041,112 +5041,112 @@ module cudaResidual
         h_dw(1:bie,1:bje,1:bke,1:nw) = h_cudaDoms(dom,sps)%dw(1:bie,1:bje,1:bke,1:nw)
         ! h_dw2 = dw
 
-        ! h_dw = h_dw + h_dw2
-        print *, bie,bje,bke
-        h_ie = h_cudaDoms(1,1)%ie
-        h_je =  h_cudaDoms(1,1)%je
-        h_ke = h_cudaDoms(1,1)%ke
-        print *, h_ie,h_je,h_ke
-        baa = zero
-        call bcomputeSpeedOfSoundSquared
-        call ballNodalGradients
+        ! ! h_dw = h_dw + h_dw2
+        ! print *, bie,bje,bke
+        ! h_ie = h_cudaDoms(1,1)%ie
+        ! h_je =  h_cudaDoms(1,1)%je
+        ! h_ke = h_cudaDoms(1,1)%ke
+        ! print *, h_ie,h_je,h_ke
+        ! baa = zero
+        ! call bcomputeSpeedOfSoundSquared
+        ! call ballNodalGradients
 
 
-        ux_v2 = h_cudaDoms(dom,sps)%ux
-        uy_v2 = h_cudaDoms(dom,sps)%uy
-        uz_v2 = h_cudaDoms(dom,sps)%uz
+        ! ux_v2 = h_cudaDoms(dom,sps)%ux
+        ! uy_v2 = h_cudaDoms(dom,sps)%uy
+        ! uz_v2 = h_cudaDoms(dom,sps)%uz
         
-        ux_v1 = ux
-        uy_v1 = uy
-        uz_v1 = uz
+        ! ux_v1 = ux
+        ! uy_v1 = uy
+        ! uz_v1 = uz
         
-        ! print *,ux_v1(:,:,1)
-        ! print *,"=================="
-        ! print *, ux_v2(:,:,1)
-        ! print *,"=================="
-        ! print *, ux_v1(:,:,1)-ux_v2(:,:,1)
+        ! ! print *,ux_v1(:,:,1)
+        ! ! print *,"=================="
+        ! ! print *, ux_v2(:,:,1)
+        ! ! print *,"=================="
+        ! ! print *, ux_v1(:,:,1)-ux_v2(:,:,1)
 
-        print  '("Max DIFF UX = ",E22.16," seconds.")', maxval(abs(ux_v2-bux))
-        print  '("Max DIFF UY = ",E22.16," seconds.")', maxval(abs(uy_v2-buy))
-        print  '("Max DIFF UZ = ",E22.16," seconds.")', maxval(abs(uz_v2-buz))
+        ! print  '("Max DIFF UX = ",E22.16," seconds.")', maxval(abs(ux_v2-bux))
+        ! print  '("Max DIFF UY = ",E22.16," seconds.")', maxval(abs(uy_v2-buy))
+        ! print  '("Max DIFF UZ = ",E22.16," seconds.")', maxval(abs(uz_v2-buz))
 
-        vx_v2 = h_cudaDoms(dom,sps)%vx
-        vy_v2 = h_cudaDoms(dom,sps)%vy
-        vz_v2 = h_cudaDoms(dom,sps)%vz
-        vx_v1 = vx
-        vy_v1 = vy
-        vz_v1 = vz
-        print  '("Max DIFF VX = ",E22.16," seconds.")', maxval(abs(vx_v2-bvx))
-        print  '("Max DIFF Vy = ",E22.16," seconds.")', maxval(abs(vy_v2-bvy))
-        print  '("Max DIFF vz = ",E22.16," seconds.")', maxval(abs(vz_v2-bvz))
+        ! vx_v2 = h_cudaDoms(dom,sps)%vx
+        ! vy_v2 = h_cudaDoms(dom,sps)%vy
+        ! vz_v2 = h_cudaDoms(dom,sps)%vz
+        ! vx_v1 = vx
+        ! vy_v1 = vy
+        ! vz_v1 = vz
+        ! print  '("Max DIFF VX = ",E22.16," seconds.")', maxval(abs(vx_v2-bvx))
+        ! print  '("Max DIFF Vy = ",E22.16," seconds.")', maxval(abs(vy_v2-bvy))
+        ! print  '("Max DIFF vz = ",E22.16," seconds.")', maxval(abs(vz_v2-bvz))
 
-        wx_v2 = h_cudaDoms(dom,sps)%wx
-        wy_v2 = h_cudaDoms(dom,sps)%wy
-        wz_v2 = h_cudaDoms(dom,sps)%wz
-        wx_v1 = wx
-        wy_v1 = wy
-        wz_v1 = wz
-        print  '("Max DIFF wX = ",E22.16," seconds.")', maxval(abs(wx_v2-bwx))
-        print  '("Max DIFF wy = ",E22.16," seconds.")', maxval(abs(wy_v2-bwy))
-        print  '("Max DIFF wz = ",E22.16," seconds.")', maxval(abs(wz_v2-bwz))
+        ! wx_v2 = h_cudaDoms(dom,sps)%wx
+        ! wy_v2 = h_cudaDoms(dom,sps)%wy
+        ! wz_v2 = h_cudaDoms(dom,sps)%wz
+        ! wx_v1 = wx
+        ! wy_v1 = wy
+        ! wz_v1 = wz
+        ! print  '("Max DIFF wX = ",E22.16," seconds.")', maxval(abs(wx_v2-bwx))
+        ! print  '("Max DIFF wy = ",E22.16," seconds.")', maxval(abs(wy_v2-bwy))
+        ! print  '("Max DIFF wz = ",E22.16," seconds.")', maxval(abs(wz_v2-bwz))
 
-        qx_v2 = h_cudaDoms(dom,sps)%qx
-        qy_v2 = h_cudaDoms(dom,sps)%qy
-        qz_v2 = h_cudaDoms(dom,sps)%qz
-        qx_v1 = qx
-        qy_v1 = qy
-        qz_v1 = qz
-        print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-bqx))
-        print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-bqy))
-        print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-bqz))
-
-
-        h_w = h_cudaDoms(dom,sps)%w
-        print  '("Max DIFF w = ",E22.16," seconds.")', maxval(abs(h_w-bw))
+        ! qx_v2 = h_cudaDoms(dom,sps)%qx
+        ! qy_v2 = h_cudaDoms(dom,sps)%qy
+        ! qz_v2 = h_cudaDoms(dom,sps)%qz
+        ! qx_v1 = qx
+        ! qy_v1 = qy
+        ! qz_v1 = qz
+        ! print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-bqx))
+        ! print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-bqy))
+        ! print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-bqz))
 
 
-        ! Surface normals are good
-        h_sI = h_cudaDoms(dom,sps)%sI
-        h_sJ = h_cudaDoms(dom,sps)%sJ
-        h_sK = h_cudaDoms(dom,sps)%sK
-        print  '("Max DIFF sI = ",E22.16," seconds.")', maxval(abs(h_SI-bsI))
-        print  '("Max DIFF sJ = ",E22.16," seconds.")', maxval(abs(h_SJ-bsJ))
-        print  '("Max DIFF sK = ",E22.16," seconds.")', maxval(abs(h_SK-bsK))
-
-        h_vol = h_cudaDoms(dom,sps)%vol
-        print  '("Max DIFF vol = ",E22.16," seconds.")', maxval(abs(h_vol-bvol(1:bie, 1:bje, 1:bke)))
+        ! h_w = h_cudaDoms(dom,sps)%w
+        ! print  '("Max DIFF w = ",E22.16," seconds.")', maxval(abs(h_w-bw))
 
 
-        h_fw = h_cudaDoms(dom,sps)%fw(1:bie,1:bje,1:bke,1:nwf)
-        print *,size(h_fw(2:bil,2:bjl,2:bkl,1:nwf)),size(bfw(2:bil,2:bjl,2:bkl,1:nwf))
-        print *,"====="
-        print *, h_fw(2:bil,2:bjl,2:bkl,ivx)
-        print *,"====="
-        print *, bfw(2:bil,2:bjl,2:bkl,ivx)
-        print  '("Max DIFF fw = ",E22.16," seconds.")', maxval(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf) ))
+        ! ! Surface normals are good
+        ! h_sI = h_cudaDoms(dom,sps)%sI
+        ! h_sJ = h_cudaDoms(dom,sps)%sJ
+        ! h_sK = h_cudaDoms(dom,sps)%sK
+        ! print  '("Max DIFF sI = ",E22.16," seconds.")', maxval(abs(h_SI-bsI))
+        ! print  '("Max DIFF sJ = ",E22.16," seconds.")', maxval(abs(h_SJ-bsJ))
+        ! print  '("Max DIFF sK = ",E22.16," seconds.")', maxval(abs(h_SK-bsK))
 
-        ! print *, "volumes:"
-        ! print *,"========"
-        ! print *, h_vol
-        ! print *, "========"
-        ! print *, bvol
-        ! print *,"========"
-        ! print *, size(h_vol), size(bvol)
-        ! counter = 0
+        ! h_vol = h_cudaDoms(dom,sps)%vol
+        ! print  '("Max DIFF vol = ",E22.16," seconds.")', maxval(abs(h_vol-bvol(1:bie, 1:bje, 1:bke)))
+
+
+        ! h_fw = h_cudaDoms(dom,sps)%fw(1:bie,1:bje,1:bke,1:nwf)
+        ! print *,size(h_fw(2:bil,2:bjl,2:bkl,1:nwf)),size(bfw(2:bil,2:bjl,2:bkl,1:nwf))
+        ! print *,"====="
+        ! print *, h_fw(2:bil,2:bjl,2:bkl,ivx)
+        ! print *,"====="
+        ! print *, bfw(2:bil,2:bjl,2:bkl,ivx)
+        ! print  '("Max DIFF fw = ",E22.16," seconds.")', maxval(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf) ))
+
+        ! ! print *, "volumes:"
+        ! ! print *,"========"
+        ! ! print *, h_vol
+        ! ! print *, "========"
+        ! ! print *, bvol
+        ! ! print *,"========"
+        ! ! print *, size(h_vol), size(bvol)
+        ! ! counter = 0
         
-        ! Speed of sound 
-        h_aa = h_cudaDoms(dom,sps)%aa
-        h_aa_v1 = aa
-        print  '("Max DIFF aa = ",E22.16," seconds.")', maxval(abs(h_aa-h_aa_v1))
-        print  '("Max DIFF aa cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_aa_v1-baa(1:bie, 1:bje, 1:bke)))
+        ! ! Speed of sound 
+        ! h_aa = h_cudaDoms(dom,sps)%aa
+        ! h_aa_v1 = aa
+        ! print  '("Max DIFF aa = ",E22.16," seconds.")', maxval(abs(h_aa-h_aa_v1))
+        ! print  '("Max DIFF aa cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_aa_v1-baa(1:bie, 1:bje, 1:bke)))
 
-        print *, maxval(h_aa), maxval(baa),minval(h_aa),minval(baa)
+        ! print *, maxval(h_aa), maxval(baa),minval(h_aa),minval(baa)
 
-        h_p = h_cudaDoms(dom,sps)%p
-        print  '("Max DIFF p = ",E22.16," seconds.")', maxval(abs(h_p-bp))
+        ! h_p = h_cudaDoms(dom,sps)%p
+        ! print  '("Max DIFF p = ",E22.16," seconds.")', maxval(abs(h_p-bp))
 
-        h_gamma = h_cudaDoms(dom,sps)%gamma
-        print  '("Max DIFF gamma = ",E22.16," seconds.")', maxval(abs(h_gamma-bgamma))
+        ! h_gamma = h_cudaDoms(dom,sps)%gamma
+        ! print  '("Max DIFF gamma = ",E22.16," seconds.")', maxval(abs(h_gamma-bgamma))
         counter = 0
         !copy cudaDoms(dom,sps)%dw to res
         do k = 2,bkl
