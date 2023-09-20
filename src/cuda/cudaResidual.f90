@@ -2320,313 +2320,309 @@ module cudaResidual
     end subroutine resScale
 
     attributes(global) subroutine inviscidCentralFlux
-        ! ---------------------------------------------
-        !               Inviscid central flux
-        ! ---------------------------------------------
-        use precision, only: realType, intType
-        use constants, only: zero, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
-        use blockPointers, only: blockIsMoving, nBkGlobal
-        use cudaFlowVarRefState, only: timeRef
-        use cgnsGrid, only: cgnsDoms
-        use cudaInputPhysics, only: equationMode
-        implicit none
-        !real(kind=realType), intent(in),optional :: wwx,wwy,wwz
-        ! Variables for inviscid central flux
-        real(kind=realType) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
-        real(kind=realType) :: pa, vnp, vnm, fs, sFace
-        integer(kind=intType) :: i, j, k, dom, sps
-        real(kind=realtype) :: tmp  
-        ! real(kind=realType) :: wwx, wwy, wwz, rvol
-
-        dom = 1
-        sps = 1
-        !thread indices start at 1
-        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
-        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
-        k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
-
-        !ifaces flux
-        !loop k 2 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i1 to cudaDoms(dom,sps)%il
-        if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. j>=2 .and. k>=2) then
-            ! Set the dot product of the grid velocity and the
-            ! normal in i-direction for a moving face.
-            sFace = cudaDoms(dom,sps)%sFaceI(i, j, k)
-            ! Compute the normal velocities of the left and right state.
-
-            vnp = cudaDoms(dom,sps)%w(i + 1, j, k, ivx) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivy) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i + 1, j, k, ivz) * cudaDoms(dom,sps)%sI(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sI(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sI(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sI(i, j, k, 3)
-            ! Set the values of the porosities for this face.
-            ! porVel defines the porosity w.r.t. velocity;
-            ! porFlux defines the porosity w.r.t. the entire flux.
-            ! The latter is only zero for a discontinuous block
-            ! boundary that must be treated conservatively.
-            ! The default value of porFlux is 0.5, such that the
-            ! correct central flux is scattered to both cells.
-            ! In case of a boundFlux the normal velocity is set
-            ! to sFace.
-
-            porVel = one
-            porFlux = half
-            if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
-            if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
-                porVel = zero
-                vnp = sFace
-                vnm = sFace
-            end if
-
-            ! Incorporate porFlux in porVel.
-
-            porVel = porVel * porFlux
-
-            ! Compute the normal velocities relative to the grid for
-            ! the face as well as the mass fluxes.
-
-            qsp = (vnp - sFace) * porVel
-            qsm = (vnm - sFace) * porVel
-
-            rqsp = qsp * cudaDoms(dom,sps)%w(i + 1, j, k, irho)
-            rqsm = qsm * cudaDoms(dom,sps)%w(i, j, k, irho)
-
-            ! Compute the sum of the pressure multiplied by porFlux.
-            ! For the default value of porFlux, 0.5, this leads to
-            ! the average pressure.
-
-            pa = porFlux * (cudaDoms(dom,sps)%P(i + 1, j, k) + cudaDoms(dom,sps)%P(i, j, k))
-
-            ! Compute the fluxes and scatter them to the cells
-            ! i,j,k and i+1,j,k. Store the density flux in the
-            ! mass flow of the appropriate sliding mesh interface.
-
-            fs = rqsp + rqsm
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, irho), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
-            ! cudaDoms(dom,sps)%dw(i + 1, j, k, irho) = cudaDoms(dom,sps)%dw(i + 1, j, k, irho) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 1)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imx), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
-            ! cudaDoms(dom,sps)%dw(i + 1, j, k, imx) = cudaDoms(dom,sps)%dw(i + 1, j, k, imx) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 2)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imy), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
-            ! cudaDoms(dom,sps)%dw(i + 1, j, k, imy) = cudaDoms(dom,sps)%dw(i + 1, j, k, imy) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i + 1, j, k, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                + pa * cudaDoms(dom,sps)%sI(i, j, k, 3)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imz), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
-            ! cudaDoms(dom,sps)%dw(i + 1, j, k, imz) = cudaDoms(dom,sps)%dw(i + 1, j, k, imz) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imz) = cudaDoms(dom,sps)%dw(i, j, k, imz) + fs
-
-            fs = qsp * cudaDoms(dom,sps)%w(i + 1, j, k, irhoE) + qsm * cudaDoms(dom,sps)%w(i, j, k, irhoE) &
-                + porFlux * (vnp * cudaDoms(dom,sps)%P(i + 1, j, k) + vnm * cudaDoms(dom,sps)%P(i, j, k))
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, irhoE), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
-            ! cudaDoms(dom,sps)%dw(i + 1, j, k, irhoE) = cudaDoms(dom,sps)%dw(i + 1, j, k, irhoE) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) + fs
+    ! ---------------------------------------------
+    !               Inviscid central flux
+    ! ---------------------------------------------
+    ! use precision, only: realType, intType
+    use cudaInputPhysics, only: equationMode
+    implicit none
+    !real(kind=realType), intent(in),optional :: wwx,wwy,wwz
+    ! Variables for inviscid central flux
+    real(kind=8) :: qsp, qsm, rqsp, rqsm, porVel, porFlux
+    real(kind=8) :: pa, vnp, vnm, fs, sFace
+    integer(kind=4) :: i, j, k
+    real(kind=8) :: tmp  
+    ! real(kind=realType) :: wwx, wwy, wwz, rvol
+    
+    ! dom = 1
+    ! sps = 1
+    !thread indices start at 1
+    i = (blockIdx%x - 1) * blockDim%x + threadIdx%x 
+    j = (blockIdx%y - 1) * blockDim%y + threadIdx%y 
+    k = (blockIdx%z - 1) * blockDim%z + threadIdx%z 
+    
+    !ifaces flux
+    !loop k 2 to cudaDoms(1,1)%kl, j 2 to cudaDoms(1,1)%jl, i1 to cudaDoms(1,1)%il
+    if (k <= cudaDoms(1,1)%kl .and. j <= cudaDoms(1,1)%jl .and. i <= cudaDoms(1,1)%il .and. j>=2 .and. k>=2) then
+        ! Set the dot product of the grid velocity and the
+        ! normal in i-direction for a moving face.
+        sFace = cudaDoms(1,1)%sFaceI(i, j, k)
+        ! Compute the normal velocities of the left and right state.
+    
+        vnp = cudaDoms(1,1)%w(i + 1, j, k, 2) * cudaDoms(1,1)%sI(i, j, k, 1) &
+                + cudaDoms(1,1)%w(i + 1, j, k, 3) * cudaDoms(1,1)%sI(i, j, k, 2) &
+                + cudaDoms(1,1)%w(i + 1, j, k, 4) * cudaDoms(1,1)%sI(i, j, k, 3)
+        vnm = cudaDoms(1,1)%w(i, j, k, 2) * cudaDoms(1,1)%sI(i, j, k, 1) &
+                + cudaDoms(1,1)%w(i, j, k, 3) * cudaDoms(1,1)%sI(i, j, k, 2) &
+                + cudaDoms(1,1)%w(i, j, k, 4) * cudaDoms(1,1)%sI(i, j, k, 3)
+        ! Set the values of the porosities for this face.
+        ! porVel defines the porosity w.r.t. velocity;
+        ! porFlux defines the porosity w.r.t. the entire flux.
+        ! The latter is only 0.0 for a discontinuous block
+        ! boundary that must be treated conservatively.
+        ! The default value of porFlux is 0.5, such that the
+        ! correct central flux is scattered to both cells.
+        ! In case of a boundFlux the normal velocity is set
+        ! to sFace.
+    
+        porVel = 1.0
+        porFlux = half
+        if (cudaDoms(1,1)%porI(i, j, k) == noFlux) porFlux = 0.0
+        if (cudaDoms(1,1)%porI(i, j, k) == boundFlux) then
+            porVel = 0.0
+            vnp = sFace
+            vnm = sFace
         end if
-        
-        !loop k 2 to cudaDoms(dom,sps)%kl, j 1 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
-        !j faces flux
-        if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. i>=2 .and. k>=2) then
-            ! Set the dot product of the grid velocity and the
-            ! normal in j-direction for a moving face.
-
-            sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
-            ! Compute the normal velocities of the left and right state.
-
-            vnp = cudaDoms(dom,sps)%w(i, j + 1, k, ivx) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivy) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j + 1, k, ivz) * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sJ(i, j, k, 1) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sJ(i, j, k, 2) &
-                    + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-
-            ! Set the values of the porosities for this face.
-            ! porVel defines the porosity w.r.t. velocity;
-            ! porFlux defines the porosity w.r.t. the entire flux.
-            ! The latter is only zero for a discontinuous block
-            ! boundary that must be treated conservatively.
-            ! The default value of porFlux is 0.5, such that the
-            ! correct central flux is scattered to both cells.
-            ! In case of a boundFlux the normal velocity is set
-            ! to sFace.
-
-            porVel = one
-            porFlux = half
-            if (cudaDoms(dom,sps)%porJ(i, j, k) == noFlux) porFlux = zero
-            if (cudaDoms(dom,sps)%porJ(i, j, k) == boundFlux) then
-                porVel = zero
-                vnp = sFace
-                vnm = sFace
-            end if
-
-            ! Incorporate porFlux in porVel.
-
-            porVel = porVel * porFlux
-
-            ! Compute the normal velocities for the face as well as the
-            ! mass fluxes.
-
-            qsp = (vnp - sFace) * porVel
-            qsm = (vnm - sFace) * porVel
-
-            rqsp = qsp * cudaDoms(dom,sps)%w(i, j + 1, k, irho)
-            rqsm = qsm * cudaDoms(dom,sps)%w(i, j, k, irho)
-
-            ! Compute the sum of the pressure multiplied by porFlux.
-            ! For the default value of porFlux, 0.5, this leads to
-            ! the average pressure.
-
-            pa = porFlux * (cudaDoms(dom,sps)%P(i, j + 1, k) + cudaDoms(dom,sps)%P(i, j, k))
-
-            ! Compute the fluxes and scatter them to the cells
-            ! i,j,k and i,j+1,k. Store the density flux in the
-            ! mass flow of the appropriate sliding mesh interface.
-
-            fs = rqsp + rqsm
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, irho), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
-            ! cudaDoms(dom,sps)%dw(i, j + 1, k, irho) = cudaDoms(dom,sps)%dw(i, j + 1, k, irho) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 1)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imx), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
-            ! cudaDoms(dom,sps)%dw(i, j + 1, k, imx) = cudaDoms(dom,sps)%dw(i, j + 1, k, imx) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 2)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imy), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
-            ! cudaDoms(dom,sps)%dw(i, j + 1, k, imy) = cudaDoms(dom,sps)%dw(i, j + 1, k, imy) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i, j + 1, k, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                + pa * cudaDoms(dom,sps)%sJ(i, j, k, 3)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imz), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
-            ! cudaDoms(dom,sps)%dw(i, j + 1, k, imz) = cudaDoms(dom,sps)%dw(i, j + 1, k, imz) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imz) = cudaDoms(dom,sps)%dw(i, j, k, imz) + fs
-
-            fs = qsp * cudaDoms(dom,sps)%w(i, j + 1, k, irhoE) + qsm * cudaDoms(dom,sps)%w(i, j, k, irhoE) &
-                + porFlux * (vnp * cudaDoms(dom,sps)%P(i, j + 1, k) + vnm * cudaDoms(dom,sps)%P(i, j, k))
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, irhoE), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
-            ! cudaDoms(dom,sps)%dw(i, j + 1, k, irhoE) = cudaDoms(dom,sps)%dw(i, j + 1, k, irhoE) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) + fs
+    
+        ! Incorporate porFlux in porVel.
+    
+        porVel = porVel * porFlux
+    
+        ! Compute the normal velocities relative to the grid for
+        ! the face as well as the mass fluxes.
+    
+        qsp = (vnp - sFace) * porVel
+        qsm = (vnm - sFace) * porVel
+    
+        rqsp = qsp * cudaDoms(1,1)%w(i + 1, j, k, 1)
+        rqsm = qsm * cudaDoms(1,1)%w(i, j, k, 1)
+    
+        ! Compute the sum of the pressure multiplied by porFlux.
+        ! For the default value of porFlux, 0.5, this leads to
+        ! the average pressure.
+    
+        pa = porFlux * (cudaDoms(1,1)%P(i + 1, j, k) + cudaDoms(1,1)%P(i, j, k))
+    
+        ! Compute the fluxes and scatter them to the cells
+        ! i,j,k and i+1,j,k. Store the density flux in the
+        ! mass flow of the appropriate sliding mesh interface.
+    
+        fs = rqsp + rqsm
+        tmp = atomicsub(cudaDoms(1,1)%dw(i + 1, j, k, 1), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 1), fs)
+        ! cudaDoms(1,1)%dw(i + 1, j, k, 1) = cudaDoms(1,1)%dw(i + 1, j, k, 1) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 1) = cudaDoms(1,1)%dw(i, j, k, 1) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i + 1, j, k, 2) + rqsm * cudaDoms(1,1)%w(i, j, k, 2) &
+            + pa * cudaDoms(1,1)%sI(i, j, k, 1)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i + 1, j, k, 2), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 2), fs)
+        ! cudaDoms(1,1)%dw(i + 1, j, k, 2) = cudaDoms(1,1)%dw(i + 1, j, k, 2) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 2) = cudaDoms(1,1)%dw(i, j, k, 2) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i + 1, j, k, 3) + rqsm * cudaDoms(1,1)%w(i, j, k, 3) &
+            + pa * cudaDoms(1,1)%sI(i, j, k, 2)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i + 1, j, k, 3), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 3), fs)
+        ! cudaDoms(1,1)%dw(i + 1, j, k, 3) = cudaDoms(1,1)%dw(i + 1, j, k, 3) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 3) = cudaDoms(1,1)%dw(i, j, k, 3) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i + 1, j, k, 4) + rqsm * cudaDoms(1,1)%w(i, j, k, 4) &
+            + pa * cudaDoms(1,1)%sI(i, j, k, 3)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i + 1, j, k, 4), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 4), fs)
+        ! cudaDoms(1,1)%dw(i + 1, j, k, 4) = cudaDoms(1,1)%dw(i + 1, j, k, 4) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 4) = cudaDoms(1,1)%dw(i, j, k, 4) + fs
+    
+        fs = qsp * cudaDoms(1,1)%w(i + 1, j, k, 5) + qsm * cudaDoms(1,1)%w(i, j, k, 5) &
+            + porFlux * (vnp * cudaDoms(1,1)%P(i + 1, j, k) + vnm * cudaDoms(1,1)%P(i, j, k))
+        tmp = atomicsub(cudaDoms(1,1)%dw(i + 1, j, k, 5), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 5), fs)
+        ! cudaDoms(1,1)%dw(i + 1, j, k, 5) = cudaDoms(1,1)%dw(i + 1, j, k, 5) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 5) = cudaDoms(1,1)%dw(i, j, k, 5) + fs
+    end if
+    
+    !loop k 2 to cudaDoms(1,1)%kl, j 1 to cudaDoms(1,1)%jl, i 2 to cudaDoms(1,1)%il
+    !j faces flux
+    if (k <= cudaDoms(1,1)%kl .and. j <= cudaDoms(1,1)%jl .and. i <= cudaDoms(1,1)%il .and. i>=2 .and. k>=2) then
+        ! Set the dot product of the grid velocity and the
+        ! normal in j-direction for a moving face.
+    
+        sFace = cudaDoms(1,1)%sFaceJ(i, j, k)
+        ! Compute the normal velocities of the left and right state.
+    
+        vnp = cudaDoms(1,1)%w(i, j + 1, k, 2) * cudaDoms(1,1)%sJ(i, j, k, 1) &
+                + cudaDoms(1,1)%w(i, j + 1, k, 3) * cudaDoms(1,1)%sJ(i, j, k, 2) &
+                + cudaDoms(1,1)%w(i, j + 1, k, 4) * cudaDoms(1,1)%sJ(i, j, k, 3)
+        vnm = cudaDoms(1,1)%w(i, j, k, 2) * cudaDoms(1,1)%sJ(i, j, k, 1) &
+                + cudaDoms(1,1)%w(i, j, k, 3) * cudaDoms(1,1)%sJ(i, j, k, 2) &
+                + cudaDoms(1,1)%w(i, j, k, 4) * cudaDoms(1,1)%sJ(i, j, k, 3)
+    
+        ! Set the values of the porosities for this face.
+        ! porVel defines the porosity w.r.t. velocity;
+        ! porFlux defines the porosity w.r.t. the entire flux.
+        ! The latter is only 0.0 for a discontinuous block
+        ! boundary that must be treated conservatively.
+        ! The default value of porFlux is 0.5, such that the
+        ! correct central flux is scattered to both cells.
+        ! In case of a boundFlux the normal velocity is set
+        ! to sFace.
+    
+        porVel = 1.0
+        porFlux = half
+        if (cudaDoms(1,1)%porJ(i, j, k) == noFlux) porFlux = 0.0
+        if (cudaDoms(1,1)%porJ(i, j, k) == boundFlux) then
+            porVel = 0.0
+            vnp = sFace
+            vnm = sFace
         end if
-
-        !k face flux
-        !loop k 1 to cudaDoms(dom,sps)%kl, j 2 to cudaDoms(dom,sps)%jl, i 2 to cudaDoms(dom,sps)%il
-        if (k <= cudaDoms(dom,sps)%kl .and. j <= cudaDoms(dom,sps)%jl .and. i <= cudaDoms(dom,sps)%il .and. i>=2 .and. j>=2) then
-            ! Set the dot product of the grid velocity and the
-                    ! normal in k-direction for a moving face.
-
-            sFace = cudaDoms(dom,sps)%sFaceK(i, j, k)
-
-            ! Compute the normal velocities of the left and right state.
-
-            vnp = cudaDoms(dom,sps)%w(i, j, k + 1, ivx) * cudaDoms(dom,sps)%sK(i, j, k, 1) &
-                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivy) * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-                  + cudaDoms(dom,sps)%w(i, j, k + 1, ivz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
-            vnm = cudaDoms(dom,sps)%w(i, j, k, ivx) * cudaDoms(dom,sps)%sK(i, j, k, 1) &
-                  + cudaDoms(dom,sps)%w(i, j, k, ivy) * cudaDoms(dom,sps)%sK(i, j, k, 2) &
-                  + cudaDoms(dom,sps)%w(i, j, k, ivz) * cudaDoms(dom,sps)%sK(i, j, k, 3)
-
-            ! Set the values of the porosities for this face.
-            ! porVel defines the porosity w.r.t. velocity;
-            ! porFlux defines the porosity w.r.t. the entire flux.
-            ! The latter is only zero for a discontinuous block
-            ! block boundary that must be treated conservatively.
-            ! The default value of porFlux is 0.5, such that the
-            ! correct central flux is scattered to both cells.
-            ! In case of a boundFlux the normal velocity is set
-            ! to sFace.
-
-            porVel = one
-            porFlux = half
-
-            if (cudaDoms(dom,sps)%porK(i, j, k) == noFlux) porFlux = zero
-            if (cudaDoms(dom,sps)%porK(i, j, k) == boundFlux) then
-                porVel = zero
-                vnp = sFace
-                vnm = sFace
-            end if
-
-            ! Incorporate porFlux in porVel.
-
-            porVel = porVel * porFlux
-
-            ! Compute the normal velocities for the face as well as the
-            ! mass fluxes.
-
-            qsp = (vnp - sFace) * porVel
-            qsm = (vnm - sFace) * porVel
-
-            rqsp = qsp * cudaDoms(dom,sps)%w(i, j, k + 1, irho)
-            rqsm = qsm * cudaDoms(dom,sps)%w(i, j, k, irho)
-
-            ! Compute the sum of the pressure multiplied by porFlux.
-            ! For the default value of porFlux, 0.5, this leads to
-            ! the average pressure.
-
-            pa = porFlux * (cudaDoms(dom,sps)%P(i, j, k + 1) + cudaDoms(dom,sps)%P(i, j, k))
-
-            ! Compute the fluxes and scatter them to the cells
-            ! i,j,k and i,j,k+1. Store the density flux in the
-            ! mass flow of the appropriate sliding mesh interface.
-
-            fs = rqsp + rqsm
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, irho), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
-            ! cudaDoms(dom,sps)%dw(i, j, k + 1, irho) = cudaDoms(dom,sps)%dw(i, j, k + 1, irho) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, irho) = cudaDoms(dom,sps)%dw(i, j, k, irho) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivx) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivx) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 1)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imx), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
-            ! cudaDoms(dom,sps)%dw(i, j, k + 1, imx) = cudaDoms(dom,sps)%dw(i, j, k + 1, imx) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imx) = cudaDoms(dom,sps)%dw(i, j, k, imx) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivy) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivy) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 2)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imy), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
-            ! cudaDoms(dom,sps)%dw(i, j, k + 1, imy) = cudaDoms(dom,sps)%dw(i, j, k + 1, imy) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imy) = cudaDoms(dom,sps)%dw(i, j, k, imy) + fs
-
-            fs = rqsp * cudaDoms(dom,sps)%w(i, j, k + 1, ivz) + rqsm * cudaDoms(dom,sps)%w(i, j, k, ivz) &
-                 + pa * cudaDoms(dom,sps)%sK(i, j, k, 3)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imz), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
-            ! cudaDoms(dom,sps)%dw(i, j, k + 1, imz) = cudaDoms(dom,sps)%dw(i, j, k + 1, imz) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, imz) = cudaDoms(dom,sps)%dw(i, j, k, imz) + fs
-
-            fs = qsp * cudaDoms(dom,sps)%w(i, j, k + 1, irhoE) + qsm * cudaDoms(dom,sps)%w(i, j, k, irhoE) &
-                 + porFlux * (vnp * cudaDoms(dom,sps)%P(i, j, k + 1) + vnm * cudaDoms(dom,sps)%P(i, j, k))
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, irhoE), fs)
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
-            ! cudaDoms(dom,sps)%dw(i, j, k + 1, irhoE) = cudaDoms(dom,sps)%dw(i, j, k + 1, irhoE) - fs
-            ! cudaDoms(dom,sps)%dw(i, j, k, irhoE) = cudaDoms(dom,sps)%dw(i, j, k, irhoE) + fs
-        end if 
-        
-        !we left out the rotationof the block
-
-
+    
+        ! Incorporate porFlux in porVel.
+    
+        porVel = porVel * porFlux
+    
+        ! Compute the normal velocities for the face as well as the
+        ! mass fluxes.
+    
+        qsp = (vnp - sFace) * porVel
+        qsm = (vnm - sFace) * porVel
+    
+        rqsp = qsp * cudaDoms(1,1)%w(i, j + 1, k, 1)
+        rqsm = qsm * cudaDoms(1,1)%w(i, j, k, 1)
+    
+        ! Compute the sum of the pressure multiplied by porFlux.
+        ! For the default value of porFlux, 0.5, this leads to
+        ! the average pressure.
+    
+        pa = porFlux * (cudaDoms(1,1)%P(i, j + 1, k) + cudaDoms(1,1)%P(i, j, k))
+    
+        ! Compute the fluxes and scatter them to the cells
+        ! i,j,k and i,j+1,k. Store the density flux in the
+        ! mass flow of the appropriate sliding mesh interface.
+    
+        fs = rqsp + rqsm
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j + 1, k, 1), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 1), fs)
+        ! cudaDoms(1,1)%dw(i, j + 1, k, 1) = cudaDoms(1,1)%dw(i, j + 1, k, 1) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 1) = cudaDoms(1,1)%dw(i, j, k, 1) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i, j + 1, k, 2) + rqsm * cudaDoms(1,1)%w(i, j, k, 2) &
+            + pa * cudaDoms(1,1)%sJ(i, j, k, 1)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j + 1, k, 2), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 2), fs)
+        ! cudaDoms(1,1)%dw(i, j + 1, k, 2) = cudaDoms(1,1)%dw(i, j + 1, k, 2) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 2) = cudaDoms(1,1)%dw(i, j, k, 2) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i, j + 1, k, 3) + rqsm * cudaDoms(1,1)%w(i, j, k, 3) &
+            + pa * cudaDoms(1,1)%sJ(i, j, k, 2)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j + 1, k, 3), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 3), fs)
+        ! cudaDoms(1,1)%dw(i, j + 1, k, 3) = cudaDoms(1,1)%dw(i, j + 1, k, 3) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 3) = cudaDoms(1,1)%dw(i, j, k, 3) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i, j + 1, k, 4) + rqsm * cudaDoms(1,1)%w(i, j, k, 4) &
+            + pa * cudaDoms(1,1)%sJ(i, j, k, 3)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j + 1, k, 4), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 4), fs)
+        ! cudaDoms(1,1)%dw(i, j + 1, k, 4) = cudaDoms(1,1)%dw(i, j + 1, k, 4) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 4) = cudaDoms(1,1)%dw(i, j, k, 4) + fs
+    
+        fs = qsp * cudaDoms(1,1)%w(i, j + 1, k, 5) + qsm * cudaDoms(1,1)%w(i, j, k, 5) &
+            + porFlux * (vnp * cudaDoms(1,1)%P(i, j + 1, k) + vnm * cudaDoms(1,1)%P(i, j, k))
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j + 1, k, 5), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 5), fs)
+        ! cudaDoms(1,1)%dw(i, j + 1, k, 5) = cudaDoms(1,1)%dw(i, j + 1, k, 5) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 5) = cudaDoms(1,1)%dw(i, j, k, 5) + fs
+    end if
+    
+    !k face flux
+    !loop k 1 to cudaDoms(1,1)%kl, j 2 to cudaDoms(1,1)%jl, i 2 to cudaDoms(1,1)%il
+    if (k <= cudaDoms(1,1)%kl .and. j <= cudaDoms(1,1)%jl .and. i <= cudaDoms(1,1)%il .and. i>=2 .and. j>=2) then
+        ! Set the dot product of the grid velocity and the
+                ! normal in k-direction for a moving face.
+    
+        sFace = cudaDoms(1,1)%sFaceK(i, j, k)
+    
+        ! Compute the normal velocities of the left and right state.
+    
+        vnp = cudaDoms(1,1)%w(i, j, k + 1, 2) * cudaDoms(1,1)%sK(i, j, k, 1) &
+              + cudaDoms(1,1)%w(i, j, k + 1, 3) * cudaDoms(1,1)%sK(i, j, k, 2) &
+              + cudaDoms(1,1)%w(i, j, k + 1, 4) * cudaDoms(1,1)%sK(i, j, k, 3)
+        vnm = cudaDoms(1,1)%w(i, j, k, 2) * cudaDoms(1,1)%sK(i, j, k, 1) &
+              + cudaDoms(1,1)%w(i, j, k, 3) * cudaDoms(1,1)%sK(i, j, k, 2) &
+              + cudaDoms(1,1)%w(i, j, k, 4) * cudaDoms(1,1)%sK(i, j, k, 3)
+    
+        ! Set the values of the porosities for this face.
+        ! porVel defines the porosity w.r.t. velocity;
+        ! porFlux defines the porosity w.r.t. the entire flux.
+        ! The latter is only 0.0 for a discontinuous block
+        ! block boundary that must be treated conservatively.
+        ! The default value of porFlux is 0.5, such that the
+        ! correct central flux is scattered to both cells.
+        ! In case of a boundFlux the normal velocity is set
+        ! to sFace.
+    
+        porVel = 1.0
+        porFlux = half
+    
+        if (cudaDoms(1,1)%porK(i, j, k) == noFlux) porFlux = 0.0
+        if (cudaDoms(1,1)%porK(i, j, k) == boundFlux) then
+            porVel = 0.0
+            vnp = sFace
+            vnm = sFace
+        end if
+    
+        ! Incorporate porFlux in porVel.
+    
+        porVel = porVel * porFlux
+    
+        ! Compute the normal velocities for the face as well as the
+        ! mass fluxes.
+    
+        qsp = (vnp - sFace) * porVel
+        qsm = (vnm - sFace) * porVel
+    
+        rqsp = qsp * cudaDoms(1,1)%w(i, j, k + 1, 1)
+        rqsm = qsm * cudaDoms(1,1)%w(i, j, k, 1)
+    
+        ! Compute the sum of the pressure multiplied by porFlux.
+        ! For the default value of porFlux, 0.5, this leads to
+        ! the average pressure.
+    
+        pa = porFlux * (cudaDoms(1,1)%P(i, j, k + 1) + cudaDoms(1,1)%P(i, j, k))
+    
+        ! Compute the fluxes and scatter them to the cells
+        ! i,j,k and i,j,k+1. Store the density flux in the
+        ! mass flow of the appropriate sliding mesh interface.
+    
+        fs = rqsp + rqsm
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j, k + 1, 1), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 1), fs)
+        ! cudaDoms(1,1)%dw(i, j, k + 1, 1) = cudaDoms(1,1)%dw(i, j, k + 1, 1) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 1) = cudaDoms(1,1)%dw(i, j, k, 1) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i, j, k + 1, 2) + rqsm * cudaDoms(1,1)%w(i, j, k, 2) &
+             + pa * cudaDoms(1,1)%sK(i, j, k, 1)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j, k + 1, 2), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 2), fs)
+        ! cudaDoms(1,1)%dw(i, j, k + 1, 2) = cudaDoms(1,1)%dw(i, j, k + 1, 2) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 2) = cudaDoms(1,1)%dw(i, j, k, 2) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i, j, k + 1, 3) + rqsm * cudaDoms(1,1)%w(i, j, k, 3) &
+             + pa * cudaDoms(1,1)%sK(i, j, k, 2)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j, k + 1, 3), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 3), fs)
+        ! cudaDoms(1,1)%dw(i, j, k + 1, 3) = cudaDoms(1,1)%dw(i, j, k + 1, 3) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 3) = cudaDoms(1,1)%dw(i, j, k, 3) + fs
+    
+        fs = rqsp * cudaDoms(1,1)%w(i, j, k + 1, 4) + rqsm * cudaDoms(1,1)%w(i, j, k, 4) &
+             + pa * cudaDoms(1,1)%sK(i, j, k, 3)
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j, k + 1, 4), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 4), fs)
+        ! cudaDoms(1,1)%dw(i, j, k + 1, 4) = cudaDoms(1,1)%dw(i, j, k + 1, 4) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 4) = cudaDoms(1,1)%dw(i, j, k, 4) + fs
+    
+        fs = qsp * cudaDoms(1,1)%w(i, j, k + 1, 5) + qsm * cudaDoms(1,1)%w(i, j, k, 5) &
+             + porFlux * (vnp * cudaDoms(1,1)%P(i, j, k + 1) + vnm * cudaDoms(1,1)%P(i, j, k))
+        tmp = atomicsub(cudaDoms(1,1)%dw(i, j, k + 1, 5), fs)
+        tmp = atomicadd(cudaDoms(1,1)%dw(i, j, k, 5), fs)
+        ! cudaDoms(1,1)%dw(i, j, k + 1, 5) = cudaDoms(1,1)%dw(i, j, k + 1, 5) - fs
+        ! cudaDoms(1,1)%dw(i, j, k, 5) = cudaDoms(1,1)%dw(i, j, k, 5) + fs
+    end if 
+    
+    !we left out the rotationof the block
+    
+    
     end subroutine inviscidCentralFlux
 
     attributes(global) subroutine computeSS
@@ -4979,7 +4975,7 @@ module cudaResidual
         real(kind=realType), dimension(:, :, :), allocatable :: wx_v1, wy_v1, wz_v1
         real(kind=realType), dimension(:, :, :), allocatable :: qx_v1, qy_v1, qz_v1
 
-        real(kind=realType), dimension(:,:,:,:), allocatable :: h_w
+        real(kind=realType), dimension(:,:,:,:), allocatable :: h_w, h_fw
         real(kind=realType), dimension(:,:,:,:), allocatable :: h_sI, h_sJ, h_sK
         real(kind=realType), dimension(:,:,:), allocatable :: h_vol, h_aa,h_p,h_gamma, h_aa_v1,h_vol_v1
         integer(kind=intType) :: h_ie,h_je,h_ke
@@ -5034,6 +5030,7 @@ module cudaResidual
         ! allocate memory for cudaDoms(dom,sps)%dw
         allocate(h_dw(1:bie,1:bje,1:bke,1:nw))
         allocate(h_dw2(1:bie,1:bje,1:bke,1:nw))
+        allocate(h_fw(1:bie,1:bje,1:bke,1:nwf))
 
         allocate(h_w(0:bib,0:bjb,0:bkb,1:nw))
 
@@ -5062,15 +5059,15 @@ module cudaResidual
         uy_v1 = uy
         uz_v1 = uz
         
-        print *,ux_v1(:,:,1)
-        print *,"=================="
-        print *, ux_v2(:,:,1)
-        print *,"=================="
-        print *, ux_v1(:,:,1)-ux_v2(:,:,1)
+        ! print *,ux_v1(:,:,1)
+        ! print *,"=================="
+        ! print *, ux_v2(:,:,1)
+        ! print *,"=================="
+        ! print *, ux_v1(:,:,1)-ux_v2(:,:,1)
 
-        print  '("Max DIFF UX = ",E22.16," seconds.")', maxval(abs(ux_v2-ux_v1))
-        print  '("Max DIFF UY = ",E22.16," seconds.")', maxval(abs(uy_v2-uy_v1))
-        print  '("Max DIFF UZ = ",E22.16," seconds.")', maxval(abs(uz_v2-uz_v1))
+        print  '("Max DIFF UX = ",E22.16," seconds.")', maxval(abs(ux_v2-bux))
+        print  '("Max DIFF UY = ",E22.16," seconds.")', maxval(abs(uy_v2-buy))
+        print  '("Max DIFF UZ = ",E22.16," seconds.")', maxval(abs(uz_v2-buz))
 
         vx_v2 = h_cudaDoms(dom,sps)%vx
         vy_v2 = h_cudaDoms(dom,sps)%vy
@@ -5078,9 +5075,9 @@ module cudaResidual
         vx_v1 = vx
         vy_v1 = vy
         vz_v1 = vz
-        print  '("Max DIFF VX = ",E22.16," seconds.")', maxval(abs(vx_v2-vx_v1))
-        print  '("Max DIFF Vy = ",E22.16," seconds.")', maxval(abs(vy_v2-vy_v1))
-        print  '("Max DIFF vz = ",E22.16," seconds.")', maxval(abs(vz_v2-vz_v1))
+        print  '("Max DIFF VX = ",E22.16," seconds.")', maxval(abs(vx_v2-bvx))
+        print  '("Max DIFF Vy = ",E22.16," seconds.")', maxval(abs(vy_v2-bvy))
+        print  '("Max DIFF vz = ",E22.16," seconds.")', maxval(abs(vz_v2-bvz))
 
         wx_v2 = h_cudaDoms(dom,sps)%wx
         wy_v2 = h_cudaDoms(dom,sps)%wy
@@ -5088,9 +5085,9 @@ module cudaResidual
         wx_v1 = wx
         wy_v1 = wy
         wz_v1 = wz
-        print  '("Max DIFF wX = ",E22.16," seconds.")', maxval(abs(wx_v2-wx_v1))
-        print  '("Max DIFF wy = ",E22.16," seconds.")', maxval(abs(wy_v2-wy_v1))
-        print  '("Max DIFF wz = ",E22.16," seconds.")', maxval(abs(wz_v2-wz_v1))
+        print  '("Max DIFF wX = ",E22.16," seconds.")', maxval(abs(wx_v2-bwx))
+        print  '("Max DIFF wy = ",E22.16," seconds.")', maxval(abs(wy_v2-bwy))
+        print  '("Max DIFF wz = ",E22.16," seconds.")', maxval(abs(wz_v2-bwz))
 
         qx_v2 = h_cudaDoms(dom,sps)%qx
         qy_v2 = h_cudaDoms(dom,sps)%qy
@@ -5098,9 +5095,9 @@ module cudaResidual
         qx_v1 = qx
         qy_v1 = qy
         qz_v1 = qz
-        print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-qx_v1))
-        print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-qy_v1))
-        print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-qz_v1))
+        print  '("Max DIFF qX = ",E22.16," seconds.")', maxval(abs(qx_v2-bqx))
+        print  '("Max DIFF qy = ",E22.16," seconds.")', maxval(abs(qy_v2-bqy))
+        print  '("Max DIFF qz = ",E22.16," seconds.")', maxval(abs(qz_v2-bqz))
 
 
         h_w = h_cudaDoms(dom,sps)%w
@@ -5116,7 +5113,16 @@ module cudaResidual
         print  '("Max DIFF sK = ",E22.16," seconds.")', maxval(abs(h_SK-bsK))
 
         h_vol = h_cudaDoms(dom,sps)%vol
-        print  '("Max DIFF vol = ",E22.16," seconds.")', maxval(abs(h_vol-bvol))
+        print  '("Max DIFF vol = ",E22.16," seconds.")', maxval(abs(h_vol-bvol(1:bie, 1:bje, 1:bke)))
+
+
+        h_fw = h_cudaDoms(dom,sps)%fw(1:bie,1:bje,1:bke,1:nwf)
+        print *,size(h_fw(2:bil,2:bjl,2:bkl,1:nwf)),size(bfw(2:bil,2:bjl,2:bkl,1:nwf))
+        print *,"====="
+        print *, h_fw(2:bil,2:bjl,2:bkl,ivx)
+        print *,"====="
+        print *, bfw(2:bil,2:bjl,2:bkl,ivx)
+        print  '("Max DIFF fw = ",E22.16," seconds.")', maxval(abs(h_fw(2:bil,2:bjl,2:bkl,1:nwf) - bfw(2:bil,2:bjl,2:bkl,1:nwf) ))
 
         ! print *, "volumes:"
         ! print *,"========"
@@ -5131,7 +5137,7 @@ module cudaResidual
         h_aa = h_cudaDoms(dom,sps)%aa
         h_aa_v1 = aa
         print  '("Max DIFF aa = ",E22.16," seconds.")', maxval(abs(h_aa-h_aa_v1))
-        print  '("Max DIFF aa cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_aa_v1-baa))
+        print  '("Max DIFF aa cpu vs gpu= ",E22.16," seconds.")', maxval(abs(h_aa_v1-baa(1:bie, 1:bje, 1:bke)))
 
         print *, maxval(h_aa), maxval(baa),minval(h_aa),minval(baa)
 
