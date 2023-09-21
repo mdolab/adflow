@@ -1,5 +1,7 @@
 #!/usr/bin/python
 """
+Differentiate Fortran source code.
+
 Differentiates fortran files with tapenade. It compares the timestamp of the
 source file with the differentiated file and only selects the files that appear
 to have changed.
@@ -53,69 +55,69 @@ full_routines = {
         "flowUtils%computeLamViscosity(w, p, Tref, muRef, rGas) > (w, p, Tref, muRef, rGas, rlv)",
         "flowUtils%computeEtotBlock(w, p) > (w, p)",
         "flowUtils%computeSpeedOfSoundSquared(w, p) > (w, p, aa)",
-        "flowUtils%allNodalGradients(w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) > (w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)",
+        "flowUtils%allNodalGradients(w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz) > (w, vol, si, sj, sk, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "initFlow", "initializeFlow.F90"): [
-        "initializeFlow%referenceState(mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreestream) > (mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreeStream, pRef, rhoRef, Tref, muRef, timeRef, pInf, pinfCorr, rhoInf, uInf, rGas, muInf,  winf) "
+        "initializeFlow%referenceState(mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreestream) > (mach, machcoef, pInfDim, TinfDim, rhoInfDim, velDirFreeStream, pRef, rhoRef, Tref, muRef, timeRef, pInf, pinfCorr, rhoInf, uInf, rGas, muInf,  winf) "  # noqa: E501
     ],
     osp.join(SRC_PATH, "bcdata", "BCData.F90"): [
         "bcData%BCDataIsoThermalwall(bcVarArray, Tref) > (BCData%TNS_wall, Tref)",
-        "bcData%BCDataSubsonicInflow(bcVarArray, muRef, Pref, rhoRef, Tref, Href, wInf) > (bcData%PtInlet, bcData%ttInlet, bcData%htInlet, bcData%turbInlet, muRef, Pref, rhoRef, Tref, Href, wInf)",
+        "bcData%BCDataSubsonicInflow(bcVarArray, muRef, Pref, rhoRef, Tref, Href, wInf) > (bcData%PtInlet, bcData%ttInlet, bcData%htInlet, bcData%turbInlet, muRef, Pref, rhoRef, Tref, Href, wInf)",  # noqa: E501
         "bcData%BCDataSubsonicOutflow(bcVarArray, Pref) > (bcData%Ps,  Pref)",
-        "bcData%BCDataSupersonicInflow(bcVarArray, muRef, rhoRef, Pref, uRef, wInf, pInfCorr) > (bcData%rho, bcData%velx, bcData%vely, bcData%velz, bcData%ps, bcData%turbInlet, muRef, rhoRef, Pref, uRef, wInf, pInfCorr)",
+        "bcData%BCDataSupersonicInflow(bcVarArray, muRef, rhoRef, Pref, uRef, wInf, pInfCorr) > (bcData%rho, bcData%velx, bcData%vely, bcData%velz, bcData%ps, bcData%turbInlet, muRef, rhoRef, Pref, uRef, wInf, pInfCorr)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "wallDistance", "wallDistance.F90"): [
         "wallDistance%updateWallDistancesQuickly(x, xSurf, d2wall) > (x, xSurf, d2wall)",
     ],
     osp.join(SRC_PATH, "turbulence", "turbUtils.F90"): [
         "turbUtils%computeEddyViscosity(w,rlv)>(w,rlv,rev)",
-        "turbutils%turbAdvection(w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) > (w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek)",
+        "turbutils%turbAdvection(w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek) > (w, vol, si, sj, sk, scratch, sfacei, sfacej, sfacek)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "solver", "BCRoutines.F90"): [
-        "BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) > (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm)",
-        "BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm) > (ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm)",
-        "BCRoutines%bcSymmPolar1stHalo(xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) > (xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)",
-        "BCRoutines%bcSymmPolar2ndHalo(xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) > (xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3)",
-        "BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip) > (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip)",
-        "BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall, bcData%uSlip) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall, bcData%uSlip)",
-        "BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm, bcData%rface) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm, bcData%rface)",
-        "BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss) > (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss)",
-        "BCRoutines%bcSubsonicInflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet)",
-        "BCRoutines%bcSubsonicOutflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps)",
+        "BCRoutines%bcSymm1stHalo(ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm) > (ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, bcData%norm)",  # noqa: E501
+        "BCRoutines%bcSymm2ndHalo(ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm) > (ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, bcData%norm)",  # noqa: E501
+        "BCRoutines%bcSymmPolar1stHalo(xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2) > (xx, ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2)",  # noqa: E501
+        "BCRoutines%bcSymmPolar2ndHalo(xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3) > (xx, ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3)",  # noqa: E501
+        "BCRoutines%bcNSWallAdiabatic(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip) > (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%uSlip)",  # noqa: E501
+        "BCRoutines%bcNSWallIsothermal(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall, bcData%uSlip) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, rGas, BCData%TNS_Wall, bcData%uSlip)",  # noqa: E501
+        "BCRoutines%bcFarField(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm, bcData%rface) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, pInfCorr, wInf, bcData%norm, bcData%rface)",  # noqa: E501
+        "BCRoutines%bcEulerWall(ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss) > (ww0, ww1, ww2, pp0, pp1, pp2, pp3, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, ssi, ssj, ssk, ss)",  # noqa: E501
+        "BCRoutines%bcSubsonicInflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%PtInlet, bcData%ttInlet, bcData%htInlet)",  # noqa: E501
+        "BCRoutines%bcSubsonicOutflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) > (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "turbulence", "turbBCRoutines.F90"): [
         "turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > (rev, w)",
-        "turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2)",
+        "turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "solver", "solverUtils.F90"): [
-        "solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol)",
-        "solverutils%slipVelocitiesFineLevel_block(pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > (veldirfreestream, bcdata%uslip, flowDoms%x)",
-        "solverutils%normalvelocities_block(sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) > (sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface)",
-        "solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) > (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream)",
-        "solverutils%cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) > (xc, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)",
+        "solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol)",  # noqa: E501
+        "solverutils%slipVelocitiesFineLevel_block(pinf, timeref, rhoinf, veldirfreestream, machgrid, bcdata%uslip, flowDoms%x) > (veldirfreestream, bcdata%uslip, flowDoms%x)",  # noqa: E501
+        "solverutils%normalvelocities_block(sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface) > (sfacei, sfacej, sfacek, si, sj, sk, bcdata%rface)",  # noqa: E501
+        "solverutils%gridVelocitiesFineLevel_block(flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream, pinf, timeref, rhoinf, machgrid) > (flowDoms%x, si, sj, sk, s, sfacei, sfacej, sfacek, velDirFreestream)",  # noqa: E501
+        "solverutils%cellFaceVelocities(xc, rotCenter, rotRate, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc) > (xc, velxGrid, velyGrid, velzGrid, derivRotationMatrix, sc)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "solver", "residuals.F90"): [
-        "residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) > (w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat)",
-        "residuals%initres_block(dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) > (dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector)",
+        "residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) > (w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat)",  # noqa: E501
+        "residuals%initres_block(dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) > (dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "solver", "fluxes.F90"): [
-        "fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) > (w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek)",
-        "fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw) > (w, pInfCOrr, rhoInf, p, radi, radj, radk, fw)",
-        "fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > (w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek)",
+        "fluxes%inviscidCentralFlux(w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek) > (w, timeRef, vol, si, sj, sk, p, dw, sfacei, sfacej, sfacek)",  # noqa: E501
+        "fluxes%inviscidDissFluxScalar(w, pInfCorr, rhoInf, p, radi, radj, radk, fw) > (w, pInfCOrr, rhoInf, p, radi, radj, radk, fw)",  # noqa: E501
+        "fluxes%inviscidDissFluxMatrix(w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > (w, pInfCorr, si, sj, sk, p, fw, sfacei, sfacej, sfacek)",  # noqa: E501
         "fluxes%inviscidDissFluxScalarApprox(w, p, radi, radj, radk, fw, rhoinf, pinfcorr) > (w, p, fw)",
-        "fluxes%inviscidDissFluxMatrixApprox(w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk) > (w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk)",
-        "fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > (w, si, sj, sk, p, fw, sfacei, sfacej, sfacek)",
-        "fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw, viscsubface%tau, viscSubface%q) > (w, x, si, sj, sk, fw, viscsubface%tau, viscSubface%q)",
+        "fluxes%inviscidDissFluxMatrixApprox(w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk) > (w, p, fw, pinfcorr, sfacei, sfacej, sfacek, si, sj, sk)",  # noqa: E501
+        "fluxes%inviscidUpwindFlux(w, si, sj, sk, p, fw, sfacei, sfacej, sfacek) > (w, si, sj, sk, p, fw, sfacei, sfacej, sfacek)",  # noqa: E501
+        "fluxes%viscousFlux(w, x, si, sj, sk, rlv, rev, aa, ux, uy, uz, vx, vy, vz, wx, wy, wz, qx, qy, qz, fw, viscsubface%tau, viscSubface%q) > (w, x, si, sj, sk, fw, viscsubface%tau, viscSubface%q)",  # noqa: E501
         "fluxes%viscousFluxApprox(w, x, rlv, rev, aa, fw, si, sj, sk) > (w, x, fw)",
     ],
     osp.join(SRC_PATH, "solver", "surfaceIntegrations.F90"): [
-        "surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCData%Fp, bcData%Fv, BCData%area, localValues) > (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCdata%Fp, bcData%Fv, BCData%area, localValues)",
-        "surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues) > (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues)",
-        "surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > (liftDirection, dragDirection, pRef, rhoRef, machCoef, funcValues)",
+        "surfaceIntegrations%wallIntegrationFace(Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCData%Fp, bcData%Fv, BCData%area, localValues) > (Pinf, Pref, ww2, pp1, pp2, xx, ssi, velDirFreeStream, pointRef, machCoef, viscSubface%tau, localValues, BCdata%Fp, bcData%Fv, BCData%area, localValues)",  # noqa: E501
+        "surfaceIntegrations%flowIntegrationFace(Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues) > (Pref, rhoRef, timeRef, TRef, rGas, ww1, ww2, pp1, pp2, xx, ssi, pointRef, localValues)",  # noqa: E501
+        "surfaceIntegrations%getCostFunctions(globalVals, liftDirection, dragDirection, pRef, rhoRef, machCoef) > (liftDirection, dragDirection, pRef, rhoRef, machCoef, funcValues)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "solver", "zipperIntegrations.F90"): [
         "zipperIntegrations%wallIntegrationZipper(vars, pointRef, localValues) > (vars, pointRef, localValues)",
-        "zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues) > (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues)",
+        "zipperIntegrations%flowIntegrationZipper(vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues) > (vars, Pref, rhoRef, timeRef, TRef, rGas, pointRef, localValues)",  # noqa: E501
     ],
     osp.join(SRC_PATH, "turbulence", "sa.F90"): [
         "sa%saSource(w, rlv, vol, si, sj, sk, timeRef, d2wall) > (w, rlv, vol, si, sj, sk, timeREf, scratch)",
@@ -188,6 +190,8 @@ dependencies = [
 
 
 class Main:
+    """Main logic of differentiation script."""
+
     dirs = {
         "forward": "outputForward",
         "reverse": "outputReverse",
@@ -213,10 +217,7 @@ class Main:
     }
 
     def __init__(self):
-        """
-        Main logic to run this script
-        """
-
+        """Runs Main logic of this script."""
         self.modes = ["forward", "reverse", "reverse_fast"]
 
         self.routines = {"forward": {}, "reverse": {}, "reverse_fast": {}}
@@ -265,9 +266,7 @@ class Main:
             self.delete_tmp_dirs()
 
     def parse_args(self):
-        """
-        Parses the command line arguments.
-        """
+        """Parses the command line arguments."""
         parser = argparse.ArgumentParser()
         parser.add_argument("-force_all", action="store_true", help="Forcefully differentiate all files when set.")
         parser.add_argument("-force_file", type=str, default=None, help="Forcefully differentaited specified file.")
@@ -279,9 +278,7 @@ class Main:
         self.args = parser.parse_args()
 
     def filter_files(self):
-        """
-        Decides what files should be differentiated.
-        """
+        """Decides what files should be differentiated."""
         self.routines = {"forward": full_routines, "reverse": full_routines, "reverse_fast": state_only_routines}
 
         # if all files should be differentiated, return here
@@ -305,28 +302,21 @@ class Main:
         self.routines["reverse_fast"] = self.drop_older_files("reverse_fast")
 
     def delete_tmp_dirs(self):
-        """
-        Deletes temporary directories.
-        """
-        for dir in self.tmpdirs:
+        """Deletes temporary directories."""
+        for directory in self.tmpdirs:
             try:
-                shutil.rmtree(dir)
+                shutil.rmtree(directory)
             except FileNotFoundError:
                 pass
 
     def create_tmp_dirs(self):
-        """
-        Creates temporary directories.
-        """
+        """Creates temporary directories."""
         self.delete_tmp_dirs()
-        for dir in self.tmpdirs:
-            os.mkdir(dir)
+        for directory in self.tmpdirs:
+            os.mkdir(directory)
 
     def postprocess_files(self):
-        """
-        Runs the post-processing scripts in 'autoEdit' on the differentiated
-        files.
-        """
+        """Runs the post-processing scripts in 'autoEdit' on the differentiated files."""
         subprocess.run(
             ["python", osp.join("autoEdit", "autoEditForward.py"), self.tmp_dirs["forward"], self.dirs["forward"]],
             shell=False,
@@ -354,7 +344,7 @@ class Main:
         files' list
 
         Parameters
-        ---------
+        ----------
         mode : str
             The mode to use, either 'forward', 'reverse' or 'reverse_fast'
 
@@ -386,7 +376,7 @@ class Main:
         Runs the preprocessor on the `files to be differentiated` per mode.
 
         Parameters
-        ---------
+        ----------
         mode : str
             The mode to use, either 'forward', 'reverse' or 'reverse_fast'
         """
@@ -422,7 +412,7 @@ class Main:
         Runs tapenade to differentiate the preprocessed files.
 
         Parameters
-        ---------
+        ----------
         mode : str
             The mode to use, either 'forward', 'reverse' or 'reverse_fast'
         """
