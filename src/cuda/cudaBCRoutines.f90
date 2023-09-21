@@ -337,95 +337,98 @@ contains
 
     ! end subroutine bcSymmPolar2ndHalo
 
-    ! subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
+    attributes(global) subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
 
-    !     ! bcNSWallAdiabatic applies the viscous adiabatic wall boundary
-    !     ! condition the pointers already defined.
+        ! bcNSWallAdiabatic applies the viscous adiabatic wall boundary
+        ! condition the pointers already defined.
 
-    !     use constants
-    !     use blockPointers, only: BCData
-    !     use inputDiscretization, only: viscWallBCTreatment
-    !     use BCPointers, only: ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, pp2, pp3, rev0, &
-    !                           rev1, rev2, iStart, jStart, iSize, jSize
-    !     use flowVarRefState, only: viscous, eddyModel
-    !     use iteration, only: currentLevel, groundLevel
-    !     implicit none
+        use constants
+        ! use blockPointers, only: BCData
+        use cudaBlock, only: d_cudaDoms
+        use inputDiscretization, only: viscWallBCTreatment
+        use cudaBCPointers, only: ww0, ww1, ww2, rlv0, rlv1, rlv2, pp0, pp1, pp2, pp3, rev0, &
+                              rev1, rev2, iStart, jStart, iSize, jSize
+        use cudaflowVarRefState, only: viscous, eddyModel
+        use iteration, only: currentLevel, groundLevel
+        implicit none
 
-    !     logical, intent(in) :: secondHalo, correctForK
-    !     integer(kind=intType), intent(in) :: nn
-    !     integer(kind=intType) :: i, j, ii
-    !     real(kind=realType) :: rhok
-    !     integer(kind=intType) :: wallTreatment
+        logical, intent(in) :: secondHalo, correctForK
+        integer(kind=intType), intent(in) :: nn
+        integer(kind=intType) :: sps = 1 ! hard-coding sps = 1 because of how the subroutine signature works
+        real(kind=realType) :: rhok
+        integer(kind=intType) :: wallTreatment
+        integer(kind=intType) :: i, j ! GPU thread indices
 
-    !     ! Initialize rhok to zero. This will be overwritten if a
-    !     ! correction for k must be applied.
+        ! Initialize rhok to zero. This will be overwritten if a
+        ! correction for k must be applied.
 
-    !     rhok = zero
+        rhok = zero
 
-    !     ! Loop over the generic subface to set the state in the
-    !     ! halo cells.
+        ! Loop over the generic subface to set the state in the
+        ! halo cells.
 
-    !     !$AD II-LOOP
-    !     do ii = 0, isize * jsize - 1
-    !         i = mod(ii, isize) + iStart
-    !         j = ii / isize + jStart
+        ! --- Initialize GPU thread indices (assuming 2d launch params) ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-    !         ! Set the value of rhok if a correcton must be applied.
-    !         ! It probably does not matter too much, because k is very
-    !         ! small near the wall.
+        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
 
-    !         if (correctForK) rhok = ww2(i, j, irho) * ww2(i, j, itu1)
+            ! Set the value of rhok if a correcton must be applied.
+            ! It probably does not matter too much, because k is very
+            ! small near the wall.
 
-    !         ! Determine the variables in the halo. As the spacing
-    !         ! is very small a constant pressure boundary condition
-    !         ! (except for the k correction) is okay. Take the slip
-    !         ! velocity into account.
+            if (correctForK) rhok = ww2(i, j, irho) * ww2(i, j, itu1)
 
-    !         ww1(i, j, irho) = ww2(i, j, irho)
-    !         ww1(i, j, ivx) = -ww2(i, j, ivx) + two * bcData(nn)%uSlip(i, j, 1)
-    !         ww1(i, j, ivy) = -ww2(i, j, ivy) + two * bcData(nn)%uSlip(i, j, 2)
-    !         ww1(i, j, ivz) = -ww2(i, j, ivz) + two * bcData(nn)%uSlip(i, j, 3)
+            ! Determine the variables in the halo. As the spacing
+            ! is very small a constant pressure boundary condition
+            ! (except for the k correction) is okay. Take the slip
+            ! velocity into account.
 
-    !         ! Set the viscosities. There is no need to test for a
-    !         ! viscous problem of course. The eddy viscosity is
-    !         ! set to the negative value, as it should be zero on
-    !         ! the wall.
+            ww1(i, j, irho) = ww2(i, j, irho)
+            ww1(i, j, ivx) = -ww2(i, j, ivx) + two * d_cudaDoms(nn,sps)%BCData(nn)%uSlip(i, j, 1)
+            ww1(i, j, ivy) = -ww2(i, j, ivy) + two * d_cudaDoms(nn,sps)%BCData(nn)%uSlip(i, j, 2)
+            ww1(i, j, ivz) = -ww2(i, j, ivz) + two * d_cudaDoms(nn,sps)%BCData(nn)%uSlip(i, j, 3)
 
-    !         rlv1(i, j) = rlv2(i, j)
-    !         if (eddyModel) rev1(i, j) = -rev2(i, j)
+            ! Set the viscosities. There is no need to test for a
+            ! viscous problem of course. The eddy viscosity is
+            ! set to the negative value, as it should be zero on
+            ! the wall.
 
-    !         ! Make sure that on the coarser grids the constant pressure
-    !         ! boundary condition is used.
+            rlv1(i, j) = rlv2(i, j)
+            if (eddyModel) rev1(i, j) = -rev2(i, j)
 
-    !         wallTreatment = viscWallBcTreatment
-    !         if (currentLevel > groundLevel) wallTreatment = constantPressure
+            ! Make sure that on the coarser grids the constant pressure
+            ! boundary condition is used.
 
-    !         BCTreatment:select case(wallTreatment)
+            wallTreatment = viscWallBcTreatment
+            if (currentLevel > groundLevel) wallTreatment = constantPressure
 
-    !         case (constantPressure)
+            BCTreatment:select case(wallTreatment)
 
-    !         ! Constant pressure. Set the gradient to zero.
-    !         pp1(i, j) = pp2(i, j) - four * third * rhok
+            case (constantPressure)
 
-    !         case default
+            ! Constant pressure. Set the gradient to zero.
+            pp1(i, j) = pp2(i, j) - four * third * rhok
 
-    !         pp1(i, j) = 2 * pp2(i, j) - pp3(i, j)
-    !         ! Adjust value if pressure is negative
-    !         if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
+            case default
 
-    !         end select BCTreatment
-    !     end do
+            pp1(i, j) = 2 * pp2(i, j) - pp3(i, j)
+            ! Adjust value if pressure is negative
+            if (pp1(i, j) .le. zero) pp1(i, j) = pp2(i, j)
 
-    !     ! Compute the energy for these halo's.
+            end select BCTreatment
+        end if
 
-    !     call computeEtot(ww1, pp1, correctForK)
+        ! Compute the energy for these halo's.
 
-    !     ! Extrapolate the state vectors in case a second halo
-    !     ! is needed.
+        call computeEtot(ww1, pp1, correctForK)
 
-    !     if (secondHalo) call extrapolate2ndHalo(correctForK)
+        ! Extrapolate the state vectors in case a second halo
+        ! is needed.
 
-    ! end subroutine bcNSWallAdiabatic
+        if (secondHalo) call extrapolate2ndHalo(correctForK)
+
+    end subroutine bcNSWallAdiabatic
 
     ! subroutine bcNSWallIsoThermal(nn, secondHalo, correctForK)
 

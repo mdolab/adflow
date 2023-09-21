@@ -8,6 +8,7 @@ module cudaBCDataMod
     ! --- ADflow module ---
     use cgnsGrid
     use BCDataMod, only: nbcVarMax, nDataSet, cgnsBoco, nbcVar
+    
     implicit none
     save
  
@@ -36,7 +37,7 @@ module cudaBCDataMod
         use BCDataMod, only: h_mass => mass, h_length => length, h_time => time, h_temp => temp, h_angle => angle, &
         h_xf => xf, h_axis => axis, h_radVec1 => radVec1, h_radVec2 => radVec2, &
         h_axAssumed => axAssumed, h_massflowPrescribed => massflowPrescribed, &
-        h_bcVarPresent => bcVarPresent, h_dataSet => dataSet, &
+        h_bcVarPresent => bcVarPresent, h_dataSet => dataSet
         ! h_dataSetd => dataSetd, &
         ! h_bcVarArrayd => bcVarArrayd
 
@@ -44,7 +45,6 @@ module cudaBCDataMod
 
         ! Copy host (CPU) vars to GPU vars
         mass = h_mass;  length = h_length; time = h_time; temp = h_temp; angle = h_angle
-        nDataSet = h_nDataSet; cgnsBoco = h_cgnsBoco; nbcVar = h_nbcVar
         xf = h_xf
         axis = h_axis; radVec1 = h_radVec1; radVec2 = h_radVec2
         axAssumed = h_axAssumed; massflowPrescribed = h_massflowPrescribed
