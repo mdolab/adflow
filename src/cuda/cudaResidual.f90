@@ -21,8 +21,8 @@ module cudaResidual
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
     integer(kind=intType), parameter :: inviscidCentralBSI = 8
-    integer(kind=intType), parameter :: inviscidCentralBSJ = 8
-    integer(kind=intType), parameter :: inviscidCentralBSK = 8
+    integer(kind=intType), parameter :: inviscidCentralBSJ = 4
+    integer(kind=intType), parameter :: inviscidCentralBSK = 4
 
 
     integer(kind=intType) :: h_nx, h_ny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
@@ -2381,15 +2381,18 @@ module cudaResidual
 
             vnp = w_s(tidx+1,tidy,tidz,ivx) * sx + w_s(tidx+1,tidy,tidz,ivy) * sy + w_s(tidx+1,tidy,tidz,ivz) * sz
             vnm = wvx*sx + wvy *sy + wvz *sz
-
+            
             porVel = one
             porFlux = half
-            if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
-            if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
-                porVel = zero
-                vnp = sFace
-                vnm = sFace
-            end if
+            if (j>=2 .and. k>=2)then 
+                if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
+                if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
+                    porVel = zero
+                    vnp = sFace
+                    vnm = sFace
+                end if
+            end if 
+            
             
             ! Incorporate porFlux in porVel.
             porVel = porVel * porFlux
@@ -2443,12 +2446,14 @@ module cudaResidual
 
             porVel = one
             porFlux = half
-            if (cudaDoms(dom,sps)%porJ(i, j, k) == noFlux) porFlux = zero
-            if (cudaDoms(dom,sps)%porJ(i, j, k) == boundFlux) then
-                porVel = zero
-                vnp = sFace
-                vnm = sFace
-            end if
+            if (i>=2 .and. k>=2) then
+                if (cudaDoms(dom,sps)%porJ(i, j, k) == noFlux) porFlux = zero
+                if (cudaDoms(dom,sps)%porJ(i, j, k) == boundFlux) then
+                    porVel = zero
+                    vnp = sFace
+                    vnm = sFace
+                end if
+            end if 
             !Incorporate porFlux in porVel.
             porVel = porVel * porFlux
 
@@ -2503,13 +2508,14 @@ module cudaResidual
 
             porVel = one
             porFlux = half
-
-            if (cudaDoms(dom,sps)%porK(i, j, k) == noFlux) porFlux = zero
-            if (cudaDoms(dom,sps)%porK(i, j, k) == boundFlux) then
-                porVel = zero
-                vnp = sFace
-                vnm = sFace
-            end if
+            if (i>=2 .and. j>=2) then
+                if (cudaDoms(dom,sps)%porK(i, j, k) == noFlux) porFlux = zero
+                if (cudaDoms(dom,sps)%porK(i, j, k) == boundFlux) then
+                    porVel = zero
+                    vnp = sFace
+                    vnm = sFace
+                end if
+            end if 
 
             porVel = porVel * porFlux
 
@@ -5137,7 +5143,7 @@ module cudaResidual
 
       !copy data from cpu to gpu
       call copyCudaBlock
-      call copyData
+    !   call copyData
 
         ibmax = 0
         jbmax = 0
@@ -5214,15 +5220,15 @@ module cudaResidual
       ! viscousFlux
       if (viscous) then
       call CPU_TIME(startVisc)
-        call computeSpeedOfSoundSquared_v1<<<grid_size, block_size>>>
+        ! call computeSpeedOfSoundSquared_v1<<<grid_size, block_size>>>
         call computeSpeedOfSoundSquared_v2<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
 
-        call allNodalGradients_v1<<<grid_size, block_size>>>
+        ! call allNodalGradients_v1<<<grid_size, block_size>>>
         call allNodalGradients_v2<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
 
-        call scaleNodalGradients_v1<<<grid_size, block_size>>>
+        ! call scaleNodalGradients_v1<<<grid_size, block_size>>>
         call scaleNodalGradients_v2<<<grid_size, block_size>>>
         istat = cudaDeviceSynchronize()
         block_size = dim3(4, 4, 2)
