@@ -365,7 +365,12 @@ class Main:
 
             # get timestamps of files
             source_timestamp = osp.getmtime(source)
-            destination_timestamp = osp.getmtime(destination)
+
+            # read the destination file's last modified timestamp. If it does not exist, set timestamp to 0
+            try: 
+                destination_timestamp = osp.getmtime(destination)
+            except FileNotFoundError:
+                destination_timestamp = 0
 
             # only keep file if source is newer
             if source_timestamp > destination_timestamp:
@@ -462,6 +467,7 @@ class Main:
         if mode != "reverse_fast":
             tapenade_msglevel = []
 
+        # actually run tapenade
         subprocess.run(
             [
                 osp.join(os.environ["TAPENADE_HOME"], "bin", "tapenade"),
