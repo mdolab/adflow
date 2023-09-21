@@ -2330,7 +2330,7 @@ module cudaResidual
         use cudaInputPhysics, only: equationMode
         use cudaFlowVarRefState, only: nwf
         implicit none
-        integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz,dom, sps
+        integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz,dom, sps,il,jl,kl,ie,je,ke
         real (kind = realType) , shared :: w_s(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK,5)
         real (kind = realType) , shared :: P_s(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
         real(kind = realType) :: fs
@@ -2351,6 +2351,14 @@ module cudaResidual
         tidx = threadIdx%x
         tidy = threadIdx%y
         tidz = threadIdx%z
+
+        ie = cudaDoms(dom,sps)%ie
+        je = cudaDoms(dom,sps)%je
+        ke = cudaDoms(dom,sps)%ke
+        il = cudaDoms(dom,sps)%il
+        jl = cudaDoms(dom,sps)%jl
+        kl = cudaDoms(dom,sps)%kl
+        
 
         if (i <= ie .and. j <= je .and. k <= ke) then
             wrho = cudaDoms(dom,sps)%w(i,j,k,irho)
