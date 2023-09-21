@@ -15,14 +15,14 @@ Each mode is treated independendly as follows:
     1. Create temporary directories
     2. Add all files to the list of `to be differentiate files`
     3. loop through that list
-        A. If the source file is older than the differentiated file, remove it
-        from that list.
-    4. preprocess all `to be differentiated files` witch cpp
-    5. run tapenade on all `to be differentiated files`. This genereates
-    differentiated fortran code
-    6. postprocess all differentiated file with the scripts in the 'autoEdit'
-    folder. This also copies the finished files to the correct folder
-    7. Delete temporary directories
+    4. If the source file is older than the differentiated file, remove it from
+        that list.
+    5. preprocess all `to be differentiated files` witch cpp
+    6. run tapenade on all `to be differentiated files`. This genereates
+        differentiated fortran code
+    7. postprocess all differentiated file with the scripts in the 'autoEdit'
+        folder. This also copies the finished files to the correct folder
+    8. Delete temporary directories
 
 It is possible to force differentiation of all files, a single file or one mode
 only. Please look at the options using `pyhton run_tapenade.py --help`
@@ -217,7 +217,7 @@ class Main:
     }
 
     def __init__(self):
-        """Runs Main logic of this script."""
+        """Run Main logic of this script."""
         self.modes = ["forward", "reverse", "reverse_fast"]
 
         self.routines = {"forward": {}, "reverse": {}, "reverse_fast": {}}
@@ -266,7 +266,7 @@ class Main:
             self.delete_tmp_dirs()
 
     def parse_args(self):
-        """Parses the command line arguments."""
+        """Parse the command line arguments."""
         parser = argparse.ArgumentParser()
         parser.add_argument("-force_all", action="store_true", help="Forcefully differentiate all files when set.")
         parser.add_argument("-force_file", type=str, default=None, help="Forcefully differentaited specified file.")
@@ -302,7 +302,7 @@ class Main:
         self.routines["reverse_fast"] = self.drop_older_files("reverse_fast")
 
     def delete_tmp_dirs(self):
-        """Deletes temporary directories."""
+        """Delete temporary directories."""
         for directory in self.tmpdirs:
             try:
                 shutil.rmtree(directory)
@@ -310,13 +310,13 @@ class Main:
                 pass
 
     def create_tmp_dirs(self):
-        """Creates temporary directories."""
+        """Create temporary directories."""
         self.delete_tmp_dirs()
         for directory in self.tmpdirs:
             os.mkdir(directory)
 
     def postprocess_files(self):
-        """Runs the post-processing scripts in 'autoEdit' on the differentiated files."""
+        """Run the post-processing scripts in 'autoEdit' on the differentiated files."""
         subprocess.run(
             ["python", osp.join("autoEdit", "autoEditForward.py"), self.tmp_dirs["forward"], self.dirs["forward"]],
             shell=False,
@@ -339,7 +339,9 @@ class Main:
 
     def drop_older_files(self, mode):
         """
-        Compares the timestamp of the differentiated file with its source. If
+        Drop files whose source is older.
+
+        Compare the timestamp of the differentiated file with its source. If
         the source is older, this file is dropped from the 'to be differentiated
         files' list
 
@@ -373,7 +375,7 @@ class Main:
 
     def preprocess_routines(self, mode):
         """
-        Runs the preprocessor on the `files to be differentiated` per mode.
+        Run the preprocessor on the `files to be differentiated` per mode.
 
         Parameters
         ----------
@@ -409,7 +411,7 @@ class Main:
 
     def differentiate_routines(self, mode):
         """
-        Runs tapenade to differentiate the preprocessed files.
+        Run tapenade to differentiate the preprocessed files.
 
         Parameters
         ----------
