@@ -1,8 +1,30 @@
 #!/usr/bin/python
 """
 Differentiates fortran files with tapenade. It compares the timestamp of the
-source file with the differentiated files and only select the files that appear
+source file with the differentiated file and only selects the files that appear
 to have changed.
+
+There are 3 different modes: forward, reverse and reverse_fast. The routines
+defined in `full_routines` are used for the forward and reverse mode. The
+routines defined in `state_only_routines` are only used for the reverse_fast
+mode.
+
+Each mode is treated independendly as follows:
+    1. Create temporary directories
+    2. Add all files to the list of `to be differentiate files`
+    3. loop through that list
+        A. If the source file is older than the differentiated file, remove it
+        from that list.
+    4. preprocess all `to be differentiated files` witch cpp
+    5. run tapenade on all `to be differentiated files`. This genereates
+    differentiated fortran code
+    6. postprocess all differentiated file with the scripts in the 'autoEdit'
+    folder. This also copies the finished files to the correct folder
+    7. Delete temporary directories
+
+It is possible to force differentiation of all files, a single file or one mode
+only. Please look at the options using `pyhton run_tapenade.py --help`
+
 """
 
 
@@ -13,6 +35,7 @@ import os.path as osp
 import subprocess
 
 SRC_PATH = ".."
+TAPENADE_PRECISION = "-i4 -dr8 -r8"
 
 
 full_routines = {
@@ -164,7 +187,6 @@ dependencies = [
 ]
 
 
-TAPENADE_PRECISION = "-i4 -dr8 -r8"
 
 
 class Main:
@@ -193,6 +215,10 @@ class Main:
     }
 
     def __init__(self):
+        """
+        Main logic to run this script
+        """
+
         self.modes = ["forward", "reverse", "reverse_fast"]
 
         self.routines = {"forward": {}, "reverse": {}, "reverse_fast": {}}
@@ -207,6 +233,7 @@ class Main:
         self.parse_args()
         self.filter_files()
 
+        # if one mode is forced, set the other modes to zero
         if self.args.only_forward:
             self.routines["reverse"] = dict()
             self.routines["reverse_fast"] = dict()
@@ -233,7 +260,6 @@ class Main:
 
             self.preprocess_routines(mode)
             self.differentiate_routines(mode)
-            self.preprocess_routines(mode)
 
         self.postprocess_files()
 
@@ -241,6 +267,9 @@ class Main:
             self.delete_tmp_dirs()
 
     def parse_args(self):
+        """
+        Parses the command line arguments.
+        """
         parser = argparse.ArgumentParser()
         parser.add_argument("-force_all", action="store_true", help="Forcefully differentiate all files when set.")
         parser.add_argument("-force_file", type=str, default=None, help="Forcefully differentaited specified file.")
@@ -252,6 +281,9 @@ class Main:
         self.args = parser.parse_args()
 
     def filter_files(self):
+        """
+        Decides what files should be differentiated.
+        """
         self.routines = {"forward": full_routines, "reverse": full_routines, "reverse_fast": state_only_routines}
 
         # if all files should be differentiated, return here
@@ -275,6 +307,9 @@ class Main:
         self.routines["reverse_fast"] = self.drop_older_files("reverse_fast")
 
     def delete_tmp_dirs(self):
+        """
+        Deletes temporary directories.
+        """
         for dir in self.tmpdirs:
             try:
                 shutil.rmtree(dir)
@@ -282,11 +317,18 @@ class Main:
                 pass
 
     def create_tmp_dirs(self):
+        """
+        Creates temporary directories.
+        """
         self.delete_tmp_dirs()
         for dir in self.tmpdirs:
             os.mkdir(dir)
 
     def postprocess_files(self):
+        """
+        Runs the post-processing scripts in 'autoEdit' on the differentiated
+        files.
+        """
         subprocess.run(
             ["python", osp.join("autoEdit", "autoEditForward.py"), self.tmp_dirs["forward"], self.dirs["forward"]],
             shell=False,
@@ -308,6 +350,22 @@ class Main:
         )
 
     def drop_older_files(self, mode):
+        """
+        Compares the timestamp of the differentiated file with its source. If
+        the source is older, this file is dropped from the 'to be differentiated
+        files' list
+
+        Parameters
+        ---------
+        mode : str
+            The mode to use, either 'forward', 'reverse' or 'reverse_fast'
+
+        Returns
+        -------
+        return_routines : dict
+            Holds the `files to be differentiated` in the same format as
+            `state_only_routines` or `full_routines`
+        """
         return_routines = dict()
 
         for source in self.routines[mode].keys():
@@ -326,12 +384,20 @@ class Main:
         return return_routines
 
     def preprocess_routines(self, mode):
+        """
+        Runs the preprocessor on the `files to be differentiated` per mode.
+
+        Parameters
+        ---------
+        mode : str
+            The mode to use, either 'forward', 'reverse' or 'reverse_fast'
+        """
         if mode == "forward":
             tapenade_strig = "-DTAPENADE_FORWARD"
         else:
             tapenade_strig = "-DTAPENADE_REVERSE"
 
-        def run_tapenade(file_name):
+        def run_preprocessor(file_name):
             subprocess.run(
                 [
                     "cpp",
@@ -347,13 +413,21 @@ class Main:
 
         # preprocess dependencies
         for dependency in dependencies:
-            run_tapenade(dependency)
+            run_preprocessor(dependency)
 
         # preprocess routines
         for file_name in self.routines[mode].keys():
-            run_tapenade(file_name)
+            run_preprocessor(file_name)
 
     def differentiate_routines(self, mode):
+        """
+        Runs tapenade to differentiate the preprocessed files.
+
+        Parameters
+        ---------
+        mode : str
+            The mode to use, either 'forward', 'reverse' or 'reverse_fast'
+        """
         # assemble the list of files and the list of routines
         tapenade_files = ""
         tapenade_routines = ""
