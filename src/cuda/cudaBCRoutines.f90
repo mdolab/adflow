@@ -2,36 +2,93 @@
 ! @Desc    :   This module contains the CUDA Fortran version of the boundary condition routines in BCRoutines.F90
 
 module cudaBCRoutines
-
+    ! --- ADflow modules to use ---
+    use precision, only: intType, realType
+    ! use cudaBlock, only: cudaBCType => d_BCData, h_BCData
+    ! use constants
+    ! use cudaBCPointers
     ! --- CUDA FORTRAN module ---
     use cudafor
+    ! ALL VARIABLES PASSED AROUND IN THIS MODULE
+    use cudaBlock, only: BCData => d_BCData, h_BCData
 
     implicit none
+    
+
+
+
     save
 
 contains
 
-    subroutine copy_data
-        ! Does the same thing as subroutine copycudaBlock in cudaBlock.f90 but does NOT store in cudaBlockType
+    subroutine copydata
+        ! This copies all the necessary data from CPU to GPU
         ! Eventually, this should get thrown out 
-        use blockPointers, only: blckptrBCData => BCData
-
-        implicit none
+        use blockPointers, only: nDom, &
+            bBCData => BCData,&
+            nBocos, bBCType => BCType
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use utils, only: setPointers
+        use constants, only: farField, symm
         
-        h_BCData = blckptrBCData
-        BCData = blckptrBCData
+        implicit none
 
-    end subroutine copy_data
+        integer(kind=intType) :: nn, sps, &
+                mm, iBeg, iEnd, jBeg, jEnd, &
+                inodeBeg, inodeEnd, jnodeBeg, jnodeEnd
+        
+        domainsLoop: do nn = 1, nDom
+            spectralLoop: do sps = 1, nTimeIntervalsSpectral
+                
+                call setPointers(nn, 1, sps)
+                
+                allocate(BCData(nBocos))
+                allocate(h_BCData(nBocos))
+
+                bocoLoop: do mm = 1, nBocos
+                    iBeg = bBCData(mm)%icbeg; iEnd = bBCData(mm)%icend
+                    jBeg = bBCData(mm)%jcbeg; jEnd = bBCData(mm)%jcend
+
+                    inodeBeg = bBCData(mm)%inbeg; inodeEnd = bBCData(mm)%inend
+                    jnodeBeg = bBCData(mm)%jnbeg; jnodeEnd = bBCData(mm)%jnend
+
+                    select case (bBCType(mm))
+
+                    case (farField)
+                        ! Only allocate vars that you need for this type of BC
+                        allocate(h_BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd))
+                        allocate(h_BCData(mm)%norm(iBeg:iEnd, jBeg:jEnd, 3))
+
+                        h_BCData(mm)%rface = bBCData(mm)%rface
+                        h_BCData(mm)%norm = bBCData(mm)%norm
+                    
+                    ! case (symm, symmPolar)
+
+                    !     h_BCData(mm)%rface = bBCData(mm)%rface
+                    !     d_BCData(mm)%rface = bBCData(mm)%rface
+                    !     h_BCData(mm)%norm = bBCData(mm)%norm
+
+                    end select
+
+                    ! --- Copy data from host to device via the host type ---
+                    BCData(mm) = h_BCData(mm)
+
+                end do bocoLoop
+
+            end do spectralLoop
+        end do domainsLoop
+
+
+    end subroutine copydata
 
 ! #ifndef USE_TAPENADE
-    attributes(global) subroutine applyAllBC(secondHalo)
+    subroutine applyAllBC(secondHalo)
         !
         !       applyAllBC applies all boundary conditions for the all
         !       blocks on the grid level currentLevel.
         !
         use constants
-        use cudaBlock, only: nDom
-        use iteration, only: currentLevel
+        use blockPointers, only: nDom
         use utils, only: setPointers
         use ALEUtils, only: interpLevelALEBC_Block, recoverLevelALEBC_block
         implicit none
@@ -43,18 +100,16 @@ contains
         !      Local Variables
         integer(kind=intType) :: sps, nn
         
-        ! manually skip time spectral for now
+        ! manually skip time spectral and multigrid for now
         integer(kind=intType) :: nTimeIntervalsSpectral = 1
-
-        sps = (blockIdx%y-1)*blockDim%y + threadIdx%y
-        nn = (blockIdx%z-1)*blockDim%z + threadIdx%z
+        integer(kind=intType) :: currentLevel = 1
 
         ! Loop over the number of spectral solutions and number of blocks.
         
-        if (sps <= spse .AND. nn <= nne) then
-
+        spectralLoop: do sps = 1, nTimeIntervalsSpectral
+            domains: do nn = 1, nDom
                 ! Set the pointers for this block.
-
+                
                 call setPointers(nn, currentLevel, sps)
 
                 call interpLevelALEBC_block
@@ -66,6 +121,241 @@ contains
 
     end subroutine applyAllBC
 ! #endif
+
+    subroutine applyAllBC_block(secondHalo)
+
+        ! Apply BCs for a single block
+        use constants
+        use blockPointers, only: nDom, nBocos, BCType, nViscBocos, w, dw, x, vol, il, jl, kl, &
+                                 sectionID, wOld, volOld, BCData, &
+                                 si, sj, sk, sfacei, sfacej, sfacek, rlv, gamma, p, rev, &
+                                 bmtj1, bmtj2, scratch, bmtk2, bmtk1, &
+                                 fw, aa, d2wall, bmti1, bmti2, s, &
+                                 bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie
+        use utils, only: setBCPointers, getCorrectForK
+        use BCPointers
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        ! subroutines for copying data to device
+        use cudafor, only: dim3
+        use cudaBlock, only: copyCudaBCData
+        use cudaBCPointers, only: copyCudaBC
+        use cudaBCDataMod, only: copyCudaBCDataMod
+        implicit none
+
+        ! --- GPU VARS ---
+        type(dim3) :: grid_size, block_size
+        integer(kind = intType) :: ibmax, jbmax, kbmax
+
+        ! Subroutine arguments.
+        logical, intent(in) :: secondHalo
+
+        ! Local variables.
+        logical :: correctForK 
+        integer(kind=intType) :: nn 
+        integer(kind=intType) :: istat, dom, sps
+        
+        ! --- GPU SETUP ---
+        ! Copy block data to device for this block
+        ! call copyCudaBlock ! this doesn't work right now
+        call copydata ! this is the manual way to do it
+
+        ibmax = 0
+        jbmax = 0
+        kbmax = 0
+        ! zeroing
+        do dom = 1,nDom
+            do sps = 1, nTimeIntervalsSpectral
+                call setPointers(dom,1,sps)
+                ibmax = max(ibmax,bib)
+                jbmax = max(jbmax,bjb)
+                kbmax = max(kbmax,bkb)
+            end do
+        end do 
+        ! SYNCHRONIZE
+        istat = cudaDeviceSynchronize()
+        
+        ! metrics
+        print *,ibmax,jbmax,kbmax
+        block_size = dim3(8, 8, 1)
+        grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), 1)
+        
+        ! call CPU_TIME(start)
+        
+        ! Determine whether or not the total energy must be corrected
+        ! for the presence of the turbulent kinetic energy.
+        correctForK = getCorrectForK()
+
+        ! Apply all the boundary conditions. The order is important!  Only
+        ! some of them have been AD'ed
+
+        ! ! ------------------------------------
+        ! !  Symmetry Boundary Condition
+        ! ! ------------------------------------
+        ! !$AD II-LOOP
+        ! do nn = 1, nBocos
+        !     if (BCType(nn) == symm) then
+        !         ! First set pointers on CPU
+        !         call setBCPointers(nn, .False.)
+        !         ! Then copy all data to device
+        !         call copyCudaBC
+        !         call copyCudaBCDataMod
+        !         ! Run routine on GPU
+        !         call bcSymm1stHalo(nn)
+        !     end if
+        ! end do
+
+        ! if (secondHalo) then
+        !     !$AD II-LOOP
+        !     do nn = 1, nBocos
+        !         if (BCType(nn) == symm) then
+        !             ! First set pointers on CPU
+        !             call setBCPointers(nn, .False.)
+        !             ! Then copy all data to device
+        !             call copyCudaBC
+        !             call copyCudaBCDataMod
+        !             ! Run routine on GPU
+        !             call bcSymm2ndHalo(nn)
+        !         end if
+        !     end do
+        ! end if
+
+        ! ! ------------------------------------
+        ! !  Symmetry Polar Boundary Condition
+        ! ! ------------------------------------
+        ! !$AD II-LOOP
+        ! do nn = 1, nBocos
+        !     if (BCType(nn) == symmPolar) then
+        !         call setBCPointers(nn, .True.)
+        !         ! Then copy all data to device
+        !         call copyCudaBC
+        !         call copyCudaBCDataMod
+        !         call bcSymmPolar1stHalo(nn)
+        !     end if
+        ! end do
+
+        ! if (secondHalo) then
+        !     !$AD II-LOOP
+        !     do nn = 1, nBocos
+        !         if (BCType(nn) == symmPolar) then
+        !             call setBCPointers(nn, .True.)
+        !             ! Then copy all data to device
+        !             call copyCudaBC
+        !             call copyCudaBCDataMod
+        !             call bcSymmPolar2ndHalo(nn)
+        !         end if
+        !     end do
+        ! end if
+
+        ! ! ------------------------------------
+        ! !  Adibatic Wall Boundary Condition
+        ! ! ------------------------------------
+        ! !$AD II-LOOP
+        ! do nn = 1, nViscBocos
+        !     if (BCType(nn) == NSWallAdiabatic) then
+        !         call setBCPointers(nn, .False.)
+        !         ! Then copy all data to device
+        !         call copyCudaBC
+        !         call copyCudaBCDataMod
+        !         call bcNSWallAdiabatic(nn, secondHalo, correctForK)
+        !     end if
+        ! end do
+
+        ! ! ------------------------------------
+        ! !  Isotermal Wall Boundary Condition
+        ! ! ------------------------------------
+        ! !$AD II-LOOP
+        ! do nn = 1, nViscBocos
+        !     if (BCType(nn) == NSWallIsoThermal) then
+        !         call setBCPointers(nn, .False.)
+        !         ! Then copy all data to device
+        !         call copyCudaBC
+        !         call copyCudaBCDataMod
+        !         call bcNSWallIsothermal(nn, secondHalo, correctForK)
+        !     end if
+        ! end do
+
+        ! ------------------------------------
+        !  Farfield Boundary Condition
+        ! ------------------------------------
+        !$AD II-LOOP
+        do nn = 1, nBocos
+            if (BCType(nn) == farField) then
+                call setBCPointers(nn, .False.)
+                ! Then copy all data to device
+                call copyCudaBCData
+                call copyCudaBC
+                call copyCudaBCDataMod
+                ! Run routine on GPU
+                call bcFarField<<<grid_size, block_size>>>(nn, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ! ------------------------------------
+        ! !  Subsonic Outflow Boundary Condition
+        ! ! ------------------------------------
+        ! do nn = 1, nBocos
+        !     if (BCType(nn) == subSonicOutFlow .or. &
+        !         BCType(nn) == MassBleedOutflow) then
+        !         call setBCPointers(nn, .False.)
+        !         ! Then copy all data to device
+        !         call copyCudaBC
+        !         call copyCudaBCDataMod
+        !         call bcSubSonicOutFlow(nn, secondHalo, correctForK)
+        !     end if
+        ! end do
+
+        ! ! ------------------------------------
+        ! !  Subsonic Inflow Boundary Condition
+        ! ! ------------------------------------
+        ! do nn = 1, nBocos
+        !     if (BCType(nn) == subSonicInFlow) then
+        !         call setBCPointers(nn, .False.)
+        !         ! Then copy all data to device
+        !         call copyCudaBC
+        !         call copyCudaBCDataMod
+        !         call bcSubSonicInflow(nn, secondHalo, correctForK)
+        !     end if
+        ! end do
+
+        ! ! ------------------------------------
+        ! !  Extrapolation Boundary Condition
+        ! ! ------------------------------------
+        ! ! Extrapolation boundary conditions; this also includes
+        ! ! the supersonic outflow boundary conditions. The difference
+        ! ! between the two is that the extrap boundary conditions
+        ! ! correspond to singular lines and supersonic outflow
+        ! ! boundaries to physical boundaries. The treatment however
+        ! ! is identical.
+        ! do nn = 1, nBocos
+        !     if (BCType(nn) == extrap .or. &
+        !         BCType(nn) == SupersonicOutFlow) then
+        !         call setBCPointers(nn, .False.)
+        !         call bcExtrap(nn, secondHalo, correctForK)
+        !     end if
+        ! end do
+
+        ! ! ------------------------------------
+        ! !  Euler Wall Boundary Condition
+        ! ! ------------------------------------
+        ! !$AD II-LOOP
+        ! do nn = 1, nBocos
+        !     if (BCType(nn) == EulerWall) then
+        !         call setBCPointers(nn, .True.)
+        !         call bcEulerWall(nn, secondHalo, correctForK)
+        !     end if
+        ! end do
+
+        ! ! ------------------------------------
+        ! !  Supersonic inflow condition
+        ! ! ------------------------------------
+        ! do nn = 1, nBocos
+        !     if (BCType(nn) == SupersonicInflow) then
+        !         call setBCPointers(nn, .False.)
+        !         call bcSupersonicInflow(nn, secondHalo, correctForK)
+        !     end if
+        ! end do
+
+    end subroutine applyAllBC_block
 
     ! ===================================================================
     !   Actual implementation of each of the boundary condition routines
@@ -82,17 +372,17 @@ contains
         !  planes, i.e. a 2D problem.
 
         use constants
-        use blockPointers, only: BCdata
+        ! use cudaBlock, only: BCData=>d_BCdata
         use cudaflowVarRefState, only: viscous, eddyModel
         use cudaBCPointers, only: gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, rlv2, &
                               iStart, jStart, iSize, jSize, rev1, rev2
         implicit none
 
         ! Subroutine arguments.
-        integer(kind=intType), intent(in) :: nn
+        integer(kind=intType), intent(in), value :: nn
 
         ! Local variables.
-        integer(kind=intType) :: i, j, l, ii
+        integer(kind=intType) :: i, j, l
         real(kind=realType) :: vn, nnx, nny, nnz
 
         ! Loop over the generic subface to set the state in the
@@ -130,55 +420,56 @@ contains
         end if
     end subroutine bcSymm1stHalo
 
-    ! subroutine bcSymm2ndHalo(nn)
+    attributes(global) subroutine bcSymm2ndHalo(nn)
 
-    !     !  bcSymm2ndHalo applies the symmetry boundary conditions to a
-    !     !  block for the 2nd halo. This routine is separate as it makes
-    !     !  AD slightly easier.
-    !     use constants
-    !     use blockPointers, only: BCdata
-    !     use flowVarRefState, only: viscous, eddyModel
-    !     use BCPointers, only: gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, rlv3, &
-    !                           rev0, rev3, iStart, jStart, iSize, jSize
-    !     implicit none
+        !  bcSymm2ndHalo applies the symmetry boundary conditions to a
+        !  block for the 2nd halo. This routine is separate as it makes
+        !  AD slightly easier.
+        use constants
+        ! use cudaBlock, only: BCData => d_BCdata
+        use cudaflowVarRefState, only: viscous, eddyModel
+        use cudaBCPointers, only: gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, rlv3, &
+                              rev0, rev3, iStart, jStart, iSize, jSize
+        implicit none
 
-    !     ! Subroutine arguments.
-    !     integer(kind=intType), intent(in) :: nn
+        ! Subroutine arguments.
+        integer(kind=intType), intent(in) :: nn
 
-    !     ! Local variables.
-    !     integer(kind=intType) :: i, j, l, ii
-    !     real(kind=realType) :: vn, nnx, nny, nnz
+        ! Local variables.
+        integer(kind=intType) :: i, j, l
+        real(kind=realType) :: vn, nnx, nny, nnz
 
-    !     ! If we need the second halo, do everything again, but using ww0,
-    !     ! ww3 etc instead of ww2 and ww1.
+        ! If we need the second halo, do everything again, but using ww0,
+        ! ww3 etc instead of ww2 and ww1.
 
-    !     !$AD II-LOOP
-    !     do ii = 0, isize * jsize - 1
-    !         i = mod(ii, isize) + iStart
-    !         j = ii / isize + jStart
+         ! --- Initialize GPU thread indices Launch params ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
-    !         vn = two * (ww3(i, j, ivx) * BCData(nn)%norm(i, j, 1) + &
-    !                     ww3(i, j, ivy) * BCData(nn)%norm(i, j, 2) + &
-    !                     ww3(i, j, ivz) * BCData(nn)%norm(i, j, 3))
+        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
 
-    !         ! Determine the flow variables in the halo cell.
-    !         ww0(i, j, irho) = ww3(i, j, irho)
-    !         ww0(i, j, ivx) = ww3(i, j, ivx) - vn * BCData(nn)%norm(i, j, 1)
-    !         ww0(i, j, ivy) = ww3(i, j, ivy) - vn * BCData(nn)%norm(i, j, 2)
-    !         ww0(i, j, ivz) = ww3(i, j, ivz) - vn * BCData(nn)%norm(i, j, 3)
+            vn = two * (ww3(i, j, ivx) * BCData(nn)%norm(i, j, 1) + &
+                        ww3(i, j, ivy) * BCData(nn)%norm(i, j, 2) + &
+                        ww3(i, j, ivz) * BCData(nn)%norm(i, j, 3))
 
-    !         ww0(i, j, irhoE) = ww3(i, j, irhoE)
+            ! Determine the flow variables in the halo cell.
+            ww0(i, j, irho) = ww3(i, j, irho)
+            ww0(i, j, ivx) = ww3(i, j, ivx) - vn * BCData(nn)%norm(i, j, 1)
+            ww0(i, j, ivy) = ww3(i, j, ivy) - vn * BCData(nn)%norm(i, j, 2)
+            ww0(i, j, ivz) = ww3(i, j, ivz) - vn * BCData(nn)%norm(i, j, 3)
 
-    !         ! Set the pressure and gamma and possibly the
-    !         ! laminar and eddy viscosity in the halo.
+            ww0(i, j, irhoE) = ww3(i, j, irhoE)
 
-    !         gamma0(i, j) = gamma3(i, j)
-    !         pp0(i, j) = pp3(i, j)
-    !         if (viscous) rlv0(i, j) = rlv3(i, j)
-    !         if (eddyModel) rev0(i, j) = rev3(i, j)
-    !     end do
+            ! Set the pressure and gamma and possibly the
+            ! laminar and eddy viscosity in the halo.
 
-    ! end subroutine bcSymm2ndHalo
+            gamma0(i, j) = gamma3(i, j)
+            pp0(i, j) = pp3(i, j)
+            if (viscous) rlv0(i, j) = rlv3(i, j)
+            if (eddyModel) rev0(i, j) = rev3(i, j)
+        end if
+
+    end subroutine bcSymm2ndHalo
 
     ! subroutine bcSymmPolar1stHalo(nn)
 
@@ -336,6 +627,139 @@ contains
     !     end do
 
     ! end subroutine bcSymmPolar2ndHalo
+
+    attributes(global) subroutine bcFarfield(nn, secondHalo, correctForK)
+
+        ! bcFarfield applies the farfield boundary condition to a block.
+        ! It is assumed that the BCPointers are already set *
+
+        use constants
+        ! use blockPointers, only: BCData
+        use cudaFlowVarRefState, only: eddyModel, viscous, gammaInf, wInf, pInfCorr
+        use cudaBCPointers, only: ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, &
+                              rev0, rev1, rev2, gamma2, iStart, jStart, iSize, jSize
+        implicit none
+
+        ! Subroutine arguments.
+        logical, intent(in), value :: secondHalo, correctForK
+        integer, intent(in), value :: nn
+        ! Local variables.
+        integer(kind=intType) ::  i, j, k, l 
+
+        real(kind=realType) :: nnx, nny, nnz
+        real(kind=realType) :: gm1, ovgm1, ac1, ac2
+        real(kind=realType) :: r0, u0, v0, w0, qn0, vn0, c0, s0
+        real(kind=realType) :: re, ue, ve, we, qne, ce
+        real(kind=realType) :: qnf, cf, uf, vf, wf, sf, cc, qq
+
+        ! Some constants needed to compute the riemann inVariants.
+
+        gm1 = gammaInf - one
+        ovgm1 = one / gm1
+
+        ! Compute the three velocity components, the speed of sound and
+        ! the entropy of the free stream.
+
+        r0 = one / wInf(irho)
+        u0 = wInf(ivx)
+        v0 = wInf(ivy)
+        w0 = wInf(ivz)
+        c0 = sqrt(gammaInf * pInfCorr * r0)
+        s0 = wInf(irho)**gammaInf / pInfCorr
+
+        ! Loop over the generic subface to set the state in the
+        ! halo cells.
+        !$AD II-LOOP
+        ! --- Initialize GPU thread indices Launch params ---
+        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
+        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+        ! do ii = 0, isize * jsize - 1
+        !     i = mod(ii, isize) + iStart
+        !     j = ii / isize + jStart
+
+            ! Compute the normal velocity of the free stream and
+            ! substract the normal velocity of the mesh.
+
+            qn0 = u0 * BCData(nn)%norm(i, j, 1) + v0 * BCData(nn)%norm(i, j, 2) + w0 * BCData(nn)%norm(i, j, 3)
+            vn0 = qn0 - BCData(nn)%rface(i, j)
+
+            ! Compute the three velocity components, the normal
+            ! velocity and the speed of sound of the current state
+            ! in the internal cell.
+
+            re = one / ww2(i, j, irho)
+            ue = ww2(i, j, ivx)
+            ve = ww2(i, j, ivy)
+            we = ww2(i, j, ivz)
+            qne = ue * BCData(nn)%norm(i, j, 1) + ve * BCData(nn)%norm(i, j, 2) + we * BCData(nn)%norm(i, j, 3)
+            ce = sqrt(gamma2(i, j) * pp2(i, j) * re)
+
+            ! Compute the new values of the riemann inVariants in
+            ! the halo cell. Either the value in the internal cell
+            ! is taken (positive sign of the corresponding
+            ! eigenvalue) or the free stream value is taken
+            ! (otherwise).
+
+            if (vn0 > -c0) then ! Outflow or subsonic inflow.
+                ac1 = qne + two * ovgm1 * ce
+            else               ! Supersonic inflow.
+                ac1 = qn0 + two * ovgm1 * c0
+            end if
+
+            if (vn0 > c0) then  ! Supersonic outflow.
+                ac2 = qne - two * ovgm1 * ce
+            else                     ! Inflow or subsonic outflow.
+                ac2 = qn0 - two * ovgm1 * c0
+            end if
+
+            qnf = half * (ac1 + ac2)
+            cf = fourth * (ac1 - ac2) * gm1
+
+            if (vn0 > zero) then ! Outflow.
+
+                uf = ue + (qnf - qne) * BCData(nn)%norm(i, j, 1)
+                vf = ve + (qnf - qne) * BCData(nn)%norm(i, j, 2)
+                wf = we + (qnf - qne) * BCData(nn)%norm(i, j, 3)
+
+                sf = ww2(i, j, irho)**gamma2(i, j) / pp2(i, j)
+
+            else
+                ! Inflow
+                uf = u0 + (qnf - qn0) * BCData(nn)%norm(i, j, 1)
+                vf = v0 + (qnf - qn0) * BCData(nn)%norm(i, j, 2)
+                wf = w0 + (qnf - qn0) * BCData(nn)%norm(i, j, 3)
+                sf = s0
+
+            end if
+
+            ! Compute the density, velocity and pressure in the
+            ! halo cell.
+
+            cc = cf * cf / gamma2(i, j)
+            qq = uf * uf + vf * vf + wf * wf
+            ww1(i, j, irho) = (sf * cc)**ovgm1
+            ww1(i, j, ivx) = uf
+            ww1(i, j, ivy) = vf
+            ww1(i, j, ivz) = wf
+            pp1(i, j) = ww1(i, j, irho) * cc
+
+            ! Simply set the laminar and eddy viscosity to
+            ! the value in the donor cell. Their values do
+            ! not matter too much in the far field.
+
+            if (viscous) rlv1(i, j) = rlv2(i, j)
+            if (eddyModel) rev1(i, j) = rev2(i, j)
+        end if
+
+        ! Compute the energy for these halos.
+        call computeEtot(ww1, pp1, correctForK)
+
+        ! Extrapolate the state vectors in case a second halo
+        ! is needed.
+        if (secondHalo) call extrapolate2ndHalo(correctForK)
+
+    end subroutine bcFarfield
 
     attributes(global) subroutine bcNSWallAdiabatic(nn, secondHalo, correctForK)
 
@@ -647,19 +1071,23 @@ contains
 
     end subroutine bcSubsonicOutflow
 
-    attributes(global) subroutine computeEtot(ww, pp, correctForK)
+    ! ========================================
+    !  DEVICE SUBROUTINES
+    ! ========================================
+    attributes(device) subroutine computeEtot(ww, pp, correctForK)
 
         ! Simplified total energy computation for boundary conditions.
         ! Only implements the constant cpModel
 
+        
         use constants, only: gammaConstant, third, five, half, irho, one
         use cudaBCPointers, only: iSize, jSize, iStart, jStart
         implicit none
 
-        real(kind=realType), dimension(:, :) :: pp
-        real(kind=realType), dimension(:, :, :) :: ww
+        real(kind=realType) :: pp
+        real(kind=realType) :: ww
         logical :: correctForK
-        integer(kind=intType) :: ii, i, j
+        integer(kind=intType) :: i, j
         real(kind=realType) :: ovgm1, factK
 
         ! Constant cp and thus constant gamma.
@@ -676,8 +1104,6 @@ contains
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
 
         if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
-            i = mod(ii, isize) + iStart
-            j = ii / isize + jStart
             if (.not. correctForK) then
                 ww(i, j, iRhoE) = ovgm1 * pp(i, j) &
                                     + half * ww(i, j, irho) * (ww(i, j, ivx)**2 &
@@ -698,7 +1124,7 @@ contains
 
     end subroutine computeEtot
         
-    attributes(global) subroutine extrapolate2ndHalo(corectForK)
+    attributes(device) subroutine extrapolate2ndHalo(corectForK)
 
         ! extrapolate2ndHalo determines the states of the second layer
         ! halo cells for the given subface of the block. It is assumed
@@ -711,7 +1137,7 @@ contains
         implicit none
 
         ! Input variables
-        logical, intent(in) :: correctForK
+        logical :: correctForK
 
         ! Working variables
         real(kind=realType), parameter :: factor = 0.5_realType

@@ -32,7 +32,7 @@ module cudaBCDataMod
 
     contains
 
-    subroutine copy_cudaBCDataMod
+    subroutine copycudaBCDataMod
         ! Pointer assignment to have CPU vars known by the 'h_' variable name here
         use BCDataMod, only: h_mass => mass, h_length => length, h_time => time, h_temp => temp, h_angle => angle, &
         h_xf => xf, h_axis => axis, h_radVec1 => radVec1, h_radVec2 => radVec2, &

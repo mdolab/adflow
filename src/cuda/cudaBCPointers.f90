@@ -7,8 +7,23 @@ module cudaBCPointers
     implicit none
     save
 
+    real(kind=realType), dimension(:, :, :), pointer, device :: ww0, ww1, ww2, ww3
+    real(kind=realType), dimension(:, :), pointer, device :: pp0, pp1, pp2, pp3
+    real(kind=realType), dimension(:, :), pointer, device :: rlv0, rlv1, rlv2, rlv3
+    real(kind=realType), dimension(:, :), pointer, device :: rev0, rev1, rev2, rev3
+    real(kind=realType), dimension(:, :), pointer, device :: gamma0, gamma1, gamma2, gamma3
+    
+    real(kind=realType), dimension(:, :, :), pointer, device :: ssi, ssj, ssk
+    real(kind=realType), dimension(:, :, :), pointer, device :: ss, xx
+    real(kind=realType), dimension(:, :), pointer, device :: dd2wall, sFace
+    integer(kind=intType), dimension(:, :), pointer, device :: gcp
+
+    integer(kind=intType), pointer, device :: iStart, iEnd, iSize
+    integer(kind=intType), pointer, device :: jStart, jEnd, jSize
+
+
     type cudaBCType
-        ! Data structure similar to cudaBlock but meant for BC
+        ! Data structure similar to BCType
         real(kind=realType), dimension(:, :, :), pointer, device :: ww0, ww1, ww2, ww3
         real(kind=realType), dimension(:, :), pointer, device :: pp0, pp1, pp2, pp3
         real(kind=realType), dimension(:, :), pointer, device :: rlv0, rlv1, rlv2, rlv3
