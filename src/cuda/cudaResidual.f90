@@ -20,7 +20,10 @@ module cudaResidual
     !               cell-centered quantities.
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
-    integer(kind=intType), parameter :: inviscidCentralBS = 4
+    integer(kind=intType), parameter :: inviscidCentralBSI = 8
+    integer(kind=intType), parameter :: inviscidCentralBSJ = 8
+    integer(kind=intType), parameter :: inviscidCentralBSK = 8
+
 
     integer(kind=intType) :: h_nx, h_ny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
     integer(kind=intType),constant :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
@@ -2328,8 +2331,8 @@ module cudaResidual
         use cudaFlowVarRefState, only: nwf
         implicit none
         integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz,dom, sps
-        real (kind = realType) , shared :: w_s(inviscidCentralBS,inviscidCentralBS,inviscidCentralBS,5)
-        real (kind = realType) , shared :: P_s(inviscidCentralBS,inviscidCentralBS,inviscidCentralBS)
+        real (kind = realType) , shared :: w_s(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK,5)
+        real (kind = realType) , shared :: P_s(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
         real(kind = realType) :: fs
         real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
         real(kind=realType) :: sx, sy, sz
@@ -5189,7 +5192,7 @@ module cudaResidual
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
       
-      block_inv = dim3(inviscidCentralBS,inviscidCentralBS,inviscidCentralBS)
+      block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
       grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y-1)), ceiling(real(bke) / (block_inv%z-1)))
       ! inviscid central flux
       call computeSS<<<grid_size, block_size>>>
@@ -5197,7 +5200,8 @@ module cudaResidual
       call computeDSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
       call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
-    !   call inviscidCentralFlux<<<grid_size, block_size>>>
+      istat = cudaDeviceSynchronize()
+      call inviscidCentralFlux<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
       ! inviscid diss flux scalar
