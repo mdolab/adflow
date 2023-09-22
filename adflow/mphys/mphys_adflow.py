@@ -435,7 +435,7 @@ class ADflowSolver(ImplicitComponent):
 
     def _set_states(self, outputs):
         self.solver.setStates(outputs["adflow_states"])
-    
+
     def _setup_vectors(self, root_vectors):
         super()._setup_vectors(root_vectors)
 
