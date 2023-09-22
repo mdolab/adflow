@@ -171,6 +171,10 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
     solver.adflow.inputiteration.printbcwarnings = updatesMade
     solver.setAeroProblem(ap)
 
+    # Turn printing back on
+    solver.setOption("printIterations", True)
+    solver.adflow.inputiteration.printbcwarnings = True
+
     if inputs is not None:
         tmp = {}
         for args, _ in ap_vars:
