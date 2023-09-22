@@ -196,10 +196,7 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
 
         updatesMade = set_vol_coords(solver, inputs)
 
-    # We need to make sure this isn't the first optimization iteration
-    # because OM will overwrite the ADflow state vector with all ones
-    # before the first iteration.
-    if outputs is not None and ap.adflowData.callCounter != -1:
+    if outputs is not None:
         updatesMade = set_states(solver, outputs)
 
     return solver.comm.allreduce(updatesMade, op=MPI.LOR)
