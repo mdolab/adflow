@@ -1917,4 +1917,267 @@ contains
 
     end subroutine extrapolate2ndHalo
 
+#ifndef USE_TAPENADE
+    subroutine applyAllBC_block_d(secondHalo)
+
+        !------------------------------------------------------------------------
+        ! Manual Differentiation Warning: This routine is differentiated by hand.
+        ! -----------------------------------------------------------------------
+
+        ! Apply BC's for a single block
+
+        use constants
+        use BCRoutines_d
+        use blockPointers, only: bcType, nBocos, nViscBocos, bcdatad
+        use flowVarRefState, only: kPresent
+        use inputDiscretization, only: precond
+        use iteration, only: currentLevel, groundLevel
+        use BCPointers_d
+        use utils, only: getCorrectForK, setBCPointers_d
+        implicit none
+
+        ! Subroutine arguments.
+        logical, intent(in) :: secondHalo
+
+        ! Local variables.
+        logical :: correctForK
+        integer(kind=intType) :: nn
+        !
+        ! Determine whether or not the total energy must be corrected
+        ! for the presence of the turbulent kinetic energy.
+        correctForK = getCorrectForK()
+
+        ! Apply all the boundary conditions. The order is important!  Only
+        ! some of them have been AD'ed
+
+        ! ------------------------------------
+        !  Symmetry Boundary Condition
+        ! ------------------------------------
+        do nn = 1, nBocos
+            if (bcType(nn) == symm) then
+                call setBCPointers_d(nn, .False.)
+                call bcSymm1stHalo_d(nn)
+            end if
+        end do
+
+        if (secondHalo) then
+            do nn = 1, nBocos
+                if (bcType(nn) == symm) then
+                    call setBCPointers_d(nn, .False.)
+                    call bcSymm2ndHalo_d(nn)
+                end if
+            end do
+        end if
+
+        ! ------------------------------------
+        !  Symmetry Polar Boundary Condition
+        ! ------------------------------------
+        !$AD II-LOOP
+        do nn = 1, nBocos
+            if (BCType(nn) == symmPolar) then
+                call setBCPointers_d(nn, .True.)
+                call bcSymmPolar1stHalo_d(nn)
+            end if
+        end do
+
+        if (secondHalo) then
+            !$AD II-LOOP
+            do nn = 1, nBocos
+                if (BCType(nn) == symmPolar) then
+                    call setBCPointers_d(nn, .True.)
+                    call bcSymmPolar2ndHalo_d(nn)
+                end if
+            end do
+        end if
+
+        ! ------------------------------------
+        !  adibatic Wall Boundary Condition
+        ! ------------------------------------
+        do nn = 1, nViscBocos
+            if (bcType(nn) == NSWallAdiabatic) then
+                call setBCPointers_d(nn, .False.)
+                call bcNSWallAdiabatic_d(nn, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Isothermal Wall Boundary Condition
+        ! ------------------------------------
+        do nn = 1, nViscBocos
+            if (bcType(nn) == NSWallIsoThermal) then
+                call setBCPointers_d(nn, .False.)
+                call bcNSWallIsothermal_d(nn, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Farfield Boundary Condition
+        ! ------------------------------------
+        do nn = 1, nBocos
+            if (bcType(nn) == farField) then
+                call setBCPointers_d(nn, .False.)
+                call bcFarField_d(nn, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Subsonic Outflow Boundary Condition
+        ! ------------------------------------
+        do nn = 1, nBocos
+            if (BCType(nn) == subSonicOutFlow .or. &
+                BCType(nn) == MassBleedOutflow) then
+                call setBCPointers_d(nn, .False.)
+                call bcSubSonicOutFlow_d(nn, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Subsonic Inflow Boundary Condition
+        ! ------------------------------------
+        do nn = 1, nBocos
+            if (BCType(nn) == subSonicInFlow) then
+                call setBCPointers_d(nn, .False.)
+                call bcSubSonicInflow_d(nn, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Euler Wall Boundary Condition
+        ! ------------------------------------
+        do nn = 1, nBocos
+            if (bcType(nn) == EulerWall) then
+                call setBCPointers_d(nn, .True.)
+                call bcEulerWall_d(nn, secondHalo, correctForK)
+            end if
+        end do
+
+    end subroutine applyAllBC_block_d
+
+    subroutine applyAllBC_block_b(secondHalo)
+
+        !------------------------------------------------------------------------
+        ! Manual Differentiation Warning: This routine is differentiated by hand.
+        ! -----------------------------------------------------------------------
+
+        ! Apply BC's for a single block
+        use constants
+        use bcroutines_b ! All of them
+        use blockPointers, only: nBocos, nViscBocos, BCType
+        use utils, only: setBCPointers_d, getCorrectForK
+        implicit none
+
+        ! Subroutine arguments.
+        logical, intent(in) :: secondHalo
+
+        ! Local variables.
+        logical :: correctForK
+        integer(kind=intType) :: mm
+        !
+        ! Determine whether or not the total energy must be corrected
+        ! for the presence of the turbulent kinetic energy.
+        correctForK = getCorrectForK()
+
+        ! ------------------------------------
+        !  Euler Wall
+        ! ------------------------------------
+        do mm = 1, nBocos
+            if (bcType(mm) == eulerWall) then
+                call setBCPointers_d(mm, .False.)
+                call bcEulerWall_b(mm, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Subsonic Inflow Boundary Condition
+        ! ------------------------------------
+        do mm = 1, nBocos
+            if (bcType(mm) == subsonicInflow) then
+                call setBCPointers_d(mm, .False.)
+                call bcSubsonicInflow_b(mm, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Subsonic Outflow Boundary Condition
+        ! ------------------------------------
+        do mm = 1, nBocos
+            if (bcType(mm) == subsonicOutflow) then
+                call setBCPointers_d(mm, .False.)
+                call bcSubsonicOutflow_b(mm, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Farfield Boundary Condition
+        ! ------------------------------------
+        do mm = 1, nBocos
+            if (bcType(mm) == farField) then
+                call setBCPointers_d(mm, .False.)
+                call bcFarField_b(mm, secondHalo, correctForK)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Isothermal Wall Boundary Condition
+        ! ------------------------------------
+        DO mm = 1, nviscbocos
+            IF (bctype(mm) .EQ. nswallisothermal) THEN
+                CALL setBCPointers_d(mm, .false.)
+                CALL BCNSWALLISOTHERMAL_B(mm, secondhalo, correctfork)
+            END IF
+        END DO
+
+        ! ------------------------------------
+        !  Adibatic Wall Boundary Condition
+        ! ------------------------------------
+        DO mm = 1, nviscbocos
+            IF (bctype(mm) .EQ. nswalladiabatic) THEN
+                CALL setBCPointers_d(mm, .false.)
+                CALL BCNSWALLADIABATIC_B(mm, secondhalo, correctfork)
+            END IF
+        END DO
+
+        ! ------------------------------------
+        !  Symmetry Polar Boundary Condition
+        ! ------------------------------------
+        if (secondHalo) then
+            do mm = 1, nBocos
+                if (BCType(mm) == symmPolar) then
+                    call setBCPointers_d(mm, .True.)
+                    call bcSymmPolar2ndHalo_b(mm)
+                end if
+            end do
+        end if
+
+        do mm = 1, nBocos
+            if (BCType(mm) == symmPolar) then
+                call setBCPointers_d(mm, .True.)
+                call bcSymmPolar1stHalo_b(mm)
+            end if
+        end do
+
+        ! ------------------------------------
+        !  Symmetry Boundary Condition
+        ! ------------------------------------
+        if (secondHalo) then
+            DO mm = 1, nbocos
+                IF (bctype(mm) .EQ. symm) THEN
+                    CALL setBCPointers_d(mm, .false.)
+                    CALL BCSYMM2ndhalo_b(mm)
+                END IF
+            END DO
+        END if
+
+        if (secondHalo) then
+            DO mm = 1, nbocos
+                IF (bctype(mm) .EQ. symm) THEN
+                    CALL setBCPointers_d(mm, .false.)
+                    CALL BCSYMM1sthalo_b(mm)
+                END IF
+            END DO
+        END if
+    end subroutine applyAllBC_block_b
+
+#endif
+
 end module BCRoutines

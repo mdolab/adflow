@@ -240,7 +240,7 @@ contains
         use diffsizes, only: ISIZE1OFDrfbcdata, ISIZE1OFDrfviscsubface
         use communication, only: adflow_comm_world, myID
         use iteration, only: currentLevel
-        use BCExtra_d, only: applyAllBC_Block_d
+        use BCRoutines, only: applyAllBC_Block_d
         use inputAdjoint, only: viscPC
         use flowVarRefState, only: nw, nwf
         use blockPointers, only: nDom, il, jl, kl, wd, xd, dw, dwd, nBocos, nViscBocos
@@ -611,12 +611,11 @@ contains
         use residuals_b, only: sourceTerms_block_b, initRes_block_b
         use fluxes_b, only: inviscidUpwindFlux_b, inviscidDissFluxScalar_b, &
                             inviscidDissFluxMatrix_b, viscousFlux_b, inviscidCentralFlux_b
-        use BCExtra_b, only: applyAllBC_Block_b
         use bcdata, only: setBCData_b, setBCDataFineGrid_b
         use oversetData, only: oversetPresent
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity_b
-        use BCRoutines, only: applyAllBC_block
+        use BCRoutines, only: applyAllBC_block, applyAllBC_Block_b
         use actuatorRegionData, only: nActuatorRegions
         use monitor, only: timeUnsteadyRestart
         use section, only: sections, nSections ! used in time-declaration
@@ -986,7 +985,6 @@ contains
                                computeSpeedOfSoundSquared_b
         use turbbcroutines_b, only: applyAllTurbBCthisblock_b, bcTurbTreatment_b
         use turbUtils_b, only: computeEddyViscosity_b
-        use BCExtra_b, only: applyAllBC_Block_b
 
         use sa_fast_b, only: saresscale_fast_b, saviscous_fast_b, &
                              sasource_fast_b, qq
@@ -997,7 +995,7 @@ contains
         use flowutils_fast_b, only: allnodalgradients_fast_b
         use residuals_fast_b, only: sourceTerms_block_fast_b, initRes_block_fast_b
         use oversetData, only: oversetPresent
-        use bcroutines, only: applyallbc_block
+        use bcroutines, only: applyallbc_block, applyAllBC_Block_b
         use actuatorRegionData, only: nActuatorRegions
         implicit none
 
@@ -1224,7 +1222,7 @@ contains
         ! This is a special state-only forward mode linearization
         ! computation used to assemble the jacobian.
         use constants
-        use BCExtra_d, only: applyAllBC_Block_d
+        use BCRoutines, only: applyAllBC_Block_d
         use inputAdjoint, only: viscPC
         use blockPointers, only: nDom, wd, xd, dw, dwd
         use flowVarRefState, only: viscous

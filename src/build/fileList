@@ -134,7 +134,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		adjoint/outputForward/ALEUtils_d.f90\
 		adjoint/outputForward/BCData_d.f90\
-		adjoint/outputForward/BCExtra_d.F90\
 		adjoint/outputForward/BCRoutines_d.f90\
 		adjoint/outputForward/adjointExtra_d.f90\
 		adjoint/outputForward/flowUtils_d.f90\
@@ -153,7 +152,6 @@ fortranFiles=	ADT/adtUtils.F90\
 		\
 		adjoint/outputReverse/ALEUtils_b.f90\
 		adjoint/outputReverse/BCData_b.f90\
-		adjoint/outputReverse/BCExtra_b.F90\
 		adjoint/outputReverse/BCRoutines_b.f90\
 		adjoint/outputReverse/adjointExtra_b.f90\
 		adjoint/outputReverse/flowUtils_b.f90\
