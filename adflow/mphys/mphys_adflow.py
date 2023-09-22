@@ -171,6 +171,10 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
     solver.adflow.inputiteration.printbcwarnings = updatesMade
     solver.setAeroProblem(ap)
 
+    # Turn printing back on
+    solver.setOption("printIterations", True)
+    solver.adflow.inputiteration.printbcwarnings = True
+
     if inputs is not None:
         tmp = {}
         for args, _ in ap_vars:
@@ -431,6 +435,23 @@ class ADflowSolver(ImplicitComponent):
 
     def _set_states(self, outputs):
         self.solver.setStates(outputs["adflow_states"])
+    
+    def _setup_vectors(self, root_vectors):
+        super()._setup_vectors(root_vectors)
+
+        # Turn off extra printouts
+        self.solver.setOption("printIterations", False)
+        self.solver.adflow.inputiteration.printbcwarnings = False
+
+        # Set the AP
+        self.solver.setAeroProblem(self.ap)
+
+        # Turn printing back on
+        self.solver.setOption("printIterations", True)
+        self.solver.adflow.inputiteration.printbcwarnings = True
+
+        # Set the OM states to be equal to the free stream
+        self.set_val("adflow_states", self.solver.getStates())
 
     def apply_nonlinear(self, inputs, outputs, residuals):
         solver = self.solver
@@ -443,6 +464,7 @@ class ADflowSolver(ImplicitComponent):
     def solve_nonlinear(self, inputs, outputs):
         solver = self.solver
         ap = self.ap
+
         if self._do_solve:
             setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
