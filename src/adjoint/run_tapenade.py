@@ -367,7 +367,7 @@ class Main:
             source_timestamp = osp.getmtime(source)
 
             # read the destination file's last modified timestamp. If it does not exist, set timestamp to 0
-            try: 
+            try:
                 destination_timestamp = osp.getmtime(destination)
             except FileNotFoundError:
                 destination_timestamp = 0
@@ -467,10 +467,20 @@ class Main:
         if mode != "reverse_fast":
             tapenade_msglevel = []
 
+        # get tapenade executable
+        tapenade_path = shutil.which("tapenade")
+        if tapenade_path is None:
+            try:
+                tapenade_path = osp.join(os.environ["TAPENADE_HOME"], "bin", "tapenade")
+            except KeyError:
+                raise OSError(
+                    "The tapenade executable was not found. Either append it to $PATH or set $TAPENADE_HOME accordingly"
+                )
+
         # actually run tapenade
         subprocess.run(
             [
-                osp.join(os.environ["TAPENADE_HOME"], "bin", "tapenade"),
+                tapenade_path,
                 "-html",
                 "-head",
                 tapenade_routines,
