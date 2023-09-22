@@ -2332,6 +2332,8 @@ module cudaResidual
         implicit none
         integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz,dom, sps,il,jl,kl,ie,je,ke
         real (kind = realType) , shared :: w_s(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK,5)
+        real (kind = realType) , shared :: dw_s(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK,5)
+
         real (kind = realType) , shared :: P_s(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
         real(kind = realType) :: fs
         real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
@@ -2339,7 +2341,7 @@ module cudaResidual
         real(kind = realType) :: tmp
         real(kind = realType) :: vnp, vnm,porVel,porFlux, sFace,qsp, qsm, rqsp, rqsm
         real(kind = realType) :: t_dw(5)
-
+    
         dom = 1
         sps = 1
         !cell centered indices
@@ -2374,6 +2376,7 @@ module cudaResidual
             w_s(tidx,tidy,tidz,ivz) = wvz
             w_s(tidx,tidy,tidz,irhoE) = wrhoE
             P_s(tidx,tidy,tidz) = P
+            dw_s(tidx,tidy,tidz,:) = zero
         end if 
         ! t_dw  = zero
         !sync threads now
@@ -2416,32 +2419,32 @@ module cudaResidual
 
             !mass flux I dir 
             fs = rqsp + rqsm
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, irho), fs)
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, irho), fs)
             t_dw(irho) = fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
 
             !imx flux I dir 
             fs = rqsp * w_s(tidx + 1, tidy, tidz, ivx) + rqsm * wvx + pa * sx
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imx), fs)
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imx), fs)
             t_dw(imx) = fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
             
             !imy flux I dir 
             fs = rqsp * w_s(tidx + 1,tidy, tidz, ivy) + rqsm * wvy + pa * sy
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imy), fs)
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imy), fs)
             t_dw(imy) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
 
             !imz flux I dir 
             fs = rqsp * w_s(tidx + 1,tidy, tidz, ivz) + rqsm * wvz + pa * sz
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, imz), fs)
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imz), fs)
             t_dw(imz) =  fs 
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
 
             !irhoE flux I dir
             fs = qsp * w_s(tidx + 1,tidy, tidz, irhoE) + qsm * wrhoE &
                 + porFlux * (vnp * P_s(tidx + 1,tidy, tidz) + vnm * P)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i + 1, j, k, irhoE), fs)
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, irhoE), fs)
             t_dw(irhoE) =  fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
 
@@ -2483,32 +2486,32 @@ module cudaResidual
             pa = porFlux * (P_s(tidx, tidy + 1, tidz) + P)
             !mass flux J dir
             fs = rqsp + rqsm
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, irho), fs)
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, irho), fs)
             t_dw(irho) = t_dw(irho) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
             
             !imx flux J dir 
             fs = rqsp * w_s(tidx, tidy + 1, tidz, ivx) + rqsm * wvx + pa * sx
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imx), fs)
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imx), fs)
             t_dw(imx) = t_dw(imx) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
 
             !imy flux J dir
             fs = rqsp * w_s(tidx, tidy + 1, tidz, ivy) + rqsm * wvy + pa * sy
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imy), fs)
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imy), fs)
             t_dw(imy) = t_dw(imy) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
 
             !imz flux J dir
             fs = rqsp * w_s(tidx, tidy + 1, tidz, ivz) + rqsm * wvz + pa * sz
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, imz), fs)
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imz), fs)
             t_dw(imz) = t_dw(imz) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
 
             !irhoE flux J dir
             fs = qsp * w_s(tidx, tidy + 1, tidz, irhoE) + qsm * wrhoE &
                 + porFlux * (vnp * P_s(tidx, tidy + 1, tidz) + vnm * P)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j + 1, k, irhoE), fs)
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, irhoE), fs)
             t_dw(irhoE) = t_dw(irhoE) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
 
@@ -2546,45 +2549,49 @@ module cudaResidual
 
             !mass flux K dir
             fs = rqsp + rqsm
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, irho), fs)
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , irho), fs)
             t_dw(irho) = t_dw(irho) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
 
             !imx flux K dir
             fs = rqsp * w_s(tidx, tidy, tidz + 1, ivx) + rqsm * wvx + pa * sx
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imx), fs)
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , imx), fs)
             t_dw(imx) = t_dw(imx) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
 
             !imy flux K dir
             fs = rqsp * w_s(tidx, tidy, tidz + 1, ivy) + rqsm * wvy + pa * sy
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imy), fs)
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , imy), fs)
             t_dw(imy) = t_dw(imy) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
 
             !imz flux K dir
             fs = rqsp * w_s(tidx, tidy, tidz + 1, ivz) + rqsm * wvz + pa * sz
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, imz), fs)
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , imz), fs)
             t_dw(imz) = t_dw(imz) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
 
             !irhoE flux K dir
             fs = qsp * w_s(tidx, tidy, tidz + 1, irhoE) + qsm * wrhoE &
                 + porFlux * (vnp * P_s(tidx, tidy, tidz + 1) + vnm * P)
-            tmp = atomicsub(cudaDoms(dom,sps)%dw(i, j, k + 1, irhoE), fs)
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1, irhoE), fs)
             t_dw(irhoE) = t_dw(irhoE) + fs
             ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
 
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), t_dw(irho))
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), t_dw(imx))
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), t_dw(imy))
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), t_dw(imz))
-            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), t_dw(irhoE))
-
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, irho), t_dw(irho))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, imx), t_dw(imx))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, imy), t_dw(imy))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, imz), t_dw(imz))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, irhoE), t_dw(irhoE))
 
         end if 
 
-
+        call syncthreads()
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho),dw_s(tidx,tidy,tidz, irho))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx),dw_s(tidx,tidy,tidz, imx))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy),dw_s(tidx,tidy,tidz, imy))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz),dw_s(tidx,tidy,tidz, imz))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE),dw_s(tidx,tidy,tidz, irhoE))
         end if 
 
         
