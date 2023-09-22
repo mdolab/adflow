@@ -232,7 +232,7 @@ class ADflowMesh(ExplicitComponent):
         return self._getTriangulatedMeshSurface(groupName=groupName)
 
     def _getTriangulatedMeshSurface(self, groupName=None, **kwargs):
-        """
+        """©
         This function returns a trianguled verision of the surface
         mesh on all processors. The intent is to use this for doing
         constraints in DVConstraints.
@@ -961,7 +961,7 @@ class ADflowFunctions(ExplicitComponent):
 
         # re-set the AP so that we are sure state is updated
         solver.setOption("printIterations", False)
-        solver.adflow.inputiteration.printbcwarnings = False  # Turn of extra printouts
+        solver.adflow.inputiteration.printbcwarnings = False  # Turn off extra printouts
         solver.setAeroProblem(ap)
 
         # Reset back to true to preserve normal ADflow printout structure
