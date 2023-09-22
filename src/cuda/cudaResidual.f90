@@ -5307,13 +5307,14 @@ module cudaResidual
         real(kind=realType), dimension(:,:,:,:), allocatable :: h_sI, h_sJ, h_sK
         real(kind=realType), dimension(:,:,:), allocatable :: h_vol, h_aa,h_p,h_gamma, h_aa_v1,h_vol_v1
         real(kind=realType), dimension(:,:,:), allocatable :: h_radI, h_radJ, h_radK
-        integer(kind=intType) :: h_ie,h_je,h_ke
+        integer(kind=intType) :: h_ie,h_je,h_ke, ierr, config
         real(kind=realType) :: sslim
 
         dom = 1 
         sps = 1
         call setPointers(1, 1, 1)
         call applyAllBC_block(.True.)
+        ierr = cudaDeviceSetSharedMemConfig(cudaSharedMemBankSizeEightByte)
         call calculateCudaResidual(.True.,1,nw)
 
         
