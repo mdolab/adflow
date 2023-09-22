@@ -261,8 +261,7 @@ python module libadflow
 
        module initializeflow
 
-         subroutine updatebcdataalllevels(printwarnings)
-           logical, intent(in) :: printwarnings
+         subroutine updatebcdataalllevels
          end subroutine updatebcdataalllevels
 
          subroutine initflow

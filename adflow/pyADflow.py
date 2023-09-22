@@ -381,7 +381,7 @@ class ADFLOW(AeroSolver):
         oversetPreTime = time.time()
 
         self.adflow.tecplotio.initializeliftdistributiondata()
-        self.adflow.initializeflow.updatebcdataalllevels(True)
+        self.adflow.initializeflow.updatebcdataalllevels()
         self.adflow.initializeflow.initflow()
 
         initFlowTime = time.time()
@@ -3681,7 +3681,7 @@ class ADFLOW(AeroSolver):
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
 
         if not firstCall:
-            self.adflow.initializeflow.updatebcdataalllevels
+            self.adflow.initializeflow.updatebcdataalllevels()
 
             # We need to do an all reduce here in case there's a BC failure
             # on any of the procs after we update the bc data.
