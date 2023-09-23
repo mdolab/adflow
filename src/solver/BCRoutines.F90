@@ -56,6 +56,11 @@ contains
 
     subroutine applyAllBC_block(secondHalo)
 
+        !--------------------------------------------------------------
+        ! Manual Differentiation Warning: Modifying this routine requires
+        ! modifying the hand-written forward and reverse routines.
+        ! --------------------------------------------------------------
+
         ! Apply BC's for a single block
         use constants
         use blockPointers, only: nBocos, BCType, nViscBocos, w, dw, x, vol, il, jl, kl, &
@@ -1918,6 +1923,7 @@ contains
     end subroutine extrapolate2ndHalo
 
 #ifndef USE_TAPENADE
+#ifndef USE_COMPLEX
     subroutine applyAllBC_block_d(secondHalo)
 
         !------------------------------------------------------------------------
@@ -2178,6 +2184,7 @@ contains
         END if
     end subroutine applyAllBC_block_b
 
+#endif
 #endif
 
 end module BCRoutines
