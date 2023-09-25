@@ -236,7 +236,7 @@ class ADflowMesh(ExplicitComponent):
         return self._getTriangulatedMeshSurface(groupName=groupName)
 
     def _getTriangulatedMeshSurface(self, groupName=None, **kwargs):
-        """©
+        """
         This function returns a trianguled verision of the surface
         mesh on all processors. The intent is to use this for doing
         constraints in DVConstraints.
