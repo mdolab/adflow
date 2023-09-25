@@ -888,17 +888,19 @@ class ADFLOW(AeroSolver):
         coordXfer=None,
     ):
         """
-        Add an actuator disk zone defined by the supplied closed
-        surface in the plot3d file "fileName". This surface defines the
-        physical extent of the region over which to apply the source terms.
-        Internally, we find all of the CFD volume cells that are inside
-        this closed surface and apply the source terms over these cells.
-        This surface is only used with the original mesh coordinates to
-        mark the internal CFD cells, and we keep using these cells even
-        if the geometric design and the mesh coordinates change. For
-        example, the marked cells can lie outside of the original
-        closed surface after a large design change, but we will still
-        use the cells that were inside the surface with the baseline design.
+        Add an actuator disk zone defined by the supplied closed surface in the
+        plot3d file "fileName". This surface defines the physical extent of the
+        region over which to apply the source terms. The plot3d file may be
+        multi-block but all the surface normals must point outside and no
+        additional surfaces can be inside. Internally, we find all of the CFD
+        volume cells that have their center inside this closed surface and
+        apply the source terms over these cells. This surface is only used with
+        the original mesh coordinates to mark the internal CFD cells, and we
+        keep using these cells even if the geometric design and the mesh
+        coordinates change. For example, the marked cells can lie outside of
+        the original closed surface after a large design change, but we will
+        still use the cells that were inside the surface with the baseline
+        design.
 
         axis1 and axis2 define the vector that we use to determine the
         direction of the thrust addition. Internally, we compute a
@@ -5623,19 +5625,19 @@ class ADFLOW(AeroSolver):
             "NKUseEW": [bool, True],
             "NKADPC": [bool, False],
             "NKViscPC": [bool, False],
+            "NKGlobalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
             "NKASMOverlap": [int, 1],
             "NKPCILUFill": [int, 2],
             "NKJacobianLag": [int, 20],
             "applyPCSubspaceSize": [int, 10],
             "NKInnerPreconIts": [int, 1],
             "NKOuterPreconIts": [int, 1],
+            "NKAMGLevels": [int, 2],
+            "NKAMGNSmooth": [int, 1],
             "NKLS": [str, ["cubic", "none", "non-monotone"]],
             "NKFixedStep": [float, 0.25],
             "RKReset": [bool, False],
             "nRKReset": [int, 5],
-            # MG PC
-            "AGMGLevels": [int, 1],
-            "AGMGNSmooth": [int, 3],
             # Approximate Newton-Krylov Parameters
             "useANKSolver": [bool, True],
             "ANKUseTurbDADI": [bool, True],
@@ -5646,11 +5648,14 @@ class ADFLOW(AeroSolver):
             "ANKLinearSolveTol": [float, 0.05],
             "ANKLinearSolveBuffer": [float, 0.01],
             "ANKLinResMax": [float, 0.1],
+            "ANKGlobalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
             "ANKASMOverlap": [int, 1],
             "ANKPCILUFill": [int, 2],
             "ANKJacobianLag": [int, 10],
             "ANKInnerPreconIts": [int, 1],
             "ANKOuterPreconIts": [int, 1],
+            "ANKAMGLevels": [int, 2],
+            "ANKAMGNSmooth": [int, 1],
             "ANKCFL0": [float, 5.0],
             "ANKCFLMin": [float, 1.0],
             "ANKCFLLimit": [float, 1e5],
@@ -5728,6 +5733,8 @@ class ADFLOW(AeroSolver):
             "ASMOverlap": [int, 1],
             "innerPreconIts": [int, 1],
             "outerPreconIts": [int, 3],
+            "adjointAMGLevels": [int, 2],
+            "adjointAMGNSmooth": [int, 1],
             "applyAdjointPCSubspaceSize": [int, 20],
             "frozenTurbulence": [bool, False],
             "useMatrixFreedrdw": [bool, True],
@@ -5789,7 +5796,7 @@ class ADFLOW(AeroSolver):
             "stab": self.adflow.inputtsstabderiv,
             "nk": self.adflow.nksolver,
             "ank": self.adflow.anksolver,
-            "agmg": self.adflow.agmg,
+            "amg": self.adflow.amg,
             "adjoint": self.adflow.inputadjoint,
             "cost": self.adflow.inputcostfunctions,
             "unsteady": self.adflow.inputunsteady,
@@ -6003,6 +6010,11 @@ class ADFLOW(AeroSolver):
             "nkswitchtol": ["nk", "nk_switchtol"],
             "nksubspacesize": ["nk", "nk_subspace"],
             "nklinearsolvetol": ["nk", "nk_rtolinit"],
+            "nkglobalpreconditioner": {
+                "additive schwarz": "asm",
+                "multigrid": "mg",
+                "location": ["nk", "nk_precondtype"],
+            },
             "nkasmoverlap": ["nk", "nk_asmoverlap"],
             "nkpcilufill": ["nk", "nk_ilufill"],
             "nkjacobianlag": ["nk", "nk_jacobianlag"],
@@ -6011,6 +6023,8 @@ class ADFLOW(AeroSolver):
             "applypcsubspacesize": ["nk", "applypcsubspacesize"],
             "nkinnerpreconits": ["nk", "nk_innerpreconits"],
             "nkouterpreconits": ["nk", "nk_outerpreconits"],
+            "nkamglevels": ["nk", "nk_amglevels"],
+            "nkamgnsmooth": ["nk", "nk_amgnsmooth"],
             "nkls": {
                 "none": self.adflow.constants.nolinesearch,
                 "cubic": self.adflow.constants.cubiclinesearch,
@@ -6020,9 +6034,6 @@ class ADFLOW(AeroSolver):
             "nkfixedstep": ["nk", "nk_fixedstep"],
             "rkreset": ["iter", "rkreset"],
             "nrkreset": ["iter", "miniternum"],
-            # MG PC
-            "agmglevels": ["agmg", "agmglevels"],
-            "agmgnsmooth": ["agmg", "agmgnsmooth"],
             # Approximate Newton-Krylov Parameters
             "useanksolver": ["ank", "useanksolver"],
             "ankuseturbdadi": ["ank", "ank_useturbdadi"],
@@ -6033,11 +6044,18 @@ class ADFLOW(AeroSolver):
             "anklinearsolvetol": ["ank", "ank_rtol"],
             "anklinearsolvebuffer": ["ank", "ank_atol_buffer"],
             "anklinresmax": ["ank", "ank_linresmax"],
+            "ankglobalpreconditioner": {
+                "additive schwarz": "asm",
+                "multigrid": "mg",
+                "location": ["ank", "ank_precondtype"],
+            },
             "ankasmoverlap": ["ank", "ank_asmoverlap"],
             "ankpcilufill": ["ank", "ank_ilufill"],
             "ankjacobianlag": ["ank", "ank_jacobianlag"],
             "ankinnerpreconits": ["ank", "ank_innerpreconits"],
             "ankouterpreconits": ["ank", "ank_outerpreconits"],
+            "ankamglevels": ["ank", "ank_amglevels"],
+            "ankamgnsmooth": ["ank", "ank_amgnsmooth"],
             "ankcfl0": ["ank", "ank_cfl0"],
             "ankcflmin": ["ank", "ank_cflmin0"],
             "ankcfllimit": ["ank", "ank_cfllimit"],
@@ -6130,6 +6148,8 @@ class ADFLOW(AeroSolver):
             "asmoverlap": ["adjoint", "overlap"],
             "innerpreconits": ["adjoint", "innerpreconits"],
             "outerpreconits": ["adjoint", "outerpreconits"],
+            "adjointamglevels": ["adjoint", "adjamglevels"],
+            "adjointamgnsmooth": ["adjoint", "adjamgnsmooth"],
             "firstrun": ["adjoint", "firstrun"],
             "verifystate": ["adjoint", "verifystate"],
             "verifyspatial": ["adjoint", "verifyspatial"],

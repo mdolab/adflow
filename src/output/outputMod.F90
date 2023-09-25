@@ -2869,10 +2869,10 @@ contains
         case (timeSpectral)
 
             ! Time spectral mode. This is not a predefined mode in CGNS
-            ! and therefore use userDefined.
+            ! and therefore use CG_UserDefined.
 
             call cg_simulation_type_write_f(cgnsInd, base, &
-                                            UserDefined, ierr)
+                                            CG_UserDefined, ierr)
             if (ierr /= CG_OK) &
                  call terminate("writeCGNSHeader", &
                  "Something wrong when calling &
@@ -3299,7 +3299,7 @@ contains
         ! supported by cgns.
 
         call cg_model_write_f("TurbulenceModel_t", &
-                              UserDefined, ierr)
+                              CG_UserDefined, ierr)
         if (ierr /= CG_OK) &
             call terminate("writeCGNSKtauInfo", &
                            "Something wrong when calling cg_model_write_f")
@@ -3622,7 +3622,7 @@ contains
                  &cg_dataclass_write_f")
 
             call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                                  Null, ierr)
+                                  CG_Null, ierr)
             if (ierr /= CG_OK) &
                  call terminate("writeReferenceState", &
                  "Something wrong when calling &
@@ -3833,7 +3833,7 @@ contains
         ! Write that user defined model is used; v2-f is not
         ! supported by cgns.
 
-        call cg_model_write_f("TurbulenceModel_t", UserDefined, ierr)
+        call cg_model_write_f("TurbulenceModel_t", CG_UserDefined, ierr)
 
         if (ierr /= CG_OK) &
             call terminate("writeCGNSV2fInfo", &
