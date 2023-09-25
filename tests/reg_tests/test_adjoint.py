@@ -308,7 +308,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
-        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
             rotRate_x = 0.5
@@ -367,7 +367,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.CFDSolver = ADFLOW_C(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
-        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
             rotRate_x = 0.5
