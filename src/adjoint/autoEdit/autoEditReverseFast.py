@@ -26,6 +26,7 @@ del_patterns = [
     re.compile(r"(\s*call popreal8)"),
     re.compile(r"(\s*call pushinteger4)"),
     re.compile(r"(\s*call popinteger4)"),
+    re.compile(r"&\s*size\(scratch, 3\)\*size\(scratch, 4\)\)"), # get rid off garbage in SST
 ]
 patt_pushcontrol1b = re.compile(r"(\s*call pushcontrol1b\()(.*)\)")
 patt_popcontrol1b = re.compile(r"(\s*call popcontrol1b\()(.*)\)")
