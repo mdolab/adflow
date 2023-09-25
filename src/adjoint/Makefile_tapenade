@@ -339,7 +339,20 @@ SST%f1SST(w, scratch, d2wall) > \
 \
 turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev) \
 \
-turbutils%turbAdvection(w,scratch)>(w,scratch)"
+turbutils%turbAdvection(w,scratch)>(w,scratch) \
+turbutils%kwCDterm(w, scratch) > \
+                  (w, scratch) \
+\
+turbutils%prodKatoLaunder(w, scratch) > \
+                  		 (w, scratch) \
+\
+turbutils%prodSmag2(w, scratch) > \
+                   (w, scratch) \
+\
+turbutils%prodWmag2(w, vol, scratch) > \
+                   (w, vol, scratch) \
+\
+"
 
 #================================================================
 

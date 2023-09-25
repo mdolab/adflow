@@ -21,7 +21,7 @@ contains
     use blockpointers, only : nx, il, ie, ny, jl, je, nz, kl, ke,&
 &   spectralsol, w, wd, si, sj, sk, dw, dwd, pori, porj, pork, &
 &   indfamilyi, indfamilyj, indfamilyk, p, pd, sfacei, sfacej, sfacek, &
-&   nbkglobal, addgridvelocities, blockismoving, vol, factfamilyi, &
+&   nbkglobal, addgridvelocities, blockismoving, vol, vold, factfamilyi,&
 &   factfamilyj, factfamilyk
     use cgnsgrid, only : cgnsdoms, massflowfamilyinv
     use flowvarrefstate, only : timeref
