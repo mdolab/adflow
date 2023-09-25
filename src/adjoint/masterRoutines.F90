@@ -42,7 +42,7 @@ contains
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity
         use actuatorRegionData, only: nActuatorRegions
-        use wallDistanceData, only: xSurfVec, xSurf, exchangeWallDistanceHalos
+        use wallDistanceData, only: xSurfVec, xSurf
 
         implicit none
 
@@ -94,10 +94,11 @@ contains
         end if
 
 
-        if (useSpatial) then
-            do sps = 1, nTimeIntervalsSpectral
-                do nn = 1, nDom
-                    call setPointers(nn, 1, sps)
+        do sps = 1, nTimeIntervalsSpectral
+            do nn = 1, nDom
+                call setPointers(nn, 1, sps)
+
+                if (useSpatial) then
 
                     call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
@@ -114,15 +115,7 @@ contains
                     call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
                     call EChk(ierr, __FILE__, __LINE__)
 
-                end do
-            end do
-
-            call whalo2(1, 1_intType, 0_intType, .false., .false., .false., .True.)
-        end if
-
-        do sps = 1, nTimeIntervalsSpectral
-            do nn = 1, nDom
-                call setPointers(nn, 1, sps)
+                end if
 
                 ! Compute the pressures/viscositites
                 call computePressureSimple(.False.)
@@ -143,8 +136,7 @@ contains
 
 
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchangeWallDistanceHalos(currentLevel))
-        exchangeWallDistanceHalos(currentLevel) = .False.
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -328,7 +320,6 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, iRegion
         real(kind=realType), dimension(nSections) :: time
         real(kind=realType) :: dummyReal, dummyReald
-        logical :: exchanged2wall
 
         logical :: useOldCoor ! for adjointextra_d() functions
         useOldCoor = .FALSE.
@@ -451,30 +442,9 @@ contains
                 ! required for ts
                 call slipvelocitiesfinelevel_block_d(useoldcoor, time, sps, nn)
 
-            end do
-        end do
-
-
-        if (equations == RANSEquations .and. useApproxWallDistance) then
-            do sps = 1, nTimeIntervalsSpectral
-                do nn = 1, nDom
-
-                    call setPointers_d(nn, 1, sps)
-
+                if (equations == RANSEquations .and. useApproxWallDistance) then
                     call updateWallDistancesQuickly_d(nn, 1, sps)
-                end do
-            end do
-
-            call whalo2_d(1, 1_intType, 0_intType, .false., .false., .false., .True.)
-        end if
-
-        do sps = 1, nTimeIntervalsSpectral
-            do nn = 1, nDom
-
-                call setPointers_d(nn, 1, sps)
-                ISIZE1OFDrfbcdata = nBocos
-                ISIZE1OFDrfviscsubface = nViscBocos
-
+                end if
                 call computePressureSimple_d(.False.)
                 call computeLamViscosity_d(.False.)
                 call computeEddyViscosity_d(.False.)
@@ -499,7 +469,7 @@ contains
         end do
 
         ! Just exchange the derivative values.
-        call whalo2_d(1, 1, nw, .True., .True., .True., .False.)
+        call whalo2_d(1, 1, nw, .True., .True., .True.)
 
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
@@ -696,7 +666,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, level, iRegion
         real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
         real(kind=realType) :: dummyReal, dummyReald
-        logical :: resetToRans, exchanged2wall
+        logical :: resetToRans
         real(kind=realType), dimension(nSections) :: time
         logical :: useOldCoor ! for solverutils_b() functions
         useOldCoor = .FALSE.
@@ -826,7 +796,7 @@ contains
         end if
 
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
 
@@ -863,27 +833,9 @@ contains
                 call computeLamViscosity_b(.false.)
                 call computePressureSimple_b(.false.)
 
-            end do domainLoop2
-        end do spsLoop2
-
-        if (equations == RANSEquations .and. useApproxWallDistance) then
-            call whalo2_b(1, 1_intType, 0_intType, .False., .False., .False., .True.)
-
-            spsLoop3: do sps = 1, nTimeIntervalsSpectral
-                domainLoop3: do nn = 1, nDom
-                    call setPointers_b(nn, 1, sps)
-
+                if (equations == RANSEquations .and. useApproxWallDistance) then
                     call updateWallDistancesQuickly_b(nn, 1, sps)
-                
-                end do domainLoop3
-            end do spsLoop3
-        end if
-
-
-        spsLoop4: do sps = 1, nTimeIntervalsSpectral
-            domainLoop4: do nn = 1, nDom
-                call setPointers_b(nn, 1, sps)
-
+                end if
                 ! Here we insert the functions related to
                 ! rotational (mesh movement) setup
                 time = timeunsteadyrestart
@@ -902,7 +854,7 @@ contains
                 call metric_block_b
                 call volume_block_b
 
-            end do domainLoop4
+            end do domainLoop2
 
             ! Restore the petsc pointers.
             call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
@@ -922,7 +874,7 @@ contains
                 call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end if
-        end do spsLoop4
+        end do spsLoop2
 
         if (present(bcDataNames)) then
             allocate (bcDataValuesdLocal(size(bcDataValuesd)))
@@ -1171,7 +1123,7 @@ contains
         end if
 
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
             domainLoop2: do nn = 1, nDom

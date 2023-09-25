@@ -37,8 +37,6 @@ module wallDistanceData
     logical, dimension(:), allocatable :: updateWallAssociation
 
 #ifndef USE_TAPENADE
-    logical, dimension(:), allocatable :: exchangeWallDistanceHalos
-
     real(kind=realType), dimension(:), pointer :: xSurfd
     Vec, dimension(:), allocatable :: xVolumeVec
     Vec, dimension(:, :), allocatable :: xSurfVec

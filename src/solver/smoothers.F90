@@ -373,7 +373,7 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true., .false.)
+                        .true., .true.)
         else
             call whalo1(currentLevel, 1_intType, nwf, .true., &
                         .true., .true.)
@@ -684,7 +684,7 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nwf, .true., &
-                        .true., .true., .false.)
+                        .true., .true.)
         else
             call whalo1(currentLevel, 1_intType, nwf, .true., &
                         .true., .true.)

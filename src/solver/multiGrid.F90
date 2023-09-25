@@ -627,7 +627,7 @@ contains
 
         if (secondHalo) then
             call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-                        .true., .true., .false.)
+                        .true., .true.)
         else
             call whalo1(currentLevel, 1_intType, nVarInt, .true., &
                         .true., .true.)
@@ -642,7 +642,7 @@ contains
 
             if (secondHalo) then
                 call whalo2(currentLevel, 1_intType, nVarInt, .true., &
-                            .true., .true., .false.)
+                            .true., .true.)
             else
                 call whalo1(currentLevel, 1_intType, nVarInt, .true., &
                             .true., .true.)

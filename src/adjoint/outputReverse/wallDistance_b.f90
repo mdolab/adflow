@@ -23,7 +23,6 @@ contains
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, x, xd, flowdoms,&
 &   flowdomsd, d2wall, d2walld
-    use walldistancedata, only : exchangewalldistancehalos
     implicit none
 ! subroutine arguments
     integer(kind=inttype) :: nn, level, sps
@@ -139,7 +138,6 @@ contains
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, x, flowdoms, &
 &   d2wall
-    use walldistancedata, only : exchangewalldistancehalos
     implicit none
 ! subroutine arguments
     integer(kind=inttype) :: nn, level, sps

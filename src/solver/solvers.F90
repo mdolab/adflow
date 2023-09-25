@@ -739,7 +739,7 @@ contains
                 ! the second halo is needed.
 
                 call whalo2(currentLevel, 1_intType, nw, .true., &
-                            .true., .true., .false.)
+                            .true., .true.)
 
                 ! Determine the time and initialize the geometrical and
                 ! boundary info for next stage, if needed.
