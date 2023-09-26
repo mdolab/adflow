@@ -91,14 +91,14 @@ def set_surf_coords(solver, inputs):
     coordsUpdated = False
     if "x_aero" in inputs:
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
-        currentSurfCoord = solver.getSurfaceCoordinates(groupName=solver.meshFamilyGroup, includeZipper=False)
+        currentSurfCoord = solver.mesh.getSurfaceCoordinates()  # Get coordinates directly from IDWarp
         coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
             if solver.comm.rank == 0:
                 print("Updating surface coords", flush=True)
             solver.setSurfaceCoordinates(newSurfCoord, groupName=solver.meshFamilyGroup)
-            solver.updateGeometryInfo()
+            solver.updateGeometryInfo(warpMesh=False)
             coordsUpdated = True
     return coordsUpdated
 
@@ -342,12 +342,17 @@ class ADflowWarper(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         solver = self.solver
-        set_surf_coords(solver, inputs)
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
+
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.solver
-        set_surf_coords(solver, inputs)
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
 
         if mode == "fwd":
             if "adflow_vol_coords" in d_outputs:
