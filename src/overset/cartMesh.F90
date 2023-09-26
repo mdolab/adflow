@@ -173,7 +173,8 @@ contains
                     iDim = maxloc(abs(bcData(mm)%symNorm), 1)
 
                     ! Now determine the average value in "iDim" dimension
-                 coorAvg = sum(xx(iBeg + 1:iEnd + 1, jBeg + 1:jEnd + 1, iDim)) / ((iEnd - iBeg + 1) * (jEnd - jBeg + 1))
+                    coorAvg = sum(xx(iBeg + 1:iEnd + 1, jBeg + 1:jEnd + 1, iDim)) &
+                              / ((iEnd - iBeg + 1) * (jEnd - jBeg + 1))
 
                     ! Check if it is sufficently close to the bounding box:
                     err1 = abs(coorAvg - xMin(iDim)) / scaleSize
@@ -919,7 +920,8 @@ contains
             call cg_base_write_f(cg, "Base#1", 3, 3, base, ierr)
 
             call cg_zone_write_f(cg, base, "cartblock", int((/cellDims(1) + 1, cellDims(2) + 1, cellDims(3) + 1, &
-                                  cellDims(1), cellDims(2), cellDims(3), 0, 0, 0/), cgsize_t), Structured, zoneID, ierr)
+                                                              cellDims(1), cellDims(2), cellDims(3), 0, 0, 0/), &
+                                                            cgsize_t), Structured, zoneID, ierr)
 
             allocate (xtmp(cellDims(1) + 1, cellDims(2) + 1, cellDims(3) + 1, 3))
 

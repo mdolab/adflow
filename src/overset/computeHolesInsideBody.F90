@@ -533,7 +533,8 @@ subroutine computeHolesInsideBody(level, sps)
 
                             coor(4) = large
                             call minDistancetreeSearchSinglePoint(walls(c)%ADT, coor, &
-                                                              intInfo2, uvw2, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                                                                  intInfo2, uvw2, dummy, 0, BB, &
+                                                                  frontLeaves, frontLeavesNew)
                             cellID2 = intInfo2(3)
 
                             if (uvw2(4) < nearWallDist**2) then
@@ -588,7 +589,8 @@ subroutine computeHolesInsideBody(level, sps)
                             ! dist cutoff.
                             coor(4) = large
                             call minDistancetreeSearchSinglePoint(fullWall%ADT, coor, &
-                                                                intInfo, uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                                                                  intInfo, uvw, dummy, 0, BB, &
+                                                                  frontLeaves, frontLeavesNew)
                             cellID = intInfo(3)
 
                             ! Determine if it is inside:

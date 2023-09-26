@@ -6,8 +6,13 @@
 PMAKE = make -j 4
 
 # ------- Define the MPI Compilers--------------------------------------
-FF90 = mpiifort
-CC   = mpiicc
+ifdef I_MPI_ROOT # Using Intel MPI
+  FF90 = mpiifort
+  CC   = mpiicc
+else # Using HPE MPI
+  FF90 = ifort -lmpi
+  CC   = icc -lmpi
+endif
 
 # ------- Define Precision Flags ---------------------------------------
 # Options for Integer precision flags: -DUSE_LONG_INT
@@ -25,6 +30,10 @@ CC_REAL_PRECISION_FLAG      =
 # Otherwise you will have to specify the HDF5 library.
 CGNS_INCLUDE_FLAGS=-I$(CGNS_HOME)/include
 CGNS_LINKER_FLAGS=-L$(CGNS_HOME)/lib -lcgns
+
+# ------- Define complexify inlcude and linker flags -------------------------
+COMPLEXIFY_INCLUDE_FLAGS=-I$(COMPLEXIFY_DIR)/include
+COMPLEXIFY_LINKER_FLAGS=-L$(COMPLEXIFY_DIR)/lib -lcomplexify
 
 # ------- Define Compiler Flags ----------------------------------------
 FF77_FLAGS   = -fPIC -r8

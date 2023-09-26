@@ -36,7 +36,10 @@ module NKSolver
     integer(kind=intType) :: NK_iluFill
     integer(kind=intType) :: NK_innerPreConIts
     integer(kind=intType) :: NK_outerPreConIts
+    integer(kind=intType) :: NK_AMGLevels
+    integer(kind=intType) :: NK_AMGNSmooth
     integer(kind=intType) :: NK_LS
+    character(len=maxStringLen) :: NK_precondType
     logical :: NK_useEW
     logical :: NK_ADPC
     logical :: NK_viscPC
@@ -77,9 +80,8 @@ contains
 
     subroutine setupNKsolver
 
-        ! Setup the PETSc objects for the Newton-Krylov
-        ! solver. destroyNKsolver can be used to destroy the objects created
-        ! in this function
+        ! Setup the PETSc objects for the Newton-Krylov solver.
+        ! destroyNKsolver can be used to destroy the objects created in this function.
 
         use constants
         use stencils, only: visc_pc_stencil, euler_pc_stencil, N_visc_pc, N_euler_pc
@@ -87,11 +89,11 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: useLinResMonitor
         use flowVarRefState, only: nw, viscous
-        use InputAdjoint, only: viscPC, precondtype
+        use InputAdjoint, only: viscPC
         use ADjointVars, only: nCellsLocal
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
-        use agmg, only: setupAGMG
+        use amg, only: setupAMG
         implicit none
 
         ! Working Variables
@@ -101,9 +103,8 @@ contains
         integer(kind=intType), dimension(:, :), pointer :: stencil
         integer(kind=intType) :: level
 
-        ! Make sure we don't have memory for the approximate and exact
-        ! Newton solvers kicking around at the same time.
-        !call destroyANKSolver()
+        ! We don't have memory for the approximate and exact Newton solvers kicking around at the same time.
+        ! destroyANKSolver() is called in solveState in solvers.F90
 
         if (.not. NK_solverSetup) then
             nDimW = nw * nCellsLocal(1_intTYpe) * nTimeIntervalsSpectral
@@ -184,8 +185,8 @@ contains
             call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            if (preCondType == 'mg') then
-                call setupAGMG(drdwpre, nDimW / nw, nw)
+            if (NK_precondType == 'mg') then
+                call setupAMG(drdwpre, nDimW / nw, nw, NK_AMGLevels, NK_AMGNSmooth)
             end if
 
             !  Create the linear solver context
@@ -368,7 +369,7 @@ contains
     subroutine FormJacobianNK
 
         use constants
-        use inputADjoint, only: viscPC, precondType
+        use inputADjoint, only: viscPC
         use utils, only: EChk
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
         implicit none
@@ -386,15 +387,15 @@ contains
         call MatAssemblyEnd(dRdw, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Assemble the approximate PC (fine leve, level 1)
+        ! Assemble the approximate PC (fine level, level 1)
         useAD = NK_ADPC
         usePC = .True.
         useTranspose = .False.
         useObjective = .False.
-        tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+        tmp = viscPC ! Save what is in viscPC and set to the NK variable
         viscPC = NK_viscPC
 
-        if (preCondType == 'mg') then
+        if (NK_precondType == 'mg') then
             useCoarseMats = .True.
         else
             useCoarseMats = .False.
@@ -405,27 +406,26 @@ contains
         ! Reset saved value
         viscPC = tmp
 
-        ! Setup KSP Options
+        ! Set up KSP Options
         preConSide = 'right'
         localPCType = 'ilu'
         kspObjectType = 'gmres'
         globalPCType = 'asm'
         localOrdering = 'rcm'
 
-        ! Setup the KSP using the same code as used for the adjoint
-        if (PreCondType == 'asm') then
+        ! Set up the KSP using the same code as used for the adjoint
+        if (NK_precondType == 'asm') then
             call setupStandardKSP(NK_KSP, kspObjectType, NK_subSpace, &
                                   preConSide, globalPCType, NK_asmOverlap, NK_outerPreConIts, localPCType, &
                                   localOrdering, NK_iluFill, NK_innerPreConIts)
         else
             call setupStandardMultigrid(NK_KSP, kspObjectType, NK_subSpace, &
                                         preConSide, NK_asmOverlap, NK_outerPreConIts, &
-                                        localOrdering, NK_iluFill)
+                                        localOrdering, NK_iluFill, NK_innerPreConIts)
         end if
 
-        ! Don't do iterative refinement for the NKSolver.
-        call KSPGMRESSetCGSRefinementType(NK_KSP, &
-                                          KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        ! Don't do iterative refinement
+        call KSPGMRESSetCGSRefinementType(NK_KSP, KSP_GMRES_CGS_REFINE_NEVER, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     end subroutine FormJacobianNK
@@ -458,12 +458,11 @@ contains
 
     subroutine destroyNKsolver
 
-        ! Destroy all the PETSc objects for the Newton-Krylov
-        ! solver.
+        ! Destroy all the PETSc objects for the Newton-Krylov solver.
 
         use constants
         use utils, only: EChk
-        use agmg, only: destroyAGMG
+        use amg, only: destroyAMG
         implicit none
         integer(kind=intType) :: ierr
 
@@ -499,7 +498,7 @@ contains
             call KSPDestroy(NK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAGMG()
+            call destroyAMG()
 
             NK_solverSetup = .False.
         end if
@@ -1644,7 +1643,7 @@ module ANKSolver
     use petsc
     implicit none
 
-    Mat dRdw, dRdwPre
+    Mat dRdw, dRdwPre, timeStepMat
     Vec wVec, rVec, deltaW, baseRes
     KSP ANK_KSP
 
@@ -1664,7 +1663,11 @@ module ANKSolver
     integer(kind=intType) :: ANK_iluFill
     integer(kind=intType) :: ANK_innerPreConIts
     integer(kind=intType) :: ANK_outerPreConIts
+    integer(kind=intType) :: ANK_AMGLevels
+    integer(kind=intType) :: ANK_AMGNSmooth
+    character(len=maxStringLen) :: ANK_precondType
     real(kind=realType) :: ANK_rtol
+    real(kind=realType) :: ANK_atol_buffer
     real(kind=realType) :: ANK_linResMax
     real(kind=realType) :: ANK_switchTol
     real(kind=realType) :: ANK_divTol = 10
@@ -1675,6 +1678,7 @@ module ANKSolver
     logical :: ANK_ADPC
     logical :: ANK_turbDebug
     logical :: ANK_useMatrixFree
+    character(len=maxStringLen) :: ANK_charTimeStepType
     integer(kind=intType) :: ANK_nsubIterTurb
 
     ! Misc variables
@@ -1683,10 +1687,11 @@ module ANKSolver
     real(kind=realType) :: ANK_stepMin, ANK_StepFactor, ANK_constCFLStep
     real(kind=realType) :: ANK_secondOrdSwitchTol, ANK_coupledSwitchTol
     real(kind=realType) :: ANK_physLSTol, ANK_unstdyLSTol
-    real(kind=realType) :: ANK_pcUpdateTol
+    real(kind=realType) :: ANK_pcUpdateTol, ANK_pcUpdateTol2
     real(kind=realType) :: ANK_pcUpdateCutoff
     real(kind=realType) :: lambda
     logical :: ANK_solverSetup = .False.
+    logical :: ANK_CFLReset
     integer(kind=intTYpe) :: ANK_iter
     integer(kind=intType) :: nState
     real(kind=alwaysRealType) :: totalR_old, totalR_pcUpdate ! for recording the previous residual
@@ -1704,9 +1709,8 @@ contains
 
     subroutine setupANKsolver
 
-        ! Setup the PETSc objects for the Newton-Krylov
-        ! solver. destroyNKsolver can be used to destroy the objects created
-        ! in this function
+        ! Setup the PETSc objects for the approximate Newton-Krylov solver.
+        ! destroyANKsolver can be used to destroy the objects created in this function.
 
         use constants
         use stencils, only: euler_PC_stencil, N_euler_PC
@@ -1719,8 +1723,7 @@ contains
         use NKSolver, only: destroyNKSolver, linearResidualMonitor
         use utils, only: EChk
         use adjointUtils, only: myMatCreate, statePreAllocation
-        use inputadjoint, only: precondtype
-        use agmg, only: setupAGMG
+        use amg, only: setupAMG
         implicit none
 
         ! Working Variables
@@ -1779,8 +1782,12 @@ contains
                                     level, .False.)
             call myMatCreate(dRdwPre, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
                              __FILE__, __LINE__)
-
             call matSetOption(dRdwPre, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call myMatCreate(timeStepMat, nState, nDimW, nDimW, nnzDiagonal, nnzOffDiag, &
+                             __FILE__, __LINE__)
+            call matSetOption(timeStepMat, MAT_STRUCTURALLY_SYMMETRIC, PETSC_TRUE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
             deallocate (nnzDiagonal, nnzOffDiag)
 
@@ -1800,8 +1807,8 @@ contains
             call MatSetOption(dRdW, MAT_ROW_ORIENTED, PETSC_FALSE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            if (preCondType == 'mg') then
-                call setupAGMG(drdwpre, nDimW / nState, nState)
+            if (ANK_precondType == 'mg') then
+                call setupAMG(drdwpre, nDimW / nState, nState, ANK_AMGLevels, ANK_AMGNSmooth)
             end if
 
             !  Create the linear solver context
@@ -1931,8 +1938,7 @@ contains
         use utils, only: EChk, setPointers
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
         use communication
-        use agmg, only: setupShellPC, destroyShellPC, applyShellPC, agmgLevels, coarseIndices, A
-        use inputadjoint, only: precondtype
+        use amg, only: setupShellPC, destroyShellPC, applyShellPC, coarseIndices, A
         implicit none
 
         ! Local Variables
@@ -1946,19 +1952,19 @@ contains
         logical :: useCoarseMats
         PC shellPC
 
-        if (preCondType == 'mg') then
+        if (ANK_precondType == 'mg') then
             useCoarseMats = .True.
         else
             useCoarseMats = .False.
         end if
 
-        ! Assemble the approximate PC (fine leve, level 1)
+        ! Assemble the approximate PC (fine level, level 1)
         useAD = ANK_ADPC
         frozenTurb = (.not. ANK_coupled)
         usePC = .True.
         useTranspose = .False.
         useObjective = .False.
-        tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+        tmp = viscPC ! Save what is in viscPC and set to False
         viscPC = .False.
 
         if (totalR > ANK_secondOrdSwitchTol * totalR0) &
@@ -1972,146 +1978,28 @@ contains
         viscPC = tmp
         approxSA = .False.
 
-        ! Add the contribution from the time step term
-
-        ! Generic block to use while setting values
-        allocate (blk(nState, nState))
-
-        ! Zero the block once, since the previous entries will be overwritten
-        ! for each cell, and zero entries will remain zero.
-        blk = zero
-
-        if (.not. ANK_coupled) then
-            ! For the segragated solver, only calculate the time step for flow variables
-            do nn = 1, nDom
-                do sps = 1, nTimeIntervalsSpectral
-                    call setPointers(nn, 1_intType, sps)
-                    do k = 2, kl
-                        do j = 2, jl
-                            do i = 2, il
-                                ! Calculate one over time step for this cell. Multiply
-                                ! the dtl by cell volume to get the actual time step
-                                ! required for a CFL of one, then multiply with the
-                                ! actual cfl number in the solver
-                                dtinv = one / (ANK_CFL * dtl(i, j, k) * volRef(i, j, k))
-
-                                ! We need to convert the momentum residuals to velocity
-                                ! residuals to get the desired effect from time steps.
-                                ! To do this, save a "pseudo" jacobian for this cell,
-                                ! that has dU/du, where U is the vector of conservative
-                                ! variables, and u are the primitive variables. For this
-                                ! jacobian, only the velocity entries are modified,
-                                ! since ADflow saves density, velocities and total
-                                ! energy in the state vector w(:,:,:,:).
-
-                                ! Density and energy updates are unchanged.
-                                blk(iRho, iRho) = dtinv
-                                blk(iRhoE, iRhoE) = dtinv
-
-                                ! save the density
-                                rho = w(i, j, k, iRho)
-
-                                ! x-velocity
-                                blk(ivx, iRho) = w(i, j, k, ivx) * dtinv
-                                blk(ivx, ivx) = rho * dtinv
-
-                                ! y-velocity
-                                blk(ivy, iRho) = w(i, j, k, ivy) * dtinv
-                                blk(ivy, ivy) = rho * dtinv
-
-                                ! z-velocity
-                                blk(ivz, iRho) = w(i, j, k, ivz) * dtinv
-                                blk(ivz, ivz) = rho * dtinv
-
-                                ! get the global cell index
-                                irow = globalCell(i, j, k)
-
-                                if (useCoarseMats) then
-                                    do lvl = 1, agmgLevels - 1
-                                        coarseRows(lvl + 1) = coarseIndices(nn, lvl)%arr(i, j, k)
-                                    end do
-                                end if
-
-                                ! Add the contribution to the matrix in PETSc
-                                call setBlock()
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        else
-            ! For the coupled solver, CFL number for the turbulent variable needs scaling
-            ! because the residuals are scaled, and additional scaling of the time step
-            ! for the turbulence variable might be required.
-            ii = 1
-            do nn = 1, nDom
-                do sps = 1, nTimeIntervalsSpectral
-                    call setPointers(nn, 1_intType, sps)
-                    do k = 2, kl
-                        do j = 2, jl
-                            do i = 2, il
-                                ! See the comment for the same calculation above
-                                dtinv = one / (ANK_CFL * dtl(i, j, k) * volRef(i, j, k))
-
-                                ! We need to convert the momentum residuals to velocity
-                                ! residuals to get the desired effect from time steps.
-                                ! To do this, save a "pseudo" jacobian for this cell,
-                                ! that has dU/du, where U is the vector of conservative
-                                ! variables, and u are the primitive variables. For this
-                                ! jacobian, only the velocity entries are modified,
-                                ! since ADflow saves density, velocities and total
-                                ! energy in the state vector w(:,:,:,:).
-
-                                ! Density update is unchanged.
-                                blk(iRho, iRho) = dtinv
-
-                                ! save the density
-                                rho = w(i, j, k, iRho)
-
-                                ! x-velocity
-                                blk(ivx, iRho) = w(i, j, k, ivx) * dtinv
-                                blk(ivx, ivx) = rho * dtinv
-
-                                ! y-velocity
-                                blk(ivy, iRho) = w(i, j, k, ivy) * dtinv
-                                blk(ivy, ivy) = rho * dtinv
-
-                                ! z-velocity
-                                blk(ivz, iRho) = w(i, j, k, ivz) * dtinv
-                                blk(ivz, ivz) = rho * dtinv
-
-                                ! Energy update is unchanged
-                                blk(iRhoE, iRhoE) = dtinv
-
-                                ! For the turbulence variable, additionally scale the cfl.
-                                ! turbresscale is required because the turbulent residuals
-                                ! are scaled with it. Furthermore, the turbulence variable
-                                ! can get a different CFL number. Scale it by turbCFLScale
-                                blk(nt1, nt1) = dtinv * turbResScale(1) / ANK_turbCFLScale
-
-                                ! get the global cell index
-                                irow = globalCell(i, j, k)
-
-                                if (useCoarseMats) then
-                                    do lvl = 1, agmgLevels - 1
-                                        coarseRows(lvl + 1) = coarseIndices(nn, lvl)%arr(i, j, k)
-                                    end do
-                                end if
-
-                                ! Add the contribution to the matrix in PETSc
-                                call setBlock()
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        end if
-
-        ! PETSc Matrix Assembly begin
+        ! Begin PETSc matrix assembly
         call MatAssemblyBegin(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Setup KSP Options
+        ! Complete the matrix assembly
+        call MatAssemblyEnd(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Add the contribution from the time step matrix
+        call MatAXPY(dRdwPre, one, timeStepMat, SUBSET_NONZERO_PATTERN, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        if (useCoarseMats) then
+            do lvl = 2, ANK_AMGLevels
+                call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+                call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end do
+        end if
+
+        ! Set up KSP options
         preConSide = 'right'
         localPCType = 'ilu'
         kspObjectType = 'gmres'
@@ -2119,70 +2007,318 @@ contains
         localOrdering = 'rcm'
         outerPreConIts = ank_outerPreconIts
 
-        ! Setup the KSP using the same code as used for the adjoint
-        if (ank_subspace < 0) then
+        if (ANK_subspace < 0) then
             subspace = ANK_maxIter
         else
             subspace = ANK_subspace
         end if
 
-        ! de-allocate the generic block
-        deallocate (blk)
-
-        ! Complete the matrix assembly.
-        call MatAssemblyEnd(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
-        if (useCoarseMats) then
-            do lvl = 2, agmgLevels
-                call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-                call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-            end do
-        end if
-
-        if (PreCondType == 'asm') then
-            ! Run the super-dee-duper function to setup the ksp object:
-
+        ! Set up the KSP using the same code as used for the adjoint
+        if (ANK_precondType == 'asm') then
             call setupStandardKSP(ANK_KSP, kspObjectType, subSpace, &
                                   preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                                   localOrdering, ANK_iluFill, ANK_innerPreConIts)
-        else if (PreCondType == 'mg') then
-
-            ! Setup the MG preconditioner!
+        else if (ANK_precondType == 'mg') then
             call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
                                         preConSide, ANK_asmOverlap, outerPreConIts, &
-                                        localOrdering, ANK_iluFill)
+                                        localOrdering, ANK_iluFill, ANK_innerPreConIts)
         end if
 
-        ! Don't do iterative refinement for the NKSolver.
-        call KSPGMRESSetCGSRefinementType(ANK_KSP, &
-                                          KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        ! Don't do iterative refinement
+        call KSPGMRESSetCGSRefinementType(ANK_KSP, KSP_GMRES_CGS_REFINE_NEVER, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-    contains
-        subroutine setBlock()
-            ! This subroutine is used to set the diagonal time stepping terms
-            ! for the Jacobians in ANK. It is only used to set diagonal blocks
+    end subroutine FormJacobianANK
 
-            implicit none
+    subroutine computeTimeStepMat(usePC)
+        ! Loops through all cells and computes the time step terms
+        ! The terms are stored in the PETSc matrix timeStepMat
 
-            call MatSetValuesBlocked(dRdwPre, 1, irow, 1, irow, blk, &
-                                     ADD_VALUES, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
+        use constants
+        use blockPointers, only: nDom, il, jl, kl, globalCell
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputIteration, only: turbResScale
+        use utils, only: EChk, setPointers
+        use amg, only: coarseIndices, A
+        implicit none
 
-            ! Extension for setting coarse grids:
-            if (useCoarseMats) then
-                do lvl = 2, agmgLevels
-                    call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
-                                             blk, ADD_VALUES, ierr)
+        ! Input variables
+        logical, intent(in) :: usePC
+
+        ! Local Variables
+        character(len=maxStringLen) :: preConSide, localPCType, kspObjectType, globalPCType, localOrdering
+        integer(kind=intType) :: ierr
+        integer(kind=intType) :: i, j, k, irow, nn, sps, lvl
+        integer(kind=intType), dimension(2:10) :: coarseRows
+        real(kind=realType), dimension(nState, nState) :: timeStepBlock
+        logical :: useCoarseMats
+
+        if (ANK_precondType == 'mg') then
+            useCoarseMats = .True.
+        else
+            useCoarseMats = .False.
+        end if
+
+        ! Zero out the time step matrix before we start
+        call MatZeroEntries(timeStepMat, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        do nn = 1, nDom
+            do sps = 1, nTimeIntervalsSpectral
+                call setPointers(nn, 1_intType, sps)
+                do k = 2, kl
+                    do j = 2, jl
+                        do i = 2, il
+
+                            ! Compute the block for this cell
+                            call computeTimeStepBlock(i, j, k, timeStepBlock)
+
+                            ! Get the global cell index
+                            irow = globalCell(i, j, k)
+
+                            ! Add the contribution to the PETSc matrix
+                            call MatSetValuesBlocked(timeStepMat, 1, irow, 1, irow, timeStepBlock, ADD_VALUES, ierr)
+                            call EChk(ierr, __FILE__, __LINE__)
+
+                            ! Extension for setting coarse grids
+                            ! We only do this when we are updating the ANK PC
+                            if (useCoarseMats .and. usePC) then
+                                do lvl = 2, ANK_AMGLevels
+                                    coarseRows(lvl) = coarseIndices(nn, lvl - 1)%arr(i, j, k)
+                                    call MatSetValuesBlocked(A(lvl), 1, coarseRows(lvl), 1, coarseRows(lvl), &
+                                                             timeStepBlock, ADD_VALUES, ierr)
+                                    call EChk(ierr, __FILE__, __LINE__)
+                                end do
+                            end if
+
+                        end do
+                    end do
                 end do
+            end do
+        end do
+
+        ! PETSc Matrix Assembly
+        call MatAssemblyBegin(timeStepMat, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+        call MatAssemblyEnd(timeStepMat, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+    end subroutine computeTimeStepMat
+
+    subroutine computeTimeStepBlock(i, j, k, timeStepBlock)
+        ! Computes the time step block matrix for a given cell i, j, k.
+
+        use constants
+        use inputPhysics, only: machInf => mach
+        use blockPointers, only: volRef, w, dtl, gamma, p, aa
+        use flowVarRefState, only: viscous, nt1
+        use inputIteration, only: turbResScale
+        use communication
+        implicit none
+
+        ! Input variables
+        integer(kind=intType), intent(in) :: i, j, k
+
+        ! Output variables
+        real(kind=realType), dimension(nState, nState), intent(out) :: timeStepBlock
+
+        ! Local variables
+        real(kind=realType) :: blendFactor, dtInv, rho, velX, velY, velZ
+        real(kind=realType) :: speed, speedOfSound, mach, machSqr, machSqrTrunc, alpha, beta, tau, gammaMinusOne
+        real(kind=realType) :: speedXY, sinTheta, cosTheta, sinAlpha, cosAlpha
+        real(kind=realType), dimension(nState, nState) :: streamToCart, symmToCons, consToSymm, stateToCons
+
+        ! Zero the block matrices
+        timeStepBlock = zero
+        stateToCons = zero
+        streamToCart = zero
+        symmToCons = zero
+        consToSymm = zero
+
+        ! Save density and velocity components for convenience
+        rho = w(i, j, k, iRho)
+        velX = w(i, j, k, ivx)
+        velY = w(i, j, k, ivy)
+        velZ = w(i, j, k, ivz)
+
+        ! Calculate one over time step for this cell.
+        ! Multiply dtl by cell volume to get the time step required for a CFL of one,
+        ! then multiply with the actual CFL number in the solver.
+        dtInv = one / (ANK_CFL * dtl(i, j, k) * volRef(i, j, k))
+
+        ! We need to convert the velocity updates to momentum updates to get the desired effect from time steps.
+        ! To do this, we form a "pseudo" Jacobian dU/du for this cell, where U is the vector of conservative
+        ! variables, and u is the vector of state variables. Only the velocity entries are modified because ADflow
+        ! saves density, velocities, and total energy in the state vector w(:,:,:,:).
+
+        stateToCons(iRho, iRho) = one
+        stateToCons(ivx, iRho) = velX
+        stateToCons(ivx, ivx) = rho
+        stateToCons(ivy, iRho) = velY
+        stateToCons(ivy, ivy) = rho
+        stateToCons(ivz, iRho) = velZ
+        stateToCons(ivz, ivz) = rho
+        stateToCons(iRhoE, iRhoE) = one
+
+        if (ANK_coupled) then
+            ! The turbulence variable can get a different CFL number, so we scale it by ANK_turbCFLScale.
+            ! In addition, turbResScale is required because the turbulent residuals are scaled with it.
+            stateToCons(nt1, nt1) = turbResScale(1) / ANK_turbCFLScale
+        end if
+
+        if (ANK_charTimeStepType == 'None') then
+
+            timeStepBlock = stateToCons * dtInv
+
+        else
+
+            ! The equations referenced in this block of the code are from the paper:
+            ! "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c)
+
+            ! Characteristic time-stepping is not applied to the turbulence equation
+            if (ANK_coupled) then
+                timeStepBlock(6, 6) = one
+                streamToCart(6, 6) = one
+                symmToCons(nt1, 6) = one
+                consToSymm(6, nt1) = one
             end if
 
-        end subroutine setBlock
-    end subroutine FormJacobianANK
+            ! Compute the speed of sound squared for inviscid flow
+            if (.not. viscous) then
+                aa(i, j, k) = gamma(i, j, k) * p(i, j, k) / rho
+            end if
+
+            ! Compute the Mach number in each cell and some other repeated terms
+            speed = SQRT(velX**2 + velY**2 + velZ**2)
+            speedOfSound = SQRT(aa(i, j, k))
+            mach = speed / speedOfSound
+            machSqr = mach**2
+            gammaMinusOne = gamma(i, j, k) - one
+
+            ! Define the state transformation matrix from Euler symmetrizing variables to conservative variables (Eq. 22)
+            symmToCons(iRho, 1) = rho / speedOfSound
+            symmToCons(iRho, 5) = -one / aa(i, j, k)
+            symmToCons(ivx, 1) = rho * velX / speedOfSound
+            symmToCons(ivx, 2) = rho
+            symmToCons(ivx, 5) = -velX / aa(i, j, k)
+            symmToCons(ivy, 1) = rho * velY / speedOfSound
+            symmToCons(ivy, 3) = rho
+            symmToCons(ivy, 5) = -velY / aa(i, j, k)
+            symmToCons(ivz, 1) = rho * velZ / speedOfSound
+            symmToCons(ivz, 4) = rho
+            symmToCons(ivz, 5) = -velZ / aa(i, j, k)
+            symmToCons(iRhoE, 1) = rho * speedOfSound * (machSqr / 2 + 1 / gammaMinusOne)
+            symmToCons(iRhoE, 2) = rho * velX
+            symmToCons(iRhoE, 3) = rho * velY
+            symmToCons(iRhoE, 4) = rho * velZ
+            symmToCons(iRhoE, 5) = -machSqr / 2
+
+            ! Define the inverse of the state transformation matrix above
+            consToSymm(1, iRho) = gammaMinusOne / 2 * speedOfSound * machSqr / rho
+            consToSymm(1, ivx) = -gammaMinusOne * velX / (rho * speedOfSound)
+            consToSymm(1, ivy) = -gammaMinusOne * velY / (rho * speedOfSound)
+            consToSymm(1, ivz) = -gammaMinusOne * velZ / (rho * speedOfSound)
+            consToSymm(1, iRhoE) = gammaMinusOne / (rho * speedOfSound)
+            consToSymm(2, iRho) = -velX / rho
+            consToSymm(2, ivx) = one / rho
+            consToSymm(3, iRho) = -velY / rho
+            consToSymm(3, ivy) = one / rho
+            consToSymm(4, iRho) = -velZ / rho
+            consToSymm(4, ivz) = one / rho
+            consToSymm(5, iRho) = aa(i, j, k) * (gammaMinusOne / 2 * machSqr - one)
+            consToSymm(5, ivx) = -gammaMinusOne * velX
+            consToSymm(5, ivy) = -gammaMinusOne * velY
+            consToSymm(5, ivz) = -gammaMinusOne * velZ
+            consToSymm(5, iRhoE) = gammaMinusOne
+
+            ! Compute the CFL-based blending factor
+            blendFactor = ANK_CFL / ANK_CFLLimit
+
+            if (ANK_charTimeStepType == 'VLR') then
+
+                ! Truncate the squared Mach number (Eq. 25)
+                machSqrTrunc = MAX(machSqr, 1e-4 * machInf**2)
+
+                ! Define the beta and tau terms in the VLR matrix (Eq. 24)
+                if (mach < one) then
+                    beta = SQRT(one - machSqrTrunc)
+                    tau = beta
+                else
+                    beta = SQRT(machSqrTrunc - one)
+                    tau = SQRT(one - one / machSqrTrunc) + 1e-4
+                end if
+
+                ! Define the VLR matrix in Euler symmetrizing variables and in the streamwise coordinate frame
+                ! This is Eq. 23 combined with the blending in Eq. 16
+                timeStepBlock(1, 1) = blendFactor * (beta**2 + tau) / (machSqrTrunc * tau) + (one - blendFactor) * one
+                timeStepBlock(1, 2) = blendFactor * one / mach
+                timeStepBlock(2, 1) = blendFactor * one / mach
+                timeStepBlock(2, 2) = one
+                timeStepBlock(3, 3) = blendFactor * one / tau + (one - blendFactor) * one
+                timeStepBlock(4, 4) = blendFactor * one / tau + (one - blendFactor) * one
+                timeStepBlock(5, 5) = one
+
+                ! Define repeated terms in the rotation matrix
+                speedXY = SQRT(velX**2 + velY**2)
+                sinTheta = velY / speedXY
+                cosTheta = velX / speedXY
+                sinAlpha = velZ / speed
+                cosAlpha = speedXY / speed
+
+                ! Define the rotation matrix from streamwise coordinates to Cartesian coordinates (Eq. 27)
+                streamToCart(1, 1) = one
+                streamToCart(2, 2) = cosAlpha * cosTheta
+                streamToCart(2, 3) = -sinTheta
+                streamToCart(2, 4) = -sinAlpha * cosTheta
+                streamToCart(3, 2) = cosAlpha * sinTheta
+                streamToCart(3, 3) = cosTheta
+                streamToCart(3, 4) = -sinAlpha * sinTheta
+                streamToCart(4, 2) = sinAlpha
+                streamToCart(4, 4) = cosAlpha
+                streamToCart(5, 5) = one
+
+                ! Transform the VLR matrix to conservative variables and Cartesian coordinates (Eq. 26)
+                timeStepBlock = MATMUL(streamToCart, timeStepBlock)
+                timeStepBlock = MATMUL(timeStepBlock, TRANSPOSE(streamToCart))
+                timeStepBlock = MATMUL(symmToCons, timeStepBlock)
+                timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+
+                ! Construct the preconditioned time step matrix
+                timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+                timeStepBlock = timeStepBlock * dtInv
+
+            else if (ANK_charTimeStepType == 'Turkel') then
+
+                ! Truncate the squared Mach number (Eq. 19)
+                machSqrTrunc = MIN(one, MAX(machSqr, 1e-4 * machInf**2))
+
+                ! Set alpha to turn off preconditioning for locally supersonic flow (Eq. 20)
+                alpha = one - machSqrTrunc**10
+
+                ! Define the Turkel matrix in Euler symmetrizing variables
+                ! This is Eq. 18 combined with the blending in Eq. 16
+                timeStepBlock(1, 1) = blendFactor * one / machSqrTrunc + (one - blendFactor) * one
+                timeStepBlock(2, 1) = blendFactor * alpha * velX / speedOfSound / machSqrTrunc
+                timeStepBlock(3, 1) = blendFactor * alpha * velY / speedOfSound / machSqrTrunc
+                timeStepBlock(4, 1) = blendFactor * alpha * velZ / speedOfSound / machSqrTrunc
+                timeStepBlock(2, 2) = one
+                timeStepBlock(3, 3) = one
+                timeStepBlock(4, 4) = one
+                timeStepBlock(5, 5) = one
+
+                ! Transform the Turkel matrix to conservative variables (Eq. 21)
+                timeStepBlock = MATMUL(symmToCons, timeStepBlock)
+                timeStepBlock = MATMUL(timeStepBlock, consToSymm)
+
+                ! Construct the preconditioned time step matrix
+                timeStepBlock = MATMUL(timeStepBlock, stateToCons)
+                timeStepBlock = timeStepBlock * dtInv
+
+            end if
+
+        end if
+
+    end subroutine computeTimeStepBlock
 
     subroutine FormJacobianANKTurb
 
@@ -2207,13 +2343,13 @@ contains
         integer(kind=intType) :: i, j, k, l, l1, ii, irow, nn, sps, outerPreConIts, subspace
         real(kind=realType), dimension(:, :), allocatable :: blk
 
-        ! Assemble the approximate PC (fine leve, level 1)
+        ! Assemble the approximate PC (fine level, level 1)
         useAD = ANK_ADPC
         frozenTurb = .False.
         usePC = .True.
         useTranspose = .False.
         useObjective = .False.
-        tmp = viscPC ! Save what is in viscPC and set to the NKvarible
+        tmp = viscPC ! Save what is in viscPC and set to False
         viscPC = .False.
 
         if (totalR > ANK_secondOrdSwitchTol * totalR0) &
@@ -2273,38 +2409,38 @@ contains
             end do
         end do
 
-        ! PETSc Matrix Assembly begin
+        ! De-allocate the generic block
+        deallocate (blk)
+
+        ! Being PETSc matrix assembly
         call MatAssemblyBegin(dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Setup KSP Options
+        ! Complete the matrix assembly
+        call MatAssemblyEnd(dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
+        ! Set up KSP options
         preConSide = 'right'
         localPCType = 'ilu'
         kspObjectType = 'gmres'
         globalPCType = 'asm'
         localOrdering = 'rcm'
         outerPreConIts = 1
-        ! Setup the KSP using the same code as used for the adjoint
+
+        ! Set up the KSP using the same code as used for the adjoint
         if (ank_subspace < 0) then
             subspace = ANK_maxIter
         else
             subspace = ANK_subspace
         end if
 
-        ! de-allocate the generic block
-        deallocate (blk)
-
-        ! Complete the matrix assembly.
-        call MatAssemblyEnd(dRdwPreTurb, MAT_FINAL_ASSEMBLY, ierr)
-        call EChk(ierr, __FILE__, __LINE__)
-
         call setupStandardKSP(ANK_KSPTurb, kspObjectType, subSpace, &
                               preConSide, globalPCType, ANK_asmOverlap, outerPreConIts, localPCType, &
                               localOrdering, ANK_iluFill, ANK_innerPreConIts)
 
-        ! Don't do iterative refinement for the NKSolver.
-        call KSPGMRESSetCGSRefinementType(ANK_KSPTurb, &
-                                          KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        ! Don't do iterative refinement
+        call KSPGMRESSetCGSRefinementType(ANK_KSPTurb, KSP_GMRES_CGS_REFINE_NEVER, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
     contains
@@ -2363,8 +2499,7 @@ contains
             call setRVecANK(rVec)
         end if
 
-        ! Add the contribution from the time stepping term
-
+        ! rVec contains the full steady residual vector
         call VecGetArrayF90(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -2376,105 +2511,9 @@ contains
         call VecGetArrayReadF90(wVec, wvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        if (.not. ANK_coupled) then
-            ! Only flow variables
-            ii = 1
-            do nn = 1, nDom
-                do sps = 1, nTimeIntervalsSpectral
-                    call setPointers(nn, 1_intType, sps)
-                    ! read the density residuals and set local CFL
-                    do k = 2, kl
-                        do j = 2, jl
-                            do i = 2, il
-                                dtinv = one / (ANK_CFL * dtl(i, j, k) * volRef(i, j, k))
-
-                                ! Update the first entry in this block, corresponds to
-                                ! density. Also save this density value.
-                                rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii) * dtinv
-                                rho = wvec_pointer(ii)
-                                iirho = ii
-                                ii = ii + 1
-
-                                ! updates 2nd-4th are velocities. They need to get converted
-                                ! to momentum residuals.
-
-                                rvec_pointer(ii) = rvec_pointer(ii) + dtinv * ( &
-                                                   wvec_pointer(ii) * invec_pointer(iiRho) + &
-                                                   rho * invec_pointer(ii))
-                                ii = ii + 1
-
-                                rvec_pointer(ii) = rvec_pointer(ii) + dtinv * ( &
-                                                   wvec_pointer(ii) * invec_pointer(iiRho) + &
-                                                   rho * invec_pointer(ii))
-                                ii = ii + 1
-
-                                rvec_pointer(ii) = rvec_pointer(ii) + dtinv * ( &
-                                                   wvec_pointer(ii) * invec_pointer(iiRho) + &
-                                                   rho * invec_pointer(ii))
-                                ii = ii + 1
-
-                                ! Finally energy gets the same update
-                                rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii) * dtinv
-                                ii = ii + 1
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        else
-            ! Include time step for turbulence
-            ii = 1
-            do nn = 1, nDom
-                do sps = 1, nTimeIntervalsSpectral
-                    call setPointers(nn, 1_intType, sps)
-                    ! read the density residuals and set local CFL
-                    do k = 2, kl
-                        do j = 2, jl
-                            do i = 2, il
-                                dtinv = one / (ANK_CFL * dtl(i, j, k) * volRef(i, j, k))
-
-                                ! Update the first entry in this block, corresponds to
-                                ! density. Also save this density value.
-                                rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii) * dtinv
-                                rho = wvec_pointer(ii)
-                                iirho = ii
-                                ii = ii + 1
-
-                                ! updates 2nd-4th are velocities. They need to get converted
-                                ! to momentum residuals.
-
-                                rvec_pointer(ii) = rvec_pointer(ii) + dtinv * ( &
-                                                   wvec_pointer(ii) * invec_pointer(iiRho) + &
-                                                   rho * invec_pointer(ii))
-                                ii = ii + 1
-
-                                rvec_pointer(ii) = rvec_pointer(ii) + dtinv * ( &
-                                                   wvec_pointer(ii) * invec_pointer(iiRho) + &
-                                                   rho * invec_pointer(ii))
-                                ii = ii + 1
-
-                                rvec_pointer(ii) = rvec_pointer(ii) + dtinv * ( &
-                                                   wvec_pointer(ii) * invec_pointer(iiRho) + &
-                                                   rho * invec_pointer(ii))
-                                ii = ii + 1
-
-                                ! energy gets the same update
-                                rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii) * dtinv
-                                ii = ii + 1
-
-                                do l = nt1, nt2
-                                    ! turbulence variable needs additional scaling, and it may
-                                    ! get a different CFL number
-                                    rvec_pointer(ii) = rvec_pointer(ii) + invec_pointer(ii) * &
-                                                       dtinv * turbResScale(l - nt1 + 1) / ANK_turbCFLScale
-                                    ii = ii + 1
-                                end do
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        end if
+        ! Multiply the perturbed state by the time step terms and add it to the residual
+        call MatMultAdd(timeStepMat, inVec, rVec, rVec, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
 
         call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
@@ -2602,139 +2641,41 @@ contains
         real(kind=realType), pointer :: rvec_pointer(:)
         real(kind=realType), pointer :: dvec_pointer(:)
 
+        real(kind=realType), dimension(nState, nState) :: timeStepMatrix
+        real(kind=realType), dimension(nState) :: wPrev
+
+        ! Allocate a PETSc vector like deltaW for intermediate computations
+        Vec unsteadyVec
+
+        call VecDuplicate(deltaW, unsteadyVec, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
+
         ! Calculate the steady residuals
         call blocketteRes(useTurbRes=ANK_coupled)
         call setRVecANK(rVec)
 
-        ! Add the contribution from the time stepping term
-
+        ! rVec contains the full steady residual vector
         call VecGetArrayF90(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! deltaW contains the full update to the state
+        ! deltaW contains the full state update vector
         call VecGetArrayReadF90(deltaW, dvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! TODO AY: check if this routine is fine with complex mode...
         ! dtl and volume can both have complex values in them
 
-        if (.not. ANK_coupled) then
-            ! Only flow variables
-            ii = 1
-            do nn = 1, nDom
-                do sps = 1, nTimeIntervalsSpectral
-                    call setPointers(nn, 1_intType, sps)
-                    ! read the density residuals and set local CFL
-                    do k = 2, kl
-                        do j = 2, jl
-                            do i = 2, il
-                                dtinv = one / (ANK_CFL * dtl(i, j, k) * volRef(i, j, k))
+        ! Multiply the delta by the time step terms
+        call MatMult(timeStepMat, deltaW, unsteadyVec, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
 
-                                ! Update the first entry in this block, corresponds to
-                                ! density. Also save this density value.
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * dvec_pointer(ii)
+        ! Add unsteady term to the steady residual
+        call VecAXPY(rVec, -omega, unsteadyVec, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
 
-                                ! calculate the density in the previous non-linear iteration
-                                rho = w(i, j, k, iRho) + omega * dvec_pointer(ii)
-                                iiRho = ii
-                                ii = ii + 1
-
-                                ! updates 2nd-4th are velocities. They need to get converted
-                                ! to momentum residuals.
-
-                                ! Calculate the u velocity in the previous non-linear iter.
-                                uu = w(i, j, k, ivx) + omega * dvec_pointer(ii)
-
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * ( &
-                                                   uu * dvec_pointer(iiRho) + &
-                                                   rho * dvec_pointer(ii))
-                                ii = ii + 1
-
-                                vv = w(i, j, k, ivx) + omega * dvec_pointer(ii)
-
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * ( &
-                                                   vv * dvec_pointer(iiRho) + &
-                                                   rho * dvec_pointer(ii))
-                                ii = ii + 1
-
-                                ww = w(i, j, k, ivx) + omega * dvec_pointer(ii)
-
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * ( &
-                                                   ww * dvec_pointer(iiRho) + &
-                                                   rho * dvec_pointer(ii))
-                                ii = ii + 1
-
-                                ! Finally energy gets the same update
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * dvec_pointer(ii)
-                                ii = ii + 1
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        else
-            ! Include time step for turbulence
-            ii = 1
-            do nn = 1, nDom
-                do sps = 1, nTimeIntervalsSpectral
-                    call setPointers(nn, 1_intType, sps)
-                    ! read the density residuals and set local CFL
-                    do k = 2, kl
-                        do j = 2, jl
-                            do i = 2, il
-                                dtinv = one / (ANK_CFL * dtl(i, j, k) * volRef(i, j, k))
-
-                                ! Update the first entry in this block, corresponds to
-                                ! density. Also save this density value.
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * dvec_pointer(ii)
-
-                                ! calculate the density in the previous non-linear iteration
-                                rho = w(i, j, k, iRho) + omega * dvec_pointer(ii)
-                                iiRho = ii
-                                ii = ii + 1
-
-                                ! updates 2nd-4th are velocities. They need to get converted
-                                ! to momentum residuals.
-
-                                ! Calculate the u velocity in the previous non-linear iter.
-                                uu = w(i, j, k, ivx) + omega * dvec_pointer(ii)
-
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * ( &
-                                                   uu * dvec_pointer(iiRho) + &
-                                                   rho * dvec_pointer(ii))
-                                ii = ii + 1
-
-                                vv = w(i, j, k, ivx) + omega * dvec_pointer(ii)
-
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * ( &
-                                                   vv * dvec_pointer(iiRho) + &
-                                                   rho * dvec_pointer(ii))
-                                ii = ii + 1
-
-                                ww = w(i, j, k, ivx) + omega * dvec_pointer(ii)
-
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * ( &
-                                                   ww * dvec_pointer(iiRho) + &
-                                                   rho * dvec_pointer(ii))
-                                ii = ii + 1
-
-                                ! Finally energy gets the same update
-                                rvec_pointer(ii) = rvec_pointer(ii) - omega * dtinv * dvec_pointer(ii)
-                                ii = ii + 1
-
-                                do l = nt1, nt2
-                                    ! turbulence variable needs additional scaling, and it may
-                                    ! get a different CFL number
-                                    rvec_pointer(ii) = rvec_pointer(ii) - omega * dvec_pointer(ii) * &
-                                                       dtinv * turbResScale(l - nt1 + 1) / ANK_turbCFLScale
-                                    ii = ii + 1
-                                end do
-                            end do
-                        end do
-                    end do
-                end do
-            end do
-        end if
+        ! Deallocate the intermediate vector
+        call VecDestroy(unsteadyVec, ierr)
+        call EChk(ierr, __FILE__, __LINE__)
 
         call VecRestoreArrayF90(rVec, rvec_pointer, ierr)
         call EChk(ierr, __FILE__, __LINE__)
@@ -2838,12 +2779,11 @@ contains
 
     subroutine destroyANKsolver
 
-        ! Destroy all the PETSc objects for the Newton-Krylov
-        ! solver.
+        ! Destroy all the PETSc objects for the approximate Newton-Krylov solver.
 
         use constants
         use utils, only: EChk
-        use agmg, only: destroyAGMG
+        use amg, only: destroyAMG
         implicit none
         integer(kind=intType) :: ierr
 
@@ -2853,6 +2793,9 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
 
             call MatDestroy(dRdwPre, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            call MatDestroy(timeStepMat, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             call VecDestroy(wVec, ierr)
@@ -2870,7 +2813,7 @@ contains
             call KSPDestroy(ANK_KSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAGMG()
+            call destroyAMG()
 
             ANK_SolverSetup = .False.
 
@@ -3191,7 +3134,8 @@ contains
 #ifndef USE_COMPLEX
                                 ratio = (wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
 #else
-                               ratio = (real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
+                                ratio = (real(wvec_pointer(ii)) &
+                                         / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
 #endif
                                 ! if the ratio is less than min step, the update is either
                                 ! in the positive direction, therefore we do not clip it,
@@ -3764,7 +3708,12 @@ contains
                 ! Initialize some variables
                 totalR_old = totalR ! Record the old residual for the first iteration
                 rtolLast = ANK_rtol ! Set the previous relative convergence tolerance for the first iteration
-                ANK_CFL = ANK_CFL0 ! only set the initial cfl for the first iteration
+                if (ANK_CFLReset) then
+                    ! we are asked to reset the cfl to the initial value on every first ANK iteration.
+                    ! if this is set to false, the CFL must be set from the python layer using either the
+                    ! initial CFL or the last CFL for the aeroproblem
+                    ANK_CFL = ANK_CFL0
+                end if
                 ANK_CFLMinBase = ANK_CFLMin0
                 totalR_pcUpdate = totalR ! only update the residual at last PC calculation for the first iteration
                 linResOld = zero
@@ -3775,19 +3724,14 @@ contains
             ANK_iter = ANK_iter + 1
         end if
 
-        ! figure out if we want to scale the ANKPCUpdateTol
-        if (.not. ANK_coupled) then
-            rel_pcUpdateTol = ANK_pcUpdateTol
+        ! figure out if we want to change the ANKPCUpdateTol:
+        ! If we are converged below the L2 target specified by ANK_pcUpdateCutoff
+        ! we use a different tolerance for the relative PC update.
+        if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
+            rel_pcUpdateTol = ANK_pcUpdateTol2
         else
-            ! for coupled ANK, we dont want to update the PC as frequently,
-            ! so we reduce the relative tol by 4 orders of magnitude,
-            ! *if* we are converged past pc update cutoff wrt free stream already
-            if (totalR / totalR0 .lt. ANK_pcUpdateCutoff) then
-                rel_pcUpdateTol = ANK_pcUpdateTol * 1e-4_realType
-            else
-                ! if we are not that far down converged, use the option directly
-                rel_pcUpdateTol = ANK_pcUpdateTol
-            end if
+            ! if we are not that far down converged, use the option directly
+            rel_pcUpdateTol = ANK_pcUpdateTol
         end if
 
         ! Compute the norm of rVec, which is identical to the
@@ -3828,9 +3772,13 @@ contains
             ! Record the total residuals when the PC is calculated.
             totalR_pcUpdate = totalR
 
-            ! Actually form the preconditioner and factorize it.
+            ! Update the time step terms before forming the PC because the states and CFL may have changed
+            ! This call also updates the time step terms for the AMG PC if required
+            call computeTimeStepMat(usePC=.True.)
 
+            ! Actually form the preconditioner and factorize it.
             call FormJacobianANK()
+
             if (totalR .le. ANK_secondOrdSwitchTol * totalR0) then
                 if (ANK_coupled) then
                     iterType = "  *CSANK"
@@ -3849,6 +3797,10 @@ contains
             ! Also update the turb PC bec. the CFL has changed
             ANK_iterTurb = 0
         else
+            ! Update the time step terms because the states may have changed from the last step
+            ! This call does not update the time step terms for the AMG PC
+            call computeTimeStepMat(usePC=.False.)
+
             if (totalR .le. ANK_secondOrdSwitchTol * totalR0) then
                 if (ANK_coupled) then
                     iterType = "   CSANK"
@@ -3923,7 +3875,7 @@ contains
 #ifndef USE_COMPLEX
         ! in the real mode, we set the atol slightly lower than the target L2 convergence
         ! the reasoning for this is detailed in the NKStep subroutine
-        atol = totalR0 * L2Conv * 0.01_realType
+        atol = totalR0 * L2Conv * ANK_atol_buffer
 #else
         ! in complex mode, we want to tightly solve the linear system every time
         ! again, see the NKStep subroutine for the explanation
