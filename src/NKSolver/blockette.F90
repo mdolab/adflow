@@ -181,6 +181,10 @@ contains
                 do nn = 1, nDom
                     call setPointers(nn, currentLevel, sps)
                     call xhalo_block()
+
+                    if (equations == RANSEquations .and. useApproxWallDistance) then
+                        call updateWallDistancesQuickly(nn, 1, sps)
+                    end if
                 end do
             end do
 
@@ -204,10 +208,6 @@ contains
                     call volume_block
                     call metric_block
                     call boundaryNormals
-
-                    if (equations == RANSEquations .and. useApproxWallDistance) then
-                        call updateWallDistancesQuickly(nn, 1, sps)
-                    end if
                 end if
 
                 ! Notes:

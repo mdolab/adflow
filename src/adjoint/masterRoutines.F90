@@ -76,10 +76,21 @@ contains
             end if
 
             do sps = 1, nTimeIntervalsSpectral
+                call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
                 do nn = 1, nDom
                     call setPointers(nn, 1, sps)
                     call xhalo_block()
+
+                    if (equations == RANSEquations .and. useApproxWallDistance) then
+                        call updateWallDistancesQuickly(nn, 1, sps)
+                    end if
                 end do
+
+                ! These arrays need to be restored before we can move to the next spectral instance.
+                call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
             end do
 
             ! Now exchange the coordinates (fine level only)
@@ -99,22 +110,9 @@ contains
                 call setPointers(nn, 1, sps)
 
                 if (useSpatial) then
-
-                    call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                    call EChk(ierr, __FILE__, __LINE__)
-
                     call volume_block
                     call metric_block
                     call boundaryNormals
-
-                    if (equations == RANSEquations .and. useApproxWallDistance) then
-                        call updateWallDistancesQuickly(nn, 1, sps)
-                    end if
-
-                    ! These arrays need to be restored before we can move to the next spectral instance.
-                    call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                    call EChk(ierr, __FILE__, __LINE__)
-
                 end if
 
                 ! Compute the pressures/viscositites
@@ -360,10 +358,43 @@ contains
         end do domainLoop1
 
         do sps = 1, nTimeIntervalsSpectral
+            ! Now set the xsurfd contribution from the full x perturbation.
+            ! scatter from the global seed (in x_like) to xSurfVecd...but only
+            ! if wallDistances were used
+            if (wallDistanceNeeded .and. useApproxWallDistance) then
+                    call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+
+                    call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
+                    call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            ! Get the pointers from the petsc vector for the surface
+            ! perturbation for wall distance.
+            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
             do nn = 1, nDom
                 call setPointers_d(nn, 1, sps)
                 call xhalo_block_d()
+
+                if (equations == RANSEquations .and. useApproxWallDistance) then
+                    call updateWallDistancesQuickly_d(nn, 1, sps)
+                end if
             end do
+
+            ! These arrays need to be restored before we can move to the next spectral instance.
+            call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
         end do
 
         ! Now exchange the coordinates. Note that we *must* exhchange the
@@ -385,19 +416,6 @@ contains
             end if
         end do
 
-        ! Now set the xsurfd contribution from the full x perturbation.
-        ! scatter from the global seed (in x_like) to xSurfVecd...but only
-        ! if wallDistances were used
-        if (wallDistanceNeeded .and. useApproxWallDistance) then
-            do sps = 1, nTimeIntervalsSpectral
-                call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-            end do
-        end if
-
         call adjustInflowAngle_d
         call referenceState_d
         if (present(bcDataNames)) then
@@ -414,15 +432,6 @@ contains
                 call setPointers_d(nn, 1, sps)
                 ISIZE1OFDrfbcdata = nBocos
                 ISIZE1OFDrfviscsubface = nViscBocos
-
-                ! Get the pointers from the petsc vector for the surface
-                ! perturbation for wall distance.
-                call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                ! And it's derivative
-                call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
 
                 call volume_block_d()
                 call metric_block_d()
@@ -442,9 +451,6 @@ contains
                 ! required for ts
                 call slipvelocitiesfinelevel_block_d(useoldcoor, time, sps, nn)
 
-                if (equations == RANSEquations .and. useApproxWallDistance) then
-                    call updateWallDistancesQuickly_d(nn, 1, sps)
-                end if
                 call computePressureSimple_d(.False.)
                 call computeLamViscosity_d(.False.)
                 call computeEddyViscosity_d(.False.)
@@ -458,13 +464,6 @@ contains
 
                 call applyAllBC_block_d(.True.)
 
-                ! These arrays need to be restored before we can move to the next spectral instance.
-                call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                ! And it's derivative
-                call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
             end do
         end do
 
@@ -800,19 +799,6 @@ contains
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
 
-            ! Get the pointers from the petsc vector for the wall
-            ! surface and it's accumulation. Only necessary for wall
-            ! distance.
-            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            ! And it's derivative
-            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            !Zero the accumulation vector on a per-time-spectral instance basis
-            xSurfd = zero
-
             domainLoop2: do nn = 1, nDom
                 call setPointers_b(nn, 1, sps)
                 call applyAllBC_block_b(.True.)
@@ -833,9 +819,6 @@ contains
                 call computeLamViscosity_b(.false.)
                 call computePressureSimple_b(.false.)
 
-                if (equations == RANSEquations .and. useApproxWallDistance) then
-                    call updateWallDistancesQuickly_b(nn, 1, sps)
-                end if
                 ! Here we insert the functions related to
                 ! rotational (mesh movement) setup
                 time = timeunsteadyrestart
@@ -856,24 +839,6 @@ contains
 
             end do domainLoop2
 
-            ! Restore the petsc pointers.
-            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            ! And it's derivative
-            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            ! Now accumulate the xsurfd accumulation by using the wall scatter
-            ! in reverse.
-            if (wallDistanceNeeded .and. useApproxWallDistance) then
-
-                call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-            end if
         end do spsLoop2
 
         if (present(bcDataNames)) then
@@ -906,11 +871,48 @@ contains
         end do
         ! Now the adjoint of the coordinate exhcange
         call exchangecoor_b(1)
-        do nn = 1, nDom
-            do sps = 1, nTimeIntervalsSpectral
+        do sps = 1, nTimeIntervalsSpectral
+            ! Get the pointers from the petsc vector for the wall
+            ! surface and it's accumulation. Only necessary for wall
+            ! distance.
+            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            !Zero the accumulation vector on a per-time-spectral instance basis
+            xSurfd = zero
+
+            do nn = 1, nDom
                 call setPointers_b(nn, 1, sps)
                 call xhalo_block_b()
+
+                if (equations == RANSEquations .and. useApproxWallDistance) then
+                    call updateWallDistancesQuickly_b(nn, 1, sps)
+                end if
             end do
+
+            ! Restore the petsc pointers.
+            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Now accumulate the xsurfd accumulation by using the wall scatter
+            ! in reverse.
+            if (wallDistanceNeeded .and. useApproxWallDistance) then
+
+                call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
         end do
 
         call VecResetArray(x_like, ierr)
