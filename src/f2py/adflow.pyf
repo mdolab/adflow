@@ -7,8 +7,182 @@ python module libadflow
     interface  ! in :adflow
 
        ! ############################################################################
-       ! ADflow Routines
+       ! ADflow Modules
        ! ############################################################################
+       module constants ! in :adflow:../../modules/constants.F90
+         use precision
+         integer parameter,optional :: maxstringlen   = 256
+         integer parameter,optional :: maxcgnsnamelen =  32
+         integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
+         integer(kind=inttype) parameter,optional :: nsequations=2_inttype
+         integer(kind=inttype) parameter,optional :: ransequations=3_inttype
+         integer(kind=inttype) parameter,optional :: steady=1_inttype
+         integer(kind=inttype) parameter,optional :: unsteady=2_inttype
+         integer(kind=inttype) parameter,optional :: timespectral=3_inttype
+         integer(kind=inttype) parameter,optional :: internalflow=1_inttype
+         integer(kind=inttype) parameter,optional :: externalflow=2_inttype
+         integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
+         integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
+         integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
+         integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
+         integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
+         integer(kind=inttype) parameter,optional :: komegamodified=5_inttype
+         integer(kind=inttype) parameter,optional :: ktau=6_inttype
+         integer(kind=inttype) parameter,optional :: mentersst=7_inttype
+         integer(kind=inttype) parameter,optional :: v2f=10_inttype
+         integer(kind=inttype) parameter,optional :: strain=1_inttype
+         integer(kind=inttype) parameter,optional :: vorticity=2_inttype
+         integer(kind=inttype) parameter,optional :: katolaunder=3_inttype
+         integer(kind=inttype) parameter,optional :: dissscalar=1_inttype
+         integer(kind=inttype) parameter,optional :: dissmatrix=2_inttype
+         integer(kind=inttype) parameter,optional :: disscusp=3_inttype
+         integer(kind=inttype) parameter,optional :: upwind=9_inttype
+         integer(kind=inttype) parameter,optional :: roe=1_inttype
+         integer(kind=inttype) parameter,optional :: vanleer=2_inttype
+         integer(kind=inttype) parameter,optional :: ausmdv=3_inttype
+         integer(kind=inttype) parameter,optional :: nolimiter=2_inttype
+         integer(kind=inttype) parameter,optional :: vanalbeda=3_inttype
+         integer(kind=inttype) parameter,optional :: minmod=4_inttype
+         integer(kind=inttype) parameter,optional :: noprecond=1_inttype
+         integer(kind=inttype) parameter,optional :: turkel=2_inttype
+         integer(kind=inttype) parameter,optional :: choimerkle=3_inttype
+         integer(kind=inttype) parameter,optional :: constantpressure=1_inttype
+         integer(kind=inttype) parameter,optional :: linextrapolpressure=2_inttype
+         integer(kind=inttype) parameter,optional :: quadextrapolpressure=3_inttype
+         integer(kind=inttype) parameter,optional :: normalmomentum=4_inttype
+         integer(kind=inttype) parameter,optional :: constantextrapol=1_inttype
+         integer(kind=inttype) parameter,optional :: linextrapol=2_inttype
+         integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
+         integer(kind=inttype) parameter,optional :: dadi=2_inttype
+         integer(kind=inttype) parameter,optional :: nllusgs=3_inttype
+         integer(kind=inttype) parameter,optional :: nllusgsline=4_inttype
+         integer(kind=inttype) parameter,optional :: decoupled=1_inttype
+         integer(kind=inttype) parameter,optional :: coupled=2_inttype
+         integer(kind=inttype) parameter,optional :: gmres=1_inttype
+         integer(kind=inttype) parameter,optional :: adi=2_inttype
+         integer(kind=inttype) parameter,optional :: bcdirichlet0=0_inttype
+         integer(kind=inttype) parameter,optional :: bcneumann0=1_inttype
+         integer(kind=inttype) parameter,optional :: noresaveraging=0_inttype
+         integer(kind=inttype) parameter,optional :: alwaysresaveraging=1_inttype
+         integer(kind=inttype) parameter,optional :: alternateresaveraging=2_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaxnotdefined=0_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaxexplicit=1_inttype
+         integer(kind=inttype) parameter,optional :: turbrelaximplicit=2_inttype
+         integer(kind=inttype) parameter,optional :: precisionsingle=1
+         integer(kind=inttype) parameter,optional :: precisiondouble=2
+         integer(kind=inttype) parameter,optional :: bdf=1
+         integer(kind=inttype) parameter,optional :: explicitrk=2
+         integer(kind=inttype) parameter,optional :: implicitrk=3
+         integer(kind=inttype) parameter,optional :: md=4
+         integer(kind=inttype) :: nolinesearch=0_inttype
+         integer(kind=inttype) :: cubiclinesearch=1_inttype
+         integer(kind=inttype) :: nonmonotonelinesearch=2_inttype
+         integer(kind=inttype) :: updatefrozen = 0_inttype
+         integer(kind=inttype) :: updatefast = 1_inttype
+         integer(kind=inttype) :: updatefull = 2_inttype
+
+         ! Cost functions
+         integer(kind=inttype) :: ncostfunction
+         integer(kind=inttype) parameter,optional :: costfunccdq=30
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
+         integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
+         integer(kind=inttype) parameter,optional :: costfunccm0=17
+         integer(kind=inttype) parameter,optional :: costfuncforcex=5
+         integer(kind=inttype) parameter,optional :: costfuncclq=25
+         integer(kind=inttype) parameter,optional :: costfuncdrag=2
+         integer(kind=inttype) parameter,optional :: costfunccl0=22
+         integer(kind=inttype) parameter,optional :: costfunccmzqdot=21
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
+         integer(kind=inttype) parameter,optional :: costfunccmzq=20
+         integer(kind=inttype) parameter,optional :: costfunccmzalphadot=19
+         integer(kind=inttype) parameter,optional :: costfunclift=1
+         integer(kind=inttype) parameter,optional :: costfunccd0=27
+         integer(kind=inttype) parameter,optional :: costfuncclqdot=26
+         integer(kind=inttype) parameter,optional :: costfuncforcey=6
+         integer(kind=inttype) parameter,optional :: costfuncforcez=7
+         integer(kind=inttype) parameter,optional :: costfuncmomz=13
+         integer(kind=inttype) parameter,optional :: costfunccdqdot=31
+         integer(kind=inttype) parameter,optional :: costfuncmomx=11
+         integer(kind=inttype) parameter,optional :: costfuncmomy=12
+         integer(kind=inttype) parameter,optional :: costfunccdalphadot=29
+         integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
+         integer(kind=inttype) parameter,optional :: costfunccdalpha=28
+         integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
+         integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
+         integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
+         integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
+         integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
+         integer(kind=inttype) parameter,optional :: costfuncclalpha=23
+         integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
+         integer(kind=inttype) parameter,optional :: costfunccfy0=32
+         integer(kind=inttype) parameter,optional :: costfunccfyalpha=33
+         integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
+         integer(kind=inttype) parameter,optional :: costfunccfyq=35
+         integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
+         integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
+         integer(kind=inttype) parameter,optional :: costfuncsepsensor=38
+         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgx=39
+         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
+         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
+         integer(kind=inttype) parameter,optional :: costfunccavitation=42
+         integer(kind=inttype) parameter,optional :: costfuncmdot=43
+         integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
+         integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
+         integer(kind=inttype) parameter,optional :: costfuncmavgrho=46
+         integer(kind=inttype) parameter,optional :: costfuncmavgps=47
+         integer(kind=inttype) parameter,optional :: costfuncmavgmn=48
+         integer(kind=inttype) parameter,optional :: costfuncmavga=49
+         integer(kind=inttype) parameter,optional :: costfuncarea=50
+         integer(kind=inttype) parameter,optional :: costfuncaxismoment=51
+         integer(kind=inttype) parameter,optional :: costfuncflowpower=52
+         integer(kind=inttype) parameter,optional :: costfuncforcexpressure=53
+         integer(kind=inttype) parameter,optional :: costfuncforceypressure=54
+         integer(kind=inttype) parameter,optional :: costfuncforcezpressure=55
+         integer(kind=inttype) parameter,optional :: costfuncforcexviscous=56
+         integer(kind=inttype) parameter,optional :: costfuncforceyviscous=57
+         integer(kind=inttype) parameter,optional :: costfuncforcezviscous=58
+         integer(kind=inttype) parameter,optional :: costfuncforcexmomentum=59
+         integer(kind=inttype) parameter,optional :: costfuncforceymomentum=60
+         integer(kind=inttype) parameter,optional :: costfuncforcezmomentum=61
+         integer(kind=inttype) parameter,optional :: costfuncdragpressure=62
+         integer(kind=inttype) parameter,optional :: costfuncdragviscous=63
+         integer(kind=inttype) parameter,optional :: costfuncdragmomentum=64
+         integer(kind=inttype) parameter,optional :: costfuncliftpressure=65
+         integer(kind=inttype) parameter,optional :: costfuncliftviscous=66
+         integer(kind=inttype) parameter,optional :: costfuncliftmomentum=67
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefpressure=68
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefviscous=69
+         integer(kind=inttype) parameter,optional :: costfuncforcexcoefmomentum=70
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefpressure=71
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefviscous=72
+         integer(kind=inttype) parameter,optional :: costfuncforceycoefmomentum=73
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefpressure=74
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefviscous=75
+         integer(kind=inttype) parameter,optional :: costfuncforcezcoefmomentum=76
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefpressure=77
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefviscous=78
+         integer(kind=inttype) parameter,optional :: costfuncliftcoefmomentum=79
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefpressure=80
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefviscous=81
+         integer(kind=inttype) parameter,optional :: costfuncdragcoefmomentum=82
+         integer(kind=inttype) parameter,optional :: costfuncmavgvx=83
+         integer(kind=inttype) parameter,optional :: costfuncmavgvy=84
+         integer(kind=inttype) parameter,optional :: costfuncmavgvz=85
+         integer(kind=inttype) parameter,optional :: costfunccperror2=86
+         integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
+         integer(kind=inttype) parameter,optional :: costfuncaavgps=88
+         integer(kind=inttype) parameter,optional :: costfunccpmin=89
+         integer(kind=inttype) parameter,optional :: costfunccoforcexx=90
+         integer(kind=inttype) parameter,optional :: costfunccoforcexy=91
+         integer(kind=inttype) parameter,optional :: costfunccoforcexz=92
+         integer(kind=inttype) parameter,optional :: costfunccoforceyx=93
+         integer(kind=inttype) parameter,optional :: costfunccoforceyy=94
+         integer(kind=inttype) parameter,optional :: costfunccoforceyz=95
+         integer(kind=inttype) parameter,optional :: costfunccoforcezx=96
+         integer(kind=inttype) parameter,optional :: costfunccoforcezy=97
+         integer(kind=inttype) parameter,optional :: costfunccoforcezz=98
+         integer(kind=inttype) parameter,optional :: costfuncmavgvi=99
+       end module constants
 
        module utils
          subroutine writeintromessage
@@ -108,8 +282,10 @@ python module libadflow
            integer(kind=inttype) :: i
          end subroutine setrestartfiles
 
-         subroutine infchangecorrection(oldwinf) ! in :test:solverUtils.F90:solverutils
-           real(kind=realtype) dimension(5),intent(in) :: oldwinf
+         subroutine infchangecorrection(oldwinf, correctiontol, correctiontype) ! in :test:solverUtils.F90:solverutils
+           real(kind=realtype), dimension(5),intent(in) :: oldwinf
+           real(kind=realtype), intent(in) :: correctiontol
+           character*(*), intent(in) :: correctiontype
          end subroutine infchangecorrection
 
        end module initializeflow
@@ -127,17 +303,15 @@ python module libadflow
        end module bcdata
 
 
-       module agmg
-         integer(kind=inttype) :: agmglevels
-         integer(kind=inttype) :: agmgnsmooth
+       module amg
 
-         subroutine setupagmg
-         end subroutine setupagmg
+         subroutine setupamg
+         end subroutine setupamg
 
-         subroutine destroyagmg
-         end subroutine destroyagmg
+         subroutine destroyamg
+         end subroutine destroyamg
 
-       end module agmg
+       end module amg
 
        module flowutils
 
@@ -186,9 +360,13 @@ python module libadflow
        end module inputparamroutines
 
        module nksolver
+         use constants
 
+         character(len=maxstringlen) :: nk_precondtype
          integer(kind=inttype) :: nk_innerpreconits
          integer(kind=inttype) :: nk_outerpreconits
+         integer(kind=inttype) :: nk_amglevels
+         integer(kind=inttype) :: nk_amgnsmooth
          integer(kind=inttype) :: nk_jacobianlag
          logical :: usenksolver
          logical :: nk_adpc
@@ -258,8 +436,12 @@ python module libadflow
 
        module anksolver
          use constants
+
+         character(len=maxstringlen) :: ank_precondtype
          integer(kind=inttype) :: ank_innerpreconits
          integer(kind=inttype) :: ank_outerpreconits
+         integer(kind=inttype) :: ank_amglevels
+         integer(kind=inttype) :: ank_amgnsmooth
          integer(kind=inttype) :: ank_jacobianlag
          logical :: useanksolver
          logical :: ank_useturbdadi
@@ -268,15 +450,18 @@ python module libadflow
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
          real(kind=realtype) :: ank_rtol
+         real(kind=realtype) :: ank_atol_buffer
          real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
          real(kind=realtype) :: ank_switchtol
+         real(kind=realtype) :: ank_cfl
          real(kind=realtype) :: ank_cfl0
          real(kind=realtype) :: ank_cflmin0
          real(kind=realtype) :: ank_cfllimit
          real(kind=realtype) :: ank_cflfactor
          real(kind=realtype) :: ank_cflexponent
          real(kind=realtype) :: ank_cflcutback
+         logical :: ank_cflreset
          real(kind=realtype) :: ank_stepfactor
          real(kind=realtype) :: ank_stepmin
          real(kind=realtype) :: ank_constcflstep
@@ -288,11 +473,13 @@ python module libadflow
          real(kind=realtype) :: ank_turbcflscale
          logical :: ank_usefullvisc
          real(kind=realtype) :: ank_pcupdatetol
+         real(kind=realtype) :: ank_pcupdatetol2
          real(kind=realtype) :: ank_pcupdatecutoff
          logical :: ank_adpc
          integer(kind=inttype) :: ank_nsubiterturb
          logical :: ank_turbdebug
          logical :: ank_usematrixfree
+         character(len=maxstringlen) :: ank_chartimesteptype
          subroutine destroyanksolver
          end subroutine destroyanksolver
 
@@ -785,244 +972,6 @@ python module libadflow
          real(kind=realtype) dimension(16) :: oversettimes
        end module oversetdata
 
-! ================ bare subroutines =============
-
-        subroutine writesol(famlist,nfamlist) ! in :test:writeSol.F90
-            integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
-            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
-        end subroutine writesol
-
-        subroutine getforces(forces,npts,sps) ! in :test:getForces.F90
-          real(kind=realtype) dimension(3,npts),intent(inout) :: forces
-          integer(kind=inttype), optional,intent(in),check(shape(forces,1)==npts),depend(forces) :: npts=shape(forces,1)
-          integer(kind=inttype) intent(in) :: sps
-        end subroutine getforces
-
-       subroutine getheatflux(hflux,npts,sps_in) ! in :test:getForces.F90
-         real(kind=realtype) dimension(npts),intent(inout) :: hflux
-         integer(kind=inttype), optional,intent(in),depend(hflux) :: npts=len(hflux)
-         integer(kind=inttype) intent(in) :: sps_in
-       end subroutine getheatflux
-
-       subroutine settnswall(tnsw,npts,sps_in) ! in :test:getForces.F90
-         real(kind=realtype) dimension(npts),intent(in) :: tnsw
-         integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
-         integer(kind=inttype) intent(in) :: sps_in
-       end subroutine settnswall
-
-       subroutine gettnswall(tnsw,npts,sps) ! in :test:getForces.F90
-         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: tnsw
-         integer(kind=inttype) intent(in) :: npts
-         integer(kind=inttype) intent(in) :: sps
-       end subroutine gettnswall
-
-       subroutine setcptargets(cptarget,npts,sps_in) ! in :test:setCpTarget.f90
-         real(kind=realtype) dimension(npts),intent(in) :: cptarget
-         integer(kind=inttype) optional,intent(in),check(len(cptarget)>=npts),depend(cptarget) :: npts=len(cptarget)
-         integer(kind=inttype) intent(in) :: sps_in
-       end subroutine setcptargets
-
-       subroutine getcptargets(cptarget,npts,sps) ! in :test:getForces.F90
-         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: cptarget
-         integer(kind=inttype) intent(in) :: npts
-         integer(kind=inttype) intent(in) :: sps
-       end subroutine getcptargets
-
-       subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
-         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
-         real(kind=realtype) dimension(3,npts),intent(in) :: pts
-         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-         integer(kind=inttype) intent(in) :: sps_in
-         real(kind=realtype) dimension(3),intent(in) :: axis
-       end subroutine getareas
-
-       subroutine getareasensitivity(darea,pts,npts,sps_in,axis) ! in :test:getAreas.f90
-         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: darea
-         real(kind=realtype) dimension(3,npts),intent(in) :: pts
-         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-         integer(kind=inttype) intent(in) :: sps_in
-         real(kind=realtype) dimension(3),intent(in) :: axis
-       end subroutine getareasensitivity
-
-
-       ! ############################################################################
-       ! ADflow Modules
-       ! ############################################################################
-       module constants ! in :adflow:../../modules/constants.F90
-         use precision
-         integer parameter,optional :: maxstringlen   = 256
-         integer parameter,optional :: maxcgnsnamelen =  32
-         integer(kind=inttype) parameter,optional :: eulerequations=1_inttype
-         integer(kind=inttype) parameter,optional :: nsequations=2_inttype
-         integer(kind=inttype) parameter,optional :: ransequations=3_inttype
-         integer(kind=inttype) parameter,optional :: steady=1_inttype
-         integer(kind=inttype) parameter,optional :: unsteady=2_inttype
-         integer(kind=inttype) parameter,optional :: timespectral=3_inttype
-         integer(kind=inttype) parameter,optional :: internalflow=1_inttype
-         integer(kind=inttype) parameter,optional :: externalflow=2_inttype
-         integer(kind=inttype) parameter,optional :: cpconstant=1_inttype
-         integer(kind=inttype) parameter,optional :: cptempcurvefits=2_inttype
-         integer(kind=inttype) parameter,optional :: spalartallmaras=2_inttype
-         integer(kind=inttype) parameter,optional :: spalartallmarasedwards=3_inttype
-         integer(kind=inttype) parameter,optional :: komegawilcox=4_inttype
-         integer(kind=inttype) parameter,optional :: komegamodified=5_inttype
-         integer(kind=inttype) parameter,optional :: ktau=6_inttype
-         integer(kind=inttype) parameter,optional :: mentersst=7_inttype
-         integer(kind=inttype) parameter,optional :: v2f=10_inttype
-         integer(kind=inttype) parameter,optional :: strain=1_inttype
-         integer(kind=inttype) parameter,optional :: vorticity=2_inttype
-         integer(kind=inttype) parameter,optional :: katolaunder=3_inttype
-         integer(kind=inttype) parameter,optional :: dissscalar=1_inttype
-         integer(kind=inttype) parameter,optional :: dissmatrix=2_inttype
-         integer(kind=inttype) parameter,optional :: disscusp=3_inttype
-         integer(kind=inttype) parameter,optional :: upwind=9_inttype
-         integer(kind=inttype) parameter,optional :: roe=1_inttype
-         integer(kind=inttype) parameter,optional :: vanleer=2_inttype
-         integer(kind=inttype) parameter,optional :: ausmdv=3_inttype
-         integer(kind=inttype) parameter,optional :: nolimiter=2_inttype
-         integer(kind=inttype) parameter,optional :: vanalbeda=3_inttype
-         integer(kind=inttype) parameter,optional :: minmod=4_inttype
-         integer(kind=inttype) parameter,optional :: noprecond=1_inttype
-         integer(kind=inttype) parameter,optional :: turkel=2_inttype
-         integer(kind=inttype) parameter,optional :: choimerkle=3_inttype
-         integer(kind=inttype) parameter,optional :: constantpressure=1_inttype
-         integer(kind=inttype) parameter,optional :: linextrapolpressure=2_inttype
-         integer(kind=inttype) parameter,optional :: quadextrapolpressure=3_inttype
-         integer(kind=inttype) parameter,optional :: normalmomentum=4_inttype
-         integer(kind=inttype) parameter,optional :: constantextrapol=1_inttype
-         integer(kind=inttype) parameter,optional :: linextrapol=2_inttype
-         integer(kind=inttype) parameter,optional :: rungekutta=1_inttype
-         integer(kind=inttype) parameter,optional :: dadi=2_inttype
-         integer(kind=inttype) parameter,optional :: nllusgs=3_inttype
-         integer(kind=inttype) parameter,optional :: nllusgsline=4_inttype
-         integer(kind=inttype) parameter,optional :: decoupled=1_inttype
-         integer(kind=inttype) parameter,optional :: coupled=2_inttype
-         integer(kind=inttype) parameter,optional :: gmres=1_inttype
-         integer(kind=inttype) parameter,optional :: adi=2_inttype
-         integer(kind=inttype) parameter,optional :: bcdirichlet0=0_inttype
-         integer(kind=inttype) parameter,optional :: bcneumann0=1_inttype
-         integer(kind=inttype) parameter,optional :: noresaveraging=0_inttype
-         integer(kind=inttype) parameter,optional :: alwaysresaveraging=1_inttype
-         integer(kind=inttype) parameter,optional :: alternateresaveraging=2_inttype
-         integer(kind=inttype) parameter,optional :: turbrelaxnotdefined=0_inttype
-         integer(kind=inttype) parameter,optional :: turbrelaxexplicit=1_inttype
-         integer(kind=inttype) parameter,optional :: turbrelaximplicit=2_inttype
-         integer(kind=inttype) parameter,optional :: precisionsingle=1
-         integer(kind=inttype) parameter,optional :: precisiondouble=2
-         integer(kind=inttype) parameter,optional :: bdf=1
-         integer(kind=inttype) parameter,optional :: explicitrk=2
-         integer(kind=inttype) parameter,optional :: implicitrk=3
-         integer(kind=inttype) parameter,optional :: md=4
-         integer(kind=inttype) :: nolinesearch=0_inttype
-         integer(kind=inttype) :: cubiclinesearch=1_inttype
-         integer(kind=inttype) :: nonmonotonelinesearch=2_inttype
-         integer(kind=inttype) :: updatefrozen = 0_inttype
-         integer(kind=inttype) :: updatefast = 1_inttype
-         integer(kind=inttype) :: updatefull = 2_inttype
-
-         ! Cost functions
-         integer(kind=inttype) :: ncostfunction
-         integer(kind=inttype) parameter,optional :: costfunccdq=30
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoef=10
-         integer(kind=inttype) parameter,optional :: costfuncmomzcoef=16
-         integer(kind=inttype) parameter,optional :: costfunccm0=17
-         integer(kind=inttype) parameter,optional :: costfuncforcex=5
-         integer(kind=inttype) parameter,optional :: costfuncclq=25
-         integer(kind=inttype) parameter,optional :: costfuncdrag=2
-         integer(kind=inttype) parameter,optional :: costfunccl0=22
-         integer(kind=inttype) parameter,optional :: costfunccmzqdot=21
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoef=8
-         integer(kind=inttype) parameter,optional :: costfunccmzq=20
-         integer(kind=inttype) parameter,optional :: costfunccmzalphadot=19
-         integer(kind=inttype) parameter,optional :: costfunclift=1
-         integer(kind=inttype) parameter,optional :: costfunccd0=27
-         integer(kind=inttype) parameter,optional :: costfuncclqdot=26
-         integer(kind=inttype) parameter,optional :: costfuncforcey=6
-         integer(kind=inttype) parameter,optional :: costfuncforcez=7
-         integer(kind=inttype) parameter,optional :: costfuncmomz=13
-         integer(kind=inttype) parameter,optional :: costfunccdqdot=31
-         integer(kind=inttype) parameter,optional :: costfuncmomx=11
-         integer(kind=inttype) parameter,optional :: costfuncmomy=12
-         integer(kind=inttype) parameter,optional :: costfunccdalphadot=29
-         integer(kind=inttype) parameter,optional :: costfuncmomxcoef=14
-         integer(kind=inttype) parameter,optional :: costfunccdalpha=28
-         integer(kind=inttype) parameter,optional :: costfuncliftcoef=3
-         integer(kind=inttype) parameter,optional :: costfunccmzalpha=18
-         integer(kind=inttype) parameter,optional :: costfuncdragcoef=4
-         integer(kind=inttype) parameter,optional :: costfuncclalphadot=24
-         integer(kind=inttype) parameter,optional :: costfuncforceycoef=9
-         integer(kind=inttype) parameter,optional :: costfuncclalpha=23
-         integer(kind=inttype) parameter,optional :: costfuncmomycoef=15
-         integer(kind=inttype) parameter,optional :: costfunccfy0=32
-         integer(kind=inttype) parameter,optional :: costfunccfyalpha=33
-         integer(kind=inttype) parameter,optional :: costfunccfyalphadot=34
-         integer(kind=inttype) parameter,optional :: costfunccfyq=35
-         integer(kind=inttype) parameter,optional :: costfunccfyqdot=36
-         integer(kind=inttype) parameter,optional :: costfuncbendingcoef=37
-         integer(kind=inttype) parameter,optional :: costfuncsepsensor=38
-         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgx=39
-         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgy=40
-         integer(kind=inttype) parameter,optional :: costfuncsepsensoravgz=41
-         integer(kind=inttype) parameter,optional :: costfunccavitation=42
-         integer(kind=inttype) parameter,optional :: costfuncmdot=43
-         integer(kind=inttype) parameter,optional :: costfuncmavgptot=44
-         integer(kind=inttype) parameter,optional :: costfuncmavgttot=45
-         integer(kind=inttype) parameter,optional :: costfuncmavgrho=46
-         integer(kind=inttype) parameter,optional :: costfuncmavgps=47
-         integer(kind=inttype) parameter,optional :: costfuncmavgmn=48
-         integer(kind=inttype) parameter,optional :: costfuncmavga=49
-         integer(kind=inttype) parameter,optional :: costfuncarea=50
-         integer(kind=inttype) parameter,optional :: costfuncaxismoment=51
-         integer(kind=inttype) parameter,optional :: costfuncflowpower=52
-         integer(kind=inttype) parameter,optional :: costfuncforcexpressure=53
-         integer(kind=inttype) parameter,optional :: costfuncforceypressure=54
-         integer(kind=inttype) parameter,optional :: costfuncforcezpressure=55
-         integer(kind=inttype) parameter,optional :: costfuncforcexviscous=56
-         integer(kind=inttype) parameter,optional :: costfuncforceyviscous=57
-         integer(kind=inttype) parameter,optional :: costfuncforcezviscous=58
-         integer(kind=inttype) parameter,optional :: costfuncforcexmomentum=59
-         integer(kind=inttype) parameter,optional :: costfuncforceymomentum=60
-         integer(kind=inttype) parameter,optional :: costfuncforcezmomentum=61
-         integer(kind=inttype) parameter,optional :: costfuncdragpressure=62
-         integer(kind=inttype) parameter,optional :: costfuncdragviscous=63
-         integer(kind=inttype) parameter,optional :: costfuncdragmomentum=64
-         integer(kind=inttype) parameter,optional :: costfuncliftpressure=65
-         integer(kind=inttype) parameter,optional :: costfuncliftviscous=66
-         integer(kind=inttype) parameter,optional :: costfuncliftmomentum=67
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoefpressure=68
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoefviscous=69
-         integer(kind=inttype) parameter,optional :: costfuncforcexcoefmomentum=70
-         integer(kind=inttype) parameter,optional :: costfuncforceycoefpressure=71
-         integer(kind=inttype) parameter,optional :: costfuncforceycoefviscous=72
-         integer(kind=inttype) parameter,optional :: costfuncforceycoefmomentum=73
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoefpressure=74
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoefviscous=75
-         integer(kind=inttype) parameter,optional :: costfuncforcezcoefmomentum=76
-         integer(kind=inttype) parameter,optional :: costfuncliftcoefpressure=77
-         integer(kind=inttype) parameter,optional :: costfuncliftcoefviscous=78
-         integer(kind=inttype) parameter,optional :: costfuncliftcoefmomentum=79
-         integer(kind=inttype) parameter,optional :: costfuncdragcoefpressure=80
-         integer(kind=inttype) parameter,optional :: costfuncdragcoefviscous=81
-         integer(kind=inttype) parameter,optional :: costfuncdragcoefmomentum=82
-         integer(kind=inttype) parameter,optional :: costfuncmavgvx=83
-         integer(kind=inttype) parameter,optional :: costfuncmavgvy=84
-         integer(kind=inttype) parameter,optional :: costfuncmavgvz=85
-         integer(kind=inttype) parameter,optional :: costfunccperror2=86
-         integer(kind=inttype) parameter,optional :: costfuncaavgptot=87
-         integer(kind=inttype) parameter,optional :: costfuncaavgps=88
-         integer(kind=inttype) parameter,optional :: costfunccpmin=89
-         integer(kind=inttype) parameter,optional :: costfunccoforcexx=90
-         integer(kind=inttype) parameter,optional :: costfunccoforcexy=91
-         integer(kind=inttype) parameter,optional :: costfunccoforcexz=92
-         integer(kind=inttype) parameter,optional :: costfunccoforceyx=93
-         integer(kind=inttype) parameter,optional :: costfunccoforceyy=94
-         integer(kind=inttype) parameter,optional :: costfunccoforceyz=95
-         integer(kind=inttype) parameter,optional :: costfunccoforcezx=96
-         integer(kind=inttype) parameter,optional :: costfunccoforcezy=97
-         integer(kind=inttype) parameter,optional :: costfunccoforcezz=98
-         integer(kind=inttype) parameter,optional :: costfuncmavgvi=99
-        end module constants
-
        module communication ! in :adflow:../../modules/communication.f90
          use precision
          integer :: adflow_comm_world
@@ -1048,6 +997,7 @@ python module libadflow
          real(kind=realtype) :: vis4
          real(kind=realtype) :: vis2coarse
          real(kind=realtype) :: adis
+         real(kind=realtype) :: acousticscalefactor
          real(kind=realtype) :: kappacoef
          logical :: vortexcorr
          logical :: dirscaling
@@ -1136,6 +1086,7 @@ python module libadflow
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
+         logical :: printnegativevolumes
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
          logical :: usedisscontinuation
@@ -1249,10 +1200,10 @@ python module libadflow
          character(len=maxstringlen) :: gmresorthogtype
          character(len=maxstringlen) :: localpctype
          character(len=maxstringlen) :: precondtype
-         real(kind=realtype) :: adjabstol
-         real(kind=realtype) :: adjdivtol
-         real(kind=realtype) :: adjreltol
-         real(kind=realtype) :: adjreltolrel
+         real(kind=alwaysrealtype) :: adjabstol
+         real(kind=alwaysrealtype) :: adjdivtol
+         real(kind=alwaysrealtype) :: adjreltol
+         real(kind=alwaysrealtype) :: adjreltolrel
          real(kind=realtype) :: adjmaxl2dev
          integer(kind=inttype) :: overlap
          integer(kind=inttype) :: adjmonstep
@@ -1261,6 +1212,8 @@ python module libadflow
          integer(kind=inttype) :: adjrestart
          integer(kind=inttype) :: innerpreconits
          integer(kind=inttype) :: outerpreconits
+         integer(kind=inttype) :: adjamglevels
+         integer(kind=inttype) :: adjamgnsmooth
          logical :: approxpc
          logical :: adpc
          logical :: viscpc
@@ -1429,6 +1382,7 @@ python module libadflow
        module adjointvars ! in :test:ADjointVars.F90
          use constants
             integer(kind=inttype) dimension(20) :: ncellslocal
+            integer(kind=inttype) dimension(20) :: ncellsglobal
             integer(kind=inttype) dimension(20) :: nnodeslocal
             integer(kind=inttype), parameter,optional :: ialpha=1
             integer(kind=inttype), parameter,optional :: ibeta=2
@@ -1456,7 +1410,7 @@ python module libadflow
           end module adjointvars
 
        module adjointpetsc
-         real(kind=realtype) :: adjresinit, adjresstart, adjresfinal
+         real(kind=alwaysrealtype) :: adjresinit, adjresstart, adjresfinal
        end module adjointpetsc
 
        module inputtsstabderiv ! in :test:inputParam.f90
@@ -1481,6 +1435,65 @@ python module libadflow
             character(32) intent(out) :: fam
           end subroutine getfam
         end module surfacefamilies
+
+! ================ bare subroutines =============
+
+        subroutine writesol(famlist,nfamlist) ! in :test:writeSol.F90
+            integer(kind=inttype) dimension(nfamlist),intent(in) :: famlist
+            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
+        end subroutine writesol
+
+        subroutine getforces(forces,npts,sps) ! in :test:getForces.F90
+          real(kind=realtype) dimension(3,npts),intent(inout) :: forces
+          integer(kind=inttype), optional,intent(in),check(shape(forces,1)==npts),depend(forces) :: npts=shape(forces,1)
+          integer(kind=inttype) intent(in) :: sps
+        end subroutine getforces
+
+       subroutine getheatflux(hflux,npts,sps_in) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(inout) :: hflux
+         integer(kind=inttype), optional,intent(in),depend(hflux) :: npts=len(hflux)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine getheatflux
+
+       subroutine settnswall(tnsw,npts,sps_in) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(in) :: tnsw
+         integer(kind=inttype) optional,intent(in),check(len(tnsw)>=npts),depend(tnsw) :: npts=len(tnsw)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine settnswall
+
+       subroutine gettnswall(tnsw,npts,sps) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: tnsw
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine gettnswall
+
+       subroutine setcptargets(cptarget,npts,sps_in) ! in :test:setCpTarget.f90
+         real(kind=realtype) dimension(npts),intent(in) :: cptarget
+         integer(kind=inttype) optional,intent(in),check(len(cptarget)>=npts),depend(cptarget) :: npts=len(cptarget)
+         integer(kind=inttype) intent(in) :: sps_in
+       end subroutine setcptargets
+
+       subroutine getcptargets(cptarget,npts,sps) ! in :test:getForces.F90
+         real(kind=realtype) dimension(npts),intent(out),depend(npts) :: cptarget
+         integer(kind=inttype) intent(in) :: npts
+         integer(kind=inttype) intent(in) :: sps
+       end subroutine getcptargets
+
+       subroutine getareas(areas,pts,npts,sps_in,axis) ! in :test:getAreas.f90
+         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: areas
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) intent(in) :: sps_in
+         real(kind=realtype) dimension(3),intent(in) :: axis
+       end subroutine getareas
+
+       subroutine getareasensitivity(darea,pts,npts,sps_in,axis) ! in :test:getAreas.f90
+         real(kind=realtype) dimension(3,npts),intent(out),depend(npts) :: darea
+         real(kind=realtype) dimension(3,npts),intent(in) :: pts
+         integer(kind=inttype) optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
+         integer(kind=inttype) intent(in) :: sps_in
+         real(kind=realtype) dimension(3),intent(in) :: axis
+       end subroutine getareasensitivity
 
 
     end interface

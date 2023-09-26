@@ -277,6 +277,17 @@ dissipationScalingExponent:
     This value typically will not need to be changed from the default.
     The value of 2/3 is the theoretical best value assuming an orthogonal 3-dimensional grid.
 
+acousticScaleFactor:
+  desc: >
+    A factor that multiplies the acoustic contribution in the spectral radius computation.
+    This only applies to the ``central plus scalar dissipation`` :py:data:`discretization`.
+    The spectral radius is used to compute dissipation terms, so this option affects the amount of dissipation in the solution.
+    A value of 1.0 will compute the spectral radius with acoustic and advective contributions weighted according to the standard JST scheme.
+    Values lower than 1.0 will result in more accurate solutions for low Mach number flows, but using too small a value will slow down convergence.
+    Setting this to the freestream Mach number tends to work well for most low Mach number cases.
+    Values greater than 1.0 should not be used because this will compromise the accuracy of the solution.
+    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+
 vis4:
   desc: >
     Coefficient of the fourth order dissipation used in the scalar and matrix JST dissipation scheme.
@@ -324,9 +335,26 @@ infChangeCorrection:
     Setting this to True will adjust the flowfield everywhere if the angle of attack changes between optimization iterations.
     The idea is that when the angle of attack is changed after a converged simulation, the residuals can stay low since this value only initially affects the residuals of the farfield boundary cells.
     As a result, the solver logic can do weird stuff because it is often based on the L2 norm of the residual.
-    If this option is set to True, we do a simple linear adjustment of every velocity vector in the solution with the same change in alpha.
+    If this option is set to True, we do a simple adjustment of the state vector with respect to the changes in the free stream conditions.
+    The method to compute the correction is determined by ``infChangeCorrectionType``.
+    The correction is only run if the norm of the free stream state change is greater than ``infChangeCorrectionTol``.
     As a result, the residuals jump up and the solver logic works as designed.
     This supersedes the :py:data:`RKReset` approach.
+
+infChangeCorrectionTol:
+  desc: >
+    The tolerance that determines if we will run a correction update when the ``infChangeCorrection`` option is set to True.
+    We first compute the change in the free stream state vector and compute its norm.
+    If this norm is greater than the tolerance set by this option, a correction update is performed.
+    If the norm of the change is smaller than the tolerance, we don't perform a correction update.
+    The default value is appropriate for the default ``"offset"`` type update.
+    When the ``"rotate"`` update type is used, users might want to select a higher tolerance because the vector rotation that determines the update might be ill conditioned with small state changes.
+
+infChangeCorrectionType:
+  desc: >
+    This option determines the method used for the correction update when the ``infChangeCorrection`` option is set to True.
+  offset: The default ``"offset"`` option simply adds the delta free stream state to every cell's state.
+  rotate: The option ``"rotate"`` will rotate the cell velocities by the rotation in the free stream velocity, and add the delta in the free stream velocity to the cells' density and energy values.
 
 cavitationNumber:
   desc: >
@@ -850,6 +878,11 @@ NKViscPC:
     This will have a memory and cost penalty, but the resulting preconditioner will be more accurate.
     Users should experiment with other linear solver options as a smaller stencil preconditioner is usually good enough.
 
+NKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the NK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
+
 NKASMOverlap:
   desc: >
     The number of overlap levels in the additive Schwarz preconditioner for the NK solver.
@@ -887,6 +920,14 @@ NKOuterPreconIts:
     More iterations may help converge the linear system faster.
     Typical values are from 1 to 3.
 
+NKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the NK solver.
+
+NKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the NK solver.
+
 NKLS:
   desc: >
     The type of line search used with the NK solver.
@@ -906,16 +947,6 @@ RKReset:
 nRKReset:
   desc: >
     The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
-
-AGMGLevels:
-  desc: >
-    Agglomerated multigrid preconditioner levels.
-    Experimental; should not be modified.
-
-AGMGNSmooth:
-  desc: >
-    Agglomerated multigrid preconditioner parameter.
-    Experimental; should not be modified.
 
 useANKSolver:
   desc: >
@@ -951,12 +982,30 @@ ANKLinearSolveTol:
   desc: >
     Linear solver tolerance for the ANK solver.
 
+ANKLinearSolveBuffer:
+  desc: >
+    Do not modify this option unless you know what you are doing with petsc linear tolerances used for the ANK solver.
+    The absolute linear solver convergence in PETSc needs to be set to a value lower than the final residual convergence norm.
+    This is because the linear residual is the linearization of the nonlinear residual, and solving the linear system in a Newton solver to an absolute linear tolerance does not guarantee that the same reduction will be achieved in the nonlinear residual as well.
+    Because of this, if we were to solve for an absolute tolerance that was based on the nonlinear absolute tolerance, the linear solver might exit right before the nonlinear system fully converges.
+    This can cause other problems where the linear system refuses to make any further progress due to the absolute tolerance, or simply, it would have been much more efficient to just do a handful more linear iterations to get some extra linear convergence that makes sure the nonlinear system would also converge.
+    The second scenario is what this option is useful for; this option is used to further offset the absolute linear solver tolerance in the ANK solver.
+    This option only really makes a difference very close to the final L2 convergence target.
+    For example, setting a value of 0.01 will force the linear solver to converge the linear system more tightly, in the cases where the absolute linear convergence is achieved before the relative target.
+    Reducing the value here to 1e-4 or 1e-6 may result in "extra" nonlinear convergence in the final iteration, at the cost of more linear solver effort.
+    Increasing the value here to 1e-1 will reduce this buffer and the solver is more likely to end closer to the final L2 convergence target, but a too large of a value might cause issues with the final iterations where several smaller additional Newton steps are required.
+
 ANKLinResMax:
   desc: >
     A parameter that is used to adaptively adjust the CFL number so that the linear residual with the ANK solver does not go above the prescribed value.
     The target linear convergence may not be reached during nonlinear iterations with the given linear solver options, and this may be fine.
     However, we want to manage the CFL number so that the linear residual after we run out of linear iterations is still below this target value.
     This can be seen as the maximum allowed linear residual at each iteration.
+
+ANKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the ANK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
 
 ANKASMOverlap:
   desc: >
@@ -980,6 +1029,14 @@ ANKInnerPreconIts:
 ANKOuterPreconIts:
   desc: >
     Similar to the :py:data:`NKOuterPreconIts` option but for the ANK solver.
+
+ANKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the ANK solver.
+
+ANKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the ANK solver.
 
 ANKCFL0:
   desc: >
@@ -1010,6 +1067,12 @@ ANKCFLCutback:
   desc: >
     The cutback factor for the CFL number in the ANK solver.
     This is the factor used when the CFL is adaptively reduced.
+
+ANKCFLReset:
+  desc: >
+    Flag that determines if the ANK CFL is reset to :py:data:`ANKCFL0` at first ANK iterations.
+    Each aero problem saves the last ANK CFL, and if this flag is set to false, subsequent solutions with the same aero problem starts at the last ANK CFL.
+    If the flag is set to true, then ANK CFL is always reset to the initial value of :py:data:`ANKCFL0`.
 
 ANKStepFactor:
   desc: >
@@ -1074,12 +1137,16 @@ ANKPCUpdateTol:
 
 ANKPCUpdateCutoff:
   desc: >
-    The cutoff tolerance below which we disable the PC update based on nonlinear convergence introduced in the option above.
-    E.g. the default value of 1e-6 will trigger PC updates with the ANK if the solver converges by a certain amount, but past a relative L2 convergence of 1e-6, this algorithm is disabled and the preconditioner is only updated with the mechanisms other than relative convergence.
+    The cutoff tolerance below which we adjust the tolerance for the PC update based on nonlinear convergence introduced with the option ``ANKPCUpdateTol``.
+    When the L2 convergence is above the value set in this option, the ANK PC updates are triggered if the relative convergence since the last PC update is below ``ANKPCUpdateTol``.
+    When the L2 convergence is below the value defined in this option, the code uses the tolerance set in ``ANKPCUpdateTolAfterCutoff`` to determine PC updates based on relative convergence.
     This is useful when CSANK is used, which can take steps that converge the L2 norm by multiple orders of magnitude in each iteration towards the end of the convergence.
-    Here, we do not need to update the PC at each solver iteration, so we disable it with this option.
-    This option only changes the PC update behavior with the coupled ANK variants.
-    Decoupled ANK variants don't get affected by this.
+    Here, we do not need to update the PC at each solver iteration, and may want to delay the PC updates based on relative convergence.
+
+ANKPCUpdateTolAfterCutoff:
+  desc: >
+    The ANK PC update tolerance used after we reach the ``ANKPCUpdateCutoff`` convergence.
+    Before the cutoff, the regular ``ANKPCUpdateTol`` is used.
 
 ANKADPC:
   desc: >
@@ -1101,6 +1168,23 @@ ANKUseMatrixFree:
   desc: >
     Use the matrix-free Jacobian for the ANK solver.
     If True, we use the approximate Jacobian formulated for the preconditioner matrix as the implicit formulation.
+
+ANKCharTimeStepType:
+  desc: >
+    This applies characteristic-based preconditioning to the ANK time step matrix.
+    This can accelerate convergence for low Mach number flows.
+    The amount of speedup will depend on how low the local Mach number is across the entire flowfield.
+    This option is mainly useful for cases with freestream Mach numbers of 0.4 or lower.
+    In most cases, this should be used in combination with :py:data:`acousticScaleFactor`.
+    See "Improving the Performance of a Compressible RANS Solver for Low and High Mach Number Flows" (Seraj2022c) for details.
+  None: No characteristic time stepping
+  Turkel: >
+    Turkel preconditioner.
+    This can be used for all flows, but the preconditioner will only be applied to locally subsonic flow.
+  VLR: >
+    van Leer-Lee-Roe preconditioner.
+    This preconditioner applies to locally subsonic and supersonic flow but is mainly useful for subsonic cases.
+    This usually performs slightly better than Turkel.
 
 blockSplitting:
   desc: >
@@ -1159,6 +1243,10 @@ setMonitor:
 printWarnings:
   desc: >
     Flag to print warning messages like for bad quality volumes, etc.
+
+printNegativeVolumes:
+  desc: >
+    Flag to print the block indices, cell center coordinates, and volume for each negative volume cell in the mesh.
 
 monitorVariables:
   desc: >
@@ -1336,7 +1424,10 @@ matrixOrdering:
 globalPreconditioner:
   desc: The type of (global) preconditioner to use for the adjoint system.
   additive Schwarz: Restricted additive Schwarz method (ASM)
-  multigrid: Agglomerated multigrid (AGMG)
+  multigrid: >
+    Algebraic multigrid (AMG).
+    This method can be much faster than ASM for large meshes.
+    The smoothing iterations and coarse level solutions are done with the standard ASM and ILU combination.
 
 localPreconditioner:
   desc: The type of preconditioner to use for the local preconditioning iteration in the adjoint solution.
@@ -1368,6 +1459,14 @@ outerPreconIts:
     Increasing this number may help with difficult problems.
     However, each iteration will take more time.
     The default should be sufficient for most problems.
+
+adjointAMGLevels:
+  desc: >
+    The number of levels to use for the adjoint solver's algebraic multigrid preconditioner.
+
+adjointAMGNSmooth:
+  desc: >
+    The number of smoothing iterations at each level for the adjoint solver's algebraic multigrid preconditioner.
 
 applyAdjointPCSubspaceSize:
   desc: >

@@ -888,17 +888,19 @@ class ADFLOW(AeroSolver):
         coordXfer=None,
     ):
         """
-        Add an actuator disk zone defined by the supplied closed
-        surface in the plot3d file "fileName". This surface defines the
-        physical extent of the region over which to apply the source terms.
-        Internally, we find all of the CFD volume cells that are inside
-        this closed surface and apply the source terms over these cells.
-        This surface is only used with the original mesh coordinates to
-        mark the internal CFD cells, and we keep using these cells even
-        if the geometric design and the mesh coordinates change. For
-        example, the marked cells can lie outside of the original
-        closed surface after a large design change, but we will still
-        use the cells that were inside the surface with the baseline design.
+        Add an actuator disk zone defined by the supplied closed surface in the
+        plot3d file "fileName". This surface defines the physical extent of the
+        region over which to apply the source terms. The plot3d file may be
+        multi-block but all the surface normals must point outside and no
+        additional surfaces can be inside. Internally, we find all of the CFD
+        volume cells that have their center inside this closed surface and
+        apply the source terms over these cells. This surface is only used with
+        the original mesh coordinates to mark the internal CFD cells, and we
+        keep using these cells even if the geometric design and the mesh
+        coordinates change. For example, the marked cells can lie outside of
+        the original closed surface after a large design change, but we will
+        still use the cells that were inside the surface with the baseline
+        design.
 
         axis1 and axis2 define the vector that we use to determine the
         direction of the thrust addition. Internally, we compute a
@@ -1350,6 +1352,9 @@ class ADFLOW(AeroSolver):
 
         # Save the winf vector. (just the flow part)
         self.curAP.adflowData.oldWinf = self.adflow.flowvarrefstate.winf[0:5].copy()
+
+        # Save the current ANK CFL in the ap data
+        self.curAP.adflowData.ank_cfl = self.adflow.anksolver.ank_cfl
 
         # Assign Fail Flags
         self.curAP.solveFailed = bool(self.adflow.killsignals.routinefailed)
@@ -1889,14 +1894,21 @@ class ADFLOW(AeroSolver):
         aeroProblem,
         CLStar,
         alpha0=None,
+        CLalphaGuess=None,
         delta=0.5,
         tol=1e-3,
-        autoReset=True,
-        CLalphaGuess=None,
+        autoReset=False,
         maxIter=20,
-        nReset=25,
+        relaxCLa=1.0,
+        relaxAlpha=1.0,
+        L2ConvRel=None,
+        stopOnStall=False,
+        writeSolution=False,
+        workUnitTime=None,
+        updateCutoff=1e-16,
     ):
-        """This is a simple secant method search for solving for a
+        """
+        This is a simple secant method search for solving for a
         fixed CL. This really should only be used to determine the
         starting alpha for a lift constraint in an optimization.
 
@@ -1909,6 +1921,12 @@ class ADFLOW(AeroSolver):
         alpha0 : angle (deg)
             Initial guess for secant search (deg). If None, use the
             value in the aeroProblem
+        CLalphaGuess : float or None
+            The user can provide an estimate for the lift curve slope
+            in order to accelerate convergence. If the user supply a
+            value to this option, it will not use the delta value anymore
+            to select the angle of attack of the second run. The value
+            should be in 1/deg.
         delta : angle (deg)
             Initial step direction for secant search
         tol : float
@@ -1918,39 +1936,195 @@ class ADFLOW(AeroSolver):
             issues when only the alpha is changed (Martois effect we
             think). This will reset the flow after each solve which
             solves this problem. Not necessary (or desired) when using
-            the RK solver.
-        CLalphaGuess : float or None
-            The user can provide an estimate for the lift curve slope
-            in order to accelerate convergence. If the user supply a
-            value to this option, it will not use the delta value anymore
-            to select the angle of attack of the second run. The value
-            should be in 1/deg.
+            the RK solver. The useCorrection option is the preferred
+            way of addressing this issue with the NK/ANK methods.
+            If solver still struggles after restarts with the correction,
+            this option can be used.
+        maxIter : int
+            Maximum number of secant solver iterations.
+        relaxCLa : float
+            Relaxation factor for the CLalpha update. Value of 1.0
+            will give the standard secant solver. A lower value will
+            damp the update to the CL alpha. Useful when the CL output
+            is expected to be noisy.
+        relaxAlpha : float
+            Relaxation factor for the alpha update. Value of 1.0
+            will give the standard secant solver. A lower value will
+            damp the alpha update. Useful to prevent large changes to
+            alpha.
+        L2ConvRel : float or list or None
+            Temporary relative L2 convergence for each iteration of the
+            CL solver. If the option is set to None, we don't modify the
+            L2ConvergenceRel option. If a float is provided, we use this
+            value as the target relative L2 convergence for each iteration.
+            If a list of floats is provided, we iterate over the values
+            and set the relative L2 convergence target separately for
+            each iteration. If the list length is less than the maximum
+            number of iterations we can perform, we keep using the last
+            value of the list until we run out of iterations.
+        stopOnStall : bool
+            Flag to determine if we want to stop early if the solver
+            fails to achieve the relative or total L2 convergence. This
+            is useful when the solver is expected to converge to the target
+            L2 tolerances at each call.
+        writeSolution : bool
+            Flag to enable a call to self.writeSolution as the CL solver
+            is finished.
+        workUnitTime : float or None
+            Optional parameter that will be passed to getConvergenceHistory
+            after each adflow call.
+        updateCutoff : float
+            Required change in alpha to trigger the clalpha update with the
+            Secant method. If the change in alpha is smaller than this option
+            we don't even bother changing clalpha and keep using the clalpha
+            value from the last iteration. This prevents clalpha from getting
+            bad updates due to noisy cl outputs that result from small alpha
+            changes.
 
         Returns
         -------
-        None, but the correct alpha is stored in the aeroProblem
+        resultsDict : dictionary
+            Dictionary that contains various results from the cl solve. The
+            dictionary contains the following data:
+
+            converged : bool
+                Flag indicating cl solver convergence. True means both the
+                CL solver target tolerance AND the overall target L2 convergence
+                is achieved. False means either one or both of the tolerances
+                are not reached.
+            iterations : int
+                Number of iterations ran.
+            l2convergence : float
+                Final relative L2 convergence of the solver w.r.t. free
+                stream residual. Useful to check overall CFD convergence.
+            alpha : float
+                Final angle of attack value
+            cl : float
+                Final CL value.
+            clstar : float
+                The original target CL. returned for convenience.
+            error : float
+                Error in cl value.
+            clalpha : float
+                Estimate to clalpha used in the last solver iteration
+            time : float
+                Total time the solver needed, in seconds
+            history : list
+                List of solver convergence histories. Each entry
+                in the list contains the convergence history of the
+                solver from each CL Solve iteration. The history
+                is returned using the "getConvergenceHistory" method.
 
         """
-        self.setAeroProblem(aeroProblem)
+
+        # time the CL solve
+        t1 = time.time()
+
+        # pointer to the iteration module for faster access
+        iterationModule = self.adflow.iteration
+
+        # create the string template we want to print for each iteration
+        iterString = (
+            "\n"
+            + "+--------------------------------------------------+\n"
+            + "|\n"
+            + "| CLSolve Iteration   {iIter}\n"
+            + "| Elapsed Time        {curTime:.3f} sec\n"
+            + "|\n"
+            + "| L2 Convergence      {L2Conv}\n"
+            + "| L2 Rel Convergence  {L2ConvRel}\n"
+            + "| Alpha               {curAlpha}\n"
+            + "| CL                  {CL}\n"
+            + "| CLStar              {CLStar}\n"
+            + "| Error               {err}\n"
+            + "| \n"
+            + "| CLAlpha             {clalpha}\n"
+            + "| Delta Alpha         {deltaAlpha}\n"
+            + "| New Alpha           {newAlpha}\n"
+            + "+--------------------------------------------------+\n"
+        )
+
+        def checkConvergence(curError):
+            # check if L2 Convergence is achieved, if not, we cant quit yet
+            # this is not the same as checking if AP solve worked. Here, we
+            # explicitly want to check if the final L2 target is reached,
+            # i.e. the solution is a valid converged state.
+            L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
+            L2ConvTarget = self.getOption("L2Convergence")
+
+            # we check if the current error is below tolerance, and if we have also reached the L2 target
+            if abs(curError) < tol and L2Conv <= L2ConvTarget:
+                converged = True
+            else:
+                converged = False
+
+            return converged
+
+        def finalizeSolver(resultsDict, modifiedOptions):
+            # exit the solver. we have a few housekeeping items:
+
+            # put back the modified options
+            for option, value in modifiedOptions.items():
+                self.setOption(option, value)
+
+            # write solution before returning if requested
+            if writeSolution:
+                self.writeSolution()
+
+            # final printout
+            if self.comm.rank == 0:
+                # print all results but the history
+                printDict = copy.deepcopy(resultsDict)
+                printDict.pop("history")
+                print("\n+--------------------------------------------------+")
+                print("| CLSolve Results:")
+                print("+--------------------------------------------------+")
+                # print all but convergence history from every call
+                self.pp(printDict)
+                print("+--------------------------------------------------+\n", flush=True)
+
+            return
+
+        # list to keep track of convergence history
+        convergenceHistory = []
+
+        # Dictionary to keep track of all the options we have modified.
+        # We keep the original values in this dictionary to be put back once we are done.
+        modifiedOptions = {}
+
+        # check if we have a custom relative l2 convergence.
+        if L2ConvRel is not None:
+            # save the original value
+            modifiedOptions["L2ConvergenceRel"] = self.getOption("L2ConvergenceRel")
+
+            # if a single value is provided, convert it into a list so that we can apply it at each iteration
+            if isinstance(L2ConvRel, float):
+                L2ConvRel = [L2ConvRel] * maxIter
+            elif isinstance(L2ConvRel, list):
+                # we may need to extend this list if its shorter than maxIter
+                if len(L2ConvRel) < maxIter:
+                    # pick the last value and add
+                    L2ConvRel += [L2ConvRel[-1]] * (maxIter - len(L2ConvRel))
+            else:
+                raise Error("L2ConvRel needs to be a float or a list of floats")
+
+            # set the first rel conv value.
+            self.setOption("L2ConvergenceRel", L2ConvRel[0])
+
+        # initialize the first alpha guess
         if alpha0 is not None:
             aeroProblem.alpha = alpha0
         else:
             alpha0 = aeroProblem.alpha
 
-        # We can stop here if we have failures in the mesh
-        if self.adflow.killsignals.fatalfail:
-            print("Cannot run CLSolve due to mesh failures.")
-            return
-
-        # Set the startign value
+        # Set the starting value
         anm2 = aeroProblem.alpha
 
-        # Print alpha
-        if self.comm.rank == 0:
-            print("Current alpha is: ", aeroProblem.alpha)
-
+        # first analysis. We let the call counter get incremented here, but the following
+        # calls do not increase adflow's call counter. As a result, the solution files will be
+        # consistently named when multiple CL solutions are performed back to back.
         self.__call__(aeroProblem, writeSolution=False)
-        self.curAP.adflowData.callCounter -= 1
+        convergenceHistory.append(self.getConvergenceHistory(workUnitTime=workUnitTime))
         sol = self.getSolution()
         fnm2 = sol["cl"] - CLStar
 
@@ -1960,28 +2134,64 @@ class ADFLOW(AeroSolver):
                 anm1 = alpha0 + abs(delta)
             else:
                 anm1 = alpha0 - abs(delta)
+            # set this to zero for the initial printout
+            clalpha = 0.0
         else:
             # Use CLalphaGuess option to define the next Aoa
             anm1 = alpha0 - fnm2 / CLalphaGuess
+            # initialize the clalpha working variable
+            clalpha = CLalphaGuess
+
+        # current L2 convergence is also needed for the print
+        L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
+
+        # print iteration info
+        if self.comm.rank == 0:
+            print(
+                iterString.format(
+                    iIter=1,
+                    curTime=time.time() - t1,
+                    L2Conv=L2Conv,
+                    L2ConvRel=iterationModule.totalrfinal / iterationModule.totalrstart,
+                    curAlpha=aeroProblem.alpha,
+                    CL=sol["cl"],
+                    CLStar=CLStar,
+                    err=fnm2,
+                    clalpha=clalpha,
+                    deltaAlpha=anm1 - aeroProblem.alpha,
+                    newAlpha=anm1,
+                )
+            )
 
         # Check for convergence if the starting point is already ok.
-        if abs(fnm2) < tol:
-            return
+        converged = checkConvergence(fnm2)
 
-        # Overwrite the RK options momentarily.
-        # We need to do this to avoid using NK right at the beggining
-        # of the new AoA iteration. When we change the AoA, we only change
-        # the residuals at the boundaries, and the Newton solver will not
-        # allow these residuals to change the rest of the solution.
-        # A few RK iterations allow the total residual to "go uphill",
-        # so that we can converge to a new solution.
-        minIterSave = self.getOption("nRKReset")
-        rkresetSave = self.getOption("rkreset")
-        self.setOption("nRKReset", nReset)
-        self.setOption("rkreset", True)
+        # rest of the results
+        CL = sol["cl"]
+        err = sol["cl"] - CLStar
+        t2 = time.time()
+        resultsDict = {
+            "converged": converged,
+            "iterations": 1,
+            "l2convergence": L2Conv,
+            "alpha": aeroProblem.alpha,
+            "cl": CL,
+            "clstar": CLStar,
+            "error": err,
+            "clalpha": clalpha,
+            "time": t2 - t1,
+            "history": convergenceHistory,
+        }
+
+        if converged or (aeroProblem.solveFailed and stopOnStall) or aeroProblem.fatalFail:
+            finalizeSolver(resultsDict, modifiedOptions)
+            return resultsDict
 
         # Secant method iterations
-        for _iIter in range(maxIter):
+        for _iIter in range(1, maxIter):
+            if L2ConvRel is not None:
+                self.setOption("L2ConvergenceRel", L2ConvRel[_iIter])
+
             # We may need to reset the flow since changing strictly
             # alpha leads to problems with the NK solver
             if autoReset:
@@ -1990,22 +2200,27 @@ class ADFLOW(AeroSolver):
             # Set current alpha
             aeroProblem.alpha = anm1
 
-            # Print alpha
-            if self.comm.rank == 0:
-                print("Current alpha is: ", aeroProblem.alpha)
-
             # Solve for n-1 value (anm1)
             self.__call__(aeroProblem, writeSolution=False)
+            convergenceHistory.append(self.getConvergenceHistory(workUnitTime=workUnitTime))
+
             self.curAP.adflowData.callCounter -= 1
             sol = self.getSolution()
             fnm1 = sol["cl"] - CLStar
 
-            # Check for convergence
-            if abs(fnm1) < tol:
-                break
-
             # Secant Update
-            anew = anm1 - fnm1 * (anm1 - anm2) / (fnm1 - fnm2)
+            if _iIter == 1 and CLalphaGuess is None:
+                # we first need to compute the estimate to clalpha
+                clalpha = (fnm1 - fnm2) / (anm1 - anm2)
+            else:
+                # only update clalpha if the change in alpha was greater than updateCutoff
+                if numpy.abs(anm1 - anm2) > updateCutoff:
+                    # we update the clalpha using a relaxed update
+                    claNew = (fnm1 - fnm2) / (anm1 - anm2)
+                    clalpha += relaxCLa * (claNew - clalpha)
+
+            # similarly, the user might want to relax the alpha update
+            anew = anm1 - (fnm1 / clalpha) * relaxAlpha
 
             # Shift n-1 values to n-2 values
             fnm2 = fnm1
@@ -2014,9 +2229,54 @@ class ADFLOW(AeroSolver):
             # Se the n-1 alpha value from update
             anm1 = anew
 
-        # Restore the min iter option given initially by user
-        self.setOption("nRKReset", minIterSave)
-        self.setOption("rkreset", rkresetSave)
+            # current L2 convergence is also needed for the print
+            L2Conv = iterationModule.totalrfinal / iterationModule.totalr0
+
+            # print iteration info
+            if self.comm.rank == 0:
+                print(
+                    iterString.format(
+                        iIter=_iIter + 1,
+                        curTime=time.time() - t1,
+                        L2Conv=L2Conv,
+                        L2ConvRel=iterationModule.totalrfinal / iterationModule.totalrstart,
+                        curAlpha=aeroProblem.alpha,
+                        CL=sol["cl"],
+                        CLStar=CLStar,
+                        err=fnm1,
+                        clalpha=clalpha,
+                        deltaAlpha=anew - aeroProblem.alpha,
+                        newAlpha=anew,
+                    )
+                )
+
+            # Check for convergence if the starting point is already ok.
+            converged = checkConvergence(fnm1)
+
+            # rest of the results
+            CL = sol["cl"]
+            err = sol["cl"] - CLStar
+            t2 = time.time()
+            resultsDict = {
+                "converged": converged,
+                "iterations": _iIter + 1,
+                "l2convergence": L2Conv,
+                "alpha": aeroProblem.alpha,
+                "cl": CL,
+                "clstar": CLStar,
+                "error": err,
+                "clalpha": clalpha,
+                "time": t2 - t1,
+                "history": convergenceHistory,
+            }
+
+            if converged or (aeroProblem.solveFailed and stopOnStall) or aeroProblem.fatalFail:
+                finalizeSolver(resultsDict, modifiedOptions)
+                return resultsDict
+
+        # we ran out of iterations and did not exit yet. so this is a failed case
+        finalizeSolver(resultsDict, modifiedOptions)
+        return resultsDict
 
     def solveTrimCL(
         self,
@@ -2878,6 +3138,8 @@ class ADFLOW(AeroSolver):
 
         self.setAeroProblem(aeroProblem, releaseAdjointMemory)
         self._resetFlow()
+        # also reset the ank cfl for this AP
+        self.resetANKCFL(aeroProblem)
 
     def _resetFlow(self):
         strLvl = self.getOption("MGStartLevel")
@@ -2894,6 +3156,20 @@ class ADFLOW(AeroSolver):
         self.adflow.killsignals.routinefailed = False
         self.adflow.killsignals.fatalfail = False
         self.adflow.nksolver.freestreamresset = False
+
+    def resetANKCFL(self, aeroProblem):
+        """
+        Resets the ANK CFL of the aeroProblem to the value set by "ANKCFL0" option.
+        During the first ANK iteration that follows, this will be overwritten
+        by the ANK solver itself with the CFL Min logic based on relative
+        convergence. This is useful if keeping a really high ANK CFL is not desired.
+
+        Parameters
+        ----------
+        aeroProblem : pyAero_problem object
+            The aeroproblem whose ANK CFL will be reset.
+        """
+        aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
 
     def getSolution(self, groupName=None):
         """Retrieve the basic solution variables from the solver. This will
@@ -3104,6 +3380,8 @@ class ADFLOW(AeroSolver):
             else:
                 self._resetFlow()
 
+            aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
+
         if failedMesh:
             self.adflow.killsignals.fatalfail = True
 
@@ -3115,7 +3393,9 @@ class ADFLOW(AeroSolver):
         # Potentially correct the states based on the change in the alpha
         oldWinf = aeroProblem.adflowData.oldWinf
         if self.getOption("infChangeCorrection") and oldWinf is not None:
-            self.adflow.initializeflow.infchangecorrection(oldWinf)
+            correctionTol = self.getOption("infChangeCorrectionTol")
+            correctionType = self.getOption("infChangeCorrectionType")
+            self.adflow.initializeflow.infchangecorrection(oldWinf, correctionTol, correctionType)
 
         # We are now ready to associate self.curAP with the supplied AP
         self.curAP = aeroProblem
@@ -3127,6 +3407,10 @@ class ADFLOW(AeroSolver):
             self.adflow.anksolver.destroyanksolver()
             if releaseAdjointMemory:
                 self.releaseAdjointMemory()
+
+        if not self.getOption("ANKCFLReset"):
+            # also set the ANK CFL to the last value if we are restarting
+            self.adflow.anksolver.ank_cfl = aeroProblem.adflowData.ank_cfl
 
     def _setAeroProblemData(self, aeroProblem, firstCall=False):
         """
@@ -4733,6 +5017,11 @@ class ADFLOW(AeroSolver):
 
         return 3 * nnodes * ntime
 
+    def getNCells(self):
+        """Return the total number of cells in the mesh"""
+
+        return self.adflow.adjointvars.ncellsglobal[0]
+
     def getStates(self):
         """Return the states on this processor. Used in aerostructural
         analysis"""
@@ -4820,7 +5109,7 @@ class ADFLOW(AeroSolver):
 
         # Now Re-assemble the global CGNS vector.
         nDOFCGNS = numpy.max(cgnsIndices) + 1
-        CGNSVec = numpy.zeros(nDOFCGNS)
+        CGNSVec = numpy.zeros(nDOFCGNS, dtype=self.dtype)
         CGNSVec[cgnsIndices] = allPts
         CGNSVec = CGNSVec.reshape((len(CGNSVec) // 3, 3))
 
@@ -5251,6 +5540,7 @@ class ADFLOW(AeroSolver):
             ],
             "viscWallTreatment": [str, ["constant pressure extrapolation", "linear pressure extrapolation"]],
             "dissipationScalingExponent": [float, 0.67],
+            "acousticScaleFactor": [float, 1.0],
             "vis4": [float, 0.0156],
             "vis2": [float, 0.25],
             "vis2Coarse": [float, 0.5],
@@ -5259,6 +5549,8 @@ class ADFLOW(AeroSolver):
             "lowSpeedPreconditioner": [bool, False],
             "wallDistCutoff": [float, 1e20],
             "infChangeCorrection": [bool, True],
+            "infChangeCorrectionTol": [float, 1e-12],
+            "infChangeCorrectionType": [str, ["offset", "rotate"]],
             "cavitationNumber": [float, 1.4],
             "cpMinRho": [float, 100.0],
             # Common Parameters
@@ -5334,19 +5626,19 @@ class ADFLOW(AeroSolver):
             "NKUseEW": [bool, True],
             "NKADPC": [bool, False],
             "NKViscPC": [bool, False],
+            "NKGlobalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
             "NKASMOverlap": [int, 1],
             "NKPCILUFill": [int, 2],
             "NKJacobianLag": [int, 20],
             "applyPCSubspaceSize": [int, 10],
             "NKInnerPreconIts": [int, 1],
             "NKOuterPreconIts": [int, 1],
+            "NKAMGLevels": [int, 2],
+            "NKAMGNSmooth": [int, 1],
             "NKLS": [str, ["cubic", "none", "non-monotone"]],
             "NKFixedStep": [float, 0.25],
             "RKReset": [bool, False],
             "nRKReset": [int, 5],
-            # MG PC
-            "AGMGLevels": [int, 1],
-            "AGMGNSmooth": [int, 3],
             # Approximate Newton-Krylov Parameters
             "useANKSolver": [bool, True],
             "ANKUseTurbDADI": [bool, True],
@@ -5355,18 +5647,23 @@ class ADFLOW(AeroSolver):
             "ANKSubspaceSize": [int, -1],
             "ANKMaxIter": [int, 40],
             "ANKLinearSolveTol": [float, 0.05],
+            "ANKLinearSolveBuffer": [float, 0.01],
             "ANKLinResMax": [float, 0.1],
+            "ANKGlobalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
             "ANKASMOverlap": [int, 1],
             "ANKPCILUFill": [int, 2],
             "ANKJacobianLag": [int, 10],
             "ANKInnerPreconIts": [int, 1],
             "ANKOuterPreconIts": [int, 1],
+            "ANKAMGLevels": [int, 2],
+            "ANKAMGNSmooth": [int, 1],
             "ANKCFL0": [float, 5.0],
             "ANKCFLMin": [float, 1.0],
             "ANKCFLLimit": [float, 1e5],
             "ANKCFLFactor": [float, 10.0],
             "ANKCFLExponent": [float, 0.5],
             "ANKCFLCutback": [float, 0.5],
+            "ANKCFLReset": [bool, True],
             "ANKStepFactor": [float, 1.0],
             "ANKStepMin": [float, 0.01],
             "ANKConstCFLStep": [float, 0.4],
@@ -5378,11 +5675,13 @@ class ADFLOW(AeroSolver):
             "ANKTurbCFLScale": [float, 1.0],
             "ANKUseFullVisc": [bool, True],
             "ANKPCUpdateTol": [float, 0.5],
-            "ANKPCUpdateCutoff": [float, 1e-6],
+            "ANKPCUpdateCutoff": [float, 1e-16],
+            "ANKPCUpdateTolAfterCutoff": [float, 1e-4],
             "ANKADPC": [bool, False],
             "ANKNSubiterTurb": [int, 1],
             "ANKTurbKSPDebug": [bool, False],
             "ANKUseMatrixFree": [bool, True],
+            "ANKCharTimeStepType": [str, ["None", "Turkel", "VLR"]],
             # Load Balance/partitioning parameters
             "blockSplitting": [bool, True],
             "loadImbalance": [float, 0.1],
@@ -5397,6 +5696,7 @@ class ADFLOW(AeroSolver):
             "printAllOptions": [bool, True],
             "setMonitor": [bool, True],
             "printWarnings": [bool, True],
+            "printNegativeVolumes": [bool, False],
             "monitorVariables": [list, ["cpu", "resrho", "resturb", "cl", "cd"]],
             "surfaceVariables": [list, ["cp", "vx", "vy", "vz", "mach"]],
             "volumeVariables": [list, ["resrho"]],
@@ -5434,6 +5734,8 @@ class ADFLOW(AeroSolver):
             "ASMOverlap": [int, 1],
             "innerPreconIts": [int, 1],
             "outerPreconIts": [int, 3],
+            "adjointAMGLevels": [int, 2],
+            "adjointAMGNSmooth": [int, 1],
             "applyAdjointPCSubspaceSize": [int, 20],
             "frozenTurbulence": [bool, False],
             "useMatrixFreedrdw": [bool, True],
@@ -5495,7 +5797,7 @@ class ADFLOW(AeroSolver):
             "stab": self.adflow.inputtsstabderiv,
             "nk": self.adflow.nksolver,
             "ank": self.adflow.anksolver,
-            "agmg": self.adflow.agmg,
+            "amg": self.adflow.amg,
             "adjoint": self.adflow.inputadjoint,
             "cost": self.adflow.inputcostfunctions,
             "unsteady": self.adflow.inputunsteady,
@@ -5620,6 +5922,7 @@ class ADFLOW(AeroSolver):
                 "location": ["discr", "viscwallbctreatment"],
             },
             "dissipationscalingexponent": ["discr", "adis"],
+            "acousticscalefactor": ["discr", "acousticscalefactor"],
             "vis4": ["discr", "vis4"],
             "vis2": ["discr", "vis2"],
             "vis2coarse": ["discr", "vis2coarse"],
@@ -5709,6 +6012,11 @@ class ADFLOW(AeroSolver):
             "nkswitchtol": ["nk", "nk_switchtol"],
             "nksubspacesize": ["nk", "nk_subspace"],
             "nklinearsolvetol": ["nk", "nk_rtolinit"],
+            "nkglobalpreconditioner": {
+                "additive schwarz": "asm",
+                "multigrid": "mg",
+                "location": ["nk", "nk_precondtype"],
+            },
             "nkasmoverlap": ["nk", "nk_asmoverlap"],
             "nkpcilufill": ["nk", "nk_ilufill"],
             "nkjacobianlag": ["nk", "nk_jacobianlag"],
@@ -5717,6 +6025,8 @@ class ADFLOW(AeroSolver):
             "applypcsubspacesize": ["nk", "applypcsubspacesize"],
             "nkinnerpreconits": ["nk", "nk_innerpreconits"],
             "nkouterpreconits": ["nk", "nk_outerpreconits"],
+            "nkamglevels": ["nk", "nk_amglevels"],
+            "nkamgnsmooth": ["nk", "nk_amgnsmooth"],
             "nkls": {
                 "none": self.adflow.constants.nolinesearch,
                 "cubic": self.adflow.constants.cubiclinesearch,
@@ -5726,9 +6036,6 @@ class ADFLOW(AeroSolver):
             "nkfixedstep": ["nk", "nk_fixedstep"],
             "rkreset": ["iter", "rkreset"],
             "nrkreset": ["iter", "miniternum"],
-            # MG PC
-            "agmglevels": ["agmg", "agmglevels"],
-            "agmgnsmooth": ["agmg", "agmgnsmooth"],
             # Approximate Newton-Krylov Parameters
             "useanksolver": ["ank", "useanksolver"],
             "ankuseturbdadi": ["ank", "ank_useturbdadi"],
@@ -5737,18 +6044,27 @@ class ADFLOW(AeroSolver):
             "anksubspacesize": ["ank", "ank_subspace"],
             "ankmaxiter": ["ank", "ank_maxiter"],
             "anklinearsolvetol": ["ank", "ank_rtol"],
+            "anklinearsolvebuffer": ["ank", "ank_atol_buffer"],
             "anklinresmax": ["ank", "ank_linresmax"],
+            "ankglobalpreconditioner": {
+                "additive schwarz": "asm",
+                "multigrid": "mg",
+                "location": ["ank", "ank_precondtype"],
+            },
             "ankasmoverlap": ["ank", "ank_asmoverlap"],
             "ankpcilufill": ["ank", "ank_ilufill"],
             "ankjacobianlag": ["ank", "ank_jacobianlag"],
             "ankinnerpreconits": ["ank", "ank_innerpreconits"],
             "ankouterpreconits": ["ank", "ank_outerpreconits"],
+            "ankamglevels": ["ank", "ank_amglevels"],
+            "ankamgnsmooth": ["ank", "ank_amgnsmooth"],
             "ankcfl0": ["ank", "ank_cfl0"],
             "ankcflmin": ["ank", "ank_cflmin0"],
             "ankcfllimit": ["ank", "ank_cfllimit"],
             "ankcflfactor": ["ank", "ank_cflfactor"],
             "ankcflexponent": ["ank", "ank_cflexponent"],
             "ankcflcutback": ["ank", "ank_cflcutback"],
+            "ankcflreset": ["ank", "ank_cflreset"],
             "ankstepfactor": ["ank", "ank_stepfactor"],
             "ankstepmin": ["ank", "ank_stepmin"],
             "ankconstcflstep": ["ank", "ank_constcflstep"],
@@ -5761,10 +6077,17 @@ class ADFLOW(AeroSolver):
             "ankusefullvisc": ["ank", "ank_usefullvisc"],
             "ankpcupdatetol": ["ank", "ank_pcupdatetol"],
             "ankpcupdatecutoff": ["ank", "ank_pcupdatecutoff"],
+            "ankpcupdatetolaftercutoff": ["ank", "ank_pcupdatetol2"],
             "ankadpc": ["ank", "ank_adpc"],
             "anknsubiterturb": ["ank", "ank_nsubiterturb"],
             "ankturbkspdebug": ["ank", "ank_turbdebug"],
             "ankusematrixfree": ["ank", "ank_usematrixfree"],
+            "ankchartimesteptype": {
+                "none": "None",
+                "turkel": "Turkel",
+                "vlr": "VLR",
+                "location": ["ank", "ank_chartimesteptype"],
+            },
             # Load Balance Parameters
             "blocksplitting": ["parallel", "splitblocks"],
             "loadimbalance": ["parallel", "loadimbalance"],
@@ -5773,6 +6096,7 @@ class ADFLOW(AeroSolver):
             # Misc Parameters
             "printiterations": ["iter", "printiterations"],
             "printwarnings": ["iter", "printwarnings"],
+            "printnegativevolumes": ["iter", "printnegativevolumes"],
             "printtiming": ["adjoint", "printtiming"],
             "setmonitor": ["adjoint", "setmonitor"],
             "storeconvhist": ["io", "storeconvinneriter"],
@@ -5826,6 +6150,8 @@ class ADFLOW(AeroSolver):
             "asmoverlap": ["adjoint", "overlap"],
             "innerpreconits": ["adjoint", "innerpreconits"],
             "outerpreconits": ["adjoint", "outerpreconits"],
+            "adjointamglevels": ["adjoint", "adjamglevels"],
+            "adjointamgnsmooth": ["adjoint", "adjamgnsmooth"],
             "firstrun": ["adjoint", "firstrun"],
             "verifystate": ["adjoint", "verifystate"],
             "verifyspatial": ["adjoint", "verifyspatial"],
@@ -5865,6 +6191,8 @@ class ADFLOW(AeroSolver):
             "cutcallback",
             "explicitsurfacecallback",
             "infchangecorrection",
+            "infchangecorrectiontol",
+            "infchangecorrectiontype",
             "restartadjoint",
             "skipafterfailedadjoint",
             "useexternaldynamicmesh",
@@ -5920,7 +6248,7 @@ class ADFLOW(AeroSolver):
         for key in iDV:
             iDV[key] = iDV[key] - 1
 
-            # Extra DVs for the Boundary condition variables
+        # Extra DVs for the boundary condition variables
         BCDV = ["pressure", "pressurestagnation", "temperaturestagnation", "thrust", "heat"]
 
         # This is ADflow's internal mapping for cost functions
@@ -5964,7 +6292,7 @@ class ADFLOW(AeroSolver):
             "clalphadot": self.adflow.constants.costfuncclalphadot,
             "cfy0": self.adflow.constants.costfunccfy0,
             "cfyalpha": self.adflow.constants.costfunccfyalpha,
-            "cfyalphddot": self.adflow.constants.costfunccfyalphadot,
+            "cfyalphadot": self.adflow.constants.costfunccfyalphadot,
             "cd0": self.adflow.constants.costfunccd0,
             "cdalpha": self.adflow.constants.costfunccdalpha,
             "cdalphadot": self.adflow.constants.costfunccdalphadot,
@@ -6266,6 +6594,7 @@ class adflowFlowCase(object):
         self.callCounter = -1
         self.disp = None
         self.oldWinf = None
+        self.ank_cfl = None
 
 
 class adflowUserFunc(object):

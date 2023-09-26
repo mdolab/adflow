@@ -2309,7 +2309,8 @@ contains
 
         if (spaceDiscr == dissScalar) then
             if (dirScaling) then
-     write (string, "(2(A, 1X), ES12.5, A)") trim(string), "Directional scaling of dissipation with exponent", adis, "."
+                write (string, "(2(A, 1X), ES12.5, A)") trim(string), &
+                    "Directional scaling of dissipation with exponent", adis, "."
             else
                 write (string, stringSpace) trim(string), "No directional scaling of dissipation."
             end if
@@ -2330,7 +2331,8 @@ contains
                 write (string, stringSpace) trim(string), "Quadratic extrapolation of normal pressure gradIent", &
                     "for inviscid wall boundary conditions."
             case (normalMomentum)
-             write (string, stringSpace) trim(string), "Normal momentum equation used to determine pressure gradient", &
+                write (string, stringSpace) trim(string), &
+                    "Normal momentum equation used to determine pressure gradient", &
                     "for inviscid wall boundary conditions."
             end select
         end if
@@ -2821,10 +2823,10 @@ contains
         case (timeSpectral)
 
             ! Time spectral mode. This is not a predefined mode in CGNS
-            ! and therefore use userDefined.
+            ! and therefore use CG_UserDefined.
 
             call cg_simulation_type_write_f(cgnsInd, base, &
-                                            UserDefined, ierr)
+                                            CG_UserDefined, ierr)
             if (ierr /= CG_OK) &
                  call terminate("writeCGNSHeader", &
                  "Something wrong when calling &
@@ -3251,7 +3253,7 @@ contains
         ! supported by cgns.
 
         call cg_model_write_f("TurbulenceModel_t", &
-                              UserDefined, ierr)
+                              CG_UserDefined, ierr)
         if (ierr /= CG_OK) &
             call terminate("writeCGNSKtauInfo", &
                            "Something wrong when calling cg_model_write_f")
@@ -3574,7 +3576,7 @@ contains
                  &cg_dataclass_write_f")
 
             call cg_units_write_f(Kilogram, Meter, Second, Kelvin, &
-                                  Null, ierr)
+                                  CG_Null, ierr)
             if (ierr /= CG_OK) &
                  call terminate("writeReferenceState", &
                  "Something wrong when calling &
@@ -3785,7 +3787,7 @@ contains
         ! Write that user defined model is used; v2-f is not
         ! supported by cgns.
 
-        call cg_model_write_f("TurbulenceModel_t", UserDefined, ierr)
+        call cg_model_write_f("TurbulenceModel_t", CG_UserDefined, ierr)
 
         if (ierr /= CG_OK) &
             call terminate("writeCGNSV2fInfo", &

@@ -1011,7 +1011,8 @@ contains
                                 print "(a)", "#                      Warning"
                                 print stringSpace, "# Symmetry boundary face", trim(cgnsDoms(i)%bocoInfo(j)%bocoName), &
                                     "of zone", trim(cgnsDoms(i)%zonename), "is not planar."
-                              write (*, stringSci5) "# Maximum deviation from the mean normal: ", real(fact), " degrees"
+                                write (*, stringSci5) "# Maximum deviation from the mean normal: ", &
+                                    real(fact), " degrees"
                                 print "(a)", "#"
 
                             end if
@@ -1352,7 +1353,7 @@ contains
         defaultFamName(BCWallViscous) = 'wall'
         defaultFamName(BCWallViscousHeatFlux) = 'wall'
         defaultFamName(BCWallViscousIsothermal) = 'wall'
-        defaultFamName(UserDefined) = 'userDefined'
+        defaultFamName(CG_UserDefined) = 'userDefined'
 
         nFam = 0
         do i = 1, size(cgnsDoms)
@@ -1364,7 +1365,8 @@ contains
                             write (*, "(2(A, I4), *(A))") "CGNS Block ", i, ", boundary condition ", j, ", of type ", &
                                 trim(BCTypeName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
                                 " does not have a family. Based on the boundary condition type,", &
-                            " a name of: '", trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), "' will be used."
+                                " a name of: '", trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS)), &
+                                "' will be used."
                         end if
                         cgnsDoms(i)%bocoInfo(j)%wallBCName = trim(defaultFamName(cgnsDoms(i)%bocoInfo(j)%BCTypeCGNS))
                     end if
@@ -2730,7 +2732,7 @@ contains
         use communication
         use inputTimeSpectral
         use checkVolBlock
-        use inputIteration
+        use inputIteration, only: printWarnings, printNegativeVolumes, meshMaxSkewness
         use utils, only: setPointers, terminate, returnFail
         use commonFormats, only: stringSpace, stringInt1
         implicit none
@@ -3347,7 +3349,10 @@ contains
                 ! Negative volumes present on the fine grid level. Print a
                 ! list of the bad volumes and terminate executation.
 
-                call writeBadVolumes(checkVolDoms, MetricVolume)
+                if (printNegativeVolumes) then
+                    call writeBadVolumes(checkVolDoms, MetricVolume)
+                end if
+
                 call returnFail("metric", &
                                 "Negative volumes present in grid.")
                 call mpi_barrier(ADflow_comm_world, ierr)
@@ -3816,7 +3821,7 @@ contains
                 ! The rotation matrices for the i-faces.
 
                 do mm = 1, il
-                    xFace => x(mm, 1:, 1:, :); 
+                    xFace => x(mm, 1:, 1:, :)
                     rotFace => rotMatrixI(mm, :, :, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, jl, kl)
@@ -3825,7 +3830,7 @@ contains
                 ! The rotation matrices for the j-faces.
 
                 do mm = 1, jl
-                    xFace => x(1:, mm, 1:, :); 
+                    xFace => x(1:, mm, 1:, :)
                     rotFace => rotMatrixJ(:, mm, :, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, il, kl)
@@ -3834,7 +3839,7 @@ contains
                 ! The rotation matrices for the k-faces.
 
                 do mm = 1, kl
-                    xFace => x(1:, 1:, mm, :); 
+                    xFace => x(1:, 1:, mm, :)
                     rotFace => rotMatrixK(:, :, mm, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, il, jl)
