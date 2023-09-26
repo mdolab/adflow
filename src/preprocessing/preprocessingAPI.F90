@@ -2732,7 +2732,7 @@ contains
         use communication
         use inputTimeSpectral
         use checkVolBlock
-        use inputIteration, only: printWarnings, printNegativeVolumes, & 
+        use inputIteration, only: printWarnings, printNegativeVolumes, &
                                   useSkewnessCheck, meshMaxSkewness, printBadlySkewedCells
         use utils, only: setPointers, terminate, returnFail
         use commonFormats, only: stringSpace, stringInt1
@@ -3389,7 +3389,6 @@ contains
 
                     ! Badly skewed volumes present on the fine grid level. Print a
                     ! list of the bad volumes and terminate executation.
-
 
                     if (printBadlySkewedCells) then
                         call writeBadVolumes(checkVolDoms, MetricSkewness)
