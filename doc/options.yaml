@@ -1248,6 +1248,10 @@ printNegativeVolumes:
   desc: >
     Flag to print the block indices, cell center coordinates, and volume for each negative volume cell in the mesh.
 
+printBadlySkewedCells:
+  desc: >
+    Flag to print the block indices, cell center coordinates, and skewness for each cell whose skewness is above the value defined in ``meshMaxSkewness``. Only used when ``useSkewnessCheck`` is active.
+
 monitorVariables:
   desc: >
     List of the variables whose convergence should be monitored.
@@ -1549,4 +1553,9 @@ cavExponent:
 
 meshMaxSkewness:
   desc: >
-    Adflow throws an error and fails if the `skewness` of the mesh is above this value. `Skewness` is defined as described `here <https://www.simscale.com/docs/simulation-setup/meshing/mesh-quality/#skewness>`__.
+    Adflow throws an error and fails if the `skewness` of the mesh is above this value. `Skewness` is defined as described `here <https://www.simscale.com/docs/simulation-setup/meshing/mesh-quality/#skewness>`__. Only used when ``useSkewnessCheck`` is active.
+
+useSkewnessCheck:
+  desc: >
+    When set to true, ADflow computes the `skewness` of each cell and throws an error if it is above ``meshMaxSkewness``. See also ``printBadlySkewedCells``.
+

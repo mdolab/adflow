@@ -1083,10 +1083,12 @@ python module libadflow
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
          real(kind=realtype), dimension(4) :: turbresscale
          real(kind=realtype) :: meshmaxskewness
+         logical :: useskewnesscheck
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
          logical :: printnegativevolumes
+         logical :: printbadlyskewedcells
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
          logical :: usedisscontinuation

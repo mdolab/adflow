@@ -5522,6 +5522,7 @@ class ADFLOW(AeroSolver):
             "turbulenceOrder": [str, ["first order", "second order"]],
             "turbResScale": [(float, list, type(None)), None],
             "meshMaxSkewness": [float, 1.0],
+            "useSkewnessCheck": [bool, False],
             "turbulenceProduction": [str, ["strain", "vorticity", "Kato-Launder"]],
             "useQCR": [bool, False],
             "useRotationSA": [bool, False],
@@ -5697,6 +5698,7 @@ class ADFLOW(AeroSolver):
             "setMonitor": [bool, True],
             "printWarnings": [bool, True],
             "printNegativeVolumes": [bool, False],
+            "printBadlySkewedCells": [bool, False],
             "monitorVariables": [list, ["cpu", "resrho", "resturb", "cl", "cd"]],
             "surfaceVariables": [list, ["cp", "vx", "vy", "vz", "mach"]],
             "volumeVariables": [list, ["resrho"]],
@@ -5784,6 +5786,7 @@ class ADFLOW(AeroSolver):
             "zippersurfacefamily",
             "cutcallback",
             "explicitsurfacecallback",
+            "useskewnesscheck",
         )
 
     def _getOptionMap(self):
@@ -5896,6 +5899,7 @@ class ADFLOW(AeroSolver):
             "turbulenceorder": {"first order": 1, "second order": 2, "location": ["discr", "orderturb"]},
             "turbresscale": ["iter", "turbresscale"],
             "meshmaxskewness": ["iter", "meshmaxskewness"],
+            "useskewnesscheck": ["iter", "useskewnesscheck"],
             "turbulenceproduction": {
                 "strain": self.adflow.constants.strain,
                 "vorticity": self.adflow.constants.vorticity,
@@ -6097,6 +6101,7 @@ class ADFLOW(AeroSolver):
             "printiterations": ["iter", "printiterations"],
             "printwarnings": ["iter", "printwarnings"],
             "printnegativevolumes": ["iter", "printnegativevolumes"],
+            "printbadlyskewedcells": ["iter", "printbadlyskewedcells"],
             "printtiming": ["adjoint", "printtiming"],
             "setmonitor": ["adjoint", "setmonitor"],
             "storeconvhist": ["io", "storeconvinneriter"],

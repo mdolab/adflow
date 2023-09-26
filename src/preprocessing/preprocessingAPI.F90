@@ -2593,7 +2593,7 @@ contains
         use inputTimeSpectral
         use iteration
         use inputUnsteady
-        use inputIteration, only: meshMaxSkewness
+        use inputIteration, only: useSkewnessCheck
         use utils, only: terminate, setPointers
         implicit none
         !
@@ -2642,7 +2642,7 @@ contains
                      &normals and volumes")
 
                 ! Allocate the memory for the skewness if desired
-                if (meshMaxSkewness < 1) then
+                if (useSkewnessCheck) then
                     allocate (flowDoms(nn, level, sps)%skew(0:ib, 0:jb, 0:kb), &
                               stat=ierr)
                     if (ierr /= 0) &
@@ -2732,7 +2732,8 @@ contains
         use communication
         use inputTimeSpectral
         use checkVolBlock
-        use inputIteration, only: printWarnings, printNegativeVolumes, meshMaxSkewness
+        use inputIteration, only: printWarnings, printNegativeVolumes, & 
+                                  useSkewnessCheck, meshMaxSkewness, printBadlySkewedCells
         use utils, only: setPointers, terminate, returnFail
         use commonFormats, only: stringSpace, stringInt1
         implicit none
@@ -2806,7 +2807,7 @@ contains
                                    "Memory allocation failure for volumeIsNeg")
                 volumeIsNeg => checkVolDoms(nn, sps)%volumeIsNeg
 
-                if (meshMaxSkewness < 1) then
+                if (useSkewnessCheck) then
                     allocate (checkVolDoms(nn, sps)%volumeIsSkewed(2:il, 2:jl, 2:kl), &
                               stat=ierr)
                     if (ierr /= 0) &
@@ -2928,7 +2929,7 @@ contains
                             ! This is necessairy for the skewness calculation
                             ! If we are not interested in skewness, skip it
 
-                            if (meshMaxSkewness < 1) then
+                            if (useSkewnessCheck) then
                                 call minMaxAngle(angles(1:4), &
                                                  x(i, m, k, :), x(i, j, k, :), x(l, j, k, :), x(l, m, k, :))
 
@@ -2995,7 +2996,7 @@ contains
                                 ! is above the threshold
                                 ! Skip it if we don't care about skewness
 
-                                if (meshMaxSkewness < 1) then
+                                if (useSkewnessCheck) then
                                     skew(i, j, k) = max((maxval(angles) - (pi / two)) / &
                                                         (pi / two), &
                                                         ((pi / two) - minval(angles)) / &
@@ -3098,7 +3099,7 @@ contains
                 ! Check if the block has badly skewed volumes. Only do this if we are
                 ! actually interested
 
-                if (meshMaxSkewness < 1) then
+                if (useSkewnessCheck) then
                     if (nBadSkew > 0) then
                         checkVolDoms(nn, sps)%blockHasSkewedVol = .true.
                     else
@@ -3376,7 +3377,7 @@ contains
         ! Determine the global number of badly skewed blocks. The result must be
         ! known on all processors and thus an allreduce is needed.
 
-        if (meshMaxSkewness < 1.0) then
+        if (useSkewnessCheck) then
             call mpi_allreduce(nBadSkew, nBadSkewGlobal, 1, adflow_integer, &
                                mpi_sum, ADflow_comm_world, ierr)
 
@@ -3389,10 +3390,13 @@ contains
                     ! Badly skewed volumes present on the fine grid level. Print a
                     ! list of the bad volumes and terminate executation.
 
-                    call writeBadVolumes(checkVolDoms, MetricSkewness)
+
+                    if (printBadlySkewedCells) then
+                        call writeBadVolumes(checkVolDoms, MetricSkewness)
+                    end if
 
                     call returnFail("metric", &
-                                    "Badly skewed volumes present in grid.")
+                                    "Badly skewed cells present in grid.")
                     call mpi_barrier(ADflow_comm_world, ierr)
 
                 else
@@ -3403,7 +3407,7 @@ contains
                     if (myID == 0) then
                         print "(a)", "#"
                         print "(a)", "#                      Warning"
-                        print stringInt1, "#* Badly skewed volumes present on coarse grid level ", level, "."
+                        print stringInt1, "#* Badly skewed cells present on coarse grid level ", level, "."
                         print "(a)", "#* Computation continues, but be aware of this"
                         print "(a)", "#"
                     end if
@@ -3447,7 +3451,7 @@ contains
         end do
 
         ! Release memory for skewness again
-        if (meshMaxSkewness < 1.0) then
+        if (useSkewnessCheck) then
             do sps = 1, nTimeIntervalsSpectral
                 do nn = 1, nDom
                     deallocate (checkVolDoms(nn, sps)%volumeIsSkewed, stat=ierr)
@@ -3575,10 +3579,10 @@ contains
         ! prepare the string to use according to the mode it is operating in
         select case (mode)
         case (MetricVolume)
-            modeString = "Negative"
+            modeString = "Negative volumes"
             descString = "Volume"
         case (MetricSkewness)
-            modeString = "Badly skewed"
+            modeString = "Badly skewed cells"
             descString = "Skewness"
         end select
 
@@ -3588,7 +3592,7 @@ contains
         if (myID == 0) then
             print "(a)", "#"
             print "(a)", "#                      Error"
-            print "(3(a))", "# ", trim(modeString), " volumes found in the grid."
+            print "(3(a))", "# ", trim(modeString), " found in the grid."
             print "(a)", "# A list of those volumes is printed below"
             print "(a)", "#"
         end if
@@ -3637,7 +3641,7 @@ contains
                                 print "(a)", "#"
 
                                 print stringSpace, "# Block", trim(cgnsDoms(nbkGlobal)%zoneName), &
-                                    "contains the following ", trim(modeString), " volumes"
+                                    "contains the following ", trim(modeString)
                                 print "(a)", "#--------------------------------------------------------------------"
                                 print "(a)", "#"
 
@@ -3650,7 +3654,7 @@ contains
 
                                 print "(a)", "#"
                                 print stringSpace, "# Spectral solution", trim(intString1), "block", &
-                                    trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following ", trim(modeString), "volumes"
+                                    trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following ", trim(modeString)
                                 print "(a)", "#--------------------------------------------------------------------"
                                 print "(a)", "#"
 

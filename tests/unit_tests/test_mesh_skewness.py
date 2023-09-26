@@ -18,7 +18,9 @@ class BasicTests(unittest.TestCase):
         gridFile = "input_files/cube_1x1x1.cgns"
         self.options = {
             "gridfile": os.path.join(baseDir, "../../", gridFile),
+            "useSkewnessCheck": True,
             "meshMaxSkewness": 0.5,
+            "printBadlySkewedCells": True,
         }
         self.idwarp_options = {
             "gridfile": os.path.join(baseDir, "../../", gridFile),

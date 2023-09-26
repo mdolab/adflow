@@ -4825,6 +4825,7 @@ contains
         use inputUnsteady
         use inputPhysics
         use iteration
+        use inputIteration, only: useSkewnessCheck
         use block, only: viscSubfaceType, BCDataType, flowDoms
         implicit none
         !
@@ -5196,9 +5197,11 @@ contains
             deallocate (flowDoms(nn, level, sps)%vol, stat=ierr)
         if (ierr /= 0) deallocationFailure = .true.
 
-        if (associated(flowDoms(nn, level, sps)%skew)) &
-            deallocate (flowDoms(nn, level, sps)%skew, stat=ierr)
-        if (ierr /= 0) deallocationFailure = .true.
+        if (useSkewnessCheck) then
+            if (associated(flowDoms(nn, level, sps)%skew)) &
+                deallocate (flowDoms(nn, level, sps)%skew, stat=ierr)
+            if (ierr /= 0) deallocationFailure = .true.
+        end if
 
         if (associated(flowDoms(nn, level, sps)%volRef)) &
             deallocate (flowDoms(nn, level, sps)%volRef, stat=ierr)
