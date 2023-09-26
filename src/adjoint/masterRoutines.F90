@@ -481,7 +481,7 @@ contains
             end do
         end do
 
-        ! Loop over the acuator regions again to sum the local volume
+        ! Loop over the actuator regions again to sum the local volume
         ! seeds into the global volume seeds
         do iRegion = 1, nActuatorRegions
             call mpi_allreduce(actuatorRegionsd(iRegion)%volLocal, actuatorRegionsd(iRegion)%volume, 1, &

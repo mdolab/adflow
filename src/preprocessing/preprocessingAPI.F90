@@ -2722,7 +2722,7 @@ contains
         use inputTimeSpectral
         use checkVolBlock
         use actuatorRegion, only: computeActuatorRegionVolume
-        use actuatorRegionData
+        use actuatorRegionData, only: nActuatorRegions, actuatorRegions
         use inputIteration, only: printWarnings, printNegativeVolumes
         use utils, only: setPointers, terminate, returnFail, EChk
         use commonFormats, only: stringSpace, stringInt1
@@ -3265,7 +3265,7 @@ contains
             end do domains
         end do spectral
 
-        ! Loop over the acuator regions again to compute the total volumes
+        ! Loop over the actuator regions again to compute the total volumes
         do iRegion = 1, nActuatorRegions
             call mpi_allreduce(actuatorRegions(iRegion)%volLocal, actuatorRegions(iRegion)%volume, 1, &
                                adflow_real, mpi_sum, adflow_comm_world, ierr)

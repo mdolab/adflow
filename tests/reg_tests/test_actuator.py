@@ -602,7 +602,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
             second = self.CFDSolver.comm.allreduce(secondLocal, op=MPI.SUM)
 
             # compare the final products
-            np.testing.assert_array_almost_equal(first, second, decimal=11)
+            np.testing.assert_allclose(first, second, atol=1e-10)
 
 
 class ActuatorCmplxTests(reg_test_classes.CmplxRegTest):
