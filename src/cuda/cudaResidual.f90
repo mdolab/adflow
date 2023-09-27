@@ -5925,8 +5925,8 @@ module cudaResidual
     call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
     istat = cudaDeviceSynchronize()
 
-    !   call inviscidCentralFlux<<<grid_size, block_size>>>
-    !   istat = cudaDeviceSynchronize()
+    call inviscidCentralFlux<<<grid_size, block_size>>>
+    istat = cudaDeviceSynchronize()
 
       ! inviscid diss flux scalar
     !   call inviscidDissFluxScalar<<<grid_size, block_size>>>
