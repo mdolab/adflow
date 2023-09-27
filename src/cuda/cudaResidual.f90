@@ -2602,6 +2602,307 @@ module cudaResidual
 
     end subroutine inviscidCentralFluxCellCentered
 
+    attributes(global) subroutine inviscidCentralFluxCellCentered_v2
+        use precision, only: realType, intType
+        use constants, only: zero, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
+        use cudaInputPhysics, only: equationMode
+        use cudaFlowVarRefState, only: nwf
+        implicit none
+        integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz,dom, sps,il,jl,kl,ie,je,ke,jmax ,kmax
+        real (kind = realType) , shared :: w_s(inviscidCentralBSI,inviscidCentralBSJ+1,inviscidCentralBSK+1,5)
+        real (kind = realType) , shared :: dw_s(inviscidCentralBSI,inviscidCentralBSJ+1,inviscidCentralBSK+1,5)
+
+        real (kind = realType) , shared :: P_s(inviscidCentralBSI,inviscidCentralBSJ+1,inviscidCentralBSK+1)
+        real(kind = realType) :: fs
+        real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
+        real(kind=realType) :: sx, sy, sz
+        real(kind = realType) :: tmp
+        real(kind = realType) :: vnp, vnm,porVel,porFlux, sFace,qsp, qsm, rqsp, rqsm
+        real(kind = realType) :: t_dw(5)
+    
+        dom = 1
+        sps = 1
+        !cell centered indices
+        i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
+        j = (blockIdx%y - 1) * (blockDim%y) + threadIdx%y 
+        k = (blockIdx%z - 1) * (blockDim%z) + threadIdx%z 
+        
+        tidx = threadIdx%x
+        tidy = threadIdx%y
+        tidz = threadIdx%z
+
+        ie = cudaDoms(dom,sps)%ie
+        je = cudaDoms(dom,sps)%je
+        ke = cudaDoms(dom,sps)%ke
+        il = cudaDoms(dom,sps)%il
+        jl = cudaDoms(dom,sps)%jl
+        kl = cudaDoms(dom,sps)%kl
+        
+        jmax = min((blockIdx%y) * (blockDim%y) ,jl)
+        kmax = min((blockIdx%z) * (blockDim%z) ,kl)
+        
+        if (i <= ie .and. j < je .and. k < ke) then
+            wrho = cudaDoms(dom,sps)%w(i,j,k,irho)
+            wvx = cudaDoms(dom,sps)%w(i,j,k,ivx)
+            wvy = cudaDoms(dom,sps)%w(i,j,k,ivy)
+            wvz = cudaDoms(dom,sps)%w(i,j,k,ivz)
+            wrhoE = cudaDoms(dom,sps)%w(i,j,k,irhoE)
+            P = cudaDoms(dom,sps)%P(i,j,k)
+
+            w_s(tidx,tidy,tidz,irho) = wrho
+            w_s(tidx,tidy,tidz,ivx) = wvx
+            w_s(tidx,tidy,tidz,ivy) = wvy 
+            w_s(tidx,tidy,tidz,ivz) = wvz
+            w_s(tidx,tidy,tidz,irhoE) = wrhoE
+            P_s(tidx,tidy,tidz) = P
+            dw_s(tidx,tidy,tidz,:) = zero
+        end if
+        if (j == jmax) then
+            w_s(tidx,tidy+1,tidz,irho) = cudaDoms(dom,sps)%w(i,j+1,k,irho)
+            w_s(tidx,tidy+1,tidz,ivx) = cudaDoms(dom,sps)%w(i,j+1,k,imx)
+            w_s(tidx,tidy+1,tidz,ivy) = cudaDoms(dom,sps)%w(i,j+1,k,imy)
+            w_s(tidx,tidy+1,tidz,ivz) = cudaDoms(dom,sps)%w(i,j+1,k,imz)
+            w_s(tidx,tidy+1,tidz,irhoE) = cudaDoms(dom,sps)%w(i,j+1,k,irhoE)
+            P_s(tidx,tidy+1,tidz) = cudaDoms(dom,sps)%P(i,j+1,k)
+            dw_s(tidx,tidy+1,tidz,:) = zero
+        end if
+        if (k == kmax) then
+            w_s(tidx,tidy,tidz+1,irho) = cudaDoms(dom,sps)%w(i,j,k+1,irho)
+            w_s(tidx,tidy,tidz+1,ivx) = cudaDoms(dom,sps)%w(i,j,k+1,imx)
+            w_s(tidx,tidy,tidz+1,ivy) = cudaDoms(dom,sps)%w(i,j,k+1,imy)
+            w_s(tidx,tidy,tidz+1,ivz) = cudaDoms(dom,sps)%w(i,j,k+1,imz)
+            w_s(tidx,tidy,tidz+1,irhoE) = cudaDoms(dom,sps)%w(i,j,k+1,irhoE)
+            P_s(tidx,tidy,tidz+1) = cudaDoms(dom,sps)%P(i,j,k+1)
+            dw_s(tidx,tidy,tidz+1,:) = zero
+        end if
+        ! t_dw  = zero
+        !sync threads now
+        call syncthreads()
+
+        if (i <= il .and. j <= jl .and. k  <= kl) then
+        if (tidx < blockdim%x ) then
+            !each thread here computes i face
+            sFace = cudaDoms(dom,sps)%sFaceI(i,j,k)
+            sx = cudaDoms(dom,sps)%sI(i,j,k,1)
+            sy = cudaDoms(dom,sps)%sI(i,j,k,2)
+            sz = cudaDoms(dom,sps)%sI(i,j,k,3)
+
+            vnp = w_s(tidx+1,tidy,tidz,ivx) * sx + w_s(tidx+1,tidy,tidz,ivy) * sy + w_s(tidx+1,tidy,tidz,ivz) * sz
+            vnm = wvx*sx + wvy *sy + wvz *sz
+            
+            porVel = one
+            porFlux = half
+            if (j>=2 .and. k>=2)then 
+                if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
+                if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
+                    porVel = zero
+                    vnp = sFace
+                    vnm = sFace
+                end if
+            end if 
+            ! Incorporate porFlux in porVel.
+            porVel = porVel * porFlux
+
+            ! Compute the normal velocities relative to the grid for
+            ! the face as well as the mass fluxes.
+            qsp = (vnp - sFace) * porVel
+            qsm = (vnm - sFace) * porVel
+            rqsp = qsp * w_s(tidx+1,tidy,tidz,irho)
+            rqsm = qsm * wrho
+
+            pa = porFlux * (P_s(tidx+1,tidy,tidz) + P)
+
+            !mass flux I dir 
+            fs = rqsp + rqsm
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, irho), fs)
+            t_dw(irho) = fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
+
+            !imx flux I dir 
+            fs = rqsp * w_s(tidx + 1, tidy, tidz, ivx) + rqsm * wvx + pa * sx
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imx), fs)
+            t_dw(imx) = fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
+            
+            !imy flux I dir 
+            fs = rqsp * w_s(tidx + 1,tidy, tidz, ivy) + rqsm * wvy + pa * sy
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imy), fs)
+            t_dw(imy) =  fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
+
+            !imz flux I dir 
+            fs = rqsp * w_s(tidx + 1,tidy, tidz, ivz) + rqsm * wvz + pa * sz
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, imz), fs)
+            t_dw(imz) =  fs 
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
+
+            !irhoE flux I dir
+            fs = qsp * w_s(tidx + 1,tidy, tidz, irhoE) + qsm * wrhoE &
+                + porFlux * (vnp * P_s(tidx + 1,tidy, tidz) + vnm * P)
+            tmp = atomicsub(dw_s(tidx + 1, tidy, tidz, irhoE), fs)
+            t_dw(irhoE) =  fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
+
+            !now each thread compute J face 
+            sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
+            sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sJ(i, j, k, 3)
+
+            vnp = w_s(tidx, tidy + 1, tidz, ivx) * sx &
+                    + w_s(tidx, tidy + 1, tidz, ivy) * sy &
+                    + w_s(tidx, tidy + 1, tidz, ivz) * sz
+
+            vnm = wvx*sx + wvy *sy + wvz *sz
+
+            porVel = one
+            porFlux = half
+            if (i>=2 .and. k>=2) then
+                if (cudaDoms(dom,sps)%porJ(i, j, k) == noFlux) porFlux = zero
+                if (cudaDoms(dom,sps)%porJ(i, j, k) == boundFlux) then
+                    porVel = zero
+                    vnp = sFace
+                    vnm = sFace
+                end if
+            end if 
+            !Incorporate porFlux in porVel.
+            porVel = porVel * porFlux
+
+
+            ! Compute the normal velocities for the face as well as the
+            ! mass fluxes.
+
+            qsp = (vnp - sFace) * porVel
+            qsm = (vnm - sFace) * porVel
+
+            rqsp = qsp * w_s(tidx, tidy + 1, tidz, irho)
+            rqsm = qsm * wrho
+            
+            pa = porFlux * (P_s(tidx, tidy + 1, tidz) + P)
+            !mass flux J dir
+            fs = rqsp + rqsm
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, irho), fs)
+            t_dw(irho) = t_dw(irho) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
+            
+            !imx flux J dir 
+            fs = rqsp * w_s(tidx, tidy + 1, tidz, ivx) + rqsm * wvx + pa * sx
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imx), fs)
+            t_dw(imx) = t_dw(imx) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
+
+            !imy flux J dir
+            fs = rqsp * w_s(tidx, tidy + 1, tidz, ivy) + rqsm * wvy + pa * sy
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imy), fs)
+            t_dw(imy) = t_dw(imy) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
+
+            !imz flux J dir
+            fs = rqsp * w_s(tidx, tidy + 1, tidz, ivz) + rqsm * wvz + pa * sz
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, imz), fs)
+            t_dw(imz) = t_dw(imz) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
+
+            !irhoE flux J dir
+            fs = qsp * w_s(tidx, tidy + 1, tidz, irhoE) + qsm * wrhoE &
+                + porFlux * (vnp * P_s(tidx, tidy + 1, tidz) + vnm * P)
+            tmp = atomicsub(dw_s(tidx, tidy + 1, tidz, irhoE), fs)
+            t_dw(irhoE) = t_dw(irhoE) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
+
+            !now each thread compute K face
+            sFace = cudaDoms(dom,sps)%sFaceK(i, j, k)
+            sx = cudaDoms(dom,sps)%sK(i, j, k, 1)
+            sy = cudaDoms(dom,sps)%sK(i, j, k, 2)
+            sz = cudaDoms(dom,sps)%sK(i, j, k, 3)
+
+            vnp = w_s(tidx, tidy, tidz + 1, ivx) * sx &
+                  + w_s(tidx, tidy, tidz + 1, ivy) * sy &
+                  + w_s(tidx, tidy, tidz + 1, ivz) * sz
+
+            vnm = wvx*sx + wvy *sy + wvz *sz
+
+            porVel = one
+            porFlux = half
+            if (i>=2 .and. j>=2) then
+                if (cudaDoms(dom,sps)%porK(i, j, k) == noFlux) porFlux = zero
+                if (cudaDoms(dom,sps)%porK(i, j, k) == boundFlux) then
+                    porVel = zero
+                    vnp = sFace
+                    vnm = sFace
+                end if
+            end if 
+
+            porVel = porVel * porFlux
+
+            qsp = (vnp - sFace) * porVel
+            qsm = (vnm - sFace) * porVel
+
+            rqsp = qsp * w_s(tidx,tidy,tidz+1, irho)
+            rqsm = qsm * wrho
+            pa = porFlux * (P_s(tidx,tidy,tidz+1) + P)
+
+            !mass flux K dir
+            fs = rqsp + rqsm
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , irho), fs)
+            t_dw(irho) = t_dw(irho) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho), fs)
+
+            !imx flux K dir
+            fs = rqsp * w_s(tidx, tidy, tidz + 1, ivx) + rqsm * wvx + pa * sx
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , imx), fs)
+            t_dw(imx) = t_dw(imx) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx), fs)
+
+            !imy flux K dir
+            fs = rqsp * w_s(tidx, tidy, tidz + 1, ivy) + rqsm * wvy + pa * sy
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , imy), fs)
+            t_dw(imy) = t_dw(imy) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy), fs)
+
+            !imz flux K dir
+            fs = rqsp * w_s(tidx, tidy, tidz + 1, ivz) + rqsm * wvz + pa * sz
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1 , imz), fs)
+            t_dw(imz) = t_dw(imz) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz), fs)
+
+            !irhoE flux K dir
+            fs = qsp * w_s(tidx, tidy, tidz + 1, irhoE) + qsm * wrhoE &
+                + porFlux * (vnp * P_s(tidx, tidy, tidz + 1) + vnm * P)
+            tmp = atomicsub(dw_s(tidx, tidy , tidz + 1, irhoE), fs)
+            t_dw(irhoE) = t_dw(irhoE) + fs
+            ! tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE), fs)
+
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, irho), t_dw(irho))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, imx), t_dw(imx))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, imy), t_dw(imy))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, imz), t_dw(imz))
+            tmp = atomicadd(dw_s(tidx,tidy,tidz, irhoE), t_dw(irhoE))
+
+        end if 
+
+        call syncthreads()
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irho),dw_s(tidx,tidy,tidz, irho))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imx),dw_s(tidx,tidy,tidz, imx))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imy),dw_s(tidx,tidy,tidz, imy))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, imz),dw_s(tidx,tidy,tidz, imz))
+        tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k, irhoE),dw_s(tidx,tidy,tidz, irhoE))
+        if (j == jmax) then
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j+1, k, irho),dw_s(tidx,tidy+1,tidz, irho))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j+1, k, imx),dw_s(tidx,tidy+1,tidz, imx))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j+1, k, imy),dw_s(tidx,tidy+1,tidz, imy))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j+1, k, imz),dw_s(tidx,tidy+1,tidz, imz))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j+1, k, irhoE),dw_s(tidx,tidy+1,tidz, irhoE))
+        end if
+        if (k == kmax) then
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k+1, irho),dw_s(tidx,tidy,tidz+1, irho))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k+1, imx),dw_s(tidx,tidy,tidz+1, imx))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k+1, imy),dw_s(tidx,tidy,tidz+1, imy))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k+1, imz),dw_s(tidx,tidy,tidz+1, imz))
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(i, j, k+1, irhoE),dw_s(tidx,tidy,tidz+1, irhoE))
+        end if
+        end if 
+    end subroutine inviscidCentralFluxCellCentered_v2
 
     attributes(global) subroutine inviscidCentralFlux
         ! ---------------------------------------------
@@ -5242,7 +5543,12 @@ module cudaResidual
       istat = cudaDeviceSynchronize()
       call computeDSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
+    !   call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
+    !   istat = cudaDeviceSynchronize()
+
+    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
+    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z)))
+    call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
       istat = cudaDeviceSynchronize()
     !   call inviscidCentralFlux<<<grid_size, block_size>>>
     !   istat = cudaDeviceSynchronize()
