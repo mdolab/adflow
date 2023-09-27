@@ -2657,7 +2657,7 @@ module cudaResidual
             P_s(tidx,tidy,tidz) = P
             dw_s(tidx,tidy,tidz,:) = zero
         end if
-        if (j == jmax) then
+        if (j == jmax .and. i <= ie .and. k <= kl) then
             w_s(tidx,tidy+1,tidz,irho) = cudaDoms(dom,sps)%w(i,j+1,k,irho)
             w_s(tidx,tidy+1,tidz,ivx) = cudaDoms(dom,sps)%w(i,j+1,k,imx)
             w_s(tidx,tidy+1,tidz,ivy) = cudaDoms(dom,sps)%w(i,j+1,k,imy)
@@ -2666,7 +2666,7 @@ module cudaResidual
             P_s(tidx,tidy+1,tidz) = cudaDoms(dom,sps)%P(i,j+1,k)
             dw_s(tidx,tidy+1,tidz,:) = zero
         end if
-        if (k == kmax) then
+        if (k == kmax .and. i <= ie .and. j <= jl) then
             w_s(tidx,tidy,tidz+1,irho) = cudaDoms(dom,sps)%w(i,j,k+1,irho)
             w_s(tidx,tidy,tidz+1,ivx) = cudaDoms(dom,sps)%w(i,j,k+1,imx)
             w_s(tidx,tidy,tidz+1,ivy) = cudaDoms(dom,sps)%w(i,j,k+1,imy)
@@ -5453,7 +5453,7 @@ module cudaResidual
       use inputPhysics, only: equationMode, equations, turbModel
       use inputDiscretization, only: spaceDiscr
       use flowvarRefState, only: viscous
-      use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie
+      use blockPointers, only: nDom, bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie, bjl=>jl, bkl=>kl
       use inputTimeSpectral, only: nTimeIntervalsSpectral
       use cudaBlock, only: copyCudaBlock
       use utils, only: setPointers
@@ -5547,7 +5547,7 @@ module cudaResidual
     !   istat = cudaDeviceSynchronize()
 
     block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
-    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z)))
+    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
     call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
       istat = cudaDeviceSynchronize()
     !   call inviscidCentralFlux<<<grid_size, block_size>>>
