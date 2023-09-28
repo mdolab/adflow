@@ -86,7 +86,7 @@ contains
         use initializeFlow, only: referenceState
         use section, only: sections, nSections
         use iteration, only: rFil, currentLevel
-        use haloExchange, only: exchangeCoor, whalo2
+        use haloExchange, only: exchangeCoor, whalo2, exchanged2Wall
         use wallDistance, only: updateWallDistancesQuickly
         use utils, only: setPointers, EChk
         use turbUtils, only: computeEddyViscosity
@@ -190,6 +190,7 @@ contains
 
             ! Now exchange the coordinates (fine level only)
             call exchangecoor(1)
+            call exchanged2Wall(1)
 
             do sps = 1, nTimeIntervalsSpectral
                 ! Update overset connectivity if necessary

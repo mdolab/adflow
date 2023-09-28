@@ -158,10 +158,13 @@ contains
                                prodWmag2_fast_b, prodKatolaunder_fast_b
         use sst_fast_b, only: SSTSource_fast_b, SSTViscous_fast_b, SSTResScale_fast_b, f1SST_fast_b, qq
 
+        ! use sst_b, only: SSTSource_b, SSTViscous_b, SSTResScale_b, f1SST_b
+
         implicit none
 
         call SSTResScale_fast_b
         call SSTViscous_fast_b
+        ! call SSTViscous_b
         !call unsteadyTurbTerm_fast_b(2_intType, 2_intType, itu1-1, qq)
         call turbAdvection_fast_b(2_intType, 2_intType, itu1 - 1, qq)
         call SSTSource_fast_b
@@ -178,6 +181,7 @@ contains
         end select
 
          call f1SST_fast_b
+         ! call f1SST_b
          call kwCDterm_fast_b
 
     end subroutine SST_block_residuals_fast_b
@@ -784,12 +788,8 @@ contains
 
         myeps = 1e-10_realType / two / rSSTSigw2
 
-        iBeg = 1
-        jBeg = 1
-        kBeg = 1
-        iEnd = ie
-        jEnd = je
-        kEnd = ke
+        iBeg = 1; jBeg = 1; kBeg = 1
+        iEnd = ie; jEnd = je; kEnd = ke
 
         do nn = 1, nBocos
 
@@ -799,19 +799,19 @@ contains
                 iBeg = 2
 
             case (iMax)
-                iEnd = iEnd - 1
+                iEnd = il
 
             case (jMin)
                 jBeg = 2
 
             case (jMax)
-                jEnd = jEnd - 1
+                jEnd = jl
 
             case (kMin)
                 kBeg = 2
 
             case (kMax)
-                kEnd = kEnd - 1
+                kEnd = kl
 
             end select
         end do

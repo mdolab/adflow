@@ -1027,7 +1027,7 @@ nadvloopspectral:do ii=1,nadv
 !      local variables.
 !
     logical :: returnimmediately
-    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend, kbeg, kend, nn
 ! check if an immediate return can be made.
     if (eddymodel) then
       if (currentlevel .le. groundlevel) then
@@ -1061,6 +1061,23 @@ nadvloopspectral:do ii=1,nadv
         kbeg = 2
         kend = kl
       end if
+! saveguard againts using values on bc's where they might not be assinged
+      do nn=1,nbocos
+        select case  (bcfaceid(nn)) 
+        case (imin) 
+          ibeg = 2
+        case (imax) 
+          iend = il
+        case (jmin) 
+          jbeg = 2
+        case (jmax) 
+          jend = jl
+        case (kmin) 
+          kbeg = 2
+        case (kmax) 
+          kend = kl
+        end select
+      end do
       select case  (turbmodel) 
       case (spalartallmaras, spalartallmarasedwards) 
         call saeddyviscosity(ibeg, iend, jbeg, jend, kbeg, kend)

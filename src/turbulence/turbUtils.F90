@@ -742,7 +742,7 @@ contains
         !      Local variables.
         !
         logical :: returnImmediately
-        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
+        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd, nn
 
         ! Check if an immediate return can be made.
 
@@ -777,6 +777,32 @@ contains
             kBeg = 2
             kEnd = kl
         end if
+
+        ! saveguard againts using values on BC's where they might not be assinged
+        do nn = 1, nBocos
+
+            select case (BCFaceID(nn))
+
+            case (iMin)
+                iBeg = 2
+
+            case (iMax)
+                iEnd = il
+
+            case (jMin)
+                jBeg = 2
+
+            case (jMax)
+                jEnd =  jl
+
+            case (kMin)
+                kBeg = 2
+
+            case (kMax)
+                kEnd = kl
+
+            end select
+        end do
 
         select case (turbModel)
 
@@ -930,6 +956,8 @@ contains
 #else
         call prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
 #endif
+
+    
 
         ! Loop over the cells of this block and compute the eddy viscosity.
         ! Most of the time, do not include halo's (iBeg=2...il,...)

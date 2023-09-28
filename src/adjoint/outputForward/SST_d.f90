@@ -1039,15 +1039,15 @@ contains
       case (imin) 
         ibeg = 2
       case (imax) 
-        iend = iend - 1
+        iend = il
       case (jmin) 
         jbeg = 2
       case (jmax) 
-        jend = jend - 1
+        jend = jl
       case (kmin) 
         kbeg = 2
       case (kmax) 
-        kend = kend - 1
+        kend = kl
       end select
     end do
 ! compute the blending function f1 for all owned cells.
@@ -1210,15 +1210,15 @@ bocos:do nn=1,nbocos
       case (imin) 
         ibeg = 2
       case (imax) 
-        iend = iend - 1
+        iend = il
       case (jmin) 
         jbeg = 2
       case (jmax) 
-        jend = jend - 1
+        jend = jl
       case (kmin) 
         kbeg = 2
       case (kmax) 
-        kend = kend - 1
+        kend = kl
       end select
     end do
 ! compute the blending function f1 for all owned cells.

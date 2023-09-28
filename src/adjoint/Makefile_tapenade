@@ -328,14 +328,14 @@ sa%saResScale(scratch) > (dw) \
 SST%SSTSource(w, scratch) > \
              (w, scratch) \
 \
-SST%SSTViscous(w, rlv, scratch) > \
-              (w, rlv, scratch) \
+SST%SSTViscous(w, rlv, rev, scratch) > \
+              (w, rlv, rev, scratch) \
 \
 SST%SSTResScale(scratch) > \
                (dw) \
 \
-SST%f1SST(w, scratch, d2wall) > \
-         (w, scratch) \
+SST%f1SST(w, rlv, scratch, d2wall) > \
+         (w, rlv, scratch) \
 \
 turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev) \
 \

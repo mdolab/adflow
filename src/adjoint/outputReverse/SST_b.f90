@@ -1317,19 +1317,19 @@ contains
         ibeg = 2
       case (imax) 
         call pushcontrol3b(4)
-        iend = iend - 1
+        iend = il
       case (jmin) 
         call pushcontrol3b(3)
         jbeg = 2
       case (jmax) 
         call pushcontrol3b(2)
-        jend = jend - 1
+        jend = jl
       case (kmin) 
         call pushcontrol3b(1)
         kbeg = 2
       case (kmax) 
         call pushcontrol3b(0)
-        kend = kend - 1
+        kend = kl
       case default
         call pushcontrol3b(6)
       end select
@@ -1631,15 +1631,15 @@ bocos:do nn=1,nbocos
       case (imin) 
         ibeg = 2
       case (imax) 
-        iend = iend - 1
+        iend = il
       case (jmin) 
         jbeg = 2
       case (jmax) 
-        jend = jend - 1
+        jend = jl
       case (kmin) 
         kbeg = 2
       case (kmax) 
-        kend = kend - 1
+        kend = kl
       end select
     end do
 ! compute the blending function f1 for all owned cells.

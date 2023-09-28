@@ -196,10 +196,10 @@ branch = myIntStack(myIntPtr)
   end subroutine sstsource
 
 !  differentiation of sstviscous in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *w *rlv *scratch
-!   with respect to varying inputs: *w *rlv *scratch
-!   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
-!   plus diff mem management of: w:in rlv:in scratch:in
+!   gradient     of useful results: *rev *w *rlv *scratch
+!   with respect to varying inputs: *rev *w *rlv *scratch
+!   rw status of diff variables: *rev:incr *w:incr *rlv:incr *scratch:in-out
+!   plus diff mem management of: rev:in w:in rlv:in scratch:in
   subroutine sstviscous_fast_b()
     use blockpointers
     use constants
@@ -475,9 +475,16 @@ myIntPtr = myIntPtr + 1
       mulmd = rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
-      rsstsigwp1d = rev(i+1, j, k)*half*muepd
-      rsstsigwd = rev(i, j, k)*half*muepd + rev(i, j, k)*half*muemd
-      rsstsigwm1d = rev(i-1, j, k)*half*muemd
+      tempd = half*muepd
+      rsstsigwp1d = rev(i+1, j, k)*tempd
+      revd(i+1, j, k) = revd(i+1, j, k) + rsstsigwp1*tempd
+      rsstsigwd = rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
+      tempd = half*muemd
+      rsstsigwm1d = rev(i-1, j, k)*tempd
+      revd(i-1, j, k) = revd(i-1, j, k) + rsstsigwm1*tempd
+      rsstsigwd = rsstsigwd + rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
       tempd = ttp*c1pd
       mulpd = mulpd + rhoi*tempd
       muepd = rhoi*tempd
@@ -486,9 +493,16 @@ myIntPtr = myIntPtr + 1
       mulmd = mulmd + rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
-      rsstsigkp1d = rev(i+1, j, k)*half*muepd
-      rsstsigkd = rev(i, j, k)*half*muepd + rev(i, j, k)*half*muemd
-      rsstsigkm1d = rev(i-1, j, k)*half*muemd
+      tempd = half*muepd
+      rsstsigkp1d = rev(i+1, j, k)*tempd
+      revd(i+1, j, k) = revd(i+1, j, k) + rsstsigkp1*tempd
+      rsstsigkd = rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd
+      tempd = half*muemd
+      rsstsigkm1d = rev(i-1, j, k)*tempd
+      revd(i-1, j, k) = revd(i-1, j, k) + rsstsigkm1*tempd
+      rsstsigkd = rsstsigkd + rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd
       rlvd(i+1, j, k) = rlvd(i+1, j, k) + half*mulpd
       rlvd(i, j, k) = rlvd(i, j, k) + half*mulpd + half*mulmd
       rlvd(i-1, j, k) = rlvd(i-1, j, k) + half*mulmd
@@ -597,9 +611,16 @@ branch = myIntStack(myIntPtr)
       mulmd = rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
-      rsstsigwp1d = rev(i, j+1, k)*half*muepd
-      rsstsigwd = rev(i, j, k)*half*muepd + rev(i, j, k)*half*muemd
-      rsstsigwm1d = rev(i, j-1, k)*half*muemd
+      tempd = half*muepd
+      rsstsigwp1d = rev(i, j+1, k)*tempd
+      revd(i, j+1, k) = revd(i, j+1, k) + rsstsigwp1*tempd
+      rsstsigwd = rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
+      tempd = half*muemd
+      rsstsigwm1d = rev(i, j-1, k)*tempd
+      revd(i, j-1, k) = revd(i, j-1, k) + rsstsigwm1*tempd
+      rsstsigwd = rsstsigwd + rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
       tempd = ttp*c1pd
       mulpd = mulpd + rhoi*tempd
       muepd = rhoi*tempd
@@ -608,9 +629,16 @@ branch = myIntStack(myIntPtr)
       mulmd = mulmd + rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
-      rsstsigkp1d = rev(i, j+1, k)*half*muepd
-      rsstsigkd = rev(i, j, k)*half*muepd + rev(i, j, k)*half*muemd
-      rsstsigkm1d = rev(i, j-1, k)*half*muemd
+      tempd = half*muepd
+      rsstsigkp1d = rev(i, j+1, k)*tempd
+      revd(i, j+1, k) = revd(i, j+1, k) + rsstsigkp1*tempd
+      rsstsigkd = rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd
+      tempd = half*muemd
+      rsstsigkm1d = rev(i, j-1, k)*tempd
+      revd(i, j-1, k) = revd(i, j-1, k) + rsstsigkm1*tempd
+      rsstsigkd = rsstsigkd + rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd
       rlvd(i, j+1, k) = rlvd(i, j+1, k) + half*mulpd
       rlvd(i, j, k) = rlvd(i, j, k) + half*mulpd + half*mulmd
       rlvd(i, j-1, k) = rlvd(i, j-1, k) + half*mulmd
@@ -720,9 +748,16 @@ branch = myIntStack(myIntPtr)
       mulmd = rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
-      rsstsigwp1d = rev(i, j, k+1)*half*muepd
-      rsstsigwd = rev(i, j, k)*half*muepd + rev(i, j, k)*half*muemd
-      rsstsigwm1d = rev(i, j, k-1)*half*muemd
+      tempd = half*muepd
+      rsstsigwp1d = rev(i, j, k+1)*tempd
+      revd(i, j, k+1) = revd(i, j, k+1) + rsstsigwp1*tempd
+      rsstsigwd = rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
+      tempd = half*muemd
+      rsstsigwm1d = rev(i, j, k-1)*tempd
+      revd(i, j, k-1) = revd(i, j, k-1) + rsstsigwm1*tempd
+      rsstsigwd = rsstsigwd + rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
       tempd = ttp*c1pd
       mulpd = mulpd + rhoi*tempd
       muepd = rhoi*tempd
@@ -731,9 +766,16 @@ branch = myIntStack(myIntPtr)
       mulmd = mulmd + rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
-      rsstsigkp1d = rev(i, j, k+1)*half*muepd
-      rsstsigkd = rev(i, j, k)*half*muepd + rev(i, j, k)*half*muemd
-      rsstsigkm1d = rev(i, j, k-1)*half*muemd
+      tempd = half*muepd
+      rsstsigkp1d = rev(i, j, k+1)*tempd
+      revd(i, j, k+1) = revd(i, j, k+1) + rsstsigkp1*tempd
+      rsstsigkd = rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd
+      tempd = half*muemd
+      rsstsigkm1d = rev(i, j, k-1)*tempd
+      revd(i, j, k-1) = revd(i, j, k-1) + rsstsigkm1*tempd
+      rsstsigkd = rsstsigkd + rev(i, j, k)*tempd
+      revd(i, j, k) = revd(i, j, k) + rsstsigk*tempd
       rlvd(i, j, k+1) = rlvd(i, j, k+1) + half*mulpd
       rlvd(i, j, k) = rlvd(i, j, k) + half*mulpd + half*mulmd
       rlvd(i, j, k-1) = rlvd(i, j, k-1) + half*mulmd
@@ -1048,10 +1090,11 @@ branch = myIntStack(myIntPtr)
   end subroutine sstresscale
 
 !  differentiation of f1sst in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *w *scratch
-!   with respect to varying inputs: *w *scratch *d2wall
-!   rw status of diff variables: *w:incr *scratch:in-out *d2wall:out
-!   plus diff mem management of: w:in scratch:in d2wall:in
+!   gradient     of useful results: *w *rlv *scratch
+!   with respect to varying inputs: *w *rlv *scratch *d2wall
+!   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
+!                *d2wall:out
+!   plus diff mem management of: w:in rlv:in scratch:in d2wall:in
   subroutine f1sst_fast_b()
 !
 !       f1sst computes the blending function f1 in both the owned
@@ -1096,6 +1139,7 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: temp3
     real(kind=realtype) :: tempd
     real(kind=realtype) :: temp4
+    real(kind=realtype) :: temp5
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: tempd1
     real(kind=realtype) :: tempd2
@@ -1136,19 +1180,19 @@ branch = myIntStack(myIntPtr)
         ibeg = 2
       case (imax) 
         call pushcontrol3b(4)
-        iend = iend - 1
+        iend = il
       case (jmin) 
         call pushcontrol3b(3)
         jbeg = 2
       case (jmax) 
         call pushcontrol3b(2)
-        jend = jend - 1
+        jend = jl
       case (kmin) 
         call pushcontrol3b(1)
         kbeg = 2
       case (kmax) 
         call pushcontrol3b(0)
-        kend = kend - 1
+        kend = kl
       case default
         call pushcontrol3b(6)
       end select
@@ -1324,11 +1368,11 @@ branch = myIntStack(myIntPtr)
         t1d = arg1d
         t2d = 0.0_8
       end if
-      temp4 = d2wall(i, j, k)*d2wall(i, j, k)
-      tempd1 = two*t2d/(max1*temp4)
+      temp5 = d2wall(i, j, k)*d2wall(i, j, k)
+      tempd1 = two*t2d/(max1*temp5)
       wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd1
-      tempd2 = -(w(i, j, k, itu1)*tempd1/(max1*temp4))
-      max1d = temp4*tempd2
+      tempd2 = -(w(i, j, k, itu1)*tempd1/(max1*temp5))
+      max1d = temp5*tempd2
       d2walld(i, j, k) = d2walld(i, j, k) + 2*d2wall(i, j, k)*max1*&
 &       tempd2
 branch = myIntStack(myIntPtr)
@@ -1347,11 +1391,14 @@ branch = myIntStack(myIntPtr)
       temp2 = w(i, j, k, itu2)
       temp1 = w(i, j, k, irho)
       temp0 = temp1*temp2
-      tempd0 = -(rlv(i, j, k)*500.0_realtype*t2d/(temp0**2*temp3**2))
-      wd(i, j, k, irho) = wd(i, j, k, irho) + temp2*temp3*tempd0
-      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp1*temp3*tempd0
+      temp4 = temp0*temp3
+      tempd0 = 500.0_realtype*t2d/temp4
+      rlvd(i, j, k) = rlvd(i, j, k) + tempd0
+      tempd1 = -(rlv(i, j, k)*tempd0/temp4)
+      wd(i, j, k, irho) = wd(i, j, k, irho) + temp2*temp3*tempd1
+      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp1*temp3*tempd1
       d2walld(i, j, k) = d2walld(i, j, k) + 2*d2wall(i, j, k)*temp0*&
-&       tempd0
+&       tempd1
       temp = 0.09_realtype*d2wall(i, j, k)
       temp0 = w(i, j, k, itu2)
       temp1 = temp0*temp
@@ -1408,15 +1455,15 @@ branch = myIntStack(myIntPtr)
       case (imin) 
         ibeg = 2
       case (imax) 
-        iend = iend - 1
+        iend = il
       case (jmin) 
         jbeg = 2
       case (jmax) 
-        jend = jend - 1
+        jend = jl
       case (kmin) 
         kbeg = 2
       case (kmax) 
-        kend = kend - 1
+        kend = kl
       end select
     end do
 ! compute the blending function f1 for all owned cells.

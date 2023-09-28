@@ -24,7 +24,7 @@ contains
         use kw, only: kwSolve
         use kt, only: ktSolve
         use vf, only: vfSolve, keSolve
-        use haloExchange, only: exchangeCoor, whalo2, whalo1
+        use haloExchange, only: exchangeCoor, whalo2, whalo1, exchanged2Wall
         use wallDistance, only: updateWallDistancesQuickly
         use solverUtils, only: timeStep_block
         use flowUtils, only: allNodalGradients, computeLamViscosity, computePressureSimple, &
@@ -95,6 +95,7 @@ contains
 
             ! Now exchange the coordinates (fine level only)
             call exchangecoor(1)
+            call exchanged2Wall(1)
 
             do sps = 1, nTimeIntervalsSpectral
                 ! Update overset connectivity if necessary
@@ -280,7 +281,7 @@ contains
                             inviscidUpwindFlux_d, viscousFlux_d, viscousFluxApprox_d, inviscidCentralFlux_d
         use residuals_d, only: sourceTerms_block_d, initres_block_d
         use adjointPETSc, only: x_like
-        use haloExchange, only: whalo2_d, exchangeCoor_d, exchangeCoor, whalo2
+        use haloExchange, only: whalo2_d, exchangeCoor_d, exchangeCoor, whalo2, exchanged2Wall, exchanged2Wall_d
         use wallDistance_d, only: updateWallDistancesQuickly_d
         use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
         use flowutils_d, only: computePressureSimple_d, computeLamViscosity_d, &
@@ -402,6 +403,9 @@ contains
         ! halo nodes and exchange coor corrects them.
         call exchangecoor_d(1)
         call exchangecoor(1)
+        call exchanged2Wall_d(1)
+        call exchanged2Wall(1)
+
 
         do sps = 1, nTimeIntervalsSpectral
             ! Update overset connectivity if necessary
@@ -606,7 +610,7 @@ contains
         use inputAdjoint, only: viscPC
         use fluxes, only: viscousFlux
         use flowVarRefState, only: nw, nwf, viscous, pInfDimd, rhoInfDimd, TinfDimd
-        use blockPointers, only: nDom, il, jl, kl, wd, xd, dw, dwd
+        use blockPointers, only: nDom, il, jl, kl, wd, xd, dw, dwd, d2walld, revd
         use inputPhysics, only: pointRefd, alphad, betad, equations, machCoefd, &
                                 machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
         use inputDiscretization, only: lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -614,7 +618,7 @@ contains
         use inputAdjoint, only: frozenTurbulence
         use utils, only: isWallType, setPointers_b, EChk
         use adjointPETSc, only: x_like
-        use haloExchange, only: whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
+        use haloExchange, only: whalo2_b, exchangeCoor_b, exchangeCoor, whalo2, exchanged2Wall_b
         use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
         use surfaceIntegrations, only: getSolution_b
         use flowUtils, only: fixAllNodalGradientsFromAD
@@ -837,6 +841,11 @@ contains
                 call metric_block_b
                 call volume_block_b
 
+                d2walld = 0
+                ! d2walld(2:il, 2:jl, 2:kl) = -1
+                d2walld(4, 4, 2:kl) = -1
+
+
             end do domainLoop2
 
         end do spsLoop2
@@ -870,8 +879,13 @@ contains
             end if
         end do
         ! Now the adjoint of the coordinate exhcange
+        call exchanged2Wall_b(1)
         call exchangecoor_b(1)
         do sps = 1, nTimeIntervalsSpectral
+
+
+            print *, 'd2wall_b', d2walld(4, 4, 0:kl+2)
+
             ! Get the pointers from the petsc vector for the wall
             ! surface and it's accumulation. Only necessary for wall
             ! distance.
@@ -887,11 +901,12 @@ contains
 
             do nn = 1, nDom
                 call setPointers_b(nn, 1, sps)
-                call xhalo_block_b()
 
                 if (equations == RANSEquations .and. useApproxWallDistance) then
                     call updateWallDistancesQuickly_b(nn, 1, sps)
                 end if
+
+                call xhalo_block_b()
             end do
 
             ! Restore the petsc pointers.
