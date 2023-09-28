@@ -209,7 +209,7 @@ contains
                 call terminate("wallDistance", &
                                "Deallocation error for communication buffers")
         else
-            call deallocateTempMemory(.false.)
+            call deallocateTempMemory(.true.)
         end if
 
         ! There are two different searches we can do: the original code
@@ -308,7 +308,7 @@ contains
                 call terminate("wallDistance", &
                                "Memory allocation failure for comm buffers")
         else
-            call allocateTempMemory(.false.)
+            call allocateTempMemory(.true.)
         end if
 
         ! Synchronize the processors.

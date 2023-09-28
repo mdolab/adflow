@@ -95,12 +95,8 @@ def set_surf_coords(solver, inputs):
     """
     coordsUpdated = False
     if "x_aero" in inputs:
-        # This is the only place in the code we don't want the zipper nodes. This is because `setSurfaceCoordinates`
-        # doesn't take the zipper nodes. The surface coordinates in the input vector do include the input nodes but they
-        # are easy to exclude because they're just tacked on to the end of the array.
-        currentSurfCoord = solver.getSurfaceCoordinates(groupName=solver.meshFamilyGroup, includeZipper=False)
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
-        newSurfCoord = newSurfCoord[: currentSurfCoord.shape[0]]
+        currentSurfCoord = solver.mesh.getSurfaceCoordinates()  # Get coordinates directly from IDWarp
         coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
@@ -108,7 +104,7 @@ def set_surf_coords(solver, inputs):
                 if solver.comm.rank == 0:
                     print("Updating surface coords", flush=True)
             solver.setSurfaceCoordinates(newSurfCoord, groupName=solver.meshFamilyGroup)
-            solver.updateGeometryInfo()
+            solver.updateGeometryInfo(warpMesh=False)
             coordsUpdated = True
     return coordsUpdated
 
@@ -352,14 +348,19 @@ class ADflowWarper(ExplicitComponent):
         if DEBUG_LOGGING:
             print_func_call(self)
         solver = self.solver
-        set_surf_coords(solver, inputs)
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
+
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         if DEBUG_LOGGING:
             print_func_call(self)
         solver = self.solver
-        set_surf_coords(solver, inputs)
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
 
         if mode == "fwd":
             if "adflow_vol_coords" in d_outputs:
