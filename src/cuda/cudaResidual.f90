@@ -21,11 +21,11 @@ module cudaResidual
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
     integer(kind=intType), parameter :: inviscidCentralBSI = 8
-    integer(kind=intType), parameter :: inviscidCentralBSJ = 4
-    integer(kind=intType), parameter :: inviscidCentralBSK = 2
+    integer(kind=intType), parameter :: inviscidCentralBSJ = 8
+    integer(kind=intType), parameter :: inviscidCentralBSK = 6
 
-    integer(kind=intType), parameter :: inviscidCentralBSIPlane = 8
-    integer(kind=intType), parameter :: inviscidCentralBSJPlane = 64
+    integer(kind=intType), parameter :: inviscidCentralBSIPlane = 32
+    integer(kind=intType), parameter :: inviscidCentralBSJPlane = 10
     integer(kind=intType), parameter :: inviscidCentralBSKPlane = 8
 
     integer(kind=intType) :: h_nx, h_ny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
@@ -3346,7 +3346,7 @@ module cudaResidual
             w_s(tidx,tidy+1,ivy) = cudaDoms(dom,sps)%w(i,j+1,k,imy)
             w_s(tidx,tidy+1,ivz) = cudaDoms(dom,sps)%w(i,j+1,k,imz)
             w_s(tidx,tidy+1,irhoE) = cudaDoms(dom,sps)%w(i,j+1,k,irhoE)
-            P_s(tidx,tidy+1) = cudaDoms(dom,sps)%P(i,j+1,k)
+            P_s(tidx,tidy+1) = (gammaConstant-one)*( w_s(tidx,tidy+1,irhoE) - half*(w_s(tidx,tidy+1,ivx)*w_s(tidx,tidy+1,ivx)+w_s(tidx,tidy+1,ivy)*w_s(tidx,tidy+1,ivy)+w_s(tidx,tidy+1,ivz)*w_s(tidx,tidy+1,ivz))*w_s(tidx,tidy+1,irho))
             dw_s(tidx,tidy+1,:) = zero
         end if  
         fs = zero
@@ -3574,7 +3574,7 @@ module cudaResidual
                     w_s(tidx,tidy+1,ivy) = cudaDoms(dom,sps)%w(i,j+1,k+1,imy)
                     w_s(tidx,tidy+1,ivz) = cudaDoms(dom,sps)%w(i,j+1,k+1,imz)
                     w_s(tidx,tidy+1,irhoE) = cudaDoms(dom,sps)%w(i,j+1,k+1,irhoE)
-                    P_s(tidx,tidy+1) = cudaDoms(dom,sps)%P(i,j+1,k+1)
+                    P_s(tidx,tidy+1) = (gammaConstant-one)*( w_s(tidx,tidy+1,irhoE) - half*(w_s(tidx,tidy+1,ivx)*w_s(tidx,tidy+1,ivx)+w_s(tidx,tidy+1,ivy)*w_s(tidx,tidy+1,ivy)+w_s(tidx,tidy+1,ivz)*w_s(tidx,tidy+1,ivz))*w_s(tidx,tidy+1,irho))
                 end if 
                 if (j == jmax .and. i <= il .and. tidx < blockDim%x .and. k  <= kl) then
                     tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,irho), dw_s(tidx,tidy+1,irho))
@@ -6289,18 +6289,18 @@ module cudaResidual
       istat = cudaDeviceSynchronize()
       call computeDSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
-      istat = cudaDeviceSynchronize()
+    !   call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
+    !   istat = cudaDeviceSynchronize()
 
-    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
-    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
-    call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
-    istat = cudaDeviceSynchronize()
+    ! block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
+    ! grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
+    ! call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
+    ! istat = cudaDeviceSynchronize()
 
-    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
-    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
-    call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
-    istat = cudaDeviceSynchronize()
+    ! block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
+    ! grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
+    ! call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
+    ! istat = cudaDeviceSynchronize()
 
     block_inv = dim3(inviscidCentralBSIPlane,inviscidCentralBSJPlane,1)
     grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlane)))
@@ -6308,8 +6308,8 @@ module cudaResidual
     istat = cudaDeviceSynchronize()
 
 
-    call inviscidCentralFlux<<<grid_size, block_size>>>
-    istat = cudaDeviceSynchronize()
+    ! call inviscidCentralFlux<<<grid_size, block_size>>>
+    ! istat = cudaDeviceSynchronize()
 
       ! inviscid diss flux scalar
     !   call inviscidDissFluxScalar<<<grid_size, block_size>>>
