@@ -332,7 +332,7 @@ contains
             select case (nFamBC)
 
             case (0)
-                cgnsFamilies(nn)%BCTypeCGNS = Null
+                cgnsFamilies(nn)%BCTypeCGNS = CG_Null
                 cgnsFamilies(nn)%BCType = BCNull
                 cgnsFamilies(nn)%bcName = ""
 
@@ -352,7 +352,7 @@ contains
                 ! used BC.
 
                 testUserDefined: if (cgnsFamilies(nn)%BCTypeCGNS == &
-                                     UserDefined) then
+                                     CG_UserDefined) then
 
                     ! Move to the family and determine the number of
                     ! user defined data nodes.
@@ -605,7 +605,7 @@ contains
 
             ! Check if units were specified.
 
-            if (ierr == CG_OK .and. len /= Null) then
+            if (ierr == CG_OK .and. len /= CG_Null) then
 
                 ! Copy the units and set gridUnitsSpecified to .true.
 
@@ -750,7 +750,7 @@ contains
 
                 ! Check if units were specified. If not assume radians.
 
-                if (ierr == CG_OK .and. angle /= Null) then
+                if (ierr == CG_OK .and. angle /= CG_Null) then
 
                     ! Determine the conversion factor to radians.
 
@@ -1200,7 +1200,8 @@ contains
             cgnsDoms(nZone)%conn1to1(i)%translation = zero
 
             call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, nZone, i, &
-                           real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), real(tlation, cgnsPerType), ierr)
+                                         real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), &
+                                         real(tlation, cgnsPerType), ierr)
             if (ierr == CG_OK) then
                 call readPeriodicSubface1to1(cgnsInd, cgnsBase, nZone, i, &
                                              cgnsDoms(nZone)%conn1to1(i)%connectName, &
@@ -2080,7 +2081,7 @@ contains
 
                     !===========================================================
 
-                case (UserDefined)
+                case (CG_UserDefined)
 
                     ! A user defined boundary condition is prescribed.
                     ! More information should be present. Determine the
@@ -2124,10 +2125,11 @@ contains
 
                     ! Print an error message if the BC type was not recognized.
 
-                    if (cgnsDoms(nZone)%bocoInfo(i)%BCType == bcNull) then
+                    if (cgnsDoms(nZone)%bocoInfo(i)%BCType == BCNull) then
                         write (errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), &
                             ", boundary face ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
-                         ": Unknown user-defined boundary condition ", trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
+                            ": Unknown user-defined boundary condition ", &
+                            trim(cgnsDoms(nZone)%bocoInfo(i)%userDefinedName)
                         if (myID == 0) call terminate("readBocos", errorMessage)
                         call mpi_barrier(ADflow_comm_world, ierr)
                     end if
@@ -2179,7 +2181,7 @@ contains
 
                     ! Print an error message if the BC type was not recognized.
 
-                    if (cgnsDoms(nZone)%bocoInfo(i)%BCType == bcNull) then
+                    if (cgnsDoms(nZone)%bocoInfo(i)%BCType == BCNull) then
                         write (errorMessage, strings) "Zone ", trim(cgnsDoms(nZone)%zoneName), &
                             ", boundary face ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName), &
                             ": boundary condition type missing or not supported"
@@ -2520,7 +2522,8 @@ contains
                         print "(a)", "#                      Warning"
                         print strings, "# Zone ", trim(cgnsDoms(nZone)%zoneName), &
                             ", boundary subface ", trim(cgnsDoms(nZone)%bocoInfo(i)%bocoName)
-                      print strings, "# BC data set ", trim(arr(k)%arrayName), ": No units specified, assuming SI units"
+                        print strings, "# BC data set ", &
+                            trim(arr(k)%arrayName), ": No units specified, assuming SI units"
                         print "(a)", "#"
                     end if
                 end if
@@ -2685,7 +2688,7 @@ contains
         case (BCTunnelOutflow)
             internalBC = SubsonicOutflow
 
-        case (UserDefined)
+        case (CG_UserDefined)
 
             ! Select the internal type base on the user defined name.
 
@@ -2719,12 +2722,12 @@ contains
                 internalBC = DomainInterfaceTotal
 
             case default
-                internalBC = bcNull
+                internalBC = BCNull
 
             end select
 
         case default
-            internalBC = bcNull
+            internalBC = BCNull
 
         end select
 
@@ -2785,7 +2788,8 @@ contains
         ! Check if this is a periodic boundary.
 
         call cg_conn_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-                           real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), real(tlation, cgnsPerType), ierr)
+                                     real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), &
+                                     real(tlation, cgnsPerType), ierr)
 
         testPeriodic: if (ierr == CG_OK) then
 
@@ -2808,7 +2812,7 @@ contains
 
             ! Check if the angle dimensions were specified.
 
-            if (ierr == CG_OK .and. angle /= Null) then
+            if (ierr == CG_OK .and. angle /= CG_Null) then
 
                 ! Determine the conversion factor to radians.
 
@@ -2926,7 +2930,8 @@ contains
 
         ! Check if this is a periodic boundary.
         call cg_1to1_periodic_read_f(cgnsInd, cgnsBase, zone, conn, &
-                           real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), real(tlation, cgnsPerType), ierr)
+                                     real(rotCenter, cgnsPerType), real(rotAngles, cgnsPerType), &
+                                     real(tlation, cgnsPerType), ierr)
 
         testPeriodic: if (ierr == CG_OK) then
 
@@ -2949,7 +2954,7 @@ contains
 
             ! Check if the angle dimensions were specified.
 
-            if (ierr == CG_OK .and. angle /= Null) then
+            if (ierr == CG_OK .and. angle /= CG_Null) then
 
                 ! Determine the conversion factor to radians.
 
@@ -2964,7 +2969,8 @@ contains
 
                     print "(a)", "#"
                     print "(a)", "#                      Warning"
-                   print strings, "# Zone ", trim(cgnsDoms(zone)%zonename), ", 1to1 connectivity ", trim(connectName), &
+                    print strings, "# Zone ", &
+                        trim(cgnsDoms(zone)%zonename), ", 1to1 connectivity ", trim(connectName), &
                         ": No unit specified for periodic angles, assuming radians."
                     print "(a)", "#"
 
@@ -3241,11 +3247,11 @@ contains
 
         if (writeCoorMeter) then
             do i = 1, cgnsNDom
-                cgnsDoms(i)%mass = Null
+                cgnsDoms(i)%mass = CG_Null
                 cgnsDoms(i)%len = Meter
-                cgnsDoms(i)%time = Null
-                cgnsDoms(i)%temp = Null
-                cgnsDoms(i)%angle = Null
+                cgnsDoms(i)%time = CG_Null
+                cgnsDoms(i)%temp = CG_Null
+                cgnsDoms(i)%angle = CG_Null
 
                 cgnsDoms(i)%gridUnitsSpecified = .true.
                 cgnsDoms(i)%LRef = one

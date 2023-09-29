@@ -39,7 +39,7 @@ contains
         use utils, only: EChk, setPointers, getDirAngle, setPointers_d
         use haloExchange, only: whalo2
         use masterRoutines, only: block_res_state, master
-        use agmg, only: agmgLevels, A, coarseIndices, coarseOversetIndices
+        use amg, only: amgLevels, A, coarseIndices, coarseOversetIndices
 #ifndef USE_COMPLEX
         use masterRoutines, only: block_res_state_d
 #endif
@@ -62,7 +62,7 @@ contains
         integer(kind=intType) :: n_stencil, i_stencil, m, iFringe, fInd, lvl, orderturbsave
         integer(kind=intType), dimension(:, :), pointer :: stencil
         real(kind=alwaysRealType) :: delta_x, one_over_dx
-        real(kind=realType) :: weights(8)
+        real(kind=realType) :: weights(8), acousticScaleSave
         real(kind=realType), dimension(:, :), allocatable :: blk
         integer(kind=intType), dimension(2:10) :: coarseRows
         integer(kind=intType), dimension(8, 2:10) :: coarseCols
@@ -151,7 +151,7 @@ contains
                                 nCol = 1
 
                                 if (buildCoarseMats) then
-                                    do lvl = 1, agmgLevels - 1
+                                    do lvl = 1, amgLevels - 1
                                         coarseRows(lvl + 1) = coarseIndices(nn, lvl)%arr(i, j, k)
                                         coarseCols(1, lvl + 1) = coarseRows(lvl + 1)
                                     end do
@@ -179,6 +179,12 @@ contains
 
             ! Very important to use only Second-Order dissipation for PC
             lumpedDiss = .True.
+            ! We also do not apply acoustic scaling because artificial dissipation stabilizes the ILU factorization.
+            ! This is mentioned in "Newton-Krylov-Schwarz Methods for Aerodynamics Problems: Compressible
+            ! and Incompressible Flows on Unstructured Grids" by D. K. Kaushik, D. E. Keyes, and B. F. Smith (1998).
+            ! The linear system will not converge if we reduce the artificial dissipation for the PC.
+            acousticScaleSave = acousticScaleFactor
+            acousticScaleFactor = one
             ! also use first order advection terms for turbulence
             orderturbsave = orderturb
             orderturb = firstOrder
@@ -325,7 +331,8 @@ contains
                                     do k = 0, kb
                                         do j = 0, jb
                                             do i = 0, ib
-                                      flowDoms(nn, level, sps2)%w(i, j, k, ll) = flowDoms(nn, 1, sps2)%wtmp(i, j, k, ll)
+                                                flowDoms(nn, level, sps2)%w(i, j, k, ll) = &
+                                                    flowDoms(nn, 1, sps2)%wtmp(i, j, k, ll)
                                             end do
                                         end do
                                     end do
@@ -435,7 +442,7 @@ contains
                                         nCol = 1
 
                                         if (buildCoarseMats) then
-                                            do lvl = 1, agmgLevels - 1
+                                            do lvl = 1, amgLevels - 1
                                                 coarseCols(1, lvl + 1) = coarseIndices(nn, lvl)%arr(i, j, k)
                                             end do
                                         end if
@@ -445,8 +452,9 @@ contains
                                             cols(m) = flowDoms(nn, level, sps)%gInd(m, i, j, k)
 
                                             if (buildCoarseMats) then
-                                                do lvl = 1, agmgLevels - 1
-                                                  coarseCols(m, lvl + 1) = coarseOversetIndices(nn, lvl)%arr(m, i, j, k)
+                                                do lvl = 1, amgLevels - 1
+                                                    coarseCols(m, lvl + 1) = &
+                                                        coarseOversetIndices(nn, lvl)%arr(m, i, j, k)
                                                 end do
                                             end if
                                         end do
@@ -481,29 +489,36 @@ contains
                                                        i + ii, j + jj, k + kk)
 
                                                 if (buildCoarseMats) then
-                                                    do lvl = 1, agmgLevels - 1
-                                                coarseRows(lvl + 1) = coarseIndices(nn, lvl)%arr(i + ii, j + jj, k + kk)
+                                                    do lvl = 1, amgLevels - 1
+                                                        coarseRows(lvl + 1) = &
+                                                            coarseIndices(nn, lvl)%arr(i + ii, j + jj, k + kk)
                                                     end do
                                                 end if
 
-                                        rowBlank: if (flowDoms(nn, level, sps)%iBlank(i + ii, j + jj, k + kk) == 1) then
+                                                rowBlank: if (flowDoms(nn, level, sps)% &
+                                                              iBlank(i + ii, j + jj, k + kk) == 1) then
 
                                                     centerCell: if (ii == 0 .and. jj == 0 .and. kk == 0) then
                                                         useDiagPC: if (usePC .and. useDiagTSPC) then
                                                             ! If we're doing the PC and we want
                                                             ! to use TS diagonal form, only set
                                                             ! values for on-time insintance
-                                                           blk = flowDoms(nn, 1, sps)%dw_deriv(i + ii, j + jj, k + kk, &
-                                                                                               lStart:lEnd, lStart:lEnd)
+                                                            blk = flowDoms(nn, 1, sps)%dw_deriv(i + ii, &
+                                                                                                j + jj, k + kk, &
+                                                                                                lStart:lEnd, &
+                                                                                                lStart:lEnd)
                                                             call setBlock(blk)
                                                         else
                                                             ! Otherwise loop over spectral
                                                             ! instances and set all.
                                                             do sps2 = 1, nTimeIntervalsSpectral
                                                                 irow = flowDoms(nn, level, sps2)% &
-                                                                       globalCell(i + ii, j + jj, k + kk)
-                                                          blk = flowDoms(nn, 1, sps2)%dw_deriv(i + ii, j + jj, k + kk, &
-                                                                                               lStart:lEnd, lStart:lEnd)
+                                                                       globalCell(i + ii, &
+                                                                                  j + jj, k + kk)
+                                                                blk = flowDoms(nn, 1, sps2)% &
+                                                                      dw_deriv(i + ii, &
+                                                                               j + jj, k + kk, &
+                                                                               lStart:lEnd, lStart:lEnd)
                                                                 call setBlock(blk)
                                                             end do
                                                         end if useDiagPC
@@ -530,7 +545,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         if (buildCoarseMats) then
-            do lvl = 2, agmgLevels
+            do lvl = 2, amgLevels
                 call MatAssemblyBegin(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end do
@@ -560,6 +575,7 @@ contains
         ! Return dissipation Parameters to normal -> VERY VERY IMPORTANT
         if (usePC) then
             lumpedDiss = .False.
+            acousticScaleFactor = acousticScaleSave
             ! also recover the turbulence advection order
             orderturb = orderturbsave
         end if
@@ -577,7 +593,7 @@ contains
         call EChk(ierr, __FILE__, __LINE__)
 
         if (buildCoarseMats) then
-            do lvl = 2, agmgLevels
+            do lvl = 2, amgLevels
                 call MatAssemblyEnd(A(lvl), MAT_FINAL_ASSEMBLY, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
             end do
@@ -667,7 +683,7 @@ contains
                 ! Extension for setting coarse grids:
                 if (buildCoarseMats) then
                     if (nCol == 1) then
-                        do lvl = 2, agmgLevels
+                        do lvl = 2, amgLevels
                             if (useTranspose) then
                                 ! Loop over the coarser levels
                                 call MatSetValuesBlocked(A(lvl), 1, coarseCols(1, lvl), 1, coarseRows(lvl), &
@@ -679,7 +695,7 @@ contains
                         end do
                     else
                         do m = 1, nCol
-                            do lvl = 2, agmgLevels
+                            do lvl = 2, amgLevels
                                 if (coarseCols(m, lvl) >= 0) then
                                     if (useTranspose) then
                                         ! Loop over the coarser levels
@@ -885,9 +901,12 @@ contains
                             allocate (cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(nDirichlet))
 
                             do iDirichlet = 1, nDirichlet
-                          nArray = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr)
-                     allocate (cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray))
-                         cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray) = zero
+                                nArray = size(cgnsDoms(nn)%bocoInfo(iBoco)%dataSet(iData) &
+                                              %dirichletArrays(iDirichlet)%dataArr)
+                                allocate (cgnsDomsd(nn)%bocoInfo(iBoco)% &
+                                          dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(nArray))
+                                cgnsDomsd(nn)%bocoInfo(iBoco)%dataSet(iData)% &
+                                    dirichletArrays(iDirichlet)%dataArr(nArray) = zero
                             end do
                         end if
                     end do
@@ -1042,8 +1061,10 @@ contains
                 if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)) then
                     do iData = 1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet)
                         if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then
-                            do iDirichlet = 1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
-                            cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(:) = zero
+                            do iDirichlet = 1, &
+                                size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
+                                cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(:) &
+                                    = zero
                             end do
                         end if
                     end do
@@ -1353,12 +1374,12 @@ contains
                                 globalPCType, ASMOverlap, globalPreConIts, localPCType, &
                                 localMatrixOrdering, localFillLevel, localPreConIts)
 
-        ! This function sets up the supplied kspObject in the followin
+        ! This function sets up the supplied kspObject in the following
         ! specific fashion. The reason this setup is in
         ! its own function is that it is used in the following places:
-        ! 1. Setting up the preconditioner to use for the NKsolver
+        ! 1. Setting up the preconditioner to use for the ANK and NK solvers
         ! 2. Setting up the preconditioner to use for the adjoint solver
-        ! 3. Setting up the smoothers on the coarse multigrid levels.
+        ! 3. Setting up the smoothers on the coarse levels for algebraic multigrid
         !
         ! The hierarchy of the setup is:
         !  kspObject --> Supplied KSP object
@@ -1441,9 +1462,8 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
         end if
 
-        ! Since there is an extraneous matMult required when using the
-        ! richardson precondtiter with only 1 iteration, only use it we need
-        ! to do more than 1 iteration.
+        ! Since there is an extra matMult required when using the Richardson preconditioner
+        ! with only 1 iteration, only use it when we need to do more than 1 iteration.
         if (globalPreConIts > 1) then
             ! Extract preconditioning context for main KSP solver: (master_PC)
             call KSPGetPC(kspObject, master_PC, ierr)
@@ -1485,8 +1505,8 @@ contains
             call EChk(ierr, __FILE__, __LINE__)
         end if
 
-        ! Set the type of 'globalPC'. This will almost always be additive Schwarz
-        call PCSetType(globalPC, 'asm', ierr)!globalPCType, ierr)
+        ! Set the 'globalPC' to additive Schwarz
+        call PCSetType(globalPC, 'asm', ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
         ! Set the overlap required
@@ -1501,26 +1521,23 @@ contains
         call PCASMGetSubKSP(globalPC, nlocal, first, subksp, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Since there is an extraneous matMult required when using the
-        ! richardson precondtiter with only 1 iteration, only use it we need
-        ! to do more than 1 iteration.
+        ! Since there is an extra matMult required when using the Richardson preconditioner
+        ! with only 1 iteration, only use it when we need to do more than 1 iteration.
         if (localPreConIts > 1) then
-            ! This 'subksp' object will ALSO be of type richardson so we can do
-            ! multiple iterations on the sub-domains
+            ! Set the subksp object to Richardson so we can do multiple iterations on the sub-domains
             call KSPSetType(subksp, 'richardson', ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
             ! Set the number of iterations to do on local blocks. Tolerances are ignored.
-
-            call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, &
-                                  PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
+            call KSPSetTolerances(subksp, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, PETSC_DEFAULT_REAL, &
                                   localPreConIts, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            ! Again, norm_type is NONE since we don't want to check error
+            ! normtype is NONE because we don't want to check error
             call kspsetnormtype(subksp, KSP_NORM_NONE, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         else
+            ! Set the subksp object to preonly because we are only doing one iteration
             call KSPSetType(subksp, 'preonly', ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end if
@@ -1529,7 +1546,7 @@ contains
         call KSPGetPC(subksp, subpc, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! The subpc type will almost always be ILU
+        ! Set the subpc type; only ILU is currently supported
         call PCSetType(subpc, localPCType, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -1543,24 +1560,21 @@ contains
 
     end subroutine setupStandardKSP
 
-    subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, &
-                                      preConSide, ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel)
+    subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, preConSide, &
+                                      ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel, localPreConIts)
 
-        ! and if localPreConIts=1 then subKSP is set to preOnly.
         use constants
         use utils, only: ECHk
-        use agmg, only: agmgOuterIts, agmgASMOverlap, agmgFillLevel, agmgMatrixOrdering, &
-                        setupShellPC, destroyShellPC, applyShellPC
+        use amg, only: amgOuterIts, amgASMOverlap, amgFillLevel, amgMatrixOrdering, amgLocalPreConIts, &
+                       setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
 
-        ! Input Params
+        ! Inputs
         KSP kspObject
-        character(len=*), intent(in) :: kspObjectType, preConSide
-        character(len=*), intent(in) :: localMatrixOrdering
-        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart
-        integer(kind=intType), intent(in) :: outerPreconIts
+        character(len=*), intent(in) :: kspObjectType, preConSide, localMatrixOrdering
+        integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, outerPreconIts, localPreConIts
 
         ! Working Variables
         PC shellPC
@@ -1595,11 +1609,13 @@ contains
         call PCShellSetApply(shellPC, applyShellPC, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
-        ! Just save the remaining pieces ofinformation in the agmg module.
-        agmgOuterIts = outerPreConIts
-        agmgASMOverlap = asmOverlap
-        agmgFillLevel = fillLevel
-        agmgMatrixOrdering = localMatrixOrdering
+        ! Save the remaining variables in the AMG module
+        amgOuterIts = outerPreConIts
+        amgASMOverlap = asmOverlap
+        amgFillLevel = fillLevel
+        amgMatrixOrdering = localMatrixOrdering
+        amgLocalPreConIts = localPreConIts
+
     end subroutine setupStandardMultigrid
 
     subroutine destroyPETScVars
@@ -1607,7 +1623,7 @@ contains
         use constants
         use ADjointPETSc, only: dRdWT, dRdwPreT, adjointKSP, adjointPETScVarsAllocated
         use inputAdjoint, only: approxPC
-        use agmg, only: destroyAGMG
+        use amg, only: destroyAMG
         use utils, only: EChk
         implicit none
 
@@ -1627,7 +1643,7 @@ contains
             call KSPDestroy(adjointKSP, ierr)
             call EChk(ierr, __FILE__, __LINE__)
 
-            call destroyAGMG()
+            call destroyAMG()
 
             adjointPETScVarsAllocated = .False.
         end if

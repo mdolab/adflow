@@ -9,7 +9,8 @@ module adjointAPI
 contains
 #ifndef USE_COMPLEX
     subroutine computeMatrixFreeProductFwd(xvdot, extradot, wdot, bcDataValuesdot, useSpatial, &
-                    useState, famLists, bcDataNames, bcDataValues, bcDataFamLists, bcVarsEmpty, dwdot, funcsDot, fDot, &
+                                           useState, famLists, bcDataNames, bcDataValues, &
+                                           bcDataFamLists, bcVarsEmpty, dwdot, funcsDot, fDot, &
                                            costSize, fSize, nTime)
 
         ! This is the main matrix-free forward mode computation
@@ -869,7 +870,7 @@ contains
         use adjointUtils, only: mykspmonitor
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
         use communication
-        use agmg, only: setupShellPC, destroyShellPC, applyShellPC
+        use amg, only: setupShellPC, destroyShellPC, applyShellPC
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -901,7 +902,8 @@ contains
             ! linear system also serves as the preconditioning matrix. This
             ! is only valid if useMatrixFree is flase.
             if (useMatrixfreedRdw) then
-            call terminate("setupPETScKSP", "useMatrixFreedRdW option cannot be true when the approxPC option is False")
+                call terminate("setupPETScKSP", &
+                               "useMatrixFreedRdW option cannot be true when the approxPC option is False")
             end if
             call KSPSetOperators(adjointKSP, dRdWt, dRdWT, ierr)
             call EChk(ierr, __FILE__, __LINE__)
@@ -915,8 +917,8 @@ contains
                                   matrixOrdering, FillLevel, innerPreConIts)
         else if (PreCondType == 'mg') then
 
-            call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, &
-                                        adjointPCSide, overlap, outerPreconIts, matrixOrdering, fillLevel)
+            call setupStandardMultigrid(adjointKSP, ADjointSolverType, adjRestart, adjointPCSide, &
+                                        overlap, outerPreconIts, matrixOrdering, fillLevel, innerPreConIts)
         end if
 
         ! Setup monitor if necessary:
@@ -1093,7 +1095,7 @@ contains
             call allocDerivativeValues(1)
         end if
 
-        ! Zero all AD seesd.
+        ! Zero all AD seeds
         do nn = 1, nDom
             do sps = 1, nTimeIntervalsSpectral
                 call zeroADSeeds(nn, 1, sps)
@@ -1134,12 +1136,12 @@ contains
         use communication, only: adflow_comm_world, myid
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use flowVarRefState, only: nwf, nw, viscous
-        use inputADjoint, only: approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC
+        use inputADjoint, only: approxPC, frozenTurbulence, useMatrixFreedRdw, viscPC, adjAMGLevels, adjAMGNSmooth
         use stencils, only: N_visc_drdw, n_euler_drdw, visc_drdw_stencil, euler_drdw_stencil, &
                             visc_drdw_stencil, visc_pc_stencil, N_visc_PC, N_euler_PC, euler_PC_stencil
         use utils, only: EChk, setPointers
         use adjointUtils, only: myMatCreate, destroyPETScVars, statePreAllocation
-        use agmg, only: setupAGMG
+        use amg, only: setupAMG
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -1237,7 +1239,7 @@ contains
             deallocate (nnzDiagonal, nnzOffDiag)
         end if
 
-        call setupAGMG(drdwpret, nDimW / nState, nState)
+        call setupAMG(drdwpret, nDimW / nState, nState, adjAMGLevels, adjAMGNSmooth)
 
         ! Create the KSP Object
         call KSPCreate(ADFLOW_COMM_WORLD, adjointKSP, ierr)

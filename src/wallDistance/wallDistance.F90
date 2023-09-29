@@ -209,7 +209,7 @@ contains
                 call terminate("wallDistance", &
                                "Deallocation error for communication buffers")
         else
-            call deallocateTempMemory(.false.)
+            call deallocateTempMemory(.true.)
         end if
 
         ! There are two different searches we can do: the original code
@@ -308,7 +308,7 @@ contains
                 call terminate("wallDistance", &
                                "Memory allocation failure for comm buffers")
         else
-            call allocateTempMemory(.false.)
+            call allocateTempMemory(.true.)
         end if
 
         ! Synchronize the processors.
@@ -1860,7 +1860,8 @@ contains
 
                                 coor(4) = large
                                 call minDistancetreeSearchSinglePoint(walls(c)%ADT, coor, &
-                                                              intInfo2, uvw2, dummy, 0, BB, frontLeaves, frontLeavesNew)
+                                                                      intInfo2, uvw2, dummy, 0, BB, &
+                                                                      frontLeaves, frontLeavesNew)
                                 cellID2 = intInfo2(3)
 
                                 if (uvw2(4) < nearWallDist**2) then
