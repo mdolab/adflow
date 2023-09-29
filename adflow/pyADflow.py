@@ -1201,7 +1201,9 @@ class ADFLOW(AeroSolver):
             # By Default set all the blocks:
             cgnsBlocks = numpy.arange(1, self.adflow.cgnsgrid.cgnsndom + 1)
 
-        self.adflow.preprocessingapi.updaterotationrate(rotCenter, rotations, cgnsBlocks)
+        nBlocks = len(cgnsBlocks)
+
+        self.adflow.preprocessingapi.updaterotationrate(rotCenter, rotations, cgnsBlocks, nBlocks)
         self._updateVelInfo = True
 
     def checkPartitioning(self, nprocs):
@@ -3671,6 +3673,7 @@ class ADFLOW(AeroSolver):
         groupArray = numpy.zeros((len(groupNames), nMax + 1))
         for i in range(len(groupNames)):
             famList = self._getFamilyList(groupNames[i])
+            
             groupArray[i, 0] = len(famList)
             groupArray[i, 1 : 1 + len(famList)] = famList
 
@@ -4538,7 +4541,6 @@ class ADFLOW(AeroSolver):
 
         # Extract any possibly BC daa
         bcDataNames, bcDataValues, bcDataFamLists, bcDataFams, bcVarsEmpty = self._getBCDataFromAeroProblem(self.curAP)
-
         # Do actual Fortran call.
         xvbar, extrabar, wbar, bcdatavaluesbar = self.adflow.adjointapi.computematrixfreeproductbwd(
             resBar,
@@ -4555,7 +4557,6 @@ class ADFLOW(AeroSolver):
             bcDataFamLists,
             bcVarsEmpty,
         )
-
         # Assemble the possible returns the user has requested:
         returns = []
         if wDeriv:
@@ -6019,6 +6020,7 @@ class ADFLOW(AeroSolver):
             "mavgptot": self.adflow.constants.costfuncmavgptot,
             "aavgptot": self.adflow.constants.costfuncaavgptot,
             "aavgps": self.adflow.constants.costfuncaavgps,
+            "mavgrho": self.adflow.constants.costfuncmavgrho,
             "mavgttot": self.adflow.constants.costfuncmavgttot,
             "mavgps": self.adflow.constants.costfuncmavgps,
             "mavgmn": self.adflow.constants.costfuncmavgmn,

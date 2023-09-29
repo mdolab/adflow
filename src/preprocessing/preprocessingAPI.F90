@@ -4073,11 +4073,11 @@ contains
         groundlevel = 1
 
         do nn = 1, nblocks
-            cgnsDoms(nn)%rotRate = rotRate
-            cgnsDoms(nn)%rotCenter = rotCenter
+            cgnsDoms(blocks(nn))%rotRate = rotRate
+            cgnsDoms(blocks(nn))%rotCenter = rotCenter
 
-            do i = 1, cgnsDoms(nn)%nBocos
-                cgnsDoms(nn)%bocoInfo(i)%rotRate = rotRate
+            do i = 1, cgnsDoms(blocks(nn))%nBocos
+                cgnsDoms(blocks(nn))%bocoInfo(i)%rotRate = rotRate
             end do
         end do
 
