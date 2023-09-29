@@ -6289,18 +6289,18 @@ module cudaResidual
       istat = cudaDeviceSynchronize()
       call computeDSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-    !   call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
-    !   istat = cudaDeviceSynchronize()
+      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
+      istat = cudaDeviceSynchronize()
 
-    ! block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
-    ! grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
-    ! call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
-    ! istat = cudaDeviceSynchronize()
+    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
+    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
+    call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
+    istat = cudaDeviceSynchronize()
 
-    ! block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
-    ! grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
-    ! call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
-    ! istat = cudaDeviceSynchronize()
+    block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
+    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
+    call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
+    istat = cudaDeviceSynchronize()
 
     block_inv = dim3(inviscidCentralBSIPlane,inviscidCentralBSJPlane,1)
     grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlane)))
@@ -6308,8 +6308,8 @@ module cudaResidual
     istat = cudaDeviceSynchronize()
 
 
-    ! call inviscidCentralFlux<<<grid_size, block_size>>>
-    ! istat = cudaDeviceSynchronize()
+    call inviscidCentralFlux<<<grid_size, block_size>>>
+    istat = cudaDeviceSynchronize()
 
       ! inviscid diss flux scalar
     !   call inviscidDissFluxScalar<<<grid_size, block_size>>>
