@@ -3363,7 +3363,7 @@ module cudaResidual
                 wvy_k = cudaDoms(dom,sps)%w(i,j,k+1,ivy)
                 wvz_k = cudaDoms(dom,sps)%w(i,j,k+1,ivz)
                 wrhoE_k = cudaDoms(dom,sps)%w(i,j,k+1,irhoE)
-                P_k = (gammaConstant-one)*(wrhoE_k - half*(wvx_k*wvx_k+wvy_k*wvy_k+wvz_k*wvz_k)*wrho_k)
+                ! P_k = (gammaConstant-one)*(wrhoE_k - half*(wvx_k*wvx_k+wvy_k*wvy_k+wvz_k*wvz_k)*wrho_k)
 
             end if 
 
