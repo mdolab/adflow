@@ -3276,8 +3276,8 @@ module cudaResidual
 
     attributes(global) subroutine inviscidCentralFluxCellCentered_v4
         use precision, only: realType, intType
-        use constants, only: zero, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
-        use cudaInputPhysics, only: equationMode
+        use constants, only: zero, half, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
+        use cudaInputPhysics, only: equationMode,gammaConstant
         use cudaFlowVarRefState, only: nwf
         implicit none
         integer(kind = intType) :: i, j, k,l, tidx, tidy, tidz
@@ -3295,6 +3295,7 @@ module cudaResidual
         real(kind = realType) :: tmp
         real(kind = realType) :: vnp, vnm,porVel,porFlux, sFace,qsp, qsm, rqsp, rqsm
         real(kind = realType) :: t_dw(5)
+    
     
         dom = 1
         sps = 1
@@ -3328,7 +3329,7 @@ module cudaResidual
             wvy = cudaDoms(dom,sps)%w(i,j,k,ivy)
             wvz = cudaDoms(dom,sps)%w(i,j,k,ivz)
             wrhoE = cudaDoms(dom,sps)%w(i,j,k,irhoE)
-            P = cudaDoms(dom,sps)%P(i,j,k)
+            P = (gammaConstant-one)*(wrhoE - half*(wvx*wvx+wvy*wvy+wvz*wvz)*wrho)
 
             w_s(tidx,tidy,irho) = wrho
             w_s(tidx,tidy,ivx) = wvx
@@ -3362,7 +3363,8 @@ module cudaResidual
                 wvy_k = cudaDoms(dom,sps)%w(i,j,k+1,ivy)
                 wvz_k = cudaDoms(dom,sps)%w(i,j,k+1,ivz)
                 wrhoE_k = cudaDoms(dom,sps)%w(i,j,k+1,irhoE)
-                P_k = cudaDoms(dom,sps)%P(i,j,k+1)
+                P_k = (gammaConstant-one)*(wrhoE_k - half*(wvx_k*wvx_k+wvy_k*wvy_k+wvz_k*wvz_k)*wrho_k)
+
             end if 
 
             !if thread is on compute cell and not last in x direction
@@ -3499,15 +3501,10 @@ module cudaResidual
                 sy = cudaDoms(dom,sps)%sK(i, j, k, 2)
                 sz = cudaDoms(dom,sps)%sK(i, j, k, 3)
             end if 
-            !read self cell in k + 1 direction
+            !computepressure of  self cell in k + 1 direction
             if (i <= ie .and. j <= jl .and. k <= kl) then
                 !k state 
-                wrho_k = cudaDoms(dom,sps)%w(i,j,k+1,irho)
-                wvx_k = cudaDoms(dom,sps)%w(i,j,k+1,ivx)
-                wvy_k = cudaDoms(dom,sps)%w(i,j,k+1,ivy)
-                wvz_k = cudaDoms(dom,sps)%w(i,j,k+1,ivz)
-                wrhoE_k = cudaDoms(dom,sps)%w(i,j,k+1,irhoE)
-                P_k = cudaDoms(dom,sps)%P(i,j,k+1)
+                P_k = (gammaConstant-one)*(wrhoE_k - half*(wvx_k*wvx_k+wvy_k*wvy_k+wvz_k*wvz_k)*wrho_k)
             end if 
 
             if (i <= il .and. j <= jl .and. k  <= kl .and. tidx < blockdim%x) then
@@ -3585,25 +3582,31 @@ module cudaResidual
                     tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,imy), dw_s(tidx,tidy+1,imy))
                     tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,imz), dw_s(tidx,tidy+1,imz))
                     tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,irhoE), dw_s(tidx,tidy+1,irhoE))
+                    dw_s(tidx,tidy+1,:) = zero
+
 
                 end if       
                 !accumulate to dw 
                 !accumulate from shared dw and t_dw into global dw
                 dwLoc = dw_s(tidx,tidy,irho) + t_dw(irho)
                 tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,irho), dwLoc)
+                dw_s(tidx,tidy,irho)  = zero
 
                 dwLoc = dw_s(tidx,tidy,imx) + t_dw(imx)
                 tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,imx), dwLoc)
-                
+                dw_s(tidx,tidy,imx) = zero
+
                 dwLoc = dw_s(tidx,tidy,imy) + t_dw(imy)
                 tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,imy), dwLoc)
-                
+                dw_s(tidx,tidy,imy)  = zero
+
                 dwLoc = dw_s(tidx,tidy,imz) + t_dw(imz)
                 tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,imz), dwLoc)
-                
+                dw_s(tidx,tidy,imz) = zero
+
                 dwLoc = dw_s(tidx,tidy,irhoE) + t_dw(irhoE)
                 tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,irhoE), dwLoc)
-
+                dw_s(tidx,tidy,irhoE) = zero
                 
                 
                 t_dw(irho) = -fs(irho)
@@ -3619,16 +3622,13 @@ module cudaResidual
             end if
             !sync after doing all that
             !set dw_s to zero
-            dw_s(tidx,tidy,:) = zero
             wrho = wrho_k
             wvx = wvx_k
             wvy = wvy_k
             wvz = wvz_k 
             wrhoE = wrhoE_k
             P = P_k
-            if (j == jmax) then
-                dw_s(tidx,tidy+1,:) = zero
-            end if      
+  
             call syncthreads()                
             !add 1 to k
             
