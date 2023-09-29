@@ -231,6 +231,8 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tempd
     integer :: branch
     if (associated(scratch)) then
+      call pushreal8array(scratch, size(scratch, 1)*size(scratch, 2)*&
+&                   size(scratch, 3)*size(scratch, 4))
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
     else
@@ -311,6 +313,8 @@ myIntPtr = myIntPtr + 1
 &       k-1, itu2) - c20*w(i, j, k, itu2) + c2p*w(i, j, k+1, itu2)
     end do
     if (associated(scratch)) then
+      call pushreal8array(scratch, size(scratch, 1)*size(scratch, 2)*&
+&                   size(scratch, 3)*size(scratch, 4))
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
     else
@@ -442,7 +446,9 @@ myIntPtr = myIntPtr + 1
       c1p = ttp*(mulp+muep)*rhoi
       c10 = c1m + c1p
 ! and the omega term.
+      call pushreal8(muem)
       muem = half*(rsstsigwm1*rev(i-1, j, k)+rsstsigw*rev(i, j, k))
+      call pushreal8(muep)
       muep = half*(rsstsigwp1*rev(i+1, j, k)+rsstsigw*rev(i, j, k))
       c2m = ttm*(mulm+muem)*rhoi
       c2p = ttp*(mulp+muep)*rhoi
@@ -475,11 +481,13 @@ myIntPtr = myIntPtr + 1
       mulmd = rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
+      call popreal8(muep)
       tempd = half*muepd
       rsstsigwp1d = rev(i+1, j, k)*tempd
       revd(i+1, j, k) = revd(i+1, j, k) + rsstsigwp1*tempd
       rsstsigwd = rev(i, j, k)*tempd
       revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
+      call popreal8(muem)
       tempd = half*muemd
       rsstsigwm1d = rev(i-1, j, k)*tempd
       revd(i-1, j, k) = revd(i-1, j, k) + rsstsigwm1*tempd
@@ -578,7 +586,9 @@ branch = myIntStack(myIntPtr)
       c1p = ttp*(mulp+muep)*rhoi
       c10 = c1m + c1p
 ! and the omega term.
+      call pushreal8(muem)
       muem = half*(rsstsigwm1*rev(i, j-1, k)+rsstsigw*rev(i, j, k))
+      call pushreal8(muep)
       muep = half*(rsstsigwp1*rev(i, j+1, k)+rsstsigw*rev(i, j, k))
       c2m = ttm*(mulm+muem)*rhoi
       c2p = ttp*(mulp+muep)*rhoi
@@ -611,11 +621,13 @@ branch = myIntStack(myIntPtr)
       mulmd = rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
+      call popreal8(muep)
       tempd = half*muepd
       rsstsigwp1d = rev(i, j+1, k)*tempd
       revd(i, j+1, k) = revd(i, j+1, k) + rsstsigwp1*tempd
       rsstsigwd = rev(i, j, k)*tempd
       revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
+      call popreal8(muem)
       tempd = half*muemd
       rsstsigwm1d = rev(i, j-1, k)*tempd
       revd(i, j-1, k) = revd(i, j-1, k) + rsstsigwm1*tempd
@@ -715,7 +727,9 @@ branch = myIntStack(myIntPtr)
       c1p = ttp*(mulp+muep)*rhoi
       c10 = c1m + c1p
 ! and the omega term.
+      call pushreal8(muem)
       muem = half*(rsstsigwm1*rev(i, j, k-1)+rsstsigw*rev(i, j, k))
+      call pushreal8(muep)
       muep = half*(rsstsigwp1*rev(i, j, k+1)+rsstsigw*rev(i, j, k))
       c2m = ttm*(mulm+muem)*rhoi
       c2p = ttp*(mulp+muep)*rhoi
@@ -748,11 +762,13 @@ branch = myIntStack(myIntPtr)
       mulmd = rhoi*tempd
       muemd = rhoi*tempd
       rhoid = rhoid + (mulm+muem)*tempd
+      call popreal8(muep)
       tempd = half*muepd
       rsstsigwp1d = rev(i, j, k+1)*tempd
       revd(i, j, k+1) = revd(i, j, k+1) + rsstsigwp1*tempd
       rsstsigwd = rev(i, j, k)*tempd
       revd(i, j, k) = revd(i, j, k) + rsstsigw*tempd
+      call popreal8(muem)
       tempd = half*muemd
       rsstsigwm1d = rev(i, j, k-1)*tempd
       revd(i, j, k-1) = revd(i, j, k-1) + rsstsigwm1*tempd
@@ -1214,7 +1230,11 @@ bocos:do nn=1,nbocos
         do k=ad_from0,kcend(nn)
           ad_from = jcbeg(nn)
           j = jcend(nn) + 1
+          call pushinteger4(j - 1)
+          call pushinteger4(ad_from)
         end do
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from0)
         call pushcontrol3b(5)
       case (imax) 
         ad_from2 = kcbeg(nn)
@@ -1222,7 +1242,11 @@ bocos:do nn=1,nbocos
         do k=ad_from2,kcend(nn)
           ad_from1 = jcbeg(nn)
           j = jcend(nn) + 1
+          call pushinteger4(j - 1)
+          call pushinteger4(ad_from1)
         end do
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from2)
         call pushcontrol3b(4)
       case (jmin) 
         ad_from4 = kcbeg(nn)
@@ -1230,7 +1254,11 @@ bocos:do nn=1,nbocos
         do k=ad_from4,kcend(nn)
           ad_from3 = icbeg(nn)
           i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from3)
         end do
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from4)
         call pushcontrol3b(3)
       case (jmax) 
         ad_from6 = kcbeg(nn)
@@ -1238,7 +1266,11 @@ bocos:do nn=1,nbocos
         do k=ad_from6,kcend(nn)
           ad_from5 = icbeg(nn)
           i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from5)
         end do
+        call pushinteger4(k - 1)
+        call pushinteger4(ad_from6)
         call pushcontrol3b(2)
       case (kmin) 
         ad_from8 = jcbeg(nn)
@@ -1246,7 +1278,11 @@ bocos:do nn=1,nbocos
         do j=ad_from8,jcend(nn)
           ad_from7 = icbeg(nn)
           i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from7)
         end do
+        call pushinteger4(j - 1)
+        call pushinteger4(ad_from8)
         call pushcontrol3b(1)
       case (kmax) 
         ad_from10 = jcbeg(nn)
@@ -1254,7 +1290,11 @@ bocos:do nn=1,nbocos
         do j=ad_from10,jcend(nn)
           ad_from9 = icbeg(nn)
           i = icend(nn) + 1
+          call pushinteger4(i - 1)
+          call pushinteger4(ad_from9)
         end do
+        call pushinteger4(j - 1)
+        call pushinteger4(ad_from10)
         call pushcontrol3b(0)
       case default
         call pushcontrol3b(6)
@@ -1264,7 +1304,11 @@ bocos:do nn=1,nbocos
       call popcontrol3b(branch)
       if (branch .lt. 3) then
         if (branch .eq. 0) then
+          call popinteger4(ad_from10)
+          call popinteger4(ad_to10)
           do j=ad_to10,ad_from10,-1
+            call popinteger4(ad_from9)
+            call popinteger4(ad_to9)
             do i=ad_to9,ad_from9,-1
               tmpd1 = scratchd(i, j, ke, if1sst)
               scratchd(i, j, ke, if1sst) = 0.0_8
@@ -1273,7 +1317,11 @@ bocos:do nn=1,nbocos
             end do
           end do
         else if (branch .eq. 1) then
+          call popinteger4(ad_from8)
+          call popinteger4(ad_to8)
           do j=ad_to8,ad_from8,-1
+            call popinteger4(ad_from7)
+            call popinteger4(ad_to7)
             do i=ad_to7,ad_from7,-1
               scratchd(i, j, 2, if1sst) = scratchd(i, j, 2, if1sst) + &
 &               scratchd(i, j, 1, if1sst)
@@ -1281,7 +1329,11 @@ bocos:do nn=1,nbocos
             end do
           end do
         else
+          call popinteger4(ad_from6)
+          call popinteger4(ad_to6)
           do k=ad_to6,ad_from6,-1
+            call popinteger4(ad_from5)
+            call popinteger4(ad_to5)
             do i=ad_to5,ad_from5,-1
               tmpd0 = scratchd(i, je, k, if1sst)
               scratchd(i, je, k, if1sst) = 0.0_8
@@ -1292,7 +1344,11 @@ bocos:do nn=1,nbocos
         end if
       else if (branch .lt. 5) then
         if (branch .eq. 3) then
+          call popinteger4(ad_from4)
+          call popinteger4(ad_to4)
           do k=ad_to4,ad_from4,-1
+            call popinteger4(ad_from3)
+            call popinteger4(ad_to3)
             do i=ad_to3,ad_from3,-1
               scratchd(i, 2, k, if1sst) = scratchd(i, 2, k, if1sst) + &
 &               scratchd(i, 1, k, if1sst)
@@ -1300,7 +1356,11 @@ bocos:do nn=1,nbocos
             end do
           end do
         else
+          call popinteger4(ad_from2)
+          call popinteger4(ad_to2)
           do k=ad_to2,ad_from2,-1
+            call popinteger4(ad_from1)
+            call popinteger4(ad_to1)
             do j=ad_to1,ad_from1,-1
               tmpd = scratchd(ie, j, k, if1sst)
               scratchd(ie, j, k, if1sst) = 0.0_8
@@ -1310,7 +1370,11 @@ bocos:do nn=1,nbocos
           end do
         end if
       else if (branch .eq. 5) then
+        call popinteger4(ad_from0)
+        call popinteger4(ad_to0)
         do k=ad_to0,ad_from0,-1
+          call popinteger4(ad_from)
+          call popinteger4(ad_to)
           do j=ad_to,ad_from,-1
             scratchd(2, j, k, if1sst) = scratchd(2, j, k, if1sst) + &
 &             scratchd(1, j, k, if1sst)
