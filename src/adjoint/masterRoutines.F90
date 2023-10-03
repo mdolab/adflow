@@ -610,7 +610,7 @@ contains
         use inputAdjoint, only: viscPC
         use fluxes, only: viscousFlux
         use flowVarRefState, only: nw, nwf, viscous, pInfDimd, rhoInfDimd, TinfDimd
-        use blockPointers, only: nDom, il, jl, kl, wd, xd, dw, dwd, d2walld, revd
+        use blockPointers, only: nDom, il, jl, kl, wd, xd, dw, dwd, revd
         use inputPhysics, only: pointRefd, alphad, betad, equations, machCoefd, &
                                 machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
         use inputDiscretization, only: lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -841,11 +841,6 @@ contains
                 call metric_block_b
                 call volume_block_b
 
-                d2walld = 0
-                ! d2walld(2:il, 2:jl, 2:kl) = -1
-                d2walld(4, 4, 2:kl) = -1
-
-
             end do domainLoop2
 
         end do spsLoop2
@@ -882,9 +877,6 @@ contains
         call exchanged2Wall_b(1)
         call exchangecoor_b(1)
         do sps = 1, nTimeIntervalsSpectral
-
-
-            print *, 'd2wall_b', d2walld(4, 4, 0:kl+2)
 
             ! Get the pointers from the petsc vector for the wall
             ! surface and it's accumulation. Only necessary for wall
