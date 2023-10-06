@@ -231,6 +231,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_rans_SST.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
     ]
 )

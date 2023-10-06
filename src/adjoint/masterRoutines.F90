@@ -95,7 +95,10 @@ contains
 
             ! Now exchange the coordinates (fine level only)
             call exchangecoor(1)
-            call exchanged2Wall(1)
+
+            if (equations == RANSEquations .and. useApproxWallDistance) then
+                call exchanged2Wall(1)
+            end if
 
             do sps = 1, nTimeIntervalsSpectral
                 ! Update overset connectivity if necessary
@@ -403,9 +406,10 @@ contains
         ! halo nodes and exchange coor corrects them.
         call exchangecoor_d(1)
         call exchangecoor(1)
-        call exchanged2Wall_d(1)
-        call exchanged2Wall(1)
 
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            call exchanged2Wall_d(1)
+        end if
 
         do sps = 1, nTimeIntervalsSpectral
             ! Update overset connectivity if necessary
@@ -874,7 +878,10 @@ contains
             end if
         end do
         ! Now the adjoint of the coordinate exhcange
-        call exchanged2Wall_b(1)
+
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            call exchanged2Wall_b(1)
+        end if
         call exchangecoor_b(1)
         do sps = 1, nTimeIntervalsSpectral
 

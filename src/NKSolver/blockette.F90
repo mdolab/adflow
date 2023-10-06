@@ -190,7 +190,10 @@ contains
 
             ! Now exchange the coordinates (fine level only)
             call exchangecoor(1)
-            call exchanged2Wall(1)
+
+            if (equations == RANSEquations .and. useApproxWallDistance) then
+                call exchanged2Wall(1)
+            end if
 
             do sps = 1, nTimeIntervalsSpectral
                 ! Update overset connectivity if necessary

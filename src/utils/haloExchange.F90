@@ -2648,6 +2648,7 @@ contains
         use communication
         use inputTimeSpectral
         use utils, only: EChk
+        implicit none
         !
         !      Subroutine arguments.
         !

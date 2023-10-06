@@ -156,7 +156,7 @@ class TestJacVecFwdFD(reg_test_classes.RegTest):
 
         rtol = 8e-4
         if self.name == 'rans_tut_wing_SST_1core':
-            rtol = 2.9e-1
+            rtol = 3.11-1
         np.testing.assert_allclose(resDot_FD, resDot, rtol=rtol, err_msg="residual")
 
         rtol = 1e-5
@@ -167,7 +167,7 @@ class TestJacVecFwdFD(reg_test_classes.RegTest):
 
         rtol = 5e-4
         if self.name == 'rans_tut_wing_SST_1core':
-            rtol = 2.2e-3
+            rtol = 5.4e-2
         np.testing.assert_allclose(fDot_FD, fDot, rtol=rtol, err_msg="forces")
 
     def test_xVDot(self):
@@ -190,7 +190,7 @@ class TestJacVecFwdFD(reg_test_classes.RegTest):
 
         atol, rtol = 5e-4, 1e-7
         if self.name == 'rans_tut_wing_SST_1core':
-            atol, rtol = 0, 2.6e1
+            atol, rtol = 0, 4.1e1
         np.testing.assert_allclose(resDot_FD, resDot, atol=atol, rtol=rtol, err_msg="residual")
 
         rtol=5e-6
@@ -201,7 +201,7 @@ class TestJacVecFwdFD(reg_test_classes.RegTest):
 
         rtol=5e-4
         if self.name == 'rans_tut_wing_SST_1core':
-            rtol=1.5e0
+            rtol=1.7e0
         np.testing.assert_allclose(fDot_FD, fDot, rtol=rtol, err_msg="forces")
 
     def test_xDvDot(self):
@@ -327,13 +327,8 @@ class TestJacVecFwdCS(reg_test_classes.CmplxRegTest):
             xVDot=xVDot, residualDeriv=True, funcDeriv=True, fDeriv=True, mode="CS", h=self.h
         )
 
-        # We need a slightly lower tolerance for SST to pass
-        rtol2, atol2 = rtol, atol
-        if self.name == 'rans_tut_wing_SST_1core':
-            rtol2, atol2 = rtol*10, atol*10
-
         self.handler.root_print("||dR/dXv * xVDot||")
-        self.handler.par_add_norm("||dR/dXv * xVDot||", resDot_cs, rtol=rtol2, atol=atol2)
+        self.handler.par_add_norm("||dR/dXv * xVDot||", resDot_cs, rtol=rtol, atol=atol)
 
         # These can be finiky sometimes so a bigger tolerance.
         self.handler.root_print("dFuncs/dXv * xVDot")

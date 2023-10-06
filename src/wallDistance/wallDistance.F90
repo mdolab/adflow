@@ -1528,6 +1528,7 @@ contains
         use inputPhysics, only: equations
         use iteration, only: groundLevel
         use haloExchange, only: exchanged2Wall
+        use inputPhysics, only: wallDistanceNeeded
         implicit none
         !
         !      Local variables.
@@ -1543,7 +1544,9 @@ contains
         nLevels = ubound(flowDoms, 2)
         do nn = groundLevel, nLevels
             call computeWallDistance(nn, .false.)
-            call exchanged2Wall(nn)
+            if (wallDistanceNeeded) then
+                call exchanged2Wall(nn)
+            end if
         end do
 
     end subroutine updateWallDistanceAllLevels
