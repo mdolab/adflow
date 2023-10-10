@@ -173,8 +173,6 @@ contains
         use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder
         use sst_fast_b, only: SSTSource_fast_b, SSTViscous_fast_b, SSTResScale_fast_b, f1SST_fast_b, qq
 
-        ! use sst_b, only: SSTSource_b, SSTViscous_b, SSTResScale_b, f1SST_b
-
         implicit none
 
         ! We need to recompute the production term because it is saved in scratch(:,:,:,iprod). This is overwritten when computing
@@ -192,7 +190,6 @@ contains
 
         call SSTResScale_fast_b
         call SSTViscous_fast_b
-        ! call SSTViscous_b
         !call unsteadyTurbTerm_fast_b(2_intType, 2_intType, itu1-1, qq)
         call turbAdvection_fast_b(2_intType, 2_intType, itu1 - 1, qq)
         call SSTSource_fast_b
@@ -208,9 +205,8 @@ contains
             call prodKatoLaunder_fast_b(2, il, 2, jl, 2, kl)
         end select
 
-         call f1SST_fast_b
-         ! call f1SST_b
-         call kwCDterm_fast_b
+        call f1SST_fast_b
+        call kwCDterm_fast_b
 
     end subroutine SST_block_residuals_fast_b
 #endif

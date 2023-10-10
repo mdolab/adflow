@@ -14,10 +14,10 @@ module sst_fast_b
 
 contains
 !  differentiation of sstsource in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *w *scratch
-!   with respect to varying inputs: *w *scratch
-!   rw status of diff variables: *w:incr *scratch:in-out
-!   plus diff mem management of: w:in scratch:in
+!   gradient     of useful results: *rev *w *scratch
+!   with respect to varying inputs: *rev *w *scratch
+!   rw status of diff variables: *rev:incr *w:incr *scratch:in-out
+!   plus diff mem management of: rev:in w:in scratch:in
   subroutine sstsource_fast_b()
 !
 !       sstsolve solves the turbulent transport equations for
@@ -114,6 +114,7 @@ branch = myIntStack(myIntPtr)
 &       *sdkd
       wd(i, j, k, itu2) = wd(i, j, k, itu2) + w(i, j, k, itu1)*rsstbetas&
 &       *sdkd
+      revd(i, j, k) = revd(i, j, k) + ss*rhoi*spkd
       tempd = rev(i, j, k)*spkd
       ssd = ssd + rhoi*tempd
       rhoid = ss*tempd

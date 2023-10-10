@@ -325,8 +325,8 @@ sa%saViscous(w, rlv, scratch) > \
 \
 sa%saResScale(scratch) > (dw) \
 \
-SST%SSTSource(w, scratch) > \
-             (w, scratch) \
+SST%SSTSource(w, scratch, rev) > \
+             (w, scratch, rev) \
 \
 SST%SSTViscous(w, rlv, rev, scratch) > \
               (w, rlv, rev, scratch) \
