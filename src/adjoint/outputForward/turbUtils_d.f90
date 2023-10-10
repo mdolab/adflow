@@ -3112,7 +3112,10 @@ nadvloopspectral:do ii=1,nadv
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, nn
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: kx, ky, kz, wwx, wwy, wwz
     real(kind=realtype) :: kxd, kyd, kzd, wwxd, wwyd, wwzd
     real(kind=realtype) :: lnwip1, lnwim1, lnwjp1, lnwjm1
@@ -3149,9 +3152,32 @@ nadvloopspectral:do ii=1,nadv
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for k and omega must be stored.
 ! in the current approach no extra memory is needed.
-    do k=1,ke
-      do j=1,je
-        do i=1,ie
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
+    do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ibeg = 2
+      case (imax) 
+        iend = il
+      case (jmin) 
+        jbeg = 2
+      case (jmax) 
+        jend = jl
+      case (kmin) 
+        kbeg = 2
+      case (kmax) 
+        kend = kl
+      end select
+    end do
+! compute the blending function f1 for all owned cells.
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
 ! compute the gradient of k in the cell center. use is made
 ! of the fact that the surrounding normals sum up to zero,
 ! such that the cell i,j,k does not give a contribution.
@@ -3338,7 +3364,10 @@ nadvloopspectral:do ii=1,nadv
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, nn
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: kx, ky, kz, wwx, wwy, wwz
     real(kind=realtype) :: lnwip1, lnwim1, lnwjp1, lnwjm1
     real(kind=realtype) :: lnwkp1, lnwkm1
@@ -3354,9 +3383,32 @@ nadvloopspectral:do ii=1,nadv
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for k and omega must be stored.
 ! in the current approach no extra memory is needed.
-    do k=1,ke
-      do j=1,je
-        do i=1,ie
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
+    do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ibeg = 2
+      case (imax) 
+        iend = il
+      case (jmin) 
+        jbeg = 2
+      case (jmax) 
+        jend = jl
+      case (kmin) 
+        kbeg = 2
+      case (kmax) 
+        kend = kl
+      end select
+    end do
+! compute the blending function f1 for all owned cells.
+    do k=kbeg,kend
+      do j=jbeg,jend
+        do i=ibeg,iend
 ! compute the gradient of k in the cell center. use is made
 ! of the fact that the surrounding normals sum up to zero,
 ! such that the cell i,j,k does not give a contribution.

@@ -2631,7 +2631,10 @@ nadvloopspectral:do ii=1,nadv
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, nn
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: kx, ky, kz, wwx, wwy, wwz
     real(kind=realtype) :: kxd, kyd, kzd, wwxd, wwyd, wwzd
     real(kind=realtype) :: lnwip1, lnwim1, lnwjp1, lnwjm1
@@ -2653,13 +2656,51 @@ nadvloopspectral:do ii=1,nadv
     real(kind=realtype) :: abs4d
     real(kind=realtype) :: abs5
     real(kind=realtype) :: abs5d
-    real(kind=realtype) :: tempd
     integer :: branch
+    real(kind=realtype) :: tempd
+! loop over the cell centers of the given block. it may be more
+! efficient to loop over the faces and to scatter the gradient,
+! but in that case the gradients for k and omega must be stored.
+! in the current approach no extra memory is needed.
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
+    do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        call pushcontrol3b(5)
+        ibeg = 2
+      case (imax) 
+        call pushcontrol3b(4)
+        iend = il
+      case (jmin) 
+        call pushcontrol3b(3)
+        jbeg = 2
+      case (jmax) 
+        call pushcontrol3b(2)
+        jend = jl
+      case (kmin) 
+        call pushcontrol3b(1)
+        kbeg = 2
+      case (kmax) 
+        call pushcontrol3b(0)
+        kend = kl
+      case default
+        call pushcontrol3b(6)
+      end select
+    end do
+! compute the blending function f1 for all owned cells.
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
 !$bwd-of ii-loop 
-    do ii=0,ie*je*ke-1
-      i = mod(ii, ie) + 1
-      j = mod(ii/ie, je) + 1
-      k = ii/(ie*je) + 1
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
 ! compute the gradient of k in the cell center. use is made
 ! of the fact that the surrounding normals sum up to zero,
 ! such that the cell i,j,k does not give a contribution.
@@ -2832,6 +2873,9 @@ branch = myIntStack(myIntPtr)
       wd(i+1, j, k, itu1) = wd(i+1, j, k, itu1) + si(i, j, k, 3)*kzd + &
 &       si(i, j, k, 2)*kyd + si(i, j, k, 1)*kxd
     end do
+    do nn=nbocos,1,-1
+      call popcontrol3b(branch)
+    end do
   end subroutine kwcdterm_fast_b
 
   subroutine kwcdterm()
@@ -2847,7 +2891,10 @@ branch = myIntStack(myIntPtr)
 !
 !      local variables.
 !
-    integer(kind=inttype) :: i, j, k, ii
+    integer(kind=inttype) :: i, j, k, ii, nn
+    integer(kind=inttype) :: isize, ibeg, iend
+    integer(kind=inttype) :: jsize, jbeg, jend
+    integer(kind=inttype) :: ksize, kbeg, kend
     real(kind=realtype) :: kx, ky, kz, wwx, wwy, wwz
     real(kind=realtype) :: lnwip1, lnwim1, lnwjp1, lnwjm1
     real(kind=realtype) :: lnwkp1, lnwkm1
@@ -2860,15 +2907,41 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: abs3
     real(kind=realtype) :: abs4
     real(kind=realtype) :: abs5
-!$ad ii-loop
 ! loop over the cell centers of the given block. it may be more
 ! efficient to loop over the faces and to scatter the gradient,
 ! but in that case the gradients for k and omega must be stored.
 ! in the current approach no extra memory is needed.
-    do ii=0,ie*je*ke-1
-      i = mod(ii, ie) + 1
-      j = mod(ii/ie, je) + 1
-      k = ii/(ie*je) + 1
+    ibeg = 1
+    jbeg = 1
+    kbeg = 1
+    iend = ie
+    jend = je
+    kend = ke
+    do nn=1,nbocos
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        ibeg = 2
+      case (imax) 
+        iend = il
+      case (jmin) 
+        jbeg = 2
+      case (jmax) 
+        jend = jl
+      case (kmin) 
+        kbeg = 2
+      case (kmax) 
+        kend = kl
+      end select
+    end do
+! compute the blending function f1 for all owned cells.
+    isize = iend - ibeg + 1
+    jsize = jend - jbeg + 1
+    ksize = kend - kbeg + 1
+!$ad ii-loop
+    do ii=0,isize*jsize*ksize-1
+      i = mod(ii, isize) + ibeg
+      j = mod(ii/isize, jsize) + jbeg
+      k = ii/(isize*jsize) + kbeg
 ! compute the gradient of k in the cell center. use is made
 ! of the fact that the surrounding normals sum up to zero,
 ! such that the cell i,j,k does not give a contribution.

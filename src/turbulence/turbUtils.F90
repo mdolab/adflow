@@ -1744,7 +1744,10 @@ contains
         !
         !      Local variables.
         !
-        integer(kind=intType) :: i, j, k, ii 
+        integer(kind=intType) :: i, j, k, ii, nn
+        integer(kind=intType) :: iSize, iBeg, iEnd
+        integer(kind=intType) :: jSize, jBeg, jEnd
+        integer(kind=intType) :: kSize, kBeg, kEnd
         real(kind=realType) :: kx, ky, kz, wwx, wwy, wwz
         real(kind=realType) :: lnwip1, lnwim1, lnwjp1, lnwjm1
         real(kind=realType) :: lnwkp1, lnwkm1
@@ -1755,16 +1758,50 @@ contains
         ! In the current approach no extra memory is needed.
 
 
+        iBeg = 1; jBeg = 1; kBeg = 1
+        iEnd = ie; jEnd = je; kEnd = ke
+
+        do nn = 1, nBocos
+
+            select case (BCFaceID(nn))
+
+            case (iMin)
+                iBeg = 2
+
+            case (iMax)
+                iEnd = il
+
+            case (jMin)
+                jBeg = 2
+
+            case (jMax)
+                jEnd = jl
+
+            case (kMin)
+                kBeg = 2
+
+            case (kMax)
+                kEnd = kl
+
+            end select
+        end do
+
+
+        ! Compute the blending function f1 for all owned cells.
 #ifdef TAPENADE_REVERSE
+        iSize = (iEnd - iBeg) + 1
+        jSize = (jEnd - jBeg) + 1
+        kSize = (kEnd - kBeg) + 1
+
         !$AD II-LOOP
-        do ii = 0, ie * je * ke - 1
-            i = mod(ii, ie) + 1
-            j = mod(ii / ie, je) + 1
-            k = ii / ((ie * je)) + 1
+        do ii = 0, iSize * jSize * kSize - 1
+            i = mod(ii, iSize) + iBeg
+            j = mod(ii / iSize, jSize) + jBeg
+            k = ii / ((iSize * jSize)) + kBeg
 #else
-        do k = 1, ke
-            do j = 1, je
-                do i = 1, ie
+        do k = kBeg, kEnd
+            do j = jBeg, jEnd
+                do i = iBeg, iEnd
 #endif
 
                     ! Compute the gradient of k in the cell center. Use is made
