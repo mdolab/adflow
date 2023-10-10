@@ -123,9 +123,23 @@ contains
         use inputPhysics, only: turbProd
         use turbutils_b, only: turbAdvection_b, kwCDterm_b, prodSmag2_b, &
                                prodWmag2_b, prodKatolaunder_b
+        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder
         use sst_b, only: SSTSource_b, SSTViscous_b, SSTResScale_b, f1SST_b, qq
 
         implicit none
+
+        ! We need to recompute the production term because it is saved in scratch(:,:,:,iprod). This is overwritten when computing
+        ! the eddyviscosity. 
+        select case (turbProd)
+        case (strain)
+            call prodSmag2(2, il, 2, jl, 2, kl)
+
+        case (vorticity)
+            call prodWmag2(2, il, 2, jl, 2, kl)
+
+        case (katoLaunder)
+            call prodKatoLaunder(2, il, 2, jl, 2, kl)
+        end select
 
         call SSTResScale_b
         call SSTViscous_b
@@ -156,11 +170,25 @@ contains
         use inputPhysics, only: turbProd
         use turbutils_fast_b, only: turbAdvection_fast_b, kwCDterm_fast_b, prodSmag2_fast_b, &
                                prodWmag2_fast_b, prodKatolaunder_fast_b
+        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder
         use sst_fast_b, only: SSTSource_fast_b, SSTViscous_fast_b, SSTResScale_fast_b, f1SST_fast_b, qq
 
         ! use sst_b, only: SSTSource_b, SSTViscous_b, SSTResScale_b, f1SST_b
 
         implicit none
+
+        ! We need to recompute the production term because it is saved in scratch(:,:,:,iprod). This is overwritten when computing
+        ! the eddyviscosity. 
+        select case (turbProd)
+        case (strain)
+            call prodSmag2(2, il, 2, jl, 2, kl)
+
+        case (vorticity)
+            call prodWmag2(2, il, 2, jl, 2, kl)
+
+        case (katoLaunder)
+            call prodKatoLaunder(2, il, 2, jl, 2, kl)
+        end select
 
         call SSTResScale_fast_b
         call SSTViscous_fast_b

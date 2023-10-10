@@ -2151,7 +2151,8 @@ contains
                 nw = 7
                 nt2 = 7
 
-                kPresent = .true.
+                ! revert this!!!
+                ! kPresent = .true.
                 eddyModel = .true.
                 if (wallFunctions) call initCurveFitDataSST
 
