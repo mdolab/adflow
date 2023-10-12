@@ -65,7 +65,7 @@ test_params = [
         "name": "different_levels_and_iterations",
         "options": {
             # AMG levels
-            "ANKAMGLevels": 3,
+            "ANKAMGLevels": 2,
             "NKAMGLevels": 2,
             "adjointAMGLevels": 1,
             # Outer iterations
