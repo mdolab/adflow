@@ -655,8 +655,8 @@ contains
     logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: gm1, v2, factk
-    real(kind=realtype) :: v2d
+    real(kind=realtype) :: gm1, v2, factk, pp
+    real(kind=realtype) :: v2d, ppd
     integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
 &   , kend, ksize
     intrinsic max
@@ -693,14 +693,15 @@ contains
 &           temp1*wd(i, j, k, ivz)
           v2 = temp*temp + temp0*temp0 + temp1*temp1
           temp1 = w(i, j, k, irho)
-          pd(i, j, k) = gm1*(wd(i, j, k, irhoe)-half*(v2*wd(i, j, k, &
-&           irho)+temp1*v2d))
-          p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*(temp1*v2))
-          if (p(i, j, k) .lt. 1.e-4_realtype*pinfcorr) then
+          ppd = gm1*(wd(i, j, k, irhoe)-half*(v2*wd(i, j, k, irho)+temp1&
+&           *v2d))
+          pp = gm1*(w(i, j, k, irhoe)-half*(temp1*v2))
+          if (pp .lt. 1.e-4_realtype*pinfcorr) then
             pd(i, j, k) = 1.e-4_realtype*pinfcorrd
             p(i, j, k) = 1.e-4_realtype*pinfcorr
           else
-            p(i, j, k) = p(i, j, k)
+            pd(i, j, k) = ppd
+            p(i, j, k) = pp
           end if
         end do
       end do
@@ -734,7 +735,7 @@ contains
     logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: gm1, v2, factk
+    real(kind=realtype) :: gm1, v2, factk, pp
     integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
 &   , kend, ksize
     intrinsic max
@@ -761,11 +762,11 @@ contains
         do i=ibeg,iend
           v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)&
 &           **2
-          p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
-          if (p(i, j, k) .lt. 1.e-4_realtype*pinfcorr) then
+          pp = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
+          if (pp .lt. 1.e-4_realtype*pinfcorr) then
             p(i, j, k) = 1.e-4_realtype*pinfcorr
           else
-            p(i, j, k) = p(i, j, k)
+            p(i, j, k) = pp
           end if
         end do
       end do

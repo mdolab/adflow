@@ -881,7 +881,7 @@ contains
 
         ! Local Variables
         integer(kind=intType) :: i, j, k, ii
-        real(kind=realType) :: gm1, v2, factK
+        real(kind=realType) :: gm1, v2, factK, pp
         integer(kind=intType) :: iBeg, iEnd, iSize, jBeg, jEnd, jSize, kBeg, kEnd, kSize
         ! Compute the pressures
         gm1 = gammaConstant - one
@@ -919,8 +919,8 @@ contains
                     do i = iBeg, iEnd
 #endif
                         v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
-                        p(i, j, k) = gm1 * (w(i, j, k, irhoE) - half * w(i, j, k, irho) * v2)
-                        p(i, j, k) = max(p(i, j, k), 1.e-4_realType * pInfCorr)
+                        pp = gm1 * (w(i, j, k, irhoE) - half * w(i, j, k, irho) * v2)
+                        p(i, j, k) = max(pp, 1.e-4_realType * pInfCorr)
 
 #ifdef TAPENADE_REVERSE
                     end do
