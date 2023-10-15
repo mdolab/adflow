@@ -2664,8 +2664,6 @@ contains
 
         ! Loop over the number of spectral solutions.
 
-        print *, 'exchanging d2wall'
-
         spectralLoop: do mm = 1, nTimeIntervalsSpectral
 
             ! Send the coordinates i have to send. The data is first copied
@@ -3105,8 +3103,6 @@ contains
 
         ! Loop over the number of spectral solutions.
 
-        print *, 'exchanging d2wall_b'
-
         spectralLoop: do mm = 1, nTimeIntervalsSpectral
 
             ! Send the coordinates i have to send. The data is first copied
@@ -3478,8 +3474,6 @@ contains
         integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
 
         ! Loop over the number of spectral solutions.
-
-        print *, 'exchanging d2wall_d'
 
         spectralLoop: do mm = 1, nTimeIntervalsSpectral
 
