@@ -18,7 +18,7 @@ contains
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, &
-&   sj, sk, vol, vold, sectionid, scratch, scratchd
+&   sj, sk, vol, sectionid, scratch, scratchd
     use flowvarrefstate, only : timeref
     use section, only : sections
     use turbmod, only : prod
@@ -332,7 +332,7 @@ contains
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, &
-&   sj, sk, vol, vold, sectionid, scratch, scratchd
+&   sj, sk, vol, sectionid, scratch, scratchd
     implicit none
 !
 !      subroutine arguments.
@@ -587,10 +587,10 @@ contains
   end subroutine prodsmag2
 
 !  differentiation of prodwmag2 in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *w *scratch *vol
-!   with respect to varying inputs: *w *scratch *vol
-!   rw status of diff variables: *w:incr *scratch:in-out *vol:incr
-!   plus diff mem management of: w:in scratch:in vol:in
+!   gradient     of useful results: *w *scratch
+!   with respect to varying inputs: *w *scratch
+!   rw status of diff variables: *w:incr *scratch:in-out
+!   plus diff mem management of: w:in scratch:in
   subroutine prodwmag2_fast_b(ibeg, iend, jbeg, jend, kbeg, kend)
 !
 !       prodwmag2 computes the term:
@@ -602,7 +602,7 @@ contains
 !
     use constants
     use blockpointers, only : nx, ny, nz, il, jl, kl, w, wd, si, &
-&   sj, sk, vol, vold, sectionid, scratch, scratchd
+&   sj, sk, vol, sectionid, scratch, scratchd
     use flowvarrefstate, only : timeref
     use section, only : sections
     implicit none
@@ -618,7 +618,7 @@ contains
     real(kind=realtype) :: uuy, uuz, vvx, vvz, wwx, wwy
     real(kind=realtype) :: uuyd, uuzd, vvxd, vvzd, wwxd, wwyd
     real(kind=realtype) :: fact, vortx, vorty, vortz
-    real(kind=realtype) :: factd, vortxd, vortyd, vortzd
+    real(kind=realtype) :: vortxd, vortyd, vortzd
     real(kind=realtype) :: omegax, omegay, omegaz
     intrinsic mod
 ! determine the non-dimensional wheel speed of this block.
@@ -679,14 +679,12 @@ contains
       vortyd = 2*vorty*scratchd(i, j, k, iprod)
       vortzd = 2*vortz*scratchd(i, j, k, iprod)
       scratchd(i, j, k, iprod) = 0.0_8
-      factd = (vvx-uuy)*vortzd + (uuz-wwx)*vortyd + (wwy-vvz)*vortxd
       vvxd = fact*vortzd
       uuyd = -(fact*vortzd)
       uuzd = fact*vortyd
       wwxd = -(fact*vortyd)
       wwyd = fact*vortxd
       vvzd = -(fact*vortxd)
-      vold(i, j, k) = vold(i, j, k) - half*factd/vol(i, j, k)**2
       wd(i, j, k-1, ivz) = wd(i, j, k-1, ivz) - sk(i, j, k-1, 2)*wwyd - &
 &       sk(i, j, k-1, 1)*wwxd
       wd(i, j-1, k, ivz) = wd(i, j-1, k, ivz) - sj(i, j-1, k, 2)*wwyd - &
@@ -1311,9 +1309,9 @@ nadvloopspectral:do ii=1,nadv
 !       last index in w is offset+1 and offset+2 respectively.
 !
     use constants
-    use blockpointers, only : nx, ny, nz, il, jl, kl, vol, vold, &
-&   sfacei, sfacej, sfacek, w, wd, si, sj, sk, addgridvelocities, bmti1,&
-&   bmti2, bmtj1, bmtj2, bmtk1, bmtk2, scratch, scratchd
+    use blockpointers, only : nx, ny, nz, il, jl, kl, vol, sfacei&
+&   , sfacej, sfacek, w, wd, si, sj, sk, addgridvelocities, bmti1, bmti2&
+&   , bmtj1, bmtj2, bmtk1, bmtk2, scratch, scratchd
     use inputdiscretization, only : orderturb
     use iteration, only : groundlevel
     use turbmod, only : secondord

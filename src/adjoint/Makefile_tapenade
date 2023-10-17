@@ -334,7 +334,7 @@ SST%SSTViscous(w, rlv, rev, scratch) > \
 SST%SSTResScale(scratch) > \
                (dw) \
 \
-SST%f1SST(w, rlv, scratch, d2wall) > \
+SST%f1SST(w, rlv, scratch) > \
          (w, rlv, scratch) \
 \
 turbutils%saEddyViscosity(w,rlv) > (w,rlv,rev) \
@@ -349,8 +349,8 @@ turbutils%prodKatoLaunder(w, scratch) > \
 turbutils%prodSmag2(w, scratch) > \
                    (w, scratch) \
 \
-turbutils%prodWmag2(w, vol, scratch) > \
-                   (w, vol, scratch) \
+turbutils%prodWmag2(w, scratch) > \
+                   (w, scratch) \
 \
 "
 

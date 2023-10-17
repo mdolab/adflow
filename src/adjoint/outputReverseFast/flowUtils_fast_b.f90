@@ -397,7 +397,7 @@ contains
     logical, intent(in) :: includehalos
 ! local variables
     integer(kind=inttype) :: i, j, k, ii
-    real(kind=realtype) :: gm1, v2, factk
+    real(kind=realtype) :: gm1, v2, factk, pp
     integer(kind=inttype) :: ibeg, iend, isize, jbeg, jend, jsize, kbeg&
 &   , kend, ksize
     intrinsic mod
@@ -429,11 +429,11 @@ contains
       j = mod(ii/isize, jsize) + jbeg
       k = ii/(isize*jsize) + kbeg
       v2 = w(i, j, k, ivx)**2 + w(i, j, k, ivy)**2 + w(i, j, k, ivz)**2
-      p(i, j, k) = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
-      if (p(i, j, k) .lt. 1.e-4_realtype*pinfcorr) then
+      pp = gm1*(w(i, j, k, irhoe)-half*w(i, j, k, irho)*v2)
+      if (pp .lt. 1.e-4_realtype*pinfcorr) then
         p(i, j, k) = 1.e-4_realtype*pinfcorr
       else
-        p(i, j, k) = p(i, j, k)
+        p(i, j, k) = pp
       end if
     end do
 ! apply correction for k in a separate loop

@@ -23,8 +23,8 @@ contains
     use constants
     use blockpointers, only : ie, je, ke, il, jl, kl, w, wd, p, &
 &   pd, rlv, rlvd, rev, revd, radi, radid, radj, radjd, radk, radkd, si,&
-&   sj, sk, sfacei, sfacej, sfacek, dtl, gamma, vol, vold, &
-&   addgridvelocities, sectionid
+&   sj, sk, sfacei, sfacej, sfacek, dtl, gamma, vol, addgridvelocities, &
+&   sectionid
     use flowvarrefstate, only : timeref, eddymodel, gammainf, pinfcorr, &
 &   viscous, rhoinf
     use inputdiscretization, only : adis, dirscaling, radiineededcoarse,&

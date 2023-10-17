@@ -1108,10 +1108,9 @@ branch = myIntStack(myIntPtr)
 
 !  differentiation of f1sst in reverse (adjoint) mode (with options noisize i4 dr8 r8):
 !   gradient     of useful results: *w *rlv *scratch
-!   with respect to varying inputs: *w *rlv *scratch *d2wall
+!   with respect to varying inputs: *w *rlv *scratch
 !   rw status of diff variables: *w:incr *rlv:incr *scratch:in-out
-!                *d2wall:out
-!   plus diff mem management of: w:in rlv:in scratch:in d2wall:in
+!   plus diff mem management of: w:in rlv:in scratch:in
   subroutine f1sst_fast_b()
 !
 !       f1sst computes the blending function f1 in both the owned
@@ -1150,16 +1149,14 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype) :: tmpd1
     integer :: branch
     real(realtype) :: temp
-    real(kind=realtype) :: temp0
+    real(realtype) :: temp0
     real(kind=realtype) :: temp1
     real(kind=realtype) :: temp2
     real(kind=realtype) :: temp3
-    real(kind=realtype) :: tempd
     real(kind=realtype) :: temp4
+    real(kind=realtype) :: tempd
     real(kind=realtype) :: temp5
     real(kind=realtype) :: tempd0
-    real(kind=realtype) :: tempd1
-    real(kind=realtype) :: tempd2
     integer :: ad_from
     integer :: ad_to
     integer :: ad_from0
@@ -1384,7 +1381,6 @@ bocos:do nn=1,nbocos
         end do
       end if
     end do
-    if (associated(d2walld)) d2walld = 0.0_8
 !$bwd-of ii-loop 
     do ii=0,isize*jsize*ksize-1
       i = mod(ii, isize) + ibeg
@@ -1434,12 +1430,9 @@ branch = myIntStack(myIntPtr)
         t2d = 0.0_8
       end if
       temp5 = d2wall(i, j, k)*d2wall(i, j, k)
-      tempd1 = two*t2d/(max1*temp5)
-      wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd1
-      tempd2 = -(w(i, j, k, itu1)*tempd1/(max1*temp5))
-      max1d = temp5*tempd2
-      d2walld(i, j, k) = d2walld(i, j, k) + 2*d2wall(i, j, k)*max1*&
-&       tempd2
+      tempd = two*t2d/(temp5*max1)
+      wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd
+      max1d = -(w(i, j, k, itu1)*tempd/max1)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) scratchd(i, j, k, icd) = scratchd(i, j, k, icd)&
@@ -1452,28 +1445,22 @@ branch = myIntStack(myIntPtr)
       else
         t2d = 0.0_8
       end if
-      temp3 = d2wall(i, j, k)*d2wall(i, j, k)
       temp2 = w(i, j, k, itu2)
       temp1 = w(i, j, k, irho)
-      temp0 = temp1*temp2
-      temp4 = temp0*temp3
-      tempd0 = 500.0_realtype*t2d/temp4
-      rlvd(i, j, k) = rlvd(i, j, k) + tempd0
-      tempd1 = -(rlv(i, j, k)*tempd0/temp4)
-      wd(i, j, k, irho) = wd(i, j, k, irho) + temp2*temp3*tempd1
-      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp1*temp3*tempd1
-      d2walld(i, j, k) = d2walld(i, j, k) + 2*d2wall(i, j, k)*temp0*&
-&       tempd1
+      temp3 = d2wall(i, j, k)*d2wall(i, j, k)
+      temp4 = temp3*temp1*temp2
+      tempd = 500.0_realtype*t2d/temp4
+      rlvd(i, j, k) = rlvd(i, j, k) + tempd
+      tempd0 = -(temp3*rlv(i, j, k)*tempd/temp4)
+      wd(i, j, k, irho) = wd(i, j, k, irho) + temp2*tempd0
+      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp1*tempd0
       temp = 0.09_realtype*d2wall(i, j, k)
-      temp0 = w(i, j, k, itu2)
-      temp1 = temp0*temp
-      temp2 = w(i, j, k, itu1)
-      temp3 = sqrt(temp2)
-      if (.not.temp2 .eq. 0.0_8) wd(i, j, k, itu1) = wd(i, j, k, itu1) +&
-&         t1d/(2.0*temp3*temp1)
-      tempd = -(temp3*t1d/temp1**2)
-      wd(i, j, k, itu2) = wd(i, j, k, itu2) + temp*tempd
-      d2walld(i, j, k) = d2walld(i, j, k) + 0.09_realtype*temp0*tempd
+      temp0 = temp*w(i, j, k, itu2)
+      temp1 = w(i, j, k, itu1)
+      temp2 = sqrt(temp1)
+      if (.not.temp1 .eq. 0.0_8) wd(i, j, k, itu1) = wd(i, j, k, itu1) +&
+&         t1d/(2.0*temp2*temp0)
+      wd(i, j, k, itu2) = wd(i, j, k, itu2) - temp*temp2*t1d/temp0**2
     end do
     do nn=nbocos,1,-1
       call popcontrol3b(branch)
