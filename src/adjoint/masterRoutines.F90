@@ -295,6 +295,7 @@ contains
         use initializeflow_d, only: referenceState_d
         use surfaceIntegrations, only: getSolution_d
         use adjointExtra_d, only: xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
+        use adjointExtra, only: volume_block
         use adjointextra_d, only: resscale_D, sumdwandfw_d
         use bcdata, only: setBCData_d, setBCDataFineGrid_d
         use oversetData, only: oversetPresent
@@ -442,6 +443,8 @@ contains
                 ISIZE1OFDrfviscsubface = nViscBocos
 
                 call volume_block_d()
+                call volume_block() ! not completely sure if this is needed still, but it fixes a bug where the residuasl would
+                ! increase from ~1e-11 to ~1e-7
                 call metric_block_d()
                 call boundaryNormals_d()
 
