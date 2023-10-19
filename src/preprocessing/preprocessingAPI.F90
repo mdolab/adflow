@@ -2597,6 +2597,7 @@ contains
         use inputTimeSpectral
         use iteration
         use inputUnsteady
+        use inputIteration, only: useSkewnessCheck
         use utils, only: terminate, setPointers
         implicit none
         !
@@ -2643,6 +2644,16 @@ contains
                      call terminate("allocateMetric", &
                      "Memory allocation failure for &
                      &normals and volumes")
+
+                ! Allocate the memory for the skewness if desired
+                if (useSkewnessCheck) then
+                    allocate (flowDoms(nn, level, sps)%skew(0:ib, 0:jb, 0:kb), &
+                              stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("allocateMetric", &
+                        "Memory allocation failure for &
+                        &skewness")
+                end if
 
                 ! Added by HDN
                 ! Added s[I,J,K]ALE
@@ -2725,7 +2736,8 @@ contains
         use communication
         use inputTimeSpectral
         use checkVolBlock
-        use inputIteration, only: printWarnings, printNegativeVolumes
+        use inputIteration, only: printWarnings, printNegativeVolumes, &
+                                  useSkewnessCheck, meshMaxSkewness, printBadlySkewedCells
         use utils, only: setPointers, terminate, returnFail
         use commonFormats, only: stringSpace, stringInt1
         implicit none
@@ -2747,10 +2759,13 @@ contains
         integer(kind=intType) :: nn, mm, sps
         integer(kind=intType) :: nVolNeg, nVolPos
         integer(kind=intType) :: nVolBad, nVolBadGlobal
+        integer(kind=intType) :: nBadSkew, nBadSkewGlobal
         integer(kind=intType) :: nBlockBad, nBlockBadGlobal
 
         real(kind=realType) :: fact, mult
         real(kind=realType) :: xp, yp, zp, vp1, vp2, vp3, vp4, vp5, vp6
+
+        real(kind=realType), dimension(24) :: angles
 
         real(kind=realType), dimension(3) :: v1, v2
 
@@ -2762,6 +2777,7 @@ contains
         logical :: badVolume, iBlankAllocated
 
         logical, dimension(:, :, :), pointer :: volumeIsNeg
+        logical, dimension(:, :, :), pointer :: volumeIsSkewed
 
         type(checkVolBlockType), &
             dimension(nDom, nTimeIntervalsSpectral) :: checkVolDoms
@@ -2770,6 +2786,7 @@ contains
 
         nVolBad = 0
         nBlockBad = 0
+        nBadSkew = 0
 
         ! Loop over the number of spectral solutions and local blocks.
 
@@ -2793,6 +2810,16 @@ contains
                     call terminate("metric", &
                                    "Memory allocation failure for volumeIsNeg")
                 volumeIsNeg => checkVolDoms(nn, sps)%volumeIsNeg
+
+                if (useSkewnessCheck) then
+                    allocate (checkVolDoms(nn, sps)%volumeIsSkewed(2:il, 2:jl, 2:kl), &
+                              stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("metric", &
+                                       "Memory allocation failure for volumeIsSkewed")
+                    volumeIsSkewed => checkVolDoms(nn, sps)%volumeIsSkewed
+                end if
+
                 !
                 !           Volume and block orientation computation.
                 !
@@ -2902,8 +2929,33 @@ contains
 
                             vol(i, j, k) = sixth * (vp1 + vp2 + vp3 + vp4 + vp5 + vp6)
 
+                            ! Calculate the min and max angles of each face
+                            ! This is necessairy for the skewness calculation
+                            ! If we are not interested in skewness, skip it
+
+                            if (useSkewnessCheck) then
+                                call minMaxAngle(angles(1:4), &
+                                                 x(i, m, k, :), x(i, j, k, :), x(l, j, k, :), x(l, m, k, :))
+
+                                call minMaxAngle(angles(5:8), &
+                                                 x(i, m, n, :), x(i, j, n, :), x(l, j, n, :), x(l, m, n, :))
+
+                                call minMaxAngle(angles(9:12), &
+                                                 x(i, m, k, :), x(i, m, n, :), x(i, j, n, :), x(i, j, k, :))
+
+                                call minMaxAngle(angles(13:16), &
+                                                 x(l, m, k, :), x(l, m, n, :), x(l, j, n, :), x(l, j, k, :))
+
+                                call minMaxAngle(angles(17:20), &
+                                                 x(i, j, k, :), x(i, j, n, :), x(l, j, n, :), x(l, j, k, :))
+
+                                call minMaxAngle(angles(21:24), &
+                                                 x(i, m, k, :), x(i, m, n, :), x(l, m, n, :), x(l, m, k, :))
+                            end if
+
                             ! Check the volume and update the number of positive
                             ! and negative volumes if needed.
+                            ! Also calculate the skewness of the cell
 
                             if (checkAll) then
 
@@ -2943,6 +2995,24 @@ contains
                                 ! Update nVolBad if this is a bad volume.
 
                                 if (badVolume) nVolBad = nVolBad + 1
+
+                                ! Calculate the skewness and update nBadSkew if it
+                                ! is above the threshold
+                                ! Skip it if we don't care about skewness
+
+                                if (useSkewnessCheck) then
+                                    skew(i, j, k) = max((maxval(angles) - (pi / two)) / &
+                                                        (pi / two), &
+                                                        ((pi / two) - minval(angles)) / &
+                                                        (pi / two))
+
+                                    if (skew(i, j, k) > meshMaxSkewness) then
+                                        volumeIsSkewed(i, j, k) = .true.
+                                        nBadSkew = nBadSkew + 1
+                                    else
+                                        volumeIsSkewed(i, j, k) = .false.
+                                    end if
+                                end if
 
                             end if
 
@@ -3029,6 +3099,18 @@ contains
                 else
                     checkVolDoms(nn, sps)%blockHasNegVol = .false.
                 end if
+
+                ! Check if the block has badly skewed volumes. Only do this if we are
+                ! actually interested
+
+                if (useSkewnessCheck) then
+                    if (nBadSkew > 0) then
+                        checkVolDoms(nn, sps)%blockHasSkewedVol = .true.
+                    else
+                        checkVolDoms(nn, sps)%blockHasSkewedVol = .false.
+                    end if
+                end if
+
                 !
                 !           Computation of the face normals in i-, j- and k-direction.
                 !           Formula's are valid for a right handed block; for a left
@@ -3273,7 +3355,7 @@ contains
                 ! list of the bad volumes and terminate executation.
 
                 if (printNegativeVolumes) then
-                    call writeNegVolumes(checkVolDoms)
+                    call writeBadVolumes(checkVolDoms, MetricVolume)
                 end if
 
                 call returnFail("metric", &
@@ -3293,6 +3375,47 @@ contains
                     print "(a)", "#"
                 end if
 
+            end if
+        end if
+
+        ! Determine the global number of badly skewed blocks. The result must be
+        ! known on all processors and thus an allreduce is needed.
+
+        if (useSkewnessCheck) then
+            call mpi_allreduce(nBadSkew, nBadSkewGlobal, 1, adflow_integer, &
+                               mpi_sum, ADflow_comm_world, ierr)
+
+            ! Test if badly skewed cells are present in the grid. If so, the action
+            ! taken depends on the grid level.
+
+            if (nBadSkewGlobal > 0) then
+                if (level == 1) then
+
+                    ! Badly skewed volumes present on the fine grid level. Print a
+                    ! list of the bad volumes and terminate executation.
+
+                    if (printBadlySkewedCells) then
+                        call writeBadVolumes(checkVolDoms, MetricSkewness)
+                    end if
+
+                    call returnFail("metric", &
+                                    "Badly skewed cells present in grid.")
+                    call mpi_barrier(ADflow_comm_world, ierr)
+
+                else
+
+                    ! Coarser grid level. The fine grid is okay, but due to the
+                    ! coarsening badly skewed volumes are introduced. Print a warning.
+
+                    if (myID == 0) then
+                        print "(a)", "#"
+                        print "(a)", "#                      Warning"
+                        print stringInt1, "#* Badly skewed cells present on coarse grid level ", level, "."
+                        print "(a)", "#* Computation continues, but be aware of this"
+                        print "(a)", "#"
+                    end if
+
+                end if
             end if
         end if
 
@@ -3329,6 +3452,18 @@ contains
                                    "Deallocation failure for volumeIsNeg")
             end do
         end do
+
+        ! Release memory for skewness again
+        if (useSkewnessCheck) then
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+                    deallocate (checkVolDoms(nn, sps)%volumeIsSkewed, stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("metric", &
+                                       "Deallocation failure for volumeIsSkewed")
+                end do
+            end do
+        end if
 
     contains
 
@@ -3367,13 +3502,53 @@ contains
 
     end subroutine metric
 
+    subroutine minMaxAngle(angles, p1, p2, p3, p4)
+        !
+        ! Calculates the min and max angles inside a quadrilateral
+        !
+        use constants
+        use utils, only: norm2cplx
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        real(kind=realType), dimension(3), intent(in) :: p1, p2, p3, p4
+        real(kind=realType), dimension(4), intent(out) :: angles
+        !
+        !      Local variables.
+        !
+        integer(kind=intType) :: i
+        real(kind=realType), dimension(4, 3) :: v
+
+        ! initialize variables
+        v(1, :) = p2 - p1
+        v(2, :) = p3 - p2
+        v(3, :) = p4 - p3
+        v(4, :) = p1 - p4
+
+        ! loop through vectors and calculate the first 3 angles
+        do i = 1, 3
+            angles(i) = acos(dot_product(-v(i, :), v(i + 1, :)) / &
+                             (norm2cplx(-v(i, :)) * norm2cplx(v(i + 1, :))))
+        end do
+
+        ! since it is a quadrilateral, the last angle must be:
+        ! 360° - sum(first 3 angles)
+        angles(4) = two * pi - sum(angles(:3))
+
+    end subroutine minMaxAngle
+
     !      ==================================================================
 
-    subroutine writeNegVolumes(checkVolDoms)
+    subroutine writeBadVolumes(checkVolDoms, mode)
         !
-        !       writeNegVolumes writes the negative volumes of a block to
-        !       stdout. If a block is flagged to have negative volumes it is
-        !       assumed that the block is intended to be a right handed block.
+        !       Writes the bad volumes of a block to stdout.
+        !       Depending on the mode, it writes those metrics:
+        !        1:     negative volumes - If a block is flagged
+        !               to have negative volumes it is assumed
+        !               that the block is intended to be a
+        !               right handed block.
+        !        2:     skewed volumes
         !
         use constants
         use blockPointers
@@ -3388,6 +3563,7 @@ contains
         !
         !      Subroutine arguments.
         !
+        integer, intent(in) :: mode
         type(checkVolBlockType), &
             dimension(nDom, nTimeIntervalsSpectral), intent(in) :: checkVolDoms
         !
@@ -3396,7 +3572,22 @@ contains
         integer :: proc, ierr
         integer(kind=intType) :: nn, sps, i, j, k
         real(kind=realType), dimension(3) :: xc
+        real(kind=realType) :: quantity
+
         character(len=10) :: intString1, intString2, intString3
+        character(len=20) :: modeString, descString
+
+        logical :: blockIsBad, volumeIsBad
+
+        ! prepare the string to use according to the mode it is operating in
+        select case (mode)
+        case (MetricVolume)
+            modeString = "Negative volumes"
+            descString = "Volume"
+        case (MetricSkewness)
+            modeString = "Badly skewed cells"
+            descString = "Skewness"
+        end select
 
         ! Processor 0 prints a message that negative volumes are present
         ! in the grid.
@@ -3404,8 +3595,8 @@ contains
         if (myID == 0) then
             print "(a)", "#"
             print "(a)", "#                      Error"
-            print "(a)", "# Negative volumes found in the grid."
-            print "(a)", "# A list of the negative volumes is printed below"
+            print "(3(a))", "# ", trim(modeString), " found in the grid."
+            print "(a)", "# A list of those volumes is printed below"
             print "(a)", "#"
         end if
 
@@ -3425,8 +3616,17 @@ contains
                     domains: do nn = 1, nDom
 
                         ! Test for a bad block.
+                        blockIsBad = .false.
+                        select case (mode)
+                        case (MetricVolume)
+                            if (checkVolDoms(nn, sps)%blockHasNegVol) &
+                                blockIsBad = .true.
+                        case (MetricSkewness)
+                            if (checkVolDoms(nn, sps)%blockHasSkewedVol) &
+                                blockIsBad = .true.
+                        end select
 
-                        testBad: if (checkVolDoms(nn, sps)%blockHasNegVol) then
+                        testBad: if (blockIsBad) then
 
                             ! Set the pointers for this block.
 
@@ -3442,8 +3642,9 @@ contains
                             case (steady, unsteady)
 
                                 print "(a)", "#"
+
                                 print stringSpace, "# Block", trim(cgnsDoms(nbkGlobal)%zoneName), &
-                                    "contains the following negative volumes"
+                                    "contains the following ", trim(modeString)
                                 print "(a)", "#--------------------------------------------------------------------"
                                 print "(a)", "#"
 
@@ -3456,7 +3657,7 @@ contains
 
                                 print "(a)", "#"
                                 print stringSpace, "# Spectral solution", trim(intString1), "block", &
-                                    trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following negative volumes"
+                                    trim(cgnsDoms(nbkGlobal)%zoneName), "contains the following ", trim(modeString)
                                 print "(a)", "#--------------------------------------------------------------------"
                                 print "(a)", "#"
 
@@ -3468,8 +3669,20 @@ contains
                             do k = 2, kl
                                 do j = 2, jl
                                     do i = 2, il
-                                        if (checkVolDoms(nn, sps)%volumeIsNeg(i, j, k)) then
 
+                                        ! Test for a bad volume.
+
+                                        volumeIsBad = .false.
+                                        select case (mode)
+                                        case (MetricVolume)
+                                            if (checkVolDoms(nn, sps)%volumeIsNeg(i, j, k)) &
+                                                volumeIsBad = .true.
+                                        case (MetricSkewness)
+                                            if (checkVolDoms(nn, sps)%volumeIsSkewed(i, j, k)) &
+                                                volumeIsBad = .true.
+                                        end select
+
+                                        if (volumeIsBad) then
                                             xc(1:3) = eighth * (x(i - 1, j - 1, k - 1, 1:3) &
                                                                 + x(i, j - 1, k - 1, 1:3) &
                                                                 + x(i - 1, j, k - 1, 1:3) &
@@ -3487,10 +3700,16 @@ contains
                                             intString2 = adjustl(intString2)
                                             intString3 = adjustl(intString3)
 
-                                            print "(7(A), 4(ES10.3, A))", "# Indices (", trim(intString1), &
-                                                ",", trim(intString2), ",", trim(intString3), "), coordinates (", &
-                                                xc(1), ",", xc(2), ",", xc(3), "), Volume: ", -vol(i, j, k)
+                                            select case (mode)
+                                            case (MetricVolume)
+                                                quantity = -vol(i, j, k)
+                                            case (MetricSkewness)
+                                                quantity = skew(i, j, k)
+                                            end select
 
+                                            print "(7(A), 3(ES10.3, A), 2(A), F6.3)", "# Indices (", trim(intString1), &
+                                                ",", trim(intString2), ",", trim(intString3), "), coordinates (", &
+                                                xc(1), ",", xc(2), ",", xc(3), "), ", trim(descString), ": ", quantity
                                         end if
                                     end do
                                 end do
@@ -3508,7 +3727,7 @@ contains
 
         end do procLoop
 
-    end subroutine writeNegVolumes
+    end subroutine writeBadVolumes
     subroutine faceRotationMatrices(level, allocMem)
         !
         !       faceRotationMatrices computes the rotation matrices on the
