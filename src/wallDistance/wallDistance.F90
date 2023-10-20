@@ -266,8 +266,9 @@ contains
                                     k = kl
                                 end select
 
-                cellIdLocal(iCell) = nCellBLockOffset(level, nn) * nTimeIntervalsSpectral + nx * ny * nz * (sps - 1) + &
-                                                     (i - 2) + (j - 2) * nx + (k - 2) * nx * ny
+                                cellIdLocal(iCell) = nCellBLockOffset(level, nn) * nTimeIntervalsSpectral + &
+                                                     nx * ny * nz * (sps - 1) + (i - 2) + (j - 2) * nx + &
+                                                     (k - 2) * nx * ny
                             end do
                         end do
                     end do
@@ -305,7 +306,10 @@ contains
                                 end if
 
                                 ! find the index of the surface cell (Requires gfortran > 9.0 )
-                              iCell = findloc(cellIdGlobal, flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), DIM=1)
+                                iCell = findloc( &
+                                cellIdGlobal, &
+                                    flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), &
+                                    DIM = 1)
 
                                 if (iCell == 0) then
                                     write (errorMessage, 100) &
