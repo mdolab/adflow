@@ -504,7 +504,8 @@ contains
                     maxval(commPatternOverset(level, sps)%sendList(i)%interpd), &
                     norm2(commPatternOverset(level, sps)%sendList(i)%interpd)
             end do sends
-           write (*, *) 'internalOverset(level, sps)%donorInterpd ', minval(internalOverset(level, sps)%donorInterpd), &
+            write (*, *) 'internalOverset(level, sps)%donorInterpd ', &
+                minval(internalOverset(level, sps)%donorInterpd), &
                 maxval(internalOverset(level, sps)%donorInterpd), &
                 norm2(internalOverset(level, sps)%donorInterpd)
         end if
@@ -546,7 +547,8 @@ contains
                         if (associated(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)) then
                             do iDirichlet = 1, size(cgnsDoms(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays)
                                 write (*, *) iDom, iBoco, iData, iDirichlet, 'dataArr(:) ' &
-                                 , cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)%dirichletArrays(iDirichlet)%dataArr(:)
+                                    , cgnsDomsd(iDom)%bocoInfo(iBoco)%dataSet(iData)% &
+                                    dirichletArrays(iDirichlet)%dataArr(:)
                             end do
                         end if
                     end do

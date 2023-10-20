@@ -76,6 +76,7 @@ module inputDiscretization
     integer(kind=intType) :: nonMatchTreatment
 
     real(kind=realType) :: vis2, vis4, vis2Coarse, adis
+    real(kind=realType) :: acousticScaleFactor
     real(kind=realType) :: kappaCoef
     logical :: lumpedDiss
     logical :: approxSA
@@ -246,9 +247,11 @@ module inputIteration
     ! cdisRk:           Dissipative coefficients in the runge kutta
     !                   scheme. The values depend on the number of
     !                   stages specified.
-    ! printIterations: If True, iterations are printed to stdout
-    ! turbresscale: Scaling factor for turbulent residual. Necessary for
-    !            NKsolver with RANS. Only tested on SA.
+    ! printIterations:  If True, iterations are printed to stdout
+    ! turbresscale:     Scaling factor for turbulent residual. Necessary for
+    !                   NKsolver with RANS. Only tested on SA.
+    ! meshMaxSkewness   If one cell has a highe skewness than this, the Solver
+    !                   errors out.
     ! iterType : String used for specifying which type of iteration was taken
     !
     ! Definition of the string, which stores the multigrid cycling
@@ -283,7 +286,13 @@ module inputIteration
     logical :: freezeTurbSource
     logical :: printIterations
     logical :: printWarnings
+    logical :: printNegativeVolumes
+    logical :: printBadlySkewedCells
     real(kind=realType), dimension(4) :: turbResScale
+    real(kind=realType) :: meshMaxSkewness
+    logical :: useSkewnessCheck
+    logical :: useDissContinuation
+    real(kind=realType) :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
 end module inputIteration
 
@@ -810,6 +819,7 @@ module inputADjoint
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
     integer(kind=intType) :: innerPreConIts
+    integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
 
     logical :: printTiming
     integer(kind=intType) :: subKSPSubspaceSize

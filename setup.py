@@ -11,6 +11,9 @@ this_directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
+with open("doc/requirements.txt") as f:
+    docs_require = f.read().splitlines()
+
 setup(
     name="adflow",
     version=__version__,
@@ -25,14 +28,16 @@ setup(
     packages=find_packages(include=["adflow*"]),
     package_data={"adflow": ["*.so"]},
     install_requires=[
-        "numpy>=1.16,<1.24",
+        "numpy>=1.16,!=1.24,!=1.24.1,!=1.24.2",
         "mdolab-baseclasses>=1.4",
         "mpi4py>=3.0",
-        "petsc4py>=3.11",
+        "scipy",
     ],
     extras_require={
-        "testing": ["parameterized", "testflo"],
+        "docs": docs_require,
+        "testing": ["parameterized", "testflo", "idwarp", "pygeo", "pyspline"],
         "mphys": ["openmdao", "mphys", "idwarp"],
+        "complex": ["complexify"],
     },
     classifiers=["Operating System :: Linux", "Programming Language :: Python, Fortran"],
 )
