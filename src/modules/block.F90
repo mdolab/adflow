@@ -384,6 +384,7 @@ module block
         !                         needed for unsteady problems on
         !                         deforming grids. Only allocated on
         !                         the finest grid level.
+        !  skew(0:ib,0:jb,0:kb)  - Skewness of Volume
         !  uv(2,2:il,2:jl,2:kl) - Parametric location on elemID for each cell.
         !                         Only used for fast wall distance calcs.
         !  porI(1:il,2:jl,2:kl) - Porosity in the i direction.
@@ -435,6 +436,7 @@ module block
         real(kind=realType), dimension(:, :, :), pointer :: vol
         real(kind=realType), dimension(:, :, :, :), pointer :: volOld
         real(kind=realType), dimension(:, :, :), pointer :: volref
+        real(kind=realType), dimension(:, :, :), pointer :: skew
         real(kind=realType), dimension(:, :, :, :), pointer :: uv
         integer(kind=intType), dimension(:, :, :, :), pointer :: surfNodeIndices
 

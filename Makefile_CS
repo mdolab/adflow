@@ -1,4 +1,4 @@
-# Master makefilefor complex ADflow. The actual makefile you want is 
+# Master makefile for complex ADflow. The actual makefile you want is
 # src/build/Makefile_CS
 default:
 # Check if the config.mk file is in the config dir.
@@ -17,29 +17,17 @@ default:
 
 
 clean:
-	rm -fr src_cs/build/*.mod
-	rm -fr src_cs/build/*.o
-	rm -fr src_cs/build/*.a
-	rm -fr src_cs/build/*.so
-	rm -fr src_cs/build/adflow_project.dep
-	rm -f *~ config.mk;
-# Completely nuke most of the directories
-	rm -fr src_cs/adjoint
-	rm -fr src_cs/ADT
-	rm -fr src_cs/bcdata
-	rm -fr src_cs/initFlow
-	rm -fr src_cs/inputParam
-	rm -fr src_cs/NKSolver
-	rm -fr src_cs/metis-4.0
-	rm -fr src_cs/output
-	rm -fr src_cs/overset
-	rm -fr src_cs/partitioning
-	rm -fr src_cs/slidingComm
-	rm -fr src_cs/solver
-	rm -fr src_cs/turbulence
-	rm -fr src_cs/utils
-	rm -fr src_cs/wallDistance
-	rm -fr src_cs/warping
+# The command will search "src_cs" finds and deletes anything (files and directories)
+# except what is listed here below. Note in order not to delete the parent directory
+# holding a file it needs to specified. Finally ! means "not".
+	find src_cs ! \( \
+	-wholename 'src_cs' \
+	-o -wholename 'src_cs/build' \
+	-o -wholename 'src_cs/build/Makefile' \
+	-o -wholename 'src_cs/build/Makefile1' \
+	-o -wholename 'src_cs/modules' \
+	-o -wholename 'src_cs/modules/precision.F90' \) \
+	-exec rm -rf {} +
 
 adflow_build:
 	ln -sf config/config.mk config.mk;

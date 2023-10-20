@@ -97,6 +97,7 @@ module blockPointers
     real(kind=realType), dimension(:, :, :), pointer :: vol
     real(kind=realType), dimension(:, :, :), pointer :: volref
     real(kind=realType), dimension(:, :, :, :), pointer :: volOld
+    real(kind=realType), dimension(:, :, :), pointer :: skew
     real(kind=realType), dimension(:, :, :, :), pointer :: dadidata
 
     integer(kind=porType), dimension(:, :, :), pointer :: porI, porJ, porK

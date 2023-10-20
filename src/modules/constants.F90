@@ -512,4 +512,8 @@ module constants
     integer(kind=intType), parameter :: iZippWallY = 8
     integer(kind=intType), parameter :: iZippWallZ = 9
 
+    ! Metric types
+    integer(kind=intType), parameter :: MetricVolume = 1
+    integer(kind=intType), parameter :: MetricSkewness = 2
+
 end module constants
