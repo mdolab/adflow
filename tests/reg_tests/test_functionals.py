@@ -243,6 +243,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_rans_rough_sa.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
         # Rough Tutorial wing RANS
         # This test makes sure a roughness value of 0 equals the standard SA model
@@ -276,6 +277,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "aero_prob": ap_tutorial_wing,
             "no_train": True,  # This test should not be able to over-write
             # the training file as it is coming from a different test
+            "dot_prod_tol": 1e-10,
         },
     ]
 )
