@@ -322,3 +322,14 @@ def assert_dot_products_allclose(handler, CFDSolver, seed=314, **kwargs):
 
     handler.par_add_sum("Dot product test for (w, xV) -> (dw, F)", dotLocal1, rtol=rtol, atol=atol)
     handler.par_add_sum("Dot product test for (w, xV) -> (dw, F)", dotLocal2, rtol=rtol, atol=atol, compare=True)
+
+    handler.root_print("Dot product test for w -> R (rev_fast)")
+
+    dwDot = CFDSolver.computeJacobianVectorProductFwd(wDot=wDot, residualDeriv=True)
+    wBar = CFDSolver.computeJacobianVectorProductBwdFast(resBar=dwBar)
+
+    dotLocal1 = numpy.sum(dwDot * dwBar)
+    dotLocal2 = numpy.sum(wDot * wBar)
+
+    handler.par_add_sum("Dot product test for w -> R (rev_fast)", dotLocal1, rtol=rtol, atol=atol)
+    handler.par_add_sum("Dot product test for w -> R (rev_fast)", dotLocal2, rtol=rtol, atol=atol, compare=True)

@@ -1066,7 +1066,7 @@ contains
         !      Local variables.
         !
         integer(kind=intType) :: nn, mm, sps, i, j, k
-        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax
+        integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, iiMax, jjMax, jj, ii
 
         real(kind=realType), dimension(:, :, :), pointer :: x0, x1, x2
 
@@ -1179,21 +1179,26 @@ contains
                             x0 => x(:, :, ke, :); x1 => x(:, :, kl, :); x2 => x(:, :, nz, :)
                         end select
 
-                        ! Determine the vector from the lower left corner to
-                        ! the upper right corner. Due to the usage of pointers
-                        ! an offset of +1 must be used, because the original
-                        ! array x start at 0.
+                        ! Determine the vector from the lower left corner to 2/3rds to the upper right corner. 
+                        ! Due to the usage of pointers an offset of +1 must be used, because 
+                        ! the original array x start at 0.
+                        ! The 2/3rds point (instead of the upper right corner) is used because on coarse single-block 
+                        ! O-grids, the two vectors might end up beeing parallel. This would cause the 
+                        ! cross-product to fail which leads to the normal of the face beeing (0,0,0)
 
-                        v1(1) = x1(iimax + 1, jjmax + 1, 1) - x1(1 + 1, 1 + 1, 1)
-                        v1(2) = x1(iimax + 1, jjmax + 1, 2) - x1(1 + 1, 1 + 1, 2)
-                        v1(3) = x1(iimax + 1, jjmax + 1, 3) - x1(1 + 1, 1 + 1, 3)
+                        ii = (iimax+1)*2/3
+                        jj = (jjmax+1)*2/3
 
-                        ! And the vector from the upper left corner to the
+                        v1(1) = x1(ii, jj, 1) - x1(1 + 1, 1 + 1, 1)
+                        v1(2) = x1(ii, jj, 2) - x1(1 + 1, 1 + 1, 2)
+                        v1(3) = x1(ii, jj, 3) - x1(1 + 1, 1 + 1, 3)
+
+                        ! And the vector from the 2/3ds upper right corner to the
                         ! lower right corner.
 
-                        v2(1) = x1(iimax + 1, 1 + 1, 1) - x1(1 + 1, jjmax + 1, 1)
-                        v2(2) = x1(iimax + 1, 1 + 1, 2) - x1(1 + 1, jjmax + 1, 2)
-                        v2(3) = x1(iimax + 1, 1 + 1, 3) - x1(1 + 1, jjmax + 1, 3)
+                        v2(1) = x1(ii, 1 + 1, 1) - x1(1 + 1, jj, 1)
+                        v2(2) = x1(ii, 1 + 1, 2) - x1(1 + 1, jj, 2)
+                        v2(3) = x1(ii, 1 + 1, 3) - x1(1 + 1, jj, 3)
 
                         ! Determine the normal of the face by taking the cross
                         ! product of v1 and v2 and add it to norm.
