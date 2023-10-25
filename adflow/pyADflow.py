@@ -93,12 +93,6 @@ class ADFLOW(AeroSolver):
             curDir = os.path.basename(os.path.dirname(os.path.realpath(__file__)))
             self.adflow = MExt.MExt("libadflow", curDir, debug=debug)._module
 
-        # This is a flag not exposed to the user as an option that controls
-        # printing the boundary condition warnings.  This should only
-        # be used in the MPhys layer when we make multiple calls to
-        # updateBCAllLevels.
-        self.adflow.inputiteration.printbcwarnings = True
-
         libLoadTime = time.time()
 
         # Information for base class:
@@ -3295,7 +3289,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : AeroProblem
+        aeroProblem : :ref:`AeroProblem <baseclasses:pyAero_problem>`
             The supplied aeroproblem to be set.
         releaseAdjointMemory : bool, optional
             Flag to release the adjoint memory when setting a new aeroproblem, by default True
