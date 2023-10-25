@@ -3289,7 +3289,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : :ref:`AeroProblem <baseclasses:pyAero_problem>`
+        aeroProblem : baseclasses:pyAero_problem
             The supplied aeroproblem to be set.
         releaseAdjointMemory : bool, optional
             Flag to release the adjoint memory when setting a new aeroproblem, by default True
