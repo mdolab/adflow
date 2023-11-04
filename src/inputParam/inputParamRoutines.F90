@@ -3730,7 +3730,7 @@ contains
         implicit none
 
         ! Initialize boundary condition warning print outs
-        printbcwarnings = .true.
+        printBCWarnings = .true.
 
         ! Initialize monitoring the turbulent residuals as well as the
         ! monitoring of mass flow of the sliding interfaces to .false.
