@@ -474,7 +474,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : aeroProblem class
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
            The AP object that the displacements should be applied to.
         dispFile : str
            The file contaning the displacements. This file should have
@@ -1243,7 +1243,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem class
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The complete description of the problem to solve
         mdCallBack : python function
             Call back for doing unsteady aeroelastic. Currently
@@ -1595,7 +1595,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem class
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aerodynamic problem to to get the solution for
 
         funcs : dict
@@ -1838,7 +1838,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem class
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aerodynamic problem to solve
 
         evalFuncs : iterable object containing strings
@@ -1920,7 +1920,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem class
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aerodynamic problem to solve
         CLStar : float
             The desired target CL
@@ -2423,7 +2423,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        AeroProblem : AeroProblem instance
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aerodynamic problem to be solved
         funcDict : dict
             Dictionary of function DV pairs to solve:
@@ -2574,7 +2574,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem class
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aerodynamic problem to solve
         sepStar : float
             The desired target separation sensor value
@@ -3129,7 +3129,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem object
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aeroproblem with the flow information we would like
             to reset the flow to.
         """
@@ -3172,7 +3172,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem object
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aeroproblem whose ANK CFL will be reset.
         """
         aeroProblem.adflowData.ank_cfl = self.getOption("ANKCFL0")
@@ -3295,7 +3295,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : AeroProblem
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The supplied aeroproblem to be set.
         releaseAdjointMemory : bool, optional
             Flag to release the adjoint memory when setting a new aeroproblem, by default True
@@ -3432,7 +3432,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : AeroProblem
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The current aeroProblem object.
         firstCall : bool, optional
             Flag that signifies this is being called for the first time, by default False
@@ -5244,7 +5244,7 @@ class ADFLOW(AeroSolver):
 
         Parameters
         ----------
-        aeroProblem : pyAero_problem class
+        aeroProblem : :class:`~baseclasses:baseclasses.problems.pyAero_problem.AeroProblem`
             The aerodynamic problem to get the error for
 
         funcError : dict
