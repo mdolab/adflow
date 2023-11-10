@@ -56,6 +56,7 @@ ALL_RES_FILES =	$(SRC)/adjoint/adjointExtra.F90\
 		$(SRC)/solver/surfaceIntegrations.F90\
 		$(SRC)/solver/zipperIntegrations.F90\
 		$(SRC)/solver/ALEUtils.F90\
+		$(SRC)/solver/actuatorRegion.F90\
 		$(SRC)/initFlow/initializeFlow.F90\
 		$(SRC)/turbulence/turbUtils.F90\
 		$(SRC)/turbulence/turbBCRoutines.F90\
@@ -102,6 +103,9 @@ bcData%BCDataSubsonicOutflow(bcVarArray, Pref) > \
 \
 bcData%BCDataSupersonicInflow(bcVarArray, muRef, rhoRef, Pref, uRef, wInf, pInfCorr) > \
 	                     (bcData%rho, bcData%velx, bcData%vely, bcData%velz, bcData%ps, bcData%turbInlet, muRef, rhoRef, Pref, uRef, wInf, pInfCorr) \
+\
+actuatorRegion%computeActuatorRegionVolume(vol, actuatorRegions%volLocal) > \
+										 (vol, actuatorRegions%volLocal)\
 \
 adjointExtra%xhalo_block(x) > \
                         (x) \
@@ -179,8 +183,8 @@ sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
 sa%saResScale(scratch, dw) > \
              (dw) \
 \
-residuals%sourceTerms_block(w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) > \
-                           (w, pref, uref, plocal, dw, actuatorRegions%force, actuatorRegions%heat) \
+residuals%sourceTerms_block(w, pref, uref, plocal, dw, vol, actuatorRegions%force, actuatorRegions%heat, actuatorRegions%volume) > \
+                           (w, pref, uref, plocal, dw, vol, actuatorRegions%force, actuatorRegions%heat, actuatorRegions%volume) \
 \
 residuals%initres_block(dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) > \
                        (dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) \
