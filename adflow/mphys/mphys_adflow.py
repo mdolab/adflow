@@ -441,17 +441,22 @@ class ADflowSolver(ImplicitComponent):
 
     def _setup_vectors(self, root_vectors):
         super()._setup_vectors(root_vectors)
+        solver = self.solver
+
+        # Get the default flags
+        printIterationsDefault = solver.getOption("printIterations")
+        printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
 
         # Turn off extra printouts
-        self.solver.setOption("printIterations", False)
-        self.solver.adflow.inputiteration.printbcwarnings = False
+        solver.setOption("printIterations", False)
+        solver.adflow.inputiteration.printbcwarnings = False
 
         # Set the AP
         self.solver.setAeroProblem(self.ap)
 
-        # Turn printing back on
-        self.solver.setOption("printIterations", True)
-        self.solver.adflow.inputiteration.printbcwarnings = True
+        # Set values back to the default
+        solver.setOption("printIterations", printIterationsDefault)
+        solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
 
         # Set the OM states to be equal to the free stream
         self.set_val("adflow_states", self.solver.getStates())
@@ -993,8 +998,11 @@ class ADflowFunctions(ExplicitComponent):
         printIterationsDefault = solver.getOption("printIterations")
         printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
 
+        # Turn off extra printouts
         solver.setOption("printIterations", False)
-        solver.adflow.inputiteration.printbcwarnings = False  # Turn off extra printouts
+        solver.adflow.inputiteration.printbcwarnings = False
+
+        # Set the aeroproblem
         solver.setAeroProblem(ap)
 
         # Reset back to true to preserve normal ADflow printout structure
