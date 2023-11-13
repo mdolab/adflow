@@ -206,7 +206,7 @@ class ADflowMesh(ExplicitComponent):
         # We want to include the zipper nodes in the surface mesh coordinates because the forces array ADflow returns
         # includes them and we need the surface coordinates array to be consistent with that.
         self.x_a0 = self.aero_solver.getSurfaceCoordinates(
-            groupName=self.aero_solver.meshFamilyGroup, includeZipper=True
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
         ).flatten(order="C")
 
         coord_size = self.x_a0.size
@@ -376,7 +376,7 @@ class ADflowWarper(ExplicitComponent):
                     self.solver.mesh.warpDeriv(dxV)
                     dxS = self.solver.mesh.getdXs()
                     dxS = self.solver.mapVector(
-                        dxS, self.solver.meshFamilyGroup, self.solver.designFamilyGroup, includeZipper=True
+                        dxS, self.solver.meshFamilyGroup, self.solver.designFamilyGroup, includeZipper=False
                     )
                     d_inputs["x_aero"] += dxS.flatten()
 
@@ -1456,7 +1456,7 @@ class ADflowBuilder(Builder):
         # node IDs of the surface of interest.
         nodeInds = []
         for tag in tags:
-            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=True)
+            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=False)
             nodeInds.append(vecout[:, 0].astype(int))
 
         # --- Now return the combined list of all node IDs for the tags, with duplicates removed ---
