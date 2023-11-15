@@ -65,9 +65,8 @@ def set_vol_coords(solver, inputs):
         coordsAreEqual = np.allclose(newGrid, currentGrid, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
-            if DEBUG_LOGGING:
-                if solver.comm.rank == 0:
-                    print("Updating vol coords", flush=True)
+            if DEBUG_LOGGING and solver.comm.rank == 0:
+                print("Updating vol coords", flush=True)
             solver.adflow.warping.setgrid(newGrid)
             solver._updateGeomInfo = True
             solver.updateGeometryInfo(warpMesh=False)
@@ -96,13 +95,24 @@ def set_surf_coords(solver, inputs):
     coordsUpdated = False
     if "x_aero" in inputs:
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
-        currentSurfCoord = solver.mesh.getSurfaceCoordinates()  # Get coordinates directly from IDWarp
+
+        # We take coordinates directly from IDWarp because they are guaranteed to match the coordinates we set. The
+        # coordinates returned by solver.getSurfaceCoordinates are taken from the volume coordinate data structures and
+        # often do not match the set surface coordinates exactly, which leads to issues when we check whether the
+        # coordinates have changed.
+        currentSurfCoord = solver.mesh.getSurfaceCoordinates()
+
+        # This is the only place in the code we don't want the zipper nodes. This is because `setSurfaceCoordinates`
+        # doesn't take the zipper nodes. The surface coordinates in the input vector do include the zipper nodes, so we
+        # need to remove them. This is simple to do since we know that the zipper nodes are tacked on to the end of the
+        # nodes array.
+        newSurfCoord = newSurfCoord[: currentSurfCoord.shape[0]]
+
         coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
-            if DEBUG_LOGGING:
-                if solver.comm.rank == 0:
-                    print("Updating surface coords", flush=True)
+            if DEBUG_LOGGING and solver.comm.rank == 0:
+                print("Updating surface coords", flush=True)
             solver.setSurfaceCoordinates(newSurfCoord, groupName=solver.meshFamilyGroup)
             solver.updateGeometryInfo(warpMesh=False)
             coordsUpdated = True
@@ -131,9 +141,8 @@ def set_states(solver, outputs):
         statesAreEqual = np.allclose(newState, currentState, rtol=1e-14, atol=1e-14)
         statesAreEqual = solver.comm.allreduce(statesAreEqual, op=MPI.LAND)
         if not statesAreEqual:
-            if DEBUG_LOGGING:
-                if solver.comm.rank == 0:
-                    print("Updating states", flush=True)
+            if DEBUG_LOGGING and solver.comm.rank == 0:
+                print("Updating states", flush=True)
             solver.setStates(outputs["adflow_states"])
             statesUpdated = True
     return statesUpdated
@@ -152,7 +161,7 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
         ADflow solver object to update.
     ap : AeroProblem instance
         The aeroproblem to set
-    ap_vars : _type_
+    ap_vars : list[str]
         The list of variables for this aeroproblem, currently this is stored in self.ap_vars in all ADflow MPhys
         components
     inputs : OpenMDAO inputs vector
@@ -195,10 +204,10 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
         if solver.comm.rank == 0 and print_dict:
             pp(tmp)
 
-        updatesMade = set_vol_coords(solver, inputs)
+        updatesMade = set_vol_coords(solver, inputs) or updatesMade
 
     if outputs is not None:
-        updatesMade = set_states(solver, outputs)
+        updatesMade = set_states(solver, outputs) or updatesMade
 
     return solver.comm.allreduce(updatesMade, op=MPI.LOR)
 
@@ -206,7 +215,6 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
 class ADflowMesh(ExplicitComponent):
     """
     Component to get the partitioned initial surface mesh coordinates
-
     """
 
     def initialize(self):
@@ -218,7 +226,7 @@ class ADflowMesh(ExplicitComponent):
         # We want to include the zipper nodes in the surface mesh coordinates because the forces array ADflow returns
         # includes them and we need the surface coordinates array to be consistent with that.
         self.x_a0 = self.aero_solver.getSurfaceCoordinates(
-            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=True
         ).flatten(order="C")
 
         coord_size = self.x_a0.size
@@ -388,7 +396,7 @@ class ADflowWarper(ExplicitComponent):
                     self.solver.mesh.warpDeriv(dxV)
                     dxS = self.solver.mesh.getdXs()
                     dxS = self.solver.mapVector(
-                        dxS, self.solver.meshFamilyGroup, self.solver.designFamilyGroup, includeZipper=False
+                        dxS, self.solver.meshFamilyGroup, self.solver.designFamilyGroup, includeZipper=True
                     )
                     d_inputs["x_aero"] += dxS.flatten()
 
@@ -675,7 +683,7 @@ class ADflowForces(ExplicitComponent):
         self.add_input("adflow_vol_coords", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
         self.add_input("adflow_states", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
 
-        local_surface_coord_size = solver.getSurfaceCoordinates(includeZipper=False).size
+        local_surface_coord_size = solver.getSurfaceCoordinates(includeZipper=True).size
         self.add_output("f_aero", distributed=True, shape=local_surface_coord_size, tags=["mphys_coupling"])
 
         # self.declare_partials(of='f_aero', wrt='*')
@@ -1445,10 +1453,10 @@ class ADflowBuilder(Builder):
 
     # TODO the get_nnodes is deprecated. will remove
     def get_nnodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=False).shape[0])
+        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])
 
     def get_number_of_nodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=False).shape[0])
+        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])
 
     def get_tagged_indices(self, tags):
         """
@@ -1457,6 +1465,7 @@ class ADflowBuilder(Builder):
         Parameters
         ----------
         tags : list[str]
+            List of surface tags to get grid IDs for. If tags is -1, then all grid IDs are returned.
 
         Returns
         -------
@@ -1477,7 +1486,7 @@ class ADflowBuilder(Builder):
         # node IDs of the surface of interest.
         nodeInds = []
         for tag in tags:
-            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=False)
+            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=True)
             nodeInds.append(vecout[:, 0].astype(int))
 
         # --- Now return the combined list of all node IDs for the tags, with duplicates removed ---
