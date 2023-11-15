@@ -171,7 +171,19 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
 
     updatesMade = ap != solver.curAP
 
+    # These flags control printing alpha and boundary condition warnings
+    # when we update the aeroproblem.  We only want these to print when
+    # we actually switch the aeroproblem.
+    printIterationsDefault = solver.getOption("printIterations")
+    printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
+
+    solver.setOption("printIterations", updatesMade)
+    solver.adflow.inputiteration.printbcwarnings = updatesMade
     solver.setAeroProblem(ap)
+
+    # Reset the defaults
+    solver.setOption("printIterations", printIterationsDefault)
+    solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
 
     if inputs is not None:
         tmp = {}
@@ -994,7 +1006,16 @@ class ADflowFunctions(ExplicitComponent):
         ap = self.ap
 
         # re-set the AP so that we are sure state is updated
+        printIterationsDefault = solver.getOption("printIterations")
+        printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
+
+        solver.setOption("printIterations", False)
+        solver.adflow.inputiteration.printbcwarnings = False  # Turn off extra printouts
         solver.setAeroProblem(ap)
+
+        # Reset back to true to preserve normal ADflow printout structure
+        solver.setOption("printIterations", printIterationsDefault)
+        solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
 
         # write the solution files. Internally, this checks the
         # types of solution files specified in the options and

@@ -2687,6 +2687,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use iteration, only: groundLevel
         use utils, only: setPointers, terminate
+        use inputIteration, only: printBCWarnings
         implicit none
         !
         !      Subroutine arguments.
@@ -2803,7 +2804,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printBCWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2827,7 +2828,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printBCWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2850,7 +2851,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printBCWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2874,7 +2875,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printBCWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2898,7 +2899,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printBCWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
@@ -2921,7 +2922,7 @@ contains
             call mpi_reduce(i, j, 1, adflow_integer, mpi_max, 0, &
                             ADflow_comm_world, ierr)
 
-            if (myID == 0 .and. j == 1) then
+            if (myID == 0 .and. j == 1 .and. printBCWarnings) then
 
                 print "(a)", "#"
                 print "(a)", "#*==================== !!! Warning !!! &
