@@ -33,7 +33,7 @@ contains
     use paramturb
     use section
     use inputphysics
-    use inputdiscretization, only : approxsa
+    use inputdiscretization, only : approxturb
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -451,7 +451,7 @@ contains
             fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-            if (approxsa) then
+            if (approxturb) then
               term1 = zero
               term1d = 0.0_8
             else
@@ -484,7 +484,7 @@ contains
     use paramturb
     use section
     use inputphysics
-    use inputdiscretization, only : approxsa
+    use inputdiscretization, only : approxturb
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -651,7 +651,7 @@ contains
             fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-            if (approxsa) then
+            if (approxturb) then
               term1 = zero
             else
               term1 = rsacb1*(one-ft2)*ss

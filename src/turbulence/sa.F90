@@ -141,7 +141,7 @@ contains
         use paramTurb
         use section
         use inputPhysics
-        use inputDiscretization, only: approxSA
+        use inputDiscretization, only: approxTurb
         use flowVarRefState
         implicit none
 
@@ -335,7 +335,7 @@ contains
                         ! Compute the source term; some terms are saved for the
                         ! linearization. The source term is stored in dvt.
 
-                        if (approxSA) then
+                        if (approxTurb) then
                             term1 = zero
                         else
                             term1 = rsaCb1 * (one - ft2) * ss

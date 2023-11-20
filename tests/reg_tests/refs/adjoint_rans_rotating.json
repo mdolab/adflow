@@ -260,7 +260,7 @@
         "ANKTurbCFLScale": 1.0,
         "ANKTurbKSPDebug": false,
         "ANKUnsteadyLSTol": 1.0,
-        "ANKUseApproxSA": false,
+        "ANKUseApproxTurb": false,
         "ANKUseFullVisc": true,
         "ANKUseMatrixFree": true,
         "ANKUseTurbDADI": true,

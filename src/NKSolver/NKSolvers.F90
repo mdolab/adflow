@@ -1673,7 +1673,7 @@ module ANKSolver
     real(kind=realType) :: ANK_switchTol
     real(kind=realType) :: ANK_divTol = 10
     logical :: ANK_useTurbDADI
-    logical :: ANK_useApproxSA
+    logical :: ANK_useApproxTurb
     real(kind=realType) :: ANK_turbcflscale
     logical :: ANK_useFullVisc
     logical :: ANK_ADPC
@@ -1934,7 +1934,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: turbResScale
         use inputADjoint, only: viscPC
-        use inputDiscretization, only: approxSA
+        use inputDiscretization, only: approxTurb
         use iteration, only: totalR0, totalR
         use utils, only: EChk, setPointers
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP, setupStandardMultigrid
@@ -1969,7 +1969,7 @@ contains
         viscPC = .False.
 
         if (totalR > ANK_secondOrdSwitchTol * totalR0) &
-            approxSA = .True.
+            approxTurb = .True.
 
         ! Create the preconditoner matrix
         call setupStateResidualMatrix(dRdwPre, useAD, usePC, useTranspose, &
@@ -1977,7 +1977,7 @@ contains
 
         ! Reset saved value
         viscPC = tmp
-        approxSA = .False.
+        approxTurb = .False.
 
         ! Begin PETSc matrix assembly
         call MatAssemblyBegin(dRdwPre, MAT_FINAL_ASSEMBLY, ierr)
@@ -2334,7 +2334,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputIteration, only: turbResScale
         use inputADjoint, only: viscPC
-        use inputDiscretization, only: approxSA
+        use inputDiscretization, only: approxTurb
         use iteration, only: totalR0, totalR
         use utils, only: EChk, setPointers
         use adjointUtils, only: setupStateResidualMatrix, setupStandardKSP
@@ -2359,7 +2359,7 @@ contains
         viscPC = .False.
 
         if (totalR > ANK_secondOrdSwitchTol * totalR0) &
-            approxSA = .True.
+            approxTurb = .True.
 
         ! Create the preconditoner matrix
         call setupStateResidualMatrix(dRdwPreTurb, useAD, usePC, useTranspose, &
@@ -2367,7 +2367,7 @@ contains
 
         ! Reset saved value
         viscPC = tmp
-        approxSA = .False.
+        approxTurb = .False.
 
         ! Add the contribution from the time step term
 
@@ -3333,7 +3333,7 @@ contains
         use blockPointers, only: nDom, flowDoms
         use inputIteration, only: L2conv
         use inputTimeSpectral, only: nTimeIntervalsSpectral
-        use inputDiscretization, only: approxSA, orderturb
+        use inputDiscretization, only: approxTurb, orderturb
         use iteration, only: approxTotalIts, totalR0, totalR, currentLevel
         use utils, only: EChk, setPointers
         use genericISNAN, only: myisnan
@@ -3397,7 +3397,7 @@ contains
 
             if (totalR > ANK_secondOrdSwitchTol * totalR0) then
                 ! Save if second order turbulence is used, we will only use 1st order during ANK (only matters for the coupled solver)
-                approxSA = .True.
+                approxTurb = .True.
                 orderturbsave = orderturb
                 orderturb = firstOrder
 
@@ -3414,8 +3414,8 @@ contains
             end if
 
             ! also check if we are using approxSA always
-            if (ANK_useApproxSA) &
-                approxSA = .True.
+            if (ANK_useApproxTurb) &
+                approxTurb = .True.
 
             ! Record the total residual and relative convergence for next iteration
             totalR_old = totalR
@@ -3473,12 +3473,12 @@ contains
             if (totalR > ANK_secondOrdSwitchTol * totalR0) then
                 ! Replace the second order turbulence option
                 orderturb = orderturbsave
-                approxSA = .False.
+                approxTurb = .False.
             end if
 
             ! put back the approxsa flag if we were using it
-            if (ANK_useApproxSA) &
-                approxSA = .False.
+            if (ANK_useApproxTurb) &
+                approxTurb = .False.
 
             ! Compute the maximum step that will limit the change
             ! in SA variable to some user defined fraction.
@@ -3623,7 +3623,7 @@ contains
         use inputPhysics, only: equations
         use inputIteration, only: L2conv
         use inputTimeSpectral, only: nTimeIntervalsSpectral
-        use inputDiscretization, only: lumpedDiss, approxSA, orderturb
+        use inputDiscretization, only: lumpedDiss, approxTurb, orderturb
         use iteration, only: approxTotalIts, totalR0, totalR, stepMonitor, linResMonitor, currentLevel, iterType
         use utils, only: EChk, setPointers
         use genericISNAN, only: myisnan
@@ -3840,7 +3840,7 @@ contains
             ! Setting lumped dissipation to true gives approximate fluxes
             ANK_useDissApprox = .True.
             lumpedDiss = .True.
-            approxSA = .True.
+            approxTurb = .True.
 
             ! Save the turbulence order, we will only use 1st order during ANK (only matters for the coupled solver)
             orderturbsave = orderturb
@@ -3863,8 +3863,8 @@ contains
         end if
 
         ! also check if we are using approxSA always
-        if (ANK_useApproxSA) &
-            approxSA = .True.
+        if (ANK_useApproxTurb) &
+            approxTurb = .True.
 
         ! Record the total residual and relative convergence for next iteration
         totalR_old = totalR
@@ -3923,7 +3923,7 @@ contains
             ! Set ANK_useDissApprox back to False to go back to using actual flux routines
             ANK_useDissApprox = .False.
             lumpedDiss = .False.
-            approxSA = .False.
+            approxTurb = .False.
 
             ! Replace turbulence order
             orderturb = orderturbsave
@@ -3931,8 +3931,8 @@ contains
         end if
 
         ! put back the approxsa flag if we were using it
-        if (ANK_useApproxSA) &
-            approxSA = .False.
+        if (ANK_useApproxTurb) &
+            approxTurb = .False.
 
         ! Compute the maximum step that will limit the change in pressure
         ! and energy to some user defined fraction.

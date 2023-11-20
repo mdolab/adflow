@@ -27,6 +27,7 @@ contains
     use blockpointers
     use constants
     use inputphysics
+    use inputdiscretization, only : approxturb
     use paramturb
     implicit none
 !
@@ -80,9 +81,14 @@ contains
           rhoi = temp
           ssd = scratchd(i, j, k, iprod)
           ss = scratch(i, j, k, iprod)
-          spkd = ss*rhoi*revd(i, j, k) + rev(i, j, k)*(rhoi*ssd+ss*rhoid&
-&           )
-          spk = rev(i, j, k)*ss*rhoi
+          if (approxturb) then
+            spk = zero
+            spkd = 0.0_8
+          else
+            spkd = ss*rhoi*revd(i, j, k) + rev(i, j, k)*(rhoi*ssd+ss*&
+&             rhoid)
+            spk = rev(i, j, k)*ss*rhoi
+          end if
           temp = w(i, j, k, itu2)
           temp0 = w(i, j, k, itu1)
           sdkd = rsstbetas*(temp*wd(i, j, k, itu1)+temp0*wd(i, j, k, &
@@ -121,6 +127,7 @@ contains
     use blockpointers
     use constants
     use inputphysics
+    use inputdiscretization, only : approxturb
     use paramturb
     implicit none
 !
@@ -162,7 +169,11 @@ contains
 ! except that everything is divided by rho here
           rhoi = one/w(i, j, k, irho)
           ss = scratch(i, j, k, iprod)
-          spk = rev(i, j, k)*ss*rhoi
+          if (approxturb) then
+            spk = zero
+          else
+            spk = rev(i, j, k)*ss*rhoi
+          end if
           sdk = rsstbetas*w(i, j, k, itu1)*w(i, j, k, itu2)
           if (spk .gt. pklim*sdk) then
             spk = pklim*sdk

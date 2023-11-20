@@ -221,6 +221,7 @@ contains
         use blockPointers
         use constants
         use inputPhysics
+        use inputDiscretization, only: approxTurb
         use paramTurb
         implicit none
         !
@@ -283,7 +284,12 @@ contains
 
                     rhoi = one / w(i, j, k, irho)
                     ss = scratch(i, j, k, iprod)
-                    spk = rev(i, j, k) * ss * rhoi
+
+                    if (approxTurb) then
+                        spk = zero
+                    else
+                        spk = rev(i, j, k) * ss * rhoi
+                    end if
                     sdk = rSSTBetas * w(i, j, k, itu1) * w(i, j, k, itu2)
                     spk = min(spk, pklim * sdk)
 

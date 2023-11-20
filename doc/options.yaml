@@ -958,11 +958,11 @@ ANKUseTurbDADI:
     Only applies to decoupled ANK.
     If False, an internal ANK-like solver is used for the turbulence in the decoupled mode.
 
-ANKUseApproxSA:
+ANKUseApproxTurb:
   desc: >
-    The ANK solver switches from the approximate to the exact SA implicit formulation when the solver switches from the first order to the second order routines (printed as SANK or CSANK).
-    Setting this flag to false will force the SA implicit treatment to always use the approximate formulation with the ANK solver variants.
-    This should have no effect on the final solution, but can help with convergence with challenging cases.
+    The ANK solver switches from the approximate to the exact implicit formulation when the solver switches from the first order to the second order routines (printed as SANK or CSANK).
+    Setting this flag to false will force the turbulence implicit treatment to always use the approximate formulation with the ANK solver variants.
+    This should have no effect on the final solution, but can help with convergence with challenging cases. 
 
 ANKSwitchTol:
   desc: >

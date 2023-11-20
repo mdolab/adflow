@@ -4037,7 +4037,7 @@ contains
         routineFailed = .False.
         fatalFail = .False.
         lumpedDiss = .False.
-        approxSA = .False.
+        approxTurb = .False.
         useApproxWallDistance = .False.
         cflLimit = 3.0
         adjointPETScVarsAllocated = .False.

@@ -27,6 +27,7 @@ contains
     use blockpointers
     use constants
     use inputphysics
+    use inputdiscretization, only : approxturb
     use paramturb
     implicit none
 !
@@ -74,7 +75,13 @@ contains
 ! except that everything is divided by rho here
       rhoi = one/w(i, j, k, irho)
       ss = scratch(i, j, k, iprod)
-      spk = rev(i, j, k)*ss*rhoi
+      if (approxturb) then
+        spk = zero
+        call pushcontrol1b(1)
+      else
+        spk = rev(i, j, k)*ss*rhoi
+        call pushcontrol1b(0)
+      end if
       sdk = rsstbetas*w(i, j, k, itu1)*w(i, j, k, itu2)
       if (spk .gt. pklim*sdk) then
         spk = pklim*sdk
@@ -106,15 +113,20 @@ contains
         sdkd = sdkd + pklim*spkd
         spkd = 0.0_8
       end if
-      t2d = t2d + rsstbeta2*rsstbetad + rsstgam2*rsstgamd
       wd(i, j, k, itu1) = wd(i, j, k, itu1) + w(i, j, k, itu2)*rsstbetas&
 &       *sdkd
       wd(i, j, k, itu2) = wd(i, j, k, itu2) + w(i, j, k, itu1)*rsstbetas&
 &       *sdkd
-      revd(i, j, k) = revd(i, j, k) + ss*rhoi*spkd
-      tempd = rev(i, j, k)*spkd
-      ssd = ssd + rhoi*tempd
-      rhoid = ss*tempd
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        revd(i, j, k) = revd(i, j, k) + ss*rhoi*spkd
+        tempd = rev(i, j, k)*spkd
+        ssd = ssd + rhoi*tempd
+        rhoid = ss*tempd
+      else
+        rhoid = 0.0_8
+      end if
+      t2d = t2d + rsstbeta2*rsstbetad + rsstgam2*rsstgamd
       scratchd(i, j, k, iprod) = scratchd(i, j, k, iprod) + ssd
       temp = w(i, j, k, irho)
       wd(i, j, k, irho) = wd(i, j, k, irho) - one*rhoid/temp**2
@@ -132,6 +144,7 @@ contains
     use blockpointers
     use constants
     use inputphysics
+    use inputdiscretization, only : approxturb
     use paramturb
     implicit none
 !
@@ -176,7 +189,11 @@ contains
 ! except that everything is divided by rho here
       rhoi = one/w(i, j, k, irho)
       ss = scratch(i, j, k, iprod)
-      spk = rev(i, j, k)*ss*rhoi
+      if (approxturb) then
+        spk = zero
+      else
+        spk = rev(i, j, k)*ss*rhoi
+      end if
       sdk = rsstbetas*w(i, j, k, itu1)*w(i, j, k, itu2)
       if (spk .gt. pklim*sdk) then
         spk = pklim*sdk

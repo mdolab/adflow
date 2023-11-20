@@ -30,7 +30,7 @@ contains
     use paramturb
     use section
     use inputphysics
-    use inputdiscretization, only : approxsa
+    use inputdiscretization, only : approxturb
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -241,7 +241,7 @@ myIntPtr = myIntPtr + 1
         fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-        if (approxsa) then
+        if (approxturb) then
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
           term1 = zero
@@ -437,7 +437,7 @@ branch = myIntStack(myIntPtr)
     use paramturb
     use section
     use inputphysics
-    use inputdiscretization, only : approxsa
+    use inputdiscretization, only : approxturb
     use flowvarrefstate
     implicit none
 ! local parameters
@@ -607,7 +607,7 @@ branch = myIntStack(myIntPtr)
         fwsa = gg*termfw
 ! compute the source term; some terms are saved for the
 ! linearization. the source term is stored in dvt.
-        if (approxsa) then
+        if (approxturb) then
           term1 = zero
         else
           term1 = rsacb1*(one-ft2)*ss
