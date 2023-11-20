@@ -439,7 +439,7 @@ class ADflowSolver(ImplicitComponent):
         local_state_size = solver.getStateSize()
 
         self.add_input("adflow_vol_coords", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
-        self.add_output("adflow_states", distributed=True, shape=local_state_size, tags=["mphys_coupling"])
+        self.add_output("adflow_states", distributed=True, shape=local_state_size, tags=["mphys_coupling"], res_ref=1e7)
 
         # self.declare_partials(of='adflow_states', wrt='*')
 
@@ -1453,7 +1453,7 @@ class ADflowBuilder(Builder):
 
     # TODO the get_nnodes is deprecated. will remove
     def get_nnodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])
+        return self.get_number_of_nodes(groupName=groupName)
 
     def get_number_of_nodes(self, groupName=None):
         return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])
@@ -1472,7 +1472,7 @@ class ADflowBuilder(Builder):
         grid_ids : list[int]
             list of grid IDs that correspond to given body/boundary tags
         """
-        numNodes = self.get_nnodes()
+        numNodes = self.get_number_of_nodes()
         if tags == -1 or tags == [-1]:
             return list(range(numNodes))
 
