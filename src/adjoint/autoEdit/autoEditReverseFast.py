@@ -22,6 +22,8 @@ patt_module = re.compile(r"\s*module\s\w*")
 patt_module_start = re.compile("(\s*module\s)(\w*)(_b)\s*")
 patt_module_end = re.compile("(\s*end module\s)(\w*)(_b)\s*")
 del_patterns = [
+    # the following lines are commented temporarily because the resulting code
+    # does not work with SST. 
     # re.compile(r"(\s*call pushreal8)"),
     # re.compile(r"(\s*call popreal8)"),
     # re.compile(r"(\s*call pushinteger4)"),

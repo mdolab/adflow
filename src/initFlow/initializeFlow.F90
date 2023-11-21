@@ -1357,7 +1357,7 @@ contains
                 ! Compute the eddy viscosity for rans computations using
                 ! an eddy viscosity model.
 
-                call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. It should be ok here.
+                call computeEddyViscosity(.False.)
 
                 ! In case of a rans computation and no restart, initialize
                 ! the turbulent variables a bit better for some turbulence

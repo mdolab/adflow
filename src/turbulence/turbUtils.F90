@@ -759,8 +759,6 @@ contains
         ! Determine the turbulence model and call the appropriate
         ! routine to compute the eddy viscosity.
         if (includeHalos) then
-            !  CAUTION: even though the following calls were made consistent to accept iBeg, iEnd, etc. care must be taken when the evaluation of EddyVisc
-            !    involves derivatives. They can't be obtained by FD in the halo cells! This is why the SST call is different from the others.
             iBeg = 1
             iEnd = ie
             jBeg = 1

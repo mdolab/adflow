@@ -214,23 +214,15 @@ contains
                     call boundaryNormals
                 end if
 
-                ! Notes:
-                ! - we do not compute inside of Halos. Those values will be filled with BCs or communications.
-                ! - second halos can be included for the compuation of BCs.
-
                 ! Compute the pressures/viscositites
                 call computePressureSimple(.False.)
 
                 ! Compute Laminar/eddy viscosity if required
                 call computeLamViscosity(.False.)
-                call computeEddyViscosity(.False.) !for SST, the velocity in 1st halo MUST be up to date before this call. It should be ok here.
+                call computeEddyViscosity(.False.)
 
                 ! Make sure to call the turb BC's first incase we need to
-                ! correct for K. We may need the updated value of K in the 1st
-                ! halo to update E, for example.
-
-                ! ********** OPTION 1: DO IT HERE ***********************
-                ! SO question is: first update turb then flow, or the other way around? (outside of this loop?)
+                ! correct for K 
                 if (equations == RANSEquations .and. turbRes) then
                     call BCTurbTreatment
                     call applyAllTurbBCthisblock(.True.)
@@ -240,19 +232,6 @@ contains
 
             end do
         end do
-
-        ! ********** OPTION 2: DO IT OUTSIDE OF THE LOOP, Turb AFTER flow ***********************
-        !  if( equations == RANSEquations .and. turbRes) then
-        !    do sps=1,nTimeIntervalsSpectral
-        !       do nn=1,nDom
-        !          call setPointers(nn, currentLevel, sps)
-
-        !             call BCTurbTreatment
-        !             call applyAllTurbBCthisblock(.True.)
-
-        !       end do
-        !    end do
-        !  end if
 
         ! Compute the ranges of the residuals we are dealing with:
         if (flowRes .and. turbRes) then

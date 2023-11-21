@@ -3263,7 +3263,6 @@ contains
                                 ! check turbulence variable
 #ifndef USE_COMPLEX
                                 ratio = (wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
-                                ! ratio = abs(wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
 #else
                                 ratio = (real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
 #endif

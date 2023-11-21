@@ -25,9 +25,6 @@ module wallDistanceData
     ! wallDistanceDataAllocated : Logical array keeping track of
     ! whether or not the petsc data is allocated.
 
-    ! the d2wall needs to be exchanged in halo cells. This is only 
-    ! the case if the distance was updated, but not exchanged yet.
-
     ! indicesForSPS: A simple derived type for keeping track of
     ! indices while doing wall distance computation.
 
