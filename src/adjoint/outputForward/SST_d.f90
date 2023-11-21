@@ -46,11 +46,17 @@ contains
     real(kind=realtype) :: result1
     real(kind=realtype) :: temp
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: temp1
 ! set model constants
-    result1 = sqrt(rsstbetas)
-    rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/result1
-    result1 = sqrt(rsstbetas)
-    rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/result1
+    if (use2003sst) then
+      rsstgam1 = 5.0_realtype/9.0_realtype
+      rsstgam2 = 0.44_realtype
+    else
+      result1 = sqrt(rsstbetas)
+      rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/result1
+      result1 = sqrt(rsstbetas)
+      rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/result1
+    end if
 !       source terms.
 !       determine the source term and its derivative w.r.t. k and
 !       omega for all internal cells of the block.
@@ -102,17 +108,30 @@ contains
           end if
           scratchd(i, j, k, idvt) = spkd - sdkd
           scratch(i, j, k, idvt) = spk - sdk
-          temp0 = scratch(i, j, k, icd)
-          temp = w(i, j, k, itu2)
-          scratchd(i, j, k, idvt+1) = ss*rsstgamd + rsstgam*ssd + two*&
-&           rsstsigw2*(temp0*t2d+t2*scratchd(i, j, k, icd)) - temp**2*&
-&           rsstbetad - rsstbeta*2*temp*wd(i, j, k, itu2)
-          scratch(i, j, k, idvt+1) = rsstgam*ss + two*rsstsigw2*(t2*&
-&           temp0) - rsstbeta*(temp*temp)
+          if (use2003sst) then
+            temp0 = rsstgam*spk/rev(i, j, k)
+            temp = scratch(i, j, k, icd)
+            temp1 = w(i, j, k, itu2)
+            scratchd(i, j, k, idvt+1) = (spk*rsstgamd+rsstgam*spkd-temp0&
+&             *revd(i, j, k))/rev(i, j, k) + two*rsstsigw2*(temp*t2d+t2*&
+&             scratchd(i, j, k, icd)) - temp1**2*rsstbetad - rsstbeta*2*&
+&             temp1*wd(i, j, k, itu2)
+            scratch(i, j, k, idvt+1) = temp0 + two*rsstsigw2*(t2*temp) -&
+&             rsstbeta*(temp1*temp1)
+          else
+            temp1 = scratch(i, j, k, icd)
+            temp0 = w(i, j, k, itu2)
+            scratchd(i, j, k, idvt+1) = ss*rsstgamd + rsstgam*ssd + two*&
+&             rsstsigw2*(temp1*t2d+t2*scratchd(i, j, k, icd)) - temp0**2&
+&             *rsstbetad - rsstbeta*2*temp0*wd(i, j, k, itu2)
+            scratch(i, j, k, idvt+1) = rsstgam*ss + two*rsstsigw2*(t2*&
+&             temp1) - rsstbeta*(temp0*temp0)
+          end if
 ! compute the source term jacobian. note that only the
 ! destruction terms are linearized to increase the diagonal
 ! dominance of the matrix. furthermore minus the source
 ! term jacobian is stored.
+
         end do
       end do
     end do
@@ -142,10 +161,15 @@ contains
     intrinsic min
     real(kind=realtype) :: result1
 ! set model constants
-    result1 = sqrt(rsstbetas)
-    rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/result1
-    result1 = sqrt(rsstbetas)
-    rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/result1
+    if (use2003sst) then
+      rsstgam1 = 5.0_realtype/9.0_realtype
+      rsstgam2 = 0.44_realtype
+    else
+      result1 = sqrt(rsstbetas)
+      rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/result1
+      result1 = sqrt(rsstbetas)
+      rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/result1
+    end if
 !       source terms.
 !       determine the source term and its derivative w.r.t. k and
 !       omega for all internal cells of the block.
@@ -181,12 +205,19 @@ contains
             spk = spk
           end if
           scratch(i, j, k, idvt) = spk - sdk
-          scratch(i, j, k, idvt+1) = rsstgam*ss + two*t2*rsstsigw2*&
-&           scratch(i, j, k, icd) - rsstbeta*w(i, j, k, itu2)**2
+          if (use2003sst) then
+            scratch(i, j, k, idvt+1) = rsstgam*spk/rev(i, j, k) + two*t2&
+&             *rsstsigw2*scratch(i, j, k, icd) - rsstbeta*w(i, j, k, &
+&             itu2)**2
+          else
+            scratch(i, j, k, idvt+1) = rsstgam*ss + two*t2*rsstsigw2*&
+&             scratch(i, j, k, icd) - rsstbeta*w(i, j, k, itu2)**2
+          end if
 ! compute the source term jacobian. note that only the
 ! destruction terms are linearized to increase the diagonal
 ! dominance of the matrix. furthermore minus the source
 ! term jacobian is stored.
+
         end do
       end do
     end do
@@ -1011,6 +1042,7 @@ contains
     use inputtimespectral
     use iteration
     use paramturb, only : rsstsigw2
+    use inputphysics, only : use2003sst
     implicit none
 !
 !      local variables.
@@ -1027,6 +1059,8 @@ contains
     intrinsic tanh
     real(kind=realtype) :: max1
     real(kind=realtype) :: max1d
+    real(kind=realtype) :: max2
+    real(kind=realtype) :: max2d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
     real(kind=realtype) :: arg10
@@ -1095,18 +1129,34 @@ contains
           else
             t1 = t1
           end if
-          if (eps .lt. scratch(i, j, k, icd)) then
-            max1d = scratchd(i, j, k, icd)
-            max1 = scratch(i, j, k, icd)
+          if (use2003sst) then
+            if (myeps/w(i, j, k, irho) .lt. scratch(i, j, k, icd)) then
+              max1d = scratchd(i, j, k, icd)
+              max1 = scratch(i, j, k, icd)
+            else
+              temp5 = myeps/w(i, j, k, irho)
+              max1d = -(temp5*wd(i, j, k, irho)/w(i, j, k, irho))
+              max1 = temp5
+            end if
+            temp5 = d2wall(i, j, k)*d2wall(i, j, k)
+            temp4 = w(i, j, k, itu1)/(max1*temp5)
+            t2d = two*(wd(i, j, k, itu1)-temp4*(temp5*max1d+max1*2*&
+&             d2wall(i, j, k)*d2walld(i, j, k)))/(max1*temp5)
+            t2 = two*temp4
           else
-            max1 = eps
-            max1d = 0.0_8
+            if (eps .lt. scratch(i, j, k, icd)) then
+              max2d = scratchd(i, j, k, icd)
+              max2 = scratch(i, j, k, icd)
+            else
+              max2 = eps
+              max2d = 0.0_8
+            end if
+            temp5 = d2wall(i, j, k)*d2wall(i, j, k)
+            temp4 = w(i, j, k, itu1)/(max2*temp5)
+            t2d = two*(wd(i, j, k, itu1)-temp4*(temp5*max2d+max2*2*&
+&             d2wall(i, j, k)*d2walld(i, j, k)))/(max2*temp5)
+            t2 = two*temp4
           end if
-          temp5 = d2wall(i, j, k)*d2wall(i, j, k)
-          temp4 = w(i, j, k, itu1)/(max1*temp5)
-          t2d = two*(wd(i, j, k, itu1)-temp4*(temp5*max1d+max1*2*d2wall(&
-&           i, j, k)*d2walld(i, j, k)))/(max1*temp5)
-          t2 = two*temp4
           if (t1 .gt. t2) then
             arg1d = t2d
             arg1 = t2
@@ -1193,6 +1243,7 @@ bocos:do nn=1,nbocos
     use inputtimespectral
     use iteration
     use paramturb, only : rsstsigw2
+    use inputphysics, only : use2003sst
     implicit none
 !
 !      local variables.
@@ -1207,6 +1258,7 @@ bocos:do nn=1,nbocos
     intrinsic min
     intrinsic tanh
     real(kind=realtype) :: max1
+    real(kind=realtype) :: max2
     real(kind=realtype) :: result1
     real(kind=realtype) :: arg10
     myeps = 1e-10_realtype/two/rsstsigw2
@@ -1245,12 +1297,21 @@ bocos:do nn=1,nbocos
           else
             t1 = t1
           end if
-          if (eps .lt. scratch(i, j, k, icd)) then
-            max1 = scratch(i, j, k, icd)
+          if (use2003sst) then
+            if (myeps/w(i, j, k, irho) .lt. scratch(i, j, k, icd)) then
+              max1 = scratch(i, j, k, icd)
+            else
+              max1 = myeps/w(i, j, k, irho)
+            end if
+            t2 = two*w(i, j, k, itu1)/(max1*d2wall(i, j, k)**2)
           else
-            max1 = eps
+            if (eps .lt. scratch(i, j, k, icd)) then
+              max2 = scratch(i, j, k, icd)
+            else
+              max2 = eps
+            end if
+            t2 = two*w(i, j, k, itu1)/(max2*d2wall(i, j, k)**2)
           end if
-          t2 = two*w(i, j, k, itu1)/(max1*d2wall(i, j, k)**2)
           if (t1 .gt. t2) then
             arg1 = t2
           else

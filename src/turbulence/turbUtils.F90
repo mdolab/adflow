@@ -359,7 +359,6 @@ contains
 #endif
     end subroutine prodWmag2
 
-#ifdef SST_2003
     subroutine strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
         !
         !       strainNorm computes the term:
@@ -470,7 +469,6 @@ contains
         end do
 #endif
     end subroutine strainNorm
-#endif
 
     function saNuKnownEddyRatio(eddyRatio, nuLam)
         !
@@ -937,6 +935,7 @@ contains
         use paramTurb
         use turbMod
         use flowVarRefState, only: timeRef
+        use inputPhysics, only: use2003SST
         implicit none
         ! Input variables
         integer(kind=intType) :: iBeg, iEnd, jBeg, jEnd, kBeg, kEnd
@@ -951,11 +950,11 @@ contains
         ! for it; for the actual eddy viscosity computation the vorticity
         ! itself is needed.
 
-#ifdef SST_2003
-        call strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-#else
-        call prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
-#endif
+        if (use2003SST) then
+            call strainNorm(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+        else
+            call prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
+        end if
 
     
 

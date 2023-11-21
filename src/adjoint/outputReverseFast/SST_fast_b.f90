@@ -49,13 +49,23 @@ contains
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: temp1
+    real(kind=realtype) :: tmp0
+    real(kind=realtype) :: tmpd0
+    real(kind=realtype) :: tempd1
     integer :: branch
     integer :: ii
 ! set model constants
-    rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/sqrt(&
-&     rsstbetas)
-    rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/sqrt(&
-&     rsstbetas)
+    if (use2003sst) then
+      rsstgam1 = 5.0_realtype/9.0_realtype
+      rsstgam2 = 0.44_realtype
+    else
+      rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/sqrt(&
+&       rsstbetas)
+      rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/sqrt(&
+&       rsstbetas)
+    end if
 !$bwd-of ii-loop 
     do ii=0,nx*ny*nz-1
       i = mod(ii, nx) + 2
@@ -95,21 +105,34 @@ myIntPtr = myIntPtr + 1
         spk = spk
       end if
       scratch(i, j, k, idvt) = spk - sdk
-! compute the source term jacobian. note that only the
-! destruction terms are linearized to increase the diagonal
-! dominance of the matrix. furthermore minus the source
-! term jacobian is stored.
-      tmpd = scratchd(i, j, k, idvt+1)
-      scratchd(i, j, k, idvt+1) = 0.0_8
-      temp0 = w(i, j, k, itu2)
-      rsstgamd = ss*tmpd
-      ssd = rsstgam*tmpd
-      tempd = two*rsstsigw2*tmpd
-      rsstbetad = -(temp0**2*tmpd)
-      wd(i, j, k, itu2) = wd(i, j, k, itu2) - 2*temp0*rsstbeta*tmpd
-      t2d = scratch(i, j, k, icd)*tempd
-      scratchd(i, j, k, icd) = scratchd(i, j, k, icd) + t2*tempd
-      spkd = scratchd(i, j, k, idvt)
+      if (use2003sst) then
+        tmpd = scratchd(i, j, k, idvt+1)
+        scratchd(i, j, k, idvt+1) = 0.0_8
+        temp1 = w(i, j, k, itu2)
+        tempd = tmpd/rev(i, j, k)
+        tempd0 = two*rsstsigw2*tmpd
+        rsstbetad = -(temp1**2*tmpd)
+        wd(i, j, k, itu2) = wd(i, j, k, itu2) - 2*temp1*rsstbeta*tmpd
+        t2d = scratch(i, j, k, icd)*tempd0
+        scratchd(i, j, k, icd) = scratchd(i, j, k, icd) + t2*tempd0
+        rsstgamd = spk*tempd
+        spkd = rsstgam*tempd
+        revd(i, j, k) = revd(i, j, k) - rsstgam*spk*tempd/rev(i, j, k)
+        ssd = 0.0_8
+      else
+        tmpd0 = scratchd(i, j, k, idvt+1)
+        scratchd(i, j, k, idvt+1) = 0.0_8
+        temp0 = w(i, j, k, itu2)
+        rsstgamd = ss*tmpd0
+        ssd = rsstgam*tmpd0
+        tempd1 = two*rsstsigw2*tmpd0
+        rsstbetad = -(temp0**2*tmpd0)
+        wd(i, j, k, itu2) = wd(i, j, k, itu2) - 2*temp0*rsstbeta*tmpd0
+        t2d = scratch(i, j, k, icd)*tempd1
+        scratchd(i, j, k, icd) = scratchd(i, j, k, icd) + t2*tempd1
+        spkd = 0.0_8
+      end if
+      spkd = spkd + scratchd(i, j, k, idvt)
       sdkd = -scratchd(i, j, k, idvt)
       scratchd(i, j, k, idvt) = 0.0_8
 branch = myIntStack(myIntPtr)
@@ -166,10 +189,15 @@ branch = myIntStack(myIntPtr)
     intrinsic min
     integer :: ii
 ! set model constants
-    rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/sqrt(&
-&     rsstbetas)
-    rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/sqrt(&
-&     rsstbetas)
+    if (use2003sst) then
+      rsstgam1 = 5.0_realtype/9.0_realtype
+      rsstgam2 = 0.44_realtype
+    else
+      rsstgam1 = rsstbeta1/rsstbetas - rsstsigw1*rsstk*rsstk/sqrt(&
+&       rsstbetas)
+      rsstgam2 = rsstbeta2/rsstbetas - rsstsigw2*rsstk*rsstk/sqrt(&
+&       rsstbetas)
+    end if
 !$ad ii-loop
 !       source terms.
 !       determine the source term and its derivative w.r.t. k and
@@ -207,12 +235,18 @@ branch = myIntStack(myIntPtr)
         spk = spk
       end if
       scratch(i, j, k, idvt) = spk - sdk
-      scratch(i, j, k, idvt+1) = rsstgam*ss + two*t2*rsstsigw2*scratch(i&
-&       , j, k, icd) - rsstbeta*w(i, j, k, itu2)**2
+      if (use2003sst) then
+        scratch(i, j, k, idvt+1) = rsstgam*spk/rev(i, j, k) + two*t2*&
+&         rsstsigw2*scratch(i, j, k, icd) - rsstbeta*w(i, j, k, itu2)**2
+      else
+        scratch(i, j, k, idvt+1) = rsstgam*ss + two*t2*rsstsigw2*scratch&
+&         (i, j, k, icd) - rsstbeta*w(i, j, k, itu2)**2
+      end if
 ! compute the source term jacobian. note that only the
 ! destruction terms are linearized to increase the diagonal
 ! dominance of the matrix. furthermore minus the source
 ! term jacobian is stored.
+
     end do
   end subroutine sstsource
 
@@ -1144,6 +1178,7 @@ branch = myIntStack(myIntPtr)
     use inputtimespectral
     use iteration
     use paramturb, only : rsstsigw2
+    use inputphysics, only : use2003sst
     implicit none
 !
 !      local variables.
@@ -1161,6 +1196,8 @@ branch = myIntStack(myIntPtr)
     intrinsic tanh
     real(kind=realtype) :: max1
     real(kind=realtype) :: max1d
+    real(kind=realtype) :: max2
+    real(kind=realtype) :: max2d
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: tmp0
@@ -1201,6 +1238,7 @@ branch = myIntStack(myIntPtr)
     integer :: ad_to9
     integer :: ad_from10
     integer :: ad_to10
+    myeps = 1e-10_realtype/two/rsstsigw2
     ibeg = 1
     jbeg = 1
     kbeg = 1
@@ -1419,16 +1457,33 @@ myIntPtr = myIntPtr + 1
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
       end if
-      if (eps .lt. scratch(i, j, k, icd)) then
-        max1 = scratch(i, j, k, icd)
+      if (use2003sst) then
+        if (myeps/w(i, j, k, irho) .lt. scratch(i, j, k, icd)) then
+          max1 = scratch(i, j, k, icd)
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 0
-      else
+        else
+          max1 = myeps/w(i, j, k, irho)
 myIntPtr = myIntPtr + 1
  myIntStack(myIntPtr) = 1
-        max1 = eps
+        end if
+        t2 = two*w(i, j, k, itu1)/(max1*d2wall(i, j, k)**2)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+      else
+        if (eps .lt. scratch(i, j, k, icd)) then
+          max2 = scratch(i, j, k, icd)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
+        else
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 1
+          max2 = eps
+        end if
+        t2 = two*w(i, j, k, itu1)/(max2*d2wall(i, j, k)**2)
+myIntPtr = myIntPtr + 1
+ myIntStack(myIntPtr) = 0
       end if
-      t2 = two*w(i, j, k, itu1)/(max1*d2wall(i, j, k)**2)
       if (t1 .gt. t2) then
         arg1 = t2
 myIntPtr = myIntPtr + 1
@@ -1449,14 +1504,31 @@ branch = myIntStack(myIntPtr)
         t1d = arg1d
         t2d = 0.0_8
       end if
-      temp5 = d2wall(i, j, k)*d2wall(i, j, k)
-      tempd = two*t2d/(temp5*max1)
-      wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd
-      max1d = -(w(i, j, k, itu1)*tempd/max1)
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
-      if (branch .eq. 0) scratchd(i, j, k, icd) = scratchd(i, j, k, icd)&
-&         + max1d
+      if (branch .eq. 0) then
+        temp5 = d2wall(i, j, k)*d2wall(i, j, k)
+        tempd = two*t2d/(temp5*max2)
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd
+        max2d = -(w(i, j, k, itu1)*tempd/max2)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+        if (branch .eq. 0) scratchd(i, j, k, icd) = scratchd(i, j, k, &
+&           icd) + max2d
+      else
+        temp5 = d2wall(i, j, k)*d2wall(i, j, k)
+        tempd = two*t2d/(temp5*max1)
+        wd(i, j, k, itu1) = wd(i, j, k, itu1) + tempd
+        max1d = -(w(i, j, k, itu1)*tempd/max1)
+branch = myIntStack(myIntPtr)
+ myIntPtr = myIntPtr - 1
+        if (branch .eq. 0) then
+          scratchd(i, j, k, icd) = scratchd(i, j, k, icd) + max1d
+        else
+          temp5 = w(i, j, k, irho)
+          wd(i, j, k, irho) = wd(i, j, k, irho) - myeps*max1d/temp5**2
+        end if
+      end if
 branch = myIntStack(myIntPtr)
  myIntPtr = myIntPtr - 1
       if (branch .eq. 0) then
@@ -1500,6 +1572,7 @@ branch = myIntStack(myIntPtr)
     use inputtimespectral
     use iteration
     use paramturb, only : rsstsigw2
+    use inputphysics, only : use2003sst
     implicit none
 !
 !      local variables.
@@ -1515,6 +1588,7 @@ branch = myIntStack(myIntPtr)
     intrinsic min
     intrinsic tanh
     real(kind=realtype) :: max1
+    real(kind=realtype) :: max2
     myeps = 1e-10_realtype/two/rsstsigw2
     ibeg = 1
     jbeg = 1
@@ -1556,12 +1630,21 @@ branch = myIntStack(myIntPtr)
       else
         t1 = t1
       end if
-      if (eps .lt. scratch(i, j, k, icd)) then
-        max1 = scratch(i, j, k, icd)
+      if (use2003sst) then
+        if (myeps/w(i, j, k, irho) .lt. scratch(i, j, k, icd)) then
+          max1 = scratch(i, j, k, icd)
+        else
+          max1 = myeps/w(i, j, k, irho)
+        end if
+        t2 = two*w(i, j, k, itu1)/(max1*d2wall(i, j, k)**2)
       else
-        max1 = eps
+        if (eps .lt. scratch(i, j, k, icd)) then
+          max2 = scratch(i, j, k, icd)
+        else
+          max2 = eps
+        end if
+        t2 = two*w(i, j, k, itu1)/(max2*d2wall(i, j, k)**2)
       end if
-      t2 = two*w(i, j, k, itu1)/(max1*d2wall(i, j, k)**2)
       if (t1 .gt. t2) then
         arg1 = t2
       else

@@ -237,15 +237,15 @@ contains
 
         ! Set model constants
 
-#ifdef SST_2003
-        rSSTGam1 = 5.0_realType / 9.0_realType
-        rSSTGam2 = 0.44_realType
-#else
-        rSSTGam1 = rSSTBeta1 / rSSTBetas &
-                   - rSSTSigw1 * rSSTK * rSSTK / sqrt(rSSTBetas)
-        rSSTGam2 = rSSTBeta2 / rSSTBetas &
-                   - rSSTSigw2 * rSSTK * rSSTK / sqrt(rSSTBetas)
-#endif
+        if (use2003SST) then
+            rSSTGam1 = 5.0_realType / 9.0_realType
+            rSSTGam2 = 0.44_realType
+        else
+            rSSTGam1 = rSSTBeta1 / rSSTBetas &
+                       - rSSTSigw1 * rSSTK * rSSTK / sqrt(rSSTBetas)
+            rSSTGam2 = rSSTBeta2 / rSSTBetas &
+                       - rSSTSigw2 * rSSTK * rSSTK / sqrt(rSSTBetas)
+        end if
 
 
         !       Source terms.
@@ -294,13 +294,13 @@ contains
                     spk = min(spk, pklim * sdk)
 
                     scratch(i, j, k, idvt) = spk - sdk
-#ifdef SST_2003
-                    scratch(i, j, k, idvt + 1) = rSSTGam * spk / rev(i, j, k) + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
-                                      - rSSTBeta * w(i, j, k, itu2)**2
-#else
-                    scratch(i, j, k, idvt + 1) = rSSTGam * ss + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
-                                      - rSSTBeta * w(i, j, k, itu2)**2
-#endif
+                    if (use2003SST) then
+                        scratch(i, j, k, idvt + 1) = rSSTGam * spk / rev(i, j, k) + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
+                                          - rSSTBeta * w(i, j, k, itu2)**2
+                    else
+                        scratch(i, j, k, idvt + 1) = rSSTGam * ss + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
+                                          - rSSTBeta * w(i, j, k, itu2)**2
+                    end if
 
                     ! Compute the source term jacobian. Note that only the
                     ! destruction terms are linearized to increase the diagonal
@@ -805,6 +805,7 @@ contains
         use inputTimeSpectral
         use iteration
         use paramTurb, only: rSSTSigw2
+        use inputPhysics, only: use2003SST
         implicit none
         !
         !      Local variables.
@@ -869,13 +870,14 @@ contains
                     t2 = 500.0_realType * rlv(i, j, k) &
                          / (w(i, j, k, irho) * w(i, j, k, itu2) * d2Wall(i, j, k)**2)
                     t1 = max(t1, t2)
-#ifdef SST_2003
-                    t2 = two * w(i, j, k, itu1) &
-                         / (max(myeps / w(i, j, k, irho), scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
-#else
-                    t2 = two * w(i, j, k, itu1) &
-                         / (max(eps, scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
-#endif
+
+                    if (use2003SST) then
+                        t2 = two * w(i, j, k, itu1) &
+                             / (max(myeps / w(i, j, k, irho), scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
+                    else
+                        t2 = two * w(i, j, k, itu1) &
+                             / (max(eps, scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
+                    end if
 
                     arg1 = min(t1, t2)
                     scratch(i, j, k, if1SST) = tanh(arg1**4)

@@ -237,6 +237,10 @@ useft2SA:
   desc: >
     Include the ft2 term in the Spalart-Allmaras turbulence model.
 
+use2003SST:
+  desc: >
+    Use the 2003 formulation of SST. This migh imporove convergence.
+
 eddyVisInfRatio:
   desc: >
     Free stream value of eddy viscosity.
