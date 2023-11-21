@@ -1139,9 +1139,6 @@ nadvloopspectral:do ii=1,nadv
 ! determine the turbulence model and call the appropriate
 ! routine to compute the eddy viscosity.
       if (includehalos) then
-!  caution: even though the following calls were made consistent to accept ibeg, iend, etc. care must be taken when the evaluatio
-!n of eddyvisc
-!    involves derivatives. they can't be obtained by fd in the halo cells! this is why the sst call is different from the others.
         ibeg = 1
         iend = ie
         jbeg = 1
