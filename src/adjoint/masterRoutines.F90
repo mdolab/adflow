@@ -41,8 +41,9 @@ contains
         use oversetData, only: oversetPresent
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity
-        use actuatorRegionData, only: nActuatorRegions
+        use actuatorRegionData, only: nActuatorRegions, actuatorRegions
         use wallDistanceData, only: xSurfVec, xSurf
+        use actuatorRegion, only: computeActuatorRegionVolume
 
         implicit none
 
@@ -106,8 +107,12 @@ contains
                     call updateOversetConnectivity(1_intType, sps)
                 end if
             end do
-        end if
 
+            ! Zero out the local volume pointers for the actuator zone
+            do iRegion = 1, nActuatorRegions
+                actuatorRegions(iRegion)%volLocal = zero
+            end do
+        end if
 
         do sps = 1, nTimeIntervalsSpectral
             do nn = 1, nDom
@@ -115,6 +120,12 @@ contains
 
                 if (useSpatial) then
                     call volume_block
+
+                    ! Compute the volume of each actuator region
+                    do iRegion = 1, nActuatorRegions
+                        call computeActuatorRegionVolume(nn, iRegion)
+                    end do
+
                     call metric_block
                     call boundaryNormals
                 end if
@@ -136,6 +147,15 @@ contains
             end do
         end do
 
+        ! Sum the local actuator zone volumes into the global actuator
+        ! zone volumes.
+        if (useSpatial) then
+            do iRegion = 1, nActuatorRegions
+                call mpi_allreduce(actuatorRegions(iRegion)%volLocal, actuatorRegions(iRegion)%volume, 1, &
+                                   adflow_real, MPI_SUM, adflow_comm_world, ierr)
+                call ECHK(ierr, __FILE__, __LINE__)
+            end do
+        end if
 
         ! Exchange values
         call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
@@ -301,7 +321,8 @@ contains
         use oversetData, only: oversetPresent
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity_d
-        use actuatorRegionData, only: nActuatorRegions
+        use actuatorRegionData, only: nActuatorRegions, actuatorRegionsd
+        use actuatorregion_d, only: computeactuatorregionvolume_d
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -435,6 +456,11 @@ contains
             call setBCDataFineGrid_d(.true.)
         end if
 
+        ! Zero out the local volume seeds for the actuator zones
+        do iRegion = 1, nActuatorRegions
+            actuatorRegionsd(iRegion)%volLocal = zero
+        end do
+
         do sps = 1, nTimeIntervalsSpectral
             do nn = 1, nDom
 
@@ -446,6 +472,12 @@ contains
                 call volume_block() ! not completely sure if this is needed still, but it fixes a bug where the residuasl would
                 ! increase from ~1e-11 to ~1e-7
                 call metric_block_d()
+
+                ! Loop over the actuator regions to compute the local
+                ! volume seeds
+                do iRegion = 1, nActuatorRegions
+                    call computeActuatorRegionVolume_d(nn, iRegion)
+                end do
                 call boundaryNormals_d()
 
                 time = timeunsteadyrestart
@@ -476,6 +508,14 @@ contains
                 call applyAllBC_block_d(.True.)
 
             end do
+        end do
+
+        ! Loop over the actuator regions again to sum the local volume
+        ! seeds into the global volume seeds
+        do iRegion = 1, nActuatorRegions
+            call mpi_allreduce(actuatorRegionsd(iRegion)%volLocal, actuatorRegionsd(iRegion)%volume, 1, &
+                               adflow_real, MPI_SUM, adflow_comm_world, ierr)
+            call ECHK(ierr, __FILE__, __LINE__)
         end do
 
         ! Just exchange the derivative values.
@@ -650,7 +690,8 @@ contains
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity_b
         use BCRoutines, only: applyAllBC_block
-        use actuatorRegionData, only: nActuatorRegions
+        use actuatorRegionData, only: nActuatorRegions, actuatorRegionsd
+        use actuatorregion_b, only: computeactuatorregionvolume_b
         use monitor, only: timeUnsteadyRestart
         use section, only: sections, nSections ! used in time-declaration
 
@@ -786,6 +827,16 @@ contains
             end do domainLoop1
         end do spsLoop1
 
+        ! All reduce the global AZ volume seeds and store them in the
+        ! local AZ volume seeds.
+        ! This is the inverse of the all reduce that is done in forward
+        ! mode to sum the local seeds into the global seeds.
+        do iRegion = 1, nActuatorRegions
+            call mpi_allreduce(actuatorRegionsd(iRegion)%volume, actuatorRegionsd(iRegion)%volLocal, 1, &
+                               adflow_real, mpi_sum, adflow_comm_world, ierr)
+            call ECHK(ierr, __FILE__, __LINE__)
+        end do
+
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
         ! interpolated values from actual compute cells. Only needed for
@@ -845,12 +896,20 @@ contains
                 call gridvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
 
                 call boundaryNormals_b
+                do iRegion = 1, nActuatorRegions
+                    call computeActuatorRegionVolume_b(nn, iRegion)
+                end do
                 call metric_block_b
                 call volume_block_b
 
             end do domainLoop2
 
         end do spsLoop2
+
+        ! Zero out the local volume seeds of the actuator zone
+        do iRegion = 1, nActuatorRegions
+            actuatorRegionsd(iRegion)%volLocal = zero
+        end do
 
         if (present(bcDataNames)) then
             allocate (bcDataValuesdLocal(size(bcDataValuesd)))

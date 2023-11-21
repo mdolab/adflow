@@ -3729,6 +3729,9 @@ contains
         use inputCostFunctions
         implicit none
 
+        ! Initialize boundary condition warning print outs
+        printBCWarnings = .true.
+
         ! Initialize monitoring the turbulent residuals as well as the
         ! monitoring of mass flow of the sliding interfaces to .false.
 

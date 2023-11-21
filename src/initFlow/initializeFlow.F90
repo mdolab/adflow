@@ -321,7 +321,7 @@ contains
     end subroutine infChangeCorrection
 
     ! Section out the BCdata setup so that it can by called from python when needed
-    subroutine updateBCDataAllLevels()
+    subroutine updateBCDataAllLevels
         ! sets the prescribed boundary data from the CGNS arrays
 
         use constants
