@@ -33,16 +33,15 @@ test_params = [
         "aero_prob": copy.deepcopy(ap_tutorial_wing),
         "N_PROCS": 1,
     },
-
     # SST test
     {
         "name": "rans_tut_wing_SST_1core",
         "options": {
             "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
             "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
-            'equationType':'RANS',
-            'useblockettes': False,
-            'turbulenceModel': 'Menter SST',
+            "equationType": "RANS",
+            "useblockettes": False,
+            "turbulenceModel": "Menter SST",
             "turbResScale": [1e3, 1e-8],
             # "nsubiter": 3,
             # "nsubiterturb": 20,
@@ -56,7 +55,6 @@ test_params = [
         "ref_file": "funcs_rans_SST.json",
         "aero_prob": copy.deepcopy(ap_tutorial_wing),
     },
-
 ]
 
 
