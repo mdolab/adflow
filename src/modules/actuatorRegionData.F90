@@ -26,6 +26,7 @@ module actuatorRegionData
         ! Volume is the total integrated volume of all cells (on all
         ! procs) included in this region
         real(kind=realType) :: volume
+        real(kind=realType) :: volLocal
 
         integer(kind=intType), dimension(:), allocatable :: blkPtr
 

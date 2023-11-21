@@ -1089,6 +1089,7 @@ python module libadflow
          logical :: printwarnings
          logical :: printnegativevolumes
          logical :: printbadlyskewedcells
+         logical :: printbcwarnings
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
          logical :: usedisscontinuation

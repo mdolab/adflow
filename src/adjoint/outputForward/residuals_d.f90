@@ -340,18 +340,18 @@ contains
 
 !  differentiation of sourceterms_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw plocal
-!   with respect to varying inputs: uref pref *w *dw actuatorregions.force
-!                actuatorregions.heat plocal
+!   with respect to varying inputs: uref pref *w *dw *vol actuatorregions.force
+!                actuatorregions.heat actuatorregions.volume plocal
 !   rw status of diff variables: uref:in pref:in *w:in *dw:in-out
-!                actuatorregions.force:in actuatorregions.heat:in
-!                plocal:in-out
-!   plus diff mem management of: w:in dw:in
+!                *vol:in actuatorregions.force:in actuatorregions.heat:in
+!                actuatorregions.volume:in plocal:in-out
+!   plus diff mem management of: w:in dw:in vol:in
   subroutine sourceterms_block_d(nn, res, iregion, plocal, plocald)
 ! apply the source terms for the given block. assume that the
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, dwd, w, wd
+    use blockpointers, only : vol, vold, dw, dwd, w, wd
     use flowvarrefstate, only : pref, prefd, uref, urefd, lref
     use communication
     use iteration, only : ordersconverged
@@ -388,14 +388,16 @@ contains
 ! compute the constant force factor
     temp = actuatorregions(iregion)%volume*pref
     f_factd = factor*(actuatorregionsd(iregion)%force-actuatorregions(&
-&     iregion)%force*actuatorregions(iregion)%volume*prefd/temp)/temp
+&     iregion)%force*(pref*actuatorregionsd(iregion)%volume+&
+&     actuatorregions(iregion)%volume*prefd)/temp)/temp
     f_fact = factor*(actuatorregions(iregion)%force/temp)
 ! heat factor. this is heat added per unit volume per unit time
-    temp = actuatorregions(iregion)%volume*(lref*lref)
+    temp = lref*lref*actuatorregions(iregion)%volume
     temp0 = temp*pref*uref
     temp1 = actuatorregions(iregion)%heat/temp0
-    q_factd = factor*(actuatorregionsd(iregion)%heat-temp1*temp*(uref*&
-&     prefd+pref*urefd))/temp0
+    q_factd = factor*(actuatorregionsd(iregion)%heat-temp1*(pref*uref*&
+&     lref**2*actuatorregionsd(iregion)%volume+temp*(uref*prefd+pref*&
+&     urefd)))/temp0
     q_fact = factor*temp1
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
@@ -406,8 +408,8 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmpd = volref(i, j, k)*f_factd
-      ftmp = volref(i, j, k)*f_fact
+      ftmpd = f_fact*vold(i, j, k) + vol(i, j, k)*f_factd
+      ftmp = vol(i, j, k)*f_fact
       vxd = wd(i, j, k, ivx)
       vx = w(i, j, k, ivx)
       vyd = wd(i, j, k, ivy)
@@ -415,8 +417,8 @@ contains
       vzd = wd(i, j, k, ivz)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmpd = volref(i, j, k)*q_factd
-      qtmp = volref(i, j, k)*q_fact
+      qtmpd = q_fact*vold(i, j, k) + vol(i, j, k)*q_factd
+      qtmp = vol(i, j, k)*q_fact
       if (res) then
 ! momentum residuals
         dwd(i, j, k, imx:imz) = dwd(i, j, k, imx:imz) - ftmpd
@@ -442,7 +444,7 @@ contains
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, w
+    use blockpointers, only : vol, dw, w
     use flowvarrefstate, only : pref, uref, lref
     use communication
     use iteration, only : ordersconverged
@@ -485,12 +487,12 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = volref(i, j, k)*f_fact
+      ftmp = vol(i, j, k)*f_fact
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmp = volref(i, j, k)*q_fact
+      qtmp = vol(i, j, k)*q_fact
       if (res) then
 ! momentum residuals
         dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp

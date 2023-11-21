@@ -344,7 +344,7 @@ contains
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, dwd, w, wd
+    use blockpointers, only : vol, dw, dwd, w, wd
     use flowvarrefstate, only : pref, uref, lref
     use communication
     use iteration, only : ordersconverged
@@ -392,7 +392,7 @@ myIntPtr = myIntPtr + 1
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = volref(i, j, k)*f_fact
+      ftmp = vol(i, j, k)*f_fact
 ! this gets the heat addition rate
       if (res) then
         vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
@@ -416,7 +416,7 @@ branch = myIntStack(myIntPtr)
 ! block pointers are already set.
     use constants
     use actuatorregiondata
-    use blockpointers, only : volref, dw, w
+    use blockpointers, only : vol, dw, w
     use flowvarrefstate, only : pref, uref, lref
     use communication
     use iteration, only : ordersconverged
@@ -459,12 +459,12 @@ branch = myIntStack(myIntPtr)
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = volref(i, j, k)*f_fact
+      ftmp = vol(i, j, k)*f_fact
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmp = volref(i, j, k)*q_fact
+      qtmp = vol(i, j, k)*q_fact
       if (res) then
 ! momentum residuals
         dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
