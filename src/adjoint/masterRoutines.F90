@@ -160,7 +160,6 @@ contains
         ! Exchange values
         call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
 
-
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
         ! interpolated values from actual compute cells. Only needed for
@@ -388,11 +387,13 @@ contains
             ! scatter from the global seed (in x_like) to xSurfVecd...but only
             ! if wallDistances were used
             if (wallDistanceNeeded .and. useApproxWallDistance) then
-                    call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
-                    call EChk(ierr, __FILE__, __LINE__)
+                call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, &
+                                     ierr)
+                call EChk(ierr, __FILE__, __LINE__)
 
-                    call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
-                    call EChk(ierr, __FILE__, __LINE__)
+                call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, &
+                                   ierr)
+                call EChk(ierr, __FILE__, __LINE__)
             end if
 
             ! Get the pointers from the petsc vector for the surface
@@ -520,7 +521,6 @@ contains
 
         ! Just exchange the derivative values.
         call whalo2_d(1, 1, nw, .True., .True., .True.)
-
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new

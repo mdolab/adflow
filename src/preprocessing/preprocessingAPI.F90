@@ -1179,15 +1179,15 @@ contains
                             x0 => x(:, :, ke, :); x1 => x(:, :, kl, :); x2 => x(:, :, nz, :)
                         end select
 
-                        ! Determine the vector from the lower left corner to 2/3rds to the upper right corner. 
-                        ! Due to the usage of pointers an offset of +1 must be used, because 
+                        ! Determine the vector from the lower left corner to 2/3rds to the upper right corner.
+                        ! Due to the usage of pointers an offset of +1 must be used, because
                         ! the original array x start at 0.
-                        ! The 2/3rds point (instead of the upper right corner) is used because on coarse single-block 
-                        ! O-grids, the two vectors might end up beeing parallel. This would cause the 
+                        ! The 2/3rds point (instead of the upper right corner) is used because on coarse single-block
+                        ! O-grids, the two vectors might end up beeing parallel. This would cause the
                         ! cross-product to fail which leads to the normal of the face beeing (0,0,0)
 
-                        ii = (iimax+1)*2/3
-                        jj = (jjmax+1)*2/3
+                        ii = (iimax + 1) * 2 / 3
+                        jj = (jjmax + 1) * 2 / 3
 
                         v1(1) = x1(ii, jj, 1) - x1(1 + 1, 1 + 1, 1)
                         v1(2) = x1(ii, jj, 2) - x1(1 + 1, 1 + 1, 2)

@@ -789,7 +789,7 @@ contains
                 jBeg = 2
 
             case (jMax)
-                jEnd =  jl
+                jEnd = jl
 
             case (kMin)
                 kBeg = 2
@@ -953,8 +953,6 @@ contains
         else
             call prodWmag2(iBeg, iEnd, jBeg, jEnd, kBeg, kEnd)
         end if
-
-    
 
         ! Loop over the cells of this block and compute the eddy viscosity.
         ! Most of the time, do not include halo's (iBeg=2...il,...)
@@ -1754,7 +1752,6 @@ contains
         ! but in that case the gradients for k and omega must be stored.
         ! In the current approach no extra memory is needed.
 
-
         iBeg = 1; jBeg = 1; kBeg = 1
         iEnd = ie; jEnd = je; kEnd = ke
 
@@ -1783,7 +1780,6 @@ contains
             end select
         end do
 
-
         ! Compute the blending function f1 for all owned cells.
 #ifdef TAPENADE_REVERSE
         iSize = (iEnd - iBeg) + 1
@@ -1796,53 +1792,53 @@ contains
             j = mod(ii / iSize, jSize) + jBeg
             k = ii / ((iSize * jSize)) + kBeg
 #else
-        do k = kBeg, kEnd
-            do j = jBeg, jEnd
-                do i = iBeg, iEnd
+            do k = kBeg, kEnd
+                do j = jBeg, jEnd
+                    do i = iBeg, iEnd
 #endif
 
-                    ! Compute the gradient of k in the cell center. Use is made
-                    ! of the fact that the surrounding normals sum up to zero,
-                    ! such that the cell i,j,k does not give a contribution.
-                    ! The gradient is scaled by a factor 1/2vol.
+                        ! Compute the gradient of k in the cell center. Use is made
+                        ! of the fact that the surrounding normals sum up to zero,
+                        ! such that the cell i,j,k does not give a contribution.
+                        ! The gradient is scaled by a factor 1/2vol.
 
-                    kx = w(i + 1, j, k, itu1) * si(i, j, k, 1) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 1) &
-                         + w(i, j + 1, k, itu1) * sj(i, j, k, 1) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 1) &
-                         + w(i, j, k + 1, itu1) * sk(i, j, k, 1) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 1)
-                    ky = w(i + 1, j, k, itu1) * si(i, j, k, 2) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 2) &
-                         + w(i, j + 1, k, itu1) * sj(i, j, k, 2) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 2) &
-                         + w(i, j, k + 1, itu1) * sk(i, j, k, 2) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 2)
-                    kz = w(i + 1, j, k, itu1) * si(i, j, k, 3) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 3) &
-                         + w(i, j + 1, k, itu1) * sj(i, j, k, 3) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 3) &
-                         + w(i, j, k + 1, itu1) * sk(i, j, k, 3) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 3)
+                        kx = w(i + 1, j, k, itu1) * si(i, j, k, 1) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 1) &
+                             + w(i, j + 1, k, itu1) * sj(i, j, k, 1) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 1) &
+                             + w(i, j, k + 1, itu1) * sk(i, j, k, 1) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 1)
+                        ky = w(i + 1, j, k, itu1) * si(i, j, k, 2) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 2) &
+                             + w(i, j + 1, k, itu1) * sj(i, j, k, 2) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 2) &
+                             + w(i, j, k + 1, itu1) * sk(i, j, k, 2) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 2)
+                        kz = w(i + 1, j, k, itu1) * si(i, j, k, 3) - w(i - 1, j, k, itu1) * si(i - 1, j, k, 3) &
+                             + w(i, j + 1, k, itu1) * sj(i, j, k, 3) - w(i, j - 1, k, itu1) * sj(i, j - 1, k, 3) &
+                             + w(i, j, k + 1, itu1) * sk(i, j, k, 3) - w(i, j, k - 1, itu1) * sk(i, j, k - 1, 3)
 
-                    ! Compute the logarithm of omega in the points that
-                    ! contribute to the gradient in this cell.
-                    ! Because: 1/omega*d/dx_j(omega) = d/dx_j( log(omega) )
+                        ! Compute the logarithm of omega in the points that
+                        ! contribute to the gradient in this cell.
+                        ! Because: 1/omega*d/dx_j(omega) = d/dx_j( log(omega) )
 
-                    lnwip1 = log(abs(w(i + 1, j, k, itu2)))
-                    lnwim1 = log(abs(w(i - 1, j, k, itu2)))
-                    lnwjp1 = log(abs(w(i, j + 1, k, itu2)))
-                    lnwjm1 = log(abs(w(i, j - 1, k, itu2)))
-                    lnwkp1 = log(abs(w(i, j, k + 1, itu2)))
-                    lnwkm1 = log(abs(w(i, j, k - 1, itu2)))
+                        lnwip1 = log(abs(w(i + 1, j, k, itu2)))
+                        lnwim1 = log(abs(w(i - 1, j, k, itu2)))
+                        lnwjp1 = log(abs(w(i, j + 1, k, itu2)))
+                        lnwjm1 = log(abs(w(i, j - 1, k, itu2)))
+                        lnwkp1 = log(abs(w(i, j, k + 1, itu2)))
+                        lnwkm1 = log(abs(w(i, j, k - 1, itu2)))
 
-                    ! Compute the scaled gradient of ln omega.
+                        ! Compute the scaled gradient of ln omega.
 
-                    wwx = lnwip1 * si(i, j, k, 1) - lnwim1 * si(i - 1, j, k, 1) &
-                          + lnwjp1 * sj(i, j, k, 1) - lnwjm1 * sj(i, j - 1, k, 1) &
-                          + lnwkp1 * sk(i, j, k, 1) - lnwkm1 * sk(i, j, k - 1, 1)
-                    wwy = lnwip1 * si(i, j, k, 2) - lnwim1 * si(i - 1, j, k, 2) &
-                          + lnwjp1 * sj(i, j, k, 2) - lnwjm1 * sj(i, j - 1, k, 2) &
-                          + lnwkp1 * sk(i, j, k, 2) - lnwkm1 * sk(i, j, k - 1, 2)
-                    wwz = lnwip1 * si(i, j, k, 3) - lnwim1 * si(i - 1, j, k, 3) &
-                          + lnwjp1 * sj(i, j, k, 3) - lnwjm1 * sj(i, j - 1, k, 3) &
-                          + lnwkp1 * sk(i, j, k, 3) - lnwkm1 * sk(i, j, k - 1, 3)
+                        wwx = lnwip1 * si(i, j, k, 1) - lnwim1 * si(i - 1, j, k, 1) &
+                              + lnwjp1 * sj(i, j, k, 1) - lnwjm1 * sj(i, j - 1, k, 1) &
+                              + lnwkp1 * sk(i, j, k, 1) - lnwkm1 * sk(i, j, k - 1, 1)
+                        wwy = lnwip1 * si(i, j, k, 2) - lnwim1 * si(i - 1, j, k, 2) &
+                              + lnwjp1 * sj(i, j, k, 2) - lnwjm1 * sj(i, j - 1, k, 2) &
+                              + lnwkp1 * sk(i, j, k, 2) - lnwkm1 * sk(i, j, k - 1, 2)
+                        wwz = lnwip1 * si(i, j, k, 3) - lnwim1 * si(i - 1, j, k, 3) &
+                              + lnwjp1 * sj(i, j, k, 3) - lnwjm1 * sj(i, j - 1, k, 3) &
+                              + lnwkp1 * sk(i, j, k, 3) - lnwkm1 * sk(i, j, k - 1, 3)
 
-                    ! Compute the dot product grad k grad ln omega.
-                    ! Multiply it by the correct scaling factor and store it.
+                        ! Compute the dot product grad k grad ln omega.
+                        ! Multiply it by the correct scaling factor and store it.
 
-                    scratch(i, j, k, icd) = fourth * (kx * wwx + ky * wwy + kz * wwz) / (vol(i, j, k)**2)
+                        scratch(i, j, k, icd) = fourth * (kx * wwx + ky * wwy + kz * wwz) / (vol(i, j, k)**2)
 
 #ifdef TAPENADE_REVERSE
                     end do
@@ -1853,7 +1849,6 @@ contains
 #endif
 
     end subroutine kwCDterm
-
 
     ! ----------------------------------------------------------------------
     !                                                                      |

@@ -1264,8 +1264,8 @@ contains
 
             ! !===============================================================
 
-            case (menterSST)
-              call readTurbKwType(nTypeMismatch)
+        case (menterSST)
+            call readTurbKwType(nTypeMismatch)
 
             ! !===============================================================
 

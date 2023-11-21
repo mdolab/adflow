@@ -87,7 +87,6 @@ contains
 
                     call applyAllTurbBCThisBlock(.true.)
 
-
                 end do domains
             end do spectralLoop
 

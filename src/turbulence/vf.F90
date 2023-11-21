@@ -19,7 +19,6 @@ contains
         !
         logical, intent(in) :: resOnly
 
-
         ! Compute time and length scale
 
         call vfScale

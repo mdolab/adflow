@@ -20,7 +20,6 @@ contains
         !
         logical, intent(in) :: resOnly
 
-
         ! Solve the transport equations for k and omega.
 
         call kwSolve(resOnly)

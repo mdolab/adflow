@@ -44,7 +44,6 @@ contains
         !
         integer(kind=intType) :: nn
 
-
         ! Alloc central jacobian memory
         allocate (qq(2:il, 2:jl, 2:kl))
 
@@ -64,12 +63,11 @@ contains
         ! Perform the residual scaling
         call saResScale
 
-        ! cleanUp 
+        ! cleanUp
         if (cleanUp) then
             deallocate (qq)
         end if
     end subroutine sa_block_residuals
-
 
 #ifndef USE_COMPLEX
     subroutine sa_block_residuals_d
@@ -85,7 +83,6 @@ contains
         !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
         call saViscous_d
         call saResScale_d
-
 
     end subroutine sa_block_residuals_d
 
@@ -114,7 +111,6 @@ contains
         use turbutils_fast_b, only: turbAdvection_fast_b
         use sa_fast_b, only: saresscale_fast_b, saviscous_fast_b, &
                              sasource_fast_b, qq
-
 
         implicit none
 
@@ -1303,7 +1299,6 @@ contains
                 end do
             end do
         end do
-
 
         ! Compute the EddyViscosity
 

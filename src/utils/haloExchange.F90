@@ -2818,7 +2818,6 @@ contains
 
     end subroutine exchanged2Wall
 
-
     !      ==================================================================
 
     subroutine correctPeriodicCoor(level, sp, nPeriodic, periodicData)
@@ -3130,7 +3129,6 @@ contains
                     j2 = commPatternCell_2nd(level)%recvList(i)%indices(j, 2)
                     k2 = commPatternCell_2nd(level)%recvList(i)%indices(j, 3)
 
-
                     ! Copy the coordinates of this point in the buffer.
                     ! Update the counter jj accordingly.
 
@@ -3195,7 +3193,7 @@ contains
 
                 ! Sum into the '1' values fro the '2' values
                 flowDomsd(d1, level, mm)%d2Wall(i1, j1, k1) = flowDomsd(d1, level, mm)%d2Wall(i1, j1, k1) + &
-                                                               flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2)
+                                                              flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2)
                 flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) = zero
 
             end do localCopy
@@ -3229,14 +3227,14 @@ contains
                     ! Store the block and the indices of the halo a bit easier.
 
                     d2 = commPatternCell_2nd(level)%sendList(ii)%block(j)
-                    i2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 1) 
-                    j2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 2) 
-                    k2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 3) 
+                    i2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 1)
+                    j2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 2)
+                    k2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 3)
 
                     ! Sum into the '2' values from the recv buffer
                     jj = jj + 1
                     flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) = flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) + &
-                                                                   sendBuffer(jj)
+                                                                  sendBuffer(jj)
 
                 end do
 
@@ -3260,7 +3258,6 @@ contains
         end do spectralLoop
 
     end subroutine exchanged2Wall_b
-
 
     subroutine exchangeCoor_d(level)
         !

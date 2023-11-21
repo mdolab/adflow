@@ -222,7 +222,7 @@ contains
                 call computeEddyViscosity(.False.)
 
                 ! Make sure to call the turb BC's first incase we need to
-                ! correct for K 
+                ! correct for K
                 if (equations == RANSEquations .and. turbRes) then
                     call BCTurbTreatment
                     call applyAllTurbBCthisblock(.True.)
@@ -249,7 +249,6 @@ contains
 
         ! Exchange values: make sure all values, including halos, are up to date everywhere
         call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
-
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new

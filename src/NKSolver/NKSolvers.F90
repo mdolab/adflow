@@ -3143,8 +3143,8 @@ contains
 #ifndef USE_COMPLEX
                                     ratio = (wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
 #else
-                                ratio = (real(wvec_pointer(ii)) &
-                                         / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
+                                    ratio = (real(wvec_pointer(ii)) &
+                                             / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
 #endif
                                     ! if the ratio is less than min step, the update is either
                                     ! in the positive direction, therefore we do not clip it,
@@ -3253,7 +3253,7 @@ contains
                 do k = 2, kl
                     do j = 2, jl
                         do i = 2, il
-                            do l=nt1, nt2
+                            do l = nt1, nt2
                                 ! multiply the ratios by 10 to check if the change in a
                                 ! variable is greater than 10% of the variable itself.
 
@@ -3264,7 +3264,8 @@ contains
 #ifndef USE_COMPLEX
                                 ratio = (wvec_pointer(ii) / (dvec_pointer(ii) + eps)) * ANK_physLSTolTurb
 #else
-                                ratio = (real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * real(ANK_physLSTolTurb)
+                                ratio = (real(wvec_pointer(ii)) / real(dvec_pointer(ii) + eps)) * &
+                                        real(ANK_physLSTolTurb)
 #endif
                                 ! if the ratio is less than min step, the update is either
                                 ! in the positive direction, therefore we do not clip it,
