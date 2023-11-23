@@ -60,7 +60,7 @@ module inputDiscretization
     !                         computations. Typically only used for
     !                         repeated calls when the wall distance would
     !                         not have changed significantly
-    ! updateWallAssociation : Logical to determine if the full wall distance
+    ! updateWallAssociations: Logical to determine if the full wall distance
     !                         assocation is to be performed on the next
     !                         wall distance calculation. This is only
     !                         significant when useApproxWallDistance is
@@ -92,6 +92,7 @@ module inputDiscretization
     logical :: radiiNeededFine, radiiNeededCoarse
 
     logical :: useApproxWallDistance
+    logical :: updateWallAssociations
     logical :: lowSpeedPreconditioner
 end module inputDiscretization
 

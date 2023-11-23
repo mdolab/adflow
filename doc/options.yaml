@@ -255,6 +255,13 @@ useApproxWallDistance:
     After the geometry deforms (such as during an optimization) the spatial search algorithm is not run, but the distance between the (new) parametric location and the (new) grid cell center is computed and taken as the wall distance.
     This is substantially faster and permits efficient wall-distance updates for use in aerostructural analysis.
 
+updateWallAssociations:
+desc: >
+    Flag to update wall associations, even if the approximate wall distance routines are used.
+    By default, we don't update the associations because the update itself cannot be differentiated.
+    However, for large mesh changes, users might still want to update the associations for
+    more accurate wall distance values.
+
 eulerWallTreatment:
   desc: >
     Specifies how wall boundary conditions are implemented for inviscid simulations.

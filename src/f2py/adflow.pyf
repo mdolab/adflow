@@ -1064,6 +1064,7 @@ python module libadflow
          logical :: lumpeddiss
          real(kind=realtype) :: sigma
          logical :: useapproxwalldistance
+         logical :: updatewallassociations
          logical :: lowspeedpreconditioner
          logical :: useblockettes
        end module inputdiscretization

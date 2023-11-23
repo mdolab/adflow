@@ -23,7 +23,7 @@ contains
         use inputTimeSpectral
         use section
         use wallDistance, only: xVolumeVec, xSurfVec, wallScatter, &
-                                wallDistanceDataAllocated, updateWallAssociation, &
+                                wallDistanceDataAllocated, updateLevelWallAssociation, &
                                 computeWallDistance
         use oversetData, only: cumDomProc, nDomProc, wallFringes, nDomTotal, &
                                overlapMatrix, oversetPresent, localWallFringes
@@ -159,9 +159,9 @@ contains
 
         ! Allocate some data of size nLevels for the fast wall distance calc
         allocate (xVolumeVec(nLevels), xSurfVec(nLevels, mm), wallScatter(nLevels, mm), &
-                  wallDistanceDataAllocated(nLevels), updateWallAssociation(nLevels))
+                  wallDistanceDataAllocated(nLevels), updateLevelWallAssociation(nLevels))
         wallDistanceDataAllocated = .False.
-        updateWallAssociation = .True.
+        updateLevelWallAssociation = .True.
 
         ! Nullify the wallFringe poiter as initialization
         nullify (wallFringes, localWallFringes)
@@ -3602,7 +3602,7 @@ contains
                 ! The rotation matrices for the i-faces.
 
                 do mm = 1, il
-                    xFace => x(mm, 1:, 1:, :); 
+                    xFace => x(mm, 1:, 1:, :);
                     rotFace => rotMatrixI(mm, :, :, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, jl, kl)
@@ -3611,7 +3611,7 @@ contains
                 ! The rotation matrices for the j-faces.
 
                 do mm = 1, jl
-                    xFace => x(1:, mm, 1:, :); 
+                    xFace => x(1:, mm, 1:, :);
                     rotFace => rotMatrixJ(:, mm, :, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, il, kl)
@@ -3620,7 +3620,7 @@ contains
                 ! The rotation matrices for the k-faces.
 
                 do mm = 1, kl
-                    xFace => x(1:, 1:, mm, :); 
+                    xFace => x(1:, 1:, mm, :);
                     rotFace => rotMatrixK(:, :, mm, :, :)
 
                     call computeRotMatrixFace(xFace, rotFace, il, jl)
