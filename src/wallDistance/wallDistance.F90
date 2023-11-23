@@ -141,6 +141,7 @@ contains
         use inputPhysics, only: equations, wallDistanceNeeded
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use inputDiscretization, only: useApproxWallDistance
+        use oversetData, only: oversetPresent
         use utils, only: setPointers, EChk, terminate, &
                          deallocateTempMemory, allocateTempMemory
         implicit none
@@ -224,7 +225,7 @@ contains
 
         ! Normal, original wall distance calc. Cannot be used when
         ! overset is present due to possibility of overlapping walls.
-        if (.not. useApproxWallDistance) then
+        if ((.not. useApproxWallDistance) .and. (.not. oversetPresent)) then
             ! Loop over the number of spectral solutions.
             spectralLoop: do sps = 1, nTimeIntervalsSpectral
 
@@ -257,7 +258,7 @@ contains
         else ! The user wants to use approx wall distance calcs OR we
             ! have overset mesh. :
 
-            if (updateWallAssociation(level)) then
+            if (updateWallAssociation(level) .or. (.not. useApproxWallDistance)) then
 
                 ! Initialize the wall distance
                 spectralLoop2: do sps = 1, nTimeIntervalsSpectral
