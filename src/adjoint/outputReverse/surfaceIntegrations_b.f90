@@ -90,6 +90,13 @@ contains
     real(kind=realtype) :: tmpd13
     real(kind=realtype) :: tmp14
     real(kind=realtype) :: tmpd14
+    real(kind=realtype) :: tmp15
+    real(kind=realtype) :: tmpd15
+    real(kind=realtype) :: tempd0
+    real(kind=realtype) :: tmp16
+    real(kind=realtype) :: tmpd16
+    real(kind=realtype) :: tmp17
+    real(kind=realtype) :: tmpd17
     integer :: branch
 ! factor used for time-averaged quantities.
     ovrnts = one/ntimeintervalsspectral
@@ -118,7 +125,7 @@ contains
     call pushreal8array(cofx, 3*ntimeintervalsspectral)
     call pushreal8array(cofy, 3*ntimeintervalsspectral)
     call pushreal8array(cofz, 3*ntimeintervalsspectral)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 ! here we finally assign the final function values
     do sps=1,ntimeintervalsspectral
       funcvalues(costfuncforcex) = funcvalues(costfuncforcex) + ovrnts*&
@@ -420,6 +427,76 @@ contains
     if (tsstability) then
       stop
     else
+      call popcontrol1b(branch)
+      if (branch .eq. 0) then
+        tmpd17 = funcvaluesd(costfunccofliftz)
+        funcvaluesd(costfunccofliftz) = 0.0_8
+        tempd = tmpd17/(fxlift+fylift+fzlift)
+        funcvaluesd(costfunccoforcexz) = funcvaluesd(costfunccoforcexz) &
+&         + fxlift*tempd
+        funcvaluesd(costfunccoforceyz) = funcvaluesd(costfunccoforceyz) &
+&         + fylift*tempd
+        funcvaluesd(costfunccoforcezz) = funcvaluesd(costfunccoforcezz) &
+&         + fzlift*tempd
+        tempd0 = -((fxlift*funcvalues(costfunccoforcexz)+fylift*&
+&         funcvalues(costfunccoforceyz)+fzlift*funcvalues(&
+&         costfunccoforcezz))*tempd/(fxlift+fylift+fzlift))
+        fxliftd = funcvalues(costfunccoforcexz)*tempd + tempd0
+        fyliftd = funcvalues(costfunccoforceyz)*tempd + tempd0
+        fzliftd = funcvalues(costfunccoforcezz)*tempd + tempd0
+        call popreal8(funcvalues(costfunccoflifty))
+        tmpd16 = funcvaluesd(costfunccoflifty)
+        funcvaluesd(costfunccoflifty) = 0.0_8
+        tempd = tmpd16/(fxlift+fylift+fzlift)
+        funcvaluesd(costfunccoforcexy) = funcvaluesd(costfunccoforcexy) &
+&         + fxlift*tempd
+        funcvaluesd(costfunccoforceyy) = funcvaluesd(costfunccoforceyy) &
+&         + fylift*tempd
+        funcvaluesd(costfunccoforcezy) = funcvaluesd(costfunccoforcezy) &
+&         + fzlift*tempd
+        tempd0 = -((fxlift*funcvalues(costfunccoforcexy)+fylift*&
+&         funcvalues(costfunccoforceyy)+fzlift*funcvalues(&
+&         costfunccoforcezy))*tempd/(fxlift+fylift+fzlift))
+        fxliftd = fxliftd + funcvalues(costfunccoforcexy)*tempd + tempd0
+        fyliftd = fyliftd + funcvalues(costfunccoforceyy)*tempd + tempd0
+        fzliftd = fzliftd + funcvalues(costfunccoforcezy)*tempd + tempd0
+        call popreal8(funcvalues(costfunccofliftx))
+        tmpd15 = funcvaluesd(costfunccofliftx)
+        funcvaluesd(costfunccofliftx) = 0.0_8
+        tempd = tmpd15/(fxlift+fylift+fzlift)
+        funcvaluesd(costfunccoforcexx) = funcvaluesd(costfunccoforcexx) &
+&         + fxlift*tempd
+        funcvaluesd(costfunccoforceyx) = funcvaluesd(costfunccoforceyx) &
+&         + fylift*tempd
+        funcvaluesd(costfunccoforcezx) = funcvaluesd(costfunccoforcezx) &
+&         + fzlift*tempd
+        tempd0 = -((fxlift*funcvalues(costfunccoforcexx)+fylift*&
+&         funcvalues(costfunccoforceyx)+fzlift*funcvalues(&
+&         costfunccoforcezx))*tempd/(fxlift+fylift+fzlift))
+        fxliftd = fxliftd + funcvalues(costfunccoforcexx)*tempd + tempd0
+        fyliftd = fyliftd + funcvalues(costfunccoforceyx)*tempd + tempd0
+        fzliftd = fzliftd + funcvalues(costfunccoforcezx)*tempd + tempd0
+      else
+        funcvaluesd(costfunccofliftz) = 0.0_8
+        funcvaluesd(costfunccoflifty) = 0.0_8
+        funcvaluesd(costfunccofliftx) = 0.0_8
+        fxliftd = 0.0_8
+        fyliftd = 0.0_8
+        fzliftd = 0.0_8
+      end if
+      funcvaluesd(costfuncforcez) = funcvaluesd(costfuncforcez) + &
+&       liftdirection(3)*fzliftd
+      liftdirectiond(3) = liftdirectiond(3) + funcvalues(costfuncforcez)&
+&       *fzliftd
+      funcvaluesd(costfuncforcey) = funcvaluesd(costfuncforcey) + &
+&       liftdirection(2)*fyliftd
+      liftdirectiond(2) = liftdirectiond(2) + funcvalues(costfuncforcey)&
+&       *fyliftd
+      funcvaluesd(costfuncforcex) = funcvaluesd(costfuncforcex) + &
+&       liftdirection(1)*fxliftd
+      liftdirectiond(1) = liftdirectiond(1) + funcvalues(costfuncforcex)&
+&       *fxliftd
+      call popreal8(funcvalues(costfuncdragcoefmomentum))
       tmpd14 = funcvaluesd(costfuncdragcoefmomentum)
       funcvaluesd(costfuncdragcoefmomentum) = 0.0_8
       funcvaluesd(costfuncforcexcoefmomentum) = funcvaluesd(&
@@ -676,7 +753,7 @@ contains
       call popreal8array(cofz, 3*ntimeintervalsspectral)
       call popreal8array(cofy, 3*ntimeintervalsspectral)
       call popreal8array(cofx, 3*ntimeintervalsspectral)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do sps=1,ntimeintervalsspectral
 ! ------------
 ! ------------
@@ -1365,10 +1442,10 @@ contains
     real(kind=realtype) :: temp0
     real(kind=realtype) :: tempd0
     integer :: branch
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -1388,7 +1465,7 @@ contains
     call pushreal8array(n, 3)
     call pushreal8array(r, 3)
     call pushreal8array(v, 3)
-!$fwd-of ii-loop
+!$fwd-of ii-loop 
 !
 !         integrate the inviscid contribution over the solid walls,
 !         either inviscid or viscous. the integration is done with
@@ -1571,7 +1648,7 @@ contains
     if (branch .eq. 0) then
       rd = 0.0_8
       refpointd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
       do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-&
 &         bcdata(mm)%inbeg)-1
         i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -1777,7 +1854,7 @@ contains
     call popreal8array(v, 3)
     call popreal8array(r, 3)
     call popreal8array(n, 3)
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -2106,10 +2183,10 @@ contains
     intrinsic max
     intrinsic sqrt
     intrinsic exp
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = -one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = one
     end select
 ! determine the reference point for the moment computation in
@@ -2520,10 +2597,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows
@@ -2577,7 +2654,7 @@ contains
     refpointd = 0.0_8
     sfacecoordrefd = 0.0_8
     ttotd = 0.0_8
-!$bwd-of ii-loop
+!$bwd-of ii-loop 
     do ii=0,(bcdata(mm)%jnend-bcdata(mm)%jnbeg)*(bcdata(mm)%inend-bcdata&
 &       (mm)%inbeg)-1
       i = mod(ii, bcdata(mm)%inend - bcdata(mm)%inbeg) + bcdata(mm)%&
@@ -2935,10 +3012,10 @@ contains
 ! mass flow out of the domain. since the low faces have ssi
 ! vectors pointining into the domain, this is correct. the high
 ! end faces need to flip this.
-    select case  (bcfaceid(mm))
-    case (imin, jmin, kmin)
+    select case  (bcfaceid(mm)) 
+    case (imin, jmin, kmin) 
       fact = one
-    case (imax, jmax, kmax)
+    case (imax, jmax, kmax) 
       fact = -one
     end select
 ! the sign of momentum forces are flipped for internal flows

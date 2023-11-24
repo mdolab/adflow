@@ -636,51 +636,48 @@ contains
 &     costfuncforcezcoefmomentum)*dragdirection(3)
 ! ----- center of lift
 ! dot product the 3 forces with the lift direction separately
-    fxliftd = funcvaluesd(costfuncforcex)*liftdirection(1) + funcvalues(&
+    fxliftd = liftdirection(1)*funcvaluesd(costfuncforcex) + funcvalues(&
 &     costfuncforcex)*liftdirectiond(1)
     fxlift = funcvalues(costfuncforcex)*liftdirection(1)
-    fyliftd = funcvaluesd(costfuncforcey)*liftdirection(2) + funcvalues(&
+    fyliftd = liftdirection(2)*funcvaluesd(costfuncforcey) + funcvalues(&
 &     costfuncforcey)*liftdirectiond(2)
     fylift = funcvalues(costfuncforcey)*liftdirection(2)
-    fzliftd = funcvaluesd(costfuncforcez)*liftdirection(3) + funcvalues(&
+    fzliftd = liftdirection(3)*funcvaluesd(costfuncforcez) + funcvalues(&
 &     costfuncforcez)*liftdirectiond(3)
     fzlift = funcvalues(costfuncforcez)*liftdirection(3)
 ! run the weighed average for the 3 components of center of lift
 ! protect against division by zero
     if (fxlift + fylift + fzlift .ne. zero) then
-      funcvaluesd(costfunccofliftx) = ((fxliftd*funcvalues(&
-&       costfunccoforcexx)+fxlift*funcvaluesd(costfunccoforcexx)+fyliftd&
-&       *funcvalues(costfunccoforceyx)+fylift*funcvaluesd(&
-&       costfunccoforceyx)+fzliftd*funcvalues(costfunccoforcezx)+fzlift*&
-&       funcvaluesd(costfunccoforcezx))*(fxlift+fylift+fzlift)-(fxlift*&
-&       funcvalues(costfunccoforcexx)+fylift*funcvalues(&
-&       costfunccoforceyx)+fzlift*funcvalues(costfunccoforcezx))*(&
-&       fxliftd+fyliftd+fzliftd))/(fxlift+fylift+fzlift)**2
-      funcvalues(costfunccofliftx) = (fxlift*funcvalues(&
-&       costfunccoforcexx)+fylift*funcvalues(costfunccoforceyx)+fzlift*&
-&       funcvalues(costfunccoforcezx))/(fxlift+fylift+fzlift)
-      funcvaluesd(costfunccoflifty) = ((fxliftd*funcvalues(&
-&       costfunccoforcexy)+fxlift*funcvaluesd(costfunccoforcexy)+fyliftd&
-&       *funcvalues(costfunccoforceyy)+fylift*funcvaluesd(&
-&       costfunccoforceyy)+fzliftd*funcvalues(costfunccoforcezy)+fzlift*&
-&       funcvaluesd(costfunccoforcezy))*(fxlift+fylift+fzlift)-(fxlift*&
-&       funcvalues(costfunccoforcexy)+fylift*funcvalues(&
-&       costfunccoforceyy)+fzlift*funcvalues(costfunccoforcezy))*(&
-&       fxliftd+fyliftd+fzliftd))/(fxlift+fylift+fzlift)**2
-      funcvalues(costfunccoflifty) = (fxlift*funcvalues(&
-&       costfunccoforcexy)+fylift*funcvalues(costfunccoforceyy)+fzlift*&
-&       funcvalues(costfunccoforcezy))/(fxlift+fylift+fzlift)
-      funcvaluesd(costfunccofliftz) = ((fxliftd*funcvalues(&
-&       costfunccoforcexz)+fxlift*funcvaluesd(costfunccoforcexz)+fyliftd&
-&       *funcvalues(costfunccoforceyz)+fylift*funcvaluesd(&
-&       costfunccoforceyz)+fzliftd*funcvalues(costfunccoforcezz)+fzlift*&
-&       funcvaluesd(costfunccoforcezz))*(fxlift+fylift+fzlift)-(fxlift*&
-&       funcvalues(costfunccoforcexz)+fylift*funcvalues(&
-&       costfunccoforceyz)+fzlift*funcvalues(costfunccoforcezz))*(&
-&       fxliftd+fyliftd+fzliftd))/(fxlift+fylift+fzlift)**2
-      funcvalues(costfunccofliftz) = (fxlift*funcvalues(&
-&       costfunccoforcexz)+fylift*funcvalues(costfunccoforceyz)+fzlift*&
-&       funcvalues(costfunccoforcezz))/(fxlift+fylift+fzlift)
+      temp0 = (fxlift*funcvalues(costfunccoforcexx)+fylift*funcvalues(&
+&       costfunccoforceyx)+fzlift*funcvalues(costfunccoforcezx))/(fxlift&
+&       +fylift+fzlift)
+      funcvaluesd(costfunccofliftx) = (funcvalues(costfunccoforcexx)*&
+&       fxliftd+fxlift*funcvaluesd(costfunccoforcexx)+funcvalues(&
+&       costfunccoforceyx)*fyliftd+fylift*funcvaluesd(costfunccoforceyx)&
+&       +funcvalues(costfunccoforcezx)*fzliftd+fzlift*funcvaluesd(&
+&       costfunccoforcezx)-temp0*(fxliftd+fyliftd+fzliftd))/(fxlift+&
+&       fylift+fzlift)
+      funcvalues(costfunccofliftx) = temp0
+      temp0 = (fxlift*funcvalues(costfunccoforcexy)+fylift*funcvalues(&
+&       costfunccoforceyy)+fzlift*funcvalues(costfunccoforcezy))/(fxlift&
+&       +fylift+fzlift)
+      funcvaluesd(costfunccoflifty) = (funcvalues(costfunccoforcexy)*&
+&       fxliftd+fxlift*funcvaluesd(costfunccoforcexy)+funcvalues(&
+&       costfunccoforceyy)*fyliftd+fylift*funcvaluesd(costfunccoforceyy)&
+&       +funcvalues(costfunccoforcezy)*fzliftd+fzlift*funcvaluesd(&
+&       costfunccoforcezy)-temp0*(fxliftd+fyliftd+fzliftd))/(fxlift+&
+&       fylift+fzlift)
+      funcvalues(costfunccoflifty) = temp0
+      temp0 = (fxlift*funcvalues(costfunccoforcexz)+fylift*funcvalues(&
+&       costfunccoforceyz)+fzlift*funcvalues(costfunccoforcezz))/(fxlift&
+&       +fylift+fzlift)
+      funcvaluesd(costfunccofliftz) = (funcvalues(costfunccoforcexz)*&
+&       fxliftd+fxlift*funcvaluesd(costfunccoforcexz)+funcvalues(&
+&       costfunccoforceyz)*fyliftd+fylift*funcvaluesd(costfunccoforceyz)&
+&       +funcvalues(costfunccoforcezz)*fzliftd+fzlift*funcvaluesd(&
+&       costfunccoforcezz)-temp0*(fxliftd+fyliftd+fzliftd))/(fxlift+&
+&       fylift+fzlift)
+      funcvalues(costfunccofliftz) = temp0
     else
       funcvaluesd(costfunccofliftx) = 0.0_8
       funcvalues(costfunccofliftx) = zero
