@@ -110,11 +110,11 @@ class TestCenterOfForce(unittest.TestCase):
 
         # compute the center of lift based on centers of force and check
         alpha = self.ap.alpha * np.pi / 180.0
-        lift_dir = np.array([-np.sin(alpha), np.cos(alpha), 0.])
+        lift_dir = np.array([-np.sin(alpha), np.cos(alpha), 0.0])
 
-        fx_vec = np.array([fx, 0., 0.])
-        fy_vec = np.array([0., fy, 0.])
-        fz_vec = np.array([0., 0., fz])
+        fx_vec = np.array([fx, 0.0, 0.0])
+        fy_vec = np.array([0.0, fy, 0.0])
+        fz_vec = np.array([0.0, 0.0, fz])
 
         fxlift = fx_vec.dot(lift_dir)
         fylift = fy_vec.dot(lift_dir)
