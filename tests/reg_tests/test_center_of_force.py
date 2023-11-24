@@ -13,6 +13,7 @@ from reg_aeroproblems import ap_tutorial_wing
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
+
 class TestCenterOfForce(unittest.TestCase):
     """
     Test center of force outputs' consistency with moment outputs,
