@@ -487,7 +487,7 @@ contains
 
             ! Write the family BC, if this is present.
 
-            if (cgnsFamilies(nn)%BCTypeCGNS /= Null) then
+            if (cgnsFamilies(nn)%BCTypeCGNS /= CG_Null) then
 
                 call cg_fambc_write_f(cgnsInd, cgnsBase, ii, &
                                       cgnsFamilies(nn)%bcName, &
@@ -497,10 +497,10 @@ contains
                      "Something wrong when calling &
                      &cg_fambc_write_f")
 
-                ! If the boundary condition is UserDefined add the
+                ! If the boundary condition is CG_UserDefined add the
                 ! description what type of user defined BC it is.
 
-                if (cgnsFamilies(nn)%BCTypeCGNS == UserDefined) then
+                if (cgnsFamilies(nn)%BCTypeCGNS == CG_UserDefined) then
 
                     ! Ultimately you would like to create the
                     ! UserDefinedData_t as a subnode of the family boundary
@@ -621,7 +621,7 @@ contains
                      "Something wrong when calling &
                      &cg_dataclass_write_f")
 
-                call cg_units_write_f(Null, Null, Second, Null, &
+                call cg_units_write_f(CG_Null, CG_Null, Second, CG_Null, &
                                       Degree, ierr)
                 if (ierr /= CG_OK) &
                      call terminate("writeCGNSGridFrame", &
@@ -754,7 +754,7 @@ contains
                          "Something wrong when calling &
                          &cg_dataclass_write_f")
 
-                    call cg_units_write_f(Null, Null, Null, Null, &
+                    call cg_units_write_f(CG_Null, CG_Null, CG_Null, CG_Null, &
                                           Degree, ierr)
                     if (ierr /= CG_OK) &
                          call terminate("writeCGNSGridFrame", &
@@ -854,10 +854,10 @@ contains
                          &cg_famname_write_f")
                 end if
 
-                ! If the boundary condition is UserDefined, write the
+                ! If the boundary condition is CG_UserDefined, write the
                 ! description of what type of user defined BC.
 
-                if (jj == UserDefined) then
+                if (jj == CG_UserDefined) then
 
                     ! Go to the current boundary condition and write
                     ! the appropriate data.

@@ -91,14 +91,14 @@ def set_surf_coords(solver, inputs):
     coordsUpdated = False
     if "x_aero" in inputs:
         newSurfCoord = inputs["x_aero"].reshape((-1, 3))
-        currentSurfCoord = solver.getSurfaceCoordinates(groupName=solver.meshFamilyGroup, includeZipper=False)
+        currentSurfCoord = solver.mesh.getSurfaceCoordinates()  # Get coordinates directly from IDWarp
         coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
         coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
         if not coordsAreEqual:
             if solver.comm.rank == 0:
                 print("Updating surface coords", flush=True)
             solver.setSurfaceCoordinates(newSurfCoord, groupName=solver.meshFamilyGroup)
-            solver.updateGeometryInfo()
+            solver.updateGeometryInfo(warpMesh=False)
             coordsUpdated = True
     return coordsUpdated
 
@@ -164,7 +164,19 @@ def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=Tr
 
     updatesMade = ap != solver.curAP
 
+    # These flags control printing alpha and boundary condition warnings
+    # when we update the aeroproblem.  We only want these to print when
+    # we actually switch the aeroproblem.
+    printIterationsDefault = solver.getOption("printIterations")
+    printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
+
+    solver.setOption("printIterations", updatesMade)
+    solver.adflow.inputiteration.printbcwarnings = updatesMade
     solver.setAeroProblem(ap)
+
+    # Reset the defaults
+    solver.setOption("printIterations", printIterationsDefault)
+    solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
 
     if inputs is not None:
         tmp = {}
@@ -333,12 +345,17 @@ class ADflowWarper(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         solver = self.solver
-        set_surf_coords(solver, inputs)
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
+
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
         solver = self.solver
-        set_surf_coords(solver, inputs)
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
 
         if mode == "fwd":
             if "adflow_vol_coords" in d_outputs:
@@ -955,7 +972,16 @@ class ADflowFunctions(ExplicitComponent):
         ap = self.ap
 
         # re-set the AP so that we are sure state is updated
+        printIterationsDefault = solver.getOption("printIterations")
+        printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
+
+        solver.setOption("printIterations", False)
+        solver.adflow.inputiteration.printbcwarnings = False  # Turn off extra printouts
         solver.setAeroProblem(ap)
+
+        # Reset back to true to preserve normal ADflow printout structure
+        solver.setOption("printIterations", printIterationsDefault)
+        solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
 
         # write the solution files. Internally, this checks the
         # types of solution files specified in the options and
