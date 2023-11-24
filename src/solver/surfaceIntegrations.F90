@@ -329,18 +329,18 @@ contains
         ! run the weighed average for the 3 components of center of lift
         ! protect against division by zero
         if ((fxLift + fyLift + fzLift) /= zero) then
-            funcValues(costfuncCofLiftX) = (fxLift * funcValues(costFuncCOForceXX) +  &
-                                            fyLift * funcValues(costFuncCOForceYX) +  &
+            funcValues(costfuncCofLiftX) = (fxLift * funcValues(costFuncCOForceXX) + &
+                                            fyLift * funcValues(costFuncCOForceYX) + &
                                             fzLift * funcValues(costFuncCOForceZX)) / &
-                                            (fxLift + fyLift + fzLift)
-            funcValues(costfuncCofLiftY) = (fxLift * funcValues(costFuncCOForceXY) +  &
-                                            fyLift * funcValues(costFuncCOForceYY) +  &
+                                           (fxLift + fyLift + fzLift)
+            funcValues(costfuncCofLiftY) = (fxLift * funcValues(costFuncCOForceXY) + &
+                                            fyLift * funcValues(costFuncCOForceYY) + &
                                             fzLift * funcValues(costFuncCOForceZY)) / &
-                                            (fxLift + fyLift + fzLift)
-            funcValues(costfuncCofLiftZ) = (fxLift * funcValues(costFuncCOForceXZ) +  &
-                                            fyLift * funcValues(costFuncCOForceYZ) +  &
+                                           (fxLift + fyLift + fzLift)
+            funcValues(costfuncCofLiftZ) = (fxLift * funcValues(costFuncCOForceXZ) + &
+                                            fyLift * funcValues(costFuncCOForceYZ) + &
                                             fzLift * funcValues(costFuncCOForceZZ)) / &
-                                            (fxLift + fyLift + fzLift)
+                                           (fxLift + fyLift + fzLift)
         else
             funcValues(costfuncCofLiftX) = zero
             funcValues(costfuncCofLiftY) = zero
@@ -453,16 +453,16 @@ contains
         ! Initialize the force and moment coefficients to 0 as well as
         ! yplusMax.
 
-        Fp = zero; Fv = zero;
-        Mp = zero; Mv = zero;
+        Fp = zero; Fv = zero; 
+        Mp = zero; Mv = zero; 
         COFSumFx = zero; COFSumFy = zero; COFSumFz = zero
         yplusMax = zero
         sepSensor = zero
         Cavitation = zero
         cpmin_ks_sum = zero
         sepSensorAvg = zero
-        Mpaxis = zero; Mvaxis = zero;
-        CpError2 = zero;
+        Mpaxis = zero; Mvaxis = zero; 
+        CpError2 = zero; 
         !
         !         Integrate the inviscid contribution over the solid walls,
         !         either inviscid or viscous. The integration is done with
