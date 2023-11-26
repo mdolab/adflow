@@ -3358,7 +3358,9 @@ class ADFLOW(AeroSolver):
                 ptSetName = aeroProblem.ptSetNames[self.designFamilyGroup]
 
                 if ptSetName not in self.DVGeo.points:
-                    coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
+                    coords0 = self.mapVector(
+                        self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False
+                    )
                     self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
             else:
                 # we have custom pointsets
@@ -4610,11 +4612,23 @@ class ADFLOW(AeroSolver):
         # For the geometric xDvDot perturbation we accumulate into the
         # already existing (and possibly nonzero) xsdot and xvdot
         if xDvDot is not None or xSDot is not None:
-            # TODO fix
             if xDvDot is not None and self.DVGeo is not None:
-                xsdot += self.DVGeo.totalSensitivityProd(xDvDot, self.curAP.ptSetName, config=self.curAP.name).reshape(
-                    xsdot.shape
-                )
+                if self.customPointSetFamilies is None:
+                    # no custom pointset families, just process the entire dvdot and add to xsdot
+                    xsdot += self.DVGeo.totalSensitivityProd(
+                        xDvDot, self.curAP.ptSetName, config=self.curAP.name
+                    ).reshape(xsdot.shape)
+                else:
+                    # custom pointsets. accumulate local xsdots in the complete vector
+                    for family in self.customPointSetFamilies.keys():
+                        # process this family's xsdot
+                        ptSetName = self.curAP.ptSetNames[family]
+                        xsdot_family = self.DVGeo.totalSensitivityProd(
+                            xDvDot, ptSetName, self.comm, config=self.curAP.name
+                        )
+                        # map it to an empty surface vector and accumulate
+                        xsdot += self.mapVector(xsdot_family, family, self.designFamilyGroup)
+
             if self.mesh is not None:
                 xsdot = self.mapVector(xsdot, self.meshFamilyGroup, self.designFamilyGroup, includeZipper=False)
                 xvdot += self.mesh.warpDerivFwd(xsdot)
@@ -4951,7 +4965,9 @@ class ADFLOW(AeroSolver):
                                 # get the mapped xsbar
                                 xsbarFamily = self.mapVector(xsbar, self.designFamilyGroup, family, includeZipper=False)
 
-                                familySens = self.DVGeo.totalSensitivity(xsbarFamily, ptSetName, self.comm, config=self.curAP.name)
+                                familySens = self.DVGeo.totalSensitivity(
+                                    xsbarFamily, ptSetName, self.comm, config=self.curAP.name
+                                )
 
                                 for key, val in familySens.items():
                                     # not the best way to do this but should work...
