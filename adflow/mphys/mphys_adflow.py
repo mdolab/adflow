@@ -1451,10 +1451,6 @@ class ADflowBuilder(Builder):
     def get_post_coupling_subsystem(self, scenario_name=None):
         return ADflowFunctions(aero_solver=self.solver)
 
-    # TODO the get_nnodes is deprecated. will remove
-    def get_nnodes(self, groupName=None):
-        return self.get_number_of_nodes(groupName=groupName)
-
     def get_number_of_nodes(self, groupName=None):
         return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])
 
