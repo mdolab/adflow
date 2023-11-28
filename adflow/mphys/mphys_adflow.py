@@ -439,7 +439,7 @@ class ADflowSolver(ImplicitComponent):
         local_state_size = solver.getStateSize()
 
         self.add_input("adflow_vol_coords", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
-        self.add_output("adflow_states", distributed=True, shape=local_state_size, tags=["mphys_coupling"], res_ref=1e7)
+        self.add_output("adflow_states", distributed=True, shape=local_state_size, tags=["mphys_coupling"])
 
         # self.declare_partials(of='adflow_states', wrt='*')
 
