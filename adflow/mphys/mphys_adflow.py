@@ -1288,17 +1288,42 @@ class ADflowMeshGroup(Group):
 class ADflowBuilder(Builder):
     def __init__(
         self,
-        options,  # adflow options
-        mesh_options=None,  # idwarp options
-        scenario="aerodynamic",  # scenario type to configure the groups
-        mesh_type="USMesh",  # mesh type option. USMesh or  MultiUSMesh
-        restart_failed_analysis=False,  # retry after failed analysis
-        err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
+        options,
+        mesh_options=None,
+        scenario="aerodynamic",
+        mesh_type="USMesh",
+        restart_failed_analysis=False,
+        err_on_convergence_fail=False,
         balance_group=None,
-        user_family_groups=None,  # Dictonary of {group: surfs} to add
-        write_solution=True,  # Write solution files automatically at the end of each solve
-        res_ref=None,  # Reference residual for residual scaling
+        user_family_groups=None,
+        write_solution=True,
+        res_ref=None,
     ):
+        """Create an ADflow MPhys builder
+
+        Parameters
+        ----------
+        options : dict
+            ADflow options
+        mesh_options : dict, optional
+            idwarp options, by default None
+        scenario : str, optional
+            Scenario type to configure the groups, by default "aerodynamic"
+        mesh_type : str, optional
+            mesh type option. "USMesh" or  "MultiUSMesh", by default "USMesh"
+        restart_failed_analysis : bool, optional
+            Whether to retry after failed analysis, by default False
+        err_on_convergence_fail : bool, optional
+            Whether to raise an analysis error if the solver stalls, by default False
+        balance_group : ???, optional
+            ???, by default None
+        user_family_groups : dict, optional
+            Dictonary of {group: surfs} to add, by default None
+        write_solution : bool, optional
+            Whether to automatically write solution files at the end of each (coupled) solution, by default True
+        res_ref : float, optional
+            Reference residual value used for OpenMDAO's residual scaling, by default None
+        """
         # options dictionary for ADflow
         self.options = options
 
