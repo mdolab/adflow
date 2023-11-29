@@ -256,7 +256,7 @@ useApproxWallDistance:
     This is substantially faster and permits efficient wall-distance updates for use in aerostructural analysis.
 
 updateWallAssociations:
-desc: >
+  desc: >
     Flag to update wall associations, even if the approximate wall distance routines are used.
     By default, we don't update the associations because the update itself cannot be differentiated.
     However, for large mesh changes, users might still want to update the associations for
