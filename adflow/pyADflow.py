@@ -4616,7 +4616,7 @@ class ADFLOW(AeroSolver):
                 if self.customPointSetFamilies is None:
                     # no custom pointset families, just process the entire dvdot and add to xsdot
                     xsdot += self.DVGeo.totalSensitivityProd(
-                        xDvDot, self.curAP.ptSetName, config=self.curAP.name
+                        xDvDot, self.curAP.ptSetNames[self.designFamilyGroup], config=self.curAP.name
                     ).reshape(xsdot.shape)
                 else:
                     # custom pointsets. accumulate local xsdots in the complete vector
