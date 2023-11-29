@@ -3305,7 +3305,7 @@ class ADFLOW(AeroSolver):
                     # this saves duplicate pointsets where the same file might be
                     # used in the explicit hole cutting multiple times in different
                     # configurations.
-                    surfFile = self.blankingSurfDict[surf]['surfFile']
+                    surfFile = self.blankingSurfDict[surf]["surfFile"]
                     surfPtSetName = f"points_{surfFile}"
                     if surfPtSetName not in self.DVGeo.points:
                         # we need to add the pointset to dvgeo. do it in parallel
@@ -3315,7 +3315,7 @@ class ADFLOW(AeroSolver):
                         # compute proc displacements
                         sizes = numpy.zeros(self.comm.size, dtype="intc")
                         sizes[:] = npts // self.comm.size
-                        sizes[:npts % self.comm.size] += 1
+                        sizes[: npts % self.comm.size] += 1
 
                         disp = numpy.zeros(self.comm.size + 1, dtype="intc")
                         disp[1:] = numpy.cumsum(sizes)
@@ -3326,7 +3326,7 @@ class ADFLOW(AeroSolver):
 
                         # we already communicated the points when loading the file,
                         # so just add them to dvgeo now
-                        procPts = surfPts[disp[self.comm.rank]:disp[self.comm.rank + 1]]
+                        procPts = surfPts[disp[self.comm.rank] : disp[self.comm.rank + 1]]
                         self.DVGeo.addPointSet(procPts, surfPtSetName, **self.pointSetKwargs)
 
             # Check if our point-set is up to date:
@@ -3340,7 +3340,10 @@ class ADFLOW(AeroSolver):
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
 
                 # also update the blanking surface coordinates
-                if self.getOption("oversetUpdateMode") == "full" and self.getOption("explicitSurfaceCallback") is not None:
+                if (
+                    self.getOption("oversetUpdateMode") == "full"
+                    and self.getOption("explicitSurfaceCallback") is not None
+                ):
                     # loop over each surf and update points
                     for surfFile in self.blankingSurfData:
                         surfPtSetName = f"points_{surfFile}"
