@@ -719,6 +719,14 @@ oversetPriority:
     A lower factor will encourage the usage of that block mesh.
     This option may be required to get the flooding algorithm working properly.
 
+recomputeOverlapMatrix:
+  desc: >
+    Flag to determine if the domain overlap matrix is re-computed when a full overset update is done.
+    This overlap matrix determines the connections between domains for the donor search algorithm; for the code to search a domain for potential donors, that domain must overlap with the current domain.
+    This matrix is re-computed when a full overset update is done because the domain overlaps can change.
+    If the overlap matrix is outdated, the code will fail to find donors in cases where there are many potential donors available from overlapping domains that are not represented in the matrix.
+    If the user knows that the overlap matrix will not change, and they want to improve the efficiency of the full overset update, they can set this option to False.
+
 oversetDebugPrint:
   desc: >
     Flag to enable or disable the debug printout from the overset algorithm when a hole cutting process fails.
