@@ -2105,7 +2105,7 @@ contains
         use ADTData
         use blockPointers, only: x, il, jl, kl, nDom, iBlank, vol, nbkGlobal, kBegOr
         use adjointVars, only: nCellsLocal
-        use utils, only: setPointers, EChk
+        use utils, only: setPointers, EChk, mynorm2
         use sorting, only: famInList
         implicit none
 
@@ -2390,7 +2390,7 @@ contains
             projVec = xp - coor(1:3)
 
             ! get the projection distance
-            projDist = norm2(projVec)
+            projDist = mynorm2(projVec)
             ! normalize it
             projVec = projVec / projDist
 
