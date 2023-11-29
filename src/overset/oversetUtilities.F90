@@ -396,29 +396,29 @@ contains
 
                 select case (BCFaceID(mm))
                 case (iMin)
-                    iStart = 1; iEnd = 3;
+                    iStart = 1; iEnd = 3; 
                     jStart = BCData(mm)%inBeg + 1; jEnd = BCData(mm)%inEnd
                     kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
                 case (iMax)
-                    iStart = nx; iEnd = ie;
+                    iStart = nx; iEnd = ie; 
                     jStart = BCData(mm)%inBeg + 1; jEnd = BCData(mm)%inEnd
                     kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
                 case (jMin)
                     iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-                    jStart = 1; jEnd = 3;
+                    jStart = 1; jEnd = 3; 
                     kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
                 case (jMax)
                     iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
-                    jStart = ny; jEnd = je;
+                    jStart = ny; jEnd = je; 
                     kStart = BCData(mm)%jnBeg + 1; kEnd = BCData(mm)%jnEnd
                 case (kMin)
                     iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
                     jStart = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-                    kStart = 1; kEnd = 3;
+                    kStart = 1; kEnd = 3; 
                 case (kMax)
                     iStart = BCData(mm)%inBeg + 1; iEnd = BCData(mm)%inEnd
                     jStart = BCData(mm)%jnBeg + 1; jEnd = BCData(mm)%jnEnd
-                    kStart = nz; kEnd = ke;
+                    kStart = nz; kEnd = ke; 
                 end select
 
                 if (BCType(mm) == OversetOuterBound) then
@@ -2620,7 +2620,7 @@ contains
 
         ! Set the starting values of u, v and w based on our previous values
 
-        u = frac0(1); v = frac0(2); w = frac0(3);
+        u = frac0(1); v = frac0(2); w = frac0(3); 
         ! The Newton algorithm to determine the parametric
         ! weights u, v and w for the given coordinate.
 

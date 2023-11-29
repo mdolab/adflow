@@ -2240,21 +2240,21 @@ contains
 
                                 ! First test the cell center
                                 coor(1:3) = eighth * ( &
-                                          x(i - 1, j - 1, k - 1, :) + &
-                                          x(i, j - 1, k - 1, :) + &
-                                          x(i - 1, j, k - 1, :) + &
-                                          x(i, j, k - 1, :) + &
-                                          x(i - 1, j - 1, k, :) + &
-                                          x(i, j - 1, k, :) + &
-                                          x(i - 1, j, k, :) + &
-                                          x(i, j, k, :))
+                                            x(i - 1, j - 1, k - 1, :) + &
+                                            x(i, j - 1, k - 1, :) + &
+                                            x(i - 1, j, k - 1, :) + &
+                                            x(i, j, k - 1, :) + &
+                                            x(i - 1, j - 1, k, :) + &
+                                            x(i, j - 1, k, :) + &
+                                            x(i - 1, j, k, :) + &
+                                            x(i, j, k, :))
 
                                 ! reset the "closest point already found" variable.
                                 coor(4) = dStar
                                 intInfo(3) = 0
                                 call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
-                                                                        uvw, dummy, 0, BB, &
-                                                                        frontLeaves, frontLeavesNew)
+                                                                      uvw, dummy, 0, BB, &
+                                                                      frontLeaves, frontLeavesNew)
                                 cellID = intInfo(3)
 
                                 ! increment the cell counter before the checks in case we exit early
