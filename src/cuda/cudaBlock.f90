@@ -98,8 +98,8 @@ module cudaBlock
         ! Allocate host
         allocate(h_cudaDoms(nDom, nTimeIntervalsSpectral))
         
-        do nn = 1, nDom ! loop over domains
-            do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
+        do sps = 1, nTimeIntervalsSpectral ! loop over time spectral intervals
+            do nn = 1, nDom ! loop over domains
                 
                 call setPointers(nn,1, sps)
                 
@@ -124,6 +124,7 @@ module cudaBlock
                 allocate(h_cudaDoms(nn,sps)%p(0:bib, 0:bjb, 0:bkb)) ! static pressures
                 allocate(h_cudaDoms(nn,sps)%gamma(0:bib, 0:bjb, 0:bkb)) ! spec heat ratio
                 allocate(h_cudaDoms(nn,sps)%ss(0:bib, 0:bjb, 0:bkb)) ! shock sensors
+                
                 ! and then set them
                 h_cudaDoms(nn, sps)%w = bw
                 h_cudaDoms(nn, sps)%p = bp
@@ -141,19 +142,20 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%radK(1:bie, 1:bje, 1:bke))
                 allocate(h_cudaDoms(nn, sps)%dtl(1:bie, 1:bje, 1:bke))
                 allocate(h_cudaDoms(nn, sps)%dss(1:bie, 1:bje, 1:bke, 1:3))
+
                 ! and set them
                 ! NOTE: these need to be computed 
                 h_cudaDoms(nn, sps)%x = bx
                 h_cudaDoms(nn, sps)%rlv = brlv
                 h_cudaDoms(nn, sps)%rev = brev
                 h_cudaDoms(nn, sps)%vol = bvol(1:bie, 1:bje, 1:bke)
+
                 ! initialize to zero
                 h_cudaDoms(nn, sps)%aa = zero
                 h_cudaDoms(nn, sps)%radI = zero
                 h_cudaDoms(nn, sps)%radJ = zero
                 h_cudaDoms(nn, sps)%radK = zero
                 h_cudaDoms(nn, sps)%dtl = zero
-
                 h_cudaDoms(nn, sps)%dss = zero
 
                 ! no halos
@@ -223,13 +225,12 @@ module cudaBlock
                 allocate(h_cudaDoms(nn, sps)%qz(1:bil, 1:bjl, 1:bkl))
                 h_cudaDoms(nn, sps)%qx = zero; h_cudaDoms(nn, sps)%qy = zero; h_cudaDoms(nn, sps)%qz = zero
 
-
             end do
         end do
 
         ! --- Copy data from host back to device---
-        do nn = 1, nDom
-            do sps = 1, nTimeIntervalsSpectral
+        do sps = 1, nTimeIntervalsSpectral
+            do nn = 1, nDom
                 d_cudaDoms(nn, sps) = h_cudaDoms(nn, sps)
             end do
         end do
