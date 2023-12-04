@@ -2327,6 +2327,7 @@ module cudaResidual
         end if
     end subroutine resScale
 
+    ! USE THIS ROUTINE AS THE BENCHMARK
     attributes(global) subroutine inviscidCentralFluxCellCentered
         use precision, only: realType, intType
         use constants, only: zero, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
@@ -3273,7 +3274,7 @@ module cudaResidual
 
     end subroutine inviscidCentralFluxCellCentered_v3
 
-
+    ! THIS ROUTINE IS ALLEGEDLY FASTER
     attributes(global) subroutine inviscidCentralFluxCellCentered_v4
         use precision, only: realType, intType
         use constants, only: zero, half, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
@@ -6278,7 +6279,7 @@ module cudaResidual
       end if
       
       ! call time step routine
-        call CPU_TIME(startInv)
+      call CPU_TIME(startInv)
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
       
@@ -6292,18 +6293,25 @@ module cudaResidual
       call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
       istat = cudaDeviceSynchronize()
 
+    ! Try different GPU kernel layouts
+    ! --- v2 ---
     block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
     grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (block_inv%z)))
+
     call inviscidCentralFluxCellCentered_v2<<<grid_inv,block_inv>>> 
     istat = cudaDeviceSynchronize()
 
+    ! --- v3 ---
     block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK/2)
     grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y)), ceiling(real(bke) / (block_inv%z*2)))
+
     call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
     istat = cudaDeviceSynchronize()
 
+    ! --- v4 ---
     block_inv = dim3(inviscidCentralBSIPlane,inviscidCentralBSJPlane,1)
     grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlane)))
+
     call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>> 
     istat = cudaDeviceSynchronize()
 
