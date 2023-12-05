@@ -20,13 +20,21 @@ module cudaResidual
     !               cell-centered quantities.
     !  ib, jb, kb - Block integer dimensions for double halo
     !               cell-centered quantities.
+
+    ! blockette sizes used in non-plane marching
     integer(kind=intType), parameter :: inviscidCentralBSI = 8
     integer(kind=intType), parameter :: inviscidCentralBSJ = 8
     integer(kind=intType), parameter :: inviscidCentralBSK = 6
 
-    integer(kind=intType), parameter :: inviscidCentralBSIPlane = 32
-    integer(kind=intType), parameter :: inviscidCentralBSJPlane = 10
-    integer(kind=intType), parameter :: inviscidCentralBSKPlane = 8
+    ! blockette sizes used in K-plane marching
+    integer(kind=intType), parameter :: inviscidCentralBSIPlaneK = 32
+    integer(kind=intType), parameter :: inviscidCentralBSJPlaneK = 10
+    integer(kind=intType), parameter :: inviscidCentralBSKPlaneK = 8
+
+    ! blockette sizes used in I-plane marching
+    integer(kind=intType), parameter :: inviscidCentralBSIPlaneI = 8
+    integer(kind=intType), parameter :: inviscidCentralBSJPlaneI = 10
+    integer(kind=intType), parameter :: inviscidCentralBSKPlaneI = 32
 
     integer(kind=intType) :: h_nx, h_ny, h_nz, h_il, h_jl, h_kl, h_ie, h_je, h_ke, h_ib, h_jb, h_kb
     integer(kind=intType),constant :: nx, ny, nz, il, jl, kl, ie, je, ke, ib, jb, kb
@@ -231,7 +239,7 @@ module cudaResidual
     ! ========================================================================================================
     !all non flux subroutines 
     attributes(global) subroutine computeSpeedOfSoundSquared_v1
-        use constants, only: two, third,irho,itu1
+        use constants, only: two, third, irho, itu1
         implicit none
         integer :: i,j,k
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
@@ -253,8 +261,8 @@ module cudaResidual
 
         real(kind=realType) :: a2, oVol, uBar,vBar,wBar,sx,sy,sz
         real(kind=realType) :: tmp
-
         integer(kind=intType) :: i, j, k
+
         i = (blockIdx%x-1)*blockDim%x + threadIdx%x
         j = (blockIdx%y-1)*blockDim%y + threadIdx%y
         k = (blockIdx%z-1)*blockDim%z + threadIdx%z
@@ -1491,6 +1499,88 @@ module cudaResidual
     end subroutine computeSpeedOfSoundSquared_v2
 
     attributes(global) subroutine computeSpeedOfSoundSquared_kplane
+        use constants, only: two, third, irho, itu1, irhoE, imx, imy, imz
+        use cudaInputPhysics, only: equationMode,gammaConstant
+        implicit none
+        integer (kind = intType) :: i, j, k
+        
+        integer(kind=intType) :: l, tx, ty, bx, by
+        integer (kind = intType) :: dom, sps, kl, jmax ,kmax
+        integer(kind=intType) :: ie, je, ke, il, jl
+        ! smaller slices of larger structures for this k-plane, shared so it is sharable between threads
+        real(kind = realType), shared :: w_s(inviscidCentralBSIPlaneK, inviscidCentralBSJPlaneK, 5)
+        real(kind = realType), shared :: gamma_s(inviscidCentralBSIPlaneK, inviscidCentralBSJPlaneK)
+        real(kind = realType), shared :: p_s(inviscidCentralBSIPlaneK, inviscidCentralBSJPlaneK)
+        real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, p, gamma
+
+        ! Only works for 1 dom and 1 sps
+        dom = 1
+        sps = 1
+
+        ! Convenience stuff
+        tx = threadIdx%x
+        ty = threadIdx%y
+        bx = blockIdx%x
+        by = blockIdx%y
+
+        ! global indices (1-indexed) using a k-plane marching approach
+        i = (bx - 1) * (blockDim%x) + tx
+        j = (by - 1) * (inviscidCentralBSJPlaneK) + ty 
+        k = (blockIdx%z - 1) * (inviscidCentralBSKPlaneK) + 1
+        ! Old (BAD)
+        ! i = (blockIdx%x-1)*blockDim%x + threadIdx%x
+        ! j = (blockIdx%y-1)*blockDim%y + threadIdx%y
+        ! k = (blockIdx%z-1)*blockDim%z + threadIdx%z
+
+        ! Leave if past k-plane
+        if (k > kl) then
+            return 
+        end if 
+
+        ! ! Read this k-plane into shared memory
+        ! ! Then every thread on a k-plane has its own version of '<varname>_s'
+        ! if (i <= il .and. j <= jl .and. k <= kl) then
+        !     wrho = cudaDoms(dom,sps)%w(i, j, k, irho)
+        !     wvx = cudaDoms(dom,sps)%w(i, j, k, ivx)
+        !     wvy = cudaDoms(dom,sps)%w(i, j, k, ivy)
+        !     wvz = cudaDoms(dom,sps)%w(i, j, k, ivz)
+        !     wrhoE = cudaDoms(dom,sps)%w(i, j, k, irhoE)
+        !     p = (gammaConstant - one) * (wrhoE - half * (wvx * wvx + wvy * wvy + wvz * wvz) * wrho)
+        !     gamma = cudaDoms(dom,sps)%gamma(i, j, k)
+
+        !     w_s(tx, ty, irho) = wrho
+        !     w_s(tx, ty, ivx) = wvx
+        !     w_s(tx, ty, ivy) = wvy
+        !     w_s(tx, ty, ivz) = wvz
+        !     w_s(tx, ty, irhoE) = wrhoE
+        !     p_s(tx, ty) = p
+        !     gamma_s(tx, ty) = gamma
+        ! end if
+        
+        do l = 1, inviscidCentralBSKPlaneK ! this is a kplane marching iteration that steps up 'k'
+            ! Compute speed of sound squared
+            if (i <= ie .AND. j <= je .AND. l <= ke) then
+                !TODO this will not work if TKE is present check 
+                !computeSpeedOfSoundSquared in blockette.F90 need
+                !check to correct for K
+
+                ! Maybe use this as more optimized later
+                ! cudaDoms(dom,sps)%aa(i,j,l) = gamma_s(tx, ty) * p_s(tx, ty) / w_s(tx, ty, irho)
+
+                ! SET THE SPEED OF SOUND IN THE GLOBAL CUDA DOM DATA STRUCT
+                cudaDoms(dom,sps)%aa(i,j,k) = cudaDoms(dom,sps)%gamma(i, j, k) &
+                * cudaDoms(dom,sps)%p(i, j, k) / cudaDoms(dom,sps)%w(i, j, k, irho)
+            end if
+
+            k = k + 1
+            if (k > kl) then
+                exit
+            end if
+
+            call syncthreads()
+        end do
+
+    
     end subroutine computeSpeedOfSoundSquared_kplane
 
     !alex
@@ -1883,8 +1973,390 @@ module cudaResidual
         ! end if 
     end subroutine allNodalGradients_v2
 
-    attributes(global) subroutine allNodalGradients_kplane
-    end subroutine allNodalGradients_kplane
+    ! attributes(global) subroutine allNodalGradients_kplane
+    !     use constants, only: zero,one,fourth,ivx,ivy,ivz
+    !     use precision, only: realType
+    !     implicit none
+
+    !     real(kind=realType) :: a2, oVol, uBar, vBar, wBar, sx, sy, sz
+    !     real(kind=realType) :: tmp
+    !     integer(kind=intType) :: i, j, k
+    !     integer(kind=intType) :: dom, sps
+
+    !     dom = 1
+    !     sps = 1
+    !     !cell centered indices
+    !     i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
+    !     j = (blockIdx%y - 1) * (inviscidCentralBSJPlaneK) + threadIdx%y 
+    !     k = (blockIdx%z - 1) * (inviscidCentralBSKPlaneK) + 1
+        
+    !     jmax = min((blockIdx%y) * (inviscidCentralBSJPlaneK) ,jl)
+    !     kmax = min((blockIdx%z) * (inviscidCentralBSKPlaneK) ,kl)
+    !     if (k > kl) then
+    !         return 
+    !     end if 
+
+    !     ! First part. Contribution in the k-direction.
+    !     ! The contribution is scattered to both the left and right node
+    !     ! in k-direction.
+        
+    !     !loop k 1 to ke, j 1 to jl and i 1 to il
+    !     if (i <= il .AND. j <= jl .AND. k <= ke) then
+    !         ! Compute 8 times the average normal for this part of
+    !         ! the control volume. The factor 8 is taken care of later
+    !         ! on when the division by the volume takes place.
+    !         sx = sk(i, j, k - 1, 1) + sk(i + 1, j, k - 1, 1) &
+    !             + sk(i, j + 1, k - 1, 1) + sk(i + 1, j + 1, k - 1, 1) &
+    !             + sk(i, j, k, 1) + sk(i + 1, j, k, 1) &
+    !             + sk(i, j + 1, k, 1) + sk(i + 1, j + 1, k, 1)
+    !         sy = sk(i, j, k - 1, 2) + sk(i + 1, j, k - 1, 2) &
+    !             + sk(i, j + 1, k - 1, 2) + sk(i + 1, j + 1, k - 1, 2) &
+    !             + sk(i, j, k, 2) + sk(i + 1, j, k, 2) &
+    !             + sk(i, j + 1, k, 2) + sk(i + 1, j + 1, k, 2)
+    !         sz = sk(i, j, k - 1, 3) + sk(i + 1, j, k - 1, 3) &
+    !             + sk(i, j + 1, k - 1, 3) + sk(i + 1, j + 1, k - 1, 3) &
+    !             + sk(i, j, k, 3) + sk(i + 1, j, k, 3) &
+    !             + sk(i, j + 1, k, 3) + sk(i + 1, j + 1, k, 3)
+    !         ! Compute the average velocities and speed of sound squared
+    !         ! for this integration point. Node that these variables are
+    !         ! stored in w(ivx), w(ivy), w(ivz) and p.
+
+    !         ubar = fourth * (w(i, j, k, ivx) + w(i + 1, j, k, ivx) &
+    !                         + w(i, j + 1, k, ivx) + w(i + 1, j + 1, k, ivx))
+    !         vbar = fourth * (w(i, j, k, ivy) + w(i + 1, j, k, ivy) &
+    !                         + w(i, j + 1, k, ivy) + w(i + 1, j + 1, k, ivy))
+    !         wbar = fourth * (w(i, j, k, ivz) + w(i + 1, j, k, ivz) &
+    !                         + w(i, j + 1, k, ivz) + w(i + 1, j + 1, k, ivz))
+
+    !         a2 = fourth * (aa(i, j, k) + aa(i + 1, j, k) + aa(i, j + 1, k) + aa(i + 1, j + 1, k))
+            
+    !         ! Add the contributions to the surface integral to the node
+    !         ! j-1 and substract it from the node j. For the heat flux it
+    !         ! is reversed, because the negative of the gradient of the
+    !         ! speed of sound must be computed.
+    !         if (k > 1) then
+
+    !             tmp = atomicadd(ux(i, j, k - 1), ubar * sx)
+    !             tmp = atomicadd(uy(i, j, k - 1), ubar * sy)
+    !             tmp = atomicadd(uz(i, j, k - 1), ubar * sz)
+    !             tmp = atomicadd(vx(i, j, k - 1), vbar * sx)
+    !             tmp = atomicadd(vy(i, j, k - 1), vbar * sy)
+    !             tmp = atomicadd(vz(i, j, k - 1), vbar * sz)
+
+    !             tmp = atomicadd(wx(i, j, k - 1), wbar * sx)
+    !             tmp = atomicadd(wy(i, j, k - 1), wbar * sy)
+    !             tmp = atomicadd(wz(i, j, k - 1), wbar * sz)
+                
+    !             tmp = atomicsub(qx(i, j, k - 1), a2 * sx)
+    !             tmp = atomicsub(qy(i, j, k - 1), a2 * sy)
+    !             tmp = atomicsub(qz(i, j, k - 1), a2 * sz)
+
+    !             ! ux(i, j, k - 1) = ux(i, j, k - 1) + ubar * sx
+    !             ! uy(i, j, k - 1) = uy(i, j, k - 1) + ubar * sy
+    !             ! uz(i, j, k - 1) = uz(i, j, k - 1) + ubar * sz
+
+    !             ! vx(i, j, k - 1) = vx(i, j, k - 1) + vbar * sx
+    !             ! vy(i, j, k - 1) = vy(i, j, k - 1) + vbar * sy
+    !             ! vz(i, j, k - 1) = vz(i, j, k - 1) + vbar * sz
+
+    !             ! wx(i, j, k - 1) = wx(i, j, k - 1) + wbar * sx
+    !             ! wy(i, j, k - 1) = wy(i, j, k - 1) + wbar * sy
+    !             ! wz(i, j, k - 1) = wz(i, j, k - 1) + wbar * sz
+
+    !             ! qx(i, j, k - 1) = qx(i, j, k - 1) - a2 * sx
+    !             ! qy(i, j, k - 1) = qy(i, j, k - 1) - a2 * sy
+    !             ! qz(i, j, k - 1) = qz(i, j, k - 1) - a2 * sz
+
+    !         end if 
+
+    !         if (k < ke) then
+
+    !             tmp = atomicsub(ux(i, j, k), ubar * sx)
+    !             tmp = atomicsub(uy(i, j, k), ubar * sy)
+    !             tmp = atomicsub(uz(i, j, k), ubar * sz)
+
+    !             tmp = atomicsub(vx(i, j, k), vbar * sx)
+    !             tmp = atomicsub(vy(i, j, k), vbar * sy)
+    !             tmp = atomicsub(vz(i, j, k), vbar * sz)
+
+    !             tmp = atomicsub(wx(i, j, k), wbar * sx)
+    !             tmp = atomicsub(wy(i, j, k), wbar * sy)
+    !             tmp = atomicsub(wz(i, j, k), wbar * sz)
+                
+    !             tmp = atomicadd(qx(i, j, k), a2 * sx) 
+    !             tmp = atomicadd(qy(i, j, k), a2 * sy)
+    !             tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+    !             ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+    !             ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+    !             ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+    !             ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+    !             ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+    !             ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+    !             ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+    !             ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+    !             ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+    !             ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+    !             ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+    !             ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
+    !         end if 
+    !     end if
+    !     ! Second part. Contribution in the j-direction.
+    !     ! The contribution is scattered to both the left and right node
+    !     ! in j-direction.
+    !     !loop k 1 to kl j 1 to je and i 1 to il
+    !     if (i <= il .AND. j <= je .AND. k <= kl) then
+    !         ! Compute 8 times the average normal for this part of
+    !         ! the control volume. The factor 8 is taken care of later
+    !         ! on when the division by the volume takes place.
+    !         sx = sj(i, j - 1, k, 1) + sj(i + 1, j - 1, k, 1) &
+    !                 + sj(i, j - 1, k + 1, 1) + sj(i + 1, j - 1, k + 1, 1) &
+    !                 + sj(i, j, k, 1) + sj(i + 1, j, k, 1) &
+    !                 + sj(i, j, k + 1, 1) + sj(i + 1, j, k + 1, 1)
+    !         sy = sj(i, j - 1, k, 2) + sj(i + 1, j - 1, k, 2) &
+    !                 + sj(i, j - 1, k + 1, 2) + sj(i + 1, j - 1, k + 1, 2) &
+    !                 + sj(i, j, k, 2) + sj(i + 1, j, k, 2) &
+    !                 + sj(i, j, k + 1, 2) + sj(i + 1, j, k + 1, 2)
+    !         sz = sj(i, j - 1, k, 3) + sj(i + 1, j - 1, k, 3) &
+    !                 + sj(i, j - 1, k + 1, 3) + sj(i + 1, j - 1, k + 1, 3) &
+    !                 + sj(i, j, k, 3) + sj(i + 1, j, k, 3) &
+    !                 + sj(i, j, k + 1, 3) + sj(i + 1, j, k + 1, 3)
+    !         ! Compute the average velocities and speed of sound squared
+    !         ! for this integration point. Node that these variables are
+    !         ! stored in w(ivx), w(ivy), w(ivz) and p.
+    !         ubar = fourth * (w(i, j, k, ivx) + w(i + 1, j, k, ivx) &
+    !                 + w(i, j, k + 1, ivx) + w(i + 1, j, k + 1, ivx))
+    !         vbar = fourth * (w(i, j, k, ivy) + w(i + 1, j, k, ivy) &
+    !                             + w(i, j, k + 1, ivy) + w(i + 1, j, k + 1, ivy))
+    !         wbar = fourth * (w(i, j, k, ivz) + w(i + 1, j, k, ivz) &
+    !                             + w(i, j, k + 1, ivz) + w(i + 1, j, k + 1, ivz))
+
+    !         a2 = fourth * (aa(i, j, k) + aa(i + 1, j, k) + aa(i, j, k + 1) + aa(i + 1, j, k + 1))
+            
+    !         ! Add the contributions to the surface integral to the node
+    !         ! j-1 and substract it from the node j. For the heat flux it
+    !         ! is reversed, because the negative of the gradient of the
+    !         ! speed of sound must be computed.
+    
+    !         if (j > 1) then
+
+    !             tmp = atomicadd(ux(i, j - 1, k), ubar * sx)
+    !             tmp = atomicadd(uy(i, j - 1, k), ubar * sy)
+    !             tmp = atomicadd(uz(i, j - 1, k), ubar * sz)
+
+    !             tmp = atomicadd(vx(i, j - 1, k), vbar * sx)
+    !             tmp = atomicadd(vy(i, j - 1, k), vbar * sy)
+    !             tmp = atomicadd(vz(i, j - 1, k), vbar * sz)
+
+    !             tmp = atomicadd(wx(i, j - 1, k), wbar * sx)
+    !             tmp = atomicadd(wy(i, j - 1, k), wbar * sy)
+    !             tmp = atomicadd(wz(i, j - 1, k), wbar * sz)
+                
+    !             tmp = atomicsub(qx(i, j - 1, k), a2 * sx)
+    !             tmp = atomicsub(qy(i, j - 1, k), a2 * sy)
+    !             tmp = atomicsub(qz(i, j - 1, k), a2 * sz)
+
+    !             ! ux(i, j - 1, k) = ux(i, j - 1, k) + ubar * sx
+    !             ! uy(i, j - 1, k) = uy(i, j - 1, k) + ubar * sy
+    !             ! uz(i, j - 1, k) = uz(i, j - 1, k) + ubar * sz
+
+    !             ! vx(i, j - 1, k) = vx(i, j - 1, k) + vbar * sx
+    !             ! vy(i, j - 1, k) = vy(i, j - 1, k) + vbar * sy
+    !             ! vz(i, j - 1, k) = vz(i, j - 1, k) + vbar * sz
+
+    !             ! wx(i, j - 1, k) = wx(i, j - 1, k) + wbar * sx
+    !             ! wy(i, j - 1, k) = wy(i, j - 1, k) + wbar * sy
+    !             ! wz(i, j - 1, k) = wz(i, j - 1, k) + wbar * sz
+
+    !             ! qx(i, j - 1, k) = qx(i, j - 1, k) - a2 * sx
+    !             ! qy(i, j - 1, k) = qy(i, j - 1, k) - a2 * sy
+    !             ! qz(i, j - 1, k) = qz(i, j - 1, k) - a2 * sz
+
+    !         end if
+
+    !         if (j < je) then
+
+    !             tmp = atomicsub(ux(i, j, k), ubar * sx) 
+    !             tmp = atomicsub(uy(i, j, k), ubar * sy)
+    !             tmp = atomicsub(uz(i, j, k), ubar * sz)
+
+    !             tmp = atomicsub(vx(i, j, k), vbar * sx)
+    !             tmp = atomicsub(vy(i, j, k), vbar * sy)
+    !             tmp = atomicsub(vz(i, j, k), vbar * sz)
+
+    !             tmp = atomicsub(wx(i, j, k), wbar * sx)
+    !             tmp = atomicsub(wy(i, j, k), wbar * sy)
+    !             tmp = atomicsub(wz(i, j, k), wbar * sz)
+                
+    !             tmp = atomicadd(qx(i, j, k), a2 * sx)
+    !             tmp = atomicadd(qy(i, j, k), a2 * sy)
+    !             tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+    !             ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+    !             ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+    !             ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+    !             ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+    !             ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+    !             ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+    !             ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+    !             ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+    !             ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+    !             ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+    !             ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+    !             ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
+    !         end if 
+    !     end if
+        
+    !     ! Third part. Contribution in the i-direction.
+    !     ! The contribution is scattered to both the left and right node
+    !     ! in i-direction.
+        
+    !     ! loop k 1 to kl j 1 to jl and i 1 to ie
+    !     if (i <= ie .AND. j <= jl .AND. k <= kl) then
+    !         ! Compute 8 times the average normal for this part of
+    !         ! the control volume. The factor 8 is taken care of later
+    !         ! on when the division by the volume takes place.
+    !         sx = si(i - 1, j, k, 1) + si(i - 1, j + 1, k, 1) &
+    !                 + si(i - 1, j, k + 1, 1) + si(i - 1, j + 1, k + 1, 1) &
+    !                 + si(i, j, k, 1) + si(i, j + 1, k, 1) &
+    !                 + si(i, j, k + 1, 1) + si(i, j + 1, k + 1, 1)
+    !         sy = si(i - 1, j, k, 2) + si(i - 1, j + 1, k, 2) &
+    !                 + si(i - 1, j, k + 1, 2) + si(i - 1, j + 1, k + 1, 2) &
+    !                 + si(i, j, k, 2) + si(i, j + 1, k, 2) &
+    !                 + si(i, j, k + 1, 2) + si(i, j + 1, k + 1, 2)
+    !         sz = si(i - 1, j, k, 3) + si(i - 1, j + 1, k, 3) &
+    !                 + si(i - 1, j, k + 1, 3) + si(i - 1, j + 1, k + 1, 3) &
+    !                 + si(i, j, k, 3) + si(i, j + 1, k, 3) &
+    !                 + si(i, j, k + 1, 3) + si(i, j + 1, k + 1, 3)
+    !         ! Compute the average velocities and speed of sound squared
+    !         ! for this integration point. Node that these variables are
+    !         ! stored in w(ivx), w(ivy), w(ivz) and p.
+    !         ubar = fourth * (w(i, j, k, ivx) + w(i, j + 1, k, ivx) &
+    !                             + w(i, j, k + 1, ivx) + w(i, j + 1, k + 1, ivx))
+    !         vbar = fourth * (w(i, j, k, ivy) + w(i, j + 1, k, ivy) &
+    !                             + w(i, j, k + 1, ivy) + w(i, j + 1, k + 1, ivy))
+    !         wbar = fourth * (w(i, j, k, ivz) + w(i, j + 1, k, ivz) &
+    !                             + w(i, j, k + 1, ivz) + w(i, j + 1, k + 1, ivz))
+
+    !         a2 = fourth * (aa(i, j, k) + aa(i, j + 1, k) + aa(i, j, k + 1) + aa(i, j + 1, k + 1))
+    !         ! Add the contributions to the surface integral to the node
+    !         ! j-1 and substract it from the node j. For the heat flux it
+    !         ! is reversed, because the negative of the gradient of the
+    !         ! speed of sound must be computed.
+    !         if (i > 1) then
+
+    !             tmp = atomicadd(ux(i - 1, j, k), ubar * sx) 
+    !             tmp = atomicadd(uy(i - 1, j, k), ubar * sy)
+    !             tmp = atomicadd(uz(i - 1, j, k), ubar * sz)
+
+    !             tmp = atomicadd(vx(i - 1, j, k), vbar * sx)
+    !             tmp = atomicadd(vy(i - 1, j, k), vbar * sy)
+    !             tmp = atomicadd(vz(i - 1, j, k), vbar * sz)
+
+    !             tmp = atomicadd(wx(i - 1, j, k), wbar * sx)
+    !             tmp = atomicadd(wy(i - 1, j, k), wbar * sy)
+    !             tmp = atomicadd(wz(i - 1, j, k), wbar * sz)
+                
+    !             tmp = atomicsub(qx(i - 1, j, k), a2 * sx)
+    !             tmp = atomicsub(qy(i - 1, j, k), a2 * sy)
+    !             tmp = atomicsub(qz(i - 1, j, k), a2 * sz)
+
+    !             ! ux(i - 1, j, k) = ux(i - 1, j, k) + ubar * sx
+    !             ! uy(i - 1, j, k) = uy(i - 1, j, k) + ubar * sy
+    !             ! uz(i - 1, j, k) = uz(i - 1, j, k) + ubar * sz
+
+    !             ! vx(i - 1, j, k) = vx(i - 1, j, k) + vbar * sx
+    !             ! vy(i - 1, j, k) = vy(i - 1, j, k) + vbar * sy
+    !             ! vz(i - 1, j, k) = vz(i - 1, j, k) + vbar * sz
+
+    !             ! wx(i - 1, j, k) = wx(i - 1, j, k) + wbar * sx
+    !             ! wy(i - 1, j, k) = wy(i - 1, j, k) + wbar * sy
+    !             ! wz(i - 1, j, k) = wz(i - 1, j, k) + wbar * sz
+
+    !             ! qx(i - 1, j, k) = qx(i - 1, j, k) - a2 * sx
+    !             ! qy(i - 1, j, k) = qy(i - 1, j, k) - a2 * sy
+    !             ! qz(i - 1, j, k) = qz(i - 1, j, k) - a2 * sz
+
+    !         end if
+
+    !         if (i < ie) then
+
+    !             tmp = atomicsub(ux(i, j, k), ubar * sx)
+    !             tmp = atomicsub(uy(i, j, k), ubar * sy)
+    !             tmp = atomicsub(uz(i, j, k), ubar * sz)
+
+    !             tmp = atomicsub(vx(i, j, k), vbar * sx)
+    !             tmp = atomicsub(vy(i, j, k), vbar * sy)
+    !             tmp = atomicsub(vz(i, j, k), vbar * sz)
+
+    !             tmp = atomicsub(wx(i, j, k), wbar * sx)
+    !             tmp = atomicsub(wy(i, j, k), wbar * sy)
+    !             tmp = atomicsub(wz(i, j, k), wbar * sz)
+                
+    !             tmp = atomicadd(qx(i, j, k), a2 * sx)
+    !             tmp = atomicadd(qy(i, j, k), a2 * sy)
+    !             tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+    !             ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+    !             ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+    !             ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+    !             ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+    !             ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+    !             ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+    !             ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+    !             ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+    !             ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+    !             ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+    !             ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+    !             ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
+    !         end if
+    !     end if 
+
+    !     !need to get rid of this to avoid race condition
+    !     !each cell only scales one node 
+    !     !however need to wait for each nodes accumulation to be done
+    !     !if thread on edge of boundary need to wait for another block to be done
+    !     !therefore split this part into a separate kernel
+
+    !     ! ! Divide by 8 times the volume to obtain the correct gradients.
+    !     ! if (i <= il .AND. j <= jl .AND. k <= kl) then
+    !     !     ! Compute the inverse of 8 times the volume for this node.
+    !     !     oVol = one / (vol(i, j, k) + vol(i, j, k + 1) &
+    !     !                           + vol(i + 1, j, k) + vol(i + 1, j, k + 1) &
+    !     !                           + vol(i, j + 1, k) + vol(i, j + 1, k + 1) &
+    !     !                           + vol(i + 1, j + 1, k) + vol(i + 1, j + 1, k + 1))
+    !     !     ! Compute the correct velocity gradients and "unit" heat
+    !     !     ! fluxes. The velocity gradients are stored in ux, etc.
+    !     !     ux(i, j, k) = ux(i, j, k) * oVol
+    !     !     uy(i, j, k) = uy(i, j, k) * oVol
+    !     !     uz(i, j, k) = uz(i, j, k) * oVol
+
+    !     !     vx(i, j, k) = vx(i, j, k) * oVol
+    !     !     vy(i, j, k) = vy(i, j, k) * oVol
+    !     !     vz(i, j, k) = vz(i, j, k) * oVol
+
+    !     !     wx(i, j, k) = wx(i, j, k) * oVol
+    !     !     wy(i, j, k) = wy(i, j, k) * oVol
+    !     !     wz(i, j, k) = wz(i, j, k) * oVol
+
+    !     !     qx(i, j, k) = qx(i, j, k) * oVol
+    !     !     qy(i, j, k) = qy(i, j, k) * oVol
+    !     !     qz(i, j, k) = qz(i, j, k) * oVol
+    !     ! end if 
+
+    ! end subroutine allNodalGradients_kplane
 
     attributes(global) subroutine scaleNodalGradients_v2
         use constants, only: zero,fourth,ivx,ivy,ivz,one
@@ -1931,6 +2403,61 @@ module cudaResidual
     end subroutine scaleNodalGradients_v2
 
     attributes(global) subroutine scaleNodalGradients_kplane
+
+        use constants, only: zero,fourth,ivx,ivy,ivz,one
+        use precision, only: realType
+        implicit none
+
+        real(kind=realType) :: a2, oVol, uBar,vBar,wBar,sx,sy,sz
+        integer(kind=intType) :: i, j, k, l, tidx, tidy, ie, je, ke, il, jl, kl
+        real (kind = realType) , shared :: vol_s(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK+1,2)
+
+        
+        ! get global indices for where we are
+        i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
+        j = (blockIdx%y - 1) * (inviscidCentralBSJPlaneK) + threadIdx%y 
+        k = (blockIdx%z - 1) * (inviscidCentralBSKPlaneK) + 1
+
+        tidx = threadIdx%x
+        tidy = threadIdx%y
+
+        ! get the small portion of vol
+        if (i <= ie .and. j <= je .and. k <= ke) then
+            vol_s(tidx, tidy, 1) = vol(i, j, k)
+            vol_s(tidx, tidy, 2) = vol(i, j, k+1)
+        end if
+        
+        ! go over each k plane
+        do l = 1, inviscidCentralBSKPlaneK
+            if (i <= il .AND. j <= jl .AND. k <= kl) then
+            
+                ! Compute the inverse of 8 times the volume for this node.
+                oVol = one / (vol_s(i, j, 1) + vol(i, j, 2) &
+                                    + vol(i + 1, j,     1) + vol(i + 1, j,    2) &
+                                    + vol(i,     j + 1, 1) + vol(i,     j + 1, 2) &
+                                    + vol(i + 1, j + 1, 2) + vol(i + 1, j + 1, 2))
+
+                ! Compute the correct velocity gradients and "unit" heat
+                ! fluxes. The velocity gradients are stored in ux, etc.
+                ux(i, j, k) = ux(i, j, k) * oVol
+                uy(i, j, k) = uy(i, j, k) * oVol
+                uz(i, j, k) = uz(i, j, k) * oVol
+
+                vx(i, j, k) = vx(i, j, k) * oVol
+                vy(i, j, k) = vy(i, j, k) * oVol
+                vz(i, j, k) = vz(i, j, k) * oVol
+
+                wx(i, j, k) = wx(i, j, k) * oVol
+                wy(i, j, k) = wy(i, j, k) * oVol
+                wz(i, j, k) = wz(i, j, k) * oVol
+
+                qx(i, j, k) = qx(i, j, k) * oVol
+                qy(i, j, k) = qy(i, j, k) * oVol
+                qz(i, j, k) = qz(i, j, k) * oVol
+
+            end if 
+        end do
+
     end subroutine scaleNodalGradients_kplane
 
     !sabet
@@ -3308,9 +3835,9 @@ module cudaResidual
         integer(kind = intType) :: i, j, k,l, tidx, tidy, tidz
         integer(kind = intType) :: dom, sps,il,jl,kl,ie,je,ke,jmax ,kmax
 
-        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
-        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
-        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1)
+        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK+1,5)
+        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK+1,5)
+        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK+1)
 
         real(kind = realType) :: fs(5),dwLoc
         real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
@@ -3325,8 +3852,8 @@ module cudaResidual
         sps = 1
         !cell centered indices
         i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
-        j = (blockIdx%y - 1) * (inviscidCentralBSJPlane) + threadIdx%y 
-        k = (blockIdx%z - 1) * (inviscidCentralBSKPlane) + 1
+        j = (blockIdx%y - 1) * (inviscidCentralBSJPlaneK) + threadIdx%y 
+        k = (blockIdx%z - 1) * (inviscidCentralBSKPlaneK) + 1
         
         tidx = threadIdx%x
         tidy = threadIdx%y
@@ -3338,8 +3865,8 @@ module cudaResidual
         jl = cudaDoms(dom,sps)%jl
         kl = cudaDoms(dom,sps)%kl
         
-        jmax = min((blockIdx%y) * (inviscidCentralBSJPlane) ,jl)
-        kmax = min((blockIdx%z) * (inviscidCentralBSKPlane) ,kl)
+        jmax = min((blockIdx%y) * (inviscidCentralBSJPlaneK) ,jl)
+        kmax = min((blockIdx%z) * (inviscidCentralBSKPlaneK) ,kl)
         if (k > kl) then
             return 
         end if 
@@ -3376,7 +3903,7 @@ module cudaResidual
         !sync threads now
         call syncthreads()
 
-        do l = 1, inviscidCentralBSKPlane
+        do l = 1, inviscidCentralBSKPlaneK
             !start loop by reading next k face
             if (i <= ie .and. j <= jl .and. k <= kl) then
                 !k state 
@@ -3682,9 +4209,9 @@ module cudaResidual
         integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz
         integer(kind = intType) :: dom, sps, il, jl, kl, ie, je, ke, jmax ,kmax
 
-        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
-        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1,5)
-        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlane,inviscidCentralBSJPlane+1)
+        real (kind = realType) , shared :: w_s(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK+1,5)
+        real (kind = realType) , shared :: dw_s(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK+1,5)
+        real (kind = realType) , shared :: P_s(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK+1)
 
         real(kind = realType) :: fs(5),dwLoc
         real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
@@ -3699,8 +4226,8 @@ module cudaResidual
         sps = 1
         !cell centered indices
         i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
-        j = (blockIdx%y - 1) * (inviscidCentralBSJPlane) + threadIdx%y 
-        k = (blockIdx%z - 1) * (inviscidCentralBSKPlane) + 1
+        j = (blockIdx%y - 1) * (inviscidCentralBSJPlaneK) + threadIdx%y 
+        k = (blockIdx%z - 1) * (inviscidCentralBSKPlaneK) + 1
         
         tidx = threadIdx%x
         tidy = threadIdx%y
@@ -3712,8 +4239,8 @@ module cudaResidual
         jl = cudaDoms(dom,sps)%jl
         kl = cudaDoms(dom,sps)%kl
         
-        jmax = min((blockIdx%y) * (inviscidCentralBSJPlane) ,jl)
-        kmax = min((blockIdx%z) * (inviscidCentralBSKPlane) ,kl)
+        jmax = min((blockIdx%y) * (inviscidCentralBSJPlaneK), jl)
+        kmax = min((blockIdx%z) * (inviscidCentralBSKPlaneK), kl)
         if (k > kl) then
             return 
         end if 
@@ -3750,7 +4277,7 @@ module cudaResidual
         !sync threads now
         call syncthreads()
 
-        do l = 1, inviscidCentralBSKPlane
+        do l = 1, inviscidCentralBSKPlaneK
             !start loop by reading next k face
             if (i <= ie .and. j <= jl .and. k <= kl) then
                 !k state 
@@ -3860,6 +4387,7 @@ module cudaResidual
                 rqsm = qsm * wrho
                 
                 pa = porFlux * (P_s(tidx, tidy + 1) + P)
+
                 !mass flux J dir
                 fs(irho) = rqsp + rqsm
                 tmp = atomicsub(dw_s(tidx, tidy + 1, irho), fs(irho))
@@ -4045,6 +4573,380 @@ module cudaResidual
         end if         
 
     end subroutine inviscidCentralFluxCellCentered_kplane
+
+    attributes(global) subroutine inviscidCentralFluxCellCentered_iplane
+        ! The old indices were 32,10,8
+        ! We're now switching to 8, 10, 32 to try out if it's faster
+        use precision, only: realType, intType
+        use constants, only: zero, half, one, two, third, fourth, eighth, ivx, ivy, ivz, irhoE, irho, itu1, imx, imy, imz
+        use cudaInputPhysics, only: equationMode,gammaConstant
+        use cudaFlowVarRefState, only: nwf
+        implicit none
+        integer(kind = intType) :: i, j, k, l, tidx, tidy, tidz
+        integer(kind = intType) :: dom, sps, il, jl, kl, ie, je, ke, jmax ,imax
+        
+        real (kind = realType) , shared :: w_s(inviscidCentralBSKPlaneI, inviscidCentralBSJPlaneI + 1, 5)
+        real (kind = realType) , shared :: dw_s(inviscidCentralBSKPlaneI, inviscidCentralBSJPlaneI + 1, 5)
+        real (kind = realType) , shared :: P_s(inviscidCentralBSKPlaneI, inviscidCentralBSJPlaneI + 1)
+
+        real(kind = realType) :: fs(5),dwLoc
+        real(kind=realType) :: wrho, wvx, wvy, wvz, wrhoE, P, pa
+        real(kind=realType) :: wrho_i, wvx_i, wvy_i, wvz_i, wrhoE_i, P_i
+
+        real(kind=realType) :: sx, sy, sz
+        real(kind = realType) :: tmp
+        real(kind = realType) :: vnp, vnm, porVel, porFlux, sFace, qsp, qsm, rqsp, rqsm
+        real(kind = realType) :: t_dw(5)
+
+        dom = 1
+        sps = 1
+        !cell centered indices
+        i = (blockIdx%x - 1) * (inviscidCentralBSIPlaneI) + 1
+        j = (blockIdx%y - 1) * (inviscidCentralBSJPlaneI) + threadIdx%y 
+        k = (blockIdx%z - 1) * (blockDim%z - 1) + threadIdx%z
+        
+        ! tidx = threadIdx%x
+        tidy = threadIdx%y
+        tidz = threadIdx%z
+
+        ie = cudaDoms(dom,sps)%ie
+        je = cudaDoms(dom,sps)%je
+        ke = cudaDoms(dom,sps)%ke
+        il = cudaDoms(dom,sps)%il
+        jl = cudaDoms(dom,sps)%jl
+        kl = cudaDoms(dom,sps)%kl
+        
+        imax = min((blockIdx%x) * (inviscidCentralBSIPlaneI), il)
+        jmax = min((blockIdx%y) * (inviscidCentralBSJPlaneI), jl)
+        if (i > il) then
+            return 
+        end if 
+
+        !read self cell
+        if (i <= ie .and. j <= je .and. k <= ke) then
+            wrho = cudaDoms(dom, sps)%w(i, j, k, irho)
+            wvx = cudaDoms(dom, sps)%w(i, j, k, ivx)
+            wvy = cudaDoms(dom, sps)%w(i, j, k, ivy)
+            wvz = cudaDoms(dom, sps)%w(i, j, k, ivz)
+            wrhoE = cudaDoms(dom, sps)%w(i, j, k, irhoE)
+            P = (gammaConstant-one)*(wrhoE - half*(wvx*wvx+wvy*wvy+wvz*wvz)*wrho)
+
+            w_s(tidz,tidy,irho) = wrho
+            w_s(tidz,tidy,ivx) = wvx
+            w_s(tidz,tidy,ivy) = wvy 
+            w_s(tidz,tidy,ivz) = wvz
+            w_s(tidz,tidy,irhoE) = wrhoE
+            P_s(tidz,tidy) = P
+            dw_s(tidz,tidy,:) = zero
+        end if
+        !read jmax halo cells of this plane
+        if (j == jmax .and. i <= ie .and. k <= ke) then
+            w_s(tidz,tidy+1,irho) = cudaDoms(dom,sps)%w(i,j+1,k,irho)
+            w_s(tidz,tidy+1,ivx) = cudaDoms(dom,sps)%w(i,j+1,k,imx)
+            w_s(tidz,tidy+1,ivy) = cudaDoms(dom,sps)%w(i,j+1,k,imy)
+            w_s(tidz,tidy+1,ivz) = cudaDoms(dom,sps)%w(i,j+1,k,imz)
+            w_s(tidz,tidy+1,irhoE) = cudaDoms(dom,sps)%w(i,j+1,k,irhoE)
+            P_s(tidz,tidy+1) = (gammaConstant - one) * (w_s(tidz, tidy+1, irhoE) &
+            - half * (w_s(tidz, tidy+1, ivx) * w_s(tidz, tidy+1, ivx) + w_s(tidz, tidy+1, ivy) * w_s(tidz, tidy + 1, ivy) &
+            + w_s(tidz, tidy+1,ivz)*w_s(tidz, tidy+1, ivz)) * w_s(tidz, tidy+1,irho))
+            dw_s(tidz,tidy+1,:) = zero
+        end if  
+        fs = zero
+        t_dw  = zero
+        call syncthreads()
+
+        do l = 1, inviscidCentralBSIPlaneI
+            !start loop by reading next i face
+            if (i <= il .and. j <= jl .and. k <= ke) then
+                !i state 
+                wrho_i = cudaDoms(dom,sps)%w(i + 1, j, k, irho)
+                wvx_i = cudaDoms(dom,sps)%w(i + 1, j, k, ivx)
+                wvy_i = cudaDoms(dom,sps)%w(i + 1, j, k, ivy)
+                wvz_i = cudaDoms(dom,sps)%w(i + 1, j, k, ivz)
+                wrhoE_i = cudaDoms(dom,sps)%w(i + 1, j, k, irhoE)
+                ! P_i = (gammaConstant-one)*(wrhoE_i - half * (wvx_i*wvx_i+wvy_i*wvy_i+wvz_i*wvz_i) * wrho_i)
+
+            end if 
+
+            !if thread is on compute cell and not last in x direction
+            !last in x is currently unused just there to read halos on right side
+            if (i <= il .and. j <= jl .and. k  <= kl .and. tidz < blockdim%z) then
+            
+                !each thread here computes i face
+                sFace = cudaDoms(dom,sps)%sFaceI(i,j,k)
+                sx = cudaDoms(dom,sps)%sI(i,j,k,1)
+                sy = cudaDoms(dom,sps)%sI(i,j,k,2)
+                sz = cudaDoms(dom,sps)%sI(i,j,k,3)
+                vnp = w_s(tidz+1,tidy,ivx) * sx + w_s(tidz+1,tidy,ivy) * sy + w_s(tidz+1,tidy,ivz) * sz
+                vnm = wvx*sx + wvy*sy + wvz*sz
+
+                porVel = one
+                porFlux = half
+                if (j>=2 .and. i>=2)then 
+                    if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
+                    if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
+                        porVel = zero
+                        vnp = sFace
+                        vnm = sFace
+                    end if
+                end if 
+
+                ! Incorporate porFlux in porVel.
+                porVel = porVel * porFlux
+
+                ! Compute the normal velocities relative to the grid for
+                    ! the face as well as the mass fluxes.
+                qsp = (vnp - sFace) * porVel
+                qsm = (vnm - sFace) * porVel
+                rqsp = qsp * w_s(tidz + 1, tidy, irho)
+                rqsm = qsm * wrho
+
+                pa = porFlux * (P_s(tidz + 1, tidy) + P)
+
+                !mass flux K dir 
+                fs(irho) =  rqsp + rqsm
+                tmp = atomicsub(dw_s(tidz + 1, tidy,  irho), fs(irho))
+                t_dw(irho) = t_dw(irho) + fs(irho)
+
+                !imx flux K dir 
+                fs(imx) = rqsp * w_s(tidz + 1, tidy,  ivx) + rqsm * wvx + pa * sx
+                tmp = atomicsub(dw_s(tidz + 1, tidy, imx), fs(imx))
+                t_dw(imx) = t_dw(imx) + fs(imx)
+                
+                !imy flux K dir 
+                fs(imy) =  rqsp * w_s(tidz + 1, tidy, ivy) + rqsm * wvy + pa * sy
+                tmp = atomicsub(dw_s(tidz + 1, tidy, imy), fs(imy))
+                t_dw(imy) =  t_dw(imy) + fs(imy)
+
+                !imz flux K dir 
+                fs(imz) =  rqsp * w_s(tidz + 1, tidy,  ivz) + rqsm * wvz + pa * sz
+                tmp = atomicsub(dw_s(tidz + 1, tidy,  imz), fs(imz))
+                t_dw(imz) =  t_dw(imz) + fs(imz) 
+
+                !irhoE flux K dir
+                fs(irhoE) = qsp * w_s(tidz + 1, tidy, irhoE) + qsm * wrhoE &
+                    + porFlux * (vnp * P_s(tidz + 1, tidy) + vnm * P)
+                tmp = atomicsub(dw_s(tidz + 1, tidy, irhoE), fs(irhoE))
+                t_dw(irhoE) =  t_dw(irhoE) + fs(irhoE)   
+
+                !now each thread compute J face 
+                sFace = cudaDoms(dom,sps)%sFaceJ(i, j, k)
+                sx = cudaDoms(dom,sps)%sJ(i, j, k, 1)
+                sy = cudaDoms(dom,sps)%sJ(i, j, k, 2)
+                sz = cudaDoms(dom,sps)%sJ(i, j, k, 3)
+
+                vnp =     w_s(tidz, tidy + 1, ivx) * sx &
+                        + w_s(tidz, tidy + 1, ivy) * sy &
+                        + w_s(tidz, tidy + 1, ivz) * sz
+
+                vnm = wvx*sx + wvy *sy + wvz *sz
+
+                porVel = one
+                porFlux = half
+                if (i>=2 .and. k>=2) then
+                    if (cudaDoms(dom,sps)%porJ(i, j, k) == noFlux) porFlux = zero
+                    if (cudaDoms(dom,sps)%porJ(i, j, k) == boundFlux) then
+                        porVel = zero
+                        vnp = sFace
+                        vnm = sFace
+                    end if
+                end if 
+                !Incorporate porFlux in porVel.
+                porVel = porVel * porFlux
+
+                ! Compute the normal velocities for the face as well as the
+                ! mass fluxes.
+
+                qsp = (vnp - sFace) * porVel
+                qsm = (vnm - sFace) * porVel
+                rqsp = qsp * w_s(tidz, tidy+1, irho)
+                rqsm = qsm * wrho
+                
+                pa = porFlux * (P_s(tidz, tidy+1) + P)
+                
+                !mass flux J dir
+                fs(irho) = rqsp + rqsm
+                tmp = atomicsub(dw_s(tidz, tidy+1, irho), fs(irho))
+                t_dw(irho) = t_dw(irho) + fs(irho)
+
+                !imx flux J dir 
+                fs(imx) = rqsp * w_s(tidz, tidy + 1, ivx) + rqsm * wvx + pa * sx
+                tmp = atomicsub(dw_s(tidz, tidy + 1, imx), fs(imx))
+                t_dw(imx) = t_dw(imx) + fs(imx)
+
+                !imy flux J dir
+                fs(imy) = rqsp * w_s(tidz, tidy + 1, ivy) + rqsm * wvy + pa * sy
+                tmp = atomicsub(dw_s(tidz, tidy + 1, imy), fs(imy))
+                t_dw(imy) = t_dw(imy) + fs(imy)
+
+                !imz flux J dir
+                fs(imz) = rqsp * w_s(tidz, tidy + 1, ivz) + rqsm * wvz + pa * sz
+                tmp = atomicsub(dw_s(tidz, tidy + 1, imz), fs(imz))
+                t_dw(imz) = t_dw(imz) + fs(imz)
+
+                !irhoE flux J dir
+                fs(irhoE) = qsp * w_s(tidz, tidy + 1,  irhoE) + qsm * wrhoE &
+                    + porFlux * (vnp * P_s(tidz, tidy + 1) + vnm * P)
+                tmp = atomicsub(dw_s(tidz, tidy + 1,  irhoE), fs(irhoE))
+                t_dw(irhoE) = t_dw(irhoE) + fs(irhoE)
+
+                !now each thread compute I face
+                !face velocity and normal
+                sFace = cudaDoms(dom,sps)%sFaceI(i, j, k)
+                sx = cudaDoms(dom,sps)%sI(i, j, k, 1)
+                sy = cudaDoms(dom,sps)%sI(i, j, k, 2)
+                sz = cudaDoms(dom,sps)%sI(i, j, k, 3)
+            end if 
+            !computepressure of self cell in i + 1 direction
+            if (i <= il .and. j <= jl .and. k <= ke) then
+                ! i state 
+                P_i = (gammaConstant - one) * (wrhoE_i - half * (wvx_i*wvx_i+wvy_i*wvy_i+wvz_i*wvz_i) *wrho_i)
+            end if 
+
+            if (i <= il .and. j <= jl .and. k  <= kl .and. tidz < blockdim%z) then
+
+                vnp = wvx_i * sx + wvy_i * sy + wvz_i * sz
+                vnm = wvx*sx + wvy *sy + wvz *sz
+                porVel = one
+                porFlux = half
+                if (k>=2 .and. j>=2) then
+                    if (cudaDoms(dom,sps)%porI(i, j, k) == noFlux) porFlux = zero
+                    if (cudaDoms(dom,sps)%porI(i, j, k) == boundFlux) then
+                        porVel = zero
+                        vnp = sFace
+                        vnm = sFace
+                    end if
+                end if 
+                porVel = porVel * porFlux
+
+                qsp = (vnp - sFace) * porVel
+                qsm = (vnm - sFace) * porVel
+
+                rqsp = qsp * wrho_i
+                rqsm = qsm * wrho
+                pa = porFlux * (P_i + P)
+
+                !mass flux I dir
+                fs(irho) = rqsp + rqsm
+                t_dw(irho) = t_dw(irho) + fs(irho)
+
+                !imx flux I dir
+                fs(imx) = rqsp * wvx_i + rqsm * wvx + pa * sx
+                t_dw(imx) = t_dw(imx) + fs(imx)
+
+                !imy flux I dir
+                fs(imy) = rqsp * wvy_i + rqsm * wvy + pa * sy
+                t_dw(imy) = t_dw(imy) + fs(imy)
+
+                !imz flux I dir
+                fs(imz) = rqsp *wvz_i + rqsm * wvz + pa * sz
+                t_dw(imz) = t_dw(imz) + fs(imz)
+
+                !irhoE flux I dir
+                fs(irhoE) = qsp * wrhoE_i + qsm * wrhoE &
+                    + porFlux * (vnp * P_i + vnm * P)
+                t_dw(irhoE) = t_dw(irhoE) + fs(irhoE)
+                !set t_dw to -fs since we subtract from k+1 cell
+                !and that is our new self cell
+            
+            end if 
+            
+            !sync here to ensure all threads are done before we write to w_s
+            call syncthreads()
+
+            !write to w_s
+            if (k <= ke .and. j <= jl) then
+                !write into w_s
+                w_s(tidz, tidy, irho) = wrho_i
+                w_s(tidz, tidy, ivx) = wvx_i
+                w_s(tidz, tidy, ivy) = wvy_i 
+                w_s(tidz, tidy, ivz) = wvz_i
+                w_s(tidz, tidy, irhoE) = wrhoE_i
+                P_s(tidz, tidy) = P_i
+
+                !read jmax halo cells
+                if (j == jmax .and. i <= ie) then
+                    w_s(tidz, tidy+1, irho) = cudaDoms(dom,sps)%w(i, j+1, k+1, irho)
+                    w_s(tidz, tidy+1, ivx) = cudaDoms(dom,sps)%w(i, j+1, k+1, imx)
+                    w_s(tidz, tidy+1, ivy) = cudaDoms(dom,sps)%w(i, j+1, k+1, imy)
+                    w_s(tidz, tidy+1, ivz) = cudaDoms(dom,sps)%w(i, j+1, k+1, imz)
+                    w_s(tidz, tidy+1, irhoE) = cudaDoms(dom,sps)%w(i, j+1, k+1, irhoE)
+                    P_s(tidz, tidy+1) = (gammaConstant-one)*( w_s(tidz, tidy+1, irhoE) &
+                    - half*(w_s(tidz, tidy+1, ivx)*w_s(tidz, tidy+1, ivx) + w_s(tidz, tidy+1, ivy)*w_s(tidz, tidy+1, ivy) &
+                    + w_s(tidz, tidy+1, ivz) * w_s(tidz, tidy+1, ivz)) * w_s(tidz, tidy+1, irho))
+                end if 
+
+                if (j == jmax .and. i <= il .and. tidz < blockDim%z .and. k  <= kl) then
+                    tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,irho), dw_s(tidz,tidy+1,irho))
+                    tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,imx), dw_s(tidz,tidy+1,imx))
+                    tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,imy), dw_s(tidz,tidy+1,imy))
+                    tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,imz), dw_s(tidz,tidy+1,imz))
+                    tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j+1,k,irhoE), dw_s(tidz,tidy+1,irhoE))
+                    dw_s(tidz,tidy+1,:) = zero
+                end if       
+                
+                !accumulate to dw 
+                !accumulate from shared dw and t_dw into global dw
+                dwLoc = dw_s(tidz,tidy,irho) + t_dw(irho)
+                tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,irho), dwLoc)
+                dw_s(tidz,tidy,irho)  = zero
+
+                dwLoc = dw_s(tidz,tidy,imx) + t_dw(imx)
+                tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,imx), dwLoc)
+                dw_s(tidz,tidy,imx) = zero
+
+                dwLoc = dw_s(tidz,tidy,imy) + t_dw(imy)
+                tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,imy), dwLoc)
+                dw_s(tidz,tidy,imy)  = zero
+
+                dwLoc = dw_s(tidz,tidy,imz) + t_dw(imz)
+                tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,imz), dwLoc)
+                dw_s(tidz,tidy,imz) = zero
+
+                dwLoc = dw_s(tidz,tidy,irhoE) + t_dw(irhoE)
+                tmp = atomicadd(cudaDoms(dom,sps)%dw(i,j,k,irhoE), dwLoc)
+                dw_s(tidz,tidy,irhoE) = zero
+                
+                
+                t_dw(irho) = -fs(irho)
+                t_dw(imx) = -fs(imx)
+                t_dw(imy) = -fs(imy)
+                t_dw(imz) = -fs(imz)
+                t_dw(irhoE) = -fs(irhoE)
+
+            end if           
+            !add 1 to i
+            i = i + 1 
+            if (i > il) then
+                exit
+            end if
+            !set dw_s to zero
+            wrho = wrho_i
+            wvx = wvx_i
+            wvy = wvy_i
+            wvz = wvz_i 
+            wrhoE = wrhoE_i
+            P = P_i
+
+            !sync after doing all that
+            call syncthreads()      
+            
+        end do
+
+        if (k  <= ke .and. j <= je .and. tidz < blockDim%z) then
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(imax+1, j, k, irho), t_dw(irho))
+
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(imax+1, j, k, imx), t_dw(imx))
+
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(imax+1, j, k, imy), t_dw(imy))
+
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(imax+1, j, k, imz), t_dw(imz))
+
+            tmp = atomicadd(cudaDoms(dom,sps)%dw(imax+1, j, k, irhoE), t_dw(irhoE))
+
+        end if
+
+    end subroutine inviscidCentralFluxCellCentered_iplane
 
     attributes(global) subroutine inviscidCentralFlux
         ! ---------------------------------------------
@@ -6624,6 +7526,7 @@ module cudaResidual
       real(kind=realType) :: start, finish, startInv, finishInv, startVisc,finishVisc,startSA,finishSA
       integer(kind = intType) :: dom, sps
       integer(kind = intType) :: ibmax, jbmax, kbmax
+      integer(kind=intType) :: gridDimx, gridDimy, gridDimz ! shorthands for readability
     
       ! copy constants
       call cudaCopyFlowVarRefState
@@ -6699,9 +7602,9 @@ module cudaResidual
       call computeDSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
 
-      ! --- v1 ---
-      call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
-      istat = cudaDeviceSynchronize()
+    !   ! --- v1 ---
+    !   call inviscidCentralFluxCellCentered<<<grid_inv,block_inv>>> 
+    !   istat = cudaDeviceSynchronize()
 
     ! ! Try different GPU kernel layouts
     ! ! --- v2 ---
@@ -6718,11 +7621,18 @@ module cudaResidual
     ! call inviscidCentralFluxCellCentered_v3<<<grid_inv,block_inv>>> 
     ! istat = cudaDeviceSynchronize()
 
-    ! ! --- v4 ---
-    ! block_inv = dim3(inviscidCentralBSIPlane,inviscidCentralBSJPlane,1)
-    ! grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlane)))
+    ! --- v4 ---
+    block_inv = dim3(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK,1)
+    grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlaneK)))
+    ! print '("kplane grid param: ",I0,", ", I0,", ",I0)', ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlaneK))
+    call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>> 
+    istat = cudaDeviceSynchronize()
 
-    ! call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>> 
+    ! ! --- iplane marching ---
+    ! block_inv = dim3(1, inviscidCentralBSJPlaneI, inviscidCentralBSKPlaneI)
+    ! grid_inv = dim3(ceiling(real(bil) / (inviscidCentralBSIPlaneI)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bke) / (block_inv%z-1)))
+    ! print '("iplane grid param: ",I0,", ", I0,", ", I0)', ceiling(real(bil) / (inviscidCentralBSIPlaneI)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bke) / (block_inv%z-1))
+    ! call inviscidCentralFluxCellCentered_iplane<<<grid_inv, block_inv>>>
     ! istat = cudaDeviceSynchronize()
 
     ! ! --- Baseline central flux call ---
@@ -6731,7 +7641,7 @@ module cudaResidual
 
       ! inviscid diss flux scalar
     !   call inviscidDissFluxScalar<<<grid_size, block_size>>>
-      istat = cudaDeviceSynchronize()
+    !   istat = cudaDeviceSynchronize()
        call CPU_TIME(finishInv)
 
         print  '("CUDA Inviscid Time = ",E22.16," seconds.")', finishInv-startInv
@@ -6740,11 +7650,21 @@ module cudaResidual
       if (viscous) then
       call CPU_TIME(startVisc)
         ! call computeSpeedOfSoundSquared_v1<<<grid_size, block_size>>>
-        call computeSpeedOfSoundSquared_v2<<<grid_size, block_size>>>
+        ! call computeSpeedOfSoundSquared_v2<<<grid_size, block_size>>>
+        block_inv = dim3(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK,1)
+        gridDimx = ceiling(real(bil) / (block_inv%x))
+        gridDimy = ceiling(real(bjl) / (block_inv%y))
+        gridDimz = ceiling(real(bkl) / (inviscidCentralBSKPlaneK))
+        grid_inv = dim3(gridDimx, gridDimy, gridDimz) ! grid layout based on having halos
+        call computeSpeedOfSoundSquared_kplane<<<grid_inv, block_inv>>>
         istat = cudaDeviceSynchronize()
 
         ! call allNodalGradients_v1<<<grid_size, block_size>>>
         call allNodalGradients_v2<<<grid_size, block_size>>>
+        ! TODO GN-HH: PICKUP HERE
+        print '("kplane grid param (speed of sound): ",I0,"x", I0,"x",I0)', gridDimx, gridDimy, gridDimz
+        print '("kplane block param (speed of sound): ",I0,"x", I0,"x",I0)', inviscidCentralBSIPlaneK, inviscidCentralBSJPlaneK, 1
+        print '("dims: ",I0, I0, I0)', bil, bjl, bkl
         istat = cudaDeviceSynchronize()
 
         ! call scaleNodalGradients_v1<<<grid_size, block_size>>>
