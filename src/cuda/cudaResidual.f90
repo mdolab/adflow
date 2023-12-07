@@ -2006,19 +2006,31 @@ module cudaResidual
 
         real(kind=realType) :: a2, oVol, uBar, vBar, wBar, sx, sy, sz
         real(kind=realType) :: tmp
-        integer(kind=intType) :: i, j, k
+        integer(kind=intType) :: i, j, k, ie, je, ke, il, jl, kl
         integer(kind=intType) :: dom, sps
+        integer(kind=intType) :: l, tidx, tidy, bidx, bidy, bidz
+        integer(kind=intType) :: jmax, kmax
 
         dom = 1
         sps = 1
+
+        ! Convenience stuff
+        tidx = threadIdx%x
+        tidy = threadIdx%y
+        bidx = blockIdx%x
+        bidy = blockIdx%y
+        bidz = blockIdx%z
+
         !cell centered indices
-        i = (blockIdx%x - 1) * (blockDim%x-1) + threadIdx%x 
-        j = (blockIdx%y - 1) * (inviscidCentralBSJPlaneK) + threadIdx%y 
-        k = (blockIdx%z - 1) * (inviscidCentralBSKPlaneK) + 1
+        i = (bidx - 1) * (blockDim%x) + tidx   ! todo is blockdim%x - 1?
+        j = (bidy - 1) * (inviscidCentralBSJPlaneK) + tidy 
+        k = (bidz - 1) * (inviscidCentralBSKPlaneK) + 1
         
         jmax = min((blockIdx%y) * (inviscidCentralBSJPlaneK) ,jl)
         kmax = min((blockIdx%z) * (inviscidCentralBSKPlaneK) ,kl)
-        if (k > kl) then
+
+        ! Leave if past k-plane
+        if (k > ke) then            
             return 
         end if 
 
@@ -2027,328 +2039,306 @@ module cudaResidual
         ! in k-direction.
         
         !loop k 1 to ke, j 1 to jl and i 1 to il
-        if (i <= il .AND. j <= jl .AND. k <= ke) then
-            ! Compute 8 times the average normal for this part of
-            ! the control volume. The factor 8 is taken care of later
-            ! on when the division by the volume takes place.
-            sx = sk(i, j, k - 1, 1) + sk(i + 1, j, k - 1, 1) &
-                + sk(i, j + 1, k - 1, 1) + sk(i + 1, j + 1, k - 1, 1) &
-                + sk(i, j, k, 1) + sk(i + 1, j, k, 1) &
-                + sk(i, j + 1, k, 1) + sk(i + 1, j + 1, k, 1)
-            sy = sk(i, j, k - 1, 2) + sk(i + 1, j, k - 1, 2) &
-                + sk(i, j + 1, k - 1, 2) + sk(i + 1, j + 1, k - 1, 2) &
-                + sk(i, j, k, 2) + sk(i + 1, j, k, 2) &
-                + sk(i, j + 1, k, 2) + sk(i + 1, j + 1, k, 2)
-            sz = sk(i, j, k - 1, 3) + sk(i + 1, j, k - 1, 3) &
-                + sk(i, j + 1, k - 1, 3) + sk(i + 1, j + 1, k - 1, 3) &
-                + sk(i, j, k, 3) + sk(i + 1, j, k, 3) &
-                + sk(i, j + 1, k, 3) + sk(i + 1, j + 1, k, 3)
-            ! Compute the average velocities and speed of sound squared
-            ! for this integration point. Node that these variables are
-            ! stored in w(ivx), w(ivy), w(ivz) and p.
+        do l = 1, inviscidCentralBSKPlaneK  ! TODO should this loop be around all 3 if statements?
+            if (i <= il .AND. j <= jl .AND. k <= ke) then
+                ! Compute 8 times the average normal for this part of
+                ! the control volume. The factor 8 is taken care of later
+                ! on when the division by the volume takes place.
+                sx =  cudaDoms(dom,sps)%sk(i, j,     k - 1, 1) + cudaDoms(dom,sps)%sk(i + 1, j,     k - 1, 1) &
+                    + cudaDoms(dom,sps)%sk(i, j + 1, k - 1, 1) + cudaDoms(dom,sps)%sk(i + 1, j + 1, k - 1, 1) &
+                    + cudaDoms(dom,sps)%sk(i, j,     k,     1) + cudaDoms(dom,sps)%sk(i + 1, j,     k,     1) &
+                    + cudaDoms(dom,sps)%sk(i, j + 1, k,     1) + cudaDoms(dom,sps)%sk(i + 1, j + 1, k,     1)
+                sy =  cudaDoms(dom,sps)%sk(i, j,     k - 1, 2) + cudaDoms(dom,sps)%sk(i + 1, j,     k - 1, 2) &
+                    + cudaDoms(dom,sps)%sk(i, j + 1, k - 1, 2) + cudaDoms(dom,sps)%sk(i + 1, j + 1, k - 1, 2) &
+                    + cudaDoms(dom,sps)%sk(i, j,     k,     2) + cudaDoms(dom,sps)%sk(i + 1, j,     k,     2) &
+                    + cudaDoms(dom,sps)%sk(i, j + 1, k,     2) + cudaDoms(dom,sps)%sk(i + 1, j + 1, k,     2)
+                sz =  cudaDoms(dom,sps)%sk(i, j,     k - 1, 3) + cudaDoms(dom,sps)%sk(i + 1, j,     k - 1, 3) &
+                    + cudaDoms(dom,sps)%sk(i, j + 1, k - 1, 3) + cudaDoms(dom,sps)%sk(i + 1, j + 1, k - 1, 3) &
+                    + cudaDoms(dom,sps)%sk(i, j,     k,     3) + cudaDoms(dom,sps)%sk(i + 1, j,     k,     3) &
+                    + cudaDoms(dom,sps)%sk(i, j + 1, k,     3) + cudaDoms(dom,sps)%sk(i + 1, j + 1, k,     3)
+                ! Compute the average velocities and speed of sound squared
+                ! for this integration point. Node that these variables are
+                ! stored in w(ivx), w(ivy), w(ivz) and p.
 
-            ubar = fourth * (w(i, j, k, ivx) + w(i + 1, j, k, ivx) &
-                            + w(i, j + 1, k, ivx) + w(i + 1, j + 1, k, ivx))
-            vbar = fourth * (w(i, j, k, ivy) + w(i + 1, j, k, ivy) &
-                            + w(i, j + 1, k, ivy) + w(i + 1, j + 1, k, ivy))
-            wbar = fourth * (w(i, j, k, ivz) + w(i + 1, j, k, ivz) &
-                            + w(i, j + 1, k, ivz) + w(i + 1, j + 1, k, ivz))
+                ubar = fourth * (cudaDoms(dom,sps)%w(i, j,     k, ivx) + cudaDoms(dom,sps)%w(i + 1, j,     k, ivx) &
+                            + cudaDoms(dom,sps)%w(i, j + 1, k, ivx) + cudaDoms(dom,sps)%w(i + 1, j + 1, k, ivx))
+                vbar = fourth * (cudaDoms(dom,sps)%w(i, j,     k, ivy) + cudaDoms(dom,sps)%w(i + 1, j,     k, ivy) &
+                            + cudaDoms(dom,sps)%w(i, j + 1, k, ivy) + cudaDoms(dom,sps)%w(i + 1, j + 1, k, ivy))
+                wbar = fourth * (cudaDoms(dom,sps)%w(i, j,     k, ivz) + cudaDoms(dom,sps)%w(i + 1, j,     k, ivz) &
+                            + cudaDoms(dom,sps)%w(i, j + 1, k, ivz) + cudaDoms(dom,sps)%w(i + 1, j + 1, k, ivz))
 
-            a2 = fourth * (aa(i, j, k) + aa(i + 1, j, k) + aa(i, j + 1, k) + aa(i + 1, j + 1, k))
-            
-            ! Add the contributions to the surface integral to the node
-            ! j-1 and substract it from the node j. For the heat flux it
-            ! is reversed, because the negative of the gradient of the
-            ! speed of sound must be computed.
-            if (k > 1) then
-
-                tmp = atomicadd(ux(i, j, k - 1), ubar * sx)
-                tmp = atomicadd(uy(i, j, k - 1), ubar * sy)
-                tmp = atomicadd(uz(i, j, k - 1), ubar * sz)
-                tmp = atomicadd(vx(i, j, k - 1), vbar * sx)
-                tmp = atomicadd(vy(i, j, k - 1), vbar * sy)
-                tmp = atomicadd(vz(i, j, k - 1), vbar * sz)
-
-                tmp = atomicadd(wx(i, j, k - 1), wbar * sx)
-                tmp = atomicadd(wy(i, j, k - 1), wbar * sy)
-                tmp = atomicadd(wz(i, j, k - 1), wbar * sz)
+                a2 = fourth * (cudaDoms(dom,sps)%aa(i, j,     k) + cudaDoms(dom,sps)%aa(i + 1, j,     k) &
+                            + cudaDoms(dom,sps)%aa(i, j + 1, k) + cudaDoms(dom,sps)%aa(i + 1, j + 1, k))
                 
-                tmp = atomicsub(qx(i, j, k - 1), a2 * sx)
-                tmp = atomicsub(qy(i, j, k - 1), a2 * sy)
-                tmp = atomicsub(qz(i, j, k - 1), a2 * sz)
+                ! Add the contributions to the surface integral to the node
+                ! j-1 and substract it from the node j. For the heat flux it
+                ! is reversed, because the negative of the gradient of the
+                ! speed of sound must be computed.
+                if (k > 1) then
 
-                ! ux(i, j, k - 1) = ux(i, j, k - 1) + ubar * sx
-                ! uy(i, j, k - 1) = uy(i, j, k - 1) + ubar * sy
-                ! uz(i, j, k - 1) = uz(i, j, k - 1) + ubar * sz
+                    tmp = atomicadd(ux(i, j, k - 1), ubar * sx)
+                    tmp = atomicadd(uy(i, j, k - 1), ubar * sy)
+                    tmp = atomicadd(uz(i, j, k - 1), ubar * sz)
+                    tmp = atomicadd(vx(i, j, k - 1), vbar * sx)
+                    tmp = atomicadd(vy(i, j, k - 1), vbar * sy)
+                    tmp = atomicadd(vz(i, j, k - 1), vbar * sz)
 
-                ! vx(i, j, k - 1) = vx(i, j, k - 1) + vbar * sx
-                ! vy(i, j, k - 1) = vy(i, j, k - 1) + vbar * sy
-                ! vz(i, j, k - 1) = vz(i, j, k - 1) + vbar * sz
+                    tmp = atomicadd(wx(i, j, k - 1), wbar * sx)
+                    tmp = atomicadd(wy(i, j, k - 1), wbar * sy)
+                    tmp = atomicadd(wz(i, j, k - 1), wbar * sz)
+                    
+                    tmp = atomicsub(qx(i, j, k - 1), a2 * sx)
+                    tmp = atomicsub(qy(i, j, k - 1), a2 * sy)
+                    tmp = atomicsub(qz(i, j, k - 1), a2 * sz)
 
-                ! wx(i, j, k - 1) = wx(i, j, k - 1) + wbar * sx
-                ! wy(i, j, k - 1) = wy(i, j, k - 1) + wbar * sy
-                ! wz(i, j, k - 1) = wz(i, j, k - 1) + wbar * sz
+                end if 
 
-                ! qx(i, j, k - 1) = qx(i, j, k - 1) - a2 * sx
-                ! qy(i, j, k - 1) = qy(i, j, k - 1) - a2 * sy
-                ! qz(i, j, k - 1) = qz(i, j, k - 1) - a2 * sz
+                if (k < ke) then
 
-            end if 
+                    tmp = atomicsub(ux(i, j, k), ubar * sx)
+                    tmp = atomicsub(uy(i, j, k), ubar * sy)
+                    tmp = atomicsub(uz(i, j, k), ubar * sz)
 
-            if (k < ke) then
+                    tmp = atomicsub(vx(i, j, k), vbar * sx)
+                    tmp = atomicsub(vy(i, j, k), vbar * sy)
+                    tmp = atomicsub(vz(i, j, k), vbar * sz)
 
-                tmp = atomicsub(ux(i, j, k), ubar * sx)
-                tmp = atomicsub(uy(i, j, k), ubar * sy)
-                tmp = atomicsub(uz(i, j, k), ubar * sz)
+                    tmp = atomicsub(wx(i, j, k), wbar * sx)
+                    tmp = atomicsub(wy(i, j, k), wbar * sy)
+                    tmp = atomicsub(wz(i, j, k), wbar * sz)
+                    
+                    tmp = atomicadd(qx(i, j, k), a2 * sx) 
+                    tmp = atomicadd(qy(i, j, k), a2 * sy)
+                    tmp = atomicadd(qz(i, j, k), a2 * sz)
 
-                tmp = atomicsub(vx(i, j, k), vbar * sx)
-                tmp = atomicsub(vy(i, j, k), vbar * sy)
-                tmp = atomicsub(vz(i, j, k), vbar * sz)
-
-                tmp = atomicsub(wx(i, j, k), wbar * sx)
-                tmp = atomicsub(wy(i, j, k), wbar * sy)
-                tmp = atomicsub(wz(i, j, k), wbar * sz)
-                
-                tmp = atomicadd(qx(i, j, k), a2 * sx) 
-                tmp = atomicadd(qy(i, j, k), a2 * sy)
-                tmp = atomicadd(qz(i, j, k), a2 * sz)
-
-                ! ux(i, j, k) = ux(i, j, k) - ubar * sx
-                ! uy(i, j, k) = uy(i, j, k) - ubar * sy
-                ! uz(i, j, k) = uz(i, j, k) - ubar * sz
-
-                ! vx(i, j, k) = vx(i, j, k) - vbar * sx
-                ! vy(i, j, k) = vy(i, j, k) - vbar * sy
-                ! vz(i, j, k) = vz(i, j, k) - vbar * sz
-
-                ! wx(i, j, k) = wx(i, j, k) - wbar * sx
-                ! wy(i, j, k) = wy(i, j, k) - wbar * sy
-                ! wz(i, j, k) = wz(i, j, k) - wbar * sz
-
-                ! qx(i, j, k) = qx(i, j, k) + a2 * sx
-                ! qy(i, j, k) = qy(i, j, k) + a2 * sy
-                ! qz(i, j, k) = qz(i, j, k) + a2 * sz
-
-            end if 
-        end if
-        ! Second part. Contribution in the j-direction.
-        ! The contribution is scattered to both the left and right node
-        ! in j-direction.
-        !loop k 1 to kl j 1 to je and i 1 to il
-        if (i <= il .AND. j <= je .AND. k <= kl) then
-            ! Compute 8 times the average normal for this part of
-            ! the control volume. The factor 8 is taken care of later
-            ! on when the division by the volume takes place.
-            sx = sj(i, j - 1, k, 1) + sj(i + 1, j - 1, k, 1) &
+                end if 
+            end if
+            ! Second part. Contribution in the j-direction.
+            ! The contribution is scattered to both the left and right node
+            ! in j-direction.
+            !loop k 1 to kl j 1 to je and i 1 to il
+            if (i <= il .AND. j <= je .AND. k <= kl) then
+                ! Compute 8 times the average normal for this part of
+                ! the control volume. The factor 8 is taken care of later
+                ! on when the division by the volume takes place.
+                sx =  sj(i, j - 1, k,     1) + sj(i + 1, j - 1, k,     1) &
                     + sj(i, j - 1, k + 1, 1) + sj(i + 1, j - 1, k + 1, 1) &
-                    + sj(i, j, k, 1) + sj(i + 1, j, k, 1) &
-                    + sj(i, j, k + 1, 1) + sj(i + 1, j, k + 1, 1)
-            sy = sj(i, j - 1, k, 2) + sj(i + 1, j - 1, k, 2) &
+                    + sj(i, j,     k,     1) + sj(i + 1, j,     k,     1) &
+                    + sj(i, j,     k + 1, 1) + sj(i + 1, j,     k + 1, 1)
+                sy =  sj(i, j - 1, k,     2) + sj(i + 1, j - 1,     k, 2) &
                     + sj(i, j - 1, k + 1, 2) + sj(i + 1, j - 1, k + 1, 2) &
-                    + sj(i, j, k, 2) + sj(i + 1, j, k, 2) &
-                    + sj(i, j, k + 1, 2) + sj(i + 1, j, k + 1, 2)
-            sz = sj(i, j - 1, k, 3) + sj(i + 1, j - 1, k, 3) &
+                    + sj(i, j,     k,     2) + sj(i + 1, j,     k,     2) &
+                    + sj(i, j,     k + 1, 2) + sj(i + 1, j,     k + 1, 2)
+                sz =  sj(i, j - 1, k,     3) + sj(i + 1, j - 1, k,     3) &
                     + sj(i, j - 1, k + 1, 3) + sj(i + 1, j - 1, k + 1, 3) &
-                    + sj(i, j, k, 3) + sj(i + 1, j, k, 3) &
-                    + sj(i, j, k + 1, 3) + sj(i + 1, j, k + 1, 3)
-            ! Compute the average velocities and speed of sound squared
-            ! for this integration point. Node that these variables are
-            ! stored in w(ivx), w(ivy), w(ivz) and p.
-            ubar = fourth * (w(i, j, k, ivx) + w(i + 1, j, k, ivx) &
-                    + w(i, j, k + 1, ivx) + w(i + 1, j, k + 1, ivx))
-            vbar = fourth * (w(i, j, k, ivy) + w(i + 1, j, k, ivy) &
-                                + w(i, j, k + 1, ivy) + w(i + 1, j, k + 1, ivy))
-            wbar = fourth * (w(i, j, k, ivz) + w(i + 1, j, k, ivz) &
-                                + w(i, j, k + 1, ivz) + w(i + 1, j, k + 1, ivz))
+                    + sj(i, j,     k,     3) + sj(i + 1, j,     k,     3) &
+                    + sj(i, j,     k + 1, 3) + sj(i + 1, j,     k + 1, 3)
+                ! Compute the average velocities and speed of sound squared
+                ! for this integration point. Node that these variables are
+                ! stored in w(ivx), w(ivy), w(ivz) and p.
+                ubar = fourth * (cudaDoms(dom,sps)%w(i, j,     k, ivx) + cudaDoms(dom,sps)%w(i + 1, j,     k, ivx) &
+                            + cudaDoms(dom,sps)%w(i, j, k + 1, ivx) + cudaDoms(dom,sps)%w(i + 1, j, k + 1, ivx))
+                vbar = fourth * (cudaDoms(dom,sps)%w(i, j,     k, ivy) + cudaDoms(dom,sps)%w(i + 1, j,     k, ivy) &
+                            + cudaDoms(dom,sps)%w(i, j, k + 1, ivy) + cudaDoms(dom,sps)%w(i + 1, j, k + 1, ivy))
+                wbar = fourth * (cudaDoms(dom,sps)%w(i, j,     k, ivz) + cudaDoms(dom,sps)%w(i + 1, j,     k, ivz) &
+                            + cudaDoms(dom,sps)%w(i, j, k + 1, ivz) + cudaDoms(dom,sps)%w(i + 1, j, k + 1, ivz))
 
-            a2 = fourth * (aa(i, j, k) + aa(i + 1, j, k) + aa(i, j, k + 1) + aa(i + 1, j, k + 1))
+                a2 = fourth * (aa(i, j, k) + aa(i + 1, j, k) & 
+                            + aa(i, j, k + 1) + aa(i + 1, j, k + 1))
+                
+                ! Add the contributions to the surface integral to the node
+                ! j-1 and substract it from the node j. For the heat flux it
+                ! is reversed, because the negative of the gradient of the
+                ! speed of sound must be computed.
+        
+                if (j > 1) then
+
+                    tmp = atomicadd(ux(i, j - 1, k), ubar * sx)
+                    tmp = atomicadd(uy(i, j - 1, k), ubar * sy)
+                    tmp = atomicadd(uz(i, j - 1, k), ubar * sz)
+
+                    tmp = atomicadd(vx(i, j - 1, k), vbar * sx)
+                    tmp = atomicadd(vy(i, j - 1, k), vbar * sy)
+                    tmp = atomicadd(vz(i, j - 1, k), vbar * sz)
+
+                    tmp = atomicadd(wx(i, j - 1, k), wbar * sx)
+                    tmp = atomicadd(wy(i, j - 1, k), wbar * sy)
+                    tmp = atomicadd(wz(i, j - 1, k), wbar * sz)
+                    
+                    tmp = atomicsub(qx(i, j - 1, k), a2 * sx)
+                    tmp = atomicsub(qy(i, j - 1, k), a2 * sy)
+                    tmp = atomicsub(qz(i, j - 1, k), a2 * sz)
+
+                    ! ux(i, j - 1, k) = ux(i, j - 1, k) + ubar * sx
+                    ! uy(i, j - 1, k) = uy(i, j - 1, k) + ubar * sy
+                    ! uz(i, j - 1, k) = uz(i, j - 1, k) + ubar * sz
+
+                    ! vx(i, j - 1, k) = vx(i, j - 1, k) + vbar * sx
+                    ! vy(i, j - 1, k) = vy(i, j - 1, k) + vbar * sy
+                    ! vz(i, j - 1, k) = vz(i, j - 1, k) + vbar * sz
+
+                    ! wx(i, j - 1, k) = wx(i, j - 1, k) + wbar * sx
+                    ! wy(i, j - 1, k) = wy(i, j - 1, k) + wbar * sy
+                    ! wz(i, j - 1, k) = wz(i, j - 1, k) + wbar * sz
+
+                    ! qx(i, j - 1, k) = qx(i, j - 1, k) - a2 * sx
+                    ! qy(i, j - 1, k) = qy(i, j - 1, k) - a2 * sy
+                    ! qz(i, j - 1, k) = qz(i, j - 1, k) - a2 * sz
+
+                end if
+
+                if (j < je) then
+
+                    tmp = atomicsub(ux(i, j, k), ubar * sx) 
+                    tmp = atomicsub(uy(i, j, k), ubar * sy)
+                    tmp = atomicsub(uz(i, j, k), ubar * sz)
+
+                    tmp = atomicsub(vx(i, j, k), vbar * sx)
+                    tmp = atomicsub(vy(i, j, k), vbar * sy)
+                    tmp = atomicsub(vz(i, j, k), vbar * sz)
+
+                    tmp = atomicsub(wx(i, j, k), wbar * sx)
+                    tmp = atomicsub(wy(i, j, k), wbar * sy)
+                    tmp = atomicsub(wz(i, j, k), wbar * sz)
+                    
+                    tmp = atomicadd(qx(i, j, k), a2 * sx)
+                    tmp = atomicadd(qy(i, j, k), a2 * sy)
+                    tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+                    ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+                    ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+                    ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+                    ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+                    ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+                    ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+                    ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+                    ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+                    ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+                    ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+                    ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+                    ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
+                end if 
+            end if
             
-            ! Add the contributions to the surface integral to the node
-            ! j-1 and substract it from the node j. For the heat flux it
-            ! is reversed, because the negative of the gradient of the
-            ! speed of sound must be computed.
-    
-            if (j > 1) then
+            ! Third part. Contribution in the i-direction.
+            ! The contribution is scattered to both the left and right node
+            ! in i-direction.
+            
+            ! loop k 1 to kl j 1 to jl and i 1 to ie
+            if (i <= ie .AND. j <= jl .AND. k <= kl) then
+                ! Compute 8 times the average normal for this part of
+                ! the control volume. The factor 8 is taken care of later
+                ! on when the division by the volume takes place.
+                sx = si(i - 1, j, k, 1) + si(i - 1, j + 1, k, 1) &
+                        + si(i - 1, j, k + 1, 1) + si(i - 1, j + 1, k + 1, 1) &
+                        + si(i, j, k, 1) + si(i, j + 1, k, 1) &
+                        + si(i, j, k + 1, 1) + si(i, j + 1, k + 1, 1)
+                sy = si(i - 1, j, k, 2) + si(i - 1, j + 1, k, 2) &
+                        + si(i - 1, j, k + 1, 2) + si(i - 1, j + 1, k + 1, 2) &
+                        + si(i, j, k, 2) + si(i, j + 1, k, 2) &
+                        + si(i, j, k + 1, 2) + si(i, j + 1, k + 1, 2)
+                sz = si(i - 1, j, k, 3) + si(i - 1, j + 1, k, 3) &
+                        + si(i - 1, j, k + 1, 3) + si(i - 1, j + 1, k + 1, 3) &
+                        + si(i, j, k, 3) + si(i, j + 1, k, 3) &
+                        + si(i, j, k + 1, 3) + si(i, j + 1, k + 1, 3)
+                ! Compute the average velocities and speed of sound squared
+                ! for this integration point. Node that these variables are
+                ! stored in w(ivx), w(ivy), w(ivz) and p.
+                ubar = fourth * (w(i, j, k, ivx) + w(i, j + 1, k, ivx) &
+                                    + w(i, j, k + 1, ivx) + w(i, j + 1, k + 1, ivx))
+                vbar = fourth * (w(i, j, k, ivy) + w(i, j + 1, k, ivy) &
+                                    + w(i, j, k + 1, ivy) + w(i, j + 1, k + 1, ivy))
+                wbar = fourth * (w(i, j, k, ivz) + w(i, j + 1, k, ivz) &
+                                    + w(i, j, k + 1, ivz) + w(i, j + 1, k + 1, ivz))
 
-                tmp = atomicadd(ux(i, j - 1, k), ubar * sx)
-                tmp = atomicadd(uy(i, j - 1, k), ubar * sy)
-                tmp = atomicadd(uz(i, j - 1, k), ubar * sz)
+                a2 = fourth * (aa(i, j, k) + aa(i, j + 1, k) + aa(i, j, k + 1) + aa(i, j + 1, k + 1))
+                ! Add the contributions to the surface integral to the node
+                ! j-1 and substract it from the node j. For the heat flux it
+                ! is reversed, because the negative of the gradient of the
+                ! speed of sound must be computed.
+                if (i > 1) then
 
-                tmp = atomicadd(vx(i, j - 1, k), vbar * sx)
-                tmp = atomicadd(vy(i, j - 1, k), vbar * sy)
-                tmp = atomicadd(vz(i, j - 1, k), vbar * sz)
+                    tmp = atomicadd(ux(i - 1, j, k), ubar * sx) 
+                    tmp = atomicadd(uy(i - 1, j, k), ubar * sy)
+                    tmp = atomicadd(uz(i - 1, j, k), ubar * sz)
 
-                tmp = atomicadd(wx(i, j - 1, k), wbar * sx)
-                tmp = atomicadd(wy(i, j - 1, k), wbar * sy)
-                tmp = atomicadd(wz(i, j - 1, k), wbar * sz)
-                
-                tmp = atomicsub(qx(i, j - 1, k), a2 * sx)
-                tmp = atomicsub(qy(i, j - 1, k), a2 * sy)
-                tmp = atomicsub(qz(i, j - 1, k), a2 * sz)
+                    tmp = atomicadd(vx(i - 1, j, k), vbar * sx)
+                    tmp = atomicadd(vy(i - 1, j, k), vbar * sy)
+                    tmp = atomicadd(vz(i - 1, j, k), vbar * sz)
 
-                ! ux(i, j - 1, k) = ux(i, j - 1, k) + ubar * sx
-                ! uy(i, j - 1, k) = uy(i, j - 1, k) + ubar * sy
-                ! uz(i, j - 1, k) = uz(i, j - 1, k) + ubar * sz
+                    tmp = atomicadd(wx(i - 1, j, k), wbar * sx)
+                    tmp = atomicadd(wy(i - 1, j, k), wbar * sy)
+                    tmp = atomicadd(wz(i - 1, j, k), wbar * sz)
+                    
+                    tmp = atomicsub(qx(i - 1, j, k), a2 * sx)
+                    tmp = atomicsub(qy(i - 1, j, k), a2 * sy)
+                    tmp = atomicsub(qz(i - 1, j, k), a2 * sz)
 
-                ! vx(i, j - 1, k) = vx(i, j - 1, k) + vbar * sx
-                ! vy(i, j - 1, k) = vy(i, j - 1, k) + vbar * sy
-                ! vz(i, j - 1, k) = vz(i, j - 1, k) + vbar * sz
+                    ! ux(i - 1, j, k) = ux(i - 1, j, k) + ubar * sx
+                    ! uy(i - 1, j, k) = uy(i - 1, j, k) + ubar * sy
+                    ! uz(i - 1, j, k) = uz(i - 1, j, k) + ubar * sz
 
-                ! wx(i, j - 1, k) = wx(i, j - 1, k) + wbar * sx
-                ! wy(i, j - 1, k) = wy(i, j - 1, k) + wbar * sy
-                ! wz(i, j - 1, k) = wz(i, j - 1, k) + wbar * sz
+                    ! vx(i - 1, j, k) = vx(i - 1, j, k) + vbar * sx
+                    ! vy(i - 1, j, k) = vy(i - 1, j, k) + vbar * sy
+                    ! vz(i - 1, j, k) = vz(i - 1, j, k) + vbar * sz
 
-                ! qx(i, j - 1, k) = qx(i, j - 1, k) - a2 * sx
-                ! qy(i, j - 1, k) = qy(i, j - 1, k) - a2 * sy
-                ! qz(i, j - 1, k) = qz(i, j - 1, k) - a2 * sz
+                    ! wx(i - 1, j, k) = wx(i - 1, j, k) + wbar * sx
+                    ! wy(i - 1, j, k) = wy(i - 1, j, k) + wbar * sy
+                    ! wz(i - 1, j, k) = wz(i - 1, j, k) + wbar * sz
 
+                    ! qx(i - 1, j, k) = qx(i - 1, j, k) - a2 * sx
+                    ! qy(i - 1, j, k) = qy(i - 1, j, k) - a2 * sy
+                    ! qz(i - 1, j, k) = qz(i - 1, j, k) - a2 * sz
+
+                end if
+
+                if (i < ie) then
+
+                    tmp = atomicsub(ux(i, j, k), ubar * sx)
+                    tmp = atomicsub(uy(i, j, k), ubar * sy)
+                    tmp = atomicsub(uz(i, j, k), ubar * sz)
+
+                    tmp = atomicsub(vx(i, j, k), vbar * sx)
+                    tmp = atomicsub(vy(i, j, k), vbar * sy)
+                    tmp = atomicsub(vz(i, j, k), vbar * sz)
+
+                    tmp = atomicsub(wx(i, j, k), wbar * sx)
+                    tmp = atomicsub(wy(i, j, k), wbar * sy)
+                    tmp = atomicsub(wz(i, j, k), wbar * sz)
+                    
+                    tmp = atomicadd(qx(i, j, k), a2 * sx)
+                    tmp = atomicadd(qy(i, j, k), a2 * sy)
+                    tmp = atomicadd(qz(i, j, k), a2 * sz)
+
+                    ! ux(i, j, k) = ux(i, j, k) - ubar * sx
+                    ! uy(i, j, k) = uy(i, j, k) - ubar * sy
+                    ! uz(i, j, k) = uz(i, j, k) - ubar * sz
+
+                    ! vx(i, j, k) = vx(i, j, k) - vbar * sx
+                    ! vy(i, j, k) = vy(i, j, k) - vbar * sy
+                    ! vz(i, j, k) = vz(i, j, k) - vbar * sz
+
+                    ! wx(i, j, k) = wx(i, j, k) - wbar * sx
+                    ! wy(i, j, k) = wy(i, j, k) - wbar * sy
+                    ! wz(i, j, k) = wz(i, j, k) - wbar * sz
+
+                    ! qx(i, j, k) = qx(i, j, k) + a2 * sx
+                    ! qy(i, j, k) = qy(i, j, k) + a2 * sy
+                    ! qz(i, j, k) = qz(i, j, k) + a2 * sz
+
+                end if
             end if
 
-            if (j < je) then
-
-                tmp = atomicsub(ux(i, j, k), ubar * sx) 
-                tmp = atomicsub(uy(i, j, k), ubar * sy)
-                tmp = atomicsub(uz(i, j, k), ubar * sz)
-
-                tmp = atomicsub(vx(i, j, k), vbar * sx)
-                tmp = atomicsub(vy(i, j, k), vbar * sy)
-                tmp = atomicsub(vz(i, j, k), vbar * sz)
-
-                tmp = atomicsub(wx(i, j, k), wbar * sx)
-                tmp = atomicsub(wy(i, j, k), wbar * sy)
-                tmp = atomicsub(wz(i, j, k), wbar * sz)
-                
-                tmp = atomicadd(qx(i, j, k), a2 * sx)
-                tmp = atomicadd(qy(i, j, k), a2 * sy)
-                tmp = atomicadd(qz(i, j, k), a2 * sz)
-
-                ! ux(i, j, k) = ux(i, j, k) - ubar * sx
-                ! uy(i, j, k) = uy(i, j, k) - ubar * sy
-                ! uz(i, j, k) = uz(i, j, k) - ubar * sz
-
-                ! vx(i, j, k) = vx(i, j, k) - vbar * sx
-                ! vy(i, j, k) = vy(i, j, k) - vbar * sy
-                ! vz(i, j, k) = vz(i, j, k) - vbar * sz
-
-                ! wx(i, j, k) = wx(i, j, k) - wbar * sx
-                ! wy(i, j, k) = wy(i, j, k) - wbar * sy
-                ! wz(i, j, k) = wz(i, j, k) - wbar * sz
-
-                ! qx(i, j, k) = qx(i, j, k) + a2 * sx
-                ! qy(i, j, k) = qy(i, j, k) + a2 * sy
-                ! qz(i, j, k) = qz(i, j, k) + a2 * sz
-
-            end if 
-        end if
-        
-        ! Third part. Contribution in the i-direction.
-        ! The contribution is scattered to both the left and right node
-        ! in i-direction.
-        
-        ! loop k 1 to kl j 1 to jl and i 1 to ie
-        if (i <= ie .AND. j <= jl .AND. k <= kl) then
-            ! Compute 8 times the average normal for this part of
-            ! the control volume. The factor 8 is taken care of later
-            ! on when the division by the volume takes place.
-            sx = si(i - 1, j, k, 1) + si(i - 1, j + 1, k, 1) &
-                    + si(i - 1, j, k + 1, 1) + si(i - 1, j + 1, k + 1, 1) &
-                    + si(i, j, k, 1) + si(i, j + 1, k, 1) &
-                    + si(i, j, k + 1, 1) + si(i, j + 1, k + 1, 1)
-            sy = si(i - 1, j, k, 2) + si(i - 1, j + 1, k, 2) &
-                    + si(i - 1, j, k + 1, 2) + si(i - 1, j + 1, k + 1, 2) &
-                    + si(i, j, k, 2) + si(i, j + 1, k, 2) &
-                    + si(i, j, k + 1, 2) + si(i, j + 1, k + 1, 2)
-            sz = si(i - 1, j, k, 3) + si(i - 1, j + 1, k, 3) &
-                    + si(i - 1, j, k + 1, 3) + si(i - 1, j + 1, k + 1, 3) &
-                    + si(i, j, k, 3) + si(i, j + 1, k, 3) &
-                    + si(i, j, k + 1, 3) + si(i, j + 1, k + 1, 3)
-            ! Compute the average velocities and speed of sound squared
-            ! for this integration point. Node that these variables are
-            ! stored in w(ivx), w(ivy), w(ivz) and p.
-            ubar = fourth * (w(i, j, k, ivx) + w(i, j + 1, k, ivx) &
-                                + w(i, j, k + 1, ivx) + w(i, j + 1, k + 1, ivx))
-            vbar = fourth * (w(i, j, k, ivy) + w(i, j + 1, k, ivy) &
-                                + w(i, j, k + 1, ivy) + w(i, j + 1, k + 1, ivy))
-            wbar = fourth * (w(i, j, k, ivz) + w(i, j + 1, k, ivz) &
-                                + w(i, j, k + 1, ivz) + w(i, j + 1, k + 1, ivz))
-
-            a2 = fourth * (aa(i, j, k) + aa(i, j + 1, k) + aa(i, j, k + 1) + aa(i, j + 1, k + 1))
-            ! Add the contributions to the surface integral to the node
-            ! j-1 and substract it from the node j. For the heat flux it
-            ! is reversed, because the negative of the gradient of the
-            ! speed of sound must be computed.
-            if (i > 1) then
-
-                tmp = atomicadd(ux(i - 1, j, k), ubar * sx) 
-                tmp = atomicadd(uy(i - 1, j, k), ubar * sy)
-                tmp = atomicadd(uz(i - 1, j, k), ubar * sz)
-
-                tmp = atomicadd(vx(i - 1, j, k), vbar * sx)
-                tmp = atomicadd(vy(i - 1, j, k), vbar * sy)
-                tmp = atomicadd(vz(i - 1, j, k), vbar * sz)
-
-                tmp = atomicadd(wx(i - 1, j, k), wbar * sx)
-                tmp = atomicadd(wy(i - 1, j, k), wbar * sy)
-                tmp = atomicadd(wz(i - 1, j, k), wbar * sz)
-                
-                tmp = atomicsub(qx(i - 1, j, k), a2 * sx)
-                tmp = atomicsub(qy(i - 1, j, k), a2 * sy)
-                tmp = atomicsub(qz(i - 1, j, k), a2 * sz)
-
-                ! ux(i - 1, j, k) = ux(i - 1, j, k) + ubar * sx
-                ! uy(i - 1, j, k) = uy(i - 1, j, k) + ubar * sy
-                ! uz(i - 1, j, k) = uz(i - 1, j, k) + ubar * sz
-
-                ! vx(i - 1, j, k) = vx(i - 1, j, k) + vbar * sx
-                ! vy(i - 1, j, k) = vy(i - 1, j, k) + vbar * sy
-                ! vz(i - 1, j, k) = vz(i - 1, j, k) + vbar * sz
-
-                ! wx(i - 1, j, k) = wx(i - 1, j, k) + wbar * sx
-                ! wy(i - 1, j, k) = wy(i - 1, j, k) + wbar * sy
-                ! wz(i - 1, j, k) = wz(i - 1, j, k) + wbar * sz
-
-                ! qx(i - 1, j, k) = qx(i - 1, j, k) - a2 * sx
-                ! qy(i - 1, j, k) = qy(i - 1, j, k) - a2 * sy
-                ! qz(i - 1, j, k) = qz(i - 1, j, k) - a2 * sz
-
+            k = k + 1 
+            if (k > ke) then
+                exit
             end if
 
-            if (i < ie) then
-
-                tmp = atomicsub(ux(i, j, k), ubar * sx)
-                tmp = atomicsub(uy(i, j, k), ubar * sy)
-                tmp = atomicsub(uz(i, j, k), ubar * sz)
-
-                tmp = atomicsub(vx(i, j, k), vbar * sx)
-                tmp = atomicsub(vy(i, j, k), vbar * sy)
-                tmp = atomicsub(vz(i, j, k), vbar * sz)
-
-                tmp = atomicsub(wx(i, j, k), wbar * sx)
-                tmp = atomicsub(wy(i, j, k), wbar * sy)
-                tmp = atomicsub(wz(i, j, k), wbar * sz)
-                
-                tmp = atomicadd(qx(i, j, k), a2 * sx)
-                tmp = atomicadd(qy(i, j, k), a2 * sy)
-                tmp = atomicadd(qz(i, j, k), a2 * sz)
-
-                ! ux(i, j, k) = ux(i, j, k) - ubar * sx
-                ! uy(i, j, k) = uy(i, j, k) - ubar * sy
-                ! uz(i, j, k) = uz(i, j, k) - ubar * sz
-
-                ! vx(i, j, k) = vx(i, j, k) - vbar * sx
-                ! vy(i, j, k) = vy(i, j, k) - vbar * sy
-                ! vz(i, j, k) = vz(i, j, k) - vbar * sz
-
-                ! wx(i, j, k) = wx(i, j, k) - wbar * sx
-                ! wy(i, j, k) = wy(i, j, k) - wbar * sy
-                ! wz(i, j, k) = wz(i, j, k) - wbar * sz
-
-                ! qx(i, j, k) = qx(i, j, k) + a2 * sx
-                ! qy(i, j, k) = qy(i, j, k) + a2 * sy
-                ! qz(i, j, k) = qz(i, j, k) + a2 * sz
-
-            end if
-        end if
+        end do
 
     end subroutine allNodalGradients_kplane
 
@@ -2899,7 +2889,7 @@ module cudaResidual
         ! --- kplane marching iteration that steps up 'k' ---
         do l = 1, inviscidCentralBSKPlaneK
 
-            ! Read this first k-plane into shared memory (this will happen again in the loop)
+            ! Read this k-plane into shared memory
             if ((i >= 2 .AND. i <= il) .AND. (j >= 2 .AND. j <= jl) .AND. (k >= 2 .AND. k <= kl)) then
                 iblank = cudaDoms(dom,sps)%iblank(i, j, k)
 
@@ -5514,6 +5504,112 @@ module cudaResidual
 
     end subroutine computeDSS
 
+    attributes(global) subroutine computeDSS_kplane
+        use constants,           only: zero, two, half,EulerEquations
+        use precision,           only: intType, realType
+        use cudaInputDiscretization, only: vis2, vis4
+        use cudaInputIteration,      only: useDissContinuation, dissContMagnitude, dissContMidpoint, dissContSharpness
+        use cudaInputPhysics,        only: equations
+        use cudaIteration,           only: rFil, totalR0, totalR
+        use cudaFlowVarRefState,     only: gammaInf, pInfCorr, rhoInf, nwf
+    
+        implicit none
+
+        ! Variables for inviscid diss flux scalar
+        real(kind=realType), parameter :: dssMax = 0.25_realType
+        real(kind=realType)            :: sslim, rhoi
+        real(kind=realType)            :: sfil, fis2, fis4
+        real(kind=realType)            :: ppor, rrad, dis2, dis4, fs
+        real(kind=realType)            :: ddw1, ddw2, ddw3, ddw4, ddw5
+        real(kind=realType)            :: tmp
+        integer(kind=intType) :: i, j, k, dom, sps
+        ! --- GPU vars ---
+        integer(kind=intType) :: jmax, kmax, ie, je, ke, ib, jb, kb, tidx, tidy, tidz, bidx, bidy, bidz
+        integer(kind=intType) :: l ! kplane iteration var
+        ! smaller slices of larger structures for this k-plane, shared so it is sharable between threads
+        real(kind=realType), shared :: ss_s(inviscidCentralBSIPlaneK, inviscidCentralBSJPlaneK+1)
+        ! Temp vars for overwriting
+        real(kind=realType) :: ss, ss_kplus, ss_kminus, ss_iplus, ss_iminus, ss_jplus, ss_jminus
+
+        dom = 1
+        sps = 1
+
+        ! Convenience stuff
+        tidx = threadIdx%x
+        tidy = threadIdx%y
+        tidz = threadIdx%z
+        bidx = blockIdx%x
+        bidy = blockIdx%y
+        bidz = blockIdx%z
+
+        ! 0-based global indices
+        i = (bidx - 1) * blockDim%x + tidx
+        j = (bidy - 1) * (inviscidCentralBSJPlaneK) + tidy 
+        k = (bidz - 1) * (inviscidCentralBSKPlaneK) + tidz
+
+        ! If you don't put this, it tries to access the module scope level ie,je,ke
+        ! and give bugs that you'll never see warning messages for b/c its CUDA
+        ! we need a better approach long term, I will not allow this to be merged
+        ! into MDO lab main like this (GWN)
+        ie = cudadoms(dom, sps)%ie
+        je = cudadoms(dom, sps)%je
+        ke = cudadoms(dom, sps)%ke
+        ib = cudadoms(dom, sps)%ib
+        jb = cudadoms(dom, sps)%jb
+        kb = cudadoms(dom, sps)%kb
+        jmax = min((bidy) * (inviscidCentralBSJPlaneK), jl)
+        kmax = min((bidz) * (inviscidCentralBSKPlaneK), kl)
+
+        ! Leave if past k-plane
+        if (k > ke) then
+            return 
+        end if
+
+        do l = 1, inviscidCentralBSKPlaneK
+
+            ! --- Read this k-plane into shared memory ---
+            ! self cell
+            if ((i <= ib) .and. (j <= jb) .and. (k <= kb)) then
+                ss = cudaDoms(dom,sps)%ss(i, j, k)
+                ! get first neighbors
+                ss_iplus = cudaDoms(dom,sps)%ss(i + 1, j, k)
+                ss_iminus = cudaDoms(dom,sps)%ss(i - 1, j, k)
+                ss_jplus = cudaDoms(dom,sps)%ss(i, j + 1, k)
+                ss_jminus = cudaDoms(dom,sps)%ss(i, j - 1, k)
+                ss_kplus = cudaDoms(dom,sps)%ss(i, j, k + 1)
+                ss_kminus = cudaDoms(dom,sps)%ss(i, j, k - 1)
+
+                ss_s(tidx, tidy) = ss
+            end if
+
+            if (((i >= 1) .and. (i <= ie)) .and. ((j >= 1) .and. (j <= je)) .and. ((k >= 1) .and. (k <= ke))) then
+
+                if(equations == EulerEquations) then
+                    sslim = 0.001_realType * pInfCorr
+                else if (equations == NSEquations .or. equations == RANSEquations) then
+                    sslim = 0.001_realType * pInfCorr / (rhoInf**gammaInf)
+                end if
+
+                cudaDoms(dom,sps)%dss(i, j, k, 1) = abs((ss_iplus - two * ss_s(tidx, tidy) + ss_iminus) &
+                                    / (ss_iplus + two * ss_s(tidx, tidy) + ss_iminus + sslim))
+                cudaDoms(dom,sps)%dss(i, j, k, 2) = abs((ss_jplus - two * ss_s(tidx, tidy) + ss_jminus) &
+                                    / (ss_jplus + two * ss_s(tidx, tidy) + ss_jminus + sslim))
+                cudaDoms(dom,sps)%dss(i, j, k, 3) = abs((ss_kplus - two * ss_s(tidx, tidy) + ss_kminus) &
+                                    / (ss_kplus + two * ss_s(tidx, tidy) + ss_kminus + sslim))
+            
+            end if
+
+            ! Increment k
+            k = k + 1
+            if (k > ke) then
+                exit
+            end if
+
+            call syncthreads()
+
+        end do
+
+    end subroutine computeDSS_kplane
 
     attributes(global) subroutine inviscidDissFluxScalar
     
@@ -6649,9 +6745,6 @@ module cudaResidual
         end if
     end subroutine viscousFlux
 
-    ! TODO GN+HH: ALL kplane routines
-    attributes(global) subroutine viscousFlux_kplane
-    end subroutine viscousFlux_kplane
 
     attributes(global) subroutine saSource
         use constants, only: fourth, two, one, zero, sixth
@@ -6871,9 +6964,6 @@ module cudaResidual
         end if
 
     end subroutine saSource
-
-    attributes(global) subroutine saSource_kplane
-    end subroutine saSource_kplane
 
     attributes(global) subroutine saAdvection
         use constants, only: zero, half
@@ -7365,9 +7455,6 @@ module cudaResidual
 
     end subroutine saAdvection
 
-    attributes(global) subroutine saAdvection_kplane
-    end subroutine saAdvection_kplane
-
     attributes(global) subroutine saViscous
         use constants, only: one, itu1, irho
         ! use sa, only: kar2Inv, cw36, cb3Inv
@@ -7586,8 +7673,6 @@ module cudaResidual
         !TODO finish copying i and j directions
     end subroutine saViscous
 
-    attributes(global) subroutine saViscous_kplane
-    end subroutine saViscous_kplane
 
     attributes(global) subroutine saResScale
         !
@@ -7615,9 +7700,6 @@ module cudaResidual
             cudaDoms(dom,sps)%dw(i, j, k, itu1) = -cudaDoms(dom,sps)%volRef(i, j, k) * cudaDoms(dom,sps)%dw(i, j, k, itu1) * rblank
         end if    
     end subroutine saResScale
-
-    attributes(global) subroutine saResScale_kplane
-    end subroutine saResScale_kplane
 
 
     subroutine calculateCudaResidual(updateIntermed, varStart, varEnd)
@@ -7720,12 +7802,15 @@ module cudaResidual
       call timeStep<<<grid_size, block_size>>>(updateIntermed)
       istat = cudaDeviceSynchronize()
     !   print *,"mesh block size:", bie, bje, bke
-      block_inv = dim3(inviscidCentralBSI,inviscidCentralBSJ,inviscidCentralBSK)
+      block_inv = dim3(inviscidCentralBSI, inviscidCentralBSJ, inviscidCentralBSK)
       grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bje) / (block_inv%y-1)), ceiling(real(bke) / (block_inv%z-1)))
       ! inviscid central flux
       call computeSS<<<grid_size, block_size>>>
       istat = cudaDeviceSynchronize()
-      call computeDSS<<<grid_size, block_size>>>
+    !   call computeDSS<<<grid_size, block_size>>>
+      block_inv = dim3(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK,1)
+      grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlaneK)))
+      call computeDSS_kplane<<<grid_inv, block_inv>>>
       istat = cudaDeviceSynchronize()
 
     !   ! --- v1 ---
@@ -7750,7 +7835,6 @@ module cudaResidual
     ! --- v4 ---
     block_inv = dim3(inviscidCentralBSIPlaneK,inviscidCentralBSJPlaneK,1)
     grid_inv = dim3(ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlaneK)))
-    ! print '("flux kplane grid param: ",I0,", ", I0,", ",I0)', ceiling(real(bie) / (block_inv%x-1)), ceiling(real(bjl) / (block_inv%y)), ceiling(real(bkl) / (inviscidCentralBSKPlaneK))
     call inviscidCentralFluxCellCentered_v4<<<grid_inv,block_inv>>> 
     istat = cudaDeviceSynchronize()
 
@@ -7796,15 +7880,17 @@ module cudaResidual
 
         ! call scaleNodalGradients_v1<<<grid_size, block_size>>>
         call scaleNodalGradients_kplane<<<grid_inv, block_inv>>>
+        istat = cudaDeviceSynchronize()
 
         call computeSpeedOfSoundSquared_kplane<<<grid_inv, block_inv>>>
         ! call scaleNodalGradients_v2<<<grid_size, block_size>>>
-        
         istat = cudaDeviceSynchronize()
+
         block_size = dim3(4, 4, 2)
         grid_size  = dim3(ceiling(real(ibmax+2) / block_size%x), ceiling(real(jbmax+2) / block_size%y), ceiling(real(kbmax+2) / block_size%z))
-        call viscousFlux<<<grid_size, block_size>>>
+        call viscousFlux<<<grid_size, block_size>>> ! skipping k-plane optimization here
         istat = cudaDeviceSynchronize()
+
         call CPU_TIME(finishVisc)
         print  '("CUDA Visc = ",E22.16," seconds.")', finishVisc-startVisc
 
