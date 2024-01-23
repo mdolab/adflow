@@ -2257,8 +2257,6 @@ contains
                                                                       frontLeaves, frontLeavesNew)
                                 cellID = intInfo(3)
 
-                                ! increment the cell counter before the checks in case we exit early
-
                                 keepChecking = .True.
 
                                 if (cellID > 0) then
