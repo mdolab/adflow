@@ -104,6 +104,21 @@ cofzz:
     See ``cofxx`` description for more details.
     Units: ``Meter``
 
+colx:
+  desc: >
+    Center of lift force, ``x`` coordinate.
+    Units: ``Meter``
+
+coly:
+  desc: >
+    Center of lift force, ``y`` coordinate.
+    Units: ``Meter``
+
+colz:
+  desc: >
+    Center of lift force, ``z`` coordinate.
+    Units: ``Meter``
+
 fx:
   desc: >
     Force from surface stresses (this includes shear/viscous, normal/pressure, and momentum/unsteady stresses) integrated in the global :math:`x` direction.

@@ -21,6 +21,7 @@ doc/tmp*.rst
 *.bak
 src/build/adflow_project.dep
 src/build/libadflow-f2pywrappers2.f90
+src/build/libadflow-f2pywrappers.f
 src/build/libadflowmodule.c
 src/build/importTest.py
 
