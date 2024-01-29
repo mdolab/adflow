@@ -86,8 +86,8 @@ contains
         use initializeFlow, only: referenceState
         use section, only: sections, nSections
         use iteration, only: rFil, currentLevel
-        use haloExchange, only: exchangeCoor, whalo2
-        use wallDistance, only: updateWallDistancesQuickly, exchangeWallDistanceHalos
+        use haloExchange, only: exchangeCoor, whalo2, exchanged2Wall
+        use wallDistance, only: updateWallDistancesQuickly
         use utils, only: setPointers, EChk
         use turbUtils, only: computeEddyViscosity
         use residuals, only: sourceTerms_block
@@ -181,11 +181,19 @@ contains
                 do nn = 1, nDom
                     call setPointers(nn, currentLevel, sps)
                     call xhalo_block()
+
+                    if (equations == RANSEquations .and. useApproxWallDistance) then
+                        call updateWallDistancesQuickly(nn, 1, sps)
+                    end if
                 end do
             end do
 
             ! Now exchange the coordinates (fine level only)
             call exchangecoor(1)
+
+            if (equations == RANSEquations .and. useApproxWallDistance) then
+                call exchanged2Wall(1)
+            end if
 
             do sps = 1, nTimeIntervalsSpectral
                 ! Update overset connectivity if necessary
@@ -204,29 +212,17 @@ contains
                     call volume_block
                     call metric_block
                     call boundaryNormals
-
-                    if (equations == RANSEquations .and. useApproxWallDistance) then
-                        call updateWallDistancesQuickly(nn, 1, sps)
-                    end if
                 end if
-
-                ! Notes:
-                ! - we do not compute inside of Halos. Those values will be filled with BCs or communications.
-                ! - second halos can be included for the compuation of BCs.
 
                 ! Compute the pressures/viscositites
                 call computePressureSimple(.False.)
 
                 ! Compute Laminar/eddy viscosity if required
                 call computeLamViscosity(.False.)
-                call computeEddyViscosity(.False.) !for SST, the velocity in 1st halo MUST be up to date before this call. It should be ok here.
+                call computeEddyViscosity(.False.)
 
                 ! Make sure to call the turb BC's first incase we need to
-                ! correct for K. We may need the updated value of K in the 1st
-                ! halo to update E, for example.
-
-                ! ********** OPTION 1: DO IT HERE ***********************
-                ! SO question is: first update turb then flow, or the other way around? (outside of this loop?)
+                ! correct for K
                 if (equations == RANSEquations .and. turbRes) then
                     call BCTurbTreatment
                     call applyAllTurbBCthisblock(.True.)
@@ -236,19 +232,6 @@ contains
 
             end do
         end do
-
-        ! ********** OPTION 2: DO IT OUTSIDE OF THE LOOP, Turb AFTER flow ***********************
-        !  if( equations == RANSEquations .and. turbRes) then
-        !    do sps=1,nTimeIntervalsSpectral
-        !       do nn=1,nDom
-        !          call setPointers(nn, currentLevel, sps)
-
-        !             call BCTurbTreatment
-        !             call applyAllTurbBCthisblock(.True.)
-
-        !       end do
-        !    end do
-        !  end if
 
         ! Compute the ranges of the residuals we are dealing with:
         if (flowRes .and. turbRes) then
@@ -265,9 +248,7 @@ contains
         end if
 
         ! Exchange values: make sure all values, including halos, are up to date everywhere
-        call whalo2(1_intType, lStart, lEnd, .True., .True., .True., exchangeWallDistanceHalos(1))
-        exchangeWallDistanceHalos(1) = .False.
-
+        call whalo2(1_intType, lStart, lEnd, .True., .True., .True.)
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -1047,7 +1028,7 @@ contains
         use paramTurb
         use blockPointers, only: sectionID
         use inputPhysics, only: useft2SA, useRotationSA, turbProd, equations
-        use inputDiscretization, only: approxSA
+        use inputDiscretization, only: approxTurb
         use section, only: sections
         use sa, only: cv13, kar2Inv, cw36, cb3Inv
         use flowvarRefState, only: timeRef
@@ -1077,7 +1058,7 @@ contains
 
         ! set the approximate multiplier here
         term1Fact = one
-        if (approxSA) term1Fact = zero
+        if (approxTurb) term1Fact = zero
 
         ! Determine the non-dimensional wheel speed of this block.
 

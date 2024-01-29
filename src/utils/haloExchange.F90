@@ -47,12 +47,12 @@ contains
         ! Exchange the 1 to 1 matching 1st level cell halo's.
 
         call whalo1to1(level, start, end, commPressure, commVarGamma, &
-                       commLamVis, commEddyVis, .false., commPatternCell_1st, &
+                       commLamVis, commEddyVis, commPatternCell_1st, &
                        internalCell_1st)
 
         ! Exchange the overset cells
         call wOverset(level, start, end, commPressure, commVarGamma, &
-                      commLamVis, commEddyVis, .false., commPatternOverset, internalOverset)
+                      commLamVis, commEddyVis, commPatternOverset, internalOverset)
 
         ! Average any overset orphans.
 
@@ -107,7 +107,7 @@ contains
     end subroutine whalo1
 
     subroutine whalo2(level, start, end, commPressure, commGamma, &
-                      commViscous, commd2wall)
+                      commViscous)
         !
         !       whalo2 exchanges all the 2nd level internal halo's for the
         !       cell centered variables.
@@ -126,7 +126,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
+        logical, intent(in) :: commPressure, commGamma, commViscous
         !
         !      Local variables.
         !
@@ -152,12 +152,12 @@ contains
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
         call whalo1to1(level, start, end, commPressure, commVarGamma, &
-                       commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
+                       commLamVis, commEddyVis, commPatternCell_2nd, &
                        internalCell_2nd)
 
         ! Exchange the overset cells
         call wOverset(level, start, end, commPressure, commVarGamma, &
-                      commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
+                      commLamVis, commEddyVis, commPatternOverset, internalOverset)
 
         ! Average any overset orphans.
 
@@ -347,14 +347,14 @@ contains
                 if (calcLamVis) rlv(oi, oj, ok) = muInf
                 if (calcEddyVis) rev(oi, oj, ok) = eddyVisInfRatio * muInf
 
-           end if checkNoNeighbors
+            end if checkNoNeighbors
 
         end do orphanLoop
 
     end subroutine orphanAverage
 
     subroutine setCommPointers(start, end, commPressure, commVarGamma, commLamVis, &
-                               commEddyVis, commd2wall, level, sps, derivPointers, nVar, varOffset)
+                               commEddyVis, level, sps, derivPointers, nVar, varOffset)
 
         ! Generic routine for setting pointers to the communication
         ! variables. Can also set pointers to derivatve values if derivPts is True.
@@ -365,7 +365,7 @@ contains
 
         ! Input
         integer(kind=intType), intent(in) :: start, end, level, sps
-        logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis, commd2wall
+        logical, intent(in) :: commPressure, commVarGamma, commLamVis, commEddyVis
         logical, intent(in) :: derivPointers
         integer(kind=intType), intent(in) :: varOffset
 
@@ -414,18 +414,13 @@ contains
                 blk%realCommVars(nVar)%var => blkLevel%rev(:, :, :)
             end if
 
-            if (commd2wall) then
-                nVar = nVar + 1
-                blk%realCommVars(nVar)%var => blkLevel%d2wall(:, :, :)
-            end if
-
         end do domainLoop
         nVar = nVar - varOffset
     end subroutine setCommPointers
 
     subroutine whalo1to1(level, start, end, commPressure, &
                          commVarGamma, commLamVis, commEddyVis, &
-                         commd2wall, commPattern, internal)
+                         commPattern, internal)
         !
         !       whalo1to1 exchanges the 1 to 1 internal halo's for the cell
         !       centered variables for the given communication pattern. It
@@ -445,7 +440,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
+        logical, intent(in) :: commLamVis, commEddyVis
 
         type(commType), dimension(*), intent(in) :: commPattern
         type(internalCommType), dimension(*), intent(in) :: internal
@@ -464,7 +459,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, 0)
+                                 commLamVis, commEddyVis, level, sps, .False., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1258,7 +1253,7 @@ contains
 
     subroutine whalo1to1_d(level, start, end, commPressure, &
                            commVarGamma, commLamVis, commEddyVis, &
-                           commd2wall, commPattern, internal)
+                           commPattern, internal)
         !
         !       whalo1to1 exchanges the 1 to 1 internal halo's derivatives
         !
@@ -1271,7 +1266,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
+        logical, intent(in) :: commLamVis, commEddyVis
 
         type(commType), dimension(*), intent(in) :: commPattern
         type(internalCommType), dimension(*), intent(in) :: internal
@@ -1281,7 +1276,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1296,7 +1291,7 @@ contains
 
     subroutine whalo1to1_b(level, start, end, commPressure, &
                            commVarGamma, commLamVis, commEddyVis, &
-                           commd2wall, commPattern, internal)
+                           commPattern, internal)
         !
         !       whalo1to1 exchanges the 1 to 1 internal halo's derivatives
         !
@@ -1309,7 +1304,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
+        logical, intent(in) :: commLamVis, commEddyVis
 
         type(commType), dimension(*), intent(in) :: commPattern
         type(internalCommType), dimension(*), intent(in) :: internal
@@ -1319,7 +1314,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1334,7 +1329,7 @@ contains
 
     subroutine wOverset(level, start, end, commPressure, &
                         commVarGamma, commLamVis, commEddyVis, &
-                        commd2wall, commPattern, internal)
+                        commPattern, internal)
         !
         !       wOverset controls the communication between overset halos
         !       for the cell-centered variables by interpolating the solution
@@ -1355,7 +1350,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
+        logical, intent(in) :: commLamVis, commEddyVis
 
         type(commType), dimension(:, :), intent(in) :: commPattern
         type(internalCommType), dimension(:, :), intent(in) :: internal
@@ -1366,7 +1361,7 @@ contains
         spectralModes: do sps = 1, nTimeIntervalsSpectral
 
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, 0)
+                                 commLamVis, commEddyVis, level, sps, .False., nVar, 0)
 
             if (nVar == 0) then
                 return
@@ -1380,7 +1375,7 @@ contains
 
     subroutine wOverset_d(level, start, end, commPressure, &
                           commVarGamma, commLamVis, commEddyVis, &
-                          commd2wall, commPattern, internal)
+                          commPattern, internal)
         !
         !       wOverset controls the communication between overset halos
         !       for the cell-centered variables by interpolating the solution
@@ -1401,7 +1396,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
+        logical, intent(in) :: commLamVis, commEddyVis
 
         type(commType), dimension(:, :), intent(in) :: commPattern
         type(internalCommType), dimension(:, :), intent(in) :: internal
@@ -1412,12 +1407,12 @@ contains
             ! this one is tricker: We have to set BOTH the real values and
             ! the the derivative values. Set the derivative values first:
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
 
             ! And then the original real values
             offset = nVar
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, offset)
+                                 commLamVis, commEddyVis, level, sps, .False., nVar, offset)
 
             if (nVar == 0) then
                 return
@@ -1430,7 +1425,7 @@ contains
 
     subroutine wOverset_b(level, start, end, commPressure, &
                           commVarGamma, commLamVis, commEddyVis, &
-                          commd2wall, commPattern, internal)
+                          commPattern, internal)
         !
         !       wOverset_b performs the *TRANSPOSE* operation of wOverset
         !       It is used for adjoint/reverse mode residual evaluations.
@@ -1445,7 +1440,7 @@ contains
         !
         integer(kind=intType), intent(in) :: level, start, end
         logical, intent(in) :: commPressure, commVarGamma
-        logical, intent(in) :: commLamVis, commEddyVis, commd2wall
+        logical, intent(in) :: commLamVis, commEddyVis
 
         type(commType), dimension(:, :), intent(in) :: commPattern
         type(internalCommType), dimension(:, :), intent(in) :: internal
@@ -1456,12 +1451,12 @@ contains
             ! this one is tricker: We have to set BOTH the real values and
             ! the the derivative values. Set the derivative values first:
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .True., nVar, 0)
+                                 commLamVis, commEddyVis, level, sps, .True., nVar, 0)
 
             ! And then the original real values
             offset = nVar
             call setCommPointers(start, end, commPressure, commVarGamma, &
-                                 commLamVis, commEddyVis, commd2wall, level, sps, .False., nVar, offset)
+                                 commLamVis, commEddyVis, level, sps, .False., nVar, offset)
 
             if (nVar == 0) then
                 return
@@ -2066,7 +2061,7 @@ contains
 
 #ifndef USE_COMPLEX
     subroutine whalo2_b(level, start, end, commPressure, commGamma, &
-                        commViscous, commd2wall)
+                        commViscous)
         !
         !       whalo2_b exchanges all the 2nd level internal halo's for the
         !       cell centered variables IN REVERSE MODE
@@ -2085,7 +2080,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
+        logical, intent(in) :: commPressure, commGamma, commViscous
         !
         !      Local variables.
         !
@@ -2129,12 +2124,11 @@ contains
         end if bothPAndE
 
         call wOverset_b(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
-
+                        commLamVis, commEddyVis, commPatternOverset, internalOverset)
 
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
         call whalo1to1_b(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
+                         commLamVis, commEddyVis, commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! NOTE: Only the 1to1 halo exchange and overset is done. whalosliding,
@@ -2144,7 +2138,7 @@ contains
     end subroutine whalo2_b
 
     subroutine whalo2_d(level, start, end, commPressure, commGamma, &
-                        commViscous, commd2wall)
+                        commViscous)
         !
         !       whalo2_b exchanges all the 2nd level internal halo's for the
         !       cell centered variables IN FORWARD MODE
@@ -2163,7 +2157,7 @@ contains
         !      Subroutine arguments.
         !
         integer(kind=intType), intent(in) :: level, start, end
-        logical, intent(in) :: commPressure, commGamma, commViscous, commd2wall
+        logical, intent(in) :: commPressure, commGamma, commViscous
         !
         !      Local variables.
         !
@@ -2189,12 +2183,12 @@ contains
         ! Exchange the 1 to 1 matching 2nd level cell halo's.
 
         call whalo1to1_d(level, start, end, commPressure, commVarGamma, &
-                         commLamVis, commEddyVis, commd2wall, commPatternCell_2nd, &
+                         commLamVis, commEddyVis, commPatternCell_2nd, &
                          internalCell_2nd)
 
         ! Exchange the overset cells
         call wOverset_d(level, start, end, commPressure, commVarGamma, &
-                        commLamVis, commEddyVis, commd2wall, commPatternOverset, internalOverset)
+                        commLamVis, commEddyVis, commPatternOverset, internalOverset)
 
         ! NOTE: Only the 1to1 halo and wOverset exchange is done. whalosliding,
         ! whalomixing, orphanAverage and PandE corrections
@@ -2645,6 +2639,185 @@ contains
 
     end subroutine exchangeCoor
 
+    subroutine exchanged2Wall(level)
+        !
+        !       ExchangeCoor exchanges the d2wall of the given grid
+        !       level.
+        !
+        use block
+        use communication
+        use inputTimeSpectral
+        use utils, only: EChk
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level
+        !
+        !      Local variables.
+        !
+        integer :: size, procID, ierr, index
+        integer, dimension(mpi_status_size) :: mpiStatus
+
+        integer(kind=intType) :: i, j, ii, jj, mm
+        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+
+        ! Loop over the number of spectral solutions.
+
+        spectralLoop: do mm = 1, nTimeIntervalsSpectral
+
+            ! Send the coordinates i have to send. The data is first copied
+            ! into the send buffer and this buffer is sent.
+
+            ii = 1
+            sends: do i = 1, commPatternCell_2nd(level)%nProcSend
+
+                ! Store the processor id and the size of the message
+                ! a bit easier.
+
+                procID = commPatternCell_2nd(level)%sendProc(i)
+                size = commPatternCell_2nd(level)%nSend(i)
+
+                ! Copy the data in the correct part of the send buffer.
+
+                jj = ii
+                !DIR$ NOVECTOR
+                do j = 1, commPatternCell_2nd(level)%nSend(i)
+
+                    ! Store the block id and the indices of the donor
+                    ! a bit easier.
+
+                    d1 = commPatternCell_2nd(level)%sendList(i)%block(j)
+                    i1 = commPatternCell_2nd(level)%sendList(i)%indices(j, 1)
+                    j1 = commPatternCell_2nd(level)%sendList(i)%indices(j, 2)
+                    k1 = commPatternCell_2nd(level)%sendList(i)%indices(j, 3)
+
+                    ! Copy the coordinates of this point in the buffer.
+                    ! Update the counter jj accordingly.
+
+                    sendBuffer(jj) = flowDoms(d1, level, mm)%d2Wall(i1, j1, k1)
+                    jj = jj + 1
+
+                end do
+
+                ! Send the data.
+
+                call mpi_isend(sendBuffer(ii), size, adflow_real, procID, &
+                               procID, ADflow_comm_world, sendRequests(i), &
+                               ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Set ii to jj for the next processor.
+
+                ii = jj
+
+            end do sends
+
+            ! Post the nonblocking receives.
+
+            ii = 1
+            receives: do i = 1, commPatternCell_2nd(level)%nProcRecv
+
+                ! Store the processor id and the size of the message
+                ! a bit easier.
+
+                procID = commPatternCell_2nd(level)%recvProc(i)
+                size = commPatternCell_2nd(level)%nRecv(i)
+
+                ! Post the receive.
+
+                call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+                               myID, ADflow_comm_world, recvRequests(i), ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! And update ii.
+
+                ii = ii + size
+
+            end do receives
+
+            ! Copy the local data.
+            !DIR$ NOVECTOR
+            localCopy: do i = 1, internalCell_2nd(level)%nCopy
+
+                ! Store the block and the indices of the donor a bit easier.
+
+                d1 = internalCell_2nd(level)%donorBlock(i)
+                i1 = internalCell_2nd(level)%donorIndices(i, 1)
+                j1 = internalCell_2nd(level)%donorIndices(i, 2)
+                k1 = internalCell_2nd(level)%donorIndices(i, 3)
+                ! Idem for the halo's.
+
+                d2 = internalCell_2nd(level)%haloBlock(i)
+                i2 = internalCell_2nd(level)%haloIndices(i, 1)
+                j2 = internalCell_2nd(level)%haloIndices(i, 2)
+                k2 = internalCell_2nd(level)%haloIndices(i, 3)
+                ! Copy the coordinates.
+                flowDoms(d2, level, mm)%d2Wall(i2, j2, k2) = &
+                    flowDoms(d1, level, mm)%d2Wall(i1, j1, k1)
+
+            end do localCopy
+
+            ! Correct the periodic halos of the internal communication
+            ! pattern
+
+            ! call correctPeriodicCoor(level, mm, &
+            !                          internalCell_2nd(level)%nPeriodic, &
+            !                          internalCell_2nd(level)%periodicData)
+
+            ! Complete the nonblocking receives in an arbitrary sequence and
+            ! copy the coordinates from the buffer into the halo's.
+
+            size = commPatternCell_2nd(level)%nProcRecv
+            completeRecvs: do i = 1, commPatternCell_2nd(level)%nProcRecv
+
+                ! Complete any of the requests.
+
+                call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Copy the data just arrived in the halo's.
+
+                ii = index
+                jj = commPatternCell_2nd(level)%nRecvCum(ii - 1) + 1
+                !DIR$ NOVECTOR
+                do j = 1, commPatternCell_2nd(level)%nRecv(ii)
+
+                    ! Store the block and the indices of the halo a bit easier.
+
+                    d2 = commPatternCell_2nd(level)%recvList(ii)%block(j)
+                    i2 = commPatternCell_2nd(level)%recvList(ii)%indices(j, 1)
+                    j2 = commPatternCell_2nd(level)%recvList(ii)%indices(j, 2)
+                    k2 = commPatternCell_2nd(level)%recvList(ii)%indices(j, 3)
+
+                    ! Copy the data.
+
+                    flowDoms(d2, level, mm)%d2Wall(i2, j2, k2) = recvBuffer(jj)
+                    jj = jj + 1
+
+                end do
+
+            end do completeRecvs
+
+            ! Correct the periodic halos of the external communication
+            ! pattern.
+
+            ! call correctPeriodicCoor(level, mm, &
+            !                          commPatternCell_2nd(level)%nPeriodic, &
+            !                          commPatternCell_2nd(level)%periodicData)
+
+            ! Complete the nonblocking sends.
+
+            size = commPatternCell_2nd(level)%nProcSend
+            do i = 1, commPatternCell_2nd(level)%nProcSend
+                call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end do
+
+        end do spectralLoop
+
+    end subroutine exchanged2Wall
+
     !      ==================================================================
 
     subroutine correctPeriodicCoor(level, sp, nPeriodic, periodicData)
@@ -2902,6 +3075,190 @@ contains
         end do spectralLoop
 
     end subroutine exchangeCoor_b
+
+    subroutine exchanged2Wall_b(level)
+        !
+        !       ExchangeCoor_b exchanges the *derivatives* of the given grid
+        !       level IN REVERSE MODE.
+        !
+        use constants
+        use block
+        use communication
+        use inputTimeSpectral
+        use utils, only: EChk
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level
+        !
+        !      Local variables.
+        !
+        integer :: size, procID, ierr, index
+        integer, dimension(mpi_status_size) :: mpiStatus
+
+        integer(kind=intType) :: i, j, ii, jj, mm, idim
+        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+
+        ! Loop over the number of spectral solutions.
+
+        spectralLoop: do mm = 1, nTimeIntervalsSpectral
+
+            ! Send the coordinates i have to send. The data is first copied
+            ! into the send buffer and this buffer is sent.
+
+            ii = 1
+            jj = 1
+            recvs: do i = 1, commPatternCell_2nd(level)%nProcRecv
+
+                ! Store the processor id and the size of the message
+                ! a bit easier.
+
+                procID = commPatternCell_2nd(level)%recvProc(i)
+                size = commPatternCell_2nd(level)%nRecv(i)
+
+                ! Copy the data in the correct part of the send buffer.
+                !DIR$ NOVECTOR
+                do j = 1, commPatternCell_2nd(level)%nRecv(i)
+
+                    ! Store the block id and the indices of the donor
+                    ! a bit easier.
+
+                    d2 = commPatternCell_2nd(level)%recvList(i)%block(j)
+                    i2 = commPatternCell_2nd(level)%recvList(i)%indices(j, 1)
+                    j2 = commPatternCell_2nd(level)%recvList(i)%indices(j, 2)
+                    k2 = commPatternCell_2nd(level)%recvList(i)%indices(j, 3)
+
+                    ! Copy the coordinates of this point in the buffer.
+                    ! Update the counter jj accordingly.
+
+                    recvBuffer(jj) = flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2)
+                    flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) = zero
+                    jj = jj + 1
+                end do
+
+                ! Send the data.
+
+                call mpi_isend(recvBuffer(ii), size, adflow_real, procID, &
+                               procID, ADflow_comm_world, recvRequests(i), &
+                               ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Set ii to jj for the next processor.
+
+                ii = jj
+
+            end do recvs
+
+            ! Post the nonblocking receives.
+
+            ii = 1
+            send: do i = 1, commPatternCell_2nd(level)%nProcSend
+
+                ! Store the processor id and the size of the message
+                ! a bit easier.
+
+                procID = commPatternCell_2nd(level)%sendProc(i)
+                size = commPatternCell_2nd(level)%nSend(i)
+
+                ! Post the receive.
+
+                call mpi_irecv(sendBuffer(ii), size, adflow_real, procID, &
+                               myID, ADflow_comm_world, sendRequests(i), ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! And update ii.
+
+                ii = ii + size
+
+            end do send
+
+            ! Copy the local data.
+            !DIR$ NOVECTOR
+            localCopy: do i = 1, internalCell_2nd(level)%nCopy
+
+                ! Store the block and the indices of the donor a bit easier.
+
+                d1 = internalCell_2nd(level)%donorBlock(i)
+                i1 = internalCell_2nd(level)%donorIndices(i, 1)
+                j1 = internalCell_2nd(level)%donorIndices(i, 2)
+                k1 = internalCell_2nd(level)%donorIndices(i, 3)
+
+                ! Idem for the halo's.
+
+                d2 = internalCell_2nd(level)%haloBlock(i)
+                i2 = internalCell_2nd(level)%haloIndices(i, 1)
+                j2 = internalCell_2nd(level)%haloIndices(i, 2)
+                k2 = internalCell_2nd(level)%haloIndices(i, 3)
+
+                ! Sum into the '1' values fro the '2' values
+                flowDomsd(d1, level, mm)%d2Wall(i1, j1, k1) = flowDomsd(d1, level, mm)%d2Wall(i1, j1, k1) + &
+                                                              flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2)
+                flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) = zero
+
+            end do localCopy
+
+            ! Correct the periodic halos of the internal communication
+            ! pattern
+
+            ! NOT IMPLEMENTED
+            ! call correctPeriodicCoor(level, mm,                          &
+            !      internalNode_1st(level)%nPeriodic,  &
+            !      internalNode_1st(level)%periodicData)
+
+            ! Complete the nonblocking receives in an arbitrary sequence and
+            ! copy the coordinates from the buffer into the halo's.
+
+            size = commPatternCell_2nd(level)%nProcSend
+            completeSends: do i = 1, commPatternCell_2nd(level)%nProcSend
+
+                ! Complete any of the requests.
+
+                call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Copy the data just arrived in the halo's.
+
+                ii = index
+                jj = commPatternCell_2nd(level)%nSendCum(ii - 1)
+                !DIR$ NOVECTOR
+                do j = 1, commPatternCell_2nd(level)%nSend(ii)
+
+                    ! Store the block and the indices of the halo a bit easier.
+
+                    d2 = commPatternCell_2nd(level)%sendList(ii)%block(j)
+                    i2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 1)
+                    j2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 2)
+                    k2 = commPatternCell_2nd(level)%sendList(ii)%indices(j, 3)
+
+                    ! Sum into the '2' values from the recv buffer
+                    jj = jj + 1
+                    flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) = flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) + &
+                                                                  sendBuffer(jj)
+
+                end do
+
+            end do completeSends
+
+            ! Correct the periodic halos of the external communication
+            ! pattern.
+            ! NOT IMLEMENTED
+            ! call correctPeriodicCoor(level, mm,                            &
+            !      commPatternNode_1st(level)%nPeriodic, &
+            !      commPatternNode_1st(level)%periodicData)
+
+            ! Complete the nonblocking sends.
+
+            size = commPatternCell_2nd(level)%nProcRecv
+            do i = 1, commPatternCell_2nd(level)%nProcRecv
+                call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end do
+
+        end do spectralLoop
+
+    end subroutine exchanged2Wall_b
+
     subroutine exchangeCoor_d(level)
         !
         !       ExchangeCoor_d exchanges the *derivatives* of the given grid
@@ -3089,6 +3446,186 @@ contains
         end do spectralLoop
 
     end subroutine exchangeCoor_d
+
+    subroutine exchanged2Wall_d(level)
+        !
+        !       ExchangeCoor_d exchanges the *derivatives* of the given grid
+        !       level.
+        !
+        use block
+        use communication
+        use inputTimeSpectral
+        use utils, only: EChk
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        integer(kind=intType), intent(in) :: level
+        !
+        !      Local variables.
+        !
+        integer :: size, procID, ierr, index
+        integer, dimension(mpi_status_size) :: mpiStatus
+
+        integer(kind=intType) :: i, j, ii, jj, mm
+        integer(kind=intType) :: d1, i1, j1, k1, d2, i2, j2, k2
+
+        ! Loop over the number of spectral solutions.
+
+        spectralLoop: do mm = 1, nTimeIntervalsSpectral
+
+            ! Send the coordinates i have to send. The data is first copied
+            ! into the send buffer and this buffer is sent.
+
+            ii = 1
+            sends: do i = 1, commPatternCell_2nd(level)%nProcSend
+
+                ! Store the processor id and the size of the message
+                ! a bit easier.
+
+                procID = commPatternCell_2nd(level)%sendProc(i)
+                size = commPatternCell_2nd(level)%nSend(i)
+
+                ! Copy the data in the correct part of the send buffer.
+
+                jj = ii
+                !DIR$ NOVECTOR
+                do j = 1, commPatternCell_2nd(level)%nSend(i)
+
+                    ! Store the block id and the indices of the donor
+                    ! a bit easier.
+
+                    d1 = commPatternCell_2nd(level)%sendList(i)%block(j)
+                    i1 = commPatternCell_2nd(level)%sendList(i)%indices(j, 1)
+                    j1 = commPatternCell_2nd(level)%sendList(i)%indices(j, 2)
+                    k1 = commPatternCell_2nd(level)%sendList(i)%indices(j, 3)
+
+                    ! Copy the coordinates of this point in the buffer.
+                    ! Update the counter jj accordingly.
+
+                    sendBuffer(jj) = flowDomsd(d1, level, mm)%d2Wall(i1, j1, k1)
+                    jj = jj + 1
+
+                end do
+
+                ! Send the data.
+
+                call mpi_isend(sendBuffer(ii), size, adflow_real, procID, &
+                               procID, ADflow_comm_world, sendRequests(i), &
+                               ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Set ii to jj for the next processor.
+
+                ii = jj
+
+            end do sends
+
+            ! Post the nonblocking receives.
+
+            ii = 1
+            receives: do i = 1, commPatternCell_2nd(level)%nProcRecv
+
+                ! Store the processor id and the size of the message
+                ! a bit easier.
+
+                procID = commPatternCell_2nd(level)%recvProc(i)
+                size = commPatternCell_2nd(level)%nRecv(i)
+
+                ! Post the receive.
+
+                call mpi_irecv(recvBuffer(ii), size, adflow_real, procID, &
+                               myID, ADflow_comm_world, recvRequests(i), ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! And update ii.
+
+                ii = ii + size
+
+            end do receives
+
+            ! Copy the local data.
+            !DIR$ NOVECTOR
+            localCopy: do i = 1, internalCell_2nd(level)%nCopy
+
+                ! Store the block and the indices of the donor a bit easier.
+
+                d1 = internalCell_2nd(level)%donorBlock(i)
+                i1 = internalCell_2nd(level)%donorIndices(i, 1)
+                j1 = internalCell_2nd(level)%donorIndices(i, 2)
+                k1 = internalCell_2nd(level)%donorIndices(i, 3)
+                ! Idem for the halo's.
+
+                d2 = internalCell_2nd(level)%haloBlock(i)
+                i2 = internalCell_2nd(level)%haloIndices(i, 1)
+                j2 = internalCell_2nd(level)%haloIndices(i, 2)
+                k2 = internalCell_2nd(level)%haloIndices(i, 3)
+                ! Copy the coordinates.
+                flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) = &
+                    flowDomsd(d1, level, mm)%d2Wall(i1, j1, k1)
+
+            end do localCopy
+
+            ! Correct the periodic halos of the internal communication
+            ! pattern
+
+            ! NOT IMPLEMENTED
+            ! call correctPeriodicCoor(level, mm,                          &
+            !      internalCell_2nd(level)%nPeriodic,  &
+            !      internalCell_2nd(level)%periodicData)
+
+            ! Complete the nonblocking receives in an arbitrary sequence and
+            ! copy the coordinates from the buffer into the halo's.
+
+            size = commPatternCell_2nd(level)%nProcRecv
+            completeRecvs: do i = 1, commPatternCell_2nd(level)%nProcRecv
+
+                ! Complete any of the requests.
+
+                call mpi_waitany(size, recvRequests, index, mpiStatus, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Copy the data just arrived in the halo's.
+
+                ii = index
+                jj = commPatternCell_2nd(level)%nRecvCum(ii - 1) + 1
+                !DIR$ NOVECTOR
+                do j = 1, commPatternCell_2nd(level)%nRecv(ii)
+
+                    ! Store the block and the indices of the halo a bit easier.
+
+                    d2 = commPatternCell_2nd(level)%recvList(ii)%block(j)
+                    i2 = commPatternCell_2nd(level)%recvList(ii)%indices(j, 1)
+                    j2 = commPatternCell_2nd(level)%recvList(ii)%indices(j, 2)
+                    k2 = commPatternCell_2nd(level)%recvList(ii)%indices(j, 3)
+
+                    ! Copy the data.
+
+                    flowDomsd(d2, level, mm)%d2Wall(i2, j2, k2) = recvBuffer(jj)
+                    jj = jj + 1
+
+                end do
+
+            end do completeRecvs
+
+            ! Correct the periodic halos of the external communication
+            ! pattern.
+            ! NOT IMLEMENTED
+            ! call correctPeriodicCoor(level, mm,                            &
+            !      commPatternCell_2nd(level)%nPeriodic, &
+            !      commPatternCell_2nd(level)%periodicData)
+
+            ! Complete the nonblocking sends.
+
+            size = commPatternCell_2nd(level)%nProcSend
+            do i = 1, commPatternCell_2nd(level)%nProcSend
+                call mpi_waitany(size, sendRequests, index, mpiStatus, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end do
+
+        end do spectralLoop
+
+    end subroutine exchanged2Wall_d
 
     ! -----------------------------------------------------------------
     !              Comm routines for zippers

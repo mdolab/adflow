@@ -44,7 +44,6 @@ contains
         !
         integer(kind=intType) :: nn
 
-
         ! Alloc central jacobian memory
         allocate (qq(2:il, 2:jl, 2:kl))
 
@@ -64,12 +63,11 @@ contains
         ! Perform the residual scaling
         call saResScale
 
-        ! cleanUp 
+        ! cleanUp
         if (cleanUp) then
             deallocate (qq)
         end if
     end subroutine sa_block_residuals
-
 
 #ifndef USE_COMPLEX
     subroutine sa_block_residuals_d
@@ -85,7 +83,6 @@ contains
         !!call unsteadyTurbTerm_d(1_intType, 1_intType, itu1-1, qq)
         call saViscous_d
         call saResScale_d
-
 
     end subroutine sa_block_residuals_d
 
@@ -115,7 +112,6 @@ contains
         use sa_fast_b, only: saresscale_fast_b, saviscous_fast_b, &
                              sasource_fast_b, qq
 
-
         implicit none
 
         call saResScale_fast_b
@@ -141,7 +137,7 @@ contains
         use paramTurb
         use section
         use inputPhysics
-        use inputDiscretization, only: approxSA
+        use inputDiscretization, only: approxTurb
         use flowVarRefState
         implicit none
 
@@ -335,7 +331,7 @@ contains
                         ! Compute the source term; some terms are saved for the
                         ! linearization. The source term is stored in dvt.
 
-                        if (approxSA) then
+                        if (approxTurb) then
                             term1 = zero
                         else
                             term1 = rsaCb1 * (one - ft2) * ss
@@ -1303,7 +1299,6 @@ contains
                 end do
             end do
         end do
-
 
         ! Compute the EddyViscosity
 

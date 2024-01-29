@@ -44,7 +44,6 @@ contains
 
         use constants
         use blockPointers, only: nx, ny, nz, il, jl, kl, x, flowDoms, d2wall
-        use wallDistanceData, only: exchangeWallDistanceHalos
         implicit none
 
         ! Subroutine arguments
@@ -116,11 +115,6 @@ contains
                 end do
             end do
         end do
-#endif
-
-
-#ifndef USE_TAPENADE
-    exchangeWallDistanceHalos(level) = .True.
 #endif
 
     end subroutine updateWallDistancesQuickly
@@ -215,7 +209,7 @@ contains
                 call terminate("wallDistance", &
                                "Deallocation error for communication buffers")
         else
-            call deallocateTempMemory(.false.)
+            call deallocateTempMemory(.true.)
         end if
 
         ! There are two different searches we can do: the original code
@@ -314,7 +308,7 @@ contains
                 call terminate("wallDistance", &
                                "Memory allocation failure for comm buffers")
         else
-            call allocateTempMemory(.false.)
+            call allocateTempMemory(.true.)
         end if
 
         ! Synchronize the processors.
@@ -1533,6 +1527,8 @@ contains
         use block, only: flowDoms
         use inputPhysics, only: equations
         use iteration, only: groundLevel
+        use haloExchange, only: exchanged2Wall
+        use inputPhysics, only: wallDistanceNeeded
         implicit none
         !
         !      Local variables.
@@ -1548,6 +1544,9 @@ contains
         nLevels = ubound(flowDoms, 2)
         do nn = groundLevel, nLevels
             call computeWallDistance(nn, .false.)
+            if (wallDistanceNeeded) then
+                call exchanged2Wall(nn)
+            end if
         end do
 
     end subroutine updateWallDistanceAllLevels

@@ -208,45 +208,30 @@ test_params = [
         "evalFuncs": ["fy", "my"],
         "N_PROCS": 2,
     },
-
     # Tutorial wing RANS SST
     {
         "name": "rans_tut_wing_SST",
         "options": {
             "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
             "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
-
-
-            'equationType':'RANS',
-            'useblockettes': False,
-
-            'turbulenceModel': 'Menter SST',
+            "equationType": "RANS",
+            "useblockettes": False,
+            "turbulenceModel": "Menter SST",
             "turbResScale": [1e3, 1e-6],
-
             "nsubiterturb": 20,
             "useMatrixFreedrdw": False,
-
-
             # ANK
             "useANKSolver": True,
             "ANKUseTurbDADI": True,
             # "ANKADPC": True,
-
-
             "ANKSecondOrdSwitchTol": 1e-4,
             # "ANKCoupledSwitchTol": 1e-6,
-
             "monitorVariables": ["resrho", "totalr", "cl", "cd"],
             "L2Convergence": 1e-14,
             "adjointL2Convergence": 1e-14,
-
             "solutionPrecision": "double",
             "outputSurfaceFamily": "wall",
-
-
             "nCycles": 20000,
-
-
             "adjointMaxIter": 1000,
             "adjointSubspaceSize": 500,
         },
@@ -255,7 +240,6 @@ test_params = [
         # "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag"],
         "evalFuncs": ["cl"],
     },
-
 ]
 
 
@@ -308,7 +292,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
-        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
             rotRate_x = 0.5
@@ -367,7 +351,7 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.CFDSolver = ADFLOW_C(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
-        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
             rotRate_x = 0.5

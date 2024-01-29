@@ -4,13 +4,11 @@ module SST
     ! model. It is slightly more modularized than the original which makes
     ! performing reverse mode AD simplier.
 
-
     use constants
     real(kind=realType), dimension(:, :, :, :, :), allocatable :: qq
     real(kind=realType), dimension(:, :, :), pointer :: ddw, ww, ddvt
     real(kind=realType), dimension(:, :), pointer :: rrlv
     real(kind=realType), dimension(:, :), pointer :: dd2Wall
-
 
 contains
 #ifndef USE_TAPENADE
@@ -42,7 +40,7 @@ contains
         ! Compute the cross diffusion term.
         call kwCDterm
 
-        ! Compute the blending function 
+        ! Compute the blending function
         call f1SST
 
         ! Alloc central jacobian memory
@@ -83,7 +81,6 @@ contains
 
     end subroutine SST_block_residuals
 
-
 #ifndef USE_COMPLEX
     subroutine SST_block_residuals_d
         use constants
@@ -109,11 +106,11 @@ contains
             call prodKatoLaunder_d(2, il, 2, jl, 2, kl)
         end select
 
-       call SSTSource_d
-       call turbAdvection_d(2_intType, 2_intType, itu1 - 1, qq)
-       !call unsteadyTurbTerm_d(2_intType, 2_intType, itu1-1, qq)
-       call SSTViscous_d
-       call SSTResScale_d
+        call SSTSource_d
+        call turbAdvection_d(2_intType, 2_intType, itu1 - 1, qq)
+        !call unsteadyTurbTerm_d(2_intType, 2_intType, itu1-1, qq)
+        call SSTViscous_d
+        call SSTResScale_d
 
     end subroutine SST_block_residuals_d
 
@@ -123,9 +120,23 @@ contains
         use inputPhysics, only: turbProd
         use turbutils_b, only: turbAdvection_b, kwCDterm_b, prodSmag2_b, &
                                prodWmag2_b, prodKatolaunder_b
+        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder
         use sst_b, only: SSTSource_b, SSTViscous_b, SSTResScale_b, f1SST_b, qq
 
         implicit none
+
+        ! We need to recompute the production term because it is saved in scratch(:,:,:,iprod). This is overwritten when computing
+        ! the eddyviscosity.
+        select case (turbProd)
+        case (strain)
+            call prodSmag2(2, il, 2, jl, 2, kl)
+
+        case (vorticity)
+            call prodWmag2(2, il, 2, jl, 2, kl)
+
+        case (katoLaunder)
+            call prodKatoLaunder(2, il, 2, jl, 2, kl)
+        end select
 
         call SSTResScale_b
         call SSTViscous_b
@@ -149,36 +160,49 @@ contains
 
     end subroutine SST_block_residuals_b
 
-
     subroutine SST_block_residuals_fast_b
         use constants
         use blockPointers, only: il, jl, kl
         use inputPhysics, only: turbProd
         use turbutils_fast_b, only: turbAdvection_fast_b, kwCDterm_fast_b, prodSmag2_fast_b, &
-                               prodWmag2_fast_b, prodKatolaunder_fast_b
+                                    prodWmag2_fast_b, prodKatolaunder_fast_b
+        use turbUtils, only: prodSmag2, prodWmag2, prodKatoLaunder
         use sst_fast_b, only: SSTSource_fast_b, SSTViscous_fast_b, SSTResScale_fast_b, f1SST_fast_b, qq
 
         implicit none
+
+        ! We need to recompute the production term because it is saved in scratch(:,:,:,iprod). This is overwritten when computing
+        ! the eddyviscosity.
+        select case (turbProd)
+        case (strain)
+            call prodSmag2(2, il, 2, jl, 2, kl)
+
+        case (vorticity)
+            call prodWmag2(2, il, 2, jl, 2, kl)
+
+        case (katoLaunder)
+            call prodKatoLaunder(2, il, 2, jl, 2, kl)
+        end select
 
         call SSTResScale_fast_b
         call SSTViscous_fast_b
         !call unsteadyTurbTerm_fast_b(2_intType, 2_intType, itu1-1, qq)
         call turbAdvection_fast_b(2_intType, 2_intType, itu1 - 1, qq)
         call SSTSource_fast_b
-  
+
         select case (turbProd)
         case (strain)
             call prodSmag2_fast_b(2, il, 2, jl, 2, kl)
-  
+
         case (vorticity)
             call prodWmag2_fast_b(2, il, 2, jl, 2, kl)
-  
+
         case (katoLaunder)
             call prodKatoLaunder_fast_b(2, il, 2, jl, 2, kl)
         end select
 
-         call f1SST_fast_b
-         call kwCDterm_fast_b
+        call f1SST_fast_b
+        call kwCDterm_fast_b
 
     end subroutine SST_block_residuals_fast_b
 #endif
@@ -193,6 +217,7 @@ contains
         use blockPointers
         use constants
         use inputPhysics
+        use inputDiscretization, only: approxTurb
         use paramTurb
         implicit none
         !
@@ -205,19 +230,17 @@ contains
         real(kind=realType) :: rhoi, ss, spk, sdk
         real(kind=realType) :: xm, ym, zm, xp, yp, zp, xa, ya, za
 
-
         ! Set model constants
 
-#ifdef SST_2003
-        rSSTGam1 = 5.0_realType / 9.0_realType
-        rSSTGam2 = 0.44_realType
-#else
-        rSSTGam1 = rSSTBeta1 / rSSTBetas &
-                   - rSSTSigw1 * rSSTK * rSSTK / sqrt(rSSTBetas)
-        rSSTGam2 = rSSTBeta2 / rSSTBetas &
-                   - rSSTSigw2 * rSSTK * rSSTK / sqrt(rSSTBetas)
-#endif
-
+        if (use2003SST) then
+            rSSTGam1 = 5.0_realType / 9.0_realType
+            rSSTGam2 = 0.44_realType
+        else
+            rSSTGam1 = rSSTBeta1 / rSSTBetas &
+                       - rSSTSigw1 * rSSTK * rSSTK / sqrt(rSSTBetas)
+            rSSTGam2 = rSSTBeta2 / rSSTBetas &
+                       - rSSTSigw2 * rSSTK * rSSTK / sqrt(rSSTBetas)
+        end if
 
         !       Source terms.
         !       Determine the source term and its derivative w.r.t. k and
@@ -233,51 +256,56 @@ contains
             j = mod(ii / nx, ny) + 2
             k = ii / (nx * ny) + 2
 #else
-        do k = 2, kl
-            do j = 2, jl
-                do i = 2, il
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
 
-                    ! Compute the blended value of rSSTGam and rSSTBeta,
-                    ! which occur in the production terms of k and omega.
+                        ! Compute the blended value of rSSTGam and rSSTBeta,
+                        ! which occur in the production terms of k and omega.
 
-                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
-                    rSSTGam = t1 * rSSTGam1 + t2 * rSSTGam2
-                    rSSTBeta = t1 * rSSTBeta1 + t2 * rSSTBeta2
+                        t1 = scratch(i, j, k, if1SST); t2 = one - t1
+                        rSSTGam = t1 * rSSTGam1 + t2 * rSSTGam2
+                        rSSTBeta = t1 * rSSTBeta1 + t2 * rSSTBeta2
 
-                    ! Compute the source terms for both the k and the omega
-                    ! equation. Note that dw(i,j,k,iprod) currently contains the
-                    ! unscaled source term. Furthermore the production term of
-                    ! k is limited to a certain times the destruction term.
+                        ! Compute the source terms for both the k and the omega
+                        ! equation. Note that dw(i,j,k,iprod) currently contains the
+                        ! unscaled source term. Furthermore the production term of
+                        ! k is limited to a certain times the destruction term.
 
-                    ! These are the same equations as in https://turbmodels.larc.nasa.gov/sst.html
-                    ! except that everything is divided by rho here
+                        ! These are the same equations as in https://turbmodels.larc.nasa.gov/sst.html
+                        ! except that everything is divided by rho here
 
-                    rhoi = one / w(i, j, k, irho)
-                    ss = scratch(i, j, k, iprod)
-                    spk = rev(i, j, k) * ss * rhoi
-                    sdk = rSSTBetas * w(i, j, k, itu1) * w(i, j, k, itu2)
-                    spk = min(spk, pklim * sdk)
+                        rhoi = one / w(i, j, k, irho)
+                        ss = scratch(i, j, k, iprod)
 
-                    scratch(i, j, k, idvt) = spk - sdk
-#ifdef SST_2003
-                    scratch(i, j, k, idvt + 1) = rSSTGam * spk / rev(i, j, k) + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
-                                      - rSSTBeta * w(i, j, k, itu2)**2
-#else
-                    scratch(i, j, k, idvt + 1) = rSSTGam * ss + two * t2 * rSSTSigw2 * scratch(i, j, k, icd) &
-                                      - rSSTBeta * w(i, j, k, itu2)**2
-#endif
+                        if (approxTurb) then
+                            spk = zero
+                        else
+                            spk = rev(i, j, k) * ss * rhoi
+                        end if
+                        sdk = rSSTBetas * w(i, j, k, itu1) * w(i, j, k, itu2)
+                        spk = min(spk, pklim * sdk)
 
-                    ! Compute the source term jacobian. Note that only the
-                    ! destruction terms are linearized to increase the diagonal
-                    ! dominance of the matrix. Furthermore minus the source
-                    ! term jacobian is stored.
+                        scratch(i, j, k, idvt) = spk - sdk
+                        if (use2003SST) then
+                            scratch(i, j, k, idvt + 1) = rSSTGam * spk / rev(i, j, k) + two * t2 * rSSTSigw2 * &
+                                                         scratch(i, j, k, icd) - rSSTBeta * w(i, j, k, itu2)**2
+                        else
+                            scratch(i, j, k, idvt + 1) = rSSTGam * ss + two * t2 * rSSTSigw2 * &
+                                                         scratch(i, j, k, icd) - rSSTBeta * w(i, j, k, itu2)**2
+                        end if
+
+                        ! Compute the source term jacobian. Note that only the
+                        ! destruction terms are linearized to increase the diagonal
+                        ! dominance of the matrix. Furthermore minus the source
+                        ! term jacobian is stored.
 
 #ifndef USE_TAPENADE
-                    qq(i, j, k, 1, 1) = rSSTBetas * w(i, j, k, itu2)
-                    qq(i, j, k, 1, 2) = zero
-                    qq(i, j, k, 2, 1) = zero
-                    qq(i, j, k, 2, 2) = two * rSSTBeta * w(i, j, k, itu2)
+                        qq(i, j, k, 1, 1) = rSSTBetas * w(i, j, k, itu2)
+                        qq(i, j, k, 1, 2) = zero
+                        qq(i, j, k, 2, 1) = zero
+                        qq(i, j, k, 2, 2) = two * rSSTBeta * w(i, j, k, itu2)
 #endif
 #ifdef TAPENADE_REVERSE
                     end do
@@ -323,121 +351,121 @@ contains
             j = mod(ii / nx, ny) + 2
             k = ii / (nx * ny) + 2
 #else
-        do k = 2, kl
-            do j = 2, jl
-                do i = 2, il
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
 
-                    ! Compute the metrics in zeta-direction, i.e. along the
-                    ! line k = constant.
+                        ! Compute the metrics in zeta-direction, i.e. along the
+                        ! line k = constant.
 
-                    voli = one / vol(i, j, k)
-                    volmi = two / (vol(i, j, k) + vol(i, j, k - 1))
-                    volpi = two / (vol(i, j, k) + vol(i, j, k + 1))
+                        voli = one / vol(i, j, k)
+                        volmi = two / (vol(i, j, k) + vol(i, j, k - 1))
+                        volpi = two / (vol(i, j, k) + vol(i, j, k + 1))
 
-                    xm = sk(i, j, k - 1, 1) * volmi
-                    ym = sk(i, j, k - 1, 2) * volmi
-                    zm = sk(i, j, k - 1, 3) * volmi
-                    xp = sk(i, j, k, 1) * volpi
-                    yp = sk(i, j, k, 2) * volpi
-                    zp = sk(i, j, k, 3) * volpi
+                        xm = sk(i, j, k - 1, 1) * volmi
+                        ym = sk(i, j, k - 1, 2) * volmi
+                        zm = sk(i, j, k - 1, 3) * volmi
+                        xp = sk(i, j, k, 1) * volpi
+                        yp = sk(i, j, k, 2) * volpi
+                        zp = sk(i, j, k, 3) * volpi
 
-                    xa = half * (sk(i, j, k, 1) + sk(i, j, k - 1, 1)) * voli
-                    ya = half * (sk(i, j, k, 2) + sk(i, j, k - 1, 2)) * voli
-                    za = half * (sk(i, j, k, 3) + sk(i, j, k - 1, 3)) * voli
-                    ttm = xm * xa + ym * ya + zm * za
-                    ttp = xp * xa + yp * ya + zp * za
+                        xa = half * (sk(i, j, k, 1) + sk(i, j, k - 1, 1)) * voli
+                        ya = half * (sk(i, j, k, 2) + sk(i, j, k - 1, 2)) * voli
+                        za = half * (sk(i, j, k, 3) + sk(i, j, k - 1, 3)) * voli
+                        ttm = xm * xa + ym * ya + zm * za
+                        ttp = xp * xa + yp * ya + zp * za
 
-                    ! Compute the blended diffusion coefficients for k-1,
-                    ! k and k+1.
-                    ! CAUTION: f1 must be known in neighbouring cells (including halos!)
+                        ! Compute the blended diffusion coefficients for k-1,
+                        ! k and k+1.
+                        ! CAUTION: f1 must be known in neighbouring cells (including halos!)
 
-                    t1 = scratch(i, j, k + 1, if1SST); t2 = one - t1
-                    rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i, j, k + 1, if1SST); t2 = one - t1
+                        rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
-                    rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i, j, k, if1SST); t2 = one - t1
+                        rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = scratch(i, j, k - 1, if1SST); t2 = one - t1
-                    rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i, j, k - 1, if1SST); t2 = one - t1
+                        rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    ! Computation of the viscous terms in zeta-direction; note
-                    ! that cross-derivatives are neglected, i.e. the mesh is
-                    ! assumed to be orthogonal.
-                    ! The second derivative in zeta-direction is constructed as
-                    ! the central difference of the first order derivatives, i.e.
-                    ! d^2/dzeta^2 = d/dzeta (d/dzeta k+1/2 - d/dzeta k-1/2).
-                    ! In this way the metric as well as the varying viscosity
-                    ! can be taken into account; the latter appears inside the
-                    ! d/dzeta derivative. The whole term is divided by rho to
-                    ! obtain the diffusion term for k and omega.
+                        ! Computation of the viscous terms in zeta-direction; note
+                        ! that cross-derivatives are neglected, i.e. the mesh is
+                        ! assumed to be orthogonal.
+                        ! The second derivative in zeta-direction is constructed as
+                        ! the central difference of the first order derivatives, i.e.
+                        ! d^2/dzeta^2 = d/dzeta (d/dzeta k+1/2 - d/dzeta k-1/2).
+                        ! In this way the metric as well as the varying viscosity
+                        ! can be taken into account; the latter appears inside the
+                        ! d/dzeta derivative. The whole term is divided by rho to
+                        ! obtain the diffusion term for k and omega.
 
-                    ! First the k-term.
+                        ! First the k-term.
 
-                    rhoi = one / w(i, j, k, irho)
-                    mulm = half * (rlv(i, j, k - 1) + rlv(i, j, k))
-                    mulp = half * (rlv(i, j, k + 1) + rlv(i, j, k))
-                    muem = half * (rSSTSigkm1 * rev(i, j, k - 1) + rSSTSigk * rev(i, j, k))
-                    muep = half * (rSSTSigkp1 * rev(i, j, k + 1) + rSSTSigk * rev(i, j, k))
+                        rhoi = one / w(i, j, k, irho)
+                        mulm = half * (rlv(i, j, k - 1) + rlv(i, j, k))
+                        mulp = half * (rlv(i, j, k + 1) + rlv(i, j, k))
+                        muem = half * (rSSTSigkm1 * rev(i, j, k - 1) + rSSTSigk * rev(i, j, k))
+                        muep = half * (rSSTSigkp1 * rev(i, j, k + 1) + rSSTSigk * rev(i, j, k))
 
-                    c1m = ttm * (mulm + muem) * rhoi
-                    c1p = ttp * (mulp + muep) * rhoi
-                    c10 = c1m + c1p
+                        c1m = ttm * (mulm + muem) * rhoi
+                        c1p = ttp * (mulp + muep) * rhoi
+                        c10 = c1m + c1p
 
-                    ! And the omega term.
+                        ! And the omega term.
 
-                    muem = half * (rSSTSigwm1 * rev(i, j, k - 1) + rSSTSigw * rev(i, j, k))
-                    muep = half * (rSSTSigwp1 * rev(i, j, k + 1) + rSSTSigw * rev(i, j, k))
+                        muem = half * (rSSTSigwm1 * rev(i, j, k - 1) + rSSTSigw * rev(i, j, k))
+                        muep = half * (rSSTSigwp1 * rev(i, j, k + 1) + rSSTSigw * rev(i, j, k))
 
-                    c2m = ttm * (mulm + muem) * rhoi
-                    c2p = ttp * (mulp + muep) * rhoi
-                    c20 = c2m + c2p
+                        c2m = ttm * (mulm + muem) * rhoi
+                        c2p = ttp * (mulp + muep) * rhoi
+                        c20 = c2m + c2p
 
-                    ! Update the residual for this cell and store the possible
-                    ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
+                        ! Update the residual for this cell and store the possible
+                        ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j, k - 1, itu1) &
-                                      - c10 * w(i, j, k, itu1) + c1p * w(i, j, k + 1, itu1)
-                    scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j, k - 1, itu2) &
-                                      - c20 * w(i, j, k, itu2) + c2p * w(i, j, k + 1, itu2)
+                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j, k - 1, itu1) &
+                                                 - c10 * w(i, j, k, itu1) + c1p * w(i, j, k + 1, itu1)
+                        scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j, k - 1, itu2) &
+                                                     - c20 * w(i, j, k, itu2) + c2p * w(i, j, k + 1, itu2)
 #ifndef USE_TAPENADE
-                    b1 = -c1m
-                    c1 = c10
-                    d1 = -c1p
+                        b1 = -c1m
+                        c1 = c10
+                        d1 = -c1p
 
-                    b2 = -c2m
-                    c2 = c20
-                    d2 = -c2p
+                        b2 = -c2m
+                        c2 = c20
+                        d2 = -c2p
 
-                    ! Update the central jacobian. For nonboundary cells this
-                    ! is simply c1 and c2. For boundary cells this is slightly
-                    ! more complicated, because the boundary conditions are
-                    ! treated implicitly and the off-diagonal terms b1, b2 and
-                    ! d1, d2 must be taken into account.
-                    ! The boundary conditions are only treated implicitly if
-                    ! the diagonal dominance of the matrix is increased.
+                        ! Update the central jacobian. For nonboundary cells this
+                        ! is simply c1 and c2. For boundary cells this is slightly
+                        ! more complicated, because the boundary conditions are
+                        ! treated implicitly and the off-diagonal terms b1, b2 and
+                        ! d1, d2 must be taken into account.
+                        ! The boundary conditions are only treated implicitly if
+                        ! the diagonal dominance of the matrix is increased.
 
-                    if (k == 2) then
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
-                                            - b1 * max(bmtk1(i, j, itu1, itu1), zero)
-                        qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - b1 * bmtk1(i, j, itu1, itu2)
-                        qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - b2 * bmtk1(i, j, itu2, itu1)
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
-                                            - b2 * max(bmtk1(i, j, itu2, itu2), zero)
-                    else if (k == kl) then
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
-                                            - d1 * max(bmtk2(i, j, itu1, itu1), zero)
-                        qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - d1 * bmtk2(i, j, itu1, itu2)
-                        qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - d2 * bmtk2(i, j, itu2, itu1)
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
-                                            - d2 * max(bmtk2(i, j, itu2, itu2), zero)
-                    else
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
-                    end if
+                        if (k == 2) then
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
+                                                - b1 * max(bmtk1(i, j, itu1, itu1), zero)
+                            qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - b1 * bmtk1(i, j, itu1, itu2)
+                            qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - b2 * bmtk1(i, j, itu2, itu1)
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
+                                                - b2 * max(bmtk1(i, j, itu2, itu2), zero)
+                        else if (k == kl) then
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
+                                                - d1 * max(bmtk2(i, j, itu1, itu1), zero)
+                            qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - d1 * bmtk2(i, j, itu1, itu2)
+                            qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - d2 * bmtk2(i, j, itu2, itu1)
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
+                                                - d2 * max(bmtk2(i, j, itu2, itu2), zero)
+                        else
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
+                        end if
 #endif
 #ifdef TAPENADE_REVERSE
                     end do
@@ -456,121 +484,121 @@ contains
             j = mod(ii / nx, ny) + 2
             k = ii / (nx * ny) + 2
 #else
-        do k = 2, kl
-            do j = 2, jl
-                do i = 2, il
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
 
-                    ! Compute the metrics in eta-direction, i.e. along the
-                    ! line j = constant.
+                        ! Compute the metrics in eta-direction, i.e. along the
+                        ! line j = constant.
 
-                    voli = one / vol(i, j, k)
-                    volmi = two / (vol(i, j, k) + vol(i, j - 1, k))
-                    volpi = two / (vol(i, j, k) + vol(i, j + 1, k))
+                        voli = one / vol(i, j, k)
+                        volmi = two / (vol(i, j, k) + vol(i, j - 1, k))
+                        volpi = two / (vol(i, j, k) + vol(i, j + 1, k))
 
-                    xm = sj(i, j - 1, k, 1) * volmi
-                    ym = sj(i, j - 1, k, 2) * volmi
-                    zm = sj(i, j - 1, k, 3) * volmi
-                    xp = sj(i, j, k, 1) * volpi
-                    yp = sj(i, j, k, 2) * volpi
-                    zp = sj(i, j, k, 3) * volpi
+                        xm = sj(i, j - 1, k, 1) * volmi
+                        ym = sj(i, j - 1, k, 2) * volmi
+                        zm = sj(i, j - 1, k, 3) * volmi
+                        xp = sj(i, j, k, 1) * volpi
+                        yp = sj(i, j, k, 2) * volpi
+                        zp = sj(i, j, k, 3) * volpi
 
-                    xa = half * (sj(i, j, k, 1) + sj(i, j - 1, k, 1)) * voli
-                    ya = half * (sj(i, j, k, 2) + sj(i, j - 1, k, 2)) * voli
-                    za = half * (sj(i, j, k, 3) + sj(i, j - 1, k, 3)) * voli
-                    ttm = xm * xa + ym * ya + zm * za
-                    ttp = xp * xa + yp * ya + zp * za
+                        xa = half * (sj(i, j, k, 1) + sj(i, j - 1, k, 1)) * voli
+                        ya = half * (sj(i, j, k, 2) + sj(i, j - 1, k, 2)) * voli
+                        za = half * (sj(i, j, k, 3) + sj(i, j - 1, k, 3)) * voli
+                        ttm = xm * xa + ym * ya + zm * za
+                        ttp = xp * xa + yp * ya + zp * za
 
-                    ! Compute the blended diffusion coefficients for j-1,
-                    ! j and j+1.
+                        ! Compute the blended diffusion coefficients for j-1,
+                        ! j and j+1.
 
-                    t1 = scratch(i, j + 1, k, if1SST); t2 = one - t1
-                    rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i, j + 1, k, if1SST); t2 = one - t1
+                        rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
-                    rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i, j, k, if1SST); t2 = one - t1
+                        rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = scratch(i, j - 1, k, if1SST); t2 = one - t1
-                    rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i, j - 1, k, if1SST); t2 = one - t1
+                        rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    ! Computation of the viscous terms in eta-direction; note
-                    ! that cross-derivatives are neglected, i.e. the mesh is
-                    ! assumed to be orthogonal.
-                    ! The second derivative in eta-direction is constructed as
-                    ! the central difference of the first order derivatives, i.e.
-                    ! d^2/deta^2 = d/deta (d/deta j+1/2 - d/deta j-1/2).
-                    ! In this way the metric as well as the varying viscosity
-                    ! can be taken into account; the latter appears inside the
-                    ! d/deta derivative. The whole term is divided by rho to
-                    ! obtain the diffusion term for k and omega.
+                        ! Computation of the viscous terms in eta-direction; note
+                        ! that cross-derivatives are neglected, i.e. the mesh is
+                        ! assumed to be orthogonal.
+                        ! The second derivative in eta-direction is constructed as
+                        ! the central difference of the first order derivatives, i.e.
+                        ! d^2/deta^2 = d/deta (d/deta j+1/2 - d/deta j-1/2).
+                        ! In this way the metric as well as the varying viscosity
+                        ! can be taken into account; the latter appears inside the
+                        ! d/deta derivative. The whole term is divided by rho to
+                        ! obtain the diffusion term for k and omega.
 
-                    ! First the k-term.
+                        ! First the k-term.
 
-                    rhoi = one / w(i, j, k, irho)
-                    mulm = half * (rlv(i, j - 1, k) + rlv(i, j, k))
-                    mulp = half * (rlv(i, j + 1, k) + rlv(i, j, k))
-                    muem = half * (rSSTSigkm1 * rev(i, j - 1, k) + rSSTSigk * rev(i, j, k))
-                    muep = half * (rSSTSigkp1 * rev(i, j + 1, k) + rSSTSigk * rev(i, j, k))
+                        rhoi = one / w(i, j, k, irho)
+                        mulm = half * (rlv(i, j - 1, k) + rlv(i, j, k))
+                        mulp = half * (rlv(i, j + 1, k) + rlv(i, j, k))
+                        muem = half * (rSSTSigkm1 * rev(i, j - 1, k) + rSSTSigk * rev(i, j, k))
+                        muep = half * (rSSTSigkp1 * rev(i, j + 1, k) + rSSTSigk * rev(i, j, k))
 
-                    c1m = ttm * (mulm + muem) * rhoi
-                    c1p = ttp * (mulp + muep) * rhoi
-                    c10 = c1m + c1p
+                        c1m = ttm * (mulm + muem) * rhoi
+                        c1p = ttp * (mulp + muep) * rhoi
+                        c10 = c1m + c1p
 
-                    ! And the omega term.
+                        ! And the omega term.
 
-                    muem = half * (rSSTSigwm1 * rev(i, j - 1, k) + rSSTSigw * rev(i, j, k))
-                    muep = half * (rSSTSigwp1 * rev(i, j + 1, k) + rSSTSigw * rev(i, j, k))
+                        muem = half * (rSSTSigwm1 * rev(i, j - 1, k) + rSSTSigw * rev(i, j, k))
+                        muep = half * (rSSTSigwp1 * rev(i, j + 1, k) + rSSTSigw * rev(i, j, k))
 
-                    c2m = ttm * (mulm + muem) * rhoi
-                    c2p = ttp * (mulp + muep) * rhoi
-                    c20 = c2m + c2p
+                        c2m = ttm * (mulm + muem) * rhoi
+                        c2p = ttp * (mulp + muep) * rhoi
+                        c20 = c2m + c2p
 
-                    ! Update the residual for this cell and store the possible
-                    ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
+                        ! Update the residual for this cell and store the possible
+                        ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j - 1, k, itu1) &
-                                      - c10 * w(i, j, k, itu1) + c1p * w(i, j + 1, k, itu1)
-                    scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j - 1, k, itu2) &
-                                      - c20 * w(i, j, k, itu2) + c2p * w(i, j + 1, k, itu2)
+                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i, j - 1, k, itu1) &
+                                                 - c10 * w(i, j, k, itu1) + c1p * w(i, j + 1, k, itu1)
+                        scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i, j - 1, k, itu2) &
+                                                     - c20 * w(i, j, k, itu2) + c2p * w(i, j + 1, k, itu2)
 
 #ifndef USE_TAPENADE
-                    b1 = -c1m
-                    c1 = c10
-                    d1 = -c1p
+                        b1 = -c1m
+                        c1 = c10
+                        d1 = -c1p
 
-                    b2 = -c2m
-                    c2 = c20
-                    d2 = -c2p
+                        b2 = -c2m
+                        c2 = c20
+                        d2 = -c2p
 
-                    ! Update the central jacobian. For nonboundary cells this
-                    ! is simply c1 and c2. For boundary cells this is slightly
-                    ! more complicated, because the boundary conditions are
-                    ! treated implicitly and the off-diagonal terms b1, b2 and
-                    ! d1, d2 must be taken into account.
-                    ! The boundary conditions are only treated implicitly if
-                    ! the diagonal dominance of the matrix is increased.
+                        ! Update the central jacobian. For nonboundary cells this
+                        ! is simply c1 and c2. For boundary cells this is slightly
+                        ! more complicated, because the boundary conditions are
+                        ! treated implicitly and the off-diagonal terms b1, b2 and
+                        ! d1, d2 must be taken into account.
+                        ! The boundary conditions are only treated implicitly if
+                        ! the diagonal dominance of the matrix is increased.
 
-                    if (j == 2) then
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
-                                            - b1 * max(bmtj1(i, k, itu1, itu1), zero)
-                        qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - b1 * bmtj1(i, k, itu1, itu2)
-                        qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - b2 * bmtj1(i, k, itu2, itu1)
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
-                                            - b2 * max(bmtj1(i, k, itu2, itu2), zero)
-                    else if (j == jl) then
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
-                                            - d1 * max(bmtj2(i, k, itu1, itu1), zero)
-                        qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - d1 * bmtj2(i, k, itu1, itu2)
-                        qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - d2 * bmtj2(i, k, itu2, itu1)
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
-                                            - d2 * max(bmtj2(i, k, itu2, itu2), zero)
-                    else
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
-                    end if
+                        if (j == 2) then
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
+                                                - b1 * max(bmtj1(i, k, itu1, itu1), zero)
+                            qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - b1 * bmtj1(i, k, itu1, itu2)
+                            qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - b2 * bmtj1(i, k, itu2, itu1)
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
+                                                - b2 * max(bmtj1(i, k, itu2, itu2), zero)
+                        else if (j == jl) then
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
+                                                - d1 * max(bmtj2(i, k, itu1, itu1), zero)
+                            qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - d1 * bmtj2(i, k, itu1, itu2)
+                            qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - d2 * bmtj2(i, k, itu2, itu1)
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
+                                                - d2 * max(bmtj2(i, k, itu2, itu2), zero)
+                        else
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
+                        end if
 
 #endif
 #ifdef TAPENADE_REVERSE
@@ -590,120 +618,120 @@ contains
             j = mod(ii / nx, ny) + 2
             k = ii / (nx * ny) + 2
 #else
-        do k = 2, kl
-            do j = 2, jl
-                do i = 2, il
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
-                    ! Compute the metrics in xi-direction, i.e. along the
-                    ! line i = constant.
+                        ! Compute the metrics in xi-direction, i.e. along the
+                        ! line i = constant.
 
-                    voli = one / vol(i, j, k)
-                    volmi = two / (vol(i, j, k) + vol(i - 1, j, k))
-                    volpi = two / (vol(i, j, k) + vol(i + 1, j, k))
+                        voli = one / vol(i, j, k)
+                        volmi = two / (vol(i, j, k) + vol(i - 1, j, k))
+                        volpi = two / (vol(i, j, k) + vol(i + 1, j, k))
 
-                    xm = si(i - 1, j, k, 1) * volmi
-                    ym = si(i - 1, j, k, 2) * volmi
-                    zm = si(i - 1, j, k, 3) * volmi
-                    xp = si(i, j, k, 1) * volpi
-                    yp = si(i, j, k, 2) * volpi
-                    zp = si(i, j, k, 3) * volpi
+                        xm = si(i - 1, j, k, 1) * volmi
+                        ym = si(i - 1, j, k, 2) * volmi
+                        zm = si(i - 1, j, k, 3) * volmi
+                        xp = si(i, j, k, 1) * volpi
+                        yp = si(i, j, k, 2) * volpi
+                        zp = si(i, j, k, 3) * volpi
 
-                    xa = half * (si(i, j, k, 1) + si(i - 1, j, k, 1)) * voli
-                    ya = half * (si(i, j, k, 2) + si(i - 1, j, k, 2)) * voli
-                    za = half * (si(i, j, k, 3) + si(i - 1, j, k, 3)) * voli
-                    ttm = xm * xa + ym * ya + zm * za
-                    ttp = xp * xa + yp * ya + zp * za
+                        xa = half * (si(i, j, k, 1) + si(i - 1, j, k, 1)) * voli
+                        ya = half * (si(i, j, k, 2) + si(i - 1, j, k, 2)) * voli
+                        za = half * (si(i, j, k, 3) + si(i - 1, j, k, 3)) * voli
+                        ttm = xm * xa + ym * ya + zm * za
+                        ttp = xp * xa + yp * ya + zp * za
 
-                    ! Compute the blended diffusion coefficients for i-1,
-                    ! i and i+1.
+                        ! Compute the blended diffusion coefficients for i-1,
+                        ! i and i+1.
 
-                    t1 = scratch(i + 1, j, k, if1SST); t2 = one - t1
-                    rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i + 1, j, k, if1SST); t2 = one - t1
+                        rSSTSigkp1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigwp1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = scratch(i, j, k, if1SST); t2 = one - t1
-                    rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i, j, k, if1SST); t2 = one - t1
+                        rSSTSigk = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigw = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    t1 = scratch(i - 1, j, k, if1SST); t2 = one - t1
-                    rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
-                    rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
+                        t1 = scratch(i - 1, j, k, if1SST); t2 = one - t1
+                        rSSTSigkm1 = t1 * rSSTSigk1 + t2 * rSSTSigk2
+                        rSSTSigwm1 = t1 * rSSTSigw1 + t2 * rSSTSigw2
 
-                    ! Computation of the viscous terms in xi-direction; note
-                    ! that cross-derivatives are neglected, i.e. the mesh is
-                    ! assumed to be orthogonal.
-                    ! The second derivative in xi-direction is constructed as
-                    ! the central difference of the first order derivatives, i.e.
-                    ! d^2/dxi^2 = d/dxi (d/dxi i+1/2 - d/dxi i-1/2).
-                    ! In this way the metric as well as the varying viscosity
-                    ! can be taken into account; the latter appears inside the
-                    ! d/dxi derivative. The whole term is divided by rho to
-                    ! obtain the diffusion term for k and omega.
+                        ! Computation of the viscous terms in xi-direction; note
+                        ! that cross-derivatives are neglected, i.e. the mesh is
+                        ! assumed to be orthogonal.
+                        ! The second derivative in xi-direction is constructed as
+                        ! the central difference of the first order derivatives, i.e.
+                        ! d^2/dxi^2 = d/dxi (d/dxi i+1/2 - d/dxi i-1/2).
+                        ! In this way the metric as well as the varying viscosity
+                        ! can be taken into account; the latter appears inside the
+                        ! d/dxi derivative. The whole term is divided by rho to
+                        ! obtain the diffusion term for k and omega.
 
-                    ! First the k-term.
+                        ! First the k-term.
 
-                    rhoi = one / w(i, j, k, irho)
-                    mulm = half * (rlv(i - 1, j, k) + rlv(i, j, k))
-                    mulp = half * (rlv(i + 1, j, k) + rlv(i, j, k))
-                    muem = half * (rSSTSigkm1 * rev(i - 1, j, k) + rSSTSigk * rev(i, j, k))
-                    muep = half * (rSSTSigkp1 * rev(i + 1, j, k) + rSSTSigk * rev(i, j, k))
+                        rhoi = one / w(i, j, k, irho)
+                        mulm = half * (rlv(i - 1, j, k) + rlv(i, j, k))
+                        mulp = half * (rlv(i + 1, j, k) + rlv(i, j, k))
+                        muem = half * (rSSTSigkm1 * rev(i - 1, j, k) + rSSTSigk * rev(i, j, k))
+                        muep = half * (rSSTSigkp1 * rev(i + 1, j, k) + rSSTSigk * rev(i, j, k))
 
-                    c1m = ttm * (mulm + muem) * rhoi
-                    c1p = ttp * (mulp + muep) * rhoi
-                    c10 = c1m + c1p
+                        c1m = ttm * (mulm + muem) * rhoi
+                        c1p = ttp * (mulp + muep) * rhoi
+                        c10 = c1m + c1p
 
-                    ! And the omega term.
+                        ! And the omega term.
 
-                    muem = half * (rSSTSigwm1 * rev(i - 1, j, k) + rSSTSigw * rev(i, j, k))
-                    muep = half * (rSSTSigwp1 * rev(i + 1, j, k) + rSSTSigw * rev(i, j, k))
+                        muem = half * (rSSTSigwm1 * rev(i - 1, j, k) + rSSTSigw * rev(i, j, k))
+                        muep = half * (rSSTSigwp1 * rev(i + 1, j, k) + rSSTSigw * rev(i, j, k))
 
-                    c2m = ttm * (mulm + muem) * rhoi
-                    c2p = ttp * (mulp + muep) * rhoi
-                    c20 = c2m + c2p
+                        c2m = ttm * (mulm + muem) * rhoi
+                        c2p = ttp * (mulp + muep) * rhoi
+                        c20 = c2m + c2p
 
-                    ! Update the residual for this cell and store the possible
-                    ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
+                        ! Update the residual for this cell and store the possible
+                        ! coefficients for the matrix in b1, b2, c1, c2, d1 and d2.
 
-                    scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i - 1, j, k, itu1) &
-                                      - c10 * w(i, j, k, itu1) + c1p * w(i + 1, j, k, itu1)
-                    scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i - 1, j, k, itu2) &
-                                      - c20 * w(i, j, k, itu2) + c2p * w(i + 1, j, k, itu2)
+                        scratch(i, j, k, idvt) = scratch(i, j, k, idvt) + c1m * w(i - 1, j, k, itu1) &
+                                                 - c10 * w(i, j, k, itu1) + c1p * w(i + 1, j, k, itu1)
+                        scratch(i, j, k, idvt + 1) = scratch(i, j, k, idvt + 1) + c2m * w(i - 1, j, k, itu2) &
+                                                     - c20 * w(i, j, k, itu2) + c2p * w(i + 1, j, k, itu2)
 
 #ifndef USE_TAPENADE
-                    b1 = -c1m
-                    c1 = c10
-                    d1 = -c1p
+                        b1 = -c1m
+                        c1 = c10
+                        d1 = -c1p
 
-                    b2 = -c2m
-                    c2 = c20
-                    d2 = -c2p
+                        b2 = -c2m
+                        c2 = c20
+                        d2 = -c2p
 
-                    ! Update the central jacobian. For nonboundary cells this
-                    ! is simply c1 and c2. For boundary cells this is slightly
-                    ! more complicated, because the boundary conditions are
-                    ! treated implicitly and the off-diagonal terms b1, b2 and
-                    ! d1, d2 must be taken into account.
-                    ! The boundary conditions are only treated implicitly if
-                    ! the diagonal dominance of the matrix is increased.
+                        ! Update the central jacobian. For nonboundary cells this
+                        ! is simply c1 and c2. For boundary cells this is slightly
+                        ! more complicated, because the boundary conditions are
+                        ! treated implicitly and the off-diagonal terms b1, b2 and
+                        ! d1, d2 must be taken into account.
+                        ! The boundary conditions are only treated implicitly if
+                        ! the diagonal dominance of the matrix is increased.
 
-                    if (i == 2) then
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
-                                            - b1 * max(bmti1(j, k, itu1, itu1), zero)
-                        qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - b1 * bmti1(j, k, itu1, itu2)
-                        qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - b2 * bmti1(j, k, itu2, itu1)
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
-                                            - b2 * max(bmti1(j, k, itu2, itu2), zero)
-                    else if (i == il) then
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
-                                            - d1 * max(bmti2(j, k, itu1, itu1), zero)
-                        qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - d1 * bmti2(j, k, itu1, itu2)
-                        qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - d2 * bmti2(j, k, itu2, itu1)
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
-                                            - d2 * max(bmti2(j, k, itu2, itu2), zero)
-                    else
-                        qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
-                        qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
-                    end if
+                        if (i == 2) then
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
+                                                - b1 * max(bmti1(j, k, itu1, itu1), zero)
+                            qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - b1 * bmti1(j, k, itu1, itu2)
+                            qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - b2 * bmti1(j, k, itu2, itu1)
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
+                                                - b2 * max(bmti1(j, k, itu2, itu2), zero)
+                        else if (i == il) then
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1 &
+                                                - d1 * max(bmti2(j, k, itu1, itu1), zero)
+                            qq(i, j, k, 1, 2) = qq(i, j, k, 1, 2) - d1 * bmti2(j, k, itu1, itu2)
+                            qq(i, j, k, 2, 1) = qq(i, j, k, 2, 1) - d2 * bmti2(j, k, itu2, itu1)
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2 &
+                                                - d2 * max(bmti2(j, k, itu2, itu2), zero)
+                        else
+                            qq(i, j, k, 1, 1) = qq(i, j, k, 1, 1) + c1
+                            qq(i, j, k, 2, 2) = qq(i, j, k, 2, 2) + c2
+                        end if
 #endif
 #ifdef TAPENADE_REVERSE
                     end do
@@ -741,13 +769,13 @@ contains
             j = mod(ii / nx, ny) + 2
             k = ii / (nx * ny) + 2
 #else
-        do k = 2, kl
-            do j = 2, jl
-                do i = 2, il
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
 #endif
-                    rblank = real(iblank(i, j, k), realType)
-                    dw(i, j, k, itu1) = -volRef(i, j, k) * scratch(i, j, k, idvt) * rblank
-                    dw(i, j, k, itu2) = -volRef(i, j, k) * scratch(i, j, k, idvt + 1) * rblank
+                        rblank = real(iblank(i, j, k), realType)
+                        dw(i, j, k, itu1) = -volRef(i, j, k) * scratch(i, j, k, idvt) * rblank
+                        dw(i, j, k, itu2) = -volRef(i, j, k) * scratch(i, j, k, idvt + 1) * rblank
 #ifdef TAPENADE_REVERSE
                     end do
 #else
@@ -771,6 +799,7 @@ contains
         use inputTimeSpectral
         use iteration
         use paramTurb, only: rSSTSigw2
+        use inputPhysics, only: use2003SST
         implicit none
         !
         !      Local variables.
@@ -784,12 +813,8 @@ contains
 
         myeps = 1e-10_realType / two / rSSTSigw2
 
-        iBeg = 1
-        jBeg = 1
-        kBeg = 1
-        iEnd = ie
-        jEnd = je
-        kEnd = ke
+        iBeg = 1; jBeg = 1; kBeg = 1
+        iEnd = ie; jEnd = je; kEnd = ke
 
         do nn = 1, nBocos
 
@@ -799,23 +824,22 @@ contains
                 iBeg = 2
 
             case (iMax)
-                iEnd = iEnd - 1
+                iEnd = il
 
             case (jMin)
                 jBeg = 2
 
             case (jMax)
-                jEnd = jEnd - 1
+                jEnd = jl
 
             case (kMin)
                 kBeg = 2
 
             case (kMax)
-                kEnd = kEnd - 1
+                kEnd = kl
 
             end select
         end do
-
 
         ! Compute the blending function f1 for all owned cells.
 #ifdef TAPENADE_REVERSE
@@ -829,26 +853,27 @@ contains
             j = mod(ii / iSize, jSize) + jBeg
             k = ii / ((iSize * jSize)) + kBeg
 #else
-        do k = kBeg, kEnd
-            do j = jBeg, jEnd
-                do i = iBeg, iEnd
+            do k = kBeg, kEnd
+                do j = jBeg, jEnd
+                    do i = iBeg, iEnd
 #endif
 
-                    t1 = sqrt(w(i, j, k, itu1)) &
-                         / (0.09_realType * w(i, j, k, itu2) * d2Wall(i, j, k))
-                    t2 = 500.0_realType * rlv(i, j, k) &
-                         / (w(i, j, k, irho) * w(i, j, k, itu2) * d2Wall(i, j, k)**2)
-                    t1 = max(t1, t2)
-#ifdef SST_2003
-                    t2 = two * w(i, j, k, itu1) &
-                         / (max(myeps / w(i, j, k, irho), scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
-#else
-                    t2 = two * w(i, j, k, itu1) &
-                         / (max(eps, scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
-#endif
+                        t1 = sqrt(w(i, j, k, itu1)) &
+                             / (0.09_realType * w(i, j, k, itu2) * d2Wall(i, j, k))
+                        t2 = 500.0_realType * rlv(i, j, k) &
+                             / (w(i, j, k, irho) * w(i, j, k, itu2) * d2Wall(i, j, k)**2)
+                        t1 = max(t1, t2)
 
-                    arg1 = min(t1, t2)
-                    scratch(i, j, k, if1SST) = tanh(arg1**4)
+                        if (use2003SST) then
+                            t2 = two * w(i, j, k, itu1) &
+                                 / (max(myeps / w(i, j, k, irho), scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
+                        else
+                            t2 = two * w(i, j, k, itu1) &
+                                 / (max(eps, scratch(i, j, k, icd)) * d2Wall(i, j, k)**2)
+                        end if
+
+                        arg1 = min(t1, t2)
+                        scratch(i, j, k, if1SST) = tanh(arg1**4)
 
 #ifdef TAPENADE_REVERSE
                     end do
@@ -966,7 +991,6 @@ contains
 
         real(kind=realType), dimension(2, 2:max(il, jl, kl)) :: bb, dd, ff
         real(kind=realType), dimension(2, 2, 2:max(il, jl, kl)) :: cc
-
 
         logical, dimension(2:jl, 2:kl), target :: flagI2, flagIl
         logical, dimension(2:il, 2:kl), target :: flagJ2, flagJl

@@ -237,6 +237,10 @@ useft2SA:
   desc: >
     Include the ft2 term in the Spalart-Allmaras turbulence model.
 
+use2003SST:
+  desc: >
+    Use the 2003 formulation of SST. This migh imporove convergence.
+
 eddyVisInfRatio:
   desc: >
     Free stream value of eddy viscosity.
@@ -878,6 +882,11 @@ NKViscPC:
     This will have a memory and cost penalty, but the resulting preconditioner will be more accurate.
     Users should experiment with other linear solver options as a smaller stencil preconditioner is usually good enough.
 
+NKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the NK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
+
 NKASMOverlap:
   desc: >
     The number of overlap levels in the additive Schwarz preconditioner for the NK solver.
@@ -915,6 +924,14 @@ NKOuterPreconIts:
     More iterations may help converge the linear system faster.
     Typical values are from 1 to 3.
 
+NKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the NK solver.
+
+NKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the NK solver.
+
 NKLS:
   desc: >
     The type of line search used with the NK solver.
@@ -935,16 +952,6 @@ nRKReset:
   desc: >
     The number of Runge-Kutta startup iterations to run when :py:data:`RKReset` is True.
 
-AGMGLevels:
-  desc: >
-    Agglomerated multigrid preconditioner levels.
-    Experimental; should not be modified.
-
-AGMGNSmooth:
-  desc: >
-    Agglomerated multigrid preconditioner parameter.
-    Experimental; should not be modified.
-
 useANKSolver:
   desc: >
     Flag to enable the ANK solver.
@@ -955,11 +962,11 @@ ANKUseTurbDADI:
     Only applies to decoupled ANK.
     If False, an internal ANK-like solver is used for the turbulence in the decoupled mode.
 
-ANKUseApproxSA:
+ANKUseApproxTurb:
   desc: >
-    The ANK solver switches from the approximate to the exact SA implicit formulation when the solver switches from the first order to the second order routines (printed as SANK or CSANK).
-    Setting this flag to false will force the SA implicit treatment to always use the approximate formulation with the ANK solver variants.
-    This should have no effect on the final solution, but can help with convergence with challenging cases.
+    The ANK solver switches from the approximate to the exact implicit formulation when the solver switches from the first order to the second order routines (printed as SANK or CSANK).
+    Setting this flag to false will force the turbulence implicit treatment to always use the approximate formulation with the ANK solver variants.
+    This should have no effect on the final solution, but can help with convergence with challenging cases. 
 
 ANKSwitchTol:
   desc: >
@@ -999,6 +1006,11 @@ ANKLinResMax:
     However, we want to manage the CFL number so that the linear residual after we run out of linear iterations is still below this target value.
     This can be seen as the maximum allowed linear residual at each iteration.
 
+ANKGlobalPreconditioner:
+  desc: Similar to the :py:data:`globalPreconditioner` option but for the ANK solver.
+  additive Schwarz: Restricted additive Schwarz method (ASM)
+  multigrid: Algebraic multigrid (AMG)
+
 ANKASMOverlap:
   desc: >
     Similar to the :py:data:`NKASMOverlap` option but for the ANK solver.
@@ -1021,6 +1033,14 @@ ANKInnerPreconIts:
 ANKOuterPreconIts:
   desc: >
     Similar to the :py:data:`NKOuterPreconIts` option but for the ANK solver.
+
+ANKAMGLevels:
+  desc: >
+    Similar to the :py:data:`adjointAMGLevels` option but for the ANK solver.
+
+ANKAMGNSmooth:
+  desc: >
+    Similar to the :py:data:`adjointAMGNSmooth` option but for the ANK solver.
 
 ANKCFL0:
   desc: >
@@ -1232,6 +1252,10 @@ printNegativeVolumes:
   desc: >
     Flag to print the block indices, cell center coordinates, and volume for each negative volume cell in the mesh.
 
+printBadlySkewedCells:
+  desc: >
+    Flag to print the block indices, cell center coordinates, and skewness for each cell whose skewness is above the value defined in ``meshMaxSkewness``. Only used when ``useSkewnessCheck`` is active.
+
 monitorVariables:
   desc: >
     List of the variables whose convergence should be monitored.
@@ -1408,7 +1432,10 @@ matrixOrdering:
 globalPreconditioner:
   desc: The type of (global) preconditioner to use for the adjoint system.
   additive Schwarz: Restricted additive Schwarz method (ASM)
-  multigrid: Agglomerated multigrid (AGMG)
+  multigrid: >
+    Algebraic multigrid (AMG).
+    This method can be much faster than ASM for large meshes.
+    The smoothing iterations and coarse level solutions are done with the standard ASM and ILU combination.
 
 localPreconditioner:
   desc: The type of preconditioner to use for the local preconditioning iteration in the adjoint solution.
@@ -1440,6 +1467,14 @@ outerPreconIts:
     Increasing this number may help with difficult problems.
     However, each iteration will take more time.
     The default should be sufficient for most problems.
+
+adjointAMGLevels:
+  desc: >
+    The number of levels to use for the adjoint solver's algebraic multigrid preconditioner.
+
+adjointAMGNSmooth:
+  desc: >
+    The number of smoothing iterations at each level for the adjoint solver's algebraic multigrid preconditioner.
 
 applyAdjointPCSubspaceSize:
   desc: >
@@ -1519,3 +1554,12 @@ cavSensorSharpness:
 cavExponent:
   desc: >
     The exponent for the numerator term (- Cp - cavitationnumber) of the cavitation sensor.
+
+meshMaxSkewness:
+  desc: >
+    Adflow throws an error and fails if the `skewness` of the mesh is above this value. `Skewness` is defined as described `here <https://www.simscale.com/docs/simulation-setup/meshing/mesh-quality/#skewness>`__. Only used when ``useSkewnessCheck`` is active.
+
+useSkewnessCheck:
+  desc: >
+    When set to true, ADflow computes the `skewness` of each cell and throws an error if it is above ``meshMaxSkewness``. See also ``printBadlySkewedCells``.
+

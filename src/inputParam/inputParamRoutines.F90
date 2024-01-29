@@ -3729,6 +3729,9 @@ contains
         use inputCostFunctions
         implicit none
 
+        ! Initialize boundary condition warning print outs
+        printBCWarnings = .true.
+
         ! Initialize monitoring the turbulent residuals as well as the
         ! monitoring of mass flow of the sliding interfaces to .false.
 
@@ -4037,7 +4040,7 @@ contains
         routineFailed = .False.
         fatalFail = .False.
         lumpedDiss = .False.
-        approxSA = .False.
+        approxTurb = .False.
         useApproxWallDistance = .False.
         cflLimit = 3.0
         adjointPETScVarsAllocated = .False.

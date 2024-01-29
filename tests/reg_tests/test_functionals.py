@@ -217,9 +217,9 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             "options": {
                 "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
                 "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_SST.cgns"),
-                'equationType':'RANS',
-                'useblockettes': False,
-                'turbulenceModel': 'Menter SST',
+                "equationType": "RANS",
+                "useblockettes": False,
+                "turbulenceModel": "Menter SST",
                 "turbResScale": [1e3, 1e-8],
                 # "nsubiter": 3,
                 # "nsubiterturb": 20,
@@ -231,6 +231,7 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
             },
             "ref_file": "funcs_rans_SST.json",
             "aero_prob": ap_tutorial_wing,
+            "dot_prod_tol": 1e-10,
         },
     ]
 )

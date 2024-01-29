@@ -87,14 +87,13 @@ contains
 
                     call applyAllTurbBCThisBlock(.true.)
 
-
                 end do domains
             end do spectralLoop
 
             ! Exchange the halo data. As it is guaranteed that we are on the
             ! finest mesh, exchange both layers of halo's.
 
-            call whalo2(groundLevel, nt1, nt2, .false., .false., .true., .false.)
+            call whalo2(groundLevel, nt1, nt2, .false., .false., .true.)
 
         end do
 

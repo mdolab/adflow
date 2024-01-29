@@ -24,7 +24,7 @@ contains
         use kw, only: kwSolve
         use kt, only: ktSolve
         use vf, only: vfSolve, keSolve
-        use haloExchange, only: exchangeCoor, whalo2, whalo1
+        use haloExchange, only: exchangeCoor, whalo2, whalo1, exchanged2Wall
         use wallDistance, only: updateWallDistancesQuickly
         use solverUtils, only: timeStep_block
         use flowUtils, only: allNodalGradients, computeLamViscosity, computePressureSimple, &
@@ -41,8 +41,9 @@ contains
         use oversetData, only: oversetPresent
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity
-        use actuatorRegionData, only: nActuatorRegions
-        use wallDistanceData, only: xSurfVec, xSurf, exchangeWallDistanceHalos
+        use actuatorRegionData, only: nActuatorRegions, actuatorRegions
+        use wallDistanceData, only: xSurfVec, xSurf
+        use actuatorRegion, only: computeActuatorRegionVolume
 
         implicit none
 
@@ -76,14 +77,29 @@ contains
             end if
 
             do sps = 1, nTimeIntervalsSpectral
+                call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
                 do nn = 1, nDom
                     call setPointers(nn, 1, sps)
                     call xhalo_block()
+
+                    if (equations == RANSEquations .and. useApproxWallDistance) then
+                        call updateWallDistancesQuickly(nn, 1, sps)
+                    end if
                 end do
+
+                ! These arrays need to be restored before we can move to the next spectral instance.
+                call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
             end do
 
             ! Now exchange the coordinates (fine level only)
             call exchangecoor(1)
+
+            if (equations == RANSEquations .and. useApproxWallDistance) then
+                call exchanged2Wall(1)
+            end if
 
             do sps = 1, nTimeIntervalsSpectral
                 ! Update overset connectivity if necessary
@@ -91,38 +107,28 @@ contains
                     call updateOversetConnectivity(1_intType, sps)
                 end if
             end do
-        end if
 
-
-        if (useSpatial) then
-            do sps = 1, nTimeIntervalsSpectral
-                do nn = 1, nDom
-                    call setPointers(nn, 1, sps)
-
-                    call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                    call EChk(ierr, __FILE__, __LINE__)
-
-                    call volume_block
-                    call metric_block
-                    call boundaryNormals
-
-                    if (equations == RANSEquations .and. useApproxWallDistance) then
-                        call updateWallDistancesQuickly(nn, 1, sps)
-                    end if
-
-                    ! These arrays need to be restored before we can move to the next spectral instance.
-                    call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                    call EChk(ierr, __FILE__, __LINE__)
-
-                end do
+            ! Zero out the local volume pointers for the actuator zone
+            do iRegion = 1, nActuatorRegions
+                actuatorRegions(iRegion)%volLocal = zero
             end do
-
-            call whalo2(1, 1_intType, 0_intType, .false., .false., .false., .True.)
         end if
 
         do sps = 1, nTimeIntervalsSpectral
             do nn = 1, nDom
                 call setPointers(nn, 1, sps)
+
+                if (useSpatial) then
+                    call volume_block
+
+                    ! Compute the volume of each actuator region
+                    do iRegion = 1, nActuatorRegions
+                        call computeActuatorRegionVolume(nn, iRegion)
+                    end do
+
+                    call metric_block
+                    call boundaryNormals
+                end if
 
                 ! Compute the pressures/viscositites
                 call computePressureSimple(.False.)
@@ -141,11 +147,18 @@ contains
             end do
         end do
 
+        ! Sum the local actuator zone volumes into the global actuator
+        ! zone volumes.
+        if (useSpatial) then
+            do iRegion = 1, nActuatorRegions
+                call mpi_allreduce(actuatorRegions(iRegion)%volLocal, actuatorRegions(iRegion)%volume, 1, &
+                                   adflow_real, MPI_SUM, adflow_comm_world, ierr)
+                call ECHK(ierr, __FILE__, __LINE__)
+            end do
+        end if
 
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., exchangeWallDistanceHalos(currentLevel))
-        exchangeWallDistanceHalos(currentLevel) = .False.
-
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -290,7 +303,7 @@ contains
                             inviscidUpwindFlux_d, viscousFlux_d, viscousFluxApprox_d, inviscidCentralFlux_d
         use residuals_d, only: sourceTerms_block_d, initres_block_d
         use adjointPETSc, only: x_like
-        use haloExchange, only: whalo2_d, exchangeCoor_d, exchangeCoor, whalo2
+        use haloExchange, only: whalo2_d, exchangeCoor_d, exchangeCoor, whalo2, exchanged2Wall, exchanged2Wall_d
         use wallDistance_d, only: updateWallDistancesQuickly_d
         use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
         use flowutils_d, only: computePressureSimple_d, computeLamViscosity_d, &
@@ -301,12 +314,14 @@ contains
         use initializeflow_d, only: referenceState_d
         use surfaceIntegrations, only: getSolution_d
         use adjointExtra_d, only: xhalo_block_d, volume_block_d, metric_BLock_d, boundarynormals_d
+        use adjointExtra, only: volume_block
         use adjointextra_d, only: resscale_D, sumdwandfw_d
         use bcdata, only: setBCData_d, setBCDataFineGrid_d
         use oversetData, only: oversetPresent
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity_d
-        use actuatorRegionData, only: nActuatorRegions
+        use actuatorRegionData, only: nActuatorRegions, actuatorRegionsd
+        use actuatorregion_d, only: computeactuatorregionvolume_d
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -328,7 +343,6 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, iRegion
         real(kind=realType), dimension(nSections) :: time
         real(kind=realType) :: dummyReal, dummyReald
-        logical :: exchanged2wall
 
         logical :: useOldCoor ! for adjointextra_d() functions
         useOldCoor = .FALSE.
@@ -369,10 +383,45 @@ contains
         end do domainLoop1
 
         do sps = 1, nTimeIntervalsSpectral
+            ! Now set the xsurfd contribution from the full x perturbation.
+            ! scatter from the global seed (in x_like) to xSurfVecd...but only
+            ! if wallDistances were used
+            if (wallDistanceNeeded .and. useApproxWallDistance) then
+                call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, &
+                                     ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, &
+                                   ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
+            ! Get the pointers from the petsc vector for the surface
+            ! perturbation for wall distance.
+            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
             do nn = 1, nDom
                 call setPointers_d(nn, 1, sps)
                 call xhalo_block_d()
+
+                if (equations == RANSEquations .and. useApproxWallDistance) then
+                    call updateWallDistancesQuickly_d(nn, 1, sps)
+                end if
             end do
+
+            ! These arrays need to be restored before we can move to the next spectral instance.
+            call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
         end do
 
         ! Now exchange the coordinates. Note that we *must* exhchange the
@@ -380,6 +429,10 @@ contains
         ! halo nodes and exchange coor corrects them.
         call exchangecoor_d(1)
         call exchangecoor(1)
+
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            call exchanged2Wall_d(1)
+        end if
 
         do sps = 1, nTimeIntervalsSpectral
             ! Update overset connectivity if necessary
@@ -394,19 +447,6 @@ contains
             end if
         end do
 
-        ! Now set the xsurfd contribution from the full x perturbation.
-        ! scatter from the global seed (in x_like) to xSurfVecd...but only
-        ! if wallDistances were used
-        if (wallDistanceNeeded .and. useApproxWallDistance) then
-            do sps = 1, nTimeIntervalsSpectral
-                call VecScatterBegin(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                call VecScatterEnd(wallScatter(1, sps), x_like, xSurfVecd(sps), INSERT_VALUES, SCATTER_FORWARD, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-            end do
-        end if
-
         call adjustInflowAngle_d
         call referenceState_d
         if (present(bcDataNames)) then
@@ -417,6 +457,11 @@ contains
             call setBCDataFineGrid_d(.true.)
         end if
 
+        ! Zero out the local volume seeds for the actuator zones
+        do iRegion = 1, nActuatorRegions
+            actuatorRegionsd(iRegion)%volLocal = zero
+        end do
+
         do sps = 1, nTimeIntervalsSpectral
             do nn = 1, nDom
 
@@ -424,17 +469,16 @@ contains
                 ISIZE1OFDrfbcdata = nBocos
                 ISIZE1OFDrfviscsubface = nViscBocos
 
-                ! Get the pointers from the petsc vector for the surface
-                ! perturbation for wall distance.
-                call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                ! And it's derivative
-                call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
                 call volume_block_d()
+                call volume_block() ! not completely sure if this is needed still, but it fixes a bug where the residuasl would
+                ! increase from ~1e-11 to ~1e-7
                 call metric_block_d()
+
+                ! Loop over the actuator regions to compute the local
+                ! volume seeds
+                do iRegion = 1, nActuatorRegions
+                    call computeActuatorRegionVolume_d(nn, iRegion)
+                end do
                 call boundaryNormals_d()
 
                 time = timeunsteadyrestart
@@ -451,30 +495,6 @@ contains
                 ! required for ts
                 call slipvelocitiesfinelevel_block_d(useoldcoor, time, sps, nn)
 
-            end do
-        end do
-
-
-        if (equations == RANSEquations .and. useApproxWallDistance) then
-            do sps = 1, nTimeIntervalsSpectral
-                do nn = 1, nDom
-
-                    call setPointers_d(nn, 1, sps)
-
-                    call updateWallDistancesQuickly_d(nn, 1, sps)
-                end do
-            end do
-
-            call whalo2_d(1, 1_intType, 0_intType, .false., .false., .false., .True.)
-        end if
-
-        do sps = 1, nTimeIntervalsSpectral
-            do nn = 1, nDom
-
-                call setPointers_d(nn, 1, sps)
-                ISIZE1OFDrfbcdata = nBocos
-                ISIZE1OFDrfviscsubface = nViscBocos
-
                 call computePressureSimple_d(.False.)
                 call computeLamViscosity_d(.False.)
                 call computeEddyViscosity_d(.False.)
@@ -488,19 +508,19 @@ contains
 
                 call applyAllBC_block_d(.True.)
 
-                ! These arrays need to be restored before we can move to the next spectral instance.
-                call VecRestoreArrayF90(xSurfVec(1, sps), xSurf, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                ! And it's derivative
-                call VecRestoreArrayF90(xSurfVecd(sps), xSurfd, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
             end do
         end do
 
-        ! Just exchange the derivative values.
-        call whalo2_d(1, 1, nw, .True., .True., .True., .False.)
+        ! Loop over the actuator regions again to sum the local volume
+        ! seeds into the global volume seeds
+        do iRegion = 1, nActuatorRegions
+            call mpi_allreduce(actuatorRegionsd(iRegion)%volLocal, actuatorRegionsd(iRegion)%volume, 1, &
+                               adflow_real, MPI_SUM, adflow_comm_world, ierr)
+            call ECHK(ierr, __FILE__, __LINE__)
+        end do
 
+        ! Just exchange the derivative values.
+        call whalo2_d(1, 1, nw, .True., .True., .True.)
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -637,7 +657,7 @@ contains
         use inputAdjoint, only: viscPC
         use fluxes, only: viscousFlux
         use flowVarRefState, only: nw, nwf, viscous, pInfDimd, rhoInfDimd, TinfDimd
-        use blockPointers, only: nDom, il, jl, kl, wd, xd, dw, dwd
+        use blockPointers, only: nDom, il, jl, kl, wd, xd, dw, dwd, revd
         use inputPhysics, only: pointRefd, alphad, betad, equations, machCoefd, &
                                 machd, machGridd, rgasdimd, equationMode, turbModel, wallDistanceNeeded
         use inputDiscretization, only: lowSpeedPreconditioner, lumpedDiss, spaceDiscr, useAPproxWallDistance
@@ -645,7 +665,7 @@ contains
         use inputAdjoint, only: frozenTurbulence
         use utils, only: isWallType, setPointers_b, EChk
         use adjointPETSc, only: x_like
-        use haloExchange, only: whalo2_b, exchangeCoor_b, exchangeCoor, whalo2
+        use haloExchange, only: whalo2_b, exchangeCoor_b, exchangeCoor, whalo2, exchanged2Wall_b
         use wallDistanceData, only: xSurfVec, xSurfVecd, xSurf, xSurfd, wallScatter
         use surfaceIntegrations, only: getSolution_b
         use flowUtils, only: fixAllNodalGradientsFromAD
@@ -670,7 +690,8 @@ contains
         use inputOverset, only: oversetUpdateMode
         use oversetCommUtilities, only: updateOversetConnectivity_b
         use BCRoutines, only: applyAllBC_block
-        use actuatorRegionData, only: nActuatorRegions
+        use actuatorRegionData, only: nActuatorRegions, actuatorRegionsd
+        use actuatorregion_b, only: computeactuatorregionvolume_b
         use monitor, only: timeUnsteadyRestart
         use section, only: sections, nSections ! used in time-declaration
 
@@ -696,7 +717,7 @@ contains
         integer(kind=intType) :: ierr, nn, sps, mm, i, j, k, l, fSize, ii, jj, level, iRegion
         real(kind=realType), dimension(:), allocatable :: extraLocalBar, bcDataValuesdLocal
         real(kind=realType) :: dummyReal, dummyReald
-        logical :: resetToRans, exchanged2wall
+        logical :: resetToRans
         real(kind=realType), dimension(nSections) :: time
         logical :: useOldCoor ! for solverutils_b() functions
         useOldCoor = .FALSE.
@@ -806,6 +827,16 @@ contains
             end do domainLoop1
         end do spsLoop1
 
+        ! All reduce the global AZ volume seeds and store them in the
+        ! local AZ volume seeds.
+        ! This is the inverse of the all reduce that is done in forward
+        ! mode to sum the local seeds into the global seeds.
+        do iRegion = 1, nActuatorRegions
+            call mpi_allreduce(actuatorRegionsd(iRegion)%volume, actuatorRegionsd(iRegion)%volLocal, 1, &
+                               adflow_real, mpi_sum, adflow_comm_world, ierr)
+            call ECHK(ierr, __FILE__, __LINE__)
+        end do
+
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
         ! interpolated values from actual compute cells. Only needed for
@@ -826,22 +857,9 @@ contains
         end if
 
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
-
-            ! Get the pointers from the petsc vector for the wall
-            ! surface and it's accumulation. Only necessary for wall
-            ! distance.
-            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            ! And it's derivative
-            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            !Zero the accumulation vector on a per-time-spectral instance basis
-            xSurfd = zero
 
             domainLoop2: do nn = 1, nDom
                 call setPointers_b(nn, 1, sps)
@@ -863,27 +881,6 @@ contains
                 call computeLamViscosity_b(.false.)
                 call computePressureSimple_b(.false.)
 
-            end do domainLoop2
-        end do spsLoop2
-
-        if (equations == RANSEquations .and. useApproxWallDistance) then
-            call whalo2_b(1, 1_intType, 0_intType, .False., .False., .False., .True.)
-
-            spsLoop3: do sps = 1, nTimeIntervalsSpectral
-                domainLoop3: do nn = 1, nDom
-                    call setPointers_b(nn, 1, sps)
-
-                    call updateWallDistancesQuickly_b(nn, 1, sps)
-                
-                end do domainLoop3
-            end do spsLoop3
-        end if
-
-
-        spsLoop4: do sps = 1, nTimeIntervalsSpectral
-            domainLoop4: do nn = 1, nDom
-                call setPointers_b(nn, 1, sps)
-
                 ! Here we insert the functions related to
                 ! rotational (mesh movement) setup
                 time = timeunsteadyrestart
@@ -899,30 +896,20 @@ contains
                 call gridvelocitiesfinelevel_block_b(useoldcoor, time, sps, nn)
 
                 call boundaryNormals_b
+                do iRegion = 1, nActuatorRegions
+                    call computeActuatorRegionVolume_b(nn, iRegion)
+                end do
                 call metric_block_b
                 call volume_block_b
 
-            end do domainLoop4
+            end do domainLoop2
 
-            ! Restore the petsc pointers.
-            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
+        end do spsLoop2
 
-            ! And it's derivative
-            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
-            call EChk(ierr, __FILE__, __LINE__)
-
-            ! Now accumulate the xsurfd accumulation by using the wall scatter
-            ! in reverse.
-            if (wallDistanceNeeded .and. useApproxWallDistance) then
-
-                call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-
-                call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
-                call EChk(ierr, __FILE__, __LINE__)
-            end if
-        end do spsLoop4
+        ! Zero out the local volume seeds of the actuator zone
+        do iRegion = 1, nActuatorRegions
+            actuatorRegionsd(iRegion)%volLocal = zero
+        end do
 
         if (present(bcDataNames)) then
             allocate (bcDataValuesdLocal(size(bcDataValuesd)))
@@ -953,12 +940,55 @@ contains
             end if
         end do
         ! Now the adjoint of the coordinate exhcange
+
+        if (equations == RANSEquations .and. useApproxWallDistance) then
+            call exchanged2Wall_b(1)
+        end if
         call exchangecoor_b(1)
-        do nn = 1, nDom
-            do sps = 1, nTimeIntervalsSpectral
+        do sps = 1, nTimeIntervalsSpectral
+
+            ! Get the pointers from the petsc vector for the wall
+            ! surface and it's accumulation. Only necessary for wall
+            ! distance.
+            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            !Zero the accumulation vector on a per-time-spectral instance basis
+            xSurfd = zero
+
+            do nn = 1, nDom
                 call setPointers_b(nn, 1, sps)
+
+                if (equations == RANSEquations .and. useApproxWallDistance) then
+                    call updateWallDistancesQuickly_b(nn, 1, sps)
+                end if
+
                 call xhalo_block_b()
             end do
+
+            ! Restore the petsc pointers.
+            call VecGetArrayF90(xSurfVec(1, sps), xSurf, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! And it's derivative
+            call VecGetArrayF90(xSurfVecd(sps), xSurfd, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+
+            ! Now accumulate the xsurfd accumulation by using the wall scatter
+            ! in reverse.
+            if (wallDistanceNeeded .and. useApproxWallDistance) then
+
+                call VecScatterBegin(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                call VecScatterEnd(wallScatter(1, sps), xSurfVecd(sps), x_like, ADD_VALUES, SCATTER_REVERSE, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+            end if
+
         end do
 
         call VecResetArray(x_like, ierr)
@@ -1171,7 +1201,7 @@ contains
         end if
 
         ! Exchange the adjoint values.
-        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
+        call whalo2_b(currentLevel, 1_intType, nw, .True., .True., .True.)
 
         spsLoop2: do sps = 1, nTimeIntervalsSpectral
             domainLoop2: do nn = 1, nDom
@@ -1254,7 +1284,7 @@ contains
 
         call computePressureSimple(.True.)
         call computeLamViscosity(.True.)
-        call computeEddyViscosity(.True.) !This is the tricky call for SST: it involves come communication because there are derivatives involved. Should be good.
+        call computeEddyViscosity(.True.)
 
         ! Make sure to call the turb BC's first incase we need to
         ! correct for K

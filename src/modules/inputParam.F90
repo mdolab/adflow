@@ -51,8 +51,8 @@ module inputDiscretization
     ! radiiNeededCoarse:      Idem for the coarse grid.
     ! lumpedDiss :            logical factor for determining whether or not
     !                         lumped dissipation is used for preconditioner
-    ! approxSA:               Determines if the approximate source terms form
-    !                         the SA model is used.
+    ! approxTurb:             Determines if the approximate source terms form
+    !                         of the turbulence model is used.
     ! sigma      :            Scaling parameter for dissipation lumping in
     !                         approximateprecondtioner
     ! useApproxWallDistance : logical to determine if the user wants to
@@ -79,7 +79,7 @@ module inputDiscretization
     real(kind=realType) :: acousticScaleFactor
     real(kind=realType) :: kappaCoef
     logical :: lumpedDiss
-    logical :: approxSA
+    logical :: approxTurb
     real(kind=realType) :: sigma
     logical :: useBlockettes
 
@@ -247,9 +247,11 @@ module inputIteration
     ! cdisRk:           Dissipative coefficients in the runge kutta
     !                   scheme. The values depend on the number of
     !                   stages specified.
-    ! printIterations: If True, iterations are printed to stdout
-    ! turbresscale: Scaling factor for turbulent residual. Necessary for
-    !            NKsolver with RANS. Only tested on SA.
+    ! printIterations:  If True, iterations are printed to stdout
+    ! turbresscale:     Scaling factor for turbulent residual. Necessary for
+    !                   NKsolver with RANS. Only tested on SA.
+    ! meshMaxSkewness   If one cell has a highe skewness than this, the Solver
+    !                   errors out.
     ! iterType : String used for specifying which type of iteration was taken
     !
     ! Definition of the string, which stores the multigrid cycling
@@ -285,7 +287,11 @@ module inputIteration
     logical :: printIterations
     logical :: printWarnings
     logical :: printNegativeVolumes
+    logical :: printBadlySkewedCells
+    logical :: printBCWarnings
     real(kind=realType), dimension(4) :: turbResScale
+    real(kind=realType) :: meshMaxSkewness
+    logical :: useSkewnessCheck
     logical :: useDissContinuation
     real(kind=realType) :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
@@ -522,6 +528,7 @@ module inputPhysics
     !                      when considering turbulence model effects
     ! useRotationSA:       Determines if we will use rotation correction (SA model only)
     ! useft2SA:            Determines if we will use the ft2 term (SA model only)
+    ! use2003SST:          Determines if we will use the 2003 variant of the SST model term (SA model only)
     ! wallFunctions:       Whether or not to use wall functions.
     ! wallDistanceNeeded:  Whether or not the wall distance is needed
     !                      for the turbulence model in a RANS problem.
@@ -570,7 +577,7 @@ module inputPhysics
     integer(kind=intType) :: turbModel, cpModel, turbProd
     integer(kind=intType) :: rvfN
     logical :: rvfB
-    logical :: useQCR, useRotationSA, useft2SA
+    logical :: useQCR, useRotationSA, useft2SA, use2003SST
 
     logical :: wallFunctions, wallDistanceNeeded
 
@@ -812,6 +819,7 @@ module inputADjoint
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
     integer(kind=intType) :: innerPreConIts
+    integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
 
     logical :: printTiming
     integer(kind=intType) :: subKSPSubspaceSize

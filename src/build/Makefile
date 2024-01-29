@@ -16,8 +16,7 @@ FF77_ALL_FLAGS_NO_OPT = $(FF77_FLAGS) $(CGNS_INCLUDE_FLAGS) -I. \
 FF77_ALL_FLAGS = $(FF77_ALL_FLAGS_NO_OPT) $(FFXX_OPT_FLAGS)
 
 CC_ALL_FLAGS     = $(C_FLAGS) -I../c_defines  -I../metis-4.0  $(PETSC_CC_INCLUDES) \
-		   $(CC_PRECISION_FLAGS) \
-		   -DSST_2003
+		   $(CC_PRECISION_FLAGS)
 
 LINKER_ALL_FLAGS = $(CGNS_LINKER_FLAGS) $(PETSC_LIB) $(LINKER_FLAGS)
 
@@ -39,14 +38,12 @@ VPATH:=$(dirs)
 fortranFilesNoOpt:=$(addprefix ../,$(fortranFilesNoOpt))
 fortranFiles:=$(addprefix ../,$(fortranFiles))
 cFiles:=$(addprefix ../,$(cFiles))
-f77Files:=$(addprefix ../,$(f77Files))
 
 # Now strip off the directory part. This is because fort_depend gives
 # us targets that are like <filename.o>.
 fortranFilesNoOptNoDir=$(notdir $(fortranFilesNoOpt))
 fortranFilesNoDir=$(notdir $(fortranFiles))
 cFilesNoDir=$(notdir $(cFiles))
-f77FilesNoDir=$(notdir $(f77Files))
 
 # Generate two separate list of .F90 and .f90 files using the filter command
 f90FilesNoOpt=$(filter %.f90,$(fortranFilesNoOptNoDir))
@@ -56,7 +53,7 @@ F90Files=$(filter %.F90,$(fortranFilesNoDir))
 
 # Finally convert all source files to .o
 OFILES_NO_OPT=$(f90FilesNoOpt:%.f90=%.o) $(F90FilesNoOpt:%.F90=%.o)
-OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o)
+OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o)
 
 # Define the file name for the auto-generated dependency file.
 DEP_FILE=adflow_project.dep

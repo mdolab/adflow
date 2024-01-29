@@ -299,7 +299,7 @@ contains
         end if
 
         ! Exchange values
-        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True., .False.)
+        call whalo2(currentLevel, 1_intType, nw, .True., .True., .True.)
 
         ! Need to re-apply the BCs. The reason is that BC halos behind
         ! interpolated cells need to be recomputed with their new
@@ -321,7 +321,7 @@ contains
     end subroutine infChangeCorrection
 
     ! Section out the BCdata setup so that it can by called from python when needed
-    subroutine updateBCDataAllLevels()
+    subroutine updateBCDataAllLevels
         ! sets the prescribed boundary data from the CGNS arrays
 
         use constants
@@ -358,8 +358,6 @@ contains
         use block, only: flowDoms
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use variableReading, only: halosRead
-        use haloExchange, only: whalo2
-        use wallDistanceData, only: exchangeWallDistanceHalos
 
         implicit none
         !
@@ -406,16 +404,6 @@ contains
         ! Initialize the dependent flow variables and the halo values.
 
         call initDepvarAndHalos(halosRead)
-
-        ! Exchange d2wall on halo cells
-        do level = 1, nLevels
-           if (exchangeWallDistanceHalos(level)) then
-                call whalo2(level, 1_intType, 0_intType, &
-                            .false., .false., .false., .true.)
-                exchangeWallDistanceHalos(level) = .False.
-            end if
-        end do
-
 
     end subroutine initFlow
 
@@ -1344,7 +1332,7 @@ contains
         ! conditions and eddy viscosity. Viscosities are not exchanged.
 
         call whalo2(mgStartlevel, 1_intType, nw, .true., .true., &
-                    .false., .false.)
+                    .false.)
 
         ! Apply all flow boundary conditions to be sure that the halo's
         ! contain the correct values. These might be needed to compute
@@ -1369,7 +1357,7 @@ contains
                 ! Compute the eddy viscosity for rans computations using
                 ! an eddy viscosity model.
 
-                call computeEddyViscosity(.False.) !for SST, the velocity in  1st halo MUST be up to date before this call. It should be ok here.
+                call computeEddyViscosity(.False.)
 
                 ! In case of a rans computation and no restart, initialize
                 ! the turbulent variables a bit better for some turbulence
@@ -1393,7 +1381,7 @@ contains
         ! Exchange the laminar and eddy viscosities.
 
         call whalo2(mgStartlevel, 1_intType, 0_intType, .false., &
-                    .false., .true., .false.)
+                    .false., .true.)
 
         if (equations == RANSEquations) then
             call applyAllTurbBC(.true.)
@@ -1405,7 +1393,7 @@ contains
         ! phase, this is not critical.
 
         call whalo2(mgStartlevel, 1_intType, nw, .true., .true., &
-                    .true., .false.)
+                    .true.)
 
     end subroutine initDepvarAndHalos
 
