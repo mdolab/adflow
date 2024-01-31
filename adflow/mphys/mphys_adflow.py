@@ -1315,8 +1315,8 @@ class ADflowBuilder(Builder):
             Whether to retry after failed analysis, by default False
         err_on_convergence_fail : bool, optional
             Whether to raise an analysis error if the solver stalls, by default False
-        balance_group : ???, optional
-            ???, by default None
+        balance_group : OpenMDAO Group or Component, optional
+            Optional OpenMDAO group or component that is added inside the ADflowGroup after the internal components needed by ADflow. This can be used to define implicit relationships that depend on the aerodynamic functions and that need to be converged by varying inputs to ADflow.
         user_family_groups : dict, optional
             Dictonary of {group: surfs} to add, by default None
         write_solution : bool, optional
