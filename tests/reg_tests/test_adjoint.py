@@ -313,8 +313,12 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.ap.evalFuncs = self.evalFuncs
 
         # add the default dvs to the problem
-        for dv in defaultAeroDVs:
-            self.ap.addDV(dv)
+        if self.name != "Rotating_wing":
+            for dv in defaultAeroDVs:
+                self.ap.addDV(dv)
+        else:
+            for dv in ["alpha", "beta", "mach", "T", "xRef", "yRef", "zRef"]:
+                self.ap.addDV(dv)
 
         self.CFDSolver = ADFLOW_C(options=options, debug=True)
 
