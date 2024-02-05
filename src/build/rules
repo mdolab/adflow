@@ -22,3 +22,9 @@
 	@echo
 	@echo "        --- Compiled $*.f successfully ---"
 	@echo
+
+%.o: %.cuf
+	$(FF90) $(FF90_ALL_FLAGS) $(CUFFLAGS) -c $< -o $*.o
+	@echo
+	@echo "        --- Compiled $*.cuf successfully ---"
+	@echo
