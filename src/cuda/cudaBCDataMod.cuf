@@ -1,4 +1,4 @@
-! @File    :   cudaBCDataMod.f90
+! @File    :   cudaBCDataMod.cuf
 ! @Desc    :   CUDA FORTRAN version of BCDataMod.F90. See that file for variable names and descriptions.
 
 module cudaBCDataMod

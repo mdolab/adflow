@@ -1,4 +1,4 @@
-! @File    :   cudaBCPointers.f90
+! @File    :   cudaBCPointers.cuf
 ! @Desc    :   This module contains the BC data type and provides subroutines for copying data between the CPU and GPU
 
 module cudaBCPointers

@@ -1,4 +1,4 @@
-! @File    :   cudaBCRoutines.f90
+! @File    :   cudaBCRoutines.cuf
 ! @Desc    :   This module contains the CUDA Fortran version of the boundary condition routines in BCRoutines.F90
 
 module cudaBCRoutines
