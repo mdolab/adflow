@@ -55,11 +55,12 @@ f90FilesNoOpt=$(filter %.f90,$(fortranFilesNoOptNoDir))
 F90FilesNoOpt=$(filter %.F90,$(fortranFilesNoOptNoDir))
 f90Files=$(filter %.f90,$(fortranFilesNoDir))
 F90Files=$(filter %.F90,$(fortranFilesNoDir))
-CuFiles=$(filter %.f90,$(cudaFilesNoDir))
+#CuFiles=$(filter %.f90,$(cudaFilesNoDir))
+CuFiles=$(filter %.cuf,$(cudaFilesNoDir))
 
 # Finally convert all source files to .o
 OFILES_NO_OPT=$(f90FilesNoOpt:%.f90=%.o) $(F90FilesNoOpt:%.F90=%.o)
-OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o) $(CuFiles:%.f90=%.o)
+OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o) $(CuFiles:%.cuf=%.o)
 
 # Define the file name for the auto-generated dependency file.
 DEP_FILE=adflow_project.dep
@@ -105,7 +106,7 @@ python: lib ../f2py/adflow.pyf
 # Generate Python inlude directory
 	 $(eval PYTHON_INCLUDES = $(shell $(PYTHON-CONFIG) --includes))
 	 @echo "#------------------------------------------------------#"
-	 @echo Python Inclue Flags $(PYTHON_INCLUDES)
+	 @echo Python Include Flags $(PYTHON_INCLUDES)
 	 @echo "#------------------------------------------------------#"
 
 # Generate Numpy inlude directory
@@ -141,6 +142,6 @@ python: lib ../f2py/adflow.pyf
 	$(FF90) $(FF90_ALL_FLAGS) -I./ -c libadflow-f2pywrappers2.f90
 
 # Final Link:
-	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so -cuda
+	$(FF90) -shared $(PYTHON_OBJECTS) libadflow.a $(LINKER_ALL_FLAGS) -o libadflow.so
 	$(PYTHON) importTest.py libadflow.so
 	mv libadflow.so ../../adflow
