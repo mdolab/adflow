@@ -60,7 +60,6 @@ CuFiles=$(filter %.cuf,$(cudaFilesNoDir))
 
 # Finally convert all source files to .o
 OFILES_NO_OPT=$(f90FilesNoOpt:%.f90=%.o) $(F90FilesNoOpt:%.F90=%.o)
-# OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o) $(CuFiles:%.f90=%.o)
 OFILES=$(f90Files:%.f90=%.o) $(F90Files:%.F90=%.o) $(cFilesNoDir:%.c=%.o) $(f77FilesNoDir:%.f=%.o) $(CuFiles:%.cuf=%.o)
 
 # Define the file name for the auto-generated dependency file.
