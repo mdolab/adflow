@@ -167,7 +167,7 @@ test_params = [
         },
         "ref_file": "adjoint_rans_tut_wing.json",
         "aero_prob": ap_tutorial_wing,
-        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation"],
+        "evalFuncs": ["fx", "mz", "cl", "cd", "cmz", "lift", "drag", "cavitation", "colx", "coly", "colz"],
     },
     # # Rotating frame test
     {
@@ -260,7 +260,7 @@ class TestAdjoint(reg_test_classes.RegTest):
         self.CFDSolver = ADFLOW(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh(options=mesh_options))
-        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=False), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
             rotRate_x = 0.5
@@ -313,13 +313,17 @@ class TestCmplxStep(reg_test_classes.CmplxRegTest):
         self.ap.evalFuncs = self.evalFuncs
 
         # add the default dvs to the problem
-        for dv in defaultAeroDVs:
-            self.ap.addDV(dv)
+        if self.name != "Rotating_wing":
+            for dv in defaultAeroDVs:
+                self.ap.addDV(dv)
+        else:
+            for dv in ["alpha", "beta", "mach", "T", "xRef", "yRef", "zRef"]:
+                self.ap.addDV(dv)
 
         self.CFDSolver = ADFLOW_C(options=options, debug=True)
 
         self.CFDSolver.setMesh(USMesh_C(options=mesh_options))
-        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True))
+        self.CFDSolver.setDVGeo(getDVGeo(self.ffdFile, isComplex=True), pointSetKwargs={"embTol": 1e-12, "eps": 1e-14})
         if self.name == "Rotating_wing":
             # Add rotation component to the frame
             rotRate_x = 0.5

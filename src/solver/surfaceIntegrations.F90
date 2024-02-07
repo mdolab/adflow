@@ -27,7 +27,7 @@ contains
                                                                      cMoment, coFx, coFy, coFz
         real(kind=realType), dimension(3) :: VcoordRef, VFreestreamRef
         real(kind=realType) :: mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
-                               mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi
+                               mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi, fxLift, fyLift, fzLift
 
         real(kind=realType) :: vdotn, mag, u, v, w
         integer(kind=intType) :: sps
@@ -323,6 +323,34 @@ contains
             funcValues(costFuncForceXCoefMomentum) * dragDirection(1) + &
             funcValues(costFuncForceYCoefMomentum) * dragDirection(2) + &
             funcValues(costFuncForceZCoefMomentum) * dragDirection(3)
+
+        ! ----- Center of Lift
+
+        ! dot product the 3 forces with the lift direction separately
+        fxLift = funcValues(costFuncForceX) * liftDirection(1)
+        fyLift = funcValues(costFuncForceY) * liftDirection(2)
+        fzLift = funcValues(costFuncForceZ) * liftDirection(3)
+
+        ! run the weighed average for the 3 components of center of lift
+        ! protect against division by zero
+        if ((fxLift + fyLift + fzLift) /= zero) then
+            funcValues(costfuncCofLiftX) = (fxLift * funcValues(costFuncCOForceXX) + &
+                                            fyLift * funcValues(costFuncCOForceYX) + &
+                                            fzLift * funcValues(costFuncCOForceZX)) / &
+                                           (fxLift + fyLift + fzLift)
+            funcValues(costfuncCofLiftY) = (fxLift * funcValues(costFuncCOForceXY) + &
+                                            fyLift * funcValues(costFuncCOForceYY) + &
+                                            fzLift * funcValues(costFuncCOForceZY)) / &
+                                           (fxLift + fyLift + fzLift)
+            funcValues(costfuncCofLiftZ) = (fxLift * funcValues(costFuncCOForceXZ) + &
+                                            fyLift * funcValues(costFuncCOForceYZ) + &
+                                            fzLift * funcValues(costFuncCOForceZZ)) / &
+                                           (fxLift + fyLift + fzLift)
+        else
+            funcValues(costfuncCofLiftX) = zero
+            funcValues(costfuncCofLiftY) = zero
+            funcValues(costfuncCofLiftZ) = zero
+        end if
 
         ! -------------------- Time Spectral Objectives ------------------
 

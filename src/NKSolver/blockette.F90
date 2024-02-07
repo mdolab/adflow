@@ -578,7 +578,7 @@ contains
                         do k = 1, ke
                             do j = 1, je
                                 do i = 0, ie
-                                    sFaceI(i, j, k) = bsFaceI(ii + ii - 2, j + jj - 2, k + kk - 2)
+                                    sFaceI(i, j, k) = bsFaceI(i + ii - 2, j + jj - 2, k + kk - 2)
                                 end do
                             end do
                         end do
@@ -586,7 +586,7 @@ contains
                         do k = 1, ke
                             do j = 0, je
                                 do i = 1, ie
-                                    sFaceJ(i, j, k) = bsFaceJ(ii + ii - 2, j + jj - 2, k + kk - 2)
+                                    sFaceJ(i, j, k) = bsFaceJ(i + ii - 2, j + jj - 2, k + kk - 2)
                                 end do
                             end do
                         end do
@@ -594,7 +594,7 @@ contains
                         do k = 0, ke
                             do j = 1, je
                                 do i = 1, ie
-                                    sFaceK(i, j, k) = bsFaceK(ii + ii - 2, j + jj - 2, k + kk - 2)
+                                    sFaceK(i, j, k) = bsFaceK(i + ii - 2, j + jj - 2, k + kk - 2)
                                 end do
                             end do
                         end do

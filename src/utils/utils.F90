@@ -3379,6 +3379,8 @@ contains
         volRef => flowDoms(nn, mm, ll)%volRef
         volOld => flowDoms(nn, 1, ll)%volOld
 
+        skew => flowDoms(nn, mm, ll)%skew
+
         porI => flowDoms(nn, mm, 1)%porI
         porJ => flowDoms(nn, mm, 1)%porJ
         porK => flowDoms(nn, mm, 1)%porK
@@ -4827,6 +4829,7 @@ contains
         use inputUnsteady
         use inputPhysics
         use iteration
+        use inputIteration, only: useSkewnessCheck
         use block, only: viscSubfaceType, BCDataType, flowDoms
         implicit none
         !
@@ -5197,6 +5200,12 @@ contains
         if (associated(flowDoms(nn, level, sps)%vol)) &
             deallocate (flowDoms(nn, level, sps)%vol, stat=ierr)
         if (ierr /= 0) deallocationFailure = .true.
+
+        if (useSkewnessCheck) then
+            if (associated(flowDoms(nn, level, sps)%skew)) &
+                deallocate (flowDoms(nn, level, sps)%skew, stat=ierr)
+            if (ierr /= 0) deallocationFailure = .true.
+        end if
 
         if (associated(flowDoms(nn, level, sps)%volRef)) &
             deallocate (flowDoms(nn, level, sps)%volRef, stat=ierr)
@@ -6648,6 +6657,29 @@ contains
         rotMat = rotMat + sin(theta) * Wmat + (1.0 - cos(theta)) * Wmat2
 
     end subroutine getRotMatrix
+
+    real(kind=realType) function norm2cplx(v)
+        ! if input is real:
+        !     returns the norm of the input array
+        !
+        ! if input is complex:
+        !     returns a complex number where the real part represents the norm of
+        !     all the real input parts and the complex part represents the norm of
+        !     all the complex input parts.
+
+        use constants
+
+        implicit none
+
+        real(kind=realType), dimension(:), intent(in) :: v
+
+#ifdef USE_COMPLEX
+        norm2cplx = cmplx(NORM2(real(v)), NORM2(aimag(v)))
+#else
+        norm2cplx = NORM2(v)
+#endif
+
+    end function norm2cplx
 
 #endif
 end module utils

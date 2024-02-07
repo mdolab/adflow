@@ -247,9 +247,11 @@ module inputIteration
     ! cdisRk:           Dissipative coefficients in the runge kutta
     !                   scheme. The values depend on the number of
     !                   stages specified.
-    ! printIterations: If True, iterations are printed to stdout
-    ! turbresscale: Scaling factor for turbulent residual. Necessary for
-    !            NKsolver with RANS. Only tested on SA.
+    ! printIterations:  If True, iterations are printed to stdout
+    ! turbresscale:     Scaling factor for turbulent residual. Necessary for
+    !                   NKsolver with RANS. Only tested on SA.
+    ! meshMaxSkewness   If one cell has a highe skewness than this, the Solver
+    !                   errors out.
     ! iterType : String used for specifying which type of iteration was taken
     !
     ! Definition of the string, which stores the multigrid cycling
@@ -285,7 +287,11 @@ module inputIteration
     logical :: printIterations
     logical :: printWarnings
     logical :: printNegativeVolumes
+    logical :: printBadlySkewedCells
+    logical :: printBCWarnings
     real(kind=realType), dimension(4) :: turbResScale
+    real(kind=realType) :: meshMaxSkewness
+    logical :: useSkewnessCheck
     logical :: useDissContinuation
     real(kind=realType) :: dissContMagnitude, dissContMidpoint, dissContSharpness
 
@@ -819,6 +825,7 @@ module inputADjoint
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
     integer(kind=intType) :: innerPreConIts
+    integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
 
     logical :: printTiming
     integer(kind=intType) :: subKSPSubspaceSize

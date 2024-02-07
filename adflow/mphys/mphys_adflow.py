@@ -1,19 +1,220 @@
 from pprint import pprint as pp
+import inspect
 
 import numpy as np
-from idwarp import USMesh
+from adflow import ADFLOW
+from idwarp import USMesh, MultiUSMesh
 from mphys.builder import Builder
 from openmdao.api import AnalysisError, ExplicitComponent, Group, ImplicitComponent
+from mpi4py import MPI
 
-from adflow import ADFLOW
 
 from .om_utils import get_dvs_and_cons
+
+# Set this to true to print out the name of the function being called and the class it's being called from along with
+# printing messages when node coordinates and states are updated from OpenMDAO inputs and outputs.
+DEBUG_LOGGING = False
+
+
+def print_func_call(component):
+    """Prints the name of the class and function being. Useful for debugging when you want to see what order OpenMDAO
+    is calling things in.
+
+    To use, simply add "print_func_call(self)" to the beginning of any function you want to track the calling of. When
+    that function is called you'll get a printout that looks something like this:
+
+    ===============================================
+    Calling ADflowForces.compute for cruise problem
+    ===============================================
+    """
+    stack = inspect.stack()
+    funcName = stack[1][3]
+    className = component.__class__.__qualname__
+    message = f"Calling {className}.{funcName}"
+    if hasattr(component, "ap"):
+        message += f" for {component.ap.name} problem"
+
+    if component.comm.rank == 0:
+        print(f"\n{'='*len(message)}", flush=True)
+        print(message, flush=True)
+        print(f"{'='*len(message)}", flush=True)
+
+
+def set_vol_coords(solver, inputs):
+    """Set the volume coordinates from the inputs vector.
+
+    Because setting the volume coordinates requires recomputing some intermediate values, this function only sets the
+    volume coordinates from the input vector if they are different from the coordinates already set in the solver.
+
+    Parameters
+    ----------
+    solver : ADflow instance
+        ADflow solver object to set the states of.
+    inputs : OpenMDAO inputs vector
+        inputs vector, presumably containing an "adflow_vol_coords" entry.
+
+    Returns
+    -------
+    bool
+        True on all procs if the coordinates were updated on any proc, False otherwise.
+    """
+    coordsUpdated = False
+    if "adflow_vol_coords" in inputs:
+        newGrid = inputs["adflow_vol_coords"]
+        currentGrid = solver.adflow.warping.getgrid(len(newGrid))
+        coordsAreEqual = np.allclose(newGrid, currentGrid, rtol=1e-14, atol=1e-14)
+        coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
+        if not coordsAreEqual:
+            if DEBUG_LOGGING and solver.comm.rank == 0:
+                print("Updating vol coords", flush=True)
+            solver.adflow.warping.setgrid(newGrid)
+            solver._updateGeomInfo = True
+            solver.updateGeometryInfo(warpMesh=False)
+            coordsUpdated = True
+    return coordsUpdated
+
+
+def set_surf_coords(solver, inputs):
+    """Set the surface coordinates from the inputs vector.
+
+    Because setting the surface coordinates requires recomputing some intermediate values, this function only sets the
+    surface coordinates from the input vector if they are different from the coordinates already set in the solver.
+
+    Parameters
+    ----------
+    solver : ADflow instance
+        ADflow solver object to set the states of.
+    inputs : OpenMDAO inputs vector
+        inputs vector, presumably containing an "x_aero" entry.
+
+    Returns
+    -------
+    bool
+        True on all procs if the coordinates were updated on any proc, False otherwise.
+    """
+    coordsUpdated = False
+    if "x_aero" in inputs:
+        newSurfCoord = inputs["x_aero"].reshape((-1, 3))
+
+        # We take coordinates directly from IDWarp because they are guaranteed to match the coordinates we set. The
+        # coordinates returned by solver.getSurfaceCoordinates are taken from the volume coordinate data structures and
+        # often do not match the set surface coordinates exactly, which leads to issues when we check whether the
+        # coordinates have changed.
+        currentSurfCoord = solver.mesh.getSurfaceCoordinates()
+
+        # This is the only place in the code we don't want the zipper nodes. This is because `setSurfaceCoordinates`
+        # doesn't take the zipper nodes. The surface coordinates in the input vector do include the zipper nodes, so we
+        # need to remove them. This is simple to do since we know that the zipper nodes are tacked on to the end of the
+        # nodes array.
+        newSurfCoord = newSurfCoord[: currentSurfCoord.shape[0]]
+
+        coordsAreEqual = np.allclose(newSurfCoord, currentSurfCoord, rtol=1e-14, atol=1e-14)
+        coordsAreEqual = solver.comm.allreduce(coordsAreEqual, op=MPI.LAND)
+        if not coordsAreEqual:
+            if DEBUG_LOGGING and solver.comm.rank == 0:
+                print("Updating surface coords", flush=True)
+            solver.setSurfaceCoordinates(newSurfCoord, groupName=solver.meshFamilyGroup)
+            solver.updateGeometryInfo(warpMesh=False)
+            coordsUpdated = True
+    return coordsUpdated
+
+
+def set_states(solver, outputs):
+    """Set the states of the solver from the outputs vector.
+
+    Parameters
+    ----------
+    solver : ADflow instance
+        ADflow solver object to set the states of.
+    outputs : OpenMDAO outputs vector
+        Outputs vector, presumably containing an "adflow_states" entry.
+
+    Returns
+    -------
+    bool
+        True on all procs if the states were updated on any proc, False otherwise.
+    """
+    statesUpdated = False
+    if "adflow_states" in outputs:
+        newState = outputs["adflow_states"]
+        currentState = solver.getStates()
+        statesAreEqual = np.allclose(newState, currentState, rtol=1e-14, atol=1e-14)
+        statesAreEqual = solver.comm.allreduce(statesAreEqual, op=MPI.LAND)
+        if not statesAreEqual:
+            if DEBUG_LOGGING and solver.comm.rank == 0:
+                print("Updating states", flush=True)
+            solver.setStates(outputs["adflow_states"])
+            statesUpdated = True
+    return statesUpdated
+
+
+def setAeroProblem(solver, ap, ap_vars, inputs=None, outputs=None, print_dict=True):
+    """Generic function to update the data in an ADflow solver object using the data passed in by OpenMDAO.
+
+    This function should be called at the start of any method that computes something using ADflow. It will update the
+    aeroproblem, the aero problem design variables, the surface or volume coordinates, depending on which values are
+    supplied in the OpenMDAO inputs and outputs vectors.
+
+    Parameters
+    ----------
+    solver : ADflow instance
+        ADflow solver object to update.
+    ap : AeroProblem instance
+        The aeroproblem to set
+    ap_vars : list[str]
+        The list of variables for this aeroproblem, currently this is stored in self.ap_vars in all ADflow MPhys
+        components
+    inputs : OpenMDAO inputs vector
+        inputs vector, by default None
+    outputs : OpenMDAO outputs vector
+        outputs vector, by default None
+    print_dict : bool, optional
+        _description_, by default True
+
+    Returns
+    -------
+    bool
+        True if any data in the solver was updated, False otherwise. This is useful for determining if things like the
+        residual need to be recomputed.
+    """
+
+    updatesMade = ap != solver.curAP
+
+    # These flags control printing alpha and boundary condition warnings
+    # when we update the aeroproblem.  We only want these to print when
+    # we actually switch the aeroproblem.
+    printIterationsDefault = solver.getOption("printIterations")
+    printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
+
+    solver.setOption("printIterations", updatesMade)
+    solver.adflow.inputiteration.printbcwarnings = updatesMade
+    solver.setAeroProblem(ap)
+
+    # Reset the defaults
+    solver.setOption("printIterations", printIterationsDefault)
+    solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
+
+    if inputs is not None:
+        tmp = {}
+        for args, _ in ap_vars:
+            name = args[0]
+            tmp[name] = inputs[name]
+
+        ap.setDesignVars(tmp)
+        if solver.comm.rank == 0 and print_dict:
+            pp(tmp)
+
+        updatesMade = set_vol_coords(solver, inputs) or updatesMade
+
+    if outputs is not None:
+        updatesMade = set_states(solver, outputs) or updatesMade
+
+    return solver.comm.allreduce(updatesMade, op=MPI.LOR)
 
 
 class ADflowMesh(ExplicitComponent):
     """
     Component to get the partitioned initial surface mesh coordinates
-
     """
 
     def initialize(self):
@@ -22,8 +223,10 @@ class ADflowMesh(ExplicitComponent):
     def setup(self):
         self.aero_solver = self.options["aero_solver"]
 
+        # We want to include the zipper nodes in the surface mesh coordinates because the forces array ADflow returns
+        # includes them and we need the surface coordinates array to be consistent with that.
         self.x_a0 = self.aero_solver.getSurfaceCoordinates(
-            groupName=self.aero_solver.meshFamilyGroup, includeZipper=False
+            groupName=self.aero_solver.meshFamilyGroup, includeZipper=True
         ).flatten(order="C")
 
         coord_size = self.x_a0.size
@@ -116,12 +319,16 @@ class ADflowMesh(ExplicitComponent):
         return [p0, v1, v2]
 
     def compute(self, inputs, outputs):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         if "x_aero0_points" in inputs:
             outputs["x_aero0"] = inputs["x_aero0_points"]
         else:
             outputs["x_aero0"] = self.x_a0
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         if mode == "fwd":
             if "x_aero0_points" in d_inputs:
                 d_outputs["x_aero0"] += d_inputs["x_aero0_points"]
@@ -158,14 +365,23 @@ class ADflowWarper(ExplicitComponent):
         # self.declare_partials(of='adflow_vol_coords', wrt='x_aero')
 
     def compute(self, inputs, outputs):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
 
-        x_a = inputs["x_aero"].reshape((-1, 3))
-        solver.setSurfaceCoordinates(x_a, groupName=solver.meshFamilyGroup)
-        solver.updateGeometryInfo()
         outputs["adflow_vol_coords"] = solver.mesh.getSolverGrid()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
+        solver = self.solver
+        coords_updated = set_surf_coords(solver, inputs)
+        if coords_updated:
+            solver.mesh.warpMesh()
+
         if mode == "fwd":
             if "adflow_vol_coords" in d_outputs:
                 if "x_aero" in d_inputs:
@@ -180,7 +396,7 @@ class ADflowWarper(ExplicitComponent):
                     self.solver.mesh.warpDeriv(dxV)
                     dxS = self.solver.mesh.getdXs()
                     dxS = self.solver.mapVector(
-                        dxS, self.solver.meshFamilyGroup, self.solver.designFamilyGroup, includeZipper=False
+                        dxS, self.solver.meshFamilyGroup, self.solver.designFamilyGroup, includeZipper=True
                     )
                     d_inputs["x_aero"] += dxS.flatten()
 
@@ -227,21 +443,6 @@ class ADflowSolver(ImplicitComponent):
 
         # self.declare_partials(of='adflow_states', wrt='*')
 
-    def _set_ap(self, inputs, print_dict=True):
-        tmp = {}
-        for args, _kwargs in self.ap_vars:
-            name = args[0]
-            tmp[name] = inputs[name]
-
-        # enable if you want to print all aero dv inputs
-        # if self.comm.rank == 0:
-        #     print('aero dv inputs:')
-        #     pp(tmp)
-
-        self.ap.setDesignVars(tmp)
-        if self.comm.rank == 0 and print_dict:
-            pp(tmp)
-
     def set_ap(self, ap):
         # this is the external function to set the ap to this component
         self.ap = ap
@@ -265,29 +466,19 @@ class ADflowSolver(ImplicitComponent):
 
     def apply_nonlinear(self, inputs, outputs, residuals):
         solver = self.solver
-
-        self._set_states(outputs)
-        self._set_ap(inputs, print_dict=False)
-
         ap = self.ap
-
-        # Set the warped mesh
-        # solver.mesh.setSolverGrid(inputs['adflow_vol_coords'])
-        # ^ This call does not exist. Assume the mesh hasn't changed since the last call to the warping comp for now
-        # TODO we must fix this. we need to put in the modified volume coordinates
+        setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
         # flow residuals
         residuals["adflow_states"] = solver.getResidual(ap)
 
     def solve_nonlinear(self, inputs, outputs):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         if self._do_solve:
-            # Set the warped mesh
-            # solver.mesh.setSolverGrid(inputs['adflow_vol_coords'])
-            # ^ This call does not exist. Assume the mesh hasn't changed since the last call to the warping comp for now
-
-            self._set_ap(inputs)
+            setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
 
@@ -379,33 +570,27 @@ class ADflowSolver(ImplicitComponent):
         outputs["adflow_states"] = solver.getStates()
 
     def linearize(self, inputs, outputs, residuals):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
-        self._set_ap(inputs, print_dict=False)
-        self._set_states(outputs)
-
-        # check if we changed APs, then we have to do a bunch of updates
-        if ap != solver.curAP:
-            # AP is changed, so we have to update the AP and
-            # run a residual to make sure all intermediate vairables are up to date
-            # we assume the AP has the last converged state information,
-            # which is automatically set in the getResidual call
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # all intermediate variables up to date.
+        if updatesMade:
             solver.getResidual(ap)
 
     def apply_linear(self, inputs, outputs, d_inputs, d_outputs, d_residuals, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
-        self._set_ap(inputs, print_dict=False)
-        self._set_states(outputs)
-
-        # check if we changed APs, then we have to do a bunch of updates
-        if ap != solver.curAP:
-            # AP is changed, so we have to update the AP and
-            # run a residual to make sure all intermediate vairables are up to date
-            # we assume the AP has the last converged state information,
-            # which is automatically set in the getResidual call
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # all intermediate variables up to date.
+        if updatesMade:
             solver.getResidual(ap)
 
         if mode == "fwd":
@@ -446,6 +631,8 @@ class ADflowSolver(ImplicitComponent):
                         d_inputs[dv_name] += dv_bar.flatten()
 
     def solve_linear(self, d_outputs, d_residuals, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
 
@@ -471,8 +658,9 @@ class ADflowSolver(ImplicitComponent):
         if mode == "fwd":
             d_outputs["adflow_states"] = solver.solveDirectForRHS(d_residuals["adflow_states"])
         elif mode == "rev":
-            # d_residuals['adflow_states'] = solver.solveAdjointForRHS(d_outputs['adflow_states'])
-            solver.adflow.adjointapi.solveadjoint(d_outputs["adflow_states"], d_residuals["adflow_states"], True)
+            phi = d_residuals["adflow_states"].copy()
+            solver.adflow.adjointapi.solveadjoint(d_outputs["adflow_states"], phi, True)
+            d_residuals["adflow_states"] = phi
 
         return True, 0, 0
 
@@ -495,20 +683,10 @@ class ADflowForces(ExplicitComponent):
         self.add_input("adflow_vol_coords", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
         self.add_input("adflow_states", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
 
-        local_surface_coord_size = solver.mesh.getSurfaceCoordinates().size
+        local_surface_coord_size = solver.getSurfaceCoordinates(includeZipper=True).size
         self.add_output("f_aero", distributed=True, shape=local_surface_coord_size, tags=["mphys_coupling"])
 
         # self.declare_partials(of='f_aero', wrt='*')
-
-    def _set_ap(self, inputs, print_dict=True):
-        tmp = {}
-        for args, _kwargs in self.ap_vars:
-            name = args[0]
-            tmp[name] = inputs[name]
-
-        self.ap.setDesignVars(tmp)
-        if self.comm.rank == 0 and print_dict:
-            pp(tmp)
 
     def set_ap(self, ap):
         # this is the external function to set the ap to this component
@@ -526,34 +704,26 @@ class ADflowForces(ExplicitComponent):
             # if self.comm.rank == 0:
             #     print('%s (%s)'%(name, kwargs['units']))
 
-    def _set_states(self, inputs):
-        self.solver.setStates(inputs["adflow_states"])
-
     def compute(self, inputs, outputs):
-        solver = self.solver
-
-        self._set_ap(inputs)
-
-        # Set the warped mesh
-        # solver.mesh.setSolverGrid(inputs['adflow_vol_coords'])
-        # ^ This call does not exist. Assume the mesh hasn't changed since the last call to the warping comp for now
-        # TODO we must fix this. we need to put in the modified volume coordinates
-        self._set_states(inputs)
-
-        outputs["f_aero"] = solver.getForces().flatten(order="C")
-
-    def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
+        setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
-        self._set_ap(inputs, print_dict=False)
+        f_aero = solver.getForces()
+        outputs["f_aero"] = f_aero.flatten(order="C")
 
-        # check if we changed APs, then we have to do a bunch of updates
-        if ap != solver.curAP:
-            # AP is changed, so we have to update the AP and
-            # run a residual to make sure all intermediate vairables are up to date
-            # we assume the AP has the last converged state information,
-            # which is automatically set in the getResidual call
+    def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
+        solver = self.solver
+        ap = self.ap
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
+
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # all intermediate variables up to date.
+        if updatesMade:
             solver.getResidual(ap)
 
         if mode == "fwd":
@@ -622,14 +792,6 @@ class AdflowHeatTransfer(ExplicitComponent):
 
         # self.declare_partials(of='f_aero', wrt='*')
 
-    def _set_ap(self, inputs):
-        tmp = {}
-        for args, _kwargs in self.ap_vars:
-            name = args[0]
-            tmp[name] = inputs[name]
-
-        self.ap.setDesignVars(tmp)
-
     def set_ap(self, ap):
         # this is the external function to set the ap to this component
         self.ap = ap
@@ -646,38 +808,31 @@ class AdflowHeatTransfer(ExplicitComponent):
             if self.comm.rank == 0:
                 print(name)
 
-    def _set_states(self, inputs):
-        self.solver.setStates(inputs["adflow_states"])
-
     def compute(self, inputs, outputs):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
+        ap = self.ap
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
 
-        ## already done by solver
-        self._set_ap(inputs)
-
-        # Set the warped mesh
-        # solver.mesh.setSolverGrid(inputs['adflow_vol_coords'])
-        # ^ This call does not exist. Assume the mesh hasn't changed since the last call to the warping comp for now
-        # TODO we must fix this. we need to put in the modified volume coordinates
-
-        #
-        # self._set_states(inputs)
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # all intermediate variables up to date.
+        if updatesMade:
+            solver.getResidual(ap)
 
         outputs["q_convect"] = solver.getHeatFluxes().flatten(order="C")
         # print()
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
-        ap = self.options["ap"]
+        ap = self.ap
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
 
-        self._set_ap(inputs)
-
-        # check if we changed APs, then we have to do a bunch of updates
-        if ap != solver.curAP:
-            # AP is changed, so we have to update the AP and
-            # run a residual to make sure all intermediate vairables are up to date
-            # we assume the AP has the last converged state information,
-            # which is automatically set in the getResidual call
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # all intermediate variables up to date.
+        if updatesMade:
             solver.getResidual(ap)
 
         if mode == "fwd":
@@ -785,17 +940,6 @@ class ADflowFunctions(ExplicitComponent):
 
         # self.declare_partials(of=f_name, wrt='*')
 
-    def _set_ap(self, inputs, print_dict=True):
-        tmp = {}
-        for args, _kwargs in self.ap_vars:
-            name = args[0]
-            tmp[name] = inputs[name]
-
-        self.ap.setDesignVars(tmp)
-        # self.options['solver'].setAeroProblem(self.options['ap'])
-        if self.comm.rank == 0 and print_dict:
-            pp(tmp)
-
     def mphys_set_ap(self, ap):
         # this is the external function to set the ap to this component
         self.ap = ap
@@ -861,9 +1005,6 @@ class ADflowFunctions(ExplicitComponent):
 
             self.add_output(f_name, distributed=False, shape=1, units=units, tags=["mphys_result"])
 
-    def _set_states(self, inputs):
-        self.solver.setStates(inputs["adflow_states"])
-
     def _get_func_name(self, name):
         return "%s_%s" % (self.ap.name, name.lower())
 
@@ -873,7 +1014,16 @@ class ADflowFunctions(ExplicitComponent):
         ap = self.ap
 
         # re-set the AP so that we are sure state is updated
+        printIterationsDefault = solver.getOption("printIterations")
+        printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
+
+        solver.setOption("printIterations", False)
+        solver.adflow.inputiteration.printbcwarnings = False  # Turn off extra printouts
         solver.setAeroProblem(ap)
+
+        # Reset back to true to preserve normal ADflow printout structure
+        solver.setOption("printIterations", printIterationsDefault)
+        solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
 
         # write the solution files. Internally, this checks the
         # types of solution files specified in the options and
@@ -882,15 +1032,18 @@ class ADflowFunctions(ExplicitComponent):
         self.solution_counter += 1
 
     def compute(self, inputs, outputs):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
-        # print('funcs compute')
+        ap = self.ap
         # actually setting things here triggers some kind of reset, so we only do it if you're actually solving
         if self._do_solve:
-            self._set_ap(inputs)
-            # Set the warped mesh
-            # solver.mesh.setSolverGrid(inputs['adflow_vol_coords'])
-            # ^ This call does not exist. Assume the mesh hasn't changed since the last call to the warping comp for now
-            self._set_states(inputs)
+            updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+
+            # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+            # all intermediate variables up to date.
+            if updatesMade:
+                solver.getResidual(ap)
 
         if self.write_solution:
             # write the solution files. Internally, this checks the
@@ -920,16 +1073,15 @@ class ADflowFunctions(ExplicitComponent):
                     outputs[name.lower()] = funcs[f_name]
 
     def compute_jacvec_product(self, inputs, d_inputs, d_outputs, mode):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
-        self._set_ap(inputs, print_dict=False)
+        updatesMade = setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, print_dict=False)
 
-        # check if we changed APs, then we have to do a bunch of updates
-        if ap != solver.curAP:
-            # AP is changed, so we have to update the AP and
-            # run a residual to make sure all intermediate vairables are up to date
-            # we assume the AP has the last converged state information,
-            # which is automatically set in the getResidual call
+        # If we changed the aeroProblem, mesh coordinates, or states, we need to run a residual evaluation to make sure
+        # all intermediate variables up to date.
+        if updatesMade:
             solver.getResidual(ap)
 
         if mode == "fwd":
@@ -1132,6 +1284,7 @@ class ADflowBuilder(Builder):
         options,  # adflow options
         mesh_options=None,  # idwarp options
         scenario="aerodynamic",  # scenario type to configure the groups
+        mesh_type="USMesh",  # mesh type option. USMesh or  MultiUSMesh
         restart_failed_analysis=False,  # retry after failed analysis
         err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
         balance_group=None,
@@ -1164,6 +1317,28 @@ class ADflowBuilder(Builder):
                 }
         else:
             self.mesh_options = mesh_options
+
+        if mesh_type == "USMesh":
+            self.multi_us_mesh = False
+
+            if "multi_us_mesh_components" in self.mesh_options.keys():
+                raise TypeError(
+                    "'multi_us_mesh_components' is only for 'MultiUSMesh' mesh_type . Please don't provide any multi_us_mesh_components dictionary for 'USMesh' mesh_type."
+                )
+
+        elif mesh_type == "MultiUSMesh":
+            if "multi_us_mesh_components" not in self.mesh_options.keys():
+                raise TypeError(
+                    "The 'multi_us_mesh_components' keyword argument is *NOT* "
+                    "optional. A multi_us_mesh_components dictionary must be passed for 'MultiUSMesh' mesh_type. "
+                )
+
+            self.multi_us_mesh = True
+
+        else:
+            raise ValueError(
+                "Available options for mesh_type: 'USMesh' and 'MultiUSMesh'. By default, 'USMesh' is used. Choose 'MultiUSMesh' When several mesh components are considered for independent deformation of multiple overset component meshes."
+            )
 
         # defaults:
 
@@ -1227,7 +1402,10 @@ class ADflowBuilder(Builder):
             for key, val in self.user_family_groups.items():
                 self.solver.addFamilyGroup(key, val)
 
-        mesh = USMesh(options=self.mesh_options, comm=comm)
+        if self.multi_us_mesh:
+            mesh = MultiUSMesh(self.mesh_options["gridFile"], self.mesh_options["multi_us_mesh_components"], comm=comm)
+        else:
+            mesh = USMesh(options=self.mesh_options, comm=comm)
 
         self.solver.setMesh(mesh)
 
@@ -1273,9 +1451,40 @@ class ADflowBuilder(Builder):
     def get_post_coupling_subsystem(self, scenario_name=None):
         return ADflowFunctions(aero_solver=self.solver)
 
-    # TODO the get_nnodes is deprecated. will remove
-    def get_nnodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName).size / 3)
-
     def get_number_of_nodes(self, groupName=None):
-        return int(self.solver.getSurfaceCoordinates(groupName=groupName).size / 3)
+        return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])
+
+    def get_tagged_indices(self, tags):
+        """
+        Method that returns grid IDs for a list of body/boundary tags.
+
+        Parameters
+        ----------
+        tags : list[str]
+            List of surface tags to get grid IDs for. If tags is -1, then all grid IDs are returned.
+
+        Returns
+        -------
+        grid_ids : list[int]
+            list of grid IDs that correspond to given body/boundary tags
+        """
+        numNodes = self.get_number_of_nodes()
+        if tags == -1 or tags == [-1]:
+            return list(range(numNodes))
+
+        # Create a dummy input vector that represents the indices of all the surface nodes
+        vecin = np.zeros((numNodes, 3), dtype=np.intc)
+        vecin[:, 0] = np.arange(numNodes)
+
+        # --- Now loop through each tag and get the local node IDs of that surface ---
+        # Since there is no method for directly getting the node IDs of a given surface, we're going to use the
+        # mapVector function to map the vector of all node IDs to the surface of interest. This will give us the local
+        # node IDs of the surface of interest.
+        nodeInds = []
+        for tag in tags:
+            vecout = self.solver.mapVector(vecin, self.solver.meshFamilyGroup, tag, includeZipper=True)
+            nodeInds.append(vecout[:, 0].astype(int))
+
+        # --- Now return the combined list of all node IDs for the tags, with duplicates removed ---
+        grid_ids = np.hstack(nodeInds)
+        return list(np.unique(grid_ids))
