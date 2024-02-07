@@ -2168,7 +2168,7 @@ contains
         end do
 
         case (cgnsSepSensor)
-        if (sepmodel == surfvec) then
+        if (sepmodel == surfvec .or. sepmodel == surfvec_ks) then
             do j = rangeFace(2, 1), rangeFace(2, 2)
                 if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
                     jor = j + jBegOr - 1

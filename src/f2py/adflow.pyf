@@ -863,7 +863,8 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: nsequations=2_inttype
          integer(kind=inttype) parameter,optional :: ransequations=3_inttype
          integer(kind=inttype) parameter,optional :: surfvec=1_inttype
-         integer(kind=inttype) parameter,optional :: heaviside=2_inttype
+          integer(kind=inttype) parameter,optional :: surfvec_ks=2_inttype
+         integer(kind=inttype) parameter,optional :: heaviside=3_inttype
          integer(kind=inttype) parameter,optional :: steady=1_inttype
          integer(kind=inttype) parameter,optional :: unsteady=2_inttype
          integer(kind=inttype) parameter,optional :: timespectral=3_inttype
@@ -1249,6 +1250,7 @@ python module libadflow
          integer(kind=inttype) :: liftindex
          real(kind=realtype) :: cavitationnumber
          real(kind=realtype) :: cpmin_rho
+         real(kind=realtype) :: sepsenmax_rho
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90

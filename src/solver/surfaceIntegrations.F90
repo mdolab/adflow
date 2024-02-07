@@ -9,8 +9,8 @@ contains
         use flowVarRefState, only: pRef, rhoRef, tRef, LRef, gammaInf, pInf, uRef, uInf
         use inputPhysics, only: liftDirection, dragDirection, surfaceRef, &
                                 machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
-                                cpmin_rho
-        use inputCostFunctions, only: computeCavitation
+                                cpmin_rho, sepsenmax_family, sepsenmax_rho
+        use inputCostFunctions, only: computeCavitation, sepmodel
         use inputTSStabDeriv, only: TSstability
         use utils, only: computeTSDerivatives
         use flowUtils, only: getDirVector
@@ -149,7 +149,12 @@ contains
             funcValues(costFuncMomYCoef) = funcValues(costFuncMomYCoef) + ovrNTS * cMoment(2, sps)
             funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS * cMoment(3, sps)
 
-            funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * globalVals(iSepSensor, sps)
+            if (sepmodel == surfvec_ks) then
+                funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * (sepsenmax_family(sps) + log(globalVals(iSepSensor, sps)) / sepsenmax_rho )
+            else 
+                funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * globalVals(iSepSensor, sps)
+            end if
+
             funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS * globalVals(iCavitation, sps)
             ! final part of the KS computation
             if (computeCavitation) then
@@ -373,8 +378,9 @@ contains
         use blockPointers
         use flowVarRefState
         use inputCostFunctions
-        use inputPhysics, only: MachCoef, pointRef, velDirFreeStream, &
-                                equations, momentAxis, cpmin_family, cpmin_rho, cavitationnumber
+        use inputPhysics, only: MachCoef, pointRef, velDirFreeStream, & 
+                                equations, momentAxis, cpmin_family, cpmin_rho, &
+                                cavitationnumber, sepsenmax_family, sepsenmax_rho
         use BCPointers
         implicit none
 
@@ -385,7 +391,8 @@ contains
         ! Local variables.
         real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
         real(kind=realType), dimension(3) :: COFSumFx, COFSumFy, COFSumFz
-        real(kind=realType) :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
+        real(kind=realType) :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum, &
+                               sepSensor_ks_sum
         integer(kind=intType) :: i, j, ii, blk
 
         real(kind=realType) :: pm1, fx, fy, fz, fn
@@ -432,6 +439,7 @@ contains
         COFSumFx = zero; COFSumFy = zero; COFSumFz = zero
         yplusMax = zero
         sepSensor = zero
+        sepSensor_ks_sum = zero
         Cavitation = zero
         cpmin_ks_sum = zero
         sepSensorAvg = zero
@@ -575,7 +583,7 @@ contains
             v(3) = ww2(i, j, ivz)
             v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-            if (sepmodel == surfvec) then
+            if (sepmodel == surfvec .or. sepmodel == surfvec_ks) then
                 ! Freestream projection over the surface.
                 vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
                                          velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
@@ -616,8 +624,22 @@ contains
                           v(3) * vectCorrected(3))
 
                 sensor = half * (one - sensor)
-                sensor = sensor * cellArea * blk
-                sepSensor = sepSensor + sensor
+                
+                
+
+                if (sepmodel == surfvec) then
+                    sensor = sensor * cellArea * blk
+                    sepSensor = sepSensor + sensor
+                    
+                else if (sepmodel == surfvec_ks) then
+
+                    ! also do the ks-based spensenor max computation
+                    ks_exponent = exp(sepsenmax_rho * (sensor - sepsenmax_family(spectralSol)))
+                    sepSensor_ks_sum = sepSensor_ks_sum + ks_exponent * blk
+                    sepSensor = sepSensor_ks_sum
+
+                end if 
+
 
             else if (sepmodel == heaviside) then
 
@@ -637,6 +659,8 @@ contains
                 sepSensorAvg(1) = sepSensorAvg(1) + sensor * xco
                 sepSensorAvg(2) = sepSensorAvg(2) + sensor * yco
                 sepSensorAvg(3) = sepSensorAvg(3) + sensor * zco
+
+            
             end if
 
             if (computeCavitation) then
@@ -839,6 +863,16 @@ contains
         localValues(iyPlus) = max(localValues(iyPlus), yplusMax)
 #endif
     end subroutine wallIntegrationFace
+
+    subroutine KS_aggregationfunction (g,max_g,g_rho)
+
+        real(kind=realType), intent(inout) :: ks_g
+        real(kind=realType), intent(in) :: g, max_g, g_rho
+
+        ks_g = exp(g_rho * (  g-max_g))
+
+
+    end subroutine KS_aggregationfunction
 
     subroutine flowIntegrationFace(isInflow, localValues, mm)
 
@@ -1185,7 +1219,7 @@ contains
         use zipperIntegrations, only: integrateZippers
         use userSurfaceIntegrations, only: integrateUserSurfaces
         use actuatorRegion, only: integrateActuatorRegions
-        use inputCostFunctions, only: computeCavitation
+        use inputCostFunctions, only: computeCavitation, sepmodel
         implicit none
 
         ! Input/Output Variables
@@ -1210,6 +1244,11 @@ contains
             ! compute the current cp min value for the cavitation computation with KS aggregation
             if (computeCavitation) then
                 call computeCpMinFamily(famList)
+            end if
+
+            ! compute the current sepsensor max value for the separation computation with KS aggregation
+            if (sepmodel==surfvec_ks) then
+                call computeSepSenMaxFamily(famList)
             end if
 
             do sps = 1, nTimeIntervalsSpectral
@@ -1380,6 +1419,129 @@ contains
 
     end subroutine computeCpMinFamily
 
+    subroutine computeSepSenMaxFamily(famList)
+
+        use constants
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use communication, only: ADflow_comm_world, myID
+        use blockPointers, only: nDom
+        use inputPhysics, only: sepsenmax_family, velDirFreeStream
+        use blockPointers
+        use flowVarRefState
+        use inputCostFunctions, only: sepsweepAngleCorrection
+        use BCPointers
+        use utils, only: setPointers, setBCPointers, isWallType, EChk
+        use sorting, only: famInList
+
+        implicit none
+
+        integer(kind=intType), dimension(:), intent(in) :: famList
+        integer(kind=intType) :: mm, nn, sps
+        integer(kind=intType) :: i, j, ii, blk, ierr
+        real(kind=realType) :: sepsensor_local
+        real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectTangential(3), v(3)
+        real(kind=realType) :: vectDotProductFsNormal, sensor
+
+        ! this routine loops over the surface cells in the given family
+        ! and computes the true maximum sepsensor value.
+        ! this is then used in the surface integration routine to compute
+        ! the cpmin using KS aggregation.
+        ! the goal is to get a differentiable cpmin output.
+
+        ! loop over the TS instances and compute sepsenmax_family for each TS instance
+        do sps = 1, nTimeIntervalsSpectral
+            ! set the local cp min to a large value so that we get the actual min
+            sepsensor_local = 0.0_realType
+            do nn = 1, nDom
+                call setPointers(nn, 1, sps)
+
+                ! Loop over all possible boundary conditions
+                bocos: do mm = 1, nBocos
+                    ! Determine if this boundary condition is to be incldued in the
+                    ! currently active group
+                    famInclude: if (famInList(BCData(mm)%famID, famList)) then
+
+                        ! Set a bunch of pointers depending on the face id to make
+                        ! a generic treatment possible.
+                        call setBCPointers(mm, .True.)
+
+                        ! no post gathered integrations currently
+                        isWall: if (isWallType(BCType(mm))) then
+
+                            !$AD II-LOOP
+                            do ii = 0, (BCData(mm)%jnEnd - bcData(mm)%jnBeg) * (bcData(mm)%inEnd - bcData(mm)%inBeg) - 1
+                                i = mod(ii, (bcData(mm)%inEnd - bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
+                                j = ii / (bcData(mm)%inEnd - bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
+
+                                ! Get normalized surface velocity:
+                                v(1) = ww2(i, j, ivx)
+                                v(2) = ww2(i, j, ivy)
+                                v(3) = ww2(i, j, ivz)
+                                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+
+                                ! Compute the force components.
+                                blk = max(BCData(mm)%iblank(i, j), 0)
+
+                                vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
+                                                        velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
+                                                        velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
+                                ! Tangential Vector on the surface, which is the freestream projected vector
+                                vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
+                                vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
+                                vectTangential(3) = velDirFreeStream(3) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 3)
+
+                                vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
+                                                                        vectTangential(3)**2) + 1e-16)
+
+                                ! compute cross product of vectTangential to surface normal, which will result in surface vector normal to the vectTangential
+                                vecCrossProd(1) = vectTangential(2) * BCData(mm)%norm(i, j, 3) - &
+                                                vectTangential(3) * BCData(mm)%norm(i, j, 2)
+                                vecCrossProd(2) = vectTangential(3) * BCData(mm)%norm(i, j, 1) - &
+                                                vectTangential(1) * BCData(mm)%norm(i, j, 3)
+                                vecCrossProd(3) = vectTangential(1) * BCData(mm)%norm(i, j, 2) - &
+                                                vectTangential(2) * BCData(mm)%norm(i, j, 1)
+
+                                vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
+                                                                    + vecCrossProd(3)**2) + 1e-16)
+
+                                ! do the sweep angle correction
+                                vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectTangential(1) + &
+                                                sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
+
+                                vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectTangential(2) + &
+                                                sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
+
+                                vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectTangential(3) + &
+                                                sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
+
+                                vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
+                                                                    + vectCorrected(3)**2) + 1e-16)
+
+                                sensor = (v(1) * vectCorrected(1) + v(2) * vectCorrected(2) + &
+                                        v(3) * vectCorrected(3))
+
+                                sensor = half * (one - sensor) *blk
+
+                                ! only take this if its a compute cell
+                                ! if (BCData(mm)%iblank(i, j) .eq. one) then
+
+                                ! compare it against the current value on this proc
+                                sepsensor_local = max(sepsensor_local, sensor)
+                                ! end if
+                            end do
+                        end if isWall
+
+                    end if famInclude
+                end do bocos
+            end do
+            ! finally communicate across all processors for this time spectral instance
+            call mpi_allreduce(sepsensor_local, sepsenmax_family(sps), 1, MPI_DOUBLE, &
+                               MPI_MAX, adflow_comm_world, ierr)
+            call EChk(ierr, __FILE__, __LINE__)
+        end do
+
+    end subroutine computeSepSenMaxFamily
+
 #ifndef USE_COMPLEX
     subroutine integrateSurfaces_d(localValues, localValuesd, famList)
         !------------------------------------------------------------------------
@@ -1489,7 +1651,7 @@ contains
         use zipperIntegrations, only: integrateZippers_d
         use userSurfaceIntegrations, only: integrateUserSurfaces_d
         use actuatorRegion, only: integrateActuatorRegions_d
-        use inputCostFunctions, only: computeCavitation
+        use inputCostFunctions, only: computeCavitation, sepmodel
         implicit none
 
         ! Input/Output Variables
@@ -1511,6 +1673,11 @@ contains
             ! compute the current cp min value for the cavitation computation with KS aggregation
             if (computeCavitation) then
                 call computeCpMinFamily(famList)
+            end if
+
+            ! compute the current sepsensor max value for the separation computation with KS aggregation
+            if (sepmodel==surfvec_ks) then
+                call computeSepSenMaxFamily(famList)
             end if
 
             localVal = zero
@@ -1571,7 +1738,7 @@ contains
         use zipperIntegrations, only: integrateZippers_b
         use userSurfaceIntegrations, only: integrateUserSurfaces_b
         use actuatorRegion, only: integrateActuatorRegions_b
-        use inputCostFunctions, only: computeCavitation
+        use inputCostFunctions, only: computeCavitation, sepmodel
         implicit none
 
         ! Input/Output Variables
@@ -1596,6 +1763,11 @@ contains
             ! compute the current cp min value for the cavitation computation with KS aggregation
             if (computeCavitation) then
                 call computeCpMinFamily(famList)
+            end if
+
+            ! compute the current sepsensor max value for the separation computation with KS aggregation
+            if (sepmodel==surfvec_ks) then
+                call computeSepSenMaxFamily(famList)
             end if
 
             localVal = zero

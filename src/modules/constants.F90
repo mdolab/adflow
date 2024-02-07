@@ -91,7 +91,8 @@ module constants
     ! sepsensor selection
     integer(kind=intType), parameter :: &
         surfvec = 1, &
-        heaviside = 2
+        surfvec_ks = 2, &
+        heaviside = 3
     ! String constants
     CHARACTER(*), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
     CHARACTER(*), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
