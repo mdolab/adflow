@@ -150,8 +150,10 @@ contains
             funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS * cMoment(3, sps)
 
             if (sepmodel == surfvec_ks) then
-                funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * (sepsenmax_family(sps) + log(globalVals(iSepSensor, sps)) / sepsenmax_rho )
-            else 
+                funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + &
+                                                ovrNTS * (sepsenmax_family(sps) + &
+                                                          log(globalVals(iSepSensor, sps)) / sepsenmax_rho)
+            else
                 funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * globalVals(iSepSensor, sps)
             end if
 
@@ -406,7 +408,7 @@ contains
         use blockPointers
         use flowVarRefState
         use inputCostFunctions
-        use inputPhysics, only: MachCoef, pointRef, velDirFreeStream, & 
+        use inputPhysics, only: MachCoef, pointRef, velDirFreeStream, &
                                 equations, momentAxis, cpmin_family, cpmin_rho, &
                                 cavitationnumber, sepsenmax_family, sepsenmax_rho
         use BCPointers
@@ -652,22 +654,19 @@ contains
                           v(3) * vectCorrected(3))
 
                 sensor = half * (one - sensor)
-                
-                
 
                 if (sepmodel == surfvec) then
                     sensor = sensor * cellArea * blk
                     sepSensor = sepSensor + sensor
-                    
+
                 else if (sepmodel == surfvec_ks) then
 
                     ! also do the ks-based spensenor max computation
-                    ks_exponent = exp(sepsenmax_rho * (sensor - sepsenmax_family(spectralSol)))
+                    call KSaggregationFunction(sensor,sepsenmax_family(spectralSol),sepsenmax_rho,ks_exponent)
                     sepSensor_ks_sum = sepSensor_ks_sum + ks_exponent * blk
                     sepSensor = sepSensor_ks_sum
 
-                end if 
-
+                end if
 
             else if (sepmodel == heaviside) then
 
@@ -688,7 +687,6 @@ contains
                 sepSensorAvg(2) = sepSensorAvg(2) + sensor * yco
                 sepSensorAvg(3) = sepSensorAvg(3) + sensor * zco
 
-            
             end if
 
             if (computeCavitation) then
@@ -892,15 +890,14 @@ contains
 #endif
     end subroutine wallIntegrationFace
 
-    subroutine KS_aggregationfunction (g,max_g,g_rho)
-
+    subroutine KSaggregationFunction(g, max_g, g_rho, ks_g)
+        implicit none
         real(kind=realType), intent(inout) :: ks_g
         real(kind=realType), intent(in) :: g, max_g, g_rho
 
-        ks_g = exp(g_rho * (  g-max_g))
+        ks_g = exp(g_rho * (g - max_g))
 
-
-    end subroutine KS_aggregationfunction
+    end subroutine KSaggregationFunction
 
     subroutine flowIntegrationFace(isInflow, localValues, mm)
 
@@ -1275,7 +1272,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (sepmodel==surfvec_ks) then
+            if (sepmodel == surfvec_ks) then
                 call computeSepSenMaxFamily(famList)
             end if
 
@@ -1511,44 +1508,47 @@ contains
                                 blk = max(BCData(mm)%iblank(i, j), 0)
 
                                 vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
-                                                        velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
-                                                        velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
+                                                         velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
+                                                         velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
                                 ! Tangential Vector on the surface, which is the freestream projected vector
-                                vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
-                                vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
-                                vectTangential(3) = velDirFreeStream(3) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 3)
+                                vectTangential(1) = velDirFreeStream(1) - &
+                                                    vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
+                                vectTangential(2) = velDirFreeStream(2) - &
+                                                    vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
+                                vectTangential(3) = velDirFreeStream(3) - &
+                                                    vectDotProductFsNormal * BCData(mm)%norm(i, j, 3)
 
                                 vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
                                                                         vectTangential(3)**2) + 1e-16)
 
                                 ! compute cross product of vectTangential to surface normal, which will result in surface vector normal to the vectTangential
                                 vecCrossProd(1) = vectTangential(2) * BCData(mm)%norm(i, j, 3) - &
-                                                vectTangential(3) * BCData(mm)%norm(i, j, 2)
+                                                  vectTangential(3) * BCData(mm)%norm(i, j, 2)
                                 vecCrossProd(2) = vectTangential(3) * BCData(mm)%norm(i, j, 1) - &
-                                                vectTangential(1) * BCData(mm)%norm(i, j, 3)
+                                                  vectTangential(1) * BCData(mm)%norm(i, j, 3)
                                 vecCrossProd(3) = vectTangential(1) * BCData(mm)%norm(i, j, 2) - &
-                                                vectTangential(2) * BCData(mm)%norm(i, j, 1)
+                                                  vectTangential(2) * BCData(mm)%norm(i, j, 1)
 
                                 vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
                                                                     + vecCrossProd(3)**2) + 1e-16)
 
                                 ! do the sweep angle correction
                                 vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectTangential(1) + &
-                                                sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
+                                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
 
                                 vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectTangential(2) + &
-                                                sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
+                                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
 
                                 vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectTangential(3) + &
-                                                sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
+                                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
 
                                 vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
-                                                                    + vectCorrected(3)**2) + 1e-16)
+                                                                      + vectCorrected(3)**2) + 1e-16)
 
                                 sensor = (v(1) * vectCorrected(1) + v(2) * vectCorrected(2) + &
-                                        v(3) * vectCorrected(3))
+                                          v(3) * vectCorrected(3))
 
-                                sensor = half * (one - sensor) *blk
+                                sensor = half * (one - sensor) * blk
 
                                 ! only take this if its a compute cell
                                 ! if (BCData(mm)%iblank(i, j) .eq. one) then
@@ -1704,7 +1704,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (sepmodel==surfvec_ks) then
+            if (sepmodel == surfvec_ks) then
                 call computeSepSenMaxFamily(famList)
             end if
 
@@ -1794,7 +1794,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (sepmodel==surfvec_ks) then
+            if (sepmodel == surfvec_ks) then
                 call computeSepSenMaxFamily(famList)
             end if
 
