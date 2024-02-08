@@ -3705,7 +3705,7 @@ contains
                  call terminate("checkInputParam", &
                  "Memory allocation failure for &
                  &sepsenmax_family")
-            sepsenmax_family = zero
+            sepsenmax_family = one
         end if
 
     end subroutine checkInputParam

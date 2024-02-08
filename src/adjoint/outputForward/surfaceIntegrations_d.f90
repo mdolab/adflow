@@ -2283,8 +2283,8 @@ contains
 !   variations   of useful results: ks_g
 !   with respect to varying inputs: g
   subroutine ksaggregationfunction_d(g, gd, max_g, g_rho, ks_g, ks_gd)
+    use precision
     implicit none
-    type(unknowntype) :: realtype
     real(kind=realtype), intent(inout) :: ks_g
     real(kind=realtype), intent(inout) :: ks_gd
     real(kind=realtype), intent(in) :: g, max_g, g_rho
@@ -2295,8 +2295,8 @@ contains
   end subroutine ksaggregationfunction_d
 
   subroutine ksaggregationfunction(g, max_g, g_rho, ks_g)
+    use precision
     implicit none
-    type(unknowntype) :: realtype
     real(kind=realtype), intent(inout) :: ks_g
     real(kind=realtype), intent(in) :: g, max_g, g_rho
     intrinsic exp

@@ -891,7 +891,9 @@ contains
     end subroutine wallIntegrationFace
 
     subroutine KSaggregationFunction(g, max_g, g_rho, ks_g)
-        implicit none
+
+        use precision
+        
         real(kind=realType), intent(inout) :: ks_g
         real(kind=realType), intent(in) :: g, max_g, g_rho
 

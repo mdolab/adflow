@@ -791,8 +791,8 @@ contains
   end subroutine wallintegrationface
 
   subroutine ksaggregationfunction(g, max_g, g_rho, ks_g)
+    use precision
     implicit none
-    type(unknowntype) :: realtype
     real(kind=realtype), intent(inout) :: ks_g
     real(kind=realtype), intent(in) :: g, max_g, g_rho
     intrinsic exp
