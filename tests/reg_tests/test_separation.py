@@ -17,31 +17,10 @@ import reg_test_classes
 baseDir = os.path.dirname(os.path.abspath(__file__))
 gridFile = os.path.join(baseDir, "../../input_files/naca0012_L3_SEP.cgns")
 test_params = [
-    {
-        "name": "rans_surfvec_1core",
-        "options":  {
-                "gridfile": gridFile,
-                "outputdirectory": os.path.join(baseDir, "../output_files"),
-                "writevolumesolution": False,
-                "writesurfacesolution": False,
-                "writetecplotsurfacesolution": False,
-                "mgcycle": "sg",
-                "ncycles": 1000,
-                "useanksolver": True,
-                "usenksolver": True,
-                "anksecondordswitchtol": 1e-2,
-                "nkswitchtol": 1e-6,
-                "volumevariables": ["temp", "mach", "resrho", "cp"],
-                "equationType": "RANS",
-                "l2convergence": 1e-15,
-                "adjointl2convergence": 1e-15,
-                "sepSensorModel": "surfvec",
-                "sepSweepAngleCorrection": 0.0,
-            }
-    },
-    {
-        "name": "rans_surfvec_ks_1core",
-        "options":  {
+     {
+        "name": "naca0012_rans_2D_surfvec_ks",
+        "ref_file" :"separation_tests_surfvec_ks.json",
+           "options":     {
                 "gridfile": gridFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
                 "writevolumesolution": False,
@@ -59,9 +38,51 @@ test_params = [
                 "adjointl2convergence": 1e-15,
                 "sepSensorModel": "surfvec_ks",
                 "sepSweepAngleCorrection": 0.0,
-            }
-    },
-]
+            }},
+             {
+        "name": "naca0012_rans_2D_surfvec",
+        "ref_file" :"separation_tests_surfvec.json",
+           "options":     {
+                "gridfile": gridFile,
+                "outputdirectory": os.path.join(baseDir, "../output_files"),
+                "writevolumesolution": False,
+                "writesurfacesolution": False,
+                "writetecplotsurfacesolution": False,
+                "mgcycle": "sg",
+                "ncycles": 1000,
+                "useanksolver": True,
+                "usenksolver": True,
+                "anksecondordswitchtol": 1e-2,
+                "nkswitchtol": 1e-6,
+                "volumevariables": ["temp", "mach", "resrho", "cp"],
+                "equationType": "RANS",
+                "l2convergence": 1e-15,
+                "adjointl2convergence": 1e-15,
+                "sepSensorModel": "surfvec_ks",
+                "sepSweepAngleCorrection": 0.0,
+            }},
+            {
+        "name": "naca0012_rans_2D_heaviside",
+        "ref_file" :"separation_tests_heaviside.json",
+           "options":     {
+                "gridfile": gridFile,
+                "outputdirectory": os.path.join(baseDir, "../output_files"),
+                "writevolumesolution": False,
+                "writesurfacesolution": False,
+                "writetecplotsurfacesolution": False,
+                "mgcycle": "sg",
+                "ncycles": 1000,
+                "useanksolver": True,
+                "usenksolver": True,
+                "anksecondordswitchtol": 1e-2,
+                "nkswitchtol": 1e-6,
+                "volumevariables": ["temp", "mach", "resrho", "cp"],
+                "equationType": "RANS",
+                "l2convergence": 1e-15,
+                "adjointl2convergence": 1e-15,
+                "sepSensorModel": "heaviside",
+                "sepSweepAngleCorrection": 0.0,
+            }}]
 
 @parameterized_class(test_params)
 class SeparationBasicTests(reg_test_classes.RegTest):
@@ -69,22 +90,25 @@ class SeparationBasicTests(reg_test_classes.RegTest):
     Tests for the separation metrics.
     """
 
-    N_PROCS = 1
-    ref_file = "separation_tests.json"
-    option = None
+    N_PROCS = 2
+    # ref_file = None
+    options = None
 
     def setUp(self):
+        if not hasattr(self, "name"):
+            # return immediately when the setup method is being called on the based class and NOT the
+            # classes created using parametrized
+            # this will happen when training, but will hopefully be fixed down the line
+            return
         super().setUp()
 
-        
-
         options = copy.copy(adflowDefOpts)
-        options.update(self.option)
+        options.update(self.options)
 
         # Setup aeroproblem
         self.ap = copy.copy(ap_naca0012_separation)
         # change the name
-        self.ap.name = "naca0012_rans_2D"
+        self.ap.name = self.name
 
         # add aoa DV
         self.ap.addDV("alpha", name="alpha")
@@ -167,50 +191,32 @@ class SeparationBasicTests(reg_test_classes.RegTest):
             self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal2, rtol=5e-10, compare=True)
 
 
+@parameterized_class(test_params)
 class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
     """
     Complex step tests for the separation functions.
     """
 
     N_PROCS = 2
-    ref_file = "separation_tests.json"
+    ref_file = None
     h = 1e-40
 
     def setUp(self):
+        if not hasattr(self, "name"):
+            # return immediately when the setup method is being called on the based class and NOT the
+            # classes created using parametrized
+            # this will happen when training, but will hopefully be fixed down the line
+            return
         super().setUp()
 
-        gridFile = os.path.join(baseDir, "../../input_files/naca0012_L3_SEP.cgns")
 
         options = copy.copy(adflowDefOpts)
-        options.update(
-            {
-                "gridfile": gridFile,
-                "outputdirectory": os.path.join(baseDir, "../output_files"),
-                "writevolumesolution": False,
-                "writesurfacesolution": False,
-                "writetecplotsurfacesolution": False,
-                "mgcycle": "sg",
-                "ncycles": 1000,
-                "useanksolver": True,
-                "usenksolver": True,
-                "anksecondordswitchtol": 1e-2,
-                "nkswitchtol": 1e-6,
-                "volumevariables": ["temp", "mach", "resrho", "cp"],
-                "equationType": "RANS",
-                "l2convergence": 1e-13,
-                "adjointl2convergence": 1e-13,
-                # to get slightly better complex convergence
-                "NKUseEW": False,
-                "NKLinearSolveTol": 1e-4,
-                "sepSensorModel": "surfvec",
-                "sepSweepAngleCorrection": 0.0,
-            }
-        )
+        options.update(self.options)
 
         # Setup aeroproblem
         self.ap = copy.copy(ap_naca0012_separation)
         # change the name
-        self.ap.name = "naca0012_rans_2D"
+        self.ap.name = self.name
 
         # add aoa DV
         self.ap.addDV("alpha", name="alpha")
