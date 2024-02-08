@@ -9,29 +9,17 @@ from adflow import ADFLOW
 from adflow import ADFLOW_C
 
 # import the testing utilities
+from parameterized import parameterized_class
 from reg_default_options import adflowDefOpts
 from reg_aeroproblems import ap_naca0012_separation
 import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
-
-
-class SeparationBasicTests(reg_test_classes.RegTest):
-    """
-    Tests for the separation metrics.
-    """
-
-    N_PROCS = 2
-    ref_file = "separation_tests.json"
-
-    def setUp(self):
-        super().setUp()
-
-        gridFile = os.path.join(baseDir, "../../input_files/naca0012_L3_SEP.cgns")
-
-        options = copy.copy(adflowDefOpts)
-        options.update(
-            {
+gridFile = os.path.join(baseDir, "../../input_files/naca0012_L3_SEP.cgns")
+test_params = [
+    {
+        "name": "rans_surfvec_1core",
+        "options":  {
                 "gridfile": gridFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
                 "writevolumesolution": False,
@@ -50,7 +38,48 @@ class SeparationBasicTests(reg_test_classes.RegTest):
                 "sepSensorModel": "surfvec",
                 "sepSweepAngleCorrection": 0.0,
             }
-        )
+    },
+    {
+        "name": "rans_surfvec_ks_1core",
+        "options":  {
+                "gridfile": gridFile,
+                "outputdirectory": os.path.join(baseDir, "../output_files"),
+                "writevolumesolution": False,
+                "writesurfacesolution": False,
+                "writetecplotsurfacesolution": False,
+                "mgcycle": "sg",
+                "ncycles": 1000,
+                "useanksolver": True,
+                "usenksolver": True,
+                "anksecondordswitchtol": 1e-2,
+                "nkswitchtol": 1e-6,
+                "volumevariables": ["temp", "mach", "resrho", "cp"],
+                "equationType": "RANS",
+                "l2convergence": 1e-15,
+                "adjointl2convergence": 1e-15,
+                "sepSensorModel": "surfvec_ks",
+                "sepSweepAngleCorrection": 0.0,
+            }
+    },
+]
+
+@parameterized_class(test_params)
+class SeparationBasicTests(reg_test_classes.RegTest):
+    """
+    Tests for the separation metrics.
+    """
+
+    N_PROCS = 1
+    ref_file = "separation_tests.json"
+    option = None
+
+    def setUp(self):
+        super().setUp()
+
+        
+
+        options = copy.copy(adflowDefOpts)
+        options.update(self.option)
 
         # Setup aeroproblem
         self.ap = copy.copy(ap_naca0012_separation)
