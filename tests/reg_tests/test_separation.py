@@ -154,9 +154,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         funcsSens = {}
         self.CFDSolver.evalFunctionsSens(self.ap, funcsSens, evalFuncs=evalFuncs)
         self.handler.root_print("separation totals")
-        self.handler.root_add_dict(
-            "separation totals", funcsSens, rtol=5e-10, atol=5e-10
-        )
+        self.handler.root_add_dict("separation totals", funcsSens, rtol=5e-10, atol=5e-10)
 
         for funcName in evalFuncs:
             ##################
@@ -173,9 +171,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
             funcsBar = self.CFDSolver._getFuncsBar(funcName)
 
             # this is the reverse seed up to the volume coordinates
-            xVBar = self.CFDSolver.computeJacobianVectorProductBwd(
-                resBar=psi, funcsBar=funcsBar, xVDeriv=True
-            )
+            xVBar = self.CFDSolver.computeJacobianVectorProductBwd(resBar=psi, funcsBar=funcsBar, xVDeriv=True)
 
             # dot product these two vectors to get a total derivative
             dotLocal = np.dot(xVDot, xVBar)
@@ -191,25 +187,17 @@ class SeparationBasicTests(reg_test_classes.RegTest):
             ##################
             # DOT PRODUCT TEST
             ##################
-            fDot_w = self.CFDSolver.computeJacobianVectorProductFwd(
-                wDot=wDot, funcDeriv=True
-            )
-            fDot_xv = self.CFDSolver.computeJacobianVectorProductFwd(
-                xVDot=xVDot, funcDeriv=True
-            )
+            fDot_w = self.CFDSolver.computeJacobianVectorProductFwd(wDot=wDot, funcDeriv=True)
+            fDot_xv = self.CFDSolver.computeJacobianVectorProductFwd(xVDot=xVDot, funcDeriv=True)
             funcsBar = {funcName: 1.0}
-            wBar, xVBar = self.CFDSolver.computeJacobianVectorProductBwd(
-                funcsBar=funcsBar, wDeriv=True, xVDeriv=True
-            )
+            wBar, xVBar = self.CFDSolver.computeJacobianVectorProductBwd(funcsBar=funcsBar, wDeriv=True, xVDeriv=True)
 
             # do the dot product. we test both state partials and volume coordinate partials
             # state
             dotLocal1 = np.dot(wDot, wBar)
             dotLocal2 = fDot_w[funcName] / self.CFDSolver.comm.size
 
-            self.handler.par_add_sum(
-                f"Dot product test for w -> {funcName}", dotLocal1, rtol=5e-10
-            )
+            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal1, rtol=5e-10)
             self.handler.par_add_sum(
                 f"Dot product test for w -> {funcName}",
                 dotLocal2,
@@ -220,9 +208,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
             # volume coords
             dotLocal1 = np.dot(xVDot, xVBar)
             dotLocal2 = fDot_xv[funcName] / self.CFDSolver.comm.size
-            self.handler.par_add_sum(
-                f"Dot product test for xV -> {funcName}", dotLocal1, rtol=5e-10
-            )
+            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal1, rtol=5e-10)
             self.handler.par_add_sum(
                 f"Dot product test for xV -> {funcName}",
                 dotLocal2,
@@ -297,9 +283,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
                 xVDot = self.CFDSolver.getSpatialPerturbation(314)
                 # gridSave = np.zeros_like(xVDot)
                 # get the original grid
-                gridSave = self.CFDSolver.adflow.warping.getgrid(
-                    self.CFDSolver.getSpatialSize()
-                )
+                gridSave = self.CFDSolver.adflow.warping.getgrid(self.CFDSolver.getSpatialSize())
                 # perturb using the random seed
                 # this is very intrusive but it works and its testing these functions sensitivities
                 # wrt geometric DVs w/o actually having a mesh or dvgeo object
@@ -312,9 +296,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
             # call solver again
             # we can also not re-set the flow and call the solver a few times until complex parts converge
             self.CFDSolver.resetFlow(self.ap)
-            self.CFDSolver(
-                self.ap
-            )  # the complex residuals dont converge well for the coordinate perturbation
+            self.CFDSolver(self.ap)  # the complex residuals dont converge well for the coordinate perturbation
 
             # check if solution failed
             self.assert_solution_failure()
@@ -328,9 +310,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
             # compute the sens
             funcsSensCS[dv] = {}
             for f in evalFuncs:
-                funcsSensCS[dv][self.ap[f]] = (
-                    np.imag(funcs_plus[dv][self.ap[f]]) / self.h
-                )
+                funcsSensCS[dv][self.ap[f]] = np.imag(funcs_plus[dv][self.ap[f]]) / self.h
 
             # reset the DV
             if dv == "alpha":
@@ -352,16 +332,10 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
             fullName = f"{self.name}_{funcName}"
 
             refVal = self.handler.db["separation totals"][fullName]["alpha"]
-            np.testing.assert_allclose(
-                funcsSensCS["alpha"][fullName], refVal, atol=1e-6, rtol=1e-6
-            )
+            np.testing.assert_allclose(funcsSensCS["alpha"][fullName], refVal, atol=1e-6, rtol=1e-6)
 
-            refVal = self.handler.db[
-                f"total {funcName} derivative wrt random volume perturbation"
-            ]
-            np.testing.assert_allclose(
-                funcsSensCS["vol_perturbation"][fullName], refVal, rtol=5e-3, atol=5e-3
-            )
+            refVal = self.handler.db[f"total {funcName} derivative wrt random volume perturbation"]
+            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][fullName], refVal, rtol=5e-3, atol=5e-3)
 
 
 if __name__ == "__main__":
