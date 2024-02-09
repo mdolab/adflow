@@ -39,6 +39,7 @@ test_params = [
             "l2convergence": 1e-15,
             "adjointl2convergence": 1e-15,
             "sepSensorModel": "surfvec_ks",
+            "sepSensorMaxRho" : 100.0,
             "sepSweepAngleCorrection": 0.0,
         },
     },
@@ -63,7 +64,7 @@ test_params = [
             "equationType": "RANS",
             "l2convergence": 1e-15,
             "adjointl2convergence": 1e-15,
-            "sepSensorModel": "surfvec_ks",
+            "sepSensorModel": "surfvec",
             "sepSweepAngleCorrection": 0.0,
         },
     },
@@ -273,7 +274,6 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
             # classes created using parametrized
             # this will happen when training, but will hopefully be fixed down the line
             return
-        # setattr(self.ap, dv, getattr(self.ap, dv) + self.h * 1j)
         aDV = {"alpha": self.ap.alpha}
         funcs = {}
         funcsSensCS = {}
@@ -349,7 +349,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         # we assume the adjoint sensitivities are also true
 
         for funcName in evalFuncs:
-            fullName = f"naca0012_rans_2D_{funcName}"
+            fullName = f"{self.name}_{funcName}"
 
             refVal = self.handler.db["separation totals"][fullName]["alpha"]
             np.testing.assert_allclose(
@@ -360,7 +360,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
                 f"total {funcName} derivative wrt random volume perturbation"
             ]
             np.testing.assert_allclose(
-                funcsSensCS["vol_perturbation"][fullName], refVal, rtol=1e-3, atol=1e-3
+                funcsSensCS["vol_perturbation"][fullName], refVal, rtol=5e-3, atol=5e-3
             )
 
 

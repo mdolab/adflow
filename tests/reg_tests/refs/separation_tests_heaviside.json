@@ -192,7 +192,7 @@
         "restartFile": null,
         "restrictionRelaxation": 0.8,
         "selfZipCutoff": 120.0,
-        "sepSensorMaxRho": 100.0,
+        "sepSensorMaxRho": 1000.0,
         "sepSensorModel": "heaviside",
         "sepSensorOffset": 0.0,
         "sepSensorSharpness": 10.0,

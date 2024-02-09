@@ -5764,7 +5764,7 @@ class ADFLOW(AeroSolver):
             "verifyExtra": [bool, True],
             # Function parmeters
             "sepSensorModel": [str, ["heaviside", "surfvec", "surfvec_ks"]],
-            "sepSensorMaxRho": [float, 100.0],
+            "sepSensorMaxRho": [float, 1000.0],
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
             "sepSweepAngleCorrection": [float, 0.0],
