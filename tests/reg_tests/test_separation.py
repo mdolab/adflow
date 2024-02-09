@@ -39,7 +39,7 @@ test_params = [
             "l2convergence": 1e-15,
             "adjointl2convergence": 1e-15,
             "sepSensorModel": "surfvec_ks",
-            "sepSensorMaxRho" : 100.0,
+            "sepSensorMaxRho": 100.0,
             "sepSweepAngleCorrection": 0.0,
         },
     },
