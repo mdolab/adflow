@@ -1534,6 +1534,12 @@ sepSensorModel:
   surfvec_ks: This method uses similar formulation to ``surfvec`` to compute the maximum separation sensor value on a desired surface instead of integrating over this surface.
     Therefore, this maximum separation sensor value can be constrained to alleviate separation.
 
+sepSensorMaxRho:
+  desc: >
+    The rho parameter used for the KS aggregation used for computing maximum separation sensor value in ``surfvec_ks`` model.
+    KS aggregation is used to compute the differentiable max separation sensor within the given family group.
+    A higher rho value will approach the actual min Cp more accurately, at the cost of a more nonlinear function.
+
 sepSensorOffset:
   desc: >
     The offset value used for the separation sensor.
