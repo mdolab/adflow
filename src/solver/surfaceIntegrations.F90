@@ -662,7 +662,7 @@ contains
                 else if (sepmodel == surfvec_ks) then
 
                     ! also do the ks-based spensenor max computation
-                    call KSaggregationFunction(sensor,sepsenmax_family(spectralSol),sepsenmax_rho,ks_exponent)
+                    call KSaggregationFunction(sensor, sepsenmax_family(spectralSol), sepsenmax_rho, ks_exponent)
                     sepSensor_ks_sum = sepSensor_ks_sum + ks_exponent * blk
                     sepSensor = sepSensor_ks_sum
 
@@ -893,7 +893,7 @@ contains
     subroutine KSaggregationFunction(g, max_g, g_rho, ks_g)
 
         use precision
-        
+
         real(kind=realType), intent(inout) :: ks_g
         real(kind=realType), intent(in) :: g, max_g, g_rho
 
