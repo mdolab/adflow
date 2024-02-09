@@ -1527,9 +1527,12 @@ sepSensorModel:
     This option allows to pick 2 separation sensor models.
   heaviside: Based on (Kenway2017b)
   surfvec: Surface vector projection. The separation is based on how much the local flow velocity deviates from the desired flow direction. 
-    We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``) in 3D cases (For airfoils, the desired direction would be the projected freestream vector over the airfoil surface). 
+    We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``) in 3D cases (For airfoils, the desired direction would be the projected freestream vector over the airfoil surface).
     Then we compute the deviation between the local flow velocity and this desired direction. We use a separation metric to integrate this computation over the desired surface.
-    ``0`` means no separation and ``1`` means that the flow is fully separated.
+    ``0`` means no separation and ``1`` means that the flow is fully separated. This 
+    Although, this method is formulated for 3D cases, this method is appropriate for airfoils. However, for 3D cases, please use ``surfvec_ks`` option, which has KS aggregation to aggregate the maximum separation sensor value to be constrained. 
+  surfvec_ks: This method uses similar formulation to ``surfvec`` to compute the maximum separation sensor value on a desired surface instead of integrating over this surface.
+    Therefore, this maximum separation sensor value can be constrained to alleviate separation.
 
 sepSensorOffset:
   desc: >
