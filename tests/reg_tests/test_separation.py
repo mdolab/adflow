@@ -20,6 +20,8 @@ test_params = [
      {
         "name": "naca0012_rans_2D_surfvec_ks",
         "ref_file" :"separation_tests_surfvec_ks.json",
+        "aero_prob": ap_naca0012_separation,
+        "N_PROCS": 2,
            "options":     {
                 "gridfile": gridFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
@@ -42,6 +44,8 @@ test_params = [
              {
         "name": "naca0012_rans_2D_surfvec",
         "ref_file" :"separation_tests_surfvec.json",
+        "aero_prob": ap_naca0012_separation,
+        "N_PROCS": 2,
            "options":     {
                 "gridfile": gridFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
@@ -64,6 +68,8 @@ test_params = [
             {
         "name": "naca0012_rans_2D_heaviside",
         "ref_file" :"separation_tests_heaviside.json",
+        "aero_prob": ap_naca0012_separation,
+        "N_PROCS": 2,
            "options":     {
                 "gridfile": gridFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
@@ -106,7 +112,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         options.update(self.options)
 
         # Setup aeroproblem
-        self.ap = copy.copy(ap_naca0012_separation)
+        self.ap = copy.deepcopy(self.aero_prob)
         # change the name
         self.ap.name = self.name
 
@@ -214,7 +220,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         options.update(self.options)
 
         # Setup aeroproblem
-        self.ap = copy.copy(ap_naca0012_separation)
+        self.ap = copy.deepcopy(ap_naca0012_separation)
         # change the name
         self.ap.name = self.name
 
@@ -230,6 +236,12 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         self.CFDSolver.addFunction("sepsensor", "wingup")
 
     def cmplx_test_separation_adjoints(self):
+        if not hasattr(self, "name"):
+            # return immediately when the setup method is being called on the based class and NOT the
+            # classes created using parametrized
+            # this will happen when training, but will hopefully be fixed down the line
+            return
+        # setattr(self.ap, dv, getattr(self.ap, dv) + self.h * 1j)
         aDV = {"alpha": self.ap.alpha}
         funcs = {}
         funcsSensCS = {}
