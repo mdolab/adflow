@@ -1529,31 +1529,31 @@ sepSensorModel:
   surfvec: Surface vector projection. The separation is based on how much the local flow velocity deviates from the desired flow direction. 
     We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``) in 3D cases (For airfoils, the desired direction would be the projected freestream vector over the airfoil surface).
     Then we compute the deviation between the local flow velocity and this desired direction. We use a separation metric to integrate this computation over the desired surface.
-    ``0`` means no separation and ``1`` means that the flow is fully separated. This 
-    Although, this method is formulated for 3D cases, this method is appropriate for airfoils. However, for 3D cases, please use ``surfvec_ks`` option, which has KS aggregation to aggregate the maximum separation sensor value to be constrained. 
+    ``0`` means no separation and ``1`` means that the flow is fully separated. 
+    Although, this method is formulated for 3D cases, it is appropriate for airfoils. However, for 3D cases, please use ``surfvec_ks`` option, which has KS aggregation to aggregate the maximum separation sensor value to be constrained. 
   surfvec_ks: This method uses similar formulation to ``surfvec`` to compute the maximum separation sensor value on a desired surface instead of integrating over this surface.
-    Therefore, this maximum separation sensor value can be constrained to alleviate separation.
+    Therefore, this maximum separation sensor value from KS aggregation function can be constrained to alleviate separation.
 
 sepSensorMaxRho:
   desc: >
-    The rho parameter used for the KS aggregation used for computing maximum separation sensor value in ``surfvec_ks`` model.
+    The rho parameter used for the KS aggregation used for computing maximum separation sensor value in ``surfvec_ks`` model in ``sepSensorModel``.
     KS aggregation is used to compute the differentiable max separation sensor within the given family group.
     A higher rho value will approach the actual max separation sensor value more accurately, at the cost of a more nonlinear function.
 
 sepSensorOffset:
   desc: >
-    The offset value used for the separation sensor.
+    The offset value used for the separation sensor in ``heaviside`` model in ``sepSensorModel``.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
 sepSensorSharpness:
   desc: >
-    The sharpness parameter for the separation sensor.
+    The sharpness parameter for the separation sensor ``heaviside`` model in ``sepSensorModel``.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
 sepSweepAngleCorrection:
   desc: >
-    This option is only for ``surfvec`` separation model in ``sepSensorModel``.
-    This angle is for 3D cases only when the wing has a sweep.
+    This option is only for ``surfvec`` and ``surfvec`_ks` separation models in ``sepSensorModel``.
+    This angle (in degrees) is for 3D cases only when the wing has a sweep.
     For airfoils, by default, this is ``0``.
     For a 3D case, the sweep angle of the wing (25% chord sweep angle) is recommended.
     The value should be in degrees. 
