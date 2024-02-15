@@ -299,7 +299,7 @@ end module inputIteration
 
 module inputCostFunctions
     use constants
-    integer(kind=inttype) :: sepmodel = heaviside
+    integer(kind=inttype) :: sepmodel = surfvec
     real(kind=realtype) :: sepSensorOffset = zero
     real(kind=realtype) :: sepSweepAngleCorrection = zero
     real(kind=realtype) :: sepSensorSharpness = 10.0_realType
