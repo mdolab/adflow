@@ -1524,7 +1524,7 @@ verifyExtra:
 
 sepSensorModel:
   desc: >
-    This option allows to pick 2 separation sensor models.
+    This option allows to pick 3 separation sensor models.
   heaviside: Based on (Kenway2017b)
   surfvec: Surface vector projection. The separation is based on how much the local flow velocity deviates from the desired flow direction. 
     We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``) in 3D cases (For airfoils, the desired direction would be the projected freestream vector over the airfoil surface).

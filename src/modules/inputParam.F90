@@ -299,10 +299,10 @@ end module inputIteration
 
 module inputCostFunctions
     use constants
-    integer(kind=inttype) :: sepmodel = surfvec
-    real(kind=realtype) :: sepSensorOffset = zero
-    real(kind=realtype) :: sepSweepAngleCorrection = zero
-    real(kind=realtype) :: sepSensorSharpness = 10.0_realType
+    integer(kind=inttype) :: sepmodel
+    real(kind=realtype) :: sepSensorOffset
+    real(kind=realtype) :: sepSweepAngleCorrection
+    real(kind=realtype) :: sepSensorSharpness
     real(kind=realtype) :: cavSensorOffset
     real(kind=realtype) :: cavSensorSharpness
     integer(kind=inttype) :: cavExponent
@@ -574,8 +574,8 @@ module inputPhysics
     ! cpmin_family         The cpmin for a given surface family that does not use
     !                      KS-aggregation, but rather an exact min computation.
     ! sepsenmax_rho           The rho parameter used with the KS-based separation sensor.
-    ! sepsenmax_family     The cpmin for a given surface family that does not use
-    !                      KS-aggregation, but rather an exact min computation.
+    ! sepsenmax_family     The maximum sepsensor value for a given surface family that does not use
+    !                      KS-aggregation, but rather an exact max computation.
 
     integer(kind=intType) :: equations, equationMode, flowType
     integer(kind=intType) :: turbModel, cpModel, turbProd
