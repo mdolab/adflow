@@ -1552,7 +1552,7 @@ sepSensorSharpness:
 
 sepSweepAngleCorrection:
   desc: >
-    This option is only for ``surfvec`` and ``surfvec`_ks` separation models in ``sepSensorModel``.
+    This option is only for ``surfvec`` and ``surfvec_ks`` separation models in ``sepSensorModel``.
     This angle (in degrees) is for 3D cases only when the wing has a sweep.
     For airfoils, by default, this is ``0``.
     For a 3D case, the sweep angle of the wing (25% chord sweep angle) is recommended.
