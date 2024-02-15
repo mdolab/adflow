@@ -148,8 +148,9 @@ contains
             funcValues(costFuncMomXCoef) = funcValues(costFuncMomXCoef) + ovrNTS * cMoment(1, sps)
             funcValues(costFuncMomYCoef) = funcValues(costFuncMomYCoef) + ovrNTS * cMoment(2, sps)
             funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS * cMoment(3, sps)
-
+            ! final part of the KS computation
             if (sepmodel == surfvec_ks) then
+                ! only calculate the log part if we are actually computing for separation for surfvec_ks method.
                 funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + &
                                                 ovrNTS * (sepsenmax_family(sps) + &
                                                           log(globalVals(iSepSensor, sps)) / sepsenmax_rho)
@@ -421,8 +422,7 @@ contains
         ! Local variables.
         real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
         real(kind=realType), dimension(3) :: COFSumFx, COFSumFy, COFSumFz
-        real(kind=realType) :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum, &
-                               sepSensor_ks_sum
+        real(kind=realType) :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
         integer(kind=intType) :: i, j, ii, blk
 
         real(kind=realType) :: pm1, fx, fy, fz, fn
@@ -469,7 +469,6 @@ contains
         COFSumFx = zero; COFSumFy = zero; COFSumFz = zero
         yplusMax = zero
         sepSensor = zero
-        sepSensor_ks_sum = zero
         Cavitation = zero
         cpmin_ks_sum = zero
         sepSensorAvg = zero
@@ -663,8 +662,7 @@ contains
 
                     ! also do the ks-based spensenor max computation
                     call KSaggregationFunction(sensor, sepsenmax_family(spectralSol), sepsenmax_rho, ks_exponent)
-                    sepSensor_ks_sum = sepSensor_ks_sum + ks_exponent * blk
-                    sepSensor = sepSensor_ks_sum
+                    sepSensor = sepSensor + ks_exponent * blk
 
                 end if
 
@@ -1472,8 +1470,8 @@ contains
         ! this routine loops over the surface cells in the given family
         ! and computes the true maximum sepsensor value.
         ! this is then used in the surface integration routine to compute
-        ! the cpmin using KS aggregation.
-        ! the goal is to get a differentiable cpmin output.
+        ! the maximum sepsensor value using KS aggregation.
+        ! the goal is to get a differentiable maximum sepsensor output.
 
         ! loop over the TS instances and compute sepsenmax_family for each TS instance
         do sps = 1, nTimeIntervalsSpectral

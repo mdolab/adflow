@@ -230,7 +230,9 @@ contains
 &       ovrnts*cmoment(2, sps)
       funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
 &       ovrnts*cmoment(3, sps)
+! final part of the ks computation
       if (sepmodel .eq. surfvec_ks) then
+! only calculate the log part if we are actually computing for separation for surfvec_ks method.
         funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
 &         ovrnts*(sepsenmax_family(sps)+log(globalvals(isepsensor, sps))&
 &         /sepsenmax_rho)
@@ -785,6 +787,7 @@ contains
 ! fy
 ! fz
 ! ------------
+! final part of the ks computation
         if (sepmodel .eq. surfvec_ks) then
           call pushcontrol1b(0)
         else
@@ -1195,7 +1198,9 @@ contains
 &       ovrnts*cmoment(2, sps)
       funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
 &       ovrnts*cmoment(3, sps)
+! final part of the ks computation
       if (sepmodel .eq. surfvec_ks) then
+! only calculate the log part if we are actually computing for separation for surfvec_ks method.
         funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
 &         ovrnts*(sepsenmax_family(sps)+log(globalvals(isepsensor, sps))&
 &         /sepsenmax_rho)
@@ -1430,9 +1435,9 @@ contains
     real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     real(kind=realtype), dimension(3) :: cofsumfxd, cofsumfyd, cofsumfzd
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation, cpmin_ks_sum, sepsensor_ks_sum
+&   cavitation, cpmin_ks_sum
     real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd, &
-&   cpmin_ks_sumd, sepsensor_ks_sumd
+&   cpmin_ks_sumd
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
@@ -1672,8 +1677,7 @@ contains
 ! also do the ks-based spensenor max computation
           call ksaggregationfunction(sensor, sepsenmax_family(&
 &                              spectralsol), sepsenmax_rho, ks_exponent)
-          sepsensor_ks_sum = sepsensor_ks_sum + ks_exponent*blk
-          sepsensor = sepsensor_ks_sum
+          sepsensor = sepsensor + ks_exponent*blk
         end if
       else if (sepmodel .eq. heaviside) then
 ! dot product with free stream
@@ -1947,7 +1951,6 @@ contains
     vd = 0.0_8
     vecttangentiald = 0.0_8
     veccrossprodd = 0.0_8
-    sepsensor_ks_sumd = 0.0_8
     call popreal8array(veccrossprod, 3)
     call popreal8array(vecttangential, 3)
     call popreal8array(v, 3)
@@ -2143,12 +2146,10 @@ contains
           cellaread = cellaread + sensor*blk*sensord
           sensord = cellarea*blk*sensord
         else
-          sepsensor_ks_sumd = sepsensor_ks_sumd + sepsensord
-          ks_exponentd = blk*sepsensor_ks_sumd
+          ks_exponentd = blk*sepsensord
           call ksaggregationfunction_b(sensor, sensord, sepsenmax_family&
 &                                (spectralsol), sepsenmax_rho, &
 &                                ks_exponent, ks_exponentd)
-          sepsensord = 0.0_8
         end if
       else if (branch .eq. 2) then
         sensord = 0.0_8
@@ -2440,7 +2441,7 @@ contains
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation, cpmin_ks_sum, sepsensor_ks_sum
+&   cavitation, cpmin_ks_sum
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: vectcorrected(3), veccrossprod(3), &
@@ -2493,7 +2494,6 @@ contains
     cofsumfz = zero
     yplusmax = zero
     sepsensor = zero
-    sepsensor_ks_sum = zero
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
@@ -2664,8 +2664,7 @@ contains
 ! also do the ks-based spensenor max computation
           call ksaggregationfunction(sensor, sepsenmax_family(&
 &                              spectralsol), sepsenmax_rho, ks_exponent)
-          sepsensor_ks_sum = sepsensor_ks_sum + ks_exponent*blk
-          sepsensor = sepsensor_ks_sum
+          sepsensor = sepsensor + ks_exponent*blk
         end if
       else if (sepmodel .eq. heaviside) then
 ! dot product with free stream
