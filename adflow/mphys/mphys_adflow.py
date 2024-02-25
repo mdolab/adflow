@@ -413,6 +413,7 @@ class ADflowSolver(ImplicitComponent):
         #    desc="uses OpenMDAO's PestcKSP linear solver with ADflow's preconditioner to solve the adjoint.")
         self.options.declare("restart_failed_analysis", default=False)
         self.options.declare("err_on_convergence_fail", default=False)
+        self.options.declare("res_ref", default=None, recordable=False)
 
         # testing flag used for unit-testing to prevent the call to actually solve
         # NOT INTENDED FOR USERS!!! FOR TESTING ONLY
@@ -425,6 +426,7 @@ class ADflowSolver(ImplicitComponent):
         self.restart_failed_analysis = self.options["restart_failed_analysis"]
         self.err_on_convergence_fail = self.options["err_on_convergence_fail"]
         self.solver = self.options["aero_solver"]
+        self.res_ref = self.options["res_ref"]
         solver = self.solver
 
         # this is the solution counter for failed solution outputs.
@@ -439,7 +441,9 @@ class ADflowSolver(ImplicitComponent):
         local_state_size = solver.getStateSize()
 
         self.add_input("adflow_vol_coords", distributed=True, shape_by_conn=True, tags=["mphys_coupling"])
-        self.add_output("adflow_states", distributed=True, shape=local_state_size, tags=["mphys_coupling"])
+        self.add_output(
+            "adflow_states", distributed=True, shape=local_state_size, tags=["mphys_coupling"], res_ref=self.res_ref
+        )
 
         # self.declare_partials(of='adflow_states', wrt='*')
 
@@ -1164,6 +1168,7 @@ class ADflowGroup(Group):
         self.options.declare("restart_failed_analysis", default=False)
         self.options.declare("err_on_convergence_fail", default=False)
         self.options.declare("balance_group", default=None, recordable=False)
+        self.options.declare("res_ref", default=None, recordable=False)
 
     def setup(self):
         self.aero_solver = self.options["solver"]
@@ -1176,6 +1181,7 @@ class ADflowGroup(Group):
 
         balance_group = self.options["balance_group"]
         self.heat_transfer = self.options["heat_transfer"]
+        self.res_ref = self.options["res_ref"]
 
         if self.use_warper:
             # if we dont have geo_disp, we also need to promote the x_a as x_a0 from the deformer component
@@ -1194,6 +1200,7 @@ class ADflowGroup(Group):
                 aero_solver=self.aero_solver,
                 restart_failed_analysis=self.restart_failed_analysis,
                 err_on_convergence_fail=self.err_on_convergence_fail,
+                res_ref=self.res_ref,
             ),
             promotes_inputs=["adflow_vol_coords"],
             promotes_outputs=["adflow_states"],
@@ -1286,15 +1293,42 @@ class ADflowMeshGroup(Group):
 class ADflowBuilder(Builder):
     def __init__(
         self,
-        options,  # adflow options
-        mesh_options=None,  # idwarp options
-        scenario="aerodynamic",  # scenario type to configure the groups
-        mesh_type="USMesh",  # mesh type option. USMesh or  MultiUSMesh
-        restart_failed_analysis=False,  # retry after failed analysis
-        err_on_convergence_fail=False,  # raise an analysis error if the solver stalls
+        options,
+        mesh_options=None,
+        scenario="aerodynamic",
+        mesh_type="USMesh",
+        restart_failed_analysis=False,
+        err_on_convergence_fail=False,
         balance_group=None,
-        user_family_groups=None,  # Dictonary of {group: surfs} to add
+        user_family_groups=None,
+        write_solution=True,
+        res_ref=None,
     ):
+        """Create an ADflow MPhys builder
+
+        Parameters
+        ----------
+        options : dict
+            ADflow options
+        mesh_options : dict, optional
+            idwarp options, by default None
+        scenario : str, optional
+            Scenario type to configure the groups, by default "aerodynamic"
+        mesh_type : str, optional
+            mesh type option. "USMesh" or  "MultiUSMesh", by default "USMesh"
+        restart_failed_analysis : bool, optional
+            Whether to retry after failed analysis, by default False
+        err_on_convergence_fail : bool, optional
+            Whether to raise an analysis error if the solver stalls, by default False
+        balance_group : OpenMDAO Group or Component, optional
+            Optional OpenMDAO group or component that is added inside the ADflowGroup after the internal components needed by ADflow. This can be used to define implicit relationships that depend on the aerodynamic functions and that need to be converged by varying inputs to ADflow.
+        user_family_groups : dict, optional
+            Dictonary of {group: surfs} to add, by default None
+        write_solution : bool, optional
+            Whether to automatically write solution files at the end of each (coupled) solution, by default True
+        res_ref : float, optional
+            Reference residual value used for OpenMDAO's residual scaling, by default None
+        """
         # options dictionary for ADflow
         self.options = options
 
@@ -1391,6 +1425,9 @@ class ADflowBuilder(Builder):
         # if self.heat_transfer:
         #     self.promotes('heat_xfer', inputs=[name])
 
+        self.write_solution = write_solution
+        self.res_ref = res_ref
+
     # api level method for all builders
     def initialize(self, comm):
         self.solver = ADFLOW(options=self.options, comm=comm)
@@ -1428,6 +1465,7 @@ class ADflowBuilder(Builder):
             restart_failed_analysis=self.restart_failed_analysis,
             err_on_convergence_fail=self.err_on_convergence_fail,
             balance_group=self.balance_group,
+            res_ref=self.res_ref,
         )
         return adflow_group
 
@@ -1454,7 +1492,7 @@ class ADflowBuilder(Builder):
             return ADflowWarper(aero_solver=self.solver)
 
     def get_post_coupling_subsystem(self, scenario_name=None):
-        return ADflowFunctions(aero_solver=self.solver)
+        return ADflowFunctions(aero_solver=self.solver, write_solution=self.write_solution)
 
     def get_number_of_nodes(self, groupName=None):
         return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])
