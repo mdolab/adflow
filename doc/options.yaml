@@ -1556,9 +1556,7 @@ sepSweepAngleCorrection:
     This angle (in degrees) is for 3D cases only when the wing has a sweep.
     For airfoils, by default, this is ``0``.
     For a 3D case, the sweep angle of the wing (25% chord sweep angle) is recommended.
-    The value should be in degrees. 
     It represents the desired flow direction over the surface, which is normal to  quarter chord line.
-    This angle correction is considered to be the classic sweep angle correction for airfoils in ASO to compute the effcetive Mach number and lift.
 
 computeCavitation:
   desc: >
