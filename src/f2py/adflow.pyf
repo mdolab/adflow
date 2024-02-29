@@ -181,7 +181,10 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccoforcezx=96
          integer(kind=inttype) parameter,optional :: costfunccoforcezy=97
          integer(kind=inttype) parameter,optional :: costfunccoforcezz=98
-         integer(kind=inttype) parameter,optional :: costfuncmavgvi=99
+         integer(kind=inttype) parameter,optional :: costfunccofliftx=99
+         integer(kind=inttype) parameter,optional :: costfunccoflifty=100
+         integer(kind=inttype) parameter,optional :: costfunccofliftz=101
+         integer(kind=inttype) parameter,optional :: costfuncmavgvi=102
        end module constants
 
        module utils
@@ -1082,10 +1085,14 @@ python module libadflow
          real(kind=realtype) allocatable,dimension(:) :: etark
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
          real(kind=realtype), dimension(4) :: turbresscale
+         real(kind=realtype) :: meshmaxskewness
+         logical :: useskewnesscheck
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
          logical :: printnegativevolumes
+         logical :: printbadlyskewedcells
+         logical :: printbcwarnings
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
          logical :: usedisscontinuation

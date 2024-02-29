@@ -341,7 +341,7 @@ module constants
     integer(kind=intType), parameter :: iTotal = 16
 
     ! Cost functions.
-    integer(kind=intType), parameter :: nCostFunction = 99
+    integer(kind=intType), parameter :: nCostFunction = 102
     integer(kind=intType), parameter :: &
         costFuncLift = 1, &
         costFuncDrag = 2, &
@@ -441,7 +441,10 @@ module constants
         costfuncCoForceZX = 96, &
         costfuncCoForceZY = 97, &
         costfuncCoForceZZ = 98, &
-        costfuncmavgvi = 99
+        costfuncCofLiftX = 99, &
+        costfuncCofLiftY = 100, &
+        costfuncCofLiftZ = 101, &
+        costfuncmavgvi = 102
 
     integer(kind=intType), parameter :: nLocalValues = 60
     integer(kind=intType), parameter :: &
@@ -510,5 +513,9 @@ module constants
     integer(kind=intType), parameter :: iZippWallX = 7
     integer(kind=intType), parameter :: iZippWallY = 8
     integer(kind=intType), parameter :: iZippWallZ = 9
+
+    ! Metric types
+    integer(kind=intType), parameter :: MetricVolume = 1
+    integer(kind=intType), parameter :: MetricSkewness = 2
 
 end module constants

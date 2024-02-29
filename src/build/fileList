@@ -133,6 +133,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		warping/setCpTarget.f90\
 		\
 		adjoint/outputForward/ALEUtils_d.f90\
+		adjoint/outputForward/actuatorRegion_d.f90\
 		adjoint/outputForward/BCData_d.f90\
 		adjoint/outputForward/BCExtra_d.F90\
 		adjoint/outputForward/BCRoutines_d.f90\
@@ -152,6 +153,7 @@ fortranFiles=	ADT/adtUtils.F90\
 		adjoint/outputForward/zipperIntegrations_d.f90\
 		\
 		adjoint/outputReverse/ALEUtils_b.f90\
+		adjoint/outputReverse/actuatorRegion_b.f90\
 		adjoint/outputReverse/BCData_b.f90\
 		adjoint/outputReverse/BCExtra_b.F90\
 		adjoint/outputReverse/BCRoutines_b.f90\
