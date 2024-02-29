@@ -1530,7 +1530,7 @@ sepSensorModel:
     We project the freestream over the desired surface and compute the desired flow direction based on the sweep angle of the wing (``sepSweepAngleCorrection``) in 3D cases (For airfoils, the desired direction would be the projected freestream vector over the airfoil surface).
     Then we compute the deviation between the local flow velocity and this desired direction. We use a separation metric to integrate this computation over the desired surface.
     ``0`` means no separation and ``1`` means that the flow is fully separated. 
-    Although, this method is formulated for 3D cases, it is appropriate for airfoils. However, for 3D cases, please use ``surfvec_ks`` option, which has KS aggregation to aggregate the maximum separation sensor value to be constrained. 
+    Although this method is formulated for 3D cases, it is appropriate for airfoils. However, for 3D cases, please use ``surfvec_ks`` option, which has KS aggregation to aggregate the maximum separation sensor value to be constrained. This option will effectively alleviate separation anywhere on the interested surface and provide separation free design. On the other hand, ``surfvec`` option may  not gurrantee to achieve separation free design when the separation happens in a very smaller region and thus, the integration over this region may not violate the constraint. 
   surfvec_ks: This method uses similar formulation to ``surfvec`` to compute the maximum separation sensor value on a desired surface instead of integrating over this surface.
     Therefore, this maximum separation sensor value from KS aggregation function can be constrained to alleviate separation.
 

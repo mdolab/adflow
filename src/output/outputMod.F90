@@ -2252,7 +2252,7 @@ contains
                     sensor = (v(1) * vectCorrected(1) + v(2) * vectCorrected(2) + &
                               v(3) * vectCorrected(3))
 
-                    sensor = one / two * (one - sensor)
+                    sensor = half * (one - sensor)
                     buffer(nn) = sensor
                 end do
             end do
@@ -2264,10 +2264,7 @@ contains
                     v(1) = ww2(i, j, ivx)
                     v(2) = ww2(i, j, ivy)
                     v(3) = ww2(i, j, ivz)
-                    ! Get normalized surface velocity:
-                    ! v(1) = ww2(ii, jj, ivx)
-                    ! v(2) = ww2(ii, jj, ivy)
-                    ! v(3) = ww2(ii, jj, ivz)
+
                     ! Normalize
                     v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 

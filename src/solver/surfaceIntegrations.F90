@@ -1475,7 +1475,7 @@ contains
 
         ! loop over the TS instances and compute sepsenmax_family for each TS instance
         do sps = 1, nTimeIntervalsSpectral
-            ! set the local cp min to a large value so that we get the actual min
+            ! set the local sepsensor to a smaller value so that we get the actual max
             sepsensor_local = 0.0_realType
             do nn = 1, nDom
                 call setPointers(nn, 1, sps)
@@ -1549,9 +1549,6 @@ contains
                                           v(3) * vectCorrected(3))
 
                                 sensor = half * (one - sensor) * blk
-
-                                ! only take this if its a compute cell
-                                ! if (BCData(mm)%iblank(i, j) .eq. one) then
 
                                 ! compare it against the current value on this proc
                                 sepsensor_local = max(sepsensor_local, sensor)

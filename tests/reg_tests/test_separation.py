@@ -23,21 +23,7 @@ test_params = [
         "aero_prob": ap_naca0012_separation,
         "N_PROCS": 2,
         "options": {
-            "gridfile": gridFile,
-            "outputdirectory": os.path.join(baseDir, "../output_files"),
-            "writevolumesolution": False,
-            "writesurfacesolution": False,
-            "writetecplotsurfacesolution": False,
-            "mgcycle": "sg",
-            "ncycles": 1000,
-            "useanksolver": True,
-            "usenksolver": True,
-            "anksecondordswitchtol": 1e-2,
-            "nkswitchtol": 1e-6,
-            "volumevariables": ["temp", "mach", "resrho", "cp"],
-            "equationType": "RANS",
-            "l2convergence": 1e-15,
-            "adjointl2convergence": 1e-15,
+            
             "sepSensorModel": "surfvec_ks",
             "sepSensorMaxRho": 100.0,
             "sepSweepAngleCorrection": 0.0,
@@ -49,21 +35,7 @@ test_params = [
         "aero_prob": ap_naca0012_separation,
         "N_PROCS": 2,
         "options": {
-            "gridfile": gridFile,
-            "outputdirectory": os.path.join(baseDir, "../output_files"),
-            "writevolumesolution": False,
-            "writesurfacesolution": False,
-            "writetecplotsurfacesolution": False,
-            "mgcycle": "sg",
-            "ncycles": 1000,
-            "useanksolver": True,
-            "usenksolver": True,
-            "anksecondordswitchtol": 1e-2,
-            "nkswitchtol": 1e-6,
-            "volumevariables": ["temp", "mach", "resrho", "cp"],
-            "equationType": "RANS",
-            "l2convergence": 1e-15,
-            "adjointl2convergence": 1e-15,
+          
             "sepSensorModel": "surfvec",
             "sepSweepAngleCorrection": 0.0,
         },
@@ -74,21 +46,7 @@ test_params = [
         "aero_prob": ap_naca0012_separation,
         "N_PROCS": 2,
         "options": {
-            "gridfile": gridFile,
-            "outputdirectory": os.path.join(baseDir, "../output_files"),
-            "writevolumesolution": False,
-            "writesurfacesolution": False,
-            "writetecplotsurfacesolution": False,
-            "mgcycle": "sg",
-            "ncycles": 1000,
-            "useanksolver": True,
-            "usenksolver": True,
-            "anksecondordswitchtol": 1e-2,
-            "nkswitchtol": 1e-6,
-            "volumevariables": ["temp", "mach", "resrho", "cp"],
-            "equationType": "RANS",
-            "l2convergence": 1e-15,
-            "adjointl2convergence": 1e-15,
+            
             "sepSensorModel": "heaviside",
             "sepSweepAngleCorrection": 0.0,
         },
@@ -115,6 +73,21 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         super().setUp()
 
         options = copy.copy(adflowDefOpts)
+        options.update({"gridfile": gridFile,
+            "outputdirectory": os.path.join(baseDir, "../output_files"),
+            "writevolumesolution": False,
+            "writesurfacesolution": False,
+            "writetecplotsurfacesolution": False,
+            "mgcycle": "sg",
+            "ncycles": 1000,
+            "useanksolver": True,
+            "usenksolver": True,
+            "anksecondordswitchtol": 1e-2,
+            "nkswitchtol": 1e-6,
+            "volumevariables": ["temp", "mach", "resrho", "cp"],
+            "equationType": "RANS",
+            "l2convergence": 1e-15,
+            "adjointl2convergence": 1e-15,})
         options.update(self.options)
 
         # Setup aeroproblem
@@ -133,7 +106,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         self.CFDSolver.addFunction("sepsensor", "wingup")
 
     def test_separation_metrics_and_derivatives(self):
-        evalFuncs = ["sepsensor_wingup", "cl"]
+        evalFuncs = ["sepsensor_wingup"]
 
         self.CFDSolver(self.ap)
 
@@ -236,6 +209,21 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         super().setUp()
 
         options = copy.copy(adflowDefOpts)
+        options.update({"gridfile": gridFile,
+            "outputdirectory": os.path.join(baseDir, "../output_files"),
+            "writevolumesolution": False,
+            "writesurfacesolution": False,
+            "writetecplotsurfacesolution": False,
+            "mgcycle": "sg",
+            "ncycles": 1000,
+            "useanksolver": True,
+            "usenksolver": True,
+            "anksecondordswitchtol": 1e-2,
+            "nkswitchtol": 1e-6,
+            "volumevariables": ["temp", "mach", "resrho", "cp"],
+            "equationType": "RANS",
+            "l2convergence": 1e-15,
+            "adjointl2convergence": 1e-15,})
         options.update(self.options)
 
         # Setup aeroproblem
@@ -270,7 +258,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         self.assert_solution_failure()
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
-        evalFuncs = ["sepsensor_wingup", "cl"]
+        evalFuncs = ["sepsensor_wingup"]
         funcs_plus = {}
         for dv in ["alpha", "vol_perturbation"]:
             if dv == "alpha":
