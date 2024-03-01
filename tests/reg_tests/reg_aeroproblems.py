@@ -242,5 +242,5 @@ ap_naca0012_separation = AeroProblem(
     altitude=3048,
     areaRef=1.0,
     chordRef=1.0,
-    evalFuncs=["sepsensor_wingup", "cl"],
+    evalFuncs=["sepsensor_wingup"],
 )

@@ -1,7 +1,5 @@
 {
-    "Dot product test for w -> cl": 0.44682806992597734,
     "Dot product test for w -> sepsensor_wingup": -0.0008690874922088732,
-    "Dot product test for xV -> cl": -0.8568609043935707,
     "Dot product test for xV -> sepsensor_wingup": 0.0001606134831308025,
     "metadata": {
         "ADPC": false,
@@ -263,17 +261,12 @@
         "zipperSurfaceFamily": null
     },
     "separation outputs": {
-        "naca0012_rans_2D_surfvec_cl": 0.17923595341008974,
         "naca0012_rans_2D_surfvec_sepsensor_wingup": 2.3411325308455358e-06
     },
     "separation totals": {
-        "naca0012_rans_2D_surfvec_cl": {
-            "alpha": 0.11928946306266422
-        },
         "naca0012_rans_2D_surfvec_sepsensor_wingup": {
-            "alpha": 2.0678015910072757e-07
+            "alpha": 2.0678015910072916e-07
         }
     },
-    "total cl derivative wrt random volume perturbation": -19.16407975692308,
-    "total sepsensor_wingup derivative wrt random volume perturbation": 0.15835087577727985
+    "total sepsensor_wingup derivative wrt random volume perturbation": 0.15835087577728044
 }
