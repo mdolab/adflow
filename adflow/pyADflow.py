@@ -1305,7 +1305,8 @@ class ADFLOW(AeroSolver):
                 )
 
         if self.adflow.killsignals.fatalfail:
-            fileName = f"failed_mesh_{self.curAP.name}_{self.curAP.adflowData.callCounter:03}.cgns"
+            numDigits = self.getOption("writeSolutionDigits")
+            fileName = f"failed_mesh_{self.curAP.name}_{self.curAP.adflowData.callCounter:0{numDigits}}.cgns"
             self.pp(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
             self.writeMeshFile(os.path.join(self.getOption("outputDirectory"), fileName))
             self.curAP.fatalFail = True
@@ -2738,14 +2739,15 @@ class ADFLOW(AeroSolver):
 
         # If we are numbering solution, it saving the sequence of
         # calls, add the call number
+        numDigits = self.getOption("writeSolutionDigits")
         if number is not None:
             # We need number based on the provided number:
-            baseName = baseName + "_%3.3d" % number
+            baseName = baseName + f"_%.{numDigits}d" % number
         else:
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
             if self.getOption("numberSolutions"):
-                baseName = baseName + "_%3.3d" % self.curAP.adflowData.callCounter
+                baseName = baseName + f"_%.{numDigits}d" % self.curAP.adflowData.callCounter
 
         # Join to get the actual filename root
         base = os.path.join(outputDir, baseName)
@@ -5706,6 +5708,7 @@ class ADFLOW(AeroSolver):
             "partitionLikeNProc": [int, -1],
             # Misc Parameters
             "numberSolutions": [bool, True],
+            "writeSolutionDigits": [int, 3],
             "printIterations": [bool, True],
             "printTiming": [bool, True],
             "printIntro": [bool, True],
@@ -6210,6 +6213,7 @@ class ADFLOW(AeroSolver):
 
         pythonOptions = {
             "numbersolutions",
+            "writesolutiondigits",
             "writetecplotsurfacesolution",
             "coupledsolution",
             "partitiononly",

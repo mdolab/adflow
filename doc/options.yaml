@@ -1220,6 +1220,11 @@ numberSolutions:
   desc: >
     Flag to set whether to attach the numbering of the AeroProblem to the grid solution file.
 
+writeSolutionDigits:
+  desc: >
+    Number of digits in the solution output filenames.
+    A value of 4 will give, for example, 0023, while a value of 3 will give 023.
+
 printIterations:
   desc: >
     Flag to set whether to print out the monitoring values at each iteration.
