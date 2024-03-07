@@ -36,7 +36,6 @@ class TestSolutionFileNames(unittest.TestCase):
         }
 
     def test_failed_mesh(self):
-
         # Create the solver
         CFDSolver = ADFLOW(options=self.options)
         ap = copy.copy(ap_tutorial_wing)
