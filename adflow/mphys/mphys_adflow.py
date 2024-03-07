@@ -559,6 +559,11 @@ class ADflowSolver(ImplicitComponent):
                         print("###############################################################")
                         print("# Solve Failed, not attempting a clean restart")
                         print("###############################################################")
+
+                    # write the solution so that we can diagnose
+                    solver.writeSolution(baseName="analysis_fail", number=self.solution_counter)
+                    self.solution_counter += 1
+
                     raise AnalysisError("ADFLOW Solver Fatal Fail")
 
                 else:
