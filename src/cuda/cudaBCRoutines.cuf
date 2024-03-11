@@ -25,7 +25,7 @@ contains
 !        !       applyAllBC applies all boundary conditions for the all
 !        !       blocks on the grid level currentLevel.
 !        !
-!        !!!!!!!!!!!!!!!GGGGGGG
+!        !!!!!!!!!!!!!!!GGGGGGG TODO: PICKUP HERE
 !        use constants
 !        use blockPointers, only: nDom
 !        use inputTimeSpectral, only:nTimeIntervalsSpectral
