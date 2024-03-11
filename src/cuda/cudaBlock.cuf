@@ -320,74 +320,64 @@ module cudaBlock
 
 
     subroutine copyCudaBCData
-        use blockPointers, only: bBCData => BCData, &
-                                nBocos, BCType
+        ! DESCRIPTION:
+        ! This copies all the necessary data from CPU to GPU
+        ! Eventually, this routine should get optimized
+
+        use blockPointers, only: nDom, &
+            bBCData => BCData,&
+            nBocos, bBCType => BCType
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
         use utils, only: setBCPointers
-        ! Allocate device 
+        use constants, only: farField, symm
+
+        implicit none
+
+        integer(kind=intType) :: nn, sps, &
+                mm, iBeg, iEnd, jBeg, jEnd, &
+                inodeBeg, inodeEnd, jnodeBeg, jnodeEnd
+
+        ! --- Allocate device and host BCData ---
         allocate(d_BCData(nBocos))
-        ! Allocate host
         allocate(h_BCData(nBocos))
 
-        ! The following is similar to the allocMemBCData() subroutine in BCData.F90
-        call setBCPointers(nn, .false.)
-        bocoLoop: do mm = 1, nBocos
-        
-            iBeg = bBCData(mm)%icbeg; iEnd = bBCData(mm)%icend
-            jBeg = bBCData(mm)%jcbeg; jEnd = bBCData(mm)%jcend
+        domainsLoop: do nn = 1, nDom
 
-            inodeBeg = bBCData(mm)%inbeg; inodeEnd = bBCData(mm)%inend
-            jnodeBeg = bBCData(mm)%jnbeg; jnodeEnd = bBCData(mm)%jnend
+            ! The following is similar to the allocMemBCData() subroutine in BCData.F90
+            ! In addition to allocating, we're also setting the BC Data
+            call setBCPointers(nn, .false.)
 
-            select case (BCType(mm))
-                
-            ! case (NSWallAdiabatic)
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%uSlip(iBeg:iEnd, jBeg:jEnd, 3))
-            !     ! allocate(h_cudaDoms(nn, sps)%BCData(mm)%uSlipALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd, 3))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%F(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd, 3))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%T(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd, 3))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%Tp(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd, 3))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%Tv(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd, 3))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%Fp(iNodeBeg + 1:iNodeEnd, jNodeBeg + 1:jNodeEnd, 3))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%Fv(iNodeBeg + 1:iNodeEnd, jNodeBeg + 1:jNodeEnd, 3))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%area(iNodeBeg + 1:iNodeEnd, jNodeBeg + 1:jNodeEnd))
-            !     allocate(h_cudaDoms(nn, sps)%BCData(mm)%CpTarget(iNodeBeg:iNodeEnd, jNodeBeg:jNodeEnd))
+            bocoLoop: do mm = 1, nBocos
             
-            !     h_cudaDoms(nn, sps)%BCData(mm)%uslip = bBCData(mm)%uslip
-            !     ! h_cudaDoms(nn, sps)%BCData(mm)%uSlipALE = bBCData(mm)%uSlipALE
-            !     h_cudaDoms(nn, sps)%BCData(mm)%F = bBCData(mm)%F
-            !     h_cudaDoms(nn, sps)%BCData(mm)%Fv = bBCData(mm)%Fv
-            !     h_cudaDoms(nn, sps)%BCData(mm)%Fp = bBCData(mm)%Tp
-            !     h_cudaDoms(nn, sps)%BCData(mm)%T = bBCData(mm)%T
-            !     h_cudaDoms(nn, sps)%BCData(mm)%Tv = bBCData(mm)%Tv
-            !     h_cudaDoms(nn, sps)%BCData(mm)%Tp = bBCData(mm)%Tp
-            !     h_cudaDoms(nn, sps)%BCData(mm)%area = bBCData(mm)%area
-            !     h_cudaDoms(nn, sps)%BCData(mm)%CpTarget = zero
-                
-            case (farField)
+                iBeg = bBCData(mm)%icbeg; iEnd = bBCData(mm)%icend
+                jBeg = bBCData(mm)%jcbeg; jEnd = bBCData(mm)%jcend
 
-                allocate(BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd))
-                ! allocate(h_cudaDoms(nn, sps)%BCData(mm)%rfaceALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd))
-                ! BCData(mm)%rface = bBCData(mm)%rface
-                ! h_cudaDoms(nn, sps)%BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
-            
-            ! case (symm, symmPolar)
+                inodeBeg = bBCData(mm)%inbeg; inodeEnd = bBCData(mm)%inend
+                jnodeBeg = bBCData(mm)%jnbeg; jnodeEnd = bBCData(mm)%jnend
 
-            !     allocate(h_BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd))
-            !     ! allocate(h_BCData(mm)%rfaceALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd))
-            !     h_BCData(mm)%rface = bBCData(mm)%rface
-            !     ! h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
+                select case (BCType(mm))
 
-            ! case (SupersonicInflow, DomainInterfaceAll) ! TODO:
-            ! case (SupersonicOutflow)
-            ! case (SupersonicInflow)
-            ! case (SupersonicOutflow, MassBleedOutflow, DomainInterfaceP)
-            ! case (DomainInterfaceRhoUVW)
-            ! case (DomainInterfaceTotal)
-            ! case (domainInterfaceRho)
+                case (farField)
 
-            end select
+                    allocate(h_BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd), &
+                    h_BCData(mm)%rfaceALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd), &
+                    h_BCData(mm)%norm(iBeg:iEnd, 3), stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("copyCudaBCData", "Memory allocation failure for &
+                        &a farfield")
 
-        end do bocoLoop
+                    h_BCData(mm)%rface = bBCData(mm)%rface
+                    h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
+                    h_BCData(mm)%norm(iBeg:iEnd, 3) = bBCData(mm)%norm
+
+
+                ! TODO [ ] : other BC types
+
+                end select
+
+            end do bocoLoop
+        end do domainsLoop
+
         ! --- Copy data from host back to device---
         do mm = 1, nBocos
             d_BCData(mm) = h_BCData(mm)

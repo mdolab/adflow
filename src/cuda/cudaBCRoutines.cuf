@@ -2,9 +2,10 @@
 ! @Desc    :   This module contains the CUDA Fortran version of the boundary condition routines in BCRoutines.F90
 
 module cudaBCRoutines
+
     ! --- ADflow modules to use ---
     use precision, only: intType, realType
-    ! use cudaBlock, only: cudaBCType => d_BCData, h_BCData
+    use cudaBlock, only: cudaBCType => d_BCData, h_BCData
     ! use constants
     ! use cudaBCPointers
     ! --- CUDA FORTRAN module ---
@@ -13,73 +14,10 @@ module cudaBCRoutines
     use cudaBlock, only: BCData => d_BCData, h_BCData
 
     implicit none
-    
-
-
 
     save
 
 contains
-
-    subroutine copydata
-        ! This copies all the necessary data from CPU to GPU
-        ! Eventually, this should get thrown out 
-        use blockPointers, only: nDom, &
-            bBCData => BCData,&
-            nBocos, bBCType => BCType
-        use inputTimeSpectral, only: nTimeIntervalsSpectral
-        use utils, only: setPointers
-        use constants, only: farField, symm
-        
-        implicit none
-
-        integer(kind=intType) :: nn, sps, &
-                mm, iBeg, iEnd, jBeg, jEnd, &
-                inodeBeg, inodeEnd, jnodeBeg, jnodeEnd
-        
-        domainsLoop: do nn = 1, nDom
-            spectralLoop: do sps = 1, nTimeIntervalsSpectral
-                
-                call setPointers(nn, 1, sps)
-                
-                allocate(BCData(nBocos))
-                allocate(h_BCData(nBocos))
-
-                bocoLoop: do mm = 1, nBocos
-                    iBeg = bBCData(mm)%icbeg; iEnd = bBCData(mm)%icend
-                    jBeg = bBCData(mm)%jcbeg; jEnd = bBCData(mm)%jcend
-
-                    inodeBeg = bBCData(mm)%inbeg; inodeEnd = bBCData(mm)%inend
-                    jnodeBeg = bBCData(mm)%jnbeg; jnodeEnd = bBCData(mm)%jnend
-
-                    select case (bBCType(mm))
-
-                    case (farField)
-                        ! Only allocate vars that you need for this type of BC
-                        allocate(h_BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd))
-                        allocate(h_BCData(mm)%norm(iBeg:iEnd, jBeg:jEnd, 3))
-
-                        h_BCData(mm)%rface = bBCData(mm)%rface
-                        h_BCData(mm)%norm = bBCData(mm)%norm
-                    
-                    ! case (symm, symmPolar)
-
-                    !     h_BCData(mm)%rface = bBCData(mm)%rface
-                    !     d_BCData(mm)%rface = bBCData(mm)%rface
-                    !     h_BCData(mm)%norm = bBCData(mm)%norm
-
-                    end select
-
-                    ! --- Copy data from host to device via the host type ---
-                    BCData(mm) = h_BCData(mm)
-
-                end do bocoLoop
-
-            end do spectralLoop
-        end do domainsLoop
-
-
-    end subroutine copydata
 
 ! #ifndef USE_TAPENADE
     subroutine applyAllBC(secondHalo)
@@ -87,8 +25,11 @@ contains
         !       applyAllBC applies all boundary conditions for the all
         !       blocks on the grid level currentLevel.
         !
+        !!!!!!!!!!!!!!!GGGGGGG
         use constants
         use blockPointers, only: nDom
+        use inputTimeSpectral, only:nTimeIntervalsSpectral
+        use iteration, only: currentLevel
         use utils, only: setPointers
         use ALEUtils, only: interpLevelALEBC_Block, recoverLevelALEBC_block
         implicit none
@@ -99,17 +40,17 @@ contains
         !
         !      Local Variables
         integer(kind=intType) :: sps, nn
-        
+
         ! manually skip time spectral and multigrid for now
         integer(kind=intType) :: nTimeIntervalsSpectral = 1
         integer(kind=intType) :: currentLevel = 1
 
         ! Loop over the number of spectral solutions and number of blocks.
-        
+
         spectralLoop: do sps = 1, nTimeIntervalsSpectral
             domains: do nn = 1, nDom
                 ! Set the pointers for this block.
-                
+
                 call setPointers(nn, currentLevel, sps)
 
                 call interpLevelALEBC_block
