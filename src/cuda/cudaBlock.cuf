@@ -328,12 +328,13 @@ module cudaBlock
             bBCData => BCData,&
             nBocos, bBCType => BCType
         use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use iteration, only: nALESteps
         use utils, only: setBCPointers
         use constants, only: farField, symm
 
         implicit none
 
-        integer(kind=intType) :: nn, sps, &
+        integer(kind=intType) :: nn, ierr, &
                 mm, iBeg, iEnd, jBeg, jEnd, &
                 inodeBeg, inodeEnd, jnodeBeg, jnodeEnd
 
@@ -355,20 +356,20 @@ module cudaBlock
                 inodeBeg = bBCData(mm)%inbeg; inodeEnd = bBCData(mm)%inend
                 jnodeBeg = bBCData(mm)%jnbeg; jnodeEnd = bBCData(mm)%jnend
 
-                select case (BCType(mm))
+                select case (bBCType(mm))
 
                 case (farField)
 
                     allocate(h_BCData(mm)%rface(iBeg:iEnd, jBeg:jEnd), &
                     h_BCData(mm)%rfaceALE(0:nALEsteps, iBeg:iEnd, jBeg:jEnd), &
-                    h_BCData(mm)%norm(iBeg:iEnd, 3), stat=ierr)
+                    h_BCData(mm)%norm(iBeg:iEnd, jBeg:jEnd, 3), stat=ierr)
                     if (ierr /= 0) &
                         call terminate("copyCudaBCData", "Memory allocation failure for &
                         &a farfield")
 
                     h_BCData(mm)%rface = bBCData(mm)%rface
                     h_BCData(mm)%rfaceALE = bBCData(mm)%rfaceALE
-                    h_BCData(mm)%norm(iBeg:iEnd, 3) = bBCData(mm)%norm
+                    h_BCData(mm)%norm = bBCData(mm)%norm
 
 
                 ! TODO [ ] : other BC types

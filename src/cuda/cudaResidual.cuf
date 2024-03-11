@@ -7,7 +7,7 @@ module cudaResidual
     use precision, only: realType, intType
     use cudaBlock, only: cudaDoms=>d_cudaDoms, h_cudaDoms
     use constants
-    use cudaBCPointers
+    ! use cudaBCPointers
     ! --- CUDA FORTRAN module ---
     use cudafor
     implicit none
