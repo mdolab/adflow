@@ -19,131 +19,133 @@ module cudaBCRoutines
 
 contains
 
-!! #ifndef USE_TAPENADE
-!    subroutine applyAllBC(secondHalo)
-!        !
-!        !       applyAllBC applies all boundary conditions for the all
-!        !       blocks on the grid level currentLevel.
-!        !
-!        !!!!!!!!!!!!!!!GGGGGGG TODO: PICKUP HERE
-!        use constants
-!        use blockPointers, only: nDom
-!        use inputTimeSpectral, only:nTimeIntervalsSpectral
-!        use iteration, only: currentLevel
-!        use utils, only: setPointers
-!        use ALEUtils, only: interpLevelALEBC_Block, recoverLevelALEBC_block
-!        implicit none
-!        !
-!        !      Subroutine arguments.
-!        !
-!        logical, intent(in) :: secondHalo
-!        !
-!        !      Local Variables
-!        integer(kind=intType) :: sps, nn
-!
-!        ! manually skip time spectral and multigrid for now
-!        integer(kind=intType) :: nTimeIntervalsSpectral = 1
-!        integer(kind=intType) :: currentLevel = 1
-!
-!        ! Loop over the number of spectral solutions and number of blocks.
-!
-!        spectralLoop: do sps = 1, nTimeIntervalsSpectral
-!            domains: do nn = 1, nDom
-!                ! Set the pointers for this block.
-!
-!                call setPointers(nn, currentLevel, sps)
-!
-!                call interpLevelALEBC_block
-!                call applyAllBC_block(secondHalo)
-!                call recoverLevelALEBC_block
-!
-!            end do domains
-!        end do spectralLoop
-!
-!    end subroutine applyAllBC
-!! #endif
-!
-!    subroutine applyAllBC_block(secondHalo)
-!
-!        ! Apply BCs for a single block
-!        use constants
-!        use blockPointers, only: nDom, nBocos, BCType, nViscBocos, w, dw, x, vol, il, jl, kl, &
-!                                 sectionID, wOld, volOld, BCData, &
-!                                 si, sj, sk, sfacei, sfacej, sfacek, rlv, gamma, p, rev, &
-!                                 bmtj1, bmtj2, scratch, bmtk2, bmtk1, &
-!                                 fw, aa, d2wall, bmti1, bmti2, s, &
-!                                 bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie
-!        use utils, only: setBCPointers, getCorrectForK
-!        use BCPointers
-!        use inputTimeSpectral, only: nTimeIntervalsSpectral
-!        ! subroutines for copying data to device
-!        use cudafor, only: dim3
-!        use cudaBlock, only: copyCudaBCData
-!        use cudaBCPointers, only: copyCudaBC
-!        use cudaBCDataMod, only: copyCudaBCDataMod
-!        implicit none
-!
-!        ! --- GPU VARS ---
-!        type(dim3) :: grid_size, block_size
-!        integer(kind = intType) :: ibmax, jbmax, kbmax
-!
-!        ! Subroutine arguments.
-!        logical, intent(in) :: secondHalo
-!
-!        ! Local variables.
-!        logical :: correctForK 
-!        integer(kind=intType) :: nn 
-!        integer(kind=intType) :: istat, dom, sps
-!        
-!        ! --- GPU SETUP ---
-!        ! Copy block data to device for this block
-!        ! call copyCudaBlock ! this doesn't work right now
-!        call copydata ! this is the manual way to do it
-!
-!        ibmax = 0
-!        jbmax = 0
-!        kbmax = 0
-!        ! zeroing
-!        do dom = 1,nDom
-!            do sps = 1, nTimeIntervalsSpectral
-!                call setPointers(dom,1,sps)
-!                ibmax = max(ibmax,bib)
-!                jbmax = max(jbmax,bjb)
-!                kbmax = max(kbmax,bkb)
-!            end do
-!        end do 
-!        ! SYNCHRONIZE
-!        istat = cudaDeviceSynchronize()
-!        
-!        ! metrics
-!        print *,ibmax,jbmax,kbmax
-!        block_size = dim3(8, 8, 1)
-!        grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), 1)
-!        
-!        ! call CPU_TIME(start)
-!        
-!        ! Determine whether or not the total energy must be corrected
-!        ! for the presence of the turbulent kinetic energy.
-!        correctForK = getCorrectForK()
-!
-!        ! Apply all the boundary conditions. The order is important!  Only
-!        ! some of them have been AD'ed
-!
-!        ! ! ------------------------------------
-!        ! !  Symmetry Boundary Condition
-!        ! ! ------------------------------------
-!        ! !$AD II-LOOP
-!        ! do nn = 1, nBocos
-!        !     if (BCType(nn) == symm) then
-!        !         ! First set pointers on CPU
-!        !         call setBCPointers(nn, .False.)
-!        !         ! Then copy all data to device
-!        !         call copyCudaBC
-!        !         call copyCudaBCDataMod
-!        !         ! Run routine on GPU
-!        !         call bcSymm1stHalo(nn)
-!        !     end if
-!        ! end do
+! #ifndef USE_TAPENADE
+    subroutine applyAllBC(secondHalo)
+        !
+        !       applyAllBC applies all boundary conditions for the all
+        !       blocks on the grid level currentLevel.
+        !
+        use constants
+        use blockPointers, only: nDom
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use iteration, only: currentLevel
+        use utils, only: setPointers
+        use ALEUtils, only: interpLevelALEBC_Block, recoverLevelALEBC_block
+        implicit none
+        !
+        !      Subroutine arguments.
+        !
+        logical, intent(in) :: secondHalo
+        !
+        !      Local Variables
+        integer(kind=intType) :: sps, nn
+
+        ! manually skip time spectral and multigrid for now
+        nTimeIntervalsSpectral = 1
+        currentLevel = 1
+
+        ! Loop over the number of spectral solutions and number of blocks.
+
+        spectralLoop: do sps = 1, nTimeIntervalsSpectral
+            domains: do nn = 1, nDom
+                ! Set the pointers for this block.
+
+                call setPointers(nn, currentLevel, sps)
+
+                call interpLevelALEBC_block
+
+                call applyAllBC_block(secondHalo)
+                call recoverLevelALEBC_block
+
+            end do domains
+        end do spectralLoop
+
+    end subroutine applyAllBC
+! #endif
+
+    subroutine applyAllBC_block(secondHalo)
+
+        ! Apply BCs for a single block
+        use constants
+        use blockPointers, only: nDom, nBocos, BCType, nViscBocos, w, dw, x, vol, il, jl, kl, &
+                                 sectionID, wOld, volOld, BCData, &
+                                 si, sj, sk, sfacei, sfacej, sfacek, rlv, gamma, p, rev, &
+                                 bmtj1, bmtj2, scratch, bmtk2, bmtk1, &
+                                 fw, aa, d2wall, bmti1, bmti2, s, &
+                                 bib=>ib, bjb=>jb, bkb=>kb, bke=>ke, bje=>je, bie=>ie
+        use utils, only: setBCPointers, getCorrectForK
+        use BCPointers
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        ! subroutines for copying data to device
+        use cudafor, only: dim3
+        use cudaBlock, only: copyCudaBCData, copyCudaBlock
+        use cudaBCPointers, only: copyCudaBC
+        use cudaBCDataMod, only: copyCudaBCDataMod
+        implicit none
+
+        ! --- GPU VARS ---
+        type(dim3) :: grid_size, block_size
+        integer(kind = intType) :: ibmax, jbmax, kbmax
+
+        ! Subroutine arguments.
+        logical, intent(in) :: secondHalo
+
+        ! Local variables.
+        logical :: correctForK 
+        integer(kind=intType) :: nn 
+        integer(kind=intType) :: istat, dom, sps
+        
+        ! --- GPU SETUP ---
+        ! Copy block data to device for this block
+        call copyCudaBlock
+        call copyCudaBCData
+
+        ibmax = 0
+        jbmax = 0
+        kbmax = 0
+        ! zeroing
+        do dom = 1,nDom
+            do sps = 1, nTimeIntervalsSpectral
+                call setPointers(dom,1,sps)
+                ibmax = max(ibmax,bib)
+                jbmax = max(jbmax,bjb)
+                kbmax = max(kbmax,bkb)
+            end do
+        end do 
+
+        istat = cudaDeviceSynchronize()
+
+        ! metrics
+        print *,ibmax,jbmax,kbmax
+        block_size = dim3(8, 8, 1)
+        grid_size  = dim3(ceiling(real(ibmax+1) / block_size%x), ceiling(real(jbmax+1) / block_size%y), 1)
+
+        ! call CPU_TIME(start)
+
+        ! Determine whether or not the total energy must be corrected
+        ! for the presence of the turbulent kinetic energy.
+        correctForK = getCorrectForK()
+
+        ! Apply all the boundary conditions. The order is important!  Only
+        ! some of them have been AD'ed
+
+        ! ------------------------------------
+        !  Symmetry Boundary Condition
+        ! ------------------------------------
+        !$AD II-LOOP
+        do nn = 1, nBocos
+             if (BCType(nn) == symm) then
+                ! First set pointers on CPU
+                call setBCPointers(nn, .False.)
+                ! Then copy all data to device
+                call copyCudaBC
+                call copyCudaBCDataMod
+
+                ! Run routine on GPU
+                !TODO: pickup debugging here GGGGGGGGGGGGGGGGGGGGGGGGGGGG
+                call bcSymm1stHalo<<<grid_size, block_size>>>(nn)
+            end if
+        end do
 !
 !        ! if (secondHalo) then
 !        !     !$AD II-LOOP
@@ -296,71 +298,71 @@ contains
 !        !     end if
 !        ! end do
 !
-!    end subroutine applyAllBC_block
-!
-!    ! ===================================================================
-!    !   Actual implementation of each of the boundary condition routines
-!    ! ===================================================================
-!    attributes(global) subroutine bcSymm1stHalo(nn)
-!
-!        !  bcSymm1stHalo applies the symmetry boundary conditions to a
-!        !  block.  * It is assumed that the pointers in blockPointers are
-!        !  already set to the correct block on the correct grid level.
-!        !
-!        !  In case also the second halo must be set, a second loop is
-!        !  execulted calling bcSymm2ndhalo. This is the only correct way
-!        !  in case the block contains only 1 cell between two symmetry
-!        !  planes, i.e. a 2D problem.
-!
-!        use constants
-!        ! use cudaBlock, only: BCData=>d_BCdata
-!        use cudaflowVarRefState, only: viscous, eddyModel
-!        use cudaBCPointers, only: gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-!                              iStart, jStart, iSize, jSize, rev1, rev2
-!        implicit none
-!
-!        ! Subroutine arguments.
-!        integer(kind=intType), intent(in), value :: nn
-!
-!        ! Local variables.
-!        integer(kind=intType) :: i, j, l
-!        real(kind=realType) :: vn, nnx, nny, nnz
-!
-!        ! Loop over the generic subface to set the state in the
-!        ! 1-st level halos
-!
-!        ! --- Initialize GPU thread indices Launch params ---
-!        i = (blockIdx%x-1)*blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
-!        j = (blockIdx%y-1)*blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
-!
-!        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
-!
-!            ! Determine twice the normal velocity component,
-!            ! which must be substracted from the donor velocity
-!            ! to obtain the halo velocity.
-!
-!            vn = two * (ww2(i, j, ivx) * BCData(nn)%norm(i, j, 1) + &
-!                        ww2(i, j, ivy) * BCData(nn)%norm(i, j, 2) + &
-!                        ww2(i, j, ivz) * BCData(nn)%norm(i, j, 3))
-!
-!            ! Determine the flow variables in the halo cell.
-!
-!            ww1(i, j, irho) = ww2(i, j, irho)
-!            ww1(i, j, ivx) = ww2(i, j, ivx) - vn * BCData(nn)%norm(i, j, 1)
-!            ww1(i, j, ivy) = ww2(i, j, ivy) - vn * BCData(nn)%norm(i, j, 2)
-!            ww1(i, j, ivz) = ww2(i, j, ivz) - vn * BCData(nn)%norm(i, j, 3)
-!            ww1(i, j, irhoE) = ww2(i, j, irhoE)
-!
-!            ! Set the pressure and gamma and possibly the
-!            ! laminar and eddy viscosity in the halo.
-!
-!            gamma1(i, j) = gamma2(i, j)
-!            pp1(i, j) = pp2(i, j)
-!            if (viscous) rlv1(i, j) = rlv2(i, j)
-!            if (eddyModel) rev1(i, j) = rev2(i, j)
-!        end if
-!    end subroutine bcSymm1stHalo
-!
+    end subroutine applyAllBC_block
+
+    ! ===================================================================
+    !   Actual implementation of each of the boundary condition routines
+    ! ===================================================================
+    attributes(global) subroutine bcSymm1stHalo(nn)
+
+        !  bcSymm1stHalo applies the symmetry boundary conditions to a
+        !  block.  * It is assumed that the pointers in blockPointers are
+        !  already set to the correct block on the correct grid level.
+        !
+        !  In case also the second halo must be set, a second loop is
+        !  execulted calling bcSymm2ndhalo. This is the only correct way
+        !  in case the block contains only 1 cell between two symmetry
+        !  planes, i.e. a 2D problem.
+
+        use constants
+        ! use cudaBlock, only: BCData=>d_BCdata
+        use cudaflowVarRefState, only: viscous, eddyModel
+        use cudaBCPointers, only: gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, rlv2, &
+                              iStart, jStart, iSize, jSize, rev1, rev2
+        implicit none
+
+        ! Subroutine arguments.
+        integer(kind=intType), intent(in), value :: nn
+
+        ! Local variables.
+        integer(kind=intType) :: i, j, l
+        real(kind=realType) :: vn, nnx, nny, nnz
+
+        ! Loop over the generic subface to set the state in the
+        ! 1-st level halos
+
+        ! --- Initialize GPU thread indices launch params ---
+        i = (blockIdx%x - 1) * blockDim%x + threadIdx%x + iStart - 1 ! starts at 0 + iStart
+        j = (blockIdx%y - 1) * blockDim%y + threadIdx%y + jStart - 1 ! starts at 0 + jStart
+
+        if ((i - iStart) <= isize .and. (j - jStart) <= jsize) then
+
+            ! Determine twice the normal velocity component,
+            ! which must be substracted from the donor velocity
+            ! to obtain the halo velocity.
+
+            vn = two * (ww2(i, j, ivx) * BCData(nn)%norm(i, j, 1) + &
+                        ww2(i, j, ivy) * BCData(nn)%norm(i, j, 2) + &
+                        ww2(i, j, ivz) * BCData(nn)%norm(i, j, 3))
+
+            ! Determine the flow variables in the halo cell.
+
+            ww1(i, j, irho) = ww2(i, j, irho)
+            ww1(i, j, ivx) = ww2(i, j, ivx) - vn * BCData(nn)%norm(i, j, 1)
+            ww1(i, j, ivy) = ww2(i, j, ivy) - vn * BCData(nn)%norm(i, j, 2)
+            ww1(i, j, ivz) = ww2(i, j, ivz) - vn * BCData(nn)%norm(i, j, 3)
+            ww1(i, j, irhoE) = ww2(i, j, irhoE)
+
+            ! Set the pressure and gamma and possibly the
+            ! laminar and eddy viscosity in the halo.
+
+            gamma1(i, j) = gamma2(i, j)
+            pp1(i, j) = pp2(i, j)
+            if (viscous) rlv1(i, j) = rlv2(i, j)
+            if (eddyModel) rev1(i, j) = rev2(i, j)
+        end if
+    end subroutine bcSymm1stHalo
+
 !    attributes(global) subroutine bcSymm2ndHalo(nn)
 !
 !        !  bcSymm2ndHalo applies the symmetry boundary conditions to a
