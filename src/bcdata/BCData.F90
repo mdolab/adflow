@@ -1432,7 +1432,6 @@ contains
             ! the code readable.
 
             call setPointers(i, 1_intType, sps)
-
             varLoop: do iVar = 1, nVar
 
                 ! Loop over the number of boundary condition subfaces.
@@ -1449,7 +1448,6 @@ contains
                     ! Check if this surface should be included or not:
                     nFam = famLists(iVar, 1)
                     famInclude: if (famInList(BCdata(j)%famID, famLists(iVar, 2:2 + nFam - 1))) then
-
                         select case (BCType(j))
 
                         case (NSWallIsothermal)
@@ -1466,9 +1464,9 @@ contains
                             call errorCheckbcDataNamesIn("SubsonicOutflow", bcDataNamesIn)
                         case default
                             call terminate('setBCData', &
-                                           'This is not a valid boundary condtion for setBCData')
+                                           'This is not a valid boundary condition for setBCData')
                         end select
-                        call insertToDataSet(bcDataNamesIn, bcDataIn)
+                        call insertToDataSet(bcDataNamesIn(ivar,:), bcDataIn(ivar))
 
                     end if famInclude
                 end do bocoLoop
@@ -1566,7 +1564,7 @@ contains
                             call terminate('setBCData', &
                                            'This is not a valid boundary condtion for setBCData')
                         end select
-                        call insertToDataSet_d(bcDataNamesIn, bcDataIn, bcDataInd)
+                        call insertToDataSet_d(bcDataNamesIn(ivar,:), bcDataIn(ivar), bcDataInd(ivar))
 
                     end if famInclude
                 end do bocoLoop
@@ -1671,7 +1669,7 @@ contains
                             call terminate('setBCData', &
                                            'This is not a valid boundary condtion for setBCData')
                         end select
-                        call insertToDataSet_b(bcDataNamesIn, bcDataIn, bcDataInd)
+                        call insertToDataSet_b(bcDataNamesIn(ivar,:), bcDataIn(ivar), bcDataInd(ivar))
 
                     end if famInclude
                 end do bocoLoop
@@ -1989,31 +1987,31 @@ contains
         !
         !      Subroutine arguments.
         !
-        character, dimension(:, :), intent(in) :: bcdatanamesin
-        real(kind=realType), dimension(:), intent(in) :: bcDataIn
+        character, dimension(:), intent(in) :: bcdatanamesin
+        real(kind=realType), intent(in) :: bcDataIn
         !
         !      Local variables.
         !
         integer(kind=intType) :: k, l, m, n, q
-        integer(kind=intType) :: ind(2, nbcVar), nVarPresent
+        integer(kind=intType) :: ind(2, nbcVar)
         character(len=maxCGNSNameLen) :: varName
 
-        nVarPresent = 0
-
-        do m = 1, size(bcDataIn)
+        do m = 1, nbcVar
             bcVarPresent(m) = .false.
 
             dataSetLoop: do k = 1, nDataSet
                 do l = 1, dataSet(k)%nDirichletArrays
+
+                    varName = char2str(bcDataNamesIn(:), maxCGNSNameLen)
+
                     if (dataSet(k)%dirichletArrays(l)%arrayName == &
-                        bcVarNames(m)) then
+                        varname) then
 
                         ! Variable is present. Store the indices, update
                         ! nVarPresent and set bcVarPresent(m) to .True.
 
-                        ind(1, m) = k; ind(2, m) = l
+                        dataSet(k)%dirichletArrays(l)%dataArr(1) = bcDataIn
 
-                        nVarPresent = nVarPresent + 1
                         bcVarPresent(m) = .true.
 
                         ! Exit the search loop, as the variable was found.
@@ -2025,20 +2023,6 @@ contains
             end do dataSetLoop
         end do
 
-        do m = 1, size(bcDataIn)
-            if (bcVarPresent(m)) then
-                k = ind(1, m)
-                l = ind(2, m)
-                do n = 1, size(bcDataIn)
-
-                    varName = char2str(bcDataNamesIn(n, :), maxCGNSNameLen)
-
-                    if (bcVarNames(m) == varname) then
-                        dataSet(k)%dirichletArrays(l)%dataArr(1) = bcDataIn(n)
-                    end if
-                end do
-            end if
-        end do
     end subroutine insertToDataSet
 
     subroutine insertToDataSet_d(bcDataNamesIn, bcDataIn, bcDataInd)
@@ -2051,8 +2035,8 @@ contains
         !
         !      Subroutine arguments.
         !
-        character, dimension(:, :), intent(in) :: bcdatanamesin
-        real(kind=realType), dimension(:), intent(in) :: bcDataIn, bcDataInd
+        character, dimension(:), intent(in) :: bcdatanamesin
+        real(kind=realType), intent(in) :: bcDataIn, bcDataInd
         !
         !      Local variables.
         !
@@ -2060,22 +2044,23 @@ contains
         integer(kind=intType) :: ind(2, nbcVar), nVarPresent
         character(len=maxCGNSNameLen) :: varName
 
-        nVarPresent = 0
-
-        do m = 1, size(bcDataIn)
+        do m = 1, nbcVar
             bcVarPresent(m) = .false.
 
             dataSetLoop: do k = 1, nDataSet
                 do l = 1, dataSet(k)%nDirichletArrays
+                    
+                    varName = char2str(bcDataNamesIn(:), maxCGNSNameLen)
+
                     if (dataSet(k)%dirichletArrays(l)%arrayName == &
-                        bcVarNames(m)) then
+                    varname) then
 
                         ! Variable is present. Store the indices, update
                         ! nVarPresent and set bcVarPresent(m) to .True.
+                        
+                        dataSet(k)%dirichletArrays(l)%dataArr(1) = bcDataIn
+                        dataSetd(k)%dirichletArrays(l)%dataArr(1) = bcDataInd
 
-                        ind(1, m) = k; ind(2, m) = l
-
-                        nVarPresent = nVarPresent + 1
                         bcVarPresent(m) = .true.
 
                         ! Exit the search loop, as the variable was found.
@@ -2087,21 +2072,6 @@ contains
             end do dataSetLoop
         end do
 
-        do m = 1, size(bcDataIn)
-            if (bcVarPresent(m)) then
-                k = ind(1, m)
-                l = ind(2, m)
-                do n = 1, size(bcDataIn)
-
-                    varName = char2str(bcDataNamesIn(n, :), maxCGNSNameLen)
-
-                    if (bcVarNames(m) == varname) then
-                        dataSet(k)%dirichletArrays(l)%dataArr(1) = bcDataIn(n)
-                        dataSetd(k)%dirichletArrays(l)%dataArr(1) = bcDataInd(n)
-                    end if
-                end do
-            end if
-        end do
     end subroutine insertToDataSet_d
 
     subroutine insertToDataSet_b(bcDataNamesIn, bcDataIn, bcDataInd)
@@ -2114,9 +2084,9 @@ contains
         !
         !      Subroutine arguments.
         !
-        character, dimension(:, :), intent(in) :: bcdatanamesin
-        real(kind=realType), dimension(:), intent(in) :: bcDataIn
-        real(kind=realType), dimension(:), intent(out) :: bcDataInd
+        character, dimension(:), intent(in) :: bcdatanamesin
+        real(kind=realType), intent(in) :: bcDataIn
+        real(kind=realType), intent(out) :: bcDataInd
         !
         !      Local variables.
         !
@@ -2124,22 +2094,23 @@ contains
         integer(kind=intType) :: ind(2, nbcVar), nVarPresent
         character(len=maxCGNSNameLen) :: varName
 
-        nVarPresent = 0
-
-        do m = 1, size(bcDataIn)
+        do m = 1, nbcVar
             bcVarPresent(m) = .false.
 
             dataSetLoop: do k = 1, nDataSet
                 do l = 1, dataSet(k)%nDirichletArrays
+
+                    varName = char2str(bcDataNamesIn(:), maxCGNSNameLen)
+
                     if (dataSet(k)%dirichletArrays(l)%arrayName == &
-                        bcVarNames(m)) then
+                        varname) then
 
                         ! Variable is present. Store the indices, update
                         ! nVarPresent and set bcVarPresent(m) to .True.
 
-                        ind(1, m) = k; ind(2, m) = l
+                        bcDataInd = bcdataind + dataSetd(k)%dirichletArrays(l)%dataArr(1)
+                        datasetd(k)%dirichletarrays(l)%dataarr(1) = 0.0_8
 
-                        nVarPresent = nVarPresent + 1
                         bcVarPresent(m) = .true.
 
                         ! Exit the search loop, as the variable was found.
@@ -2151,21 +2122,6 @@ contains
             end do dataSetLoop
         end do
 
-        do m = 1, size(bcDataIn)
-            if (bcVarPresent(m)) then
-                k = ind(1, m)
-                l = ind(2, m)
-                do n = 1, size(bcDataIn)
-
-                    varName = char2str(bcDataNamesIn(n, :), maxCGNSNameLen)
-
-                    if (bcVarNames(m) == varname) then
-                        bcDataInd(n) = bcdataind(n) + dataSetd(k)%dirichletArrays(l)%dataArr(1)
-                        datasetd(k)%dirichletarrays(l)%dataarr(1) = 0.0_8
-                    end if
-                end do
-            end if
-        end do
     end subroutine insertToDataSet_b
     !--------------------------------------------
     ! Initialization routines
