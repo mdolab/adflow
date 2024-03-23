@@ -3697,6 +3697,17 @@ contains
             cpmin_family = zero
         end if
 
+        ! Allocate the memory for sepsenmax_family. We had to wait until
+        ! nTimeIntervalsSpectral was set.
+        if (.not. allocated(sepsenmax_family)) then
+            allocate (sepsenmax_family(nTimeIntervalsSpectral), stat=ierr)
+            if (ierr /= 0) &
+                 call terminate("checkInputParam", &
+                 "Memory allocation failure for &
+                 &sepsenmax_family")
+            sepsenmax_family = one
+        end if
+
     end subroutine checkInputParam
     subroutine setDefaultValues
         !
@@ -4046,8 +4057,6 @@ contains
         adjointPETScVarsAllocated = .False.
         adjointPETScPreProcVarsAllocated = .False.
         usematrixfreedrdw = .False.
-        sepSensorOffset = zero
-        sepSensorSharpness = 10_realType
     end subroutine setDefaultValues
 
     subroutine initializeIsoSurfaceVariables(values, nValues)
