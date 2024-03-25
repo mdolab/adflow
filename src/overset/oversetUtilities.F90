@@ -1591,10 +1591,6 @@ contains
                             if (badCell .and. printBadCells) then
                                 if (oversetDebugPrint) &
                                     print *, 'Error in connectivity at :', nbkglobal, i + iBegOr, j + jBegOr, k + kBegOr
-                                ! we can modify iBlankLast because this is the last checkOverset call.
-                                ! we set iBlankLast to -5 to mark orphan cells, this value will then
-                                ! be moved to iBlank after we are done with other loops.
-                                flowDoms(nn, level, sps)%iBlankLast(i, j, k) = -5
                             end if
                         end if
                     end do
@@ -1670,6 +1666,12 @@ contains
                                         ! This cell is an orphan:
                                         n = n + 1
                                         orphans(:, n) = (/ii, jj, kk/)
+                                        if (printBadCells) then
+                                            ! we can modify iBlankLast because this is the last checkOverset call.
+                                            ! we set iBlankLast to -5 to mark orphan cells, this value will then
+                                            ! be moved to iBlank after we are done with other loops.
+                                            flowDoms(nn, level, sps)%iBlankLast(ii, jj, kk) = -5
+                                        end if
                                     end if
                                 end if
                             end do stencilLoop3

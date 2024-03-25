@@ -31,7 +31,7 @@ module wallDistanceData
     real(kind=realType), dimension(:), pointer :: xSurf
 
     logical, dimension(:), allocatable :: wallDistanceDataAllocated
-    logical, dimension(:), allocatable :: updateWallAssociation
+    logical, dimension(:), allocatable :: updateLevelWallAssociation
 
 #ifndef USE_TAPENADE
     real(kind=realType), dimension(:), pointer :: xSurfd
