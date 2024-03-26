@@ -3,8 +3,11 @@
 Introduction
 ============
 
-ADflow is a multi-block structured flow solver initially developed at Stanford University under the sponsorship of the Department of Energy Advanced Strategic Computing (ASC) Initiative.
+ADflow is a multi-block and overset structured flow solver initially developed at Stanford University under the sponsorship of the Department of Energy Advanced Strategic Computing (ASC) Initiative.
 It solves the compressible Euler, laminar Navier-Stokes and Reynolds-Averaged Navier-Stokes equations using a second-order finite volume discretization.
+It currently features three solvers: multigrid, approximate Newton-Krylov, and Newton-Krylov, more details of which are under :ref:`solvers <adflow_solvers>.
+Users control the CFD solver via a solver option dictionary.
+More details are in :ref:`options <adflow_options>.
 
 Although its primary objective in this program was to compute the flows in the rotating components of jet engines, 
 ADflow has been developed as a completely general solver, and it is therefore applicable to a variety of other types of problems, including external aerodynamic flows.
@@ -22,7 +25,7 @@ A summary of the various features that can be found in ADflow is given below:
 
 * Massively parallel (both CPU and memory scalable) implementation using MPI.
 
-* ALE Deforming grid implementation using ``pyWarp``
+* ALE Deforming grid implementation using ``IDWarp``
 
 * Interface to conservative and consistent load and displacement transfer for aeroelastic computations.
 
