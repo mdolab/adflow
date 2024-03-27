@@ -829,7 +829,7 @@ contains
             else
                 select case (spaceDiscr)
                 case (dissScalar)
-                    ! call inviscidDissFluxScalar_block
+                     call inviscidDissFluxScalar_block
                 case (dissMatrix)
                     call inviscidDissFluxMatrix_block
                 case (upwind)

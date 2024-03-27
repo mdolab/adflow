@@ -4354,9 +4354,6 @@ module cudaResidual
          ddw1 = cudaDoms(dom,sps)%w(i, j + 1, k, irho) - cudaDoms(dom,sps)%w(i, j, k, irho)
          fs = dis2 * ddw1 &
               - dis4 * (cudaDoms(dom,sps)%w(i, j + 2, k, irho) - cudaDoms(dom,sps)%w(i, j - 1, k, irho) - three * ddw1)
-             if (j == 1 .and. i == 2 .and. k == 2) then
-                 print *, "gpu",fs
-             end if 
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, irho), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i,     j, k, irho), fs)
 
@@ -4388,8 +4385,8 @@ module cudaResidual
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imy), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i,     j, k, imy), fs)
 
-         cudaDoms(dom,sps)%fw(i, j + 1, k, imy) = cudaDoms(dom,sps)%fw(i, j + 1, k, imy) + fs
-         cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fs
+!         cudaDoms(dom,sps)%fw(i, j + 1, k, imy) = cudaDoms(dom,sps)%fw(i, j + 1, k, imy) + fs
+ !        cudaDoms(dom,sps)%fw(i, j, k, imy) = cudaDoms(dom,sps)%fw(i, j, k, imy) - fs
     
         ! Z-momentum.
     
@@ -4402,8 +4399,8 @@ module cudaResidual
          tmp = atomicadd(cudaDoms(dom,sps)%fw(i, j + 1, k, imz), fs)
          tmp = atomicsub(cudaDoms(dom,sps)%fw(i,     j, k, imz), fs)
 
-         cudaDoms(dom,sps)%fw(i, j + 1, k, imz) = cudaDoms(dom,sps)%fw(i, j + 1, k, imz) + fs
-         cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fs
+ !        cudaDoms(dom,sps)%fw(i, j + 1, k, imz) = cudaDoms(dom,sps)%fw(i, j + 1, k, imz) + fs
+         !cudaDoms(dom,sps)%fw(i, j, k, imz) = cudaDoms(dom,sps)%fw(i, j, k, imz) - fs
     
         ! Energy.
     
