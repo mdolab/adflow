@@ -677,16 +677,26 @@ python module libadflow
        end module usersurfaceintegrations
 
        module actuatorregion ! in :test:actuatorDiskRegion.F90
-         subroutine addactuatorregion(pts,conn,axis1,axis2,famname,famid,thrust,torque,heat,relaxstart,relaxend,npts,nconn) ! in :test:actuatorDiskRegion.F90:actuatorregion
+         subroutine addactuatorregion(pts,conn,acttype,axis1,axis2,famname,famid,thrust,torque,swirlfact,mdistribparam,ndistribparam,distribpdfactor,innerzerothrustradius,propradius,spinnerradius,rootdragfactor,relaxstart,relaxend,npts,nconn) ! in :test:actuatorDiskRegion.F90:actuatorregion
            real(kind=realtype) dimension(3,npts),intent(in) :: pts
            integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
+           character*(*) :: acttype
            real(kind=realtype), dimension(3),intent(in) :: axis1
            real(kind=realtype), dimension(3),intent(in) :: axis2
            character*(*) :: famname
            integer(kind=inttype) intent(in) :: famid
            real(kind=realtype) :: thrust
            real(kind=realtype) :: torque
-           real(kind=realtype) :: heat
+           !# Shamsheer commented out heat and removed from the subroutine line above. 
+           !# real(kind=realtype) :: heat
+           real(kind=realtype) :: swirlfact
+           real(kind=realtype) :: mdistribparam
+           real(kind=realtype) :: ndistribparam
+           real(kind=realtype) :: distribpdfactor
+           real(kind=realtype) :: innerzerothrustradius
+           real(kind=realtype) :: propradius
+           real(kind=realtype) :: spinnerradius
+           real(kind=realtype) :: rootdragfactor
            real(kind=realtype) :: relaxstart
            real(kind=realtype) :: relaxend
            integer(kind=inttype), optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
