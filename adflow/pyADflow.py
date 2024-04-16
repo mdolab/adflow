@@ -683,7 +683,7 @@ class ADFLOW(AeroSolver):
             j = self.nSlice + i + 1
 
             if useDir:
-                direction = sliceDir[j]
+                direction = sliceDir[i]
             else:
                 direction = dummySliceDir
 
