@@ -5,6 +5,227 @@ module userSurfaceIntegrations
     use userSurfaceIntegrationData
 contains
 
+    subroutine remapMesh(vars, conn, ptValid, nvars, npts, nElements, varsValid, connValid, nptsValid)
+        implicit none
+
+        ! Inputs
+        integer(kind=intType), intent(in) :: npts, nElements, nvars              ! Number of nodes and elements
+        real(kind=realType), dimension(nvars, npts), intent(in) :: vars          ! Original nodes array (shape: 3 x npts)
+        integer(kind=intType), dimension(3, nElements), intent(in) :: conn           ! Original connectivity array (shape: 3 x n_elements)
+        logical, dimension(npts), intent(in) :: ptValid         ! Logical array indicating validity of nodes
+
+        ! Outputs
+        real(kind=realType), dimension(:, :), allocatable, intent(out) :: varsValid    ! Valid nodes array (shape: 3 x npts_valid)
+        integer(kind=intType), dimension(:, :), allocatable, intent(out) :: connValid     ! Valid connectivity array (shape: 3 x n_elements_valid)
+        integer(kind=intType), intent(out) :: nptsValid                                   ! Number of valid nodes
+
+        ! Local variables
+        logical, dimension(:), allocatable :: nodeUsed      ! Array to track if a node is used in a valid triangle
+        integer(kind=intType) :: i, j, k, countPtsValid, countConnsValid
+        integer(kind=intType), dimension(3, nElements) :: connTemp
+
+        ! Allocate memory for node_used array
+        allocate (nodeUsed(npts))
+
+        ! Initialize node_used array
+        nodeUsed = .false.
+
+        ! Count valid nodes
+        countPtsValid = 0
+        do i = 1, npts
+            if (ptValid(i)) then
+                countPtsValid = countPtsValid + 1
+                nodeUsed(i) = .true.
+            end if
+        end do
+
+        ! Allocate memory for valid nodes array
+        allocate (varsValid(size(vars, 1), countPtsValid))
+
+        ! Count the number of valid elements
+        countConnsValid = 0
+        do i = 1, nElements
+            if ((ptValid(conn(1, i)) .and. ptValid(conn(2, i)) .and. ptValid(conn(3, i)))) then
+                countConnsValid = countConnsValid + 1
+            end if
+        end do
+
+        ! Allocate memory for valid connectivity array
+        ! Copy valid nodes to new array
+        allocate (connValid(3, countConnsValid))
+
+        countPtsValid = 0
+        do i = 1, npts
+            if (nodeUsed(i)) then
+                countPtsValid = countPtsValid + 1
+                varsValid(:, countPtsValid) = vars(:, i)
+
+                ! Update the connectivity array
+                do j = 1, nElements
+                    if (conn(1, j) == i) then
+                        connTemp(1, j) = countPtsValid
+                    end if
+                    if (conn(2, j) == i) then
+                        connTemp(2, j) = countPtsValid
+                    end if
+                    if (conn(3, j) == i) then
+                        connTemp(3, j) = countPtsValid
+                    end if
+                end do
+            end if
+        end do
+
+        ! Copy the valid connectivity array
+        countConnsValid = 0
+        do i = 1, nElements
+            if ((ptValid(conn(1, i)) .and. ptValid(conn(2, i)) .and. ptValid(conn(3, i)))) then
+                countConnsValid = countConnsValid + 1
+                connValid(:, countConnsValid) = connTemp(:, i)
+            end if
+        end do
+
+        ! Deallocate node_used array
+        deallocate (nodeUsed)
+
+    end subroutine remapMesh
+
+    subroutine getUserSurfaceData(iSurf, sps, validVars, validConn)
+
+        use constants
+        use block, only: flowDoms, nDom
+        use flowVarRefState, only: pRef, rhoRef
+        use communication, only: myid
+        use flowUtils, only: computePtot, computeTtot
+        use sorting, only: famInList
+        use utils, only: terminate
+
+        ! Input Parameters
+        integer(kind=intType), intent(in) :: iSurf, sps
+
+        ! Output Parameters
+        real(kind=realType), dimension(:, :), allocatable, intent(out) :: validVars
+        integer(kind=intType), dimension(:, :), allocatable, intent(out) :: validConn
+
+        ! Working parameters
+        integer(kind=intType) :: i, j, k, jj, ierr, nn, iDim, nPts
+        real(kind=realType), dimension(:), allocatable :: recvBuffer1, recvBuffer2
+        real(kind=realType), dimension(:, :), allocatable :: vars
+        real(kind=realType), dimension(:, :), allocatable :: solVars
+        logical, dimension(:), allocatable :: ptValid
+        type(userIntSurf), pointer :: surf
+        real(kind=realType) :: p, gamma, vmag
+
+        if (nUserIntSurfs == 0) then
+            write (*, *) "Warning: No user-supplied surfaces to write"
+            return ! Nothing to do
+        end if
+
+        ! Set the pointers for the required communication variables
+        domainLoop: do nn = 1, nDom
+            if (flowDoms(nn, 1, sps)%addGridVelocities) then
+                call terminate("userSurfaceIntegrations", "Cannot use user-supplied surface integrations"&
+                     &"on with moving grids")
+            end if
+
+            flowDoms(nn, 1, sps)%realCommVars(iRho)%var => flowDoms(nn, 1, sps)%w(:, :, :, iRho)
+            flowDoms(nn, 1, sps)%realCommVars(iVx)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVx)
+            flowDoms(nn, 1, sps)%realCommVars(iVy)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVy)
+            flowDoms(nn, 1, sps)%realCommVars(iVz)%var => flowDoms(nn, 1, sps)%w(:, :, :, iVz)
+            flowDoms(nn, 1, sps)%realCommVars(iZippFlowP)%var => flowDoms(nn, 1, sps)%P(:, :, :)
+            flowDoms(nn, 1, sps)%realCommVars(iZippFlowGamma)%var => flowDoms(nn, 1, sps)%gamma(:, :, :)
+            ! flowDoms(nn, 1, sps)%realCommVars(iZippFlowSface)%var => Not Implemented
+
+            flowDoms(nn, 1, sps)%realCommVars(iZippFlowX)%var => flowDoms(nn, 1, sps)%x(:, :, :, 1)
+            flowDoms(nn, 1, sps)%realCommVars(iZippFlowY)%var => flowDoms(nn, 1, sps)%x(:, :, :, 2)
+            flowDoms(nn, 1, sps)%realCommVars(iZippFlowZ)%var => flowDoms(nn, 1, sps)%x(:, :, :, 3)
+        end do domainLoop
+
+        ! Pointer for easier reading
+        surf => userIntSurfs(iSurf)
+
+        nPts = size(surf%pts, 2)
+
+        ! Communicate the face values and the nodal values
+        if (myid == 0) then
+            allocate (recvBuffer1(6 * nPts), recvBuffer2(3 * nPts))
+        else
+            allocate (recvBuffer1(0), recvBuffer2(0))
+            allocate (solVars(0, 0))
+        end if
+
+        call commUserIntegrationSurfaceVars(recvBuffer1, iRho, iZippFlowGamma, surf%flowComm)
+        call commUserIntegrationSurfaceVars(recvBuffer2, iZippFlowX, iZippFlowZ, surf%nodeComm)
+
+        ! Only get the data on the root processor
+        if (myid == 0) then
+
+            ! Allocate some temporary data
+            allocate (vars(npts, nZippFlowComm), ptValid(npts))
+            ptValid = .True.
+
+            ! We have to re-order the data according to the "inv"
+            ! array in each of the two comms.
+            do i = 1, nPts
+
+                ! Flow Variables
+                j = surf%flowComm%inv(i)
+                vars(j, iRho:iZippFlowGamma) = recvBuffer1(6 * (i - 1) + iRho:6 * (i - 1) + iZippFlowGamma)
+
+                if (.not. surf%flowComm%valid(i)) then
+                    ptValid(j) = .False.
+                end if
+
+                ! Sface is not implemented. To correctly do this,
+                ! interpolate the three components of 's', do the dot
+                ! product with the local normal to get the sFace value.
+                vars(j, iZippFlowSface) = zero
+
+                ! Node Comm Values
+                j = surf%nodeComm%inv(i)
+                vars(j, iZippFlowX:iZippFlowZ) = recvBuffer2(3 * i - 2:3 * i)
+
+                ! The additional pt-valid array
+                if (.not. surf%nodeComm%valid(i)) then
+                    ptValid(j) = .False.
+                end if
+            end do
+
+            ! We need to loop over the variables to compute and store the solution variables
+            allocate (solVars(11, npts))
+
+            do i = 1, npts
+                p = vars(i, iRhoE)
+                gamma = vars(i, iZippFlowGamma)
+                solVars(1, i) = vars(i, iZippFlowX)     ! x-coordinate
+                solVars(2, i) = vars(i, iZippFlowY)     ! y-coordinate
+                solVars(3, i) = vars(i, iZippFlowZ)     ! z-coordinate
+                solVars(4, i) = vars(i, iVx)            ! x-velocity
+                solVars(5, i) = vars(i, iVy)            ! y-velocity
+                solVars(6, i) = vars(i, iVz)            ! z-velocity
+                solVars(7, i) = vars(i, iRho)           ! density
+                solVars(8, i) = vars(i, iRhoE) * pRef   ! Static pressure
+
+                ! Total pressure, stored in the 9th column
+                call computePtot(vars(i, iRho), vars(i, iVx), vars(i, iVy), vars(i, iVz), p, solVars(9, i))
+
+                ! Total temperature, stored in the 10th column
+                call computeTtot(vars(i, iRho), vars(i, iVx), vars(i, iVy), vars(i, iVz), p, solVars(10, i))
+
+                ! Compute the Mach number
+                vmag = sqrt(vars(i, iVx)**2 + vars(i, iVy)**2 + vars(i, iVz)**2)
+                solVars(11, i) = vmag / sqrt(gamma * p / vars(i, iRho)) ! Mach number
+            end do
+
+            ! Remap the mesh to only include valid points
+            call remapMesh(solVars, surf%conn, ptValid, size(solVars, 1), npts, &
+                           size(surf%conn, 2), validVars, validConn, nptsValid)
+
+            deallocate (vars, ptValid)
+        end if
+        deallocate (recvBuffer1, recvBuffer2)
+
+    end subroutine getUserSurfaceData
+
     subroutine integrateUserSurfaces(localValues, famList, sps)
 
         use constants

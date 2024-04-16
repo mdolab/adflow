@@ -648,6 +648,19 @@ python module libadflow
 
          subroutine initializeliftdistributiondata
          end subroutine initializeliftdistributiondata
+
+         subroutine writeuserintsurf(slicename,filename,famid) ! in :test:tecplotIO.F90:tecplotio
+          use constants
+          use inputio
+          use commonformats, only: int5,sci6
+          use usersurfaceintegrationdata, only: userintsurfs,nuserintsurfs,userintsurf
+          use usersurfaceintegrations, only: getusersurfacedata
+          use sorting, only: faminlist
+          character*(*) intent(in) :: slicename
+          character*(*) intent(in) :: filename
+          integer(kind=inttype) intent(in) :: famid
+        end subroutine writeuserintsurf
+
        end subroutine tecplotio
 
        module surfaceintegrations

@@ -18,21 +18,24 @@ History
 v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 """
 
+import copy
+import hashlib
+
 # =============================================================================
 # Imports
 # =============================================================================
 import os
-import time
-import copy
-import types
-import numpy
 import sys
-from mpi4py import MPI
-from baseclasses import AeroSolver, AeroProblem, getPy3SafeString
-from baseclasses.utils import Error, CaseInsensitiveDict
-from . import MExt
-import hashlib
+import time
+import types
 from collections import OrderedDict
+
+import numpy
+from baseclasses import AeroProblem, AeroSolver, getPy3SafeString
+from baseclasses.utils import CaseInsensitiveDict, Error
+from mpi4py import MPI
+
+from . import MExt
 
 
 class ADFLOWWarning(object):
@@ -3104,6 +3107,29 @@ class ADFLOW(AeroSolver):
 
             f.close()
         # end if (root proc )
+
+    def writeUserIntSurfFile(self, familyName, outputDir=None, baseName=None, number=None):
+        if outputDir is None:
+            outputDir = self.getOption("outputDirectory")
+
+        if baseName is None:
+            baseName = self.curAP.name
+
+        if not familyName.lower() in self.families:
+            raise Error("Family %s not found in the solver." % familyName)
+
+        famID = self.families[familyName.lower()][0]  # Get the family ID
+
+        numDigits = self.getOption("writeSolutionDigits")
+        if number is not None:
+            baseName = f"{baseName}_{familyName.lower()}_{number:0{numDigits}d}"
+        else:
+            if self.getOption("numberSolutions"):
+                baseName = f"{baseName}_{familyName.lower()}_{self.curAP.adflowData.callCounter:0{numDigits}d}"
+
+        fileName = os.path.join(outputDir, baseName)
+
+        self.adflow.tecplotio.writeuserintsurf(familyName, fileName, famID)
 
     def resetAdjoint(self, obj):
         """

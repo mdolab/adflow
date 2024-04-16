@@ -62,6 +62,7 @@ module tecplotIO
     integer(kind=intType), parameter :: nSliceMax = 1000
     integer(kind=intType) :: nParaSlices = 0
     integer(kind=intType) :: nAbsSlices = 0
+    integer(kind=intType) :: nVolSlice = 0
     type(slice), dimension(:, :), allocatable :: paraSlices, absSlices
 
     ! Data for the user supplied lift distributions
@@ -2310,5 +2311,104 @@ contains
             write (fileID, int5) 1, 2
         end if
     end subroutine writeSlice
+
+    subroutine writeUserIntSurf(sliceName, fileName, famID)
+        use constants
+        use inputIO
+        use commonFormats, only: int7
+        use userSurfaceIntegrationData, only: userIntSurfs, nUserIntSurfs, userIntSurf
+        use userSurfaceIntegrations, only: getUserSurfaceData
+        use sorting, only: famInList
+        use communication, only: myID
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputIteration, only: printIterations
+        implicit none
+
+        ! Input parameters
+        character(len=*), intent(in) :: sliceName
+        character(len=*), intent(in) :: fileName
+        integer(kind=intType), intent(in) :: famID
+
+        ! Working variables
+        integer(kind=intType) :: i, j, iSurf, sps, file
+        real(kind=realType) :: tmp
+        real(kind=realType), dimension(:, :), allocatable :: vars
+        integer(kind=intType), dimension(:, :), allocatable :: conn
+        type(userIntSurf) :: surf
+
+        if (myID == 0 .and. printIterations) then
+            print "(a)", "#"
+            print "(a)", "Writing volume slice"
+        end if
+
+        timeLoop: do sps = 1, nTimeIntervalsSpectral
+
+            ! This needs to happen on all processors because
+            ! getUserSurfaceData has to communicate the data for this surface.
+            ! Only the vars and conn on the root proc will have data.
+            do iSurf = 1, nUserIntSurfs
+                surf = userIntSurfs(iSurf)
+                if (surf%famID == famID) then
+                    call getUserSurfaceData(iSurf, sps, vars, conn)
+                    exit
+                end if
+            end do
+
+            file = 11
+            if (myID == 0) then
+                print "(a,4x,a)", "#", trim(fileName)
+                open (unit=file, file=trim(fileName))
+
+                ! Write the header information
+                write (file, *) "Title = ""ADflow Volume Slice"""
+                write (file, "(a)", advance='no') "Variables = "
+                write (file, "(a)", advance="no") " ""CoordinateX"" "
+                write (file, "(a)", advance="no") " ""CoordinateY"" "
+                write (file, "(a)", advance="no") " ""CoordinateZ"" "
+                write (file, "(a)", advance="no") " ""VelocityX"" "
+                write (file, "(a)", advance="no") " ""VelocityY"" "
+                write (file, "(a)", advance="no") " ""VelocityZ"" "
+                write (file, "(a)", advance="no") " ""Density"" "
+                write (file, "(a)", advance="no") " ""StaticPressure"" "
+                write (file, "(a)", advance="no") " ""TotalPressure"" "
+                write (file, "(a)", advance="no") " ""TotalTemperature"" "
+                write (file, "(a)", advance="no") " ""Mach"" "
+
+                write (file, "(1x)")
+
+                write (file, "(a,a,a)") "Zone T= """, trim(sliceName), """"
+
+                if (size(vars, 2) > 0) then
+                    write (file, *) "Nodes = ", size(vars, 2), " Elements= ", size(conn, 2), " ZONETYPE=FETRIANGLE"
+                    write (file, *) "DATAPACKING=POINT"
+
+                    do i = 1, size(vars, 2)
+                        ! Write the variables
+                        do j = 1, size(vars, 1)
+                            write (file, sci6, advance='no') vars(j, i)
+                        end do
+
+                        write (file, "(1x)")
+                    end do
+
+                    do i = 1, size(conn, 2)
+                        write (file, int7) conn(1, i), conn(2, i), conn(3, i)
+                    end do
+                else
+                    write (file, *) "Nodes = ", 3, " Elements= ", 1, " ZONETYPE=FETRIANGLE"
+                    write (file, *) "DATAPACKING=POINT"
+                    do i = 1, 3
+                        do j = 1, 10
+                            write (file, sci6, advance='no') zero
+                        end do
+
+                        write (file, "(1x)")
+                    end do
+                    write (file, int7) 1, 2, 3
+                end if
+            end if
+        end do timeLoop
+
+    end subroutine writeUserIntSurf
 
 end module tecplotIO
