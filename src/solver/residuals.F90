@@ -352,9 +352,7 @@ contains
         use constants
         use actuatorRegionData
         use blockPointers, only: vol, dw, w
-        use flowVarRefState, only: pRef, uRef
-        ! Shamsheer note: Commenting out heat term for now.
-        ! use LRef
+        use flowVarRefState, only: pRef, uRef, LRef
         use communication
         use iteration, only: ordersConverged
         implicit none
@@ -366,9 +364,7 @@ contains
 
         ! Working
         integer(kind=intType) :: i, j, k, ii, iStart, iEnd
-        real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, F_fact(3), reDim, factor, oStart, oEnd
-        ! Shamsheer note: Commenting out heat term for now.
-        ! real(kind=realType) :: Q_fact, Qtmp
+        real(kind=realType) :: Ftmp(3), Vx, Vy, Vz, F_fact(3), Q_fact, Qtmp, reDim, factor, oStart, oEnd
 
         reDim = pRef * uRef
 
@@ -392,8 +388,7 @@ contains
         end if
 
         ! Heat factor. This is heat added per unit volume per unit time
-        ! Shamsheer note: Commenting out heat term for now.
-        ! Q_fact = factor * actuatorRegions(iRegion)%heat / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
+        Q_fact = factor * actuatorRegions(iRegion)%heat / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
 
         ! Loop over the ranges for this block
         iStart = actuatorRegions(iRegion)%blkPtr(nn - 1) + 1
@@ -417,18 +412,15 @@ contains
             Vz = w(i, j, k, iVz)
 
             ! this gets the heat addition rate
-            ! Shamsheer note: Commenting out heat term for now.
-            ! QTmp = vol(i, j, k) * Q_fact
+            QTmp = vol(i, j, k) * Q_fact
 
             if (res) then
                 ! Momentum residuals
                 dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
 
                 ! energy residuals
-                ! Shamsheer note: Commenting out heat term for now.
                 dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE) - &
-                                     Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz
-                                     ! - Qtmp
+                                     Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz - Qtmp
             else
                 ! Add in the local power contribution:
                 pLocal = pLocal + (Vx * Ftmp(1) + Vy * FTmp(2) + Vz * Ftmp(3)) * reDim

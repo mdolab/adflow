@@ -6,29 +6,28 @@ module actuatorRegion
     implicit none
 
 contains
-    ! Shamsheer note: Commented out this subroutine
-    ! subroutine computeActuatorRegionVolume(nn, iRegion)
-    !     use blockPointers, only: nDom, vol
-    !     implicit none
+    subroutine computeActuatorRegionVolume(nn, iRegion)
+        use blockPointers, only: nDom, vol
+        implicit none
 
-    !     ! Inputs
-    !     integer(kind=intType), intent(in) :: nn, iRegion
+        ! Inputs
+        integer(kind=intType), intent(in) :: nn, iRegion
 
-    !     ! Working
-    !     integer(kind=intType) :: iii
-    !     integer(kind=intType) :: i, j, k
+        ! Working
+        integer(kind=intType) :: iii
+        integer(kind=intType) :: i, j, k
 
-    !     ! Loop over the region for this block
-    !     do iii = actuatorRegions(iRegion)%blkPtr(nn - 1) + 1, actuatorRegions(iRegion)%blkPtr(nn)
-    !         i = actuatorRegions(iRegion)%cellIDs(1, iii)
-    !         j = actuatorRegions(iRegion)%cellIDs(2, iii)
-    !         k = actuatorRegions(iRegion)%cellIDs(3, iii)
+        ! Loop over the region for this block
+        do iii = actuatorRegions(iRegion)%blkPtr(nn - 1) + 1, actuatorRegions(iRegion)%blkPtr(nn)
+            i = actuatorRegions(iRegion)%cellIDs(1, iii)
+            j = actuatorRegions(iRegion)%cellIDs(2, iii)
+            k = actuatorRegions(iRegion)%cellIDs(3, iii)
 
-    !         ! Sum the volume of each cell within the region on this proc
-    !         actuatorRegions(iRegion)%volLocal = actuatorRegions(iRegion)%volLocal + vol(i, j, k)
-    !     end do
+            ! Sum the volume of each cell within the region on this proc
+            actuatorRegions(iRegion)%volLocal = actuatorRegions(iRegion)%volLocal + vol(i, j, k)
+        end do
 
-    ! end subroutine computeActuatorRegionVolume
+    end subroutine computeActuatorRegionVolume
 
     ! ----------------------------------------------------------------------
     !                                                                      |
@@ -38,9 +37,8 @@ contains
 
 #ifndef USE_TAPENADE
     subroutine addActuatorRegion(pts, conn, actType, axis1, axis2, famName, famID, &
-                                 thrust, torque, swirlFact, mDistribParam, nDistribParam, &
+                                 thrust, torque, heat, swirlFact, mDistribParam, nDistribParam, &
                                  distribPDfactor, innerZeroThrustRadius, propRadius, spinnerRadius, rootDragFactor, relaxStart, relaxEnd, nPts, nConn)
-        ! Shamsheer note: Removed heat from this subroutine
         ! Add a user-supplied integration surface.
 
         use communication, only: myID, adflow_comm_world
@@ -60,9 +58,7 @@ contains
         integer(kind=intType), dimension(4, nConn), intent(in), target :: conn
         real(kind=realType), intent(in), dimension(3) :: axis1, axis2
         character(len=*) :: famName, actType
-        real(kind=realType) :: thrust, torque, relaxStart, relaxEnd, swirlFact
-        ! real(kind=realType) :: heat
-        ! Shamsheer note: Removed heat from the above line
+        real(kind=realType) :: thrust, torque, heat, relaxStart, relaxEnd, swirlFact
         real(kind=realType) :: mDistribParam, nDistribParam
         real(kind=realType) :: distribPDfactor, innerZeroThrustRadius, propRadius, spinnerRadius, rootDragFactor
 
@@ -99,8 +95,7 @@ contains
         region%famName = famName
         region%famID = famID
         region%T = torque
-        ! region%heat = heat
-        ! Shamsheer note: Removed heat from here
+        region%heat = heat
         region%relaxStart = relaxStart
         region%relaxEnd = relaxEnd
         ! We use the axis to define the direction of F. Since we are

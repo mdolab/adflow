@@ -883,7 +883,7 @@ class ADFLOW(AeroSolver):
         familyName,
         thrust=0.0,
         torque=0.0,
-        # heat=0.0,
+        heat=0.0,
         swirlFact=0.0,
         mDistribParam=1.0,
         nDistribParam=0.5,
@@ -985,14 +985,12 @@ class ADFLOW(AeroSolver):
            applied inside the innerZeroThrustRadius for the propeller model.
            See below for a description of innerZeroThrustRadius.)
 
-        torque : scalar
+        torque : scalar, float
            The total amount of torque to apply to the region, about the
            specified axis. This is only for the uniform actuator zone.
 
-        # ----- Shamsheer note: This is new in the mdolab ADflow. If needed, incorporate later. -------
-        # heat : scalar, float
-        #    The total amount of head added in the actuator zone with source terms
-        # ---------------------------------------------------------------------------------------------
+        heat : scalar, float
+           The total amount of head added in the actuator zone with source terms
 
         relaxStart : scalar, float
             The start of the relaxation in terms of
@@ -1091,10 +1089,8 @@ class ADFLOW(AeroSolver):
 
         #  Now continue to fortran were we setup the actual region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, actType, axis1, axis2, familyName, famID, thrust, torque,
-            # heat
-            swirlFact,
-            mDistribParam, nDistribParam, distribPDfactor, innerZeroThrustRadius,
+            pts.T, conn.T, actType, axis1, axis2, familyName, famID, thrust, torque, heat,
+            swirlFact, mDistribParam, nDistribParam, distribPDfactor, innerZeroThrustRadius,
             propRadius, spinnerRadius, rootDragFactor, relaxStart, relaxEnd)
 
     def writeActuatorRegions(self, fileName, outputDir=None):

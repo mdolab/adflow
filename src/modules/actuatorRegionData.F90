@@ -16,7 +16,7 @@ module actuatorRegionData
         ! The total number of cells included this proc has
         integer(kind=intType) :: nCellIDs
 
-        ! F is the total Force to be applied on this region
+        ! F is the force vector to be applied on this region
         real(kind=realType) :: F(3)
 
         ! thrust is the total thrust magnitude to be applied on this region
@@ -29,21 +29,20 @@ module actuatorRegionData
         real(kind=realType) :: spinnerRadius
         real(kind=realType) :: rootDragFactor
 
-        ! T is the total torque to be applied on this regoin
+        ! T is the total torque to be applied on this region
         real(kind=realType) :: T
+        ! vector that determines the direction of the applied torque and force
         real(kind=realType), dimension(3) :: axisVec
         real(kind=realType), dimension(:, :), pointer :: thrustVec
         real(kind=realType), dimension(:, :), pointer :: swirlVec
 
         ! total heat flux to be added on this regoin
-        ! Shamsheer note: heat is a new variable in the latest mdolab ADflow
-        ! real(kind=realType) :: heat
+        real(kind=realType) :: heat
 
         ! Volume is the total integrated volume of all cells (on all
         ! procs) included in this region
         real(kind=realType) :: volume
-        ! Shamsheer note: volLocal is a new variable in the latest mdolab ADflow
-        ! real(kind=realType) :: volLocal
+        real(kind=realType) :: volLocal
 
         real(kind=realType) :: totalThrustSum
         real(kind=realType) :: totalSwirlSum
