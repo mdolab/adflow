@@ -20,7 +20,6 @@ v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 
 import copy
 import hashlib
-
 # =============================================================================
 # Imports
 # =============================================================================
@@ -3108,6 +3107,30 @@ class ADFLOW(AeroSolver):
             f.close()
         # end if (root proc )
 
+    def writeSurfaceASCII(self, familyName, outputDir=None, baseName=None, number=None):
+        if outputDir is None:
+            outputDir = self.getOptions("outputDirectory")
+
+        if baseName is None:
+            baseName = self.curAP.name
+
+        if not familyName.lower() in self.families:
+            raise Error(f"Family {familyName} is not found in the solver")
+
+        famList = self._getFamilyList(familyName)
+
+        numDigits = self.getOption("writeSolutionDigits")
+
+        if number is not None:
+            baseName = f"{baseName}_{familyName.lower()}_{self.curAP.adflowData.callCounter:0{numDigits}d}"
+        else:
+            if self.getOption("numberSolutions"):
+                baseName = f"{baseName}_{familyName.lower()}_{self.curAP.adflowData.callCounter:0{numDigits}d}"
+        
+        fileName = os.path.join(outputDir, baseName)
+
+        self.adflow.tecplotio.writebcsurfacesascii(fileName, famList)
+
     def writeUserIntSurfFile(self, familyName, outputDir=None, baseName=None, number=None):
         if outputDir is None:
             outputDir = self.getOption("outputDirectory")
@@ -3116,7 +3139,7 @@ class ADFLOW(AeroSolver):
             baseName = self.curAP.name
 
         if not familyName.lower() in self.families:
-            raise Error("Family %s not found in the solver." % familyName)
+            raise Error(f"Family {familyName} not found in the solver.")
 
         famID = self.families[familyName.lower()][0]  # Get the family ID
 

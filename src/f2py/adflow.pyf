@@ -646,6 +646,26 @@ python module libadflow
            integer(kind=inttype), optional,intent(in),check(len(famlist)>=nfamlist),depend(famlist) :: nfamlist=len(famlist)
          end subroutine writetecplot
 
+         subroutine writebcsurfacesascii(filename,famlist) ! in output/tecplotIO.F90:tecplotio
+            use constants
+            use communication, only: myid,adflow_comm_world,nproc
+            use inputtimespectral, only: ntimeintervalsspectral
+            use inputphysics, only: equationmode
+            use inputiteration, only: printiterations
+            use inputio, only: precisionsurfgrid,precisionsurfsol
+            use outputmod, only: surfsolnames,numberofsurfsolvariables
+            use surfacefamilies, only: bcfamexchange,famnames,familyexchange
+            use utils, only: echk,setpointers,setbcpointers
+            use bcpointers, only: xx
+            use sorting, only: faminlist
+            use extraoutput, only: surfwriteblank
+            use oversetdata, only: zippermesh,zippermeshes
+            use surfaceutils
+            use petsc
+            character*(*) intent(in) :: filename
+            integer(kind=inttype) dimension(:),intent(in) :: famlist
+         end subroutine writebcsurfacesascii
+
          subroutine initializeliftdistributiondata
          end subroutine initializeliftdistributiondata
 
@@ -686,7 +706,6 @@ python module libadflow
 
          subroutine interpolateintegrationsurfaces
          end subroutine interpolateintegrationsurfaces
-
        end module usersurfaceintegrations
 
        module actuatorregion ! in :test:actuatorDiskRegion.F90
