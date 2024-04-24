@@ -183,8 +183,8 @@ sa%saViscous(w, vol, si, sj, sk, rlv, scratch) > \
 sa%saResScale(scratch, dw) > \
              (dw) \
 \
-residuals%sourceTerms_block(w, pref, uref, plocal, dw, vol, actuatorRegions%force, actuatorRegions%heat, actuatorRegions%volume) > \
-                           (w, pref, uref, plocal, dw, vol, actuatorRegions%force, actuatorRegions%heat, actuatorRegions%volume) \
+residuals%sourceTerms_block(w, pref, uref, plocal, dw, vol, actuatorRegions%F, actuatorRegions%thrust, actuatorRegions%heat, actuatorRegions%volume) > \
+                           (w, pref, uref, plocal, dw, vol, actuatorRegions%F, actuatorRegions%thrust, actuatorRegions%heat, actuatorRegions%volume) \
 \
 residuals%initres_block(dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) > \
                        (dw, fw, flowDoms%w, flowDoms%vol, dscalar, dvector) \
