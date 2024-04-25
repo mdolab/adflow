@@ -2487,13 +2487,10 @@ contains
                 open (unit=fileID, file=trim(fname))
 
                 ! Write the title of the file
-                write (fileID, *) "TITLE = ""ADflow Surface Solution Data"""
-
-                ! Integer for FileType: 0 = Full, 1= Grid, 2 = Solution
-                write (fileID, *) ("FILETYPE = FULL")
+                write (fileID, *) "Title = ""ADflow Surface Solution Data"""
 
                 ! Write the variables header
-                write (fileID, "(a)", advance="no") ("VARIABLES = ")
+                write (fileID, "(a)", advance="no") ("Variables = ")
 
                 ! Write the variable names
                 write (fileID, "(a)", advance="no") " ""CoordinateX"" "
@@ -2580,11 +2577,10 @@ contains
                             end do
 
                             if (nCellsToWrite > 0) then
-                                write (fileID, "(1x)")
                                 write (fileID, "(a,a,a)") "Zone T = """, trim(famNames(exch%famList(iFam))), """"
                                 write (fileID, *) "Nodes = ", nNodes, " Elements = ", &
-                                    nCellsToWrite, "ZONETYPE=FEQUADRILATERAL"
-                                write (fileID, *) "DATAPACKING=BLOCK"
+                                    nCellsToWrite, " ZONETYPE=FEQUADRILATERAL"
+                                write (fileID, *) "DATAPACKING=POINT"
 
                             end if
                         end if famInclude
