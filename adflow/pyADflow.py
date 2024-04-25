@@ -20,6 +20,7 @@ v. 1.0  - Original pyAero Framework Implementation (RP,SM 2008)
 
 import copy
 import hashlib
+
 # =============================================================================
 # Imports
 # =============================================================================
@@ -3107,7 +3108,7 @@ class ADFLOW(AeroSolver):
             f.close()
         # end if (root proc )
 
-    def writeSurfaceASCII(self, familyName, outputDir=None, baseName=None, number=None):
+    def writeBCSurfaceASCII(self, familyName, outputDir=None, baseName=None, number=None):
         if outputDir is None:
             outputDir = self.getOptions("outputDirectory")
 
@@ -3126,8 +3127,9 @@ class ADFLOW(AeroSolver):
         else:
             if self.getOption("numberSolutions"):
                 baseName = f"{baseName}_{familyName.lower()}_{self.curAP.adflowData.callCounter:0{numDigits}d}"
-        
+
         fileName = os.path.join(outputDir, baseName)
+        fileName += ".dat"
 
         self.adflow.tecplotio.writebcsurfacesascii(fileName, famList)
 
@@ -3151,6 +3153,7 @@ class ADFLOW(AeroSolver):
                 baseName = f"{baseName}_{familyName.lower()}_{self.curAP.adflowData.callCounter:0{numDigits}d}"
 
         fileName = os.path.join(outputDir, baseName)
+        fileName += ".dat"
 
         self.adflow.tecplotio.writeuserintsurf(familyName, fileName, famID)
 
