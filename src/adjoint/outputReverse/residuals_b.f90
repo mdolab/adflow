@@ -335,12 +335,12 @@ contains
   end subroutine residual_block
 
 !  differentiation of sourceterms_block in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: uref pref *w *dw *vol actuatorregions.force
-!                actuatorregions.heat actuatorregions.volume plocal
-!   with respect to varying inputs: uref pref *w *dw *vol actuatorregions.force
-!                actuatorregions.heat actuatorregions.volume plocal
+!   gradient     of useful results: uref pref *w *dw *vol actuatorregions.f
+!                actuatorregions.thrust actuatorregions.heat actuatorregions.volume plocal
+!   with respect to varying inputs: uref pref *w *dw *vol actuatorregions.f
+!                actuatorregions.thrust actuatorregions.heat actuatorregions.volume plocal
 !   rw status of diff variables: uref:incr pref:incr *w:incr *dw:in-out
-!                *vol:incr actuatorregions.force:incr actuatorregions.heat:incr
+!                *vol:incr actuatorregions.f:incr actuatorregions.thrust actuatorregions.heat:incr
 !                actuatorregions.volume:incr plocal:in-out
 !   plus diff mem management of: w:in dw:in vol:in
   subroutine sourceterms_block_b(nn, res, iregion, plocal, plocald)
@@ -365,6 +365,7 @@ contains
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, f_factd(3), q_factd&
 &   , qtmpd, redimd
     real(kind=realtype), dimension(3) :: tempd
+    real(kind=realtype) :: tempd3
     real(kind=realtype) :: temp
     real(kind=realtype) :: tempd0
     real(kind=realtype) :: temp0
@@ -388,18 +389,83 @@ contains
       oend = actuatorregions(iregion)%relaxend
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
+! if using the uniform force distribution
+    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(&
 &     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
     q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
 &     iregion)%volume/(pref*uref*lref*lref)
+      call pushcontrol1b(0)
+    else
+      call pushcontrol1b(1)
+    end if
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
+! if using the uniform force distribution
+    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
+      call pushcontrol1b(0)
+    else
+      call pushcontrol1b(1)
+    end if
     q_factd = 0.0_8
     redimd = 0.0_8
     f_factd = 0.0_8
+! if using the simple propeller force distribution
+    if (actuatorregions(iregion)%acttype .eq. 'simpleprop') then
+      redimd = 0.0_8
+      do ii=istart,iend
+! extract the cell id.
+        i = actuatorregions(iregion)%cellids(1, ii)
+        j = actuatorregions(iregion)%cellids(2, ii)
+        k = actuatorregions(iregion)%cellids(3, ii)
+        ftmp = factor*actuatorregions(iregion)%thrustvec(:, ii)*&
+&         actuatorregions(iregion)%thrust/pref
+        ftmp = ftmp + factor*actuatorregions(iregion)%swirlvec(:, ii)*&
+&         actuatorregions(iregion)%thrust/pref
+        vx = w(i, j, k, ivx)
+        vy = w(i, j, k, ivy)
+        vz = w(i, j, k, ivz)
+        if (res) then
+          ftmpd = 0.0_8
+          ftmpd(1) = ftmpd(1) - vx*dwd(i, j, k, irhoe)
+          vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
+          ftmpd(2) = ftmpd(2) - vy*dwd(i, j, k, irhoe)
+          vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
+          ftmpd(3) = ftmpd(3) - vz*dwd(i, j, k, irhoe)
+          vzd = -(ftmp(3)*dwd(i, j, k, irhoe))
+          ftmpd = ftmpd - dwd(i, j, k, imx:imz)
+        else
+          ftmpd = 0.0_8
+          tempd3 = redim*plocald
+          vxd = ftmp(1)*tempd3
+          ftmpd(1) = ftmpd(1) + vx*tempd3
+          vyd = ftmp(2)*tempd3
+          ftmpd(2) = ftmpd(2) + vy*tempd3
+          vzd = ftmp(3)*tempd3
+          ftmpd(3) = ftmpd(3) + vz*tempd3
+          redimd = redimd + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*plocald
+        end if
+        tempd2 = sum(factor*actuatorregions(iregion)%thrustvec(:, ii)*&
+&         ftmpd)/pref
+        wd(i, j, k, ivz) = wd(i, j, k, ivz) + vzd
+        wd(i, j, k, ivy) = wd(i, j, k, ivy) + vyd
+        wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
+        tempd1 = sum(factor*actuatorregions(iregion)%swirlvec(:, ii)*&
+&         ftmpd)/pref
+        actuatorregionsd(iregion)%thrust = actuatorregionsd(iregion)%&
+&         thrust + tempd2 + tempd1
+        prefd = prefd - actuatorregions(iregion)%thrust*tempd2/pref - &
+&         actuatorregions(iregion)%thrust*tempd1/pref
+      end do
+    else
+      redimd = 0.0_8
+    end if
+    call popcontrol1b(branch)
+    if (branch .eq. 0) then
+      f_factd = 0.0_8
 !$bwd-of ii-loop 
     do ii=istart,iend
 ! extract the cell id.
@@ -441,8 +507,13 @@ contains
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
       f_factd = f_factd + vol(i, j, k)*ftmpd
     end do
+    else
+      factd = 0.0_8
+    end if
+    call popcontrol1b(branch)
+    if (branch .eq. 0) then
     tempd = factor*f_factd/(actuatorregions(iregion)%volume*pref)
-    tempd0 = -(sum(actuatorregions(iregion)%force*tempd)/(&
+    tempd0 = -(sum(actuatorregions(iregion)%f*tempd)/(&
 &     actuatorregions(iregion)%volume*pref))
     temp = lref*lref*actuatorregions(iregion)%volume
     temp0 = temp*pref*uref
@@ -455,9 +526,9 @@ contains
     prefd = prefd + uref*temp*tempd2 + actuatorregions(iregion)%volume*&
 &     tempd0
     urefd = urefd + pref*temp*tempd2
-    actuatorregionsd(iregion)%force = actuatorregionsd(iregion)%force + &
+    actuatorregionsd(iregion)%f = actuatorregionsd(iregion)%f + &
 &     tempd
-    call popcontrol1b(branch)
+    endif
     prefd = prefd + uref*redimd
     urefd = urefd + pref*redimd
   end subroutine sourceterms_block_b
@@ -494,16 +565,21 @@ contains
       oend = actuatorregions(iregion)%relaxend
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
+! if using the uniform force distribution
+    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(&
 &     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
     q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
 &     iregion)%volume/(pref*uref*lref*lref)
+    end if
+!$ad ii-loop
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
-!$ad ii-loop
+! if using the uniform force distribution
+    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
     do ii=istart,iend
 ! extract the cell id.
       i = actuatorregions(iregion)%cellids(1, ii)
@@ -527,6 +603,33 @@ contains
         plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
       end if
     end do
+    end if
+! if using the simple propeller force distribution
+    if (actuatorregions(iregion)%acttype .eq. 'simpleprop') then
+      do ii=istart,iend
+! extract the cell id.
+        i = actuatorregions(iregion)%cellids(1, ii)
+        j = actuatorregions(iregion)%cellids(2, ii)
+        k = actuatorregions(iregion)%cellids(3, ii)
+        ftmp = factor*actuatorregions(iregion)%thrustvec(:, ii)*&
+&         actuatorregions(iregion)%thrust/pref
+        ftmp = ftmp + factor*actuatorregions(iregion)%swirlvec(:, ii)*&
+&         actuatorregions(iregion)%thrust/pref
+        vx = w(i, j, k, ivx)
+        vy = w(i, j, k, ivy)
+        vz = w(i, j, k, ivz)
+        if (res) then
+! momentum residuals
+          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
+! energy residuals
+          dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)&
+&           *vy - ftmp(3)*vz
+        else
+! add in the local power contribution:
+          plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
+        end if
+      end do
+    end if
   end subroutine sourceterms_block
 
 !  differentiation of initres_block in reverse (adjoint) mode (with options noisize i4 dr8 r8):
