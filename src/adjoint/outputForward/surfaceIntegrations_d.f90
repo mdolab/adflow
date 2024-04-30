@@ -20,8 +20,8 @@ contains
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
 &   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_family, &
-&   cpmin_rho, sepsenmax_family, sepsenmax_rho
-    use inputcostfunctions, only : computecavitation, computekssepsensor
+&   cpmin_rho, sepsenmaxfamily, sepsenmaxrho
+    use inputcostfunctions, only : computecavitation, computesepsensorks
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector
@@ -297,14 +297,14 @@ contains
       funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
 &       ovrnts*cmoment(3, sps)
 ! final part of the ks computation
-      if (computekssepsensor) then
+      if (computesepsensorks) then
 ! only calculate the log part if we are actually computing for separation for ks method.
         funcvaluesd(costfuncsepsensorks) = funcvaluesd(&
 &         costfuncsepsensorks) + ovrnts*globalvalsd(isepsensorks, sps)/(&
-&         sepsenmax_rho*globalvals(isepsensorks, sps))
+&         sepsenmaxrho*globalvals(isepsensorks, sps))
         funcvalues(costfuncsepsensorks) = funcvalues(costfuncsepsensorks&
-&         ) + ovrnts*(sepsenmax_family(sps)+log(globalvals(isepsensorks&
-&         , sps))/sepsenmax_rho)
+&         ) + ovrnts*(sepsenmaxfamily(sps)+log(globalvals(isepsensorks, &
+&         sps))/sepsenmaxrho)
       end if
       funcvaluesd(costfuncsepsensor) = funcvaluesd(costfuncsepsensor) + &
 &       ovrnts*globalvalsd(isepsensor, sps)
@@ -712,8 +712,8 @@ contains
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
 &   machcoef, lengthref, alpha, beta, liftindex, cpmin_family, cpmin_rho&
-&   , sepsenmax_family, sepsenmax_rho
-    use inputcostfunctions, only : computecavitation, computekssepsensor
+&   , sepsenmaxfamily, sepsenmaxrho
+    use inputcostfunctions, only : computecavitation, computesepsensorks
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector
@@ -867,11 +867,11 @@ contains
       funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
 &       ovrnts*cmoment(3, sps)
 ! final part of the ks computation
-      if (computekssepsensor) then
+      if (computesepsensorks) then
 ! only calculate the log part if we are actually computing for separation for ks method.
         funcvalues(costfuncsepsensorks) = funcvalues(costfuncsepsensorks&
-&         ) + ovrnts*(sepsenmax_family(sps)+log(globalvals(isepsensorks&
-&         , sps))/sepsenmax_rho)
+&         ) + ovrnts*(sepsenmaxfamily(sps)+log(globalvals(isepsensorks, &
+&         sps))/sepsenmaxrho)
       end if
       funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
 &       ovrnts*globalvals(isepsensor, sps)
@@ -1085,8 +1085,8 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cpmin_family, cpmin_rho, cavitationnumber, sepsenmax_family, &
-&   sepsenmax_rho
+&   cpmin_family, cpmin_rho, cavitationnumber, sepsenmaxfamily, &
+&   sepsenmaxrho
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1396,7 +1396,7 @@ contains
       result1 = temp
       vd = (vd-v*result1d/(result1+1e-16))/(result1+1e-16)
       v = v/(result1+1e-16)
-      if (computekssepsensor) then
+      if (computesepsensorks) then
 ! freestream projection over the surface.
         temp = bcdata(mm)%norm(i, j, 1)
         temp0 = bcdata(mm)%norm(i, j, 2)
@@ -1448,9 +1448,9 @@ contains
         sensord = -(sensord/temp1)
         sensor = (cos(degtorad*sepangledeviation)-sensor)/temp1
 ! also do the ks-based spensenor max computation
-        call ksaggregationfunction_d(sensor, sensord, sepsenmax_family(&
-&                              spectralsol), sepsenmax_rho, ks_exponent&
-&                              , ks_exponentd)
+        call ksaggregationfunction_d(sensor, sensord, sepsenmaxfamily(&
+&                              spectralsol), sepsenmaxrho, ks_exponent, &
+&                              ks_exponentd)
         sepsensorksd = sepsensorksd + blk*ks_exponentd
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
@@ -1771,7 +1771,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
 &   equations, momentaxis, cpmin_family, cpmin_rho, cavitationnumber, &
-&   sepsenmax_family, sepsenmax_rho
+&   sepsenmaxfamily, sepsenmaxrho
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1964,7 +1964,7 @@ contains
       arg1 = v(1)**2 + v(2)**2 + v(3)**2
       result1 = sqrt(arg1)
       v = v/(result1+1e-16)
-      if (computekssepsensor) then
+      if (computesepsensorks) then
 ! freestream projection over the surface.
         vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
 &         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
@@ -1988,8 +1988,8 @@ contains
         sensor = (cos(degtorad*sepangledeviation)-sensor)/(cos(degtorad*&
 &         sepangledeviation)-cos(pi)+1e-16)
 ! also do the ks-based spensenor max computation
-        call ksaggregationfunction(sensor, sepsenmax_family(spectralsol)&
-&                            , sepsenmax_rho, ks_exponent)
+        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
+&                            , sepsenmaxrho, ks_exponent)
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
 ! dot product with free stream

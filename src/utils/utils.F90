@@ -4737,7 +4737,7 @@ contains
         !
         use block
         use inputTimeSpectral
-        use inputPhysics, only: cpmin_family, sepsenmax_family
+        use inputPhysics, only: cpmin_family, sepSenMaxFamily
         use ADjointPETSc
         use cgnsGrid
         implicit none
@@ -4769,9 +4769,9 @@ contains
         if (allocated(cpmin_family)) &
             deallocate (cpmin_family)
 
-        ! deallocate the sepsenmax_family array allocated in inputParamRoutines
-        if (allocated(sepsenmax_family)) &
-            deallocate (sepsenmax_family)
+        ! deallocate the sepSenMaxFamily array allocated in inputParamRoutines
+        if (allocated(sepSenMaxFamily)) &
+            deallocate (sepSenMaxFamily)
 
         ! Destroy variables allocated in preprocessingAdjoint
         if (adjointPETScPreProcVarsAllocated) then

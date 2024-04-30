@@ -3709,15 +3709,15 @@ contains
             cpmin_family = zero
         end if
 
-        ! Allocate the memory for sepsenmax_family. We had to wait until
+        ! Allocate the memory for sepsenmaxfamily. We had to wait until
         ! nTimeIntervalsSpectral was set.
-        if (.not. allocated(sepsenmax_family)) then
-            allocate (sepsenmax_family(nTimeIntervalsSpectral), stat=ierr)
+        if (.not. allocated(sepSenMaxFamily)) then
+            allocate (sepSenMaxFamily(nTimeIntervalsSpectral), stat=ierr)
             if (ierr /= 0) &
                  call terminate("checkInputParam", &
                  "Memory allocation failure for &
-                 &sepsenmax_family")
-            sepsenmax_family = one
+                 &sepSenMaxFamily")
+            sepSenMaxFamily = one
         end if
 
     end subroutine checkInputParam

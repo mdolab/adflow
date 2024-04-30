@@ -101,7 +101,7 @@
         "closedSurfaceFamilies": null,
         "coarseDiscretization": "central plus scalar dissipation",
         "computeCavitation": false,
-        "computeKsSepSensor": false,
+        "computeSepSensorKs": false,
         "coupledSolution": false,
         "cpMinRho": 100.0,
         "cutCallback": null,

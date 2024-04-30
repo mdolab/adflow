@@ -1554,7 +1554,7 @@ sepAngleDeviation:
     This angle (in degrees) is for 3D cases only.
     For airfoils, by default, this is ``0``.
 
-computeKsSepSensor:
+computeSepSensorKs:
   desc: >
     Whether or not to compute KS based separation related cost functions, which is ``sepSensorKs`` cost function.
     If this option is not set to ``True``, the code will return zero for this cost function.

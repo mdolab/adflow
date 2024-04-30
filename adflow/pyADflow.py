@@ -5766,7 +5766,7 @@ class ADFLOW(AeroSolver):
             "verifySpatial": [bool, True],
             "verifyExtra": [bool, True],
             # Function parmeters
-            "computeKsSepSensor": [bool, False],
+            "computeSepSensorKs": [bool, False],
             "sepSensorMaxRho": [float, 1000.0],
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
@@ -6184,8 +6184,8 @@ class ADFLOW(AeroSolver):
             "verifyextra": ["adjoint", "verifyextra"],
             "usematrixfreedrdw": ["adjoint", "usematrixfreedrdw"],
             # Parameters for functions
-            "computekssepsensor": ["cost", "computekssepsensor"],
-            "sepsensormaxrho": ["physics", "sepsenmax_rho"],
+            "computesepsensorks": ["cost", "computesepsensorks"],
+            "sepsensormaxrho": ["physics", "sepsenmaxrho"],
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
             "sepangledeviation": ["cost", "sepangledeviation"],

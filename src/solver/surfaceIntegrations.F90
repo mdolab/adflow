@@ -9,8 +9,8 @@ contains
         use flowVarRefState, only: pRef, rhoRef, tRef, LRef, gammaInf, pInf, uRef, uInf
         use inputPhysics, only: liftDirection, dragDirection, surfaceRef, &
                                 machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
-                                cpmin_rho, sepsenmax_family, sepsenmax_rho
-        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
+                                cpmin_rho, sepSenMaxFamily, sepSenMaxRho
+        use inputCostFunctions, only: computeCavitation, computeSepSensorKs
         use inputTSStabDeriv, only: TSstability
         use utils, only: computeTSDerivatives
         use flowUtils, only: getDirVector
@@ -149,11 +149,11 @@ contains
             funcValues(costFuncMomYCoef) = funcValues(costFuncMomYCoef) + ovrNTS * cMoment(2, sps)
             funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS * cMoment(3, sps)
             ! final part of the KS computation
-            if (computeKsSepSensor) then
+            if (computeSepSensorKs) then
                 ! only calculate the log part if we are actually computing for separation for KS method.
                 funcValues(costFuncSepSensorKs) = funcValues(costFuncSepSensorKs) + &
-                                                  ovrNTS * (sepsenmax_family(sps) + &
-                                                            log(globalVals(iSepSensorKs, sps)) / sepsenmax_rho)
+                                                  ovrNTS * (sepSenMaxFamily(sps) + &
+                                                            log(globalVals(iSepSensorKs, sps)) / sepSenMaxRho)
             end if
 
             funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * globalVals(iSepSensor, sps)
@@ -411,7 +411,7 @@ contains
         use inputCostFunctions
         use inputPhysics, only: MachCoef, pointRef, velDirFreeStream, &
                                 equations, momentAxis, cpmin_family, cpmin_rho, &
-                                cavitationnumber, sepsenmax_family, sepsenmax_rho
+                                cavitationnumber, sepSenMaxFamily, sepSenMaxRho
         use BCPointers
         implicit none
 
@@ -613,7 +613,7 @@ contains
             v(3) = ww2(i, j, ivz)
             v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-            if (computeKsSepSensor) then
+            if (computeSepSensorKs) then
                 ! Freestream projection over the surface.
                 vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
                                          velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
@@ -636,7 +636,7 @@ contains
                          (cos(degtorad * sepangledeviation) - cos(pi) + 1e-16)
 
                 ! also do the ks-based spensenor max computation
-                call KSaggregationFunction(sensor, sepsenmax_family(spectralSol), sepsenmax_rho, ks_exponent)
+                call KSaggregationFunction(sensor, sepSenMaxFamily(spectralSol), sepSenMaxRho, ks_exponent)
                 sepSensorKs = sepSensorKs + ks_exponent * blk
 
             end if
@@ -1216,7 +1216,7 @@ contains
         use zipperIntegrations, only: integrateZippers
         use userSurfaceIntegrations, only: integrateUserSurfaces
         use actuatorRegion, only: integrateActuatorRegions
-        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
+        use inputCostFunctions, only: computeCavitation, computeSepSensorKs
         implicit none
 
         ! Input/Output Variables
@@ -1244,7 +1244,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (computeKsSepSensor) then
+            if (computeSepSensorKs) then
                 call computeSepSenMaxFamily(famList)
             end if
 
@@ -1422,7 +1422,7 @@ contains
         use inputTimeSpectral, only: nTimeIntervalsSpectral
         use communication, only: ADflow_comm_world, myID
         use blockPointers, only: nDom
-        use inputPhysics, only: sepsenmax_family, velDirFreeStream
+        use inputPhysics, only: sepSenMaxFamily, velDirFreeStream
         use blockPointers
         use flowVarRefState
         use inputCostFunctions, only: sepangledeviation
@@ -1445,7 +1445,7 @@ contains
         ! the maximum sepsensor value using KS aggregation.
         ! the goal is to get a differentiable maximum sepsensor output.
 
-        ! loop over the TS instances and compute sepsenmax_family for each TS instance
+        ! loop over the TS instances and compute sepSenMaxFamily for each TS instance
         do sps = 1, nTimeIntervalsSpectral
             ! set the local sepsensor to a smaller value so that we get the actual max
             sepsensor_local = -10000.0_realType
@@ -1514,7 +1514,7 @@ contains
                 end do bocos
             end do
             ! finally communicate across all processors for this time spectral instance
-            call mpi_allreduce(sepsensor_local, sepsenmax_family(sps), 1, MPI_DOUBLE, &
+            call mpi_allreduce(sepsensor_local, sepSenMaxFamily(sps), 1, MPI_DOUBLE, &
                                MPI_MAX, adflow_comm_world, ierr)
             call EChk(ierr, __FILE__, __LINE__)
         end do
@@ -1630,7 +1630,7 @@ contains
         use zipperIntegrations, only: integrateZippers_d
         use userSurfaceIntegrations, only: integrateUserSurfaces_d
         use actuatorRegion, only: integrateActuatorRegions_d
-        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
+        use inputCostFunctions, only: computeCavitation, computeSepSensorKs
         implicit none
 
         ! Input/Output Variables
@@ -1655,7 +1655,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (computeKsSepSensor) then
+            if (computeSepSensorKs) then
                 call computeSepSenMaxFamily(famList)
             end if
 
@@ -1717,7 +1717,7 @@ contains
         use zipperIntegrations, only: integrateZippers_b
         use userSurfaceIntegrations, only: integrateUserSurfaces_b
         use actuatorRegion, only: integrateActuatorRegions_b
-        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
+        use inputCostFunctions, only: computeCavitation, computeSepSensorKs
         implicit none
 
         ! Input/Output Variables
@@ -1745,7 +1745,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (computeKsSepSensor) then
+            if (computeSepSensorKs) then
                 call computeSepSenMaxFamily(famList)
             end if
 

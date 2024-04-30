@@ -34,7 +34,7 @@ test_params = [
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup"],
         "N_PROCS": 2,
         "options": {
-            "computeKsSepSensor": True,
+            "computeSepSensorKs": True,
             "sepangledeviation": 0.0,
             "monitorvariables": ["cl", "cd", "sepsensor"],
         },

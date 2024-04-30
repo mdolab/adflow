@@ -1496,6 +1496,9 @@ class ADflowBuilder(Builder):
 
     def get_post_coupling_subsystem(self, scenario_name=None):
         return ADflowFunctions(aero_solver=self.solver, write_solution=self.write_solution)
+    
+    def get_post_coupling_subsystem_schur(self, scenario_name=None):
+        return ADflowFunctions(aero_solver=self.solver, write_solution=False)
 
     def get_number_of_nodes(self, groupName=None):
         return int(self.solver.getSurfaceCoordinates(groupName=groupName, includeZipper=True).shape[0])

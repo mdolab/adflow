@@ -1197,7 +1197,7 @@ python module libadflow
          integer(kind=inttype) :: liftindex
          real(kind=realtype) :: cavitationnumber
          real(kind=realtype) :: cpmin_rho
-         real(kind=realtype) :: sepsenmax_rho
+         real(kind=realtype) :: sepsenmaxrho
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90
@@ -1379,7 +1379,7 @@ python module libadflow
 
        module inputcostfunctions ! in :test:costFunctions.F90
          use constants
-         logical::computekssepsensor
+         logical::computesepsensorks
          real(kind=realtype) sepsensoroffset
          real(kind=realtype) sepsensorsharpness
          real(kind=realtype) sepangledeviation

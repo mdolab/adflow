@@ -12,8 +12,8 @@ contains
 &   , uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref, &
 &   machcoef, lengthref, alpha, beta, liftindex, cpmin_family, cpmin_rho&
-&   , sepsenmax_family, sepsenmax_rho
-    use inputcostfunctions, only : computecavitation, computekssepsensor
+&   , sepsenmaxfamily, sepsenmaxrho
+    use inputcostfunctions, only : computecavitation, computesepsensorks
     use inputtsstabderiv, only : tsstability
     use utils_fast_b, only : computetsderivatives
     use flowutils_fast_b, only : getdirvector
@@ -166,11 +166,11 @@ contains
       funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
 &       ovrnts*cmoment(3, sps)
 ! final part of the ks computation
-      if (computekssepsensor) then
+      if (computesepsensorks) then
 ! only calculate the log part if we are actually computing for separation for ks method.
         funcvalues(costfuncsepsensorks) = funcvalues(costfuncsepsensorks&
-&         ) + ovrnts*(sepsenmax_family(sps)+log(globalvals(isepsensorks&
-&         , sps))/sepsenmax_rho)
+&         ) + ovrnts*(sepsenmaxfamily(sps)+log(globalvals(isepsensorks, &
+&         sps))/sepsenmaxrho)
       end if
       funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
 &       ovrnts*globalvals(isepsensor, sps)
@@ -370,7 +370,7 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
 &   equations, momentaxis, cpmin_family, cpmin_rho, cavitationnumber, &
-&   sepsenmax_family, sepsenmax_rho
+&   sepsenmaxfamily, sepsenmaxrho
     use bcpointers
     implicit none
 ! input/output variables
@@ -558,7 +558,7 @@ contains
       v(2) = ww2(i, j, ivy)
       v(3) = ww2(i, j, ivz)
       v = v/(sqrt(v(1)**2+v(2)**2+v(3)**2)+1e-16)
-      if (computekssepsensor) then
+      if (computesepsensorks) then
 ! freestream projection over the surface.
         vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
 &         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
@@ -580,8 +580,8 @@ contains
         sensor = (cos(degtorad*sepangledeviation)-sensor)/(cos(degtorad*&
 &         sepangledeviation)-cos(pi)+1e-16)
 ! also do the ks-based spensenor max computation
-        call ksaggregationfunction(sensor, sepsenmax_family(spectralsol)&
-&                            , sepsenmax_rho, ks_exponent)
+        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
+&                            , sepsenmaxrho, ks_exponent)
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
 ! dot product with free stream
