@@ -10,7 +10,7 @@ contains
         use inputPhysics, only: liftDirection, dragDirection, surfaceRef, &
                                 machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
                                 cpmin_rho, sepsenmax_family, sepsenmax_rho
-        use inputCostFunctions, only: computeCavitation, sepmodel
+        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
         use inputTSStabDeriv, only: TSstability
         use utils, only: computeTSDerivatives
         use flowUtils, only: getDirVector
@@ -149,14 +149,14 @@ contains
             funcValues(costFuncMomYCoef) = funcValues(costFuncMomYCoef) + ovrNTS * cMoment(2, sps)
             funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS * cMoment(3, sps)
             ! final part of the KS computation
-            if (sepmodel == surfvec_ks) then
-                ! only calculate the log part if we are actually computing for separation for surfvec_ks method.
-                funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + &
-                                                ovrNTS * (sepsenmax_family(sps) + &
-                                                          log(globalVals(iSepSensor, sps)) / sepsenmax_rho)
-            else
-                funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * globalVals(iSepSensor, sps)
+            if (computeKsSepSensor) then
+                ! only calculate the log part if we are actually computing for separation for KS method.
+                funcValues(costFuncSepSensorKs) = funcValues(costFuncSepSensorKs) + &
+                                                  ovrNTS * (sepsenmax_family(sps) + &
+                                                            log(globalVals(iSepSensorKs, sps)) / sepsenmax_rho)
             end if
+
+            funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * globalVals(iSepSensor, sps)
 
             funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS * globalVals(iCavitation, sps)
             ! final part of the KS computation
@@ -422,11 +422,11 @@ contains
         ! Local variables.
         real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
         real(kind=realType), dimension(3) :: COFSumFx, COFSumFy, COFSumFz
-        real(kind=realType) :: yplusMax, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
+        real(kind=realType) :: yplusMax, sepSensorKs, sepSensor, sepSensorAvg(3), Cavitation, cpmin_ks_sum
         integer(kind=intType) :: i, j, ii, blk
 
         real(kind=realType) :: pm1, fx, fy, fz, fn
-        real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectTangential(3)
+        real(kind=realType) :: vectTangential(3)
         real(kind=realType) :: vectDotProductFsNormal
         real(kind=realType) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3), L
         real(kind=realType) :: fact, rho, mul, yplus, dwall
@@ -469,6 +469,7 @@ contains
         COFSumFx = zero; COFSumFy = zero; COFSumFz = zero
         yplusMax = zero
         sepSensor = zero
+        sepSensorKs = zero
         Cavitation = zero
         cpmin_ks_sum = zero
         sepSensorAvg = zero
@@ -612,7 +613,7 @@ contains
             v(3) = ww2(i, j, ivz)
             v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-            if (sepmodel == surfvec .or. sepmodel == surfvec_ks) then
+            if (computeKsSepSensor) then
                 ! Freestream projection over the surface.
                 vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
                                          velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
@@ -625,67 +626,37 @@ contains
                 vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
                                                         vectTangential(3)**2) + 1e-16)
 
-                ! compute cross product of vectTangential to surface normal, which will result in surface vector normal to the vectTangential
-                vecCrossProd(1) = vectTangential(2) * BCData(mm)%norm(i, j, 3) - &
-                                  vectTangential(3) * BCData(mm)%norm(i, j, 2)
-                vecCrossProd(2) = vectTangential(3) * BCData(mm)%norm(i, j, 1) - &
-                                  vectTangential(1) * BCData(mm)%norm(i, j, 3)
-                vecCrossProd(3) = vectTangential(1) * BCData(mm)%norm(i, j, 2) - &
-                                  vectTangential(2) * BCData(mm)%norm(i, j, 1)
+                ! computing separation sensor
+                ! velocity dot products
+                sensor = (v(1) * vectTangential(1) + v(2) * vectTangential(2) + &
+                          v(3) * vectTangential(3))
 
-                vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
-                                                    + vecCrossProd(3)**2) + 1e-16)
+                ! sepsensor value
+                sensor = (cos(degtorad * sepangledeviation) - sensor) / &
+                         (cos(degtorad * sepangledeviation) - cos(pi) + 1e-16)
 
-                ! do the sweep angle correction
-                vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectTangential(1) + &
-                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
-
-                vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectTangential(2) + &
-                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
-
-                vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectTangential(3) + &
-                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
-
-                vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
-                                                      + vectCorrected(3)**2) + 1e-16)
-
-                sensor = (v(1) * vectCorrected(1) + v(2) * vectCorrected(2) + &
-                          v(3) * vectCorrected(3))
-
-                sensor = half * (one - sensor)
-
-                if (sepmodel == surfvec) then
-                    sensor = sensor * cellArea * blk
-                    sepSensor = sepSensor + sensor
-
-                else if (sepmodel == surfvec_ks) then
-
-                    ! also do the ks-based spensenor max computation
-                    call KSaggregationFunction(sensor, sepsenmax_family(spectralSol), sepsenmax_rho, ks_exponent)
-                    sepSensor = sepSensor + ks_exponent * blk
-
-                end if
-
-            else if (sepmodel == heaviside) then
-
-                ! Dot product with free stream
-                sensor = -(v(1) * velDirFreeStream(1) + v(2) * velDirFreeStream(2) + &
-                           v(3) * velDirFreeStream(3))
-
-                !Now run through a smooth heaviside function:
-                sensor = one / (one + exp(-2 * sepSensorSharpness * (sensor - sepSensorOffset)))
-
-                ! And integrate over the area of this cell and save, blanking as we go.
-                sensor = sensor * cellArea * blk
-                sepSensor = sepSensor + sensor
-
-                ! Also accumulate into the sepSensorAvg
-                ! x-y-zco are computed above for center of force computations
-                sepSensorAvg(1) = sepSensorAvg(1) + sensor * xco
-                sepSensorAvg(2) = sepSensorAvg(2) + sensor * yco
-                sepSensorAvg(3) = sepSensorAvg(3) + sensor * zco
+                ! also do the ks-based spensenor max computation
+                call KSaggregationFunction(sensor, sepsenmax_family(spectralSol), sepsenmax_rho, ks_exponent)
+                sepSensorKs = sepSensorKs + ks_exponent * blk
 
             end if
+
+            ! Dot product with free stream
+            sensor = -(v(1) * velDirFreeStream(1) + v(2) * velDirFreeStream(2) + &
+                       v(3) * velDirFreeStream(3))
+
+            !Now run through a smooth heaviside function:
+            sensor = one / (one + exp(-2 * sepSensorSharpness * (sensor - sepSensorOffset)))
+
+            ! And integrate over the area of this cell and save, blanking as we go.
+            sensor = sensor * cellArea * blk
+            sepSensor = sepSensor + sensor
+
+            ! Also accumulate into the sepSensorAvg
+            ! x-y-zco are computed above for center of force computations
+            sepSensorAvg(1) = sepSensorAvg(1) + sensor * xco
+            sepSensorAvg(2) = sepSensorAvg(2) + sensor * yco
+            sepSensorAvg(3) = sepSensorAvg(3) + sensor * zco
 
             if (computeCavitation) then
                 plocal = pp2(i, j)
@@ -877,6 +848,7 @@ contains
         localValues(iCoForceY:iCoForceY + 2) = localValues(iCoForceY:iCoForceY + 2) + COFSumFy
         localValues(iCoForceZ:iCoForceZ + 2) = localValues(iCoForceZ:iCoForceZ + 2) + COFSumFz
         localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
+        localValues(iSepSensorKs) = localValues(iSepSensorKs) + sepSensorKs
         localValues(iCavitation) = localValues(iCavitation) + cavitation
         localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
         localValues(iSepAvg:iSepAvg + 2) = localValues(iSepAvg:iSepAvg + 2) + sepSensorAvg
@@ -1244,7 +1216,7 @@ contains
         use zipperIntegrations, only: integrateZippers
         use userSurfaceIntegrations, only: integrateUserSurfaces
         use actuatorRegion, only: integrateActuatorRegions
-        use inputCostFunctions, only: computeCavitation, sepmodel
+        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
         implicit none
 
         ! Input/Output Variables
@@ -1272,7 +1244,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (sepmodel == surfvec_ks) then
+            if (computeKsSepSensor) then
                 call computeSepSenMaxFamily(famList)
             end if
 
@@ -1453,7 +1425,7 @@ contains
         use inputPhysics, only: sepsenmax_family, velDirFreeStream
         use blockPointers
         use flowVarRefState
-        use inputCostFunctions, only: sepsweepAngleCorrection
+        use inputCostFunctions, only: sepangledeviation
         use BCPointers
         use utils, only: setPointers, setBCPointers, isWallType, EChk
         use sorting, only: famInList
@@ -1464,7 +1436,7 @@ contains
         integer(kind=intType) :: mm, nn, sps
         integer(kind=intType) :: i, j, ii, blk, ierr
         real(kind=realType) :: sepsensor_local
-        real(kind=realType) :: vectCorrected(3), vecCrossProd(3), vectTangential(3), v(3)
+        real(kind=realType) ::vectTangential(3), v(3)
         real(kind=realType) :: vectDotProductFsNormal, sensor
 
         ! this routine loops over the surface cells in the given family
@@ -1476,7 +1448,7 @@ contains
         ! loop over the TS instances and compute sepsenmax_family for each TS instance
         do sps = 1, nTimeIntervalsSpectral
             ! set the local sepsensor to a smaller value so that we get the actual max
-            sepsensor_local = 0.0_realType
+            sepsensor_local = -10000.0_realType
             do nn = 1, nDom
                 call setPointers(nn, 1, sps)
 
@@ -1498,60 +1470,42 @@ contains
                                 i = mod(ii, (bcData(mm)%inEnd - bcData(mm)%inBeg)) + bcData(mm)%inBeg + 1
                                 j = ii / (bcData(mm)%inEnd - bcData(mm)%inBeg) + bcData(mm)%jnBeg + 1
 
-                                ! Get normalized surface velocity:
-                                v(1) = ww2(i, j, ivx)
-                                v(2) = ww2(i, j, ivy)
-                                v(3) = ww2(i, j, ivz)
-                                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+                                ! only take this if its a compute cell
+                                if (BCData(mm)%iblank(i, j) .eq. one) then
+                                    ! Get normalized surface velocity:
+                                    v(1) = ww2(i, j, ivx)
+                                    v(2) = ww2(i, j, ivy)
+                                    v(3) = ww2(i, j, ivz)
+                                    v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
 
-                                ! Compute the force components.
-                                blk = max(BCData(mm)%iblank(i, j), 0)
+                                    vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
+                                                             velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
+                                                             velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
+                                    ! Tangential Vector on the surface, which is the freestream projected vector
+                                    vectTangential(1) = velDirFreeStream(1) - &
+                                                        vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
+                                    vectTangential(2) = velDirFreeStream(2) - &
+                                                        vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
+                                    vectTangential(3) = velDirFreeStream(3) - &
+                                                        vectDotProductFsNormal * BCData(mm)%norm(i, j, 3)
 
-                                vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
-                                                         velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
-                                                         velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
-                                ! Tangential Vector on the surface, which is the freestream projected vector
-                                vectTangential(1) = velDirFreeStream(1) - &
-                                                    vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
-                                vectTangential(2) = velDirFreeStream(2) - &
-                                                    vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
-                                vectTangential(3) = velDirFreeStream(3) - &
-                                                    vectDotProductFsNormal * BCData(mm)%norm(i, j, 3)
+                                    vectTangential = vectTangential / &
+                                                     (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
+                                                           vectTangential(3)**2) + 1e-16)
 
-                                vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
-                                                                        vectTangential(3)**2) + 1e-16)
+                                    ! computing separation sensor
+                                    ! velocity dot products
+                                    sensor = (v(1) * vectTangential(1) + v(2) * vectTangential(2) + &
+                                              v(3) * vectTangential(3))
 
-                                ! compute cross product of vectTangential to surface normal, which will result in surface vector normal to the vectTangential
-                                vecCrossProd(1) = vectTangential(2) * BCData(mm)%norm(i, j, 3) - &
-                                                  vectTangential(3) * BCData(mm)%norm(i, j, 2)
-                                vecCrossProd(2) = vectTangential(3) * BCData(mm)%norm(i, j, 1) - &
-                                                  vectTangential(1) * BCData(mm)%norm(i, j, 3)
-                                vecCrossProd(3) = vectTangential(1) * BCData(mm)%norm(i, j, 2) - &
-                                                  vectTangential(2) * BCData(mm)%norm(i, j, 1)
+                                    ! sepsensor value
+                                    sensor = (cos(degtorad * sepangledeviation) - sensor) / &
+                                             (cos(degtorad * sepangledeviation) - cos(pi) + 1e-16)
 
-                                vecCrossProd = vecCrossProd / (sqrt(vecCrossProd(1)**2 + vecCrossProd(2)**2 &
-                                                                    + vecCrossProd(3)**2) + 1e-16)
+                                    ! compare it against the current value on this proc
+                                    sepsensor_local = max(sepsensor_local, sensor)
+                                end if
 
-                                ! do the sweep angle correction
-                                vectCorrected(1) = cos(degtorad * sepsweepanglecorrection) * vectTangential(1) + &
-                                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(1)
-
-                                vectCorrected(2) = cos(degtorad * sepsweepanglecorrection) * vectTangential(2) + &
-                                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(2)
-
-                                vectCorrected(3) = cos(degtorad * sepsweepanglecorrection) * vectTangential(3) + &
-                                                   sin(degtorad * sepsweepanglecorrection) * vecCrossProd(3)
-
-                                vectCorrected = vectCorrected / (sqrt(vectCorrected(1)**2 + vectCorrected(2)**2 &
-                                                                      + vectCorrected(3)**2) + 1e-16)
-
-                                sensor = (v(1) * vectCorrected(1) + v(2) * vectCorrected(2) + &
-                                          v(3) * vectCorrected(3))
-
-                                sensor = half * (one - sensor) * blk
-
-                                ! compare it against the current value on this proc
-                                sepsensor_local = max(sepsensor_local, sensor)
                                 ! end if
                             end do
                         end if isWall
@@ -1676,7 +1630,7 @@ contains
         use zipperIntegrations, only: integrateZippers_d
         use userSurfaceIntegrations, only: integrateUserSurfaces_d
         use actuatorRegion, only: integrateActuatorRegions_d
-        use inputCostFunctions, only: computeCavitation, sepmodel
+        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
         implicit none
 
         ! Input/Output Variables
@@ -1701,7 +1655,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (sepmodel == surfvec_ks) then
+            if (computeKsSepSensor) then
                 call computeSepSenMaxFamily(famList)
             end if
 
@@ -1763,7 +1717,7 @@ contains
         use zipperIntegrations, only: integrateZippers_b
         use userSurfaceIntegrations, only: integrateUserSurfaces_b
         use actuatorRegion, only: integrateActuatorRegions_b
-        use inputCostFunctions, only: computeCavitation, sepmodel
+        use inputCostFunctions, only: computeCavitation, computeKsSepSensor
         implicit none
 
         ! Input/Output Variables
@@ -1791,7 +1745,7 @@ contains
             end if
 
             ! compute the current sepsensor max value for the separation computation with KS aggregation
-            if (sepmodel == surfvec_ks) then
+            if (computeKsSepSensor) then
                 call computeSepSenMaxFamily(famList)
             end if
 

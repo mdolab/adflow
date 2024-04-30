@@ -1,6 +1,8 @@
 {
     "Dot product test for w -> sepsensor_wingup": 3.3730981550898195e-06,
+    "Dot product test for w -> sepsensorks_wingup": -0.028969851882137163,
     "Dot product test for xV -> sepsensor_wingup": 1.2853779404337437e-05,
+    "Dot product test for xV -> sepsensorks_wingup": 0.0,
     "metadata": {
         "ADPC": false,
         "ANKADPC": false,
@@ -101,6 +103,7 @@
         "closedSurfaceFamilies": null,
         "coarseDiscretization": "central plus scalar dissipation",
         "computeCavitation": false,
+        "computeKsSepSensor": true,
         "coupledSolution": false,
         "cpMinRho": 100.0,
         "cutCallback": null,
@@ -144,11 +147,9 @@
         "meshMaxSkewness": 1.0,
         "meshSurfaceFamily": null,
         "monitorVariables": [
-            "cpu",
-            "resrho",
-            "resturb",
             "cl",
-            "cd"
+            "cd",
+            "sepsensor"
         ],
         "nCycles": 1000,
         "nCyclesCoarse": 500,
@@ -190,11 +191,10 @@
         "restartFile": null,
         "restrictionRelaxation": 0.8,
         "selfZipCutoff": 120.0,
+        "sepAngleDeviation": 0.0,
         "sepSensorMaxRho": 1000.0,
-        "sepSensorModel": "heaviside",
         "sepSensorOffset": 0.0,
         "sepSensorSharpness": 10.0,
-        "sepSweepAngleCorrection": 0.0,
         "setMonitor": true,
         "skipAfterFailedAdjoint": true,
         "smoothParameter": 1.5,
@@ -254,6 +254,7 @@
         ],
         "wallDistCutoff": 1e+20,
         "windAxis": false,
+        "writeSolutionDigits": 3,
         "writeSolutionEachIter": false,
         "writeSurfaceSolution": false,
         "writeTecplotSurfaceSolution": false,
@@ -261,12 +262,17 @@
         "zipperSurfaceFamily": null
     },
     "separation outputs": {
-        "naca0012_rans_2D_heaviside_sepsensor_wingup": 5.790755939623052e-07
+        "naca0012_rans_2D_sepsensorks_sepsensor_wingup": 5.790755939623052e-07,
+        "naca0012_rans_2D_sepsensorks_sepsensorks_wingup": 0.004306874504213172
     },
     "separation totals": {
-        "naca0012_rans_2D_heaviside_sepsensor_wingup": {
+        "naca0012_rans_2D_sepsensorks_sepsensor_wingup": {
             "alpha": -1.7982183657947908e-07
+        },
+        "naca0012_rans_2D_sepsensorks_sepsensorks_wingup": {
+            "alpha": 1.837305954809948e-06
         }
     },
-    "total sepsensor_wingup derivative wrt random volume perturbation": -0.0016197144251801664
+    "total sepsensor_wingup derivative wrt random volume perturbation": -0.0016197144251801664,
+    "total sepsensorks_wingup derivative wrt random volume perturbation": 1.5536759419315689
 }

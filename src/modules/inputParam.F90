@@ -299,9 +299,9 @@ end module inputIteration
 
 module inputCostFunctions
     use constants
-    integer(kind=inttype) :: sepmodel
+    logical :: computeKsSepSensor
     real(kind=realtype) :: sepSensorOffset
-    real(kind=realtype) :: sepSweepAngleCorrection
+    real(kind=realtype) :: sepAngleDeviation
     real(kind=realtype) :: sepSensorSharpness
     real(kind=realtype) :: cavSensorOffset
     real(kind=realtype) :: cavSensorSharpness

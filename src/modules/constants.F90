@@ -88,11 +88,6 @@ module constants
     ! radian to degree conversion
     real(kind=realType), parameter :: degtorad = pi / 180.0_realType
 
-    ! sepsensor selection
-    integer(kind=intType), parameter :: &
-        surfvec = 1, &
-        surfvec_ks = 2, &
-        heaviside = 3
     ! String constants
     CHARACTER(*), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
     CHARACTER(*), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -349,7 +344,7 @@ module constants
     integer(kind=intType), parameter :: iTotal = 16
 
     ! Cost functions.
-    integer(kind=intType), parameter :: nCostFunction = 102
+    integer(kind=intType), parameter :: nCostFunction = 103
     integer(kind=intType), parameter :: &
         costFuncLift = 1, &
         costFuncDrag = 2, &
@@ -452,9 +447,10 @@ module constants
         costfuncCofLiftX = 99, &
         costfuncCofLiftY = 100, &
         costfuncCofLiftZ = 101, &
-        costfuncmavgvi = 102
+        costfuncmavgvi = 102, &
+        costFuncSepSensorKs = 103
 
-    integer(kind=intType), parameter :: nLocalValues = 60
+    integer(kind=intType), parameter :: nLocalValues = 61
     integer(kind=intType), parameter :: &
         iFp = 1, &
         iFv = 4, &
@@ -494,7 +490,8 @@ module constants
         iCoForceX = 51, &
         iCoForceY = 54, &
         iCoForceZ = 57, &
-        iMassVi = 60
+        iMassVi = 60, &
+        iSepSensorKs = 61
 
     ! Constants for zipper comm
 

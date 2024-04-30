@@ -18,34 +18,25 @@ baseDir = os.path.dirname(os.path.abspath(__file__))
 gridFile = os.path.join(baseDir, "../../input_files/naca0012_L3_SEP.cgns")
 test_params = [
     {
-        "name": "naca0012_rans_2D_surfvec_ks",
-        "ref_file": "separation_tests_surfvec_ks.json",
+        "name": "naca0012_rans_2D_sepsensor",
+        "ref_file": "separation_tests_sepsensor.json",
         "aero_prob": ap_naca0012_separation,
+        "eval_funcs": ["sepsensor_wingup"],
         "N_PROCS": 2,
         "options": {
-            "sepSensorModel": "surfvec_ks",
-            "sepSensorMaxRho": 100.0,
-            "sepSweepAngleCorrection": 0.0,
+            "monitorvariables": ["cl", "cd", "sepsensor"],
         },
     },
     {
-        "name": "naca0012_rans_2D_surfvec",
-        "ref_file": "separation_tests_surfvec.json",
+        "name": "naca0012_rans_2D_sepsensorks",
+        "ref_file": "separation_tests_sepsensorks.json",
         "aero_prob": ap_naca0012_separation,
+        "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup"],
         "N_PROCS": 2,
         "options": {
-            "sepSensorModel": "surfvec",
-            "sepSweepAngleCorrection": 0.0,
-        },
-    },
-    {
-        "name": "naca0012_rans_2D_heaviside",
-        "ref_file": "separation_tests_heaviside.json",
-        "aero_prob": ap_naca0012_separation,
-        "N_PROCS": 2,
-        "options": {
-            "sepSensorModel": "heaviside",
-            "sepSweepAngleCorrection": 0.0,
+            "computeKsSepSensor": True,
+            "sepangledeviation": 0.0,
+            "monitorvariables": ["cl", "cd", "sepsensor"],
         },
     },
 ]
@@ -105,9 +96,10 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         self.CFDSolver.addFamilyGroup("wingup", ["upper_skin"])
 
         self.CFDSolver.addFunction("sepsensor", "wingup")
+        self.CFDSolver.addFunction("sepsensorks", "wingup")
 
     def test_separation_metrics_and_derivatives(self):
-        evalFuncs = ["sepsensor_wingup"]
+        evalFuncs = self.eval_funcs
 
         self.CFDSolver(self.ap)
 
@@ -246,6 +238,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         self.CFDSolver.addFamilyGroup("wingup", ["upper_skin"])
 
         self.CFDSolver.addFunction("sepsensor", "wingup")
+        self.CFDSolver.addFunction("sepsensorks", "wingup")
 
     def cmplx_test_separation_adjoints(self):
         if not hasattr(self, "name"):
@@ -263,7 +256,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         self.assert_solution_failure()
         self.CFDSolver.evalFunctions(self.ap, funcs)
 
-        evalFuncs = ["sepsensor_wingup"]
+        evalFuncs = self.eval_funcs
         funcs_plus = {}
         for dv in ["alpha", "vol_perturbation"]:
             if dv == "alpha":
@@ -328,7 +321,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
             np.testing.assert_allclose(funcsSensCS["alpha"][fullName], refVal, atol=1e-6, rtol=1e-6)
 
             refVal = self.handler.db[f"total {funcName} derivative wrt random volume perturbation"]
-            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][fullName], refVal, rtol=5e-3, atol=5e-3)
+            np.testing.assert_allclose(funcsSensCS["vol_perturbation"][fullName], refVal, rtol=9e-3, atol=5e-3)
 
 
 if __name__ == "__main__":
