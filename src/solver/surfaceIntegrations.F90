@@ -1436,7 +1436,7 @@ contains
         integer(kind=intType) :: mm, nn, sps
         integer(kind=intType) :: i, j, ii, blk, ierr
         real(kind=realType) :: sepsensor_local
-        real(kind=realType) ::vectTangential(3), v(3)
+        real(kind=realType) :: vectTangential(3), v(3)
         real(kind=realType) :: vectDotProductFsNormal, sensor
 
         ! this routine loops over the surface cells in the given family

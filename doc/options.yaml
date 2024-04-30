@@ -1550,14 +1550,14 @@ sepAngleDeviation:
     For example, on a wing, the streamlines on the upper surface flows inboard direction. 
     And in some regions, it goes in the outboard directions.
     Therefore, we provide an allowable flow deviation from the projected freestream on the surface to compute the sensor.
-    For instance, when the angle is 90 degrees, this approximately closes to the verge of separation.
+    For instance, when the angle is ``90`` degrees, this approximately closes to the verge of separation.
     This angle (in degrees) is for 3D cases only.
     For airfoils, by default, this is ``0``.
 
 computeKsSepSensor:
   desc: >
     Whether or not to compute KS based separation related cost functions, which is ``sepSensorKs`` cost function.
-    If this option is not set to `True`, the code will return zero for this cost function.
+    If this option is not set to ``True``, the code will return zero for this cost function.
 
 computeCavitation:
   desc: >
