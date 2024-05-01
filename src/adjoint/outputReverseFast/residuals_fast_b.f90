@@ -375,7 +375,7 @@ contains
 ! if using the uniform force distribution
     if (actuatorregions(iregion)%acttype .eq. 'uniform') fact then
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(&
 &     iregion)%volume/pref
     end if
 ! loop over the ranges for this block
@@ -477,7 +477,7 @@ branch = myIntStack(myIntPtr)
 ! if using the uniform force distribution
     if (actuatorregions(iregion)%acttype .eq. 'uniform') then
 ! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+    f_fact = factor*actuatorregions(iregion)%f/actuatorregions(&
 &     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
     q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&

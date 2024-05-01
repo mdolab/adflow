@@ -1485,10 +1485,10 @@ contains
                     varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
 
                     if (trim(varName) == "Thrust") then
-                        actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
+                        actuatorRegions(iRegion)%f = actuatorRegions(iRegion)%axisVec * &
                                                          bcDataIn(iVar)
                     else if (trim(varName) == "Torque") then
-                        actuatorRegions(iRegion)%torque = bcDataIn(iVar)
+                        actuatorRegions(iRegion)%t = bcDataIn(iVar)
                     else if (trim(varName) == "Heat") then
                         actuatorRegions(iRegion)%heat = bcDataIn(iVar)
                     end if
@@ -1583,13 +1583,13 @@ contains
                     varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
 
                     if (trim(varName) == "Thrust") then
-                        actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
+                        actuatorRegions(iRegion)%f = actuatorRegions(iRegion)%axisVec * &
                                                          bcDataIn(iVar)
-                        actuatorRegionsd(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
+                        actuatorRegionsd(iRegion)%f = actuatorRegions(iRegion)%axisVec * &
                                                           bcDataInd(iVar)
                     else if (trim(varName) == "Torque") then
-                        actuatorRegions(iRegion)%torque = bcDataIn(iVar)
-                        actuatorRegionsd(iRegion)%torque = bcDataInd(iVar)
+                        actuatorRegions(iRegion)%t = bcDataIn(iVar)
+                        actuatorRegionsd(iRegion)%t = bcDataInd(iVar)
                     else if (trim(varName) == "Heat") then
                         actuatorRegions(iRegion)%heat = bcDataIn(iVar)
                         actuatorRegionsd(iRegion)%heat = bcDataInd(iVar)
@@ -1689,9 +1689,9 @@ contains
 
                     if (trim(varName) == "Thrust") then
                         bcDataInd(ivar) = &
-                            sum(actuatorRegions(iRegion)%axisVec * actuatorRegionsd(iRegion)%force)
+                            sum(actuatorRegions(iRegion)%axisVec * actuatorRegionsd(iRegion)%f)
                     else if (trim(varName) == "Torque") then
-                        bcDataInd(ivar) = actuatorRegionsd(iRegion)%torque
+                        bcDataInd(ivar) = actuatorRegionsd(iRegion)%t
                     else if (trim(varName) == "Heat") then
                         bcDataInd(ivar) = actuatorRegionsd(iRegion)%heat
                     end if
