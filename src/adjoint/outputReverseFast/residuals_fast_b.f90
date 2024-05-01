@@ -373,7 +373,7 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
 ! if using the uniform force distribution
-    if (actuatorregions(iregion)%acttype .eq. 'uniform') fact then
+    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
 ! compute the constant force factor
     f_fact = factor*actuatorregions(iregion)%f/actuatorregions(&
 &     iregion)%volume/pref

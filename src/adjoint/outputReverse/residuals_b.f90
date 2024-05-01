@@ -466,6 +466,7 @@ contains
     call popcontrol1b(branch)
     if (branch .eq. 0) then
       f_factd = 0.0_8
+      q_factd = 0.0_8
 !$bwd-of ii-loop 
     do ii=istart,iend
 ! extract the cell id.
@@ -508,7 +509,8 @@ contains
       f_factd = f_factd + vol(i, j, k)*ftmpd
     end do
     else
-      factd = 0.0_8
+      f_factd = 0.0_8
+      q_factd = 0.0_8
     end if
     call popcontrol1b(branch)
     if (branch .eq. 0) then
