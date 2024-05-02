@@ -38,7 +38,8 @@ contains
 #ifndef USE_TAPENADE
     subroutine addActuatorRegion(pts, conn, actType, axis1, axis2, famName, famID, &
                                  thrust, torque, heat, swirlFact, mDistribParam, nDistribParam, &
-                                 distribPDfactor, innerZeroThrustRadius, propRadius, spinnerRadius, rootDragFactor, relaxStart, relaxEnd, nPts, nConn)
+                                 distribPDfactor, innerZeroThrustRadius, propRadius, spinnerRadius, &
+                                 rootDragFactor, relaxStart, relaxEnd, nPts, nConn)
         ! Add a user-supplied integration surface.
 
         use communication, only: myID, adflow_comm_world
@@ -226,72 +227,72 @@ contains
                                     ! to the list.
                                     region%nCellIDs = region%nCellIDs + 1
                                     region%cellIDs(:, region%nCellIDs) = (/i, j, k/)
-                                                 if (region%actType == 'simpleProp') then
-                                                 ! Compute cross product for tangential vector and normize
-                                                 v1 = xCen - axis2
-                                                 v2 = axisVec
+                                    if (region%actType == 'simpleProp') then
+                                        ! Compute cross product for tangential vector and normize
+                                        v1 = xCen - axis2
+                                        v2 = axisVec
 
-                                                 v3(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-                                                 v3(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-                                                 v3(3) = (v1(1)*v2(2) - v1(2)*v2(1))
-                                                 v3 = v3 / sqrt(v3(1)**2 + v3(2)**2 + v3(3)**2)
-                                                 region%cellTangentials(:, region%nCellIDs) = v3
+                                        v3(1) = (v1(2)*v2(3) - v1(3)*v2(2))
+                                        v3(2) = (v1(3)*v2(1) - v1(1)*v2(3))
+                                        v3(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+                                        v3 = v3 / sqrt(v3(1)**2 + v3(2)**2 + v3(3)**2)
+                                        region%cellTangentials(:, region%nCellIDs) = v3
 
-                                                 ! Compute the dot product and subtract to get radius
-                                                 dotP = v1(1)*v2(2) + v1(2)*v2(2) + v1(3)*v2(3)
-                                                 radVec = v1 - dotP * axisVec
-                                                 region%cellRadii(region%nCellIDs) = &
-                                                        sqrt(radVec(1)**2 + radVec(2)**2 + radVec(3)**2)
+                                        ! Compute the dot product and subtract to get radius
+                                        dotP = v1(1)*v2(2) + v1(2)*v2(2) + v1(3)*v2(3)
+                                        radVec = v1 - dotP * axisVec
+                                        region%cellRadii(region%nCellIDs) = &
+                                            sqrt(radVec(1)**2 + radVec(2)**2 + radVec(3)**2)
 
-                                                    ! Compute unscaled thrust and swirl forces
-                                                 if (region%cellRadii(region%nCellIDs) < spinnerRadius) then
+                                        ! Compute unscaled thrust and swirl forces
+                                        if (region%cellRadii(region%nCellIDs) < spinnerRadius) then
 
-                                                     Ftmp = zero
-                                                     region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
+                                            Ftmp = zero
+                                            region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
 
-                                                     Swtmp = zero
-                                                     region%swirlVec(:, region%nCellIDs) = Swtmp * region%cellTangentials(:, region%nCellIDs)
+                                            Swtmp = zero
+                                            region%swirlVec(:, region%nCellIDs) = Swtmp * region%cellTangentials(:, region%nCellIDs)
 
-                                                 else if (region%cellRadii(region%nCellIDs) < innerZeroThrustRadius) then
+                                        else if (region%cellRadii(region%nCellIDs) < innerZeroThrustRadius) then
 
-                                                     rHat = ((region%cellRadii(region%nCellIDs) - innerZeroThrustRadius) &
-                                                                    / (propRadius - innerZeroThrustRadius))
-                                                     fact = rootDragFactor / propRadius
-                                                     fact2 = rHat**mDistribParam * (one - rHat)**nDistribParam &
-                                                                     / (two * pi * region%cellRadii(region%nCellIDs))
-                                                     Ftmp = volRef(i, j, k) * fact * fact2
+                                            rHat = ((region%cellRadii(region%nCellIDs) - innerZeroThrustRadius) &
+                                                        / (propRadius - innerZeroThrustRadius))
+                                            fact = rootDragFactor / propRadius
+                                            fact2 = rHat**mDistribParam * (one - rHat)**nDistribParam &
+                                                            / (two * pi * region%cellRadii(region%nCellIDs))
+                                            Ftmp = volRef(i, j, k) * fact * fact2
 
-                                                    !    thrustSum = thrustSum + Ftmp
+                                            thrustSum = thrustSum + Ftmp
 
-                                                     region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
+                                            region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
 
-                                                     Swtmp = zero
-                                                     region%swirlVec(:, region%nCellIDs) = Swtmp * region%cellTangentials(:, region%nCellIDs)
+                                            Swtmp = zero
+                                            region%swirlVec(:, region%nCellIDs) = Swtmp * region%cellTangentials(:, region%nCellIDs)
 
-                                                 else
+                                        else
 
-                                                     rHat = ((region%cellRadii(region%nCellIDs) - innerZeroThrustRadius) &
-                                                                    / (propRadius - innerZeroThrustRadius))
-                                                     fact = one / propRadius
-                                                     fact2 = rHat**mDistribParam * (one - rHat)**nDistribParam &
-                                                                     / (two * pi * region%cellRadii(region%nCellIDs))
-                                                     Ftmp = volRef(i, j, k) * fact * fact2
+                                            rHat = ((region%cellRadii(region%nCellIDs) - innerZeroThrustRadius) &
+                                                        / (propRadius - innerZeroThrustRadius))
+                                            fact = one / propRadius
+                                            fact2 = rHat**mDistribParam * (one - rHat)**nDistribParam &
+                                                            / (two * pi * region%cellRadii(region%nCellIDs))
+                                            Ftmp = volRef(i, j, k) * fact * fact2
 
-                                                     thrustSum = thrustSum + Ftmp
+                                            thrustSum = thrustSum + Ftmp
 
-                                                     region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
+                                            region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
 
-                                                     swirlFact2 = distribPDfactor / pi / region%cellRadii(region%nCellIDs) &
-                                                                                * propRadius * swirlFact
-                                                     FTang = swirlFact2 * fact * fact2
-                                                     Swtmp = volRef(i, j, k) * FTang
+                                            swirlFact2 = distribPDfactor / pi / region%cellRadii(region%nCellIDs) &
+                                                         * propRadius * swirlFact
+                                            FTang = swirlFact2 * fact * fact2
+                                            Swtmp = volRef(i, j, k) * FTang
 
-                                                     swirlSum = swirlSum + Swtmp
+                                            swirlSum = swirlSum + Swtmp
 
-                                                     region%swirlVec(:, region%nCellIDs) = Swtmp &
-                                                                                                                * region%cellTangentials(:, region%nCellIDs)
-                                                 end if
-                                                 end if
+                                            region%swirlVec(:, region%nCellIDs) = Swtmp &
+                                                                                  * region%cellTangentials(:, region%nCellIDs)
+                                        end if
+                                    end if
                                 end if
                             end if
                         end if
