@@ -7,8 +7,19 @@ PMAKE = make -j 4
 
 # ------- Define the MPI Compilers--------------------------------------
 ifdef I_MPI_ROOT # Using Intel MPI
-  FF90 = mpiifort
-  CC   = mpiicc
+  ICC_EXISTS := $(shell command -v icc)
+
+  ifdef ICC_EXISTS
+    # icc only exists on older Intel versions
+    # Assume that we want to use the old compilers
+    FF90 = mpiifort
+    CC = mpiicc
+  else
+    # Use the new compilers
+    FF90 = mpiifx
+    CC = mpiicx
+  endif
+
 else # Using HPE MPI
   FF90 = ifort -lmpi
   CC   = icc -lmpi
