@@ -5770,7 +5770,7 @@ class ADFLOW(AeroSolver):
             "sepSensorMaxRho": [float, 1000.0],
             "sepSensorOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
-            "sepAngleDeviation": [float, 0.0],
+            "sepAngleDeviation": [float, 90.0],
             "cavSensorOffset": [float, 0.0],
             "cavSensorSharpness": [float, 10.0],
             "cavExponent": [int, 0],
