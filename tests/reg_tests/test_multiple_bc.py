@@ -58,6 +58,7 @@ class MultiBCTests(reg_test_classes.RegTest):
             "smoother": "DADI",
             "adjointamglevels": 0,
             "adjointamgnsmooth": 0,
+            "solutionPrecision": "double",
         }
 
         self.options["outputdirectory"] = adflowDefOpts["outputdirectory"]
@@ -102,7 +103,7 @@ class MultiBCTests(reg_test_classes.RegTest):
         Test the BC functions
         """
         self.CFDSolver(self.ap)
-        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-9)
+        utils.assert_functions_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-12)
 
     def test_bc_adjoint(self):
         """
@@ -161,6 +162,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
             "L2ConvergenceRel": 1e-13,
             "ankcfllimit": 1e9,
             "smoother": "DADI",
+            "solutionPrecision": "double",
         }
 
         options = copy.copy(adflowDefOpts)

@@ -150,7 +150,7 @@
         "forcesAsTractions": true,
         "frozenTurbulence": false,
         "globalPreconditioner": "additive Schwarz",
-        "gridFile": "input_files/simpleMultiBC.cgns",
+        "gridFile": "input_files/multi_bc.cgns",
         "gridPrecision": "double",
         "gridPrecisionSurface": "single",
         "infChangeCorrection": true,
