@@ -1,15 +1,14 @@
-import unittest
-import numpy as np
-import os
 import copy
+import os
+import unittest
 
-from adflow import ADFLOW
-from adflow import ADFLOW_C
-
-import reg_test_utils as utils
-from reg_default_options import adflowDefOpts
-from reg_aeroproblems import ap_multi_bc
+import numpy as np
 import reg_test_classes
+import reg_test_utils as utils
+from reg_aeroproblems import ap_multi_bc
+from reg_default_options import adflowDefOpts
+
+from adflow import ADFLOW, ADFLOW_C
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 
@@ -26,7 +25,7 @@ class MultiBCTests(reg_test_classes.RegTest):
         super().setUp()
 
         self.options = {
-            "gridFile": os.path.join(baseDir, "../../input_files/simpleMultiBC.cgns"),
+            "gridFile": os.path.join(baseDir, "../../input_files/multi_bc.cgns"),
             "writevolumesolution": False,
             "writesurfacesolution": False,
             "writetecplotsurfacesolution": False,
@@ -140,7 +139,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
         super().setUp()
 
         self.options = {
-            "gridFile": os.path.join(baseDir, "../../input_files/simpleMultiBC.cgns"),
+            "gridFile": os.path.join(baseDir, "../../input_files/multi_bc.cgns"),
             "writevolumesolution": False,
             "writesurfacesolution": False,
             "writetecplotsurfacesolution": False,
