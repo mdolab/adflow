@@ -33,8 +33,11 @@ module NKSolver
     integer(kind=intType) :: NK_jacobianLag
     integer(kind=intType) :: NK_subspace
     integer(kind=intType) :: NK_asmOverlap
+    integer(kind=intType) :: NK_asmOverlapCoarse
     integer(kind=intType) :: NK_iluFill
+    integer(kind=intType) :: NK_iluFillCoarse
     integer(kind=intType) :: NK_innerPreConIts
+    integer(kind=intType) :: NK_innerPreConItsCoarse
     integer(kind=intType) :: NK_outerPreConIts
     integer(kind=intType) :: NK_AMGLevels
     integer(kind=intType) :: NK_AMGNSmooth
@@ -421,7 +424,8 @@ contains
         else
             call setupStandardMultigrid(NK_KSP, kspObjectType, NK_subSpace, &
                                         preConSide, NK_asmOverlap, NK_outerPreConIts, &
-                                        localOrdering, NK_iluFill, NK_innerPreConIts)
+                                        localOrdering, NK_iluFill, NK_innerPreConIts, &
+                                        NK_asmOverlapCoarse, NK_iluFillCoarse, NK_innerPreConItsCoarse)
         end if
 
         ! Don't do iterative refinement
@@ -1660,8 +1664,11 @@ module ANKSolver
     integer(kind=intType) :: ANK_subSpace
     integer(kind=intType) :: ANK_maxIter
     integer(kind=intType) :: ANK_asmOverlap
+    integer(kind=intType) :: ANK_asmOverlapCoarse
     integer(kind=intType) :: ANK_iluFill
+    integer(kind=intType) :: ANK_iluFillCoarse
     integer(kind=intType) :: ANK_innerPreConIts
+    integer(kind=intType) :: ANK_innerPreConItsCoarse
     integer(kind=intType) :: ANK_outerPreConIts
     integer(kind=intType) :: ANK_AMGLevels
     integer(kind=intType) :: ANK_AMGNSmooth
@@ -2021,7 +2028,8 @@ contains
         else if (ANK_precondType == 'mg') then
             call setupStandardMultigrid(ANK_KSP, kspObjectType, subSpace, &
                                         preConSide, ANK_asmOverlap, outerPreConIts, &
-                                        localOrdering, ANK_iluFill, ANK_innerPreConIts)
+                                        localOrdering, ANK_iluFill, ANK_innerPreConIts, &
+                                        ANK_asmOverlapCoarse, ANK_iluFillCoarse, ANK_innerPreConItsCoarse)
         end if
 
         ! Don't do iterative refinement

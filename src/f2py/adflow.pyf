@@ -367,6 +367,7 @@ python module libadflow
 
          character(len=maxstringlen) :: nk_precondtype
          integer(kind=inttype) :: nk_innerpreconits
+         integer(kind=inttype) :: nk_innerpreconitscoarse
          integer(kind=inttype) :: nk_outerpreconits
          integer(kind=inttype) :: nk_amglevels
          integer(kind=inttype) :: nk_amgnsmooth
@@ -378,8 +379,10 @@ python module libadflow
          integer(kind=inttype) :: nk_ls
          integer(kind=inttype) :: nk_subspace
          integer(kind=inttype) :: nk_asmoverlap
+         integer(kind=inttype) :: nk_asmoverlapcoarse
          real(kind=realtype) :: nk_rtolinit
          integer(kind=inttype) :: nk_ilufill
+         integer(kind=inttype) :: nk_ilufillcoarse
          real(kind=realtype) :: nk_switchtol
          real(kind=realtype) :: nk_cfl0
          real(kind=realtype) :: nk_fixedstep
@@ -442,6 +445,7 @@ python module libadflow
 
          character(len=maxstringlen) :: ank_precondtype
          integer(kind=inttype) :: ank_innerpreconits
+         integer(kind=inttype) :: ank_innerpreconitscoarse
          integer(kind=inttype) :: ank_outerpreconits
          integer(kind=inttype) :: ank_amglevels
          integer(kind=inttype) :: ank_amgnsmooth
@@ -452,10 +456,12 @@ python module libadflow
          integer(kind=inttype) :: ank_subspace
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
+         integer(kind=inttype) :: ank_asmoverlapcoarse
          real(kind=realtype) :: ank_rtol
          real(kind=realtype) :: ank_atol_buffer
          real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
+         integer(kind=inttype) :: ank_ilufillcoarse
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl
          real(kind=realtype) :: ank_cfl0

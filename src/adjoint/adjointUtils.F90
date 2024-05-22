@@ -1562,12 +1562,14 @@ contains
     end subroutine setupStandardKSP
 
     subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, preConSide, &
-                                      ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel, localPreConIts)
+                                      ASMOverlap, outerPreconIts, localMatrixOrdering, fillLevel, localPreConIts, &
+                                      ASMOverlapCoarse, fillLevelCoarse, localPreConItsCoarse)
 
         use constants
         use utils, only: ECHk
-        use amg, only: amgOuterIts, amgASMOverlap, amgFillLevel, amgMatrixOrdering, amgLocalPreConIts, &
-                       setupShellPC, destroyShellPC, applyShellPC
+        use amg, only: amgOuterIts, amgASMOverlapFine, amgASMOverlapCoarse, amgMatrixOrdering, &
+                       setupShellPC, destroyShellPC, applyShellPC, &
+                       amgFillLevelFine, amgFillLevelCoarse, amgLocalPreConItsFine, amgLocalPreConItsCoarse
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -1576,6 +1578,7 @@ contains
         KSP kspObject
         character(len=*), intent(in) :: kspObjectType, preConSide, localMatrixOrdering
         integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, outerPreconIts, localPreConIts
+        integer(kind=intType), intent(in) :: ASMOverlapCoarse, fillLevelCoarse, localPreConItsCoarse
 
         ! Working Variables
         PC shellPC
@@ -1612,10 +1615,13 @@ contains
 
         ! Save the remaining variables in the AMG module
         amgOuterIts = outerPreConIts
-        amgASMOverlap = asmOverlap
-        amgFillLevel = fillLevel
         amgMatrixOrdering = localMatrixOrdering
-        amgLocalPreConIts = localPreConIts
+        amgASMOverlapFine = ASMOverlap
+        amgFillLevelFine = fillLevel
+        amgLocalPreConItsFine = localPreConIts
+        amgASMOverlapCoarse = ASMOverlapCoarse
+        amgFillLevelCoarse = fillLevelCoarse
+        amgLocalPreConItsCoarse = localPreConItsCoarse
 
     end subroutine setupStandardMultigrid
 
