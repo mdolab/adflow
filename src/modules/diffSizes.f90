@@ -76,6 +76,7 @@ module diffSizes
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_oarea, ISIZE2OFDrfDrfbcdata_oarea, ISIZE3OFDrfDrfbcdata_oarea
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_sepsensor, ISIZE2OFDrfDrfbcdata_sepSensor
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_sepsensorks, ISIZE2OFDrfDrfbcdata_sepSensorKs
+    integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_sepsensorarea, ISIZE2OFDrfDrfbcdata_sepSensorArea
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_Cavitation, ISIZE2OFDrfDrfbcdata_Cavitation
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_axisMoment, ISIZE2OFDrfDrfbcdata_axisMoment
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_rface, ISIZE2OFDrfDrfbcdata_rface, ISIZE3OFDrfDrfbcdata_rface

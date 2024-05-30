@@ -301,8 +301,12 @@ module inputCostFunctions
     use constants
     logical :: computeSepSensorKs
     real(kind=realtype) :: sepSensorOffset
+    real(kind=realtype) :: sepSensorOffsetOne
+    real(kind=realtype) :: sepSensorOffsetTwo
     real(kind=realtype) :: sepAngleDeviation
     real(kind=realtype) :: sepSensorSharpness
+    real(kind=realtype) :: sepSensorSharpnessOne
+    real(kind=realtype) :: sepSensorSharpnessTwo
     real(kind=realtype) :: cavSensorOffset
     real(kind=realtype) :: cavSensorSharpness
     integer(kind=inttype) :: cavExponent

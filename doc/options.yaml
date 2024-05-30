@@ -1543,6 +1543,26 @@ sepSensorSharpness:
     The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
+sepSensorOffsetOne:
+  desc: >
+    The offset value used for the separation sensor in ``sepSensor`` cost function.
+    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
+sepSensorSharpnessOne:
+  desc: >
+    The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
+    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
+sepSensorOffsetTwo:
+  desc: >
+    The offset value used for the separation sensor in ``sepSensor`` cost function.
+    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
+sepSensorSharpnessTwo:
+  desc: >
+    The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
+    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
 sepAngleDeviation:
   desc: >
     This option is for KS based separation sensor, ``sepSensorKs`` cost function.

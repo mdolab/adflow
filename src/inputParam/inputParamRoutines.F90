@@ -298,7 +298,7 @@ contains
             case (cgnsAxisMoment)
                 sortNumber(i) = 116
 
-            case (cgnsSepSensorKs)
+            case (cgnsSepSensorArea)
                 sortNumber(i) = 117
 
             case (cgnsHdiffMax)
@@ -1597,9 +1597,9 @@ contains
                 nMon = nMon + 1; nMonSum = nMonSum + 1
                 tmpNames(nMon) = cgnsSepSensor
 
-            case ("sepsensorks")
+            case ("sepsensorarea")
                 nMon = nMon + 1; nMonSum = nMonSum + 1
-                tmpNames(nMon) = cgnsSepSensorKs
+                tmpNames(nMon) = cgnsSepSensorArea
 
             case ("cavitation")
                 nMon = nMon + 1; nMonSum = nMonSum + 1
@@ -2360,6 +2360,7 @@ contains
         surfWriteBlank = .false.
         surfWriteSepSensor = .false.
         surfWriteSepSensorKs = .false.
+        surfWriteSepSensorArea = .false.
         surfWriteCavitation = .false.
         surfWriteAxisMoment = .false.
         surfWriteGC = .false.
@@ -2480,6 +2481,10 @@ contains
 
             case ("sepsensorks")
                 surfWriteSepSensorKs = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("sepsensorarea")
+                surfWriteSepSensorArea = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case ("cavitation")
@@ -3717,7 +3722,7 @@ contains
                  call terminate("checkInputParam", &
                  "Memory allocation failure for &
                  &sepSenMaxFamily")
-            sepSenMaxFamily = one
+            sepSenMaxFamily = -one
         end if
 
     end subroutine checkInputParam

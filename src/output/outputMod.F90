@@ -166,6 +166,7 @@ contains
         if (surfWriteBlank) nSolVar = nSolVar + 1
         if (surfWriteSepSensor) nSolVar = nSolVar + 1
         if (surfWriteSepSensorKs) nSolVar = nSolVar + 1
+        if (surfWriteSepSensorArea) nSolVar = nSolVar + 1
         if (surfWriteCavitation) nSolVar = nSolVar + 1
         if (surfWriteGC) nSolVar = nSolVar + 1
 
@@ -703,6 +704,11 @@ contains
         if (surfWriteSepSensorKs) then
             nn = nn + 1
             solNames(nn) = cgnsSepSensorKs
+        end if
+
+        if (surfWriteSepSensorArea) then
+            nn = nn + 1
+            solNames(nn) = cgnsSepSensorArea
         end if
 
         if (surfWriteCavitation) then
@@ -1479,8 +1485,8 @@ contains
 
             select case (solName)
 
-            case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
-                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsSepSensor, cgnsSepSensorKs)
+            case (cgnsSkinFmag, cgnsStanton, cgnsYplus, cgnsSkinFx, &
+                  cgnsSkinFy, cgnsSkinFz, cgnsSepSensor, cgnsSepSensorKs, cgnsSepSensorArea)
 
                 ! Update the counter and set this entry of buffer to 0.
 
@@ -2239,6 +2245,79 @@ contains
                 ! sepsensor value
                 sensor = (cos(degtorad * sepAngleDeviation) - sensor) / &
                          (cos(degtorad * sepAngleDeviation) - cos(pi) + 1e-16)
+
+                buffer(nn) = sensor
+            end do
+        end do
+
+        case (cgnsSepSensorArea)
+
+        do j = rangeFace(2, 1), rangeFace(2, 2)
+            if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
+                jor = j + jBegOr - 1
+                if (jor == jBeg) then
+                    jj = j + 1
+                else if (jor == jEnd + 1) then
+                    jj = j - 1
+                else
+                    jj = j
+                end if
+            else
+                jj = j
+
+            end if
+
+            do i = rangeFace(1, 1), rangeFace(1, 2)
+
+                if (present(iBeg) .and. present(iEnd) .and. (useRindLayer)) then
+                    ior = i + iBegor - 1
+                    if (ior == iBeg) then
+                        ii = i + 1
+                    else if (ior == iEnd + 1) then
+                        ii = i - 1
+                    else
+                        ii = i
+                    end if
+                else
+                    ii = i
+                end if
+
+                nn = nn + 1
+
+                ! Get normalized surface velocity:
+                v(1) = ww2(ii, jj, ivx)
+                v(2) = ww2(ii, jj, ivy)
+                v(3) = ww2(ii, jj, ivz)
+
+                ! Normalize
+                v = v / (sqrt(v(1)**2 + v(2)**2 + v(3)**2) + 1e-16)
+                mm = viscPointer(ii, jj)
+
+                norm(1) = BCData(mm)%norm(ii, jj, 1)
+                norm(2) = BCData(mm)%norm(ii, jj, 2)
+                norm(3) = BCData(mm)%norm(ii, jj, 3)
+
+                vectDotProductFsNormal = velDirFreeStream(1) * norm(1) + &
+                                         velDirFreeStream(2) * norm(2) + &
+                                         velDirFreeStream(3) * norm(3)
+
+                vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * norm(1)
+                vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * norm(2)
+                vectTangential(3) = velDirFreeStream(3) - vectDotProductFsNormal * norm(3)
+
+                vectTangential = vectTangential / (sqrt(vectTangential(1)**2 + vectTangential(2)**2 + &
+                                                        vectTangential(3)**2) + 1e-16)
+
+                ! computing separation sensor
+                ! velocity dot products
+                sensor = (v(1) * vectTangential(1) + v(2) * vectTangential(2) + &
+                          v(3) * vectTangential(3))
+
+                ! sepsensor value
+                sensor = (cos(degtorad * sepAngleDeviation) - sensor) / &
+                         (cos(degtorad * sepAngleDeviation) - cos(pi) + 1e-16)
+
+                sensor = one / (one + exp(-2 * sepSensorSharpnessTwo * (sensor + sepSensorOffsetTwo))) 
 
                 buffer(nn) = sensor
             end do
