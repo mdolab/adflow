@@ -1,7 +1,7 @@
 {
-    "Dot product test for w -> sepsensor_wingup": 3.3730981550898195e-06,
-    "Dot product test for w -> sepsensorks_wingup": -0.028969851882137163,
-    "Dot product test for xV -> sepsensor_wingup": 1.2853779404337437e-05,
+    "Dot product test for w -> sepsensor_wingup": -3.413578625244386e-05,
+    "Dot product test for w -> sepsensorks_wingup": -0.012285733905643411,
+    "Dot product test for xV -> sepsensor_wingup": -0.1708149227129096,
     "Dot product test for xV -> sepsensorks_wingup": 0.0,
     "metadata": {
         "ADPC": false,
@@ -18,7 +18,7 @@
         "ANKCFLReset": true,
         "ANKCharTimeStepType": "None",
         "ANKConstCFLStep": 0.4,
-        "ANKCoupledSwitchTol": 1e-16,
+        "ANKCoupledSwitchTol": 0.0001,
         "ANKGlobalPreconditioner": "additive Schwarz",
         "ANKInnerPreconIts": 1,
         "ANKJacobianLag": 10,
@@ -34,7 +34,7 @@
         "ANKPCUpdateTolAfterCutoff": 0.0001,
         "ANKPhysicalLSTol": 0.2,
         "ANKPhysicalLSTolTurb": 0.99,
-        "ANKSecondOrdSwitchTol": 0.01,
+        "ANKSecondOrdSwitchTol": 0.001,
         "ANKStepFactor": 1.0,
         "ANKStepMin": 0.01,
         "ANKSubspaceSize": -1,
@@ -70,7 +70,7 @@
         "NKOuterPreconIts": 1,
         "NKPCILUFill": 2,
         "NKSubspaceSize": 60,
-        "NKSwitchTol": 1e-06,
+        "NKSwitchTol": 1e-05,
         "NKUseEW": true,
         "NKViscPC": false,
         "RKReset": false,
@@ -151,7 +151,7 @@
             "cd",
             "sepsensor"
         ],
-        "nCycles": 1000,
+        "nCycles": 5000,
         "nCyclesCoarse": 500,
         "nFloodIter": -1,
         "nRKReset": 5,
@@ -159,7 +159,7 @@
         "nSaveSurface": 1,
         "nSaveVolume": 1,
         "nSubiter": 1,
-        "nSubiterTurb": 3,
+        "nSubiterTurb": 35,
         "nTimeStepsCoarse": 48,
         "nTimeStepsFine": 400,
         "nearWallDist": 0.1,
@@ -191,10 +191,14 @@
         "restartFile": null,
         "restrictionRelaxation": 0.8,
         "selfZipCutoff": 120.0,
-        "sepAngleDeviation": 0.0,
+        "sepAngleDeviation": 90.0,
         "sepSensorMaxRho": 1000.0,
         "sepSensorOffset": 0.0,
+        "sepSensorOffsetOne": 0.0,
+        "sepSensorOffsetTwo": 0.0,
         "sepSensorSharpness": 10.0,
+        "sepSensorSharpnessOne": 25.0,
+        "sepSensorSharpnessTwo": 25.0,
         "setMonitor": true,
         "skipAfterFailedAdjoint": true,
         "smoothParameter": 1.5,
@@ -228,7 +232,7 @@
         "useGridMotion": false,
         "useLinResMonitor": false,
         "useMatrixFreedrdw": true,
-        "useNKSolver": true,
+        "useNKSolver": false,
         "useOversetWallScaling": false,
         "useQCR": false,
         "useRotationSA": false,
@@ -262,17 +266,17 @@
         "zipperSurfaceFamily": null
     },
     "separation outputs": {
-        "naca0012_rans_2D_sepsensorks_sepsensor_wingup": 5.790755939623052e-07,
-        "naca0012_rans_2D_sepsensorks_sepsensorks_wingup": 0.004306874504213172
+        "naca0012_rans_2D_sepsensorks_sepsensor_wingup": 0.9436658909967628,
+        "naca0012_rans_2D_sepsensorks_sepsensorks_wingup": 1.0039701459789896
     },
     "separation totals": {
         "naca0012_rans_2D_sepsensorks_sepsensor_wingup": {
-            "alpha": -1.7982183657947908e-07
+            "alpha": -2.0453157612660585e-09
         },
         "naca0012_rans_2D_sepsensorks_sepsensorks_wingup": {
-            "alpha": 1.837305954809948e-06
+            "alpha": 3.7782394013417314e-06
         }
     },
-    "total sepsensor_wingup derivative wrt random volume perturbation": -0.0016197144251801664,
-    "total sepsensorks_wingup derivative wrt random volume perturbation": 1.5536759419315689
+    "total sepsensor_wingup derivative wrt random volume perturbation": -0.17081860114602293,
+    "total sepsensorks_wingup derivative wrt random volume perturbation": 0.1637025596134265
 }

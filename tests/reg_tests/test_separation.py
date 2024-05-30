@@ -35,7 +35,19 @@ test_params = [
         "N_PROCS": 2,
         "options": {
             "computeSepSensorKs": True,
-            "sepangledeviation": 0.0,
+            # "sepangledeviation": 0.0,
+            "monitorvariables": ["cl", "cd", "sepsensor"],
+        },
+    },
+    {
+        "name": "naca0012_rans_2D_sepsensorarea",
+        "ref_file": "separation_tests_sepsensorarea.json",
+        "aero_prob": ap_naca0012_separation,
+        "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorarea_wingup"],
+        "N_PROCS": 2,
+        "options": {
+            "computeSepSensorKs": True,
+            # "sepangledeviation": 0.0,
             "monitorvariables": ["cl", "cd", "sepsensor"],
         },
     },
@@ -69,11 +81,13 @@ class SeparationBasicTests(reg_test_classes.RegTest):
                 "writesurfacesolution": False,
                 "writetecplotsurfacesolution": False,
                 "mgcycle": "sg",
-                "ncycles": 1000,
+                "ncycles": 5000,
                 "useanksolver": True,
-                "usenksolver": True,
-                "anksecondordswitchtol": 1e-2,
-                "nkswitchtol": 1e-6,
+                # "usenksolver": True,
+                "nsubiterturb": 35,
+                "anksecondordswitchtol": 1e-3,
+                "ankcoupledswitchtol": 1e-4,
+                # "nkswitchtol": 1e-6,
                 "volumevariables": ["temp", "mach", "resrho", "cp"],
                 "equationType": "RANS",
                 "l2convergence": 1e-15,
@@ -97,6 +111,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
 
         self.CFDSolver.addFunction("sepsensor", "wingup")
         self.CFDSolver.addFunction("sepsensorks", "wingup")
+        self.CFDSolver.addFunction("sepsensorarea", "wingup")
 
     def test_separation_metrics_and_derivatives(self):
         evalFuncs = self.eval_funcs
@@ -210,11 +225,13 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
                 "writesurfacesolution": False,
                 "writetecplotsurfacesolution": False,
                 "mgcycle": "sg",
-                "ncycles": 1000,
+                "ncycles": 5000,
                 "useanksolver": True,
-                "usenksolver": True,
-                "anksecondordswitchtol": 1e-2,
-                "nkswitchtol": 1e-6,
+                # "usenksolver": True,
+                "nsubiterturb": 35,
+                "anksecondordswitchtol": 1e-3,
+                "ankcoupledswitchtol": 1e-4,
+                # "nkswitchtol": 1e-6,
                 "volumevariables": ["temp", "mach", "resrho", "cp"],
                 "equationType": "RANS",
                 "l2convergence": 1e-15,
@@ -239,6 +256,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
 
         self.CFDSolver.addFunction("sepsensor", "wingup")
         self.CFDSolver.addFunction("sepsensorks", "wingup")
+        self.CFDSolver.addFunction("sepsensorarea", "wingup")
 
     def cmplx_test_separation_adjoints(self):
         if not hasattr(self, "name"):

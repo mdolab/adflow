@@ -2244,7 +2244,7 @@ contains
 
                 ! sepsensor value
                 sensor = (cos(degtorad * sepAngleDeviation) - sensor) / &
-                         (cos(degtorad * sepAngleDeviation) - cos(pi) + 1e-16)
+                         (-cos(degtorad * sepAngleDeviation) + cos(zero) + 1e-16)
 
                 buffer(nn) = sensor
             end do
@@ -2315,9 +2315,9 @@ contains
 
                 ! sepsensor value
                 sensor = (cos(degtorad * sepAngleDeviation) - sensor) / &
-                         (cos(degtorad * sepAngleDeviation) - cos(pi) + 1e-16)
+                         (-cos(degtorad * sepAngleDeviation) + cos(zero) + 1e-16)
 
-                sensor = one / (one + exp(-2 * sepSensorSharpnessTwo * (sensor + sepSensorOffsetTwo))) 
+                sensor = one / (one + exp(-2 * sepSensorSharpnessTwo * (sensor + sepSensorOffsetTwo)))
 
                 buffer(nn) = sensor
             end do

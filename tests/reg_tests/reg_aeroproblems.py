@@ -237,10 +237,10 @@ ap_simple_cart_cube = AeroProblem(
 
 ap_naca0012_separation = AeroProblem(
     name="0012separation",
-    alpha=1.5,
+    alpha=20.0,
     mach=0.35,
     altitude=3048,
     areaRef=1.0,
     chordRef=1.0,
-    evalFuncs=["sepsensor_wingup", "sepsensorks_wingup"],
+    evalFuncs=["sepsensor_wingup", "sepsensorks_wingup", "sepsensorarea_wingup"],
 )

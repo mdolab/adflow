@@ -583,14 +583,14 @@ contains
 ! sepsensor value
         sensor = (cos(degtorad*sepangledeviation)-sensor)/(-cos(degtorad&
 &         *sepangledeviation)+cos(zero)+1e-16)
-! also do the ks-based spensenor max computation
-        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
-&                            , sepsenmaxrho, ks_exponent)
         sepsensorarea = blk*sepsenmaxfamily(spectralsol)*cellarea*one/(&
 &         one+exp(2*sepsensorsharpnessone*(sepsenmaxfamily(spectralsol)+&
 &         sepsensoroffsetone))) + cellarea*blk*one/(one+exp(-(2*&
 &         sepsensorsharpnesstwo*(sensor+sepsensoroffsettwo)))) + &
 &         sepsensorarea
+! also do the ks-based spensenor max computation
+        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
+&                            , sepsenmaxrho, ks_exponent)
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
 ! dot product with free stream

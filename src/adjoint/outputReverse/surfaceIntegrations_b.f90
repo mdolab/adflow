@@ -1651,14 +1651,14 @@ contains
 ! sepsensor value
         sensor = (cos(degtorad*sepangledeviation)-sensor)/(-cos(degtorad&
 &         *sepangledeviation)+cos(zero)+1e-16)
-! also do the ks-based spensenor max computation
-        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
-&                            , sepsenmaxrho, ks_exponent)
         sepsensorarea = blk*sepsenmaxfamily(spectralsol)*cellarea*one/(&
 &         one+exp(2*sepsensorsharpnessone*(sepsenmaxfamily(spectralsol)+&
 &         sepsensoroffsetone))) + cellarea*blk*one/(one+exp(-(2*&
 &         sepsensorsharpnesstwo*(sensor+sepsensoroffsettwo)))) + &
 &         sepsensorarea
+! also do the ks-based spensenor max computation
+        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
+&                            , sepsenmaxrho, ks_exponent)
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
 ! dot product with free stream
@@ -2112,17 +2112,17 @@ contains
       call popcontrol1b(branch)
       if (branch .eq. 0) then
         ks_exponentd = blk*sepsensorksd
+        call ksaggregationfunction_b(sensor, sensord, sepsenmaxfamily(&
+&                              spectralsol), sepsenmaxrho, ks_exponent, &
+&                              ks_exponentd)
         temp0 = -(2*sepsensorsharpnesstwo*(sepsensoroffsettwo+sensor))
         temp = one + exp(temp0)
         tempd1 = blk*one*sepsensoraread/temp
         cellaread = cellaread + sepsenmaxfamily(spectralsol)*blk*one*&
 &         sepsensoraread/(one+exp(sepsensorsharpnessone*2*(&
 &         sepsenmaxfamily(spectralsol)+sepsensoroffsetone))) + tempd1
-        sensord = sepsensorsharpnesstwo*2*exp(temp0)*cellarea*tempd1/&
-&         temp
-        call ksaggregationfunction_b(sensor, sensord, sepsenmaxfamily(&
-&                              spectralsol), sepsenmaxrho, ks_exponent, &
-&                              ks_exponentd)
+        sensord = sensord + sepsensorsharpnesstwo*2*exp(temp0)*cellarea*&
+&         tempd1/temp
         sensord = -(sensord/(cos(zero)-cos(degtorad*sepangledeviation)+&
 &         1e-16))
         vd(1) = vd(1) + vecttangential(1)*sensord
@@ -2531,14 +2531,14 @@ contains
 ! sepsensor value
         sensor = (cos(degtorad*sepangledeviation)-sensor)/(-cos(degtorad&
 &         *sepangledeviation)+cos(zero)+1e-16)
-! also do the ks-based spensenor max computation
-        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
-&                            , sepsenmaxrho, ks_exponent)
         sepsensorarea = blk*sepsenmaxfamily(spectralsol)*cellarea*one/(&
 &         one+exp(2*sepsensorsharpnessone*(sepsenmaxfamily(spectralsol)+&
 &         sepsensoroffsetone))) + cellarea*blk*one/(one+exp(-(2*&
 &         sepsensorsharpnesstwo*(sensor+sepsensoroffsettwo)))) + &
 &         sepsensorarea
+! also do the ks-based spensenor max computation
+        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
+&                            , sepsenmaxrho, ks_exponent)
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
 ! dot product with free stream
@@ -2724,7 +2724,7 @@ contains
   end subroutine wallintegrationface
 
 !  differentiation of ksaggregationfunction in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: ks_g g
+!   gradient     of useful results: ks_g
 !   with respect to varying inputs: g
   subroutine ksaggregationfunction_b(g, gd, max_g, g_rho, ks_g, ks_gd)
     use precision
@@ -2734,7 +2734,7 @@ contains
     real(kind=realtype), intent(in) :: g, max_g, g_rho
     real(kind=realtype) :: gd
     intrinsic exp
-    gd = gd + g_rho*exp(g_rho*(g-max_g))*ks_gd
+    gd = g_rho*exp(g_rho*(g-max_g))*ks_gd
   end subroutine ksaggregationfunction_b
 
   subroutine ksaggregationfunction(g, max_g, g_rho, ks_g)

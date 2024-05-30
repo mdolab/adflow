@@ -1460,10 +1460,6 @@ contains
         temp1 = cos(zero) - cos(degtorad*sepangledeviation) + 1e-16
         sensord = -(sensord/temp1)
         sensor = (cos(degtorad*sepangledeviation)-sensor)/temp1
-! also do the ks-based spensenor max computation
-        call ksaggregationfunction_d(sensor, sensord, sepsenmaxfamily(&
-&                              spectralsol), sepsenmaxrho, ks_exponent, &
-&                              ks_exponentd)
         arg1 = 2*sepsensorsharpnessone*(sepsenmaxfamily(spectralsol)+&
 &         sepsensoroffsetone)
         arg2d = -(sepsensorsharpnesstwo*2*sensord)
@@ -1475,6 +1471,10 @@ contains
 &         cellarea*exp(arg2)*arg2d/temp)/temp + sepsensoraread
         sepsensorarea = temp1*(cellarea/temp0) + blk*one*(cellarea/temp)&
 &         + sepsensorarea
+! also do the ks-based spensenor max computation
+        call ksaggregationfunction_d(sensor, sensord, sepsenmaxfamily(&
+&                              spectralsol), sepsenmaxrho, ks_exponent, &
+&                              ks_exponentd)
         sepsensorksd = sepsensorksd + blk*ks_exponentd
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
@@ -2017,15 +2017,15 @@ contains
 ! sepsensor value
         sensor = (cos(degtorad*sepangledeviation)-sensor)/(-cos(degtorad&
 &         *sepangledeviation)+cos(zero)+1e-16)
-! also do the ks-based spensenor max computation
-        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
-&                            , sepsenmaxrho, ks_exponent)
         arg1 = 2*sepsensorsharpnessone*(sepsenmaxfamily(spectralsol)+&
 &         sepsensoroffsetone)
         arg2 = -(2*sepsensorsharpnesstwo*(sensor+sepsensoroffsettwo))
         sepsensorarea = blk*sepsenmaxfamily(spectralsol)*cellarea*one/(&
 &         one+exp(arg1)) + cellarea*blk*one/(one+exp(arg2)) + &
 &         sepsensorarea
+! also do the ks-based spensenor max computation
+        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
+&                            , sepsenmaxrho, ks_exponent)
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
 ! dot product with free stream

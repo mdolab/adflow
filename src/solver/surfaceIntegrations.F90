@@ -148,7 +148,7 @@ contains
             funcValues(costFuncMomXCoef) = funcValues(costFuncMomXCoef) + ovrNTS * cMoment(1, sps)
             funcValues(costFuncMomYCoef) = funcValues(costFuncMomYCoef) + ovrNTS * cMoment(2, sps)
             funcValues(costFuncMomZCoef) = funcValues(costFuncMomZCoef) + ovrNTS * cMoment(3, sps)
-            
+
             ! final part of the KS computation
             if (computeSepSensorKs) then
                 ! only calculate the log part if we are actually computing for separation for KS method.
@@ -156,11 +156,11 @@ contains
                                                   ovrNTS * (sepSenMaxFamily(sps) + &
                                                             log(globalVals(iSepSensorKs, sps)) / sepSenMaxRho)
 
-                funcValues(costFuncSepSensorArea) = funcValues(costFuncSepSensorArea) + & 
-                                                ovrNTS * globalVals(iSepSensorArea, sps)
+                funcValues(costFuncSepSensorArea) = funcValues(costFuncSepSensorArea) + &
+                                                    ovrNTS * globalVals(iSepSensorArea, sps)
 
             end if
-            
+
             funcValues(costFuncSepSensor) = funcValues(costFuncSepSensor) + ovrNTS * globalVals(iSepSensor, sps)
 
             funcValues(costFuncCavitation) = funcValues(costFuncCavitation) + ovrNTS * globalVals(iCavitation, sps)
@@ -428,7 +428,7 @@ contains
         real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
         real(kind=realType), dimension(3) :: COFSumFx, COFSumFy, COFSumFz
         real(kind=realType) :: yplusMax, sepSensorKs, sepSensor, sepSensorAvg(3), &
-                            sepSensorArea, Cavitation, cpmin_ks_sum
+                               sepSensorArea, Cavitation, cpmin_ks_sum
         integer(kind=intType) :: i, j, ii, blk
 
         real(kind=realType) :: pm1, fx, fy, fz, fn
@@ -623,8 +623,8 @@ contains
             if (computeSepSensorKs) then
                 ! Freestream projection over the surface.
                 vectDotProductFsNormal = velDirFreeStream(1) * BCData(mm)%norm(i, j, 1) + &
-                                            velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
-                                            velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
+                                         velDirFreeStream(2) * BCData(mm)%norm(i, j, 2) + &
+                                         velDirFreeStream(3) * BCData(mm)%norm(i, j, 3)
                 ! Tangential Vector on the surface, which is the freestream projected vector
                 vectTangential(1) = velDirFreeStream(1) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 1)
                 vectTangential(2) = velDirFreeStream(2) - vectDotProductFsNormal * BCData(mm)%norm(i, j, 2)
@@ -636,22 +636,19 @@ contains
                 ! computing separation sensor
                 ! velocity dot products
                 sensor = (v(1) * vectTangential(1) + v(2) * vectTangential(2) + &
-                            v(3) * vectTangential(3))
+                          v(3) * vectTangential(3))
 
                 ! sepsensor value
                 sensor = (cos(degtorad * sepangledeviation) - sensor) / &
-                            (-cos(degtorad * sepangledeviation) + cos(zero) + 1e-16)
+                         (-cos(degtorad * sepangledeviation) + cos(zero) + 1e-16)
 
+                sepSensorArea = blk * sepSenMaxFamily(spectralSol) * cellArea * one / &
+                          (one + exp(2 * sepSensorSharpnessOne * (sepSenMaxFamily(spectralSol) + sepSensorOffsetOne))) &
+                                + cellArea * blk * one / (one + exp(-2 * sepSensorSharpnessTwo &
+                                                                    * (sensor + sepSensorOffsetTwo))) + sepSensorArea
 
                 ! also do the ks-based spensenor max computation
                 call KSaggregationFunction(sensor, sepSenMaxFamily(spectralSol), sepSenMaxRho, ks_exponent)
-
-
-                sepSensorArea =  blk * sepSenMaxFamily(spectralSol) *cellArea* one / &
-                    (one + exp(2 * sepSensorSharpnessOne * (sepSenMaxFamily(spectralSol) + sepSensorOffsetOne))) + &
-                    cellArea * blk * one / &
-                    (one + exp(-2 * sepSensorSharpnessTwo * (sensor + sepSensorOffsetTwo))) + sepSensorArea
-
                 sepSensorKs = sepSensorKs + ks_exponent * blk
 
             end if
