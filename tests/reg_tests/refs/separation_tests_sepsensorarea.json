@@ -1,6 +1,6 @@
 {
     "Dot product test for w -> sepsensor_wingup": -3.413578625244386e-05,
-    "Dot product test for w -> sepsensorarea_wingup": 2.1876169416746107e-22,
+    "Dot product test for w -> sepsensorarea_wingup": 3.156991882291173e-22,
     "Dot product test for w -> sepsensorks_wingup": -0.012285733905643411,
     "Dot product test for xV -> sepsensor_wingup": -0.1708149227129096,
     "Dot product test for xV -> sepsensorarea_wingup": -0.17081501916514247,
@@ -277,7 +277,7 @@
             "alpha": -2.0453157612660585e-09
         },
         "naca0012_rans_2D_sepsensorarea_sepsensorarea_wingup": {
-            "alpha": -7.034040791828033e-39
+            "alpha": -4.80058469332402e-40
         },
         "naca0012_rans_2D_sepsensorarea_sepsensorks_wingup": {
             "alpha": 3.7782394013417314e-06

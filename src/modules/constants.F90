@@ -451,7 +451,7 @@ module constants
         costFuncSepSensorKs = 103, &
         costFuncSepSensorArea = 104
 
-    integer(kind=intType), parameter :: nLocalValues = 62
+    integer(kind=intType), parameter :: nLocalValues = 63
     integer(kind=intType), parameter :: &
         iFp = 1, &
         iFv = 4, &
@@ -493,7 +493,8 @@ module constants
         iCoForceZ = 57, &
         iMassVi = 60, &
         iSepSensorKs = 61, &
-        iSepSensorArea = 62
+        iSepSensorArea = 62, &
+        iSepSensorAreaKs = 63
 
     ! Constants for zipper comm
 

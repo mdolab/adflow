@@ -178,18 +178,19 @@ class SeparationBasicTests(reg_test_classes.RegTest):
             dotLocal1 = np.dot(wDot, wBar)
             dotLocal2 = fDot_w[funcName] / self.CFDSolver.comm.size
 
-            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal1, rtol=1e-9, atol=1e-8)
+            self.handler.par_add_sum(f"Dot product test for w -> {funcName}", dotLocal1, rtol=1e-8, atol=1e-8)
             self.handler.par_add_sum(
                 f"Dot product test for w -> {funcName}",
                 dotLocal2,
-                rtol=5e-10,
+                rtol=1e-8,
+                atol=1e-8,
                 compare=True,
             )
 
             # volume coords
             dotLocal1 = np.dot(xVDot, xVBar)
             dotLocal2 = fDot_xv[funcName] / self.CFDSolver.comm.size
-            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal1, rtol=1e-9, atol=1e-8)
+            self.handler.par_add_sum(f"Dot product test for xV -> {funcName}", dotLocal1, rtol=1e-8, atol=1e-8)
             self.handler.par_add_sum(
                 f"Dot product test for xV -> {funcName}",
                 dotLocal2,

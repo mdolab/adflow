@@ -10,7 +10,8 @@ contains
         use inputPhysics, only: liftDirection, dragDirection, surfaceRef, &
                                 machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
                                 cpmin_rho, sepSenMaxFamily, sepSenMaxRho
-        use inputCostFunctions, only: computeCavitation, computeSepSensorKs
+        use inputCostFunctions, only: computeCavitation, computeSepSensorKs, sepSensorSharpnessOne, &
+                                      sepSensorOffsetOne
         use inputTSStabDeriv, only: TSstability
         use utils, only: computeTSDerivatives
         use flowUtils, only: getDirVector
@@ -29,7 +30,7 @@ contains
         real(kind=realType) :: mAvgPtot, mAvgTtot, mAvgRho, mAvgPs, mFlow, mAvgMn, mAvga, &
                                mAvgVx, mAvgVy, mAvgVz, gArea, mAvgVi, fxLift, fyLift, fzLift
 
-        real(kind=realType) :: vdotn, mag, u, v, w
+        real(kind=realType) :: vdotn, mag, u, v, w, ks_comp
         integer(kind=intType) :: sps
         real(kind=realType), dimension(8) :: dcdq, dcdqdot
         real(kind=realType), dimension(8) :: dcdalpha, dcdalphadot
@@ -152,11 +153,15 @@ contains
             ! final part of the KS computation
             if (computeSepSensorKs) then
                 ! only calculate the log part if we are actually computing for separation for KS method.
-                funcValues(costFuncSepSensorKs) = funcValues(costFuncSepSensorKs) + &
-                                                  ovrNTS * (sepSenMaxFamily(sps) + &
-                                                            log(globalVals(iSepSensorKs, sps)) / sepSenMaxRho)
+                ks_comp = ovrNTS * (sepSenMaxFamily(sps) + &
+                                    log(globalVals(iSepSensorKs, sps)) / sepSenMaxRho)
+
+                funcValues(costFuncSepSensorKs) = funcValues(costFuncSepSensorKs) + ks_comp
 
                 funcValues(costFuncSepSensorArea) = funcValues(costFuncSepSensorArea) + &
+                                                    ovrNTS * globalVals(iSepSensorAreaKs, sps) * ks_comp * &
+                                                    one / (one + exp(2 * sepSensorSharpnessOne &
+                                                                     * (ks_comp + sepSensorOffsetOne))) + &
                                                     ovrNTS * globalVals(iSepSensorArea, sps)
 
             end if
@@ -428,7 +433,7 @@ contains
         real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
         real(kind=realType), dimension(3) :: COFSumFx, COFSumFy, COFSumFz
         real(kind=realType) :: yplusMax, sepSensorKs, sepSensor, sepSensorAvg(3), &
-                               sepSensorArea, Cavitation, cpmin_ks_sum
+                               sepSensorArea, Cavitation, cpmin_ks_sum, sepSensorAreaKs
         integer(kind=intType) :: i, j, ii, blk
 
         real(kind=realType) :: pm1, fx, fy, fz, fn
@@ -477,6 +482,7 @@ contains
         sepSensor = zero
         sepSensorKs = zero
         sepSensorArea = zero
+        sepSensorAreaKs = zero
         Cavitation = zero
         cpmin_ks_sum = zero
         sepSensorAvg = zero
@@ -642,13 +648,13 @@ contains
                 sensor = (cos(degtorad * sepangledeviation) - sensor) / &
                          (-cos(degtorad * sepangledeviation) + cos(zero) + 1e-16)
 
-                sepSensorArea = blk * sepSenMaxFamily(spectralSol) * cellArea * one / &
-                          (one + exp(2 * sepSensorSharpnessOne * (sepSenMaxFamily(spectralSol) + sepSensorOffsetOne))) &
-                                + cellArea * blk * one / (one + exp(-2 * sepSensorSharpnessTwo &
-                                                                    * (sensor + sepSensorOffsetTwo))) + sepSensorArea
-
                 ! also do the ks-based spensenor max computation
                 call KSaggregationFunction(sensor, sepSenMaxFamily(spectralSol), sepSenMaxRho, ks_exponent)
+
+                sepSensorAreaKs = sepSensorAreaKs + blk * cellArea
+                sepSensorArea = cellArea * blk * one / (one + exp(-2 * sepSensorSharpnessTwo &
+                                                                  * (sensor + sepSensorOffsetTwo))) + sepSensorArea
+
                 sepSensorKs = sepSensorKs + ks_exponent * blk
 
             end if
@@ -861,6 +867,7 @@ contains
         localValues(iCoForceZ:iCoForceZ + 2) = localValues(iCoForceZ:iCoForceZ + 2) + COFSumFz
         localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
         localValues(iSepSensorKs) = localValues(iSepSensorKs) + sepSensorKs
+        localValues(iSepSensorAreaKs) = localValues(iSepSensorAreaKs) + sepSensorAreaKs
         localValues(iSepSensorArea) = localValues(iSepSensorArea) + sepSensorArea
         localValues(iCavitation) = localValues(iCavitation) + cavitation
         localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
