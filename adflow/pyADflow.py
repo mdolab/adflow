@@ -680,7 +680,7 @@ class ADFLOW(AeroSolver):
             j = self.nSlice + i + 1
 
             if useDir:
-                direction = sliceDir[j]
+                direction = sliceDir[i]
             else:
                 direction = dummySliceDir
 
@@ -1306,7 +1306,7 @@ class ADFLOW(AeroSolver):
 
         if self.adflow.killsignals.fatalfail:
             numDigits = self.getOption("writeSolutionDigits")
-            fileName = f"failed_mesh_{self.curAP.name}_{self.curAP.adflowData.callCounter:0{numDigits}}.cgns"
+            fileName = f"failed_mesh_{self.curAP.name}_{self.curAP.adflowData.callCounter:0{numDigits}d}.cgns"
             self.pp(f"Fatal failure during mesh warp! Bad mesh is written in output directory as {fileName}")
             self.writeMeshFile(os.path.join(self.getOption("outputDirectory"), fileName))
             self.curAP.fatalFail = True
@@ -2742,12 +2742,12 @@ class ADFLOW(AeroSolver):
         numDigits = self.getOption("writeSolutionDigits")
         if number is not None:
             # We need number based on the provided number:
-            baseName = baseName + f"_%.{numDigits}d" % number
+            baseName = f"{baseName}_{number:0{numDigits}d}"
         else:
             # if number is none, i.e. standalone, but we need to
             # number solutions, use internal counter
             if self.getOption("numberSolutions"):
-                baseName = baseName + f"_%.{numDigits}d" % self.curAP.adflowData.callCounter
+                baseName = f"{baseName}_{self.curAP.adflowData.callCounter:0{numDigits}d}"
 
         # Join to get the actual filename root
         base = os.path.join(outputDir, baseName)
