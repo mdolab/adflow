@@ -3109,7 +3109,7 @@ class ADFLOW(AeroSolver):
 
     def writeFamilySolution(self, familyName, outputDir=None, baseName=None, number=None):
         if outputDir is None:
-            outputDir = self.getOptions("outputDirectory")
+            outputDir = self.getOption("outputDirectory")
 
         if baseName is None:
             baseName = self.curAP.name
