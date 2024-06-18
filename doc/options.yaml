@@ -110,7 +110,7 @@ isosurface:
   desc: >
     Dictionary specifying the type and values to be used for isosurfaces.
     Any of the ``volumeVariables`` may be used.
-    An example dictionary is : ``{"Vx":-0.001, "shock":1.0}``.
+    An example dictionary is : ``{"vx":-0.001, "shock":1.0}``.
     This will place an isosurface at (essentially) 0 x-velocity and an isosurface at the shock sensor value of 1 (used to visualize the shock region).
 
 isoVariables:
