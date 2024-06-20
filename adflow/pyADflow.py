@@ -302,11 +302,14 @@ class ADFLOW(AeroSolver):
         flag = numpy.zeros(n)
 
         # Call the user supplied callback if necessary
-        self.oversetCutCallback(flag)
+        self._oversetCutCallback(flag)
         cutCallBackTime = time.time()
 
         # also run through the surface callback routine
-        self.oversetExplicitSurfaceCallback(flag, firstCall=True)
+        # the initialization is done separately in case we want to do
+        # full overset updates later on.
+        self._initializeExplicitSurfaceCallback()
+        self._oversetExplicitSurfaceCallback(flag)
         explicitSurfaceCutTime = time.time()
 
         # Need to reset the oversetPriority option since the CGNSGrid
@@ -4336,10 +4339,10 @@ class ADFLOW(AeroSolver):
                 # Only need to call the cutCallBack and regenerate the zipper mesh
                 # if we're doing a full update.
                 if self.getOption("oversetUpdateMode") == "full":
-                    self.oversetCutCallback(flag)
+                    self._oversetCutCallback(flag)
 
                     # also run the explicit surface blanking
-                    self.oversetExplicitSurfaceCallback(flag, firstCall=False)
+                    self._oversetExplicitSurfaceCallback(flag)
 
                     # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = self.comm.allreduce(
@@ -4367,9 +4370,17 @@ class ADFLOW(AeroSolver):
             )
             self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
 
-    def oversetCutCallback(self, flag):
-        # this routine goes through the explicit callback routine provided by the user and
-        # modifies the flag array in place
+    def _oversetCutCallback(self, flag):
+        """This routine goes through the explicit callback routine provided by the user
+        and modifies the flag array in place. The most common use case for this is to
+        blank out the cells on the wrong side of the symmetry plane.
+
+        Parameters
+        ----------
+        flag : ndarray
+            Array that is used as a mask to select the explicitly blanked cells.
+            This is modified in place.
+        """
         cutCallBack = self.getOption("cutCallBack")
         if cutCallBack is not None:
             n = len(flag)
@@ -4377,27 +4388,63 @@ class ADFLOW(AeroSolver):
             cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
             cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
-    def oversetExplicitSurfaceCallback(self, flag, firstCall=True):
-        # exclude the cells inside closed surfaces if we are provided with them
-        explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
-        if explicitSurfaceCallback is not None:
-            # the user wants to exclude cells that lie within a list of surfaces.
+    def _initializeExplicitSurfaceCallback(self):
+        """Rotuine that loads the external surfaces provided by the user for explicit blanking.
+        We can do this just once because there may be subsequent calls with the same surfaces.
+        """
 
-            # get the number of cells
-            n = len(flag)
+        self.explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
 
-            if firstCall:
-                # first, call the callback function with cgns zone name IDs.
-                # this need to return us a dictionary with the surface mesh information,
-                # as well as which blocks in the cgns mesh to include in the search.
-                # we dont need to update this dictionary on subsequent calls.
-                self.blankingSurfDict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
-                blankingSurfData = {}
+        if self.explicitSurfaceCallback is not None:
+            # first, call the callback function with cgns zone name IDs.
+            # this need to return us a dictionary with the surface mesh information,
+            # as well as which blocks in the cgns mesh to include in the search.
+            # we dont need to update this dictionary on subsequent calls.
+            self.blankingSurfDict = self.explicitSurfaceCallback(self.CGNSZoneNameIDs)
 
             # also keep track of a second dictionary that saves the surface info. We do this
             # separately because the surface files can be shared across different blanking calls.
             # in this case, we dont want to process the surfaces multiple times.
             blankingSurfData = {}
+
+            for surf in self.blankingSurfDict:
+                # this is the plot3d surface that defines the closed volume
+                surfFile = self.blankingSurfDict[surf]["surfFile"]
+
+                # if this is the first call, we need to load the surface meshes.
+                # we might have duplicate mesh files, so no need to load them again
+                # if we have already loadded one copy
+                if surfFile not in blankingSurfData:
+                    # optional coordinate transformation to do general manipulation of the coordinates
+                    if "coordXfer" in self.blankingSurfDict[surf]:
+                        coordXfer = self.blankingSurfDict[surf]["coordXfer"]
+                    else:
+                        coordXfer = None
+
+                    # read the plot3d surface
+                    pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
+
+                    blankingSurfData[surfFile] = {"pts": pts, "conn": conn}
+
+            self.blankingSurfData = blankingSurfData
+
+    def _oversetExplicitSurfaceCallback(self, flag):
+        """This routine runs the explicit surface callback algorithm if user adds
+        surfaces that define the boundaries of the compute domain. This approach
+        will work more robustly than the automated flooding algorithm for complex
+        grids.
+
+        Parameters
+        ----------
+        flag : ndarray
+            Array that is used as a mask to select the explicitly blanked cells.
+            This is modified in place.
+        """
+
+        if self.explicitSurfaceCallback is not None:
+
+            # get the number of cells
+            n = len(flag)
 
             # loop over the surfaces
             for surf in self.blankingSurfDict:
@@ -4417,31 +4464,9 @@ class ADFLOW(AeroSolver):
                 else:
                     kMin = -1
 
-                # if this is the first call, we need to load the surface meshes.
-                # we might have duplicate mesh files, so no need to load them again
-                # if we have already loadded one copy
-                if firstCall:
-                    if surfFile not in blankingSurfData:
-                        # optional coordinate transformation to do general manipulation of the coordinates
-                        if "coordXfer" in self.blankingSurfDict[surf]:
-                            coordXfer = self.blankingSurfDict[surf]["coordXfer"]
-                        else:
-                            coordXfer = None
-
-                        # read the plot3d surface
-                        pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
-
-                        blankingSurfData[surfFile] = {"pts": pts, "conn": conn}
-                    else:
-                        # just load from the local dict
-                        pts = blankingSurfData[surfFile]["pts"]
-                        conn = blankingSurfData[surfFile]["conn"]
-
-                else:
-                    # we can just load the pts and conn from the dictionary
-                    # these are only saved if we have a DVGeo, a Mesh, and we are doing a full overset update.
-                    pts = self.blankingSurfData[surfFile]["pts"]
-                    conn = self.blankingSurfData[surfFile]["conn"]
+                # the surf file is loaded in initialization
+                pts = self.blankingSurfData[surfFile]["pts"]
+                conn = self.blankingSurfData[surfFile]["conn"]
 
                 # get a new flag array
                 surfFlag = numpy.zeros(n, "intc")
@@ -4453,12 +4478,9 @@ class ADFLOW(AeroSolver):
                 # update the flag array with the new info
                 flag[:] = numpy.any([flag, surfFlag], axis=0)
 
-            # finally before we quit, check if we need to save the blanking surface data
-            if firstCall and (self.getOption("oversetUpdateMode") == "full"):
-                # save the points and conn if we are doing full overset updates.
-                # we will add the points to the potential DVGeo and re-use the conn info
-                # during hole cutting update
-                self.blankingSurfData = blankingSurfData
+            # we can delete the surface info if we are not running in full overset update mode
+            if self.getOption("oversetUpdateMode") != "full":
+                del self.blankingSurfData
 
     def getAdjointResNorms(self):
         """

@@ -2128,7 +2128,6 @@ contains
         real(kind=realType), dimension(:, :), allocatable :: norm
         integer(kind=intType), dimension(:), allocatable :: normCount
         integer(kind=intType), dimension(:, :), pointer :: tmp
-        logical :: keepChecking
 
         ! ADT Type required data
         integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew
@@ -2257,61 +2256,47 @@ contains
                                                                       frontLeaves, frontLeavesNew)
                                 cellID = intInfo(3)
 
-                                keepChecking = .True.
-
                                 if (cellID > 0) then
+
                                     ! Now check if this was successful or not:
                                     if (checkInside()) then
-                                        ! Whoohoo! We are inside the region. Flag this cell
+                                        ! We are inside the region. Flag this cell
                                         flag(cell_counter) = 1
-                                        keepChecking = .False.
-                                    else
-                                        ! we are outside. now check if the projection distance is larger than
-                                        ! the max diagonal. if so, we can quit early here.
-                                        if (uvw(4) .gt. diag_max) then
-                                            ! projection is larger than our biggest diagonal.
-                                            ! other nodes wont be in the surface, so we can exit the cell early here
-                                            keepChecking = .False.
-                                        end if
-                                    end if
-                                end if
+                                    else if (uvw(4) .lt. diag_max) then
+                                        ! We are outside, but the projection is smaller than the biggest diagonal.
+                                        ! This means we are outside, but not sufficiently far.
+                                        ! Check vectors between the center and each vertex
 
-                                if (keepChecking) then
-                                    ! we are outside, but not sufficiently far.
-                                    ! Check vectors between the center and each vertex
+                                        do l = 1, 8
+                                            select case (l)
+                                            case (1)
+                                                vertexPt = x(i - 1, j - 1, k - 1, :)
+                                            case (2)
+                                                vertexPt = x(i, j - 1, k - 1, :)
+                                            case (3)
+                                                vertexPt = x(i, j, k - 1, :)
+                                            case (4)
+                                                vertexPt = x(i - 1, j, k - 1, :)
+                                            case (5)
+                                                vertexPt = x(i - 1, j - 1, k, :)
+                                            case (6)
+                                                vertexPt = x(i, j - 1, k, :)
+                                            case (7)
+                                                vertexPt = x(i, j, k, :)
+                                            case (8)
+                                                vertexPt = x(i - 1, j, k, :)
+                                            end select
 
-                                    ! actually test each node
-                                    do l = 1, 8
-                                        select case (l)
-                                        case (1)
-                                            vertexPt = x(i - 1, j - 1, k - 1, :)
-                                        case (2)
-                                            vertexPt = x(i, j - 1, k - 1, :)
-                                        case (3)
-                                            vertexPt = x(i, j, k - 1, :)
-                                        case (4)
-                                            vertexPt = x(i - 1, j, k - 1, :)
-                                        case (5)
-                                            vertexPt = x(i - 1, j - 1, k, :)
-                                        case (6)
-                                            vertexPt = x(i, j - 1, k, :)
-                                        case (7)
-                                            vertexPt = x(i, j, k, :)
-                                        case (8)
-                                            vertexPt = x(i - 1, j, k, :)
-                                        end select
-
-                                        if (cellID > 0) then
                                             ! Now check if this was successful or not:
                                             if (checkNearby()) then
-                                                ! Whoohoo! We are inside the region. Flag this cell
+                                                ! We are inside the region. Flag this cell.
                                                 flag(cell_counter) = 1
                                                 exit
                                             end if
-                                        end if
-                                    end do
-                                end if
+                                        end do
 
+                                    end if
+                                end if
                             end if
 
                             cell_counter = cell_counter + 1
