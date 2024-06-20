@@ -4442,7 +4442,6 @@ class ADFLOW(AeroSolver):
         """
 
         if self.explicitSurfaceCallback is not None:
-
             # get the number of cells
             n = len(flag)
 
