@@ -4389,7 +4389,7 @@ class ADFLOW(AeroSolver):
             cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
     def _initializeExplicitSurfaceCallback(self):
-        """Rotuine that loads the external surfaces provided by the user for explicit blanking.
+        """Routine that loads the external surfaces provided by the user for explicit blanking.
         We can do this just once because there may be subsequent calls with the same surfaces.
         """
 
