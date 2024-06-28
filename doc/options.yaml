@@ -255,6 +255,12 @@ useApproxWallDistance:
     After the geometry deforms (such as during an optimization) the spatial search algorithm is not run, but the distance between the (new) parametric location and the (new) grid cell center is computed and taken as the wall distance.
     This is substantially faster and permits efficient wall-distance updates for use in aerostructural analysis.
 
+updateWallAssociations:
+  desc: >
+    Flag to update wall associations, even if the approximate wall distance routines are used.
+    By default, we don't update the associations because the update itself cannot be differentiated.
+    However, for large mesh changes, users might still want to update the associations for more accurate wall distance values.
+
 eulerWallTreatment:
   desc: >
     Specifies how wall boundary conditions are implemented for inviscid simulations.
@@ -711,6 +717,14 @@ oversetPriority:
     A higher factor will discourage use of that block mesh.
     A lower factor will encourage the usage of that block mesh.
     This option may be required to get the flooding algorithm working properly.
+
+recomputeOverlapMatrix:
+  desc: >
+    Flag to determine if the domain overlap matrix is re-computed when a full overset update is done.
+    This overlap matrix determines the connections between domains for the donor search algorithm; for the code to search a domain for potential donors, that domain must overlap with the current domain.
+    This matrix is re-computed when a full overset update is done because the domain overlaps can change.
+    If the overlap matrix is outdated, the code will fail to find donors in cases where there are many potential donors available from overlapping domains that are not represented in the matrix.
+    If the user knows that the overlap matrix will not change, and they want to improve the efficiency of the full overset update, they can set this option to False.
 
 oversetDebugPrint:
   desc: >
