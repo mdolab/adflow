@@ -4042,6 +4042,8 @@ contains
         lumpedDiss = .False.
         approxSA = .False.
         useApproxWallDistance = .False.
+        updateWallAssociations = .False.
+        recomputeOverlapMatrix = .True.
         cflLimit = 3.0
         adjointPETScVarsAllocated = .False.
         adjointPETScPreProcVarsAllocated = .False.
