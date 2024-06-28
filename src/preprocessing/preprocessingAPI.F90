@@ -31,6 +31,7 @@ contains
         use coarseUtils, only: createCoarseBlocks
         use pointMatchedCommPattern, only: determineCommPattern
         use oversetAPI, only: oversetComm, determineClusters, determineViscousDirs
+        use wallDistanceData, only: nCellBlockOffset
         implicit none
         !
         !      Local variables.
@@ -207,6 +208,12 @@ contains
         ! Loop over the number of levels and perform a lot of tasks.
         ! See the corresponding subroutine header, although the
         ! names are pretty self-explaining
+
+        ! Allocate Block-offset. SA rough might need it. It is filled in
+        ! 'setGlobalCellsAndNodes'. This function is called per level and thus it
+        ! must be allocated before the call
+
+        allocate (nCellBlockOffset(nLevels, nDom))
 
         do level = 1, nLevels
             call xhalo(level)
@@ -1918,6 +1925,7 @@ contains
         use inputTimeSpectral
         use utils, only: setPointers, terminate
         use haloExchange, only: whalo1to1intgeneric
+        use wallDistanceData, only: nCellBlockOffset
         implicit none
 
         ! Input variables
@@ -1928,7 +1936,7 @@ contains
         integer(kind=intType) :: ierr, istart
         logical :: commPressure, commLamVis, commEddyVis, commGamma
         integer(kind=intType), dimension(nProc) :: nNodes, nCells, nCellOffset, nNodeOffset
-        integer(kind=intType), dimension(nDom) :: nCellBLockOffset, nNodeBLockOffset
+        integer(kind=intType), dimension(nDom) :: nNodeBLockOffset
         integer(kind=intType) :: npts, nCell, nNode
         integer(kind=intType), dimension(:), allocatable :: nNodesProc, cumNodesProc
         integer(kind=intTYpe), dimension(:), allocatable :: nCellsProc, cumCellsProc
@@ -1995,11 +2003,11 @@ contains
                          adflow_integer, 0, ADflow_comm_world, ierr)
 
         ! Determine the global cell number offset for each local block.
-        nCellBlockOffset(1) = nCellOffsetLocal(level)
+        nCellBlockOffset(level, 1) = nCellOffsetLocal(level)
         do nn = 2, nDom
             call setPointers(nn - 1, level, 1)
-            nCellBlockOffset(nn) = nCellBlockOffset(nn - 1) &
-                                   + nx * ny * nz
+            nCellBlockOffset(level, nn) = nCellBlockOffset(level, nn - 1) &
+                                          + nx * ny * nz
         end do
 
         ! Repeat for nodes.
@@ -2026,7 +2034,7 @@ contains
                             ! instances of a give block adjacent to each other in
                             ! the matrix
                             globalCell(i, j, k) = &
-                                nCellBLockOffset(nn) * nTimeIntervalsSpectral + nx * ny * nz * (sps - 1) + &
+                                nCellBLockOffset(level, nn) * nTimeIntervalsSpectral + nx * ny * nz * (sps - 1) + &
                                 (i - 2) + (j - 2) * nx + (k - 2) * nx * ny
                         end do
                     end do
@@ -4355,5 +4363,42 @@ contains
         end do
 
     end subroutine updateRotationRate
+
+    subroutine updateSurfaceRoughness(ks_in, famList, nFamList)
+
+        use constants
+        use blockPointers
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use utils, only: setPointers
+        use sorting, only: famInList
+        implicit none
+
+        real(kind=realType), intent(in) :: ks_in
+        integer(kind=intType), intent(in) :: nFamList, famList(nFamList)
+
+        integer(kind=intType) :: nLevels, level, sps, nn, mm
+
+        nLevels = ubound(flowDoms, 2)
+
+        do level = 1, nLevels
+            do sps = 1, nTimeIntervalsSpectral
+                do nn = 1, nDom
+                    call setPointers(nn, level, sps)
+
+                    ! Loop over the number of boundary subfaces of this block.
+                    do mm = 1, nBocos
+
+                        if (.not. famInList(BCData(mm)%famID, famList)) then
+                            cycle
+                        end if
+
+                        BCData(mm)%ksNS_Wall = ks_in
+
+                    end do
+                end do
+            end do
+        end do
+
+    end subroutine updateSurfaceRoughness
 
 end module preprocessingAPI
