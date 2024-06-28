@@ -52,6 +52,25 @@ contains
     end if
 !$ad ii-loop
 ! ------------------------------------
+!  antisymmetry boundary condition
+! ------------------------------------
+    do nn=1,nbocos
+      if (bctype(nn) .eq. antisymm) then
+        call setbcpointers(nn, .false.)
+        call bcantisymm1sthalo(nn)
+      end if
+    end do
+    if (secondhalo) then
+!$ad ii-loop
+      do nn=1,nbocos
+        if (bctype(nn) .eq. antisymm) then
+          call setbcpointers(nn, .false.)
+          call bcantisymm2ndhalo(nn)
+        end if
+      end do
+    end if
+!$ad ii-loop
+! ------------------------------------
 !  symmetry polar boundary condition
 ! ------------------------------------
     do nn=1,nbocos
@@ -245,6 +264,112 @@ contains
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do
   end subroutine bcsymm2ndhalo
+
+  subroutine bcantisymm1sthalo(nn)
+!  bcantisymm1sthalo applies the antisymmetry boundary conditions to a
+!  block.  * it is assumed that the pointers in blockpointers are
+!  already set to the correct block on the correct grid level.
+!  it should only be applied for high-speed near free-face operation,
+!  unless you are clear what you use it for
+!
+!  in case also the second halo must be set, a second loop is
+!  execulted calling bcsymm2ndhalo. this is the only correct way
+!  in case the block contains only 1 cell between two symmetry
+!  planes, i.e. a 2d problem.
+    use constants
+    use blockpointers, only : bcdata
+    use flowvarrefstate, only : viscous, eddymodel, pinf, winf
+    use bcpointers, only : gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, &
+&   rlv2, istart, jstart, isize, jsize, rev1, rev2
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    real(kind=realtype), dimension(5) :: dww2
+    intrinsic mod
+!$ad ii-loop
+! loop over the generic subface to set the state in the
+! 1-st level halos
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+! determine twice the normal velocity component,
+! which must be substracted from the donor velocity
+! to obtain the halo velocity.
+      dww2(irho) = ww2(i, j, irho) - winf(irho)
+      dww2(ivx) = ww2(i, j, ivx) - winf(ivx)
+      dww2(ivy) = ww2(i, j, ivy) - winf(ivy)
+      dww2(ivz) = ww2(i, j, ivz) - winf(ivz)
+      dww2(irhoe) = ww2(i, j, irhoe) - winf(irhoe)
+      vn = two*(dww2(ivx)*bcdata(nn)%norm(i, j, 1)+dww2(ivy)*bcdata(nn)%&
+&       norm(i, j, 2)+dww2(ivz)*bcdata(nn)%norm(i, j, 3))
+! determine the flow variables in the halo cell.
+      ww1(i, j, ivx) = -dww2(ivx) + vn*bcdata(nn)%norm(i, j, 1)
+      ww1(i, j, ivy) = -dww2(ivy) + vn*bcdata(nn)%norm(i, j, 2)
+      ww1(i, j, ivz) = -dww2(ivz) + vn*bcdata(nn)%norm(i, j, 3)
+      ww1(i, j, irho) = -dww2(irho) + winf(irho)
+      ww1(i, j, ivx) = winf(ivx) + ww1(i, j, ivx)
+      ww1(i, j, ivy) = winf(ivy) + ww1(i, j, ivy)
+      ww1(i, j, ivz) = winf(ivz) + ww1(i, j, ivz)
+      ww1(i, j, irhoe) = -dww2(irhoe) + winf(irhoe)
+! set the pressure and gamma and possibly the
+! laminar and eddy viscosity in the halo.
+      gamma1(i, j) = gamma2(i, j)
+      pp1(i, j) = pinf - (pp2(i, j)-pinf)
+      if (viscous) rlv1(i, j) = -rlv2(i, j)
+      if (eddymodel) rev1(i, j) = -rev2(i, j)
+    end do
+  end subroutine bcantisymm1sthalo
+
+  subroutine bcantisymm2ndhalo(nn)
+!  bcsymm2ndhalo applies the symmetry boundary conditions to a
+!  block for the 2nd halo. this routine is separate as it makes
+!  ad slightly easier.
+    use constants
+    use blockpointers, only : bcdata
+    use flowvarrefstate, only : viscous, eddymodel, pinf, winf
+    use bcpointers, only : gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, &
+&   rlv3, rev0, rev3, istart, jstart, isize, jsize
+    implicit none
+! subroutine arguments.
+    integer(kind=inttype), intent(in) :: nn
+! local variables.
+    integer(kind=inttype) :: i, j, l, ii
+    real(kind=realtype) :: vn, nnx, nny, nnz
+    real(kind=realtype), dimension(5) :: dww3
+    intrinsic mod
+!$ad ii-loop
+! if we need the second halo, do everything again, but using ww0,
+! ww3 etc instead of ww2 and ww1.
+    do ii=0,isize*jsize-1
+      i = mod(ii, isize) + istart
+      j = ii/isize + jstart
+      dww3(irho) = ww3(i, j, irho) - winf(irho)
+      dww3(ivx) = ww3(i, j, ivx) - winf(ivx)
+      dww3(ivy) = ww3(i, j, ivy) - winf(ivy)
+      dww3(ivz) = ww3(i, j, ivz) - winf(ivz)
+      dww3(irhoe) = ww3(i, j, irhoe) - winf(irhoe)
+      vn = two*(dww3(ivx)*bcdata(nn)%norm(i, j, 1)+dww3(ivy)*bcdata(nn)%&
+&       norm(i, j, 2)+dww3(ivz)*bcdata(nn)%norm(i, j, 3))
+! determine the flow variables in the halo cell.
+      ww0(i, j, ivx) = -dww3(ivx) + vn*bcdata(nn)%norm(i, j, 1)
+      ww0(i, j, ivy) = -dww3(ivy) + vn*bcdata(nn)%norm(i, j, 2)
+      ww0(i, j, ivz) = -dww3(ivz) + vn*bcdata(nn)%norm(i, j, 3)
+      ww0(i, j, irho) = -dww3(irho) + winf(irho)
+      ww0(i, j, ivx) = winf(ivx) + ww0(i, j, ivx)
+      ww0(i, j, ivy) = winf(ivy) + ww0(i, j, ivy)
+      ww0(i, j, ivz) = winf(ivz) + ww0(i, j, ivz)
+      ww0(i, j, irhoe) = -dww3(irhoe) + winf(irhoe)
+! set the pressure and gamma and possibly the
+! laminar and eddy viscosity in the halo.
+      gamma0(i, j) = gamma3(i, j)
+      pp0(i, j) = pinf - (pp3(i, j)-pinf)
+      if (viscous) rlv0(i, j) = -rlv3(i, j)
+      if (eddymodel) rev0(i, j) = -rev3(i, j)
+    end do
+  end subroutine bcantisymm2ndhalo
 
   subroutine bcsymmpolar1sthalo(nn)
 ! bcsymmpolar applies the polar symmetry boundary conditions to a
