@@ -298,6 +298,9 @@ contains
             case (cgnsAxisMoment)
                 sortNumber(i) = 116
 
+            case (cgnsSepSensorArea)
+                sortNumber(i) = 117
+
             case (cgnsHdiffMax)
                 sortNumber(i) = 201
 
@@ -1594,6 +1597,10 @@ contains
                 nMon = nMon + 1; nMonSum = nMonSum + 1
                 tmpNames(nMon) = cgnsSepSensor
 
+            case ("sepsensorarea")
+                nMon = nMon + 1; nMonSum = nMonSum + 1
+                tmpNames(nMon) = cgnsSepSensorArea
+
             case ("cavitation")
                 nMon = nMon + 1; nMonSum = nMonSum + 1
                 tmpNames(nMon) = cgnsCavitation
@@ -2352,6 +2359,8 @@ contains
 
         surfWriteBlank = .false.
         surfWriteSepSensor = .false.
+        surfWriteSepSensorKs = .false.
+        surfWriteSepSensorArea = .false.
         surfWriteCavitation = .false.
         surfWriteAxisMoment = .false.
         surfWriteGC = .false.
@@ -2468,6 +2477,14 @@ contains
 
             case ("sepsensor")
                 surfWriteSepSensor = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("sepsensorks")
+                surfWriteSepSensorKs = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("sepsensorarea")
+                surfWriteSepSensorArea = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case ("cavitation")
@@ -3697,6 +3714,17 @@ contains
             cpmin_family = zero
         end if
 
+        ! Allocate the memory for sepsenmaxfamily. We had to wait until
+        ! nTimeIntervalsSpectral was set.
+        if (.not. allocated(sepSenMaxFamily)) then
+            allocate (sepSenMaxFamily(nTimeIntervalsSpectral), stat=ierr)
+            if (ierr /= 0) &
+                 call terminate("checkInputParam", &
+                 "Memory allocation failure for &
+                 &sepSenMaxFamily")
+            sepSenMaxFamily = -one
+        end if
+
     end subroutine checkInputParam
     subroutine setDefaultValues
         !
@@ -4048,8 +4076,6 @@ contains
         adjointPETScVarsAllocated = .False.
         adjointPETScPreProcVarsAllocated = .False.
         usematrixfreedrdw = .False.
-        sepSensorOffset = zero
-        sepSensorSharpness = 10_realType
     end subroutine setDefaultValues
 
     subroutine initializeIsoSurfaceVariables(values, nValues)
