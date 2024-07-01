@@ -82,6 +82,27 @@ test_params = [
             "innerPreconIts": 3,
         },
     },
+    {
+        "name": "nondefault_coarse_levels",
+        "options": {
+            # AMG levels
+            "ANKAMGLevels": 2,
+            "NKAMGLevels": 2,
+            "adjointAMGLevels": 2,
+            # ANK coarse level options
+            "ANKASMOverlapCoarse": 2,
+            "ANKPCILUFillCoarse": 2,
+            "ANKInnerPreconItsCoarse": 2,
+            # NK coarse level options
+            "NKASMOverlapCoarse": 2,
+            "NKPCILUFillCoarse": 2,
+            "NKInnerPreconItsCoarse": 2,
+            # Adjoint coarse level options
+            "ASMOverlapCoarse": 2,
+            "ILUFillCoarse": 2,
+            "innerPreconItsCoarse": 2,
+        },
+    },
 ]
 
 
