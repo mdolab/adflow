@@ -1510,7 +1510,7 @@ innerPreconIts:
 
 innerPreconItsCoarse:
   desc: >
-    Same as :py:data:`innerPreconItsCoarse` but for the coarse levels when using ``multigrid`` for :py:data:`globalPreconditioner`.
+    Same as :py:data:`innerPreconIts` but for the coarse levels when using ``multigrid`` for :py:data:`globalPreconditioner`.
 
 outerPreconIts:
   desc: >
