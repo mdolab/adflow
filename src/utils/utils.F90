@@ -3242,6 +3242,7 @@ contains
         ! from blockPointers so use a bare use.
         use constants
         use blockPointers
+        use inputPhysics, only: useRoughSA
         implicit none
         !
         !      Subroutine arguments
@@ -3480,6 +3481,9 @@ contains
 
         d2Wall => flowDoms(nn, mm, ll)%d2Wall
         filterDES => flowDoms(nn, mm, ll)%filterDES  ! eran-des
+        if (useRoughSA) then
+            ks => flowDoms(nn, mm, ll)%ks
+        end if
 
         ! Arrays used for the implicit treatment of the turbulent wall
         ! boundary conditions. As these variables are only allocated for
@@ -4600,7 +4604,7 @@ contains
         use inputtimespectral, only: nTimeIntervalsSpectral
         use wallDistanceData, only: xSurfVec, xSurfVecd
         use flowVarRefState, only: winfd
-        use inputPhysics, only: wallDistanceNeeded
+        use inputPhysics, only: wallDistanceNeeded, useRoughSA
         use adjointVars, only: derivVarsAllocated
         use BCPointers_b
 
@@ -4917,6 +4921,10 @@ contains
                 deallocate (BCData(i)%TNS_Wall, stat=ierr)
             if (ierr /= 0) deallocationFailure = .true.
 
+            if (associated(BCData(i)%ksNS_Wall)) &
+                deallocate (BCData(i)%ksNS_Wall, stat=ierr)
+            if (ierr /= 0) deallocationFailure = .true.
+
             if (associated(BCData(i)%ptInlet)) &
                 deallocate (BCData(i)%ptInlet, stat=ierr)
             if (ierr /= 0) deallocationFailure = .true.
@@ -4996,6 +5004,7 @@ contains
 
             nullify (BCData(i)%uSlip)
             nullify (BCData(i)%TNS_Wall)
+            nullify (BCData(i)%ksNS_Wall)
 
             nullify (BCData(i)%normALE)
             nullify (BCData(i)%rfaceALE)
