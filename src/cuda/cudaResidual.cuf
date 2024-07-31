@@ -1545,10 +1545,7 @@ module cudaResidual
 
             ! print *,"k:", i,j,k, a2
             
-            ! Add the contributions to the surface integral to the node
-            ! j-1 and substract it from the node j. For the heat flux it
-            ! is reversed, because the negative of the gradient of the
-            ! speed of sound must be computed.
+            ! Add the contributions to the surface integral to the node ! j-1 and substract it from the node j. For the heat flux it ! is reversed, because the negative of the gradient of the ! speed of sound must be computed.
             if (k > 1) then
 
                 tmp = atomicadd(cudaDoms(dom,sps)%ux(i, j, k - 1), ubar * sx)
@@ -4573,7 +4570,9 @@ module cudaResidual
             ! the gradients of the speed of sound squared for the heat
             ! flux.
             mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i, j, k + 1))
-            mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j, k + 1))
+            if (eddyModel) then
+              mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j, k + 1))
+            end if 
             mut = mul + mue
 
             gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i, j, k + 1)) - one
@@ -4815,7 +4814,9 @@ module cudaResidual
             ! flux.
 
             mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i, j + 1, k))
-            mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j + 1, k))
+            if (eddyModel) then
+              mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i, j + 1, k))
+            end if
             mut = mul + mue
 
             gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i, j + 1, k)) - one
@@ -5058,7 +5059,9 @@ module cudaResidual
             ! flux.
 
             mul = por * (cudaDoms(dom,sps)%rlv(i, j, k) + cudaDoms(dom,sps)%rlv(i + 1, j, k))
-            mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i + 1, j, k))
+            if (eddyModel) then
+              mue = por * (cudaDoms(dom,sps)%rev(i, j, k) + cudaDoms(dom,sps)%rev(i + 1, j, k))
+            end if
             mut = mul + mue
 
             gm1 = half * (cudaDoms(dom,sps)%gamma(i, j, k) + cudaDoms(dom,sps)%gamma(i + 1, j, k)) - one
@@ -6299,6 +6302,18 @@ module cudaResidual
             kbmax = max(kbmax,bkb)
             h_cudaDoms(dom,sps)%fw                           = zero
             h_cudaDoms(dom,sps)%dw(:, :, :, varStart:varEnd) = zero
+            h_cudaDoms(dom,sps)%ux                           = zero
+            h_cudaDoms(dom,sps)%uy                           = zero
+            h_cudaDoms(dom,sps)%uz                           = zero
+            h_cudaDoms(dom,sps)%vx                           = zero
+            h_cudaDoms(dom,sps)%vy                           = zero
+            h_cudaDoms(dom,sps)%vz                           = zero
+            h_cudaDoms(dom,sps)%wx                           = zero
+            h_cudaDoms(dom,sps)%wy                           = zero
+            h_cudaDoms(dom,sps)%wz                           = zero
+            h_cudaDoms(dom,sps)%qx                           = zero
+            h_cudaDoms(dom,sps)%qy                           = zero
+            h_cudaDoms(dom,sps)%qz                           = zero
         end do
       end do 
      
