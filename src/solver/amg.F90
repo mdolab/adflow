@@ -37,12 +37,18 @@ module amg
 
     ! The number of local ILU iterations
     integer(kind=intType) amgLocalPreConIts
+    integer(kind=intType) amgLocalPreConItsFine
+    integer(kind=intType) amgLocalPreConItsCoarse
 
     ! ASM overlap for the solver/smoother
-    integer(kind=intType) :: amgASMOverlap
+    integer(kind=intType) amgASMOverlap
+    integer(kind=intType) amgASMOverlapFine
+    integer(kind=intType) amgASMOverlapCoarse
 
     ! ILU fill for the solver/smoother
-    integer(kind=intType) :: amgFillLevel
+    integer(kind=intType) amgFillLevel
+    integer(kind=intType) amgFillLevelFine
+    integer(kind=intType) amgFillLevelCoarse
 
     ! Ordering
     character(len=maxStringLen) :: amgMatrixOrdering
@@ -529,9 +535,17 @@ contains
             if (lvl == 1) then
                 call KSPSetOperators(kspLevels(lvl), fineMat, fineMat, ierr)
                 call EChk(ierr, __FILE__, __LINE__)
+
+                amgFillLevel = amgFillLevelFine
+                amgLocalPreConIts = amgLocalPreConItsFine
+                amgASMOverlap = amgASMOverlapFine
             else
                 call KSPSetOperators(kspLevels(lvl), A(lvl), A(lvl), ierr)
                 call EChk(ierr, __FILE__, __LINE__)
+
+                amgFillLevel = amgFillLevelCoarse
+                amgLocalPreConIts = amgLocalPreConItsCoarse
+                amgASMOverlap = amgASMOverlapCoarse
             end if
 
             call kspsetnormtype(kspLevels(lvl), KSP_NORM_NONE, ierr)
