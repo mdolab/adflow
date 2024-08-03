@@ -163,6 +163,8 @@ contains
         if (surfWriteCfx) nSolVar = nSolVar + 1
         if (surfWriteCfy) nSolVar = nSolVar + 1
         if (surfWriteCfz) nSolVar = nSolVar + 1
+        if (surfWriteForceInDragDir) nSolVar = nSolVar + 1
+        if (surfWriteForceInLiftDir) nSolVar = nSolVar + 1
         if (surfWriteBlank) nSolVar = nSolVar + 1
         if (surfWriteSepSensor) nSolVar = nSolVar + 1
         if (surfWriteCavitation) nsolVar = nsolVar + 1
@@ -687,6 +689,16 @@ contains
         if (surfWriteCfz) then
             nn = nn + 1
             solNames(nn) = cgnsSkinFz
+        end if
+
+        if (surfWriteForceInDragDir) then
+            nn = nn + 1
+            solNames(nn) = cgnsForceInDragDir
+        end if
+
+        if (surfWriteForceInLiftDir) then
+            nn = nn + 1
+            solNames(nn) = cgnsForceInLiftDir
         end if
 
         if (surfWriteBlank) then
@@ -1425,6 +1437,7 @@ contains
         real(kind=realType) :: tauxy, tauxz, tauyz
         real(kind=realType) :: pm1, a, sensor, plocal, sensor1
         real(kind=realType), dimension(3) :: norm, V
+        real(kind=realType) :: coeffPressure
 
         real(kind=realType), dimension(:, :, :), pointer :: ww1, ww2
         real(kind=realType), dimension(:, :, :), pointer :: ss1, ss2, ss
@@ -1472,7 +1485,7 @@ contains
             select case (solName)
 
             case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
-                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz)
+                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir, cgnsForceInLiftDir)
 
                 ! Update the counter and set this entry of buffer to 0.
 
@@ -1491,6 +1504,19 @@ contains
 
             end select
         end if
+
+        ! Compute the square of (dimensional) inflow velocity from MachCoef for Cp computation
+        select case (solName)
+        case (cgnsCp, cgnsForceInDragDir, cgnsForceInLiftDir)
+            ! Same formula used in referenceState (see initializeFlow.F90),
+            ! multiplied by the square of the reference velocity (uRef).
+            ! MachCoef is initialized in inputParamRoutines.F90 and can also be passed from the python layer
+            ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module
+            ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
+            ! (see initializeFlow.F90).
+            uInfDim2 = (MachCoef * MachCoef * gammaInf * pInf / rhoInf) * uRef * uRef
+        end select
+
         !
         !       Determine the face on which the subface is located and set
         !       a couple of variables accordingly. In this way a generic
@@ -1851,47 +1877,14 @@ contains
         !================================================================
 
         case (cgnsCp)
-        ! Calclulating the square of (dimensional) inflow velocity from MachCoef
-        !
-        ! Same formula used in referenceState (see initializeFlow.F90),
-        ! multiplied by the square of the reference velocity (uRef).
-        ! MachCoef is initialized in inputParamRoutines.F90 and can also be passed from the python layer
-        ! Note that the reference quantities (such as pRef, uRef, rhoInfDim, ..) are defined in  module
-        ! flowVarRefState (see flowVarRefState.F90) and first set in the subroutine referenceState
-        ! (see initializeFlow.F90).
-        uInfDim2 = (MachCoef * MachCoef * gammaInf * pInf / rhoInf) * uRef * uRef
 
         do j = rangeFace(2, 1), rangeFace(2, 2)
             do i = rangeFace(1, 1), rangeFace(1, 2)
                 nn = nn + 1
-                ! Get frame rotation rate and local surface coordinates
-                ! by averaging wall and halo cell centers
-                ! (xx1,xx2 are pointers to the mesh coordinates, see block.F90)
-                rrate_ = cgnsdoms(1)%rotrate
-                r_(1) = (half * (xx1(i, j, 1) + xx2(i, j, 1)))
-                r_(2) = (half * (xx1(i, j, 2) + xx2(i, j, 2)))
-                r_(3) = (half * (xx1(i, j, 3) + xx2(i, j, 3)))
-                ! calc cross-product between rotation rate and r_
-                ! to obtain local apparent wall velocity
-                wCrossR(1) = rrate_(2) * r_(3) - rrate_(3) * r_(2)
-                wCrossR(2) = rrate_(3) * r_(1) - rrate_(1) * r_(3)
-                wCrossR(3) = rrate_(1) * r_(2) - rrate_(2) * r_(1)
-                rot_speed2 = wCrossR(1)**2 + wCrossR(2)**2 + wCrossR(3)**2
-                buffer(nn) = ((half * (pp1(i, j) + pp2(i, j)) - pInf) * pRef) &
-                             / (half * (rhoInfDim) * (uInfDim2 + rot_speed2))
-                ! Comments on the Cp (buffer(nn)) calculation above:
-                !
-                ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
-                !
-                ! Numerator (dimensionalized):
-                !     (P_i-P_0) -> (half*(pp1(i,j)+pp2(i,j))-pInf) * pRef
-                !     P_i is given by the average of the wall and halo cell
-                !     (see comment at the beginning of storeSurfsolInBuffer)
-                !     pp1, pp2 are (nondimensional) pressure pointers, e.g. pp1 => p(1,1:,1:)
-                !
-                ! Denominator (dimensionalized): (0.5*rho*(U_a)^2) ->
-                !       (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
-                !       The local velocity term includes the rotational components!
+
+                call computeCoeffPressure()
+                buffer(nn) = coeffPressure
+
             end do
         end do
 
@@ -1965,7 +1958,7 @@ contains
         !        ================================================================
 
         case (cgnsSkinFmag, cgnsYplus, &
-              cgnsSkinFx, cgnsSkinFy, cgnsSkinFz)
+              cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir, cgnsForceInLiftDir)
 
         ! To avoid a lot of code duplication these 5 variables are
         ! treated together.
@@ -2066,6 +2059,24 @@ contains
 
                 case (cgnsSkinFz)
                     buffer(nn) = fact * fz
+
+                case (cgnsForceInDragDir)
+
+                    ! Compute pressure coefficient projected in the drag direction
+                    call computeCoeffPressure()
+                    buffer(nn) = coeffPressure * DOT_PRODUCT(norm, dragDirection)
+
+                    ! Add skin friction projected in the drag direction
+                    buffer(nn) = buffer(nn) + fact * DOT_PRODUCT((/fx, fy, fz/), dragDirection)
+
+                case (cgnsForceInLiftDir)
+
+                    ! Compute pressure coefficient projected in the lift direction
+                    call computeCoeffPressure()
+                    buffer(nn) = coeffPressure * DOT_PRODUCT(norm, liftDirection)
+
+                    ! Add skin friction projected in the lift direction
+                    buffer(nn) = buffer(nn) + fact * DOT_PRODUCT((/fx, fy, fz/), liftDirection)
 
                 case (cgnsYplus)
                     rsurf = half * (ww1(ii, jj, irho) + ww2(ii, jj, irho))
@@ -2204,6 +2215,41 @@ contains
             end do
         end do
         end select varName
+
+    contains
+
+        subroutine computeCoeffPressure()
+            implicit none
+
+            ! Get frame rotation rate and local surface coordinates
+            ! by averaging wall and halo cell centers
+            ! (xx1,xx2 are pointers to the mesh coordinates, see block.F90)
+            rrate_ = cgnsdoms(1)%rotrate
+            r_(1) = (half * (xx1(i, j, 1) + xx2(i, j, 1)))
+            r_(2) = (half * (xx1(i, j, 2) + xx2(i, j, 2)))
+            r_(3) = (half * (xx1(i, j, 3) + xx2(i, j, 3)))
+            ! calc cross-product between rotation rate and r_
+            ! to obtain local apparent wall velocity
+            wCrossR(1) = rrate_(2) * r_(3) - rrate_(3) * r_(2)
+            wCrossR(2) = rrate_(3) * r_(1) - rrate_(1) * r_(3)
+            wCrossR(3) = rrate_(1) * r_(2) - rrate_(2) * r_(1)
+            rot_speed2 = wCrossR(1)**2 + wCrossR(2)**2 + wCrossR(3)**2
+            coeffPressure = ((half * (pp1(i, j) + pp2(i, j)) - pInf) * pRef) &
+                            / (half * (rhoInfDim) * (uInfDim2 + rot_speed2))
+            ! Comments on the Cp calculation above:
+            !
+            ! Cp = (P_i - P_0) / (0.5*rho*(U_a)^2)
+            !
+            ! Numerator (dimensionalized):
+            !     (P_i-P_0) -> (half*(pp1(i,j)+pp2(i,j))-pInf) * pRef
+            !     P_i is given by the average of the wall and halo cell
+            !     (see comment at the beginning of storeSurfsolInBuffer)
+            !     pp1, pp2 are (nondimensional) pressure pointers, e.g. pp1 => p(1,1:,1:)
+            !
+            ! Denominator (dimensionalized): (0.5*rho*(U_a)^2) ->
+            !       (half*(rhoInfDim)*(uInfDim2 + rot_speed2))
+            !       The local velocity term includes the rotational components!
+        end subroutine computeCoeffPressure
 
     end subroutine storeSurfsolInBuffer
 

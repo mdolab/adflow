@@ -394,6 +394,8 @@ contains
             surfWriteCfx = .false.
             surfWriteCfy = .false.
             surfWriteCfz = .false.
+            surfWriteForceInDragDir = .false.
+            surfWriteForceInLiftDir = .false.
 
             volWriteMachTurb = .false.
             volWriteEddyVis = .false.
@@ -2349,6 +2351,8 @@ contains
         surfWriteCfx = .false.
         surfWriteCfy = .false.
         surfWriteCfz = .false.
+        surfWriteForceInDragDir = .false.
+        surfWriteForceInLiftDir = .false.
 
         surfWriteBlank = .false.
         surfWriteSepSensor = .false.
@@ -2460,6 +2464,14 @@ contains
 
             case ("cfz")
                 surfWriteCfz = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("forceindragdir")
+                surfWriteForceInDragDir = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("forceinliftdir")
+                surfWriteForceInLiftDir = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case ("blank")
