@@ -211,6 +211,48 @@ test_params = [
 ]
 
 
+"""test_params = [
+    # # Rotating frame test
+    {
+        "name": "Rotating_wing",
+        "options": {
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_rotframe.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_rotframe.cgns"),
+            "nCycles": 20000,
+            "equationType": "RANS",
+            "smoother": "DADI",
+            "useRotationSA": True,
+            "useQCR": True,
+            "useBlockettes": False,
+            "restrictionRelaxation": 1.0,
+            "CFL": 1.5,
+            "NKinnerpreconits": 2,
+            "NKjacobianlag": 3,
+            "NKouterpreconits": 3,
+            "NKsubspacesize": 100,
+            "ANKmaxiter": 80,
+            "ANKasmoverlap": 2,
+            "ANKinnerpreconits": 2,
+            "ANKouterpreconits": 2,
+            "nsubiterturb": 10,
+            "ANKSecondordSwitchTol": 1e-2,
+            "ANKcoupledSwitchTol": 1e-8,
+            "ANKCFLlimit": 1e10,
+            "L2Convergence": 1e-14,
+            "adjointL2Convergence": 1e-14,
+            "ADPC": True,
+            "adjointMaxIter": 1000,
+            "adjointSubspaceSize": 500,
+            "monitorVariables": ["cpu", "resrho", "resturb", "cmx"],
+            "volumevariables": ["resrho"],
+        },
+        "ref_file": "adjoint_rans_rotating.json",
+        "aero_prob": ap_tutorial_wing_rotating,
+        "evalFuncs": ["fy", "my"],
+        "N_PROCS": 2,
+    },
+]"""
+
 @parameterized_class(test_params)
 class TestAdjoint(reg_test_classes.RegTest):
     """
@@ -276,6 +318,13 @@ class TestAdjoint(reg_test_classes.RegTest):
         utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
         self.assert_adjoint_failure()
 
+    def test_adjoint2(self):
+        utils.assert_adjoint2_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
+
+    def test_adjoint_states(self):
+        utils.assert_adjoint_states_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
 
 @parameterized_class(test_params)
 class TestCmplxStep(reg_test_classes.CmplxRegTest):
