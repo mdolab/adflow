@@ -28,9 +28,7 @@ def assert_adjoint_states_allclose(handler, CFDSolver, ap, evalFuncs=None, **kwa
     states1 = CFDSolver.getStates()
     CFDSolver.evalFunctionsSens(ap, funcsSens, evalFuncs=None)
     states2 = CFDSolver.getStates()
-    
     resNorm = numpy.sqrt((1/CFDSolver.getStateSize())*numpy.sum((states1-states2)**2))
-
     handler.root_print("Adjoint States")
     handler.par_add_norm("Adjoint States", resNorm, rtol=rtol, atol=atol)
 
