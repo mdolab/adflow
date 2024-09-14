@@ -1520,7 +1520,7 @@ contains
 
                                     ! sepsensor value
                                     sensor = (cos(degtorad * sepangledeviation) - sensor) / &
-                                             (cos(degtorad * sepangledeviation) - cos(pi) + 1e-16)
+                                             (-cos(degtorad * sepangledeviation) + cos(zero) + 1e-16)
 
                                     ! compare it against the current value on this proc
                                     sepsensor_local = max(sepsensor_local, sensor)

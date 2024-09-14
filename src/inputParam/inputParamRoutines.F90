@@ -3722,7 +3722,7 @@ contains
                  call terminate("checkInputParam", &
                  "Memory allocation failure for &
                  &sepSenMaxFamily")
-            sepSenMaxFamily = -one
+            sepSenMaxFamily = zero
         end if
 
     end subroutine checkInputParam
