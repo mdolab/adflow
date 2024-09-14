@@ -1440,6 +1440,9 @@ contains
                     case (cgnsSepSensor)
                         monLoc(mm) = monLoc(mm) + localValues(isepSensor)
 
+                    case (cgnsSepSensorArea)
+                        monLoc(mm) = monLoc(mm) + localValues(isepSensorArea)
+
                     case (cgnsCavitation)
                         monLoc(mm) = monLoc(mm) + localValues(iCavitation)
 
