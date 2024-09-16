@@ -7,8 +7,8 @@ G. Kenway
 
 # Import modules
 import os
-import sys
 import re
+import sys
 
 # Specify file extension
 EXT = "_fast_b.f90"
@@ -58,6 +58,7 @@ FILE_IGNORE = [
     "BCData_fast_b.f90",
     "oversetUtilities_fast_b.f90",
     "zipperIntegrations_fast_b.f90",
+    "actuatorRegion_fast_b.f90",
 ]
 
 for f in os.listdir(DIR_ORI):

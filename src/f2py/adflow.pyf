@@ -181,7 +181,10 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccoforcezx=96
          integer(kind=inttype) parameter,optional :: costfunccoforcezy=97
          integer(kind=inttype) parameter,optional :: costfunccoforcezz=98
-         integer(kind=inttype) parameter,optional :: costfuncmavgvi=99
+         integer(kind=inttype) parameter,optional :: costfunccofliftx=99
+         integer(kind=inttype) parameter,optional :: costfunccoflifty=100
+         integer(kind=inttype) parameter,optional :: costfunccofliftz=101
+         integer(kind=inttype) parameter,optional :: costfuncmavgvi=102
        end module constants
 
        module utils
@@ -364,6 +367,7 @@ python module libadflow
 
          character(len=maxstringlen) :: nk_precondtype
          integer(kind=inttype) :: nk_innerpreconits
+         integer(kind=inttype) :: nk_innerpreconitscoarse
          integer(kind=inttype) :: nk_outerpreconits
          integer(kind=inttype) :: nk_amglevels
          integer(kind=inttype) :: nk_amgnsmooth
@@ -375,8 +379,10 @@ python module libadflow
          integer(kind=inttype) :: nk_ls
          integer(kind=inttype) :: nk_subspace
          integer(kind=inttype) :: nk_asmoverlap
+         integer(kind=inttype) :: nk_asmoverlapcoarse
          real(kind=realtype) :: nk_rtolinit
          integer(kind=inttype) :: nk_ilufill
+         integer(kind=inttype) :: nk_ilufillcoarse
          real(kind=realtype) :: nk_switchtol
          real(kind=realtype) :: nk_cfl0
          real(kind=realtype) :: nk_fixedstep
@@ -439,6 +445,7 @@ python module libadflow
 
          character(len=maxstringlen) :: ank_precondtype
          integer(kind=inttype) :: ank_innerpreconits
+         integer(kind=inttype) :: ank_innerpreconitscoarse
          integer(kind=inttype) :: ank_outerpreconits
          integer(kind=inttype) :: ank_amglevels
          integer(kind=inttype) :: ank_amgnsmooth
@@ -449,10 +456,12 @@ python module libadflow
          integer(kind=inttype) :: ank_subspace
          integer(kind=inttype) :: ank_maxiter
          integer(kind=inttype) :: ank_asmoverlap
+         integer(kind=inttype) :: ank_asmoverlapcoarse
          real(kind=realtype) :: ank_rtol
          real(kind=realtype) :: ank_atol_buffer
          real(kind=realtype) :: ank_linresmax
          integer(kind=inttype) :: ank_ilufill
+         integer(kind=inttype) :: ank_ilufillcoarse
          real(kind=realtype) :: ank_switchtol
          real(kind=realtype) :: ank_cfl
          real(kind=realtype) :: ank_cfl0
@@ -1006,6 +1015,7 @@ python module libadflow
          logical :: lumpeddiss
          real(kind=realtype) :: sigma
          logical :: useapproxwalldistance
+         logical :: updatewallassociations
          logical :: lowspeedpreconditioner
          logical :: useblockettes
        end module inputdiscretization
@@ -1082,10 +1092,14 @@ python module libadflow
          real(kind=realtype) allocatable,dimension(:) :: etark
          real(kind=realtype) allocatable,dimension(:) :: cdisrk
          real(kind=realtype), dimension(4) :: turbresscale
+         real(kind=realtype) :: meshmaxskewness
+         logical :: useskewnesscheck
          logical :: freezeturbsource
          logical :: printiterations
          logical :: printwarnings
          logical :: printnegativevolumes
+         logical :: printbadlyskewedcells
+         logical :: printbcwarnings
          real(kind=realtype) ::maxl2deviationfactor
          logical :: uselinresmonitor
          logical :: usedisscontinuation
@@ -1254,6 +1268,7 @@ python module libadflow
          logical :: debugzipper
          logical :: usezippermesh
          logical :: useoversetwallscaling
+         logical :: recomputeoverlapmatrix
          logical :: oversetdebugprint
          real(kind=realtype) :: selfzipcutoff
        end module inputoverset
