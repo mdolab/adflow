@@ -55,6 +55,25 @@ contains
     end if
 
     ! ------------------------------------
+    !  AntiSymmetry Boundary Condition
+    ! ------------------------------------
+    do nn=1, nBocos
+       if (bcType(nn) == symm) then
+          call setBCPointers_d(nn, .False.)
+          call bcAntiSymm1stHalo_d(nn)
+       end if
+    end do
+
+    if (secondHalo) then
+       do nn=1, nBocos
+          if (bcType(nn) == symm) then
+             call setBCPointers_d(nn, .False.)
+             call bcAntiSymm2ndHalo_d(nn)
+          end if
+       end do
+    end if
+
+    ! ------------------------------------
     !  Symmetry Polar Boundary Condition
     ! ------------------------------------
     !$AD II-LOOP
