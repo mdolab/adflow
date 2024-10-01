@@ -468,6 +468,28 @@ class ADflowSolver(ImplicitComponent):
     def _set_states(self, outputs):
         self.solver.setStates(outputs["adflow_states"])
 
+    def _setup_vectors(self, root_vectors):
+        super()._setup_vectors(root_vectors)
+        solver = self.solver
+
+        # Get the default flags
+        printIterationsDefault = solver.getOption("printIterations")
+        printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
+
+        # Turn off extra printouts
+        solver.setOption("printIterations", False)
+        solver.adflow.inputiteration.printbcwarnings = False
+
+        # Set the AP
+        self.solver.setAeroProblem(self.ap)
+
+        # Set values back to the default
+        solver.setOption("printIterations", printIterationsDefault)
+        solver.adflow.inputiteration.printbcwarnings = printBCWarningsDefault
+
+        # Set the OM states to be equal to the free stream
+        self.set_val("adflow_states", self.solver.getStates())
+
     def apply_nonlinear(self, inputs, outputs, residuals):
         solver = self.solver
         ap = self.ap
@@ -481,6 +503,7 @@ class ADflowSolver(ImplicitComponent):
             print_func_call(self)
         solver = self.solver
         ap = self.ap
+
         if self._do_solve:
             setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
@@ -488,6 +511,9 @@ class ADflowSolver(ImplicitComponent):
 
             # do not write solution files inside the solver loop
             solver(ap, writeSolution=False)
+
+            # base name for failed solution writing
+            fail_name = f"{self.ap.name}_analysis_fail"
 
             if ap.fatalFail:
                 if self.comm.rank == 0:
@@ -507,7 +533,7 @@ class ADflowSolver(ImplicitComponent):
                             print("###############################################################")
 
                         # write the solution so that we can diagnose
-                        solver.writeSolution(baseName="analysis_fail", number=self.solution_counter)
+                        solver.writeSolution(baseName=fail_name, number=self.solution_counter)
                         self.solution_counter += 1
 
                         if self.analysis_error_on_failure:
@@ -524,7 +550,7 @@ class ADflowSolver(ImplicitComponent):
                             print("###############################################################")
 
                         # write the solution so that we can diagnose
-                        solver.writeSolution(baseName="analysis_fail", number=self.solution_counter)
+                        solver.writeSolution(baseName=fail_name, number=self.solution_counter)
                         self.solution_counter += 1
 
                         ap.solveFailed = False
@@ -539,7 +565,7 @@ class ADflowSolver(ImplicitComponent):
                                 print("###############################################################")
 
                             # write the solution so that we can diagnose
-                            solver.writeSolution(baseName="analysis_fail", number=self.solution_counter)
+                            solver.writeSolution(baseName=fail_name, number=self.solution_counter)
                             self.solution_counter += 1
 
                             if self.analysis_error_on_failure:
@@ -559,6 +585,11 @@ class ADflowSolver(ImplicitComponent):
                         print("###############################################################")
                         print("# Solve Failed, not attempting a clean restart")
                         print("###############################################################")
+
+                    # write the solution so that we can diagnose
+                    solver.writeSolution(baseName=fail_name, number=self.solution_counter)
+                    self.solution_counter += 1
+
                     raise AnalysisError("ADFLOW Solver Fatal Fail")
 
                 else:
@@ -1021,8 +1052,11 @@ class ADflowFunctions(ExplicitComponent):
         printIterationsDefault = solver.getOption("printIterations")
         printBCWarningsDefault = solver.adflow.inputiteration.printbcwarnings
 
+        # Turn off extra printouts
         solver.setOption("printIterations", False)
-        solver.adflow.inputiteration.printbcwarnings = False  # Turn off extra printouts
+        solver.adflow.inputiteration.printbcwarnings = False
+
+        # Set the aeroproblem
         solver.setAeroProblem(ap)
 
         # Reset back to true to preserve normal ADflow printout structure

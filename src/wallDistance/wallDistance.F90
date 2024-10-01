@@ -345,7 +345,8 @@ contains
                                  sendBufferSize, recvBufferSize
         use inputPhysics, only: equations, wallDistanceNeeded
         use inputTimeSpectral, only: nTimeIntervalsSpectral
-        use inputDiscretization, only: useApproxWallDistance
+        use inputDiscretization, only: useApproxWallDistance, updateWallAssociations
+        use oversetData, only: oversetPresent
         use utils, only: setPointers, EChk, terminate, &
                          deallocateTempMemory, allocateTempMemory
         implicit none
@@ -429,7 +430,7 @@ contains
 
         ! Normal, original wall distance calc. Cannot be used when
         ! overset is present due to possibility of overlapping walls.
-        if (.not. useApproxWallDistance) then
+        if ((.not. useApproxWallDistance) .and. (.not. oversetPresent)) then
             ! Loop over the number of spectral solutions.
             spectralLoop: do sps = 1, nTimeIntervalsSpectral
 
@@ -462,7 +463,7 @@ contains
         else ! The user wants to use approx wall distance calcs OR we
             ! have overset mesh. :
 
-            if (updateWallAssociation(level)) then
+            if (updateLevelWallAssociation(level)) then
 
                 ! Initialize the wall distance
                 spectralLoop2: do sps = 1, nTimeIntervalsSpectral
@@ -479,7 +480,10 @@ contains
                     call determineWallAssociation(level, sps)
                 end do
 
-                updateWallAssociation(level) = .False.
+                if (.not. updateWallAssociations) then
+                    ! don't re-compute the wall associations after the first call
+                    updateLevelWallAssociation(level) = .False.
+                end if
             end if
 
             ! Update the xsurf vector from X

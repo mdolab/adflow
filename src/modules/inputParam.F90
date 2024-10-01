@@ -60,7 +60,7 @@ module inputDiscretization
     !                         computations. Typically only used for
     !                         repeated calls when the wall distance would
     !                         not have changed significantly
-    ! updateWallAssociation : Logical to determine if the full wall distance
+    ! updateWallAssociations: Logical to determine if the full wall distance
     !                         assocation is to be performed on the next
     !                         wall distance calculation. This is only
     !                         significant when useApproxWallDistance is
@@ -92,6 +92,7 @@ module inputDiscretization
     logical :: radiiNeededFine, radiiNeededCoarse
 
     logical :: useApproxWallDistance
+    logical :: updateWallAssociations
     logical :: lowSpeedPreconditioner
 end module inputDiscretization
 
@@ -797,7 +798,8 @@ module inputADjoint
 
     ! FillLevel     : Number of levels of fill for the ILU local PC
     ! Overlap       : Amount of overlap in the ASM PC
-    integer(kind=intType) :: FillLevel, Overlap
+    integer(kind=intType) :: fillLevel, overlap
+    integer(kind=intType) :: fillLevelCoarse, overlapCoarse
 
     ! adjRelTol     : Relative tolerance
     ! adjAbsTol     : Absolute tolerance
@@ -819,7 +821,7 @@ module inputADjoint
     ! outerPCIts : Number of iterations to run for on (global) preconditioner
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
-    integer(kind=intType) :: innerPreConIts
+    integer(kind=intType) :: innerPreConIts, innerPreConItsCoarse
     integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
 
     logical :: printTiming
@@ -882,5 +884,6 @@ module inputOverset
     integer(kind=intType) :: nFloodIter
     logical :: useZipperMesh
     logical :: useOversetWallScaling
+    logical :: recomputeOverlapMatrix
     logical :: oversetDebugPrint
 end module inputOverset
