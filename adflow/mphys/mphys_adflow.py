@@ -13,7 +13,7 @@ from .om_utils import get_dvs_and_cons
 
 # Set this to true to print out the name of the function being called and the class it's being called from along with
 # printing messages when node coordinates and states are updated from OpenMDAO inputs and outputs.
-DEBUG_LOGGING = False
+DEBUG_LOGGING = True
 
 
 def print_func_call(component):
@@ -491,12 +491,23 @@ class ADflowSolver(ImplicitComponent):
         self.set_val("adflow_states", self.solver.getStates())
 
     def apply_nonlinear(self, inputs, outputs, residuals):
+        if DEBUG_LOGGING:
+            print_func_call(self)
         solver = self.solver
         ap = self.ap
         setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
         # flow residuals
         residuals["adflow_states"] = solver.getResidual(ap)
+
+    def printStatesRange(self, states):
+        stateNames = ["density", "velocityX", "velocityY", "velocityZ", "Energy", "Turb"]
+        for ii, stateName in enumerate(stateNames):
+            singleState = states[ii::6]
+            minState = self.comm.allreduce(np.min(singleState), op=MPI.MIN)
+            maxState = self.comm.allreduce(np.max(singleState), op=MPI.MAX)
+            if self.comm.rank == 0:
+                print(f"{stateName}: min = {minState:.11e}, max = {maxState:.11e}")
 
     def solve_nonlinear(self, inputs, outputs):
         if DEBUG_LOGGING:
@@ -505,12 +516,107 @@ class ADflowSolver(ImplicitComponent):
         ap = self.ap
 
         if self._do_solve:
+
+            if self.comm.rank == 0:
+                print(f"Pre-setAeroProblem, OpenMDAO outputs")
+            self.printStatesRange(outputs["adflow_states"])
+            if self.comm.rank == 0:
+                print(f"Pre-setAeroProblem, ADflow state")
+            self.printStatesRange(solver.getStates())
+
             setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
 
+            if self.comm.rank == 0:
+                print(f"Post-setAeroProblem, OpenMDAO outputs")
+            self.printStatesRange(outputs["adflow_states"])
+            if self.comm.rank == 0:
+                print(f"Post-setAeroProblem, ADflow state")
+            self.printStatesRange(solver.getStates())
+
+            # ==============================================================================
+            # TODO: Remove this once done debugging
+            # ==============================================================================
+            # Check if there is a NaN in any of the inputs or outputs
+            # for variable in inputs:
+            #     nanInInput = self.comm.allreduce(any(np.isnan(inputs[variable])), op=MPI.LOR)
+            #     if self.comm.rank == 0:
+            #         if nanInInput:
+            #             print(f"NaN present in {variable} input!")
+            #         else:
+            #             print(f"No NaNs in {variable} input")
+            # for variable in outputs:
+            #     nanInOutput = self.comm.allreduce(any(np.isnan(outputs[variable])), op=MPI.LOR)
+            #     if self.comm.rank == 0:
+            #         if nanInOutput:
+            #             print(f"NaN present in {variable} output!")
+            #         else:
+            #             print(f"No NaNs in {variable} output")
+
+            # # Do a standalone residual evaluation
+            # if self.comm.rank == 0:
+            #     print(f"Pre-residualEval, OpenMDAO outputs")
+            # self.printStatesRange(outputs["adflow_states"])
+            # if self.comm.rank == 0:
+            #     print(f"Pre-residualEval, ADflow state")
+            # self.printStatesRange(solver.getStates())
+
+
+            # solver.writeSolution(baseName=f"{self.ap.name}_preResEval", number=self.solution_counter)
+            res = solver.getResidual(ap)
+            # if self.comm.rank == 0:
+            #     print(f"Post-residualEval, OpenMDAO outputs")
+            # self.printStatesRange(outputs["adflow_states"])
+            # if self.comm.rank == 0:
+            #     print(f"Post-residualEval, ADflow state")
+            # self.printStatesRange(solver.getStates())
+            # solver.writeSolution(baseName=f"{self.ap.name}_postResEval", number=self.solution_counter)
+            # self.solution_counter += 1
+
+            nanInResidual = self.comm.allreduce(any(np.isnan(res)), op=MPI.LOR)
+            if self.comm.rank == 0:
+                if nanInResidual:
+                    print("NaN present in residual")
+                else:
+                    print("No NaNs in residual")
+
+            if nanInResidual:
+                # Add a small amount of noise (+- 1e-4 times the average magnitude of that state) to the adflow state before setting it
+                # for ii in range(6):
+                #     singleState = outputs["adflow_states"][ii::6]
+                #     avgMag = np.mean(np.abs(singleState))
+                #     outputs["adflow_states"][ii::6] += 1e-4*avgMag * (np.random.rand(len(singleState))-0.5)
+                # setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
+
+                # Reset the solution
+                solver.resetFlow(ap)
+
+            # if self.comm.rank == 0:
+            #     print(f"Pre-solve, OpenMDAO outputs")
+            # self.printStatesRange(outputs["adflow_states"])
+            # if self.comm.rank == 0:
+            #     print(f"Pre-solve, ADflow state")
+            # self.printStatesRange(solver.getStates())
+            # ==============================================================================
+            # end Remove
+            # ==============================================================================
+
             # do not write solution files inside the solver loop
             solver(ap, writeSolution=False)
+
+            # ==============================================================================
+            # TODO: Remove this once done debugging
+            # ==============================================================================
+            # if self.comm.rank == 0:
+            #     print(f"Post-solve, OpenMDAO outputs")
+            # self.printStatesRange(outputs["adflow_states"])
+            # if self.comm.rank == 0:
+            #     print(f"Post-solve, ADflow state")
+            # self.printStatesRange(solver.getStates())
+            # ==============================================================================
+            # end Remove
+            # ==============================================================================
 
             # base name for failed solution writing
             fail_name = f"{self.ap.name}_analysis_fail"
@@ -520,6 +626,10 @@ class ADflowSolver(ImplicitComponent):
                     print("###############################################################")
                     print("# Solve Fatal Fail. Analysis Error")
                     print("###############################################################")
+
+                # write the solution so that we can diagnose
+                solver.writeSolution(baseName=fail_name, number=self.solution_counter)
+                self.solution_counter += 1
 
                 raise AnalysisError("ADFLOW Solver Fatal Fail")
 
