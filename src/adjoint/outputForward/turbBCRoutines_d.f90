@@ -7,12 +7,16 @@ module turbbcroutines_d
 contains
 !  differentiation of applyallturbbcthisblock in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev *w
-!   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
-!                *bvtk2 *bvti1 *bvti2
+!   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bmtk1
+!                *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
+!                *bmtj1 *bmtj2
 !   rw status of diff variables: *rev:in-out *bvtj1:in *bvtj2:in
-!                *w:in-out *bvtk1:in *bvtk2:in *bvti1:in *bvti2:in
+!                *w:in-out *bmtk1:in *bmtk2:in *bvtk1:in *bvtk2:in
+!                *bmti1:in *bmti2:in *bvti1:in *bvti2:in *bmtj1:in
+!                *bmtj2:in
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-!                bvtk1:in bvtk2:in bvti1:in bvti2:in
+!                bmtk1:in bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in
+!                bvti1:in bvti2:in bmtj1:in bmtj2:in
 !      ==================================================================
   subroutine applyallturbbcthisblock_d(secondhalo)
 !
@@ -36,6 +40,7 @@ contains
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww1, ww2
     real(kind=realtype) :: temp
+    real(kind=realtype) :: temp0
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! loop over the faces and set the state in
@@ -49,9 +54,11 @@ bocos:do nn=1,nbocos
                 wd(1, i, j, l) = bvti1d(i, j, l)
                 w(1, i, j, l) = bvti1(i, j, l)
                 do m=nt1,nt2
-                  temp = bmti1(i, j, l, m)
-                  wd(1, i, j, l) = wd(1, i, j, l) - temp*wd(2, i, j, m)
-                  w(1, i, j, l) = w(1, i, j, l) - temp*w(2, i, j, m)
+                  temp = w(2, i, j, m)
+                  temp0 = bmti1(i, j, l, m)
+                  wd(1, i, j, l) = wd(1, i, j, l) - temp*bmti1d(i, j, l&
+&                   , m) - temp0*wd(2, i, j, m)
+                  w(1, i, j, l) = w(1, i, j, l) - temp0*temp
                 end do
               end do
             end do
@@ -63,10 +70,11 @@ bocos:do nn=1,nbocos
                 wd(ie, i, j, l) = bvti2d(i, j, l)
                 w(ie, i, j, l) = bvti2(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(il, i, j, m)
                   temp = bmti2(i, j, l, m)
-                  wd(ie, i, j, l) = wd(ie, i, j, l) - temp*wd(il, i, j, &
-&                   m)
-                  w(ie, i, j, l) = w(ie, i, j, l) - temp*w(il, i, j, m)
+                  wd(ie, i, j, l) = wd(ie, i, j, l) - temp0*bmti2d(i, j&
+&                   , l, m) - temp*wd(il, i, j, m)
+                  w(ie, i, j, l) = w(ie, i, j, l) - temp*temp0
                 end do
               end do
             end do
@@ -78,9 +86,11 @@ bocos:do nn=1,nbocos
                 wd(i, 1, j, l) = bvtj1d(i, j, l)
                 w(i, 1, j, l) = bvtj1(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, 2, j, m)
                   temp = bmtj1(i, j, l, m)
-                  wd(i, 1, j, l) = wd(i, 1, j, l) - temp*wd(i, 2, j, m)
-                  w(i, 1, j, l) = w(i, 1, j, l) - temp*w(i, 2, j, m)
+                  wd(i, 1, j, l) = wd(i, 1, j, l) - temp0*bmtj1d(i, j, l&
+&                   , m) - temp*wd(i, 2, j, m)
+                  w(i, 1, j, l) = w(i, 1, j, l) - temp*temp0
                 end do
               end do
             end do
@@ -92,10 +102,11 @@ bocos:do nn=1,nbocos
                 wd(i, je, j, l) = bvtj2d(i, j, l)
                 w(i, je, j, l) = bvtj2(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, jl, j, m)
                   temp = bmtj2(i, j, l, m)
-                  wd(i, je, j, l) = wd(i, je, j, l) - temp*wd(i, jl, j, &
-&                   m)
-                  w(i, je, j, l) = w(i, je, j, l) - temp*w(i, jl, j, m)
+                  wd(i, je, j, l) = wd(i, je, j, l) - temp0*bmtj2d(i, j&
+&                   , l, m) - temp*wd(i, jl, j, m)
+                  w(i, je, j, l) = w(i, je, j, l) - temp*temp0
                 end do
               end do
             end do
@@ -107,9 +118,11 @@ bocos:do nn=1,nbocos
                 wd(i, j, 1, l) = bvtk1d(i, j, l)
                 w(i, j, 1, l) = bvtk1(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, j, 2, m)
                   temp = bmtk1(i, j, l, m)
-                  wd(i, j, 1, l) = wd(i, j, 1, l) - temp*wd(i, j, 2, m)
-                  w(i, j, 1, l) = w(i, j, 1, l) - temp*w(i, j, 2, m)
+                  wd(i, j, 1, l) = wd(i, j, 1, l) - temp0*bmtk1d(i, j, l&
+&                   , m) - temp*wd(i, j, 2, m)
+                  w(i, j, 1, l) = w(i, j, 1, l) - temp*temp0
                 end do
               end do
             end do
@@ -121,10 +134,11 @@ bocos:do nn=1,nbocos
                 wd(i, j, ke, l) = bvtk2d(i, j, l)
                 w(i, j, ke, l) = bvtk2(i, j, l)
                 do m=nt1,nt2
+                  temp0 = w(i, j, kl, m)
                   temp = bmtk2(i, j, l, m)
-                  wd(i, j, ke, l) = wd(i, j, ke, l) - temp*wd(i, j, kl, &
-&                   m)
-                  w(i, j, ke, l) = w(i, j, ke, l) - temp*w(i, j, kl, m)
+                  wd(i, j, ke, l) = wd(i, j, ke, l) - temp0*bmtk2d(i, j&
+&                   , l, m) - temp*wd(i, j, kl, m)
+                  w(i, j, ke, l) = w(i, j, ke, l) - temp*temp0
                 end do
               end do
             end do
@@ -598,16 +612,22 @@ bocos:do nn=1,nbocos
           do l=nt1,nt2
             select case  (bcfaceid(nn)) 
             case (imin) 
+              bmti1d(i, j, l, l) = 0.0_8
               bmti1(i, j, l, l) = -one
             case (imax) 
+              bmti2d(i, j, l, l) = 0.0_8
               bmti2(i, j, l, l) = -one
             case (jmin) 
+              bmtj1d(i, j, l, l) = 0.0_8
               bmtj1(i, j, l, l) = -one
             case (jmax) 
+              bmtj2d(i, j, l, l) = 0.0_8
               bmtj2(i, j, l, l) = -one
             case (kmin) 
+              bmtk1d(i, j, l, l) = 0.0_8
               bmtk1(i, j, l, l) = -one
             case (kmax) 
+              bmtk2d(i, j, l, l) = 0.0_8
               bmtk2(i, j, l, l) = -one
             end select
           end do
@@ -1005,7 +1025,9 @@ bocos:do nn=1,nbocos
       do j=1,je
         do l=nt1,nt2
           do m=nt1,nt2
+            bmti1d(j, k, l, m) = 0.0_8
             bmti1(j, k, l, m) = zero
+            bmti2d(j, k, l, m) = 0.0_8
             bmti2(j, k, l, m) = zero
           end do
           bvti1d(j, k, l) = 0.0_8
@@ -1019,7 +1041,9 @@ bocos:do nn=1,nbocos
       do i=1,ie
         do l=nt1,nt2
           do m=nt1,nt2
+            bmtj1d(i, k, l, m) = 0.0_8
             bmtj1(i, k, l, m) = zero
+            bmtj2d(i, k, l, m) = 0.0_8
             bmtj2(i, k, l, m) = zero
           end do
           bvtj1d(i, k, l) = 0.0_8
@@ -1033,7 +1057,9 @@ bocos:do nn=1,nbocos
       do i=1,ie
         do l=nt1,nt2
           do m=nt1,nt2
+            bmtk1d(i, j, l, m) = 0.0_8
             bmtk1(i, j, l, m) = zero
+            bmtk2d(i, j, l, m) = 0.0_8
             bmtk2(i, j, l, m) = zero
           end do
           bvtk1d(i, j, l) = 0.0_8
@@ -1235,6 +1261,7 @@ bocos:do nn=1,nbocos
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             call saroughfact(2, i, j, fact)
+            bmti1d(i, j, itu1, itu1) = 0.0_8
             bmti1(i, j, itu1, itu1) = -fact
           end do
         end do
@@ -1242,6 +1269,7 @@ bocos:do nn=1,nbocos
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             call saroughfact(il, i, j, fact)
+            bmti2d(i, j, itu1, itu1) = 0.0_8
             bmti2(i, j, itu1, itu1) = -fact
           end do
         end do
@@ -1249,6 +1277,7 @@ bocos:do nn=1,nbocos
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             call saroughfact(i, 2, j, fact)
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
             bmtj1(i, j, itu1, itu1) = -fact
           end do
         end do
@@ -1256,6 +1285,7 @@ bocos:do nn=1,nbocos
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             call saroughfact(i, jl, j, fact)
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
             bmtj2(i, j, itu1, itu1) = -fact
           end do
         end do
@@ -1263,6 +1293,7 @@ bocos:do nn=1,nbocos
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             call saroughfact(i, j, 2, fact)
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
             bmtk1(i, j, itu1, itu1) = -fact
           end do
         end do
@@ -1270,6 +1301,7 @@ bocos:do nn=1,nbocos
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
             call saroughfact(i, j, kl, fact)
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
             bmtk2(i, j, itu1, itu1) = -fact
           end do
         end do
@@ -1319,7 +1351,9 @@ bocos:do nn=1,nbocos
             temp0 = one/(rkwbeta1*(d2wall(2, ii, jj)*d2wall(2, ii, jj)))
             tmpdd = -(temp0*2*d2walld(2, ii, jj)/d2wall(2, ii, jj))
             tmpd = temp0
+            bmti1d(i, j, itu1, itu1) = 0.0_8
             bmti1(i, j, itu1, itu1) = one
+            bmti1d(i, j, itu2, itu2) = 0.0_8
             bmti1(i, j, itu2, itu2) = one
             bvti1d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvti1(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1358,7 +1392,9 @@ bocos:do nn=1,nbocos
 &             ))
             tmpdd = -(temp0*2*d2walld(il, ii, jj)/d2wall(il, ii, jj))
             tmpd = temp0
+            bmti2d(i, j, itu1, itu1) = 0.0_8
             bmti2(i, j, itu1, itu1) = one
+            bmti2d(i, j, itu2, itu2) = 0.0_8
             bmti2(i, j, itu2, itu2) = one
             bvti2d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvti2(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1396,7 +1432,9 @@ bocos:do nn=1,nbocos
             temp0 = one/(rkwbeta1*(d2wall(ii, 2, jj)*d2wall(ii, 2, jj)))
             tmpdd = -(temp0*2*d2walld(ii, 2, jj)/d2wall(ii, 2, jj))
             tmpd = temp0
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
             bmtj1(i, j, itu1, itu1) = one
+            bmtj1d(i, j, itu2, itu2) = 0.0_8
             bmtj1(i, j, itu2, itu2) = one
             bvtj1d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtj1(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1435,7 +1473,9 @@ bocos:do nn=1,nbocos
 &             ))
             tmpdd = -(temp0*2*d2walld(ii, jl, jj)/d2wall(ii, jl, jj))
             tmpd = temp0
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
             bmtj2(i, j, itu1, itu1) = one
+            bmtj2d(i, j, itu2, itu2) = 0.0_8
             bmtj2(i, j, itu2, itu2) = one
             bvtj2d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtj2(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1473,7 +1513,9 @@ bocos:do nn=1,nbocos
             temp0 = one/(rkwbeta1*(d2wall(ii, jj, 2)*d2wall(ii, jj, 2)))
             tmpdd = -(temp0*2*d2walld(ii, jj, 2)/d2wall(ii, jj, 2))
             tmpd = temp0
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
             bmtk1(i, j, itu1, itu1) = one
+            bmtk1d(i, j, itu2, itu2) = 0.0_8
             bmtk1(i, j, itu2, itu2) = one
             bvtk1d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtk1(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1512,7 +1554,9 @@ bocos:do nn=1,nbocos
 &             ))
             tmpdd = -(temp0*2*d2walld(ii, jj, kl)/d2wall(ii, jj, kl))
             tmpd = temp0
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
             bmtk2(i, j, itu1, itu1) = one
+            bmtk2d(i, j, itu2, itu2) = 0.0_8
             bmtk2(i, j, itu2, itu2) = one
             bvtk2d(i, j, itu2) = two*60.0_realtype*(tmpd*nud+nu*tmpdd)
             bvtk2(i, j, itu2) = two*60.0_realtype*nu*tmpd
@@ -1527,42 +1571,54 @@ bocos:do nn=1,nbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmti1d(i, j, itu1, itu1) = 0.0_8
             bmti1(i, j, itu1, itu1) = one
+            bmti1d(i, j, itu2, itu2) = 0.0_8
             bmti1(i, j, itu2, itu2) = one
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmti2d(i, j, itu1, itu1) = 0.0_8
             bmti2(i, j, itu1, itu1) = one
+            bmti2d(i, j, itu2, itu2) = 0.0_8
             bmti2(i, j, itu2, itu2) = one
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
             bmtj1(i, j, itu1, itu1) = one
+            bmtj1d(i, j, itu2, itu2) = 0.0_8
             bmtj1(i, j, itu2, itu2) = one
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
             bmtj2(i, j, itu1, itu1) = one
+            bmtj2d(i, j, itu2, itu2) = 0.0_8
             bmtj2(i, j, itu2, itu2) = one
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
             bmtk1(i, j, itu1, itu1) = one
+            bmtk1d(i, j, itu2, itu2) = 0.0_8
             bmtk1(i, j, itu2, itu2) = one
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
             bmtk2(i, j, itu1, itu1) = one
+            bmtk2d(i, j, itu2, itu2) = 0.0_8
             bmtk2(i, j, itu2, itu2) = one
           end do
         end do

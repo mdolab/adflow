@@ -162,7 +162,7 @@ BCRoutines%bcSubsonicInflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0
 BCRoutines%bcSubsonicOutflow(ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) > \
                             (ww0, ww1, ww2, pp0, pp1, pp2, rlv0, rlv1, rlv2, rev0, rev1, rev2, bcData%norm, bcData%Ps) \
 \
-turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) > \
+turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2) > \
                                       (rev, w) \
 \
 turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > \

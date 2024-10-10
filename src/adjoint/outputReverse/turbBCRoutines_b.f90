@@ -7,12 +7,16 @@ module turbbcroutines_b
 contains
 !  differentiation of applyallturbbcthisblock in reverse (adjoint) mode (with options noisize i4 dr8 r8):
 !   gradient     of useful results: *rev *w
-!   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bvtk1
-!                *bvtk2 *bvti1 *bvti2
+!   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bmtk1
+!                *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
+!                *bmtj1 *bmtj2
 !   rw status of diff variables: *rev:in-out *bvtj1:out *bvtj2:out
-!                *w:in-out *bvtk1:out *bvtk2:out *bvti1:out *bvti2:out
+!                *w:in-out *bmtk1:out *bmtk2:out *bvtk1:out *bvtk2:out
+!                *bmti1:out *bmti2:out *bvti1:out *bvti2:out *bmtj1:out
+!                *bmtj2:out
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-!                bvtk1:in bvtk2:in bvti1:in bvti2:in
+!                bmtk1:in bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in
+!                bvti1:in bvti2:in bmtj1:in bmtj2:in
 !      ==================================================================
   subroutine applyallturbbcthisblock_b(secondhalo)
 !
@@ -41,6 +45,7 @@ contains
     real(kind=realtype) :: tmpd0
     real(kind=realtype) :: tmp1
     real(kind=realtype) :: tmpd1
+    integer :: branch
     integer :: ad_from
     integer :: ad_to
     integer :: ad_from0
@@ -65,7 +70,6 @@ contains
     integer :: ad_to9
     integer :: ad_from10
     integer :: ad_to10
-    integer :: branch
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! loop over the faces and set the state in
@@ -78,7 +82,17 @@ bocos:do nn=1,nbocos
           ad_from0 = bcdata(nn)%jcbeg
           do j=ad_from0,bcdata(nn)%jcend
             ad_from = bcdata(nn)%icbeg
-            i = bcdata(nn)%icend + 1
+            do i=ad_from,bcdata(nn)%icend
+              do l=nt1,nt2
+                call pushreal8(w(1, i, j, l))
+                w(1, i, j, l) = bvti1(i, j, l)
+                do m=nt1,nt2
+                  call pushreal8(w(1, i, j, l))
+                  w(1, i, j, l) = w(1, i, j, l) - bmti1(i, j, l, m)*w(2&
+&                   , i, j, m)
+                end do
+              end do
+            end do
             call pushinteger4(i - 1)
             call pushinteger4(ad_from)
           end do
@@ -89,7 +103,18 @@ bocos:do nn=1,nbocos
           ad_from2 = bcdata(nn)%jcbeg
           do j=ad_from2,bcdata(nn)%jcend
             ad_from1 = bcdata(nn)%icbeg
-            i = bcdata(nn)%icend + 1
+            do i=ad_from1,bcdata(nn)%icend
+              do l=nt1,nt2
+                call pushreal8(w(ie, i, j, l))
+                w(ie, i, j, l) = bvti2(i, j, l)
+                do m=nt1,nt2
+                  tmp = w(ie, i, j, l) - bmti2(i, j, l, m)*w(il, i, j, m&
+&                   )
+                  call pushreal8(w(ie, i, j, l))
+                  w(ie, i, j, l) = tmp
+                end do
+              end do
+            end do
             call pushinteger4(i - 1)
             call pushinteger4(ad_from1)
           end do
@@ -100,7 +125,17 @@ bocos:do nn=1,nbocos
           ad_from4 = bcdata(nn)%jcbeg
           do j=ad_from4,bcdata(nn)%jcend
             ad_from3 = bcdata(nn)%icbeg
-            i = bcdata(nn)%icend + 1
+            do i=ad_from3,bcdata(nn)%icend
+              do l=nt1,nt2
+                call pushreal8(w(i, 1, j, l))
+                w(i, 1, j, l) = bvtj1(i, j, l)
+                do m=nt1,nt2
+                  call pushreal8(w(i, 1, j, l))
+                  w(i, 1, j, l) = w(i, 1, j, l) - bmtj1(i, j, l, m)*w(i&
+&                   , 2, j, m)
+                end do
+              end do
+            end do
             call pushinteger4(i - 1)
             call pushinteger4(ad_from3)
           end do
@@ -111,7 +146,18 @@ bocos:do nn=1,nbocos
           ad_from6 = bcdata(nn)%jcbeg
           do j=ad_from6,bcdata(nn)%jcend
             ad_from5 = bcdata(nn)%icbeg
-            i = bcdata(nn)%icend + 1
+            do i=ad_from5,bcdata(nn)%icend
+              do l=nt1,nt2
+                call pushreal8(w(i, je, j, l))
+                w(i, je, j, l) = bvtj2(i, j, l)
+                do m=nt1,nt2
+                  tmp0 = w(i, je, j, l) - bmtj2(i, j, l, m)*w(i, jl, j, &
+&                   m)
+                  call pushreal8(w(i, je, j, l))
+                  w(i, je, j, l) = tmp0
+                end do
+              end do
+            end do
             call pushinteger4(i - 1)
             call pushinteger4(ad_from5)
           end do
@@ -122,7 +168,17 @@ bocos:do nn=1,nbocos
           ad_from8 = bcdata(nn)%jcbeg
           do j=ad_from8,bcdata(nn)%jcend
             ad_from7 = bcdata(nn)%icbeg
-            i = bcdata(nn)%icend + 1
+            do i=ad_from7,bcdata(nn)%icend
+              do l=nt1,nt2
+                call pushreal8(w(i, j, 1, l))
+                w(i, j, 1, l) = bvtk1(i, j, l)
+                do m=nt1,nt2
+                  call pushreal8(w(i, j, 1, l))
+                  w(i, j, 1, l) = w(i, j, 1, l) - bmtk1(i, j, l, m)*w(i&
+&                   , j, 2, m)
+                end do
+              end do
+            end do
             call pushinteger4(i - 1)
             call pushinteger4(ad_from7)
           end do
@@ -133,7 +189,18 @@ bocos:do nn=1,nbocos
           ad_from10 = bcdata(nn)%jcbeg
           do j=ad_from10,bcdata(nn)%jcend
             ad_from9 = bcdata(nn)%icbeg
-            i = bcdata(nn)%icend + 1
+            do i=ad_from9,bcdata(nn)%icend
+              do l=nt1,nt2
+                call pushreal8(w(i, j, ke, l))
+                w(i, j, ke, l) = bvtk2(i, j, l)
+                do m=nt1,nt2
+                  tmp1 = w(i, j, ke, l) - bmtk2(i, j, l, m)*w(i, j, kl, &
+&                   m)
+                  call pushreal8(w(i, j, ke, l))
+                  w(i, j, ke, l) = tmp1
+                end do
+              end do
+            end do
             call pushinteger4(i - 1)
             call pushinteger4(ad_from9)
           end do
@@ -150,8 +217,14 @@ bocos:do nn=1,nbocos
       if (eddymodel) then
         if (bctype(nn) .eq. nswalladiabatic .or. bctype(nn) .eq. &
 &           nswallisothermal) then
+! viscous wall boundary condition. eddy viscosity is
+! zero at the wall.
+          call bceddywall(nn)
           call pushcontrol2b(0)
         else
+! any boundary condition but viscous wall. a homogeneous
+! neumann condition is applied to the eddy viscosity.
+          call bceddynowall(nn)
           call pushcontrol2b(1)
         end if
       else
@@ -160,6 +233,14 @@ bocos:do nn=1,nbocos
 ! extrapolate the turbulent variables in case a second halo
 ! is needed.
       if (secondhalo) then
+        if (associated(w)) then
+          call pushreal8array(w, size(w, 1)*size(w, 2)*size(w, 3)*size(w&
+&                       , 4))
+          call pushcontrol1b(1)
+        else
+          call pushcontrol1b(0)
+        end if
+        call turb2ndhalo(nn)
         call pushcontrol1b(1)
       else
         call pushcontrol1b(0)
@@ -167,13 +248,24 @@ bocos:do nn=1,nbocos
     end do bocos
     if (associated(bvtj1d)) bvtj1d = 0.0_8
     if (associated(bvtj2d)) bvtj2d = 0.0_8
+    if (associated(bmtk1d)) bmtk1d = 0.0_8
+    if (associated(bmtk2d)) bmtk2d = 0.0_8
     if (associated(bvtk1d)) bvtk1d = 0.0_8
     if (associated(bvtk2d)) bvtk2d = 0.0_8
+    if (associated(bmti1d)) bmti1d = 0.0_8
+    if (associated(bmti2d)) bmti2d = 0.0_8
     if (associated(bvti1d)) bvti1d = 0.0_8
     if (associated(bvti2d)) bvti2d = 0.0_8
+    if (associated(bmtj1d)) bmtj1d = 0.0_8
+    if (associated(bmtj2d)) bmtj2d = 0.0_8
     do nn=nbocos,1,-1
       call popcontrol1b(branch)
-      if (branch .ne. 0) call turb2ndhalo_b(nn)
+      if (branch .ne. 0) then
+        call popcontrol1b(branch)
+        if (branch .eq. 1) call popreal8array(w, size(w, 1)*size(w, 2)*&
+&                                       size(w, 3)*size(w, 4))
+        call turb2ndhalo_b(nn)
+      end if
       call popcontrol2b(branch)
       if (branch .eq. 0) then
         call bceddywall_b(nn)
@@ -192,9 +284,13 @@ bocos:do nn=1,nbocos
               do i=ad_to,ad_from,-1
                 do l=nt2,nt1,-1
                   do m=nt2,nt1,-1
+                    call popreal8(w(1, i, j, l))
+                    bmti1d(i, j, l, m) = bmti1d(i, j, l, m) - w(2, i, j&
+&                     , m)*wd(1, i, j, l)
                     wd(2, i, j, m) = wd(2, i, j, m) - bmti1(i, j, l, m)*&
 &                     wd(1, i, j, l)
                   end do
+                  call popreal8(w(1, i, j, l))
                   bvti1d(i, j, l) = bvti1d(i, j, l) + wd(1, i, j, l)
                   wd(1, i, j, l) = 0.0_8
                 end do
@@ -209,11 +305,15 @@ bocos:do nn=1,nbocos
               do i=ad_to1,ad_from1,-1
                 do l=nt2,nt1,-1
                   do m=nt2,nt1,-1
+                    call popreal8(w(ie, i, j, l))
                     tmpd = wd(ie, i, j, l)
                     wd(ie, i, j, l) = tmpd
+                    bmti2d(i, j, l, m) = bmti2d(i, j, l, m) - w(il, i, j&
+&                     , m)*tmpd
                     wd(il, i, j, m) = wd(il, i, j, m) - bmti2(i, j, l, m&
 &                     )*tmpd
                   end do
+                  call popreal8(w(ie, i, j, l))
                   bvti2d(i, j, l) = bvti2d(i, j, l) + wd(ie, i, j, l)
                   wd(ie, i, j, l) = 0.0_8
                 end do
@@ -231,9 +331,13 @@ bocos:do nn=1,nbocos
             do i=ad_to3,ad_from3,-1
               do l=nt2,nt1,-1
                 do m=nt2,nt1,-1
+                  call popreal8(w(i, 1, j, l))
+                  bmtj1d(i, j, l, m) = bmtj1d(i, j, l, m) - w(i, 2, j, m&
+&                   )*wd(i, 1, j, l)
                   wd(i, 2, j, m) = wd(i, 2, j, m) - bmtj1(i, j, l, m)*wd&
 &                   (i, 1, j, l)
                 end do
+                call popreal8(w(i, 1, j, l))
                 bvtj1d(i, j, l) = bvtj1d(i, j, l) + wd(i, 1, j, l)
                 wd(i, 1, j, l) = 0.0_8
               end do
@@ -248,11 +352,15 @@ bocos:do nn=1,nbocos
             do i=ad_to5,ad_from5,-1
               do l=nt2,nt1,-1
                 do m=nt2,nt1,-1
+                  call popreal8(w(i, je, j, l))
                   tmpd0 = wd(i, je, j, l)
                   wd(i, je, j, l) = tmpd0
+                  bmtj2d(i, j, l, m) = bmtj2d(i, j, l, m) - w(i, jl, j, &
+&                   m)*tmpd0
                   wd(i, jl, j, m) = wd(i, jl, j, m) - bmtj2(i, j, l, m)*&
 &                   tmpd0
                 end do
+                call popreal8(w(i, je, j, l))
                 bvtj2d(i, j, l) = bvtj2d(i, j, l) + wd(i, je, j, l)
                 wd(i, je, j, l) = 0.0_8
               end do
@@ -268,9 +376,13 @@ bocos:do nn=1,nbocos
           do i=ad_to7,ad_from7,-1
             do l=nt2,nt1,-1
               do m=nt2,nt1,-1
+                call popreal8(w(i, j, 1, l))
+                bmtk1d(i, j, l, m) = bmtk1d(i, j, l, m) - w(i, j, 2, m)*&
+&                 wd(i, j, 1, l)
                 wd(i, j, 2, m) = wd(i, j, 2, m) - bmtk1(i, j, l, m)*wd(i&
 &                 , j, 1, l)
               end do
+              call popreal8(w(i, j, 1, l))
               bvtk1d(i, j, l) = bvtk1d(i, j, l) + wd(i, j, 1, l)
               wd(i, j, 1, l) = 0.0_8
             end do
@@ -285,11 +397,15 @@ bocos:do nn=1,nbocos
           do i=ad_to9,ad_from9,-1
             do l=nt2,nt1,-1
               do m=nt2,nt1,-1
+                call popreal8(w(i, j, ke, l))
                 tmpd1 = wd(i, j, ke, l)
                 wd(i, j, ke, l) = tmpd1
+                bmtk2d(i, j, l, m) = bmtk2d(i, j, l, m) - w(i, j, kl, m)&
+&                 *tmpd1
                 wd(i, j, kl, m) = wd(i, j, kl, m) - bmtk2(i, j, l, m)*&
 &                 tmpd1
               end do
+              call popreal8(w(i, j, ke, l))
               bvtk2d(i, j, l) = bvtk2d(i, j, l) + wd(i, j, ke, l)
               wd(i, j, ke, l) = 0.0_8
             end do
