@@ -1188,12 +1188,18 @@ bocos:do nn=1,nviscbocos
 ! or the modified roughness-boundary condition
     use constants
     use inputphysics, only : useroughsa
-    use blockpointers, only : ks, d2wall
+    use blockpointers, only : ks, d2wall, il, jl, kl
     implicit none
 ! local variablse
     integer(kind=inttype), intent(in) :: i, j, k
     real(kind=realtype), intent(out) :: fact
     if (.not.useroughsa) then
+      fact = -one
+      return
+    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
+&       .or. k .lt. 2) .or. k .gt. kl) then
+! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
+! the regular sa-boundary condition
       fact = -one
       return
     else

@@ -166,7 +166,7 @@ turbBCRoutines%applyAllTurbBCThisBlock(rev, w, bvtj1, bvtj2, bvtk1, bvtk2, bvti1
                                       (rev, w) \
 \
 turbBCRoutines%bcTurbTreatment(w, rlv, d2wall, winf) > \
-                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2) \
+                              (w, rlv, d2wall, winf, bvtj1, bvtj2, bvtk1, bvtk2, bvti1, bvti2, bmti1, bmti2, bmtj1, bmtj2, bmtk1, bmtk2) \
 \
 solverUtils%timeStep_block(w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) > \
               (w, pInfCorr, rhoInf, si, sj, sk, sFaceI, sFaceJ, sFaceK, p, radi, radj, radk, dtl, rlv, rev, vol) \

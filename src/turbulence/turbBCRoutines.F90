@@ -1405,7 +1405,7 @@ contains
 
         use constants
         use inputPhysics, only: useRoughSA
-        use BlockPointers, only: ks, d2wall
+        use BlockPointers, only: ks, d2wall, il, jl, kl
         implicit none
 
         ! local variablse
@@ -1416,6 +1416,16 @@ contains
             fact = -one
             return
         end if
+
+        ! We need the distance to the wall, but this is not available for halo-cells, thus we simply return 
+        ! the regular SA-boundary condition
+        if (i .lt. 2 .or. i .gt. il .or. &
+            j .lt. 2 .or. j .gt. jl .or. &
+            k .lt. 2 .or. k .gt. kl) then
+            fact = -one
+            return
+        end if
+
 
         fact = (ks(i, j, k) - d2wall(i, j, k) / 0.03_realType) / &
                (ks(i, j, k) + d2wall(i, j, k) / 0.03_realType)

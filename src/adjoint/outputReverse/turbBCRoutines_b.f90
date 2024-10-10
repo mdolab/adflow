@@ -15,8 +15,8 @@ contains
 !                *bmti1:out *bmti2:out *bvti1:out *bvti2:out *bmtj1:out
 !                *bmtj2:out
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-!                bmtk1:in bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-!                bvti1:in bvti2:in bmtj1:in bmtj2:in
+!                bmtk1:in bmtk2:in bvtk1:in bvtk2:in d2wall:in
+!                bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
 !      ==================================================================
   subroutine applyallturbbcthisblock_b(secondhalo)
 !
@@ -680,7 +680,7 @@ bocos:do nn=1,nbocos
 !  differentiation of bceddywall in reverse (adjoint) mode (with options noisize i4 dr8 r8):
 !   gradient     of useful results: *rev
 !   with respect to varying inputs: *rev
-!   plus diff mem management of: rev:in
+!   plus diff mem management of: rev:in d2wall:in
   subroutine bceddywall_b(nn)
 !
 !       bceddywall sets the eddy viscosity in the halo cells of
@@ -869,12 +869,15 @@ bocos:do nn=1,nbocos
   end subroutine bceddywall
 
 !  differentiation of bcturbfarfield in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
-!                bvti1:in bvti2:in
+!   gradient     of useful results: winf *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in bmtk2:in
+!                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
+!                bmtj1:in bmtj2:in
   subroutine bcturbfarfield_b(nn)
 !
 !       bcturbfarfield applies the implicit treatment of the
@@ -911,6 +914,26 @@ bocos:do nn=1,nbocos
 ! determine whether we are dealing with an inflow or
 ! outflow boundary here.
         if (dot .gt. zero) then
+! outflow. simply extrapolation or zero neumann bc
+! of the turbulent variables.
+          do l=nt1,nt2
+            select case  (bcfaceid(nn)) 
+            case (imin) 
+              call pushcontrol3b(5)
+            case (imax) 
+              call pushcontrol3b(4)
+            case (jmin) 
+              call pushcontrol3b(3)
+            case (jmax) 
+              call pushcontrol3b(2)
+            case (kmin) 
+              call pushcontrol3b(1)
+            case (kmax) 
+              call pushcontrol3b(0)
+            case default
+              call pushcontrol3b(6)
+            end select
+          end do
           call pushcontrol1b(1)
         else
 ! inflow. turbulent variables are prescribed.
@@ -964,6 +987,27 @@ bocos:do nn=1,nbocos
             else if (branch .eq. 5) then
               winfd(l) = winfd(l) + bvti1d(i, j, l)
               bvti1d(i, j, l) = 0.0_8
+            end if
+          end do
+        else
+          do l=nt2,nt1,-1
+            call popcontrol3b(branch)
+            if (branch .lt. 3) then
+              if (branch .eq. 0) then
+                bmtk2d(i, j, l, l) = 0.0_8
+              else if (branch .eq. 1) then
+                bmtk1d(i, j, l, l) = 0.0_8
+              else
+                bmtj2d(i, j, l, l) = 0.0_8
+              end if
+            else if (branch .lt. 5) then
+              if (branch .eq. 3) then
+                bmtj1d(i, j, l, l) = 0.0_8
+              else
+                bmti2d(i, j, l, l) = 0.0_8
+              end if
+            else if (branch .eq. 5) then
+              bmti1d(i, j, l, l) = 0.0_8
             end if
           end do
         end if
@@ -1277,6 +1321,86 @@ bocos:do nn=1,nbocos
     end do
   end subroutine bcturboutflow
 
+!  differentiation of bcturbsymm in reverse (adjoint) mode (with options noisize i4 dr8 r8):
+!   gradient     of useful results: *bmtk1 *bmtk2 *bmti1 *bmti2
+!                *bmtj1 *bmtj2
+!   with respect to varying inputs: *bmtk1 *bmtk2 *bmti1 *bmti2
+!                *bmtj1 *bmtj2
+!   plus diff mem management of: bmtk1:in bmtk2:in bmti1:in bmti2:in
+!                bmtj1:in bmtj2:in
+  subroutine bcturbsymm_b(nn)
+!
+!       bcturbsymm applies the implicit treatment of the symmetry
+!       boundary condition (or inviscid wall) to subface nn. as the
+!       symmetry boundary condition is independent of the turbulence
+!       model, this routine is valid for all models. it is assumed
+!       that the pointers in blockpointers are already set to the
+!       correct block on the correct grid level.
+!
+    use constants
+    use blockpointers
+    use flowvarrefstate
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: nn
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, l
+    integer :: branch
+! loop over the faces of the subfaces and set the values of bmt
+! for an implicit treatment. for a symmetry face this means
+! that the halo value is set to the internal value.
+    do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+      do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+        do l=nt1,nt2
+          select case  (bcfaceid(nn)) 
+          case (imin) 
+            call pushcontrol3b(5)
+          case (imax) 
+            call pushcontrol3b(4)
+          case (jmin) 
+            call pushcontrol3b(3)
+          case (jmax) 
+            call pushcontrol3b(2)
+          case (kmin) 
+            call pushcontrol3b(1)
+          case (kmax) 
+            call pushcontrol3b(0)
+          case default
+            call pushcontrol3b(6)
+          end select
+        end do
+      end do
+    end do
+    do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+      do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+        do l=nt2,nt1,-1
+          call popcontrol3b(branch)
+          if (branch .lt. 3) then
+            if (branch .eq. 0) then
+              bmtk2d(i, j, l, l) = 0.0_8
+            else if (branch .eq. 1) then
+              bmtk1d(i, j, l, l) = 0.0_8
+            else
+              bmtj2d(i, j, l, l) = 0.0_8
+            end if
+          else if (branch .lt. 5) then
+            if (branch .eq. 3) then
+              bmtj1d(i, j, l, l) = 0.0_8
+            else
+              bmti2d(i, j, l, l) = 0.0_8
+            end if
+          else if (branch .eq. 5) then
+            bmti1d(i, j, l, l) = 0.0_8
+          end if
+        end do
+      end do
+    end do
+  end subroutine bcturbsymm_b
+
   subroutine bcturbsymm(nn)
 !
 !       bcturbsymm applies the implicit treatment of the symmetry
@@ -1324,15 +1448,20 @@ bocos:do nn=1,nbocos
   end subroutine bcturbsymm
 
 !  differentiation of bcturbtreatment in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: winf *bvtj1 *bvtj2 *w *rlv
-!                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2
-!   with respect to varying inputs: winf *bvtj1 *bvtj2 *w *rlv
-!                *bvtk1 *bvtk2 *d2wall *bvti1 *bvti2
+!   gradient     of useful results: winf *bvtj1 *bvtj2 *w *bmtk1
+!                *rlv *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2
+!                *bvti1 *bvti2 *bmtj1 *bmtj2
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *w *bmtk1
+!                *rlv *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2
+!                *bvti1 *bvti2 *bmtj1 *bmtj2
 !   rw status of diff variables: winf:incr *bvtj1:in-out *bvtj2:in-out
-!                *w:incr *rlv:incr *bvtk1:in-out *bvtk2:in-out
-!                *d2wall:incr *bvti1:in-out *bvti2:in-out
-!   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!                *w:incr *bmtk1:in-out *rlv:incr *bmtk2:in-out
+!                *bvtk1:in-out *bvtk2:in-out *d2wall:incr *bmti1:in-out
+!                *bmti2:in-out *bvti1:in-out *bvti2:in-out *bmtj1:in-out
+!                *bmtj2:in-out
+!   plus diff mem management of: bvtj1:in bvtj2:in w:in bmtk1:in
+!                rlv:in bmtk2:in bvtk1:in bvtk2:in d2wall:in bmti1:in
+!                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
   subroutine bcturbtreatment_b()
 !
 !       bcturbtreatment sets the arrays bmti1, bvti1, etc, such that
@@ -1360,21 +1489,21 @@ bocos:do nn=1,nbocos
 ! determine the kind of boundary condition for this subface.
       select case  (bctype(nn)) 
       case (nswalladiabatic, nswallisothermal) 
-        call pushcontrol2b(2)
+        call pushcontrol3b(3)
       case (symm, symmpolar, eulerwall) 
-        call pushcontrol2b(3)
+        call pushcontrol3b(2)
       case (farfield) 
-        call pushcontrol2b(1)
+        call pushcontrol3b(1)
       case (slidinginterface, oversetouterbound, domaininterfaceall, &
 &     domaininterfacerhouvw, domaininterfacep, domaininterfacerho, &
 &     domaininterfacetotal) 
-        call pushcontrol2b(0)
+        call pushcontrol3b(0)
       case default
-        call pushcontrol2b(3)
+        call pushcontrol3b(4)
       end select
     end do bocos
     do nn=nbocos,1,-1
-      call popcontrol2b(branch)
+      call popcontrol3b(branch)
       if (branch .lt. 2) then
         if (branch .eq. 0) then
           call bcturbinterface_b(nn)
@@ -1382,6 +1511,8 @@ bocos:do nn=1,nbocos
           call bcturbfarfield_b(nn)
         end if
       else if (branch .eq. 2) then
+        call bcturbsymm_b(nn)
+      else if (branch .eq. 3) then
         call bcturbwall_b(nn)
       end if
     end do
@@ -1390,6 +1521,10 @@ bocos:do nn=1,nbocos
         do l=nt2,nt1,-1
           bvtk2d(i, j, l) = 0.0_8
           bvtk1d(i, j, l) = 0.0_8
+          do m=nt2,nt1,-1
+            bmtk2d(i, j, l, m) = 0.0_8
+            bmtk1d(i, j, l, m) = 0.0_8
+          end do
         end do
       end do
     end do
@@ -1398,6 +1533,10 @@ bocos:do nn=1,nbocos
         do l=nt2,nt1,-1
           bvtj2d(i, k, l) = 0.0_8
           bvtj1d(i, k, l) = 0.0_8
+          do m=nt2,nt1,-1
+            bmtj2d(i, k, l, m) = 0.0_8
+            bmtj1d(i, k, l, m) = 0.0_8
+          end do
         end do
       end do
     end do
@@ -1406,6 +1545,10 @@ bocos:do nn=1,nbocos
         do l=nt2,nt1,-1
           bvti2d(j, k, l) = 0.0_8
           bvti1d(j, k, l) = 0.0_8
+          do m=nt2,nt1,-1
+            bmti2d(j, k, l, m) = 0.0_8
+            bmti1d(j, k, l, m) = 0.0_8
+          end do
         end do
       end do
     end do
@@ -1504,12 +1647,15 @@ bocos:do nn=1,nbocos
   end subroutine bcturbtreatment
 
 !  differentiation of bcturbwall in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                *bvtk2 *d2wall *bvti1 *bvti2
-!   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                *bvtk2 *d2wall *bvti1 *bvti2
-!   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!   gradient     of useful results: *bvtj1 *bvtj2 *w *bmtk1 *rlv
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
+!   with respect to varying inputs: *bvtj1 *bvtj2 *w *bmtk1 *rlv
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
+!   plus diff mem management of: bvtj1:in bvtj2:in w:in bmtk1:in
+!                rlv:in bmtk2:in bvtk1:in bvtk2:in d2wall:in bmti1:in
+!                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
   subroutine bcturbwall_b(nn)
 !
 !       bcturbwall applies the implicit treatment of the viscous
@@ -1533,7 +1679,7 @@ bocos:do nn=1,nbocos
 !
     integer(kind=inttype) :: i, j, ii, jj, iimax, jjmax
     real(kind=realtype) :: tmpd, tmpe, tmpf, nu, fact
-    real(kind=realtype) :: tmpdd, nud
+    real(kind=realtype) :: tmpdd, nud, factd
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww2
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
@@ -1559,7 +1705,59 @@ bocos:do nn=1,nbocos
 ! implicit treatment.
     select case  (turbmodel) 
     case (spalartallmaras, spalartallmarasedwards) 
-
+! spalart-allmaras type of model. value at the wall is zero,
+! so simply negate the internal value.
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            factd = -bmti1d(i, j, itu1, itu1)
+            bmti1d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_b(2, i, j, fact, factd)
+          end do
+        end do
+      case (imax) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            factd = -bmti2d(i, j, itu1, itu1)
+            bmti2d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_b(il, i, j, fact, factd)
+          end do
+        end do
+      case (jmin) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            factd = -bmtj1d(i, j, itu1, itu1)
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_b(i, 2, j, fact, factd)
+          end do
+        end do
+      case (jmax) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            factd = -bmtj2d(i, j, itu1, itu1)
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_b(i, jl, j, fact, factd)
+          end do
+        end do
+      case (kmin) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            factd = -bmtk1d(i, j, itu1, itu1)
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_b(i, j, 2, fact, factd)
+          end do
+        end do
+      case (kmax) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            factd = -bmtk2d(i, j, itu1, itu1)
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_b(i, j, kl, fact, factd)
+          end do
+        end do
+      end select
+!        ================================================================
     case (komegawilcox, komegamodified, mentersst) 
 ! k-omega type of models. k is zero on the wall and thus the
 ! halo value is the negative of the first internal cell.
@@ -1615,6 +1813,8 @@ bocos:do nn=1,nbocos
             bvti1d(i, j, itu2) = 0.0_8
             nud = tmpd*tempd
             tmpdd = nu*tempd
+            bmti1d(i, j, itu2, itu2) = 0.0_8
+            bmti1d(i, j, itu1, itu1) = 0.0_8
             temp = rkwbeta1*(d2wall(2, ii, jj)*d2wall(2, ii, jj))
             d2walld(2, ii, jj) = d2walld(2, ii, jj) - 2*d2wall(2, ii, jj&
 &             )*rkwbeta1*one*tmpdd/temp**2
@@ -1679,6 +1879,8 @@ bocos:do nn=1,nbocos
             bvti2d(i, j, itu2) = 0.0_8
             nud = tmpd*tempd
             tmpdd = nu*tempd
+            bmti2d(i, j, itu2, itu2) = 0.0_8
+            bmti2d(i, j, itu1, itu1) = 0.0_8
             temp = rkwbeta1*(d2wall(il, ii, jj)*d2wall(il, ii, jj))
             d2walld(il, ii, jj) = d2walld(il, ii, jj) - 2*d2wall(il, ii&
 &             , jj)*rkwbeta1*one*tmpdd/temp**2
@@ -1743,6 +1945,8 @@ bocos:do nn=1,nbocos
             bvtj1d(i, j, itu2) = 0.0_8
             nud = tmpd*tempd
             tmpdd = nu*tempd
+            bmtj1d(i, j, itu2, itu2) = 0.0_8
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
             temp = rkwbeta1*(d2wall(ii, 2, jj)*d2wall(ii, 2, jj))
             d2walld(ii, 2, jj) = d2walld(ii, 2, jj) - 2*d2wall(ii, 2, jj&
 &             )*rkwbeta1*one*tmpdd/temp**2
@@ -1807,6 +2011,8 @@ bocos:do nn=1,nbocos
             bvtj2d(i, j, itu2) = 0.0_8
             nud = tmpd*tempd
             tmpdd = nu*tempd
+            bmtj2d(i, j, itu2, itu2) = 0.0_8
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
             temp = rkwbeta1*(d2wall(ii, jl, jj)*d2wall(ii, jl, jj))
             d2walld(ii, jl, jj) = d2walld(ii, jl, jj) - 2*d2wall(ii, jl&
 &             , jj)*rkwbeta1*one*tmpdd/temp**2
@@ -1871,6 +2077,8 @@ bocos:do nn=1,nbocos
             bvtk1d(i, j, itu2) = 0.0_8
             nud = tmpd*tempd
             tmpdd = nu*tempd
+            bmtk1d(i, j, itu2, itu2) = 0.0_8
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
             temp = rkwbeta1*(d2wall(ii, jj, 2)*d2wall(ii, jj, 2))
             d2walld(ii, jj, 2) = d2walld(ii, jj, 2) - 2*d2wall(ii, jj, 2&
 &             )*rkwbeta1*one*tmpdd/temp**2
@@ -1935,6 +2143,8 @@ bocos:do nn=1,nbocos
             bvtk2d(i, j, itu2) = 0.0_8
             nud = tmpd*tempd
             tmpdd = nu*tempd
+            bmtk2d(i, j, itu2, itu2) = 0.0_8
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
             temp = rkwbeta1*(d2wall(ii, jj, kl)*d2wall(ii, jj, kl))
             d2walld(ii, jj, kl) = d2walld(ii, jj, kl) - 2*d2wall(ii, jj&
 &             , kl)*rkwbeta1*one*tmpdd/temp**2
@@ -1955,6 +2165,54 @@ bocos:do nn=1,nbocos
           else
             call popinteger4(jj)
           end if
+        end do
+      end select
+!        ================================================================
+    case (ktau) 
+! k-tau model. both k and tau are zero at the wall, so the
+! negative value of the internal cell is taken for the halo.
+      select case  (bcfaceid(nn)) 
+      case (imin) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            bmti1d(i, j, itu2, itu2) = 0.0_8
+            bmti1d(i, j, itu1, itu1) = 0.0_8
+          end do
+        end do
+      case (imax) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            bmti2d(i, j, itu2, itu2) = 0.0_8
+            bmti2d(i, j, itu1, itu1) = 0.0_8
+          end do
+        end do
+      case (jmin) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            bmtj1d(i, j, itu2, itu2) = 0.0_8
+            bmtj1d(i, j, itu1, itu1) = 0.0_8
+          end do
+        end do
+      case (jmax) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            bmtj2d(i, j, itu2, itu2) = 0.0_8
+            bmtj2d(i, j, itu1, itu1) = 0.0_8
+          end do
+        end do
+      case (kmin) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            bmtk1d(i, j, itu2, itu2) = 0.0_8
+            bmtk1d(i, j, itu1, itu1) = 0.0_8
+          end do
+        end do
+      case (kmax) 
+        do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
+          do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+            bmtk2d(i, j, itu2, itu2) = 0.0_8
+            bmtk2d(i, j, itu1, itu1) = 0.0_8
+          end do
         end do
       end select
 !        ================================================================
@@ -2719,17 +2977,52 @@ bocos:do nn=1,nviscbocos
     end do bocos
   end subroutine turbbcnswall
 
+!  differentiation of saroughfact in reverse (adjoint) mode (with options noisize i4 dr8 r8):
+!   gradient     of useful results: *d2wall fact
+!   with respect to varying inputs: *d2wall
+!   plus diff mem management of: d2wall:in
+  subroutine saroughfact_b(i, j, k, fact, factd)
+! returns either the regular sa-boundary condition
+! or the modified roughness-boundary condition
+    use constants
+    use inputphysics, only : useroughsa
+    use blockpointers, only : ks, d2wall, d2walld, il, jl, kl
+    implicit none
+! local variablse
+    integer(kind=inttype), intent(in) :: i, j, k
+    real(kind=realtype) :: fact
+    real(kind=realtype) :: factd
+    real(kind=realtype) :: temp
+    if (useroughsa) then
+! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
+! the regular sa-boundary condition
+      if (.not.(((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. &
+&         jl) .or. k .lt. 2) .or. k .gt. kl)) then
+        temp = ks(i, j, k) + d2wall(i, j, k)/0.03_realtype
+        d2walld(i, j, k) = d2walld(i, j, k) - (1.0/(0.03_realtype*temp)+&
+&         (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(0.03_realtype*&
+&         temp**2))*factd
+      end if
+    end if
+  end subroutine saroughfact_b
+
   subroutine saroughfact(i, j, k, fact)
 ! returns either the regular sa-boundary condition
 ! or the modified roughness-boundary condition
     use constants
     use inputphysics, only : useroughsa
-    use blockpointers, only : ks, d2wall
+    use blockpointers, only : ks, d2wall, il, jl, kl
     implicit none
 ! local variablse
     integer(kind=inttype), intent(in) :: i, j, k
     real(kind=realtype), intent(out) :: fact
     if (.not.useroughsa) then
+      fact = -one
+      return
+    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
+&       .or. k .lt. 2) .or. k .gt. kl) then
+! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
+! the regular sa-boundary condition
       fact = -one
       return
     else

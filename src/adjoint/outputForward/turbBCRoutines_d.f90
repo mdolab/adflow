@@ -15,8 +15,8 @@ contains
 !                *bmti1:in *bmti2:in *bvti1:in *bvti2:in *bmtj1:in
 !                *bmtj2:in
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
-!                bmtk1:in bmtk2:in bvtk1:in bvtk2:in bmti1:in bmti2:in
-!                bvti1:in bvti2:in bmtj1:in bmtj2:in
+!                bmtk1:in bmtk2:in bvtk1:in bvtk2:in d2wall:in
+!                bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
 !      ==================================================================
   subroutine applyallturbbcthisblock_d(secondhalo)
 !
@@ -422,7 +422,7 @@ bocos:do nn=1,nbocos
 !  differentiation of bceddywall in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev
 !   with respect to varying inputs: *rev
-!   plus diff mem management of: rev:in
+!   plus diff mem management of: rev:in d2wall:in
   subroutine bceddywall_d(nn)
 !
 !       bceddywall sets the eddy viscosity in the halo cells of
@@ -566,12 +566,15 @@ bocos:do nn=1,nbocos
   end subroutine bceddywall
 
 !  differentiation of bcturbfarfield in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   plus diff mem management of: bvtj1:in bvtj2:in bvtk1:in bvtk2:in
-!                bvti1:in bvti2:in
+!   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   plus diff mem management of: bvtj1:in bvtj2:in bmtk1:in bmtk2:in
+!                bvtk1:in bvtk2:in bmti1:in bmti2:in bvti1:in bvti2:in
+!                bmtj1:in bmtj2:in
   subroutine bcturbfarfield_d(nn)
 !
 !       bcturbfarfield applies the implicit treatment of the
@@ -942,6 +945,65 @@ bocos:do nn=1,nbocos
     end do
   end subroutine bcturboutflow
 
+!  differentiation of bcturbsymm in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: *bmtk1 *bmtk2 *bmti1 *bmti2
+!                *bmtj1 *bmtj2
+!   with respect to varying inputs: *bmtk1 *bmtk2 *bmti1 *bmti2
+!                *bmtj1 *bmtj2
+!   plus diff mem management of: bmtk1:in bmtk2:in bmti1:in bmti2:in
+!                bmtj1:in bmtj2:in
+  subroutine bcturbsymm_d(nn)
+!
+!       bcturbsymm applies the implicit treatment of the symmetry
+!       boundary condition (or inviscid wall) to subface nn. as the
+!       symmetry boundary condition is independent of the turbulence
+!       model, this routine is valid for all models. it is assumed
+!       that the pointers in blockpointers are already set to the
+!       correct block on the correct grid level.
+!
+    use constants
+    use blockpointers
+    use flowvarrefstate
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype), intent(in) :: nn
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j, l
+! loop over the faces of the subfaces and set the values of bmt
+! for an implicit treatment. for a symmetry face this means
+! that the halo value is set to the internal value.
+    do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
+      do i=bcdata(nn)%icbeg,bcdata(nn)%icend
+        do l=nt1,nt2
+          select case  (bcfaceid(nn)) 
+          case (imin) 
+            bmti1d(i, j, l, l) = 0.0_8
+            bmti1(i, j, l, l) = -one
+          case (imax) 
+            bmti2d(i, j, l, l) = 0.0_8
+            bmti2(i, j, l, l) = -one
+          case (jmin) 
+            bmtj1d(i, j, l, l) = 0.0_8
+            bmtj1(i, j, l, l) = -one
+          case (jmax) 
+            bmtj2d(i, j, l, l) = 0.0_8
+            bmtj2(i, j, l, l) = -one
+          case (kmin) 
+            bmtk1d(i, j, l, l) = 0.0_8
+            bmtk1(i, j, l, l) = -one
+          case (kmax) 
+            bmtk2d(i, j, l, l) = 0.0_8
+            bmtk2(i, j, l, l) = -one
+          end select
+        end do
+      end do
+    end do
+  end subroutine bcturbsymm_d
+
   subroutine bcturbsymm(nn)
 !
 !       bcturbsymm applies the implicit treatment of the symmetry
@@ -989,14 +1051,17 @@ bocos:do nn=1,nbocos
   end subroutine bcturbsymm
 
 !  differentiation of bcturbtreatment in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
+!   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
 !   with respect to varying inputs: winf *w *rlv *d2wall
 !   rw status of diff variables: winf:in *bvtj1:out *bvtj2:out
-!                *w:in *rlv:in *bvtk1:out *bvtk2:out *d2wall:in
-!                *bvti1:out *bvti2:out
-!   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!                *w:in *bmtk1:out *rlv:in *bmtk2:out *bvtk1:out
+!                *bvtk2:out *d2wall:in *bmti1:out *bmti2:out *bvti1:out
+!                *bvti2:out *bmtj1:out *bmtj2:out
+!   plus diff mem management of: bvtj1:in bvtj2:in w:in bmtk1:in
+!                rlv:in bmtk2:in bvtk1:in bvtk2:in d2wall:in bmti1:in
+!                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
   subroutine bcturbtreatment_d()
 !
 !       bcturbtreatment sets the arrays bmti1, bvti1, etc, such that
@@ -1071,10 +1136,16 @@ bocos:do nn=1,nbocos
     end do
     if (associated(bvtj1d)) bvtj1d = 0.0_8
     if (associated(bvtj2d)) bvtj2d = 0.0_8
+    if (associated(bmtk1d)) bmtk1d = 0.0_8
+    if (associated(bmtk2d)) bmtk2d = 0.0_8
     if (associated(bvtk1d)) bvtk1d = 0.0_8
     if (associated(bvtk2d)) bvtk2d = 0.0_8
+    if (associated(bmti1d)) bmti1d = 0.0_8
+    if (associated(bmti2d)) bmti2d = 0.0_8
     if (associated(bvti1d)) bvti1d = 0.0_8
     if (associated(bvti2d)) bvti2d = 0.0_8
+    if (associated(bmtj1d)) bmtj1d = 0.0_8
+    if (associated(bmtj2d)) bmtj2d = 0.0_8
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! determine the kind of boundary condition for this subface.
@@ -1089,7 +1160,7 @@ bocos:do nn=1,nbocos
       case (symm, symmpolar, eulerwall) 
 ! symmetry, polar symmetry or inviscid wall. treatment of
 ! the turbulent equations is identical.
-        call bcturbsymm(nn)
+        call bcturbsymm_d(nn)
 !=============================================================
       case (farfield) 
 ! farfield. the kind of boundary condition to be applied,
@@ -1200,12 +1271,15 @@ bocos:do nn=1,nbocos
   end subroutine bcturbtreatment
 
 !  differentiation of bcturbwall in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *bvtj1 *bvtj2 *bvtk1 *bvtk2
-!                *bvti1 *bvti2
-!   with respect to varying inputs: *bvtj1 *bvtj2 *w *rlv *bvtk1
-!                *bvtk2 *d2wall *bvti1 *bvti2
-!   plus diff mem management of: bvtj1:in bvtj2:in w:in rlv:in
-!                bvtk1:in bvtk2:in d2wall:in bvti1:in bvti2:in
+!   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
+!                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
+!                *bmtj2
+!   with respect to varying inputs: *bvtj1 *bvtj2 *w *bmtk1 *rlv
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
+!   plus diff mem management of: bvtj1:in bvtj2:in w:in bmtk1:in
+!                rlv:in bmtk2:in bvtk1:in bvtk2:in d2wall:in bmti1:in
+!                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
   subroutine bcturbwall_d(nn)
 !
 !       bcturbwall applies the implicit treatment of the viscous
@@ -1229,7 +1303,7 @@ bocos:do nn=1,nbocos
 !
     integer(kind=inttype) :: i, j, ii, jj, iimax, jjmax
     real(kind=realtype) :: tmpd, tmpe, tmpf, nu, fact
-    real(kind=realtype) :: tmpdd, nud
+    real(kind=realtype) :: tmpdd, nud, factd
     real(kind=realtype), dimension(:, :, :, :), pointer :: bmt
     real(kind=realtype), dimension(:, :, :), pointer :: bvt, ww2
     real(kind=realtype), dimension(:, :), pointer :: rlv2, dd2wall
@@ -1260,48 +1334,48 @@ bocos:do nn=1,nbocos
       case (imin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            call saroughfact(2, i, j, fact)
-            bmti1d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_d(2, i, j, fact, factd)
+            bmti1d(i, j, itu1, itu1) = -factd
             bmti1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (imax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            call saroughfact(il, i, j, fact)
-            bmti2d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_d(il, i, j, fact, factd)
+            bmti2d(i, j, itu1, itu1) = -factd
             bmti2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            call saroughfact(i, 2, j, fact)
-            bmtj1d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_d(i, 2, j, fact, factd)
+            bmtj1d(i, j, itu1, itu1) = -factd
             bmtj1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (jmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            call saroughfact(i, jl, j, fact)
-            bmtj2d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_d(i, jl, j, fact, factd)
+            bmtj2d(i, j, itu1, itu1) = -factd
             bmtj2(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmin) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            call saroughfact(i, j, 2, fact)
-            bmtk1d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_d(i, j, 2, fact, factd)
+            bmtk1d(i, j, itu1, itu1) = -factd
             bmtk1(i, j, itu1, itu1) = -fact
           end do
         end do
       case (kmax) 
         do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
           do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-            call saroughfact(i, j, kl, fact)
-            bmtk2d(i, j, itu1, itu1) = 0.0_8
+            call saroughfact_d(i, j, kl, fact, factd)
+            bmtk2d(i, j, itu1, itu1) = -factd
             bmtk2(i, j, itu1, itu1) = -fact
           end do
         end do
@@ -2306,17 +2380,60 @@ bocos:do nn=1,nviscbocos
     end do bocos
   end subroutine turbbcnswall
 
+!  differentiation of saroughfact in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: fact
+!   with respect to varying inputs: *d2wall
+!   plus diff mem management of: d2wall:in
+  subroutine saroughfact_d(i, j, k, fact, factd)
+! returns either the regular sa-boundary condition
+! or the modified roughness-boundary condition
+    use constants
+    use inputphysics, only : useroughsa
+    use blockpointers, only : ks, d2wall, d2walld, il, jl, kl
+    implicit none
+! local variablse
+    integer(kind=inttype), intent(in) :: i, j, k
+    real(kind=realtype), intent(out) :: fact
+    real(kind=realtype), intent(out) :: factd
+    real(kind=realtype) :: temp
+    real(kind=realtype) :: temp0
+    if (.not.useroughsa) then
+      fact = -one
+      factd = 0.0_8
+      return
+    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
+&       .or. k .lt. 2) .or. k .gt. kl) then
+! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
+! the regular sa-boundary condition
+      fact = -one
+      factd = 0.0_8
+      return
+    else
+      temp = ks(i, j, k) + d2wall(i, j, k)/0.03_realtype
+      temp0 = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/temp
+      factd = -((1.0/0.03_realtype+temp0/0.03_realtype)*d2walld(i, j, k)&
+&       /temp)
+      fact = temp0
+    end if
+  end subroutine saroughfact_d
+
   subroutine saroughfact(i, j, k, fact)
 ! returns either the regular sa-boundary condition
 ! or the modified roughness-boundary condition
     use constants
     use inputphysics, only : useroughsa
-    use blockpointers, only : ks, d2wall
+    use blockpointers, only : ks, d2wall, il, jl, kl
     implicit none
 ! local variablse
     integer(kind=inttype), intent(in) :: i, j, k
     real(kind=realtype), intent(out) :: fact
     if (.not.useroughsa) then
+      fact = -one
+      return
+    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
+&       .or. k .lt. 2) .or. k .gt. kl) then
+! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
+! the regular sa-boundary condition
       fact = -one
       return
     else
