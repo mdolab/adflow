@@ -234,8 +234,9 @@ contains
         use constants
         use blockPointers, only: BCdata
         use flowVarRefState, only: viscous, eddyModel
+        use inputPhysics, only: useRoughSA
         use BCPointers, only: gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, rlv2, &
-                              iStart, jStart, iSize, jSize, rev1, rev2
+                              iStart, jStart, iSize, jSize, rev1, rev2, d2wall1, d2wall2, ks1, ks2
         implicit none
 
         ! Subroutine arguments.
@@ -274,6 +275,8 @@ contains
 
             gamma1(i, j) = gamma2(i, j)
             pp1(i, j) = pp2(i, j)
+            d2wall1(i, j) = d2wall2(i, j)
+            if (useRoughSA) ks1(i, j) = ks2(i, j)
             if (viscous) rlv1(i, j) = rlv2(i, j)
             if (eddyModel) rev1(i, j) = rev2(i, j)
         end do
@@ -287,7 +290,8 @@ contains
         use constants
         use blockPointers, only: BCdata
         use flowVarRefState, only: viscous, eddyModel
-        use BCPointers, only: gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, rlv3, &
+        use inputPhysics, only: useRoughSA
+        use BCPointers, only: gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, rlv3, d2wall0, d2wall3, ks0, ks3, &
                               rev0, rev3, iStart, jStart, iSize, jSize
         implicit none
 
@@ -323,6 +327,8 @@ contains
 
             gamma0(i, j) = gamma3(i, j)
             pp0(i, j) = pp3(i, j)
+            d2wall0(i, j) = d2wall3(i, j)
+            if (useRoughSA) ks0(i, j) = ks3(i, j)
             if (viscous) rlv0(i, j) = rlv3(i, j)
             if (eddyModel) rev0(i, j) = rev3(i, j)
         end do
@@ -339,8 +345,10 @@ contains
         ! centerline. This routine does just the 1st level halo.
 
         use constants
+        use inputPhysics, only: useRoughSA
         use BCPointers, only: ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, &
-                              xx, iStart, jStart, iSize, jSize
+                              xx, iStart, jStart, iSize, jSize, &
+                              d2wall1, d2wall2, ks1, ks2
         use flowVarRefState, only: viscous, eddyModel
         implicit none
 
@@ -403,6 +411,8 @@ contains
             ! eddy viscosity in the halo.
 
             pp1(i, j) = pp2(i, j)
+            d2wall1(i, j) = d2wall2(i, j)
+            if (useRoughSA) ks1(i, j) = ks2(i, j)
             if (viscous) rlv1(i, j) = rlv2(i, j)
             if (eddyModel) rev1(i, j) = rev2(i, j)
         end do
@@ -418,7 +428,8 @@ contains
         ! centerline. This routine does just the 2nd level halo.
 
         use constants
-        use BCPointers, only: ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, &
+        use inputPhysics, only: useRoughSA
+        use BCPointers, only: ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, d2wall0, d2wall3, ks0, ks3, &
                               xx, iStart, jStart, iSize, jSize
         use flowVarRefState, only: viscous, eddyModel
         implicit none
@@ -480,6 +491,8 @@ contains
             ! eddy viscosity in the halo.
 
             pp0(i, j) = pp3(i, j)
+            d2wall0(i, j) = d2wall3(i, j)
+            if (useRoughSA) ks0(i, j) = ks3(i, j)
             if (viscous) rlv0(i, j) = rlv3(i, j)
             if (eddyModel) rev0(i, j) = rev3(i, j)
         end do
