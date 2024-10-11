@@ -1,6 +1,7 @@
 {
     "Dot product test for (w, xV) -> (dw, F)": 25051748893.868687,
     "Dot product test for Xv -> R": -8183826.0616009245,
+    "Dot product test for w -> F": 48678.90552195639,
     "Dot product test for w -> R": 25061252292.450912,
     "Dot product test for xV -> F": -1368251.4261434944,
     "Eval Functions:": {
