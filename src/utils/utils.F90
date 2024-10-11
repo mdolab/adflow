@@ -888,12 +888,14 @@ contains
         use blockPointers, only: w, p, rlv, rev, gamma, x, d2wall, &
                                  si, sj, sk, s, globalCell, BCData, nx, il, ie, ib, &
                                  ny, jl, je, jb, nz, kl, ke, kb, BCFaceID, &
-                                 addgridvelocities, sFaceI, sFaceJ, sFaceK, addGridVelocities
+                                 addgridvelocities, sFaceI, sFaceJ, sFaceK, addGridVelocities, &
+                                 d2wall, ks
         use BCPointers, only: ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
                               rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, &
                               gamma0, gamma1, gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, &
-                              sFace, iStart, iEnd, jStart, jEnd, iSize, jSize
-        use inputPhysics, only: cpModel, equations
+                              sFace, iStart, iEnd, jStart, jEnd, iSize, jSize, &
+                              d2wall0, d2wall1, d2wall2, d2wall3, ks0, ks1, ks2, ks3
+        use inputPhysics, only: cpModel, equations, useRoughSA
         implicit none
 
         ! Subroutine arguments.
@@ -939,6 +941,18 @@ contains
             rev1 => rev(1, 1:, 1:)
             rev0 => rev(0, 1:, 1:)
 
+            d2wall3 => d2wall(3, 1:, 1:)
+            d2wall2 => d2wall(2, 1:, 1:)
+            d2wall1 => d2wall(1, 1:, 1:)
+            d2wall0 => d2wall(0, 1:, 1:)
+
+            if (useRoughSA) then
+                ks3 => ks(3, 1:, 1:)
+                ks2 => ks(2, 1:, 1:)
+                ks1 => ks(1, 1:, 1:)
+                ks0 => ks(0, 1:, 1:)
+            end if
+
             gamma3 => gamma(3, 1:, 1:)
             gamma2 => gamma(2, 1:, 1:)
             gamma1 => gamma(1, 1:, 1:)
@@ -968,6 +982,18 @@ contains
             rev2 => rev(il, 1:, 1:)
             rev1 => rev(ie, 1:, 1:)
             rev0 => rev(ib, 1:, 1:)
+
+            d2wall3 => d2wall(nx, 1:, 1:)
+            d2wall2 => d2wall(il, 1:, 1:)
+            d2wall1 => d2wall(ie, 1:, 1:)
+            d2wall0 => d2wall(ib, 1:, 1:)
+
+            if (useRoughSA) then
+                ks3 => ks(nx, 1:, 1:)
+                ks2 => ks(il, 1:, 1:)
+                ks1 => ks(ie, 1:, 1:)
+                ks0 => ks(ib, 1:, 1:)
+            end if
 
             gamma3 => gamma(nx, 1:, 1:)
             gamma2 => gamma(il, 1:, 1:)
@@ -999,6 +1025,18 @@ contains
             rev1 => rev(1:, 1, 1:)
             rev0 => rev(1:, 0, 1:)
 
+            d2wall3 => d2wall(1:, 3, 1:)
+            d2wall2 => d2wall(1:, 2, 1:)
+            d2wall1 => d2wall(1:, 1, 1:)
+            d2wall0 => d2wall(1:, 0, 1:)
+
+            if (useRoughSA) then
+                ks3 => ks(1:, 3, 1:)
+                ks2 => ks(1:, 2, 1:)
+                ks1 => ks(1:, 1, 1:)
+                ks0 => ks(1:, 0, 1:)
+            end if
+
             gamma3 => gamma(1:, 3, 1:)
             gamma2 => gamma(1:, 2, 1:)
             gamma1 => gamma(1:, 1, 1:)
@@ -1028,6 +1066,18 @@ contains
             rev2 => rev(1:, jl, 1:)
             rev1 => rev(1:, je, 1:)
             rev0 => rev(1:, jb, 1:)
+
+            d2wall3 => d2wall(1:, ny, 1:)
+            d2wall2 => d2wall(1:, jl, 1:)
+            d2wall1 => d2wall(1:, je, 1:)
+            d2wall0 => d2wall(1:, jb, 1:)
+
+            if (useRoughSA) then
+                ks3 => ks(1:, ny, 1:)
+                ks2 => ks(1:, jl, 1:)
+                ks1 => ks(1:, je, 1:)
+                ks0 => ks(1:, jb, 1:)
+            end if
 
             gamma3 => gamma(1:, ny, 1:)
             gamma2 => gamma(1:, jl, 1:)
@@ -1059,6 +1109,18 @@ contains
             rev1 => rev(1:, 1:, 1)
             rev0 => rev(1:, 1:, 0)
 
+            d2wall3 => d2wall(1:, 1:, 3)
+            d2wall2 => d2wall(1:, 1:, 2)
+            d2wall1 => d2wall(1:, 1:, 1)
+            d2wall0 => d2wall(1:, 1:, 0)
+
+            if (useRoughSA) then
+                ks3 => ks(1:, 1:, 3)
+                ks2 => ks(1:, 1:, 2)
+                ks1 => ks(1:, 1:, 1)
+                ks0 => ks(1:, 1:, 0)
+            end if
+
             gamma3 => gamma(1:, 1:, 3)
             gamma2 => gamma(1:, 1:, 2)
             gamma1 => gamma(1:, 1:, 1)
@@ -1088,6 +1150,18 @@ contains
             rev2 => rev(1:, 1:, kl)
             rev1 => rev(1:, 1:, ke)
             rev0 => rev(1:, 1:, kb)
+
+            d2wall3 => d2wall(1:, 1:, nz)
+            d2wall2 => d2wall(1:, 1:, kl)
+            d2wall1 => d2wall(1:, 1:, ke)
+            d2wall0 => d2wall(1:, 1:, kb)
+
+            if (useRoughSA) then
+                ks3 => ks(1:, 1:, nz)
+                ks2 => ks(1:, 1:, kl)
+                ks1 => ks(1:, 1:, ke)
+                ks0 => ks(1:, 1:, kb)
+            end if
 
             gamma3 => gamma(1:, 1:, nz)
             gamma2 => gamma(1:, 1:, kl)
@@ -2056,14 +2130,16 @@ contains
     &   gamma, x, xd, d2wall, d2walld, si, sid, sj, sjd, sk, skd, s, sd, &
     &   globalcell, bcdata, bcdatad, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
     &   ke, kb, bcfaceid, addgridvelocities, sfacei, sfaceid, sfacej, &
-    &   sfacejd, sfacek, sfacekd, addgridvelocities
+    &   sfacejd, sfacek, sfacekd, addgridvelocities, d2wall, d2walld, ks
         use bcpointers_d, only: ww0, ww0d, ww1, ww1d, ww2, ww2d, ww3, ww3d,&
     &   pp0, pp0d, pp1, pp1d, pp2, pp2d, pp3, pp3d, rlv0, rlv0d, rlv1, rlv1d&
     &   , rlv2, rlv2d, rlv3, rlv3d, rev0, rev0d, rev1, rev1d, rev2, rev2d, &
     &   rev3, rev3d, gamma0, gamma1, gamma2, gamma3, gcp, xx, xxd, ss, ssd, &
     &   ssi, ssid, ssj, ssjd, ssk, sskd, dd2wall, sface, istart, iend, &
-    &   jstart, jend, isize, jsize
-        use inputphysics, only: cpmodel, equations
+    &   jstart, jend, isize, jsize, &
+        d2wall0, d2wall0d, d2wall1, d2wall1d, d2wall2, d2wall2d, d2wall3, d2wall3d, &
+        ks0, ks1, ks2, ks3
+        use inputphysics, only: cpmodel, equations, useRoughSA
         implicit none
 ! subroutine arguments.
         integer(kind=inttype), intent(in) :: nn
@@ -2114,11 +2190,25 @@ contains
             rev1 => rev(1, 1:, 1:)
             rev0d => revd(0, 1:, 1:)
             rev0 => rev(0, 1:, 1:)
+            d2wall3d => d2walld(3, 1:, 1:)
+            d2wall3 =>  d2wall(3, 1:, 1:)
+            d2wall2d => d2walld(2, 1:, 1:)
+            d2wall2 =>  d2wall(2, 1:, 1:)
+            d2wall1d => d2walld(1, 1:, 1:)
+            d2wall1 =>  d2wall(1, 1:, 1:)
+            d2wall0d => d2walld(0, 1:, 1:)
+            d2wall0 =>  d2wall(0, 1:, 1:)
             gamma3 => gamma(3, 1:, 1:)
             gamma2 => gamma(2, 1:, 1:)
             gamma1 => gamma(1, 1:, 1:)
             gamma0 => gamma(0, 1:, 1:)
             gcp => globalcell(2, 1:, 1:)
+            if (useRoughSA) then
+                ks3 => ks(3, 1:, 1:)
+                ks2 => ks(2, 1:, 1:)
+                ks1 => ks(1, 1:, 1:)
+                ks0 => ks(0, 1:, 1:)
+            end if
         case (imax)
 !---------------------------------------------------------------------------
             ww3d => wd(nx, 1:, 1:, :)
@@ -2153,11 +2243,25 @@ contains
             rev1 => rev(ie, 1:, 1:)
             rev0d => revd(ib, 1:, 1:)
             rev0 => rev(ib, 1:, 1:)
+            d2wall3d => d2walld(nx, 1:, 1:)
+            d2wall3 =>  d2wall(nx, 1:, 1:)
+            d2wall2d => d2walld(il, 1:, 1:)
+            d2wall2 =>  d2wall(il, 1:, 1:)
+            d2wall1d => d2walld(ie, 1:, 1:)
+            d2wall1 =>  d2wall(ie, 1:, 1:)
+            d2wall0d => d2walld(ib, 1:, 1:)
+            d2wall0 =>  d2wall(ib, 1:, 1:)
             gamma3 => gamma(nx, 1:, 1:)
             gamma2 => gamma(il, 1:, 1:)
             gamma1 => gamma(ie, 1:, 1:)
             gamma0 => gamma(ib, 1:, 1:)
             gcp => globalcell(il, 1:, 1:)
+            if (useRoughSA) then
+                ks3 => ks(nx, 1:, 1:)
+                ks2 => ks(il, 1:, 1:)
+                ks1 => ks(ie, 1:, 1:)
+                ks0 => ks(ib, 1:, 1:)
+            end if
         case (jmin)
 !---------------------------------------------------------------------------
             ww3d => wd(1:, 3, 1:, :)
@@ -2192,11 +2296,25 @@ contains
             rev1 => rev(1:, 1, 1:)
             rev0d => revd(1:, 0, 1:)
             rev0 => rev(1:, 0, 1:)
+            d2wall3d => d2walld(1:, 3, 1:)
+            d2wall3 =>  d2wall(1:, 3, 1:)
+            d2wall2d => d2walld(1:, 2, 1:)
+            d2wall2 =>  d2wall(1:, 2, 1:)
+            d2wall1d => d2walld(1:, 1, 1:)
+            d2wall1 =>  d2wall(1:, 1, 1:)
+            d2wall0d => d2walld(1:, 0, 1:)
+            d2wall0 =>  d2wall(1:, 0, 1:)
             gamma3 => gamma(1:, 3, 1:)
             gamma2 => gamma(1:, 2, 1:)
             gamma1 => gamma(1:, 1, 1:)
             gamma0 => gamma(1:, 0, 1:)
             gcp => globalcell(1:, 2, 1:)
+            if (useRoughSA) then
+                ks3 => ks(1:, 3, 1:)
+                ks2 => ks(1:, 2, 1:)
+                ks1 => ks(1:, 1, 1:)
+                ks0 => ks(1:, 0, 1:)
+            end if
         case (jmax)
 !---------------------------------------------------------------------------
             ww3d => wd(1:, ny, 1:, :)
@@ -2231,11 +2349,25 @@ contains
             rev1 => rev(1:, je, 1:)
             rev0d => revd(1:, jb, 1:)
             rev0 => rev(1:, jb, 1:)
+            d2wall3d => d2walld(1:, ny, 1:)
+            d2wall3 =>  d2wall(1:, ny, 1:)
+            d2wall2d => d2walld(1:, jl, 1:)
+            d2wall2 =>  d2wall(1:, jl, 1:)
+            d2wall1d => d2walld(1:, je, 1:)
+            d2wall1 =>  d2wall(1:, je, 1:)
+            d2wall0d => d2walld(1:, jb, 1:)
+            d2wall0 =>  d2wall(1:, jb, 1:)
             gamma3 => gamma(1:, ny, 1:)
             gamma2 => gamma(1:, jl, 1:)
             gamma1 => gamma(1:, je, 1:)
             gamma0 => gamma(1:, jb, 1:)
             gcp => globalcell(1:, jl, 1:)
+            if (useRoughSA) then
+                ks3 => ks(1:, ny, 1:)
+                ks2 => ks(1:, jl, 1:)
+                ks1 => ks(1:, je, 1:)
+                ks0 => ks(1:, jb, 1:)
+            end if
         case (kmin)
 !---------------------------------------------------------------------------
             ww3d => wd(1:, 1:, 3, :)
@@ -2270,11 +2402,25 @@ contains
             rev1 => rev(1:, 1:, 1)
             rev0d => revd(1:, 1:, 0)
             rev0 => rev(1:, 1:, 0)
+            d2wall3d => d2walld(1:, 1:, 3)
+            d2wall3 =>  d2wall(1:, 1:, 3)
+            d2wall2d => d2walld(1:, 1:, 2)
+            d2wall2 =>  d2wall(1:, 1:, 2)
+            d2wall1d => d2walld(1:, 1:, 1)
+            d2wall1 =>  d2wall(1:, 1:, 1)
+            d2wall0d => d2walld(1:, 1:, 0)
+            d2wall0 =>  d2wall(1:, 1:, 0)
             gamma3 => gamma(1:, 1:, 3)
             gamma2 => gamma(1:, 1:, 2)
             gamma1 => gamma(1:, 1:, 1)
             gamma0 => gamma(1:, 1:, 0)
             gcp => globalcell(1:, 1:, 2)
+            if (useRoughSA) then
+                ks3 => ks(1:, 1:, 3)
+                ks2 => ks(1:, 1:, 2)
+                ks1 => ks(1:, 1:, 1)
+                ks0 => ks(1:, 1:, 0)
+            end if
         case (kmax)
 !---------------------------------------------------------------------------
             ww3d => wd(1:, 1:, nz, :)
@@ -2309,11 +2455,25 @@ contains
             rev1 => rev(1:, 1:, ke)
             rev0d => revd(1:, 1:, kb)
             rev0 => rev(1:, 1:, kb)
+            d2wall3d => d2walld(1:, 1:, nz)
+            d2wall3 =>  d2wall(1:, 1:, nz)
+            d2wall2d => d2walld(1:, 1:, kl)
+            d2wall2 =>  d2wall(1:, 1:, kl)
+            d2wall1d => d2walld(1:, 1:, ke)
+            d2wall1 =>  d2wall(1:, 1:, ke)
+            d2wall0d => d2walld(1:, 1:, kb)
+            d2wall0 =>  d2wall(1:, 1:, kb)
             gamma3 => gamma(1:, 1:, nz)
             gamma2 => gamma(1:, 1:, kl)
             gamma1 => gamma(1:, 1:, ke)
             gamma0 => gamma(1:, 1:, kb)
             gcp => globalcell(1:, 1:, kl)
+            if (useRoughSA) then
+                ks3 => ks(1:, 1:, nz)
+                ks2 => ks(1:, 1:, kl)
+                ks1 => ks(1:, 1:, ke)
+                ks0 => ks(1:, 1:, kb)
+            end if
         end select
         if (spatialpointers) then
             select case (bcfaceid(nn))

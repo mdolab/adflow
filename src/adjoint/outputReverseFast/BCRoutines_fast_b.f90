@@ -170,8 +170,10 @@ contains
     use constants
     use blockpointers, only : bcdata
     use flowvarrefstate, only : viscous, eddymodel
+    use inputphysics, only : useroughsa
     use bcpointers, only : gamma1, gamma2, ww1, ww2, pp1, pp2, rlv1, &
-&   rlv2, istart, jstart, isize, jsize, rev1, rev2
+&   rlv2, istart, jstart, isize, jsize, rev1, rev2, d2wall1, d2wall2, &
+&   ks1, ks2
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -201,6 +203,8 @@ contains
 ! laminar and eddy viscosity in the halo.
       gamma1(i, j) = gamma2(i, j)
       pp1(i, j) = pp2(i, j)
+      d2wall1(i, j) = d2wall2(i, j)
+      if (useroughsa) ks1(i, j) = ks2(i, j)
       if (viscous) rlv1(i, j) = rlv2(i, j)
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
@@ -213,8 +217,10 @@ contains
     use constants
     use blockpointers, only : bcdata
     use flowvarrefstate, only : viscous, eddymodel
+    use inputphysics, only : useroughsa
     use bcpointers, only : gamma0, gamma3, ww0, ww3, pp0, pp3, rlv0, &
-&   rlv3, rev0, rev3, istart, jstart, isize, jsize
+&   rlv3, d2wall0, d2wall3, ks0, ks3, rev0, rev3, istart, jstart, isize,&
+&   jsize
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -241,6 +247,8 @@ contains
 ! laminar and eddy viscosity in the halo.
       gamma0(i, j) = gamma3(i, j)
       pp0(i, j) = pp3(i, j)
+      d2wall0(i, j) = d2wall3(i, j)
+      if (useroughsa) ks0(i, j) = ks3(i, j)
       if (viscous) rlv0(i, j) = rlv3(i, j)
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do
@@ -254,8 +262,9 @@ contains
 ! case of a degenerate line, as this line is the axi-symmetric
 ! centerline. this routine does just the 1st level halo.
     use constants
+    use inputphysics, only : useroughsa
     use bcpointers, only : ww1, ww2, pp1, pp2, rlv1, rlv2, rev1, rev2, &
-&   xx, istart, jstart, isize, jsize
+&   xx, istart, jstart, isize, jsize, d2wall1, d2wall2, ks1, ks2
     use flowvarrefstate, only : viscous, eddymodel
     implicit none
 ! subroutine arguments.
@@ -307,6 +316,8 @@ contains
 ! set the pressure and possibly the laminar and
 ! eddy viscosity in the halo.
       pp1(i, j) = pp2(i, j)
+      d2wall1(i, j) = d2wall2(i, j)
+      if (useroughsa) ks1(i, j) = ks2(i, j)
       if (viscous) rlv1(i, j) = rlv2(i, j)
       if (eddymodel) rev1(i, j) = rev2(i, j)
     end do
@@ -320,8 +331,9 @@ contains
 ! case of a degenerate line, as this line is the axi-symmetric
 ! centerline. this routine does just the 2nd level halo.
     use constants
+    use inputphysics, only : useroughsa
     use bcpointers, only : ww0, ww3, pp0, pp3, rlv0, rlv3, rev0, rev3, &
-&   xx, istart, jstart, isize, jsize
+&   d2wall0, d2wall3, ks0, ks3, xx, istart, jstart, isize, jsize
     use flowvarrefstate, only : viscous, eddymodel
     implicit none
 ! subroutine arguments.
@@ -371,6 +383,8 @@ contains
 ! set the pressure and possibly the laminar and
 ! eddy viscosity in the halo.
       pp0(i, j) = pp3(i, j)
+      d2wall0(i, j) = d2wall3(i, j)
+      if (useroughsa) ks0(i, j) = ks3(i, j)
       if (viscous) rlv0(i, j) = rlv3(i, j)
       if (eddymodel) rev0(i, j) = rev3(i, j)
     end do

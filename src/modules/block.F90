@@ -658,13 +658,14 @@ module block
         !
         !         Turbulence model variables.
         !
-        ! d2Wall(2:il,2:jl,2:kl) - Distance from the center of the cell
-        !                          to the nearest viscous wall.
+        ! d2Wall(0:ib, 0:jb, 0:kb) - Distance from the center of the cell
+        !                          to the nearest viscous wall. It is exchanged for non-BC halo cells and extrapolated 
+        !                          for symmetry type BCs. For other BCs, this value is initialize to a large number
         ! intermittency( )       - Function defining the transition location
         !
         ! The next two variables are only initialized if roughness is requested (useRoughSA = True)
         ! nearestWallCellInd(2:il,2:jl,2:kl)   - global cell ID for the nearest wall cell; is needed for rougness
-        ! ks(2:il,2:jl,2:kl)     - Roughness value of the nearest wall
+        ! ks(0:ib, 0:jb, 0:kb)     - Roughness value of the nearest wall - see d2wall description for the values set
 
         real(kind=realType), dimension(:, :, :), pointer :: d2Wall, filterDES
         real(kind=realType), dimension(:, :, :), pointer :: intermittency

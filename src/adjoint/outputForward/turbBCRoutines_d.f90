@@ -8,12 +8,12 @@ contains
 !  differentiation of applyallturbbcthisblock in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev *w
 !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bmtk1
-!                *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
-!                *bmtj1 *bmtj2
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
 !   rw status of diff variables: *rev:in-out *bvtj1:in *bvtj2:in
 !                *w:in-out *bmtk1:in *bmtk2:in *bvtk1:in *bvtk2:in
-!                *bmti1:in *bmti2:in *bvti1:in *bvti2:in *bmtj1:in
-!                *bmtj2:in
+!                *d2wall:in *bmti1:in *bmti2:in *bvti1:in *bvti2:in
+!                *bmtj1:in *bmtj2:in
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
 !                bmtk1:in bmtk2:in bvtk1:in bvtk2:in d2wall:in
 !                bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
@@ -421,7 +421,7 @@ bocos:do nn=1,nbocos
 
 !  differentiation of bceddywall in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *rev
-!   with respect to varying inputs: *rev
+!   with respect to varying inputs: *rev *d2wall
 !   plus diff mem management of: rev:in d2wall:in
   subroutine bceddywall_d(nn)
 !
@@ -442,6 +442,7 @@ bocos:do nn=1,nbocos
 !
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: fact
+    real(kind=realtype) :: factd
 ! determine the face id on which the subface is located and
 ! loop over the faces of the subface and set the eddy viscosity
 ! in the halo cells.
@@ -449,48 +450,48 @@ bocos:do nn=1,nbocos
     case (imin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          call saroughfact(2, i, j, fact)
-          revd(1, i, j) = fact*revd(2, i, j)
+          call saroughfact_d(2, i, j, fact, factd)
+          revd(1, i, j) = rev(2, i, j)*factd + fact*revd(2, i, j)
           rev(1, i, j) = fact*rev(2, i, j)
         end do
       end do
     case (imax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          call saroughfact(il, i, j, fact)
-          revd(ie, i, j) = fact*revd(il, i, j)
+          call saroughfact_d(il, i, j, fact, factd)
+          revd(ie, i, j) = rev(il, i, j)*factd + fact*revd(il, i, j)
           rev(ie, i, j) = fact*rev(il, i, j)
         end do
       end do
     case (jmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          call saroughfact(i, 2, j, fact)
-          revd(i, 1, j) = fact*revd(i, 2, j)
+          call saroughfact_d(i, 2, j, fact, factd)
+          revd(i, 1, j) = rev(i, 2, j)*factd + fact*revd(i, 2, j)
           rev(i, 1, j) = fact*rev(i, 2, j)
         end do
       end do
     case (jmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          call saroughfact(i, jl, j, fact)
-          revd(i, je, j) = fact*revd(i, jl, j)
+          call saroughfact_d(i, jl, j, fact, factd)
+          revd(i, je, j) = rev(i, jl, j)*factd + fact*revd(i, jl, j)
           rev(i, je, j) = fact*rev(i, jl, j)
         end do
       end do
     case (kmin) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          call saroughfact(i, j, 2, fact)
-          revd(i, j, 1) = fact*revd(i, j, 2)
+          call saroughfact_d(i, j, 2, fact, factd)
+          revd(i, j, 1) = rev(i, j, 2)*factd + fact*revd(i, j, 2)
           rev(i, j, 1) = fact*rev(i, j, 2)
         end do
       end do
     case (kmax) 
       do j=bcdata(nn)%jcbeg,bcdata(nn)%jcend
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
-          call saroughfact(i, j, kl, fact)
-          revd(i, j, ke) = fact*revd(i, j, kl)
+          call saroughfact_d(i, j, kl, fact, factd)
+          revd(i, j, ke) = rev(i, j, kl)*factd + fact*revd(i, j, kl)
           rev(i, j, ke) = fact*rev(i, j, kl)
         end do
       end do
@@ -1054,11 +1055,13 @@ bocos:do nn=1,nbocos
 !   variations   of useful results: *bvtj1 *bvtj2 *bmtk1 *bmtk2
 !                *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2 *bmtj1
 !                *bmtj2
-!   with respect to varying inputs: winf *w *rlv *d2wall
-!   rw status of diff variables: winf:in *bvtj1:out *bvtj2:out
-!                *w:in *bmtk1:out *rlv:in *bmtk2:out *bvtk1:out
-!                *bvtk2:out *d2wall:in *bmti1:out *bmti2:out *bvti1:out
-!                *bvti2:out *bmtj1:out *bmtj2:out
+!   with respect to varying inputs: winf *bvtj1 *bvtj2 *w *bmtk1
+!                *rlv *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2
+!                *bvti1 *bvti2 *bmtj1 *bmtj2
+!   rw status of diff variables: winf:in *bvtj1:in-out *bvtj2:in-out
+!                *w:in *bmtk1:in-out *rlv:in *bmtk2:in-out *bvtk1:in-out
+!                *bvtk2:in-out *d2wall:in *bmti1:in-out *bmti2:in-out
+!                *bvti1:in-out *bvti2:in-out *bmtj1:in-out *bmtj2:in-out
 !   plus diff mem management of: bvtj1:in bvtj2:in w:in bmtk1:in
 !                rlv:in bmtk2:in bvtk1:in bvtk2:in d2wall:in bmti1:in
 !                bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
@@ -1134,18 +1137,6 @@ bocos:do nn=1,nbocos
         end do
       end do
     end do
-    if (associated(bvtj1d)) bvtj1d = 0.0_8
-    if (associated(bvtj2d)) bvtj2d = 0.0_8
-    if (associated(bmtk1d)) bmtk1d = 0.0_8
-    if (associated(bmtk2d)) bmtk2d = 0.0_8
-    if (associated(bvtk1d)) bvtk1d = 0.0_8
-    if (associated(bvtk2d)) bvtk2d = 0.0_8
-    if (associated(bmti1d)) bmti1d = 0.0_8
-    if (associated(bmti2d)) bmti2d = 0.0_8
-    if (associated(bvti1d)) bvti1d = 0.0_8
-    if (associated(bvti2d)) bvti2d = 0.0_8
-    if (associated(bmtj1d)) bmtj1d = 0.0_8
-    if (associated(bmtj2d)) bmtj2d = 0.0_8
 ! loop over the boundary condition subfaces of this block.
 bocos:do nn=1,nbocos
 ! determine the kind of boundary condition for this subface.
@@ -2401,19 +2392,19 @@ bocos:do nn=1,nviscbocos
       fact = -one
       factd = 0.0_8
       return
-    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
-&       .or. k .lt. 2) .or. k .gt. kl) then
-! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
-! the regular sa-boundary condition
-      fact = -one
-      factd = 0.0_8
-      return
     else
       temp = ks(i, j, k) + d2wall(i, j, k)/0.03_realtype
       temp0 = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/temp
       factd = -((1.0/0.03_realtype+temp0/0.03_realtype)*d2walld(i, j, k)&
 &       /temp)
       fact = temp0
+      if (ks(i, j, k) .eq. 0.01 .or. d2wall(i, j, k) .eq. 0.01) print*, &
+&                                                               i, j, k&
+&                                                               , fact, &
+&                                                               d2wall(i&
+&                                                               , j, k)&
+&                                                               , ks(i, &
+&                                                               j, k)
     end if
   end subroutine saroughfact_d
 
@@ -2430,15 +2421,16 @@ bocos:do nn=1,nviscbocos
     if (.not.useroughsa) then
       fact = -one
       return
-    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
-&       .or. k .lt. 2) .or. k .gt. kl) then
-! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
-! the regular sa-boundary condition
-      fact = -one
-      return
     else
       fact = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(ks(i, j, k)+&
 &       d2wall(i, j, k)/0.03_realtype)
+      if (ks(i, j, k) .eq. 0.01 .or. d2wall(i, j, k) .eq. 0.01) print*, &
+&                                                               i, j, k&
+&                                                               , fact, &
+&                                                               d2wall(i&
+&                                                               , j, k)&
+&                                                               , ks(i, &
+&                                                               j, k)
     end if
   end subroutine saroughfact
 

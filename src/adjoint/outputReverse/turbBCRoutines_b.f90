@@ -6,14 +6,16 @@ module turbbcroutines_b
 
 contains
 !  differentiation of applyallturbbcthisblock in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *rev *w
+!   gradient     of useful results: *rev *bvtj1 *bvtj2 *w *bmtk1
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
 !   with respect to varying inputs: *rev *bvtj1 *bvtj2 *w *bmtk1
-!                *bmtk2 *bvtk1 *bvtk2 *bmti1 *bmti2 *bvti1 *bvti2
-!                *bmtj1 *bmtj2
-!   rw status of diff variables: *rev:in-out *bvtj1:out *bvtj2:out
-!                *w:in-out *bmtk1:out *bmtk2:out *bvtk1:out *bvtk2:out
-!                *bmti1:out *bmti2:out *bvti1:out *bvti2:out *bmtj1:out
-!                *bmtj2:out
+!                *bmtk2 *bvtk1 *bvtk2 *d2wall *bmti1 *bmti2 *bvti1
+!                *bvti2 *bmtj1 *bmtj2
+!   rw status of diff variables: *rev:in-out *bvtj1:incr *bvtj2:incr
+!                *w:in-out *bmtk1:incr *bmtk2:incr *bvtk1:incr
+!                *bvtk2:incr *d2wall:incr *bmti1:incr *bmti2:incr
+!                *bvti1:incr *bvti2:incr *bmtj1:incr *bmtj2:incr
 !   plus diff mem management of: rev:in bvtj1:in bvtj2:in w:in
 !                bmtk1:in bmtk2:in bvtk1:in bvtk2:in d2wall:in
 !                bmti1:in bmti2:in bvti1:in bvti2:in bmtj1:in bmtj2:in
@@ -219,6 +221,13 @@ bocos:do nn=1,nbocos
 &           nswallisothermal) then
 ! viscous wall boundary condition. eddy viscosity is
 ! zero at the wall.
+          if (associated(rev)) then
+            call pushreal8array(rev, size(rev, 1)*size(rev, 2)*size(rev&
+&                         , 3))
+            call pushcontrol1b(1)
+          else
+            call pushcontrol1b(0)
+          end if
           call bceddywall(nn)
           call pushcontrol2b(0)
         else
@@ -246,18 +255,6 @@ bocos:do nn=1,nbocos
         call pushcontrol1b(0)
       end if
     end do bocos
-    if (associated(bvtj1d)) bvtj1d = 0.0_8
-    if (associated(bvtj2d)) bvtj2d = 0.0_8
-    if (associated(bmtk1d)) bmtk1d = 0.0_8
-    if (associated(bmtk2d)) bmtk2d = 0.0_8
-    if (associated(bvtk1d)) bvtk1d = 0.0_8
-    if (associated(bvtk2d)) bvtk2d = 0.0_8
-    if (associated(bmti1d)) bmti1d = 0.0_8
-    if (associated(bmti2d)) bmti2d = 0.0_8
-    if (associated(bvti1d)) bvti1d = 0.0_8
-    if (associated(bvti2d)) bvti2d = 0.0_8
-    if (associated(bmtj1d)) bmtj1d = 0.0_8
-    if (associated(bmtj2d)) bmtj2d = 0.0_8
     do nn=nbocos,1,-1
       call popcontrol1b(branch)
       if (branch .ne. 0) then
@@ -268,6 +265,9 @@ bocos:do nn=1,nbocos
       end if
       call popcontrol2b(branch)
       if (branch .eq. 0) then
+        call popcontrol1b(branch)
+        if (branch .eq. 1) call popreal8array(rev, size(rev, 1)*size(rev&
+&                                       , 2)*size(rev, 3))
         call bceddywall_b(nn)
       else if (branch .eq. 1) then
         call bceddynowall_b(nn)
@@ -678,8 +678,8 @@ bocos:do nn=1,nbocos
   end subroutine bceddynowall
 
 !  differentiation of bceddywall in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *rev
-!   with respect to varying inputs: *rev
+!   gradient     of useful results: *rev *d2wall
+!   with respect to varying inputs: *rev *d2wall
 !   plus diff mem management of: rev:in d2wall:in
   subroutine bceddywall_b(nn)
 !
@@ -700,6 +700,7 @@ bocos:do nn=1,nbocos
 !
     integer(kind=inttype) :: i, j
     real(kind=realtype) :: fact
+    real(kind=realtype) :: factd
     real(kind=realtype) :: tmp
     real(kind=realtype) :: tmpd
     real(kind=realtype) :: tmp0
@@ -715,13 +716,18 @@ bocos:do nn=1,nbocos
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           call pushreal8(fact)
           call saroughfact(2, i, j, fact)
+          call pushreal8(rev(1, i, j))
+          rev(1, i, j) = fact*rev(2, i, j)
         end do
       end do
       do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
         do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+          call popreal8(rev(1, i, j))
+          factd = rev(2, i, j)*revd(1, i, j)
           revd(2, i, j) = revd(2, i, j) + fact*revd(1, i, j)
           revd(1, i, j) = 0.0_8
           call popreal8(fact)
+          call saroughfact_b(2, i, j, fact, factd)
         end do
       end do
     case (imax) 
@@ -729,14 +735,20 @@ bocos:do nn=1,nbocos
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           call pushreal8(fact)
           call saroughfact(il, i, j, fact)
+          tmp = fact*rev(il, i, j)
+          call pushreal8(rev(ie, i, j))
+          rev(ie, i, j) = tmp
         end do
       end do
       do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
         do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+          call popreal8(rev(ie, i, j))
           tmpd = revd(ie, i, j)
           revd(ie, i, j) = 0.0_8
+          factd = rev(il, i, j)*tmpd
           revd(il, i, j) = revd(il, i, j) + fact*tmpd
           call popreal8(fact)
+          call saroughfact_b(il, i, j, fact, factd)
         end do
       end do
     case (jmin) 
@@ -744,13 +756,18 @@ bocos:do nn=1,nbocos
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           call pushreal8(fact)
           call saroughfact(i, 2, j, fact)
+          call pushreal8(rev(i, 1, j))
+          rev(i, 1, j) = fact*rev(i, 2, j)
         end do
       end do
       do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
         do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+          call popreal8(rev(i, 1, j))
+          factd = rev(i, 2, j)*revd(i, 1, j)
           revd(i, 2, j) = revd(i, 2, j) + fact*revd(i, 1, j)
           revd(i, 1, j) = 0.0_8
           call popreal8(fact)
+          call saroughfact_b(i, 2, j, fact, factd)
         end do
       end do
     case (jmax) 
@@ -758,14 +775,20 @@ bocos:do nn=1,nbocos
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           call pushreal8(fact)
           call saroughfact(i, jl, j, fact)
+          tmp0 = fact*rev(i, jl, j)
+          call pushreal8(rev(i, je, j))
+          rev(i, je, j) = tmp0
         end do
       end do
       do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
         do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+          call popreal8(rev(i, je, j))
           tmpd0 = revd(i, je, j)
           revd(i, je, j) = 0.0_8
+          factd = rev(i, jl, j)*tmpd0
           revd(i, jl, j) = revd(i, jl, j) + fact*tmpd0
           call popreal8(fact)
+          call saroughfact_b(i, jl, j, fact, factd)
         end do
       end do
     case (kmin) 
@@ -773,13 +796,18 @@ bocos:do nn=1,nbocos
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           call pushreal8(fact)
           call saroughfact(i, j, 2, fact)
+          call pushreal8(rev(i, j, 1))
+          rev(i, j, 1) = fact*rev(i, j, 2)
         end do
       end do
       do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
         do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+          call popreal8(rev(i, j, 1))
+          factd = rev(i, j, 2)*revd(i, j, 1)
           revd(i, j, 2) = revd(i, j, 2) + fact*revd(i, j, 1)
           revd(i, j, 1) = 0.0_8
           call popreal8(fact)
+          call saroughfact_b(i, j, 2, fact, factd)
         end do
       end do
     case (kmax) 
@@ -787,14 +815,20 @@ bocos:do nn=1,nbocos
         do i=bcdata(nn)%icbeg,bcdata(nn)%icend
           call pushreal8(fact)
           call saroughfact(i, j, kl, fact)
+          tmp1 = fact*rev(i, j, kl)
+          call pushreal8(rev(i, j, ke))
+          rev(i, j, ke) = tmp1
         end do
       end do
       do j=bcdata(nn)%jcend,bcdata(nn)%jcbeg,-1
         do i=bcdata(nn)%icend,bcdata(nn)%icbeg,-1
+          call popreal8(rev(i, j, ke))
           tmpd1 = revd(i, j, ke)
           revd(i, j, ke) = 0.0_8
+          factd = rev(i, j, kl)*tmpd1
           revd(i, j, kl) = revd(i, j, kl) + fact*tmpd1
           call popreal8(fact)
+          call saroughfact_b(i, j, kl, fact, factd)
         end do
       end do
     end select
@@ -2994,15 +3028,10 @@ bocos:do nn=1,nviscbocos
     real(kind=realtype) :: factd
     real(kind=realtype) :: temp
     if (useroughsa) then
-! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
-! the regular sa-boundary condition
-      if (.not.(((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. &
-&         jl) .or. k .lt. 2) .or. k .gt. kl)) then
-        temp = ks(i, j, k) + d2wall(i, j, k)/0.03_realtype
-        d2walld(i, j, k) = d2walld(i, j, k) - (1.0/(0.03_realtype*temp)+&
-&         (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(0.03_realtype*&
-&         temp**2))*factd
-      end if
+      temp = ks(i, j, k) + d2wall(i, j, k)/0.03_realtype
+      d2walld(i, j, k) = d2walld(i, j, k) - (1.0/(0.03_realtype*temp)+(&
+&       ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(0.03_realtype*temp**&
+&       2))*factd
     end if
   end subroutine saroughfact_b
 
@@ -3019,15 +3048,16 @@ bocos:do nn=1,nviscbocos
     if (.not.useroughsa) then
       fact = -one
       return
-    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
-&       .or. k .lt. 2) .or. k .gt. kl) then
-! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
-! the regular sa-boundary condition
-      fact = -one
-      return
     else
       fact = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(ks(i, j, k)+&
 &       d2wall(i, j, k)/0.03_realtype)
+      if (ks(i, j, k) .eq. 0.01 .or. d2wall(i, j, k) .eq. 0.01) print*, &
+&                                                               i, j, k&
+&                                                               , fact, &
+&                                                               d2wall(i&
+&                                                               , j, k)&
+&                                                               , ks(i, &
+&                                                               j, k)
     end if
   end subroutine saroughfact
 

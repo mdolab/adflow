@@ -155,6 +155,7 @@ contains
         use communication, only: adflow_comm_world, nProc, myID
         use sorting, only: famInList
         use wallDistanceData, only: nCellBlockOffset
+        use haloExchange, only : exchangeKs
         implicit none
 
         ! Local Variables
@@ -329,6 +330,10 @@ contains
                 deallocate (ksGlobal, cellIdGlobal)
             end do
         end do
+
+
+        call exchangeKs(1)
+
     end subroutine updateWallRoughness
 
     subroutine computeWallDistance(level, allocMem)
@@ -692,7 +697,7 @@ contains
         !
         integer :: ierr
 
-        integer(kind=intType) :: nn, il, jl, kl
+        integer(kind=intType) :: nn, ib, jb, kb
 
         ! Loop over the domains.
 
@@ -702,21 +707,25 @@ contains
 
             if (allocMem) then
 
-                il = flowDoms(nn, level, sps)%il
-                jl = flowDoms(nn, level, sps)%jl
-                kl = flowDoms(nn, level, sps)%kl
+                ib = flowDoms(nn, level, sps)%ib
+                jb = flowDoms(nn, level, sps)%jb
+                kb = flowDoms(nn, level, sps)%kb
 
-                allocate (flowDoms(nn, level, sps)%d2Wall(2:il, 2:jl, 2:kl), &
+                allocate (flowDoms(nn, level, sps)%d2Wall(0:ib, 0:jb, 0:kb), &
                           stat=ierr)
                 if (ierr /= 0) &
                     call terminate("initWallDistance", &
                                    "Memory allocation failure for d2Wall")
+
                 if (useRoughSA) then
-                    allocate (flowDoms(nn, level, sps)%ks(2:il, 2:jl, 2:kl), &
+                    allocate (flowDoms(nn, level, sps)%ks(0:ib, 0:jb, 0:kb), &
                               stat=ierr)
                     if (ierr /= 0) &
                         call terminate("initWallDistance", &
                                        "Memory allocation failure for ks")
+
+                    ! initalize to zero
+                    flowDoms(nn, level, sps)%ks = zero
                 end if
             end if
 
@@ -1744,6 +1753,8 @@ contains
         use block, only: flowDoms
         use inputPhysics, only: equations
         use iteration, only: groundLevel
+        use haloExchange, only: exchanged2Wall
+        use inputPhysics, only: wallDistanceNeeded
         implicit none
         !
         !      Local variables.
@@ -1759,6 +1770,9 @@ contains
         nLevels = ubound(flowDoms, 2)
         do nn = groundLevel, nLevels
             call computeWallDistance(nn, .false.)
+            if (wallDistanceNeeded) then
+                call exchanged2Wall(nn)
+            end if
         end do
 
     end subroutine updateWallDistanceAllLevels

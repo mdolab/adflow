@@ -19,6 +19,7 @@ contains
                                  recvBufferSize_1to1, sendBufferSize_1to1, sendBufferSIzeOver, &
                                  recvBufferSizeOver, commPatternOverset, internalOverset, sendBuffer, &
                                  recvBuffer, sendBufferSize, recvBufferSize
+        use haloExchange, only: exchanged2Wall
         use inputPhysics
         use inputTimeSpectral
         use section
@@ -239,6 +240,9 @@ contains
         ! be done and overset connectivity computed
         do level = 1, nLevels
             call computeWallDistance(level, .True.)
+            if (wallDistanceNeeded) then
+                call exchanged2Wall(level)
+            end if
         end do
         call preprocessingADjoint
 

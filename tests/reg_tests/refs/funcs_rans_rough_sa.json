@@ -1,7 +1,6 @@
 {
-    "Dot product test for (w, xV) -> (dw, F)": 25052510162.914825,
-    "Dot product test for Xv -> R": -7422557.015466749,
-    "Dot product test for w -> F": 48678.90552195639,
+    "Dot product test for (w, xV) -> (dw, F)": 25051748893.868687,
+    "Dot product test for Xv -> R": -8183826.0616009245,
     "Dot product test for w -> R": 25061252292.450912,
     "Dot product test for xV -> F": -1368251.4261434944,
     "Eval Functions:": {
@@ -694,7 +693,7 @@
     "||dF/dzRef||": 0.0,
     "||dR/dP||": 0.07356605182246514,
     "||dR/dT||": 9.220630057589264e-07,
-    "||dR/dXv * xVDot||": 26736790.15992888,
+    "||dR/dXv * xVDot||": 26726959.34145183,
     "||dR/dalpha||": 0.010271084828244875,
     "||dR/dbeta||": 0.6070879776942455,
     "||dR/dmach||": 0.9283860217641269,
@@ -1086,7 +1085,7 @@
     },
     "||dsepsensoravgz/dXv||": 3.3049236735056238,
     "||dsepsensoravgz/dw||": 10.598482329462021,
-    "||dwBar^T * dR/dXv||": 111601096.04341298,
+    "||dwBar^T * dR/dXv||": 108834126.81700659,
     "||dwBar^T * dR/dw||": 2217397593.2762737,
     "||dwBar^T * dR/xDv||": {
         "P_mdo_tutorial": 0.8893628179225483,

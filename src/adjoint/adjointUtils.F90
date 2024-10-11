@@ -772,8 +772,10 @@ contains
 
                 ! Allocate d2wall if not already done so
                 if (.not. associated(flowDoms(nn, 1, sps)%d2wall)) then
-                    allocate (flowDoms(nn, 1, sps)%d2wall(2:il, 2:jl, 2:kl))
+                    allocate (flowDoms(nn, 1, sps)%d2wall(0:ib, 0:jb, 0:kb))
                     call EChk(ierr, __FILE__, __LINE__)
+
+                    flowDoms(nn, level, sps)%d2Wall = 0.01
                 end if
 
                 ! Now allocate all valus that have a differentiable
@@ -829,7 +831,7 @@ contains
                     flowDomsd(nn, level, sps)%bvtj2(ie, ke, nt1:nt2), &
                     flowDomsd(nn, level, sps)%bvtk1(ie, je, nt1:nt2), &
                     flowDomsd(nn, level, sps)%bvtk2(ie, je, nt1:nt2), &
-                    flowDomsd(nn, level, sps)%d2Wall(2:il, 2:jl, 2:kl), &
+                    flowDomsd(nn, level, sps)%d2Wall(0:ib, 0:jb, 0:kb), &
                     stat=ierr)
                 call EChk(ierr, __FILE__, __LINE__)
 

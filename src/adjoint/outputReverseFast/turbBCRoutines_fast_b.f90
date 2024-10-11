@@ -1196,15 +1196,16 @@ bocos:do nn=1,nviscbocos
     if (.not.useroughsa) then
       fact = -one
       return
-    else if (((((i .lt. 2 .or. i .gt. il) .or. j .lt. 2) .or. j .gt. jl)&
-&       .or. k .lt. 2) .or. k .gt. kl) then
-! we need the distance to the wall, but this is not available for halo-cells, thus we simply return 
-! the regular sa-boundary condition
-      fact = -one
-      return
     else
       fact = (ks(i, j, k)-d2wall(i, j, k)/0.03_realtype)/(ks(i, j, k)+&
 &       d2wall(i, j, k)/0.03_realtype)
+      if (ks(i, j, k) .eq. 0.01 .or. d2wall(i, j, k) .eq. 0.01) print*, &
+&                                                               i, j, k&
+&                                                               , fact, &
+&                                                               d2wall(i&
+&                                                               , j, k)&
+&                                                               , ks(i, &
+&                                                               j, k)
     end if
   end subroutine saroughfact
 
