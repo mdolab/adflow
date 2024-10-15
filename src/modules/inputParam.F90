@@ -796,7 +796,8 @@ module inputADjoint
 
     ! FillLevel     : Number of levels of fill for the ILU local PC
     ! Overlap       : Amount of overlap in the ASM PC
-    integer(kind=intType) :: FillLevel, Overlap
+    integer(kind=intType) :: fillLevel, overlap
+    integer(kind=intType) :: fillLevelCoarse, overlapCoarse
 
     ! adjRelTol     : Relative tolerance
     ! adjAbsTol     : Absolute tolerance
@@ -818,7 +819,7 @@ module inputADjoint
     ! outerPCIts : Number of iterations to run for on (global) preconditioner
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
-    integer(kind=intType) :: innerPreConIts
+    integer(kind=intType) :: innerPreConIts, innerPreConItsCoarse
     integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
 
     logical :: printTiming
