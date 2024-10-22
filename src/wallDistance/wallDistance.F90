@@ -126,6 +126,216 @@ contains
     ! ----------------------------------------------------------------------
 
 #ifndef USE_TAPENADE
+
+    subroutine updateWallRoughness()
+
+        ! Sets the roughness-value (ks) of the nearest wall-cell in the volume cells.
+        !
+        ! At first, it creates two lists: (1) ks values on the surface; (2) global
+        ! cellIndex corresponding to this ks-value.
+        !
+        ! Then it gathers the full list on each proc *THIS DOES NOT SCALE IN MEMORY*
+        !
+        ! After that, it iterate through every volume cell and finds the index in
+        ! list (1) that corresponds to the cellIndex of the nearest surface-cell.
+        ! Then it uses this index to set the ks value listed in (2).
+        !
+        !
+        ! A more memory efficient approach would be to create a 'PETSc Scatter'.
+        ! This should be straight forward using the cellIndex-list mentioned above.
+        ! You might take a look at 'wallScatter' further down this file for
+        ! inspiration.
+
+        use constants
+        use blockPointers
+        use inputTimeSpectral, only: nTimeIntervalsSpectral
+        use inputPhysics, only: useRoughSA
+        use utils, only: setPointers, EChk, terminate
+        use surfaceFamilies, only: BCFamGroups
+        use communication, only: adflow_comm_world, nProc, myID
+        use sorting, only: famInList
+        use wallDistanceData, only: nCellBlockOffset
+        use haloExchange, only : exchangeKs
+        implicit none
+
+        ! Local Variables
+        integer(kind=intType) :: i, j, k, ii, jj, ierr, iCell
+        integer(kind=intType) :: iBeg, jBeg, iEnd, jEnd, ni, nj
+        integer(kind=intType) :: nn, sps, level, nLevels, mm
+        integer(kind=intType), dimension(:), allocatable :: nCellProc, cumCellProc
+        integer(kind=intType), dimension(:), pointer :: wallFamList
+        integer(kind=intType), dimension(:), allocatable :: cellIdLocal, cellIdGlobal
+        integer(kind=intType) :: nCellsLocal, nCellsGlobal
+        real(kind=realType), dimension(:), allocatable :: ksLocal, ksGlobal
+
+        character(len=maxStringLen) :: errorMessage
+
+        ! exit if not in use
+        if (.not. useRoughSA) then
+            return
+        end if
+
+        wallFamList => BCFamGroups(iBCGroupWalls)%famList
+        nLevels = ubound(flowDoms, 2)
+
+        do level = 1, nLevels
+            do sps = 1, nTimeIntervalsSpectral
+
+                ! figure out the local space needed
+                nCellsLocal = 0
+                do nn = 1, nDom
+                    call setPointers(nn, level, sps)
+
+                    do mm = 1, nBocos
+                        if (.not. famInList(BCdata(mm)%famID, wallFamlist)) then
+                            cycle
+                        end if
+                        nCellsLocal = nCellsLocal + &
+                                      (bcData(mm)%inEnd - bcData(mm)%inBeg) * (bcData(mm)%jnEnd - bcData(mm)%jnBeg)
+                    end do
+                end do
+
+                ! Now communicate these sizes with everyone
+                allocate (nCellProc(nProc), cumCellProc(0:nProc))
+
+                call mpi_allgather(nCellsLocal, 1, adflow_integer, nCellProc, 1, adflow_integer, &
+                                   adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! Now make cumulative versions of these
+                cumCellProc(0) = 0
+                do i = 1, nProc
+                    cumCellProc(i) = cumCellProc(i - 1) + nCellProc(i)
+                end do
+
+                ! And save the total number of nodes and cells for reference
+                nCellsGlobal = cumCellProc(nProc)
+
+                ! Allocate the space for the local ks values and cellId's
+                allocate (ksLocal(nCellsLocal), cellIdLocal(nCellsLocal))
+
+                ! Move all the local ks-values in a list
+                ! Create a second list with the global cell ID corresponding to the ks-values
+                iCell = 0
+                do nn = 1, nDom
+                    call setPointers(nn, level, sps)
+                    do mm = 1, nBocos
+                        if (.not. famInList(BCdata(mm)%famID, wallFamlist)) then
+                            cycle
+                        end if
+
+                        jBeg = BCData(mm)%jnBeg; jEnd = BCData(mm)%jnEnd
+                        iBeg = BCData(mm)%inBeg; iEnd = BCData(mm)%inEnd
+                        ni = iEnd - iBeg
+                        nj = jEnd - jBeg
+
+                        do jj = 1, nj
+                            do ii = 1, ni
+                                iCell = iCell + 1
+
+                                ! saving local ks-value is easy
+                                ksLocal(iCell) = BCData(mm)%ksNS_Wall(ii, jj)
+
+                                ! to calculate the global cellID, we must associate the
+                                ! BC-cell to the volume cell first. We basically have to
+                                ! set surface i-j values to global i,j,k values.
+
+                                select case (BCFaceID(mm))
+                                case (iMin)
+                                    i = 2
+                                    j = ii + 1
+                                    k = jj + 1
+                                case (iMax)
+                                    i = il
+                                    j = ii + 1
+                                    k = jj + 1
+                                case (jMin)
+                                    i = ii + 1
+                                    j = 2
+                                    k = jj + 1
+                                case (jMax)
+                                    i = ii + 1
+                                    j = jl
+                                    k = jj + 1
+                                case (kMin)
+                                    i = ii + 1
+                                    j = jj + 1
+                                    k = 2
+                                case (kMax)
+                                    i = ii + 1
+                                    j = jj + 1
+                                    k = kl
+                                end select
+
+                                cellIdLocal(iCell) = nCellBLockOffset(level, nn) * nTimeIntervalsSpectral + &
+                                                     nx * ny * nz * (sps - 1) + (i - 2) + (j - 2) * nx + &
+                                                     (k - 2) * nx * ny
+                            end do
+                        end do
+                    end do
+                end do
+
+                ! allocate global arrays
+                allocate (ksGlobal(nCellsGlobal), cellIdGlobal(nCellsGlobal))
+
+                ! gather all the surface-ks values on each proc
+                call mpi_allgatherv(ksLocal, nCellsLocal, adflow_real, &
+                                    ksGlobal, nCellProc, cumCellProc, adflow_real, &
+                                    adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! gather all the cellId's on each proc
+                call mpi_allgatherv(cellIdLocal, nCellsLocal, adflow_integer, &
+                                    cellIdGlobal, nCellProc, cumCellProc, adflow_integer, &
+                                    adflow_comm_world, ierr)
+                call EChk(ierr, __FILE__, __LINE__)
+
+                ! free local memory
+                deallocate (cumCellProc, nCellProc, ksLocal, cellIdLocal)
+
+                ! set the ks-values in the volume
+                do nn = 1, nDom
+                    call setPointers(nn, level, sps)
+                    do k = 2, kl
+                        do j = 2, jl
+                            do i = 2, il
+                                if (flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) == -1) then
+                                    ! This cell is too far away and has no
+                                    ! association. Set the roughness to zero.
+                                    ks(i, j, k) = zero
+                                    cycle
+                                end if
+
+                                ! find the index of the surface cell (Requires gfortran > 9.0 )
+                                iCell = findloc( &
+                                cellIdGlobal, &
+                                    flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k), &
+                                    DIM = 1)
+
+                                if (iCell == 0) then
+                                    write (errorMessage, 100) &
+                                        flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k)
+100                                 format("Could not find surface cell with id ", I10.1)
+                                    call terminate("updateWallRoughness", errorMessage)
+                                end if
+
+                                ! set the ks value
+                                ks(i, j, k) = ksGlobal(iCell)
+                            end do
+                        end do
+                    end do
+                end do
+
+                ! free global memory
+                deallocate (ksGlobal, cellIdGlobal)
+            end do
+        end do
+
+
+        call exchangeKs(1)
+
+    end subroutine updateWallRoughness
+
     subroutine computeWallDistance(level, allocMem)
         !
         !       wallDistance computes the distances of the cell centers to
@@ -474,6 +684,7 @@ contains
         !
         use constants
         use blockPointers, only: nDom, flowDoms
+        use inputPhysics, only: useRoughSA
         use utils, only: terminate
         implicit none
         !
@@ -486,7 +697,7 @@ contains
         !
         integer :: ierr
 
-        integer(kind=intType) :: nn, il, jl, kl
+        integer(kind=intType) :: nn, ib, jb, kb
 
         ! Loop over the domains.
 
@@ -496,15 +707,26 @@ contains
 
             if (allocMem) then
 
-                il = flowDoms(nn, level, sps)%il
-                jl = flowDoms(nn, level, sps)%jl
-                kl = flowDoms(nn, level, sps)%kl
+                ib = flowDoms(nn, level, sps)%ib
+                jb = flowDoms(nn, level, sps)%jb
+                kb = flowDoms(nn, level, sps)%kb
 
-                allocate (flowDoms(nn, level, sps)%d2Wall(2:il, 2:jl, 2:kl), &
+                allocate (flowDoms(nn, level, sps)%d2Wall(0:ib, 0:jb, 0:kb), &
                           stat=ierr)
                 if (ierr /= 0) &
                     call terminate("initWallDistance", &
                                    "Memory allocation failure for d2Wall")
+
+                if (useRoughSA) then
+                    allocate (flowDoms(nn, level, sps)%ks(0:ib, 0:jb, 0:kb), &
+                              stat=ierr)
+                    if (ierr /= 0) &
+                        call terminate("initWallDistance", &
+                                       "Memory allocation failure for ks")
+
+                    ! initalize to zero
+                    flowDoms(nn, level, sps)%ks = zero
+                end if
             end if
 
             ! Initialize the wall distances to a large value.
@@ -1531,6 +1753,8 @@ contains
         use block, only: flowDoms
         use inputPhysics, only: equations
         use iteration, only: groundLevel
+        use haloExchange, only: exchanged2Wall
+        use inputPhysics, only: wallDistanceNeeded
         implicit none
         !
         !      Local variables.
@@ -1546,6 +1770,9 @@ contains
         nLevels = ubound(flowDoms, 2)
         do nn = groundLevel, nLevels
             call computeWallDistance(nn, .false.)
+            if (wallDistanceNeeded) then
+                call exchanged2Wall(nn)
+            end if
         end do
 
     end subroutine updateWallDistanceAllLevels
@@ -1737,6 +1964,10 @@ contains
             allocate (fullWall%conn(4, nCells))
             allocate (fullWall%ind(nNodes))
 
+            if (useRoughSA) then
+                allocate (fullWall%indCell(nCells))
+            end if
+
             nNodes = 0
             nCells = 0
             ii = 0
@@ -1753,6 +1984,9 @@ contains
                 do j = 1, walls(i)%nCells
                     nCells = nCells + 1
                     fullWall%conn(:, nCells) = walls(i)%conn(:, j) + ii
+                    if (useRoughSA) then
+                        fullWall%indCell(nCells) = walls(i)%indCell(j)
+                    end if
                 end do
 
                 ! Increment the node offset
@@ -1781,6 +2015,9 @@ contains
             if (.not. associated(flowDoms(nn, level, sps)%surfNodeIndices)) then
                 allocate (flowDoms(nn, level, sps)%surfNodeIndices(4, 2:il, 2:jl, 2:kl))
                 allocate (flowDoms(nn, level, sps)%uv(2, 2:il, 2:jl, 2:kl))
+                if (useRoughSA) then
+                    allocate (flowDoms(nn, level, sps)%nearestWallCellInd(2:il, 2:jl, 2:kl))
+                end if
             end if
 
             ! Set the cluster for this block
@@ -1823,10 +2060,16 @@ contains
                                         walls(c)%ind(walls(c)%conn(kk, cellID))
                                 end do
                                 flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
+                                if (useRoughSA) then
+                                    flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = walls(c)%indCell(cellID)
+                                end if
                             else
                                 ! Just set dummy values. These will never be used.
                                 flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                                 flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
+                                if (useRoughSA) then
+                                    flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = -1
+                                end if
                             end if
 
                             ! We are done with this point.
@@ -1856,7 +2099,9 @@ contains
                                         fullWall%ind(fullWall%conn(kk, cellID))
                                 end do
                                 flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
-
+                                if (useRoughSA) then
+                                    flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = fullWall%indCell(cellID)
+                                end if
                             else
 
                                 ! This point is *closer* than the nearWallDist AND
@@ -1876,6 +2121,9 @@ contains
                                             walls(c)%ind(walls(c)%conn(kk, cellID2))
                                     end do
                                     flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw2(1:2)
+                                    if (useRoughSA) then
+                                        flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = fullWall%indCell(cellID2)
+                                    end if
                                 else
                                     ! The full wall distance is better. Take that.
 
@@ -1884,7 +2132,9 @@ contains
                                             fullWall%ind(fullWall%conn(kk, cellID))
                                     end do
                                     flowDoms(nn, level, sps)%uv(:, i, j, k) = uvw(1:2)
-
+                                    if (useRoughSA) then
+                                        flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = fullWall%indCell(cellID)
+                                    end if
                                 end if
                             end if
                         else
@@ -1895,7 +2145,9 @@ contains
 
                             flowDoms(nn, level, sps)%surfNodeIndices(:, i, j, k) = 0
                             flowDoms(nn, level, sps)%uv(:, i, j, k) = 0
-
+                            if (useRoughSA) then
+                                flowDoms(nn, level, sps)%nearestWallCellInd(i, j, k) = -1
+                            end if
                         end if
                     end do
                 end do

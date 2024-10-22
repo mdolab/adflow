@@ -86,7 +86,7 @@ contains
         use initializeFlow, only: referenceState
         use section, only: sections, nSections
         use iteration, only: rFil, currentLevel
-        use haloExchange, only: exchangeCoor, whalo2
+        use haloExchange, only: exchangeCoor, whalo2, exchanged2Wall
         use wallDistance, only: updateWallDistancesQuickly
         use utils, only: setPointers, EChk
         use turbUtils, only: computeEddyViscosity
@@ -181,11 +181,19 @@ contains
                 do nn = 1, nDom
                     call setPointers(nn, currentLevel, sps)
                     call xhalo_block()
+
+                    if (equations == RANSEquations .and. useApproxWallDistance) then
+                        call updateWallDistancesQuickly(nn, 1, sps)
+                    end if
                 end do
             end do
 
             ! Now exchange the coordinates (fine level only)
             call exchangecoor(1)
+
+            if (equations == RANSEquations .and. useApproxWallDistance) then
+                call exchanged2Wall(1)
+            end if
 
             do sps = 1, nTimeIntervalsSpectral
                 ! Update overset connectivity if necessary
