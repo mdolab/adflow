@@ -211,7 +211,6 @@ test_params = [
 ]
 
 
-
 @parameterized_class(test_params)
 class TestAdjoint(reg_test_classes.RegTest):
     """
@@ -284,6 +283,7 @@ class TestAdjoint(reg_test_classes.RegTest):
     def test_adjoint_states(self):
         utils.assert_adjoint_states_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
         self.assert_adjoint_failure()
+
 
 @parameterized_class(test_params)
 class TestCmplxStep(reg_test_classes.CmplxRegTest):
