@@ -35,6 +35,41 @@ test_params = [
         "aero_prob": copy.deepcopy(ap_tutorial_wing),
         "N_PROCS": 1,
     },
+
+    {
+        "name": "rough_sa_tut_wing_1core",
+        "options": {
+            "gridFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
+            "restartFile": os.path.join(baseDir, "../../input_files/mdo_tutorial_rough.cgns"),
+                "equationType": "RANS",
+                "useBlockettes": False,
+                "useRoughSA": True,
+                "MGCycle": "2w",
+                "equationType": "RANS",
+                "smoother": "DADI",
+                "CFL": 1.5,
+                "CFLCoarse": 1.25,
+                "resAveraging": "never",
+                "nSubiter": 3,
+                "nSubiterTurb": 3,
+                "nCyclesCoarse": 100,
+                "nCycles": 1000,
+                "monitorVariables": ["cpu", "resrho", "resturb", "cl", "cd", "cmz", "yplus", "totalr"],
+                "useNKsolver": True,
+                "ANKSwitchTol": 1e-2,
+                "ANKSecondordSwitchTol": 1e-2,
+                "L2Convergence": 1e-15,
+                "NKSwitchTol": 1e-5,
+                "adjointL2Convergence": 1e-16,
+                "blockSplitting": True,
+                "NKjacobianlag": 2,
+
+        },
+        "ref_file": "funcs_rans_rough_sa.json",
+        "aero_prob": copy.deepcopy(ap_tutorial_wing),
+        "N_PROCS": 1,
+    },
+
 ]
 
 

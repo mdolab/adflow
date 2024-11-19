@@ -10,6 +10,8 @@ module BCPointers
     real(kind=realType), dimension(:, :, :), pointer :: ww0, ww1, ww2, ww3
     real(kind=realType), dimension(:, :), pointer :: pp0, pp1, pp2, pp3
     real(kind=realType), dimension(:, :), pointer :: rlv0, rlv1, rlv2, rlv3
+    real(kind=realType), dimension(:, :), pointer :: d2wall0, d2wall1, d2wall2, d2wall3
+    real(kind=realType), dimension(:, :), pointer :: ks0, ks1, ks2, ks3
     real(kind=realType), dimension(:, :), pointer :: rev0, rev1, rev2, rev3
     real(kind=realType), dimension(:, :), pointer :: gamma0, gamma1, gamma2, gamma3
     real(kind=realType), dimension(:, :, :), pointer :: ssi, ssj, ssk
@@ -25,6 +27,7 @@ module BCPointers
     real(kind=realType), dimension(:, :), pointer :: pp0d, pp1d, pp2d, pp3d
     real(kind=realType), dimension(:, :), pointer :: rlv0d, rlv1d, rlv2d, rlv3d
     real(kind=realType), dimension(:, :), pointer :: rev0d, rev1d, rev2d, rev3d
+    real(kind=realType), dimension(:, :), pointer :: d2wall0d, d2wall1d, d2wall2d, d2wall3d
     real(kind=realType), dimension(:, :), pointer :: gamma0d, gamma1d, gamma2d, gamma3d
     real(kind=realType), dimension(:, :, :), pointer :: ssid, ssjd, sskd, xxd
     real(kind=realType), dimension(:, :, :), pointer :: ssd

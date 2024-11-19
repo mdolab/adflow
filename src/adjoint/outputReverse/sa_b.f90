@@ -42,6 +42,8 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: distrough
+    real(kind=realtype) :: distroughd
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: fv1d, fv2d, ft2d
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
@@ -184,12 +186,26 @@ contains
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/d2wall(i, j, k)**2
         chi = w(i, j, k, itu1)/nu
+        if (.not.useroughsa) then
+          dist2inv = one/d2wall(i, j, k)**2
+          call pushcontrol1b(0)
+        else
+          distrough = d2wall(i, j, k) + 0.03_realtype*ks(i, j, k)
+          dist2inv = one/distrough**2
+          chi = chi + rsacr1*ks(i, j, k)/distrough
+          call pushcontrol1b(1)
+        end if
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)
-        fv2 = one - chi/(one+chi*fv1)
+        if (.not.useroughsa) then
+          fv2 = one - chi/(one+chi*fv1)
+          call pushcontrol1b(0)
+        else
+          fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+          call pushcontrol1b(1)
+        end if
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.
@@ -311,18 +327,37 @@ contains
         else
           chi2d = 0.0_8
         end if
-        tempd = -(fv2d/(one+chi*fv1))
-        chid = tempd
-        tempd0 = -(chi*tempd/(one+chi*fv1))
-        fv1d = chi*tempd0
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          tempd = -(fv2d/(one+chi*fv1))
+          tempd0 = -(chi*tempd/(one+chi*fv1))
+          chid = tempd + fv1*tempd0
+          fv1d = chi*tempd0
+          nud = 0.0_8
+        else
+          temp0 = w(i, j, k, itu1)
+          temp = nu + temp0*fv1
+          tempd = w(i, j, k, itu1)*fv2d/temp**2
+          wd(i, j, k, itu1) = wd(i, j, k, itu1) + fv1*tempd - fv2d/temp
+          nud = tempd
+          fv1d = temp0*tempd
+          chid = 0.0_8
+        end if
         tempd = fv1d/(cv13+chi3)
         chi3d = (1.0-chi3/(cv13+chi3))*tempd
         chi2d = chi2d + chi*chi3d
-        chid = chid + fv1*tempd0 + chi2*chi3d + 2*chi*chi2d
+        chid = chid + chi2*chi3d + 2*chi*chi2d
+        call popcontrol1b(branch)
+        if (branch .eq. 0) then
+          temp = d2wall(i, j, k)
+          d2walld(i, j, k) = d2walld(i, j, k) - 2*one*dist2invd/temp**3
+        else
+          distroughd = -(rsacr1*ks(i, j, k)*chid/distrough**2) - 2*one*&
+&           dist2invd/distrough**3
+          d2walld(i, j, k) = d2walld(i, j, k) + distroughd
+        end if
         wd(i, j, k, itu1) = wd(i, j, k, itu1) + chid/nu
-        nud = -(w(i, j, k, itu1)*chid/nu**2)
-        temp = d2wall(i, j, k)
-        d2walld(i, j, k) = d2walld(i, j, k) - 2*one*dist2invd/temp**3
+        nud = nud - w(i, j, k, itu1)*chid/nu**2
         temp = w(i, j, k, irho)
         rlvd(i, j, k) = rlvd(i, j, k) + nud/temp
         wd(i, j, k, irho) = wd(i, j, k, irho) - rlv(i, j, k)*nud/temp**2
@@ -511,6 +546,7 @@ contains
     real(kind=realtype), parameter :: f23=two*third
 ! local variables.
     integer(kind=inttype) :: i, j, k, nn, ii
+    real(kind=realtype) :: distrough
     real(kind=realtype) :: fv1, fv2, ft2
     real(kind=realtype) :: ss, sst, nu, dist2inv, chi, chi2, chi3
     real(kind=realtype) :: rr, gg, gg6, termfw, fwsa, term1, term2
@@ -627,12 +663,22 @@ contains
 ! and nu) and the functions fv1 and fv2. the latter corrects
 ! the production term near a viscous wall.
         nu = rlv(i, j, k)/w(i, j, k, irho)
-        dist2inv = one/d2wall(i, j, k)**2
         chi = w(i, j, k, itu1)/nu
+        if (.not.useroughsa) then
+          dist2inv = one/d2wall(i, j, k)**2
+        else
+          distrough = d2wall(i, j, k) + 0.03_realtype*ks(i, j, k)
+          dist2inv = one/distrough**2
+          chi = chi + rsacr1*ks(i, j, k)/distrough
+        end if
         chi2 = chi*chi
         chi3 = chi*chi2
         fv1 = chi3/(chi3+cv13)
-        fv2 = one - chi/(one+chi*fv1)
+        if (.not.useroughsa) then
+          fv2 = one - chi/(one+chi*fv1)
+        else
+          fv2 = one - w(i, j, k, itu1)/(nu+w(i, j, k, itu1)*fv1)
+        end if
 ! the function ft2, which is designed to keep a laminar
 ! solution laminar. when running in fully turbulent mode
 ! this function should be set to 0.0.
