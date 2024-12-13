@@ -186,7 +186,7 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccofliftz=101
          integer(kind=inttype) parameter,optional :: costfuncmavgvi=102
          integer(kind=inttype) parameter,optional :: costfuncsepsensorks=103
-         integer(kind=inttype) parameter,optional :: costfuncsepsensorarea=104
+         integer(kind=inttype) parameter,optional :: costfuncsepsensorksarea=104
        end module constants
 
        module utils
@@ -1382,12 +1382,10 @@ python module libadflow
          use constants
          logical::computesepsensorks
          real(kind=realtype) sepsensoroffset
-         real(kind=realtype) sepsensoroffsetone
-         real(kind=realtype) sepsensoroffsettwo
+         real(kind=realtype) sepsensorksoffset
          real(kind=realtype) sepsensorsharpness
-         real(kind=realtype) sepsensorsharpnessone
-         real(kind=realtype) sepsensorsharpnesstwo
-         real(kind=realtype) sepangledeviation
+         real(kind=realtype) sepsensorkssharpness
+         real(kind=realtype) sepsensorksphi
          real(kind=realtype) cavsensoroffset
          real(kind=realtype) cavsensorsharpness
          integer(kind=inttype) cavexponent

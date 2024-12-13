@@ -10,8 +10,8 @@ contains
         use inputPhysics, only: liftDirection, dragDirection, surfaceRef, &
                                 machCoef, lengthRef, alpha, beta, liftIndex, cpmin_family, &
                                 cpmin_rho, sepSenMaxFamily, sepSenMaxRho
-        use inputCostFunctions, only: computeCavitation, computeSepSensorKs, sepSensorSharpnessOne, &
-                                      sepSensorOffsetOne
+        use inputCostFunctions, only: computeCavitation, computeSepSensorKs, sepSensorKsSharpness, &
+                                      sepSensorKsOffset
         use inputTSStabDeriv, only: TSstability
         use utils, only: computeTSDerivatives
         use flowUtils, only: getDirVector
@@ -158,10 +158,10 @@ contains
 
                 funcValues(costFuncSepSensorKs) = funcValues(costFuncSepSensorKs) + ks_comp
 
-                funcValues(costFuncSepSensorArea) = funcValues(costFuncSepSensorArea) + &
-                                                    ovrNTS * globalVals(iSepSensorAreaKs, sps) * ks_comp * &
-                                                    one / (one + exp(2 * sepSensorSharpnessOne &
-                                                                     * (ks_comp + sepSensorOffsetOne))) + &
+                funcValues(costFuncsepSensorKsArea) = funcValues(costFuncsepSensorKsArea) + &
+                                                    ovrNTS * globalVals(iSepSensorKsArea, sps) * ks_comp * &
+                                                    one / (one + exp(2 * sepSensorKsSharpness &
+                                                                     * (ks_comp + sepSensorKsOffset))) + &
                                                     ovrNTS * globalVals(iSepSensorArea, sps)
 
             end if
@@ -433,7 +433,7 @@ contains
         real(kind=realType), dimension(3) :: Fp, Fv, Mp, Mv
         real(kind=realType), dimension(3) :: COFSumFx, COFSumFy, COFSumFz
         real(kind=realType) :: yplusMax, sepSensorKs, sepSensor, sepSensorAvg(3), &
-                               sepSensorArea, Cavitation, cpmin_ks_sum, sepSensorAreaKs
+                               sepSensorArea, Cavitation, cpmin_ks_sum, sepSensorKsArea
         integer(kind=intType) :: i, j, ii, blk
 
         real(kind=realType) :: pm1, fx, fy, fz, fn
@@ -482,7 +482,7 @@ contains
         sepSensor = zero
         sepSensorKs = zero
         sepSensorArea = zero
-        sepSensorAreaKs = zero
+        sepSensorKsArea = zero
         Cavitation = zero
         cpmin_ks_sum = zero
         sepSensorAvg = zero
@@ -645,15 +645,15 @@ contains
                           v(3) * vectTangential(3))
 
                 ! sepsensor value
-                sensor = (cos(degtorad * sepangledeviation) - sensor) / &
-                         (-cos(degtorad * sepangledeviation) + cos(zero) + 1e-16)
+                sensor = (cos(degtorad * sepsensorksphi) - sensor) / &
+                         (-cos(degtorad * sepsensorksphi) + cos(zero) + 1e-16)
 
                 ! also do the ks-based spensenor max computation
                 call KSaggregationFunction(sensor, sepSenMaxFamily(spectralSol), sepSenMaxRho, ks_exponent)
 
-                sepSensorAreaKs = sepSensorAreaKs + blk * cellArea
-                sepSensorArea = cellArea * blk * one / (one + exp(-2 * sepSensorSharpnessTwo &
-                                                                  * (sensor + sepSensorOffsetTwo))) + sepSensorArea
+                sepSensorKsArea = sepSensorKsArea + blk * cellArea
+                sepSensorArea = cellArea * blk * one / (one + exp(-2 * sepSensorKsSharpness &
+                                                                  * (sensor + sepSensorKsOffset))) + sepSensorArea
 
                 sepSensorKs = sepSensorKs + ks_exponent * blk
 
@@ -867,7 +867,7 @@ contains
         localValues(iCoForceZ:iCoForceZ + 2) = localValues(iCoForceZ:iCoForceZ + 2) + COFSumFz
         localValues(iSepSensor) = localValues(iSepSensor) + sepSensor
         localValues(iSepSensorKs) = localValues(iSepSensorKs) + sepSensorKs
-        localValues(iSepSensorAreaKs) = localValues(iSepSensorAreaKs) + sepSensorAreaKs
+        localValues(iSepSensorKsArea) = localValues(iSepSensorKsArea) + sepSensorKsArea
         localValues(iSepSensorArea) = localValues(iSepSensorArea) + sepSensorArea
         localValues(iCavitation) = localValues(iCavitation) + cavitation
         localValues(iCpMin) = localValues(iCpMin) + cpmin_ks_sum
@@ -1445,7 +1445,7 @@ contains
         use inputPhysics, only: sepSenMaxFamily, velDirFreeStream
         use blockPointers
         use flowVarRefState
-        use inputCostFunctions, only: sepangledeviation
+        use inputCostFunctions, only: sepsensorksphi
         use BCPointers
         use utils, only: setPointers, setBCPointers, isWallType, EChk
         use sorting, only: famInList
@@ -1519,8 +1519,8 @@ contains
                                               v(3) * vectTangential(3))
 
                                     ! sepsensor value
-                                    sensor = (cos(degtorad * sepangledeviation) - sensor) / &
-                                             (-cos(degtorad * sepangledeviation) + cos(zero) + 1e-16)
+                                    sensor = (cos(degtorad * sepsensorksphi) - sensor) / &
+                                             (-cos(degtorad * sepsensorksphi) + cos(zero) + 1e-16)
 
                                     ! compare it against the current value on this proc
                                     sepsensor_local = max(sepsensor_local, sensor)

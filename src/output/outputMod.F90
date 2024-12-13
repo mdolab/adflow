@@ -166,7 +166,7 @@ contains
         if (surfWriteBlank) nSolVar = nSolVar + 1
         if (surfWriteSepSensor) nSolVar = nSolVar + 1
         if (surfWriteSepSensorKs) nSolVar = nSolVar + 1
-        if (surfWriteSepSensorArea) nSolVar = nSolVar + 1
+        if (surfWriteSepSensorKsArea) nSolVar = nSolVar + 1
         if (surfWriteCavitation) nSolVar = nSolVar + 1
         if (surfWriteGC) nSolVar = nSolVar + 1
 
@@ -706,9 +706,9 @@ contains
             solNames(nn) = cgnsSepSensorKs
         end if
 
-        if (surfWriteSepSensorArea) then
+        if (surfWriteSepSensorKsArea) then
             nn = nn + 1
-            solNames(nn) = cgnsSepSensorArea
+            solNames(nn) = cgnsSepSensorKsArea
         end if
 
         if (surfWriteCavitation) then
@@ -1486,7 +1486,7 @@ contains
             select case (solName)
 
             case (cgnsSkinFmag, cgnsStanton, cgnsYplus, cgnsSkinFx, &
-                  cgnsSkinFy, cgnsSkinFz, cgnsSepSensor, cgnsSepSensorKs, cgnsSepSensorArea)
+                  cgnsSkinFy, cgnsSkinFz, cgnsSepSensor, cgnsSepSensorKs, cgnsSepSensorKsArea)
 
                 ! Update the counter and set this entry of buffer to 0.
 
@@ -2243,14 +2243,14 @@ contains
                           v(3) * vectTangential(3))
 
                 ! sepsensor value
-                sensor = (cos(degtorad * sepAngleDeviation) - sensor) / &
-                         (-cos(degtorad * sepAngleDeviation) + cos(zero) + 1e-16)
+                sensor = (cos(degtorad * sepsensorksphi) - sensor) / &
+                         (-cos(degtorad * sepsensorksphi) + cos(zero) + 1e-16)
 
                 buffer(nn) = sensor
             end do
         end do
 
-        case (cgnsSepSensorArea)
+        case (cgnsSepSensorKsArea)
 
         do j = rangeFace(2, 1), rangeFace(2, 2)
             if (present(jBeg) .and. present(jEnd) .and. (useRindLayer)) then
@@ -2314,10 +2314,10 @@ contains
                           v(3) * vectTangential(3))
 
                 ! sepsensor value
-                sensor = (cos(degtorad * sepAngleDeviation) - sensor) / &
-                         (-cos(degtorad * sepAngleDeviation) + cos(zero) + 1e-16)
+                sensor = (cos(degtorad * sepsensorksphi) - sensor) / &
+                         (-cos(degtorad * sepsensorksphi) + cos(zero) + 1e-16)
 
-                sensor = one / (one + exp(-2 * sepSensorSharpnessTwo * (sensor + sepSensorOffsetTwo)))
+                sensor = one / (one + exp(-2 * sepSensorKsSharpness * (sensor + sepSensorKsOffset)))
 
                 buffer(nn) = sensor
             end do

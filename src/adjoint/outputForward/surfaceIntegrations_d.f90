@@ -22,7 +22,7 @@ contains
 &   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_family, &
 &   cpmin_rho, sepsenmaxfamily, sepsenmaxrho
     use inputcostfunctions, only : computecavitation, computesepsensorks&
-&   , sepsensorsharpnessone, sepsensoroffsetone
+&   , sepsensorkssharpness, sepsensorksoffset
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector
@@ -311,18 +311,18 @@ contains
 &         costfuncsepsensorks) + ks_compd
         funcvalues(costfuncsepsensorks) = funcvalues(costfuncsepsensorks&
 &         ) + ks_comp
-        arg1d = sepsensorsharpnessone*2*ks_compd
-        arg1 = 2*sepsensorsharpnessone*(ks_comp+sepsensoroffsetone)
+        arg1d = sepsensorkssharpness*2*ks_compd
+        arg1 = 2*sepsensorkssharpness*(ks_comp+sepsensorksoffset)
         temp0 = one + exp(arg1)
-        temp = globalvals(isepsensorareaks, sps)*ks_comp/temp0
-        funcvaluesd(costfuncsepsensorarea) = funcvaluesd(&
-&         costfuncsepsensorarea) + ovrnts*one*(ks_comp*globalvalsd(&
-&         isepsensorareaks, sps)+globalvals(isepsensorareaks, sps)*&
+        temp = globalvals(isepsensorksarea, sps)*ks_comp/temp0
+        funcvaluesd(costfuncsepsensorksarea) = funcvaluesd(&
+&         costfuncsepsensorksarea) + ovrnts*one*(ks_comp*globalvalsd(&
+&         isepsensorksarea, sps)+globalvals(isepsensorksarea, sps)*&
 &         ks_compd-temp*exp(arg1)*arg1d)/temp0 + ovrnts*globalvalsd(&
 &         isepsensorarea, sps)
-        funcvalues(costfuncsepsensorarea) = funcvalues(&
-&         costfuncsepsensorarea) + ovrnts*one*temp + ovrnts*globalvals(&
-&         isepsensorarea, sps)
+        funcvalues(costfuncsepsensorksarea) = funcvalues(&
+&         costfuncsepsensorksarea) + ovrnts*one*temp + ovrnts*globalvals&
+&         (isepsensorarea, sps)
       end if
       funcvaluesd(costfuncsepsensor) = funcvaluesd(costfuncsepsensor) + &
 &       ovrnts*globalvalsd(isepsensor, sps)
@@ -732,7 +732,7 @@ contains
 &   machcoef, lengthref, alpha, beta, liftindex, cpmin_family, cpmin_rho&
 &   , sepsenmaxfamily, sepsenmaxrho
     use inputcostfunctions, only : computecavitation, computesepsensorks&
-&   , sepsensorsharpnessone, sepsensoroffsetone
+&   , sepsensorkssharpness, sepsensorksoffset
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector
@@ -893,10 +893,10 @@ contains
 &         isepsensorks, sps))/sepsenmaxrho)
         funcvalues(costfuncsepsensorks) = funcvalues(costfuncsepsensorks&
 &         ) + ks_comp
-        arg1 = 2*sepsensorsharpnessone*(ks_comp+sepsensoroffsetone)
-        funcvalues(costfuncsepsensorarea) = funcvalues(&
-&         costfuncsepsensorarea) + ovrnts*globalvals(isepsensorareaks, &
-&         sps)*ks_comp*one/(one+exp(arg1)) + ovrnts*globalvals(&
+        arg1 = 2*sepsensorkssharpness*(ks_comp+sepsensorksoffset)
+        funcvalues(costfuncsepsensorksarea) = funcvalues(&
+&         costfuncsepsensorksarea) + ovrnts*globalvals(isepsensorksarea&
+&         , sps)*ks_comp*one/(one+exp(arg1)) + ovrnts*globalvals(&
 &         isepsensorarea, sps)
       end if
       funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
@@ -1128,9 +1128,9 @@ contains
     real(kind=realtype), dimension(3) :: cofsumfxd, cofsumfyd, cofsumfzd
     real(kind=realtype) :: yplusmax, sepsensorks, sepsensor, &
 &   sepsensoravg(3), sepsensorarea, cavitation, cpmin_ks_sum, &
-&   sepsensorareaks
+&   sepsensorksarea
     real(kind=realtype) :: sepsensorksd, sepsensord, sepsensoravgd(3), &
-&   sepsensoraread, cavitationd, cpmin_ks_sumd, sepsensorareaksd
+&   sepsensoraread, cavitationd, cpmin_ks_sumd, sepsensorksaread
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
@@ -1207,7 +1207,7 @@ contains
     sepsensor = zero
     sepsensorks = zero
     sepsensorarea = zero
-    sepsensorareaks = zero
+    sepsensorksarea = zero
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
@@ -1224,7 +1224,7 @@ contains
     mpaxisd = 0.0_8
     vecttangentiald = 0.0_8
     sepsensorksd = 0.0_8
-    sepsensorareaksd = 0.0_8
+    sepsensorksaread = 0.0_8
     cperror2d = 0.0_8
     fpd = 0.0_8
     sepsensoraread = 0.0_8
@@ -1475,17 +1475,17 @@ contains
         sensor = v(1)*vecttangential(1) + v(2)*vecttangential(2) + v(3)*&
 &         vecttangential(3)
 ! sepsensor value
-        temp1 = cos(zero) - cos(degtorad*sepangledeviation) + 1e-16
+        temp1 = cos(zero) - cos(degtorad*sepsensorksphi) + 1e-16
         sensord = -(sensord/temp1)
-        sensor = (cos(degtorad*sepangledeviation)-sensor)/temp1
+        sensor = (cos(degtorad*sepsensorksphi)-sensor)/temp1
 ! also do the ks-based spensenor max computation
         call ksaggregationfunction_d(sensor, sensord, sepsenmaxfamily(&
 &                              spectralsol), sepsenmaxrho, ks_exponent, &
 &                              ks_exponentd)
-        sepsensorareaksd = sepsensorareaksd + blk*cellaread
-        sepsensorareaks = sepsensorareaks + blk*cellarea
-        arg1d = -(sepsensorsharpnesstwo*2*sensord)
-        arg1 = -(2*sepsensorsharpnesstwo*(sensor+sepsensoroffsettwo))
+        sepsensorksaread = sepsensorksaread + blk*cellaread
+        sepsensorksarea = sepsensorksarea + blk*cellarea
+        arg1d = -(sepsensorkssharpness*2*sensord)
+        arg1 = -(2*sepsensorkssharpness*(sensor+sepsensorksoffset))
         temp1 = one + exp(arg1)
         sepsensoraread = blk*one*(cellaread-cellarea*exp(arg1)*arg1d/&
 &         temp1)/temp1 + sepsensoraread
@@ -1776,10 +1776,10 @@ contains
     localvaluesd(isepsensorks) = localvaluesd(isepsensorks) + &
 &     sepsensorksd
     localvalues(isepsensorks) = localvalues(isepsensorks) + sepsensorks
-    localvaluesd(isepsensorareaks) = localvaluesd(isepsensorareaks) + &
-&     sepsensorareaksd
-    localvalues(isepsensorareaks) = localvalues(isepsensorareaks) + &
-&     sepsensorareaks
+    localvaluesd(isepsensorksarea) = localvaluesd(isepsensorksarea) + &
+&     sepsensorksaread
+    localvalues(isepsensorksarea) = localvalues(isepsensorksarea) + &
+&     sepsensorksarea
     localvaluesd(isepsensorarea) = localvaluesd(isepsensorarea) + &
 &     sepsensoraread
     localvalues(isepsensorarea) = localvalues(isepsensorarea) + &
@@ -1830,7 +1830,7 @@ contains
     real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     real(kind=realtype) :: yplusmax, sepsensorks, sepsensor, &
 &   sepsensoravg(3), sepsensorarea, cavitation, cpmin_ks_sum, &
-&   sepsensorareaks
+&   sepsensorksarea
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: vecttangential(3)
@@ -1885,7 +1885,7 @@ contains
     sepsensor = zero
     sepsensorks = zero
     sepsensorarea = zero
-    sepsensorareaks = zero
+    sepsensorksarea = zero
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
@@ -2035,13 +2035,13 @@ contains
         sensor = v(1)*vecttangential(1) + v(2)*vecttangential(2) + v(3)*&
 &         vecttangential(3)
 ! sepsensor value
-        sensor = (cos(degtorad*sepangledeviation)-sensor)/(-cos(degtorad&
-&         *sepangledeviation)+cos(zero)+1e-16)
+        sensor = (cos(degtorad*sepsensorksphi)-sensor)/(-cos(degtorad*&
+&         sepsensorksphi)+cos(zero)+1e-16)
 ! also do the ks-based spensenor max computation
         call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
 &                            , sepsenmaxrho, ks_exponent)
-        sepsensorareaks = sepsensorareaks + blk*cellarea
-        arg1 = -(2*sepsensorsharpnesstwo*(sensor+sepsensoroffsettwo))
+        sepsensorksarea = sepsensorksarea + blk*cellarea
+        arg1 = -(2*sepsensorkssharpness*(sensor+sepsensorksoffset))
         sepsensorarea = cellarea*blk*one/(one+exp(arg1)) + sepsensorarea
         sepsensorks = sepsensorks + ks_exponent*blk
       end if
@@ -2217,8 +2217,8 @@ contains
 &     +2) + cofsumfz
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
     localvalues(isepsensorks) = localvalues(isepsensorks) + sepsensorks
-    localvalues(isepsensorareaks) = localvalues(isepsensorareaks) + &
-&     sepsensorareaks
+    localvalues(isepsensorksarea) = localvalues(isepsensorksarea) + &
+&     sepsensorksarea
     localvalues(isepsensorarea) = localvalues(isepsensorarea) + &
 &     sepsensorarea
     localvalues(icavitation) = localvalues(icavitation) + cavitation

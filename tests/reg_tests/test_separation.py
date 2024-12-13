@@ -40,10 +40,10 @@ test_params = [
         },
     },
     {
-        "name": "naca0012_rans_2D_sepsensorarea",
-        "ref_file": "separation_tests_sepsensorarea.json",
+        "name": "naca0012_rans_2D_sepsensorksarea",
+        "ref_file": "separation_tests_sepsensorksarea.json",
         "aero_prob": ap_naca0012_separation,
-        "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorarea_wingup"],
+        "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
         "N_PROCS": 2,
         "options": {
             "computeSepSensorKs": True,
@@ -111,7 +111,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
 
         self.CFDSolver.addFunction("sepsensor", "wingup")
         self.CFDSolver.addFunction("sepsensorks", "wingup")
-        self.CFDSolver.addFunction("sepsensorarea", "wingup")
+        self.CFDSolver.addFunction("sepsensorksarea", "wingup")
 
     def test_separation_metrics_and_derivatives(self):
         evalFuncs = self.eval_funcs
@@ -257,7 +257,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
 
         self.CFDSolver.addFunction("sepsensor", "wingup")
         self.CFDSolver.addFunction("sepsensorks", "wingup")
-        self.CFDSolver.addFunction("sepsensorarea", "wingup")
+        self.CFDSolver.addFunction("sepsensorksarea", "wingup")
 
     def cmplx_test_separation_adjoints(self):
         if not hasattr(self, "name"):

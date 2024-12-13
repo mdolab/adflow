@@ -316,7 +316,7 @@ sepsensorks:
     Any values that are greater than 0 are out of the alowable flow deviation.
     Thus, to constraint the separation, we use KS aggregation to find the maximum value in the sensor and can constraint it to be less than or equal to ``0``.
 
-sepsensorarea:
+sepsensorksarea:
   desc: >
     The area separated based on the KS aggregation approach..
     This is evaluated by the considering two separated heaviside smoothing with KS aggregation approach.

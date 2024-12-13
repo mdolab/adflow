@@ -1527,7 +1527,7 @@ verifyExtra:
     This option is for debugging the adjoint only.
     It is used to verify dIda.
 
-sepSensorMaxRho:
+sepSensorKsRho:
   desc: >
     The rho parameter used for the KS aggregation used for computing maximum separation sensor value in ``sepSensorKs`` cost function.
     KS aggregation is used to compute the differentiable max separation sensor within the given family group.
@@ -1543,27 +1543,17 @@ sepSensorSharpness:
     The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
-sepSensorOffsetOne:
+sepSensorKsOffset:
   desc: >
     The offset value used for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
-sepSensorSharpnessOne:
+sepSensorKsSharpness:
   desc: >
     The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
-sepSensorOffsetTwo:
-  desc: >
-    The offset value used for the separation sensor in ``sepSensor`` cost function.
-    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
-
-sepSensorSharpnessTwo:
-  desc: >
-    The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
-    See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
-
-sepAngleDeviation:
+sepSensorKsPhi:
   desc: >
     This option is for KS based separation sensor, ``sepSensorKs`` cost function.
     This angle is used to compute the allowable flow deviation region with respect to the freestream projected direction on the desired surface.

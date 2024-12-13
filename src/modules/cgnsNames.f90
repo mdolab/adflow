@@ -273,7 +273,7 @@ module cgnsNames
 !
     character(len=maxCGNSNameLen), parameter :: cgnsSepSensor = "SepSensor"
     character(len=maxCGNSNameLen), parameter :: cgnsSepSensorKs = "SepSensorKs"
-    character(len=maxCGNSNameLen), parameter :: cgnsSepSensorArea = "SepSensorArea"
+    character(len=maxCGNSNameLen), parameter :: cgnsSepSensorKsArea = "SepSensorKsArea"
     character(len=maxCGNSNameLen), parameter :: cgnsCavitation = "Cavitation"
     character(len=maxCGNSNameLen), parameter :: cgnsAxisMoment = "AxisMoment"
 !

@@ -6172,8 +6172,8 @@ contains
                 case (cgnsSepSensor)
                     write (*, "(a)", advance="no") "        SepSensor       |"
 
-                case (cgnsSepSensorArea)
-                    write (*, "(a)", advance="no") "       SepSensorArea    |"
+                case (cgnssepSensorKsArea)
+                    write (*, "(a)", advance="no") "       sepSensorKsArea    |"
 
                 case (cgnsCavitation)
                     write (*, "(a)", advance="no") "       Cavitation       |"
@@ -6277,8 +6277,8 @@ contains
                 case (cgnsSepSensor)
                     write (*, "(a)", advance="no") "                    SepSensor                    |"
 
-                case (cgnsSepSensorArea)
-                    write (*, "(a)", advance="no") "                    SepSensorArea                |"
+                case (cgnssepSensorKsArea)
+                    write (*, "(a)", advance="no") "                    sepSensorKsArea                |"
 
                 case (cgnsCavitation)
                     write (*, "(a)", advance="no") "                   Cavitation                    |"

@@ -298,7 +298,7 @@ contains
             case (cgnsAxisMoment)
                 sortNumber(i) = 116
 
-            case (cgnsSepSensorArea)
+            case (cgnsSepSensorKsArea)
                 sortNumber(i) = 117
 
             case (cgnsHdiffMax)
@@ -1597,9 +1597,9 @@ contains
                 nMon = nMon + 1; nMonSum = nMonSum + 1
                 tmpNames(nMon) = cgnsSepSensor
 
-            case ("sepsensorarea")
+            case ("SepSensorKsArea")
                 nMon = nMon + 1; nMonSum = nMonSum + 1
-                tmpNames(nMon) = cgnsSepSensorArea
+                tmpNames(nMon) = cgnsSepSensorKsArea
 
             case ("cavitation")
                 nMon = nMon + 1; nMonSum = nMonSum + 1
@@ -2360,7 +2360,7 @@ contains
         surfWriteBlank = .false.
         surfWriteSepSensor = .false.
         surfWriteSepSensorKs = .false.
-        surfWriteSepSensorArea = .false.
+        surfWriteSepSensorKsArea = .false.
         surfWriteCavitation = .false.
         surfWriteAxisMoment = .false.
         surfWriteGC = .false.
@@ -2483,8 +2483,8 @@ contains
                 surfWriteSepSensorKs = .true.
                 nVarSpecified = nVarSpecified + 1
 
-            case ("sepsensorarea")
-                surfWriteSepSensorArea = .true.
+            case ("sepsensorksarea")
+                surfWriteSepSensorKsArea = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case ("cavitation")
