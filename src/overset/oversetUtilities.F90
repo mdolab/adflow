@@ -1541,7 +1541,7 @@ contains
 
     end subroutine qsortPocketEdgeType
 
-    subroutine checkOverset(level, sps, totalOrphans, printBadCells)
+    subroutine checkOverset(level, sps, totalOrphans, lastCall)
 
         !
         !       CheckOverset checks the integrity of the overset connectivity
@@ -1560,7 +1560,7 @@ contains
         ! Input/Output
         integer(kind=intType), intent(in) :: level, sps
         integer(kind=intType), intent(out) :: totalOrphans
-        logical, intent(in) :: printBadCells
+        logical, intent(in) :: lastCall
 
         ! Working
         integer(kind=intType) :: i, j, k, nn, ii, jj, kk, n, ierr
@@ -1588,13 +1588,8 @@ contains
                                     badCell = .True.
                                 end if
                             end do stencilLoop
-                            if (badCell .and. printBadCells) then
-                                if (oversetDebugPrint) &
-                                    print *, 'Error in connectivity at :', nbkglobal, i + iBegOr, j + jBegOr, k + kBegOr
-                                ! we can modify iBlankLast because this is the last checkOverset call.
-                                ! we set iBlankLast to -5 to mark orphan cells, this value will then
-                                ! be moved to iBlank after we are done with other loops.
-                                flowDoms(nn, level, sps)%iBlankLast(i, j, k) = -5
+                            if (badCell .and. lastCall .and. oversetDebugPrint) then
+                                print *, 'Error in connectivity at :', nbkglobal, i + iBegOr, j + jBegOr, k + kBegOr
                             end if
                         end if
                     end do
@@ -1670,6 +1665,12 @@ contains
                                         ! This cell is an orphan:
                                         n = n + 1
                                         orphans(:, n) = (/ii, jj, kk/)
+                                        if (lastCall) then
+                                            ! we can modify iBlankLast because this is the last checkOverset call.
+                                            ! we set iBlankLast to -5 to mark orphan cells, this value will then
+                                            ! be moved to iBlank after we are done with other loops.
+                                            flowDoms(nn, level, sps)%iBlankLast(ii, jj, kk) = -5
+                                        end if
                                     end if
                                 end if
                             end do stencilLoop3
@@ -1688,10 +1689,10 @@ contains
             print *, 'Total number of orphans:', totalOrphans
         end if
 
-        ! if this is the last checkOverset call with printBadCells = .True., then
+        ! if this is the last checkOverset call with lastCall = .True., then
         ! we can move the orphan information to iBlank because we have done all
         ! the checking required.
-        if (printBadCells .and. (totalOrphans .gt. 0)) then
+        if (lastCall .and. (totalOrphans .gt. 0)) then
             ! loop over the cells and write the orphan information to iBlank
             do nn = 1, nDom
                 call setPointers(nn, level, sps)
