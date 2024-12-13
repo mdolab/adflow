@@ -1498,8 +1498,9 @@ contains
 
             select case (solName)
 
-            case (cgnsSkinFmag, cgnsStanton, cgnsYplus, cgnsSkinFx, &
-                  cgnsSkinFy, cgnsSkinFz, cgnsSepSensor, cgnsSepSensorKs, cgnsSepSensorKsArea, cgnsForceInDragDir, cgnsForceInLiftDir)
+             case (cgnsSkinFmag, cgnsStanton, cgnsYplus, &
+                  cgnsSkinFx, cgnsSkinFy, cgnsSkinFz, cgnsForceInDragDir, cgnsForceInLiftDir, &
+                  cgnsSepSensor, cgnsSepSensorKs, cgnsSepSensorKsArea)
 
                 ! Update the counter and set this entry of buffer to 0.
 
