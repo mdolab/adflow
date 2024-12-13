@@ -185,6 +185,8 @@ python module libadflow
          integer(kind=inttype) parameter,optional :: costfunccoflifty=100
          integer(kind=inttype) parameter,optional :: costfunccofliftz=101
          integer(kind=inttype) parameter,optional :: costfuncmavgvi=102
+         integer(kind=inttype) parameter,optional :: costfuncsepsensorks=103
+         integer(kind=inttype) parameter,optional :: costfuncsepsensorksarea=104
        end module constants
 
        module utils
@@ -1203,6 +1205,7 @@ python module libadflow
          integer(kind=inttype) :: liftindex
          real(kind=realtype) :: cavitationnumber
          real(kind=realtype) :: cpmin_rho
+         real(kind=realtype) :: sepsenmaxrho
        end module inputphysics
 
        module inputadjoint ! in :adflow:../modules/inputParam.f90
@@ -1385,8 +1388,12 @@ python module libadflow
 
        module inputcostfunctions ! in :test:costFunctions.F90
          use constants
+         logical::computesepsensorks
          real(kind=realtype) sepsensoroffset
+         real(kind=realtype) sepsensorksoffset
          real(kind=realtype) sepsensorsharpness
+         real(kind=realtype) sepsensorkssharpness
+         real(kind=realtype) sepsensorksphi
          real(kind=realtype) cavsensoroffset
          real(kind=realtype) cavsensorsharpness
          integer(kind=inttype) cavexponent

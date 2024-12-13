@@ -20,8 +20,9 @@ contains
     use inputphysics, only : liftdirection, liftdirectiond, &
 &   dragdirection, dragdirectiond, surfaceref, machcoef, machcoefd, &
 &   lengthref, alpha, alphad, beta, betad, liftindex, cpmin_family, &
-&   cpmin_rho
-    use inputcostfunctions, only : computecavitation
+&   cpmin_rho, sepsenmaxfamily, sepsenmaxrho
+    use inputcostfunctions, only : computecavitation, computesepsensorks&
+&   , sepsensorkssharpness, sepsensorksoffset
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector
@@ -47,14 +48,17 @@ contains
     real(kind=realtype) :: mavgptotd, mavgttotd, mavgrhod, mavgpsd, &
 &   mflowd, mavgmnd, mavgad, mavgvxd, mavgvyd, mavgvzd, garead, mavgvid&
 &   , fxliftd, fyliftd, fzliftd
-    real(kind=realtype) :: vdotn, mag, u, v, w
+    real(kind=realtype) :: vdotn, mag, u, v, w, ks_comp
+    real(kind=realtype) :: ks_compd
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic log
+    intrinsic exp
     intrinsic sqrt
     real(kind=realtype) :: arg1
+    real(kind=realtype) :: arg1d
     real(kind=realtype) :: temp
     real(kind=realtype) :: temp0
     real(kind=realtype), dimension(3) :: temp1
@@ -296,6 +300,30 @@ contains
 &       ovrnts*cmomentd(3, sps)
       funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
 &       ovrnts*cmoment(3, sps)
+! final part of the ks computation
+      if (computesepsensorks) then
+! only calculate the log part if we are actually computing for separation for ks method.
+        ks_compd = ovrnts*globalvalsd(isepsensorks, sps)/(sepsenmaxrho*&
+&         globalvals(isepsensorks, sps))
+        ks_comp = ovrnts*(sepsenmaxfamily(sps)+log(globalvals(&
+&         isepsensorks, sps))/sepsenmaxrho)
+        funcvaluesd(costfuncsepsensorks) = funcvaluesd(&
+&         costfuncsepsensorks) + ks_compd
+        funcvalues(costfuncsepsensorks) = funcvalues(costfuncsepsensorks&
+&         ) + ks_comp
+        arg1d = sepsensorkssharpness*2*ks_compd
+        arg1 = 2*sepsensorkssharpness*(ks_comp+sepsensorksoffset)
+        temp0 = one + exp(arg1)
+        temp = globalvals(isepsensorksarea, sps)*ks_comp/temp0
+        funcvaluesd(costfuncsepsensorksarea) = funcvaluesd(&
+&         costfuncsepsensorksarea) + ovrnts*one*(ks_comp*globalvalsd(&
+&         isepsensorksarea, sps)+globalvals(isepsensorksarea, sps)*&
+&         ks_compd-temp*exp(arg1)*arg1d)/temp0 + ovrnts*globalvalsd(&
+&         isepsensorarea, sps)
+        funcvalues(costfuncsepsensorksarea) = funcvalues(&
+&         costfuncsepsensorksarea) + ovrnts*one*temp + ovrnts*globalvals&
+&         (isepsensorarea, sps)
+      end if
       funcvaluesd(costfuncsepsensor) = funcvaluesd(costfuncsepsensor) + &
 &       ovrnts*globalvalsd(isepsensor, sps)
       funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
@@ -701,8 +729,10 @@ contains
     use flowvarrefstate, only : pref, rhoref, tref, lref, gammainf, &
 &   pinf, uref, uinf
     use inputphysics, only : liftdirection, dragdirection, surfaceref,&
-&   machcoef, lengthref, alpha, beta, liftindex, cpmin_family, cpmin_rho
-    use inputcostfunctions, only : computecavitation
+&   machcoef, lengthref, alpha, beta, liftindex, cpmin_family, cpmin_rho&
+&   , sepsenmaxfamily, sepsenmaxrho
+    use inputcostfunctions, only : computecavitation, computesepsensorks&
+&   , sepsensorkssharpness, sepsensorksoffset
     use inputtsstabderiv, only : tsstability
     use utils_d, only : computetsderivatives
     use flowutils_d, only : getdirvector
@@ -719,12 +749,13 @@ contains
     real(kind=realtype) :: mavgptot, mavgttot, mavgrho, mavgps, mflow, &
 &   mavgmn, mavga, mavgvx, mavgvy, mavgvz, garea, mavgvi, fxlift, fylift&
 &   , fzlift
-    real(kind=realtype) :: vdotn, mag, u, v, w
+    real(kind=realtype) :: vdotn, mag, u, v, w, ks_comp
     integer(kind=inttype) :: sps
     real(kind=realtype), dimension(8) :: dcdq, dcdqdot
     real(kind=realtype), dimension(8) :: dcdalpha, dcdalphadot
     real(kind=realtype), dimension(8) :: coef0
     intrinsic log
+    intrinsic exp
     intrinsic sqrt
     real(kind=realtype) :: arg1
 ! factor used for time-averaged quantities.
@@ -855,6 +886,19 @@ contains
 &       ovrnts*cmoment(2, sps)
       funcvalues(costfuncmomzcoef) = funcvalues(costfuncmomzcoef) + &
 &       ovrnts*cmoment(3, sps)
+! final part of the ks computation
+      if (computesepsensorks) then
+! only calculate the log part if we are actually computing for separation for ks method.
+        ks_comp = ovrnts*(sepsenmaxfamily(sps)+log(globalvals(&
+&         isepsensorks, sps))/sepsenmaxrho)
+        funcvalues(costfuncsepsensorks) = funcvalues(costfuncsepsensorks&
+&         ) + ks_comp
+        arg1 = 2*sepsensorkssharpness*(ks_comp+sepsensorksoffset)
+        funcvalues(costfuncsepsensorksarea) = funcvalues(&
+&         costfuncsepsensorksarea) + ovrnts*globalvals(isepsensorksarea&
+&         , sps)*ks_comp*one/(one+exp(arg1)) + ovrnts*globalvals(&
+&         isepsensorarea, sps)
+      end if
       funcvalues(costfuncsepsensor) = funcvalues(costfuncsepsensor) + &
 &       ovrnts*globalvals(isepsensor, sps)
       funcvalues(costfunccavitation) = funcvalues(costfunccavitation) + &
@@ -1067,7 +1111,8 @@ contains
     use inputcostfunctions
     use inputphysics, only : machcoef, machcoefd, pointref, pointrefd,&
 &   veldirfreestream, veldirfreestreamd, equations, momentaxis, &
-&   cpmin_family, cpmin_rho, cavitationnumber
+&   cpmin_family, cpmin_rho, cavitationnumber, sepsenmaxfamily, &
+&   sepsenmaxrho
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1081,13 +1126,18 @@ contains
     real(kind=realtype), dimension(3) :: fpd, fvd, mpd, mvd
     real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
     real(kind=realtype), dimension(3) :: cofsumfxd, cofsumfyd, cofsumfzd
-    real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation, cpmin_ks_sum
-    real(kind=realtype) :: sepsensord, sepsensoravgd(3), cavitationd, &
-&   cpmin_ks_sumd
+    real(kind=realtype) :: yplusmax, sepsensorks, sepsensor, &
+&   sepsensoravg(3), sepsensorarea, cavitation, cpmin_ks_sum, &
+&   sepsensorksarea
+    real(kind=realtype) :: sepsensorksd, sepsensord, sepsensoravgd(3), &
+&   sepsensoraread, cavitationd, cpmin_ks_sumd, sepsensorksaread
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
     real(kind=realtype) :: pm1d, fxd, fyd, fzd
+    real(kind=realtype) :: vecttangential(3)
+    real(kind=realtype) :: vecttangentiald(3)
+    real(kind=realtype) :: vectdotproductfsnormal
+    real(kind=realtype) :: vectdotproductfsnormald
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: xcd, xcod, ycd, ycod, zcd, zcod, rd(3)
@@ -1112,14 +1162,16 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic sqrt
+    intrinsic cos
     intrinsic exp
     real(kind=realtype) :: arg1
     real(kind=realtype) :: arg1d
     real(kind=realtype) :: result1
     real(kind=realtype) :: result1d
     real(kind=realtype) :: temp
-    real(kind=realtype) :: tempd
     real(kind=realtype) :: temp0
+    real(kind=realtype) :: temp1
+    real(kind=realtype) :: tempd
     select case  (bcfaceid(mm)) 
     case (imin, jmin, kmin) 
       fact = -one
@@ -1153,6 +1205,9 @@ contains
     cofsumfz = zero
     yplusmax = zero
     sepsensor = zero
+    sepsensorks = zero
+    sepsensorarea = zero
+    sepsensorksarea = zero
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
@@ -1167,8 +1222,12 @@ contains
     cpmin_ks_sumd = 0.0_8
     vd = 0.0_8
     mpaxisd = 0.0_8
+    vecttangentiald = 0.0_8
+    sepsensorksd = 0.0_8
+    sepsensorksaread = 0.0_8
     cperror2d = 0.0_8
     fpd = 0.0_8
+    sepsensoraread = 0.0_8
     mpd = 0.0_8
     cavitationd = 0.0_8
     sepsensord = 0.0_8
@@ -1368,6 +1427,72 @@ contains
       result1 = temp
       vd = (vd-v*result1d/(result1+1e-16))/(result1+1e-16)
       v = v/(result1+1e-16)
+      if (computesepsensorks) then
+! freestream projection over the surface.
+        temp = bcdata(mm)%norm(i, j, 1)
+        temp0 = bcdata(mm)%norm(i, j, 2)
+        temp1 = bcdata(mm)%norm(i, j, 3)
+        vectdotproductfsnormald = temp*veldirfreestreamd(1) + temp0*&
+&         veldirfreestreamd(2) + temp1*veldirfreestreamd(3)
+        vectdotproductfsnormal = temp*veldirfreestream(1) + temp0*&
+&         veldirfreestream(2) + temp1*veldirfreestream(3)
+! tangential vector on the surface, which is the freestream projected vector
+        temp1 = bcdata(mm)%norm(i, j, 1)
+        vecttangentiald(1) = veldirfreestreamd(1) - temp1*&
+&         vectdotproductfsnormald
+        vecttangential(1) = veldirfreestream(1) - temp1*&
+&         vectdotproductfsnormal
+        temp1 = bcdata(mm)%norm(i, j, 2)
+        vecttangentiald(2) = veldirfreestreamd(2) - temp1*&
+&         vectdotproductfsnormald
+        vecttangential(2) = veldirfreestream(2) - temp1*&
+&         vectdotproductfsnormal
+        temp1 = bcdata(mm)%norm(i, j, 3)
+        vecttangentiald(3) = veldirfreestreamd(3) - temp1*&
+&         vectdotproductfsnormald
+        vecttangential(3) = veldirfreestream(3) - temp1*&
+&         vectdotproductfsnormal
+        arg1d = 2*vecttangential(1)*vecttangentiald(1) + 2*&
+&         vecttangential(2)*vecttangentiald(2) + 2*vecttangential(3)*&
+&         vecttangentiald(3)
+        arg1 = vecttangential(1)**2 + vecttangential(2)**2 + &
+&         vecttangential(3)**2
+        temp1 = sqrt(arg1)
+        if (arg1 .eq. 0.0_8) then
+          result1d = 0.0_8
+        else
+          result1d = arg1d/(2.0*temp1)
+        end if
+        result1 = temp1
+        vecttangentiald = (vecttangentiald-vecttangential*result1d/(&
+&         result1+1e-16))/(result1+1e-16)
+        vecttangential = vecttangential/(result1+1e-16)
+! computing separation sensor
+! velocity dot products
+        sensord = vecttangential(1)*vd(1) + v(1)*vecttangentiald(1) + &
+&         vecttangential(2)*vd(2) + v(2)*vecttangentiald(2) + &
+&         vecttangential(3)*vd(3) + v(3)*vecttangentiald(3)
+        sensor = v(1)*vecttangential(1) + v(2)*vecttangential(2) + v(3)*&
+&         vecttangential(3)
+! sepsensor value
+        temp1 = cos(zero) - cos(degtorad*sepsensorksphi) + 1e-16
+        sensord = -(sensord/temp1)
+        sensor = (cos(degtorad*sepsensorksphi)-sensor)/temp1
+! also do the ks-based spensenor max computation
+        call ksaggregationfunction_d(sensor, sensord, sepsenmaxfamily(&
+&                              spectralsol), sepsenmaxrho, ks_exponent, &
+&                              ks_exponentd)
+        sepsensorksaread = sepsensorksaread + blk*cellaread
+        sepsensorksarea = sepsensorksarea + blk*cellarea
+        arg1d = -(sepsensorkssharpness*2*sensord)
+        arg1 = -(2*sepsensorkssharpness*(sensor+sepsensorksoffset))
+        temp1 = one + exp(arg1)
+        sepsensoraread = blk*one*(cellaread-cellarea*exp(arg1)*arg1d/&
+&         temp1)/temp1 + sepsensoraread
+        sepsensorarea = blk*one*(cellarea/temp1) + sepsensorarea
+        sepsensorksd = sepsensorksd + blk*ks_exponentd
+        sepsensorks = sepsensorks + ks_exponent*blk
+      end if
 ! dot product with free stream
       sensord = -(veldirfreestream(1)*vd(1)) - v(1)*veldirfreestreamd(1)&
 &       - veldirfreestream(2)*vd(2) - v(2)*veldirfreestreamd(2) - &
@@ -1377,9 +1502,9 @@ contains
 !now run through a smooth heaviside function:
       arg1d = -(sepsensorsharpness*2*sensord)
       arg1 = -(2*sepsensorsharpness*(sensor-sepsensoroffset))
-      temp = one/(one+exp(arg1))
-      sensord = -(temp*exp(arg1)*arg1d/(one+exp(arg1)))
-      sensor = temp
+      temp1 = one/(one+exp(arg1))
+      sensord = -(temp1*exp(arg1)*arg1d/(one+exp(arg1)))
+      sensor = temp1
 ! and integrate over the area of this cell and save, blanking as we go.
       sensord = blk*(cellarea*sensord+sensor*cellaread)
       sensor = sensor*cellarea*blk
@@ -1396,33 +1521,33 @@ contains
       if (computecavitation) then
         plocald = pp2d(i, j)
         plocal = pp2(i, j)
-        temp = two/(gammainf*(machcoef*machcoef))
-        tmpd = -(temp*2*machcoefd/machcoef)
-        tmp = temp
+        temp1 = two/(gammainf*(machcoef*machcoef))
+        tmpd = -(temp1*2*machcoefd/machcoef)
+        tmp = temp1
         cpd = (plocal-pinf)*tmpd + tmp*(plocald-pinfd)
         cp = tmp*(plocal-pinf)
         sensor1d = -cpd
         sensor1 = -cp - cavitationnumber
         arg1d = -(cavsensorsharpness*2*sensor1d)
         arg1 = 2*cavsensorsharpness*(-sensor1+cavsensoroffset)
-        temp = one + exp(arg1)
-        temp0 = sensor1**cavexponent/temp
+        temp1 = one + exp(arg1)
+        temp = sensor1**cavexponent/temp1
         if (sensor1 .le. 0.0_8 .and. (cavexponent .eq. 0.0_8 .or. &
 &           cavexponent .ne. int(cavexponent))) then
           tempd = 0.0_8
         else
           tempd = cavexponent*sensor1**(cavexponent-1)*sensor1d
         end if
-        sensor1d = (tempd-temp0*exp(arg1)*arg1d)/temp
-        sensor1 = temp0
+        sensor1d = (tempd-temp*exp(arg1)*arg1d)/temp1
+        sensor1 = temp
         sensor1d = blk*(cellarea*sensor1d+sensor1*cellaread)
         sensor1 = sensor1*cellarea*blk
         cavitationd = cavitationd + sensor1d
         cavitation = cavitation + sensor1
 ! also do the ks-based cpmin computation
-        temp0 = cpmin_rho*(cpmin_family(spectralsol)-cp)
-        ks_exponentd = -(exp(temp0)*cpmin_rho*cpd)
-        ks_exponent = exp(temp0)
+        temp1 = cpmin_rho*(cpmin_family(spectralsol)-cp)
+        ks_exponentd = -(exp(temp1)*cpmin_rho*cpd)
+        ks_exponent = exp(temp1)
         cpmin_ks_sumd = cpmin_ks_sumd + blk*ks_exponentd
         cpmin_ks_sum = cpmin_ks_sum + ks_exponent*blk
       end if
@@ -1467,24 +1592,24 @@ contains
         tauyz = viscsubface(mm)%tau(i, j, 6)
 ! compute the viscous force on the face. a minus sign
 ! is now present, due to the definition of this force.
-        temp0 = tauxx*ssi(i, j, 1) + tauxy*ssi(i, j, 2) + tauxz*ssi(i, j&
+        temp1 = tauxx*ssi(i, j, 1) + tauxy*ssi(i, j, 2) + tauxz*ssi(i, j&
 &         , 3)
         fxd = -(fact*(pref*(ssi(i, j, 1)*tauxxd+tauxx*ssid(i, j, 1)+ssi(&
 &         i, j, 2)*tauxyd+tauxy*ssid(i, j, 2)+ssi(i, j, 3)*tauxzd+tauxz*&
-&         ssid(i, j, 3))+temp0*prefd))
-        fx = -(fact*(temp0*pref))
-        temp0 = tauxy*ssi(i, j, 1) + tauyy*ssi(i, j, 2) + tauyz*ssi(i, j&
+&         ssid(i, j, 3))+temp1*prefd))
+        fx = -(fact*(temp1*pref))
+        temp1 = tauxy*ssi(i, j, 1) + tauyy*ssi(i, j, 2) + tauyz*ssi(i, j&
 &         , 3)
         fyd = -(fact*(pref*(ssi(i, j, 1)*tauxyd+tauxy*ssid(i, j, 1)+ssi(&
 &         i, j, 2)*tauyyd+tauyy*ssid(i, j, 2)+ssi(i, j, 3)*tauyzd+tauyz*&
-&         ssid(i, j, 3))+temp0*prefd))
-        fy = -(fact*(temp0*pref))
-        temp0 = tauxz*ssi(i, j, 1) + tauyz*ssi(i, j, 2) + tauzz*ssi(i, j&
+&         ssid(i, j, 3))+temp1*prefd))
+        fy = -(fact*(temp1*pref))
+        temp1 = tauxz*ssi(i, j, 1) + tauyz*ssi(i, j, 2) + tauzz*ssi(i, j&
 &         , 3)
         fzd = -(fact*(pref*(ssi(i, j, 1)*tauxzd+tauxz*ssid(i, j, 1)+ssi(&
 &         i, j, 2)*tauyzd+tauyz*ssid(i, j, 2)+ssi(i, j, 3)*tauzzd+tauzz*&
-&         ssid(i, j, 3))+temp0*prefd))
-        fz = -(fact*(temp0*pref))
+&         ssid(i, j, 3))+temp1*prefd))
+        fz = -(fact*(temp1*pref))
 ! compute the coordinates of the centroid of the face
 ! relative from the moment reference point. due to the
 ! usage of pointers for xx and offset of 1 is present,
@@ -1648,6 +1773,17 @@ contains
 &     +2) + cofsumfz
     localvaluesd(isepsensor) = localvaluesd(isepsensor) + sepsensord
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
+    localvaluesd(isepsensorks) = localvaluesd(isepsensorks) + &
+&     sepsensorksd
+    localvalues(isepsensorks) = localvalues(isepsensorks) + sepsensorks
+    localvaluesd(isepsensorksarea) = localvaluesd(isepsensorksarea) + &
+&     sepsensorksaread
+    localvalues(isepsensorksarea) = localvalues(isepsensorksarea) + &
+&     sepsensorksarea
+    localvaluesd(isepsensorarea) = localvaluesd(isepsensorarea) + &
+&     sepsensoraread
+    localvalues(isepsensorarea) = localvalues(isepsensorarea) + &
+&     sepsensorarea
     localvaluesd(icavitation) = localvaluesd(icavitation) + cavitationd
     localvalues(icavitation) = localvalues(icavitation) + cavitation
     localvaluesd(icpmin) = localvaluesd(icpmin) + cpmin_ks_sumd
@@ -1681,7 +1817,8 @@ contains
     use flowvarrefstate
     use inputcostfunctions
     use inputphysics, only : machcoef, pointref, veldirfreestream, &
-&   equations, momentaxis, cpmin_family, cpmin_rho, cavitationnumber
+&   equations, momentaxis, cpmin_family, cpmin_rho, cavitationnumber, &
+&   sepsenmaxfamily, sepsenmaxrho
     use bcpointers_d
     implicit none
 ! input/output variables
@@ -1691,10 +1828,13 @@ contains
 ! local variables.
     real(kind=realtype), dimension(3) :: fp, fv, mp, mv
     real(kind=realtype), dimension(3) :: cofsumfx, cofsumfy, cofsumfz
-    real(kind=realtype) :: yplusmax, sepsensor, sepsensoravg(3), &
-&   cavitation, cpmin_ks_sum
+    real(kind=realtype) :: yplusmax, sepsensorks, sepsensor, &
+&   sepsensoravg(3), sepsensorarea, cavitation, cpmin_ks_sum, &
+&   sepsensorksarea
     integer(kind=inttype) :: i, j, ii, blk
     real(kind=realtype) :: pm1, fx, fy, fz, fn
+    real(kind=realtype) :: vecttangential(3)
+    real(kind=realtype) :: vectdotproductfsnormal
     real(kind=realtype) :: xc, xco, yc, yco, zc, zco, qf(3), r(3), n(3)&
 &   , l
     real(kind=realtype) :: fact, rho, mul, yplus, dwall
@@ -1710,6 +1850,7 @@ contains
     intrinsic mod
     intrinsic max
     intrinsic sqrt
+    intrinsic cos
     intrinsic exp
     real(kind=realtype) :: arg1
     real(kind=realtype) :: result1
@@ -1742,6 +1883,9 @@ contains
     cofsumfz = zero
     yplusmax = zero
     sepsensor = zero
+    sepsensorks = zero
+    sepsensorarea = zero
+    sepsensorksarea = zero
     cavitation = zero
     cpmin_ks_sum = zero
     sepsensoravg = zero
@@ -1870,6 +2014,37 @@ contains
       arg1 = v(1)**2 + v(2)**2 + v(3)**2
       result1 = sqrt(arg1)
       v = v/(result1+1e-16)
+      if (computesepsensorks) then
+! freestream projection over the surface.
+        vectdotproductfsnormal = veldirfreestream(1)*bcdata(mm)%norm(i, &
+&         j, 1) + veldirfreestream(2)*bcdata(mm)%norm(i, j, 2) + &
+&         veldirfreestream(3)*bcdata(mm)%norm(i, j, 3)
+! tangential vector on the surface, which is the freestream projected vector
+        vecttangential(1) = veldirfreestream(1) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 1)
+        vecttangential(2) = veldirfreestream(2) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 2)
+        vecttangential(3) = veldirfreestream(3) - vectdotproductfsnormal&
+&         *bcdata(mm)%norm(i, j, 3)
+        arg1 = vecttangential(1)**2 + vecttangential(2)**2 + &
+&         vecttangential(3)**2
+        result1 = sqrt(arg1)
+        vecttangential = vecttangential/(result1+1e-16)
+! computing separation sensor
+! velocity dot products
+        sensor = v(1)*vecttangential(1) + v(2)*vecttangential(2) + v(3)*&
+&         vecttangential(3)
+! sepsensor value
+        sensor = (cos(degtorad*sepsensorksphi)-sensor)/(-cos(degtorad*&
+&         sepsensorksphi)+cos(zero)+1e-16)
+! also do the ks-based spensenor max computation
+        call ksaggregationfunction(sensor, sepsenmaxfamily(spectralsol)&
+&                            , sepsenmaxrho, ks_exponent)
+        sepsensorksarea = sepsensorksarea + blk*cellarea
+        arg1 = -(2*sepsensorkssharpness*(sensor+sepsensorksoffset))
+        sepsensorarea = cellarea*blk*one/(one+exp(arg1)) + sepsensorarea
+        sepsensorks = sepsensorks + ks_exponent*blk
+      end if
 ! dot product with free stream
       sensor = -(v(1)*veldirfreestream(1)+v(2)*veldirfreestream(2)+v(3)*&
 &       veldirfreestream(3))
@@ -2041,6 +2216,11 @@ contains
     localvalues(icoforcez:icoforcez+2) = localvalues(icoforcez:icoforcez&
 &     +2) + cofsumfz
     localvalues(isepsensor) = localvalues(isepsensor) + sepsensor
+    localvalues(isepsensorks) = localvalues(isepsensorks) + sepsensorks
+    localvalues(isepsensorksarea) = localvalues(isepsensorksarea) + &
+&     sepsensorksarea
+    localvalues(isepsensorarea) = localvalues(isepsensorarea) + &
+&     sepsensorarea
     localvalues(icavitation) = localvalues(icavitation) + cavitation
     localvalues(icpmin) = localvalues(icpmin) + cpmin_ks_sum
     localvalues(isepavg:isepavg+2) = localvalues(isepavg:isepavg+2) + &
@@ -2049,6 +2229,30 @@ contains
 &     mvaxis
     localvalues(icperror2) = localvalues(icperror2) + cperror2
   end subroutine wallintegrationface
+
+!  differentiation of ksaggregationfunction in forward (tangent) mode (with options i4 dr8 r8):
+!   variations   of useful results: ks_g
+!   with respect to varying inputs: g
+  subroutine ksaggregationfunction_d(g, gd, max_g, g_rho, ks_g, ks_gd)
+    use precision
+    implicit none
+    real(kind=realtype), intent(inout) :: ks_g
+    real(kind=realtype), intent(inout) :: ks_gd
+    real(kind=realtype), intent(in) :: g, max_g, g_rho
+    real(kind=realtype), intent(in) :: gd
+    intrinsic exp
+    ks_gd = exp(g_rho*(g-max_g))*g_rho*gd
+    ks_g = exp(g_rho*(g-max_g))
+  end subroutine ksaggregationfunction_d
+
+  subroutine ksaggregationfunction(g, max_g, g_rho, ks_g)
+    use precision
+    implicit none
+    real(kind=realtype), intent(inout) :: ks_g
+    real(kind=realtype), intent(in) :: g, max_g, g_rho
+    intrinsic exp
+    ks_g = exp(g_rho*(g-max_g))
+  end subroutine ksaggregationfunction
 
 !  differentiation of flowintegrationface in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: localvalues

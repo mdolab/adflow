@@ -276,6 +276,8 @@ module cgnsNames
 !       Names of the "lift" force, separation sensor and cavitation
 !
     character(len=maxCGNSNameLen), parameter :: cgnsSepSensor = "SepSensor"
+    character(len=maxCGNSNameLen), parameter :: cgnsSepSensorKs = "SepSensorKs"
+    character(len=maxCGNSNameLen), parameter :: cgnsSepSensorKsArea = "SepSensorKsArea"
     character(len=maxCGNSNameLen), parameter :: cgnsCavitation = "Cavitation"
     character(len=maxCGNSNameLen), parameter :: cgnsAxisMoment = "AxisMoment"
 !
