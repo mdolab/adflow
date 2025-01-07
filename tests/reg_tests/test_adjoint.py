@@ -276,6 +276,14 @@ class TestAdjoint(reg_test_classes.RegTest):
         utils.assert_adjoint_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
         self.assert_adjoint_failure()
 
+    def test_adjoint2(self):
+        utils.assert_adjoint2_sens_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
+
+    def test_adjoint_states(self):
+        utils.assert_adjoint_states_allclose(self.handler, self.CFDSolver, self.ap, tol=1e-10)
+        self.assert_adjoint_failure()
+
 
 @parameterized_class(test_params)
 class TestCmplxStep(reg_test_classes.CmplxRegTest):
