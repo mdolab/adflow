@@ -5911,7 +5911,7 @@ class ADFLOW(AeroSolver):
             "verifyExtra": [bool, True],
             # Function parmeters
             "computeSepSensorKs": [bool, False],
-            "sepsensorksrho": [float, 1000.0],
+            "sepSensorKsRho": [float, 1000.0],
             "sepSensorOffset": [float, 0.0],
             "sepSensorKsOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
