@@ -520,6 +520,24 @@ class ADflowSolver(ImplicitComponent):
             setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
+
+            # For some reason, the ADflow solver will randomly NaN in the first iteration of a solve when starting from a state and mesh that it has already converged successfully. I have tried many things to debug this but nothing has worked:
+            # - Explicitly setting state before solve
+            # - compiling with `-O1 -xCORE-AVX2`
+            # - Compiling with `-fp-model=precise`
+            # - Compiling with only `-O2`
+            # - Disabling blockettes
+            # - running with a different number of procs
+            # - Running on `cas_ait` instead of `sky_ele` nodes
+            # - As above but setting slightly perturbed states
+            # - Running on a different mesh
+            # - Running on stampede
+
+            # The thing I have found to work is:
+            # - Set the OpenMDAO inputs and outputs
+            # - Evaluate the residual
+            # - If there is a NaN in the residual, call `resetFlow` and set the same OpenMDAO inputs and outputs again
+            # - Run the solver
             res = solver.getResidual(ap)
 
             nanInResidual = self.comm.allreduce(any(np.isnan(res)), op=MPI.LOR)
@@ -534,31 +552,8 @@ class ADflowSolver(ImplicitComponent):
                 solver.resetFlow(ap)
                 setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
-            # if self.comm.rank == 0:
-            #     print(f"Pre-solve, OpenMDAO outputs")
-            # self.printStatesRange(outputs["adflow_states"])
-            # if self.comm.rank == 0:
-            #     print(f"Pre-solve, ADflow state")
-            # self.printStatesRange(solver.getStates())
-            # ==============================================================================
-            # end Remove
-            # ==============================================================================
-
             # do not write solution files inside the solver loop
             solver(ap, writeSolution=False)
-
-            # ==============================================================================
-            # TODO: Remove this once done debugging
-            # ==============================================================================
-            # if self.comm.rank == 0:
-            #     print(f"Post-solve, OpenMDAO outputs")
-            # self.printStatesRange(outputs["adflow_states"])
-            # if self.comm.rank == 0:
-            #     print(f"Post-solve, ADflow state")
-            # self.printStatesRange(solver.getStates())
-            # ==============================================================================
-            # end Remove
-            # ==============================================================================
 
             # base name for failed solution writing
             fail_name = f"{self.ap.name}_analysis_fail"
