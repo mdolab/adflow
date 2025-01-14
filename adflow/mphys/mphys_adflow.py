@@ -517,62 +517,10 @@ class ADflowSolver(ImplicitComponent):
 
         if self._do_solve:
 
-            if self.comm.rank == 0:
-                print(f"Pre-setAeroProblem, OpenMDAO outputs")
-            self.printStatesRange(outputs["adflow_states"])
-            if self.comm.rank == 0:
-                print(f"Pre-setAeroProblem, ADflow state")
-            self.printStatesRange(solver.getStates())
-
             setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
             ap.solveFailed = False  # might need to clear this out?
             ap.fatalFail = False
-
-            if self.comm.rank == 0:
-                print(f"Post-setAeroProblem, OpenMDAO outputs")
-            self.printStatesRange(outputs["adflow_states"])
-            if self.comm.rank == 0:
-                print(f"Post-setAeroProblem, ADflow state")
-            self.printStatesRange(solver.getStates())
-
-            # ==============================================================================
-            # TODO: Remove this once done debugging
-            # ==============================================================================
-            # Check if there is a NaN in any of the inputs or outputs
-            # for variable in inputs:
-            #     nanInInput = self.comm.allreduce(any(np.isnan(inputs[variable])), op=MPI.LOR)
-            #     if self.comm.rank == 0:
-            #         if nanInInput:
-            #             print(f"NaN present in {variable} input!")
-            #         else:
-            #             print(f"No NaNs in {variable} input")
-            # for variable in outputs:
-            #     nanInOutput = self.comm.allreduce(any(np.isnan(outputs[variable])), op=MPI.LOR)
-            #     if self.comm.rank == 0:
-            #         if nanInOutput:
-            #             print(f"NaN present in {variable} output!")
-            #         else:
-            #             print(f"No NaNs in {variable} output")
-
-            # # Do a standalone residual evaluation
-            # if self.comm.rank == 0:
-            #     print(f"Pre-residualEval, OpenMDAO outputs")
-            # self.printStatesRange(outputs["adflow_states"])
-            # if self.comm.rank == 0:
-            #     print(f"Pre-residualEval, ADflow state")
-            # self.printStatesRange(solver.getStates())
-
-
-            # solver.writeSolution(baseName=f"{self.ap.name}_preResEval", number=self.solution_counter)
             res = solver.getResidual(ap)
-            # if self.comm.rank == 0:
-            #     print(f"Post-residualEval, OpenMDAO outputs")
-            # self.printStatesRange(outputs["adflow_states"])
-            # if self.comm.rank == 0:
-            #     print(f"Post-residualEval, ADflow state")
-            # self.printStatesRange(solver.getStates())
-            # solver.writeSolution(baseName=f"{self.ap.name}_postResEval", number=self.solution_counter)
-            # self.solution_counter += 1
 
             nanInResidual = self.comm.allreduce(any(np.isnan(res)), op=MPI.LOR)
             if self.comm.rank == 0:
@@ -582,15 +530,9 @@ class ADflowSolver(ImplicitComponent):
                     print("No NaNs in residual")
 
             if nanInResidual:
-                # Add a small amount of noise (+- 1e-4 times the average magnitude of that state) to the adflow state before setting it
-                # for ii in range(6):
-                #     singleState = outputs["adflow_states"][ii::6]
-                #     avgMag = np.mean(np.abs(singleState))
-                #     outputs["adflow_states"][ii::6] += 1e-4*avgMag * (np.random.rand(len(singleState))-0.5)
-                # setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
-
-                # Reset the solution
+                # Reset the solution then set the inputs and states again, somehow this fixes the issue
                 solver.resetFlow(ap)
+                setAeroProblem(solver, ap, self.ap_vars, inputs=inputs, outputs=outputs, print_dict=False)
 
             # if self.comm.rank == 0:
             #     print(f"Pre-solve, OpenMDAO outputs")
