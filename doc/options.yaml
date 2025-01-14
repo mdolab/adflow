@@ -1616,7 +1616,7 @@ sepSensorKsPhi:
     And in some regions, it goes in the outboard directions.
     Therefore, we provide an allowable flow deviation from the projected freestream on the surface to compute the sensor (see below figure).
 
-    .. figure:: images/KS_sepsensov1.png
+.. figure:: images/KS_sepsensov1.png
 
     Figure from :cite:t:`Abdul-Kaiyoom2025`
 
