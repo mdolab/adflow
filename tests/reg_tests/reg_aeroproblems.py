@@ -18,6 +18,16 @@ ap_tutorial_wing = AeroProblem(
     evalFuncs=defaultFuncList,
 )
 
+ap_tutorial_wing_sep = AeroProblem(
+    name="mdo_tutorial_separation",
+    alpha=20.0,
+    mach=0.40,
+    areaRef=45.5,
+    chordRef=3.25,
+    altitude=3048,
+    evalFuncs=["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
+)
+
 ap_tutorial_wing_laminar = AeroProblem(
     name="mdo_tutorial",
     alpha=1.8,

@@ -11,28 +11,33 @@ from adflow import ADFLOW_C
 # import the testing utilities
 from parameterized import parameterized_class
 from reg_default_options import adflowDefOpts
-from reg_aeroproblems import ap_naca0012_separation
+from reg_aeroproblems import ap_naca0012_separation, ap_tutorial_wing_sep
 import reg_test_classes
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
-gridFile = os.path.join(baseDir, "../../input_files/naca0012_L3_SEP.cgns")
+gridFile_airfoil = os.path.join(baseDir, "../../input_files/naca0012_L3_SEP.cgns")
+gridFile_wing = os.path.join(baseDir, "../../input_files/mdo_tutorial_rans_sep.cgns")
 test_params = [
     {
         "name": "naca0012_rans_2D_sepsensor",
+        "gridFile": gridFile_airfoil,
         "ref_file": "separation_tests_sepsensor.json",
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup"],
         "N_PROCS": 2,
+        "sepSensorKsPhi":90.0,
         "options": {
             "monitorvariables": ["cl", "cd", "sepsensor"],
         },
     },
     {
         "name": "naca0012_rans_2D_sepsensorks",
+        "gridFile": gridFile_airfoil,
         "ref_file": "separation_tests_sepsensorks.json",
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup"],
         "N_PROCS": 2,
+        "sepSensorKsPhi":90.0,
         "options": {
             "computeSepSensorKs": True,
             # "sepangledeviation": 0.0,
@@ -41,10 +46,40 @@ test_params = [
     },
     {
         "name": "naca0012_rans_2D_sepsensorksarea",
+        "gridFile": gridFile_airfoil,
         "ref_file": "separation_tests_sepsensorksarea.json",
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
         "N_PROCS": 2,
+        "sepSensorKsPhi":90.0,
+        "options": {
+            "computeSepSensorKs": True,
+            # "sepangledeviation": 0.0,
+            "monitorvariables": ["cl", "cd", "sepsensor"],
+        },
+    },
+    {
+        "name": "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea",
+        "gridFile": gridFile_wing,
+        "ref_file": "separation_tests_wing_phi_90_sepsensors.json",
+        "aero_prob": ap_tutorial_wing_sep,
+        "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
+        "N_PROCS": 2,
+        "sepSensorKsPhi":90.0,
+        "options": {
+            "computeSepSensorKs": True,
+            # "sepangledeviation": 0.0,
+            "monitorvariables": ["cl", "cd", "sepsensor"],
+        },
+    },
+     {
+        "name": "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea",
+        "gridFile": gridFile_wing,
+        "ref_file": "separation_tests_wing_phi_120_sepsensors.json",
+        "aero_prob": ap_tutorial_wing_sep,
+        "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
+        "N_PROCS": 2,
+        "sepSensorKsPhi":120.0,
         "options": {
             "computeSepSensorKs": True,
             # "sepangledeviation": 0.0,
@@ -75,7 +110,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         options = copy.copy(adflowDefOpts)
         options.update(
             {
-                "gridfile": gridFile,
+                "gridfile": self.gridFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
                 "writevolumesolution": False,
                 "writesurfacesolution": False,
@@ -83,6 +118,8 @@ class SeparationBasicTests(reg_test_classes.RegTest):
                 "mgcycle": "sg",
                 "ncycles": 5000,
                 "useanksolver": True,
+                #phi angle
+                "sepSensorKsPhi": self.sepSensorKsPhi,
                 # "usenksolver": True,
                 "nsubiterturb": 35,
                 "anksecondordswitchtol": 1e-3,
@@ -220,7 +257,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         options = copy.copy(adflowDefOpts)
         options.update(
             {
-                "gridfile": gridFile,
+                "gridfile": self.gridFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
                 "writevolumesolution": False,
                 "writesurfacesolution": False,
@@ -228,6 +265,8 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
                 "mgcycle": "sg",
                 "ncycles": 5000,
                 "useanksolver": True,
+                #phi angle
+                "sepSensorKsPhi": self.sepSensorKsPhi,
                 # "usenksolver": True,
                 "nsubiterturb": 35,
                 "anksecondordswitchtol": 1e-3,

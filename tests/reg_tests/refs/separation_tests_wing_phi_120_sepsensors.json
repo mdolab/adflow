@@ -1,8 +1,10 @@
 {
-    "Dot product test for w -> sepsensor_wingup": -3.413578625244386e-05,
-    "Dot product test for w -> sepsensorks_wingup": -0.012285733905642566,
-    "Dot product test for xV -> sepsensor_wingup": -0.1708149227129096,
+    "Dot product test for w -> sepsensor_wingup": -637.6269173749915,
+    "Dot product test for w -> sepsensorks_wingup": -0.15377300610383726,
+    "Dot product test for w -> sepsensorksarea_wingup": -644.9386949589646,
+    "Dot product test for xV -> sepsensor_wingup": 1.2114462764139833,
     "Dot product test for xV -> sepsensorks_wingup": 0.0,
+    "Dot product test for xV -> sepsensorksarea_wingup": -0.10385801848912624,
     "metadata": {
         "ADPC": false,
         "ANKADPC": false,
@@ -134,7 +136,7 @@
         "forcesAsTractions": true,
         "frozenTurbulence": false,
         "globalPreconditioner": "additive Schwarz",
-        "gridFile": "input_files/naca0012_L3_SEP.cgns",
+        "gridFile": "input_files/mdo_tutorial_rans_sep.cgns",
         "gridPrecision": "double",
         "gridPrecisionSurface": "single",
         "infChangeCorrection": true,
@@ -202,7 +204,7 @@
         "restrictionRelaxation": 0.8,
         "selfZipCutoff": 120.0,
         "sepSensorKsOffset": 0.0,
-        "sepSensorKsPhi": 90.0,
+        "sepSensorKsPhi": 120.0,
         "sepSensorKsRho": 1000.0,
         "sepSensorKsSharpness": 25.0,
         "sepSensorOffset": 0.0,
@@ -275,17 +277,22 @@
         "zipperSurfaceFamily": null
     },
     "separation outputs": {
-        "naca0012_rans_2D_sepsensorks_sepsensor_wingup": 0.9436658909967628,
-        "naca0012_rans_2D_sepsensorks_sepsensorks_wingup": 1.0039701459789896
+        "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea_sepsensor_wingup": 37.93494336514198,
+        "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea_sepsensorks_wingup": 0.3344612777058671,
+        "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea_sepsensorksarea_wingup": 31.2469989390757
     },
     "separation totals": {
-        "naca0012_rans_2D_sepsensorks_sepsensor_wingup": {
-            "alpha": -2.0453157612660585e-09
+        "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea_sepsensor_wingup": {
+            "alpha": 1.2667829860575701
         },
-        "naca0012_rans_2D_sepsensorks_sepsensorks_wingup": {
-            "alpha": 3.7782394013400153e-06
+        "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea_sepsensorks_wingup": {
+            "alpha": -2.455775884433157e-05
+        },
+        "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea_sepsensorksarea_wingup": {
+            "alpha": 1.4644339912992403
         }
     },
-    "total sepsensor_wingup derivative wrt random volume perturbation": -0.17081860114602293,
-    "total sepsensorks_wingup derivative wrt random volume perturbation": 0.16370255961346358
+    "total sepsensor_wingup derivative wrt random volume perturbation": -8686.22226844715,
+    "total sepsensorks_wingup derivative wrt random volume perturbation": -3.7490444326821404,
+    "total sepsensorksarea_wingup derivative wrt random volume perturbation": 6341.576389018141
 }
