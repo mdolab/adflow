@@ -21,6 +21,7 @@ test_params = [
     {
         "name": "naca0012_rans_2D_sepsensor",
         "gridFile": gridFile_airfoil,
+        "restartFile": None,
         "ref_file": "separation_tests_sepsensor.json",
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup"],
@@ -33,6 +34,7 @@ test_params = [
     {
         "name": "naca0012_rans_2D_sepsensorks",
         "gridFile": gridFile_airfoil,
+        "restartFile": None,
         "ref_file": "separation_tests_sepsensorks.json",
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup"],
@@ -47,6 +49,7 @@ test_params = [
     {
         "name": "naca0012_rans_2D_sepsensorksarea",
         "gridFile": gridFile_airfoil,
+        "restartFile": None,
         "ref_file": "separation_tests_sepsensorksarea.json",
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
@@ -61,6 +64,7 @@ test_params = [
     {
         "name": "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea",
         "gridFile": gridFile_wing,
+        "restartFile": gridFile_wing,
         "ref_file": "separation_tests_wing_phi_90_sepsensors.json",
         "aero_prob": ap_tutorial_wing_sep,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
@@ -75,6 +79,7 @@ test_params = [
      {
         "name": "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea",
         "gridFile": gridFile_wing,
+        "restartFile": gridFile_wing,
         "ref_file": "separation_tests_wing_phi_120_sepsensors.json",
         "aero_prob": ap_tutorial_wing_sep,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
@@ -111,6 +116,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
         options.update(
             {
                 "gridfile": self.gridFile,
+                "restartFile": self.restartFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
                 "writevolumesolution": False,
                 "writesurfacesolution": False,

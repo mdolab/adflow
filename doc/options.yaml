@@ -1624,7 +1624,7 @@ computeSepSensorKs:
   desc: >
     Whether or not to compute KS based separation related cost functions, which are ``sepSensorKs`` and ``sepSensorKsArea`` cost functions.
     If this option is not set to ``True``, the code will return zero for this cost function.
-    When we set this to true to compute these cost functions, there is a small compute overhead because we first find the  conventiona maximum value of the sensor, max(sensor), over the desired surface to compute the aggregated maximum value.
+    When we set this to `True`` to compute these cost functions, there is a small compute overhead because we first find the conventional maximum value of the sensor, max(sensor), over the desired surface to compute the aggregated maximum value.
 
 computeCavitation:
   desc: >

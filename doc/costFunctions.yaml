@@ -312,7 +312,7 @@ sepsensorks:
     The separation sensor value based on the KS aggregation for the given surface is provided by this cost function.
     We first compute the deviation of the local velocity from the projected freestream on the desired surface. 
     Then, we use a trigonometric function to compute the sensor by providing an allowable flow deviation angle from this projected vector. 
-    As a result, the sensor provides values ranging from ``-1`` to a positive number, which varies depending on `sepSensorKsPhi` angle selection. 
+    As a result, the sensor provides values ranging from ``-1`` to a positive number, which depends on `sepSensorKsPhi` angle selection. 
     Any values that are greater than ``0`` are out of the allowable flow deviation.
     Thus, to constraint the separation, we use KS aggregation to find the maximum value in the sensor and can constraint it to be less than or equal to ``0``.
     See :cite:t:`Abdul-Kaiyoom2024a` and :cite:t:`Abdul-Kaiyoom2025`  for more details.
@@ -321,7 +321,7 @@ sepsensorksarea:
   desc: >
     The area separated based on the KS aggregation approach.
     This sensor provides the total area of the cells, where `sepsensorks` is greater than ``0`` in those cells.
-    This is evaluated by the considering two heaviside smoothing with KS aggregation approach.
+    This area is computed by considering two heaviside smoothing function with KS aggregation approach.
     It is recommended to start the initial angle of attack in the separated region to compute this value because of the sensor's highly nonlinear behaviour.
     See :cite:t:`Abdul-Kaiyoom2024a` and :cite:t:`Abdul-Kaiyoom2025`  for more details.
 
