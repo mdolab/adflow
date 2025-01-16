@@ -1641,7 +1641,9 @@ class ADFLOW(AeroSolver):
                 self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
                 key = self.adflowUserCostFunctions[f].funcName
                 value = callBackFuncs[key]
-                funcs[self.curAP.name + "_%s" % key] = value
+                full_ap_key = self.curAP.name + "_%s" % key
+                self.curAP.funcNames[key] = full_ap_key
+                funcs[full_ap_key] = value
 
         userFuncTime = time.time()
         if self.getOption("printTiming") and self.comm.rank == 0:
