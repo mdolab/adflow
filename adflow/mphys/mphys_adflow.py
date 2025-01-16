@@ -23,6 +23,7 @@ X_AERO0_GEOM_OUTPUT = MPhysVariables.Aerodynamics.Surface.Geometry.COORDINATES_O
 F_AERO = MPhysVariables.Aerodynamics.Surface.LOADS
 Q_AERO = MPhysVariables.Aerodynamics.Surface.HEAT_FLOW
 
+
 def print_func_call(component):
     """Prints the name of the class and function being. Useful for debugging when you want to see what order OpenMDAO
     is calling things in.
@@ -1261,9 +1262,7 @@ class ADflowGroup(Group):
             )
 
         if self.heat_transfer:
-            self.add_subsystem(
-                "heat_xfer", AdflowHeatTransfer(aero_solver=self.aero_solver), promotes_outputs=[Q_AERO]
-            )
+            self.add_subsystem("heat_xfer", AdflowHeatTransfer(aero_solver=self.aero_solver), promotes_outputs=[Q_AERO])
 
         if balance_group is not None:
             self.add_subsystem("balance", balance_group)
