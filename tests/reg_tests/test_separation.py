@@ -264,6 +264,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         options.update(
             {
                 "gridfile": self.gridFile,
+                "restartFile": self.restartFile,
                 "outputdirectory": os.path.join(baseDir, "../output_files"),
                 "writevolumesolution": False,
                 "writesurfacesolution": False,
@@ -287,7 +288,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
         options.update(self.options)
 
         # Setup aeroproblem
-        self.ap = copy.deepcopy(ap_naca0012_separation)
+        self.ap = copy.deepcopy(self.aero_prob)
         # change the name
         self.ap.name = self.name
 

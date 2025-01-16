@@ -1,10 +1,10 @@
 {
-    "Dot product test for w -> sepsensor_wingup": -637.6269173749915,
-    "Dot product test for w -> sepsensorks_wingup": 0.04325734114766269,
-    "Dot product test for w -> sepsensorksarea_wingup": -554.728861405979,
-    "Dot product test for xV -> sepsensor_wingup": 1.2114462764139833,
+    "Dot product test for w -> sepsensor_wingup": -637.6269173740144,
+    "Dot product test for w -> sepsensorks_wingup": 0.043257341117306,
+    "Dot product test for w -> sepsensorksarea_wingup": -554.7288613970034,
+    "Dot product test for xV -> sepsensor_wingup": 1.2114462764060412,
     "Dot product test for xV -> sepsensorks_wingup": 0.0,
-    "Dot product test for xV -> sepsensorksarea_wingup": 0.8992520496545973,
+    "Dot product test for xV -> sepsensorksarea_wingup": 0.8992520496302875,
     "metadata": {
         "ADPC": false,
         "ANKADPC": false,
@@ -200,7 +200,7 @@
         "recomputeOverlapMatrix": true,
         "resAveraging": "alternate",
         "restartAdjoint": true,
-        "restartFile": null,
+        "restartFile": "input_files/mdo_tutorial_rans_sep.cgns",
         "restrictionRelaxation": 0.8,
         "selfZipCutoff": 120.0,
         "sepSensorKsOffset": 0.0,
@@ -277,22 +277,22 @@
         "zipperSurfaceFamily": null
     },
     "separation outputs": {
-        "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensor_wingup": 37.93494336514198,
-        "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensorks_wingup": 1.0010304188120078,
-        "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensorksarea_wingup": 37.696928026776106
+        "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensor_wingup": 37.93494336512041,
+        "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensorks_wingup": 1.0010304188120098,
+        "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensorksarea_wingup": 37.69692802675455
     },
     "separation totals": {
         "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensor_wingup": {
-            "alpha": 1.2667829860575701
+            "alpha": 1.2667829860416475
         },
         "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensorks_wingup": {
-            "alpha": -0.0005856907843162938
+            "alpha": -0.0005856907842894039
         },
         "wing_rans_3D_phi_90_sepsensorks_sepsensorksarea_sepsensorksarea_wingup": {
-            "alpha": 1.2908838725821143
+            "alpha": 1.2908838725206817
         }
     },
-    "total sepsensor_wingup derivative wrt random volume perturbation": -8686.22226844715,
-    "total sepsensorks_wingup derivative wrt random volume perturbation": -5.602226530378641,
-    "total sepsensorksarea_wingup derivative wrt random volume perturbation": -12737.153586418866
+    "total sepsensor_wingup derivative wrt random volume perturbation": -8686.222268515028,
+    "total sepsensorks_wingup derivative wrt random volume perturbation": -5.6022265301217296,
+    "total sepsensorksarea_wingup derivative wrt random volume perturbation": -12737.153586037944
 }
