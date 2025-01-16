@@ -26,7 +26,7 @@ test_params = [
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup"],
         "N_PROCS": 2,
-        "sepSensorKsPhi":90.0,
+        "sepSensorKsPhi": 90.0,
         "options": {
             "monitorvariables": ["cl", "cd", "sepsensor"],
         },
@@ -39,7 +39,7 @@ test_params = [
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup"],
         "N_PROCS": 2,
-        "sepSensorKsPhi":90.0,
+        "sepSensorKsPhi": 90.0,
         "options": {
             "computeSepSensorKs": True,
             # "sepangledeviation": 0.0,
@@ -54,7 +54,7 @@ test_params = [
         "aero_prob": ap_naca0012_separation,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
         "N_PROCS": 2,
-        "sepSensorKsPhi":90.0,
+        "sepSensorKsPhi": 90.0,
         "options": {
             "computeSepSensorKs": True,
             # "sepangledeviation": 0.0,
@@ -69,14 +69,14 @@ test_params = [
         "aero_prob": ap_tutorial_wing_sep,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
         "N_PROCS": 2,
-        "sepSensorKsPhi":90.0,
+        "sepSensorKsPhi": 90.0,
         "options": {
             "computeSepSensorKs": True,
             # "sepangledeviation": 0.0,
             "monitorvariables": ["cl", "cd", "sepsensor"],
         },
     },
-     {
+    {
         "name": "wing_rans_3D_phi_120_sepsensorks_sepsensorksarea",
         "gridFile": gridFile_wing,
         "restartFile": gridFile_wing,
@@ -84,7 +84,7 @@ test_params = [
         "aero_prob": ap_tutorial_wing_sep,
         "eval_funcs": ["sepsensor_wingup", "sepsensorks_wingup", "sepsensorksarea_wingup"],
         "N_PROCS": 2,
-        "sepSensorKsPhi":120.0,
+        "sepSensorKsPhi": 120.0,
         "options": {
             "computeSepSensorKs": True,
             # "sepangledeviation": 0.0,
@@ -124,7 +124,7 @@ class SeparationBasicTests(reg_test_classes.RegTest):
                 "mgcycle": "sg",
                 "ncycles": 5000,
                 "useanksolver": True,
-                #phi angle
+                # phi angle
                 "sepSensorKsPhi": self.sepSensorKsPhi,
                 # "usenksolver": True,
                 "nsubiterturb": 35,
@@ -271,7 +271,7 @@ class SeparationCmplxTests(reg_test_classes.CmplxRegTest):
                 "mgcycle": "sg",
                 "ncycles": 5000,
                 "useanksolver": True,
-                #phi angle
+                # phi angle
                 "sepSensorKsPhi": self.sepSensorKsPhi,
                 # "usenksolver": True,
                 "nsubiterturb": 35,
