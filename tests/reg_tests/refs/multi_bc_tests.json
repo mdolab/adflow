@@ -1,11 +1,11 @@
 {
     "Eval Functions:": {
         "multi_bc_aavgps_inflow1": 79972.22540486867,
-        "multi_bc_aavgps_inflow2": 79972.22540486869,
+        "multi_bc_aavgps_inflow2": 79972.22540486867,
         "multi_bc_aavgps_outflow": 75052.47263318527,
-        "multi_bc_aavgptot_inflow1": 106309.9136481898,
-        "multi_bc_aavgptot_inflow2": 106309.9136481898,
-        "multi_bc_aavgptot_outflow": 105192.7394204602,
+        "multi_bc_aavgptot_inflow1": 106309.91364818986,
+        "multi_bc_aavgptot_inflow2": 106309.91364818987,
+        "multi_bc_aavgptot_outflow": 105192.7394204603,
         "multi_bc_area_inflow1": 2.0,
         "multi_bc_area_inflow2": 2.0,
         "multi_bc_area_outflow": 4.0,
@@ -16,17 +16,17 @@
         "multi_bc_forcexpressure_inflow2": 0.0,
         "multi_bc_forcexpressure_outflow": 0.0,
         "multi_bc_mavgttot_inflow1": 318.9900535204331,
-        "multi_bc_mavgttot_inflow2": 318.9900535204331,
-        "multi_bc_mavgttot_outflow": 318.98609537035674,
-        "multi_bc_mavgvi_inflow1": 91.08798474567361,
-        "multi_bc_mavgvi_inflow2": 91.08798474567362,
-        "multi_bc_mavgvi_outflow": 114.39611591093914,
-        "multi_bc_mavgvx_inflow1": -1.2320898581813347,
-        "multi_bc_mavgvx_inflow2": 1.2320898581813389,
-        "multi_bc_mavgvx_outflow": 1.2579100856958253e-14,
-        "multi_bc_mdot_inflow1": 420.2118036049814,
-        "multi_bc_mdot_inflow2": 420.21180360498147,
-        "multi_bc_mdot_outflow": -840.5112597743265
+        "multi_bc_mavgttot_inflow2": 318.9900535204328,
+        "multi_bc_mavgttot_outflow": 318.9860953703569,
+        "multi_bc_mavgvi_inflow1": 91.08798474567418,
+        "multi_bc_mavgvi_inflow2": 91.08798474567416,
+        "multi_bc_mavgvi_outflow": 114.39611591093973,
+        "multi_bc_mavgvx_inflow1": -1.2320898581813373,
+        "multi_bc_mavgvx_inflow2": 1.2320898581813335,
+        "multi_bc_mavgvx_outflow": 6.221920853979346e-15,
+        "multi_bc_mdot_inflow1": 420.21180360498215,
+        "multi_bc_mdot_inflow2": 420.21180360498226,
+        "multi_bc_mdot_outflow": -840.5112597743271
     },
     "metadata": {
         "ADPC": true,
@@ -34,6 +34,7 @@
         "ANKAMGLevels": 2,
         "ANKAMGNSmooth": 1,
         "ANKASMOverlap": 2,
+        "ANKASMOverlapCoarse": 0,
         "ANKCFL0": 5.0,
         "ANKCFLCutback": 0.5,
         "ANKCFLExponent": 0.5,
@@ -46,6 +47,7 @@
         "ANKCoupledSwitchTol": 0.0001,
         "ANKGlobalPreconditioner": "additive Schwarz",
         "ANKInnerPreconIts": 3,
+        "ANKInnerPreconItsCoarse": 1,
         "ANKJacobianLag": 10,
         "ANKLinResMax": 0.1,
         "ANKLinearSolveBuffer": 0.01,
@@ -54,6 +56,7 @@
         "ANKNSubiterTurb": 1,
         "ANKOuterPreconIts": 3,
         "ANKPCILUFill": 2,
+        "ANKPCILUFillCoarse": 0,
         "ANKPCUpdateCutoff": 1e-16,
         "ANKPCUpdateTol": 0.5,
         "ANKPCUpdateTolAfterCutoff": 0.0001,
@@ -72,11 +75,13 @@
         "ANKUseMatrixFree": true,
         "ANKUseTurbDADI": true,
         "ASMOverlap": 2,
+        "ASMOverlapCoarse": 0,
         "CFL": 1.7,
         "CFLCoarse": 1.0,
         "CFLLimit": 1.5,
         "GMRESOrthogonalizationType": "modified Gram-Schmidt",
         "ILUFill": 2,
+        "ILUFillCoarse": 0,
         "L2Convergence": 1e-15,
         "L2ConvergenceCoarse": 0.01,
         "L2ConvergenceRel": 1e-15,
@@ -86,14 +91,17 @@
         "NKAMGLevels": 2,
         "NKAMGNSmooth": 1,
         "NKASMOverlap": 1,
+        "NKASMOverlapCoarse": 0,
         "NKFixedStep": 0.25,
         "NKGlobalPreconditioner": "additive Schwarz",
         "NKInnerPreconIts": 1,
+        "NKInnerPreconItsCoarse": 1,
         "NKJacobianLag": 20,
         "NKLS": "cubic",
         "NKLinearSolveTol": 0.3,
         "NKOuterPreconIts": 1,
         "NKPCILUFill": 2,
+        "NKPCILUFillCoarse": 0,
         "NKSubspaceSize": 60,
         "NKSwitchTol": 1e-05,
         "NKUseEW": true,
@@ -150,13 +158,14 @@
         "forcesAsTractions": true,
         "frozenTurbulence": false,
         "globalPreconditioner": "additive Schwarz",
-        "gridFile": "input_files/multi_bc.cgns",
+        "gridFile": "tests/reg_tests/input_files/multi_bc.cgns",
         "gridPrecision": "double",
         "gridPrecisionSurface": "single",
         "infChangeCorrection": true,
         "infChangeCorrectionTol": 1e-12,
         "infChangeCorrectionType": "offset",
         "innerPreconIts": 2,
+        "innerPreconItsCoarse": 1,
         "isoVariables": [],
         "isosurface": {},
         "liftIndex": 2,
@@ -191,7 +200,7 @@
         "nearWallDist": 0.1,
         "numberSolutions": true,
         "outerPreconIts": 3,
-        "outputDirectory": "../output_files",
+        "outputDirectory": "tests/reg_tests/tests/output_files",
         "outputSurfaceFamily": "allSurfaces",
         "overlapFactor": 0.9,
         "oversetDebugPrint": false,
@@ -212,6 +221,7 @@
         "printWarnings": true,
         "qMode": false,
         "rMode": false,
+        "recomputeOverlapMatrix": true,
         "resAveraging": "alternate",
         "restartAdjoint": true,
         "restartFile": null,
@@ -245,6 +255,7 @@
         "turbulenceModel": "SA",
         "turbulenceOrder": "first order",
         "turbulenceProduction": "strain",
+        "updateWallAssociations": false,
         "useALE": true,
         "useANKSolver": true,
         "useApproxWallDistance": true,
@@ -288,28 +299,28 @@
         "zipperSurfaceFamily": null
     },
     "multi_bc_aavgps_inflow1 sens": {
-        "pressure1": 0.08982951223916952,
-        "pressure2": 0.04901795332727384
+        "pressure1": 0.08982936234446079,
+        "pressure2": 0.04901810322198458
     },
     "multi_bc_aavgps_inflow2 sens": {
-        "pressure1": 0.049017937877381144,
-        "pressure2": 0.08982952768905844
+        "pressure1": 0.049018092319771236,
+        "pressure2": 0.08982937324666898
     },
     "multi_bc_aavgps_outflow sens": {
-        "pressure1": 0.0011599547437828018,
-        "pressure2": 0.0011599541315776857
+        "pressure1": 0.0011599543506087882,
+        "pressure2": 0.0011599545247518806
     },
     "multi_bc_aavgptot_inflow1 sens": {
-        "pressure1": 0.9913316521426866,
-        "pressure2": 0.009004976169476923
+        "pressure1": 0.9913317289195107,
+        "pressure2": 0.009004899392655986
     },
     "multi_bc_aavgptot_inflow2 sens": {
-        "pressure1": 0.009004976317859372,
-        "pressure2": 0.9913316519943
+        "pressure1": 0.009004899271157031,
+        "pressure2": 0.9913317290410025
     },
     "multi_bc_aavgptot_outflow sens": {
-        "pressure1": 0.504138658421483,
-        "pressure2": 0.5041386550998923
+        "pressure1": 0.5041386582457721,
+        "pressure2": 0.5041386552756072
     },
     "multi_bc_area_inflow1 sens": {
         "pressure1": 0.0,
@@ -348,51 +359,51 @@
         "pressure2": 0.0
     },
     "multi_bc_mavgttot_inflow1 sens": {
-        "pressure1": -3.35250781858707e-07,
-        "pressure2": 2.2136855119830947e-08
+        "pressure1": -3.3525090769618146e-07,
+        "pressure2": 2.2136980958555534e-08
     },
     "multi_bc_mavgttot_inflow2 sens": {
-        "pressure1": 2.213686329539414e-08,
-        "pressure2": -3.352507900316532e-07
+        "pressure1": 2.2136969327764886e-08,
+        "pressure2": -3.3525089606072523e-07
     },
     "multi_bc_mavgttot_outflow sens": {
-        "pressure1": -1.1181571063516495e-07,
-        "pressure2": -1.11815659947238e-07
+        "pressure1": -1.1181568539223824e-07,
+        "pressure2": -1.1181568519434024e-07
     },
     "multi_bc_mavgvi_inflow1 sens": {
-        "pressure1": 0.010600327047346281,
-        "pressure2": 0.00011063681142234701
+        "pressure1": 0.010600327733806543,
+        "pressure2": 0.00011063612496181598
     },
     "multi_bc_mavgvi_inflow2 sens": {
-        "pressure1": 0.00011063682269010104,
-        "pressure2": 0.010600327036078655
+        "pressure1": 0.00011063613271343405,
+        "pressure2": 0.010600327726055011
     },
     "multi_bc_mavgvi_outflow sens": {
-        "pressure1": 0.0035314792625192226,
-        "pressure2": 0.003531478695791305
+        "pressure1": 0.0035314787349440247,
+        "pressure2": 0.003531479223366418
     },
     "multi_bc_mavgvx_inflow1 sens": {
-        "pressure1": -2.3696328503916474e-05,
-        "pressure2": 8.45820381690252e-06
+        "pressure1": -2.369633521552063e-05,
+        "pressure2": 8.458210528506423e-06
     },
     "multi_bc_mavgvx_inflow2 sens": {
-        "pressure1": -8.458376596653094e-06,
-        "pressure2": 2.36965012836673e-05
+        "pressure1": -8.458179445146736e-06,
+        "pressure2": 2.3696304132160887e-05
     },
     "multi_bc_mavgvx_outflow sens": {
-        "pressure1": -3.0245178346667068e-05,
-        "pressure2": 3.024517834666778e-05
+        "pressure1": -3.0245116678010507e-05,
+        "pressure2": 3.0245116678011477e-05
     },
     "multi_bc_mdot_inflow1 sens": {
-        "pressure1": 0.007325507622999666,
-        "pressure2": -0.00018475929839381213
+        "pressure1": 0.007325508960039602,
+        "pressure2": -0.00018476063543373662
     },
     "multi_bc_mdot_inflow2 sens": {
-        "pressure1": -0.00018475921217044712,
-        "pressure2": 0.007325507536776308
+        "pressure1": -0.00018476059849015336,
+        "pressure2": 0.007325508923095981
     },
     "multi_bc_mdot_outflow sens": {
-        "pressure1": -0.007139969099944397,
-        "pressure2": -0.0071399689293630535
+        "pressure1": -0.00713996905130578,
+        "pressure2": -0.00713996897800165
     }
 }
