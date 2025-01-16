@@ -1616,15 +1616,13 @@ sepSensorKsPhi:
     And in some regions, it goes in the outboard directions.
     Therefore, we provide an allowable flow deviation from the projected freestream on the surface to compute the sensor.
     For instance, when the angle is ``90`` degrees, this approximately closes to the verge of separation.
-    This angle (in degrees) is for 3D cases only.
-    For airfoils, by default, this is ``0``.
     See Figure 2.16 in "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
 
 computeSepSensorKs:
   desc: >
     Whether or not to compute KS based separation related cost functions, which are ``sepSensorKs`` and ``sepSensorKsArea`` cost functions.
     If this option is not set to ``True``, the code will return zero for this cost function.
-    When we set this to `True`` to compute these cost functions, there is a small compute overhead because we first find the conventional maximum value of the sensor, max(sensor), over the desired surface to compute the aggregated maximum value.
+    When we set this to ``True`` to compute these cost functions, there is a small compute overhead because we first find the conventional maximum value of the sensor, max(sensor), over the desired surface to compute the aggregated maximum value.
 
 computeCavitation:
   desc: >
