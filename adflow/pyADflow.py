@@ -3346,6 +3346,7 @@ class ADFLOW(AeroSolver):
                     # used in the explicit hole cutting multiple times in different
                     # configurations.
                     surfFile = self.blankingSurfDict[surf]["surfFile"]
+                    surfPointSetKwargs = self.blankingSurfDict[surf]["pointSetKwargs"]
                     surfPtSetName = f"points_{surfFile}"
                     if surfPtSetName not in self.DVGeo.points:
                         # we need to add the pointset to dvgeo. do it in parallel
@@ -3367,7 +3368,7 @@ class ADFLOW(AeroSolver):
                         # we already communicated the points when loading the file,
                         # so just add them to dvgeo now
                         procPts = surfPts[disp[self.comm.rank] : disp[self.comm.rank + 1]]
-                        self.DVGeo.addPointSet(procPts, surfPtSetName, **self.pointSetKwargs)
+                        self.DVGeo.addPointSet(procPts, surfPtSetName, **self.pointSetKwargs, **surfPointSetKwargs)
 
             # Check if our point-set is up to date:
             updateSurface = False
