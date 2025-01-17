@@ -1,11 +1,11 @@
 {
     "Eval Functions:": {
-        "multi_bc_aavgps_inflow1": 79972.22540486867,
-        "multi_bc_aavgps_inflow2": 79972.22540486867,
+        "multi_bc_aavgps_inflow1": 79972.22540486869,
+        "multi_bc_aavgps_inflow2": 79972.22540486866,
         "multi_bc_aavgps_outflow": 75052.47263318527,
-        "multi_bc_aavgptot_inflow1": 106309.91364818986,
-        "multi_bc_aavgptot_inflow2": 106309.91364818987,
-        "multi_bc_aavgptot_outflow": 105192.7394204603,
+        "multi_bc_aavgptot_inflow1": 106309.91364818982,
+        "multi_bc_aavgptot_inflow2": 106309.9136481898,
+        "multi_bc_aavgptot_outflow": 105192.73942046019,
         "multi_bc_area_inflow1": 2.0,
         "multi_bc_area_inflow2": 2.0,
         "multi_bc_area_outflow": 4.0,
@@ -15,18 +15,18 @@
         "multi_bc_forcexpressure_inflow1": 0.0,
         "multi_bc_forcexpressure_inflow2": 0.0,
         "multi_bc_forcexpressure_outflow": 0.0,
-        "multi_bc_mavgttot_inflow1": 318.9900535204331,
-        "multi_bc_mavgttot_inflow2": 318.9900535204328,
-        "multi_bc_mavgttot_outflow": 318.9860953703569,
-        "multi_bc_mavgvi_inflow1": 91.08798474567418,
-        "multi_bc_mavgvi_inflow2": 91.08798474567416,
-        "multi_bc_mavgvi_outflow": 114.39611591093973,
-        "multi_bc_mavgvx_inflow1": -1.2320898581813373,
-        "multi_bc_mavgvx_inflow2": 1.2320898581813335,
-        "multi_bc_mavgvx_outflow": 6.221920853979346e-15,
-        "multi_bc_mdot_inflow1": 420.21180360498215,
-        "multi_bc_mdot_inflow2": 420.21180360498226,
-        "multi_bc_mdot_outflow": -840.5112597743271
+        "multi_bc_mavgttot_inflow1": 318.99005352043326,
+        "multi_bc_mavgttot_inflow2": 318.9900535204332,
+        "multi_bc_mavgttot_outflow": 318.98609537035674,
+        "multi_bc_mavgvi_inflow1": 91.0879847456737,
+        "multi_bc_mavgvi_inflow2": 91.08798474567361,
+        "multi_bc_mavgvi_outflow": 114.39611591093912,
+        "multi_bc_mavgvx_inflow1": -1.2320898581813335,
+        "multi_bc_mavgvx_inflow2": 1.2320898581813313,
+        "multi_bc_mavgvx_outflow": -1.4202210644952866e-15,
+        "multi_bc_mdot_inflow1": 420.2118036049814,
+        "multi_bc_mdot_inflow2": 420.21180360498147,
+        "multi_bc_mdot_outflow": -840.5112597743265
     },
     "metadata": {
         "ADPC": true,
@@ -299,28 +299,28 @@
         "zipperSurfaceFamily": null
     },
     "multi_bc_aavgps_inflow1 sens": {
-        "pressure1": 0.08982936234446079,
-        "pressure2": 0.04901810322198458
+        "pressure1": 0.08982989581172657,
+        "pressure2": 0.049017569754712005
     },
     "multi_bc_aavgps_inflow2 sens": {
-        "pressure1": 0.049018092319771236,
-        "pressure2": 0.08982937324666898
+        "pressure1": 0.04901755363257747,
+        "pressure2": 0.0898299119338663
     },
     "multi_bc_aavgps_outflow sens": {
-        "pressure1": 0.0011599543506087882,
-        "pressure2": 0.0011599545247518806
+        "pressure1": 0.0011599540740622428,
+        "pressure2": 0.0011599548012984479
     },
     "multi_bc_aavgptot_inflow1 sens": {
-        "pressure1": 0.9913317289195107,
-        "pressure2": 0.009004899392655986
+        "pressure1": 0.9913316338223394,
+        "pressure2": 0.009004994489824125
     },
     "multi_bc_aavgptot_inflow2 sens": {
-        "pressure1": 0.009004899271157031,
-        "pressure2": 0.9913317290410025
+        "pressure1": 0.009004993562341503,
+        "pressure2": 0.9913316347498242
     },
     "multi_bc_aavgptot_outflow sens": {
-        "pressure1": 0.5041386582457721,
-        "pressure2": 0.5041386552756072
+        "pressure1": 0.5041386575611085,
+        "pressure2": 0.504138655960269
     },
     "multi_bc_area_inflow1 sens": {
         "pressure1": 0.0,
@@ -359,51 +359,51 @@
         "pressure2": 0.0
     },
     "multi_bc_mavgttot_inflow1 sens": {
-        "pressure1": -3.3525090769618146e-07,
-        "pressure2": 2.2136980958555534e-08
+        "pressure1": -3.3525044856707794e-07,
+        "pressure2": 2.2136521828798318e-08
     },
     "multi_bc_mavgttot_inflow2 sens": {
-        "pressure1": 2.2136969327764886e-08,
-        "pressure2": -3.3525089606072523e-07
+        "pressure1": 2.2136458352835876e-08,
+        "pressure2": -3.352503850906767e-07
     },
     "multi_bc_mavgttot_outflow sens": {
-        "pressure1": -1.1181568539223824e-07,
-        "pressure2": -1.1181568519434024e-07
+        "pressure1": -1.1181566122792623e-07,
+        "pressure2": -1.1181570935487989e-07
     },
     "multi_bc_mavgvi_inflow1 sens": {
-        "pressure1": 0.010600327733806543,
-        "pressure2": 0.00011063612496181598
+        "pressure1": 0.01060032696762643,
+        "pressure2": 0.00011063689114220887
     },
     "multi_bc_mavgvi_inflow2 sens": {
-        "pressure1": 0.00011063613271343405,
-        "pressure2": 0.010600327726055011
+        "pressure1": 0.00011063690077485668,
+        "pressure2": 0.010600326957993862
     },
     "multi_bc_mavgvi_outflow sens": {
-        "pressure1": 0.0035314787349440247,
-        "pressure2": 0.003531479223366418
+        "pressure1": 0.003531478349734694,
+        "pressure2": 0.003531479608575862
     },
     "multi_bc_mavgvx_inflow1 sens": {
-        "pressure1": -2.369633521552063e-05,
-        "pressure2": 8.458210528506423e-06
+        "pressure1": -2.3696744363364283e-05,
+        "pressure2": 8.458619676350056e-06
     },
     "multi_bc_mavgvx_inflow2 sens": {
-        "pressure1": -8.458179445146736e-06,
-        "pressure2": 2.3696304132160887e-05
+        "pressure1": -8.457839131198552e-06,
+        "pressure2": 2.3695963818212438e-05
     },
     "multi_bc_mavgvx_outflow sens": {
-        "pressure1": -3.0245116678010507e-05,
-        "pressure2": 3.0245116678011477e-05
+        "pressure1": -3.0245002270377282e-05,
+        "pressure2": 3.0245002270378085e-05
     },
     "multi_bc_mdot_inflow1 sens": {
-        "pressure1": 0.007325508960039602,
-        "pressure2": -0.00018476063543373662
+        "pressure1": 0.007325505506005988,
+        "pressure2": -0.0001847571814001576
     },
     "multi_bc_mdot_inflow2 sens": {
-        "pressure1": -0.00018476059849015336,
-        "pressure2": 0.007325508923095981
+        "pressure1": -0.00018475715205522206,
+        "pressure2": 0.0073255054766610895
     },
     "multi_bc_mdot_outflow sens": {
-        "pressure1": -0.00713996905130578,
-        "pressure2": -0.00713996897800165
+        "pressure1": -0.0071399690452908435,
+        "pressure2": -0.007139968984016611
     }
 }
