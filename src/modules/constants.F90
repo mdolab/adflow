@@ -85,6 +85,9 @@ module constants
     real(kind=realType), parameter :: threefourth = 0.75_realType
     real(kind=realType), parameter :: sqrtthree = 1.7320508075688772_realType
 
+    ! radian to degree conversion
+    real(kind=realType), parameter :: degtorad = pi / 180.0_realType
+
     ! String constants
     CHARACTER(*), PARAMETER :: LOWER_CASE = 'abcdefghijklmnopqrstuvwxyz'
     CHARACTER(*), PARAMETER :: UPPER_CASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -341,7 +344,7 @@ module constants
     integer(kind=intType), parameter :: iTotal = 16
 
     ! Cost functions.
-    integer(kind=intType), parameter :: nCostFunction = 102
+    integer(kind=intType), parameter :: nCostFunction = 104
     integer(kind=intType), parameter :: &
         costFuncLift = 1, &
         costFuncDrag = 2, &
@@ -444,9 +447,11 @@ module constants
         costfuncCofLiftX = 99, &
         costfuncCofLiftY = 100, &
         costfuncCofLiftZ = 101, &
-        costfuncmavgvi = 102
+        costfuncmavgvi = 102, &
+        costFuncSepSensorKs = 103, &
+        costFuncSepSensorKsArea = 104
 
-    integer(kind=intType), parameter :: nLocalValues = 60
+    integer(kind=intType), parameter :: nLocalValues = 63
     integer(kind=intType), parameter :: &
         iFp = 1, &
         iFv = 4, &
@@ -486,7 +491,10 @@ module constants
         iCoForceX = 51, &
         iCoForceY = 54, &
         iCoForceZ = 57, &
-        iMassVi = 60
+        iMassVi = 60, &
+        iSepSensorKs = 61, &
+        iSepSensorArea = 62, &
+        iSepSensorKsArea = 63
 
     ! Constants for zipper comm
 
