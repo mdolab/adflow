@@ -1588,15 +1588,48 @@ verifyExtra:
     This option is for debugging the adjoint only.
     It is used to verify dIda.
 
+sepSensorKsRho:
+  desc: >
+    The rho parameter used for the KS aggregation used for computing maximum separation sensor value in ``sepSensorKs`` and ``sepSensorKsArea`` cost functions.
+    KS aggregation is used to compute the differentiable max separation sensor within the given family group.
+    A higher rho value will approach the actual max separation sensor value more accurately. However, this will increase the nonlinearity in the cost function.
+    See "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
 sepSensorOffset:
   desc: >
-    The offset value used for the separation sensor.
+    The offset value used for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
 
 sepSensorSharpness:
   desc: >
-    The sharpness parameter for the separation sensor.
+    The sharpness parameter for the separation sensor in ``sepSensor`` cost function.
     See "Buffet-Onset Constraint Formulation for Aerodynamic Shape Optimization" (Kenway2017b) for more details.
+
+sepSensorKsOffset:
+  desc: >
+    The offset value used for the separation sensor in ``sepSensorKsArea`` cost functions.
+    See "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
+sepSensorKsSharpness:
+  desc: >
+    The sharpness parameter for the separation sensor in ``sepSensorKsArea`` cost function.
+    See "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
+sepSensorKsPhi:
+  desc: >
+    This option is for KS based separation sensors, ``sepSensorKs`` and ``sepSensorKsArea`` cost function.
+    This angle is used to compute the allowable flow deviation region with respect to the freestream projected direction on the desired surface.
+    For example, on a wing, the streamlines on the upper surface flows inboard direction . 
+    And in some regions, it goes in the outboard directions.
+    Therefore, we provide an allowable flow deviation from the projected freestream on the surface to compute the sensor.
+    For instance, when the angle is ``90`` degrees, this approximately closes to the verge of separation.
+    See Figure 2.16 in "Numerical Methods for Coupled Aeropropulsive Design Optimization" (Abdul-Kaiyoom2025) for more details.
+
+computeSepSensorKs:
+  desc: >
+    Whether or not to compute KS based separation related cost functions, which are ``sepSensorKs`` and ``sepSensorKsArea`` cost functions.
+    If this option is not set to ``True``, the code will return zero for this cost function.
+    When we set this to ``True`` to compute these cost functions, there is a small compute overhead because we first find the conventional maximum value of the sensor, max(sensor), over the desired surface to compute the aggregated maximum value.
 
 computeCavitation:
   desc: >
