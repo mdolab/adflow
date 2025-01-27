@@ -2111,6 +2111,14 @@ contains
         ISIZE1OFDrfDrfbcdata_sepSensor = 0
         ISIZE2OFDrfDrfbcdata_sepSensor = 0
 
+        ! sepSensorKs
+        ISIZE1OFDrfDrfbcdata_sepSensorKs = 0
+        ISIZE2OFDrfDrfbcdata_sepSensorKs = 0
+
+        ! sepSensorKsArea
+        ISIZE1OFDrfDrfbcdata_sepSensorKsArea = 0
+        ISIZE2OFDrfDrfbcdata_sepSensorKsArea = 0
+
         ! Cavitation
         ISIZE1OFDrfDrfbcdata_Cavitation = 0
         ISIZE2OFDrfDrfbcdata_Cavitation = 0
