@@ -742,6 +742,7 @@ contains
         volWriteResRho = .true.
         volWriteResMom = .false.
         volWriteResRhoe = .false.
+        volWriteSoundSpeed = .false.
 
         ! Set the values which depend on the equations to be solved.
 
@@ -2587,6 +2588,7 @@ contains
         volWriteGC = .false.
         volWriteStatus = .false.
         volWriteIntermittency = .false.
+        volWriteSoundSpeed = .false.
 
         ! Initialize nVarSpecified to 0. This serves as a test
         ! later on.
@@ -2736,6 +2738,10 @@ contains
 
             case ("intermittency")
                 volWriteIntermittency = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("soundspeed")
+                volWriteSoundSpeed = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case default

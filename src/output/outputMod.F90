@@ -225,6 +225,7 @@ contains
         if (volWriteGC) nVolSolvar = nVolSolvar + 1
         if (volWriteStatus) nVolSolvar = nVolSolvar + 1
         if (volWriteIntermittency) nVolDiscrVar = nVolDiscrVar + 1
+        if (volWriteSoundSpeed) nVolDiscrVar = nVolDiscrVar + 1
 
         ! Check the discrete variables.
 
@@ -569,6 +570,11 @@ contains
         if (volWriteIntermittency) then
             nn = nn + 1
             solNames(nn) = cgnsIntermittency
+        end if
+
+        if (volWriteSoundSpeed) then
+            nn = nn + 1
+            solNames(nn) = cgnsSoundSpeed
         end if
 
     end subroutine volSolNames
@@ -1366,6 +1372,15 @@ contains
                         gradP = gradP / sqrt(gradP(1)**2 + gradP(2)**2 + gradP(3)**2)
                         ! Dot product
                         wIO(i, j, k, 1) = UovA(1) * gradP(1) + UovA(2) * gradP(2) + UovA(3) * gradP(3)
+                    end do
+                end do
+            end do
+
+        case (cgnsSoundSpeed)
+            do k = kBeg, kEnd
+                do j = jBeg, jEnd
+                    do i = iBeg, iEnd
+                        wIO(i, j, k, 1) = sqrt(real(aa(i, j, k)))
                     end do
                 end do
             end do
