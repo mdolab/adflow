@@ -45,15 +45,16 @@ class MultiBCTests(reg_test_classes.RegTest):
             "equationType": "RANS",
             "l2convergence": 1e-15,
             "L2ConvergenceRel": 1e-15,
-            "adjointl2convergence": 1e-13,
-            "adjointL2ConvergenceRel": 1e-13,
-            "ankcfllimit": 1e9,
+            "adjointl2convergence": 1e-15,
+            "adjointL2ConvergenceRel": 1e-15,
+            "ankcfllimit": 1e5,
             "adpc": True,
             "innerpreconits": 2,
             "outerpreconits": 3,
             "asmoverlap": 2,
-            "adjointsubspacesize": 200,
-            "adjointmaxiter": 200,
+            "adjointsubspacesize": 100,
+            "adjointmaxiter": 100,
+            "skipafterfailedadjoint": False,
             "smoother": "DADI",
             "solutionPrecision": "double",
         }
@@ -70,8 +71,8 @@ class MultiBCTests(reg_test_classes.RegTest):
             "aavgps",
             "area",
             "mavgvx",
-            "forcexpressure",
-            "forcexmomentum",
+            "forcezpressure",
+            "forcezmomentum",
             "mavgvi",
         ]
 
@@ -87,13 +88,16 @@ class MultiBCTests(reg_test_classes.RegTest):
         self.ap = ap_multi_bc
 
         self.ap.setBCVar("Pressure", 75000.0, "outflow")
-        self.ap.setBCVar("PressureStagnation", 106400.0, "inflow1")
-        self.ap.setBCVar("PressureStagnation", 106400.0, "inflow2")
-        self.ap.setBCVar("TemperatureStagnation", 319.0, "inflow1")
-        self.ap.setBCVar("TemperatureStagnation", 319.0, "inflow2")
+        self.ap.setBCVar("PressureStagnation", 107400.0, "inflow1")
+        self.ap.setBCVar("PressureStagnation", 105400.0, "inflow2")
+        self.ap.setBCVar("TemperatureStagnation", 330.0, "inflow1")
+        self.ap.setBCVar("TemperatureStagnation", 310.0, "inflow2")
 
-        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow1", name="pressure1", units="Pa")
-        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow2", name="pressure2", units="Pa")
+        self.ap.addDV("Pressure", value=75000.0, family="outflow", name="ps1", units="Pa")
+        self.ap.addDV("PressureStagnation", value=107400.0, family="inflow1", name="pt1", units="Pa")
+        self.ap.addDV("PressureStagnation", value=105400.0, family="inflow2", name="pt2", units="Pa")
+        self.ap.addDV("TemperatureStagnation", value=330.0, family="inflow1", name="tt1", units="K")
+        self.ap.addDV("TemperatureStagnation", value=310.0, family="inflow2", name="tt2", units="K")
 
     def test_bc_functions(self):
         """
@@ -106,7 +110,15 @@ class MultiBCTests(reg_test_classes.RegTest):
         """
         Test the adjoint sensitivities
         """
-        self.ap.setDesignVars({"pressure1": 106400.0, "pressure2": 106400.0})
+        self.ap.setDesignVars(
+            {
+                "ps1": 75000.0,
+                "pt1": 107400.0,
+                "pt2": 105400.0,
+                "tt1": 330.0,
+                "tt2": 310.0,
+            }
+        )
         self.CFDSolver(self.ap)
 
         funcs = {}
@@ -176,8 +188,8 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
             "aavgps",
             "area",
             "mavgvx",
-            "forcexpressure",
-            "forcexmomentum",
+            "forcezpressure",
+            "forcezmomentum",
             "mavgvi",
         ]
 
@@ -198,8 +210,8 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
         self.ap.setBCVar("TemperatureStagnation", 319.0, "inflow1")
         self.ap.setBCVar("TemperatureStagnation", 319.0, "inflow2")
 
-        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow1", name="pressure1", units="Pa")
-        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow2", name="pressure2", units="Pa")
+        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow1", name="pt1", units="Pa")
+        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow2", name="pt2", units="Pa")
 
     def cmplx_test_bc_functions(self):
         """
@@ -214,8 +226,8 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
             "aavgps",
             "area",
             "mavgvx",
-            "forcexpressure",
-            "forcexmomentum",
+            "forcezpressure",
+            "forcezmomentum",
             "mavgvi",
         ]
 
@@ -224,7 +236,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
             for func in funcs:
                 evalFuncs.append(f"{func}_{family}")
 
-        aDV = {"pressure1": 106400.0, "pressure2": 106400.0}
+        aDV = {"pt1": 106400.0, "pt2": 106400.0}
         self.ap.setDesignVars(aDV)
 
         self.CFDSolver(self.ap)
@@ -237,7 +249,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
 
         funcs_plus = {}
 
-        for dv in ["pressure1", "pressure2"]:
+        for dv in ["pt1", "pt2"]:
             # Save the old dv
             dvsave = aDV[dv]
 
@@ -264,7 +276,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
             # reset the DV
             aDV[dv] = dvsave
 
-        for dv in ["pressure1", "pressure2"]:
+        for dv in ["pt1", "pt2"]:
             for key in funcsSensCS[dv]:
                 ref_val = self.handler.db[f"{key} sens"][dv]
                 np.testing.assert_allclose(funcsSensCS[dv][key], ref_val, atol=1e-6, rtol=1e-6)

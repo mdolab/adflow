@@ -1,32 +1,32 @@
 {
     "Eval Functions:": {
-        "multi_bc_aavgps_inflow1": 79972.22540486869,
-        "multi_bc_aavgps_inflow2": 79972.22540486866,
-        "multi_bc_aavgps_outflow": 75052.47263318527,
-        "multi_bc_aavgptot_inflow1": 106309.91364818982,
-        "multi_bc_aavgptot_inflow2": 106309.9136481898,
-        "multi_bc_aavgptot_outflow": 105192.73942046019,
+        "multi_bc_aavgps_inflow1": 79949.18669598275,
+        "multi_bc_aavgps_inflow2": 79976.82928693885,
+        "multi_bc_aavgps_outflow": 75052.38530620735,
+        "multi_bc_aavgptot_inflow1": 107313.35404518896,
+        "multi_bc_aavgptot_inflow2": 105302.81306896318,
+        "multi_bc_aavgptot_outflow": 105192.70074354431,
         "multi_bc_area_inflow1": 2.0,
         "multi_bc_area_inflow2": 2.0,
         "multi_bc_area_outflow": 4.0,
-        "multi_bc_forcexmomentum_inflow1": 0.0,
-        "multi_bc_forcexmomentum_inflow2": 0.0,
-        "multi_bc_forcexmomentum_outflow": 0.0,
-        "multi_bc_forcexpressure_inflow1": 0.0,
-        "multi_bc_forcexpressure_inflow2": 0.0,
-        "multi_bc_forcexpressure_outflow": 0.0,
-        "multi_bc_mavgttot_inflow1": 318.99005352043326,
-        "multi_bc_mavgttot_inflow2": 318.9900535204332,
-        "multi_bc_mavgttot_outflow": 318.98609537035674,
-        "multi_bc_mavgvi_inflow1": 91.0879847456737,
-        "multi_bc_mavgvi_inflow2": 91.08798474567361,
-        "multi_bc_mavgvi_outflow": 114.39611591093912,
-        "multi_bc_mavgvx_inflow1": -1.2320898581813335,
-        "multi_bc_mavgvx_inflow2": 1.2320898581813313,
-        "multi_bc_mavgvx_outflow": -1.4202210644952866e-15,
-        "multi_bc_mdot_inflow1": 420.2118036049814,
-        "multi_bc_mdot_inflow2": 420.21180360498147,
-        "multi_bc_mdot_outflow": -840.5112597743265
+        "multi_bc_forcezmomentum_inflow1": -97704.00299665132,
+        "multi_bc_forcezmomentum_inflow2": -91097.81087355808,
+        "multi_bc_forcezmomentum_outflow": 208390.21388589527,
+        "multi_bc_forcezpressure_inflow1": 42751.62660803454,
+        "multi_bc_forcezpressure_inflow2": 42696.341426122264,
+        "multi_bc_forcezpressure_outflow": -105090.45877517067,
+        "multi_bc_mavgttot_inflow1": 329.81106232862487,
+        "multi_bc_mavgttot_inflow2": 310.16298807871146,
+        "multi_bc_mavgttot_outflow": 320.01969323648035,
+        "multi_bc_mavgvi_inflow1": 102.35899122373334,
+        "multi_bc_mavgvi_inflow2": 77.75154621175122,
+        "multi_bc_mavgvi_outflow": 114.30738289823893,
+        "multi_bc_mavgvx_inflow1": -1.2900721673803774,
+        "multi_bc_mavgvx_inflow2": 1.1898162727567199,
+        "multi_bc_mavgvx_outflow": -0.06831387625801144,
+        "multi_bc_mdot_inflow1": 421.04498907958066,
+        "multi_bc_mdot_inflow2": 418.0153482449321,
+        "multi_bc_mdot_outflow": -839.1450457747753
     },
     "metadata": {
         "ADPC": true,
@@ -39,7 +39,7 @@
         "ANKCFLCutback": 0.5,
         "ANKCFLExponent": 0.5,
         "ANKCFLFactor": 10.0,
-        "ANKCFLLimit": 1000000000.0,
+        "ANKCFLLimit": 100000.0,
         "ANKCFLMin": 1.0,
         "ANKCFLReset": true,
         "ANKCharTimeStepType": "None",
@@ -112,14 +112,14 @@
         "adjointAMGLevels": 2,
         "adjointAMGNSmooth": 1,
         "adjointDivTol": 100000.0,
-        "adjointL2Convergence": 1e-13,
+        "adjointL2Convergence": 1e-15,
         "adjointL2ConvergenceAbs": 1e-16,
-        "adjointL2ConvergenceRel": 1e-13,
-        "adjointMaxIter": 200,
+        "adjointL2ConvergenceRel": 1e-15,
+        "adjointMaxIter": 100,
         "adjointMaxL2DeviationFactor": 1.0,
         "adjointMonitorStep": 10,
         "adjointSolver": "GMRES",
-        "adjointSubspaceSize": 200,
+        "adjointSubspaceSize": 100,
         "alphaFollowing": true,
         "alphaMode": false,
         "altitudeMode": false,
@@ -230,7 +230,7 @@
         "sepSensorOffset": 0.0,
         "sepSensorSharpness": 10.0,
         "setMonitor": true,
-        "skipAfterFailedAdjoint": true,
+        "skipAfterFailedAdjoint": false,
         "smoothParameter": 1.5,
         "smoother": "DADI",
         "solutionPrecision": "double",
@@ -299,111 +299,192 @@
         "zipperSurfaceFamily": null
     },
     "multi_bc_aavgps_inflow1 sens": {
-        "pressure1": 0.08982989581172657,
-        "pressure2": 0.049017569754712005
+        "ps1": 0.8692128903015172,
+        "pt1": 0.08253795871697153,
+        "pt2": 0.05591176405646852,
+        "tt1": -2.8245428843173617,
+        "tt2": 3.007429659038159
     },
     "multi_bc_aavgps_inflow2 sens": {
-        "pressure1": 0.04901755363257747,
-        "pressure2": 0.0898299119338663
+        "ps1": 0.8686694843474186,
+        "pt1": 0.04206559258478974,
+        "pt2": 0.0978011651512638,
+        "tt1": 2.4425165342034716,
+        "tt2": -2.5994751152065647
     },
     "multi_bc_aavgps_outflow sens": {
-        "pressure1": 0.0011599540740622428,
-        "pressure2": 0.0011599548012984479
+        "ps1": 0.9974412904081432,
+        "pt1": 0.0010477078082590636,
+        "pt2": 0.0012499772050232874,
+        "tt1": 0.0004882641623507971,
+        "tt2": -0.00046112239789203584
     },
     "multi_bc_aavgptot_inflow1 sens": {
-        "pressure1": 0.9913316338223394,
-        "pressure2": 0.009004994489824125
+        "ps1": -0.0016804313224212865,
+        "pt1": 0.9909426991644258,
+        "pt2": 0.0096029422855804,
+        "tt1": 1.038305794186922,
+        "tt2": -1.1053045688178005
     },
     "multi_bc_aavgptot_inflow2 sens": {
-        "pressure1": 0.009004993562341503,
-        "pressure2": 0.9913316347498242
+        "ps1": -0.001980057153714682,
+        "pt1": 0.008628716197634988,
+        "pt2": 0.9916945098432987,
+        "tt1": -1.3092169997912266,
+        "tt2": 1.393676042576327
     },
     "multi_bc_aavgptot_outflow sens": {
-        "pressure1": 0.5041386575611085,
-        "pressure2": 0.504138655960269
+        "ps1": -0.02775662628232721,
+        "pt1": 0.5058292460154317,
+        "pt2": 0.502360735176823,
+        "tt1": -0.17129204362115852,
+        "tt2": 0.1809953796066198
     },
     "multi_bc_area_inflow1 sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+        "ps1": 0.0,
+        "pt1": 0.0,
+        "pt2": 0.0,
+        "tt1": 0.0,
+        "tt2": 0.0
     },
     "multi_bc_area_inflow2 sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+        "ps1": 0.0,
+        "pt1": 0.0,
+        "pt2": 0.0,
+        "tt1": 0.0,
+        "tt2": 0.0
     },
     "multi_bc_area_outflow sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+        "ps1": 0.0,
+        "pt1": 0.0,
+        "pt2": 0.0,
+        "tt1": 0.0,
+        "tt2": 0.0
     },
-    "multi_bc_forcexmomentum_inflow1 sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+    "multi_bc_forcezmomentum_inflow1 sens": {
+        "ps1": 2.700432467399824,
+        "pt1": -2.93552186508786,
+        "pt2": 0.14266513490765542,
+        "tt1": -12.047713397755539,
+        "tt2": 12.826901371450695
     },
-    "multi_bc_forcexmomentum_inflow2 sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+    "multi_bc_forcezmomentum_inflow2 sens": {
+        "ps1": 2.7515715238166756,
+        "pt1": 0.10451336865805562,
+        "pt2": -2.928767586280819,
+        "tt1": 12.06188312364724,
+        "tt2": -12.83823253797882
     },
-    "multi_bc_forcexmomentum_outflow sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+    "multi_bc_forcezmomentum_outflow sens": {
+        "ps1": -5.96663919535872,
+        "pt1": 3.0761017796512773,
+        "pt2": 3.0884012428551366,
+        "tt1": -0.9563193253742011,
+        "tt2": 1.011111374379404
     },
-    "multi_bc_forcexpressure_inflow1 sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+    "multi_bc_forcezpressure_inflow1 sens": {
+        "ps1": -1.7384257810883808,
+        "pt1": -0.16507591729595872,
+        "pt2": -0.11182352792953629,
+        "tt1": 5.649085548175547,
+        "tt2": -6.014859552631291
     },
-    "multi_bc_forcexpressure_inflow2 sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+    "multi_bc_forcezpressure_inflow2 sens": {
+        "ps1": -1.7373389686948373,
+        "pt1": -0.08413118516957949,
+        "pt2": -0.1956023303025276,
+        "tt1": -4.885033068406943,
+        "tt2": 5.198950230413129
     },
-    "multi_bc_forcexpressure_outflow sens": {
-        "pressure1": 0.0,
-        "pressure2": 0.0
+    "multi_bc_forcezpressure_outflow sens": {
+        "ps1": 3.989765161632573,
+        "pt1": 0.004190831233036254,
+        "pt2": 0.00499990882009315,
+        "tt1": 0.0019530566494031884,
+        "tt2": -0.0018444895915681434
     },
     "multi_bc_mavgttot_inflow1 sens": {
-        "pressure1": -3.3525044856707794e-07,
-        "pressure2": 2.2136521828798318e-08
+        "ps1": -1.1176189618837202e-06,
+        "pt1": 2.597981601850158e-06,
+        "pt2": -1.8519967113837227e-06,
+        "tt1": 0.990717050997599,
+        "tt2": 0.009272373036981127
     },
     "multi_bc_mavgttot_inflow2 sens": {
-        "pressure1": 2.2136458352835876e-08,
-        "pressure2": -3.352503850906767e-07
+        "ps1": 2.3382703246851146e-06,
+        "pt1": 1.706563156580831e-06,
+        "pt2": -3.4028295073363333e-06,
+        "tt1": 0.008216823541605363,
+        "tt2": 0.9917788374649095
     },
     "multi_bc_mavgttot_outflow sens": {
-        "pressure1": -1.1181566122792623e-07,
-        "pressure2": -1.1181570935487989e-07
+        "ps1": 6.980696005746097e-06,
+        "pt1": 8.690766919163993e-05,
+        "pt2": -9.352407645362056e-05,
+        "tt1": 0.4945518425432346,
+        "tt2": 0.5058631771007541
     },
     "multi_bc_mavgvi_inflow1 sens": {
-        "pressure1": 0.01060032696762643,
-        "pressure2": 0.00011063689114220887
+        "ps1": 0.00014999955499235722,
+        "pt1": 0.008823639079879647,
+        "pt2": 9.605351264930423e-05,
+        "tt1": 0.1626864059412712,
+        "tt2": -0.008086670427974332
     },
     "multi_bc_mavgvi_inflow2 sens": {
-        "pressure1": 0.00011063690077485668,
-        "pressure2": 0.010600326957993862
+        "ps1": -1.7878248620249056e-05,
+        "pt1": 7.405812343036839e-05,
+        "pt2": 0.008304852731579932,
+        "tt1": -0.010211259461439965,
+        "tt2": 0.13627457770741155
     },
     "multi_bc_mavgvi_outflow sens": {
-        "pressure1": 0.003531478349734694,
-        "pressure2": 0.003531479608575862
+        "ps1": -0.0007905155669217165,
+        "pt1": 0.00334691335854554,
+        "pt2": 0.003559980557386001,
+        "tt1": 0.08689302887981998,
+        "tt2": 0.09185361540995488
     },
     "multi_bc_mavgvx_inflow1 sens": {
-        "pressure1": -2.3696744363364283e-05,
-        "pressure2": 8.458619676350056e-06
+        "ps1": 2.0939422838741496e-05,
+        "pt1": -2.4804052434795392e-05,
+        "pt2": 1.0374709843300361e-05,
+        "tt1": -0.00233881417661853,
+        "tt2": 0.00040916964539309246
     },
     "multi_bc_mavgvx_inflow2 sens": {
-        "pressure1": -8.457839131198552e-06,
-        "pressure2": 2.3695963818212438e-05
+        "ps1": -2.139768861030034e-05,
+        "pt1": -7.031147604825476e-06,
+        "pt2": 2.2390785972413188e-05,
+        "tt1": 0.00046710047143664273,
+        "tt2": 0.001421566121408459
     },
     "multi_bc_mavgvx_outflow sens": {
-        "pressure1": -3.0245002270377282e-05,
-        "pressure2": 3.0245002270378085e-05
+        "ps1": -4.037041424339791e-06,
+        "pt1": -2.8540610094410214e-05,
+        "pt2": 3.1955123208081326e-05,
+        "tt1": -0.00041539080819198634,
+        "tt2": 0.0003319227227703398
     },
     "multi_bc_mdot_inflow1 sens": {
-        "pressure1": 0.007325505506005988,
-        "pressure2": -0.0001847571814001576
+        "ps1": -0.004267473254658826,
+        "pt1": 0.00709920993332207,
+        "pt2": -0.00020253323170480936,
+        "tt1": -0.6113534066026866,
+        "tt2": -0.028311334133468653
     },
     "multi_bc_mdot_inflow2 sens": {
-        "pressure1": -0.00018475715205522206,
-        "pressure2": 0.0073255054766610895
+        "ps1": -0.004786526077406334,
+        "pt1": -0.00016098810014647332,
+        "pt2": 0.00753603248994371,
+        "tt1": -0.029745012328567095,
+        "tt2": -0.6425564100473051
     },
     "multi_bc_mdot_outflow sens": {
-        "pressure1": -0.0071399690452908435,
-        "pressure2": -0.007139968984016611
+        "ps1": 0.009050325069264306,
+        "pt1": -0.006940586239344063,
+        "pt2": -0.00732927928592177,
+        "tt1": 0.641730682691145,
+        "tt2": 0.6703313238370421
     }
 }
