@@ -1336,6 +1336,7 @@ surfaceVariables:
       * ``ptloss`` (relative total pressure loss)
       * ``mach`` (mach number)
       * ``blank`` (cell iblank values used for visualization or other post-processing)
+      * ``soundspeed`` (speed of sound)
 
     In addition, the following variables are available for viscous flows:
 

@@ -677,6 +677,7 @@ contains
         surfWriteVz = .true.
         surfWriteCp = .true.
         surfWriteMach = .true.
+        surfWriteSoundSpeed = .true.
 
         ! Set the values which depend on the equations to be solved.
 
@@ -2369,6 +2370,7 @@ contains
         surfWriteCavitation = .false.
         surfWriteAxisMoment = .false.
         surfWriteGC = .false.
+        surfWriteSoundSpeed = .false.
 
         ! Initialize nVarSpecified to 0. This serves as a test
         ! later on.
@@ -2510,6 +2512,10 @@ contains
 
             case ("gc")
                 surfWriteGC = .True.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("soundspeed")
+                surfWriteSoundSpeed = .True.
                 nVarSpecified = nVarSpecified + 1
 
             case default
