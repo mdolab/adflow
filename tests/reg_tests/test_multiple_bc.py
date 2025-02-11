@@ -205,13 +205,13 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
         self.ap = ap_multi_bc
 
         self.ap.setBCVar("Pressure", 75000.0, "outflow")
-        self.ap.setBCVar("PressureStagnation", 106400.0, "inflow1")
-        self.ap.setBCVar("PressureStagnation", 106400.0, "inflow2")
-        self.ap.setBCVar("TemperatureStagnation", 319.0, "inflow1")
-        self.ap.setBCVar("TemperatureStagnation", 319.0, "inflow2")
+        self.ap.setBCVar("PressureStagnation", 107400.0, "inflow1")
+        self.ap.setBCVar("PressureStagnation", 105400.0, "inflow2")
+        self.ap.setBCVar("TemperatureStagnation", 330.0, "inflow1")
+        self.ap.setBCVar("TemperatureStagnation", 310.0, "inflow2")
 
-        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow1", name="pt1", units="Pa")
-        self.ap.addDV("PressureStagnation", value=106400.0, family="inflow2", name="pt2", units="Pa")
+        self.ap.addDV("PressureStagnation", value=107400.0, family="inflow1", name="pt1", units="Pa")
+        self.ap.addDV("PressureStagnation", value=105400.0, family="inflow2", name="pt2", units="Pa")
 
     def cmplx_test_bc_functions(self):
         """
@@ -236,7 +236,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
             for func in funcs:
                 evalFuncs.append(f"{func}_{family}")
 
-        aDV = {"pt1": 106400.0, "pt2": 106400.0}
+        aDV = {"pt1": 107400.0, "pt2": 105400.0}
         self.ap.setDesignVars(aDV)
 
         self.CFDSolver(self.ap)
