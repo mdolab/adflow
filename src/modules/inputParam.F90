@@ -60,7 +60,7 @@ module inputDiscretization
     !                         computations. Typically only used for
     !                         repeated calls when the wall distance would
     !                         not have changed significantly
-    ! updateWallAssociation : Logical to determine if the full wall distance
+    ! updateWallAssociations: Logical to determine if the full wall distance
     !                         assocation is to be performed on the next
     !                         wall distance calculation. This is only
     !                         significant when useApproxWallDistance is
@@ -92,6 +92,7 @@ module inputDiscretization
     logical :: radiiNeededFine, radiiNeededCoarse
 
     logical :: useApproxWallDistance
+    logical :: updateWallAssociations
     logical :: lowSpeedPreconditioner
 end module inputDiscretization
 
@@ -299,8 +300,12 @@ end module inputIteration
 
 module inputCostFunctions
     use constants
-    real(kind=realtype) :: sepSensorOffset = zero
-    real(kind=realtype) :: sepSensorSharpness = 10.0_realType
+    logical :: computeSepSensorKs
+    real(kind=realtype) :: sepSensorOffset
+    real(kind=realtype) :: sepSensorKsOffset
+    real(kind=realtype) :: sepSensorKsPhi
+    real(kind=realtype) :: sepSensorSharpness
+    real(kind=realtype) :: sepSensorKsSharpness
     real(kind=realtype) :: cavSensorOffset
     real(kind=realtype) :: cavSensorSharpness
     integer(kind=inttype) :: cavExponent
@@ -571,6 +576,9 @@ module inputPhysics
     ! cpmin_rho            The rho parameter used with the KS-based cavitation sensor.
     ! cpmin_family         The cpmin for a given surface family that does not use
     !                      KS-aggregation, but rather an exact min computation.
+    ! sepSenMaxRho           The rho parameter used with the KS-based separation sensor.
+    ! sepSenMaxFamily     The maximum sepsensor value for a given surface family that does not use
+    !                      KS-aggregation, but rather an exact max computation.
 
     integer(kind=intType) :: equations, equationMode, flowType
     integer(kind=intType) :: turbModel, cpModel, turbProd
@@ -597,6 +605,8 @@ module inputPhysics
     real(kind=realType) :: cavitationnumber
     real(kind=realType) :: cpmin_rho
     real(kind=realType), dimension(:), allocatable :: cpmin_family
+    real(kind=realType) :: sepSenMaxRho
+    real(kind=realType), dimension(:), allocatable :: sepSenMaxFamily
 
 #ifndef USE_TAPENADE
     real(kind=realType) :: alphad, betad
@@ -795,7 +805,8 @@ module inputADjoint
 
     ! FillLevel     : Number of levels of fill for the ILU local PC
     ! Overlap       : Amount of overlap in the ASM PC
-    integer(kind=intType) :: FillLevel, Overlap
+    integer(kind=intType) :: fillLevel, overlap
+    integer(kind=intType) :: fillLevelCoarse, overlapCoarse
 
     ! adjRelTol     : Relative tolerance
     ! adjAbsTol     : Absolute tolerance
@@ -817,7 +828,7 @@ module inputADjoint
     ! outerPCIts : Number of iterations to run for on (global) preconditioner
     ! intterPCIts : Number of iterations to run on local preconditioner
     integer(kind=intType) :: outerPreConIts
-    integer(kind=intType) :: innerPreConIts
+    integer(kind=intType) :: innerPreConIts, innerPreConItsCoarse
     integer(kind=intType) :: adjAMGLevels, adjAMGNSmooth
 
     logical :: printTiming
@@ -880,5 +891,6 @@ module inputOverset
     integer(kind=intType) :: nFloodIter
     logical :: useZipperMesh
     logical :: useOversetWallScaling
+    logical :: recomputeOverlapMatrix
     logical :: oversetDebugPrint
 end module inputOverset
