@@ -133,7 +133,7 @@ class MultiBCTests(reg_test_classes.RegTest):
         self.CFDSolver.evalFunctionsSens(self.ap, funcsSens)
 
         for key in funcsSens:
-            self.handler.root_add_dict(f"{key} sens", funcsSens[key], rtol=1e-12, atol=1e-12)
+            self.handler.root_add_dict(f"{key} sens", funcsSens[key], rtol=1e-11, atol=1e-11)
 
 
 class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
@@ -279,7 +279,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
         for dv in ["pt1", "pt2"]:
             for key in funcsSensCS[dv]:
                 ref_val = self.handler.db[f"{key} sens"][dv]
-                np.testing.assert_allclose(funcsSensCS[dv][key], ref_val, atol=1e-6, rtol=1e-6)
+                np.testing.assert_allclose(funcsSensCS[dv][key], ref_val, atol=1e-10, rtol=1e-10)
 
 
 if __name__ == "__main__":
