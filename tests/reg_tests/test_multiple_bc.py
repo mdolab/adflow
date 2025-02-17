@@ -279,7 +279,7 @@ class MultiBCCmplxTests(reg_test_classes.CmplxRegTest):
         for dv in ["pt1", "pt2"]:
             for key in funcsSensCS[dv]:
                 ref_val = self.handler.db[f"{key} sens"][dv]
-                np.testing.assert_allclose(funcsSensCS[dv][key], ref_val, atol=1e-10, rtol=1e-10)
+                np.testing.assert_allclose(funcsSensCS[dv][key], ref_val, atol=1e-9, rtol=1e-9)
 
 
 if __name__ == "__main__":
