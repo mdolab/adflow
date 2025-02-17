@@ -1308,9 +1308,7 @@ class ADflowGroup(Group):
             )
 
         if self.heat_transfer:
-            self.add_subsystem(
-                "heat_xfer", AdflowHeatTransfer(aero_solver=self.aero_solver), promotes_outputs=[Q_AERO]
-            )
+            self.add_subsystem("heat_xfer", AdflowHeatTransfer(aero_solver=self.aero_solver), promotes_outputs=[Q_AERO])
 
         if balance_group is not None:
             self.add_subsystem("balance", balance_group)
