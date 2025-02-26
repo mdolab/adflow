@@ -297,63 +297,19 @@ class ADFLOW(AeroSolver):
             name = getPy3SafeString(self.adflow.utils.getcgnszonename(i + 1).strip())
             self.CGNSZoneNameIDs[name] = i + 1
 
-        # Call the user supplied callback if necessary
-        cutCallBack = self.getOption("cutCallBack")
+        # Allocate the flag array we will use for the explicit hole cutting.
+        # This is modified in place as we go through each callback routine.
         flag = numpy.zeros(n)
-        if cutCallBack is not None:
-            xCen = self.adflow.utils.getcellcenters(1, n).T
-            cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
-            cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
 
+        # Call the user supplied callback if necessary
+        self._oversetCutCallback(flag)
         cutCallBackTime = time.time()
 
-        # exclude the cells inside closed surfaces if we are provided with them
-        explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
-        if explicitSurfaceCallback is not None:
-            # the user wants to exclude cells that lie within a list of surfaces.
-
-            # first, call the callback function with cgns zone name IDs.
-            # this need to return us a dictionary with the surface mesh information,
-            # as well as which blocks in the cgns mesh to include in the search
-            surfDict = explicitSurfaceCallback(self.CGNSZoneNameIDs)
-
-            # loop over the surfaces
-            for surf in surfDict:
-                if self.comm.rank == 0:
-                    print(f"Explicitly blanking surface: {surf}")
-
-                # this is the plot3d surface that defines the closed volume
-                surfFile = surfDict[surf]["surfFile"]
-                # the indices of cgns blocks that we want to consider when blanking inside the surface
-                blockIDs = surfDict[surf]["blockIDs"]
-                # the fortran lookup expects this list in increasing order
-                blockIDs.sort()
-
-                # check if there is a kMin provided
-                if "kMin" in surfDict[surf]:
-                    kMin = surfDict[surf]["kMin"]
-                else:
-                    kMin = -1
-
-                # optional coordinate transformation to do general manipulation of the coordinates
-                if "coordXfer" in surfDict[surf]:
-                    coordXfer = surfDict[surf]["coordXfer"]
-                else:
-                    coordXfer = None
-
-                # read the plot3d surface
-                pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
-
-                # get a new flag array
-                surfFlag = numpy.zeros(n, "intc")
-
-                # call the fortran routine to determine if the cells are inside or outside.
-                # this code is very similar to the actuator zone creation.
-                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surfFlag, blockIDs, kMin)
-
-                # update the flag array with the new info
-                flag = numpy.any([flag, surfFlag], axis=0)
-
+        # also run through the surface callback routine
+        # the initialization is done separately in case we want to do
+        # full overset updates later on.
+        self._initializeExplicitSurfaceCallback()
+        self._oversetExplicitSurfaceCallback(flag)
         explicitSurfaceCutTime = time.time()
 
         # Need to reset the oversetPriority option since the CGNSGrid
@@ -1759,7 +1715,9 @@ class ADFLOW(AeroSolver):
                 self.adflowUserCostFunctions[f].evalFunctions(callBackFuncs)
                 key = self.adflowUserCostFunctions[f].funcName
                 value = callBackFuncs[key]
-                funcs[self.curAP.name + "_%s" % key] = value
+                full_ap_key = self.curAP.name + "_%s" % key
+                self.curAP.funcNames[key] = full_ap_key
+                funcs[full_ap_key] = value
 
         userFuncTime = time.time()
         if self.getOption("printTiming") and self.comm.rank == 0:
@@ -3421,6 +3379,37 @@ class ADFLOW(AeroSolver):
                 coords0 = self.mapVector(self.coords0, self.allFamilies, self.designFamilyGroup, includeZipper=False)
                 self.DVGeo.addPointSet(coords0, ptSetName, **self.pointSetKwargs)
 
+            # also check if we need to embed blanking surface points
+            if self.getOption("oversetUpdateMode") == "full" and self.getOption("explicitSurfaceCallback") is not None:
+                for surf in self.blankingSurfDict:
+                    # the name of the pointset will be based on the surface filename.
+                    # this saves duplicate pointsets where the same file might be
+                    # used in the explicit hole cutting multiple times in different
+                    # configurations.
+                    surfFile = self.blankingSurfDict[surf]["surfFile"]
+                    surfPtSetName = f"points_{surfFile}"
+                    if surfPtSetName not in self.DVGeo.points:
+                        # we need to add the pointset to dvgeo. do it in parallel
+                        surfPts = self.blankingSurfData[surfFile]["pts"]
+                        npts = surfPts.shape[0]
+
+                        # compute proc displacements
+                        sizes = numpy.zeros(self.comm.size, dtype="intc")
+                        sizes[:] = npts // self.comm.size
+                        sizes[: npts % self.comm.size] += 1
+
+                        disp = numpy.zeros(self.comm.size + 1, dtype="intc")
+                        disp[1:] = numpy.cumsum(sizes)
+
+                        # save this info in the dict
+                        self.blankingSurfData[surfFile]["sizes"] = sizes
+                        self.blankingSurfData[surfFile]["disp"] = disp
+
+                        # we already communicated the points when loading the file,
+                        # so just add them to dvgeo now
+                        procPts = surfPts[disp[self.comm.rank] : disp[self.comm.rank + 1]]
+                        self.DVGeo.addPointSet(procPts, surfPtSetName, **self.pointSetKwargs)
+
             # Check if our point-set is up to date:
             if not self.DVGeo.pointSetUpToDate(ptSetName) or aeroProblem.adflowData.disp is not None:
                 coords = self.DVGeo.update(ptSetName, config=aeroProblem.name)
@@ -3430,6 +3419,37 @@ class ADFLOW(AeroSolver):
                     coords += self.curAP.adflowData.disp
 
                 self.setSurfaceCoordinates(coords, self.designFamilyGroup)
+
+                # also update the blanking surface coordinates
+                if (
+                    self.getOption("oversetUpdateMode") == "full"
+                    and self.getOption("explicitSurfaceCallback") is not None
+                ):
+                    # loop over each surf and update points
+                    for surfFile in self.blankingSurfData:
+                        surfPtSetName = f"points_{surfFile}"
+                        sizes = self.blankingSurfData[surfFile]["sizes"]
+                        disp = self.blankingSurfData[surfFile]["disp"]
+                        nptsg = disp[-1]
+
+                        # get the updated local points
+                        newPtsLocal = self.DVGeo.update(surfPtSetName, config=aeroProblem.name)
+
+                        # we need to gather all points on all procs. use the vectorized allgatherv for this
+
+                        # sendbuf
+                        newPtsLocal = newPtsLocal.flatten()
+                        sendbuf = [newPtsLocal, sizes[self.comm.rank] * 3]
+
+                        # recvbuf
+                        newPtsGlobal = numpy.zeros(nptsg * 3, dtype=self.dtype)
+                        recvbuf = [newPtsGlobal, sizes * 3, disp[0:-1] * 3, MPI.DOUBLE]
+
+                        # do an allgatherv
+                        self.comm.Allgatherv(sendbuf, recvbuf)
+
+                        # reshape into a nptsg,3 array
+                        self.blankingSurfData[surfFile]["pts"] = newPtsGlobal.reshape((nptsg, 3))
 
         self._setAeroProblemData(aeroProblem)
 
@@ -4387,16 +4407,18 @@ class ADFLOW(AeroSolver):
                 ncells = self.adflow.adjointvars.ncellslocal[0]
                 ntime = self.adflow.inputtimespectral.ntimeintervalsspectral
                 n = ncells * ntime
+
+                # Allocate the flag array we will use for the explicit hole cutting.
+                # This is modified in place as we go through each callback routine.
                 flag = numpy.zeros(n)
 
                 # Only need to call the cutCallBack and regenerate the zipper mesh
                 # if we're doing a full update.
                 if self.getOption("oversetUpdateMode") == "full":
-                    cutCallBack = self.getOption("cutCallBack")
-                    if cutCallBack is not None:
-                        xCen = self.adflow.utils.getcellcenters(1, n).T
-                        cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
-                        cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
+                    self._oversetCutCallback(flag)
+
+                    # also run the explicit surface blanking
+                    self._oversetExplicitSurfaceCallback(flag)
 
                     # Verify previous mesh failures
                     self.adflow.killsignals.routinefailed = self.comm.allreduce(
@@ -4423,6 +4445,117 @@ class ADFLOW(AeroSolver):
                 bool(self.adflow.killsignals.routinefailed), op=MPI.LOR
             )
             self.adflow.killsignals.fatalfail = self.adflow.killsignals.routinefailed
+
+    def _oversetCutCallback(self, flag):
+        """This routine goes through the explicit callback routine provided by the user
+        and modifies the flag array in place. The most common use case for this is to
+        blank out the cells on the wrong side of the symmetry plane.
+
+        Parameters
+        ----------
+        flag : ndarray
+            Array that is used as a mask to select the explicitly blanked cells.
+            This is modified in place.
+        """
+        cutCallBack = self.getOption("cutCallBack")
+        if cutCallBack is not None:
+            n = len(flag)
+            xCen = self.adflow.utils.getcellcenters(1, n).T
+            cellIDs = self.adflow.utils.getcellcgnsblockids(1, n)
+            cutCallBack(xCen, self.CGNSZoneNameIDs, cellIDs, flag)
+
+    def _initializeExplicitSurfaceCallback(self):
+        """Routine that loads the external surfaces provided by the user for explicit blanking.
+        We can do this just once because there may be subsequent calls with the same surfaces.
+        """
+
+        self.explicitSurfaceCallback = self.getOption("explicitSurfaceCallback")
+
+        if self.explicitSurfaceCallback is not None:
+            # first, call the callback function with cgns zone name IDs.
+            # this need to return us a dictionary with the surface mesh information,
+            # as well as which blocks in the cgns mesh to include in the search.
+            # we dont need to update this dictionary on subsequent calls.
+            self.blankingSurfDict = self.explicitSurfaceCallback(self.CGNSZoneNameIDs)
+
+            # also keep track of a second dictionary that saves the surface info. We do this
+            # separately because the surface files can be shared across different blanking calls.
+            # in this case, we dont want to process the surfaces multiple times.
+            blankingSurfData = {}
+
+            for surf in self.blankingSurfDict:
+                # this is the plot3d surface that defines the closed volume
+                surfFile = self.blankingSurfDict[surf]["surfFile"]
+
+                # if this is the first call, we need to load the surface meshes.
+                # we might have duplicate mesh files, so no need to load them again
+                # if we have already loadded one copy
+                if surfFile not in blankingSurfData:
+                    # optional coordinate transformation to do general manipulation of the coordinates
+                    if "coordXfer" in self.blankingSurfDict[surf]:
+                        coordXfer = self.blankingSurfDict[surf]["coordXfer"]
+                    else:
+                        coordXfer = None
+
+                    # read the plot3d surface
+                    pts, conn = self._readPlot3DSurfFile(surfFile, convertToTris=False, coordXfer=coordXfer)
+
+                    blankingSurfData[surfFile] = {"pts": pts, "conn": conn}
+
+            self.blankingSurfData = blankingSurfData
+
+    def _oversetExplicitSurfaceCallback(self, flag):
+        """This routine runs the explicit surface callback algorithm if user adds
+        surfaces that define the boundaries of the compute domain. This approach
+        will work more robustly than the automated flooding algorithm for complex
+        grids.
+
+        Parameters
+        ----------
+        flag : ndarray
+            Array that is used as a mask to select the explicitly blanked cells.
+            This is modified in place.
+        """
+
+        if self.explicitSurfaceCallback is not None:
+            # get the number of cells
+            n = len(flag)
+
+            # loop over the surfaces
+            for surf in self.blankingSurfDict:
+                if self.comm.rank == 0:
+                    print(f"Explicitly blanking surface: {surf}", flush=True)
+
+                # this is the plot3d surface that defines the closed volume
+                surfFile = self.blankingSurfDict[surf]["surfFile"]
+                # the indices of cgns blocks that we want to consider when blanking inside the surface
+                blockIDs = self.blankingSurfDict[surf]["blockIDs"]
+                # the fortran lookup expects this list in increasing order
+                blockIDs.sort()
+
+                # check if there is a kMin provided
+                if "kMin" in self.blankingSurfDict[surf]:
+                    kMin = self.blankingSurfDict[surf]["kMin"]
+                else:
+                    kMin = -1
+
+                # the surf file is loaded in initialization
+                pts = self.blankingSurfData[surfFile]["pts"]
+                conn = self.blankingSurfData[surfFile]["conn"]
+
+                # get a new flag array
+                surfFlag = numpy.zeros(n, "intc")
+
+                # call the fortran routine to determine if the cells are inside or outside.
+                # this code is very similar to the actuator zone creation.
+                self.adflow.oversetapi.flagcellsinsurface(pts.T, conn.T, surfFlag, blockIDs, kMin)
+
+                # update the flag array with the new info
+                flag[:] = numpy.any([flag, surfFlag], axis=0)
+
+            # we can delete the surface info if we are not running in full overset update mode
+            if self.getOption("oversetUpdateMode") != "full":
+                del self.blankingSurfData
 
     def getAdjointResNorms(self):
         """
@@ -5621,6 +5754,7 @@ class ADFLOW(AeroSolver):
             "eddyVisInfRatio": [float, 0.009],
             "useWallFunctions": [bool, False],
             "useApproxWallDistance": [bool, True],
+            "updateWallAssociations": [bool, False],
             "eulerWallTreatment": [
                 str,
                 [
@@ -5681,6 +5815,7 @@ class ADFLOW(AeroSolver):
             "useOversetWallScaling": [bool, False],
             "selfZipCutoff": [float, 120.0],
             "oversetPriority": [dict, {}],
+            "recomputeOverlapMatrix": [bool, True],
             "oversetDebugPrint": [bool, False],
             # Unsteady Parameters
             "timeIntegrationScheme": [str, ["BDF", "explicit RK", "implicit RK"]],
@@ -5720,10 +5855,13 @@ class ADFLOW(AeroSolver):
             "NKViscPC": [bool, False],
             "NKGlobalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
             "NKASMOverlap": [int, 1],
+            "NKASMOverlapCoarse": [int, 0],
             "NKPCILUFill": [int, 2],
+            "NKPCILUFillCoarse": [int, 0],
             "NKJacobianLag": [int, 20],
             "applyPCSubspaceSize": [int, 10],
             "NKInnerPreconIts": [int, 1],
+            "NKInnerPreconItsCoarse": [int, 1],
             "NKOuterPreconIts": [int, 1],
             "NKAMGLevels": [int, 2],
             "NKAMGNSmooth": [int, 1],
@@ -5743,9 +5881,12 @@ class ADFLOW(AeroSolver):
             "ANKLinResMax": [float, 0.1],
             "ANKGlobalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
             "ANKASMOverlap": [int, 1],
+            "ANKASMOverlapCoarse": [int, 0],
             "ANKPCILUFill": [int, 2],
+            "ANKPCILUFillCoarse": [int, 0],
             "ANKJacobianLag": [int, 10],
             "ANKInnerPreconIts": [int, 1],
+            "ANKInnerPreconItsCoarse": [int, 1],
             "ANKOuterPreconIts": [int, 1],
             "ANKAMGLevels": [int, 2],
             "ANKAMGNSmooth": [int, 1],
@@ -5825,8 +5966,11 @@ class ADFLOW(AeroSolver):
             "globalPreconditioner": [str, ["additive Schwarz", "multigrid"]],
             "localPreconditioner": [str, ["ILU"]],
             "ILUFill": [int, 2],
+            "ILUFillCoarse": [int, 0],
             "ASMOverlap": [int, 1],
+            "ASMOverlapCoarse": [int, 0],
             "innerPreconIts": [int, 1],
+            "innerPreconItsCoarse": [int, 1],
             "outerPreconIts": [int, 3],
             "adjointAMGLevels": [int, 2],
             "adjointAMGNSmooth": [int, 1],
@@ -5840,8 +5984,13 @@ class ADFLOW(AeroSolver):
             "verifySpatial": [bool, True],
             "verifyExtra": [bool, True],
             # Function parmeters
+            "computeSepSensorKs": [bool, False],
+            "sepSensorKsRho": [float, 1000.0],
             "sepSensorOffset": [float, 0.0],
+            "sepSensorKsOffset": [float, 0.0],
             "sepSensorSharpness": [float, 10.0],
+            "sepSensorKsSharpness": [float, 25.0],
+            "sepSensorKsPhi": [float, 90.0],
             "cavSensorOffset": [float, 0.0],
             "cavSensorSharpness": [float, 10.0],
             "cavExponent": [int, 0],
@@ -5861,6 +6010,7 @@ class ADFLOW(AeroSolver):
             "equationmode",
             "flowtype",
             "useapproxwalldistance",
+            "updatewallassociations",
             "liftindex",
             "mgcycle",
             "mgstartlevel",
@@ -6005,6 +6155,7 @@ class ADFLOW(AeroSolver):
             "usewallfunctions": ["physics", "wallfunctions"],
             "walldistcutoff": ["physics", "walldistcutoff"],
             "useapproxwalldistance": ["discr", "useapproxwalldistance"],
+            "updatewallassociations": ["discr", "updatewallassociations"],
             "eulerwalltreatment": {
                 "linear pressure extrapolation": self.adflow.constants.linextrapolpressure,
                 "constant pressure extrapolation": self.adflow.constants.constantpressure,
@@ -6069,6 +6220,7 @@ class ADFLOW(AeroSolver):
             "usezippermesh": ["overset", "usezippermesh"],
             "useoversetwallscaling": ["overset", "useoversetwallscaling"],
             "selfzipcutoff": ["overset", "selfzipcutoff"],
+            "recomputeoverlapmatrix": ["overset", "recomputeoverlapmatrix"],
             "oversetdebugprint": ["overset", "oversetdebugprint"],
             # Unsteady Params
             "timeintegrationscheme": {
@@ -6114,12 +6266,15 @@ class ADFLOW(AeroSolver):
                 "location": ["nk", "nk_precondtype"],
             },
             "nkasmoverlap": ["nk", "nk_asmoverlap"],
+            "nkasmoverlapcoarse": ["nk", "nk_asmoverlapcoarse"],
             "nkpcilufill": ["nk", "nk_ilufill"],
+            "nkpcilufillcoarse": ["nk", "nk_ilufillcoarse"],
             "nkjacobianlag": ["nk", "nk_jacobianlag"],
             "nkadpc": ["nk", "nk_adpc"],
             "nkviscpc": ["nk", "nk_viscpc"],
             "applypcsubspacesize": ["nk", "applypcsubspacesize"],
             "nkinnerpreconits": ["nk", "nk_innerpreconits"],
+            "nkinnerpreconitscoarse": ["nk", "nk_innerpreconitscoarse"],
             "nkouterpreconits": ["nk", "nk_outerpreconits"],
             "nkamglevels": ["nk", "nk_amglevels"],
             "nkamgnsmooth": ["nk", "nk_amgnsmooth"],
@@ -6148,9 +6303,12 @@ class ADFLOW(AeroSolver):
                 "location": ["ank", "ank_precondtype"],
             },
             "ankasmoverlap": ["ank", "ank_asmoverlap"],
+            "ankasmoverlapcoarse": ["ank", "ank_asmoverlapcoarse"],
             "ankpcilufill": ["ank", "ank_ilufill"],
+            "ankpcilufillcoarse": ["ank", "ank_ilufillcoarse"],
             "ankjacobianlag": ["ank", "ank_jacobianlag"],
             "ankinnerpreconits": ["ank", "ank_innerpreconits"],
+            "ankinnerpreconitscoarse": ["ank", "ank_innerpreconitscoarse"],
             "ankouterpreconits": ["ank", "ank_outerpreconits"],
             "ankamglevels": ["ank", "ank_amglevels"],
             "ankamgnsmooth": ["ank", "ank_amgnsmooth"],
@@ -6243,9 +6401,12 @@ class ADFLOW(AeroSolver):
             },
             "localpreconditioner": {"ilu": "ilu", "location": ["adjoint", "localpctype"]},
             "ilufill": ["adjoint", "filllevel"],
+            "ilufillcoarse": ["adjoint", "filllevelcoarse"],
             "applyadjointpcsubspacesize": ["adjoint", "applyadjointpcsubspacesize"],
             "asmoverlap": ["adjoint", "overlap"],
+            "asmoverlapcoarse": ["adjoint", "overlapcoarse"],
             "innerpreconits": ["adjoint", "innerpreconits"],
+            "innerpreconitscoarse": ["adjoint", "innerpreconitscoarse"],
             "outerpreconits": ["adjoint", "outerpreconits"],
             "adjointamglevels": ["adjoint", "adjamglevels"],
             "adjointamgnsmooth": ["adjoint", "adjamgnsmooth"],
@@ -6255,8 +6416,13 @@ class ADFLOW(AeroSolver):
             "verifyextra": ["adjoint", "verifyextra"],
             "usematrixfreedrdw": ["adjoint", "usematrixfreedrdw"],
             # Parameters for functions
+            "computesepsensorks": ["cost", "computesepsensorks"],
+            "sepsensorksrho": ["physics", "sepsenmaxrho"],
             "sepsensoroffset": ["cost", "sepsensoroffset"],
             "sepsensorsharpness": ["cost", "sepsensorsharpness"],
+            "sepsensorkssharpness": ["cost", "sepsensorkssharpness"],
+            "sepsensorksoffset": ["cost", "sepsensorksoffset"],
+            "sepsensorksphi": ["cost", "sepsensorksphi"],
             "cavsensoroffset": ["cost", "cavsensoroffset"],
             "cavsensorsharpness": ["cost", "cavsensorsharpness"],
             "cavexponent": ["cost", "cavexponent"],
@@ -6400,6 +6566,8 @@ class ADFLOW(AeroSolver):
             "clqdot": self.adflow.constants.costfuncclqdot,
             "cbend": self.adflow.constants.costfuncbendingcoef,
             "sepsensor": self.adflow.constants.costfuncsepsensor,
+            "sepsensorks": self.adflow.constants.costfuncsepsensorks,
+            "sepsensorksarea": self.adflow.constants.costfuncsepsensorksarea,
             "sepsensoravgx": self.adflow.constants.costfuncsepsensoravgx,
             "sepsensoravgy": self.adflow.constants.costfuncsepsensoravgy,
             "sepsensoravgz": self.adflow.constants.costfuncsepsensoravgz,

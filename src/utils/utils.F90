@@ -4737,7 +4737,7 @@ contains
         !
         use block
         use inputTimeSpectral
-        use inputPhysics, only: cpmin_family
+        use inputPhysics, only: cpmin_family, sepSenMaxFamily
         use ADjointPETSc
         use cgnsGrid
         implicit none
@@ -4768,6 +4768,10 @@ contains
         ! deallocate the cpmin_family array allocated in inputParamRoutines
         if (allocated(cpmin_family)) &
             deallocate (cpmin_family)
+
+        ! deallocate the sepSenMaxFamily array allocated in inputParamRoutines
+        if (allocated(sepSenMaxFamily)) &
+            deallocate (sepSenMaxFamily)
 
         ! Destroy variables allocated in preprocessingAdjoint
         if (adjointPETScPreProcVarsAllocated) then
@@ -6168,6 +6172,9 @@ contains
                 case (cgnsSepSensor)
                     write (*, "(a)", advance="no") "        SepSensor       |"
 
+                case (cgnssepSensorKsArea)
+                    write (*, "(a)", advance="no") "       sepSensorKsArea    |"
+
                 case (cgnsCavitation)
                     write (*, "(a)", advance="no") "       Cavitation       |"
 
@@ -6269,6 +6276,9 @@ contains
 
                 case (cgnsSepSensor)
                     write (*, "(a)", advance="no") "                    SepSensor                    |"
+
+                case (cgnssepSensorKsArea)
+                    write (*, "(a)", advance="no") "                    sepSensorKsArea                |"
 
                 case (cgnsCavitation)
                     write (*, "(a)", advance="no") "                   Cavitation                    |"
