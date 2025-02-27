@@ -840,6 +840,10 @@ class ADFLOW(AeroSolver):
         thrust=0.0,
         torque=0.0,
         heat=0.0,
+        relaxStart=None,
+        relaxEnd=None,
+        coordXfer=None,
+        # simpleProp specific parameters
         swirlFact=0.0,
         mDistribParam=1.0,
         nDistribParam=0.5,
@@ -848,9 +852,6 @@ class ADFLOW(AeroSolver):
         propRadius=0.1,
         spinnerRadius=0.0,
         rootDragFactor=0.0,
-        relaxStart=None,
-        relaxEnd=None,
-        coordXfer=None,
     ):
         """Add an actuator zone with a uniform force distribution or add
         an actuator-disk zone representing a propeller. The zone is defined by
