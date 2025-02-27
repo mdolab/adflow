@@ -95,7 +95,7 @@ contains
         region%actType = actType
         region%famName = famName
         region%famID = famID
-        region%T = torque
+        region%torque = torque
         region%heat = heat
         region%relaxStart = relaxStart
         region%relaxEnd = relaxEnd
@@ -112,7 +112,7 @@ contains
 
         axisVec = axisVec / axisVecNorm
 
-        region%F = axisVec * thrust
+        region%force = axisVec * thrust
         region%thrust = thrust
         region%axisVec = axisVec
 

@@ -558,8 +558,8 @@ contains
 
         ! And the reverse seeds in the actuator zones
         do i = 1, nActuatorRegions
-            write (*, *) 'actuatorRegionsd(i)%F ', actuatorRegionsd(i)%f
-            write (*, *) 'actuatorRegionsd(i)%T ', actuatorRegionsd(i)%t
+            write (*, *) 'actuatorRegionsd(i)%Force ', actuatorRegionsd(i)%force
+            write (*, *) 'actuatorRegionsd(i)%Torque ', actuatorRegionsd(i)%torque
         end do
 
     end subroutine printADSeeds
