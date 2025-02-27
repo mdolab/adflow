@@ -420,7 +420,7 @@ contains
 
                     ! energy residuals
                     dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE) - &
-                                        Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz - Qtmp
+                                         Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz - Qtmp
                 else
                     ! Add in the local power contribution:
                     pLocal = pLocal + (Vx * Ftmp(1) + Vy * FTmp(2) + Vz * Ftmp(3)) * reDim
@@ -430,33 +430,33 @@ contains
 
         ! If using the simple propeller force distribution
         if (actuatorRegions(iRegion)%actType == 'simpleProp') then
-        !$AD II-LOOP
-        do ii=iStart, iEnd
+            !$AD II-LOOP
+            do ii = iStart, iEnd
 
-             ! Extract the cell ID.
-             i = actuatorRegions(iRegion)%cellIDs(1, ii)
-             j = actuatorRegions(iRegion)%cellIDs(2, ii)
-             k = actuatorRegions(iRegion)%cellIDs(3, ii)
+                ! Extract the cell ID.
+                i = actuatorRegions(iRegion)%cellIDs(1, ii)
+                j = actuatorRegions(iRegion)%cellIDs(2, ii)
+                k = actuatorRegions(iRegion)%cellIDs(3, ii)
 
-            Ftmp = factor * actuatorRegions(iRegion)%thrustVec(:, ii) * actuatorRegions(iRegion)%thrust / pRef
-            Ftmp = Ftmp + factor * actuatorRegions(iRegion)%swirlVec(:, ii) * actuatorRegions(iRegion)%thrust / pRef
+                Ftmp = factor * actuatorRegions(iRegion)%thrustVec(:, ii) * actuatorRegions(iRegion)%thrust / pRef
+                Ftmp = Ftmp + factor * actuatorRegions(iRegion)%swirlVec(:, ii) * actuatorRegions(iRegion)%thrust / pRef
 
-             Vx = w(i, j, k, iVx)
-             Vy = w(i, j, k, iVy)
-             Vz = w(i, j, k, iVz)
+                Vx = w(i, j, k, iVx)
+                Vy = w(i, j, k, iVy)
+                Vz = w(i, j, k, iVz)
 
-             if (res) then
+                if (res) then
                     ! Momentum residuals
                     dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
 
                     ! energy residuals
-                    dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE)    - &
-                             Ftmp(1)*Vx - Ftmp(2)*Vy - Ftmp(3)*Vz
-             else
+                    dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE) - &
+                                         Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz
+                else
                     ! Add in the local power contribution:
-                    pLocal = pLocal + (Vx*Ftmp(1) + Vy*Ftmp(2) + Vz*Ftmp(3))*reDim
-             end if
-        end do
+                    pLocal = pLocal + (Vx * Ftmp(1) + Vy * Ftmp(2) + Vz * Ftmp(3)) * reDim
+                end if
+            end do
         end if
 
     end subroutine sourceTerms_block

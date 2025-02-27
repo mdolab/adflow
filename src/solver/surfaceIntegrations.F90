@@ -159,10 +159,10 @@ contains
                 funcValues(costFuncSepSensorKs) = funcValues(costFuncSepSensorKs) + ks_comp
 
                 funcValues(costFuncsepSensorKsArea) = funcValues(costFuncsepSensorKsArea) + &
-                                                    ovrNTS * globalVals(iSepSensorKsArea, sps) * ks_comp * &
-                                                    one / (one + exp(2 * sepSensorKsSharpness &
-                                                                     * (ks_comp + sepSensorKsOffset))) + &
-                                                    ovrNTS * globalVals(iSepSensorArea, sps)
+                                                      ovrNTS * globalVals(iSepSensorKsArea, sps) * ks_comp * &
+                                                      one / (one + exp(2 * sepSensorKsSharpness &
+                                                                       * (ks_comp + sepSensorKsOffset))) + &
+                                                      ovrNTS * globalVals(iSepSensorArea, sps)
 
             end if
 
