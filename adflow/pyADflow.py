@@ -850,7 +850,7 @@ class ADFLOW(AeroSolver):
         rootDragFactor=0.0,
         relaxStart=None,
         relaxEnd=None,
-        coordXfer=None
+        coordXfer=None,
     ):
         """Add an actuator zone with a uniform force distribution or add
         an actuator-disk zone representing a propeller. The zone is defined by
@@ -869,7 +869,7 @@ class ADFLOW(AeroSolver):
         propeller-wing interaction" by Chauhan and Martins
         for more. This applies axis-symmetric (but radially varying) forces.
 
-	The surface defines the physical extent of the
+        The surface defines the physical extent of the
         region over which to apply the source terms. The plot3d file may be
         multi-block but all the surface normals must point outside and no
         additional surfaces can be inside. Internally, we find all of the CFD
@@ -930,7 +930,7 @@ class ADFLOW(AeroSolver):
            thrust, and also to define the propeller axis for the propeller model.
            The propeller axis is used to compute the radii of the cells in the
            actuator-disk zone and also to calculate the directions for axial and
-           tangential forces. 
+           tangential forces.
 
         familyName : str
            The name to be associated with the functions defined on this region.
@@ -1040,14 +1040,32 @@ class ADFLOW(AeroSolver):
         if relaxEnd is None and relaxStart is not None:
             raise Error("relaxEnd must be given is relaxStart is specified")
 
-        if actType != 'uniform' and actType != 'simpleProp':
+        if actType != "uniform" and actType != "simpleProp":
             raise Error("actType must be 'uniform' or 'simpleProp'")
 
         #  Now continue to fortran were we setup the actual region.
         self.adflow.actuatorregion.addactuatorregion(
-            pts.T, conn.T, actType, axis1, axis2, familyName, famID, thrust, torque, heat,
-            swirlFact, mDistribParam, nDistribParam, distribPDfactor, innerZeroThrustRadius,
-            propRadius, spinnerRadius, rootDragFactor, relaxStart, relaxEnd)
+            pts.T,
+            conn.T,
+            actType,
+            axis1,
+            axis2,
+            familyName,
+            famID,
+            thrust,
+            torque,
+            heat,
+            swirlFact,
+            mDistribParam,
+            nDistribParam,
+            distribPDfactor,
+            innerZeroThrustRadius,
+            propRadius,
+            spinnerRadius,
+            rootDragFactor,
+            relaxStart,
+            relaxEnd,
+        )
 
     def writeActuatorRegions(self, fileName, outputDir=None):
         """
