@@ -1074,8 +1074,8 @@ contains
 
         ! And the reverse seeds in the actuator zones
         do i = 1, nActuatorRegions
-            actuatorRegionsd(i)%F = zero
-            actuatorRegionsd(i)%T = zero
+            actuatorRegionsd(i)%force = zero
+            actuatorRegionsd(i)%torque = zero
             actuatorRegionsd(i)%thrust = zero
             actuatorRegionsd(i)%heat = zero
             actuatorRegionsd(i)%volume = zero
@@ -1563,12 +1563,15 @@ contains
     end subroutine setupStandardKSP
 
     subroutine setupStandardMultigrid(kspObject, kspObjectType, gmresRestart, preConSide, &
-                                      ASMoverlap, outerPreconIts, localMatrixOrdering, fillLevel, localPreConIts)
+                                      ASMOverlap, outerPreconIts, localMatrixOrdering, fillLevel, localPreConIts, &
+                                      ASMOverlapCoarse, fillLevelCoarse, localPreConItsCoarse)
 
         use constants
         use utils, only: ECHk
-        use amg, only: amgOuterIts, amgASMOverlap, amgFillLevel, amgMatrixOrdering, amgLocalPreConIts, &
-                       setupShellPC, destroyShellPC, applyShellPC
+        use inputADjoint, only: GMRESOrthogType
+        use amg, only: amgOuterIts, amgASMOverlapFine, amgASMOverlapCoarse, amgMatrixOrdering, &
+                       setupShellPC, destroyShellPC, applyShellPC, &
+                       amgFillLevelFine, amgFillLevelCoarse, amgLocalPreConItsFine, amgLocalPreConItsCoarse
 #include <petsc/finclude/petsc.h>
         use petsc
         implicit none
@@ -1577,6 +1580,7 @@ contains
         KSP kspObject
         character(len=*), intent(in) :: kspObjectType, preConSide, localMatrixOrdering
         integer(kind=intType), intent(in) :: ASMOverlap, fillLevel, gmresRestart, outerPreconIts, localPreConIts
+        integer(kind=intType), intent(in) :: ASMOverlapCoarse, fillLevelCoarse, localPreConItsCoarse
 
         ! Working Variables
         PC shellPC
@@ -1596,6 +1600,23 @@ contains
         call KSPGMRESSetRestart(kspObject, gmresRestart, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
+        ! Set the orthogonalization method for GMRES
+        select case (GMRESOrthogType)
+        case ('modified_gram_schmidt')
+            ! Use modified Gram-Schmidt
+            call KSPGMRESSetOrthogonalization(kspObject, KSPGMRESModifiedGramSchmidtOrthogonalization, ierr)
+        case ('cgs_never_refine')
+            ! Use classical Gram-Schmidt with no refinement
+            call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_NEVER, ierr)
+        case ('cgs_refine_if_needed')
+            ! Use classical Gram-Schmidt with refinement if needed
+            call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_IFNEEDED, ierr)
+        case ('cgs_always_refine')
+            ! Use classical Gram-Schmidt with refinement at every iteration
+            call KSPGMRESSetCGSRefinementType(kspObject, KSP_GMRES_CGS_REFINE_ALWAYS, ierr)
+        end select
+        call EChk(ierr, __FILE__, __LINE__)
+
         call KSPGetPC(kspObject, shellPC, ierr)
         call EChk(ierr, __FILE__, __LINE__)
 
@@ -1613,10 +1634,13 @@ contains
 
         ! Save the remaining variables in the AMG module
         amgOuterIts = outerPreConIts
-        amgASMOverlap = asmOverlap
-        amgFillLevel = fillLevel
         amgMatrixOrdering = localMatrixOrdering
-        amgLocalPreConIts = localPreConIts
+        amgASMOverlapFine = ASMOverlap
+        amgFillLevelFine = fillLevel
+        amgLocalPreConItsFine = localPreConIts
+        amgASMOverlapCoarse = ASMOverlapCoarse
+        amgFillLevelCoarse = fillLevelCoarse
+        amgLocalPreConItsCoarse = localPreConItsCoarse
 
     end subroutine setupStandardMultigrid
 
@@ -2087,6 +2111,14 @@ contains
         ! sepSensor
         ISIZE1OFDrfDrfbcdata_sepSensor = 0
         ISIZE2OFDrfDrfbcdata_sepSensor = 0
+
+        ! sepSensorKs
+        ISIZE1OFDrfDrfbcdata_sepSensorKs = 0
+        ISIZE2OFDrfDrfbcdata_sepSensorKs = 0
+
+        ! sepSensorKsArea
+        ISIZE1OFDrfDrfbcdata_sepSensorKsArea = 0
+        ISIZE2OFDrfDrfbcdata_sepSensorKsArea = 0
 
         ! Cavitation
         ISIZE1OFDrfDrfbcdata_Cavitation = 0

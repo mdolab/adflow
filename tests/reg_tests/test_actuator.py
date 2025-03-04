@@ -94,6 +94,7 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         actuatorFile = os.path.join(baseDir, "../../input_files/actuator_test_disk.xyz")
         self.CFDSolver.addActuatorRegion(
             actuatorFile,
+            "uniform",
             np.array([0, 0, 0]),
             np.array([1, 0, 0]),
             "actuator_region",

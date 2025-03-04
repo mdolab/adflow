@@ -95,7 +95,7 @@ contains
         region%actType = actType
         region%famName = famName
         region%famID = famID
-        region%T = torque
+        region%torque = torque
         region%heat = heat
         region%relaxStart = relaxStart
         region%relaxEnd = relaxEnd
@@ -112,7 +112,7 @@ contains
 
         axisVec = axisVec / axisVecNorm
 
-        region%F = axisVec * thrust
+        region%force = axisVec * thrust
         region%thrust = thrust
         region%axisVec = axisVec
 
@@ -181,14 +181,14 @@ contains
         allocate (region%cellIDs(3, nCellsLocal(1)))
 
         if (region%actType == 'simpleProp') then
-        ! Allocate sufficient space for the maximum possible number of cellIDs
-        allocate(region%cellTangentials(3, nCellsLocal(1)))
-        allocate(region%thrustVec(3, nCellsLocal(1)))
-        allocate(region%swirlVec(3, nCellsLocal(1)))
+            ! Allocate sufficient space for the maximum possible number of cellIDs
+            allocate (region%cellTangentials(3, nCellsLocal(1)))
+            allocate (region%thrustVec(3, nCellsLocal(1)))
+            allocate (region%swirlVec(3, nCellsLocal(1)))
 
-        ! Allocate sufficient space for the maximum possible number of cellIDs
-        allocate(region%cellRadii(nCellsLocal(1)))
-        region%cellRadii(:) = zero
+            ! Allocate sufficient space for the maximum possible number of cellIDs
+            allocate (region%cellRadii(nCellsLocal(1)))
+            region%cellRadii(:) = zero
         end if
 
         ! Now search for all the coordinate. Note that We have explictly
@@ -232,14 +232,14 @@ contains
                                         v1 = xCen - axis2
                                         v2 = axisVec
 
-                                        v3(1) = (v1(2)*v2(3) - v1(3)*v2(2))
-                                        v3(2) = (v1(3)*v2(1) - v1(1)*v2(3))
-                                        v3(3) = (v1(1)*v2(2) - v1(2)*v2(1))
+                                        v3(1) = (v1(2) * v2(3) - v1(3) * v2(2))
+                                        v3(2) = (v1(3) * v2(1) - v1(1) * v2(3))
+                                        v3(3) = (v1(1) * v2(2) - v1(2) * v2(1))
                                         v3 = v3 / sqrt(v3(1)**2 + v3(2)**2 + v3(3)**2)
                                         region%cellTangentials(:, region%nCellIDs) = v3
 
                                         ! Compute the dot product and subtract to get radius
-                                        dotP = v1(1)*v2(1) + v1(2)*v2(2) + v1(3)*v2(3)
+                                        dotP = v1(1) * v2(1) + v1(2) * v2(2) + v1(3) * v2(3)
                                         radVec = v1 - dotP * axisVec
                                         region%cellRadii(region%nCellIDs) = &
                                             sqrt(radVec(1)**2 + radVec(2)**2 + radVec(3)**2)
@@ -251,15 +251,16 @@ contains
                                             region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
 
                                             Swtmp = zero
-                                            region%swirlVec(:, region%nCellIDs) = Swtmp * region%cellTangentials(:, region%nCellIDs)
+                                            region%swirlVec(:, region%nCellIDs) = &
+                                                Swtmp * region%cellTangentials(:, region%nCellIDs)
 
                                         else if (region%cellRadii(region%nCellIDs) < innerZeroThrustRadius) then
 
                                             rHat = ((region%cellRadii(region%nCellIDs) - innerZeroThrustRadius) &
-                                                        / (propRadius - innerZeroThrustRadius))
+                                                    / (propRadius - innerZeroThrustRadius))
                                             fact = rootDragFactor / propRadius
                                             fact2 = rHat**mDistribParam * (one - rHat)**nDistribParam &
-                                                            / (two * pi * region%cellRadii(region%nCellIDs))
+                                                    / (two * pi * region%cellRadii(region%nCellIDs))
                                             Ftmp = volRef(i, j, k) * fact * fact2
 
                                             thrustSum = thrustSum + Ftmp
@@ -267,15 +268,16 @@ contains
                                             region%thrustVec(:, region%nCellIDs) = Ftmp * axisVec
 
                                             Swtmp = zero
-                                            region%swirlVec(:, region%nCellIDs) = Swtmp * region%cellTangentials(:, region%nCellIDs)
+                                            region%swirlVec(:, region%nCellIDs) = &
+                                                Swtmp * region%cellTangentials(:, region%nCellIDs)
 
                                         else
 
                                             rHat = ((region%cellRadii(region%nCellIDs) - innerZeroThrustRadius) &
-                                                        / (propRadius - innerZeroThrustRadius))
+                                                    / (propRadius - innerZeroThrustRadius))
                                             fact = one / propRadius
                                             fact2 = rHat**mDistribParam * (one - rHat)**nDistribParam &
-                                                            / (two * pi * region%cellRadii(region%nCellIDs))
+                                                    / (two * pi * region%cellRadii(region%nCellIDs))
                                             Ftmp = volRef(i, j, k) * fact * fact2
 
                                             thrustSum = thrustSum + Ftmp
@@ -289,8 +291,8 @@ contains
 
                                             swirlSum = swirlSum + Swtmp
 
-                                            region%swirlVec(:, region%nCellIDs) = Swtmp &
-                                                                                  * region%cellTangentials(:, region%nCellIDs)
+                                            region%swirlVec(:, region%nCellIDs) = &
+                                                Swtmp * region%cellTangentials(:, region%nCellIDs)
                                         end if
                                     end if
                                 end if
@@ -314,33 +316,33 @@ contains
         deallocate (tmp)
 
         if (region%actType == 'simpleProp') then
-        ! Resize the cellTangentials to the correct size now that we know the
-        ! correct exact number.
-        tmp2 => region%cellTangentials
-        allocate(region%cellTangentials(3, region%nCellIDs))
-        region%cellTangentials = tmp2(:, 1:region%nCellIDs)
-        deallocate(tmp2)
+            ! Resize the cellTangentials to the correct size now that we know the
+            ! correct exact number.
+            tmp2 => region%cellTangentials
+            allocate (region%cellTangentials(3, region%nCellIDs))
+            region%cellTangentials = tmp2(:, 1:region%nCellIDs)
+            deallocate (tmp2)
 
-        ! Resize the thrustVec to the correct size now that we know the
-        ! correct exact number.
-        tmp2 => region%thrustVec
-        allocate(region%thrustVec(3, region%nCellIDs))
-        region%thrustVec = tmp2(:, 1:region%nCellIDs)
-        deallocate(tmp2)
+            ! Resize the thrustVec to the correct size now that we know the
+            ! correct exact number.
+            tmp2 => region%thrustVec
+            allocate (region%thrustVec(3, region%nCellIDs))
+            region%thrustVec = tmp2(:, 1:region%nCellIDs)
+            deallocate (tmp2)
 
-        ! Resize the swirlVec to the correct size now that we know the
-        ! correct exact number.
-        tmp2 => region%swirlVec
-        allocate(region%swirlVec(3, region%nCellIDs))
-        region%swirlVec = tmp2(:, 1:region%nCellIDs)
-        deallocate(tmp2)
+            ! Resize the swirlVec to the correct size now that we know the
+            ! correct exact number.
+            tmp2 => region%swirlVec
+            allocate (region%swirlVec(3, region%nCellIDs))
+            region%swirlVec = tmp2(:, 1:region%nCellIDs)
+            deallocate (tmp2)
 
-        ! Resize the cellRadii to the correct size now that we know the
-        ! correct exact number.
-        tmp3 => region%cellRadii
-        allocate(region%cellRadii(region%nCellIDs))
-        region%cellRadii = tmp3(1:region%nCellIDs)
-        deallocate(tmp3)
+            ! Resize the cellRadii to the correct size now that we know the
+            ! correct exact number.
+            tmp3 => region%cellRadii
+            allocate (region%cellRadii(region%nCellIDs))
+            region%cellRadii = tmp3(1:region%nCellIDs)
+            deallocate (tmp3)
         end if
 
         ! Now go back and generate the total volume of the the cells we've flagged
@@ -361,25 +363,25 @@ contains
         call mpi_allreduce(volLocal, region%volume, 1, adflow_real, &
                            MPI_SUM, adflow_comm_world, ierr)
         call ECHK(ierr, __FILE__, __LINE__)
-        write (*,*) "Total vol of actuator region is", region%volume
+        write (*, *) "Total vol of actuator region is", region%volume
 
         if (region%actType == 'simpleProp') then
-        write (*,*) "thrust sum is", thrustSum
-        call mpi_allreduce(thrustSum, region%totalThrustSum, 1, adflow_real, &
-                 MPI_SUM, adflow_comm_world, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-        write (*,*) "Total thrust magnitude (mpi sum) without scaling factor    is", region%totalThrustSum
+            write (*, *) "thrust sum is", thrustSum
+            call mpi_allreduce(thrustSum, region%totalThrustSum, 1, adflow_real, &
+                               MPI_SUM, adflow_comm_world, ierr)
+            call ECHK(ierr, __FILE__, __LINE__)
+            write (*, *) "Total thrust magnitude (mpi sum) without scaling factor    is", region%totalThrustSum
 
-        write (*,*) "swirl sum is", swirlSum
-        call mpi_allreduce(swirlSum, region%totalSwirlSum, 1, adflow_real, &
-                 MPI_SUM, adflow_comm_world, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-        write (*,*) "Total swirl magnitude (mpi sum) without scaling factor is", region%totalSwirlSum
+            write (*, *) "swirl sum is", swirlSum
+            call mpi_allreduce(swirlSum, region%totalSwirlSum, 1, adflow_real, &
+                               MPI_SUM, adflow_comm_world, ierr)
+            call ECHK(ierr, __FILE__, __LINE__)
+            write (*, *) "Total swirl magnitude (mpi sum) without scaling factor is", region%totalSwirlSum
 
-        region%thrustVec = region%thrustVec / region%totalThrustSum
-        region%swirlVec = region%swirlVec / region%totalThrustSum
+            region%thrustVec = region%thrustVec / region%totalThrustSum
+            region%swirlVec = region%swirlVec / region%totalThrustSum
 
-        deallocate(region%cellTangentials)
+            deallocate (region%cellTangentials)
         end if
 
         ! Final memory cleanup
