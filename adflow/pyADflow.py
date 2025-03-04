@@ -913,7 +913,7 @@ class ADFLOW(AeroSolver):
         propeller-wing interaction" by Chauhan and Martins
         for more. This applies axis-symmetric (but radially varying) forces.
 
-	The surface defines the physical extent of the
+        The surface defines the physical extent of the
         region over which to apply the source terms. The plot3d file may be
         multi-block but all the surface normals must point outside and no
         additional surfaces can be inside. Internally, we find all of the CFD
@@ -986,6 +986,7 @@ class ADFLOW(AeroSolver):
            See below for a description of innerZeroThrustRadius.)
 
         torque : scalar, float
+           Torque does not work! If you want swirl, try the simpleProp actType.
            The total amount of torque to apply to the region, about the
            specified axis. This is only for the uniform actuator zone.
 
@@ -1086,6 +1087,12 @@ class ADFLOW(AeroSolver):
 
         if actType != 'uniform' and actType != 'simpleProp':
             raise Error("actType must be 'uniform' or 'simpleProp'")
+
+        # Torque input doesn't do anything, warn user if they try to change it
+        if actType == "uniform" and torque != 0.0 and self.comm.rank == 0:
+            ADFLOWWarning(
+                "The torque input does not work for the uniform actuator region. If swirl is desired, try using the simpleProp actuator region."
+            )
 
         #  Now continue to fortran were we setup the actual region.
         self.adflow.actuatorregion.addactuatorregion(
