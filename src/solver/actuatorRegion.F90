@@ -239,7 +239,7 @@ contains
                                         region%cellTangentials(:, region%nCellIDs) = v3
 
                                         ! Compute the dot product and subtract to get radius
-                                        dotP = v1(1) * v2(2) + v1(2) * v2(2) + v1(3) * v2(3)
+                                        dotP = v1(1) * v2(1) + v1(2) * v2(2) + v1(3) * v2(3)
                                         radVec = v1 - dotP * axisVec
                                         region%cellRadii(region%nCellIDs) = &
                                             sqrt(radVec(1)**2 + radVec(2)**2 + radVec(3)**2)
