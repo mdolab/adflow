@@ -3,7 +3,7 @@ module diffSizes
     implicit none
     save
 
-    ! These are the diff sizes reqruied for the forward mode AD
+    ! These are the diff sizes required for the forward mode AD
     integer(kind=intType), parameter :: ISIZE3ofviscsubface = 3
     integer(kind=intType) :: ISIZE1OFDrfbcdata
 
@@ -13,7 +13,7 @@ module diffSizes
     integer(kind=intType) :: ISIZE3OFDrfflowdoms
     integer(kind=intType) :: ISIZE1OFDrfflowdoms_bcdata
 
-    ! These are the diff sizes reqruied for the reverse mode AD
+    ! These are the diff sizes required for the reverse mode AD
     integer(kind=intType) :: ISIZE3OFDrfrlv, ISIZE2OFDrfrlv, ISIZE1OFDrfrlv
     integer(kind=intType) :: ISIZE4OFDrfw, ISIZE3OFDrfw, ISIZE2OFDrfw, ISIZE1OFDrfw
     integer(kind=intType) :: ISIZE4OFDrffw, ISIZE3OFDrffw, ISIZE2OFDrffw, ISIZE1OFDrffw
@@ -68,7 +68,7 @@ module diffSizes
     integer(kind=intType) :: ISIZE2OFDrfbmtk1, ISIZE2OFDrfbvtk1
     integer(kind=intType) :: ISIZE1OFDrfbmtk1, ISIZE1OFDrfbvtk1
 
-    ! These are the diff sizes reqruied for the forward mode debug
+    ! These are the diff sizes required for the forward mode debug
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_m, ISIZE2OFDrfDrfbcdata_m, ISIZE3OFDrfDrfbcdata_m
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_fp, ISIZE2OFDrfDrfbcdata_fp, ISIZE3OFDrfDrfbcdata_fp
     integer(kind=intType) :: ISIZE1OFDrfDrfbcdata_fv, ISIZE2OFDrfDrfbcdata_fv, ISIZE3OFDrfDrfbcdata_fv
@@ -107,7 +107,9 @@ module diffSizes
     integer(kind=intType) :: ISIZE1OFDu1, ISIZE1OFDu2, ISIZE1OFDu3
     integer(kind=intType) :: ISIZE1OFLeft, ISIZE1OFRight, ISIZE1OFFlux
 
-    ! These are the diff sizes reqruied for the reverse mode
+    integer(kind=intType) :: ISIZE1OFtemp
+
+    ! These are the diff sizes required for the reverse mode
     integer(kind=intType) :: ISIZE1OFDRFCOEFTIME
     integer(kind=intType) :: ISIZE1OFDRFDTL, ISIZE2OFDRFDTL, ISIZE3OFDRFDTL
     integer(kind=intType) :: ISIZE1OFDRFDRFVISCSUBFACE_UTAU, ISIZE2OFDRFDRFVISCSUBFACE_UTAU
