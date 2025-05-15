@@ -732,12 +732,13 @@ contains
     use blockpointers, only : w, p, rlv, rev, gamma, x, d2wall, si, sj&
 &   , sk, s, globalcell, bcdata, nx, il, ie, ib, ny, jl, je, jb, nz, kl,&
 &   ke, kb, bcfaceid, addgridvelocities, sfacei, sfacej, sfacek, &
-&   addgridvelocities
+&   addgridvelocities, d2wall, ks
     use bcpointers_d, only : ww0, ww1, ww2, ww3, pp0, pp1, pp2, pp3, &
 &   rlv0, rlv1, rlv2, rlv3, rev0, rev1, rev2, rev3, gamma0, gamma1, &
 &   gamma2, gamma3, gcp, xx, ss, ssi, ssj, ssk, dd2wall, sface, istart, &
-&   iend, jstart, jend, isize, jsize
-    use inputphysics, only : cpmodel, equations
+&   iend, jstart, jend, isize, jsize, d2wall0, d2wall1, d2wall2, d2wall3&
+&   , ks0, ks1, ks2, ks3
+    use inputphysics, only : cpmodel, equations, useroughsa
     implicit none
 ! subroutine arguments.
     integer(kind=inttype), intent(in) :: nn
@@ -772,6 +773,16 @@ contains
       rev2 => rev(2, 1:, 1:)
       rev1 => rev(1, 1:, 1:)
       rev0 => rev(0, 1:, 1:)
+      d2wall3 => d2wall(3, 1:, 1:)
+      d2wall2 => d2wall(2, 1:, 1:)
+      d2wall1 => d2wall(1, 1:, 1:)
+      d2wall0 => d2wall(0, 1:, 1:)
+      if (useroughsa) then
+        ks3 => ks(3, 1:, 1:)
+        ks2 => ks(2, 1:, 1:)
+        ks1 => ks(1, 1:, 1:)
+        ks0 => ks(0, 1:, 1:)
+      end if
       gamma3 => gamma(3, 1:, 1:)
       gamma2 => gamma(2, 1:, 1:)
       gamma1 => gamma(1, 1:, 1:)
@@ -795,6 +806,16 @@ contains
       rev2 => rev(il, 1:, 1:)
       rev1 => rev(ie, 1:, 1:)
       rev0 => rev(ib, 1:, 1:)
+      d2wall3 => d2wall(nx, 1:, 1:)
+      d2wall2 => d2wall(il, 1:, 1:)
+      d2wall1 => d2wall(ie, 1:, 1:)
+      d2wall0 => d2wall(ib, 1:, 1:)
+      if (useroughsa) then
+        ks3 => ks(nx, 1:, 1:)
+        ks2 => ks(il, 1:, 1:)
+        ks1 => ks(ie, 1:, 1:)
+        ks0 => ks(ib, 1:, 1:)
+      end if
       gamma3 => gamma(nx, 1:, 1:)
       gamma2 => gamma(il, 1:, 1:)
       gamma1 => gamma(ie, 1:, 1:)
@@ -818,6 +839,16 @@ contains
       rev2 => rev(1:, 2, 1:)
       rev1 => rev(1:, 1, 1:)
       rev0 => rev(1:, 0, 1:)
+      d2wall3 => d2wall(1:, 3, 1:)
+      d2wall2 => d2wall(1:, 2, 1:)
+      d2wall1 => d2wall(1:, 1, 1:)
+      d2wall0 => d2wall(1:, 0, 1:)
+      if (useroughsa) then
+        ks3 => ks(1:, 3, 1:)
+        ks2 => ks(1:, 2, 1:)
+        ks1 => ks(1:, 1, 1:)
+        ks0 => ks(1:, 0, 1:)
+      end if
       gamma3 => gamma(1:, 3, 1:)
       gamma2 => gamma(1:, 2, 1:)
       gamma1 => gamma(1:, 1, 1:)
@@ -841,6 +872,16 @@ contains
       rev2 => rev(1:, jl, 1:)
       rev1 => rev(1:, je, 1:)
       rev0 => rev(1:, jb, 1:)
+      d2wall3 => d2wall(1:, ny, 1:)
+      d2wall2 => d2wall(1:, jl, 1:)
+      d2wall1 => d2wall(1:, je, 1:)
+      d2wall0 => d2wall(1:, jb, 1:)
+      if (useroughsa) then
+        ks3 => ks(1:, ny, 1:)
+        ks2 => ks(1:, jl, 1:)
+        ks1 => ks(1:, je, 1:)
+        ks0 => ks(1:, jb, 1:)
+      end if
       gamma3 => gamma(1:, ny, 1:)
       gamma2 => gamma(1:, jl, 1:)
       gamma1 => gamma(1:, je, 1:)
@@ -864,6 +905,16 @@ contains
       rev2 => rev(1:, 1:, 2)
       rev1 => rev(1:, 1:, 1)
       rev0 => rev(1:, 1:, 0)
+      d2wall3 => d2wall(1:, 1:, 3)
+      d2wall2 => d2wall(1:, 1:, 2)
+      d2wall1 => d2wall(1:, 1:, 1)
+      d2wall0 => d2wall(1:, 1:, 0)
+      if (useroughsa) then
+        ks3 => ks(1:, 1:, 3)
+        ks2 => ks(1:, 1:, 2)
+        ks1 => ks(1:, 1:, 1)
+        ks0 => ks(1:, 1:, 0)
+      end if
       gamma3 => gamma(1:, 1:, 3)
       gamma2 => gamma(1:, 1:, 2)
       gamma1 => gamma(1:, 1:, 1)
@@ -887,6 +938,16 @@ contains
       rev2 => rev(1:, 1:, kl)
       rev1 => rev(1:, 1:, ke)
       rev0 => rev(1:, 1:, kb)
+      d2wall3 => d2wall(1:, 1:, nz)
+      d2wall2 => d2wall(1:, 1:, kl)
+      d2wall1 => d2wall(1:, 1:, ke)
+      d2wall0 => d2wall(1:, 1:, kb)
+      if (useroughsa) then
+        ks3 => ks(1:, 1:, nz)
+        ks2 => ks(1:, 1:, kl)
+        ks1 => ks(1:, 1:, ke)
+        ks0 => ks(1:, 1:, kb)
+      end if
       gamma3 => gamma(1:, 1:, nz)
       gamma2 => gamma(1:, 1:, kl)
       gamma1 => gamma(1:, 1:, ke)

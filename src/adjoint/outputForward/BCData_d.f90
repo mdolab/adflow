@@ -13,10 +13,27 @@ contains
   subroutine setbcvarnamesisothermalwall()
     use cgnsnames
     use constants
+    use inputphysics, only : useroughsa
     implicit none
     nbcvar = nbcvarisothermalwall
     bcvarnames(1) = cgnstemp
+    if (useroughsa) then
+      nbcvar = nbcvar + 1
+      bcvarnames(2) = cgnssandgrainroughness
+    end if
   end subroutine setbcvarnamesisothermalwall
+
+  subroutine setbcvarnamesadiabaticwall()
+    use cgnsnames
+    use constants
+    use inputphysics, only : useroughsa
+    implicit none
+    nbcvar = nbcvaradiabaticwall
+    if (useroughsa) then
+      nbcvar = nbcvar + 1
+      bcvarnames(1) = cgnssandgrainroughness
+    end if
+  end subroutine setbcvarnamesadiabaticwall
 
   subroutine setbcvarnamessubsonicinflow()
     use constants
@@ -329,10 +346,10 @@ contains
   end subroutine unitvectorscylsystem
 
 !  differentiation of bcdataisothermalwall in forward (tangent) mode (with options i4 dr8 r8):
-!   variations   of useful results: *(*bcdata.tns_wall)
+!   variations   of useful results: *(*bcdata.tns_wall) bcvararray
 !   with respect to varying inputs: tref bcvararray
 !   rw status of diff variables: tref:in *(*bcdata.tns_wall):out
-!                bcvararray:in
+!                bcvararray:in-out
 !   plus diff mem management of: bcdata:in *bcdata.tns_wall:in
 ! ---------------------------------------------------------------
 ! routines that set the actual bcdata values from the cgns data set
@@ -350,6 +367,7 @@ contains
     use blockpointers, only : bcfaceid, bcdata, bcdatad, nbkglobal
     use utils_d, only : terminate, sitemperature
     use flowvarrefstate, only : tref, trefd
+    use inputphysics, only : useroughsa
     use diffsizes
 !  hint: isize1ofdrfbcdata should be the size of dimension 1 of array *bcdata
     implicit none
@@ -388,6 +406,21 @@ contains
         bcdata(boco)%tns_wall(i, j) = temp0
       end do
     end do
+! set a value of 0 if it was not possible to determine the
+! sand grain roughness
+    if (useroughsa) then
+! set a value of 0 if it was not possible to determine the
+! sand grain roughness
+      if (.not.bcvarpresent(1)) then
+        bcvararrayd(:, :, 2) = 0.0_8
+        bcvararray(:, :, 2) = zero
+      end if
+      do j=jbeg,jend
+        do i=ibeg,iend
+          bcdata(boco)%ksns_wall(i, j) = bcvararray(i, j, 2)
+        end do
+      end do
+    end if
   end subroutine bcdataisothermalwall_d
 
 ! ---------------------------------------------------------------
@@ -406,6 +439,7 @@ contains
     use blockpointers, only : bcfaceid, bcdata, nbkglobal
     use utils_d, only : terminate, sitemperature
     use flowvarrefstate, only : tref
+    use inputphysics, only : useroughsa
     implicit none
 !
 !      subroutine arguments.
@@ -431,7 +465,53 @@ contains
 &         tref
       end do
     end do
+! set a value of 0 if it was not possible to determine the
+! sand grain roughness
+    if (useroughsa) then
+! set a value of 0 if it was not possible to determine the
+! sand grain roughness
+      if (.not.bcvarpresent(1)) bcvararray(:, :, 2) = zero
+      do j=jbeg,jend
+        do i=ibeg,iend
+          bcdata(boco)%ksns_wall(i, j) = bcvararray(i, j, 2)
+        end do
+      end do
+    end if
   end subroutine bcdataisothermalwall
+
+  subroutine bcdataadiabaticwall(boco, bcvararray, ibeg, iend, jbeg, &
+&   jend)
+!
+!       tries to extract the equivalent sand grain roughness. it sets
+!       a default value of 0.0
+!
+    use constants
+    use cgnsnames
+    use inputphysics, only : useroughsa
+    use blockpointers, only : bcfaceid, bcdata, nbkglobal
+    implicit none
+!
+!      subroutine arguments.
+!
+    integer(kind=inttype) :: boco
+    integer(kind=inttype) :: ibeg, iend, jbeg, jend
+    real(kind=realtype), dimension(ibeg:iend, jbeg:jend, nbcvarmax) :: &
+&   bcvararray
+!
+!      local variables.
+!
+    integer(kind=inttype) :: i, j
+    if (useroughsa) then
+! set a value of 0 if it was not possible to determine the
+! sand grain roughness
+      if (.not.bcvarpresent(1)) bcvararray(:, :, 1) = zero
+      do j=jbeg,jend
+        do i=ibeg,iend
+          bcdata(boco)%ksns_wall(i, j) = bcvararray(i, j, 1)
+        end do
+      end do
+    end if
+  end subroutine bcdataadiabaticwall
 
 !  differentiation of bcdatasubsonicinflow in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *(*bcdata.ptinlet) *(*bcdata.ttinlet)
