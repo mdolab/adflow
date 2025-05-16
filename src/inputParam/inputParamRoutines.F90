@@ -677,6 +677,7 @@ contains
         surfWriteVz = .true.
         surfWriteCp = .true.
         surfWriteMach = .true.
+        surfWriteSoundSpeed = .true.
 
         ! Set the values which depend on the equations to be solved.
 
@@ -742,6 +743,7 @@ contains
         volWriteResRho = .true.
         volWriteResMom = .false.
         volWriteResRhoe = .false.
+        volWriteSoundSpeed = .false.
 
         ! Set the values which depend on the equations to be solved.
 
@@ -2368,6 +2370,7 @@ contains
         surfWriteCavitation = .false.
         surfWriteAxisMoment = .false.
         surfWriteGC = .false.
+        surfWriteSoundSpeed = .false.
 
         ! Initialize nVarSpecified to 0. This serves as a test
         ! later on.
@@ -2511,6 +2514,10 @@ contains
                 surfWriteGC = .True.
                 nVarSpecified = nVarSpecified + 1
 
+            case ("soundspeed")
+                surfWriteSoundSpeed = .True.
+                nVarSpecified = nVarSpecified + 1
+
             case default
                 pos = len_trim(keyword)
                 write (errorMessage, "(3a)") "Unknown surface output &
@@ -2587,6 +2594,7 @@ contains
         volWriteGC = .false.
         volWriteStatus = .false.
         volWriteIntermittency = .false.
+        volWriteSoundSpeed = .false.
 
         ! Initialize nVarSpecified to 0. This serves as a test
         ! later on.
@@ -2736,6 +2744,10 @@ contains
 
             case ("intermittency")
                 volWriteIntermittency = .true.
+                nVarSpecified = nVarSpecified + 1
+
+            case ("soundspeed")
+                volWriteSoundSpeed = .true.
                 nVarSpecified = nVarSpecified + 1
 
             case default
