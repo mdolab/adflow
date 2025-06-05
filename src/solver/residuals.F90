@@ -381,11 +381,8 @@ contains
             factor = (ordersConverged - oStart) / (oEnd - oStart)
         end if
 
-        ! If using the uniform force distribution
-        if (actuatorRegions(iRegion)%actType == 'uniform') then
-            ! Compute the constant force factor
-            F_fact = factor * actuatorRegions(iRegion)%force / actuatorRegions(iRegion)%volume / pRef
-        end if
+        ! Compute the constant force factor
+        F_fact = factor * actuatorRegions(iRegion)%force / actuatorRegions(iRegion)%volume / pRef
 
         ! Heat factor. This is heat added per unit volume per unit time
         Q_fact = factor * actuatorRegions(iRegion)%heat / actuatorRegions(iRegion)%volume / (pRef * uRef * LRef * LRef)
@@ -394,70 +391,36 @@ contains
         iStart = actuatorRegions(iRegion)%blkPtr(nn - 1) + 1
         iEnd = actuatorRegions(iRegion)%blkPtr(nn)
 
-        ! If using the uniform force distribution
-        if (actuatorRegions(iRegion)%actType == 'uniform') then
-            !$AD II-LOOP
-            do ii = iStart, iEnd
+        !$AD II-LOOP
+        do ii = iStart, iEnd
 
-                ! Extract the cell ID.
-                i = actuatorRegions(iRegion)%cellIDs(1, ii)
-                j = actuatorRegions(iRegion)%cellIDs(2, ii)
-                k = actuatorRegions(iRegion)%cellIDs(3, ii)
+            ! Extract the cell ID.
+            i = actuatorRegions(iRegion)%cellIDs(1, ii)
+            j = actuatorRegions(iRegion)%cellIDs(2, ii)
+            k = actuatorRegions(iRegion)%cellIDs(3, ii)
 
-                ! This actually gets the force
-                FTmp = vol(i, j, k) * F_fact
+            ! This actually gets the force
+            FTmp = vol(i, j, k) * F_fact
 
-                Vx = w(i, j, k, iVx)
-                Vy = w(i, j, k, iVy)
-                Vz = w(i, j, k, iVz)
+            Vx = w(i, j, k, iVx)
+            Vy = w(i, j, k, iVy)
+            Vz = w(i, j, k, iVz)
 
-                ! this gets the heat addition rate
-                QTmp = vol(i, j, k) * Q_fact
+            ! this gets the heat addition rate
+            QTmp = vol(i, j, k) * Q_fact
 
-                if (res) then
-                    ! Momentum residuals
-                    dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
+            if (res) then
+                ! Momentum residuals
+                dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
 
-                    ! energy residuals
-                    dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE) - &
-                                         Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz - Qtmp
-                else
-                    ! Add in the local power contribution:
-                    pLocal = pLocal + (Vx * Ftmp(1) + Vy * FTmp(2) + Vz * Ftmp(3)) * reDim
-                end if
-            end do
-        end if
-
-        ! If using the simple propeller force distribution
-        if (actuatorRegions(iRegion)%actType == 'simpleProp') then
-            !$AD II-LOOP
-            do ii = iStart, iEnd
-
-                ! Extract the cell ID.
-                i = actuatorRegions(iRegion)%cellIDs(1, ii)
-                j = actuatorRegions(iRegion)%cellIDs(2, ii)
-                k = actuatorRegions(iRegion)%cellIDs(3, ii)
-
-                Ftmp = factor * actuatorRegions(iRegion)%thrustVec(:, ii) * actuatorRegions(iRegion)%thrust / pRef
-                Ftmp = Ftmp + factor * actuatorRegions(iRegion)%swirlVec(:, ii) * actuatorRegions(iRegion)%thrust / pRef
-
-                Vx = w(i, j, k, iVx)
-                Vy = w(i, j, k, iVy)
-                Vz = w(i, j, k, iVz)
-
-                if (res) then
-                    ! Momentum residuals
-                    dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - Ftmp
-
-                    ! energy residuals
-                    dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE) - &
-                                         Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz
-                else
-                    ! Add in the local power contribution:
-                    pLocal = pLocal + (Vx * Ftmp(1) + Vy * Ftmp(2) + Vz * Ftmp(3)) * reDim
-                end if
-            end do
-        end if
+                ! energy residuals
+                dw(i, j, k, iRhoE) = dw(i, j, k, iRhoE) - &
+                                     Ftmp(1) * Vx - Ftmp(2) * Vy - Ftmp(3) * Vz - Qtmp
+            else
+                ! Add in the local power contribution:
+                pLocal = pLocal + (Vx * Ftmp(1) + Vy * FTmp(2) + Vz * Ftmp(3)) * reDim
+            end if
+        end do
 
     end subroutine sourceTerms_block
 

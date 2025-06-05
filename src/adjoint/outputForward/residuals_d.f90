@@ -341,12 +341,12 @@ contains
 !  differentiation of sourceterms_block in forward (tangent) mode (with options i4 dr8 r8):
 !   variations   of useful results: *dw plocal
 !   with respect to varying inputs: uref pref *w *dw *vol actuatorregions.force
-!                actuatorregions.thrust actuatorregions.heat actuatorregions.volume
-!                plocal
+!                actuatorregions.heat actuatorregions.volume actuatorregions.relaxstart
+!                actuatorregions.relaxend plocal
 !   rw status of diff variables: uref:in pref:in *w:in *dw:in-out
-!                *vol:in actuatorregions.force:in actuatorregions.thrust:in
-!                actuatorregions.heat:in actuatorregions.volume:in
-!                plocal:in-out
+!                *vol:in actuatorregions.force:in actuatorregions.heat:in
+!                actuatorregions.volume:in actuatorregions.relaxstart:in
+!                actuatorregions.relaxend:in plocal:in-out
 !   plus diff mem management of: w:in dw:in vol:in
   subroutine sourceterms_block_d(nn, res, iregion, plocal, plocald)
 ! apply the source terms for the given block. assume that the
@@ -357,8 +357,6 @@ contains
     use flowvarrefstate, only : pref, prefd, uref, urefd, lref
     use communication
     use iteration, only : ordersconverged
-    use diffsizes
-!  hint: isize1oftemp should be the size of dimension 1 of array temp
     implicit none
 ! input
     integer(kind=inttype), intent(in) :: nn, iregion
@@ -370,129 +368,87 @@ contains
     real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
 &   , redim, factor, ostart, oend
     real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, f_factd(3), q_factd&
-&   , qtmpd, redimd
+&   , qtmpd, redimd, factord, ostartd, oendd
     real(kind=realtype) :: temp
-    real(kind=realtype) :: temp0
+    real(kind=realtype), dimension(3) :: temp0
     real(kind=realtype) :: temp1
-    real(kind=realtype), dimension(isize1oftemp) :: temp2
-    real(kind=realtype), dimension(isize1oftemp) :: temp3
+    real(kind=realtype) :: temp2
     redimd = uref*prefd + pref*urefd
     redim = pref*uref
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
     if (ordersconverged .lt. actuatorregions(iregion)%relaxstart) then
       factor = zero
+      factord = 0.0_8
     else if (ordersconverged .gt. actuatorregions(iregion)%relaxend) &
 &   then
       factor = one
+      factord = 0.0_8
     else
 ! in between
+      ostartd = actuatorregionsd(iregion)%relaxstart
       ostart = actuatorregions(iregion)%relaxstart
+      oendd = actuatorregionsd(iregion)%relaxend
       oend = actuatorregions(iregion)%relaxend
-      factor = (ordersconverged-ostart)/(oend-ostart)
+      temp = (ordersconverged-ostart)/(oend-ostart)
+      factord = (-ostartd-temp*(oendd-ostartd))/(oend-ostart)
+      factor = temp
     end if
-! if using the uniform force distribution
-    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
 ! compute the constant force factor
-      temp = actuatorregions(iregion)%volume*pref
-      f_factd = factor*(actuatorregionsd(iregion)%force-actuatorregions(&
-&       iregion)%force*(pref*actuatorregionsd(iregion)%volume+&
-&       actuatorregions(iregion)%volume*prefd)/temp)/temp
-      f_fact = factor*(actuatorregions(iregion)%force/temp)
-    else
-      f_factd = 0.0_8
-    end if
+    temp0 = factor*actuatorregions(iregion)%force/(actuatorregions(&
+&     iregion)%volume*pref)
+    f_factd = (actuatorregions(iregion)%force*factord+factor*&
+&     actuatorregionsd(iregion)%force-temp0*(pref*actuatorregionsd(&
+&     iregion)%volume+actuatorregions(iregion)%volume*prefd))/(&
+&     actuatorregions(iregion)%volume*pref)
+    f_fact = temp0
 ! heat factor. this is heat added per unit volume per unit time
     temp = lref*lref*actuatorregions(iregion)%volume
-    temp0 = temp*pref*uref
-    temp1 = actuatorregions(iregion)%heat/temp0
-    q_factd = factor*(actuatorregionsd(iregion)%heat-temp1*(pref*uref*&
-&     lref**2*actuatorregionsd(iregion)%volume+temp*(uref*prefd+pref*&
-&     urefd)))/temp0
-    q_fact = factor*temp1
+    temp1 = temp*pref*uref
+    temp2 = factor*actuatorregions(iregion)%heat/temp1
+    q_factd = (actuatorregions(iregion)%heat*factord+factor*&
+&     actuatorregionsd(iregion)%heat-temp2*(pref*uref*lref**2*&
+&     actuatorregionsd(iregion)%volume+temp*(uref*prefd+pref*urefd)))/&
+&     temp1
+    q_fact = temp2
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
-! if using the uniform force distribution
-    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
-      do ii=istart,iend
+    do ii=istart,iend
 ! extract the cell id.
-        i = actuatorregions(iregion)%cellids(1, ii)
-        j = actuatorregions(iregion)%cellids(2, ii)
-        k = actuatorregions(iregion)%cellids(3, ii)
+      i = actuatorregions(iregion)%cellids(1, ii)
+      j = actuatorregions(iregion)%cellids(2, ii)
+      k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmpd = f_fact*vold(i, j, k) + vol(i, j, k)*f_factd
-        ftmp = vol(i, j, k)*f_fact
-        vxd = wd(i, j, k, ivx)
-        vx = w(i, j, k, ivx)
-        vyd = wd(i, j, k, ivy)
-        vy = w(i, j, k, ivy)
-        vzd = wd(i, j, k, ivz)
-        vz = w(i, j, k, ivz)
+      ftmpd = f_fact*vold(i, j, k) + vol(i, j, k)*f_factd
+      ftmp = vol(i, j, k)*f_fact
+      vxd = wd(i, j, k, ivx)
+      vx = w(i, j, k, ivx)
+      vyd = wd(i, j, k, ivy)
+      vy = w(i, j, k, ivy)
+      vzd = wd(i, j, k, ivz)
+      vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-        qtmpd = q_fact*vold(i, j, k) + vol(i, j, k)*q_factd
-        qtmp = vol(i, j, k)*q_fact
-        if (res) then
+      qtmpd = q_fact*vold(i, j, k) + vol(i, j, k)*q_factd
+      qtmp = vol(i, j, k)*q_fact
+      if (res) then
 ! momentum residuals
-          dwd(i, j, k, imx:imz) = dwd(i, j, k, imx:imz) - ftmpd
-          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
+        dwd(i, j, k, imx:imz) = dwd(i, j, k, imx:imz) - ftmpd
+        dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
 ! energy residuals
-          dwd(i, j, k, irhoe) = dwd(i, j, k, irhoe) - vx*ftmpd(1) - ftmp&
-&           (1)*vxd - vy*ftmpd(2) - ftmp(2)*vyd - vz*ftmpd(3) - ftmp(3)*&
-&           vzd - qtmpd
-          dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)&
-&           *vy - ftmp(3)*vz - qtmp
-        else
+        dwd(i, j, k, irhoe) = dwd(i, j, k, irhoe) - vx*ftmpd(1) - ftmp(1&
+&         )*vxd - vy*ftmpd(2) - ftmp(2)*vyd - vz*ftmpd(3) - ftmp(3)*vzd &
+&         - qtmpd
+        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)*&
+&         vy - ftmp(3)*vz - qtmp
+      else
 ! add in the local power contribution:
-          temp1 = vx*ftmp(1) + vy*ftmp(2) + vz*ftmp(3)
-          plocald = plocald + redim*(ftmp(1)*vxd+vx*ftmpd(1)+ftmp(2)*vyd&
-&           +vy*ftmpd(2)+ftmp(3)*vzd+vz*ftmpd(3)) + temp1*redimd
-          plocal = plocal + temp1*redim
-        end if
-      end do
-    end if
-! if using the simple propeller force distribution
-    if (actuatorregions(iregion)%acttype .eq. 'simpleprop') then
-      do ii=istart,iend
-! extract the cell id.
-        i = actuatorregions(iregion)%cellids(1, ii)
-        j = actuatorregions(iregion)%cellids(2, ii)
-        k = actuatorregions(iregion)%cellids(3, ii)
-        temp2 = factor*actuatorregions(iregion)%thrustvec(:, ii)
-        temp1 = actuatorregions(iregion)%thrust/pref
-        ftmpd = temp2*(actuatorregionsd(iregion)%thrust-temp1*prefd)/&
-&         pref
-        ftmp = temp2*temp1
-        temp3 = factor*actuatorregions(iregion)%swirlvec(:, ii)
-        temp1 = actuatorregions(iregion)%thrust/pref
-        ftmpd = ftmpd + temp3*(actuatorregionsd(iregion)%thrust-temp1*&
-&         prefd)/pref
-        ftmp = ftmp + temp3*temp1
-        vxd = wd(i, j, k, ivx)
-        vx = w(i, j, k, ivx)
-        vyd = wd(i, j, k, ivy)
-        vy = w(i, j, k, ivy)
-        vzd = wd(i, j, k, ivz)
-        vz = w(i, j, k, ivz)
-        if (res) then
-! momentum residuals
-          dwd(i, j, k, imx:imz) = dwd(i, j, k, imx:imz) - ftmpd
-          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
-! energy residuals
-          dwd(i, j, k, irhoe) = dwd(i, j, k, irhoe) - vx*ftmpd(1) - ftmp&
-&           (1)*vxd - vy*ftmpd(2) - ftmp(2)*vyd - vz*ftmpd(3) - ftmp(3)*&
-&           vzd
-          dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)&
-&           *vy - ftmp(3)*vz
-        else
-! add in the local power contribution:
-          temp1 = vx*ftmp(1) + vy*ftmp(2) + vz*ftmp(3)
-          plocald = plocald + redim*(ftmp(1)*vxd+vx*ftmpd(1)+ftmp(2)*vyd&
-&           +vy*ftmpd(2)+ftmp(3)*vzd+vz*ftmpd(3)) + temp1*redimd
-          plocal = plocal + temp1*redim
-        end if
-      end do
-    end if
+        temp2 = vx*ftmp(1) + vy*ftmp(2) + vz*ftmp(3)
+        plocald = plocald + redim*(ftmp(1)*vxd+vx*ftmpd(1)+ftmp(2)*vyd+&
+&         vy*ftmpd(2)+ftmp(3)*vzd+vz*ftmpd(3)) + temp2*redimd
+        plocal = plocal + temp2*redim
+      end if
+    end do
   end subroutine sourceterms_block_d
 
   subroutine sourceterms_block(nn, res, iregion, plocal)
@@ -527,72 +483,39 @@ contains
       oend = actuatorregions(iregion)%relaxend
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
-! if using the uniform force distribution
-    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
 ! compute the constant force factor
-      f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
-&       iregion)%volume/pref
-    end if
+    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
+&     iregion)%volume/pref
 ! heat factor. this is heat added per unit volume per unit time
     q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
 &     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
-! if using the uniform force distribution
-    if (actuatorregions(iregion)%acttype .eq. 'uniform') then
 !$ad ii-loop
-      do ii=istart,iend
+    do ii=istart,iend
 ! extract the cell id.
-        i = actuatorregions(iregion)%cellids(1, ii)
-        j = actuatorregions(iregion)%cellids(2, ii)
-        k = actuatorregions(iregion)%cellids(3, ii)
+      i = actuatorregions(iregion)%cellids(1, ii)
+      j = actuatorregions(iregion)%cellids(2, ii)
+      k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-        ftmp = vol(i, j, k)*f_fact
-        vx = w(i, j, k, ivx)
-        vy = w(i, j, k, ivy)
-        vz = w(i, j, k, ivz)
+      ftmp = vol(i, j, k)*f_fact
+      vx = w(i, j, k, ivx)
+      vy = w(i, j, k, ivy)
+      vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-        qtmp = vol(i, j, k)*q_fact
-        if (res) then
+      qtmp = vol(i, j, k)*q_fact
+      if (res) then
 ! momentum residuals
-          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
+        dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
 ! energy residuals
-          dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)&
-&           *vy - ftmp(3)*vz - qtmp
-        else
+        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)*&
+&         vy - ftmp(3)*vz - qtmp
+      else
 ! add in the local power contribution:
-          plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
-        end if
-      end do
-    end if
-! if using the simple propeller force distribution
-    if (actuatorregions(iregion)%acttype .eq. 'simpleprop') then
-!$ad ii-loop
-      do ii=istart,iend
-! extract the cell id.
-        i = actuatorregions(iregion)%cellids(1, ii)
-        j = actuatorregions(iregion)%cellids(2, ii)
-        k = actuatorregions(iregion)%cellids(3, ii)
-        ftmp = factor*actuatorregions(iregion)%thrustvec(:, ii)*&
-&         actuatorregions(iregion)%thrust/pref
-        ftmp = ftmp + factor*actuatorregions(iregion)%swirlvec(:, ii)*&
-&         actuatorregions(iregion)%thrust/pref
-        vx = w(i, j, k, ivx)
-        vy = w(i, j, k, ivy)
-        vz = w(i, j, k, ivz)
-        if (res) then
-! momentum residuals
-          dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
-! energy residuals
-          dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)&
-&           *vy - ftmp(3)*vz
-        else
-! add in the local power contribution:
-          plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
-        end if
-      end do
-    end if
+        plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
+      end if
+    end do
   end subroutine sourceterms_block
 
 !  differentiation of initres_block in forward (tangent) mode (with options i4 dr8 r8):
