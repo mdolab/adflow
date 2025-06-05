@@ -1076,6 +1076,7 @@ contains
         do i = 1, nActuatorRegions
             actuatorRegionsd(i)%force = zero
             actuatorRegionsd(i)%torque = zero
+            actuatorRegionsd(i)%thrust = zero
             actuatorRegionsd(i)%heat = zero
             actuatorRegionsd(i)%volume = zero
         end do
