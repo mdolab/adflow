@@ -115,6 +115,118 @@ contains
 
     end subroutine computeCellDistances
 
+
+    subroutine addActuatorRegion(flag, n, famName, famID, relaxStart, relaxEnd)
+        ! Add a user-supplied integration surface.
+
+        use communication, only: myID, adflow_comm_world
+        use constants
+        use blockPointers, only: x, il, jl, kl, nDom, iBlank, vol
+        use adjointVars, only: nCellsLocal
+        use utils, only: setPointers, EChk
+        implicit none
+
+        ! Input variables
+        integer(kind=intType), intent(in) :: famID
+        character(len=*) :: famName
+        real(kind=realType) :: relaxStart, relaxEnd
+
+        integer(kind=intType), intent(in) :: n
+        integer(kind=intType), dimension(n), intent(in) :: flag
+
+        ! Working variables
+        integer(kind=intType) :: i, j, k, nn, sps, level, ii, iii, ierr
+        real(kind=realType) :: volLocal
+        type(actuatorRegionType), pointer :: region
+        integer(kind=intType), dimension(:, :), pointer :: tmp
+
+        nActuatorRegions = nActuatorRegions + 1
+        if (nActuatorRegions > nActuatorRegionsMax) then
+            print *, "Error: Exceeded the maximum number of actuatorDiskRegions.  "&
+                 &"Increase nActuatorDiskRegionsMax"
+            stop
+        end if
+
+        ! Save the input information
+        region => actuatorRegions(nActuatorRegions)
+        region%famName = famName
+        region%famID = famID
+        region%relaxStart = relaxStart
+        region%relaxEnd = relaxEnd
+
+
+        region%force = 0
+        region%heat = 0
+
+
+
+        allocate (region%blkPtr(0:nDom))
+        region%blkPtr(0) = 0
+        allocate (region%cellIDs(3, nCellsLocal(1)))
+
+        ! Now search for all the coordinate. Note that We have explictly
+        ! set sps to 1 becuase it is only implemented for single grid.
+        sps = 1
+        level = 1
+
+        ii = 0
+        do nn = 1, nDom
+            call setPointers(nn, level, sps)
+            do k = 2, kl
+                do j = 2, jl
+                    do i = 2, il
+                        ii = ii + 1
+
+                        ! cycle if it is not a compute cell
+                        if (iblank(i, j, k) /= 1) then
+                            cycle
+                        end if
+
+                        ! cycle if cell was not tagged
+                        if (flag(ii) /= 1) then
+                            cycle
+                        end if
+
+                        region%nCellIDs = region%nCellIDs + 1
+                        region%cellIDs(:, region%nCellIDs) = (/i, j, k/)
+                    end do
+                end do
+            end do
+            ! Since we're doing all the blocks in order, simply store the
+            ! current counter into blkPtr which gives up the range of cells
+            ! we have found on this block
+            region%blkPtr(nn) = region%nCellIDs
+
+        end do
+
+        ! Resize the cellIDs to the correct size now that we know the
+        ! correct exact number.
+        tmp => region%cellIDs
+        allocate (region%cellIDs(3, region%nCellIDs))
+        region%cellIDs = tmp(:, 1:region%nCellIDs)
+        deallocate (tmp)
+
+        ! Now go back and generate the total volume of the the cells we've flagged
+        volLocal = zero
+
+        do nn = 1, nDom
+            call setPointers(nn, level, sps)
+
+            ! Loop over the region for this block
+            do iii = region%blkPtr(nn - 1) + 1, region%blkPtr(nn)
+                i = region%cellIDs(1, iii)
+                j = region%cellIDs(2, iii)
+                k = region%cellIDs(3, iii)
+                volLocal = volLocal + vol(i, j, k)
+            end do
+        end do
+
+        call mpi_allreduce(volLocal, region%volume, 1, adflow_real, &
+                           MPI_SUM, adflow_comm_world, ierr)
+        call ECHK(ierr, __FILE__, __LINE__)
+
+    end subroutine addActuatorRegion
+
     subroutine writeActuatorRegions(fileName)
 
         ! This a (mostly) debug routine that is used to verify to the user

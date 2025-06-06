@@ -361,7 +361,7 @@ class ADFLOW(AeroSolver):
             print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
             print("+--------------------------------------------------+")
 
-        self.actuatorRegions = list()
+        self._actuatorRegions = list()
 
     def __del__(self):
         """
@@ -844,6 +844,34 @@ class ADFLOW(AeroSolver):
         if self.getOption("equationMode").lower() == "time spectral":
             raise Error("ActuatorRegions cannot be used in Time Spectral Mode.")
 
+        # Check if the family name given is already used for something
+        # else.
+        if familyName.lower() in self.families:
+            raise Error(
+                "Cannot add ActuatorDiskRegion with family name '%s'" "because the name it already exists." % familyName
+            )
+
+        # Need to add an additional family so first figure out what
+        # the max family index is:
+        maxInd = 0
+
+        for fam in self.families:
+            if len(self.families[fam]) > 0:
+                maxInd = max(maxInd, numpy.max(self.families[fam]))
+        famID = maxInd + 1
+        self.families[familyName.lower()] = [famID]
+
+        if relaxStart is None and relaxEnd is None:
+            # No relaxation at all
+            relaxStart = -1.0
+            relaxEnd = -1.0
+
+        if relaxStart is None and relaxEnd is not None:
+            # Start at 0 orders if start is not given
+            relaxStart = 0.0
+
+        if relaxEnd is None and relaxStart is not None:
+            raise Error("relaxEnd must be given is relaxStart is specified")
 
 
         # compute the distance of each cell to the AR plane and axis
@@ -856,18 +884,13 @@ class ADFLOW(AeroSolver):
         )
 
         # tag the active cells
-        flags = actuatorRegion.tagActiveCells(distance2axis, distance2plane)
-
-
-        print(flags)
-
-
-
-        # print(distance2axis)
-        # print(distance2plane)
+        flag = actuatorRegion.tagActiveCells(distance2axis, distance2plane)
+        self.adflow.actuatorregion.addactuatorregion(
+                flag, familyName, famID, relaxStart, relaxEnd
+                )
 
         # book keep the new region
-        self.actuatorRegions.append(actuatorRegion)
+        self._actuatorRegions.append(actuatorRegion)
 
     def writeActuatorRegions(self, fileName, outputDir=None):
         """
