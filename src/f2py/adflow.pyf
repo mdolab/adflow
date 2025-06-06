@@ -685,16 +685,13 @@ python module libadflow
        end module usersurfaceintegrations
 
        module actuatorregion ! in :test:actuatorDiskRegion.F90
-         subroutine addactuatorregion(pts,conn,famname,famid,relaxstart,relaxend,npts,nconn) ! in :test:actuatorDiskRegion.F90:actuatorregion
-           real(kind=realtype) dimension(3,npts),intent(in) :: pts
-           integer(kind=inttype) dimension(4,nconn),intent(in) :: conn
-           character*(*) :: famname
-           integer(kind=inttype) intent(in) :: famid
-           real(kind=realtype) :: relaxstart
-           real(kind=realtype) :: relaxend
-           integer(kind=inttype), optional,intent(in),check(shape(pts,1)==npts),depend(pts) :: npts=shape(pts,1)
-           integer(kind=inttype), optional,intent(in),check(shape(conn,1)==nconn),depend(conn) :: nconn=shape(conn,1)
-         end subroutine addactuatorregion
+         subroutine computecelldistances(centerpoint, thrustvector, n, distance2plane, distance2axis) ! in :test:actuatorDiskRegion.F90:actuatorregion
+           real(kind=realtype) dimension(3),intent(in) :: centerpoint
+           real(kind=realtype) dimension(3),intent(in) :: thrustvector
+           integer(kind=inttype) intent(in) :: n
+           real(kind=realtype) dimension(n),intent(out),depend(n) :: distance2plane
+           real(kind=realtype) dimension(n),intent(out),depend(n) :: distance2axis
+         end subroutine computecelldistances
 
          subroutine writeactuatorregions(filename)
            character*(*) intent(in) :: filename

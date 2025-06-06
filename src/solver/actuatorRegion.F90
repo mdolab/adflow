@@ -36,133 +36,39 @@ contains
     ! ----------------------------------------------------------------------
 
 #ifndef USE_TAPENADE
-    subroutine addActuatorRegion(pts, conn, famName, famID, relaxStart, relaxEnd, nPts, nConn)
-        ! Add a user-supplied integration surface.
+    subroutine computeCellDistances(centerPoint, thrustVector, n, distance2plane, distance2axis)
 
-        use communication, only: myID, adflow_comm_world
         use constants
-        use adtBuild, only: buildSerialQuad, destroySerialQuad
-        use adtLocalSearch, only: minDistanceTreeSearchSinglePoint
-        use ADTUtils, only: stack
-        use ADTData
-        use blockPointers, only: x, il, jl, kl, nDom, iBlank, vol, volRef
-        use adjointVars, only: nCellsLocal
-        use utils, only: setPointers, EChk
+        use blockPointers, only: x, il, jl, kl, nDom, iBlank
+        use utils, only: setPointers
         implicit none
 
         ! Input variables
-        integer(kind=intType), intent(in) :: nPts, nConn, famID
-        real(kind=realType), dimension(3, nPts), intent(in), target :: pts
-        integer(kind=intType), dimension(4, nConn), intent(in), target :: conn
-        character(len=*) :: famName 
-        real(kind=realType) :: relaxStart, relaxEnd
+        real(kind=realType), dimension(3), intent(in) :: centerPoint, thrustVector
+        integer(kind=intType), intent(in) :: n
+        real(kind=realType), dimension(n), intent(out) :: distance2plane, distance2axis
+
 
         ! Working variables
-        integer(kind=intType) :: i, j, k, nn, iDim, cellID, intInfo(3), sps, level, iii, ierr
-        real(kind=realType) :: dStar, volLocal
-        type(actuatorRegionType), pointer :: region
-        real(kind=realType), dimension(3) :: minX, maxX, v1, v2, v3, xCen
-        type(adtType) :: ADT
-        ! real(kind=realType) :: axisVecNorm
-        real(kind=realType), dimension(:, :), allocatable :: norm
-        integer(kind=intType), dimension(:), allocatable :: normCount
-        integer(kind=intType), dimension(:, :), pointer :: tmp
+        integer(kind=intType) :: ii, i, j, k, nn, iDim, level, sps
+        real(kind=realType), dimension(3) ::  xCen
 
-        ! ! ADT Type required data
-        integer(kind=intType), dimension(:), pointer :: frontLeaves, frontLeavesNew
-        type(adtBBoxTargetType), dimension(:), pointer :: BB
-        real(kind=realType) :: coor(4), uvw(5)
-        real(kind=realType) :: dummy(3, 2)
+        ! Loop through all the cells and compute the distance of each cell center from the thrust axis (centerPoint + thrustVector)
+        ! also compute the distance from the plane formed by the centerPoint and the normal trhustVector
+        distance2axis = large
+        distance2plane = large
 
-        nActuatorRegions = nActuatorRegions + 1
-        if (nActuatorRegions > nActuatorRegionsMax) then
-            print *, "Error: Exceeded the maximum number of actuatorDiskRegions.  "&
-                 &"Increase nActuatorDiskRegionsMax"
-            stop
-        end if
-
-        ! Save the input information
-        region => actuatorRegions(nActuatorRegions)
-        region%famName = famName
-        region%famID = famID
-        region%relaxStart = relaxStart
-        region%relaxEnd = relaxEnd
-
-        allocate (region%blkPtr(0:nDom))
-        region%blkPtr(0) = 0
-
-        ! Next thing we need to do is to figure out if any of our cells
-        ! are inside the actuator disk region. If so we will save them in
-        ! the actuatorRegionType data structure
-
-        ! Since this is effectively a wall-distance calc it gets super
-        ! costly for the points far away. Luckly, we can do a fairly
-        ! simple shortcut: Just compute the bounding box of the region and
-        ! use that as the "already found" distance in the cloest point
-        ! search. This will eliminate all the points further away
-        ! immediately and this should be sufficiently fast.
-
-        ! So...compute that bounding box:
-        do iDim = 1, 3
-            minX(iDim) = minval(pts(iDim, :))
-            maxX(iDim) = maxval(pts(iDim, :))
-        end do
-
-        ! Get the max distance. This should be quite conservative.
-        dStar = (maxX(1) - minx(1))**2 + (maxX(2) - minX(2))**2 + (maxX(3) - minX(3))**2
-
-        ! Now build the tree.
-        call buildSerialQuad(size(conn, 2), size(pts, 2), pts, conn, ADT)
-
-        ! Compute the (averaged) unique nodal vectors:
-        allocate (norm(3, size(pts, 2)), normCount(size(pts, 2)))
-
-        norm = zero
-        normCount = 0
-
-        do i = 1, size(conn, 2)
-
-            ! Compute cross product normal and normalize
-            v1 = pts(:, conn(3, i)) - pts(:, conn(1, i))
-            v2 = pts(:, conn(4, i)) - pts(:, conn(2, i))
-
-            v3(1) = (v1(2) * v2(3) - v1(3) * v2(2))
-            v3(2) = (v1(3) * v2(1) - v1(1) * v2(3))
-            v3(3) = (v1(1) * v2(2) - v1(2) * v2(1))
-            v3 = v3 / sqrt(v3(1)**2 + v3(2)**2 + v3(3)**2)
-
-            ! Add to each of the four pts and increment the number added
-            do j = 1, 4
-                norm(:, conn(j, i)) = norm(:, conn(j, i)) + v3
-                normCount(conn(j, i)) = normCount(conn(j, i)) + 1
-            end do
-        end do
-
-        ! Now just divide by the norm count
-        do i = 1, size(pts, 2)
-            norm(:, i) = norm(:, i) / normCount(i)
-        end do
-
-        ! Norm count is no longer needed
-        deallocate (normCount)
-
-        ! Allocate the extra data the tree search requires.
-        allocate (stack(100), BB(20), frontLeaves(25), frontLeavesNew(25))
-
-        ! Allocate sufficient space for the maximum possible number of cellIDs
-        allocate (region%cellIDs(3, nCellsLocal(1)))
-
-
-        ! Now search for all the coordinate. Note that We have explictly
-        ! set sps to 1 becuase it is only implemented for single grid.
         sps = 1
         level = 1
 
+        ii = 0
         do nn = 1, nDom
             call setPointers(nn, level, sps)
             do k = 2, kl
                 do j = 2, jl
                     do i = 2, il
+                        ii = ii + 1
+
                         ! cycle if it is not a compute cell
                         if (iblank(i, j, k) /= 1) then
                             cycle
@@ -174,107 +80,40 @@ contains
                                          + x(i - 1, j - 1, k, :) + x(i, j - 1, k, :) &
                                          + x(i - 1, j, k, :) + x(i, j, k, :))
 
-                        ! The current point to search for and continually
-                        ! reset the "closest point already found" variable.
-                        coor(1:3) = xCen
-                        coor(4) = dStar
-                        intInfo(3) = 0
-                        call minDistancetreeSearchSinglePoint(ADT, coor, intInfo, &
-                                                              uvw, dummy, 0, BB, frontLeaves, frontLeavesNew)
-                        cellID = intInfo(3)
-                        ! cycle if cell was not found
-                        if (cellID == 0) then
-                            cycle
-                        end if
+                        ! compute distance from plane
+                        distance2plane(ii) = dot_product(thrustVector, xCen - centerPoint) / vector_norm(thrustVector)
 
-                        ! cycle if cell is not inside actuator region
-                        if (.not. checkInside()) then
-                            cycle
-                        end if
-
-                        ! Whoohoo! We are inside the region. Add this cell to the list.
-                        region%nCellIDs = region%nCellIDs + 1
-                        region%cellIDs(:, region%nCellIDs) = (/i, j, k/)
+                        ! Distance from point to axis
+                        distance2axis(ii) = vector_norm(cross_product(xCen - centerPoint, thrustVector)) / vector_norm(thrustVector)
 
                     end do
                 end do
             end do
-            ! Since we're doing all the blocks in order, simply store the
-            ! current counter into blkPtr which gives up the range of cells
-            ! we have found on this block
-            region%blkPtr(nn) = region%nCellIDs
-
         end do
 
-
-        ! Now search for all the coordinate. Note that We have explictly
-        ! set sps to 1 becuase it is only implemented for single grid.
-        sps = 1
-
-        ! Resize the cellIDs to the correct size now that we know the
-        ! correct exact number.
-        tmp => region%cellIDs
-        allocate (region%cellIDs(3, region%nCellIDs))
-        region%cellIDs = tmp(:, 1:region%nCellIDs)
-        deallocate (tmp)
-
-        ! Now go back and generate the total volume of the cells we've flagged
-        volLocal = zero
-
-        do nn = 1, nDom
-            call setPointers(nn, level, sps)
-
-            ! Loop over the region for this block
-            do iii = region%blkPtr(nn - 1) + 1, region%blkPtr(nn)
-                i = region%cellIDs(1, iii)
-                j = region%cellIDs(2, iii)
-                k = region%cellIDs(3, iii)
-                volLocal = volLocal + vol(i, j, k)
-            end do
-        end do
-
-        call mpi_allreduce(volLocal, region%volume, 1, adflow_real, &
-                           MPI_SUM, adflow_comm_world, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
-        write (*, *) "Total vol of actuator region is", region%volume
-
-        ! Final memory cleanup
-        deallocate (stack, norm, frontLeaves, frontLeavesNew, BB)
-        call destroySerialQuad(ADT)
     contains
+        function dot_product(a, b) 
+            real(kind=realType), intent(in) :: a(3), b(3)
+            real(kind=realType) :: dot_product
+            dot_product = a(1)*b(1) + a(2)*b(2) + a(3)*b(3)
+        end function dot_product
 
-        function checkInside()
+        function cross_product(a, b)
+            real(kind=realType), intent(in) :: a(3), b(3)
+            real(kind=realType) :: cross_product(3)
 
-            implicit none
-            logical :: checkInside
-            integer(kind=intType) :: jj
-            real(kind=realType) :: shp(4), xp(3), normal(3), v1(3), dp
+            cross_product(1) = a(2)*b(3) - a(3)*b(2)
+            cross_product(2) = a(3)*b(1) - a(1)*b(3)
+            cross_product(3) = a(1)*b(2) - a(2)*b(1)
+        end function cross_product
 
-            ! bi-linear shape functions (CCW ordering)
-            shp(1) = (one - uvw(1)) * (one - uvw(2))
-            shp(2) = (uvw(1)) * (one - uvw(2))
-            shp(3) = (uvw(1)) * (uvw(2))
-            shp(4) = (one - uvw(1)) * (uvw(2))
+        function vector_norm(a) 
+            real(kind=realType), intent(in) :: a(3)
+            real(kind=realType) :: vector_norm
+            vector_norm = sqrt(a(1)**2 + a(2)**2 + a(3)**2)
+        end function vector_norm
 
-            xp = zero
-            normal = zero
-            do jj = 1, 4
-                xp = xp + shp(jj) * pts(:, conn(jj, cellID))
-                normal = normal + shp(jj) * norm(:, conn(jj, cellID))
-            end do
-
-            ! Compute the dot product of normal with cell center
-            ! (stored in coor) with the point on the surface.
-            v1 = coor(1:3) - xp
-            dp = normal(1) * v1(1) + normal(2) * v1(2) + normal(3) * v1(3)
-
-            if (dp < zero) then
-                checkInside = .True.
-            else
-                checkInside = .False.
-            end if
-        end function checkInside
-    end subroutine addActuatorRegion
+    end subroutine computeCellDistances
 
     subroutine writeActuatorRegions(fileName)
 
