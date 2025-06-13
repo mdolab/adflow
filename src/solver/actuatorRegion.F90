@@ -29,6 +29,47 @@ contains
 
     end subroutine computeActuatorRegionVolume
 
+
+    subroutine computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane, distance2axis)
+        use constants
+        use blockPointers, only: x
+        implicit none
+
+        ! Inputs
+        real(kind=realType), dimension(3), intent(in) :: centerPoint, thrustVector
+        integer(kind=intType), intent(in) :: i, j, k
+
+        ! Outputs
+        real(kind=realType), intent(out) :: distance2axis, distance2plane
+
+        ! Working
+        real(kind=realType)  :: thrustVectorNorm, dotProduct, norm
+        real(kind=realType), dimension(3) ::  xCen, distance2center, crossProduct
+
+        ! Compute the cell center
+        xCen = eighth * (x(i - 1, j - 1, k - 1, :) + x(i, j - 1, k - 1, :) &
+                         + x(i - 1, j, k - 1, :) + x(i, j, k - 1, :) &
+                         + x(i - 1, j - 1, k, :) + x(i, j - 1, k, :) &
+                         + x(i - 1, j, k, :) + x(i, j, k, :))
+
+        thrustVectorNorm = sqrt(thrustVector(1)**2 + thrustVector(2)**2 + thrustVector(3)**2)
+        distance2center = xCen - centerPoint
+
+        ! compute distance to plane
+        dotProduct = thrustVector(1)*distance2center(1) + thrustVector(2)*distance2center(2) + thrustVector(3)*distance2center(3)
+        distance2plane = dotProduct / thrustVectorNorm
+
+        ! compute distance to axis
+        crossProduct(1) = distance2center(2)*thrustVector(3) - distance2center(3)*thrustVector(2)
+        crossProduct(2) = distance2center(3)*thrustVector(1) - distance2center(1)*thrustVector(3)
+        crossProduct(3) = distance2center(1)*thrustVector(2) - distance2center(2)*thrustVector(1)
+
+        norm = sqrt(crossProduct(1)**2 + crossProduct(2)**2 + crossProduct(3)**2)
+
+        distance2axis = norm / thrustVectorNorm
+
+    end subroutine computeCellSpatialMetrics
+
     ! ----------------------------------------------------------------------
     !                                                                      |
     !                    No Tapenade Routine below this line               |
@@ -36,7 +77,7 @@ contains
     ! ----------------------------------------------------------------------
 
 #ifndef USE_TAPENADE
-    subroutine computeCellDistances(centerPoint, thrustVector, n, distance2plane, distance2axis)
+    subroutine computeInitialSpatialMetrics(centerPoint, thrustVector, n, distance2plane, distance2axis)
 
         use constants
         use blockPointers, only: x, il, jl, kl, nDom, iBlank
@@ -74,46 +115,13 @@ contains
                             cycle
                         end if
 
-                        ! Compute the cell center
-                        xCen = eighth * (x(i - 1, j - 1, k - 1, :) + x(i, j - 1, k - 1, :) &
-                                         + x(i - 1, j, k - 1, :) + x(i, j, k - 1, :) &
-                                         + x(i - 1, j - 1, k, :) + x(i, j - 1, k, :) &
-                                         + x(i - 1, j, k, :) + x(i, j, k, :))
-
-                        ! compute distance from plane
-                        distance2plane(ii) = dot_product(thrustVector, xCen - centerPoint) / vector_norm(thrustVector)
-
-                        ! Distance from point to axis
-                        distance2axis(ii) = vector_norm(cross_product(xCen - centerPoint, thrustVector)) / vector_norm(thrustVector)
-
+                        call computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane(ii), distance2axis(ii))
                     end do
                 end do
             end do
         end do
 
-    contains
-        function dot_product(a, b) 
-            real(kind=realType), intent(in) :: a(3), b(3)
-            real(kind=realType) :: dot_product
-            dot_product = a(1)*b(1) + a(2)*b(2) + a(3)*b(3)
-        end function dot_product
-
-        function cross_product(a, b)
-            real(kind=realType), intent(in) :: a(3), b(3)
-            real(kind=realType) :: cross_product(3)
-
-            cross_product(1) = a(2)*b(3) - a(3)*b(2)
-            cross_product(2) = a(3)*b(1) - a(1)*b(3)
-            cross_product(3) = a(1)*b(2) - a(2)*b(1)
-        end function cross_product
-
-        function vector_norm(a) 
-            real(kind=realType), intent(in) :: a(3)
-            real(kind=realType) :: vector_norm
-            vector_norm = sqrt(a(1)**2 + a(2)**2 + a(3)**2)
-        end function vector_norm
-
-    end subroutine computeCellDistances
+    end subroutine computeInitialSpatialMetrics
 
 
     subroutine addActuatorRegion(flag, n, famName, famID, relaxStart, relaxEnd)

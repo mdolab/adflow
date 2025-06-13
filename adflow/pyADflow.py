@@ -877,7 +877,7 @@ class ADFLOW(AeroSolver):
         # compute the distance of each cell to the AR plane and axis
         ncells = self.adflow.adjointvars.ncellslocal[0]
 
-        distance2plane, distance2axis = self.adflow.actuatorregion.computecelldistances(
+        distance2plane, distance2axis = self.adflow.actuatorregion.computeinitialspatialmetrics(
             actuatorRegion.centerPoint,
             actuatorRegion.thrustVector,
             ncells
