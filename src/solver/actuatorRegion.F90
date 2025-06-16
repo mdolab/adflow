@@ -124,7 +124,7 @@ contains
     end subroutine computeInitialSpatialMetrics
 
 
-    subroutine addActuatorRegion(flag, n, famName, famID, relaxStart, relaxEnd)
+    subroutine addActuatorRegion(flag, n, famName, famID, relaxStart, relaxEnd, iRegion, nLocalCells)
         ! Add a user-supplied integration surface.
 
         use communication, only: myID, adflow_comm_world
@@ -136,11 +136,15 @@ contains
 
         ! Input variables
         integer(kind=intType), intent(in) :: famID
-        character(len=*) :: famName
-        real(kind=realType) :: relaxStart, relaxEnd
+        character(len=*), intent(in) :: famName
+        real(kind=realType), intent(in) :: relaxStart, relaxEnd
 
         integer(kind=intType), intent(in) :: n
         integer(kind=intType), dimension(n), intent(in) :: flag
+
+        ! Output Variables
+        integer(kind=intType), intent(out) :: iRegion
+        integer(kind=intType), intent(out) :: nLocalCells
 
         ! Working variables
         integer(kind=intType) :: i, j, k, nn, sps, level, ii, iii, ierr
@@ -157,10 +161,11 @@ contains
 
         ! Save the input information
         region => actuatorRegions(nActuatorRegions)
+        iRegion = nActuatorRegions
         region%famName = famName
         region%famID = famID
-        region%relaxStart = relaxStart
-        region%relaxEnd = relaxEnd
+        ! region%relaxStart = relaxStart
+        ! region%relaxEnd = relaxEnd
 
 
         region%force = 0
@@ -213,6 +218,7 @@ contains
         allocate (region%cellIDs(3, region%nCellIDs))
         region%cellIDs = tmp(:, 1:region%nCellIDs)
         deallocate (tmp)
+        nLocalCells = region%nCellIDs
 
         ! Now go back and generate the total volume of the the cells we've flagged
         volLocal = zero

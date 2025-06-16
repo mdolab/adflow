@@ -885,9 +885,15 @@ class ADFLOW(AeroSolver):
 
         # tag the active cells
         flag = actuatorRegion.tagActiveCells(distance2axis, distance2plane)
-        self.adflow.actuatorregion.addactuatorregion(
-                flag, familyName, famID, relaxStart, relaxEnd
+        iRegion, nLocalCells = self.adflow.actuatorregion.addactuatorregion(
+                flag, 
+                familyName, 
+                famID, 
+                relaxStart, 
+                relaxEnd,
                 )
+        actuatorRegion.iRegion = iRegion
+        actuatorRegion.nLocalCells = nLocalCells
 
         # book keep the new region
         self._actuatorRegions.append(actuatorRegion)

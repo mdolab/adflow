@@ -11,6 +11,8 @@ class AbstractActuatorRegion(ABC):
 
         self.centerPoint = centerPoint
         self.thrustVector = thrustVector
+        self.iRegion = -1
+        self.nLocalCells = -1
 
     @abstractmethod
     def tagActiveCells(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray) -> npt.NDArray:
@@ -34,18 +36,20 @@ class UniformActuatorRegion(AbstractActuatorRegion):
         if heat < 0:
             raise ValueError('"heat" must not be smaller than 0.')
 
-        self.outerDiameter = outerDiameter
-        self.regionDepth = regionDepth
+        self._outerDiameter = outerDiameter
+        self._regionDepth = regionDepth
+        self._thrust = thrust
+        self._heat = heat
 
 
-    def tagActiveCells(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray) -> npt.NDArray:
+    def tagActiveCells(self, distance2axis, distance2plane):
         flags = np.zeros_like(distance2axis)
 
         indices =  np.logical_and(
-                distance2axis <= self.outerDiameter/2,
+                distance2axis <= self._outerDiameter/2,
                 np.logical_and(
                     distance2plane >= 0,
-                    distance2plane <= self.regionDepth
+                    distance2plane <= self._regionDepth
                     )
                 )
 
