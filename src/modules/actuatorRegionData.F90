@@ -11,17 +11,8 @@ module actuatorRegionData
         ! The total number of cells included this proc has
         integer(kind=intType) :: nCellIDs
 
-        ! the force vector to be applied on this region
-        ! this is equal to torque * axisVec
-        real(kind=realType) :: force(3)
-
-        ! total heat flux to be added on this regoin
-        real(kind=realType) :: heat
-
-        ! Volume is the total integrated volume of all cells (on all
-        ! procs) included in this region
-        real(kind=realType) :: volume
-        real(kind=realType) :: volLocal
+        real(kind=realType), dimension(:, :), pointer :: force
+        real(kind=realType), dimension(:), pointer :: heat
 
         integer(kind=intType), dimension(:), allocatable :: blkPtr
 

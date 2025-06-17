@@ -355,8 +355,8 @@ contains
     real(kind=realtype), intent(inout) :: plocal
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
-    real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend
+    real(kind=realtype) :: vx, vy, vz, fx, fy, fz, q, redim, factor, &
+&   ostart, oend
     real(kind=realtype) :: vxd, vyd, vzd
     integer :: branch
 ! compute the relaxation factor based on the ordersconverged
@@ -378,10 +378,6 @@ myIntPtr = myIntPtr + 1
       oend = actuatorregions(iregion)%relaxend
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
-! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
-&     iregion)%volume/pref
-! heat factor. this is heat added per unit volume per unit time
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
@@ -392,12 +388,14 @@ myIntPtr = myIntPtr + 1
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = vol(i, j, k)*f_fact
+      fx = factor*actuatorregions(iregion)%force(1, ii)/pref
+      fy = factor*actuatorregions(iregion)%force(2, ii)/pref
+      fz = factor*actuatorregions(iregion)%force(3, ii)/pref
 ! this gets the heat addition rate
       if (res) then
-        vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
-        vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
-        vzd = -(ftmp(3)*dwd(i, j, k, irhoe))
+        vxd = -(fx*dwd(i, j, k, irhoe))
+        vyd = -(fy*dwd(i, j, k, irhoe))
+        vzd = -(fz*dwd(i, j, k, irhoe))
       else
         vxd = 0.0_8
         vyd = 0.0_8
@@ -427,8 +425,8 @@ branch = myIntStack(myIntPtr)
     real(kind=realtype), intent(inout) :: plocal
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
-    real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend
+    real(kind=realtype) :: vx, vy, vz, fx, fy, fz, q, redim, factor, &
+&   ostart, oend
     redim = pref*uref
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
@@ -443,12 +441,6 @@ branch = myIntStack(myIntPtr)
       oend = actuatorregions(iregion)%relaxend
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
-! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
-&     iregion)%volume/pref
-! heat factor. this is heat added per unit volume per unit time
-    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
-&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
@@ -459,21 +451,25 @@ branch = myIntStack(myIntPtr)
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = vol(i, j, k)*f_fact
+      fx = factor*actuatorregions(iregion)%force(1, ii)/pref
+      fy = factor*actuatorregions(iregion)%force(2, ii)/pref
+      fz = factor*actuatorregions(iregion)%force(3, ii)/pref
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmp = vol(i, j, k)*q_fact
+      q = factor*actuatorregions(iregion)%heat(ii)/(pref*uref*lref*lref)
       if (res) then
 ! momentum residuals
-        dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
+        dw(i, j, k, imx) = dw(i, j, k, imx) - fx
+        dw(i, j, k, imy) = dw(i, j, k, imy) - fy
+        dw(i, j, k, imz) = dw(i, j, k, imz) - fz
 ! energy residuals
-        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)*&
-&         vy - ftmp(3)*vz - qtmp
+        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - fx*vx - fy*vy - fz*vz &
+&         - q
       else
 ! add in the local power contribution:
-        plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
+        plocal = plocal + (vx*fx+vy*fy+vz*fz)*redim
       end if
     end do
   end subroutine sourceterms_block

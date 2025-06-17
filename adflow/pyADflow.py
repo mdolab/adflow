@@ -203,6 +203,9 @@ class ADFLOW(AeroSolver):
         # had we read in a param file
         self.adflow.iteration.deforming_grid = True
 
+
+        self._actuatorRegions = list()
+
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
         # use it, and then it will be deleted.
@@ -361,7 +364,6 @@ class ADFLOW(AeroSolver):
             print("| %-30s: %10.3f sec" % ("Total Init Time", finalInitTime - startInitTime))
             print("+--------------------------------------------------+")
 
-        self._actuatorRegions = list()
 
     def __del__(self):
         """
@@ -897,6 +899,32 @@ class ADFLOW(AeroSolver):
 
         # book keep the new region
         self._actuatorRegions.append(actuatorRegion)
+
+    def _updateActuatorRegionsBC(self):
+        for actuatorRegion in self._actuatorRegions:
+
+            # compute local metrics
+            distance2plane, distance2axis, volume = self.adflow.actuatorregion.computespatialmetrics(
+                actuatorRegion.iRegion, 
+                actuatorRegion.nLocalCells, 
+                actuatorRegion.centerPoint, 
+                actuatorRegion.thrustVector, 
+                )
+
+            totalVolume = self.comm.allreduce(numpy.sum(volume), op=MPI.SUM)
+
+
+            # compute the BC
+            force = actuatorRegion.computeCellForceVector(distance2axis, distance2plane, volume, totalVolume)
+            heat = actuatorRegion.computeCellHeatVector(distance2axis, distance2plane, volume, totalVolume)
+
+            # set the BC value in Fortran
+            self.adflow.actuatorregion.populatebcvalues(
+                actuatorRegion.iRegion, 
+                actuatorRegion.nLocalCells, 
+                force.T,
+                heat.T,
+                )
 
     def writeActuatorRegions(self, fileName, outputDir=None):
         """
@@ -3618,6 +3646,8 @@ class ADFLOW(AeroSolver):
         nameArray, dataArray, groupArray, groupNames, empty = self._getBCDataFromAeroProblem(AP)
         if not empty:
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
+
+        self._updateActuatorRegionsBC()
 
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()

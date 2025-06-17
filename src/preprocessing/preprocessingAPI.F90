@@ -2732,7 +2732,6 @@ contains
         use communication
         use inputTimeSpectral
         use checkVolBlock
-        use actuatorRegion, only: computeActuatorRegionVolume
         use actuatorRegionData, only: nActuatorRegions, actuatorRegions
         use inputIteration, only: printWarnings, printNegativeVolumes, &
                                   useSkewnessCheck, meshMaxSkewness, printBadlySkewedCells
@@ -2786,11 +2785,6 @@ contains
         nVolBad = 0
         nBlockBad = 0
         nBadSkew = 0
-
-        ! Zero out the local volume pointers for the actuator zone
-        do iRegion = 1, nActuatorRegions
-            actuatorRegions(iRegion)%volLocal = zero
-        end do
 
         ! Loop over the number of spectral solutions and local blocks.
 
@@ -3061,11 +3055,6 @@ contains
                             vol(i, j, ke) = vol(i, j, kl)
                         end if
                     end do
-                end do
-
-                ! Compute the volume of the actuator regions on each domain
-                do iRegion = 1, nActuatorRegions
-                    call computeActuatorRegionVolume(nn, iRegion)
                 end do
 
                 ! Determine the orientation of the block. For the fine level
@@ -3346,13 +3335,6 @@ contains
                 end if debugging
             end do domains
         end do spectral
-
-        ! Loop over the actuator regions again to compute the total volumes
-        do iRegion = 1, nActuatorRegions
-            call mpi_allreduce(actuatorRegions(iRegion)%volLocal, actuatorRegions(iRegion)%volume, 1, &
-                               adflow_real, mpi_sum, adflow_comm_world, ierr)
-            call ECHK(ierr, __FILE__, __LINE__)
-        end do
 
         ! Determine the global number of bad blocks. The result must be
         ! known on all processors and thus an allreduce is needed.

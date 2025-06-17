@@ -8,47 +8,44 @@ module actuatorregion_b
   implicit none
 
 contains
-!  differentiation of computeactuatorregionvolume in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: *vol actuatorregions.vollocal
-!   with respect to varying inputs: *vol actuatorregions.vollocal
-!   rw status of diff variables: *vol:incr actuatorregions.vollocal:in-out
-!   plus diff mem management of: vol:in
-  subroutine computeactuatorregionvolume_b(nn, iregion)
-    use blockpointers, only : ndom, vol, vold
+  subroutine computecellspatialmetrics(i, j, k, centerpoint, &
+&   thrustvector, distance2plane, distance2axis)
+    use constants
+    use blockpointers, only : x
     implicit none
 ! inputs
-    integer(kind=inttype), intent(in) :: nn, iregion
+    real(kind=realtype), dimension(3), intent(in) :: centerpoint, &
+&   thrustvector
+    integer(kind=inttype), intent(in) :: i, j, k
+! outputs
+    real(kind=realtype), intent(out) :: distance2axis, distance2plane
 ! working
-    integer(kind=inttype) :: iii
-    integer(kind=inttype) :: i, j, k
-    do iii=actuatorregions(iregion)%blkptr(nn),actuatorregions(iregion)%&
-&       blkptr(nn-1)+1,-1
-      i = actuatorregions(iregion)%cellids(1, iii)
-      j = actuatorregions(iregion)%cellids(2, iii)
-      k = actuatorregions(iregion)%cellids(3, iii)
-      vold(i, j, k) = vold(i, j, k) + actuatorregionsd(iregion)%vollocal
-    end do
-  end subroutine computeactuatorregionvolume_b
-
-  subroutine computeactuatorregionvolume(nn, iregion)
-    use blockpointers, only : ndom, vol
-    implicit none
-! inputs
-    integer(kind=inttype), intent(in) :: nn, iregion
-! working
-    integer(kind=inttype) :: iii
-    integer(kind=inttype) :: i, j, k
-! loop over the region for this block
-    do iii=actuatorregions(iregion)%blkptr(nn-1)+1,actuatorregions(&
-&       iregion)%blkptr(nn)
-      i = actuatorregions(iregion)%cellids(1, iii)
-      j = actuatorregions(iregion)%cellids(2, iii)
-      k = actuatorregions(iregion)%cellids(3, iii)
-! sum the volume of each cell within the region on this proc
-      actuatorregions(iregion)%vollocal = actuatorregions(iregion)%&
-&       vollocal + vol(i, j, k)
-    end do
-  end subroutine computeactuatorregionvolume
+    real(kind=realtype) :: thrustvectornorm, dotproduct, norm
+    real(kind=realtype), dimension(3) :: xcen, distance2center, &
+&   crossproduct
+    intrinsic sqrt
+! compute the cell center
+    xcen = eighth*(x(i-1, j-1, k-1, :)+x(i, j-1, k-1, :)+x(i-1, j, k-1, &
+&     :)+x(i, j, k-1, :)+x(i-1, j-1, k, :)+x(i, j-1, k, :)+x(i-1, j, k, &
+&     :)+x(i, j, k, :))
+    thrustvectornorm = sqrt(thrustvector(1)**2 + thrustvector(2)**2 + &
+&     thrustvector(3)**2)
+    distance2center = xcen - centerpoint
+! compute distance to plane
+    dotproduct = thrustvector(1)*distance2center(1) + thrustvector(2)*&
+&     distance2center(2) + thrustvector(3)*distance2center(3)
+    distance2plane = dotproduct/thrustvectornorm
+! compute distance to axis
+    crossproduct(1) = distance2center(2)*thrustvector(3) - &
+&     distance2center(3)*thrustvector(2)
+    crossproduct(2) = distance2center(3)*thrustvector(1) - &
+&     distance2center(1)*thrustvector(3)
+    crossproduct(3) = distance2center(1)*thrustvector(2) - &
+&     distance2center(2)*thrustvector(1)
+    norm = sqrt(crossproduct(1)**2 + crossproduct(2)**2 + crossproduct(3&
+&     )**2)
+    distance2axis = norm/thrustvectornorm
+  end subroutine computecellspatialmetrics
 ! ----------------------------------------------------------------------
 !                                                                      |
 !                    no tapenade routine below this line               |

@@ -6,30 +6,6 @@ module actuatorRegion
     implicit none
 
 contains
-    subroutine computeActuatorRegionVolume(nn, iRegion)
-        use blockPointers, only: nDom, vol
-        implicit none
-
-        ! Inputs
-        integer(kind=intType), intent(in) :: nn, iRegion
-
-        ! Working
-        integer(kind=intType) :: iii
-        integer(kind=intType) :: i, j, k
-
-        ! Loop over the region for this block
-        do iii = actuatorRegions(iRegion)%blkPtr(nn - 1) + 1, actuatorRegions(iRegion)%blkPtr(nn)
-            i = actuatorRegions(iRegion)%cellIDs(1, iii)
-            j = actuatorRegions(iRegion)%cellIDs(2, iii)
-            k = actuatorRegions(iRegion)%cellIDs(3, iii)
-
-            ! Sum the volume of each cell within the region on this proc
-            actuatorRegions(iRegion)%volLocal = actuatorRegions(iRegion)%volLocal + vol(i, j, k)
-        end do
-
-    end subroutine computeActuatorRegionVolume
-
-
     subroutine computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane, distance2axis)
         use constants
         use blockPointers, only: x
@@ -69,6 +45,7 @@ contains
         distance2axis = norm / thrustVectorNorm
 
     end subroutine computeCellSpatialMetrics
+
 
     ! ----------------------------------------------------------------------
     !                                                                      |
@@ -148,7 +125,6 @@ contains
 
         ! Working variables
         integer(kind=intType) :: i, j, k, nn, sps, level, ii, iii, ierr
-        real(kind=realType) :: volLocal
         type(actuatorRegionType), pointer :: region
         integer(kind=intType), dimension(:, :), pointer :: tmp
 
@@ -164,13 +140,8 @@ contains
         iRegion = nActuatorRegions
         region%famName = famName
         region%famID = famID
-        ! region%relaxStart = relaxStart
-        ! region%relaxEnd = relaxEnd
-
-
-        region%force = 0
-        region%heat = 0
-
+        region%relaxStart = relaxStart
+        region%relaxEnd = relaxEnd
 
 
         allocate (region%blkPtr(0:nDom))
@@ -212,6 +183,7 @@ contains
 
         end do
 
+
         ! Resize the cellIDs to the correct size now that we know the
         ! correct exact number.
         tmp => region%cellIDs
@@ -220,26 +192,84 @@ contains
         deallocate (tmp)
         nLocalCells = region%nCellIDs
 
-        ! Now go back and generate the total volume of the the cells we've flagged
-        volLocal = zero
 
+        ! Allocate variables for the source terms
+        allocate (region%force(3, region%nCellIDs))
+        allocate (region%heat(region%nCellIDs))
+
+    end subroutine addActuatorRegion
+
+    subroutine computeSpatialMetrics(iRegion, nLocalCells, centerPoint, thrustVector, distance2plane, distance2axis, volume)
+        use constants
+        use blockPointers, only: nDom, vol
+        use utils, only: setPointers
+        implicit none
+
+        ! Inputs
+        real(kind=realType), dimension(3), intent(in) :: centerPoint, thrustVector
+        integer(kind=intType), intent(in) :: nLocalCells
+        integer(kind=intType), intent(in) :: iRegion
+
+        ! Outputs
+        real(kind=realType), intent(out), dimension(nLocalCells) :: distance2axis, distance2plane, volume
+
+        ! Working
+        type(actuatorRegionType), pointer :: region
+        integer(kind=intType) :: sps, level, nn, i, j, k, iii
+
+        region => actuatorRegions(iRegion)
+
+
+        sps = 1
+        level = 1
         do nn = 1, nDom
             call setPointers(nn, level, sps)
+            do iii = actuatorRegions(iRegion)%blkPtr(nn - 1) + 1, actuatorRegions(iRegion)%blkPtr(nn)
+                i = actuatorRegions(iRegion)%cellIDs(1, iii)
+                j = actuatorRegions(iRegion)%cellIDs(2, iii)
+                k = actuatorRegions(iRegion)%cellIDs(3, iii)
 
-            ! Loop over the region for this block
-            do iii = region%blkPtr(nn - 1) + 1, region%blkPtr(nn)
-                i = region%cellIDs(1, iii)
-                j = region%cellIDs(2, iii)
-                k = region%cellIDs(3, iii)
-                volLocal = volLocal + vol(i, j, k)
+
+                call computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane(iii), distance2axis(iii))
+                volume(iii) = vol(i, j, k)
             end do
         end do
 
-        call mpi_allreduce(volLocal, region%volume, 1, adflow_real, &
-                           MPI_SUM, adflow_comm_world, ierr)
-        call ECHK(ierr, __FILE__, __LINE__)
+    end subroutine computeSpatialMetrics
 
-    end subroutine addActuatorRegion
+    subroutine populateBCValues(iRegion, nLocalCells, force, heat)
+        use constants
+        use blockPointers, only: nDom
+        use utils, only: setPointers
+        implicit none
+
+        ! Inputs
+        integer(kind=intType), intent(in) :: iRegion
+        integer(kind=intType), intent(in) :: nLocalCells
+        real(kind=realType), dimension(3, nLocalCells), intent(in) :: force
+        real(kind=realType), dimension(nLocalCells), intent(in) :: heat
+
+
+        ! Working
+        type(actuatorRegionType), pointer :: region
+        integer(kind=intType) :: sps, level, nn, i, j, k, iii
+
+
+        region => actuatorRegions(iRegion)
+
+
+        sps = 1
+        level = 1
+        do nn = 1, nDom
+            call setPointers(nn, level, sps)
+            do iii = actuatorRegions(iRegion)%blkPtr(nn - 1) + 1, actuatorRegions(iRegion)%blkPtr(nn)
+                actuatorRegions(iRegion)%force(:, iii) = force(:, iii)
+                actuatorRegions(iRegion)%heat(iii) = heat(iii)
+            end do
+        end do
+
+    end subroutine populateBCValues
+
 
     subroutine writeActuatorRegions(fileName)
 

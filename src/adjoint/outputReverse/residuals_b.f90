@@ -335,17 +335,18 @@ contains
   end subroutine residual_block
 
 !  differentiation of sourceterms_block in reverse (adjoint) mode (with options noisize i4 dr8 r8):
-!   gradient     of useful results: uref pref *w *dw *vol actuatorregions.force
-!                actuatorregions.heat actuatorregions.volume actuatorregions.relaxstart
+!   gradient     of useful results: uref pref *w *dw *(actuatorregions.force)
+!                *(actuatorregions.heat) actuatorregions.relaxstart
 !                actuatorregions.relaxend plocal
-!   with respect to varying inputs: uref pref *w *dw *vol actuatorregions.force
-!                actuatorregions.heat actuatorregions.volume actuatorregions.relaxstart
+!   with respect to varying inputs: uref pref *w *dw *(actuatorregions.force)
+!                *(actuatorregions.heat) actuatorregions.relaxstart
 !                actuatorregions.relaxend plocal
 !   rw status of diff variables: uref:incr pref:incr *w:incr *dw:in-out
-!                *vol:incr actuatorregions.force:incr actuatorregions.heat:incr
-!                actuatorregions.volume:incr actuatorregions.relaxstart:incr
-!                actuatorregions.relaxend:incr plocal:in-out
-!   plus diff mem management of: w:in dw:in vol:in
+!                *(actuatorregions.force):incr *(actuatorregions.heat):incr
+!                actuatorregions.relaxstart:incr actuatorregions.relaxend:incr
+!                plocal:in-out
+!   plus diff mem management of: w:in dw:in actuatorregions.force:in
+!                actuatorregions.heat:in
   subroutine sourceterms_block_b(nn, res, iregion, plocal, plocald)
 ! apply the source terms for the given block. assume that the
 ! block pointers are already set.
@@ -363,16 +364,14 @@ contains
     real(kind=realtype), intent(inout) :: plocald
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
-    real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend
-    real(kind=realtype) :: ftmpd(3), vxd, vyd, vzd, f_factd(3), q_factd&
-&   , qtmpd, redimd, factord, ostartd, oendd
-    real(kind=realtype) :: temp
+    real(kind=realtype) :: vx, vy, vz, fx, fy, fz, q, redim, factor, &
+&   ostart, oend
+    real(kind=realtype) :: vxd, vyd, vzd, fxd, fyd, fzd, qd, redimd, &
+&   factord, ostartd, oendd
     real(kind=realtype) :: tempd
-    real(kind=realtype) :: temp0
+    real(kind=realtype) :: temp
     real(kind=realtype) :: tempd0
-    real(kind=realtype), dimension(3) :: tempd1
-    real(kind=realtype) :: tempd2
+    real(kind=realtype) :: tempd1
     integer :: branch
     redim = pref*uref
 ! compute the relaxation factor based on the ordersconverged
@@ -391,18 +390,11 @@ contains
       factor = (ordersconverged-ostart)/(oend-ostart)
       call pushcontrol2b(2)
     end if
-! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
-&     iregion)%volume/pref
-! heat factor. this is heat added per unit volume per unit time
-    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
-&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
-    q_factd = 0.0_8
     redimd = 0.0_8
-    f_factd = 0.0_8
+    factord = 0.0_8
 !$bwd-of ii-loop 
     do ii=istart,iend
 ! extract the cell id.
@@ -410,58 +402,59 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = vol(i, j, k)*f_fact
+      fx = factor*actuatorregions(iregion)%force(1, ii)/pref
+      fy = factor*actuatorregions(iregion)%force(2, ii)/pref
+      fz = factor*actuatorregions(iregion)%force(3, ii)/pref
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
       if (res) then
-        ftmpd = 0.0_8
-        ftmpd(1) = ftmpd(1) - vx*dwd(i, j, k, irhoe)
-        vxd = -(ftmp(1)*dwd(i, j, k, irhoe))
-        ftmpd(2) = ftmpd(2) - vy*dwd(i, j, k, irhoe)
-        vyd = -(ftmp(2)*dwd(i, j, k, irhoe))
-        ftmpd(3) = ftmpd(3) - vz*dwd(i, j, k, irhoe)
-        vzd = -(ftmp(3)*dwd(i, j, k, irhoe))
-        qtmpd = -dwd(i, j, k, irhoe)
-        ftmpd = ftmpd - dwd(i, j, k, imx:imz)
+        fxd = -(vx*dwd(i, j, k, irhoe)) - dwd(i, j, k, imx)
+        vxd = -(fx*dwd(i, j, k, irhoe))
+        fyd = -(vy*dwd(i, j, k, irhoe)) - dwd(i, j, k, imy)
+        vyd = -(fy*dwd(i, j, k, irhoe))
+        fzd = -(vz*dwd(i, j, k, irhoe)) - dwd(i, j, k, imz)
+        vzd = -(fz*dwd(i, j, k, irhoe))
+        qd = -dwd(i, j, k, irhoe)
       else
-        ftmpd = 0.0_8
-        tempd2 = redim*plocald
-        redimd = redimd + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*plocald
-        vxd = ftmp(1)*tempd2
-        ftmpd(1) = ftmpd(1) + vx*tempd2
-        vyd = ftmp(2)*tempd2
-        ftmpd(2) = ftmpd(2) + vy*tempd2
-        vzd = ftmp(3)*tempd2
-        ftmpd(3) = ftmpd(3) + vz*tempd2
-        qtmpd = 0.0_8
+        tempd1 = redim*plocald
+        redimd = redimd + (vx*fx+vy*fy+vz*fz)*plocald
+        vxd = fx*tempd1
+        fxd = vx*tempd1
+        vyd = fy*tempd1
+        fyd = vy*tempd1
+        vzd = fz*tempd1
+        fzd = vz*tempd1
+        qd = 0.0_8
       end if
-      vold(i, j, k) = vold(i, j, k) + q_fact*qtmpd + sum(f_fact*ftmpd)
-      q_factd = q_factd + vol(i, j, k)*qtmpd
+      tempd0 = actuatorregions(iregion)%force(3, ii)*fzd/pref
+      temp = lref*lref*pref*uref
+      tempd = qd/temp
+      factord = factord + actuatorregions(iregion)%heat(ii)*tempd + &
+&       tempd0
+      actuatorregionsd(iregion)%heat(ii) = actuatorregionsd(iregion)%&
+&       heat(ii) + factor*tempd
+      tempd1 = -(lref**2*factor*actuatorregions(iregion)%heat(ii)*tempd/&
+&       temp)
+      prefd = prefd + uref*tempd1 - factor*tempd0/pref
+      urefd = urefd + pref*tempd1
       wd(i, j, k, ivz) = wd(i, j, k, ivz) + vzd
       wd(i, j, k, ivy) = wd(i, j, k, ivy) + vyd
       wd(i, j, k, ivx) = wd(i, j, k, ivx) + vxd
-      f_factd = f_factd + vol(i, j, k)*ftmpd
+      actuatorregionsd(iregion)%force(3, ii) = actuatorregionsd(iregion)&
+&       %force(3, ii) + factor*fzd/pref
+      actuatorregionsd(iregion)%force(2, ii) = actuatorregionsd(iregion)&
+&       %force(2, ii) + factor*fyd/pref
+      tempd0 = actuatorregions(iregion)%force(2, ii)*fyd/pref
+      factord = factord + tempd0
+      prefd = prefd - factor*tempd0/pref
+      actuatorregionsd(iregion)%force(1, ii) = actuatorregionsd(iregion)&
+&       %force(1, ii) + factor*fxd/pref
+      tempd0 = actuatorregions(iregion)%force(1, ii)*fxd/pref
+      factord = factord + tempd0
+      prefd = prefd - factor*tempd0/pref
     end do
-    tempd1 = f_factd/(actuatorregions(iregion)%volume*pref)
-    tempd0 = -(sum(actuatorregions(iregion)%force*tempd1)*factor/(&
-&     actuatorregions(iregion)%volume*pref))
-    temp0 = lref*lref*actuatorregions(iregion)%volume
-    temp = temp0*pref*uref
-    tempd2 = q_factd/temp
-    factord = actuatorregions(iregion)%heat*tempd2 + sum(actuatorregions&
-&     (iregion)%force*tempd1)
-    actuatorregionsd(iregion)%heat = actuatorregionsd(iregion)%heat + &
-&     factor*tempd2
-    tempd = -(factor*actuatorregions(iregion)%heat*tempd2/temp)
-    actuatorregionsd(iregion)%volume = actuatorregionsd(iregion)%volume &
-&     + lref**2*pref*uref*tempd + pref*tempd0
-    prefd = prefd + uref*temp0*tempd + actuatorregions(iregion)%volume*&
-&     tempd0
-    urefd = urefd + pref*temp0*tempd
-    actuatorregionsd(iregion)%force = actuatorregionsd(iregion)%force + &
-&     factor*tempd1
     call popcontrol2b(branch)
     if (branch .ne. 0) then
       if (branch .ne. 1) then
@@ -495,8 +488,8 @@ contains
     real(kind=realtype), intent(inout) :: plocal
 ! working
     integer(kind=inttype) :: i, j, k, ii, istart, iend
-    real(kind=realtype) :: ftmp(3), vx, vy, vz, f_fact(3), q_fact, qtmp&
-&   , redim, factor, ostart, oend
+    real(kind=realtype) :: vx, vy, vz, fx, fy, fz, q, redim, factor, &
+&   ostart, oend
     redim = pref*uref
 ! compute the relaxation factor based on the ordersconverged
 ! how far we are into the ramp:
@@ -511,12 +504,6 @@ contains
       oend = actuatorregions(iregion)%relaxend
       factor = (ordersconverged-ostart)/(oend-ostart)
     end if
-! compute the constant force factor
-    f_fact = factor*actuatorregions(iregion)%force/actuatorregions(&
-&     iregion)%volume/pref
-! heat factor. this is heat added per unit volume per unit time
-    q_fact = factor*actuatorregions(iregion)%heat/actuatorregions(&
-&     iregion)%volume/(pref*uref*lref*lref)
 ! loop over the ranges for this block
     istart = actuatorregions(iregion)%blkptr(nn-1) + 1
     iend = actuatorregions(iregion)%blkptr(nn)
@@ -527,21 +514,25 @@ contains
       j = actuatorregions(iregion)%cellids(2, ii)
       k = actuatorregions(iregion)%cellids(3, ii)
 ! this actually gets the force
-      ftmp = vol(i, j, k)*f_fact
+      fx = factor*actuatorregions(iregion)%force(1, ii)/pref
+      fy = factor*actuatorregions(iregion)%force(2, ii)/pref
+      fz = factor*actuatorregions(iregion)%force(3, ii)/pref
       vx = w(i, j, k, ivx)
       vy = w(i, j, k, ivy)
       vz = w(i, j, k, ivz)
 ! this gets the heat addition rate
-      qtmp = vol(i, j, k)*q_fact
+      q = factor*actuatorregions(iregion)%heat(ii)/(pref*uref*lref*lref)
       if (res) then
 ! momentum residuals
-        dw(i, j, k, imx:imz) = dw(i, j, k, imx:imz) - ftmp
+        dw(i, j, k, imx) = dw(i, j, k, imx) - fx
+        dw(i, j, k, imy) = dw(i, j, k, imy) - fy
+        dw(i, j, k, imz) = dw(i, j, k, imz) - fz
 ! energy residuals
-        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - ftmp(1)*vx - ftmp(2)*&
-&         vy - ftmp(3)*vz - qtmp
+        dw(i, j, k, irhoe) = dw(i, j, k, irhoe) - fx*vx - fy*vy - fz*vz &
+&         - q
       else
 ! add in the local power contribution:
-        plocal = plocal + (vx*ftmp(1)+vy*ftmp(2)+vz*ftmp(3))*redim
+        plocal = plocal + (vx*fx+vy*fy+vz*fz)*redim
       end if
     end do
   end subroutine sourceterms_block

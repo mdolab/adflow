@@ -19,6 +19,16 @@ class AbstractActuatorRegion(ABC):
         flags = np.zeros_like(distance2axis)
         return flags
 
+    @abstractmethod
+    def computeCellForceVector(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray, cellVolume: npt.NDArray, totalVolume: float) -> npt.NDArray:
+        force = np.zeros((3, len(distance2axis)))
+        return force
+
+    @abstractmethod
+    def computeCellHeatVector(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray, cellVolume: npt.NDArray, totalVolume: float) -> npt.NDArray:
+        heat = np.zeros_like(distance2axis)
+        return heat
+
 
 
 
@@ -56,4 +66,21 @@ class UniformActuatorRegion(AbstractActuatorRegion):
         flags[indices] = 1
 
         return flags
+
+    def computeCellForceVector(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray, cellVolume: npt.NDArray, totalVolume: float):
+        force = np.zeros((len(distance2axis), 3))
+
+        force[:, :] = np.outer(
+                self._thrust * cellVolume / totalVolume, 
+                self.thrustVector
+                )
+
+        return force
+
+    def computeCellHeatVector(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray, cellVolume: npt.NDArray, totalVolume: float):
+        heat = np.zeros_like(distance2axis)
+
+        heat = self._heat * cellVolume / totalVolume
+
+        return heat
 

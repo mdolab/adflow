@@ -704,6 +704,23 @@ python module libadflow
            integer(kind=inttype), intent(out) :: nlocalcells
          end subroutine addactuatorregion
 
+         subroutine computespatialmetrics(iregion, nlocalcells, centerpoint, thrustvector, distance2plane, distance2axis, volume) ! in :test:actuatorDiskRegion.F90:actuatorregion
+           real(kind=realtype) dimension(3),intent(in) :: centerpoint
+           real(kind=realtype) dimension(3),intent(in) :: thrustvector
+           integer(kind=inttype), intent(in) :: iregion
+           integer(kind=inttype) intent(in) :: nlocalcells
+           real(kind=realtype) dimension(nlocalcells),intent(out),depend(nlocalcells) :: distance2plane
+           real(kind=realtype) dimension(nlocalcells),intent(out),depend(nlocalcells) :: distance2axis
+           real(kind=realtype) dimension(nlocalcells),intent(out),depend(nlocalcells) :: volume
+         end subroutine addactuatorregion
+
+         subroutine populatebcvalues(iregion, nlocalcells, force, heat) ! in :test:actuatorDiskRegion.F90:actuatorregion
+           integer(kind=inttype), intent(in) :: iregion
+           integer(kind=inttype) intent(in) :: nlocalcells
+           real(kind=realtype) dimension(3, nlocalcells),intent(in),depend(nlocalcells) :: force
+           real(kind=realtype) dimension(nlocalcells),intent(in),depend(nlocalcells) :: heat
+         end subroutine populatebcvalues
+
          subroutine writeactuatorregions(filename)
            character*(*) intent(in) :: filename
          end subroutine writeactuatorregions
