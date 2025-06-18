@@ -7,10 +7,15 @@ import numpy.typing as npt
 
 class AbstractActuatorRegion(ABC):
     def __init__(self, centerPoint: npt.NDArray, thrustVector: npt.NDArray):
-        # todo add error checking
+        if centerPoint.shape != (3,):
+            raise ValueError('"centerPoint" must have shape "(3,)"') 
+        if thrustVector.shape != (3,):
+            raise ValueError('"thrustVector" must have shape "(3,)"') 
+        if np.linalg.norm(thrustVector) == 0:
+            raise ValueError('"trustVector" can not have a length of "0"')
 
         self.centerPoint = centerPoint
-        self.thrustVector = thrustVector
+        self.thrustVector = thrustVector / np.linalg.norm(thrustVector)
         self.iRegion = -1
         self.nLocalCells = -1
 
