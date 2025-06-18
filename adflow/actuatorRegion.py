@@ -18,6 +18,14 @@ class AbstractActuatorRegion(ABC):
         self.thrustVector = thrustVector / np.linalg.norm(thrustVector)
         self.iRegion = -1
         self.nLocalCells = -1
+        self.familyName = None
+        self._boundaryConditions = dict()
+
+    def setBCValue(self, bcName, bcValue):
+        if bcName not in self._boundaryConditions.keys():
+            raise ValueError(f'"{bcName}" is not a valid boundary Condition. Valid Conditions are: {list(self._boundaryConditions.keys())}')
+        
+        self._boundaryConditions[bcName] = bcValue
 
     @abstractmethod
     def tagActiveCells(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray) -> npt.NDArray:
@@ -39,7 +47,7 @@ class AbstractActuatorRegion(ABC):
 
 
 class UniformActuatorRegion(AbstractActuatorRegion):
-    def __init__(self, centerPoint: npt.NDArray, thrustVector: npt.NDArray, outerDiameter: float, regionDepth: float, thrust: float, heat: float):
+    def __init__(self, centerPoint: npt.NDArray, thrustVector: npt.NDArray, outerDiameter: float, regionDepth: float, thrust: float = 0., heat: float = 0.):
         super().__init__(centerPoint, thrustVector)
 
         if regionDepth <= 0:
@@ -53,9 +61,14 @@ class UniformActuatorRegion(AbstractActuatorRegion):
 
         self._outerDiameter = outerDiameter
         self._regionDepth = regionDepth
-        self._thrust = thrust
-        self._heat = heat
 
+        self._heatBcName = 'Heat'
+        self._thrustBcName = 'Thrust'
+
+        self._boundaryConditions = {
+                self._thrustBcName: thrust,
+                self._heatBcName: heat,
+                }
 
     def tagActiveCells(self, distance2axis, distance2plane):
         flags = np.zeros_like(distance2axis)
@@ -74,9 +87,10 @@ class UniformActuatorRegion(AbstractActuatorRegion):
 
     def computeCellForceVector(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray, cellVolume: npt.NDArray, totalVolume: float):
         force = np.zeros((len(distance2axis), 3))
+        thrustBC = self._boundaryConditions[self._thrustBcName]
 
         force[:, :] = np.outer(
-                self._thrust * cellVolume / totalVolume, 
+                thrustBC * cellVolume / totalVolume, 
                 self.thrustVector
                 )
 
@@ -84,8 +98,9 @@ class UniformActuatorRegion(AbstractActuatorRegion):
 
     def computeCellHeatVector(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray, cellVolume: npt.NDArray, totalVolume: float):
         heat = np.zeros_like(distance2axis)
+        heatBC = self._boundaryConditions[self._heatBcName]
 
-        heat = self._heat * cellVolume / totalVolume
+        heat = heatBC * cellVolume / totalVolume
 
         return heat
 

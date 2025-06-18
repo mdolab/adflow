@@ -896,12 +896,20 @@ class ADFLOW(AeroSolver):
                 )
         actuatorRegion.iRegion = iRegion
         actuatorRegion.nLocalCells = nLocalCells
+        actuatorRegion.familyName = familyName
 
         # book keep the new region
         self._actuatorRegions.append(actuatorRegion)
 
-    def _updateActuatorRegionsBC(self):
+    def _updateActuatorRegionsBC(self, aeroproblem):
         for actuatorRegion in self._actuatorRegions:
+
+            # set BC values
+            for (bcName, familyName), bcValue in aeroproblem.bcVarData.items():
+                if familyName != actuatorRegion.familyName:
+                    continue
+                actuatorRegion.setBCValue(bcName, bcValue)
+
 
             # compute local metrics
             distance2plane, distance2axis, volume = self.adflow.actuatorregion.computespatialmetrics(
@@ -917,11 +925,11 @@ class ADFLOW(AeroSolver):
             if actuatorRegion.nLocalCells == 0:
                 continue
 
-            # compute the BC
+            # compute the source terms
             force = actuatorRegion.computeCellForceVector(distance2axis, distance2plane, volume, totalVolume)
             heat = actuatorRegion.computeCellHeatVector(distance2axis, distance2plane, volume, totalVolume)
 
-            # set the BC value in Fortran
+            # apply the source terms in Fortran
             self.adflow.actuatorregion.populatebcvalues(
                 actuatorRegion.iRegion, 
                 actuatorRegion.nLocalCells, 
@@ -3650,7 +3658,7 @@ class ADFLOW(AeroSolver):
         if not empty:
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
 
-        self._updateActuatorRegionsBC()
+        self._updateActuatorRegionsBC(AP)
 
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()
