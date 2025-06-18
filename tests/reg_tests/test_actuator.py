@@ -13,6 +13,8 @@ from idwarp import USMesh
 from pygeo import DVGeometry
 from adflow import ADFLOW_C
 
+from adflow.actuatorRegion import UniformActuatorRegion
+
 # import the testing utilities
 import reg_test_utils as utils
 from reg_default_options import adflowDefOpts
@@ -91,18 +93,19 @@ class ActuatorBasicTests(reg_test_classes.RegTest):
         # this is imported from reg_aeroproblems utility script
         self.ap = ap_actuator_pipe
 
-        actuatorFile = os.path.join(baseDir, "../../input_files/actuator_test_disk.xyz")
+        actuator_region = UniformActuatorRegion(
+            centerPoint = np.array([-0.38, 0, 0.3]),
+            thrustVector = np.array([1, 0, 0]),
+            outerDiameter = 0.354,
+            regionDepth = 0.12,
+            thrust = 0,
+            heat = 0,
+            )
+
         self.CFDSolver.addActuatorRegion(
-            actuatorFile,
-            "uniform",
-            np.array([0, 0, 0]),
-            np.array([1, 0, 0]),
-            "actuator_region",
-            # we will set these individually in the tests below
-            thrust=0.0,
-            torque=0.0,
-            heat=0.0,
-        )
+            actuator_region,
+            'actuator_region',
+            )
 
         # add thrust and heat as AP DVs
         self.ap.setBCVar("Thrust", 0.0, "actuator_region")
