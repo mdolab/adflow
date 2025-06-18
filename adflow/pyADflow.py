@@ -913,6 +913,9 @@ class ADFLOW(AeroSolver):
 
             totalVolume = self.comm.allreduce(numpy.sum(volume), op=MPI.SUM)
 
+            # skip this proc if no cells are active
+            if actuatorRegion.nLocalCells == 0:
+                continue
 
             # compute the BC
             force = actuatorRegion.computeCellForceVector(distance2axis, distance2plane, volume, totalVolume)
