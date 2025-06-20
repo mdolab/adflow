@@ -1413,7 +1413,6 @@ contains
         use sorting, only: famInList
         use utils, only: setPointers, terminate, char2str
         use communication, only: myid
-        use actuatorRegionData, only: actuatorRegions, nActuatorRegions
         !
         !      Subroutine arguments.
         !
@@ -1475,27 +1474,6 @@ contains
             end do varLoop
         end do domainsLoop
 
-        ! ! Loop over any actuator regions since they also could have to set BCData
-        ! regionLoop: do iRegion = 1, nActuatorRegions
-        !     varLoop2: do iVar = 1, nVar
-        !         nFam = famLists(iVar, 1)
-        !         famInclude2: if (famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2 + nFam - 1))) then
-
-        !             ! Extract the name
-        !             varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
-
-        !             if (trim(varName) == "Thrust") then
-        !                 actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
-        !                                                  bcDataIn(iVar)
-        !             else if (trim(varName) == "Torque") then
-        !                 actuatorRegions(iRegion)%torque = bcDataIn(iVar)
-        !             else if (trim(varName) == "Heat") then
-        !                 actuatorRegions(iRegion)%heat = bcDataIn(iVar)
-        !             end if
-        !         end if famInclude2
-        !     end do varLoop2
-        ! end do regionLoop
-
     end subroutine setBCData
 
     subroutine setBCData_d(bcDataNamesIn, bcDataIn, bcDataInd, famLists, sps, &
@@ -1509,7 +1487,6 @@ contains
                                  cgnsSubFace, BCType
         use sorting, only: famInList
         use utils, only: setPointers_d, terminate, char2str
-        use actuatorRegionData, only: actuatorRegionsd, actuatorRegions, nActuatorRegions
         !
         !      Subroutine arguments.
         !
@@ -1573,31 +1550,6 @@ contains
             end do varLoop
         end do domainsLoop
 
-        ! ! Loop over any actuator regions since they also could have to set BCData
-        ! regionLoop: do iRegion = 1, nActuatorRegions
-        !     varLoop2: do iVar = 1, nVar
-        !         nFam = famLists(iVar, 1)
-        !         famInclude2: if (famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2 + nFam - 1))) then
-
-        !             ! Extract the name
-        !             varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
-
-        !             if (trim(varName) == "Thrust") then
-        !                 actuatorRegions(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
-        !                                                  bcDataIn(iVar)
-        !                 actuatorRegionsd(iRegion)%force = actuatorRegions(iRegion)%axisVec * &
-        !                                                   bcDataInd(iVar)
-        !             else if (trim(varName) == "Torque") then
-        !                 actuatorRegions(iRegion)%torque = bcDataIn(iVar)
-        !                 actuatorRegionsd(iRegion)%torque = bcDataInd(iVar)
-        !             else if (trim(varName) == "Heat") then
-        !                 actuatorRegions(iRegion)%heat = bcDataIn(iVar)
-        !                 actuatorRegionsd(iRegion)%heat = bcDataInd(iVar)
-        !             end if
-        !         end if famInclude2
-        !     end do varLoop2
-        ! end do regionLoop
-
     end subroutine setBCData_d
 
     subroutine setBCData_b(bcDataNamesIn, bcDataIn, bcDataInd, famLists, sps, &
@@ -1611,7 +1563,6 @@ contains
                                  cgnsSubFace, BCType
         use sorting, only: famInList
         use utils, only: setPointers_b, terminate, char2str
-        use actuatorRegionData, only: actuatorRegionsd, actuatorRegions, nActuatorRegions
 
         !
         !      Subroutine arguments.
@@ -1677,27 +1628,6 @@ contains
                 end do bocoLoop
             end do varLoop
         end do domainsLoop
-
-        ! ! Loop over any actuator regions since they also could have to set BCData
-        ! regionLoop: do iRegion = 1, nActuatorRegions
-        !     varLoop2: do iVar = 1, nVar
-        !         nFam = famLists(iVar, 1)
-        !         famInclude2: if (famInList(actuatorRegions(iRegion)%famID, famLists(iVar, 2:2 + nFam - 1))) then
-
-        !             ! Extract the name
-        !             varName = char2str(bcDataNamesIn(iVar, :), maxCGNSNameLen)
-
-        !             if (trim(varName) == "Thrust") then
-        !                 bcDataInd(ivar) = &
-        !                     sum(actuatorRegions(iRegion)%axisVec * actuatorRegionsd(iRegion)%force)
-        !             else if (trim(varName) == "Torque") then
-        !                 bcDataInd(ivar) = actuatorRegionsd(iRegion)%torque
-        !             else if (trim(varName) == "Heat") then
-        !                 bcDataInd(ivar) = actuatorRegionsd(iRegion)%heat
-        !             end if
-        !         end if famInclude2
-        !     end do varLoop2
-        ! end do regionLoop
 
     end subroutine setBCData_b
 
