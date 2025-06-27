@@ -685,12 +685,13 @@ python module libadflow
        end module usersurfaceintegrations
 
        module actuatorregion ! in :test:actuatorDiskRegion.F90
-         subroutine computeinitialspatialmetrics(centerpoint, thrustvector, n, distance2plane, distance2axis) ! in :test:actuatorDiskRegion.F90:actuatorregion
+         subroutine computeinitialspatialmetrics(centerpoint, thrustvector, n, distance2plane, distance2axis, tangent) ! in :test:actuatorDiskRegion.F90:actuatorregion
            real(kind=realtype) dimension(3),intent(in) :: centerpoint
            real(kind=realtype) dimension(3),intent(in) :: thrustvector
            integer(kind=inttype) intent(in) :: n
            real(kind=realtype) dimension(n),intent(out),depend(n) :: distance2plane
            real(kind=realtype) dimension(n),intent(out),depend(n) :: distance2axis
+           real(kind=realtype) dimension(3, n),intent(out),depend(n) :: tangent
          end subroutine computeinitialspatialmetrics
 
          subroutine addactuatorregion(flag,n,famname,famid,relaxstart,relaxend,iregion,nlocalcells) ! in :test:actuatorDiskRegion.F90:actuatorregion
@@ -704,13 +705,14 @@ python module libadflow
            integer(kind=inttype), intent(out) :: nlocalcells
          end subroutine addactuatorregion
 
-         subroutine computespatialmetrics(iregion, nlocalcells, centerpoint, thrustvector, distance2plane, distance2axis, volume) ! in :test:actuatorDiskRegion.F90:actuatorregion
+         subroutine computespatialmetrics(iregion, nlocalcells, centerpoint, thrustvector, distance2plane, distance2axis, tangent, volume) ! in :test:actuatorDiskRegion.F90:actuatorregion
            real(kind=realtype) dimension(3),intent(in) :: centerpoint
            real(kind=realtype) dimension(3),intent(in) :: thrustvector
            integer(kind=inttype), intent(in) :: iregion
            integer(kind=inttype) intent(in) :: nlocalcells
            real(kind=realtype) dimension(nlocalcells),intent(out),depend(nlocalcells) :: distance2plane
            real(kind=realtype) dimension(nlocalcells),intent(out),depend(nlocalcells) :: distance2axis
+           real(kind=realtype) dimension(3, nlocalcells),intent(out),depend(nlocalcells) :: tangent
            real(kind=realtype) dimension(nlocalcells),intent(out),depend(nlocalcells) :: volume
          end subroutine addactuatorregion
 

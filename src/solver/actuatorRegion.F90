@@ -6,7 +6,7 @@ module actuatorRegion
     implicit none
 
 contains
-    subroutine computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane, distance2axis)
+    subroutine computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane, distance2axis, tangent)
         use constants
         use blockPointers, only: x
         implicit none
@@ -17,10 +17,11 @@ contains
 
         ! Outputs
         real(kind=realType), intent(out) :: distance2axis, distance2plane
+        real(kind=realType), dimension(3), intent(out) :: tangent
 
         ! Working
-        real(kind=realType)  :: thrustVectorNorm, dotProduct, norm
-        real(kind=realType), dimension(3) ::  xCen, distance2center, crossProduct
+        real(kind=realType)  :: thrustVectorNorm, dotProduct, tangentNorm
+        real(kind=realType), dimension(3) ::  xCen, distance2center, rawTangent
 
         ! Compute the cell center
         xCen = eighth * (x(i - 1, j - 1, k - 1, :) + x(i, j - 1, k - 1, :) &
@@ -36,13 +37,17 @@ contains
         distance2plane = dotProduct / thrustVectorNorm
 
         ! compute distance to axis
-        crossProduct(1) = distance2center(2)*thrustVector(3) - distance2center(3)*thrustVector(2)
-        crossProduct(2) = distance2center(3)*thrustVector(1) - distance2center(1)*thrustVector(3)
-        crossProduct(3) = distance2center(1)*thrustVector(2) - distance2center(2)*thrustVector(1)
+        rawTangent(1) = distance2center(2)*thrustVector(3) - distance2center(3)*thrustVector(2)
+        rawTangent(2) = distance2center(3)*thrustVector(1) - distance2center(1)*thrustVector(3)
+        rawTangent(3) = distance2center(1)*thrustVector(2) - distance2center(2)*thrustVector(1)
 
-        norm = sqrt(crossProduct(1)**2 + crossProduct(2)**2 + crossProduct(3)**2)
+        tangentNorm = sqrt(rawTangent(1)**2 + rawTangent(2)**2 + rawTangent(3)**2)
 
-        distance2axis = norm / thrustVectorNorm
+        distance2axis = tangentNorm / thrustVectorNorm
+
+        ! compute tangential vector
+        tangent = rawTangent / tangentNorm
+
 
     end subroutine computeCellSpatialMetrics
 
@@ -54,7 +59,7 @@ contains
     ! ----------------------------------------------------------------------
 
 #ifndef USE_TAPENADE
-    subroutine computeInitialSpatialMetrics(centerPoint, thrustVector, n, distance2plane, distance2axis)
+    subroutine computeInitialSpatialMetrics(centerPoint, thrustVector, n, distance2plane, distance2axis, tangent)
 
         use constants
         use blockPointers, only: x, il, jl, kl, nDom, iBlank
@@ -65,6 +70,7 @@ contains
         real(kind=realType), dimension(3), intent(in) :: centerPoint, thrustVector
         integer(kind=intType), intent(in) :: n
         real(kind=realType), dimension(n), intent(out) :: distance2plane, distance2axis
+        real(kind=realType), dimension(3, n), intent(out) :: tangent
 
 
         ! Working variables
@@ -92,7 +98,9 @@ contains
                             cycle
                         end if
 
-                        call computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane(ii), distance2axis(ii))
+                        call computeCellSpatialMetrics(i, j, k, &
+                            centerPoint, thrustVector, &
+                            distance2plane(ii), distance2axis(ii), tangent(:, ii))
                     end do
                 end do
             end do
@@ -199,7 +207,8 @@ contains
 
     end subroutine addActuatorRegion
 
-    subroutine computeSpatialMetrics(iRegion, nLocalCells, centerPoint, thrustVector, distance2plane, distance2axis, volume)
+    subroutine computeSpatialMetrics(iRegion, nLocalCells, centerPoint, thrustVector, &
+            distance2plane, distance2axis, tangent, volume)
         use constants
         use blockPointers, only: nDom, vol
         use utils, only: setPointers
@@ -212,6 +221,7 @@ contains
 
         ! Outputs
         real(kind=realType), intent(out), dimension(nLocalCells) :: distance2axis, distance2plane, volume
+        real(kind=realType), dimension(3, nLocalCells), intent(out) :: tangent
 
         ! Working
         type(actuatorRegionType), pointer :: region
@@ -230,7 +240,10 @@ contains
                 k = actuatorRegions(iRegion)%cellIDs(3, iii)
 
 
-                call computeCellSpatialMetrics(i, j, k, centerPoint, thrustVector, distance2plane(iii), distance2axis(iii))
+                call computeCellSpatialMetrics(i, j, k, &
+                    centerPoint, thrustVector, &
+                    distance2plane(iii), distance2axis(iii), tangent(:, iii))
+
                 volume(iii) = vol(i, j, k)
             end do
         end do

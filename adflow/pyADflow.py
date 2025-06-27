@@ -879,14 +879,15 @@ class ADFLOW(AeroSolver):
         # compute the distance of each cell to the AR plane and axis
         ncells = self.adflow.adjointvars.ncellslocal[0]
 
-        distance2plane, distance2axis = self.adflow.actuatorregion.computeinitialspatialmetrics(
+        distance2plane, distance2axis, tangent = self.adflow.actuatorregion.computeinitialspatialmetrics(
             actuatorRegion.centerPoint,
             actuatorRegion.thrustVector,
             ncells
         )
+        tangent = tangent.T
 
         # tag the active cells
-        flag = actuatorRegion.tagActiveCells(distance2axis, distance2plane)
+        flag = actuatorRegion.tagActiveCells(distance2axis, distance2plane, tangent)
         iRegion, nLocalCells = self.adflow.actuatorregion.addactuatorregion(
                 flag, 
                 familyName, 
@@ -912,12 +913,13 @@ class ADFLOW(AeroSolver):
 
 
             # compute local metrics
-            distance2plane, distance2axis, volume = self.adflow.actuatorregion.computespatialmetrics(
+            distance2plane, distance2axis, tangent, volume = self.adflow.actuatorregion.computespatialmetrics(
                 actuatorRegion.iRegion, 
                 actuatorRegion.nLocalCells, 
                 actuatorRegion.centerPoint, 
                 actuatorRegion.thrustVector, 
                 )
+            tangent = tangent.T
 
             totalVolume = self.comm.allreduce(numpy.sum(volume), op=MPI.SUM)
 
@@ -926,8 +928,8 @@ class ADFLOW(AeroSolver):
                 continue
 
             # compute the source terms
-            force = actuatorRegion.computeCellForceVector(distance2axis, distance2plane, volume, totalVolume)
-            heat = actuatorRegion.computeCellHeatVector(distance2axis, distance2plane, volume, totalVolume)
+            force = actuatorRegion.computeCellForceVector(distance2axis, distance2plane, tangent, volume, totalVolume)
+            heat = actuatorRegion.computeCellHeatVector(distance2axis, distance2plane, tangent, volume, totalVolume)
 
             # apply the source terms in Fortran
             self.adflow.actuatorregion.populatebcvalues(
