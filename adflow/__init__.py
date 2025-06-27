@@ -6,3 +6,6 @@ from .pyADflow import ADFLOW
 from .pyADflow_C import ADFLOW_C
 from .oversetCheck import OversetCheck
 from .checkZipper import checkZipper
+
+
+from .actuatorRegion import UniformActuatorRegion, BSplineActuatorRegion
