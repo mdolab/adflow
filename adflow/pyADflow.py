@@ -33,7 +33,7 @@ from baseclasses.utils import Error, CaseInsensitiveDict
 from . import MExt
 import hashlib
 from collections import OrderedDict
-from .actuatorRegion import AbstractActuatorRegion
+from .actuatorRegion import ActuatorRegionHandler, AbstractActuatorRegion
 
 
 class ADFLOWWarning(object):
@@ -203,8 +203,7 @@ class ADFLOW(AeroSolver):
         # had we read in a param file
         self.adflow.iteration.deforming_grid = True
 
-
-        self._actuatorRegions = list()
+        self._actuatorRegionHandler = ActuatorRegionHandler()
 
         # In order to properly initialize we need to have mach number
         # and a few other things set. Just create a dummy aeroproblem,
@@ -839,8 +838,8 @@ class ADFLOW(AeroSolver):
         self,
         actuatorRegion: AbstractActuatorRegion,
         familyName,
-        relaxStart=None,
-        relaxEnd=None,
+        relaxStart=-1,
+        relaxEnd=-1,
     ):
         # ActuatorDiskRegions cannot be used in timeSpectralMode
         if self.getOption("equationMode").lower() == "time spectral":
@@ -860,84 +859,18 @@ class ADFLOW(AeroSolver):
         for fam in self.families:
             if len(self.families[fam]) > 0:
                 maxInd = max(maxInd, numpy.max(self.families[fam]))
-        famID = maxInd + 1
-        self.families[familyName.lower()] = [famID]
+        familyID = maxInd + 1
+        self.families[familyName.lower()] = [familyID]
 
-        if relaxStart is None and relaxEnd is None:
-            # No relaxation at all
-            relaxStart = -1.0
-            relaxEnd = -1.0
-
-        if relaxStart is None and relaxEnd is not None:
-            # Start at 0 orders if start is not given
+        if relaxStart < 0 and relaxEnd > 0:
             relaxStart = 0.0
 
-        if relaxEnd is None and relaxStart is not None:
-            raise Error("relaxEnd must be given is relaxStart is specified")
+        if relaxEnd < 0 and relaxStart >= 0:
+            raise ValueError("relaxEnd must be given if relaxStart is specified")
 
 
-        # compute the distance of each cell to the AR plane and axis
-        ncells = self.adflow.adjointvars.ncellslocal[0]
+        self._actuatorRegionHandler.addActuatorRegion(actuatorRegion, self.adflow, familyName, familyID, relaxStart, relaxEnd)
 
-        distance2plane, distance2axis, tangent = self.adflow.actuatorregion.computeinitialspatialmetrics(
-            actuatorRegion.centerPoint,
-            actuatorRegion.thrustVector,
-            ncells
-        )
-        tangent = tangent.T
-
-        # tag the active cells
-        flag = actuatorRegion.tagActiveCells(distance2axis, distance2plane, tangent)
-        iRegion, nLocalCells = self.adflow.actuatorregion.addactuatorregion(
-                flag, 
-                familyName, 
-                famID, 
-                relaxStart, 
-                relaxEnd,
-                )
-        actuatorRegion.iRegion = iRegion
-        actuatorRegion.nLocalCells = nLocalCells
-        actuatorRegion.familyName = familyName
-
-        # book keep the new region
-        self._actuatorRegions.append(actuatorRegion)
-
-    def _updateActuatorRegionsBC(self, aeroproblem):
-        for actuatorRegion in self._actuatorRegions:
-
-            # set BC values
-            for (bcName, familyName), bcValue in aeroproblem.bcVarData.items():
-                if familyName != actuatorRegion.familyName:
-                    continue
-                actuatorRegion.setBCValue(bcName, bcValue)
-
-
-            # compute local metrics
-            distance2plane, distance2axis, tangent, volume = self.adflow.actuatorregion.computespatialmetrics(
-                actuatorRegion.iRegion, 
-                actuatorRegion.nLocalCells, 
-                actuatorRegion.centerPoint, 
-                actuatorRegion.thrustVector, 
-                )
-            tangent = tangent.T
-
-            totalVolume = self.comm.allreduce(numpy.sum(volume), op=MPI.SUM)
-
-            # skip this proc if no cells are active
-            if actuatorRegion.nLocalCells == 0:
-                continue
-
-            # compute the source terms
-            force = actuatorRegion.computeCellForceVector(distance2axis, distance2plane, tangent, volume, totalVolume)
-            heat = actuatorRegion.computeCellHeatVector(distance2axis, distance2plane, tangent, volume, totalVolume)
-
-            # apply the source terms in Fortran
-            self.adflow.actuatorregion.populatebcvalues(
-                actuatorRegion.iRegion, 
-                actuatorRegion.nLocalCells, 
-                force.T,
-                heat.T,
-                )
 
     def writeActuatorRegions(self, fileName, outputDir=None):
         """
@@ -959,15 +892,8 @@ class ADFLOW(AeroSolver):
         if outputDir is None:
             outputDir = self.getOption("outputDirectory")
 
-        # Join to get the actual filename root
-        fileName = os.path.join(outputDir, fileName)
+        self._actuatorRegionHandler.writeActuatorRegions(self.adflow, fileName, outputDir)
 
-        # Ensure extension is .plt even if the user didn't specify
-        fileName, ext = os.path.splitext(fileName)
-        fileName += ".plt"
-
-        # just call the underlying fortran routine
-        self.adflow.actuatorregion.writeactuatorregions(fileName)
 
     def addUserFunction(self, funcName, functions, callBack):
         """Add a new function to ADflow by combining existing functions in a
@@ -3660,7 +3586,7 @@ class ADFLOW(AeroSolver):
         if not empty:
             self.adflow.bcdata.setbcdata(nameArray, dataArray, groupArray, 1)
 
-        self._updateActuatorRegionsBC(AP)
+        self._actuatorRegionHandler.updateActuatorRegionsBC(AP, self.adflow, self.comm)
 
         if not firstCall:
             self.adflow.initializeflow.updatebcdataalllevels()

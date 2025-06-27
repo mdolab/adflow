@@ -1,9 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
+from types import ModuleType
+import os
+
+from mpi4py import MPI
 
 import numpy as np
 import numpy.typing as npt
 import scipy.interpolate as interpolate
+
+
+from baseclasses import AeroProblem
 
 
 class AbstractActuatorRegion(ABC):
@@ -24,7 +31,7 @@ class AbstractActuatorRegion(ABC):
         self.thrustVector = thrustVector / np.linalg.norm(thrustVector)
         self.iRegion = -1
         self.nLocalCells = -1
-        self.familyName = None
+        self.familyName = ''
 
 
         self._heatBcName = 'Heat'
@@ -55,6 +62,90 @@ class AbstractActuatorRegion(ABC):
     def computeCellHeatVector(self, distance2axis: npt.NDArray, distance2plane: npt.NDArray, tangent: npt.NDArray, cellVolume: npt.NDArray, totalVolume: float) -> npt.NDArray:
         heat = np.zeros_like(distance2axis)
         return heat
+
+
+class ActuatorRegionHandler():
+    def __init__(self):
+
+        self._actuatorRegions = list()
+
+    def addActuatorRegion(self, actuatorRegion: AbstractActuatorRegion, adflow_fortran: ModuleType, familyName: str, familyID: int, relaxStart: float, relaxEnd: float):
+        # compute the distance of each cell to the AR plane and axis
+        ncells = adflow_fortran.adjointvars.ncellslocal[0]
+
+        distance2plane, distance2axis, tangent = adflow_fortran.actuatorregion.computeinitialspatialmetrics(
+            actuatorRegion.centerPoint,
+            actuatorRegion.thrustVector,
+            ncells
+        )
+        tangent = tangent.T
+
+        # tag the active cells
+        flag = actuatorRegion.tagActiveCells(distance2axis, distance2plane, tangent)
+        iRegion, nLocalCells = adflow_fortran.actuatorregion.addactuatorregion(
+                flag, 
+                familyName, 
+                familyID, 
+                relaxStart, 
+                relaxEnd,
+                )
+        actuatorRegion.iRegion = iRegion
+        actuatorRegion.nLocalCells = nLocalCells
+        actuatorRegion.familyName = familyName
+
+        # book keep the new region
+        self._actuatorRegions.append(actuatorRegion)
+
+    def updateActuatorRegionsBC(self, aeroproblem: AeroProblem, adflow_fortran: ModuleType, comm: MPI.Intracomm):
+        for actuatorRegion in self._actuatorRegions:
+
+            # set BC values
+            for (bcName, familyName), bcValue in aeroproblem.bcVarData.items():
+                if familyName != actuatorRegion.familyName:
+                    continue
+                actuatorRegion.setBCValue(bcName, bcValue)
+
+
+            # compute local metrics
+            distance2plane, distance2axis, tangent, volume = adflow_fortran.actuatorregion.computespatialmetrics(
+                actuatorRegion.iRegion, 
+                actuatorRegion.nLocalCells, 
+                actuatorRegion.centerPoint, 
+                actuatorRegion.thrustVector, 
+                )
+            tangent = tangent.T
+
+            totalVolume = comm.allreduce(np.sum(volume), op=MPI.SUM)
+
+            # skip this proc if no cells are active
+            if actuatorRegion.nLocalCells == 0:
+                continue
+
+            # compute the source terms
+            force = actuatorRegion.computeCellForceVector(distance2axis, distance2plane, tangent, volume, totalVolume)
+            heat = actuatorRegion.computeCellHeatVector(distance2axis, distance2plane, tangent, volume, totalVolume)
+
+            # apply the source terms in Fortran
+            adflow_fortran.actuatorregion.populatebcvalues(
+                actuatorRegion.iRegion, 
+                actuatorRegion.nLocalCells, 
+                force.T,
+                heat.T,
+                )
+
+    def writeActuatorRegions(self, adflow_fortran: ModuleType, fileName: str, outputDir: str):
+        # Join to get the actual filename root
+        fileName = os.path.join(outputDir, fileName)
+
+        # Ensure extension is .plt even if the user didn't specify
+        fileName, ext = os.path.splitext(fileName)
+        fileName += ".plt"
+
+        # just call the underlying fortran routine
+        adflow_fortran.actuatorregion.writeactuatorregions(fileName)
+
+
+
 
 
 
@@ -106,10 +197,9 @@ class CircularActuatorRegion(AbstractActuatorRegion):
 
 class UniformActuatorRegion(CircularActuatorRegion):
     def computeCellForceVector(self, distance2axis, distance2plane, tangent, cellVolume, totalVolume):
-        force = np.zeros((len(distance2axis), 3))
         thrustBC = self._boundaryConditions[self._thrustBcName]
 
-        force[:, :] = np.outer(
+        force = np.outer(
                 thrustBC * cellVolume / totalVolume, 
                 self.thrustVector
                 )
@@ -117,7 +207,6 @@ class UniformActuatorRegion(CircularActuatorRegion):
         return force
 
     def computeCellHeatVector(self, distance2axis, distance2plane, tangent, cellVolume, totalVolume):
-        heat = np.zeros_like(distance2axis)
         heatBC = self._boundaryConditions[self._heatBcName]
 
         heat = heatBC * cellVolume / totalVolume
@@ -155,35 +244,33 @@ class BSplineActuatorRegion(CircularActuatorRegion):
 
 
     def computeCellForceVector(self, distance2axis, distance2plane, tangent, cellVolume, totalVolume):
-        force = np.zeros((len(distance2axis), 3))
         thrustBC = self._boundaryConditions[self._thrustBcName]
 
         normalizedRadius = self._computeNormalizedRadius(distance2axis) 
         thrustFactor = thrustBC * cellVolume / totalVolume
 
-        # add thrust
-        force[:, :] = np.outer(
+        # add axial contribution (thrust)
+        force = np.outer(
                 self._thrustSpline(normalizedRadius) * thrustFactor, 
                 self.thrustVector
                 )
 
-        # add swirl (tangential contribution)
+        # add tangential contribution (swirl)
         force += np.multiply(
                 tangent.T, 
                 np.array([self._tangentSpline(normalizedRadius) * thrustFactor])
                 ).T
 
         # add radial contribution
-        radius = np.cross(tangent, self.thrustVector)
+        radius = np.cross(self.thrustVector, tangent)
         force += np.multiply(
                 radius.T, 
-                np.array([self._radialSpline(normalizedRadius) * thrustFactor])
+                np.array([self._radialSpline(normalizedRadius)*2 * thrustFactor])
                 ).T
 
         return force
 
     def computeCellHeatVector(self, distance2axis, distance2plane, tangent, cellVolume, totalVolume):
-        heat = np.zeros_like(distance2axis)
         heatBC = self._boundaryConditions[self._heatBcName]
 
         normalizedRadius = self._computeNormalizedRadius(distance2axis) 
