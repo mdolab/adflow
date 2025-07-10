@@ -9,7 +9,7 @@ module actuatorregion_d
 
 contains
   subroutine computecellspatialmetrics(i, j, k, centerpoint, &
-&   thrustvector, distance2plane, distance2axis)
+&   thrustvector, distance2plane, distance2axis, tangent)
     use constants
     use blockpointers, only : x
     implicit none
@@ -19,10 +19,11 @@ contains
     integer(kind=inttype), intent(in) :: i, j, k
 ! outputs
     real(kind=realtype), intent(out) :: distance2axis, distance2plane
+    real(kind=realtype), dimension(3), intent(out) :: tangent
 ! working
-    real(kind=realtype) :: thrustvectornorm, dotproduct, norm
+    real(kind=realtype) :: thrustvectornorm, dotproduct, tangentnorm
     real(kind=realtype), dimension(3) :: xcen, distance2center, &
-&   crossproduct
+&   rawtangent
     intrinsic sqrt
     real(kind=realtype) :: arg1
 ! compute the cell center
@@ -37,15 +38,17 @@ contains
 &     distance2center(2) + thrustvector(3)*distance2center(3)
     distance2plane = dotproduct/thrustvectornorm
 ! compute distance to axis
-    crossproduct(1) = distance2center(2)*thrustvector(3) - &
-&     distance2center(3)*thrustvector(2)
-    crossproduct(2) = distance2center(3)*thrustvector(1) - &
-&     distance2center(1)*thrustvector(3)
-    crossproduct(3) = distance2center(1)*thrustvector(2) - &
-&     distance2center(2)*thrustvector(1)
-    arg1 = crossproduct(1)**2 + crossproduct(2)**2 + crossproduct(3)**2
-    norm = sqrt(arg1)
-    distance2axis = norm/thrustvectornorm
+    rawtangent(1) = distance2center(2)*thrustvector(3) - distance2center&
+&     (3)*thrustvector(2)
+    rawtangent(2) = distance2center(3)*thrustvector(1) - distance2center&
+&     (1)*thrustvector(3)
+    rawtangent(3) = distance2center(1)*thrustvector(2) - distance2center&
+&     (2)*thrustvector(1)
+    arg1 = rawtangent(1)**2 + rawtangent(2)**2 + rawtangent(3)**2
+    tangentnorm = sqrt(arg1)
+    distance2axis = tangentnorm/thrustvectornorm
+! compute tangential vector
+    tangent = rawtangent/tangentnorm
   end subroutine computecellspatialmetrics
 ! ----------------------------------------------------------------------
 !                                                                      |
